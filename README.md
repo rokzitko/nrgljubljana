@@ -12,7 +12,7 @@ To adapt this skeleton for a new TRIQS application, the following steps are nece
 * Run the following commands in order after replacing **appname** accordingly
 
 ```bash
-git clone https://github.com/triqs/app4triqs --branch unstable appname
+git clone https://github.com/triqs/app4triqs --branch cpp_only appname
 cd appname
 ./share/squash_history.sh
 ./share/replace_and_rename.py appname
@@ -36,7 +36,7 @@ You can merge future changes to the app4triqs skeleton into your project with th
 
 ```bash
 git remote update
-git merge app4triqs_remote/unstable -m "Merge latest app4triqs skeleton changes"
+git merge app4triqs_remote/cpp_only -m "Merge latest app4triqs skeleton changes"
 ```
 
 If you should encounter any conflicts resolve them and `git commit`.
@@ -56,9 +56,6 @@ according to your needs (replace app4triqs in the following by the name of your 
 * Adjust or remove the `README.md` and `doc/ChangeLog.md` file
 * In the `c++/app4triqs` subdirectory adjust the example files `app4triqs.hpp` and `app4triqs.cpp` or add your own source files.
 * In the `test/c++` subdirectory adjust the example test `basic.cpp` or add your own tests.
-* In the `python/app4triqs` subdirectory add your Python source files.
-  Be sure to remove the `app4triqs_module_desc.py` file unless you want to generate a Python module from your C++ source code.
-* In the `test/python` subdirectory adjust the example test `Basic.py` or add your own tests.
 * Adjust any documentation examples given as `*.rst` files in the doc directory.
 * Adjust the sphinx configuration in `doc/conf.py.in` as necessary.
 * The build and install process is identical to the one outline [here](https://triqs.github.io/app4triqs/unstable/install.html).

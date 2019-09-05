@@ -55,10 +55,6 @@ add_custom_command(
 
 option(Sphinx_Only "When building the documentation, skip the Python Modules and the generation of C++ Api and example outputs" OFF)
 if(NOT Sphinx_Only)
-  # Autodoc usage requires the python modules to be built first
-  get_property(CPP2PY_MODULES_LIST GLOBAL PROPERTY CPP2PY_MODULES_LIST)
-  add_dependencies(docs_sphinx ${CPP2PY_MODULES_LIST})
-
   # Generation of C++ Api and Example Outputs
   add_dependencies(docs_sphinx docs_cpp2rst docs_example_output)
 endif()

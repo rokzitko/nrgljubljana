@@ -28,14 +28,3 @@ C++ reference manual
    :maxdepth: 5
 
    cpp2rst_generated/contents
-
-Python reference manual
------------------------
-
-.. automodule:: app4triqs 
-   :members:
-
-.. autoclass:: app4triqs.app4triqs_module.Toto
-   :members:
-
-.. autofunction:: app4triqs.app4triqs_module.chain
