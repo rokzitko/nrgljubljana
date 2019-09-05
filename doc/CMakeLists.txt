@@ -35,7 +35,6 @@ foreach(example ${ExampleList})
   get_filename_component(d ${example} DIRECTORY)
   add_executable(doc_${f} EXCLUDE_FROM_ALL ${example})
   set_property(TARGET doc_${f} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${d})
-  target_link_libraries(doc_${f} triqs)
   add_custom_command(TARGET doc_${f}
    COMMAND doc_${f} > ${CMAKE_CURRENT_SOURCE_DIR}/${d}/${f}.output 2>/dev/null
    WORKING_DIRECTORY ${d}
@@ -50,7 +49,7 @@ endforeach()
 add_custom_target(docs_sphinx ALL)
 add_custom_command(
   TARGET docs_sphinx
-  COMMAND PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH} ${TRIQS_SPHINXBUILD_EXECUTABLE} -c . -j8 -b html ${CMAKE_CURRENT_SOURCE_DIR} html
+  COMMAND PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH} sphinx-build -c . -j8 -b html ${CMAKE_CURRENT_SOURCE_DIR} html
 )
 
 option(Sphinx_Only "When building the documentation, skip the Python Modules and the generation of C++ Api and example outputs" OFF)

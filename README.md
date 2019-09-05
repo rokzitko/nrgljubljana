@@ -12,7 +12,7 @@ To adapt this skeleton for a new TRIQS application, the following steps are nece
 * Run the following commands in order after replacing **appname** accordingly
 
 ```bash
-git clone https://github.com/triqs/app4triqs --branch cpp_only appname
+git clone https://github.com/triqs/app4triqs --branch cpp_only_notriqs appname
 cd appname
 ./share/squash_history.sh
 ./share/replace_and_rename.py appname

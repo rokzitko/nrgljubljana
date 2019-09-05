@@ -1,5 +1,4 @@
 #pragma once
-#include <triqs/gfs.hpp>
 
 namespace app4triqs {
 
@@ -49,12 +48,6 @@ namespace app4triqs {
 
     /// Comparison
     bool operator==(toto const &b) const;
-
-    /// HDF5
-    static std::string hdf5_scheme() { return "Toto"; }
-
-    friend void h5_write(triqs::h5::group grp, std::string subgroup_name, toto const &m);
-    friend void h5_read(triqs::h5::group grp, std::string subgroup_name, toto &m);
 
     /// Serialization
     template <class Archive> void serialize(Archive &ar, const unsigned int) { ar &i; }

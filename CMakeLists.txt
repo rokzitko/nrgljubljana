@@ -29,29 +29,25 @@ endif()
 project(APP4TRIQS VERSION 2.2.0 LANGUAGES C CXX)
 
 # ############
-# Load TRIQS and CPP2PY
-find_package(TRIQS 2.2 REQUIRED)
+# Load CPP2PY
 find_package(Cpp2Py 1.6 REQUIRED)
 
 # Get the git hash & print status
-triqs_get_git_hash_of_source_dir(PROJECT_GIT_HASH)
+execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_VARIABLE PROJECT_GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE)
 message(STATUS "${PROJECT_NAME} version : ${PROJECT_VERSION}")
 message(STATUS "${PROJECT_NAME} Git hash: ${PROJECT_GIT_HASH}")
 
-# Enforce Consistent Versioning
-if(NOT ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR} VERSION_EQUAL ${TRIQS_VERSION_MAJOR}.${TRIQS_VERSION_MINOR})
-  message(FATAL_ERROR "The ${PROJECT_NAME} version ${PROJECT_VERSION} is not compatible with TRIQS version ${TRIQS_VERSION}.")
-endif()
-
-# Default Install directory to TRIQS_ROOT if not given or invalid.
+# Assert that Install directory is given and invalid.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTALL_PREFIX}))
-  message(STATUS "No install prefix given (or invalid). Defaulting to TRIQS_ROOT")
-  set(CMAKE_INSTALL_PREFIX ${TRIQS_ROOT} CACHE PATH "default install path" FORCE)
+  message(FATAL_ERROR "No install prefix given (or invalid)")
 endif()
 message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------")
 
 # ############
 # Options
+
+# Make additional Find Modules available
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/share/cmake/Modules)
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -101,12 +97,8 @@ endif()
 # Build the documentation
 option(Build_Documentation "Build documentation" OFF)
 if(Build_Documentation)
-  if(NOT TRIQS_WITH_DOCUMENTATION)
-    message(WARNING "TRIQS was installed without documentation! Cannot build documentation.")
-  else()
-    message(STATUS "Documentation Build enabled")
-    add_subdirectory(doc)
-  endif()
+  message(STATUS "Documentation Build enabled")
+  add_subdirectory(doc)
 endif()
 
 # Additional configuration files
@@ -125,7 +117,6 @@ if(BUILD_DEBIAN_PACKAGE)
   set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
   set(CPACK_PACKAGE_CONTACT "https://github.com/TRIQS/app4triqs")
   execute_process(COMMAND dpkg --print-architecture OUTPUT_VARIABLE CMAKE_DEBIAN_PACKAGE_ARCHITECTURE OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(CPACK_DEBIAN_PACKAGE_DEPENDS "triqs (>= 2.2)")
   set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
   set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
   include(CPack)

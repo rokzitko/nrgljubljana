@@ -1,18 +1,15 @@
 file(GLOB_RECURSE sources *.cpp)
 add_library(app4triqs_c ${sources})
 
-# Link against triqs and enable warnings
-target_link_libraries(app4triqs_c PUBLIC triqs PRIVATE project_warnings)
+# Enable warnings
+target_link_libraries(app4triqs_c PRIVATE project_warnings)
 
 # Configure compilation
-target_compile_options(app4triqs_c PUBLIC -fPIC)
+target_compile_options(app4triqs_c PUBLIC -fPIC -std=c++17)
 target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_compile_definitions(app4triqs_c PUBLIC
 				APP4TRIQS_GIT_HASH=${PROJECT_GIT_HASH}
-				TRIQS_GIT_HASH=${TRIQS_GIT_HASH}
 				$<$<CONFIG:Debug>:APP4TRIQS_DEBUG>
-				$<$<CONFIG:Debug>:TRIQS_DEBUG>
-				$<$<CONFIG:Debug>:TRIQS_ARRAYS_ENFORCE_BOUNDCHECK>
 			  )
 
 # Install library and headers
