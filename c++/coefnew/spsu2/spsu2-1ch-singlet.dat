@@ -1,0 +1,4 @@
+{ 1, 1, Invar(ss1), Invar(ss1), 1},
+{ 2, 2, Invar(ss1), Invar(ss1), 1},
+{ 3, 3, Invar(-1 + ss1), Invar(-1 + ss1), 1},
+{ 4, 4, Invar(1 + ss1), Invar(1 + ss1), 1},

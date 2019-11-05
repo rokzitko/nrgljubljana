@@ -1,0 +1,2 @@
+const unsigned int LENGTH_I_3CH =  4;
+const unsigned int LENGTH_D_3CH =  8;

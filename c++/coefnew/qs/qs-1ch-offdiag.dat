@@ -1,0 +1,4 @@
+OFFDIAG(1, 2, 0, 1);
+OFFDIAG(1, 3, 0, 1);
+OFFDIAG(2, 4, 0, -(sqrt(2)*sqrt(S(ss)/(1 + 2*S(ss)))));
+OFFDIAG(3, 4, 0, (1 + S(ss))/sqrt(0.5 + (3*S(ss))/2. + Power(S(ss),2)));

@@ -1,0 +1,14 @@
+[1] qn=Invar(2); d=Invar(-1); state=-nc[a[0, 0], a[0, 1]]
+             Iq + Iz                                                                                     Iz
+        Sqrt[-------]                                                                           Sqrt[1 - --]
+               Iq                  1            1                                                        Iq               1          1                1 + NN
+nc[coef[-------------], dirpdt[{{-(-) + Iq}, {-(-) + Iz}, r}, -nc[a[0, 0], a[0, 1]]]] + nc[coef[------------], dirpdt[{{-(-) + Iq}, {- + Iz}, r}, (-1)      ]]
+           Sqrt[2]                 2            2                                                 Sqrt[2]                 2          2
+[2] qn=Invar(2); d=Invar(1); state=-nc[a[0, 0], a[0, 1]]
+              1 + Iq - Iz             1           1                                                    1 + Iq + Iz             1         1                1 + NN
+nc[coef[-Sqrt[-----------]], dirpdt[{{- + Iq}, {-(-) + Iz}, r}, -nc[a[0, 0], a[0, 1]]]] + nc[coef[Sqrt[-----------]], dirpdt[{{- + Iq}, {- + Iz}, r}, (-1)      ]]
+               2 + 2 Iq               2           2                                                     2 + 2 Iq               2         2
+[3] qn=Invar(1); d=Invar(0); state=a[0, 0]
+nc[coef[1], dirpdt[{{Iq}, {Iz}, r}, a[0, 0]]]
+[4] qn=Invar(1); d=Invar(0); state=a[0, 1]
+nc[coef[1], dirpdt[{{Iq}, {Iz}, r}, a[0, 1]]]

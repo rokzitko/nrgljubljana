@@ -1,0 +1,5 @@
+DIAG_DOUP(1, 1, 0, 0);
+DIAG_DOUP(2, 2, 0, 0);
+DIAG_DOUP(2, 3, 0, 1);
+DIAG_DOUP(3, 3, 0, 0);
+DIAG_DOUP(4, 4, 0, 0);

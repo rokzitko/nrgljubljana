@@ -1,0 +1,15 @@
+bw - Adaptive broadening tool for NRG Ljubljana
+Rok Zitko, rok.zitko@ijs.si, 2009
+
+The algorithm used is described in the following paper:
+A. Freyn, S. Florens, PRB 79, 121102(R) (2009).
+
+NOTES: 
+
+1. For very sharp features in the spectral function, there is a compromise
+between the lowest b(w) allowed, 'bmin', and the fineness of the
+discretization mesh, as controlled by 'broaden_ratio':
+
+broaden_ratio - 1 << bmin.
+
+In practice, bmin = broaden_ratio-1 is an adequate choice (order 10^-4 error).

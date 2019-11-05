@@ -1,0 +1,5 @@
+- using occupation number representation
+- in recalcop[]: m should contain conserved quantum numbers (q,s,p, etc),
+  while the lists should contain those additional quantum numbers that
+  drop out of the problem
+- argument 'r' is totally useless (dirpdt)

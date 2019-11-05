@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/rokzitko/common/delo/ljubljana/cmake/NRGLjubljana/tools/integ/integ.cc
+iostream
+-
+iomanip
+-
+fstream
+-
+vector
+-
+utility
+-
+cassert
+-
+string
+-
+cstring
+-
+algorithm
+-
+gsl/gsl_errno.h
+-
+gsl/gsl_spline.h
+-
+gsl/gsl_integration.h
+-
+unistd.h
+-
+getopt.h
+-
+

@@ -1,0 +1,4 @@
+OFFDIAG(1, 3, 0, 1);
+OFFDIAG(2, 4, 0, -1);
+OFFDIAG(1, 2, 1, 1);
+OFFDIAG(3, 4, 1, 1);

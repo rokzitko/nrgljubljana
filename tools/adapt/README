@@ -1,0 +1,49 @@
+adapt - solver for differential equations which determine the full set of
+discretization coefficients in adaptive logarithmic discretization approach
+in numerical renormalization group
+
+Copyright (C) 2008, 2009 Rok Zitko
+
+
+adapt solves the differential equations which determine logarithmic
+discretization coefficients in the form
+
+  epsilon(x) = g(x) Lambda^(2-x),
+  Epsilon(x) = f(x) Lambda^(2-x),
+  
+where epsilon(x) are the discretization mesh points and Epsilon(x) the
+representative energies, while x=j+z is the mesh parameter which combines
+the discretization interval number j=1,2,3,.. and the twist parameter z in
+the interval [0:1]. For more details see
+
+  Rok Zitko: "Adaptive logarithmic discretization for numerical
+  renormalization group methods", Computer Physics Communications (2009).
+
+and
+ 
+  Rok Zitko, Thomas Pruschke: "Energy resolution and discretization
+  artefacts in the numerical renormalization group", 
+  Physical Review B 79, 085106 (2009).
+  
+
+
+1. Usage
+
+Usage: adapt [P|N] [parameter_file]
+
+Optional argument P or N specifies whether positive or negative frequency
+part of the density of states is being discretized [default is "P"].
+
+Argument parameter_file specifies which file contains parameters [default is
+"param"].
+
+Consult the sample parameter file for description of the parameters
+(in test/tools/adapt).
+
+
+2. Acknowledgements
+
+'adapt' solver was developed during author's stay at the Institute for
+theoretical physics, University of Goettingen, Germany. Fruitful discussions
+with prof. Thomas Pruschke, computer support by GWDG, and support by the
+German Science Foundation through SFB 602 are acknowledged.

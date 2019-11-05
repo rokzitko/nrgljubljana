@@ -1,0 +1,5 @@
+const unsigned int LENGTH_I_1CH_0 =  2;
+const unsigned int LENGTH_I_1CH =  2;
+const unsigned int LENGTH_D_1CH =  5;
+const unsigned int LENGTH_T0_1CH =  6;
+const unsigned int LENGTH_Tpm_1CH =  5;

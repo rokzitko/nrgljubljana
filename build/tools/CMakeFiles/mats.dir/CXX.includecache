@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/rokzitko/common/delo/ljubljana/cmake/NRGLjubljana/tools/mats/mats.cc
+iostream
+-
+fstream
+-
+sstream
+-
+iomanip
+-
+cmath
+-
+cstdlib
+-
+cassert
+-
+cfloat
+-
+utility
+-
+vector
+-
+map
+-
+string
+-
+algorithm
+-
+complex
+-
+unistd.h
+-
+getopt.h
+-
+

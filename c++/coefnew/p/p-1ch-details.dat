@@ -1,0 +1,8 @@
+[1] qn=Invar(-1); d=Invar(-1); state=a[0, 0]
+nc[coef[1], dirpdt[{{-P}, {}, r}, a[0, 0]]]
+[2] qn=Invar(-1); d=Invar(-1); state=a[0, 1]
+nc[coef[1], dirpdt[{{-P}, {}, r}, a[0, 1]]]
+[3] qn=Invar(1); d=Invar(1); state=1
+nc[coef[1], dirpdt[{{P}, {}, r}, 1]]
+[4] qn=Invar(1); d=Invar(1); state=-nc[a[0, 0], a[0, 1]]
+nc[coef[1], dirpdt[{{P}, {}, r}, -nc[a[0, 0], a[0, 1]]]]

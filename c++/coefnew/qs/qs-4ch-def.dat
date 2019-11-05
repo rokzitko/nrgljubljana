@@ -1,0 +1,8 @@
+const unsigned int LENGTH_I_4CH_0 =  250;
+const unsigned int LENGTH_I_4CH_1 =  250;
+const unsigned int LENGTH_I_4CH_2 =  220;
+const unsigned int LENGTH_I_4CH_3 =  186;
+const unsigned int LENGTH_I_4CH =  186;
+const unsigned int LENGTH_D_4CH =  386;
+const unsigned int LENGTH_T0_4CH =  516;
+const unsigned int LENGTH_Tpm_4CH =  432;

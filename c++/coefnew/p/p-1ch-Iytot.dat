@@ -1,0 +1,2 @@
+ISOSPINY(3, 4, 0, Complex(0,0.5));
+ISOSPINY(4, 3, 0, Complex(0,-0.5));

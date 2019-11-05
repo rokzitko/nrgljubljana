@@ -1,0 +1,62 @@
+#!/bin/sh
+m4 nrg-recalc-QST.cc.m4 >nrg-recalc-QST.cc
+
+m4 nrg-recalc-ANYJ.cc.m4 >nrg-recalc-ANYJ.cc
+
+m4 nrg-recalc-ISO.cc.m4 >nrg-recalc-ISO.cc
+
+m4 nrg-recalc-ISO2.cc.m4 >nrg-recalc-ISO2.cc
+
+m4 nrg-recalc-ISO2LR.cc.m4 >nrg-recalc-ISO2LR.cc
+
+m4 nrg-recalc-ISOLR.cc.m4 >nrg-recalc-ISOLR.cc
+
+m4 nrg-recalc-ISOSZ.cc.m4 >nrg-recalc-ISOSZ.cc
+
+m4 nrg-recalc-ISOSZLR.cc.m4 >nrg-recalc-ISOSZLR.cc
+
+m4 nrg-recalc-NONE.cc.m4 >nrg-recalc-NONE.cc
+
+m4 nrg-recalc-QS.cc.m4 >nrg-recalc-QS.cc
+
+m4 nrg-recalc-QSLR.cc.m4 >nrg-recalc-QSLR.cc
+
+m4 nrg-recalc-QSC3.cc.m4 >nrg-recalc-QSC3.cc
+
+m4 nrg-recalc-QSZ.cc.m4 >nrg-recalc-QSZ.cc
+
+m4 nrg-recalc-QSZLR.cc.m4 >nrg-recalc-QSZLR.cc
+
+m4 nrg-recalc-SL.cc.m4 >nrg-recalc-SL.cc
+
+m4 nrg-recalc-SL3.cc.m4 >nrg-recalc-SL3.cc
+
+m4 nrg-recalc-SPSU2.cc.m4 >nrg-recalc-SPSU2.cc
+
+m4 nrg-recalc-SPU1.cc.m4 >nrg-recalc-SPU1.cc
+
+m4 nrg-recalc-SPU1LR.cc.m4 >nrg-recalc-SPU1LR.cc
+
+m4 nrg-recalc-SU2.cc.m4 >nrg-recalc-SU2.cc
+
+m4 nrg-recalc-DBLSU2.cc.m4 >nrg-recalc-DBLSU2.cc
+
+m4 nrg-recalc-DBLISOSZ.cc.m4 >nrg-recalc-DBLISOSZ.cc
+
+m4 nrg-recalc-U1.cc.m4 >nrg-recalc-U1.cc
+
+m4 nrg-recalc-SPSU2LR.cc.m4 >nrg-recalc-SPSU2LR.cc
+
+m4 nrg-recalc-SPSU2T.cc.m4 >nrg-recalc-SPSU2T.cc
+
+m4 nrg-recalc-SPSU2C3.cc.m4 >nrg-recalc-SPSU2C3.cc
+
+m4 nrg-recalc-QSTZ.cc.m4 >nrg-recalc-QSTZ.cc
+
+m4 nrg-recalc-QSZTZ.cc.m4 >nrg-recalc-QSZTZ.cc
+
+m4 nrg-recalc-QJ.cc.m4 >nrg-recalc-QJ.cc
+
+m4 nrg-recalc-P.cc.m4 >nrg-recalc-P.cc
+
+m4 nrg-recalc-PP.cc.m4 >nrg-recalc-PP.cc

@@ -1,0 +1,4 @@
+In[1] = Invar(-1);
+In[2] = Invar(1);
+In[3] = Invar(0);
+In[4] = Invar(0);

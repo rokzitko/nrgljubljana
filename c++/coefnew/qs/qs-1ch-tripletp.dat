@@ -1,0 +1,5 @@
+{ 1, 1, Invar(1 + q1, ss1), Invar(1 + q1, 2 + ss1), 1},
+{ 2, 2, Invar(q1, -1 + ss1), Invar(q1, 1 + ss1), sqrt(1 + 1/(1 + S(ss1)) - 2/(1 + 2*S(ss1)))},
+{ 3, 2, Invar(q1, 1 + ss1), Invar(q1, 1 + ss1), -(1/sqrt((1 + S(ss1))*(1 + 2*S(ss1))))},
+{ 3, 3, Invar(q1, 1 + ss1), Invar(q1, 3 + ss1), 1},
+{ 4, 4, Invar(-1 + q1, ss1), Invar(-1 + q1, 2 + ss1), 1},

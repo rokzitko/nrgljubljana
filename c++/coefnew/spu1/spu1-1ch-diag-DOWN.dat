@@ -1,0 +1,4 @@
+DIAG_DOWN(1, 1, 0, 1);
+DIAG_DOWN(2, 2, 0, 0);
+DIAG_DOWN(3, 3, 0, 1);
+DIAG_DOWN(4, 4, 0, 0);

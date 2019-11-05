@@ -1,0 +1,16 @@
+In[1] = Invar(0, 0, -1);
+In[2] = Invar(0, 0, 1);
+In[3] = Invar(0, -2, -1);
+In[4] = Invar(0, 0, -1);
+In[5] = Invar(0, 2, -1);
+In[6] = Invar(-1, -1, -1);
+In[7] = Invar(1, -1, -1);
+In[8] = Invar(-1, 1, -1);
+In[9] = Invar(1, 1, -1);
+In[10] = Invar(-1, -1, 1);
+In[11] = Invar(1, -1, 1);
+In[12] = Invar(-1, 1, 1);
+In[13] = Invar(1, 1, 1);
+In[14] = Invar(-2, 0, 1);
+In[15] = Invar(0, 0, 1);
+In[16] = Invar(2, 0, 1);

@@ -1,0 +1,4 @@
+{ 1, 1, Invar(-1 + ii1, ssz1), Invar(-1 + ii1, ssz1), 1},
+{ 2, 2, Invar(1 + ii1, ssz1), Invar(1 + ii1, ssz1), 1},
+{ 3, 3, Invar(ii1, -1 + ssz1), Invar(ii1, -1 + ssz1), 1},
+{ 4, 4, Invar(ii1, 1 + ssz1), Invar(ii1, 1 + ssz1), 1},

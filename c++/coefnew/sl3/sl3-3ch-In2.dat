@@ -1,0 +1,8 @@
+In[1] = Invar(1, 1, 1);
+In[2] = Invar(1, 1, 0);
+In[3] = Invar(1, 0, 1);
+In[4] = Invar(1, 0, 0);
+In[5] = Invar(0, 1, 1);
+In[6] = Invar(0, 1, 0);
+In[7] = Invar(0, 0, 1);
+In[8] = Invar(0, 0, 0);

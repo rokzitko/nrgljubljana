@@ -1,0 +1,2 @@
+const unsigned int LENGTH_I_2CH =  8;
+const unsigned int LENGTH_D_2CH =  256;

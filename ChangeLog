@@ -1,0 +1,507 @@
+2.2.0 relative to 2.0.6
+=======================
+- Parallelization using MPI. The diagonalization can now be spread
+  over several calculation nodes. In combination with the SMP
+  parallelization in LAPACK routines, even higher performance can now
+  be achieved.
+- Portability improvements (for example, the code now compiles under 
+  Mac OS X without any tweaking).
+- Calculation of the temperature-dependent conductance G(T), and 
+  of the temperature-dependent moments (cf. specgt, speci1t, speci2t).
+- Optimized routines for spectral function calculation, contributed
+  by Markus Greger.
+- Enhanced support for "global" operators. A number of such operators
+  are defined for a number of different symmetry types. These can
+  be used to calculate the temperature-dependent susceptibility
+  for the general case (specchit).
+- New symmetry types: SU(2)_iso x SU(2)_iso x U(1)_spin,
+  SU(2)_iso x SU(2)_iso, U(1)_ch x U(1)_ch x U(1)_ch (for three-channel
+  problems), U(1)_spin x Z_2
+- Improvements in output from the code, diagnostics, etc.
+- Calculation of an estimate of the Kondo temperature for the Kondo
+  and Anderson models (TKW output line).
+- Output of real and imaginary parts of spectral weights (reim).
+- Extrapolation of thermodynamic calculations to high temperatures
+  (tdht).
+- Tools for smoothing of spectral functions (intavg) and for smoothing
+  the thermodynamical quantities (tdavg).
+- Adaptable broadening tool (bw), implementing the method introduced
+  by A. Freyn and S. Florens.
+- Old docs, tests and examples were removed. The documentation will
+  be distributed separately.
+- Some defaults for parameters have been changed, taking into account
+  recent algorithmic developments and the accumulated experience with
+  running the NRG calculations.
+- Some bugs fixed (for instance, spectral function calculation
+  for symtype=NONE).
+- Huge library of automatic regression tests (distributed separately,
+  big file!).
+- "Decoupling tools" (matrix, diag, unitary in tools/dec). 
+  It is now possible to run NRG Ljubljana without Mathematica by using 
+  perl scripts to generate the input 'data' file from a template file 
+  (generated using option=TEMPLATE).
+
+2.2.1 relative to 2.2.0
+=======================
+- Output of complex expectation values (for non-Hermitian operators)
+
+2.2.2 relative to 2.2.1
+=======================
+- Bug fix in CFS code
+- smooth=newsc broadening scheme for problems with a superconducting gap
+- Code cleanup, some fixes in the README file
+- Schur decomposition is now the default way of diagonalizing the
+  Hamiltonians. The old behavior can be restored using the NOSCHUR option.
+
+2.2.3 relative to 2.2.2
+=======================
+- Bug fix in CFS code for complex problems
+
+2.3
+===
+- Full density matrix code (for spectral functions and expectation values)
+
+2.3.9
+=====
+- 2x2 spin structure for symtype=U1
+
+2.3.15
+======
+- store=one vs. store=split
+
+2.3.16
+======
+- "general approach" for computing the linear conductance at finite
+temperatures
+- binary data now contain complex values if P::reim=true
+
+2.3.20
+======
+- Compilation and installation of tools is now optional. Use
+"./configure --with-tools" to enable.
+- orthogonality check for checkdiag=true
+
+2.4.0
+=====
+- Backwards compatibility breaking; remove cruft from the past.
+
+2.4.0.1
+=======
+- Drop F77 requirements. No BLAS/LAPACK autodetection.
+
+2.4.0.3
+===========================
+- CFSold, CFSgt, CFSls
+
+2.4.0.4
+===========================
+- different handling of U, Gamma, delta, t parameters
+
+2.4.1.0 relative to 2.4.0.4
+=========================
+- Interleaved Wilson chains (substeps). Presently implemented for QS and SPSU2 symmetry types.
+
+2.4.1.1 
+=======
+- fixed gather* script, added some "use strict" statements
+
+2.4.1.2
+=======
+- Substeps for SPU1
+
+2.4.1.3
+=======
+- Gaussian broadening in broaden tool
+
+2.4.1.4
+=======
+- U_d, D_d, CU_d, CD_d, AU_d, AD_d operators
+
+2.4.1.6
+=======
+- Improved compatibility with recent C++ standards [unordered_map,
+headers]
+
+2.4.1.7
+=======
+- sign: int -> double in spec_*.cc
+
+2.4.1.8
+=======
+- my_warning("tr1=") bug fix
+
+2.4.1.9
+=======
+- offset by 1 error in nrgchain2x2 fixed
+
+2.4.1.10, 12.1.2015
+========
+- HAVE_BOOST_MPI -> NRG_MPI
+
+2.4.1.11, 31.1.2015
+========
+- bigfix for ireducsigma[] - spherical tensor operator
+
+2.4.1.12, 6.3.2015
+========
+- broaden - support for accumulation point away from omega=0
+- bins.h - support for accumulation point away from omega=0
+
+2.4.2, 11.8.2015
+=====
+- QST basis for 3-channel problems
+
+2.4.2.1, 25.8.2015
+=======
+- specmoments tool
+
+2.4.2.2, 24.9.2015
+=======
+- SPSU2LR symmetry type
+
+2.4.2.3, 25.9.2015
+=======
+- versioned binary number, to avoid NFS issues
+
+2.4.2.4, 13.10.2015
+=======
+- 3-channel SPSU2 code
+- removed doublet-self code
+
+2.4.2.5, 22.10.2015
+=======
+- SPSU2T code
+
+2.4.2.6, 30.10.2015
+=======
+- QSC3, SPSU2C3 codes
+- complex correctness in initial.m
+
+2.4.3.0, 3.11.2015
+=======
+- refactorization of symmetry codes
+- bug fix for line by line sending of matrices over MPI
+
+2.4.3.1, 6.11.2015
+=======
+- bug fix in calc_abs_energies (RMAX -> NRSTATES)
+
+2.4.3.3
+=======
+- bug fix for "td" in ISOLR
+
+2.4.3.4
+=======
+- orbital-triplet creation op for QST
+- d[] -> d in operators.m, _Function -> _ in initial.m
+
+2.4.3.5
+=======
+- QST troubleshooting
+
+2.4.3.6, 25.2.2016
+=======
+- QSTZ symmetry type
+
+2.4.3.7, 2.3.2016
+=======
+- QSZTZ symmetry type
+
+2.4.3.8, 7.3.2016
+=======
+- QJ symmetry type
+- mtDoubletOp[]
+- some reshuffling in operators.m, lops now sorted alphabetically
+
+2.4.3.9, 17.3.2016
+=======
+- 4ch QS code
+
+2.4.3.10, 24.4.2016
+========
+- support for numerical coefficient tables (see QST)
+
+2.4.3.11, 14.6.2016
+========
+- global magnetic field
+
+2.4.3.12, 24.6.2016
+========
+- POLARIZED for symtype=NONE
+
+2.4.3.13, 21.9.2016
+========
+- reorganized some code in adapt
+- removed dmft/ since it is obsolete
+- removed rescaling of xi() in data file
+
+2.4.3.14
+========
+- support for automatic rescaling (bandrescale parameter)
+
+2.4.3.16
+========
+- doublet spectra for QJ
+
+2.4.3.17
+========
+- broaden tool can do a final Gaussian broadening pass
+
+2.4.3.18, 13.10.2016
+========
+- fixes in spectrum calc for QJ and QST
+
+2.4.3.19, 19.10.2016
+========
+- fixes in quadrupole operator handling
+
+2.4.3.20, 21.11.2016
+========
+- spin and orbital triplet operators for QST
+
+2.4.3.21, 1.12.2016
+========
+- bugfix in offdiag_build(): factor -> factor_rescale
+
+2.4.3.22, 19.1.2017
+========
+- substeps for QSZ
+
+2.4.3.23, 19.1.2017
+========
+- LRSPIN option
+
+2.4.3.24, 25.7.2017
+========
+- SYMTYPE=P (total fermion number parity conservation)
+
+2.4.3.25, 30.8.2017
+========
+- SYMTYPE=PP (separate fermion number parity conservation in two separate channels)
+
+2.4.3.26, 13.11.2017
+========
+- support for channel-mixing Wilson chains (rungs=true) for QS and QSZ
+
+2.4.3.27
+========
+- hilb tool for converting im/resigma -> im/reaw
+
+2.4.3.28
+========
+- support for complex Wilson chain coefficients in initial.m (manual
+and manual_V), function ImportTable[]
+
+2.4.3.29
+========
+- improvements in hilb tool (imsigma -> imaw, Steffen interpolation)
+
+2.4.3.30
+========
+- BAND=manual_nambu
+
+2.4.3.31, 14.8.2018
+========
+- bug fix in the coefficient table for symtype=P for doublet operators
+
+2.4.3.32, 7.1.2019
+========
+- cosmetics in initial.m (basops etc.)
+
+2.4.3.33, 29.1.2019
+========
+- portability fix in calculate_Z, removed boost::lambda::bind dependence
+
+2.4.3.34, 28.3.2019
+========
+- VDIM
+
+2.4.3.35, 27.6.2019
+========
+- P::ZBW, fixes in calc_generic_DMNRG(), mergeNN2half(), LAST_ITERATION(),
+window_function()
+- new variable Nlen, changes in determine_Nmax()
+- new function do_no_recalc(). Fixes in do_recalc_kept(),
+do_recalc_all()
+- new function doZBW(), changes in nrg_after_diag()
+- changes in start_calculation(). ?? fdm density matrix handling
+- additional nrglog lines for log=@
+- C++14 constructs, for loops.
+- time "spec" as a whole, not separately for different spectra types
+- removed all broadening schemes except "new". The idea is that
+nowadays we always do broadening using an external tool.
+- FDMold, CFSold removed
+- get_loop_dim() moved to spec.cc
+
+2.4.3.36, 12.7.2019
+========
+- Bins::setlimits, P::emin, P::emax, code cleanup in bins.h
+- sign fix for CFS calculations for bosonic operators to bring it in
+line with the standard convention (and with the FT, FDM and DMNRG
+implementations, which already had correct sign for bosonic operators)
+
+2.4.3.37, 19.7.2019
+========
+- more for() loop modernisation
+- cleanup, remove functions that never got called
+- removed value_raw(), replaced by shift. Cleaned up code handling absenergy.
+- getNz script
+- style fixes, removed empty lines in nrg.cc (TO DO: other files)
+- modernized regression testing infrastructure
+- all output to cout, nothing goes to cerr (this makes problems easier to
+spot in the logs)
+- removed some boost libraries, switched to C++11 solutions
+(unordered_map, lambdas)
+
+2.4.4.1, 22.7.2019
+=======
+- P::finitemats, P::fdmmats, etc., P::mats
+- removed NRDOTS from data file, removed P::dots
+- removed P::T0opt
+- matsubara.h
+- BaseSpectrum cleanup, now contains all relevant data field, fullname()
+- SpectrumMatsubara, ChainSpectrumMatsubara
+- cleanup of open_files_spec, new open_files()
+- enum class matstype (fermionic, bosonic)
+- enum class axis (RealFreq, Temp, Matsubara)
+- matstypestring, axistypestring
+- changes in spec.cc: creation of ChainSpectrum in a switch statement, 
+relevant parameters now read from BaseSpectrum within calc_generic()
+- OPENSPEC is now a function. 
+
+2.4.4.2, 23.7.2019
+=======
+- cleanup of calc_generic(), BaseSpectrum passed as parameter in place of sign
+
+2.4.4.3, 23.7.2019
+=======
+- DMNRGmats, tested & works!
+- *SpectrumMatsubara2
+
+2.4.4.4, 24.7.2019
+=======
+- removed get_loop_dim(), dim* parameter to calc_spec functions
+- x.begin() -> begin(x)
+- functors replaced by lambdas
+- removed recalculation wrappers
+- myrank defined for non-MPI case
+- new safeopen()
+- new output_val()
+- calc_generic3()
+- major cleanup of diag.h, removed unnecessary tests, removed macros
+
+2.4.4.5, 25.7.2019
+=======
+- removed masquerading in Spikes
+- fixed initializations in classes
+- int,unsigned int,etc. -> size_t where used as index in for loops, or
+as size or counter variable. Where appropriate, uninitialized value
+changed from -1 to 0.
+- renamed nrg-invar-ANY.cc to invar.cc
+- NRG_WORKDIR from environment, creates a uniquely named work subdirectory
+- reports unused parameters, parameter list is sorted, parameters that were
+modified from the default values are indicated by an asterisk
+
+2.4.4.6, 25.7.2019
+=======
+- calc_generic3_FT_v3mm() implemented
+
+2.4.4.7, 26.7.2019
+=======
+- SPECTYPE converted to a pointer to object (class SPEC), use
+polymorphisem to create appropriate ChainSpectrum and to call
+appropriate calc() member
+
+2.4.4.9, 1.8.2019
+=======
+- source reorganization for DM calculations
+- alternative calculation for FDM on Matsubara axis (omega=0 for
+bosonic case not handled + it is slower, thus commented out,
+but in principle it works)
+
+2.4.4.10
+?
+
+2.4.4.11, 4.9.2019
+========
+- new implementation of FDM Matsubara based on automated compter-algebra
+derivation; it also is faster since it avoids redundant calculations.
+- dropped version number (2_4) from filename
+- change in default path for modules in nrginit
+- some obsolete scripts removed from the distribution
+
+2.4.4.12, 5.9.2019
+========
+- v3mm implemented for FDM
+- total weight reported during Matsubara ChainSpectrum merging
+- some const correctness fixes
+- fixed Nlen handling for ZBW case, as well as setting N to Ninit (and
+scale according to Ninit-1)
+
+2.4.4.13, 12.9.2019
+========
+- optimizations in FDM_v3mm
+- clean up warnings from clang
+- comment out assertions in Matsubara2::add
+- size_t correctness
+
+2.4.4.14, 13.9.2019
+========
+- N is now size_t
+
+2.4.4.15, 14.9.2019
+========
+- nrg_diagonalisations_serial() removed
+- OpenMP parallelization for Matsubara calculations (FT and FDM)
+
+2.4.4.16, 17.9.2019
+========
+- optimizations for FDM calculations of 3-pt vertex functions
+
+2.4.4.17, 18.9.2019
+========
+- fixed a bug introduced in nrg.cc (call to shift_abs_energies) in
+2.4.4.16, reverting to previous version
+
+2.4.4.18, 19.9.2019
+========
+- bug fixing in 2-pt GF calculation with FDM algoritm (new implementation)
+
+2.4.4.19, 20.9.2019
+========
+- increased the default precision of output by 4 decimals (6 -> 10)
+- LOOP_D and LOOP_K macros, ENG(x,matstype) in spec_FDM.cc
+- code cleanup in spec_FDM.cc
+
+2.4.4.20, 20.9.2019
+========
+- FDMmats optimization
+
+2.4.4.21, 24.9.2019
+========
+- spec_FDM.cc cleanup, ENG() removed, cleared up the mess with
+transpositions
+
+2.4.4.22, 24.9.2019
+========
+- new implementation of v3mm FDM
+- v3mm FT removed (last tested working version = 2.4.4.20)
+
+2.4.4.23, 25.9.2019
+========
+- P::diagth
+- v3mm FDM finished 
+
+2.4.4.24, 18.10.2019
+========
+- more detailed logging in matrix.cc
+- bug fix in sym-U1.cc (incorrect handling of zeta(3,4) coefficients
+  in the case of complex coefficients)
+- reverted: sym-U1.cc was fine, initial.m had to be fixed instead
+
+2.4.4.25, 22.10.2019
+========
+
+TO DO:
+- TD-NRG
+- parity projected calculations

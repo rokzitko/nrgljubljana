@@ -1,0 +1,6 @@
+{ 1, 1, Invar(-1 + ii1, ss1), Invar(-1 + ii1, ss1), 1},
+{ 2, 2, Invar(1 + ii1, ss1), Invar(1 + ii1, ss1), 1},
+{ 3, 3, Invar(ii1, -1 + ss1), Invar(ii1, -1 + ss1), sqrt(1 - 1/S(ss1) + 2/(1 + 2*S(ss1)))},
+{ 3, 4, Invar(ii1, -1 + ss1), Invar(ii1, 1 + ss1), 1/sqrt((1 + S(ss1))*(1 + 2*S(ss1)))},
+{ 4, 3, Invar(ii1, 1 + ss1), Invar(ii1, -1 + ss1), -(1/sqrt(S(ss1)*(1 + 2*S(ss1))))},
+{ 4, 4, Invar(ii1, 1 + ss1), Invar(ii1, 1 + ss1), sqrt((S(ss1)*(1 + 2*S(ss1)))/(Power(1 + S(ss1),3)*(3 + 2*S(ss1)))) + S(ss1)*sqrt((S(ss1)*(1 + 2*S(ss1)))/(Power(1 + S(ss1),3)*(3 + 2*S(ss1)))) + 2*sqrt(S(ss1)/(3 + 11*S(ss1) + 12*Power(S(ss1),2) + 4*Power(S(ss1),3)))},

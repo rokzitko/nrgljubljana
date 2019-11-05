@@ -1,0 +1,12 @@
+RUNGHOP(2, 4, 1);
+RUNGHOP(3, 5, 1);
+RUNGHOP(4, 2, 1);
+RUNGHOP(5, 3, 1);
+RUNGHOP(6, 7, sqrt(2));
+RUNGHOP(7, 6, sqrt(2));
+RUNGHOP(7, 8, sqrt(2));
+RUNGHOP(8, 7, sqrt(2));
+RUNGHOP(12, 14, -1);
+RUNGHOP(13, 15, -1);
+RUNGHOP(14, 12, -1);
+RUNGHOP(15, 13, -1);

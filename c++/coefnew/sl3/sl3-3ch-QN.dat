@@ -1,0 +1,8 @@
+QN[1] = Invar(-1, -1, -1);
+QN[2] = Invar(-1, -1, 0);
+QN[3] = Invar(-1, 0, -1);
+QN[4] = Invar(-1, 0, 0);
+QN[5] = Invar(0, -1, -1);
+QN[6] = Invar(0, -1, 0);
+QN[7] = Invar(0, 0, -1);
+QN[8] = Invar(0, 0, 0);

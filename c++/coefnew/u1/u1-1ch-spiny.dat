@@ -1,0 +1,2 @@
+SPINY(2, 3, 0, Complex(0,0.5));
+SPINY(3, 2, 0, Complex(0,-0.5));

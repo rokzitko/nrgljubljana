@@ -1,0 +1,3 @@
+const unsigned int LENGTH_I_3CH_0 = 66;
+const unsigned int LENGTH_I_3CH_1 = 72;
+const unsigned int LENGTH_I_3CH_2 = 66;

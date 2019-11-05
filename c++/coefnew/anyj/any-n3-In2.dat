@@ -1,0 +1,8 @@
+In[1] = Invar(frac(3, 2), 0);
+In[2] = Invar(frac(1, 2), 1);
+In[3] = Invar(frac(1, 2), 0);
+In[4] = Invar(frac(1, 2), -1);
+In[5] = Invar(frac(-1, 2), 1);
+In[6] = Invar(frac(-1, 2), 0);
+In[7] = Invar(frac(-1, 2), -1);
+In[8] = Invar(frac(-3, 2), 0);

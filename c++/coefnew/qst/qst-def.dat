@@ -1,0 +1,9 @@
+const unsigned int LENGTH_D_3CH_a = 185;
+const unsigned int LENGTH_D_3CH_b = 209;
+const unsigned int LENGTH_I_3CH_0 = 60;
+const unsigned int LENGTH_I_3CH_1 = 70;
+const unsigned int LENGTH_I_3CH_2 = 60;
+const unsigned int LENGTH_T0_3CH = 122;
+const unsigned int LENGTH_Tpm_3CH = 101;
+const unsigned int LENGTH_OT0_3CH = 144;
+const unsigned int LENGTH_OTpm_3CH = 128;

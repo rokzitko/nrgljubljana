@@ -1,0 +1,2 @@
+8.5.2009 - fixed case y<LIMIT when x is not within [-B:B].
+8.5.2009 - finer mesh near the +-B boundary points for DOS_Bethe_scale4.dat

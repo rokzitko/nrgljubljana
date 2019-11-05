@@ -1,0 +1,2 @@
+OFFDIAG_2(1, 3, 0, Power(-1,NN)*sqrt(2)*sqrt(ISO(ii)/(1 + 2*ISO(ii))));
+OFFDIAG_2(2, 3, 0, (-2*Power(-1,NN)*(1 + ISO(ii)))/sqrt(2 + 6*ISO(ii) + 4*Power(ISO(ii),2)));

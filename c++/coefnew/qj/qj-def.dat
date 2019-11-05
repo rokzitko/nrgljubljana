@@ -1,0 +1,11 @@
+const unsigned int LENGTH_D_3CH =  107;
+const unsigned int LENGTH_I_3CH_j1_2_jz1_2 =  110;
+const unsigned int LENGTH_I_3CH_j1_2_jzM1_2 =  110;
+const unsigned int LENGTH_I_3CH_j3_2_jz3_2 =  106;
+const unsigned int LENGTH_I_3CH_j3_2_jz1_2 =  132;
+const unsigned int LENGTH_I_3CH_j3_2_jzM1_2 =  132;
+const unsigned int LENGTH_I_3CH_j3_2_jzM3_2 =  106;
+const unsigned int LENGTH_Q1_3CH =  151;
+const unsigned int LENGTH_Q2_3CH =  178;
+const unsigned int LENGTH_T0_3CH =  150;
+const unsigned int LENGTH_Tpm_3CH =  135;

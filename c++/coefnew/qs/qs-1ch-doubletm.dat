@@ -1,0 +1,5 @@
+{ 1, 1, Invar(1 + q1, ss1), Invar(q1, -1 + ss1), 1},
+{ 2, 2, Invar(q1, -1 + ss1), Invar(-1 + q1, -2 + ss1), -1},
+{ 2, 3, Invar(q1, -1 + ss1), Invar(-1 + q1, ss1), 1/(-1 - 2*S(ss1))},
+{ 3, 3, Invar(q1, 1 + ss1), Invar(-1 + q1, ss1), (-2*(1 + S(ss1)))/sqrt(5 + 1/S(ss1) + 8*S(ss1) + 4*Power(S(ss1),2))},
+{ 4, 4, Invar(-1 + q1, ss1), Invar(-2 + q1, -1 + ss1), 1},

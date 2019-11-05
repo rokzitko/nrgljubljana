@@ -1,0 +1,1 @@
+/Library/Developer/CommandLineTools/usr/bin/clang++  -g -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/nrgljubljana_c.dir/nrg.cc.o  -o nrgljubljana_c -lomp /usr/local/lib/libboost_serialization.dylib -framework Accelerate /usr/local/lib/libgmp.dylib /usr/local/lib/libgmpxx.dylib 

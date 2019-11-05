@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/rokzitko/common/delo/ljubljana/cmake/NRGLjubljana/tools/diag/diag.cc
+iostream
+-
+fstream
+-
+iomanip
+-
+cmath
+-
+cstdlib
+-
+cassert
+-
+cfloat
+-
+utility
+-
+vector
+-
+string
+-
+map
+-
+ctime
+-
+unistd.h
+-
+
