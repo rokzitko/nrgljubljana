@@ -1,5 +1,5 @@
 # GSL
-find_package(GSL REQUIRED)
+find_package(GSL 2.0 REQUIRED)
 add_library(gsl INTERFACE)
 target_include_directories(gsl SYSTEM INTERFACE ${GSL_INCLUIDE_DIRS})
 target_link_libraries(gsl INTERFACE ${GSL_LIBRARIES})
