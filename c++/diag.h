@@ -4,27 +4,7 @@
 #ifndef _diag_h_
 #define _diag_h_
 
-extern "C"
-{
-  void dsyev(char *jobz, char *uplo, int *n, double *a, int *lda,
-	     double *w, double *work, int *lwork, int *info);
-  void dsyevr(char *jobz, char *range, char *uplo,
-	      int *n, double *a, int *lda,
-	      double *vl, double *vu, int *il, int *iu,
-	      double *abstol, int *m, double *w,
-	      double *z, int *ldz, int *isuppz,
-	      double *work, int *lwork, int *iwork, int *liwork,
-	      int *info);
-  void zheev(char *jobz, char *uplo, int *n, cmpl *a, int *lda,
-	     double *w, cmpl *work, int *lwork, double *rwork, int *info);
-  void zheevr(char *jobz, char *range, char *uplo,
-	      int *n, cmpl *a, int *lda,
-	      double *vl, double *vu, int *il, int *iu,
-	      double *abstol, int *m, double *w,
-	      cmpl *z, int *ldz, int *isuppz,
-	      cmpl *work, int *lwork, cmpl *rwork, int *lrwork, int *iwork,
-	      int *liwork, int *info);
-}
+#include "lapack.h"
 
 bool logletter(char);
 
@@ -65,13 +45,13 @@ size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V')
   int LWORK0 = -1; // length of the WORK array
   double WORK0[1];
   // Step 1: determine optimal LWORK
-  dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
+  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
 	WORK0, &LWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK = int(WORK0[0]);
   double * WORK = new double[LWORK];
   // Step 2: perform the diagonalisation
-  dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
+  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
 	WORK, &LWORK, &INFO);
   if (INFO!=0)
     my_error("eigensolver failed. INFO=%i", INFO);
@@ -130,7 +110,7 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
    double WORK0[1];
    int IWORK0[1];
    // Step 1: determine optimal LWORK and LIWORK
-   dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA,
+   LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA,
 	  &VL, &VU, &IL, &IU, &ABSTOL, &MM,
 	  (double*)eigenvalues, &Z[0], &LDZ, ISUPPZ,
 	  WORK0, &LWORK0, IWORK0, &LIWORK0, &INFO);
@@ -140,7 +120,7 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
    double * WORK = new double[LWORK];
    int * IWORK = new int[LIWORK];
    // Step 2: perform the diagonalisation
-   dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA,
+   LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA,
 	  &VL, &VU, &IL, &IU, &ABSTOL, &MM,
 	  (double*)eigenvalues, &Z[0], &LDZ, ISUPPZ,
 	  WORK, &LWORK, IWORK, &LIWORK, &INFO);
@@ -183,13 +163,13 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V')
   int RWORKdim = max(1ul, 3*dim-2);
   double RWORK[RWORKdim];
   // Step 1: determine optimal LWORK
-  zheev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
+  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
 	WORK0, &LWORK0, RWORK, &INFO);
   my_assert(INFO == 0);
   int LWORK = int(WORK0[0].real());
   cmpl * WORK = new cmpl[LWORK];
   // Step 2: perform the diagonalisation
-  zheev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
+  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
 	WORK, &LWORK, RWORK, &INFO);
   if (INFO != 0)
     my_error("eigensolver failed. INFO=%i", INFO);
@@ -248,7 +228,7 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V',
   int LIWORK0 = -1; // query
   int IWORK0[1];
   // Step 1: determine optimal LWORK, LRWORK, and LIWORK
-  zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA,
+  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA,
 	 &VL, &VU, &IL, &IU, &ABSTOL, &MM,
 	 (double*)eigenvalues, &Z[0], &LDZ, ISUPPZ,
 	 WORK0, &LWORK0, RWORK0, &LRWORK0, IWORK0, &LIWORK0, &INFO);
@@ -260,7 +240,7 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V',
   int LIWORK = IWORK0[0];
   int * IWORK = new int[LIWORK];
   // Step 2: perform the diagonalisation
-  zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA,
+  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA,
 	 &VL, &VU, &IL, &IU, &ABSTOL, &MM,
 	 (double*)eigenvalues, &Z[0], &LDZ, ISUPPZ,
 	 WORK, &LWORK, RWORK, &LRWORK, IWORK, &LIWORK, &INFO);
