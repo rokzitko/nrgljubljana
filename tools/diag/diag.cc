@@ -50,10 +50,7 @@ void usage(ostream &OUT = cout)
 
 inline int MAX(int a, int b) { return (a > b ? a : b); }
 
-extern "C" {
-   void dsyev(char *jobz, char *uplo, int *n, double *a, int *lda, double *w,
-	      double *work, int *lwork, int *info);
-}
+#include "lapack.h"
 
 #define IJ(i, j) (dim*(i)+(j))
 
@@ -72,7 +69,7 @@ void diagonalize(unsigned int dim, DVEC &d)
    double WORK0[1];
    
    // Step 1: determine optimal LWORK
-   dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
+   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
 	 WORK0, &LWORK0, &INFO);
       
    assert(INFO == 0);
@@ -92,7 +89,7 @@ void diagonalize(unsigned int dim, DVEC &d)
    double WORK[LWORK];
    
    // Step 2: perform the diagonalisation
-   dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
+   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double*)eigenvalues,
 	 WORK, &LWORK, &INFO);
    
    if (INFO != 0) {
