@@ -81,8 +81,8 @@ target_compile_options(project_warnings
     -Wno-vla
     -Wno-vla-extension
     -Wno-unused-variable
-    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
-    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
+#    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
+#    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
 )
 

@@ -2465,7 +2465,7 @@ void nrg_diagonalisations_OpenMP()
    nrglog('@', "@ nrg_diagonalisations_OpenMP()");
    nrglog('(', "OpenMP diag");
    size_t nr = NRG::tasks.size();
-   size_t itask;
+   size_t itask = 0;
    int nth = P::diagth;
    #pragma omp parallel for schedule(dynamic) num_threads(nth)
    for (itask = 0; itask < nr; itask++) {
