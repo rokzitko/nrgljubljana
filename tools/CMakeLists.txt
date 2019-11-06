@@ -35,4 +35,4 @@ foreach(exec ${all_executables})
 endforeach()
 
 # Additional source file for 'matrix' tool
-target_sources(matrix PUBLIC matrix/parser.cc)
+target_sources(matrix PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/matrix/parser.cc)
