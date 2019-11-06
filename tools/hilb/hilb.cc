@@ -6,7 +6,7 @@
 // Mode 2: read x and y from a file.
 // Mode 3: convert imsigma/resigma.dat to imaw/reaw.dat files in the DMFT loop.
 // 
-// Rok Zitko, rok.zitko@ijs.si, 2009-2017
+// Rok Zitko, rok.zitko@ijs.si, 2009-2019
 
 // CHANGE LOG
 // 5.1.2017 - improved usage message
@@ -15,6 +15,7 @@
 //          - support for calculating Re and Im parts.
 // 22.11.2017 - support for imsigma/resigma -> imaw/reaw computation
 // 13.12.2017 - Monotone cubic interpolation: gsl_interp_cspline -> gsl_interp_steffen
+// 6. 11.2019 - reverted to cspline for compatibility
 
 #include <iostream>
 #include <fstream>
@@ -533,7 +534,9 @@ void load_dos(char *dosfilename)
    int len = Xpts.size();
    
    acc = gsl_interp_accel_alloc();
-   spline = gsl_spline_alloc(gsl_interp_steffen, len);
+   spline = gsl_spline_alloc(gsl_interp_cspline, len);
+   // Available in GSL from version 2.6 on
+//   spline = gsl_spline_alloc(gsl_interp_steffen, len);
    gsl_spline_init(spline, &Xpts[0], &Ypts[0], len);
    
    Xmin = Xpts[0];
