@@ -93,7 +93,7 @@ target_compile_options(project_warnings
 find_package(OpenMP REQUIRED)
 add_library(openmp INTERFACE)
 target_compile_options(openmp INTERFACE ${OpenMP_CXX_FLAGS})
-target_link_libraries(openmp INTERFACE omp)
+target_link_libraries(openmp INTERFACE ${OpenMP_CXX_FLAGS})
 install(TARGETS openmp EXPORT nrgljubljana-targets)
 
 # Boost
