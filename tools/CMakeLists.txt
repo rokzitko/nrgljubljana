@@ -12,15 +12,15 @@ macro(add_tool exec_name)
   target_link_libraries(${exec_name} PRIVATE project_warnings)
 
   # Configure compilation
-  target_compile_options(${exec_name} PUBLIC -fPIC -std=c++17)
-  target_include_directories(${exec_name} PUBLIC $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}>)
-  target_compile_definitions(${exec_name} PUBLIC
+  target_compile_options(${exec_name} PRIVATE -fPIC -std=c++17)
+  target_include_directories(${exec_name} PRIVATE $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}>)
+  target_compile_definitions(${exec_name} PRIVATE
 				NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
 				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
 			  )
-			  
 
-  target_link_libraries(${exec_name} PUBLIC openmp boost blas_lapack gmp gsl
+  # Link dependencies
+  target_link_libraries(${exec_name} PRIVATE openmp boost blas_lapack gmp gsl
         $<$<BOOL:${ASAN}>:asan>
         $<$<BOOL:${UBSAN}>:ubsan>
   )
@@ -35,4 +35,4 @@ foreach(exec ${all_executables})
 endforeach()
 
 # Additional source file for 'matrix' tool
-target_sources(matrix PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/matrix/parser.cc)
+target_sources(matrix PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/matrix/parser.cc)
