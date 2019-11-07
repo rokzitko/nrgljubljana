@@ -66,7 +66,6 @@ class Symmetry
  protected:
   size_t channels;
   bool substeps;
-  size_t spin; // XXX: move to where it is really needed? (ANYJ?)
   int combs;
 
  public:
@@ -82,7 +81,6 @@ class Symmetry
 
    void set_channels(size_t ch) { channels = ch; }
    void set_substeps(bool sb) { substeps = sb; }
-   void set_spin(size_t sp) { spin = sp; } // XXX
 
    // For some symmetry types with two-channels we distinguish between 
    // even and odd parity with respect to the channel-interchange

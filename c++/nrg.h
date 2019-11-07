@@ -4,28 +4,35 @@
 #ifndef _nrg_h_
 #define _nrg_h_
 
-#include <iostream>
-#include <iomanip>
-#include <utility>
-#include <deque>
 #include <fstream>
 #include <sstream>
+#include <iostream>
+#include <iomanip>
+
+#include <complex>
+#include <unordered_map>
+#include <map>
+#include <list>
+#include <deque>
 #include <set>
+
 #include <numeric>
+#include <math.h> // isfinite
+#include <utility>
 #include <algorithm>
+#include <functional>
+#include <limits>
+
 #include <cassert>
 #include <cmath>
 #include <cfloat>
 #include <climits>
 #include <cstring>
-#include <complex>
-#include <functional>
-#include <unordered_map>
-
-#include "portabil.h"
 
 #include <unistd.h>
 #include <cstdlib> // mkdtemp
+
+#include "portabil.h"
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -40,14 +47,14 @@
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
-
-#include <boost/serialization/map.hpp>
-#include <boost/serialization/list.hpp>
 #include <boost/serialization/vector.hpp>
-#include <boost/serialization/complex.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/utility.hpp>
-#include <boost/serialization/list.hpp>
+
+//#include <boost/serialization/map.hpp>
+//#include <boost/serialization/list.hpp>
+//#include <boost/serialization/complex.hpp>
+//#include <boost/serialization/base_object.hpp>
+//#include <boost/serialization/utility.hpp>
+//#include <boost/serialization/list.hpp>
 
 using namespace std;
 using namespace boost::numeric;
@@ -58,7 +65,6 @@ using namespace boost::numeric::ublas;
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 
-using namespace boost::numeric::bindings::atlas;
 namespace atlas = boost::numeric::bindings::atlas;
 
 // This must be set manually through CXXFLAG=-DNRG_MPI

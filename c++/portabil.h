@@ -4,15 +4,6 @@
 #ifndef _portabil_h_
 #define _portabil_h_
 
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <cstdlib>
-#include <cmath>
-#include <string>
-#include <complex>
-#include <limits>
-
 using namespace std;
 
 // Square raises x to the power of two

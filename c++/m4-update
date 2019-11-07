@@ -1,8 +1,6 @@
 #!/bin/sh
 m4 nrg-recalc-QST.cc.m4 >nrg-recalc-QST.cc
 
-m4 nrg-recalc-ANYJ.cc.m4 >nrg-recalc-ANYJ.cc
-
 m4 nrg-recalc-ISO.cc.m4 >nrg-recalc-ISO.cc
 
 m4 nrg-recalc-ISO2.cc.m4 >nrg-recalc-ISO2.cc

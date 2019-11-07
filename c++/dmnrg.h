@@ -1,5 +1,5 @@
 // dmnrg.h - Density-matrix NRG
-// Copyright (C) 2009-2015 Rok Zitko
+// Copyright (C) 2009-2019 Rok Zitko
 
 #ifndef _dmnrg_h_
 #define _dmnrg_h_
@@ -10,64 +10,51 @@ string saverhofn(const string & prefix, int N)
    return P::workdir + "/" + prefix + tostring(N);
 }
 
-// Choose!
+// Choose one!
 #define LINEBYLINE
+//#define WHOLEMATRIX
 
 #ifdef WHOLEMATRIX
- #define saveMatrix saveMatrix_wholematrix
- #define loadMatrix loadMatrix_wholematrix
- #define saveEigen saveEigen_wholematrix
- #define loadEigen loadEigen_wholematrix
+void saveMatrix(boost::archive::binary_oarchive &oa, const Matrix &m)
+{
+   oa << m;
+}
+
+void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m)
+{
+   ia >> m;
+}
+
+void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m)
+{
+   oa << m;
+}
+
+void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m)
+{
+   ia >> m;
+}
 #endif
 
+// This approach is required for large problem sizes where an
+// individual matrix could exceed 2GB. This has been an issue with
+// serialization of matrices for MPI due to limited maximal MPI
+// message size.
 #ifdef LINEBYLINE
- #define saveMatrix saveMatrix_linebyline
- #define loadMatrix loadMatrix_linebyline
- #define saveEigen saveEigen_linebyline
- #define loadEigen loadEigen_linebyline
-#endif
-
-void saveMatrix_wholematrix(boost::archive::binary_oarchive &oa, const Matrix &m)
-{
-   oa << m;
-}
-
-void saveEigen_wholematrix(boost::archive::binary_oarchive &oa, const Eigen &m)
-{
-   oa << m;
-}
-
-void saveMatrix_linebyline(boost::archive::binary_oarchive &oa, const Matrix &m)
+void saveMatrix(boost::archive::binary_oarchive &oa, const Matrix &m)
 {
    const size_t size1 = m.size1();
    const size_t size2 = m.size2();
    oa << size1 << size2;
    for (size_t i = 0; i < size1; i++) {
-      ublas::vector<t_matel> vec = ublas::vector<t_matel>(size2);
       matrix_row<const Matrix> mr = matrix_row<const Matrix>(m, i);
+      ublas::vector<t_matel> vec = ublas::vector<t_matel>(size2);
       vec = mr;
       oa << vec;
    }
 }
 
-void saveEigen_linebyline(boost::archive::binary_oarchive &oa, const Eigen &m)
-{
-   oa << m.nr << m.rmax << m.nrpost;
-   oa << m.value << m.shift << m.absenergy;
-   saveMatrix_linebyline(oa, m.matrix0);
-}
-
-void loadMatrix_wholematrix(boost::archive::binary_iarchive &ia, Matrix &m)
-{
-   ia >> m;
-}
-
-void loadEigen_wholematrix(boost::archive::binary_iarchive &ia, Eigen &m)
-{
-   ia >> m;
-}
-
-void loadMatrix_linebyline(boost::archive::binary_iarchive &ia, Matrix &m)
+void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m)
 {
    size_t size1, size2;
    ia >> size1 >> size2;
@@ -79,17 +66,25 @@ void loadMatrix_linebyline(boost::archive::binary_iarchive &ia, Matrix &m)
    }
 }
 
-void loadEigen_linebyline(boost::archive::binary_iarchive &ia, Eigen &m)
+void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m)
+{
+   oa << m.nr << m.rmax << m.nrpost;
+   oa << m.value << m.shift << m.absenergy;
+   saveMatrix(oa, m.matrix0);
+}
+
+void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m)
 {
    ia >> m.nr >> m.rmax >> m.nrpost;
    ia >> m.value >> m.shift >> m.absenergy;
-   loadMatrix_linebyline(ia, m.matrix0);
+   loadMatrix(ia, m.matrix0);
 }
+#endif
 
 void saveRho_split(size_t N, const string & prefix, const DensMatElements &rho)
 {
    const string fn = saverhofn(prefix, N);
-   ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
+   std::ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
    if (!MATRIXF)
      my_error("Can't open file %s for writing.", fn.c_str());
    boost::archive::binary_oarchive oa(MATRIXF);
@@ -102,7 +97,7 @@ void saveRho_split(size_t N, const string & prefix, const DensMatElements &rho)
      oa << inv;
      ostringstream fni;
      fni << fn << "-" << cnt;
-     ofstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::out);
+     std::ofstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::out);
      if (!ONEMATRIX)
        my_error("Can't open file %s for writing.", fni.str().c_str());
      boost::archive::binary_oarchive oaone(ONEMATRIX);
@@ -137,7 +132,7 @@ int remove(string filename)
 void loadRho_split(size_t N, const string & prefix, DensMatElements &rho)
 {
    const string fn = saverhofn(prefix, N);
-   ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
+   std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
    if (!MATRIXF)
      my_error("Can't open file %s for reading", fn.c_str());
    boost::archive::binary_iarchive ia(MATRIXF);
@@ -149,7 +144,7 @@ void loadRho_split(size_t N, const string & prefix, DensMatElements &rho)
       ia >> inv;
       ostringstream fni;
       fni << fn << "-" << cnt;
-      ifstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::in);
+      std::ifstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::in);
       if (!ONEMATRIX)
 	my_error("Can't open file %s for reading.", fni.str().c_str());
       boost::archive::binary_iarchive iaone(ONEMATRIX);
@@ -195,21 +190,6 @@ string unitaryfn(size_t N)
  (eigenvalue, eigenvector) pairs. NOTE: if diag=dsyevr, we effectively
  perform a truncation at the moment of the partial diagonalization!! */
 
-void store_transformations_one(size_t N,
-			       const DiagInfo &diag)
-{
-  const string fn = unitaryfn(N);
-  ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
-  if (!MATRIXF)
-    my_error("Can't open file %s for writing.", fn.c_str());
-  boost::archive::binary_oarchive oa(MATRIXF);
-  oa << diag;
-  if (MATRIXF.bad()) 
-     my_error("Error writing %s", fn.c_str());
-  MATRIXF.close();
-}
-
-// Split it in smaller chunks (one per invariant space)
 void store_transformations_split(size_t N,
 				 const DiagInfo &diag)
 {
@@ -263,7 +243,7 @@ void store_transformations(size_t N,
 void load_transformations_split(size_t N, DiagInfo &diag)
 {
   const string fn = unitaryfn(N);
-  ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
+  std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
   if (!MATRIXF)
     my_error("Can't open file %s for reading", fn.c_str());
   boost::archive::binary_iarchive ia(MATRIXF);
@@ -275,7 +255,7 @@ void load_transformations_split(size_t N, DiagInfo &diag)
      ia >> inv;
      ostringstream fni;
      fni << fn << "-" << cnt;
-     ifstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::in);
+     std::ifstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::in);
      if (!ONEMATRIX)
        my_error("Can't open file %s for reading.", fni.str().c_str());
      my_assert(diag.count(inv) == 0); // added 18.8.2015
@@ -379,11 +359,11 @@ void cdmI(size_t i, // Subspace index (alpha=1,...,P::combs)
 				     range(offset, offset+dim));
   Matrix T(dim, nromega);
   // T <- U^dag rhoN
-  gemm(CblasConjTrans, CblasNoTrans, 
+  atlas::gemm(CblasConjTrans, CblasNoTrans, 
        t_factor(1.0), U, rhoN, t_factor(0.0), T);
   // rhoNEW <- rhoNEW + factor T U
   // Note that we are *adding* to rhoNEW
-  gemm(CblasNoTrans, CblasNoTrans, 
+   atlas::gemm(CblasNoTrans, CblasNoTrans, 
        t_factor(factor), T, U, t_factor(1.0), rhoNEW);
 }
 

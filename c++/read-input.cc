@@ -73,12 +73,8 @@ void read_nr_channels(ifstream &fdata)
   }
   nrglog('!', "perchannel=" << P::perchannel);
   my_assert(P::perchannel >= 1);
-  if (sym_string == "SL" || sym_string == "SL3") {
-    P::spin.setvalue(1);
-  } else if (sym_string != "ANYJ")
-    my_assert(P::spin == 2);
-  nrglog('!', "spin=" << P::spin);
-  my_assert(P::spin >= 1);
+  if (sym_string == "SL" || sym_string == "SL3")
+    P::spin.setvalue(1); // override the default value of 2
   const int statespersite = pow(2, P::spin);
   if (!P::substeps) 
      P::combs = pow(statespersite, P::channels);

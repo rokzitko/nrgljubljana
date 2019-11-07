@@ -4,10 +4,6 @@
 #ifndef _spectral_h_
 #define _spectral_h_
 
-#include <vector>
-#include <utility>
-#include <iostream>
-
 // This structure is used in spec*.cc
 struct DELTA 
 {

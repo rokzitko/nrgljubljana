@@ -8,7 +8,8 @@ foreach(file ${all_h5_ref_files})
 endforeach()
 
 # List of all tests
-file(GLOB_RECURSE all_tests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
+#file(GLOB_RECURSE all_tests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
+set(all_tests)
 
 foreach(test ${all_tests})
   get_filename_component(test_name ${test} NAME_WE)
@@ -35,3 +36,9 @@ foreach(test ${all_tests})
     )
   endif()
 endforeach()
+
+# Regression tests
+configure_file(test1_qs/param test1_qs/param)
+configure_file(test1_qs/data test1_qs/data)
+add_test(NAME test1_qs COMMAND ${PROJECT_BINARY_DIR}/c++/nrgljubljana_c ; ${CMAKE_CURRENT_SOURCE_DIR}/compare
+WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test1_qs)

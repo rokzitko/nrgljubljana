@@ -29,7 +29,6 @@
    rok.zitko@ijs.si
 */
 
-#include "portabil.h"
 #include "nrg.h"
 #include "debug.h"
 #include "misc.h"
@@ -830,7 +829,6 @@ set_of_tables u0p, u0m; // u_{0,m} coefficients
 #include "sym-ISOSZ.cc"
 #include "sym-SPSU2.cc"
 #include "sym-SPU1.cc"
-#include "sym-ANYJ.cc"
 #include "sym-DBLSU2.cc"
 #include "sym-DBLISOSZ.cc"
 #include "sym-ISOLR.cc"
@@ -3416,7 +3414,6 @@ void start_calculation()
    Sym->set_combs(P::combs);
    Sym->set_channels(P::channels);
    Sym->set_substeps(P::substeps);
-   Sym->set_spin(P::spin);
    Sym->load(); // This call actually initializes the data structures.
    Sym->report();
    dm = AllSteps(P::Nlen);

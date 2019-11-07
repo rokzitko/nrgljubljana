@@ -494,10 +494,9 @@ namespace P {
   // temperatures above the bandwidth D. 
   param<int> tdht ("tdht", "Calculate TD properties for T>D", "0");
 
-  /* In ANYJ code, the conduction-band electrons may have arbitrary spin.
-   It is expressed in terms of the spin multiplicity, 2S+1. For SL code,
+  /* Spin expressed in terms of the spin multiplicity, 2S+1. For SL code,
    P::spin is 1. Default value of 2 is valid for all other symmetry types.
-   */
+  */
   param<size_t> spin ("spin", "Conduction-band electron spin (multiplicity)", "2");
 
   // old, orth or cpp. If tri=cpp, we do the tridiagonalisation in the C++
