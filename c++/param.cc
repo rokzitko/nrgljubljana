@@ -525,7 +525,7 @@ namespace P {
   // The following one is parsed from the command line! This is the
   // directory where we keep temporary files during the computation, so
   // workdir should point to some local storage device with ample space.
-  string workdir = DIR_UNITARY;
+  string workdir = ".";
    
   // If NRG Ljubljana is compiled with MPI support, the default is
   // to use the MPI parallelization for spreading the diagonalizations

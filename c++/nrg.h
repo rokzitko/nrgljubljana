@@ -115,19 +115,12 @@ int myrank = 0; // in order to simplify the code
 #define FN_CUSTOMFDM "customfdm"
 #define FN_CUSTOMSQ "customsq"
 
-// Input files
-#define FN_DATA "data"
-#define FN_PARAM "param"
-
 // Density-matrix approach
 #define FN_UNITARY "unitary"
 #define FN_RHO "rho"
 #define FN_RHOFDM "rhofdm"
 
 #define FN_SUBSPACES "subspaces.dat"
-
-// Directory for temporary files. No trailing slash.
-#define DIR_UNITARY "."
 
 #define T_WIDTH 12
 

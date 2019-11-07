@@ -30,6 +30,7 @@
 */
 
 #include "nrg.h"
+#include "nrg-lib.h" // exposed interfaces for wrapping into a library
 #include "debug.h"
 #include "misc.h"
 
@@ -702,22 +703,35 @@ void dump_parameters()
   for (const auto &i : allparams) i->dump();
 }
 
-void create_workdir(int argc, char *argv[])
+const string default_workdir = ".";
+
+void create_workdir(string workdir)
 {
-   string workdir = ".";
-   if(const char* env_w = std::getenv("NRG_WORKDIR"))
-      workdir = env_w;
-   if (argc == 3 && strcmp(argv[1], "-w") == 0)
-      workdir = argv[2];
    string workdir_template = workdir + "/XXXXXX";
    char x[workdir_template.length()+1];
    strncpy(x, workdir_template.c_str(), workdir_template.length()+1);
    if (char *w = mkdtemp(x)) // create a unique directory
       P::workdir = w;
    else
-      P::workdir = ".";
+      P::workdir = default_workdir;
    cout << "workdir=" << P::workdir << endl << endl;
 }
+
+void set_workdir(string workdir)
+{
+   create_workdir(workdir);
+}
+
+void set_workdir(int argc, char *argv[])
+{
+   string workdir = default_workdir;
+   if(const char* env_w = std::getenv("NRG_WORKDIR"))
+      workdir = env_w;
+   if (argc == 3 && strcmp(argv[1], "-w") == 0) 
+      workdir = argv[2];
+   create_workdir(workdir);
+}
+
 
 void remove_workdir()
 {
@@ -3249,8 +3263,46 @@ void init_openMP()
    cout << "[OMP] Max. number of threads: " << omp_get_max_threads() << endl;
    cout << "[OMP] Number of processors: "   << omp_get_num_procs() << endl;
    cout << "[OMP] Dynamic thread adjustment: "   << omp_get_dynamic() << endl;
-   cout << "[OMP] Nested parallelism: "     << omp_get_nested() << endl;
+   cout << "[OMP] Nested parallelism: "     << omp_get_nested() << endl << endl;
+#ifdef MKL
+   MKLVersion version;
+   mkl_get_version(&version);
+   cout << "Using Intel MKL library " <<
+     version.MajorVersion << "." << version.MinorVersion << "." << version.UpdateVersion << endl;
+   cout << "Processor optimization: " << version.Processor << endl;
+   int max_threads = mkl_get_max_threads();
+// Portability hack
+# ifdef MKL_DOMAIN_BLAS
+   #define NRG_MKL_DOMAIN_BLAS MKL_DOMAIN_BLAS
+#else
+   #define NRG_MKL_DOMAIN_BLAS MKL_BLAS
+#endif
+   int blas_max_threads = mkl_domain_get_max_threads(NRG_MKL_DOMAIN_BLAS);
+   int dynamic = mkl_get_dynamic();
+   cout << "max_threads=" << max_threads <<
+     " blas_max_threads=" << blas_max_threads <<
+     " dynamic=" << dynamic << endl << endl;
+#endif
    cout << endl;
+#ifdef MKL
+   MKLVersion version;
+   mkl_get_version(&version);
+   cout << "Using Intel MKL library " <<
+     version.MajorVersion << "." << version.MinorVersion << "." << version.UpdateVersion << endl;
+   cout << "Processor optimization: " << version.Processor << endl;
+   int max_threads = mkl_get_max_threads();
+// Portability hack
+# ifdef MKL_DOMAIN_BLAS
+   #define NRG_MKL_DOMAIN_BLAS MKL_DOMAIN_BLAS
+#else
+   #define NRG_MKL_DOMAIN_BLAS MKL_BLAS
+#endif
+   int blas_max_threads = mkl_domain_get_max_threads(NRG_MKL_DOMAIN_BLAS);
+   int dynamic = mkl_get_dynamic();
+   cout << "max_threads=" << max_threads <<
+     " blas_max_threads=" << blas_max_threads <<
+     " dynamic=" << dynamic << endl << endl;
+#endif
 }
 
 // Called after the symmetry type is determined from the data file.
@@ -3492,40 +3544,14 @@ void init_laststored()
    }
 }
 
-// main() for the master process
-int main_master(int argc, char *argv[])
+void run_nrg_master()
 {
   // Master process does most of the i/o and passes calculations to
   // the slaves.
   print_about_message(cout);
-#ifdef NRG_MPI
-   cout << "Parallelization using MPI: Running on " << mpiw->size() << " processors." << endl << endl;
-#else
-   cout << "No MPI: single node calculation." << endl << endl;
-#endif
-   init_openMP();
-#ifdef MKL
-   MKLVersion version;
-   mkl_get_version(&version);
-   cout << "Using Intel MKL library " <<
-     version.MajorVersion << "." << version.MinorVersion << "." << version.UpdateVersion << endl;
-   cout << "Processor optimization: " << version.Processor << endl;
-   int max_threads = mkl_get_max_threads();
-// Portability hack
-# ifdef MKL_DOMAIN_BLAS
-   #define NRG_MKL_DOMAIN_BLAS MKL_DOMAIN_BLAS
-#else
-   #define NRG_MKL_DOMAIN_BLAS MKL_BLAS
-#endif
-   int blas_max_threads = mkl_domain_get_max_threads(NRG_MKL_DOMAIN_BLAS);
-   int dynamic = mkl_get_dynamic();
-   cout << "max_threads=" << max_threads <<
-     " blas_max_threads=" << blas_max_threads <<
-     " dynamic=" << dynamic << endl << endl;
-#endif
+  init_openMP();
   set_new_handler(outOfMemory);
   cout << setprecision(COUT_PRECISION);
-  create_workdir(argc,argv);
   read_parameters();
   validateparameters();
   calculate_invariants();
@@ -3550,7 +3576,6 @@ int main_master(int argc, char *argv[])
 	cout << "Can't create DONE." << endl;
   }
   remove_workdir();
-  return 0;
 }
 
 #ifdef NRG_MPI
@@ -3575,8 +3600,7 @@ void slave_diag()
    mpiw->send(MASTER, TAG_INVAR, I);
 }
 
-// main() for the slave processes
-int main_slave(int argc, char *argv[])
+void run_nrg_slave()
 {
   set_new_handler(outOfMemory);
   cout << "MPI slave rank " << myrank << endl;
@@ -3617,25 +3641,26 @@ int main_slave(int argc, char *argv[])
 	usleep(100);
      }
   } // while(!done)
-
-  return 0;
 }
 #endif
 
 int main(int argc, char *argv[])
 {
 #ifdef NRG_MPI
-  mpi::environment env(argc, argv);
-  mpi::communicator world;
-  mpienv = &env;
-  mpiw = &world;
-  myrank = mpiw->rank();
-  if (myrank == 0) {
-     return main_master(argc, argv);
-  } else {
-     return main_slave(argc, argv);
-  }
+   mpi::environment env(argc, argv);
+   mpi::communicator world;
+   mpienv = &env;
+   mpiw = &world;
+   myrank = mpiw->rank();
+   if (myrank == 0) {
+      set_workdir(argc, argv);
+      cout << "Parallelization using MPI: Running on " << mpiw->size() << " processors." << endl << endl;
+      run_nrg_master();
+   } else
+      run_nrg_slave();
 #else
-  return main_master(argc, argv);
+   set_workdir(argc, argv);
+   cout << "No MPI: single node calculation." << endl << endl;
+   run_nrg_master();
 #endif  // NRG_MPI
 }
