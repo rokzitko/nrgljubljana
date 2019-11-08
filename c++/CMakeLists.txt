@@ -1,5 +1,5 @@
-set(sources nrg.cc)
-add_executable(nrgljubljana_c ${sources})
+set(sources nrg-lib.cc)
+add_library(nrgljubljana_c ${sources})
 
 # Enable warnings
 target_link_libraries(nrgljubljana_c PRIVATE project_warnings)
@@ -16,9 +16,13 @@ target_compile_definitions(nrgljubljana_c PUBLIC
 
 target_link_libraries(nrgljubljana_c PUBLIC openmp boost blas_lapack gmp)
 
+# Compile nrg executable
+add_executable(nrg nrg.cc)
+target_link_libraries(nrg PRIVATE nrgljubljana_c)
+
 # Install library and headers
 install(TARGETS nrgljubljana_c EXPORT nrgljubljana-targets DESTINATION lib)
-
+install(TARGETS nrg DESTINATION bin)
 
 # ========= Static Analyzer Checks ==========
 
