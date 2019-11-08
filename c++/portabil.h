@@ -46,19 +46,19 @@ void print_trace(void)
 
 bool my_isfinite(double x)
 {
-   return isfinite(x);
+   return std::isfinite(x);
 }
 
 typedef complex<double> cmpl;
 
 bool my_isfinite(cmpl z)
 {
-   return isfinite(z.real()) && isfinite(z.imag());
+   return std::isfinite(z.real()) && std::isfinite(z.imag());
 }
 
 inline int isfinite(cmpl z)
 {
-   return (isfinite(z.real()) && isfinite(z.imag()) ? 1 : 0);
+   return (std::isfinite(z.real()) && std::isfinite(z.imag()) ? 1 : 0);
 }
 
 template <typename T>

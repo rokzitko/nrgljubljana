@@ -483,11 +483,11 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N)
 	 my_assert(Eabs >= 0.0);
 	 const long double betaE = Eabs/P::T;
 	 long double val1 = expl(-betaE) / ZZ;
-	 val1 = isfinite(val1) ? val1 : 0.0;
+	 val1 = std::isfinite(val1) ? val1 : 0.0;
 	 tr1 += mult(I) * val1;
 	 const long double ratio = STAT::wn[N] / ZZ;
 	 long double val2 = expl(-betaE) * ratio;
-	 val2 = isfinite(val2) ? val2 : 0.0;
+	 val2 = std::isfinite(val2) ? val2 : 0.0;
 	 rhoI(i, i) = double(val2);
 	 tr2 += mult(I) * val2;
       }
@@ -495,10 +495,10 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N)
    nrglog('w', "tr1=" << tr1 << " tr2=" << tr2);
    // Sanity checks. The trace tr2 should be equal to the total
    // weight of the shell-N contribution to the full density matrix.
-   if (isfinite(tr1) && !num_equal(tr1, 1.0))
+   if (std::isfinite(tr1) && !num_equal(tr1, 1.0))
       my_warning("tr1=%24.16Lf", tr1); // This is not fatal! (but weird)
    const double diff = (tr2-STAT::wn[N])/STAT::wn[N]; // relative error
-   if (isfinite(diff) && !num_equal(diff, 0.0, 1e-8)) {
+   if (std::isfinite(diff) && !num_equal(diff, 0.0, 1e-8)) {
       my_warning("diff=%24.16lf", diff); // This is more serious..
       my_assert(STAT::wn[N] < 1e-12); // ..but OK if small enough overall.
    }

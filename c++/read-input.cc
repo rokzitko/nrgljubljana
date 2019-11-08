@@ -6,12 +6,9 @@
 void validateparameters()
 {
   my_assert(P::keep > 1);
-  if (P::keepenergy > 0.0) 
-    my_assert(P::keepmin <= P::keep);
-  if (P::dmnrg || cfs_flags())
-    P::dm.setvalue(true);
-  if (cfs_flags() && ! P::lastalloverride)
-    P::lastall.setvalue(true);
+  if (P::keepenergy > 0.0) my_assert(P::keepmin <= P::keep);
+  if (P::dmnrg || cfs_flags()) P::dm.setvalue(true);
+  if (cfs_flags() && ! P::lastalloverride) P::lastall.setvalue(true);
   my_assert(P::Lambda > 1.0);
   P::diagroutine = undefined;
   if (NRG::v == "real") {
@@ -74,7 +71,9 @@ void read_nr_channels(ifstream &fdata)
   nrglog('!', "perchannel=" << P::perchannel);
   my_assert(P::perchannel >= 1);
   if (sym_string == "SL" || sym_string == "SL3")
-    P::spin.setvalue(1); // override the default value of 2
+      P::spin = 1;
+  else
+      P::spin = 2;
   const int statespersite = pow(2, P::spin);
   if (!P::substeps) 
      P::combs = pow(statespersite, P::channels);

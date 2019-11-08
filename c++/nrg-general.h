@@ -28,7 +28,6 @@ using namespace std;
 // C headers
 #include <cassert>
 #include <cmath>
-#include <math.h> // isfinite
 #include <cfloat>
 #include <climits>
 #include <cstring>

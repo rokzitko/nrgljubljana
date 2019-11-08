@@ -1,33 +1,5 @@
-// "NRG Ljubljana" - Numerical renormalization group for multiple
-// impurities and an arbitrary number of channels
-//
 // matrix.cc - Symmetry dependent code for Hamiltonian matrix generation
-//
-// Copyright (C) 2009-2016 Rok Zitko
-//
-//   This program is free software; you can redistribute it and/or modify
-//   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation; either version 2 of the License, or
-//   (at your option) any later version.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of the GNU General Public License
-//   along with this program; if not, write to the Free Software
-//   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-//
-//   Contact information:
-//   Rok Zitko
-//   F5 - Condensed matter physics
-//   "Jozef Stefan" Institute
-//   Jamova 39
-//   SI-1000 Ljubljana
-//   Slovenia
-//
-//   rok.zitko@ijs.si
+// Copyright (C) 2009-2019 Rok Zitko
 
 #ifndef _matrix_cc_
 #define _matrix_cc_
@@ -104,7 +76,7 @@ void offdiag_build(size_t i, size_t j,
   my_assert(size1 && size2);
   // < In[i] r | f^\dag | In[j] r' >
   const Twoinvar II = make_pair(In[i], In[j]);
-  if (!isfinite(factor)) {
+  if (!std::isfinite(factor)) {
      cout << "offdiag_function() critical error: factor is not finite." << endl;
      cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor=" << factor << endl;
      cout << "source subspaces II=" << II << endl;
