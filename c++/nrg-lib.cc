@@ -31,11 +31,21 @@
 
 #include "nrg-general.h"
 #include "nrg-lib.h" // exposed interfaces for wrapping into a library
+#include "portabil.h"
+#include "time_mem.h"
 #include "debug.h"
 #include "misc.h"
 
 #include "param.cc"
 #include "outfield.cc"
+
+#ifdef NRG_MPI
+mpi::environment *mpienv;
+mpi::communicator *mpiw;
+int myrank() { return mpiw->rank(); } // used in diag.h, time_mem.h
+#else
+int myrank() { return 0; }
+#endif
 
 #include <omp.h>
 
@@ -2498,12 +2508,25 @@ void nrg_diagonalisations_OpenMP()
 }
 
 #ifdef NRG_MPI
+const int TAG_HELLO = 1;
+const int TAG_EXIT = 2;
+const int TAG_DIAG = 3;
+const int TAG_SYNC = 4;
+const int TAG_MATRIX = 5;
+const int TAG_INVAR = 6;
+const int TAG_EIGEN = 7;
+const int TAG_MATRIX_SIZE = 8;
+const int TAG_MATRIX_LINE = 9;
+const int TAG_EIGEN_INT = 10;
+const int TAG_EIGEN_VEC = 11;
+const int TAG_EIGEN_RMAXVALS = 12;
+
 void mpi_sync_params();
 
 void check_status(mpi::status &status)
 {
    if (status.error()) {
-      cout << "MPI communication error. rank=" << myrank << endl;
+      cout << "MPI communication error. rank=" << mpiw->rank() << endl;
       mpienv->abort(1);
    }
 }
@@ -2593,7 +2616,7 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig)
 {
    Eigen eigmock; // empty Eigen
    mpiw->send(dest, TAG_EIGEN, eigmock);
-   nrglog('M', "Sending eigen from " << myrank << " to " << dest);
+   nrglog('M', "Sending eigen from " << mpiw->rank() << " to " << dest);
    mpiw->send(dest, TAG_EIGEN_INT, eig.nr);
    mpiw->send(dest, TAG_EIGEN_INT, eig.rmax);
    mpiw->send(dest, TAG_EIGEN_INT, eig.nrpost);
@@ -2604,7 +2627,7 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig)
 
 void mpi_receive_eigen_linebyline(int source, Eigen &eig)
 {
-   nrglog('M', "Receiving eigen from " << source << " on " << myrank);
+   nrglog('M', "Receiving eigen from " << source << " on " << mpiw->rank());
    mpi::status status;
    Eigen eigmock;
    status = mpiw->recv(source, TAG_EIGEN, eigmock);
@@ -3257,6 +3280,11 @@ void print_about_message(ostream &F)
   F << "Compiled on " << __DATE__ << " at " << __TIME__ << endl << endl;
 }
 
+#ifdef MKL
+#include <mkl_service.h>
+#include <mkl_types.h>
+#endif
+
 // OpenMP parallelization support
 void init_openMP()
 {
@@ -3284,25 +3312,6 @@ void init_openMP()
      " dynamic=" << dynamic << endl << endl;
 #endif
    cout << endl;
-#ifdef MKL
-   MKLVersion version;
-   mkl_get_version(&version);
-   cout << "Using Intel MKL library " <<
-     version.MajorVersion << "." << version.MinorVersion << "." << version.UpdateVersion << endl;
-   cout << "Processor optimization: " << version.Processor << endl;
-   int max_threads = mkl_get_max_threads();
-// Portability hack
-# ifdef MKL_DOMAIN_BLAS
-   #define NRG_MKL_DOMAIN_BLAS MKL_DOMAIN_BLAS
-#else
-   #define NRG_MKL_DOMAIN_BLAS MKL_BLAS
-#endif
-   int blas_max_threads = mkl_domain_get_max_threads(NRG_MKL_DOMAIN_BLAS);
-   int dynamic = mkl_get_dynamic();
-   cout << "max_threads=" << max_threads <<
-     " blas_max_threads=" << blas_max_threads <<
-     " dynamic=" << dynamic << endl << endl;
-#endif
 }
 
 // Called after the symmetry type is determined from the data file.
@@ -3509,24 +3518,19 @@ int mpidebuglevel = 0;
 void mpidebug(string str)
 {
    if (mpidebuglevel > 0)
-     cout << "MPI process " << myrank << " " << str << endl;
+     cout << "MPI process " << mpiw->rank() << " " << str << endl;
 }
 
 void mpi_sync_params()
 {
    // Synchronize global parameters
-   if (myrank == 0) {
+   if (mpiw->rank() == 0) {
       sP.init();
       for (size_t i = 1; i < mpiw->size(); i++)
 	 mpiw->send(i, TAG_SYNC, 0);
    }
    mpi::broadcast(*mpiw, sP, 0);
 }
-#endif
-
-#ifdef MKL
-#include <mkl_service.h>
-#include <mkl_types.h>
 #endif
 
 // What is the last iteration completed in the previous NRG runs?
@@ -3603,7 +3607,7 @@ void slave_diag()
 void run_nrg_slave()
 {
   set_new_handler(outOfMemory);
-  cout << "MPI slave rank " << myrank << endl;
+  cout << "MPI slave rank " << mpiw->rank() << endl;
   const int MASTER = 0;
   bool done = false;
   while (!done) {
@@ -3614,7 +3618,7 @@ void run_nrg_slave()
 	mpi::status status;
 	status = mpiw->recv(MASTER, mpi::any_tag, task);
 	check_status(status);
-	nrglog('M', "Slave " << myrank << " received message with tag " << status.tag());
+	nrglog('M', "Slave " << mpiw->rank() << " received message with tag " << status.tag());
 	switch (status.tag()) {
 	 case TAG_HELLO:
 	   mpidebug("ready");
@@ -3632,7 +3636,7 @@ void run_nrg_slave()
 	   mpi_sync_params();
 	   break;
 	 default:
-	   cout << "MPI error: unknown tag on " << myrank << endl;
+	   cout << "MPI error: unknown tag on " << mpiw->rank() << endl;
 	   break;
 	} // switch
      } else {

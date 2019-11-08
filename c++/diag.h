@@ -4,6 +4,7 @@
 #ifndef _diag_h_
 #define _diag_h_
 
+#define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"
 
 bool logletter(char);
@@ -35,7 +36,7 @@ size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V')
 {
   Timing t(false);
   const size_t dim = m.size1();
-  nrglog('A', "LAPACK, dim=" << dim << " (dsyev)" << " on node " << myrank);
+  nrglog('A', "LAPACK, dim=" << dim << " (dsyev)" << " [" << myrank() << "]");
   t_matel *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
   char UPLO = 'L'; // lower triangle of a is stored
@@ -63,7 +64,7 @@ size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V')
            d.vektor(r, j) = ham[dim*r+j];
      d.perform_checks();
   }
-  nrglog('t', "Elapsed: " << t.total() << " on node " << myrank);
+  nrglog('t', "Elapsed: " << t.total() << " [" << myrank() << "]");
   delete[] WORK;
   return dim;
 }
@@ -84,7 +85,7 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
       M = CLIP(M, 1ul, dim); // at least 1, at most dim
       RANGE = 'I';
    } else RANGE = 'A';
-   nrglog('A', "LAPACK, dim=" << dim << " (dsyevr)" << " on node " << myrank);
+   nrglog('A', "LAPACK, dim=" << dim << " (dsyevr)" << " [" << myrank() << "]");
    t_matel *ham = bindings::traits::matrix_storage(m);
    t_eigen eigenvalues[dim]; // eigenvalues on exit
    char UPLO = 'L'; // lower triangle of a is stored
@@ -139,7 +140,7 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
             d.vektor(r, j) = Z[dim*r+j];
       d.perform_checks();
    }
-   nrglog('t',"Elapsed: " << t.total() << " on node " << myrank);
+   nrglog('t',"Elapsed: " << t.total() << " [" << myrank() << "]");
    delete[] WORK;
    delete[] IWORK;
    return M;
@@ -151,7 +152,7 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V')
 {
   Timing t(false);
   const size_t dim = m.size1();
-  nrglog('A', "LAPACK, dim=" << dim << " (zheev)" << " on node " << myrank);
+  nrglog('A', "LAPACK, dim=" << dim << " (zheev)" << " [" << myrank() << "]");
   t_matel *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
   char UPLO = 'L'; // lower triangle of a is stored
@@ -181,7 +182,7 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V')
            d.vektor(r, j) = ham[dim*r+j];
      d.perform_checks();
   }
-  nrglog('t', "Elapsed: " << t.total() << " on node " << myrank);
+  nrglog('t', "Elapsed: " << t.total() << " [" << myrank() << "]");
   delete[] WORK;
   return dim;
 }
@@ -200,7 +201,7 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V',
     M = CLIP(M, 1ul, dim); // at least 1, at most dim
     RANGE = 'I';
   } else RANGE = 'A';
-  nrglog('A', "LAPACK, dim=" << dim << " (zheevr)" << " on node " << myrank);
+  nrglog('A', "LAPACK, dim=" << dim << " (zheevr)" << " [" << myrank() << "]");
   t_matel *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
   char UPLO = 'L'; // lower triangle of a is stored
@@ -259,7 +260,7 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V',
            d.vektor(r, j) = Z[dim*r+j];
      d.perform_checks();
   }
-  nrglog('t', "Elapsed: " << t.total() << " on node " << myrank);
+  nrglog('t', "Elapsed: " << t.total() << " [" << myrank() << "]");
   delete [] WORK;
   delete [] RWORK;
   delete [] IWORK;

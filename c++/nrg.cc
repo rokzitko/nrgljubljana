@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "nrg-lib.h"
-#include "nrg.h"
+#include "nrg-general.h" // common
+#include "nrg-lib.h" // exposed in library
+#include "nrg.h" // specific to executable
 
 int main(int argc, char *argv[])
 {
@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
    mpi::communicator world;
    mpienv = &env;
    mpiw = &world;
-   myrank = mpiw->rank();
+   int myrank = mpiw->rank();
    if (myrank == 0) {
       set_workdir(argc, argv);
       std::cout << "Parallelization using MPI: Running on " << mpiw->size() << " processors." << std::endl << std::endl;

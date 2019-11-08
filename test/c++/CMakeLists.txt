@@ -40,5 +40,5 @@ endforeach()
 # Regression tests
 configure_file(test1_qs/param test1_qs/param)
 configure_file(test1_qs/data test1_qs/data)
-add_test(NAME test1_qs COMMAND ${PROJECT_BINARY_DIR}/c++/nrgljubljana_c ; ${CMAKE_CURRENT_SOURCE_DIR}/compare
+add_test(NAME test1_qs COMMAND ${PROJECT_BINARY_DIR}/c++/nrg ; ${CMAKE_CURRENT_SOURCE_DIR}/compare
 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test1_qs)
