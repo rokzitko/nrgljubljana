@@ -1,0 +1,21 @@
+[param]
+symtype=QS
+model=SIAM
+
+U=1.0
+Gamma=0.1
+delta=0.1
+T=0.1
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+ops=n_d n_d^2
+
+Nmax=10
+keep=100
+
+dumpannotated=1000
+dumpscaled=false
+dumpabs=true

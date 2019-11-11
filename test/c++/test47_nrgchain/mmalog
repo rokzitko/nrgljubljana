@@ -1,0 +1,170 @@
+NRG Ljubljana 2.4.4 (c) Rok Zitko, rok.zitko@ijs.si, 2005-2019
+Mathematica version: 12.0.0 for Mac OS X x86 (64-bit) (April 7, 2019)
+sneg version: 1.251
+Loading module initialparse.m
+Options: {}
+def1ch, NRDOTS=1
+COEFCHANNELS:1
+H0=coefzeta[1, 0]*(-1 + nc[f[0, 0, 0], f[1, 0, 0]] + nc[f[0, 0, 1], f[1, 0, 1]])
+adddots, nrdots=1
+Loading module models.m
+"models started"
+Loading module custommodels.m
+Can't load custommodels.m. Continuing.
+params={gammaPol -> Sqrt[gammaA*theta0]/Sqrt[Pi], gammaPolCh[ch_] :> Sqrt[1/Pi*theta0Ch[ch]*gammaA], hybV[i_, j_] :> Sqrt[1/Pi]*V[i, j], coefzeta[ch_, j__] :> N[bandrescale*zeta[ch][j]], coefxi[ch_, j__] :> N[bandrescale*xi[ch][j]], 
+   coefrung[ch_, j__] :> N[bandrescale*zetaR[ch][j]], coefdelta[ch_, j__] :> N[bandrescale*scdelta[ch][j]], coefkappa[ch_, j__] :> N[bandrescale*sckappa[ch][j]], U -> 1., delta -> 0, t -> 0., 
+   gammaPol2 -> Sqrt[extraGamma2*gammaA*thetaCh[1]]/Sqrt[Pi], gammaPol2to2 -> Sqrt[extraGamma2to2*gammaA*thetaCh[2]]/Sqrt[Pi], gammaPolch1 -> Sqrt[extraGamma1*gammaA*thetaCh[1]]/Sqrt[Pi], 
+   gammaPolch2 -> Sqrt[extraGamma2*gammaA*thetaCh[2]]/Sqrt[Pi], gammaPolch3 -> Sqrt[extraGamma3*gammaA*thetaCh[3]]/Sqrt[Pi], Jspin -> extraJspin*gammaA, Jcharge -> extraJcharge*gammaA, Jcharge1 -> extraJcharge1*gammaA, 
+   Jcharge2 -> extraJcharge2*gammaA, Jkondo -> extraJkondo*gammaA, Jkondo1 -> extraJkondo1*gammaA, Jkondo2 -> extraJkondo2*gammaA, Jkondo3 -> extraJkondo3*gammaA, Jkondo1P -> extraJkondo1P*gammaA, Jkondo2P -> extraJkondo2P*gammaA, 
+   Jkondo1Z -> extraJkondo1Z*gammaA, Jkondo2Z -> extraJkondo2Z*gammaA, JkondoP -> extraJkondoP*gammaA, JkondoZ -> extraJkondoZ*gammaA, Jkondo1ch2 -> extraJkondo1ch2*gammaA, Jkondo2ch2 -> extraJkondo2ch2*gammaA, gep -> extrag, dd -> extrad}
+NRDOTS:1
+CHANNELS:1
+basis:{d[], f[0]}
+lrchain:{}
+lrextrarule:{}
+NROPS:2
+Hamiltonian generated. U/2 - coefzeta[1, 0] + delta*nc[d[0, 0], d[1, 0]] - (U*nc[d[0, 0], d[1, 0]])/2 + gammaPolCh[1]*nc[d[0, 0], f[1, 0, 0]] + delta*nc[d[0, 1], d[1, 1]] - (U*nc[d[0, 1], d[1, 1]])/2 + 
+   gammaPolCh[1]*nc[d[0, 1], f[1, 0, 1]] + gammaPolCh[1]*nc[f[0, 0, 0], d[1, 0]] + coefzeta[1, 0]*nc[f[0, 0, 0], f[1, 0, 0]] + gammaPolCh[1]*nc[f[0, 0, 1], d[1, 1]] + coefzeta[1, 0]*nc[f[0, 0, 1], f[1, 0, 1]] - 
+   U*nc[d[0, 0], d[0, 1], d[1, 0], d[1, 1]]
+H-conj[H]=0
+SCALE[0]=1.0201394465967895
+faktor=1.3862943611198906
+Generating basis
+Basis states generated.
+BASIS NR=16
+Basis: basis.SIAM..QS
+PREC=30
+DISCNMAX=20
+mMAX=80
+"band=manual, importing theta, COEFCHANNELS="1
+"thetaCh[1]="0.355
+Diagonalisation.
+Loading discretization data from files.
+"xi="{0.6861356780264738, 0.877747188576813, 0.8563831337727165, 0.9976545377538764, 0.9332489429819215, 1.036084156654311, 0.9523485732641045, 1.044990594072019, 0.9560243757933367, 1.046625638395644, 0.9563479089097993, 
+   1.046738519929375, 0.9561298706725179, 1.046623093790913, 0.9559254075285781, 1.046524379369778, 0.955798888520972, 1.046465671232377, 0.9557293001478631, 1.046434410551937, 0.9556927855898152}
+"zeta="{0.1775296938447387, -0.099334609689133, 0.01934804998636831, -0.04282971915974047, -0.00195092588658457, -0.02379117080215193, -0.003365258350382766, -0.01255823372933325, -0.002156246720278144, -0.006431026970743214, 
+   -0.00117835099230096, -0.003251316810369034, -0.0006124197392093729, -0.001634491865905484, -0.0003119718310047329, -0.0008194916517515817, -0.0001574680684712984, -0.0004103256650559518, -0.00007912192601040856, -0.0002053135726054358, 
+   -0.00003966315290246414}
+BAND="manual" thetaCh={"0.355"}
+Discretization (channel 1)
+"xitable" (channel 1)
+0.6861356780264738
+0.877747188576813
+0.8563831337727165
+0.9976545377538764
+0.9332489429819215
+1.036084156654311
+0.9523485732641045
+1.044990594072019
+0.9560243757933367
+1.046625638395644
+0.9563479089097993
+1.046738519929375
+0.9561298706725179
+1.046623093790913
+0.9559254075285781
+1.046524379369778
+0.955798888520972
+1.046465671232377
+0.9557293001478631
+1.046434410551937
+0.9556927855898152
+"zetatable" (channel 1)
+0.1775296938447387
+-0.099334609689133
+0.01934804998636831
+-0.04282971915974047
+-0.00195092588658457
+-0.02379117080215193
+-0.003365258350382766
+-0.01255823372933325
+-0.002156246720278144
+-0.006431026970743214
+-0.00117835099230096
+-0.003251316810369034
+-0.0006124197392093729
+-0.001634491865905484
+-0.0003119718310047329
+-0.0008194916517515817
+-0.0001574680684712984
+-0.0004103256650559518
+-0.00007912192601040856
+-0.0002053135726054358
+-0.00003966315290246414
+Precision last xi:MachinePrecision
+Precision last zeta: MachinePrecision
+Discretization done.
+--EOF--
+           {{# Input file for NRG Ljubljana}, {# symtype , QS}, {# Using sneg version , 1.251}, {#!9}, {# Number of channels, chain sites, subspaces: }, {1, 20, 6}}
+
+maketable[]
+
+exnames={d, g, Gamma1, Gamma2, Gamma2to2, Gamma3, Jcharge, Jcharge1, Jcharge2, Jkondo, Jkondo1, Jkondo1ch2, Jkondo1P, Jkondo1Z, Jkondo2, Jkondo2ch2, Jkondo2P, Jkondo2Z, Jkondo3, JkondoP, JkondoZ, Jspin}
+thetaCh={"0.355"}
+theta0Ch={"0.355"}
+gammaPolCh={"0.33615474055149913"}
+checkdefinitions[] -> 0.022148656050735238
+calcgsenergy[]
+diagvc[{-2, 1}]
+Generating matrix: ham.SIAM..QS_-2.1
+hamil={{(U - 2*coefzeta[1, 0])/2}}
+dim={1, 1}
+det[vec]=1. 1-abs=0.
+orthogonality check=0.
+diagvc[{-1, 2}]
+Generating matrix: ham.SIAM..QS_-1.2
+hamil={{U/2, gammaPolCh[1]}, {gammaPolCh[1], delta - coefzeta[1, 0]}}
+dim={2, 2}
+det[vec]=-1. 1-abs=0.
+orthogonality check=0.
+diagvc[{0, 1}]
+Generating matrix: ham.SIAM..QS_0.1
+hamil={{U/2 + coefzeta[1, 0], Sqrt[2]*gammaPolCh[1], 0}, {Sqrt[2]*gammaPolCh[1], delta, Sqrt[2]*gammaPolCh[1]}, {0, Sqrt[2]*gammaPolCh[1], (4*delta + U - 2*coefzeta[1, 0])/2}}
+dim={3, 3}
+det[vec]=-0.9999999999999999 1-abs=1.1102230246251565*^-16
+orthogonality check=1.4988010832439613*^-15
+diagvc[{0, 3}]
+Generating matrix: ham.SIAM..QS_0.3
+hamil={{delta}}
+dim={1, 1}
+det[vec]=1. 1-abs=0.
+orthogonality check=0.
+diagvc[{1, 2}]
+Generating matrix: ham.SIAM..QS_1.2
+hamil={{delta + coefzeta[1, 0], -gammaPolCh[1]}, {-gammaPolCh[1], (4*delta + U)/2}}
+dim={2, 2}
+det[vec]=1.0000000000000004 1-abs=-4.440892098500626*^-16
+orthogonality check=8.881784197001252*^-16
+diagvc[{2, 1}]
+Generating matrix: ham.SIAM..QS_2.1
+hamil={{2*delta + U/2 + coefzeta[1, 0]}}
+dim={1, 1}
+det[vec]=1. 1-abs=0.
+orthogonality check=0.
+Lowest energies (absolute):{-0.47794438996763855, -0.3160086327442301, -0.03405787795262094, 0., 0.3224703061552613, 0.4683774691157475, 0.6384789388994914, 0.6775296938447387, 0.7115875717973597, 1.0095669208518907}
+Lowest energies (GS shifted):{0., 0.16193575722340847, 0.4438865120150176, 0.47794438996763855, 0.8004146961228998, 0.9463218590833861, 1.11642332886713, 1.1554740838123774, 1.1895319617649982, 1.4875113108195293}
+Scale factor SCALE(Ninit):1.0201394465967895
+Lowest energies (shifted and scaled):{0., 0.15873884473699176, 0.43512336817857017, 0.46850888039088473, 0.7846130240263752, 0.9276397087087842, 1.0943830596802682, 1.1326628802239416, 1.1660483924362561, 1.4581450759324168}
+makeireducf GENERAL
+ireducTable: f[0]{}
+Loading module operators.m
+"operators.m started"
+s: n_d op.SIAM..QS.n_d nc[d[0, 0], d[1, 0]] + nc[d[0, 1], d[1, 1]]
+d: A_d d
+ireducTable: d{}
+t: sigma_d d[]
+operators.m done
+Loading module customoperators.m
+Can't load customoperators.m. Continuing.
+Loading module modeloperators.m
+Can't load modeloperators.m. Continuing.
+-- maketable[] done --
+Timing report
+{basis, 0.0246`4.842480100599352}
+{ham, 0.1793910000000000001`4.927194393925288}
+{maketable, 0.845933`6.378880960692725}
+{xi, 0.035537`5.002225755782415}
+{_, 0}
+data
+gammaPol=0.3361547405514991
+"Success!"

@@ -38,7 +38,12 @@ foreach(test ${all_tests})
 endforeach()
 
 # Regression tests
-configure_file(test1_qs/param test1_qs/param)
-configure_file(test1_qs/data test1_qs/data)
-add_test(NAME test1_qs COMMAND ${PROJECT_BINARY_DIR}/c++/nrg ; ${CMAKE_CURRENT_SOURCE_DIR}/compare
-WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test1_qs)
+
+file(STRINGS simple_tests simple_tests)
+
+foreach(test ${simple_tests})
+  configure_file(${test}/param ${test}/param)
+  configure_file(${test}/data ${test}/data)
+  add_test(NAME ${test} COMMAND ${PROJECT_BINARY_DIR}/c++/nrg ; ${CMAKE_CURRENT_SOURCE_DIR}/compare
+           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test})
+endforeach()
