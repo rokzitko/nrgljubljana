@@ -1,5 +1,5 @@
 // Calculation of NRG chain coefficients
-// Rok Zitko, rok.zitko@ijs.si, 2009, 2010, 2015
+// Rok Zitko, rok.zitko@ijs.si, 2009-2019
 
 /*
  *   This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 //            - mMAX now defaults to 2*Nmax
 // 6. 1. 2015 - bug fix for my_mpf class (copy constructor)
 // 23.9. 2016 - support for bandrescale
+// 11.11.2019 - switchable rescaling of xi coefficients (new default: no rescaling)
 
 #include <iostream>
 #include <fstream>
@@ -61,6 +62,7 @@ double xmax; // higher boundary of the x=j+z interval, where the ODE
 unsigned int mMAX; // the number of coefficients computed (max index)
 unsigned int Nmax; // the length of the Wilson chain (max index)
 double bandrescale = 1.0; // band rescaling factor
+bool rescalexi = false; // rescale coefficients xi
 
 unsigned int preccpp; // precision for GMP
 
@@ -181,6 +183,7 @@ void set_parameters()
   adapt = Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
    
   bandrescale = P("bandrescale", 1.0);
+  rescalexi = P("rescalexi", false);
 
   xmax = P("xmax", 30); // Interval [1..xmax]
   assert(xmax >= 1.0);
@@ -502,8 +505,8 @@ void tridiag()
     // Save results
     double dxi = mpf_get_d(mpxi);
     double dzeta = mpf_get_d(mpzeta);
-    double coef_xi = dxi/SCALE(n+1);
-    double coef_zeta = dzeta; // NOT RESCALED!!!
+    double coef_xi = dxi/(P::rescalexi ? SCALE(n+1) : 1.0);
+    double coef_zeta = dzeta; // NEVER RESCALED!!!
 
     XI << coef_xi << endl;
     ZETA << coef_zeta << endl;
