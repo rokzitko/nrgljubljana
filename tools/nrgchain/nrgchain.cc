@@ -183,7 +183,7 @@ void set_parameters()
   adapt = Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
    
   bandrescale = P("bandrescale", 1.0);
-  rescalexi = P("rescalexi", false);
+  rescalexi = Pbool("rescalexi", false);
 
   xmax = P("xmax", 30); // Interval [1..xmax]
   assert(xmax >= 1.0);
@@ -505,7 +505,7 @@ void tridiag()
     // Save results
     double dxi = mpf_get_d(mpxi);
     double dzeta = mpf_get_d(mpzeta);
-    double coef_xi = dxi/(P::rescalexi ? SCALE(n+1) : 1.0);
+    double coef_xi = dxi/(rescalexi == true ? SCALE(n+1) : 1.0);
     double coef_zeta = dzeta; // NEVER RESCALED!!!
 
     XI << coef_xi << endl;
