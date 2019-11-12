@@ -1,0 +1,7 @@
+#!/bin/sh
+adapt P
+adapt N
+echo 1.0 >theta.dat
+nrginit
+nrgchain
+./prepare.pl

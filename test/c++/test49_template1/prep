@@ -1,0 +1,6 @@
+#!/bin/sh
+adapt P
+adapt N
+nrgchain
+nrginit
+./prepare.pl
