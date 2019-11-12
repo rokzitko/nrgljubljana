@@ -63,7 +63,13 @@ test64_emax
 test65_algorithms_mats
 test66_fdmexpvn
 test67_fixeps
+test68_grouptol
+test69_specgt
 test6_Lambda
+test70_lastall=false
+test71_lastall=true
+test72_lastalloverride=false
+test73_lastalloverride=true
 test7_z
 test8_keep
 test9_keepenergy
