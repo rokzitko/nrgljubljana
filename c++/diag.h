@@ -298,7 +298,8 @@ Eigen diagonalise(Matrix &m)
    if (dr == diagzheevr) M = diagonalise_zheevr(m, d, 'V', sP.diagratio);
 #endif
    my_assert(M > 0);
-   my_assert(M == m.size2());
+   my_assert(M == d.value.size());
+   my_assert(M == d.matrix0.size1());
    my_assert(d.matrix0.size1() <= m.size1());
    my_assert(d.matrix0.size2() == m.size2());
    if (logletter('e')) {    // Dump the first P::logenumber eigenvalues
