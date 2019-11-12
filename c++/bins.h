@@ -101,7 +101,7 @@ void Bins::loggrid_std()
 // Unbiased assignment of the spectral weight to bins.
 inline void Bins::add(double energy, t_weight weight)
 {
-   if (abs(weight) < P::DISCARD_IMMEDIATELY * energy)
+   if (abs(weight) < P::discard_immediately * energy)
       return;
    if (P::accumulation > 0.0) 
       add_acc(energy, weight);
@@ -175,7 +175,7 @@ void Bins::trim()
       const double enext = bins[i+1].first; // increasing!
       my_assert(enext > e);
       const double ewidth = enext-e;
-      if (abs(w) < P::DISCARD_TRIM * ewidth)
+      if (abs(w) < P::discard_trim * ewidth)
          discarded_weight_abs += abs(w);
       else 
          bins2.push_back(bins[i]);

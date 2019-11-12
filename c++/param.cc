@@ -378,11 +378,11 @@ namespace P {
   // less than (energy_bin(this)-energy_bin(next))*DISCARD_TRIM. This
   // is consistent with the fact that spectral density is spectral
   // weight per interval.
-  param<double> DISCARD_TRIM ("discard_trim", "Peak clipping at the end of the run", "1e-16"); // N
+  param<double> discard_trim ("discard_trim", "Peak clipping at the end of the run", "1e-16"); // N
 
   // DISCARD_IMMEDIATELY is relative value wrt peak energy: we clip
   // if peak's weight is lower than energy*DISCARD_IMMEDIATELY.
-  param<double> DISCARD_IMMEDIATELY ("discard_immediately", "Peak clipping on the fly", "1e-16"); // N
+  param<double> discard_immediately ("discard_immediately", "Peak clipping on the fly", "1e-16"); // N
 
   // Optimization in 3-pt vertex calculations: drop small terms.
   param<double> v3mmcutoff ("v3mmcutoff", "Cutoff for small terms", "1e-16"); // *
