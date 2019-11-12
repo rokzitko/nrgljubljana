@@ -735,7 +735,7 @@ void set_workdir(string workdir)
 void set_workdir(int argc, char *argv[])
 {
    string workdir = default_workdir;
-   if(const char* env_w = std::getenv("NRG_WORKDIR"))
+   if (const char* env_w = std::getenv("NRG_WORKDIR"))
       workdir = env_w;
    if (argc == 3 && strcmp(argv[1], "-w") == 0) 
       workdir = argv[2];
