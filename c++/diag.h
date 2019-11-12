@@ -298,7 +298,7 @@ Eigen diagonalise(Matrix &m)
    if (dr == diagzheevr) M = diagonalise_zheevr(m, d, 'V', sP.diagratio);
 #endif
    my_assert(M > 0);
-   my_assert(M == m.size1());
+   my_assert(M == m.size2());
    my_assert(d.matrix0.size1() <= m.size1());
    my_assert(d.matrix0.size2() == m.size2());
    if (logletter('e')) {    // Dump the first P::logenumber eigenvalues
@@ -307,7 +307,7 @@ Eigen diagonalise(Matrix &m)
 	       [] (t_eigen x) { cout << x << ' '; });
       cout << endl;
    }
-   if (P::checkdiag) { // default is true
+   if (P::checkdiag) { // default is false (since Nov 2019)
       const size_t dim = d.getrmax();
       my_assert(d.matrix0.size2() == dim);
       for (size_t r = 0; r < M; r++) {
