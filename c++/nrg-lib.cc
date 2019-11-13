@@ -713,6 +713,11 @@ void dump_parameters()
   for (const auto &i : allparams) i->dump();
 }
 
+void remove_workdir()
+{
+   remove(P::workdir.c_str());
+}
+
 const string default_workdir = ".";
 
 void create_workdir(string workdir)
@@ -725,10 +730,16 @@ void create_workdir(string workdir)
    else
       P::workdir = default_workdir;
    cout << "workdir=" << P::workdir << endl << endl;
+   atexit(remove_workdir);
 }
 
-void set_workdir(string workdir)
+void set_workdir(string workdir_)
 {
+   string workdir = default_workdir;
+   if (const char* env_w = std::getenv("NRG_WORKDIR"))
+      workdir = env_w;
+   if (!workdir_.empty())
+      workdir = workdir_;
    create_workdir(workdir);
 }
 
@@ -740,12 +751,6 @@ void set_workdir(int argc, char *argv[])
    if (argc == 3 && strcmp(argv[1], "-w") == 0) 
       workdir = argv[2];
    create_workdir(workdir);
-}
-
-
-void remove_workdir()
-{
-   remove(P::workdir.c_str());
 }
 
 // This class holds table of generalized xi/zeta/etc. coefficients
@@ -3579,7 +3584,6 @@ void run_nrg_master()
      if (!D)
 	cout << "Can't create DONE." << endl;
   }
-  remove_workdir();
 }
 
 #ifdef NRG_MPI
