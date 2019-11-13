@@ -8,7 +8,6 @@ private:
   bool running;
   map<string, double> t;
   bool reportonexit;
-
 public:  
   Timing(bool _reportonexit = true) : reportonexit(_reportonexit) {
      all = gettime();
@@ -91,8 +90,7 @@ private:
   bool reportonexit;
   int peakusage;
 public:
-  MemoryStats(bool rpexit = true) {
-    reportonexit = rpexit;
+   MemoryStats(bool rpexit = true) : reportonexit(rpexit) {
     peakusage = 0;
   }
   // Intermediate level routine.
