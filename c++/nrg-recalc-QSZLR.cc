@@ -8,6 +8,11 @@ namespace QSZLR {
 #include "qszlr/qszlr-2ch-def.dat"
 }
 
+// m4 macros for nrg-recalc-*.cc files
+// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+
+// m4 comment: $2 is length, $3,... are quantum numbers
+
 // Driver routine for recalc_f()
 void SymmetryQSZLR::recalc_irreduc(const DiagInfo &diag) {
   LOOP_const(diag, isp) {
@@ -23,21 +28,117 @@ void SymmetryQSZLR::recalc_irreduc(const DiagInfo &diag) {
 
     Invar I1;
     I1 = Invar(qp + 1, sszp + 1, pp);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spinupa.dat", 0, QSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spinupb.dat", 1, QSZLR::LENGTH_I_2CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qszlr/qszlr-2ch-spinupa.dat"
+                << ", ch=" << 0 << ", len=" << QSZLR::LENGTH_I_2CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qszlr/qszlr-2ch-spinupa.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qszlr/qszlr-2ch-spinupb.dat"
+                << ", ch=" << 1 << ", len=" << QSZLR::LENGTH_I_2CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qszlr/qszlr-2ch-spinupb.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+      }
+    };
 
     I1 = Invar(qp + 1, sszp - 1, pp);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spindowna.dat", 0, QSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spindownb.dat", 1, QSZLR::LENGTH_I_2CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qszlr/qszlr-2ch-spindowna.dat"
+                << ", ch=" << 0 << ", len=" << QSZLR::LENGTH_I_2CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qszlr/qszlr-2ch-spindowna.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qszlr/qszlr-2ch-spindownb.dat"
+                << ", ch=" << 1 << ", len=" << QSZLR::LENGTH_I_2CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qszlr/qszlr-2ch-spindownb.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+      }
+    };
 
     // ****** CASE II: DIFFERENT PARITY ******
 
     I1 = Invar(qp + 1, sszp + 1, -pp);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spinupdiffa.dat", 0, QSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spinupdiffb.dat", 1, QSZLR::LENGTH_I_2CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qszlr/qszlr-2ch-spinupdiffa.dat"
+                << ", ch=" << 0 << ", len=" << QSZLR::LENGTH_I_2CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qszlr/qszlr-2ch-spinupdiffa.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qszlr/qszlr-2ch-spinupdiffb.dat"
+                << ", ch=" << 1 << ", len=" << QSZLR::LENGTH_I_2CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qszlr/qszlr-2ch-spinupdiffb.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+      }
+    };
 
     I1 = Invar(qp + 1, sszp - 1, -pp);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spindowndiffa.dat", 0, QSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spindowndiffb.dat", 1, QSZLR::LENGTH_I_2CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qszlr/qszlr-2ch-spindowndiffa.dat"
+                << ", ch=" << 0 << ", len=" << QSZLR::LENGTH_I_2CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qszlr/qszlr-2ch-spindowndiffa.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qszlr/qszlr-2ch-spindowndiffb.dat"
+                << ", ch=" << 1 << ", len=" << QSZLR::LENGTH_I_2CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qszlr/qszlr-2ch-spindowndiffb.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+      }
+    };
   }
 }

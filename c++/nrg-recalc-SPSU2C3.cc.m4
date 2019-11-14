@@ -10,20 +10,19 @@ namespace SPSU2C3 {
 
 include(recalc-macros.m4)
 
-#define xRECALC_F_TAB(a,b,c) 0;
+#define xRECALC_F_TAB(a, b, c) 0;
 
-// Driver routine for recalc_f()
-void SymmetrySPSU2C3::recalc_irreduc(const DiagInfo &diag)
-{
+   // Driver routine for recalc_f()
+   void SymmetrySPSU2C3::recalc_irreduc(const DiagInfo &diag) {
 #ifdef NRG_COMPLEX
   // CONVENTION: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
-    Invar Ip = INVAR(isp);
+    Invar Ip  = INVAR(isp);
     Sspin ssp = Ip.get("SS");
-    int p = Ip.get("P");
-    
+    int p     = Ip.get("P");
+
     Invar I1;
-    
+
 // TRICK: ensure we are evaluating the expressions in the complex plane
 #undef Power
 #define Power(x, y) pow(cmpl(x), cmpl(y))
@@ -31,38 +30,37 @@ void SymmetrySPSU2C3::recalc_irreduc(const DiagInfo &diag)
 #undef sqrt
 #define sqrt(x) csqrt(x)
 
-    I1 = Invar(ssp+1, (p+0)%3);
+    I1 = Invar(ssp + 1, (p + 0) % 3);
     RECALC_F_TAB("spsu2c3/spsu2c3-spinup0-a.dat", 0, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spinup0-b.dat", 1, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spinup0-c.dat", 2, SPSU2C3::LENGTH_I_3CH);
-    
-    I1 = Invar(ssp-1, (p+0)%3);
+
+    I1 = Invar(ssp - 1, (p + 0) % 3);
     RECALC_F_TAB("spsu2c3/spsu2c3-spindown0-a.dat", 0, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spindown0-b.dat", 1, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spindown0-c.dat", 2, SPSU2C3::LENGTH_I_3CH);
 
-    I1 = Invar(ssp+1, (p+1)%3);
+    I1 = Invar(ssp + 1, (p + 1) % 3);
     RECALC_F_TAB("spsu2c3/spsu2c3-spinup1-a.dat", 0, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spinup1-b.dat", 1, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spinup1-c.dat", 2, SPSU2C3::LENGTH_I_3CH);
-    
-    I1 = Invar(ssp-1, (p+1)%3);
+
+    I1 = Invar(ssp - 1, (p + 1) % 3);
     RECALC_F_TAB("spsu2c3/spsu2c3-spindown1-a.dat", 0, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spindown1-b.dat", 1, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spindown1-c.dat", 2, SPSU2C3::LENGTH_I_3CH);
 
-    I1 = Invar(ssp+1, (p+2)%3);
+    I1 = Invar(ssp + 1, (p + 2) % 3);
     RECALC_F_TAB("spsu2c3/spsu2c3-spinup2-a.dat", 0, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spinup2-b.dat", 1, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spinup2-c.dat", 2, SPSU2C3::LENGTH_I_3CH);
-    
-    I1 = Invar(ssp-1, (p+2)%3);
+
+    I1 = Invar(ssp - 1, (p + 2) % 3);
     RECALC_F_TAB("spsu2c3/spsu2c3-spindown2-a.dat", 0, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spindown2-b.dat", 1, SPSU2C3::LENGTH_I_3CH);
     RECALC_F_TAB("spsu2c3/spsu2c3-spindown2-c.dat", 2, SPSU2C3::LENGTH_I_3CH);
 #undef sqrt
 #undef Power
-
-}
+  }
 #endif
 }

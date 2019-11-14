@@ -9,6 +9,11 @@ namespace PP {
 #include "pp/pp-2ch-def.dat"
 }
 
+// m4 macros for nrg-recalc-*.cc files
+// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+
+// m4 comment: $2 is length, $3,... are quantum numbers
+
 // Driver routine for recalc_f()
 void SymmetryPP::recalc_irreduc(const DiagInfo &diag) {
   LOOP_const(diag, isp) {

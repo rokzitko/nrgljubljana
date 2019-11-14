@@ -9,6 +9,11 @@ namespace P {
 #include "p/p-2ch-def.dat"
 } // namespace P
 
+// m4 macros for nrg-recalc-*.cc files
+// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+
+// m4 comment: $2 is length, $3,... are quantum numbers
+
 // Driver routine for recalc_f()
 void SymmetryP::recalc_irreduc(const DiagInfo &diag) {
   LOOP_const(diag, isp) {
@@ -17,12 +22,121 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag) {
 
     Invar I1 = Invar(-p); // always the opposite fermion parity!
 
-    ONETWO(RECALC_F_TAB_P("p/p-1ch-a-CR-DO.dat", 0, 0, P::LENGTH_I_1CH); RECALC_F_TAB_P("p/p-1ch-a-CR-UP.dat", 0, 1, P::LENGTH_I_1CH);
-           RECALC_F_TAB_P("p/p-1ch-a-AN-DO.dat", 0, 2, P::LENGTH_I_1CH); RECALC_F_TAB_P("p/p-1ch-a-AN-UP.dat", 0, 3, P::LENGTH_I_1CH);
-           , RECALC_F_TAB_P("p/p-2ch-a-CR-DO.dat", 0, 0, P::LENGTH_I_2CH); RECALC_F_TAB_P("p/p-2ch-b-CR-DO.dat", 1, 0, P::LENGTH_I_2CH);
-           RECALC_F_TAB_P("p/p-2ch-a-CR-UP.dat", 0, 1, P::LENGTH_I_2CH); RECALC_F_TAB_P("p/p-2ch-b-CR-UP.dat", 1, 1, P::LENGTH_I_2CH);
-           RECALC_F_TAB_P("p/p-2ch-a-AN-DO.dat", 0, 2, P::LENGTH_I_2CH); RECALC_F_TAB_P("p/p-2ch-b-AN-DO.dat", 1, 2, P::LENGTH_I_2CH);
-           RECALC_F_TAB_P("p/p-2ch-a-AN-UP.dat", 0, 3, P::LENGTH_I_2CH); RECALC_F_TAB_P("p/p-2ch-b-AN-UP.dat", 1, 3, P::LENGTH_I_2CH));
+    switch (channels) {
+      case 1: {
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-1ch-a-CR-DO.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_1CH);
+            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, P::LENGTH_I_1CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-1ch-a-CR-UP.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_1CH);
+            recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, P::LENGTH_I_1CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-1ch-a-AN-DO.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_1CH);
+            recalc_f(diag, a.opch[0][2], Ip, I1, recalc_table, P::LENGTH_I_1CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-1ch-a-AN-UP.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_1CH);
+            recalc_f(diag, a.opch[0][3], Ip, I1, recalc_table, P::LENGTH_I_1CH);
+          }
+        };
+      } break;
+      case 2: {
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-2ch-a-CR-DO.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-2ch-b-CR-DO.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-2ch-a-CR-UP.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-2ch-b-CR-UP.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[1][1], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-2ch-a-AN-DO.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[0][2], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-2ch-b-AN-DO.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[1][2], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-2ch-a-AN-UP.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[0][3], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+          }
+        };
+        {
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "p/p-2ch-b-AN-UP.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[1][3], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+          }
+        }
+      } break;
+      default: my_assert_not_reached();
+    };
   }
 }
 
@@ -33,7 +147,39 @@ void SymmetryP::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEleme
     int p1   = I1.get("P");
     Invar Ip = Invar(-p1); // always the opposite fermion parity!
 
-    ONETWO(RECALC_TAB("p/p-1ch-doublet.dat", P::LENGTH_D_1CH, Invar(-1)), RECALC_TAB("p/p-2ch-doublet.dat", P::LENGTH_D_2CH, Invar(-1)));
+    switch (channels) {
+      case 1: {
+        {
+          nrglog('f',
+                 "RECALC(fn="
+                    << "p/p-1ch-doublet.dat"
+                    << ", len=" << P::LENGTH_D_1CH << ", Iop=" << Invar(-1) << ")");
+          if (diag.count(Ip)) {
+            struct Recalc recalc_table[] = {
+#include "p/p-1ch-doublet.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_D_1CH);
+            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, P::LENGTH_D_1CH, Invar(-1));
+          }
+        }
+      } break;
+      case 2: {
+        {
+          nrglog('f',
+                 "RECALC(fn="
+                    << "p/p-2ch-doublet.dat"
+                    << ", len=" << P::LENGTH_D_2CH << ", Iop=" << Invar(-1) << ")");
+          if (diag.count(Ip)) {
+            struct Recalc recalc_table[] = {
+#include "p/p-2ch-doublet.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_D_2CH);
+            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, P::LENGTH_D_2CH, Invar(-1));
+          }
+        }
+      } break;
+      default: my_assert_not_reached();
+    };
   }
 }
 

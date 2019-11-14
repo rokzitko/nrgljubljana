@@ -4,6 +4,11 @@
 // Rok Zitko, rok.zitko@ijs.si, Oct 2015
 // This file pertains to (Q,S,P) subspaces, P modulo 3
 
+// m4 macros for nrg-recalc-*.cc files
+// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+
+// m4 comment: $2 is length, $3,... are quantum numbers
+
 namespace QSC3 {
 #include "qsc3/qsc3-def.dat"
 }
@@ -30,34 +35,250 @@ void SymmetryQSC3::recalc_irreduc(const DiagInfo &diag) {
 #define sqrt(x) csqrt(x)
 
     I1 = Invar(qp + 1, ssp + 1, (p + 0) % 3);
-    RECALC_F_TAB("qsc3/qsc3-spinup0-a.dat", 0, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spinup0-b.dat", 1, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spinup0-c.dat", 2, QSC3::LENGTH_I_3CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spinup0-a.dat"
+                << ", ch=" << 0 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spinup0-a.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spinup0-b.dat"
+                << ", ch=" << 1 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spinup0-b.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spinup0-c.dat"
+                << ", ch=" << 2 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spinup0-c.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
 
     I1 = Invar(qp + 1, ssp - 1, (p + 0) % 3);
-    RECALC_F_TAB("qsc3/qsc3-spindown0-a.dat", 0, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spindown0-b.dat", 1, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spindown0-c.dat", 2, QSC3::LENGTH_I_3CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spindown0-a.dat"
+                << ", ch=" << 0 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spindown0-a.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spindown0-b.dat"
+                << ", ch=" << 1 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spindown0-b.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spindown0-c.dat"
+                << ", ch=" << 2 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spindown0-c.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
 
     I1 = Invar(qp + 1, ssp + 1, (p + 1) % 3);
-    RECALC_F_TAB("qsc3/qsc3-spinup1-a.dat", 0, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spinup1-b.dat", 1, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spinup1-c.dat", 2, QSC3::LENGTH_I_3CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spinup1-a.dat"
+                << ", ch=" << 0 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spinup1-a.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spinup1-b.dat"
+                << ", ch=" << 1 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spinup1-b.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spinup1-c.dat"
+                << ", ch=" << 2 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spinup1-c.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
 
     I1 = Invar(qp + 1, ssp - 1, (p + 1) % 3);
-    RECALC_F_TAB("qsc3/qsc3-spindown1-a.dat", 0, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spindown1-b.dat", 1, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spindown1-c.dat", 2, QSC3::LENGTH_I_3CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spindown1-a.dat"
+                << ", ch=" << 0 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spindown1-a.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spindown1-b.dat"
+                << ", ch=" << 1 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spindown1-b.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spindown1-c.dat"
+                << ", ch=" << 2 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spindown1-c.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
 
     I1 = Invar(qp + 1, ssp + 1, (p + 2) % 3);
-    RECALC_F_TAB("qsc3/qsc3-spinup2-a.dat", 0, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spinup2-b.dat", 1, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spinup2-c.dat", 2, QSC3::LENGTH_I_3CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spinup2-a.dat"
+                << ", ch=" << 0 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spinup2-a.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spinup2-b.dat"
+                << ", ch=" << 1 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spinup2-b.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spinup2-c.dat"
+                << ", ch=" << 2 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spinup2-c.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
 
     I1 = Invar(qp + 1, ssp - 1, (p + 2) % 3);
-    RECALC_F_TAB("qsc3/qsc3-spindown2-a.dat", 0, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spindown2-b.dat", 1, QSC3::LENGTH_I_3CH);
-    RECALC_F_TAB("qsc3/qsc3-spindown2-c.dat", 2, QSC3::LENGTH_I_3CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spindown2-a.dat"
+                << ", ch=" << 0 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spindown2-a.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spindown2-b.dat"
+                << ", ch=" << 1 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spindown2-b.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "qsc3/qsc3-spindown2-c.dat"
+                << ", ch=" << 2 << ", len=" << QSC3::LENGTH_I_3CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "qsc3/qsc3-spindown2-c.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSC3::LENGTH_I_3CH);
+        recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, QSC3::LENGTH_I_3CH);
+      }
+    };
 #undef Power
 #undef sqrt
   }

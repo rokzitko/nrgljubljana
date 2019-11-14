@@ -7,23 +7,20 @@
 
 include(recalc-macros.m4)
 
-namespace ISO2 {
+   namespace ISO2 {
 #include "iso2/iso2-1ch-def.dat"
 #include "iso2/iso2-2ch-def.dat"
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryISO2::recalc_doublet(DiagInfo &diag,
-                          MatrixElements &cold,
-                          MatrixElements &cnew)
-{
+void SymmetryISO2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   LOOP(diag, is1) {
-    Invar I1 = INVAR(is1);
+    Invar I1  = INVAR(is1);
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
     Invar Ip;
 
-    Ip = Invar(ii1-1, ss1+1);
+    Ip = Invar(ii1 - 1, ss1 + 1);
     ONETWO(`RECALC_TAB("iso2/iso2-1ch-doubletmp.dat", ISO2::LENGTH_D_1CH, Invar(2, 2))',
            `RECALC_TAB("iso2/iso2-2ch-doubletmp.dat", ISO2::LENGTH_D_2CH, Invar(2, 2))');
       
@@ -41,19 +38,17 @@ void SymmetryISO2::recalc_doublet(DiagInfo &diag,
   }
 }
 
-
 // (ISO): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISO2::recalc_irreduc(const DiagInfo &diag)
-{
+void SymmetryISO2::recalc_irreduc(const DiagInfo &diag) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);
     Invar I1;
 
     // NOTE: ii,ss only couples to ii+-1,ss+-1 in general, even for
-    // several channels. 
+    // several channels.
 
     Ispin iip = Ip.get("II");
     Sspin ssp = Ip.get("SS");
@@ -61,7 +56,7 @@ void SymmetryISO2::recalc_irreduc(const DiagInfo &diag)
     // the new site (f_{n+1}).
     int NN = getnn();
 
-    I1 = Invar(iip+1, ssp+1);
+    I1 = Invar(iip + 1, ssp + 1);
     ONETWO(`RECALC_F_TAB("iso2/iso2-1ch-spinup-isoupa.dat", 0, ISO2::LENGTH_I_1CH)',
 
            `RECALC_F_TAB("iso2/iso2-2ch-spinup-isoupa.dat", 0, ISO2::LENGTH_I_2CH);
@@ -88,12 +83,9 @@ void SymmetryISO2::recalc_irreduc(const DiagInfo &diag)
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISO2::recalc_triplet(DiagInfo &diag,
-                          MatrixElements &cold,
-                          MatrixElements &cnew)
-{
+void SymmetryISO2::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   LOOP(diag, is1) {
-    Invar I1 = INVAR(is1);
+    Invar I1  = INVAR(is1);
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
     Invar Ip;

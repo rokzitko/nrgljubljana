@@ -4,6 +4,11 @@
 // Rok Zitko, rok.zitko@ijs.si, Dec 2009
 // This file pertains to (I1,I2) subspaces
 
+// m4 macros for nrg-recalc-*.cc files
+// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+
+// m4 comment: $2 is length, $3,... are quantum numbers
+
 namespace DBLSU2 {
 #include "dblsu2/dblsu2-2ch-def.dat"
 }
@@ -17,16 +22,64 @@ void SymmetryDBLSU2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, Matrix
     Invar Ip;
 
     Ip = Invar(ii11 - 1, ii21);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doubletm0.dat", DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+    {
+      nrglog('f',
+             "RECALC(fn="
+                << "dblsu2/dblsu2-2ch-doubletm0.dat"
+                << ", len=" << DBLSU2::LENGTH_D1_2CH << ", Iop=" << Invar(2, 0) << ")");
+      if (diag.count(Ip)) {
+        struct Recalc recalc_table[] = {
+#include "dblsu2/dblsu2-2ch-doubletm0.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
+        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+      }
+    };
 
     Ip = Invar(ii11 + 1, ii21);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doubletp0.dat", DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+    {
+      nrglog('f',
+             "RECALC(fn="
+                << "dblsu2/dblsu2-2ch-doubletp0.dat"
+                << ", len=" << DBLSU2::LENGTH_D1_2CH << ", Iop=" << Invar(2, 0) << ")");
+      if (diag.count(Ip)) {
+        struct Recalc recalc_table[] = {
+#include "dblsu2/dblsu2-2ch-doubletp0.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
+        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+      }
+    };
 
     Ip = Invar(ii11, ii21 - 1);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0m.dat", DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+    {
+      nrglog('f',
+             "RECALC(fn="
+                << "dblsu2/dblsu2-2ch-doublet0m.dat"
+                << ", len=" << DBLSU2::LENGTH_D2_2CH << ", Iop=" << Invar(0, 2) << ")");
+      if (diag.count(Ip)) {
+        struct Recalc recalc_table[] = {
+#include "dblsu2/dblsu2-2ch-doublet0m.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
+        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+      }
+    };
 
     Ip = Invar(ii11, ii21 + 1);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0p.dat", DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+    {
+      nrglog('f',
+             "RECALC(fn="
+                << "dblsu2/dblsu2-2ch-doublet0p.dat"
+                << ", len=" << DBLSU2::LENGTH_D2_2CH << ", Iop=" << Invar(0, 2) << ")");
+      if (diag.count(Ip)) {
+        struct Recalc recalc_table[] = {
+#include "dblsu2/dblsu2-2ch-doublet0p.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
+        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+      }
+    };
   }
 }
 

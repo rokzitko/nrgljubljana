@@ -9,6 +9,11 @@ namespace SPU1 {
 #include "spu1/spu1-2ch-def.dat"
 } // namespace SPU1
 
+// m4 macros for nrg-recalc-*.cc files
+// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+
+// m4 comment: $2 is length, $3,... are quantum numbers
+
 // Recalculate matrix elements of a doublet tensor operator
 void SymmetrySPU1::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!P::substeps) {
@@ -18,12 +23,74 @@ void SymmetrySPU1::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEl
       Invar Ip;
 
       Ip = Invar(ssz1 + 1);
-      ONETWO(RECALC_TAB("spu1/spu1-1ch-doubletp.dat", SPU1::LENGTH_D_1CH, Invar(-1)),
-             RECALC_TAB("spu1/spu1-2ch-doubletp.dat", SPU1::LENGTH_D_2CH, Invar(-1)));
+      switch (channels) {
+        case 1: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-1ch-doubletp.dat"
+                      << ", len=" << SPU1::LENGTH_D_1CH << ", Iop=" << Invar(-1) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-doubletp.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_D_1CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_D_1CH, Invar(-1));
+            }
+          }
+        } break;
+        case 2: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-2ch-doubletp.dat"
+                      << ", len=" << SPU1::LENGTH_D_2CH << ", Iop=" << Invar(-1) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-2ch-doubletp.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_D_2CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_D_2CH, Invar(-1));
+            }
+          }
+        } break;
+        default: my_assert_not_reached();
+      };
 
       Ip = Invar(ssz1 - 1);
-      ONETWO(RECALC_TAB("spu1/spu1-1ch-doubletm.dat", SPU1::LENGTH_D_1CH, Invar(+1)),
-             RECALC_TAB("spu1/spu1-2ch-doubletm.dat", SPU1::LENGTH_D_2CH, Invar(+1)));
+      switch (channels) {
+        case 1: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-1ch-doubletm.dat"
+                      << ", len=" << SPU1::LENGTH_D_1CH << ", Iop=" << Invar(+1) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-doubletm.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_D_1CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_D_1CH, Invar(+1));
+            }
+          }
+        } break;
+        case 2: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-2ch-doubletm.dat"
+                      << ", len=" << SPU1::LENGTH_D_2CH << ", Iop=" << Invar(+1) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-2ch-doubletm.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_D_2CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_D_2CH, Invar(+1));
+            }
+          }
+        } break;
+        default: my_assert_not_reached();
+      };
     } // loop
   } else {
     LOOP(diag, is1) {
@@ -32,10 +99,34 @@ void SymmetrySPU1::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEl
       Invar Ip;
 
       Ip = Invar(ssz1 + 1);
-      RECALC_TAB("spu1/spu1-1ch-doubletp.dat", SPU1::LENGTH_D_1CH, Invar(-1));
+      {
+        nrglog('f',
+               "RECALC(fn="
+                  << "spu1/spu1-1ch-doubletp.dat"
+                  << ", len=" << SPU1::LENGTH_D_1CH << ", Iop=" << Invar(-1) << ")");
+        if (diag.count(Ip)) {
+          struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-doubletp.dat"
+          };
+          BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_D_1CH);
+          recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_D_1CH, Invar(-1));
+        }
+      };
 
       Ip = Invar(ssz1 - 1);
-      RECALC_TAB("spu1/spu1-1ch-doubletm.dat", SPU1::LENGTH_D_1CH, Invar(+1));
+      {
+        nrglog('f',
+               "RECALC(fn="
+                  << "spu1/spu1-1ch-doubletm.dat"
+                  << ", len=" << SPU1::LENGTH_D_1CH << ", Iop=" << Invar(+1) << ")");
+        if (diag.count(Ip)) {
+          struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-doubletm.dat"
+          };
+          BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_D_1CH);
+          recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_D_1CH, Invar(+1));
+        }
+      };
     } // loop
   }
 }
@@ -50,16 +141,100 @@ void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag) {
     Invar I1;
 
     I1 = Invar(sszp + 1);
-    ONETWO(RECALC_F_TAB("spu1/spu1-1ch-spinupa.dat", 0, SPU1::LENGTH_I_1CH),
-
-           RECALC_F_TAB("spu1/spu1-2ch-spinupa.dat", 0, SPU1::LENGTH_I_2CH);
-           RECALC_F_TAB("spu1/spu1-2ch-spinupb.dat", 1, SPU1::LENGTH_I_2CH));
+    switch (channels) {
+      case 1: {
+        {
+          nrglog('f',
+                 "RECALC_F(fn="
+                    << "spu1/spu1-1ch-spinupa.dat"
+                    << ", ch=" << 0 << ", len=" << SPU1::LENGTH_I_1CH << ")");
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "spu1/spu1-1ch-spinupa.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_1CH);
+            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1::LENGTH_I_1CH);
+          }
+        }
+      } break;
+      case 2: {
+        {
+          nrglog('f',
+                 "RECALC_F(fn="
+                    << "spu1/spu1-2ch-spinupa.dat"
+                    << ", ch=" << 0 << ", len=" << SPU1::LENGTH_I_2CH << ")");
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "spu1/spu1-2ch-spinupa.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1::LENGTH_I_2CH);
+          }
+        };
+        {
+          nrglog('f',
+                 "RECALC_F(fn="
+                    << "spu1/spu1-2ch-spinupb.dat"
+                    << ", ch=" << 1 << ", len=" << SPU1::LENGTH_I_2CH << ")");
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "spu1/spu1-2ch-spinupb.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPU1::LENGTH_I_2CH);
+          }
+        }
+      } break;
+      default: my_assert_not_reached();
+    };
 
     I1 = Invar(sszp - 1);
-    ONETWO(RECALC_F_TAB("spu1/spu1-1ch-spindowna.dat", 0, SPU1::LENGTH_I_1CH),
-
-           RECALC_F_TAB("spu1/spu1-2ch-spindowna.dat", 0, SPU1::LENGTH_I_2CH);
-           RECALC_F_TAB("spu1/spu1-2ch-spindownb.dat", 1, SPU1::LENGTH_I_2CH));
+    switch (channels) {
+      case 1: {
+        {
+          nrglog('f',
+                 "RECALC_F(fn="
+                    << "spu1/spu1-1ch-spindowna.dat"
+                    << ", ch=" << 0 << ", len=" << SPU1::LENGTH_I_1CH << ")");
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "spu1/spu1-1ch-spindowna.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_1CH);
+            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1::LENGTH_I_1CH);
+          }
+        }
+      } break;
+      case 2: {
+        {
+          nrglog('f',
+                 "RECALC_F(fn="
+                    << "spu1/spu1-2ch-spindowna.dat"
+                    << ", ch=" << 0 << ", len=" << SPU1::LENGTH_I_2CH << ")");
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "spu1/spu1-2ch-spindowna.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1::LENGTH_I_2CH);
+          }
+        };
+        {
+          nrglog('f',
+                 "RECALC_F(fn="
+                    << "spu1/spu1-2ch-spindownb.dat"
+                    << ", ch=" << 1 << ", len=" << SPU1::LENGTH_I_2CH << ")");
+          if (diag.count(I1)) {
+            struct Recalc_f recalc_table[] = {
+#include "spu1/spu1-2ch-spindownb.dat"
+            };
+            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_2CH);
+            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPU1::LENGTH_I_2CH);
+          }
+        }
+      } break;
+      default: my_assert_not_reached();
+    };
   } // loop
 }
 
@@ -73,10 +248,34 @@ void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, int M) {
     Invar I1;
 
     I1 = Invar(sszp + 1);
-    RECALC_F_TAB("spu1/spu1-1ch-spinupa.dat", M, SPU1::LENGTH_I_1CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "spu1/spu1-1ch-spinupa.dat"
+                << ", ch=" << M << ", len=" << SPU1::LENGTH_I_1CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "spu1/spu1-1ch-spinupa.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_1CH);
+        recalc_f(diag, a.opch[M][0], Ip, I1, recalc_table, SPU1::LENGTH_I_1CH);
+      }
+    };
 
     I1 = Invar(sszp - 1);
-    RECALC_F_TAB("spu1/spu1-1ch-spindowna.dat", M, SPU1::LENGTH_I_1CH);
+    {
+      nrglog('f',
+             "RECALC_F(fn="
+                << "spu1/spu1-1ch-spindowna.dat"
+                << ", ch=" << M << ", len=" << SPU1::LENGTH_I_1CH << ")");
+      if (diag.count(I1)) {
+        struct Recalc_f recalc_table[] = {
+#include "spu1/spu1-1ch-spindowna.dat"
+        };
+        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_1CH);
+        recalc_f(diag, a.opch[M][0], Ip, I1, recalc_table, SPU1::LENGTH_I_1CH);
+      }
+    };
   } // loop
 }
 
@@ -89,16 +288,109 @@ void SymmetrySPU1::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixEl
       Invar Ip;
 
       Ip = Invar(ssz1);
-      ONETWO(RECALC_TAB("spu1/spu1-1ch-triplets.dat", SPU1::LENGTH_T0_1CH, Invar(0)),
-             RECALC_TAB("spu1/spu1-2ch-triplets.dat", SPU1::LENGTH_T0_2CH, Invar(0)));
+      switch (channels) {
+        case 1: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-1ch-triplets.dat"
+                      << ", len=" << SPU1::LENGTH_T0_1CH << ", Iop=" << Invar(0) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-triplets.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_T0_1CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_T0_1CH, Invar(0));
+            }
+          }
+        } break;
+        case 2: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-2ch-triplets.dat"
+                      << ", len=" << SPU1::LENGTH_T0_2CH << ", Iop=" << Invar(0) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-2ch-triplets.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_T0_2CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_T0_2CH, Invar(0));
+            }
+          }
+        } break;
+        default: my_assert_not_reached();
+      };
 
       Ip = Invar(ssz1 + 2);
-      ONETWO(RECALC_TAB("spu1/spu1-1ch-tripletp.dat", SPU1::LENGTH_Tpm_1CH, Invar(-2)),
-             RECALC_TAB("spu1/spu1-2ch-tripletp.dat", SPU1::LENGTH_Tpm_2CH, Invar(-2)));
+      switch (channels) {
+        case 1: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-1ch-tripletp.dat"
+                      << ", len=" << SPU1::LENGTH_Tpm_1CH << ", Iop=" << Invar(-2) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-tripletp.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_Tpm_1CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_Tpm_1CH, Invar(-2));
+            }
+          }
+        } break;
+        case 2: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-2ch-tripletp.dat"
+                      << ", len=" << SPU1::LENGTH_Tpm_2CH << ", Iop=" << Invar(-2) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-2ch-tripletp.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_Tpm_2CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_Tpm_2CH, Invar(-2));
+            }
+          }
+        } break;
+        default: my_assert_not_reached();
+      };
 
       Ip = Invar(ssz1 - 2);
-      ONETWO(RECALC_TAB("spu1/spu1-1ch-tripletm.dat", SPU1::LENGTH_Tpm_1CH, Invar(+2)),
-             RECALC_TAB("spu1/spu1-2ch-tripletm.dat", SPU1::LENGTH_Tpm_2CH, Invar(+2)));
+      switch (channels) {
+        case 1: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-1ch-tripletm.dat"
+                      << ", len=" << SPU1::LENGTH_Tpm_1CH << ", Iop=" << Invar(+2) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-tripletm.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_Tpm_1CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_Tpm_1CH, Invar(+2));
+            }
+          }
+        } break;
+        case 2: {
+          {
+            nrglog('f',
+                   "RECALC(fn="
+                      << "spu1/spu1-2ch-tripletm.dat"
+                      << ", len=" << SPU1::LENGTH_Tpm_2CH << ", Iop=" << Invar(+2) << ")");
+            if (diag.count(Ip)) {
+              struct Recalc recalc_table[] = {
+#include "spu1/spu1-2ch-tripletm.dat"
+              };
+              BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_Tpm_2CH);
+              recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_Tpm_2CH, Invar(+2));
+            }
+          }
+        } break;
+        default: my_assert_not_reached();
+      };
     } // loop
   } else {
     LOOP(diag, is1) {
@@ -107,13 +399,49 @@ void SymmetrySPU1::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixEl
       Invar Ip;
 
       Ip = Invar(ssz1);
-      RECALC_TAB("spu1/spu1-1ch-triplets.dat", SPU1::LENGTH_T0_1CH, Invar(0));
+      {
+        nrglog('f',
+               "RECALC(fn="
+                  << "spu1/spu1-1ch-triplets.dat"
+                  << ", len=" << SPU1::LENGTH_T0_1CH << ", Iop=" << Invar(0) << ")");
+        if (diag.count(Ip)) {
+          struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-triplets.dat"
+          };
+          BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_T0_1CH);
+          recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_T0_1CH, Invar(0));
+        }
+      };
 
       Ip = Invar(ssz1 + 2);
-      RECALC_TAB("spu1/spu1-1ch-tripletp.dat", SPU1::LENGTH_Tpm_1CH, Invar(-2));
+      {
+        nrglog('f',
+               "RECALC(fn="
+                  << "spu1/spu1-1ch-tripletp.dat"
+                  << ", len=" << SPU1::LENGTH_Tpm_1CH << ", Iop=" << Invar(-2) << ")");
+        if (diag.count(Ip)) {
+          struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-tripletp.dat"
+          };
+          BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_Tpm_1CH);
+          recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_Tpm_1CH, Invar(-2));
+        }
+      };
 
       Ip = Invar(ssz1 - 2);
-      RECALC_TAB("spu1/spu1-1ch-tripletm.dat", SPU1::LENGTH_Tpm_1CH, Invar(+2));
+      {
+        nrglog('f',
+               "RECALC(fn="
+                  << "spu1/spu1-1ch-tripletm.dat"
+                  << ", len=" << SPU1::LENGTH_Tpm_1CH << ", Iop=" << Invar(+2) << ")");
+        if (diag.count(Ip)) {
+          struct Recalc recalc_table[] = {
+#include "spu1/spu1-1ch-tripletm.dat"
+          };
+          BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_Tpm_1CH);
+          recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SPU1::LENGTH_Tpm_1CH, Invar(+2));
+        }
+      };
     } // loop
   }
 }
