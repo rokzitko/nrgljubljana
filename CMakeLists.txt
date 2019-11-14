@@ -173,6 +173,10 @@ endif()
 # Additional configuration files
 add_subdirectory(share)
 
+# Mathematica part of NRG Ljubljana (nrginit)
+add_subdirectory(nrginit)
+#install(DIRECTORY SIAM DESTINATION templates USE_SOURCE_PERMISSIONS)
+
 # #############
 # Debian Package
 
