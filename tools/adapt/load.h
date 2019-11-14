@@ -5,14 +5,11 @@
 #include <algorithm>
 
 // Split a string 's' into substrings. Leading spaces are ignored.
-vector<string> split_string(const string &s, unsigned int atleast = 0)
-{
+vector<string> split_string(const string &s, unsigned int atleast = 0) {
   int index = 0;
-  int len = s.length();
+  int len   = s.length();
 
-  while (index < len && isspace(s[index])) {
-    index++;
-  }
+  while (index < len && isspace(s[index])) { index++; }
 
   vector<string> substrings;
 
@@ -27,9 +24,7 @@ vector<string> split_string(const string &s, unsigned int atleast = 0)
     substrings.push_back(substr);
 
     // Locate new substring
-    while (index < len && isspace(s[index])) {
-      index++;
-    }
+    while (index < len && isspace(s[index])) { index++; }
   }
 
   if (substrings.size() < atleast) {
@@ -40,16 +35,14 @@ vector<string> split_string(const string &s, unsigned int atleast = 0)
   return substrings;
 }
 
-Vec load_g(const string &filename)
-{
+Vec load_g(const string &filename) {
   ifstream F;
   safe_open(F, filename);
 
   Vec vecg;
   while (F) {
     string line = getnextline(F);
-    if (!F)
-      break;
+    if (!F) break;
 
     vector<string> columns = split_string(line, 2);
 
@@ -66,32 +59,25 @@ Vec load_g(const string &filename)
   return vecg;
 }
 
-void rescalevecxy(Vec &vec, double factorx, double factory)
-{
-   const int len = vec.size();
-   for (int i = 0; i < len; i++) {
-      vec[i].first *= factorx;
-      vec[i].second *= factory;
-   }
-   
-   cout << "Rescaled to the interval [ " << vec.front().first 
-        << " : " << vec.back().second << " ]" << endl;
+void rescalevecxy(Vec &vec, double factorx, double factory) {
+  const int len = vec.size();
+  for (int i = 0; i < len; i++) {
+    vec[i].first *= factorx;
+    vec[i].second *= factory;
+  }
+
+  cout << "Rescaled to the interval [ " << vec.front().first << " : " << vec.back().second << " ]" << endl;
 }
 
 // Show minimal and maximal y in a table.
-void minmaxvec(Vec &vec, string name)
-{
-  double miny = DBL_MAX;
-  double maxy = 0;
+void minmaxvec(Vec &vec, string name) {
+  double miny   = DBL_MAX;
+  double maxy   = 0;
   const int len = vec.size();
   for (int i = 0; i < len; i++) {
     double y = vec[i].second;
-    if (y > maxy) {
-      maxy = y;
-    }
-    if (y < miny) {
-      miny = y;
-    }
+    if (y > maxy) { maxy = y; }
+    if (y < miny) { miny = y; }
   }
 
   cout << "# min[" << name << "]=" << miny;
@@ -102,16 +88,14 @@ enum SIGN { POS, NEG }; // positive vs. negative energies
 
 // Load positive (sign=POS) or negative (sogn=NEG) part of the
 // hybridisation function into a vector.
-Vec load_rho(const string &filename, SIGN sign)
-{
+Vec load_rho(const string &filename, SIGN sign) {
   ifstream F;
   safe_open(F, filename);
 
   Vec vecrho;
   while (F) {
     string line = getnextline(F);
-    if (!F)
-      break;
+    if (!F) break;
 
     vector<string> columns = split_string(line, 2);
 
@@ -148,56 +132,46 @@ Vec load_rho(const string &filename, SIGN sign)
 #include <iterator>
 #include <sstream>
 
-string tostring(const Pair &p)
-{
-   ostringstream str;
-   str << p.first << " " << p.second;
-   return str.str();
+string tostring(const Pair &p) {
+  ostringstream str;
+  str << p.first << " " << p.second;
+  return str.str();
 }
 
-void save(const string &fn, const Vec &v)
-{
-   ofstream F(fn.c_str());
-   if (!F) {
-      cerr << "Failed to open " << fn << " for writing." << endl;
-      exit(1);
-   }
+void save(const string &fn, const Vec &v) {
+  ofstream F(fn.c_str());
+  if (!F) {
+    cerr << "Failed to open " << fn << " for writing." << endl;
+    exit(1);
+  }
 
-   transform(v.begin(),
-	     v.end(),
-	     ostream_iterator<string>(F, "\n"),
-	     tostring);
+  transform(v.begin(), v.end(), ostream_iterator<string>(F, "\n"), tostring);
 }
 
-void save(const string &fn, const vector<double> &v)
-{
-   ofstream F(fn.c_str());
-   if (!F) {
-      cerr << "Failed to open " << fn << " for writing." << endl;
-      exit(1);
-   }
-   
-   F << setprecision(18);
+void save(const string &fn, const vector<double> &v) {
+  ofstream F(fn.c_str());
+  if (!F) {
+    cerr << "Failed to open " << fn << " for writing." << endl;
+    exit(1);
+  }
 
-   copy(v.begin(),
-	v.end(),
-	ostream_iterator<double>(F, "\n"));
+  F << setprecision(18);
+
+  copy(v.begin(), v.end(), ostream_iterator<double>(F, "\n"));
 }
 
-void load(const string &fn, vector<double> &v)
-{
-   ifstream F;
-   safe_open(F, fn);
-   
-   v.clear();
-   
-   while (F) {
-      string line = getnextline(F);
-      if (!F)
-	break;
+void load(const string &fn, vector<double> &v) {
+  ifstream F;
+  safe_open(F, fn);
 
-      const double x = atof(line.c_str());
-      
-      v.push_back(x);
-   }
+  v.clear();
+
+  while (F) {
+    string line = getnextline(F);
+    if (!F) break;
+
+    const double x = atof(line.c_str());
+
+    v.push_back(x);
+  }
 }

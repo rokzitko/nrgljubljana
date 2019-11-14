@@ -5,18 +5,11 @@
 // Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Dec 2008
 // $Id: io.h,v 1.1 2009/03/20 09:53:41 rok Exp $
 
-inline double atof(const string &s)
-{
-  return atof(s.c_str());
-}
+inline double atof(const string &s) { return atof(s.c_str()); }
 
-inline int atoi(const string &s)
-{
-  return atoi(s.c_str());
-}
+inline int atoi(const string &s) { return atoi(s.c_str()); }
 
-void safe_open(ifstream &F, const string &filename)
-{
+void safe_open(ifstream &F, const string &filename) {
   F.open(filename.c_str());
   if (!F) {
     cerr << "Can't open " << filename << " for reading." << endl;
@@ -26,8 +19,7 @@ void safe_open(ifstream &F, const string &filename)
 
 const int PREC = 16;
 
-void safe_open(ofstream &F, const string &filename)
-{
+void safe_open(ofstream &F, const string &filename) {
   F.open(filename.c_str());
   if (!F) {
     cerr << "Can't open " << filename << " for writing." << endl;
@@ -37,8 +29,7 @@ void safe_open(ofstream &F, const string &filename)
 }
 
 // Get next line from stream F, skipping empty lines and comments.
-string getnextline(ifstream &F)
-{
+string getnextline(ifstream &F) {
   string line;
   while (F) {
     getline(F, line);

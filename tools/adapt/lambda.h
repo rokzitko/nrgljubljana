@@ -7,15 +7,15 @@
 
 // All things Lambda (stored to avoid recomputing).
 class LAMBDA {
- private:
+  private:
   double Lambda, logLambda, factorLambda;
 
- public:
+  public:
   LAMBDA() { Lambda = -1; };
   LAMBDA(double in_Lambda) {
-    Lambda = in_Lambda;
-    logLambda = log(Lambda);
-    factorLambda = (1.0-1.0/Lambda)/log(Lambda);
+    Lambda       = in_Lambda;
+    logLambda    = log(Lambda);
+    factorLambda = (1.0 - 1.0 / Lambda) / log(Lambda);
   }
 
   inline operator const double &() { return Lambda; }
