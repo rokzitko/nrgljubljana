@@ -72,8 +72,8 @@ namespace mpi = boost::mpi;
 // Support for compiler dependant optimizations
 
 #ifdef __GNUC__
-#define PUREFNC __attribute__ ((pure))
-#define CONSTFNC __attribute__ ((const))
+#define PUREFNC __attribute__((pure))
+#define CONSTFNC __attribute__((const))
 #else
 #define PUREFNC
 #define CONSTFNC
@@ -90,8 +90,7 @@ namespace mpi = boost::mpi;
 #define FN_RHOFDM "rhofdm"
 #define FN_SUBSPACES "subspaces.dat"
 
-#define HIGHPREC(val) setw(30) << setprecision(16) << (val) \
-                                 << setprecision(COUT_PRECISION)  
+#define HIGHPREC(val) setw(30) << setprecision(16) << (val) << setprecision(COUT_PRECISION)
 
 int myrank();
 
