@@ -1,0 +1,68 @@
+# Input file for NRG Ljubljana
+# symtype 	QS
+# Using sneg version 	1.251
+#!9
+# Number of channels, chain sites, subspaces: 
+1	4	6
+# SCALE 	1.0201394465967895
+# Energies (GS energy subtracted, multiplied by 1/SCALE):
+-2	1
+1
+DIAG 	ham.SIAM..QS_-2.1
+-1	2
+2
+DIAG 	ham.SIAM..QS_-1.2
+0	1
+3
+DIAG 	ham.SIAM..QS_0.1
+0	3
+1
+DIAG 	ham.SIAM..QS_0.3
+1	2
+2
+DIAG 	ham.SIAM..QS_1.2
+2	1
+1
+DIAG 	ham.SIAM..QS_2.1
+# Irreducible matrix elements for Wilson chains:
+f 0 0
+6
+2	1	1	2
+0.	1.4142135623730951
+1	2	0	3
+1.224744871391589
+0.
+1	2	0	1
+0.	-0.7071067811865475	0.
+0.	0.	1.
+0	3	-1	2
+0.	1.
+0	1	-1	2
+1.4142135623730951	0.
+0.	1.
+0.	0.
+-1	2	-2	1
+1.
+0.
+# GS energy in absolute units:
+e
+1
+# Irreducible matrix elements for other operators:
+sn_d
+6
+-2	1	-2	1
+0.
+-1	2	-1	2
+0.	0.
+0.	1.
+0	1	0	1
+0.	0.	0.
+0.	1.	0.
+0.	0.	2.
+0	3	0	3
+1.
+1	2	1	2
+1.	0.
+0.	2.
+2	1	2	1
+2.

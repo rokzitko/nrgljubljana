@@ -1,3 +1,4 @@
+
 (* 
    NRG Ljubljana -- initial.m -- Basis construction, initial Hamiltonian
    diagonalisation and calculation of irreducible matrix elements 
@@ -433,6 +434,8 @@ LRTRICK - rewrite the basis states so that they are even viz. odd wrt parity
 COMPLEX - enforce the generation of a complex-numbers version of the data file
 NOSHUR - do not use the Shur decomposition to diagonalize matrices
 MPVCSLOW - set MPVCFAST=False
+GENERATE_TEMPLATE - generate a template file with no Wilson coefficients, to be used
+     in the NRG Ljubljana <-> TRIQS interface
 *)
 
 (* Spin of conduction-band electrons. *)
@@ -1061,7 +1064,7 @@ hamfilename = fnprefix <> "ham." <> uniquesuffix;
 opfilename = fnprefix <> "op." <> uniquesuffix;
 
 writedir = paramdefault["writedir", ""];
-MyPut[x_, fn_] := If[option["WRITE"], Put[x, writedir <> fn]];
+MyPut[x_, fn_, forcewrite_:False] := If[option["WRITE"] || forcewrite, Put[x, writedir <> fn]];
 
 GENERATEBASIS = If[option["READBASIS"], False, True];
 
@@ -1753,7 +1756,7 @@ ham[inv_] := Module[{fn, rep},
     MyVPrint[2, "rep=", rep];
   
     (* Save the *generic* Hamiltonian matrix to a file *)
-    MyPut[rep, fn];
+    MyPut[rep, fn, option["GENERATE_TEMPLATE"]];
   ];
     
   (* If option PARAMPRE is specified, apply parameters now! *)
@@ -1788,7 +1791,7 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
   MyAssert[dim[[1]] == dim[[2]]];
   nr = dim[[1]];
 
-  If[option["TEMPLATE"],
+  If[option["TEMPLATE"] || option["GENERATE_TEMPLATE"],
     (* Fake a result with correct structure *)
     Return[{Range[nr], IdentityMatrix[nr]//N}];
   ];
@@ -2823,6 +2826,9 @@ If[TRI == "manual",
 If[TRI == "manual" || TRI == "manual_nambu",
   defaultprec = 30; (* Should be enough *)
   dothelanczos = loaddiscretizationtables;
+];
+If[option["GENERATE_TEMPLATE"],  
+  dothelanczos = None;
 ];
 
 (* Use arbitrary precision arithmetics *)
@@ -3883,7 +3889,7 @@ timestart["xi"];
 MyPrint["Diagonalisation."];
 
 hookfile["hook_pre_lanczosinit"];
-If[TRI != "manual" && TRI != "manual_nambu",
+If[TRI != "manual" && TRI != "manual_nambu" && !option["GENERATE_TEMPLATE"],
   lanczosinit[];
 ];
 hookfile["hook_post_lanczosinit"];
@@ -4111,7 +4117,7 @@ makeenergies[] := Module[{i, inv, val, line},
   Flatten1 @ Table[
       inv = subspaces[[i]];
       val = First[diagvc[inv]];
-      If[option["TEMPLATE"],
+      If[option["TEMPLATE"] || option["GENERATE_TEMPLATE"],
         line = {"DIAG ", hamfn[inv]},
       (* else *)
         line = (val-GSenergy)/SCALE[Ninit]; (* FC *)
@@ -4313,7 +4319,7 @@ maketable[]:=Module[{t},
   addexnames[]; (* To be on the safe side... *)
   perturbhamiltonian[];
   inittheta0ch[];
-  checkdefinitions[];
+  If[!option["GENERATE_TEMPLATE"], checkdefinitions[]];
 
   (* Perform all diagonalisations *)  
   calcgsenergy[]; 
@@ -4344,7 +4350,7 @@ maketable[]:=Module[{t},
     t = Join[t, tops];
   ];
   
-  If[TRI != "none",
+  If[TRI != "none" && !option["GENERATE_TEMPLATE"],
     t = Join[t,
              {{"# Discretization tables:"}},
              makedisctables[]
@@ -4357,7 +4363,7 @@ maketable[]:=Module[{t},
     ];    
   ];
   
-  If[TRI == "cpp",
+  If[TRI == "cpp" && !option["GENERATE_TEMPLATE"],
     t = Join[t, maketritables[]];
   ];
 
@@ -4393,7 +4399,7 @@ maketable[]:=Module[{t},
 
 (* Actually generate and write datafile *)
 makedata[filename_]:=Module[{suffix, fn, tabelca},
-  suffix = If[option["TEMPLATE"], ".in", ""];
+  suffix = If[option["TEMPLATE"] || option["GENERATE_TEMPLATE"], ".in", ""];
   fn = filename <> suffix;
   tabelca = maketable[];
   iscomplex = !FreeQ[tabelca, Complex[_,_]] || option["COMPLEX"];
