@@ -5,7 +5,7 @@
 
 NRGDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 NRG_INITSCRIPT=${NRGDIR}/nrginit.m
-math -batchinput -batchoutput <<EOF
+${1:-math} -batchinput -batchoutput <<EOF
 NRGDIR="${NRGDIR}";
 Get["${NRG_INITSCRIPT}"];
 EOF

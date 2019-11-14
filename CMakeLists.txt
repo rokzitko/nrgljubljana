@@ -49,6 +49,9 @@ message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------"
 # Make additional Find Modules available
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/share/cmake/Modules)
 
+# FindMathematica
+set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake/Mathematica" ${CMAKE_MODULE_PATH})
+
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
@@ -115,6 +118,12 @@ install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
 # GMP
 find_package(GMP REQUIRED)
 install(TARGETS gmp EXPORT nrgljubljana-targets)
+
+# Mathematica (optional)
+find_package(Mathematica)
+if(Mathematica_FOUND)
+  message(STATUS Mathematica executable ${Mathematica_KERNEL_EXECUTABLE};)
+endif()
 
 # Dynamic Analyzer Checks
 option(ASAN OFF "Compile library and executables with LLVM Address Sanitizer")
