@@ -374,8 +374,8 @@ void cmd_line(int argc, char *argv[]) {
 
 void add_zero_point (Vec &vecrho)
 {
-  x0 = vecrho.front().first;
-  y0 = vecrho.front().second;
+  double x0 = vecrho.front().first;
+  double y0 = vecrho.front().second;
   const double SMALL = 1e-99;
   if (x0 > SMALL)
     vecrho.push_back(make_pair(x0, y0)); // XX switch to deque and push_front?
