@@ -353,7 +353,7 @@ double rhs_F(double x, double y) {
 }
 
 void about(ostream &F = cout) {
-  F << "# Discretization ODE solver [adaptable mesh]" << endl;
+  F << "# Discretization ODE solver" << endl;
   F << "# Rok Zitko, rok.zitko@ijs.si, 2008" << endl;
 }
 
@@ -372,9 +372,22 @@ void cmd_line(int argc, char *argv[]) {
   cout << "# ++ " << (sign == POS ? "POSITIVE" : "NEGATIVE") << endl;
 }
 
+void add_zero_point (Vec &vecrho)
+{
+  x0 = vecrho.front().first;
+  y0 = vecrho.front().second;
+  const double SMALL = 1e-99;
+  if (x0 > SMALL)
+    vecrho.push_back(make_pair(x0, y0)); // XX switch to deque and push_front?
+  sort(begin(vecrho), end(vecrho)); // XX
+}
+
 void load_init_rho() {
   string rhofn = Pstr("dos", "Delta.dat");
   vecrho       = load_rho(rhofn, sign);
+  add_zero_point(vecrho);
+   
+      
   rescalevecxy(vecrho, 1.0 / bandrescale, bandrescale);
   minmaxvec(vecrho, "rho");
   rho = LinInt(vecrho);
