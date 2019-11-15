@@ -1,0 +1,37 @@
+[extra]
+U=1.0
+Gamma=0.
+delta=0.1
+B=0.1
+
+[param]
+symtype=QSZ
+polarized=true
+model=SIAM
+variant=MAGFIELD
+
+T=0.1
+band=flat_with_bulk_field
+bulkh=0.1
+
+discretization=Z
+Lambda=2.0
+
+Nmax=30
+keep=100
+
+ops=n_d A_d A_f SZd SZf0
+specs=n_d-n_d SZd-SZd SZf0-SZf0
+specd=A_d-A_d-u A_d-A_d-d A_f-A_f-u A_f-A_f-d
+
+dumpannotated=10
+
+fdm=true
+fdmexpv=true
+fdmmats=true
+mats=3
+
+broaden_ratio=1.03
+broaden_max=10.0
+bins=200
+alpha=0.3

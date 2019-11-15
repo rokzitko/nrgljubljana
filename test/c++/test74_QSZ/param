@@ -1,0 +1,35 @@
+[extra]
+U=1.0
+Gamma=0.1
+delta=0.1
+B=0.1
+
+[param]
+symtype=QSZ
+model=SIAM
+variant=MAGFIELD
+
+T=0.1
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Nmax=30
+keep=100
+
+ops=n_d A_d SZd
+specs=n_d-n_d SZd-SZd
+specd=A_d-A_d-u A_d-A_d-d
+
+dumpannotated=10
+
+fdm=true
+fdmexpv=true
+fdmmats=true
+mats=3
+
+broaden_ratio=1.03
+broaden_max=10.0
+bins=200
+alpha=0.3

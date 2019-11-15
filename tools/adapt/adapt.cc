@@ -378,15 +378,14 @@ void add_zero_point (Vec &vecrho)
   double y0 = vecrho.front().second;
   const double SMALL = 1e-99;
   if (x0 > SMALL)
-    vecrho.push_back(make_pair(x0, y0)); // XX switch to deque and push_front?
-  sort(begin(vecrho), end(vecrho)); // XX
+    vecrho.push_back(make_pair(SMALL, y0));
+  sort(begin(vecrho), end(vecrho));
 }
 
 void load_init_rho() {
   string rhofn = Pstr("dos", "Delta.dat");
   vecrho       = load_rho(rhofn, sign);
   add_zero_point(vecrho);
-   
       
   rescalevecxy(vecrho, 1.0 / bandrescale, bandrescale);
   minmaxvec(vecrho, "rho");

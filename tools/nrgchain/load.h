@@ -66,7 +66,7 @@ void rescalevecxy(Vec &vec, double factorx, double factory) {
     vec[i].second *= factory;
   }
 
-  cout << "Rescaled to the interval [ " << vec.front().first << " : " << vec.back().second << " ]" << endl;
+  cout << "Rescaled to the interval [ " << vec.front().first << " : " << vec.back().first << " ]" << endl;
 }
 
 // Show minimal and maximal y in a table.

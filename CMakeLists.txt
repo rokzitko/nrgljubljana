@@ -122,7 +122,7 @@ install(TARGETS gmp EXPORT nrgljubljana-targets)
 # Mathematica (optional)
 find_package(Mathematica)
 if(Mathematica_FOUND)
-  message(STATUS Mathematica executable ${Mathematica_KERNEL_EXECUTABLE};)
+  message(STATUS "Mathematica executable ${Mathematica_KERNEL_EXECUTABLE}")
 endif()
 
 # Dynamic Analyzer Checks

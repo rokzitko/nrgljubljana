@@ -192,7 +192,7 @@ void set_parameters() {
   nrgchain_tridiag     = Pbool("nrgchains_tridiag", true);
 
   cout << "# Lambda=" << Lambda;
-  cout << " bandrescale=" << bandrescale << endl;
+  cout << " bandrescale=" << bandrescale;
   cout << " z=" << z << endl;
   cout << "# xmax=" << xmax;
   cout << " mMAX=" << mMAX;
@@ -200,12 +200,26 @@ void set_parameters() {
   cout << "# band=" << band << endl;
 }
 
+void add_zero_point (Vec &vecrho)
+{
+     double x0 = vecrho.front().first;
+     double y0 = vecrho.front().second;
+     const double SMALL = 1e-99;
+     if (x0 > SMALL)
+          vecrho.push_back(make_pair(SMALL, y0));
+     sort(begin(vecrho), end(vecrho));
+}
+
 void load_rho() {
   const string rhofn = Pstr("dos", "Delta.dat");
+
   vecrho_pos         = load_rho(rhofn, POS);
   rescalevecxy(vecrho_pos, 1.0 / bandrescale, bandrescale);
+  add_zero_point(vecrho_pos);
+
   vecrho_neg = load_rho(rhofn, NEG);
   rescalevecxy(vecrho_neg, 1.0 / bandrescale, bandrescale);
+  add_zero_point(vecrho_neg);
 }
 
 void init_rho() {
