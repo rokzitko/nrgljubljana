@@ -43,7 +43,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #ifndef lapack_int
 #if defined(LAPACK_ILP64)

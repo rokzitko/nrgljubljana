@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include "parser.hh"
 #include "matrix.h"
-#include <math.h>
+#include <cmath>
 
 using namespace std;
 

@@ -36,7 +36,7 @@
 #include "gmock/gmock-matchers.h"
 #include "gmock/gmock-generated-matchers.h"
 
-#include <string.h>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <string>

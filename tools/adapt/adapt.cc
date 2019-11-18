@@ -354,7 +354,7 @@ double rhs_F(double x, double y) {
 
 void about(ostream &F = cout) {
   F << "# Discretization ODE solver" << endl;
-  F << "# Rok Zitko, rok.zitko@ijs.si, 2008" << endl;
+  F << "# Rok Zitko, rok.zitko@ijs.si, 2008-2019" << endl;
 }
 
 void cmd_line(int argc, char *argv[]) {

@@ -132,7 +132,7 @@ template <typename T> T finite_test_fnc(T x, const char *file, int line) {
 
 // *** Timing
 
-#include <time.h>
+#include <ctime>
 #include <sys/time.h>
 
 // Return time in seconds

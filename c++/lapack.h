@@ -43,7 +43,7 @@
 
 #include "lapacke_mangling.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #ifdef __cplusplus
 extern "C" {

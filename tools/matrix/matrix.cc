@@ -16,10 +16,10 @@
 /* First, we deal with  platform-specific or compiler-specific issues. */
 
 /* begin standard C headers. */
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <cerrno>
+#include <cstdlib>
 #include <unistd.h>
 
 /* end standard C headers. */
@@ -430,7 +430,7 @@ char *yytext;
 #include <cstdlib>
 #include "parser.hh"
 #include "matrix.h"
-#include <math.h>
+#include <cmath>
 
 using namespace std;
 
