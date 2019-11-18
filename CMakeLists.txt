@@ -126,15 +126,20 @@ if(Mathematica_FOUND)
 endif()
 
 # Dynamic Analyzer Checks
+
 option(ASAN OFF "Compile library and executables with LLVM Address Sanitizer")
 option(UBSAN OFF "Compile library and executables with LLVM Undefined Behavior Sanitizer")
 
 if(ASAN)
-  find_package(sanitizer REQUIRED "asan")
+  if(NOT TARGET asan)
+    find_package(sanitizer REQUIRED "asan")
+  endif()
   install(TARGETS asan EXPORT nrgljubljana-targets)
 endif()
 if(UBSAN)
-  find_package(sanitizer REQUIRED "ubsan")
+  if(NOT TARGET ubsan)
+    find_package(sanitizer REQUIRED "ubsan")
+  endif()
   install(TARGETS ubsan EXPORT nrgljubljana-targets)
 endif()
 

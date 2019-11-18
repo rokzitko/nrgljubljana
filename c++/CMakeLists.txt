@@ -14,7 +14,11 @@ target_compile_definitions(nrgljubljana_c PUBLIC
 				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
 )
 
-target_link_libraries(nrgljubljana_c PUBLIC openmp boost blas_lapack gmp)
+# Link dependencies
+target_link_libraries(nrgljubljana_c PUBLIC openmp boost blas_lapack gmp
+  $<$<BOOL:${ASAN}>:asan>
+  $<$<BOOL:${UBSAN}>:ubsan>
+)
 
 # Compile nrg executable
 add_executable(nrg nrg.cc)
