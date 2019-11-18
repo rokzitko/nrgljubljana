@@ -1,0 +1,35 @@
+#!/usr/bin/env perl
+
+open (O, "<param.cc") or die;
+open (C, ">param_C-write.cpp") or die;
+open (S, ">param_S-write.cpp") or die;
+open (N, ">param_N-write.cpp") or die;
+
+$spaces = "    ";
+
+while (<O>) {
+  if (/param\<(.*?)\>\s*(\S*?)\s*\("(.*?)\"\s*,\s*"(.*?)"\s*,\s*"(.*?)"\);\s*\/\/\s*(.*)/) {
+    $type = $1;
+    $name = $2;
+    $name2 = $3;
+    if (!$name eq $name2) { die "$name $name2\n"; }
+    $cmt = $4;
+    $default = $5;
+    if ($type eq "string") { $default = "\"$default\""; }
+    $token = $6;
+#    $str = "$spaces/// $cmt\n$spaces$type $name = $default;\n\n";
+    $str = "${spaces}F << \"$name=\" << ".lc($token)."p.$name << std::endl;\n";
+    print "$token: $str";
+    if ($token eq "C") { 
+	print C $str; 
+    }
+    if ($token eq "S") { 
+	print S $str; 
+    }
+    if ($token eq "N") { 
+	print N $str; 
+    }
+  }
+}
+
+print "DONE!\n";
