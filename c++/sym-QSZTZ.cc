@@ -5,7 +5,7 @@ class SymmetryQSZTZ : public Symmetry {
   public:
   SymmetryQSZTZ() : Symmetry() { all_syms["QSZTZ"] = this; }
 
-  void init() {
+  void init() override {
     Sz.set("<Sz>", 1);
     Sz2.set("<Sz^2>", 2);
     Tz.set("<Tz>", 3);
@@ -22,23 +22,23 @@ class SymmetryQSZTZ : public Symmetry {
     Invar_f      = Invar(1, 2, 1);
   }
 
-  int mult(const Invar &I) { return 1; }
+  int mult(const Invar &I) override { return 1; }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SZ"), I2.get("SZ"), I3.get("SZ"))
        && u1_equality(I1.get("TZ"), I2.get("TZ"), I3.get("TZ"));
   }
 
-  bool Invar_allowed(const Invar &I) { return true; }
+  bool Invar_allowed(const Invar &I) override { return true; }
 
-  void load() {
+  void load() override {
     my_assert(!substeps);
     my_assert(channels == 3);
 #include "qsztz/qsztz-In2.dat"
 #include "qsztz/qsztz-QN.dat"
   } // load
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trTZ, trTZ2, trQ, trQ2;
 
     LOOP_const(diag, is) {

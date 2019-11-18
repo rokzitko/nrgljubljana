@@ -193,7 +193,7 @@ class GTEST_API_ ExitedWithCode {
   bool operator()(int exit_status) const;
  private:
   // No implementation - assignment is unsupported.
-  void operator=(const ExitedWithCode& other);
+  void operator=(const ExitedWithCode& other) = delete;
 
   const int exit_code_;
 };

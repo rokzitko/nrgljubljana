@@ -2,7 +2,7 @@ class SymmetryNONE : public Symmetry {
   public:
   SymmetryNONE() : Symmetry() { all_syms["NONE"] = this; }
 
-  void init() {
+  void init() override {
     InvarStructure InvStruc[] = {
        {"x", additive} // dummy quantum number
     };
@@ -10,7 +10,7 @@ class SymmetryNONE : public Symmetry {
     InvarSinglet = Invar(0);
   }
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 1:
 #include "none/none-1ch-In2.dat"
@@ -29,7 +29,7 @@ class SymmetryNONE : public Symmetry {
   void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
   void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
 
-  void calculate_TD(const DiagInfo &diag, double factor){};
+  void calculate_TD(const DiagInfo &diag, double factor) override{};
 
   DECL;
   HAS_DOUBLET;

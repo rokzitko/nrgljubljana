@@ -32,8 +32,8 @@ string name;              // filename of binary files containing the raw data
 int Nz;                   // Number of spectra (1..Nz)
 
 typedef pair<double, double> Pair;
-typedef vector<Pair> Vec;
-typedef vector<double> dvec;
+using Vec = vector<Pair>;
+using dvec = vector<double>;
 
 vector<Vec> input; // input data
 dvec mesh;         // output mesh
@@ -114,17 +114,17 @@ void read_files() {
 class LinInt {
   protected:
   Vec vec;               // tabulated data
-  int len;               // length of vec
-  int index;             // index of the interval where last x was found
-  double x0, x1;         // last x was in [x0:x1]
-  double f0, f1;         // f(x0), f(x1)
-  double deriv;          // (f1-f0)/(x1-x0)
-  bool newintegral_flag; // set to true when we switch to a new interval
-  double xmin, xmax;     // lowest and highest x contained in vec
-  double fxmin, fxmax;   // f(xmin), f(xmax)
+  int len{};               // length of vec
+  int index{};             // index of the interval where last x was found
+  double x0{}, x1{};         // last x was in [x0:x1]
+  double f0{}, f1{};         // f(x0), f(x1)
+  double deriv{};          // (f1-f0)/(x1-x0)
+  bool newintegral_flag{}; // set to true when we switch to a new interval
+  double xmin{}, xmax{};     // lowest and highest x contained in vec
+  double fxmin{}, fxmax{};   // f(xmin), f(xmax)
 
   public:
-  LinInt(){};
+  LinInt()= default;;
   LinInt(Vec &in_vec) : vec(in_vec) {
     len              = vec.size();
     index            = -1;
@@ -215,7 +215,7 @@ dvec merge_meshes() {
   }
 
   sort(mesh.begin(), mesh.end());
-  dvec::iterator new_end = unique(mesh.begin(), mesh.end(), eq_approx);
+  auto new_end = unique(mesh.begin(), mesh.end(), eq_approx);
   mesh.erase(new_end, mesh.end());
   return mesh;
 }
@@ -223,7 +223,7 @@ dvec merge_meshes() {
 vector<LinInt> f; // interpolation objects
 
 void interpolate() {
-  for (int i = 0; i < Nz; i++) { f.push_back(LinInt(input[i])); }
+  for (int i = 0; i < Nz; i++) { f.emplace_back(input[i]); }
 }
 
 Vec avg() {

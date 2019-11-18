@@ -128,7 +128,7 @@ std::ostream& operator<<(std::ostream& os, const TestPartResult& result);
 // virtual.
 class GTEST_API_ TestPartResultArray {
  public:
-  TestPartResultArray() {}
+  TestPartResultArray() = default;
 
   // Appends the given TestPartResult to the array.
   void Append(const TestPartResult& result);
@@ -148,7 +148,7 @@ class GTEST_API_ TestPartResultArray {
 // This interface knows how to report a test part result.
 class GTEST_API_ TestPartResultReporterInterface {
  public:
-  virtual ~TestPartResultReporterInterface() {}
+  virtual ~TestPartResultReporterInterface() = default;
 
   virtual void ReportTestPartResult(const TestPartResult& result) = 0;
 };
@@ -169,7 +169,7 @@ class GTEST_API_ HasNewFatalFailureHelper
   void ReportTestPartResult(const TestPartResult& result) override;
   bool has_new_fatal_failure() const { return has_new_fatal_failure_; }
  private:
-  bool has_new_fatal_failure_;
+  bool has_new_fatal_failure_{false};
   TestPartResultReporterInterface* original_reporter_;
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(HasNewFatalFailureHelper);

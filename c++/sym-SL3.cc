@@ -5,7 +5,7 @@ class SymmetrySL3 : public Symmetry {
   public:
   SymmetrySL3() : Symmetry() { all_syms["SL3"] = this; }
 
-  void init() {
+  void init() override {
     Q1.set("<Q1>", 1);      // charge
     Q12.set("<Q1^2>", 2);   // charge squared
     sQ12.set("<sQ1^2>", 3); // charge fluctuation
@@ -24,7 +24,7 @@ class SymmetrySL3 : public Symmetry {
     InvarSinglet = Invar(0, 0, 0);
   }
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 3:
 #include "sl3/sl3-3ch-In2.dat"
@@ -35,7 +35,7 @@ class SymmetrySL3 : public Symmetry {
     }
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trQ1, trQ12; // Tr[Q], Tr[Q^2]
     bucket trQ2, trQ22;
     bucket trQ3, trQ32;

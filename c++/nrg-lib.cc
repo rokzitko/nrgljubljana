@@ -49,16 +49,20 @@ int myrank() { return 0; }
 
 #include <omp.h>
 
+
+#include <utility>
+
+
 // Shared parameters for MPI parallelization.
 class sharedparam {
   public:
   // Parameters which have to be known to the slave processes (which only
   // perform diagonalizations).
   dr_value diagroutine;
-  double diagratio;
-  size_t dsyevrlimit;
-  size_t zheevrlimit;
-  bool logall;
+  double diagratio{};
+  size_t dsyevrlimit{};
+  size_t zheevrlimit{};
+  bool logall{};
   string log;
   void init();
 
@@ -87,11 +91,11 @@ MemoryStats ms;
 string sym_string = "";
 
 // Quantum number types defined to enforce type checking
-typedef int Number;
-typedef int Ispin;
-typedef int Sspin;
-typedef int Tangmom;
-typedef int SZspin;
+using Number = int;
+using Ispin = int;
+using Sspin = int;
+using Tangmom = int;
+using SZspin = int;
 
 // Invariant subspace abstraction (container with quantum numbers)
 #include "invar.cc"
@@ -99,11 +103,11 @@ typedef int SZspin;
 // *** Commonly used types ***
 
 #ifdef NRG_REAL
-typedef double t_matel;                       // type for the matrix elements
-typedef double t_eigen;                       // type for the eigenvalues
-typedef double t_coef;                        // type for the Wilson chain coefficients
-typedef double t_factor;                      // type for various prefactors in recalculations
-typedef double t_expv;                        // type for expectation values of operators
+using t_matel = double;                       // type for the matrix elements
+using t_eigen = double;                       // type for the eigenvalues
+using t_coef = double;                        // type for the Wilson chain coefficients
+using t_factor = double;                      // type for various prefactors in recalculations
+using t_expv = double;                        // type for expectation values of operators
 inline double CONJ_ME(double x) { return x; } // Conjugation of matrix elements: no op
 #endif
 
@@ -117,17 +121,17 @@ typedef cmpl t_expv; // we allow the calculation of expectation values of
 inline cmpl CONJ_ME(cmpl z) { return conj(z); }
 #endif
 
-typedef cmpl t_weight; // spectral weight accumulators (complex in general)
+using t_weight = cmpl; // spectral weight accumulators (complex in general)
 
 // Type for arrays of eigenvalues
-typedef ublas::vector<t_eigen> EVEC;
-typedef std::vector<t_eigen> STDEVEC;
+using EVEC = ublas::vector<t_eigen>;
+using STDEVEC = std::vector<t_eigen>;
 
 // Type for arrays of coefficients for Wilson chains
-typedef ublas::vector<t_coef> CVEC;
+using CVEC = ublas::vector<t_coef>;
 
-typedef ublas::vector<double> DVEC;
-typedef ublas::vector<size_t> IVEC;
+using DVEC = ublas::vector<double>;
+using IVEC = ublas::vector<size_t>;
 
 /* NOTE: Row major is the C array format: A[0][0], A[0][1], A[0][2],
 A[1][0], A[1][1], etc. The default in UBLAS is row major, while LAPACK
@@ -150,7 +154,7 @@ typedef matrix<t_matel, ublas::row_major> Matrix;
 
 #include "numerics.h"
 
-typedef std::vector<Invar> InvarVec; // vector of Invars
+using InvarVec = std::vector<Invar>; // vector of Invars
 
 typedef pair<Invar, Invar> Twoinvar;
 typedef map<Twoinvar, Matrix> MatrixElements;
@@ -184,9 +188,9 @@ typedef map<string, MatrixElements> CustomOp;
 string NAME(const CustomOp::value_type &i) { return i.first; }
 
 // Vector containing irreducible matrix elements of f operators.
-typedef std::vector<MatrixElements> OpchChannel;
+using OpchChannel = std::vector<MatrixElements>;
 // Each channel contains P::perchannel OpchChannel matrices.
-typedef std::vector<OpchChannel> Opch;
+using Opch = std::vector<OpchChannel>;
 
 // Object of class IterInfo cotains full information when entering
 // stage N of the NRG iteration.
@@ -237,7 +241,7 @@ class Rmaxvals {
   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
 
   public:
-  Rmaxvals(){};
+  Rmaxvals()= default;;
   Rmaxvals(const Rmaxvals &v);
   Rmaxvals &operator=(const Rmaxvals &) = default;
   size_t rmax(size_t i) const;
@@ -261,7 +265,7 @@ class DimSub {
   Rmaxvals rmax;   // substructure of vectors omega
   EVEC eigenvalue; // all eigenvalues
   EVEC absenergy;  // absolute energies (for FDM)
-  DimSub(){};
+  DimSub()= default;;
   DimSub(size_t _kept, size_t _total) : kept(_kept), total(_total) {
     my_assert(kept <= total);
     discarded = total - kept;
@@ -277,7 +281,7 @@ class DimSub {
 // Full information about the number of states and matrix dimensions
 // Example: dm[N].rmax[I] etc.
 typedef map<Invar, DimSub> Subs;
-typedef std::vector<Subs> AllSteps;
+using AllSteps = std::vector<Subs>;
 AllSteps dm;
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
@@ -413,7 +417,7 @@ class SPEC {
   virtual string merge() { return ""; } // what merging rule to use
 };
 
-typedef SPEC *SPECTYPE;
+using SPECTYPE = SPEC *;
 
 // In namespace NRG we store run-time information about the calculation.
 namespace NRG {
@@ -509,7 +513,7 @@ typedef unordered_map<t_eigen, t_eigen> mapdd;
 // Pair of energy and multiplicity. This is used to compute the true
 // grand-canonical partition function STAT::ZZ.
 typedef pair<t_eigen, int> energy_mult_type;
-typedef list<energy_mult_type> excitation_list;
+using excitation_list = list<energy_mult_type>;
 
 // Namespace for storing various statistical quantities calculated
 // during iteration.
@@ -935,8 +939,8 @@ CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &
 
 class ChainSpectrum {
   public:
-  ChainSpectrum(){};
-  virtual ~ChainSpectrum(){};
+  ChainSpectrum()= default;;
+  virtual ~ChainSpectrum()= default;;
   virtual void add(double energy, t_weight weight) = 0; // XXX
 };
 
@@ -945,12 +949,12 @@ class ChainSpectrumBinning : public ChainSpectrum {
   Bins spos, sneg;
 
   public:
-  ChainSpectrumBinning(){};
-  virtual ~ChainSpectrumBinning() {
+  ChainSpectrumBinning()= default;;
+  ~ChainSpectrumBinning() override {
     assert_isfinite(spos.total_weight()); // Bug trap
     assert_isfinite(sneg.total_weight());
   }
-  void add(double energy, t_weight weight) {
+  void add(double energy, t_weight weight) override {
     if (energy >= 0.0)
       spos.add(energy, weight);
     else
@@ -965,9 +969,9 @@ class ChainSpectrumTemp : public ChainSpectrum {
   Temp v;
 
   public:
-  ChainSpectrumTemp(){};
-  virtual ~ChainSpectrumTemp() {}
-  void add(double T, t_weight value) { v.add_value(T, value); }
+  ChainSpectrumTemp()= default;;
+  ~ChainSpectrumTemp() override = default;
+  void add(double T, t_weight value) override { v.add_value(T, value); }
   friend class SpectrumTemp;
 };
 
@@ -981,9 +985,9 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
   public:
   ChainSpectrumMatsubara() = delete;
   ChainSpectrumMatsubara(matstype _mt) : m(P::mats, _mt){};
-  virtual ~ChainSpectrumMatsubara() {}
+  ~ChainSpectrumMatsubara() override = default;
   void add(size_t n, t_weight w) { m.add(n, w); }
-  void add(double energy, t_weight w) { my_assert_not_reached(); }
+  void add(double energy, t_weight w) override { my_assert_not_reached(); }
   t_weight total_weight() const { return m.total_weight(); }
   friend class SpectrumMatsubara;
 };
@@ -995,9 +999,9 @@ class ChainSpectrumMatsubara2 : public ChainSpectrum {
   public:
   ChainSpectrumMatsubara2() = delete;
   ChainSpectrumMatsubara2(matstype _mt) : m(P::mats, _mt){};
-  virtual ~ChainSpectrumMatsubara2() {}
+  ~ChainSpectrumMatsubara2() override = default;
   void add(size_t i, size_t j, t_weight w) { m.add(i, j, w); }
-  void add(double energy, t_weight w) { my_assert_not_reached(); }
+  void add(double energy, t_weight w) override { my_assert_not_reached(); }
   t_weight total_weight() const { return m.total_weight(); }
   friend class SpectrumMatsubara2;
 };
@@ -1008,8 +1012,8 @@ class Spectrum {
   public:
   string opname, filename;
   SPECTYPE spectype;
-  Spectrum(string _opname, string _filename, SPECTYPE _spectype) : opname(_opname), filename(_filename), spectype(_spectype){};
-  virtual ~Spectrum(){};
+  Spectrum(string _opname, string _filename, SPECTYPE _spectype) : opname(std::move(_opname)), filename(std::move(_filename)), spectype(_spectype){};
+  virtual ~Spectrum()= default;;
   virtual void merge(ChainSpectrum *cs) = 0; // called from spec.cc as the very last step
   string name() { return opname; }
 };
@@ -1023,8 +1027,8 @@ class SpectrumTemp : public Spectrum {
 
   public:
   SpectrumTemp(string _opname, string _filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
-  void merge(ChainSpectrum *cs);
-  ~SpectrumTemp();
+  void merge(ChainSpectrum *cs) override;
+  ~SpectrumTemp() override;
 };
 
 void SpectrumTemp::merge(ChainSpectrum *cs) {
@@ -1051,8 +1055,8 @@ class SpectrumMatsubara : public Spectrum {
   public:
   SpectrumMatsubara(string _opname, string _filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
-  void merge(ChainSpectrum *cs);
-  ~SpectrumMatsubara();
+  void merge(ChainSpectrum *cs) override;
+  ~SpectrumMatsubara() override;
 };
 
 void SpectrumMatsubara::merge(ChainSpectrum *cs) {
@@ -1074,8 +1078,8 @@ class SpectrumMatsubara2 : public Spectrum {
   public:
   SpectrumMatsubara2(string _opname, string _filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
-  void merge(ChainSpectrum *cs);
-  ~SpectrumMatsubara2();
+  void merge(ChainSpectrum *cs) override;
+  ~SpectrumMatsubara2() override;
 };
 
 void SpectrumMatsubara2::merge(ChainSpectrum *cs) {
@@ -1123,7 +1127,7 @@ ostream &operator<<(ostream &os, const axis a) { return os << axisstring(a); }
  as the spectrum type. Functions calc_specdens() et al. receive an
  object of this type as input. */
 
-typedef shared_ptr<Spectrum> SpectrumPtr;
+using SpectrumPtr = shared_ptr<Spectrum>;
 
 class BaseSpectrum {
   public:
@@ -1132,10 +1136,10 @@ class BaseSpectrum {
   size_t nr;     // number of operators
   const MatrixElements &op1, &op2, &op3;
   SpectrumPtr spec;
-  SPECTYPE spectype; // SPEC_FT, ...
+  SPECTYPE spectype{}; // SPEC_FT, ...
   axis a;            // axis::RealFreq, axis::Temp, axis::Matsubara, etc.
   matstype mt;       // matstype::bosonic, matstype::fermionic, etc.
-  int spin;          // -1 or +1, or 0 where irrelevant
+  int spin{};          // -1 or +1, or 0 where irrelevant
   string fullname() const {
     string s = name + " " + prefix + " " + spectype->name() + " " + axisstring(a);
     if (a != axis::RealFreq && a != axis::Temp) s += " " + matstypestring(mt);
@@ -1147,7 +1151,7 @@ class BaseSpectrum {
 };
 
 class speclist;
-typedef list<speclist *> lsl;
+using lsl = list<speclist *>;
 lsl allspectra; // list of list of spectra
 
 class speclist {
@@ -1498,7 +1502,7 @@ namespace oprecalc {
    are also recomputed in the second run if fdmexpvn=-1. */
   set<string> s, p, g, d, v, t, q, ot;
 
-  void clear(void) {
+  void clear() {
     s.clear();
     p.clear();
     g.clear();
@@ -1863,7 +1867,7 @@ inline t_eigen scaled_energy(t_eigen e, bool scaled = true, bool absolute = fals
 void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = false) {
   std::vector<pair<t_eigen, Invar>> seznam;
   for (const auto &is : diag)
-    for (const auto e : EIGEN(is).value) seznam.push_back(make_pair(e, INVAR(is)));
+    for (const auto e : EIGEN(is).value) seznam.emplace_back(e, INVAR(is));
   sort(begin(seznam), end(seznam));
   size_t len = min(seznam.size(), size_t(P::dumpannotated));
   // If states are clustered, we dump the full cluster
@@ -2473,7 +2477,7 @@ void nrg_determine_tasks() {
 // a side effect, we compute some statistics about matrix sizes.
 void sort_task_list() {
   std::vector<pair<size_t, Invar>> tasks_with_sizes;
-  for (const auto &i : NRG::tasks) tasks_with_sizes.push_back(make_pair(qsrmax[i].total(), i));
+  for (const auto &i : NRG::tasks) tasks_with_sizes.emplace_back(qsrmax[i].total(), i);
   // Sort in the *decreasing* order!
   sort(rbegin(tasks_with_sizes), rend(tasks_with_sizes));
   auto nr       = tasks_with_sizes.size();
@@ -2838,7 +2842,7 @@ void start_run() {
 // === AFTER THE NRG ITERATION HAD COMPLETED =================================
 
 // Processing performed both after NRG and after DM runs.
-void finalize_common(void) {
+void finalize_common() {
   nrglog('@', "@ finalize_common()");
   TIME("broaden");
   for (auto &i : allspectra) i->clear(); // processing happens in the destructor
@@ -2857,7 +2861,7 @@ void dump_subspace_information() {
 }
 
 // Called after the first NRG run.
-void finalize_nrg(void) {
+void finalize_nrg() {
   nrglog('@', "@ finalize_nrg()");
   finalize_common();
   cout << endl << "Total energy: " << HIGHPREC(STAT::totalenergy) << endl;
@@ -2872,7 +2876,7 @@ void finalize_nrg(void) {
 }
 
 // Called after the second NRG run.
-void finalize_dmnrg(void) {
+void finalize_dmnrg() {
   nrglog('@', "@ finalize_dmnrg()");
   finalize_common();
   if (P::fdmexpv) {
@@ -2985,7 +2989,7 @@ void read_data() {
   read_energies(fdata, diagprev, nsubs);
   skip_comments(fdata);
   read_ireducf(fdata, diagprev);
-  while (1) {
+  while (true) {
     /* skip white space */
     while (!fdata.eof() && isspace(fdata.peek())) fdata.get();
     if (fdata.eof()) break;

@@ -2,7 +2,7 @@ class SymmetryPP : public Symmetry {
   public:
   SymmetryPP() : Symmetry() { all_syms["PP"] = this; }
 
-  void init() {
+  void init() override {
     InvarStructure InvStruc[] = {
        {"Pa", multiplicative}, // fermion parity in channel a
        {"Pb", multiplicative}  // fermion parity in channel b
@@ -11,7 +11,7 @@ class SymmetryPP : public Symmetry {
     InvarSinglet = Invar(1, 1);
   }
 
-  void load() {
+  void load() override {
     switch (channels) {
 
       case 2:
@@ -26,9 +26,9 @@ class SymmetryPP : public Symmetry {
   void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
   void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
 
-  void calculate_TD(const DiagInfo &diag, double factor){};
+  void calculate_TD(const DiagInfo &diag, double factor) override{};
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return z2_equality(I1.get("Pa"), I2.get("Pa"), I3.get("Pa")) && z2_equality(I1.get("Pb"), I2.get("Pb"), I3.get("Pb"));
   }
 

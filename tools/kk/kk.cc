@@ -39,8 +39,8 @@
 using namespace std;
 
 typedef pair<double, double> XYPOINT;
-typedef vector<XYPOINT> XYFUNC;
-typedef vector<double> DVEC;
+using XYFUNC = vector<XYPOINT>;
+using DVEC = vector<double>;
 
 // number of digits of precision in the generated output file
 #define OUTPUT_PRECISION 16
@@ -223,7 +223,7 @@ void calc(XYFUNC &re) {
 
 void writere(XYFUNC &re, ostream &F) {
   F << setprecision(OUTPUT_PRECISION);
-  for (XYFUNC::iterator i = re.begin(); i != re.end(); i++) F << i->first << " " << i->second << endl;
+  for (auto & i : re) F << i.first << " " << i.second << endl;
 }
 
 void done() {

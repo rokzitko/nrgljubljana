@@ -35,7 +35,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 #endif
 
     typedef boost::numeric::ublas::vector<T, ArrT>          identifier_type; 
-    typedef V                                               vector_type;
+    using vector_type = V;
     typedef typename default_vector_traits< V, T >::pointer pointer;
 
     static pointer storage (vector_type& v) {
@@ -53,9 +53,9 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::vector_reference<V>, typename boost::remove_const<VR>::type >::value) );
 #endif
 
-    typedef boost::numeric::ublas::vector_reference<V>             identifier_type; 
-    typedef VR                                                     vector_type;
-    typedef typename V::value_type                                 value_type ;
+    using identifier_type = boost::numeric::ublas::vector_reference<V>; 
+    using vector_type = VR;
+    using value_type = typename V::value_type ;
     typedef typename default_vector_traits<VR,value_type>::pointer pointer; 
 
   private:
@@ -79,9 +79,9 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::vector_range<V>, typename boost::remove_const<VR>::type >::value) );
 #endif
 
-    typedef boost::numeric::ublas::vector_range<V>                 identifier_type; 
-    typedef VR                                                     vector_type;
-    typedef typename V::value_type                                 value_type ;
+    using identifier_type = boost::numeric::ublas::vector_range<V>; 
+    using vector_type = VR;
+    using value_type = typename V::value_type ;
     typedef typename default_vector_traits<VR,value_type>::pointer pointer; 
 
   private:
@@ -108,9 +108,9 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::vector_slice<V>, typename boost::remove_const<VS>::type >::value) );
 #endif
 
-    typedef boost::numeric::ublas::vector_slice<V>                 identifier_type; 
-    typedef VS                                                     vector_type;
-    typedef typename V::value_type                                 value_type ;
+    using identifier_type = boost::numeric::ublas::vector_slice<V>; 
+    using vector_type = VS;
+    using value_type = typename V::value_type ;
     typedef typename default_vector_traits<VS,value_type>::pointer pointer; 
 
   private:
@@ -140,7 +140,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 #endif
 
     typedef boost::numeric::ublas::c_vector<T,N>         identifier_type; 
-    typedef V                                            vector_type;
+    using vector_type = V;
     typedef typename default_vector_traits<V,T>::pointer pointer;
 
     static pointer storage (vector_type& v) { return v.data(); }
@@ -159,7 +159,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 #endif
 
     typedef boost::numeric::ublas::bounded_vector<T, N>     identifier_type; 
-    typedef V                                               vector_type;
+    using vector_type = V;
     typedef typename default_vector_traits< V, T >::pointer pointer;
 
     static pointer storage (vector_type& v) {

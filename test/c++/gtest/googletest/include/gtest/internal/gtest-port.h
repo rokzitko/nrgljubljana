@@ -243,11 +243,11 @@
 //                                        deprecated; calling a marked function
 //                                        should generate a compiler warning
 
-#include <ctype.h>   // for isspace, etc
-#include <stddef.h>  // for ptrdiff_t
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>   // for isspace, etc
+#include <cstddef>  // for ptrdiff_t
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <type_traits>
 
@@ -910,13 +910,13 @@ class GTEST_API_ RE {
 
  private:
   void Init(const char* regex);
-  const char* pattern_;
-  bool is_valid_;
+  const char* pattern_{};
+  bool is_valid_{};
 
 # if GTEST_USES_POSIX_RE
 
-  regex_t full_regex_;     // For FullMatch().
-  regex_t partial_regex_;  // For PartialMatch().
+  regex_t full_regex_{};     // For FullMatch().
+  regex_t partial_regex_{};  // For PartialMatch().
 
 # else  // GTEST_USES_SIMPLE_RE
 
@@ -1026,9 +1026,9 @@ inline void FlushInfoLog() { fflush(nullptr); }
 // Note that the non-const reference will not have "const" added. This is
 // standard, and necessary so that "T" can always bind to "const T&".
 template <typename T>
-struct ConstRef { typedef const T& type; };
+struct ConstRef { using type = const T &; };
 template <typename T>
-struct ConstRef<T&> { typedef T& type; };
+struct ConstRef<T&> { using type = T &; };
 
 // The argument T must depend on some template parameters.
 #define GTEST_REFERENCE_TO_CONST_(T) \
@@ -1179,7 +1179,7 @@ inline void SleepMilliseconds(int n) {
 // use it in user tests, either directly or indirectly.
 class Notification {
  public:
-  Notification() : notified_(false) {
+  Notification()  {
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_init(&mutex_, nullptr));
   }
   ~Notification() {
@@ -1208,8 +1208,8 @@ class Notification {
   }
 
  private:
-  pthread_mutex_t mutex_;
-  bool notified_;
+  pthread_mutex_t mutex_{};
+  bool notified_{false};
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Notification);
 };
@@ -1277,7 +1277,7 @@ class GTEST_API_ Notification {
 // problem.
 class ThreadWithParamBase {
  public:
-  virtual ~ThreadWithParamBase() {}
+  virtual ~ThreadWithParamBase() = default;
   virtual void Run() = 0;
 };
 
@@ -1307,7 +1307,7 @@ extern "C" inline void* ThreadFuncWithCLinkage(void* thread) {
 template <typename T>
 class ThreadWithParam : public ThreadWithParamBase {
  public:
-  typedef void UserThreadFunc(T);
+  using UserThreadFunc = void (T);
 
   ThreadWithParam(UserThreadFunc* func, T param, Notification* thread_can_start)
       : func_(func),
@@ -1341,7 +1341,7 @@ class ThreadWithParam : public ThreadWithParamBase {
   // notifies.
   Notification* const thread_can_start_;
   bool finished_;  // true if we know that the thread function has finished.
-  pthread_t thread_;  // The native thread object.
+  pthread_t thread_{};  // The native thread object.
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ThreadWithParam);
 };
@@ -1692,7 +1692,7 @@ class MutexBase {
 // shares its API with MutexBase otherwise.
 class Mutex : public MutexBase {
  public:
-  Mutex() {
+  Mutex() : MutexBase() {
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_init(&mutex_, nullptr));
     has_owner_ = false;
   }
@@ -1722,7 +1722,7 @@ class GTestMutexLock {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(GTestMutexLock);
 };
 
-typedef GTestMutexLock MutexLock;
+using MutexLock = GTestMutexLock;
 
 // Helpers for ThreadLocal.
 
@@ -1732,7 +1732,7 @@ typedef GTestMutexLock MutexLock;
 // ThreadLocalValueHolderBase.
 class ThreadLocalValueHolderBase {
  public:
-  virtual ~ThreadLocalValueHolderBase() {}
+  virtual ~ThreadLocalValueHolderBase() = default;
 };
 
 // Called by pthread to delete thread-local data stored by
@@ -1789,7 +1789,7 @@ class GTEST_API_ ThreadLocal {
   }
 
   T* GetOrCreateValue() const {
-    ThreadLocalValueHolderBase* const holder =
+    auto* const holder =
         static_cast<ThreadLocalValueHolderBase*>(pthread_getspecific(key_));
     if (holder != nullptr) {
       return CheckedDowncastToActualType<ValueHolder>(holder)->pointer();
@@ -1803,8 +1803,8 @@ class GTEST_API_ ThreadLocal {
 
   class ValueHolderFactory {
    public:
-    ValueHolderFactory() {}
-    virtual ~ValueHolderFactory() {}
+    ValueHolderFactory() = default;
+    virtual ~ValueHolderFactory() = default;
     virtual ValueHolder* MakeNewHolder() const = 0;
 
    private:
@@ -1813,8 +1813,8 @@ class GTEST_API_ ThreadLocal {
 
   class DefaultValueHolderFactory : public ValueHolderFactory {
    public:
-    DefaultValueHolderFactory() {}
-    virtual ValueHolder* MakeNewHolder() const { return new ValueHolder(); }
+    DefaultValueHolderFactory() = default;
+    ValueHolder* MakeNewHolder() const override { return new ValueHolder(); }
 
    private:
     GTEST_DISALLOW_COPY_AND_ASSIGN_(DefaultValueHolderFactory);
@@ -1823,7 +1823,7 @@ class GTEST_API_ ThreadLocal {
   class InstanceValueHolderFactory : public ValueHolderFactory {
    public:
     explicit InstanceValueHolderFactory(const T& value) : value_(value) {}
-    virtual ValueHolder* MakeNewHolder() const {
+    ValueHolder* MakeNewHolder() const override {
       return new ValueHolder(value_);
     }
 
@@ -1936,7 +1936,7 @@ inline bool IsXDigit(char ch) {
   return isxdigit(static_cast<unsigned char>(ch)) != 0;
 }
 inline bool IsXDigit(wchar_t ch) {
-  const unsigned char low_byte = static_cast<unsigned char>(ch);
+  const auto low_byte = static_cast<unsigned char>(ch);
   return ch == low_byte && isxdigit(low_byte) != 0;
 }
 
@@ -2001,7 +2001,7 @@ inline bool IsDir(const StatStruct& st) {
 
 #else
 
-typedef struct stat StatStruct;
+using StatStruct = struct stat;
 
 inline int FileNo(FILE* file) { return fileno(file); }
 inline int IsATTY(int fd) { return isatty(fd); }
@@ -2127,7 +2127,7 @@ class TypeWithSize {
  public:
   // This prevents the user from using TypeWithSize<N> with incorrect
   // values of N.
-  typedef void UInt;
+  using UInt = void;
 };
 
 // The specialization for size 4.
@@ -2138,8 +2138,8 @@ class TypeWithSize<4> {
   //
   // As base/basictypes.h doesn't compile on Windows, we cannot use
   // uint32, uint64, and etc here.
-  typedef int Int;
-  typedef unsigned int UInt;
+  using Int = int;
+  using UInt = unsigned int;
 };
 
 // The specialization for size 8.
@@ -2156,11 +2156,11 @@ class TypeWithSize<8> {
 };
 
 // Integer types of known sizes.
-typedef TypeWithSize<4>::Int Int32;
-typedef TypeWithSize<4>::UInt UInt32;
-typedef TypeWithSize<8>::Int Int64;
-typedef TypeWithSize<8>::UInt UInt64;
-typedef TypeWithSize<8>::Int TimeInMillis;  // Represents time in milliseconds.
+using Int32 = TypeWithSize<4>::Int;
+using UInt32 = TypeWithSize<4>::UInt;
+using Int64 = TypeWithSize<8>::Int;
+using UInt64 = TypeWithSize<8>::UInt;
+using TimeInMillis = TypeWithSize<8>::Int;  // Represents time in milliseconds.
 
 // Utilities for command line flags and environment variables.
 

@@ -7,23 +7,23 @@
 
 // Structures for storing tabulated data, such as rho(omega).
 typedef pair<double, double> Pair;
-typedef vector<Pair> Vec;
+using Vec = vector<Pair>;
 
 // Linear interpolation class
 class LinInt {
   protected:
   Vec vec;               // tabulated data
-  int len;               // length of vec
-  int index;             // index of the interval where last x was found
-  double x0, x1;         // last x was in [x0:x1]
-  double f0, f1;         // f(x0), f(x1)
-  double deriv;          // (f1-f0)/(x1-x0)
-  bool newintegral_flag; // set to true when we switch to a new interval
-  double xmin, xmax;     // lowest and highest x contained in vec
-  double fxmin, fxmax;   // f(xmin), f(xmax)
+  int len{};               // length of vec
+  int index{};             // index of the interval where last x was found
+  double x0{}, x1{};         // last x was in [x0:x1]
+  double f0{}, f1{};         // f(x0), f(x1)
+  double deriv{};          // (f1-f0)/(x1-x0)
+  bool newintegral_flag{}; // set to true when we switch to a new interval
+  double xmin{}, xmax{};     // lowest and highest x contained in vec
+  double fxmin{}, fxmax{};   // f(xmin), f(xmax)
 
   public:
-  LinInt(){};
+  LinInt()= default;;
   LinInt(Vec &in_vec) : vec(in_vec) {
     len = vec.size();
     if (len < 2) {
@@ -47,10 +47,10 @@ class LinInt {
 class IntLinInt : public LinInt {
   protected:
   Vec intvec;
-  double intfxmin, intfxmax; // int f(x) @ xmin and @ xmax
+  double intfxmin{}, intfxmax{}; // int f(x) @ xmin and @ xmax
 
   public:
-  IntLinInt(){};
+  IntLinInt()= default;;
   IntLinInt(Vec &in_vec, Vec &in_intvec) : LinInt(in_vec), intvec(in_intvec) {
     intfxmin = intvec.front().second;
     intfxmax = intvec.back().second;

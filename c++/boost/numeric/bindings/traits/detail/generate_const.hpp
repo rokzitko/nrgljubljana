@@ -24,27 +24,27 @@ namespace boost { namespace numeric { namespace bindings { namespace traits { na
 
   template <typename V, typename X>
   struct generate_const {
-     typedef X type; 
+     using type = X; 
   };
 
   template <typename V, typename X>
   struct generate_const< const V, X > {
-     typedef X const type; 
+     using type = const X; 
   };
 
   template <typename V, typename X>
   struct generate_const< V const, X const > {
-     typedef X const type; 
+     using type = const X; 
   };
 
   template <typename T, int N, typename X>
   struct generate_const< const T[N], X > {
-     typedef X const type; 
+     using type = const X; 
   };
 
   template <typename T, int N, typename X>
   struct generate_const< const T[N], X const > {
-     typedef X const type; 
+     using type = const X; 
   };
 
 }}}}}

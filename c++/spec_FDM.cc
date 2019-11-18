@@ -2,32 +2,32 @@
 
 class SPEC_FDMls : virtual public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumBinning; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumBinning; }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "FDMls"; }
-  string merge() { return "CFS"; }
+            const Invar &) override;
+  string name() override { return "FDMls"; }
+  string merge() override { return "CFS"; }
 };
 
 class SPEC_FDMgt : virtual public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumBinning; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumBinning; }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "FDMgt"; }
-  string merge() { return "CFS"; }
+            const Invar &) override;
+  string name() override { return "FDMgt"; }
+  string merge() override { return "CFS"; }
 };
 
 class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumBinning; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumBinning; }
   void calc(const Eigen &a1, const Eigen &a2, const Matrix &a3, const Matrix &a4, const BaseSpectrum &a5, t_factor a6, ChainSpectrum *a7,
-            const Invar &a8, const Invar &a9) {
+            const Invar &a8, const Invar &a9) override {
     SPEC_FDMgt::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9);
     SPEC_FDMls::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9);
   }
-  string name() { return "FDM"; }
-  string merge() { return "CFS"; }
+  string name() override { return "FDM"; }
+  string merge() override { return "CFS"; }
 };
 
 #define LOOP_D(n)                                                                                                                                    \
@@ -124,10 +124,10 @@ cs->add(d.energy, d.weight);
 
 class SPEC_FDMmats : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &bs) { return new ChainSpectrumMatsubara(bs.mt); }
+  ChainSpectrum *make_cs(const BaseSpectrum &bs) override { return new ChainSpectrumMatsubara(bs.mt); }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "FDMmats"; }
+            const Invar &) override;
+  string name() override { return "FDMmats"; }
 };
 
 // *********** Matsubara axis version  ***********
@@ -197,12 +197,12 @@ if (allj > 0 && reti > 0) {
 
 class SPEC_FDM_v3mm : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &bs) { return new ChainSpectrumMatsubara2(matstype::fb); }
-  string name() { return "FDM_v3mm"; }
+  ChainSpectrum *make_cs(const BaseSpectrum &bs) override { return new ChainSpectrumMatsubara2(matstype::fb); }
+  string name() override { return "FDM_v3mm"; }
   void calc_A(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-              ChainSpectrum *, const Invar &, const Invar &, const Invar &);
+              ChainSpectrum *, const Invar &, const Invar &, const Invar &) override;
   void calc_B(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-              ChainSpectrum *, const Invar &, const Invar &, const Invar &);
+              ChainSpectrum *, const Invar &, const Invar &, const Invar &) override;
 };
 
 template <typename T> inline std::complex<T> boltz_fnc_noscale(T E1, T E2, T bzE1, T bzE2, T wn, short n) {
@@ -222,7 +222,7 @@ template <typename T> inline std::complex<T> boltz_fnc_noscale(T E1, T E2, T bzE
 // 6. numerical prefactors
 // 7. differences A vs. B: conjugation, index reversal
 
-typedef std::vector<matrix<t_weight>> res_t;
+using res_t = std::vector<matrix<t_weight> >;
 
 #undef LOOP_D
 #undef LOOP_K

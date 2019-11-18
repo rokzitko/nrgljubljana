@@ -2,11 +2,11 @@
 
 class SPEC_DMNRG : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumBinning; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumBinning; }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "DMNRG"; }
-  string merge() { return "NN2"; }
+            const Invar &) override;
+  string name() override { return "DMNRG"; }
+  string merge() override { return "NN2"; }
 };
 
 void SPEC_DMNRG::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
@@ -46,10 +46,10 @@ void SPEC_DMNRG::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
 
 class SPEC_DMNRGmats : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &bs) { return new ChainSpectrumMatsubara(bs.mt); }
+  ChainSpectrum *make_cs(const BaseSpectrum &bs) override { return new ChainSpectrumMatsubara(bs.mt); }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "DMNRGmats"; }
+            const Invar &) override;
+  string name() override { return "DMNRGmats"; }
 };
 
 void SPEC_DMNRGmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,

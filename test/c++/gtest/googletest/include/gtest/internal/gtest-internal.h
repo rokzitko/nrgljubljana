@@ -50,15 +50,17 @@
 # include <stdexcept>
 #endif
 
-#include <ctype.h>
-#include <float.h>
-#include <string.h>
+#include <cctype>
+#include <cfloat>
+#include <cstring>
 #include <iomanip>
 #include <limits>
 #include <map>
 #include <set>
 #include <string>
 #include <type_traits>
+#include <utility>
+
 #include <vector>
 
 #include "gtest/gtest-message.h"
@@ -239,7 +241,7 @@ class FloatingPoint {
  public:
   // Defines the unsigned integer type that has the same size as the
   // floating point number.
-  typedef typename TypeWithSize<sizeof(RawType)>::UInt Bits;
+  using Bits = typename TypeWithSize<sizeof(RawType)>::UInt;
 
   // Constants.
 
@@ -393,8 +395,8 @@ inline double FloatingPoint<double>::Max() { return DBL_MAX; }
 
 // Typedefs the instances of the FloatingPoint template class that we
 // care to use.
-typedef FloatingPoint<float> Float;
-typedef FloatingPoint<double> Double;
+using Float = FloatingPoint<float>;
+using Double = FloatingPoint<double>;
 
 // In order to catch the mistake of putting tests that use different
 // test fixture classes in the same test suite, we need to assign
@@ -402,7 +404,7 @@ typedef FloatingPoint<double> Double;
 // used to hold such IDs.  The user should treat TypeId as an opaque
 // type: the only operation allowed on TypeId values is to compare
 // them for equality using the == operator.
-typedef const void* TypeId;
+using TypeId = const void *;
 
 template <typename T>
 class TypeIdHelper {
@@ -439,14 +441,14 @@ GTEST_API_ TypeId GetTestTypeId();
 // of a Test object.
 class TestFactoryBase {
  public:
-  virtual ~TestFactoryBase() {}
+  virtual ~TestFactoryBase() = default;
 
   // Creates a test instance to run. The instance is both created and destroyed
   // within TestInfoImpl::Run()
   virtual Test* CreateTest() = 0;
 
  protected:
-  TestFactoryBase() {}
+  TestFactoryBase() = default;
 
  private:
   GTEST_DISALLOW_COPY_AND_ASSIGN_(TestFactoryBase);
@@ -478,8 +480,8 @@ using SetUpTestSuiteFunc = void (*)();
 using TearDownTestSuiteFunc = void (*)();
 
 struct CodeLocation {
-  CodeLocation(const std::string& a_file, int a_line)
-      : file(a_file), line(a_line) {}
+  CodeLocation(std::string  a_file, int a_line)
+      : file(std::move(a_file)), line(a_line) {}
 
   std::string file;
   int line;
@@ -574,7 +576,7 @@ GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 // State of the definition of a type-parameterized test suite.
 class GTEST_API_ TypedTestSuitePState {
  public:
-  TypedTestSuitePState() : registered_(false) {}
+  TypedTestSuitePState()  {}
 
   // Adds the given test name to defined_test_names_ and return true
   // if the test suite hasn't been registered; otherwise aborts the
@@ -599,7 +601,7 @@ class GTEST_API_ TypedTestSuitePState {
   }
 
   const CodeLocation& GetCodeLocation(const std::string& test_name) const {
-    RegisteredTestsMap::const_iterator it = registered_tests_.find(test_name);
+    auto it = registered_tests_.find(test_name);
     GTEST_CHECK_(it != registered_tests_.end());
     return it->second;
   }
@@ -613,7 +615,7 @@ class GTEST_API_ TypedTestSuitePState {
  private:
   typedef ::std::map<std::string, CodeLocation> RegisteredTestsMap;
 
-  bool registered_;
+  bool registered_{false};
   RegisteredTestsMap registered_tests_;
 };
 
@@ -658,7 +660,7 @@ struct DefaultNameGenerator {
 
 template <typename Provided = DefaultNameGenerator>
 struct NameGeneratorSelector {
-  typedef Provided type;
+  using type = Provided;
 };
 
 template <typename NameGenerator>
@@ -696,9 +698,9 @@ class TypeParameterizedTest {
                        const char* case_name, const char* test_names, int index,
                        const std::vector<std::string>& type_names =
                            GenerateNames<DefaultNameGenerator, Types>()) {
-    typedef typename Types::Head Type;
-    typedef Fixture<Type> FixtureClass;
-    typedef typename GTEST_BIND_(TestSel, Type) TestClass;
+    using Type = typename Types::Head;
+    using FixtureClass = Fixture<Type>;
+    using TestClass = typename TestSel::template TestSel;;::Bind<Type>::time;
 
     // First, registers the first type-parameterized test in the type
     // list.
@@ -718,7 +720,7 @@ class TypeParameterizedTest {
 
     // Next, recurses (at compile time) with the tail of the type list.
     return TypeParameterizedTest<Fixture, TestSel,
-                                 typename Types::Tail>::Register(prefix,
+                                 typename Types::Tail>Register(prefix,
                                                                  code_location,
                                                                  case_name,
                                                                  test_names,
@@ -764,7 +766,7 @@ class TypeParameterizedTestSuite {
     }
     const CodeLocation& test_location = state->GetCodeLocation(test_name);
 
-    typedef typename Tests::Head Head;
+    using Head = typename Tests::Head;
 
     // First, register the first test in 'Test' for each type in 'Types'.
     TypeParameterizedTest<Fixture, Head, Types>::Register(
@@ -891,7 +893,7 @@ struct IsAProtocolMessage
 // Also note that the simpler approach of overloading
 // IsContainerTest(typename C::const_iterator*) and
 // IsContainerTest(...) doesn't work with Visual Age C++ and Sun C++.
-typedef int IsContainer;
+using IsContainer = int;
 template <class C,
           class Iterator = decltype(::std::declval<const C&>().begin()),
           class = decltype(::std::declval<const C&>().end()),
@@ -902,7 +904,7 @@ IsContainer IsContainerTest(int /* dummy */) {
   return 0;
 }
 
-typedef char IsNotContainer;
+using IsNotContainer = char;
 template <class C>
 IsNotContainer IsContainerTest(long /* dummy */) { return '\0'; }
 
@@ -1044,9 +1046,9 @@ template <typename Element>
 class NativeArray {
  public:
   // STL-style container typedefs.
-  typedef Element value_type;
-  typedef Element* iterator;
-  typedef const Element* const_iterator;
+  using value_type = Element;
+  using iterator = Element *;
+  using const_iterator = const Element *;
 
   // Constructs from a native array. References the source.
   NativeArray(const Element* array, size_t count, RelationToSourceReference) {
@@ -1085,7 +1087,7 @@ class NativeArray {
 
   // Initializes this object with a copy of the input.
   void InitCopy(const Element* array, size_t a_size) {
-    Element* const copy = new Element[a_size];
+    auto* const copy = new Element[a_size];
     CopyArray(array, a_size, copy);
     array_ = copy;
     size_ = a_size;
@@ -1100,7 +1102,7 @@ class NativeArray {
   }
 
   const Element* array_;
-  size_t size_;
+  size_t size_{};
   void (NativeArray::*clone_)(const Element*, size_t);
 
   GTEST_DISALLOW_ASSIGN_(NativeArray);

@@ -36,7 +36,7 @@
 
 #include "gmock/internal/gmock-internal-utils.h"
 
-#include <ctype.h>
+#include <cctype>
 #include <ostream>  // NOLINT
 #include <string>
 #include "gmock/gmock.h"
@@ -184,7 +184,7 @@ GTEST_API_ void Log(LogSeverity severity, const std::string& message,
   std::cout << ::std::flush;
 }
 
-GTEST_API_ WithoutMatchers GetWithoutMatchers() { return WithoutMatchers(); }
+GTEST_API_ WithoutMatchers GetWithoutMatchers() { return {}; }
 
 GTEST_API_ void IllegalDoDefault(const char* file, int line) {
   internal::Assert(

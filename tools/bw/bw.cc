@@ -54,7 +54,7 @@ double **buffers; // binary data buffers
 int *sizes;       // sizes of buffers
 
 typedef map<double, double> mapdd;
-typedef vector<double> vec;
+using vec = vector<double>;
 
 mapdd spec;           // Spectrum
 unsigned int nr_spec; // Number of raw spectrum points
@@ -186,7 +186,7 @@ void load(int i) {
 
   // Allocate the read buffer. The data will be kept in memory for the
   // duration of the calculation!
-  double *buffer = new double[2 * nr];
+  auto *buffer = new double[2 * nr];
   f.seekg(0, ios::beg); // Return to the beginning of the file.
   f.read((char *)buffer, len);
   if (f.fail()) {
@@ -223,7 +223,7 @@ void merge() {
     for (int l = 0; l < sizes[i]; l++) {
       double &freq      = buffers[i][2 * l];
       double &value     = buffers[i][2 * l + 1];
-      mapdd::iterator I = spec.find(freq);
+      auto I = spec.find(freq);
       if (I == spec.end()) {
         spec[freq] = value;
       } else {
@@ -239,9 +239,9 @@ void merge() {
   // (frequency,weight) data in the form of linear vectors for faster
   // access in the ensuing calculations.
   double sum = 0.0;
-  for (mapdd::iterator I = spec.begin(); I != spec.end(); I++) {
-    const double weight = (I->second /= Nz); // Normalize weight on the fly
-    const double freq   = I->first;
+  for (auto & I : spec) {
+    const double weight = (I.second /= Nz); // Normalize weight on the fly
+    const double freq   = I.first;
     vfreq.push_back(freq);
     vspec.push_back(weight);
     sum += weight;
@@ -434,9 +434,9 @@ void save(const string filename0, const mapdd &m, int iter = 0, double trim = 0.
     exit(1);
   }
 
-  for (mapdd::const_iterator I = m.begin(); I != m.end(); I++) {
-    if (trim != 0.0 && abs(I->first) < trim) { continue; }
-    F << I->first << " " << I->second << endl;
+  for (auto I : m) {
+    if (trim != 0.0 && abs(I.first) < trim) { continue; }
+    F << I.first << " " << I.second << endl;
   }
 }
 
@@ -514,23 +514,23 @@ void calc_deriv(const vec &inta, vec &deriv) {
 }
 
 typedef pair<double, double> Pair;
-typedef vector<Pair> Vec;
+using Vec = vector<Pair>;
 
 // Linear interpolation class
 class LinInt {
   protected:
   Vec vec;               // tabulated data
-  int len;               // length of vec
-  int index;             // index of the interval where last x was found
-  double x0, x1;         // last x was in [x0:x1]
-  double f0, f1;         // f(x0), f(x1)
-  double deriv;          // (f1-f0)/(x1-x0)
-  bool newintegral_flag; // set to true when we switch to a new interval
-  double xmin, xmax;     // lowest and highest x contained in vec
-  double fxmin, fxmax;   // f(xmin), f(xmax)
+  int len{};               // length of vec
+  int index{};             // index of the interval where last x was found
+  double x0{}, x1{};         // last x was in [x0:x1]
+  double f0{}, f1{};         // f(x0), f(x1)
+  double deriv{};          // (f1-f0)/(x1-x0)
+  bool newintegral_flag{}; // set to true when we switch to a new interval
+  double xmin{}, xmax{};     // lowest and highest x contained in vec
+  double fxmin{}, fxmax{};   // f(xmin), f(xmax)
 
   public:
-  LinInt(){};
+  LinInt()= default;;
   LinInt(Vec &in_vec) : vec(in_vec) {
     len              = vec.size();
     index            = -1;

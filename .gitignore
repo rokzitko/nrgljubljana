@@ -1,2 +1,5 @@
 compile_commands.json
 doc/cpp2rst_generated
+build.*
+build_*
+run_tests

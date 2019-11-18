@@ -2,7 +2,7 @@ class SymmetryP : public Symmetry {
   public:
   SymmetryP() : Symmetry() { all_syms["P"] = this; }
 
-  void init() {
+  void init() override {
     InvarStructure InvStruc[] = {
        {"P", multiplicative} // fermion parity
     };
@@ -10,7 +10,7 @@ class SymmetryP : public Symmetry {
     InvarSinglet = Invar(1);
   }
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 1:
 #include "p/p-1ch-In2.dat"
@@ -29,9 +29,9 @@ class SymmetryP : public Symmetry {
   void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
   void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
 
-  void calculate_TD(const DiagInfo &diag, double factor){};
+  void calculate_TD(const DiagInfo &diag, double factor) override{};
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) { return z2_equality(I1.get("P"), I2.get("P"), I3.get("P")); }
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override { return z2_equality(I1.get("P"), I2.get("P"), I3.get("P")); }
 
   DECL;
   HAS_DOUBLET;

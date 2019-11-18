@@ -35,7 +35,7 @@
 #ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_PARAM_UTIL_H_
 #define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_PARAM_UTIL_H_
 
-#include <ctype.h>
+#include <cctype>
 
 #include <cassert>
 #include <iterator>
@@ -90,7 +90,7 @@ template <typename> class ParamGenerator;
 template <typename T>
 class ParamIteratorInterface {
  public:
-  virtual ~ParamIteratorInterface() {}
+  virtual ~ParamIteratorInterface() = default;
   // A pointer to the base generator instance.
   // Used only for the purposes of iterator comparison
   // to make sure that two iterators belong to the same generator.
@@ -120,9 +120,9 @@ class ParamIteratorInterface {
 template <typename T>
 class ParamIterator {
  public:
-  typedef T value_type;
-  typedef const T& reference;
-  typedef ptrdiff_t difference_type;
+  using value_type = T;
+  using reference = const T &;
+  using difference_type = ptrdiff_t;
 
   // ParamIterator assumes ownership of the impl_ pointer.
   ParamIterator(const ParamIterator& other) : impl_(other.impl_->Clone()) {}
@@ -163,9 +163,9 @@ class ParamIterator {
 template <typename T>
 class ParamGeneratorInterface {
  public:
-  typedef T ParamType;
+  using ParamType = T;
 
-  virtual ~ParamGeneratorInterface() {}
+  virtual ~ParamGeneratorInterface() = default;
 
   // Generator interface definition
   virtual ParamIteratorInterface<T>* Begin() const = 0;
@@ -180,7 +180,7 @@ class ParamGeneratorInterface {
 template<typename T>
 class ParamGenerator {
  public:
-  typedef ParamIterator<T> iterator;
+  using iterator = ParamIterator<T>;
 
   explicit ParamGenerator(ParamGeneratorInterface<T>* impl) : impl_(impl) {}
   ParamGenerator(const ParamGenerator& other) : impl_(other.impl_) {}
@@ -207,7 +207,7 @@ class RangeGenerator : public ParamGeneratorInterface<T> {
   RangeGenerator(T begin, T end, IncrementT step)
       : begin_(begin), end_(end),
         step_(step), end_index_(CalculateEndIndex(begin, end, step)) {}
-  ~RangeGenerator() override {}
+  ~RangeGenerator() override = default;
 
   ParamIteratorInterface<T>* Begin() const override {
     return new Iterator(this, begin_, 0, step_);
@@ -222,7 +222,7 @@ class RangeGenerator : public ParamGeneratorInterface<T> {
     Iterator(const ParamGeneratorInterface<T>* base, T value, int index,
              IncrementT step)
         : base_(base), value_(value), index_(index), step_(step) {}
-    ~Iterator() override {}
+    ~Iterator() override = default;
 
     const ParamGeneratorInterface<T>* BaseGenerator() const override {
       return base_;
@@ -253,7 +253,7 @@ class RangeGenerator : public ParamGeneratorInterface<T> {
           step_(other.step_) {}
 
     // No implementation - assignment is unsupported.
-    void operator=(const Iterator& other);
+    void operator=(const Iterator& other) = delete;
 
     const ParamGeneratorInterface<T>* const base_;
     T value_;
@@ -271,7 +271,7 @@ class RangeGenerator : public ParamGeneratorInterface<T> {
   }
 
   // No implementation - assignment is unsupported.
-  void operator=(const RangeGenerator& other);
+  void operator=(const RangeGenerator& other) = delete;
 
   const T begin_;
   const T end_;
@@ -292,7 +292,7 @@ class ValuesInIteratorRangeGenerator : public ParamGeneratorInterface<T> {
   template <typename ForwardIterator>
   ValuesInIteratorRangeGenerator(ForwardIterator begin, ForwardIterator end)
       : container_(begin, end) {}
-  ~ValuesInIteratorRangeGenerator() override {}
+  ~ValuesInIteratorRangeGenerator() override = default;
 
   ParamIteratorInterface<T>* Begin() const override {
     return new Iterator(this, container_.begin());
@@ -302,14 +302,14 @@ class ValuesInIteratorRangeGenerator : public ParamGeneratorInterface<T> {
   }
 
  private:
-  typedef typename ::std::vector<T> ContainerType;
+  using ContainerType = typename ::std::vector<T>;
 
   class Iterator : public ParamIteratorInterface<T> {
    public:
     Iterator(const ParamGeneratorInterface<T>* base,
              typename ContainerType::const_iterator iterator)
         : base_(base), iterator_(iterator) {}
-    ~Iterator() override {}
+    ~Iterator() override = default;
 
     const ParamGeneratorInterface<T>* BaseGenerator() const override {
       return base_;
@@ -361,7 +361,7 @@ class ValuesInIteratorRangeGenerator : public ParamGeneratorInterface<T> {
   };  // class ValuesInIteratorRangeGenerator::Iterator
 
   // No implementation - assignment is unsupported.
-  void operator=(const ValuesInIteratorRangeGenerator& other);
+  void operator=(const ValuesInIteratorRangeGenerator& other) = delete;
 
   const ContainerType container_;
 };  // class ValuesInIteratorRangeGenerator
@@ -391,7 +391,7 @@ void TestNotEmpty(const T&) {}
 template <class TestClass>
 class ParameterizedTestFactory : public TestFactoryBase {
  public:
-  typedef typename TestClass::ParamType ParamType;
+  using ParamType = typename TestClass::ParamType;
   explicit ParameterizedTestFactory(ParamType parameter) :
       parameter_(parameter) {}
   Test* CreateTest() override {
@@ -412,7 +412,7 @@ class ParameterizedTestFactory : public TestFactoryBase {
 template <class ParamType>
 class TestMetaFactoryBase {
  public:
-  virtual ~TestMetaFactoryBase() {}
+  virtual ~TestMetaFactoryBase() = default;
 
   virtual TestFactoryBase* CreateTestFactory(ParamType parameter) = 0;
 };
@@ -431,7 +431,7 @@ class TestMetaFactory
  public:
   using ParamType = typename TestSuite::ParamType;
 
-  TestMetaFactory() {}
+  TestMetaFactory() = default;
 
   TestFactoryBase* CreateTestFactory(ParamType parameter) override {
     return new ParameterizedTestFactory<TestSuite>(parameter);
@@ -453,7 +453,7 @@ class TestMetaFactory
 // and calls RegisterTests() on each of them when asked.
 class ParameterizedTestSuiteInfoBase {
  public:
-  virtual ~ParameterizedTestSuiteInfoBase() {}
+  virtual ~ParameterizedTestSuiteInfoBase() = default;
 
   // Base part of test suite name for display purposes.
   virtual const std::string& GetTestSuiteName() const = 0;
@@ -466,7 +466,7 @@ class ParameterizedTestSuiteInfoBase {
   virtual void RegisterTests() = 0;
 
  protected:
-  ParameterizedTestSuiteInfoBase() {}
+  ParameterizedTestSuiteInfoBase() = default;
 
  private:
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ParameterizedTestSuiteInfoBase);
@@ -487,12 +487,12 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
   // AddTestSuiteInstantiation().
   using ParamType = typename TestSuite::ParamType;
   // A function that returns an instance of appropriate generator type.
-  typedef ParamGenerator<ParamType>(GeneratorCreationFunc)();
+  using GeneratorCreationFunc = ParamGenerator<ParamType> ();
   using ParamNameGeneratorFunc = std::string(const TestParamInfo<ParamType>&);
 
   explicit ParameterizedTestSuiteInfo(const char* name,
                                       CodeLocation code_location)
-      : test_suite_name_(name), code_location_(code_location) {}
+      : test_suite_name_(name), code_location_(std::move(code_location)) {}
 
   // Test case base name for display purposes.
   const std::string& GetTestSuiteName() const override {
@@ -601,12 +601,12 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
   //  <Instantiation name, Sequence generator creation function,
   //     Name generator function, Source file, Source line>
   struct InstantiationInfo {
-      InstantiationInfo(const std::string &name_in,
+      InstantiationInfo(std::string name_in,
                         GeneratorCreationFunc* generator_in,
                         ParamNameGeneratorFunc* name_func_in,
                         const char* file_in,
                         int line_in)
-          : name(name_in),
+          : name(std::move(name_in)),
             generator(generator_in),
             name_func(name_func_in),
             file(file_in),
@@ -618,7 +618,7 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
       const char* file;
       int line;
   };
-  typedef ::std::vector<InstantiationInfo> InstantiationContainer;
+  using InstantiationContainer = ::std::vector<InstantiationInfo>;
 
   static bool IsValidParamName(const std::string& name) {
     // Check for empty string
@@ -626,8 +626,8 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
       return false;
 
     // Check for invalid characters
-    for (std::string::size_type index = 0; index < name.size(); ++index) {
-      if (!isalnum(name[index]) && name[index] != '_')
+    for (char index : name) {
+      if (!isalnum(index) && index != '_')
         return false;
     }
 
@@ -656,7 +656,7 @@ using ParameterizedTestCaseInfo = ParameterizedTestSuiteInfo<TestCase>;
 // ParameterizedTestSuiteInfo descriptors.
 class ParameterizedTestSuiteRegistry {
  public:
-  ParameterizedTestSuiteRegistry() {}
+  ParameterizedTestSuiteRegistry() = default;
   ~ParameterizedTestSuiteRegistry() {
     for (auto& test_suite_info : test_suite_infos_) {
       delete test_suite_info;
@@ -751,11 +751,11 @@ template <typename... T>
 class CartesianProductGenerator
     : public ParamGeneratorInterface<::std::tuple<T...>> {
  public:
-  typedef ::std::tuple<T...> ParamType;
+  using ParamType = ::std::tuple<T...>;
 
   CartesianProductGenerator(const std::tuple<ParamGenerator<T>...>& g)
       : generators_(g) {}
-  ~CartesianProductGenerator() override {}
+  ~CartesianProductGenerator() override = default;
 
   ParamIteratorInterface<ParamType>* Begin() const override {
     return new Iterator(this, generators_, false);
@@ -779,7 +779,7 @@ class CartesianProductGenerator
           current_(is_end ? end_ : begin_) {
       ComputeCurrentValue();
     }
-    ~IteratorImpl() override {}
+    ~IteratorImpl() override = default;
 
     const ParamGeneratorInterface<ParamType>* BaseGenerator() const override {
       return base_;

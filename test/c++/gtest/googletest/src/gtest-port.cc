@@ -30,10 +30,10 @@
 
 #include "gtest/internal/gtest-port.h"
 
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <climits>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <memory>
 
@@ -1307,7 +1307,7 @@ bool ParseInt32(const Message& src_text, const char* str, Int32* value) {
   }
 
   // Is the parsed value in the range of an Int32?
-  const Int32 result = static_cast<Int32>(long_value);
+  const auto result = static_cast<Int32>(long_value);
   if (long_value == LONG_MAX || long_value == LONG_MIN ||
       // The parsed value overflows as a long.  (strtol() returns
       // LONG_MAX or LONG_MIN when the input overflows.)

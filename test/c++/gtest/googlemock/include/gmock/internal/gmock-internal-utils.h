@@ -39,7 +39,7 @@
 #ifndef GMOCK_INCLUDE_GMOCK_INTERNAL_GMOCK_INTERNAL_UTILS_H_
 #define GMOCK_INCLUDE_GMOCK_INTERNAL_GMOCK_INTERNAL_UTILS_H_
 
-#include <stdio.h>
+#include <cstdio>
 #include <ostream>  // NOLINT
 #include <string>
 #include <type_traits>
@@ -79,7 +79,7 @@ template <typename Pointer>
 struct PointeeOf {
   // Smart pointer classes define type element_type as the type of
   // their pointees.
-  typedef typename Pointer::element_type type;
+  using type = typename Pointer::element_type;
 };
 // This specialization is for the raw pointer case.
 template <typename T>
@@ -251,7 +251,7 @@ class FailureReporterInterface {
     kNonfatal, kFatal
   };
 
-  virtual ~FailureReporterInterface() {}
+  virtual ~FailureReporterInterface() = default;
 
   // Reports a failure that occurred at the given source file location.
   virtual void ReportFailure(FailureType type, const char* file, int line,
@@ -327,7 +327,7 @@ GTEST_API_ void Log(LogSeverity severity, const std::string& message,
 //
 class WithoutMatchers {
  private:
-  WithoutMatchers() {}
+  WithoutMatchers() = default;
   friend GTEST_API_ WithoutMatchers GetWithoutMatchers();
 };
 
@@ -380,8 +380,8 @@ inline T Invalid() {
 template <class RawContainer>
 class StlContainerView {
  public:
-  typedef RawContainer type;
-  typedef const type& const_reference;
+  using type = RawContainer;
+  using const_reference = const type &;
 
   static const_reference ConstReference(const RawContainer& container) {
     // Ensures that RawContainer is not a const type.
@@ -396,14 +396,14 @@ class StlContainerView {
 template <typename Element, size_t N>
 class StlContainerView<Element[N]> {
  public:
-  typedef typename std::remove_const<Element>::type RawElement;
-  typedef internal::NativeArray<RawElement> type;
+  using RawElement = typename std::remove_const<Element>::type;
+  using type = internal::NativeArray<RawElement>;
   // NativeArray<T> can represent a native array either by value or by
   // reference (selected by a constructor argument), so 'const type'
   // can be used to reference a const native array.  We cannot
   // 'typedef const type& const_reference' here, as that would mean
   // ConstReference() has to return a reference to a local variable.
-  typedef const type const_reference;
+  using const_reference = const type;
 
   static const_reference ConstReference(const Element (&array)[N]) {
     // Ensures that Element is not a const type.
@@ -420,10 +420,9 @@ class StlContainerView<Element[N]> {
 template <typename ElementPointer, typename Size>
 class StlContainerView< ::std::tuple<ElementPointer, Size> > {
  public:
-  typedef typename std::remove_const<
-      typename internal::PointeeOf<ElementPointer>::type>::type RawElement;
-  typedef internal::NativeArray<RawElement> type;
-  typedef const type const_reference;
+  using RawElement = typename std::remove_const<typename internal::PointeeOf<ElementPointer>::type>::type;
+  using type = internal::NativeArray<RawElement>;
+  using const_reference = const type;
 
   static const_reference ConstReference(
       const ::std::tuple<ElementPointer, Size>& array) {
@@ -444,7 +443,7 @@ template <typename T> class StlContainerView<T&>;
 // and this transform produces a similar but assignable pair.
 template <typename T>
 struct RemoveConstFromKey {
-  typedef T type;
+  using type = T;
 };
 
 // Partially specialized to remove constness from std::pair<const K, V>.

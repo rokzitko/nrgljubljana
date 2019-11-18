@@ -8,8 +8,8 @@
 // iteration.
 class outfield;
 
-typedef outfield *outfieldPtr;
-typedef std::vector<outfieldPtr> vecoutptr;
+using outfieldPtr = outfield *;
+using vecoutptr = std::vector<outfieldPtr>;
 
 // Container for all fields
 vecoutptr allfields;
@@ -19,7 +19,7 @@ class outfield {
   protected:
   string _desc;     // description of the field
   string _value;    // value of the field
-  double _rawvalue; // unformatted value stored in the field
+  double _rawvalue{}; // unformatted value stored in the field
 
   public:
   static int width; // width of the output field
@@ -37,7 +37,7 @@ class outfield {
       allfields.insert(begin(allfields) + pos, ptr);
   };
 
-  outfield(void) { _desc = ""; };
+  outfield() { _desc = ""; };
 
   outfield(string desc, int pos = -1) { set(desc, pos); }
 

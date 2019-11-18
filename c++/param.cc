@@ -1,3 +1,7 @@
+#include <utility>
+
+
+
 // param.cc - Parameter parsing
 // Copyright (C) 2009-2019 Rok Zitko
 
@@ -40,8 +44,8 @@ class parambase {
   string _value;
 
   public:
-  parambase(string keyword, string desc, string defaultv) : _keyword(keyword), _desc(desc), _value(defaultv){};
-  virtual ~parambase(){};
+  parambase(string keyword, string desc, string defaultv) : _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
+  virtual ~parambase()= default;;
   virtual void setvalue_str(string newvalue) = 0;
   virtual void dump()                        = 0;
   string getkeyword() const { return _keyword; }
@@ -71,11 +75,11 @@ template <class T> class param : public parambase {
     }
     allparams.push_back((parambase *)this);
   }
-  virtual void dump() { cout << _keyword << "=" << data << (!defaultval ? " *" : "") << endl; }
+  void dump() override { cout << _keyword << "=" << data << (!defaultval ? " *" : "") << endl; }
   // This line enables to access parameters using an object as a rvalue
   inline operator const T &() const { return data; }
-  inline T value(void) const { return data; }
-  virtual void setvalue_str(string newvalue) {
+  inline T value() const { return data; }
+  void setvalue_str(string newvalue) override {
     _value     = newvalue;
     data       = fromstring<T>(newvalue);
     defaultval = false;
@@ -561,7 +565,7 @@ void allowed_coefchannel(size_t ch) {
 
 // Returns true if any of the CFS or related spectral function
 // calculations are requested.
-bool cfs_flags(void) { return (P::cfs || P::fdm); }
+bool cfs_flags() { return (P::cfs || P::fdm); }
 
 // Calculate some constant parameters (invariants), etc.
 // Called after parameters have been parsed and VALIDATED.

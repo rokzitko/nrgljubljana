@@ -1,6 +1,6 @@
 #ifndef CBLAS_H
 #define CBLAS_H
-#include <stddef.h>
+#include <cstddef>
 
 /* Allow the use in C++ code.  */
 #ifdef __cplusplus

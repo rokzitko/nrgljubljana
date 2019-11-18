@@ -34,14 +34,14 @@
 #include "gtest/internal/custom/gtest.h"
 #include "gtest/gtest-spi.h"
 
-#include <ctype.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <wchar.h>
-#include <wctype.h>
+#include <cctype>
+#include <cmath>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <cwchar>
+#include <cwctype>
 
 #include <algorithm>
 #include <iomanip>
@@ -50,6 +50,8 @@
 #include <map>
 #include <ostream>  // NOLINT
 #include <sstream>
+#include <utility>
+
 #include <vector>
 
 #if GTEST_OS_LINUX
@@ -365,8 +367,8 @@ static bool GTestIsInitialized() { return GetArgvs().size() > 0; }
 static int SumOverTestSuiteList(const std::vector<TestSuite*>& case_list,
                                 int (TestSuite::*method)() const) {
   int sum = 0;
-  for (size_t i = 0; i < case_list.size(); i++) {
-    sum += (case_list[i]->*method)();
+  for (auto i : case_list) {
+    sum += (i->*method)();
   }
   return sum;
 }
@@ -697,8 +699,8 @@ static AssertionResult HasOneFailure(const char* /* results_expr */,
 // substring the failure message should contain.
 SingleFailureChecker::SingleFailureChecker(const TestPartResultArray* results,
                                            TestPartResult::Type type,
-                                           const std::string& substr)
-    : results_(results), type_(type), substr_(substr) {}
+                                           std::string  substr)
+    : results_(results), type_(type), substr_(std::move(substr)) {}
 
 // The destructor of SingleFailureChecker verifies that the given
 // TestPartResultArray contains exactly one failure that has the given
@@ -864,7 +866,7 @@ TimeInMillis GetTimeInMillis() {
 
   return static_cast<TimeInMillis>(now.time) * 1000 + now.millitm;
 #elif GTEST_HAS_GETTIMEOFDAY_
-  struct timeval now;
+  struct timeval now{};
   gettimeofday(&now, nullptr);
   return static_cast<TimeInMillis>(now.tv_sec) * 1000 + now.tv_usec / 1000;
 #else
@@ -1101,7 +1103,7 @@ namespace {
 class InternalStrings {
  public:
   size_t GetId(const std::string& str) {
-    IdMap::iterator it = ids_.find(str);
+    auto it = ids_.find(str);
     if (it != ids_.end()) return it->second;
     size_t id = ids_.size();
     return ids_[str] = id;
@@ -1120,11 +1122,11 @@ std::vector<EditType> CalculateOptimalEdits(
   std::vector<size_t> left_ids, right_ids;
   {
     InternalStrings intern_table;
-    for (size_t i = 0; i < left.size(); ++i) {
-      left_ids.push_back(intern_table.GetId(left[i]));
+    for (const auto & i : left) {
+      left_ids.push_back(intern_table.GetId(i));
     }
-    for (size_t i = 0; i < right.size(); ++i) {
-      right_ids.push_back(intern_table.GetId(right[i]));
+    for (const auto & i : right) {
+      right_ids.push_back(intern_table.GetId(i));
     }
   }
   return CalculateOptimalEdits(left_ids, right_ids);
@@ -1150,15 +1152,15 @@ class Hunk {
       case ' ':
         ++common_;
         FlushEdits();
-        hunk_.push_back(std::make_pair(' ', line));
+        hunk_.emplace_back(' ', line);
         break;
       case '-':
         ++removes_;
-        hunk_removes_.push_back(std::make_pair('-', line));
+        hunk_removes_.emplace_back('-', line);
         break;
       case '+':
         ++adds_;
-        hunk_adds_.push_back(std::make_pair('+', line));
+        hunk_adds_.emplace_back('+', line);
         break;
     }
   }
@@ -2032,11 +2034,10 @@ std::string AppendUserMessage(const std::string& gtest_msg,
 
 // Creates an empty TestResult.
 TestResult::TestResult()
-    : death_test_count_(0), start_timestamp_(0), elapsed_time_(0) {}
+     {}
 
 // D'tor.
-TestResult::~TestResult() {
-}
+TestResult::~TestResult() = default;
 
 // Returns the i-th test part result among all the results. i can
 // range from 0 to total_part_count() - 1. If i is not in that range,
@@ -2255,8 +2256,7 @@ Test::Test()
 // The d'tor restores the states of all flags.  The actual work is
 // done by the d'tor of the gtest_flag_saver_ field, and thus not
 // visible here.
-Test::~Test() {
-}
+Test::~Test() = default;
 
 // Sets up the test fixture.
 //
@@ -2543,17 +2543,17 @@ bool Test::IsSkipped() {
 
 // Constructs a TestInfo object. It assumes ownership of the test factory
 // object.
-TestInfo::TestInfo(const std::string& a_test_suite_name,
-                   const std::string& a_name, const char* a_type_param,
+TestInfo::TestInfo(std::string  a_test_suite_name,
+                   std::string  a_name, const char* a_type_param,
                    const char* a_value_param,
                    internal::CodeLocation a_code_location,
                    internal::TypeId fixture_class_id,
                    internal::TestFactoryBase* factory)
-    : test_suite_name_(a_test_suite_name),
-      name_(a_name),
+    : test_suite_name_(std::move(a_test_suite_name)),
+      name_(std::move(a_name)),
       type_param_(a_type_param ? new std::string(a_type_param) : nullptr),
       value_param_(a_value_param ? new std::string(a_value_param) : nullptr),
-      location_(a_code_location),
+      location_(std::move(a_code_location)),
       fixture_class_id_(fixture_class_id),
       should_run_(false),
       is_disabled_(false),
@@ -2589,7 +2589,7 @@ TestInfo* MakeAndRegisterTestInfo(
     const char* value_param, CodeLocation code_location,
     TypeId fixture_class_id, SetUpTestSuiteFunc set_up_tc,
     TearDownTestSuiteFunc tear_down_tc, TestFactoryBase* factory) {
-  TestInfo* const test_info =
+  auto* const test_info =
       new TestInfo(test_suite_name, name, type_param, value_param,
                    code_location, fixture_class_id, factory);
   GetUnitTestImpl()->AddTestInfo(set_up_tc, tear_down_tc, test_info);
@@ -3107,7 +3107,7 @@ static void PrintFullTestCommentIfPresent(const TestInfo& test_info) {
 // Class PrettyUnitTestResultPrinter is copyable.
 class PrettyUnitTestResultPrinter : public TestEventListener {
  public:
-  PrettyUnitTestResultPrinter() {}
+  PrettyUnitTestResultPrinter() = default;
   static void PrintTestName(const char* test_suite, const char* test) {
     printf("%s.%s", test_suite, test);
   }
@@ -3392,7 +3392,7 @@ void PrettyUnitTestResultPrinter::OnTestIterationEnd(const UnitTest& unit_test,
 // This class forwards events to other event listeners.
 class TestEventRepeater : public TestEventListener {
  public:
-  TestEventRepeater() : forwarding_enabled_(true) {}
+  TestEventRepeater()  {}
   ~TestEventRepeater() override;
   void Append(TestEventListener *listener);
   TestEventListener* Release(TestEventListener* listener);
@@ -3427,7 +3427,7 @@ class TestEventRepeater : public TestEventListener {
  private:
   // Controls whether events will be forwarded to listeners_. Set to false
   // in death test child processes.
-  bool forwarding_enabled_;
+  bool forwarding_enabled_{true};
   // The list of listeners that receive events.
   std::vector<TestEventListener*> listeners_;
 
@@ -3500,8 +3500,8 @@ GTEST_REVERSE_REPEATER_METHOD_(OnTestProgramEnd, UnitTest)
 void TestEventRepeater::OnTestIterationStart(const UnitTest& unit_test,
                                              int iteration) {
   if (forwarding_enabled_) {
-    for (size_t i = 0; i < listeners_.size(); i++) {
-      listeners_[i]->OnTestIterationStart(unit_test, iteration);
+    for (auto & listener : listeners_) {
+      listener->OnTestIterationStart(unit_test, iteration);
     }
   }
 }
@@ -3641,8 +3641,7 @@ std::string XmlUnitTestResultPrinter::EscapeXml(
     const std::string& str, bool is_attribute) {
   Message m;
 
-  for (size_t i = 0; i < str.size(); ++i) {
-    const char ch = str[i];
+  for (char ch : str) {
     switch (ch) {
       case '<':
         m << "&lt;";
@@ -3687,9 +3686,9 @@ std::string XmlUnitTestResultPrinter::RemoveInvalidXmlCharacters(
     const std::string& str) {
   std::string output;
   output.reserve(str.size());
-  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
-    if (IsValidXmlCharacter(*it))
-      output.push_back(*it);
+  for (char it : str)
+    if (IsValidXmlCharacter(it))
+      output.push_back(it);
 
   return output;
 }
@@ -3736,7 +3735,7 @@ static bool PortableLocaltime(time_t seconds, struct tm* out) {
 // Converts the given epoch time in milliseconds to a date string in the ISO
 // 8601 format, without the timezone information.
 std::string FormatEpochTimeInMillisAsIso8601(TimeInMillis ms) {
-  struct tm time_struct;
+  struct tm time_struct{};
   if (!PortableLocaltime(static_cast<time_t>(ms / 1000), &time_struct))
     return "";
   // YYYY-MM-DDThh:mm:ss
@@ -3840,7 +3839,7 @@ void XmlUnitTestResultPrinter::OutputXmlTestInfo(::std::ostream* stream,
       const std::string summary = location + "\n" + part.summary();
       *stream << "      <failure message=\""
               << EscapeXmlAttribute(summary.c_str())
-              << "\" type=\"\">";
+              << R"(" type="">)";
       const std::string detail = location + "\n" + part.message();
       OutputXmlCDataSection(stream, RemoveInvalidXmlCharacters(detail).c_str());
       *stream << "</failure>\n";
@@ -4058,8 +4057,7 @@ void JsonUnitTestResultPrinter::OnTestIterationEnd(const UnitTest& unit_test,
 std::string JsonUnitTestResultPrinter::EscapeJson(const std::string& str) {
   Message m;
 
-  for (size_t i = 0; i < str.size(); ++i) {
-    const char ch = str[i];
+  for (char ch : str) {
     switch (ch) {
       case '\\':
       case '"':
@@ -4107,7 +4105,7 @@ static std::string FormatTimeInMillisAsDuration(TimeInMillis ms) {
 // Converts the given epoch time in milliseconds to a date string in the
 // RFC3339 format, without the timezone information.
 static std::string FormatEpochTimeInMillisAsRFC3339(TimeInMillis ms) {
-  struct tm time_struct;
+  struct tm time_struct{};
   if (!PortableLocaltime(static_cast<time_t>(ms / 1000), &time_struct))
     return "";
   // YYYY-MM-DDThh:mm:ss
@@ -4218,7 +4216,7 @@ void JsonUnitTestResultPrinter::OutputJsonTestInfo(::std::ostream* stream,
                                                           part.line_number());
       const std::string message = EscapeJson(location + "\n" + part.message());
       *stream << kIndent << "  {\n"
-              << kIndent << "    \"failure\": \"" << message << "\",\n"
+              << kIndent << R"(    "failure": ")" << message << "\",\n"
               << kIndent << "    \"type\": \"\"\n"
               << kIndent << "  }";
     }
@@ -4535,9 +4533,8 @@ class ScopedPrematureExitFile {
 // class TestEventListeners
 
 TestEventListeners::TestEventListeners()
-    : repeater_(new internal::TestEventRepeater()),
-      default_result_printer_(nullptr),
-      default_xml_generator_(nullptr) {}
+    : repeater_(new internal::TestEventRepeater())
+      {}
 
 TestEventListeners::~TestEventListeners() { delete repeater_; }
 
@@ -5159,7 +5156,7 @@ void UnitTestImpl::PostFlagParsingInit() {
 class TestSuiteNameIs {
  public:
   // Constructor.
-  explicit TestSuiteNameIs(const std::string& name) : name_(name) {}
+  explicit TestSuiteNameIs(std::string  name) : name_(std::move(name)) {}
 
   // Returns true if the name of test_suite matches name_.
   bool operator()(const TestSuite* test_suite) const {
@@ -5984,10 +5981,10 @@ static void LoadFlagsFromFile(const std::string& path) {
   posix::FClose(flagfile);
   std::vector<std::string> lines;
   SplitString(contents, '\n', &lines);
-  for (size_t i = 0; i < lines.size(); ++i) {
-    if (lines[i].empty())
+  for (auto & line : lines) {
+    if (line.empty())
       continue;
-    if (!ParseGoogleTestFlag(lines[i].c_str()))
+    if (!ParseGoogleTestFlag(line.c_str()))
       g_help_flag = true;
   }
 }

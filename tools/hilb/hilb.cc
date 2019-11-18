@@ -38,7 +38,7 @@
 
 using namespace std;
 
-typedef complex<double> cplx;
+using cplx = complex<double>;
 
 double x, y; // argument z=x+Iy. Global variable for simplicity.
 
@@ -63,7 +63,7 @@ inline double sqr(double x) { return x * x; }
 
 double rho_Bethe(double e) { return 2.0 / M_PI * scale * sqrt(1 - sqr(e * scale)); }
 
-typedef std::vector<double> DVEC;
+using DVEC = std::vector<double>;
 
 DVEC Xpts, Ypts;
 double Xmin, Xmax;
@@ -122,7 +122,7 @@ void handle_qag(int status) {
 
 double calcim() {
   gsl_function F;
-  F.params = 0;
+  F.params = nullptr;
 
   if (abs(y) < LIM_DIRECT) {
     // Rescaled integration limits. Only the absolute value of y matters here.
@@ -224,7 +224,7 @@ double calcim() {
 
 double calcre() {
   gsl_function F;
-  F.params = 0;
+  F.params = nullptr;
 
   if (abs(y) < LIM_DIRECT) {
     // Rescaled integration limits. Only the absolute value of y matters here.

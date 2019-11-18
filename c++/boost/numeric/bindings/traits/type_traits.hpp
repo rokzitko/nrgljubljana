@@ -29,23 +29,23 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   };
   template<>
   struct type_traits<float> { 
-    typedef float type; 
-    typedef float real_type; 
+    using type = float; 
+    using real_type = float; 
   };
   template<> 
   struct type_traits<double> { 
-    typedef double type; 
-    typedef double real_type; 
+    using type = double; 
+    using real_type = double; 
   };
   template<> 
   struct type_traits<complex_f> { 
-    typedef complex_f type; 
-    typedef float real_type; 
+    using type = complex_f; 
+    using real_type = float; 
   };
   template<> 
   struct type_traits<complex_d> { 
-    typedef complex_d type; 
-    typedef double real_type; 
+    using type = complex_d; 
+    using real_type = double; 
   };
 
 

@@ -25,8 +25,8 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     
     template<> 
     struct ublas_ordering<boost::numeric::ublas::row_major_tag> {
-      typedef row_major_t                        type; 
-      typedef boost::numeric::ublas::row_major   functor_type; 
+      using type = row_major_t; 
+      using functor_type = boost::numeric::ublas::row_major; 
 
       template <typename M>
       static typename M::size_type leading_dimension( M const& m ) {
@@ -46,8 +46,8 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     
     template<> 
     struct ublas_ordering<boost::numeric::ublas::column_major_tag> {
-      typedef column_major_t                        type; 
-      typedef boost::numeric::ublas::column_major   functor_type; 
+      using type = column_major_t; 
+      using functor_type = boost::numeric::ublas::column_major; 
 
       template <typename M>
       static typename M::size_type leading_dimension( M const& m ) {

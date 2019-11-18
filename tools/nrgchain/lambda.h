@@ -8,7 +8,7 @@
 // All things Lambda (stored to avoid recomputing).
 class LAMBDA {
   private:
-  double Lambda, logLambda, factorLambda;
+  double Lambda, logLambda{}, factorLambda{};
 
   public:
   LAMBDA() { Lambda = -1; };

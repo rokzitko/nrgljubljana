@@ -68,11 +68,11 @@ void recalc_f(const DiagInfo &dg, MatrixElements &ff, const Invar &Ip, const Inv
 // of nonzero irreducible matrix elements. cf. Hofstetter PhD p. 120
 // <Q+1 S+-1/2 .. i1 ||f^\dag|| Q S .. ip>_N = factor < IN1 .. ||f^\dag|| INp ..>_{N_1}
 struct Recalc {
-  size_t i1; // combination of states
-  size_t ip;
+  size_t i1{}; // combination of states
+  size_t ip{};
   Invar IN1; // subspace in N-1 stage
   Invar INp;
-  t_factor factor; // additional multiplicative factor
+  t_factor factor{}; // additional multiplicative factor
 };
 
 // Used in recalc_general() for debugging purposes.

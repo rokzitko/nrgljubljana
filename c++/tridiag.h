@@ -12,7 +12,7 @@
 // Wrapper class for arbitrary precision numbers
 class my_mpf {
   private:
-  mpf_t val;
+  mpf_t val{};
 
   public:
   my_mpf() { mpf_init(val); }
@@ -25,7 +25,7 @@ class my_mpf {
   inline operator mpf_t &() { return val; }
 };
 
-typedef std::vector<my_mpf> vmpf;
+using vmpf = std::vector<my_mpf>;
 
 // Fix normalization of u_{n,m}, v_{n,m} to 1. IMPORTANT: pass by
 // reference!

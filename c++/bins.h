@@ -21,10 +21,10 @@
 
 class Bins {
   private:
-  size_t binsperdecade;
-  size_t nrbins;
-  double emin, emax;
-  double log10emin, log10emax; // base-10 log of the limits
+  size_t binsperdecade{};
+  size_t nrbins{};
+  double emin{}, emax{};
+  double log10emin{}, log10emax{}; // base-10 log of the limits
   void setlimits();
   inline void add_std(double energy, t_weight weight);
   inline void add_acc(double energy, t_weight weight);
@@ -180,16 +180,16 @@ class Temp {
   Spikes v;
   void add_value(double energy, t_weight weight); // for ChainSpectrumTemp
   operator Spikes &() { return v; }
-  typedef Spikes::iterator iterator;
-  typedef Spikes::const_iterator const_iterator;
+  using iterator = Spikes::iterator;
+  using const_iterator = Spikes::const_iterator;
   iterator begin() { return v.begin(); }
   iterator end() { return v.end(); }
 };
 
 inline void Temp::add_value(double energy, t_weight weight) {
-  for (size_t i = 0; i < v.size(); i++) {
-    if (v[i].first == energy) {
-      v[i].second += weight;
+  for (auto & i : v) {
+    if (i.first == energy) {
+      i.second += weight;
       return;
     }
   }

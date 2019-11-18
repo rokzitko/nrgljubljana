@@ -35,15 +35,17 @@
 #define GTEST_SRC_GTEST_INTERNAL_INL_H_
 
 #ifndef _WIN32_WCE
-# include <errno.h>
+# include <cerrno>
 #endif  // !_WIN32_WCE
-#include <stddef.h>
-#include <stdlib.h>  // For strtoll/_strtoul64/malloc/free.
-#include <string.h>  // For memmove.
+#include <cstddef>
+#include <cstdlib>  // For strtoll/_strtoul64/malloc/free.
+#include <cstring>  // For memmove.
 
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
+
 #include <vector>
 
 #include "gtest/internal/gtest-port.h"
@@ -281,7 +283,7 @@ inline int CountIf(const Container& c, Predicate predicate) {
   // Implemented as an explicit loop since std::count_if() in libCstd on
   // Solaris has a non-standard signature.
   int count = 0;
-  for (typename Container::const_iterator it = c.begin(); it != c.end(); ++it) {
+  for (auto it = c.begin(); it != c.end(); ++it) {
     if (predicate(*it))
       ++count;
   }
@@ -350,7 +352,7 @@ class TestPropertyKeyIs {
   // Constructor.
   //
   // TestPropertyKeyIs has NO default constructor.
-  explicit TestPropertyKeyIs(const std::string& key) : key_(key) {}
+  explicit TestPropertyKeyIs(std::string  key) : key_(std::move(key)) {}
 
   // Returns true if the test name of test property matches on key_.
   bool operator()(const TestProperty& test_property) const {
@@ -418,8 +420,8 @@ GTEST_API_ FilePath GetCurrentExecutableName();
 // The role interface for getting the OS stack trace as a string.
 class OsStackTraceGetterInterface {
  public:
-  OsStackTraceGetterInterface() {}
-  virtual ~OsStackTraceGetterInterface() {}
+  OsStackTraceGetterInterface() = default;
+  virtual ~OsStackTraceGetterInterface() = default;
 
   // Returns the current OS stack trace as an std::string.  Parameters:
   //
@@ -445,7 +447,7 @@ class OsStackTraceGetterInterface {
 // A working implementation of the OsStackTraceGetterInterface interface.
 class OsStackTraceGetter : public OsStackTraceGetterInterface {
  public:
-  OsStackTraceGetter() {}
+  OsStackTraceGetter() = default;
 
   std::string CurrentStackTrace(int max_depth, int skip_count) override;
   void UponLeavingGTest() override;
@@ -466,8 +468,8 @@ class OsStackTraceGetter : public OsStackTraceGetterInterface {
 
 // Information about a Google Test trace point.
 struct TraceInfo {
-  const char* file;
-  int line;
+  const char* file{};
+  int line{};
   std::string message;
 };
 
@@ -1016,7 +1018,7 @@ bool ParseNaturalNumber(const ::std::string& str, Integer* number) {
 
   GTEST_CHECK_(sizeof(Integer) <= sizeof(parsed));
 
-  const Integer result = static_cast<Integer>(parsed);
+  const auto result = static_cast<Integer>(parsed);
   if (parse_success && static_cast<BiggestConvertible>(result) == parsed) {
     *number = result;
     return true;

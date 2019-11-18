@@ -43,15 +43,15 @@
 #  include <crt_externs.h>
 # endif  // GTEST_OS_MAC
 
-# include <errno.h>
+# include <cerrno>
 # include <fcntl.h>
-# include <limits.h>
+# include <climits>
 
 # if GTEST_OS_LINUX
 #  include <signal.h>
 # endif  // GTEST_OS_LINUX
 
-# include <stdarg.h>
+# include <cstdarg>
 
 # if GTEST_OS_WINDOWS
 #  include <windows.h>
@@ -1193,9 +1193,8 @@ class Arguments {
   Arguments() { args_.push_back(nullptr); }
 
   ~Arguments() {
-    for (std::vector<char*>::iterator i = args_.begin(); i != args_.end();
-         ++i) {
-      free(*i);
+    for (auto & arg : args_) {
+      free(arg);
     }
   }
   void AddArgument(const char* argument) {
@@ -1204,7 +1203,7 @@ class Arguments {
 
   template <typename Str>
   void AddArguments(const ::std::vector<Str>& arguments) {
-    for (typename ::std::vector<Str>::const_iterator i = arguments.begin();
+    for (auto i = arguments.begin();
          i != arguments.end();
          ++i) {
       args_.insert(args_.end() - 1, posix::StrDup(i->c_str()));
@@ -1244,7 +1243,7 @@ inline char** GetEnviron() { return environ; }
 // This function is called in a clone()-ed process and thus must avoid
 // any potentially unsafe operations like malloc or libc functions.
 static int ExecDeathTestChildMain(void* child_arg) {
-  ExecDeathTestArgs* const args = static_cast<ExecDeathTestArgs*>(child_arg);
+  auto* const args = static_cast<ExecDeathTestArgs*>(child_arg);
   GTEST_DEATH_TEST_CHECK_SYSCALL_(close(args->close_fd));
 
   // We need to execute the test program in the same environment where

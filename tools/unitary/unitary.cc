@@ -40,14 +40,14 @@ bool veryverbose      = false;
 bool transpose_first  = false;
 bool transpose_last   = false;
 double scale_factor   = 1.0;
-char *output_filename = 0;
+char *output_filename = nullptr;
 
 bool input_ac_bin = false;
 
 const int OUTPUT_PREC = 18;
 double CHOP_TOL       = 1e-14;
 
-typedef ublas::matrix<double> MAT;
+using MAT = ublas::matrix<double>;
 
 void about() {
   if (!quiet) {
@@ -222,7 +222,7 @@ void run(int argc, char *argv[]) {
     M = prod(A, N);
     if (scale_factor != 1.0) M = scale_factor * M;
     if (veryverbose) cout << "M=" << M << endl;
-    if (output_filename != 0) save(output_filename, M);
+    if (output_filename != nullptr) save(output_filename, M);
     return;
   }
   usage();

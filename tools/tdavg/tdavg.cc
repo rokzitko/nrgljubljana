@@ -41,15 +41,15 @@ string ref_name; // reference file (to be subtracted element by element)
 bool copycomments      = false;
 string lastcommentline = "";
 
-typedef vector<double> dvec;
+using dvec = vector<double>;
 
 typedef pair<double, dvec> Line;
-typedef vector<Line> multiVec;
+using multiVec = vector<Line>;
 
 typedef pair<double, double> dpair;
-typedef vector<dpair> Vec;
+using Vec = vector<dpair>;
 
-typedef vector<multiVec> DataType;
+using DataType = vector<multiVec>;
 DataType input;     // input data
 DataType reference; // reference data (to be subtracted element by element)
 dvec mesh;          // output mesh
@@ -63,7 +63,7 @@ void usage(ostream &F = cout) { F << "Usage: " << PROGRAM << " " << USAGE << end
 
 // Check for the existance of a regular file.
 bool file_exists(string filename) {
-  struct stat s;
+  struct stat s{};
   int result = stat(filename.c_str(), &s);
   if (result == 0 && S_ISREG(s.st_mode)) return true;
   return false;
@@ -122,12 +122,12 @@ dvec split(const string &s) {
 }
 
 ostream &operator<<(ostream &os, const dvec &v) {
-  for (dvec::const_iterator i = v.begin(); i != v.end(); i++) { os << *i << " "; }
+  for (double i : v) { os << i << " "; }
   return os;
 }
 
 ostream &operator<<(ostream &os, const Vec &v) {
-  for (Vec::const_iterator i = v.begin(); i != v.end(); i++) { os << i->first << " " << i->second << endl; }
+  for (const auto & i : v) { os << i.first << " " << i.second << endl; }
   return os;
 }
 
@@ -208,16 +208,16 @@ void read_files() {
 class LinInt {
   protected:
   Vec vec;               // tabulated data
-  int len;               // length of vec
-  int index;             // index of the interval where last x was found
-  double x0, x1;         // last x was in [x0:x1]
-  double f0, f1;         // f(x0), f(x1)
-  double deriv;          // (f1-f0)/(x1-x0)
-  bool newintegral_flag; // set to true when we switch to a new interval
-  double xmin, xmax;     // lowest and highest x contained in vec
-  double fxmin, fxmax;   // f(xmin), f(xmax)
+  int len{};               // length of vec
+  int index{};             // index of the interval where last x was found
+  double x0{}, x1{};         // last x was in [x0:x1]
+  double f0{}, f1{};         // f(x0), f(x1)
+  double deriv{};          // (f1-f0)/(x1-x0)
+  bool newintegral_flag{}; // set to true when we switch to a new interval
+  double xmin{}, xmax{};     // lowest and highest x contained in vec
+  double fxmin{}, fxmax{};   // f(xmin), f(xmax)
   public:
-  LinInt(){};
+  LinInt()= default;;
   LinInt(Vec &in_vec) : vec(in_vec) {
     len              = vec.size();
     index            = -1;
@@ -302,13 +302,13 @@ dvec merge_meshes() {
     for (unsigned int j = 0; j < len; j++) { mesh.push_back(input[i][j].first); }
   }
   sort(mesh.begin(), mesh.end());
-  dvec::iterator new_end = unique(mesh.begin(), mesh.end(), eq_approx);
+  auto new_end = unique(mesh.begin(), mesh.end(), eq_approx);
   mesh.erase(new_end, mesh.end());
   return mesh;
 }
 
-typedef vector<LinInt> LinIntVector;
-typedef vector<LinIntVector> IntType;
+using LinIntVector = vector<LinInt>;
+using IntType = vector<LinIntVector>;
 IntType f, reff; // interpolation objects
 
 IntType interpolate(const DataType &data) {

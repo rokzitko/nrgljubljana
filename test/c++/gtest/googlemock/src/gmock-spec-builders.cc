@@ -35,12 +35,14 @@
 
 #include "gmock/gmock-spec-builders.h"
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <iostream>  // NOLINT
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
+
 #include <vector>
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -76,10 +78,10 @@ GTEST_API_ void LogWithLocation(testing::internal::LogSeverity severity,
 
 // Constructs an ExpectationBase object.
 ExpectationBase::ExpectationBase(const char* a_file, int a_line,
-                                 const std::string& a_source_text)
+                                 std::string  a_source_text)
     : file_(a_file),
       line_(a_line),
-      source_text_(a_source_text),
+      source_text_(std::move(a_source_text)),
       cardinality_specified_(false),
       cardinality_(Exactly(1)),
       call_count_(0),
@@ -91,7 +93,7 @@ ExpectationBase::ExpectationBase(const char* a_file, int a_line,
       action_count_checked_(false) {}
 
 // Destructs an ExpectationBase object.
-ExpectationBase::~ExpectationBase() {}
+ExpectationBase::~ExpectationBase() = default;
 
 // Explicitly specifies the cardinality of this expectation.  Used by
 // the subclasses to implement the .Times() clause.
@@ -114,10 +116,8 @@ void ExpectationBase::RetireAllPreRequisites()
     ExpectationBase* exp = expectations.back();
     expectations.pop_back();
 
-    for (ExpectationSet::const_iterator it =
-             exp->immediate_prerequisites_.begin();
-         it != exp->immediate_prerequisites_.end(); ++it) {
-      ExpectationBase* next = it->expectation_base().get();
+    for (const auto & immediate_prerequisite : exp->immediate_prerequisites_) {
+      ExpectationBase* next = immediate_prerequisite.expectation_base().get();
       if (!next->is_retired()) {
         next->Retire();
         expectations.push_back(next);
@@ -136,10 +136,8 @@ bool ExpectationBase::AllPrerequisitesAreSatisfied() const
     const ExpectationBase* exp = expectations.back();
     expectations.pop_back();
 
-    for (ExpectationSet::const_iterator it =
-             exp->immediate_prerequisites_.begin();
-         it != exp->immediate_prerequisites_.end(); ++it) {
-      const ExpectationBase* next = it->expectation_base().get();
+    for (const auto & immediate_prerequisite : exp->immediate_prerequisites_) {
+      const ExpectationBase* next = immediate_prerequisite.expectation_base().get();
       if (!next->IsSatisfied()) return false;
       expectations.push_back(next);
     }
@@ -156,10 +154,8 @@ void ExpectationBase::FindUnsatisfiedPrerequisites(ExpectationSet* result) const
     const ExpectationBase* exp = expectations.back();
     expectations.pop_back();
 
-    for (ExpectationSet::const_iterator it =
-             exp->immediate_prerequisites_.begin();
-         it != exp->immediate_prerequisites_.end(); ++it) {
-      const ExpectationBase* next = it->expectation_base().get();
+    for (const auto & immediate_prerequisite : exp->immediate_prerequisites_) {
+      const ExpectationBase* next = immediate_prerequisite.expectation_base().get();
 
       if (next->IsSatisfied()) {
         // If *it is satisfied and has a call count of 0, some of its
@@ -171,7 +167,7 @@ void ExpectationBase::FindUnsatisfiedPrerequisites(ExpectationSet* result) const
         // Now that we know next is unsatisfied, we are not so interested
         // in whether its pre-requisites are satisfied.  Therefore we
         // don't iterate into it here.
-        *result += *it;
+        *result += immediate_prerequisite;
       }
     }
   }
@@ -302,9 +298,9 @@ void ReportUninterestingCall(CallReaction reaction, const std::string& msg) {
 }
 
 UntypedFunctionMockerBase::UntypedFunctionMockerBase()
-    : mock_obj_(nullptr), name_("") {}
+     {}
 
-UntypedFunctionMockerBase::~UntypedFunctionMockerBase() {}
+UntypedFunctionMockerBase::~UntypedFunctionMockerBase() = default;
 
 // Sets the mock object this mock method belongs to, and registers
 // this information in the global mock registry.  Will be called
@@ -559,22 +555,22 @@ CallReaction intToCallReaction(int mock_behavior) {
 
 namespace {
 
-typedef std::set<internal::UntypedFunctionMockerBase*> FunctionMockers;
+using FunctionMockers = std::set<internal::UntypedFunctionMockerBase *>;
 
 // The current state of a mock object.  Such information is needed for
 // detecting leaked mock objects and explicitly verifying a mock's
 // expectations.
 struct MockObjectState {
   MockObjectState()
-      : first_used_file(nullptr), first_used_line(-1), leakable(false) {}
+       {}
 
   // Where in the source file an ON_CALL or EXPECT_CALL is first
   // invoked on this mock object.
-  const char* first_used_file;
-  int first_used_line;
+  const char* first_used_file{nullptr};
+  int first_used_line{-1};
   ::std::string first_used_test_suite;
   ::std::string first_used_test;
-  bool leakable;  // true if it's OK to leak the object.
+  bool leakable{false};  // true if it's OK to leak the object.
   FunctionMockers function_mockers;  // All registered methods of the object.
 };
 
@@ -743,9 +739,8 @@ bool Mock::VerifyAndClearExpectationsLocked(void* mock_obj)
   bool expectations_met = true;
   FunctionMockers& mockers =
       g_mock_object_registry.states()[mock_obj].function_mockers;
-  for (FunctionMockers::const_iterator it = mockers.begin();
-       it != mockers.end(); ++it) {
-    if (!(*it)->VerifyAndClearExpectationsLocked()) {
+  for (auto mocker : mockers) {
+    if (!mocker->VerifyAndClearExpectationsLocked()) {
       expectations_met = false;
     }
   }
@@ -803,7 +798,7 @@ void Mock::RegisterUseByOnCallOrExpectCall(const void* mock_obj,
 void Mock::UnregisterLocked(internal::UntypedFunctionMockerBase* mocker)
     GTEST_EXCLUSIVE_LOCK_REQUIRED_(internal::g_gmock_mutex) {
   internal::g_gmock_mutex.AssertHeld();
-  for (MockObjectRegistry::StateMap::iterator it =
+  for (auto it =
            g_mock_object_registry.states().begin();
        it != g_mock_object_registry.states().end(); ++it) {
     FunctionMockers& mockers = it->second.function_mockers;
@@ -831,22 +826,21 @@ void Mock::ClearDefaultActionsLocked(void* mock_obj)
   // object.
   FunctionMockers& mockers =
       g_mock_object_registry.states()[mock_obj].function_mockers;
-  for (FunctionMockers::const_iterator it = mockers.begin();
-       it != mockers.end(); ++it) {
-    (*it)->ClearDefaultActionsLocked();
+  for (auto mocker : mockers) {
+    mocker->ClearDefaultActionsLocked();
   }
 
   // We don't clear the content of mockers, as they may still be
   // needed by VerifyAndClearExpectationsLocked().
 }
 
-Expectation::Expectation() {}
+Expectation::Expectation() = default;
 
 Expectation::Expectation(
-    const std::shared_ptr<internal::ExpectationBase>& an_expectation_base)
-    : expectation_base_(an_expectation_base) {}
+    std::shared_ptr<internal::ExpectationBase>  an_expectation_base)
+    : expectation_base_(std::move(an_expectation_base)) {}
 
-Expectation::~Expectation() {}
+Expectation::~Expectation() = default;
 
 // Adds an expectation to a sequence.
 void Sequence::AddExpectation(const Expectation& expectation) const {

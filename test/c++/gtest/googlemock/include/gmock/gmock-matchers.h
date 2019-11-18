@@ -42,7 +42,7 @@
 #ifndef GMOCK_INCLUDE_GMOCK_GMOCK_MATCHERS_H_
 #define GMOCK_INCLUDE_GMOCK_GMOCK_MATCHERS_H_
 
-#include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <initializer_list>
 #include <iterator>
@@ -281,8 +281,8 @@ class SafeMatcherCastImpl {
         cannot_convert_non_reference_arg_to_reference);
     // In case both T and U are arithmetic types, enforce that the
     // conversion is not lossy.
-    typedef GTEST_REMOVE_REFERENCE_AND_CONST_(T) RawT;
-    typedef GTEST_REMOVE_REFERENCE_AND_CONST_(U) RawU;
+    using RawT = typename std::remove_const<typename std::remove_reference<T>::type>::type;
+    using RawU = typename std::remove_const<typename std::remove_reference<U>::type>::type;
     const bool kTIsOther = GMOCK_KIND_OF_(RawT) == internal::kOther;
     const bool kUIsOther = GMOCK_KIND_OF_(RawU) == internal::kOther;
     GTEST_COMPILE_ASSERT_(
@@ -451,7 +451,7 @@ void ExplainMatchFailureTupleTo(const MatcherTuple& matchers,
 template <typename Tuple, typename Func, typename OutIter>
 class TransformTupleValuesHelper {
  private:
-  typedef ::std::tuple_size<Tuple> TupleSize;
+  using TupleSize = ::std::tuple_size<Tuple>;
 
  public:
   // For each member of tuple 't', taken in order, evaluates '*out++ = f(t)'.
@@ -656,9 +656,9 @@ bool CaseInsensitiveStringEquals(const StringType& s1,
 template <typename StringType>
 class StrEqualityMatcher {
  public:
-  StrEqualityMatcher(const StringType& str, bool expect_eq,
+  StrEqualityMatcher(StringType  str, bool expect_eq,
                      bool case_sensitive)
-      : string_(str), expect_eq_(expect_eq), case_sensitive_(case_sensitive) {}
+      : string_(std::move(str)), expect_eq_(expect_eq), case_sensitive_(case_sensitive) {}
 
 #if GTEST_HAS_ABSL
   bool MatchAndExplain(const absl::string_view& s,
@@ -727,8 +727,8 @@ class StrEqualityMatcher {
 template <typename StringType>
 class HasSubstrMatcher {
  public:
-  explicit HasSubstrMatcher(const StringType& substring)
-      : substring_(substring) {}
+  explicit HasSubstrMatcher(StringType  substring)
+      : substring_(std::move(substring)) {}
 
 #if GTEST_HAS_ABSL
   bool MatchAndExplain(const absl::string_view& s,
@@ -784,7 +784,7 @@ class HasSubstrMatcher {
 template <typename StringType>
 class StartsWithMatcher {
  public:
-  explicit StartsWithMatcher(const StringType& prefix) : prefix_(prefix) {
+  explicit StartsWithMatcher(StringType  prefix) : prefix_(std::move(prefix)) {
   }
 
 #if GTEST_HAS_ABSL
@@ -841,7 +841,7 @@ class StartsWithMatcher {
 template <typename StringType>
 class EndsWithMatcher {
  public:
-  explicit EndsWithMatcher(const StringType& suffix) : suffix_(suffix) {}
+  explicit EndsWithMatcher(StringType  suffix) : suffix_(std::move(suffix)) {}
 
 #if GTEST_HAS_ABSL
   bool MatchAndExplain(const absl::string_view& s,
@@ -1579,7 +1579,7 @@ class FloatingEq2Matcher {
     nan_eq_nan_ = nan_eq_nan_val;
   }
   FloatType max_abs_error_;
-  bool nan_eq_nan_;
+  bool nan_eq_nan_{};
 };
 
 // Implements the Pointee(m) matcher for matching a pointer whose
@@ -1607,8 +1607,7 @@ class PointeeMatcher {
   template <typename Pointer>
   class Impl : public MatcherInterface<Pointer> {
    public:
-    typedef typename PointeeOf<typename std::remove_const<
-        typename std::remove_reference<Pointer>::type>::type>::type Pointee;
+    using Pointee = typename PointeeOf<typename std::remove_const<typename std::remove_reference<Pointer>::type>::type>::type;
 
     explicit Impl(const InnerMatcher& matcher)
         : matcher_(MatcherCast<const Pointee&>(matcher)) {}
@@ -1787,7 +1786,7 @@ class FieldMatcher {
 template <typename Class, typename PropertyType, typename Property>
 class PropertyMatcher {
  public:
-  typedef const PropertyType& RefToConstProperty;
+  using RefToConstProperty = const PropertyType &;
 
   PropertyMatcher(Property property, const Matcher<RefToConstProperty>& matcher)
       : property_(property),
@@ -1853,7 +1852,7 @@ class PropertyMatcher {
 // The default template specifies features for functor objects.
 template <typename Functor>
 struct CallableTraits {
-  typedef Functor StorageType;
+  using StorageType = Functor;
 
   static void CheckIsValid(Functor /* functor */) {}
 
@@ -1864,8 +1863,8 @@ struct CallableTraits {
 // Specialization for function pointers.
 template <typename ArgType, typename ResType>
 struct CallableTraits<ResType(*)(ArgType)> {
-  typedef ResType ResultType;
-  typedef ResType(*StorageType)(ArgType);
+  using ResultType = ResType;
+  using StorageType = ResType (*)(ArgType);
 
   static void CheckIsValid(ResType(*f)(ArgType)) {
     GTEST_CHECK_(f != nullptr)
@@ -1893,7 +1892,7 @@ class ResultOfMatcher {
   }
 
  private:
-  typedef typename CallableTraits<Callable>::StorageType CallableStorageType;
+  using CallableStorageType = typename CallableTraits<Callable>::StorageType;
 
   template <typename T>
   class Impl : public MatcherInterface<T> {
@@ -2010,11 +2009,8 @@ class BeginEndDistanceIsMatcher {
   template <typename Container>
   class Impl : public MatcherInterface<Container> {
    public:
-    typedef internal::StlContainerView<
-        GTEST_REMOVE_REFERENCE_AND_CONST_(Container)> ContainerView;
-    typedef typename std::iterator_traits<
-        typename ContainerView::type::const_iterator>::difference_type
-        DistanceType;
+    using ContainerView = internal::StlContainerView<typename std::remove_const<typename std::remove_reference<Container>::type>::type>;
+    using DistanceType = typename std::iterator_traits<typename ContainerView::type::const_iterator>::difference_type;
     explicit Impl(const DistanceMatcher& distance_matcher)
         : distance_matcher_(MatcherCast<DistanceType>(distance_matcher)) {}
 
@@ -2064,9 +2060,9 @@ class BeginEndDistanceIsMatcher {
 template <typename Container>
 class ContainerEqMatcher {
  public:
-  typedef internal::StlContainerView<Container> View;
-  typedef typename View::type StlContainer;
-  typedef typename View::const_reference StlContainerReference;
+  using View = internal::StlContainerView<Container>;
+  using StlContainer = typename View::type;
+  using StlContainerReference = typename View::const_reference;
 
   // We make a copy of expected in case the elements in it are modified
   // after this matcher is created.
@@ -2090,10 +2086,8 @@ class ContainerEqMatcher {
   template <typename LhsContainer>
   bool MatchAndExplain(const LhsContainer& lhs,
                        MatchResultListener* listener) const {
-    typedef internal::StlContainerView<
-        typename std::remove_const<LhsContainer>::type>
-        LhsView;
-    typedef typename LhsView::type LhsStlContainer;
+    using LhsView = internal::StlContainerView<typename std::remove_const<LhsContainer>::type>;
+    using LhsStlContainer = typename LhsView::type;
     StlContainerReference lhs_stl_container = LhsView::ConstReference(lhs);
     if (lhs_stl_container == expected_)
       return true;
@@ -2167,14 +2161,12 @@ class WhenSortedByMatcher {
   template <typename LhsContainer>
   class Impl : public MatcherInterface<LhsContainer> {
    public:
-    typedef internal::StlContainerView<
-         GTEST_REMOVE_REFERENCE_AND_CONST_(LhsContainer)> LhsView;
-    typedef typename LhsView::type LhsStlContainer;
-    typedef typename LhsView::const_reference LhsStlContainerReference;
+    using LhsView = internal::StlContainerView<typename std::remove_const<typename std::remove_reference<LhsContainer>::type>::type>;
+    using LhsStlContainer = typename LhsView::type;
+    using LhsStlContainerReference = typename LhsView::const_reference;
     // Transforms std::pair<const Key, Value> into std::pair<Key, Value>
     // so that we can match associative containers.
-    typedef typename RemoveConstFromKey<
-        typename LhsStlContainer::value_type>::type LhsValue;
+    using LhsValue = typename RemoveConstFromKey<typename LhsStlContainer::value_type>::type;
 
     Impl(const Comparator& comparator, const ContainerMatcher& matcher)
         : comparator_(comparator), matcher_(matcher) {}
@@ -2239,9 +2231,9 @@ class PointwiseMatcher {
       use_UnorderedPointwise_with_hash_tables);
 
  public:
-  typedef internal::StlContainerView<RhsContainer> RhsView;
-  typedef typename RhsView::type RhsStlContainer;
-  typedef typename RhsStlContainer::value_type RhsValue;
+  using RhsView = internal::StlContainerView<RhsContainer>;
+  using RhsStlContainer = typename RhsView::type;
+  using RhsValue = typename RhsStlContainer::value_type;
 
   // Like ContainerEq, we make a copy of rhs in case the elements in
   // it are modified after this matcher is created.
@@ -2266,11 +2258,10 @@ class PointwiseMatcher {
   template <typename LhsContainer>
   class Impl : public MatcherInterface<LhsContainer> {
    public:
-    typedef internal::StlContainerView<
-         GTEST_REMOVE_REFERENCE_AND_CONST_(LhsContainer)> LhsView;
-    typedef typename LhsView::type LhsStlContainer;
-    typedef typename LhsView::const_reference LhsStlContainerReference;
-    typedef typename LhsStlContainer::value_type LhsValue;
+    using LhsView = internal::StlContainerView<typename std::remove_const<typename std::remove_reference<LhsContainer>::type>::type>;
+    using LhsStlContainer = typename LhsView::type;
+    using LhsStlContainerReference = typename LhsView::const_reference;
+    using LhsValue = typename LhsStlContainer::value_type;
     // We pass the LHS value and the RHS value to the inner matcher by
     // reference, as they may be expensive to copy.  We must use tuple
     // instead of pair here, as a pair cannot hold references (C++ 98,
@@ -2356,11 +2347,11 @@ class PointwiseMatcher {
 template <typename Container>
 class QuantifierMatcherImpl : public MatcherInterface<Container> {
  public:
-  typedef GTEST_REMOVE_REFERENCE_AND_CONST_(Container) RawContainer;
-  typedef StlContainerView<RawContainer> View;
-  typedef typename View::type StlContainer;
-  typedef typename View::const_reference StlContainerReference;
-  typedef typename StlContainer::value_type Element;
+  using RawContainer = typename std::remove_const<typename std::remove_reference<Container>::type>::type;
+  using View = StlContainerView<RawContainer>;
+  using StlContainer = typename View::type;
+  using StlContainerReference = typename View::const_reference;
+  using Element = typename StlContainer::value_type;
 
   template <typename InnerMatcher>
   explicit QuantifierMatcherImpl(InnerMatcher inner_matcher)
@@ -2521,8 +2512,8 @@ auto Second(T& x, Rank0) -> decltype((x.second)) {  // NOLINT
 template <typename PairType>
 class KeyMatcherImpl : public MatcherInterface<PairType> {
  public:
-  typedef GTEST_REMOVE_REFERENCE_AND_CONST_(PairType) RawPairType;
-  typedef typename RawPairType::first_type KeyType;
+  using RawPairType = typename std::remove_const<typename std::remove_reference<PairType>::type>::type;
+  using KeyType = typename RawPairType::first_type;
 
   template <typename InnerMatcher>
   explicit KeyMatcherImpl(InnerMatcher inner_matcher)
@@ -2584,9 +2575,9 @@ class KeyMatcher {
 template <typename PairType>
 class PairMatcherImpl : public MatcherInterface<PairType> {
  public:
-  typedef GTEST_REMOVE_REFERENCE_AND_CONST_(PairType) RawPairType;
-  typedef typename RawPairType::first_type FirstType;
-  typedef typename RawPairType::second_type SecondType;
+  using RawPairType = typename std::remove_const<typename std::remove_reference<PairType>::type>::type;
+  using FirstType = typename RawPairType::first_type;
+  using SecondType = typename RawPairType::second_type;
 
   template <typename FirstMatcher, typename SecondMatcher>
   PairMatcherImpl(FirstMatcher first_matcher, SecondMatcher second_matcher)
@@ -2690,11 +2681,11 @@ class PairMatcher {
 template <typename Container>
 class ElementsAreMatcherImpl : public MatcherInterface<Container> {
  public:
-  typedef GTEST_REMOVE_REFERENCE_AND_CONST_(Container) RawContainer;
-  typedef internal::StlContainerView<RawContainer> View;
-  typedef typename View::type StlContainer;
-  typedef typename View::const_reference StlContainerReference;
-  typedef typename StlContainer::value_type Element;
+  using RawContainer = typename std::remove_const<typename std::remove_reference<Container>::type>::type;
+  using View = internal::StlContainerView<RawContainer>;
+  using StlContainer = typename View::type;
+  using StlContainerReference = typename View::const_reference;
+  using Element = typename StlContainer::value_type;
 
   // Constructs the matcher from a sequence of element values or
   // element matchers.
@@ -2878,7 +2869,7 @@ class GTEST_API_ MatchMatrix {
 };
 
 typedef ::std::pair<size_t, size_t> ElementMatcherPair;
-typedef ::std::vector<ElementMatcherPair> ElementMatcherPairs;
+using ElementMatcherPairs = ::std::vector<ElementMatcherPair>;
 
 // Returns a maximum bipartite matching for the specified graph 'g'.
 // The matching is represented as a vector of {element, matcher} pairs.
@@ -2905,7 +2896,7 @@ class GTEST_API_ UnorderedElementsAreMatcherImplBase {
   // A vector of matcher describers, one for each element matcher.
   // Does not own the describers (and thus can be used only when the
   // element matchers are alive).
-  typedef ::std::vector<const MatcherDescriberInterface*> MatcherDescriberVec;
+  using MatcherDescriberVec = ::std::vector<const MatcherDescriberInterface *>;
 
   // Describes this UnorderedElementsAre matcher.
   void DescribeToImpl(::std::ostream* os) const;
@@ -2944,12 +2935,12 @@ class UnorderedElementsAreMatcherImpl
     : public MatcherInterface<Container>,
       public UnorderedElementsAreMatcherImplBase {
  public:
-  typedef GTEST_REMOVE_REFERENCE_AND_CONST_(Container) RawContainer;
-  typedef internal::StlContainerView<RawContainer> View;
-  typedef typename View::type StlContainer;
-  typedef typename View::const_reference StlContainerReference;
-  typedef typename StlContainer::const_iterator StlContainerConstIterator;
-  typedef typename StlContainer::value_type Element;
+  using RawContainer = typename std::remove_const<typename std::remove_reference<Container>::type>::type;
+  using View = internal::StlContainerView<RawContainer>;
+  using StlContainer = typename View::type;
+  using StlContainerReference = typename View::const_reference;
+  using StlContainerConstIterator = typename StlContainer::const_iterator;
+  using Element = typename StlContainer::value_type;
 
   template <typename InputIter>
   UnorderedElementsAreMatcherImpl(UnorderedMatcherRequire::Flags matcher_flags,
@@ -3051,10 +3042,10 @@ class UnorderedElementsAreMatcher {
 
   template <typename Container>
   operator Matcher<Container>() const {
-    typedef GTEST_REMOVE_REFERENCE_AND_CONST_(Container) RawContainer;
-    typedef typename internal::StlContainerView<RawContainer>::type View;
-    typedef typename View::value_type Element;
-    typedef ::std::vector<Matcher<const Element&> > MatcherVec;
+    using RawContainer = typename std::remove_const<typename std::remove_reference<Container>::type>::type;
+    using View = typename internal::StlContainerView<RawContainer>::type;
+    using Element = typename View::value_type;
+    using MatcherVec = ::std::vector<Matcher<const Element &> >;
     MatcherVec matchers;
     matchers.reserve(::std::tuple_size<MatcherTuple>::value);
     TransformTupleValues(CastAndAppendTransform<const Element&>(), matchers_,
@@ -3083,10 +3074,10 @@ class ElementsAreMatcher {
             ::std::tuple_size<MatcherTuple>::value < 2,
         use_UnorderedElementsAre_with_hash_tables);
 
-    typedef GTEST_REMOVE_REFERENCE_AND_CONST_(Container) RawContainer;
-    typedef typename internal::StlContainerView<RawContainer>::type View;
-    typedef typename View::value_type Element;
-    typedef ::std::vector<Matcher<const Element&> > MatcherVec;
+    using RawContainer = typename std::remove_const<typename std::remove_reference<Container>::type>::type;
+    using View = typename internal::StlContainerView<RawContainer>::type;
+    using Element = typename View::value_type;
+    using MatcherVec = ::std::vector<Matcher<const Element &> >;
     MatcherVec matchers;
     matchers.reserve(::std::tuple_size<MatcherTuple>::value);
     TransformTupleValues(CastAndAppendTransform<const Element&>(), matchers_,
@@ -3245,8 +3236,8 @@ class OptionalMatcher {
   template <typename Optional>
   class Impl : public MatcherInterface<Optional> {
    public:
-    typedef GTEST_REMOVE_REFERENCE_AND_CONST_(Optional) OptionalView;
-    typedef typename OptionalView::value_type ValueType;
+    using OptionalView = typename std::remove_const<typename std::remove_reference<Optional>::type>::type;
+    using ValueType = typename OptionalView::value_type;
     explicit Impl(const ValueMatcher& value_matcher)
         : value_matcher_(MatcherCast<ValueType>(value_matcher)) {}
 
@@ -3502,7 +3493,7 @@ template <typename Iter>
 inline internal::ElementsAreArrayMatcher<
     typename ::std::iterator_traits<Iter>::value_type>
 ElementsAreArray(Iter first, Iter last) {
-  typedef typename ::std::iterator_traits<Iter>::value_type T;
+  using T = typename ::std::iterator_traits<Iter>::value_type;
   return internal::ElementsAreArrayMatcher<T>(first, last);
 }
 
@@ -3547,7 +3538,7 @@ template <typename Iter>
 inline internal::UnorderedElementsAreArrayMatcher<
     typename ::std::iterator_traits<Iter>::value_type>
 UnorderedElementsAreArray(Iter first, Iter last) {
-  typedef typename ::std::iterator_traits<Iter>::value_type T;
+  using T = typename ::std::iterator_traits<Iter>::value_type;
   return internal::UnorderedElementsAreArrayMatcher<T>(
       internal::UnorderedMatcherRequire::ExactMatch, first, last);
 }
@@ -3911,38 +3902,38 @@ inline PolymorphicMatcher<internal::EndsWithMatcher<std::wstring> > EndsWith(
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field == the second field.
-inline internal::Eq2Matcher Eq() { return internal::Eq2Matcher(); }
+inline internal::Eq2Matcher Eq() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field >= the second field.
-inline internal::Ge2Matcher Ge() { return internal::Ge2Matcher(); }
+inline internal::Ge2Matcher Ge() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field > the second field.
-inline internal::Gt2Matcher Gt() { return internal::Gt2Matcher(); }
+inline internal::Gt2Matcher Gt() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field <= the second field.
-inline internal::Le2Matcher Le() { return internal::Le2Matcher(); }
+inline internal::Le2Matcher Le() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field < the second field.
-inline internal::Lt2Matcher Lt() { return internal::Lt2Matcher(); }
+inline internal::Lt2Matcher Lt() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field != the second field.
-inline internal::Ne2Matcher Ne() { return internal::Ne2Matcher(); }
+inline internal::Ne2Matcher Ne() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where
 // FloatEq(first field) matches the second field.
 inline internal::FloatingEq2Matcher<float> FloatEq() {
-  return internal::FloatingEq2Matcher<float>();
+  return {};
 }
 
 // Creates a polymorphic matcher that matches a 2-tuple where
 // DoubleEq(first field) matches the second field.
 inline internal::FloatingEq2Matcher<double> DoubleEq() {
-  return internal::FloatingEq2Matcher<double>();
+  return {};
 }
 
 // Creates a polymorphic matcher that matches a 2-tuple where
@@ -3974,7 +3965,7 @@ inline internal::FloatingEq2Matcher<double> DoubleNear(double max_abs_error) {
 // equality.
 inline internal::FloatingEq2Matcher<float> NanSensitiveFloatNear(
     float max_abs_error) {
-  return internal::FloatingEq2Matcher<float>(max_abs_error, true);
+  return {max_abs_error, true};
 }
 
 // Creates a polymorphic matcher that matches a 2-tuple where
@@ -3982,7 +3973,7 @@ inline internal::FloatingEq2Matcher<float> NanSensitiveFloatNear(
 // equality.
 inline internal::FloatingEq2Matcher<double> NanSensitiveDoubleNear(
     double max_abs_error) {
-  return internal::FloatingEq2Matcher<double>(max_abs_error, true);
+  return {max_abs_error, true};
 }
 
 // Creates a matcher that matches any value of type T that m doesn't
@@ -4034,7 +4025,7 @@ inline PolymorphicMatcher<internal::ContainerEqMatcher<
 ContainerEq(const Container& rhs) {
   // This following line is for working around a bug in MSVC 8.0,
   // which causes Container to be a const type sometimes.
-  typedef typename std::remove_const<Container>::type RawContainer;
+  using RawContainer = typename std::remove_const<Container>::type;
   return MakePolymorphicMatcher(
       internal::ContainerEqMatcher<RawContainer>(rhs));
 }
@@ -4072,7 +4063,7 @@ Pointwise(const TupleMatcher& tuple_matcher, const Container& rhs) {
   // This following line is for working around a bug in MSVC 8.0,
   // which causes Container to be a const type sometimes (e.g. when
   // rhs is a const int[])..
-  typedef typename std::remove_const<Container>::type RawContainer;
+  using RawContainer = typename std::remove_const<Container>::type;
   return internal::PointwiseMatcher<TupleMatcher, RawContainer>(
       tuple_matcher, rhs);
 }
@@ -4108,13 +4099,13 @@ UnorderedPointwise(const Tuple2Matcher& tuple2_matcher,
   // This following line is for working around a bug in MSVC 8.0,
   // which causes RhsContainer to be a const type sometimes (e.g. when
   // rhs_container is a const int[]).
-  typedef typename std::remove_const<RhsContainer>::type RawRhsContainer;
+  using RawRhsContainer = typename std::remove_const<RhsContainer>::type;
 
   // RhsView allows the same code to handle RhsContainer being a
   // STL-style container and it being a native C-style array.
-  typedef typename internal::StlContainerView<RawRhsContainer> RhsView;
-  typedef typename RhsView::type RhsStlContainer;
-  typedef typename RhsStlContainer::value_type Second;
+  using RhsView = typename internal::StlContainerView<RawRhsContainer>;
+  using RhsStlContainer = typename RhsView::type;
+  using Second = typename RhsStlContainer::value_type;
   const RhsStlContainer& rhs_stl_container =
       RhsView::ConstReference(rhs_container);
 
@@ -4195,7 +4186,7 @@ template <typename Iter>
 inline internal::UnorderedElementsAreArrayMatcher<
     typename ::std::iterator_traits<Iter>::value_type>
 IsSupersetOf(Iter first, Iter last) {
-  typedef typename ::std::iterator_traits<Iter>::value_type T;
+  using T = typename ::std::iterator_traits<Iter>::value_type;
   return internal::UnorderedElementsAreArrayMatcher<T>(
       internal::UnorderedMatcherRequire::Superset, first, last);
 }
@@ -4252,7 +4243,7 @@ template <typename Iter>
 inline internal::UnorderedElementsAreArrayMatcher<
     typename ::std::iterator_traits<Iter>::value_type>
 IsSubsetOf(Iter first, Iter last) {
-  typedef typename ::std::iterator_traits<Iter>::value_type T;
+  using T = typename ::std::iterator_traits<Iter>::value_type;
   return internal::UnorderedElementsAreArrayMatcher<T>(
       internal::UnorderedMatcherRequire::Subset, first, last);
 }

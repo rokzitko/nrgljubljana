@@ -1,3 +1,7 @@
+#include <utility>
+
+
+
 #ifndef _time_mem_h_
 #define _time_mem_h_
 
@@ -15,12 +19,12 @@ class Timing {
     timer   = gettime();
     running = false;
   }
-  void start(void) {
+  void start() {
     my_assert(!running);
     running = true;
     timer   = gettime();
   }
-  double stop(void) {
+  double stop() {
     my_assert(running);
     running    = false;
     double end = gettime();
@@ -38,7 +42,7 @@ class Timing {
     double end = gettime();
     return end - all;
   }
-  void report(void) {
+  void report() {
     const int T_WIDTH  = 12;
     const double t_all = total();
     cout << endl;
@@ -70,7 +74,7 @@ class TimeScope {
   string timer_name;
 
   public:
-  TimeScope(Timing &_timer, const string &_timer_name) : timer(_timer), timer_name(_timer_name) { timer.start(); }
+  TimeScope(Timing &_timer, string _timer_name) : timer(_timer), timer_name(std::move(_timer_name)) { timer.start(); }
   ~TimeScope() { timer.add(timer_name); }
 };
 

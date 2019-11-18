@@ -40,6 +40,10 @@
 #ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_FILEPATH_H_
 #define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_FILEPATH_H_
 
+#include <utility>
+
+
+
 #include "gtest/internal/gtest-string.h"
 
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
@@ -62,9 +66,9 @@ namespace internal {
 class GTEST_API_ FilePath {
  public:
   FilePath() : pathname_("") { }
-  FilePath(const FilePath& rhs) : pathname_(rhs.pathname_) { }
+  FilePath(const FilePath& rhs)  = default;
 
-  explicit FilePath(const std::string& pathname) : pathname_(pathname) {
+  explicit FilePath(std::string  pathname) : pathname_(std::move(pathname)) {
     Normalize();
   }
 

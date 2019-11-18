@@ -50,17 +50,15 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 #endif 
 
     typedef boost::numeric::ublas::matrix<T, F, ArrT>   identifier_type ;
-    typedef M                                           matrix_type;
-    typedef general_t                                   matrix_structure; 
-    typedef typename detail::ublas_ordering<
-      typename F::orientation_category
-    >::type                                             ordering_type; 
+    using matrix_type = M;
+    using matrix_structure = general_t; 
+    using ordering_type = typename detail::ublas_ordering<typename F::orientation_category>::type; 
 
-    typedef T                                           value_type; 
+    using value_type = T; 
     typedef typename detail::generate_const<M,T>::type* pointer; 
 
-      typedef typename identifier_type::orientation_category                      orientation_category; 
-      typedef typename detail::ublas_ordering<orientation_category>::functor_type functor_t ;
+      using orientation_category = typename identifier_type::orientation_category; 
+      using functor_t = typename detail::ublas_ordering<orientation_category>::functor_type ;
 
     static pointer storage (matrix_type& m) {
       typedef typename detail::generate_const<M,ArrT>::type array_type ;
@@ -97,12 +95,12 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::matrix_reference<M>, typename boost::remove_const<MR>::type>::value) ) ;
 #endif 
 
-    typedef boost::numeric::ublas::matrix_reference<M>  identifier_type;
-    typedef MR                                          matrix_type;
-    typedef typename matrix_traits<M>::matrix_structure matrix_structure; 
-    typedef typename matrix_traits<M>::ordering_type    ordering_type; 
+    using identifier_type = boost::numeric::ublas::matrix_reference<M>;
+    using matrix_type = MR;
+    using matrix_structure = typename matrix_traits<M>::matrix_structure; 
+    using ordering_type = typename matrix_traits<M>::ordering_type; 
 
-    typedef typename M::value_type                                value_type;
+    using value_type = typename M::value_type;
     typedef typename detail::generate_const<MR,value_type>::type* pointer; 
 
   private:
@@ -143,17 +141,17 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::matrix_range<M>, typename boost::remove_const<MR>::type>::value) ) ;
 #endif 
 
-    typedef boost::numeric::ublas::matrix_range<M>      identifier_type;
-    typedef MR                                          matrix_type;
-    typedef typename matrix_traits<M>::matrix_structure matrix_structure;
-    typedef typename matrix_traits<M>::ordering_type    ordering_type; 
+    using identifier_type = boost::numeric::ublas::matrix_range<M>;
+    using matrix_type = MR;
+    using matrix_structure = typename matrix_traits<M>::matrix_structure;
+    using ordering_type = typename matrix_traits<M>::ordering_type; 
 
   private:
     typedef typename detail::generate_const<MR, typename MR::matrix_closure_type>::type m_type; 
 
   public:
-    typedef typename matrix_traits<m_type>::value_type            value_type;
-    typedef typename matrix_traits<m_type>::pointer               pointer ;
+    using value_type = typename matrix_traits<m_type>::value_type;
+    using pointer = typename matrix_traits<m_type>::pointer ;
 
   public:
     static pointer storage (matrix_type& mr) {
@@ -194,12 +192,12 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::matrix_slice<M>, typename boost::remove_const<MS>::type>::value) ) ;
 #endif 
 
-    typedef boost::numeric::ublas::matrix_slice<M>   identifier_type;
-    typedef MS                                       matrix_type;
-    typedef unknown_structure_t                      matrix_structure; 
-    typedef typename matrix_traits<M>::ordering_type ordering_type; 
+    using identifier_type = boost::numeric::ublas::matrix_slice<M>;
+    using matrix_type = MS;
+    using matrix_structure = unknown_structure_t; 
+    using ordering_type = typename matrix_traits<M>::ordering_type; 
 
-    typedef typename M::value_type                                value_type;
+    using value_type = typename M::value_type;
     typedef typename detail::generate_const<MS,value_type>::type* pointer; 
 
   private:
@@ -226,7 +224,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     }
   public:
     static std::ptrdiff_t leading_dimension (matrix_type& ms) {
-      typedef typename identifier_type::orientation_category oc_t; 
+      using oc_t = typename identifier_type::orientation_category; 
       return ld (ms.stride1(), ms.stride2(), oc_t())
 	* matrix_traits<m_type>::leading_dimension (ms.data()); 
     }
@@ -252,9 +250,9 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::matrix_row<M>, typename boost::remove_const<MR>::type>::value) ) ;
 #endif 
 
-    typedef boost::numeric::ublas::matrix_row<M>                   identifier_type;
-    typedef MR                                                     vector_type;
-    typedef typename M::value_type                                 value_type;
+    using identifier_type = boost::numeric::ublas::matrix_row<M>;
+    using vector_type = MR;
+    using value_type = typename M::value_type;
     typedef typename default_vector_traits<MR,value_type>::pointer pointer; 
 
   private:
@@ -282,9 +280,9 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::matrix_column<M>, typename boost::remove_const<MC>::type>::value) ) ;
 #endif 
 
-    typedef boost::numeric::ublas::matrix_column<M>                identifier_type; 
-    typedef MC                                                     vector_type;
-    typedef typename M::value_type                                 value_type ;
+    using identifier_type = boost::numeric::ublas::matrix_column<M>; 
+    using vector_type = MC;
+    using value_type = typename M::value_type ;
     typedef typename default_vector_traits<MC,value_type>::pointer pointer; 
 
   private:
@@ -314,11 +312,11 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 #endif
 
     typedef boost::numeric::ublas::c_matrix<T,M,N>   identifier_type ;
-    typedef Matr                                     matrix_type;
-    typedef general_t                                matrix_structure; 
-    typedef row_major_t                              ordering_type; 
+    using matrix_type = Matr;
+    using matrix_structure = general_t; 
+    using ordering_type = row_major_t; 
 
-    typedef T                                              value_type; 
+    using value_type = T; 
     typedef typename detail::generate_const<Matr,T>::type* pointer; 
 
     static pointer storage (matrix_type& m) { return m.data(); }
@@ -345,9 +343,9 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::matrix_vector_range<M>, typename boost::remove_const<MR>::type >::value) );
 #endif
 
-    typedef boost::numeric::ublas::matrix_vector_range<M>          identifier_type; 
-    typedef MR                                                     vector_type;
-    typedef typename M::value_type                                 value_type;
+    using identifier_type = boost::numeric::ublas::matrix_vector_range<M>; 
+    using vector_type = MR;
+    using value_type = typename M::value_type;
     typedef typename default_vector_traits<MR,value_type>::pointer pointer; 
 
     static pointer storage (vector_type& mr) {
@@ -370,9 +368,9 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
     BOOST_STATIC_ASSERT( (boost::is_same< boost::numeric::ublas::matrix_vector_slice<M>, typename boost::remove_const<MR>::type >::value) );
 #endif
 
-    typedef boost::numeric::ublas::matrix_vector_slice<M>          identifier_type; 
-    typedef MR                                                     vector_type;
-    typedef typename M::value_type                                 value_type;
+    using identifier_type = boost::numeric::ublas::matrix_vector_slice<M>; 
+    using vector_type = MR;
+    using value_type = typename M::value_type;
     typedef typename default_vector_traits<MR,value_type>::pointer pointer; 
 
     static pointer storage (vector_type& mr) {
@@ -401,17 +399,15 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
 #endif 
 
     typedef boost::numeric::ublas::bounded_matrix<T, R, C, F>   identifier_type ;
-    typedef M                                                   matrix_type;
-    typedef general_t                                           matrix_structure; 
-    typedef typename detail::ublas_ordering<
-      typename F::orientation_category
-    >::type                                                     ordering_type; 
+    using matrix_type = M;
+    using matrix_structure = general_t; 
+    using ordering_type = typename detail::ublas_ordering<typename F::orientation_category>::type; 
 
-    typedef T                                                   value_type; 
+    using value_type = T; 
     typedef typename detail::generate_const<M,T>::type* pointer; 
 
-      typedef typename identifier_type::orientation_category                      orientation_category; 
-      typedef typename detail::ublas_ordering<orientation_category>::functor_type functor_t ;
+      using orientation_category = typename identifier_type::orientation_category; 
+      using functor_t = typename detail::ublas_ordering<orientation_category>::functor_type ;
 
     static pointer storage (matrix_type& m) {
       typedef typename detail::generate_const<M,typename identifier_type::array_type>::type array_type ;

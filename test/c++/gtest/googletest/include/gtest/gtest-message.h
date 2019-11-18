@@ -91,7 +91,7 @@ class GTEST_API_ Message {
  private:
   // The type of basic IO manipulators (endl, ends, and flush) for
   // narrow streams.
-  typedef std::ostream& (*BasicNarrowIoManip)(std::ostream&);
+  using BasicNarrowIoManip = std::ostream &(*)(std::ostream &);
 
  public:
   // Constructs an empty Message.
@@ -191,7 +191,7 @@ class GTEST_API_ Message {
 
   // We declare (but don't implement) this to prevent the compiler
   // from implementing the assignment operator.
-  void operator=(const Message&);
+  void operator=(const Message&) = delete;
 };
 
 // Streams a Message to an ostream.

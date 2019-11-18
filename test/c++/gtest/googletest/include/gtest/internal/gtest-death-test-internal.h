@@ -39,8 +39,10 @@
 #include "gtest/gtest-matchers.h"
 #include "gtest/internal/gtest-internal.h"
 
-#include <stdio.h>
+#include <cstdio>
 #include <memory>
+#include <utility>
+
 
 namespace testing {
 namespace internal {
@@ -83,7 +85,7 @@ class GTEST_API_ DeathTest {
   static bool Create(const char* statement, Matcher<const std::string&> matcher,
                      const char* file, int line, DeathTest** test);
   DeathTest();
-  virtual ~DeathTest() { }
+  virtual ~DeathTest() = default;
 
   // A helper class that aborts a death test when it's deleted.
   class ReturnSentinel {
@@ -145,7 +147,7 @@ GTEST_DISABLE_MSC_WARNINGS_POP_()  //  4251
 // Factory interface for death tests.  May be mocked out for testing.
 class DeathTestFactory {
  public:
-  virtual ~DeathTestFactory() { }
+  virtual ~DeathTestFactory() = default;
   virtual bool Create(const char* statement,
                       Matcher<const std::string&> matcher, const char* file,
                       int line, DeathTest** test) = 0;
@@ -265,11 +267,11 @@ inline Matcher<const ::std::string&> MakeDeathTestMatcher(
 // RUN_ALL_TESTS was called.
 class InternalRunDeathTestFlag {
  public:
-  InternalRunDeathTestFlag(const std::string& a_file,
+  InternalRunDeathTestFlag(std::string  a_file,
                            int a_line,
                            int an_index,
                            int a_write_fd)
-      : file_(a_file), line_(a_line), index_(an_index),
+      : file_(std::move(a_file)), line_(a_line), index_(an_index),
         write_fd_(a_write_fd) {}
 
   ~InternalRunDeathTestFlag() {

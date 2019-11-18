@@ -181,13 +181,13 @@ typedef union YYSTYPE {
 #ifdef YYTYPE_UINT8
 typedef YYTYPE_UINT8 yytype_uint8;
 #else
-typedef unsigned char yytype_uint8;
+using yytype_uint8 = unsigned char;
 #endif
 
 #ifdef YYTYPE_INT8
 typedef YYTYPE_INT8 yytype_int8;
 #elif (defined __STDC__ || defined __C99__FUNC__ || defined __cplusplus || defined _MSC_VER)
-typedef signed char yytype_int8;
+using yytype_int8 = signed char;
 #else
 typedef short int yytype_int8;
 #endif
@@ -195,13 +195,13 @@ typedef short int yytype_int8;
 #ifdef YYTYPE_UINT16
 typedef YYTYPE_UINT16 yytype_uint16;
 #else
-typedef unsigned short int yytype_uint16;
+using yytype_uint16 = unsigned short;
 #endif
 
 #ifdef YYTYPE_INT16
 typedef YYTYPE_INT16 yytype_int16;
 #else
-typedef short int yytype_int16;
+using yytype_int16 = short;
 #endif
 
 #ifndef YYSIZE_T
@@ -936,7 +936,7 @@ int yyparse();
 #endif
 #else /* ! YYPARSE_PARAM */
 #if defined __STDC__ || defined __cplusplus
-int yyparse(void);
+int yyparse();
 #else
 int yyparse();
 #endif
@@ -963,7 +963,7 @@ int yyparse(YYPARSE_PARAM) void *YYPARSE_PARAM;
 #endif
 #else /* ! YYPARSE_PARAM */
 #if (defined __STDC__ || defined __C99__FUNC__ || defined __cplusplus || defined _MSC_VER)
-int yyparse(void)
+int yyparse()
 #else
 int yyparse()
 
@@ -1078,7 +1078,7 @@ yysetstate:
 
     {
       yytype_int16 *yyss1  = yyss;
-      union yyalloc *yyptr = (union yyalloc *)YYSTACK_ALLOC(YYSTACK_BYTES(yystacksize));
+      auto *yyptr = (union yyalloc *)YYSTACK_ALLOC(YYSTACK_BYTES(yystacksize));
       if (!yyptr) goto yyexhaustedlab;
       YYSTACK_RELOCATE(yyss_alloc, yyss);
       YYSTACK_RELOCATE(yyvs_alloc, yyvs);
@@ -1351,7 +1351,7 @@ yyreduce:
     {
       (yyval.dvec)       = new (struct vec);
       (yyval.dvec)->val  = (yyvsp[(1) - (1)].dval);
-      (yyval.dvec)->next = 0;
+      (yyval.dvec)->next = nullptr;
     } break;
 
     case 25:
@@ -1359,7 +1359,7 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 128 "parser.yy"
     {
-      struct vec *new_node = new (struct vec);
+      auto *new_node = new (struct vec);
       new_node->val        = (yyvsp[(1) - (3)].dval);
       new_node->next       = (yyvsp[(3) - (3)].dvec);
       (yyval.dvec)         = new_node;
@@ -1370,7 +1370,7 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 136 "parser.yy"
     {
-      (yyval.dvec) = 0;
+      (yyval.dvec) = nullptr;
     } break;
 
     case 27:
@@ -1388,7 +1388,7 @@ yyreduce:
     {
       (yyval.dmat)       = new (struct mat);
       (yyval.dmat)->vec  = (yyvsp[(1) - (1)].dvec);
-      (yyval.dmat)->next = 0;
+      (yyval.dmat)->next = nullptr;
     } break;
 
     case 29:
@@ -1396,7 +1396,7 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 145 "parser.yy"
     {
-      struct mat *new_node = new (struct mat);
+      auto *new_node = new (struct mat);
       new_node->vec        = (yyvsp[(1) - (3)].dvec);
       new_node->next       = (yyvsp[(3) - (3)].dmat);
       (yyval.dmat)         = new_node;
@@ -1407,7 +1407,7 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 153 "parser.yy"
     {
-      (yyval.dmat) = 0;
+      (yyval.dmat) = nullptr;
     } break;
 
     case 31:
@@ -1520,7 +1520,7 @@ yyerrorlab:
   /* Pacify compilers like GCC when the user code never invokes
      YYERROR and the label yyerrorlab therefore never appears in user
      code.  */
-  if (/*CONSTCOND*/ 0) goto yyerrorlab;
+  if (/*CONSTCOND*/ false) goto yyerrorlab;
 
   /* Do not reclaim the symbols of the rule which action triggered
      this YYERROR.  */
@@ -1758,7 +1758,7 @@ void dump_vector(struct vec *dvec) {
   struct vec *ptr = dvec;
 
   while (ptr) {
-    OUT << ptr->val << (ptr->next != 0 ? " " : "");
+    OUT << ptr->val << (ptr->next != nullptr ? " " : "");
     ptr = ptr->next;
   }
   OUT << endl;
@@ -1769,26 +1769,26 @@ void dump_matrix(struct mat *dmat) {
 
   while (ptr) {
     dump_vector(ptr->vec);
-    if (ptr->next != 0) { OUT << prefix; }
+    if (ptr->next != nullptr) { OUT << prefix; }
     ptr = ptr->next;
   }
 }
 
 struct vec *duplicate_vector(struct vec *dvec) {
   struct vec *ptr      = dvec;
-  struct vec *previous = 0;
+  struct vec *previous = nullptr;
 
   while (ptr) {
-    struct vec *new_node = new (struct vec);
+    auto *new_node = new (struct vec);
     if (previous) { previous->next = new_node; }
     previous       = new_node;
     new_node->val  = ptr->val;
-    new_node->next = 0;
+    new_node->next = nullptr;
 
     ptr = ptr->next;
   }
 
-  return 0;
+  return nullptr;
 }
 
 double gammapolch(int i) {

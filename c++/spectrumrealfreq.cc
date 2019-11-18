@@ -4,15 +4,15 @@ class SpectrumRealFreq : public Spectrum {
   Bins fspos, fsneg; // Full spectral information
   void mergeNN2(ChainSpectrumBinning &cs);
   void mergeCFS(ChainSpectrumBinning &cs);
-  void weight_report(void);
+  void weight_report();
   void trim();
   void savebins();
   void continuous();
 
   public:
   SpectrumRealFreq(string _opname, string _filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype){};
-  void merge(ChainSpectrum *cs);
-  ~SpectrumRealFreq();
+  void merge(ChainSpectrum *cs) override;
+  ~SpectrumRealFreq() override;
 };
 
 SpectrumRealFreq::~SpectrumRealFreq() {
@@ -147,7 +147,7 @@ void SpectrumRealFreq::mergeNN2(ChainSpectrumBinning &cs) {
 
 const double IMAG_TOLERANCE = 1e-10;
 
-void SpectrumRealFreq::weight_report(void) {
+void SpectrumRealFreq::weight_report() {
   auto fmt = [](t_weight x) -> string {
     if (abs(x.imag()) < IMAG_TOLERANCE)
       return tostring(x.real());
@@ -226,8 +226,7 @@ void SpectrumRealFreq::continuous() {
   omega0 = (P::omega0 < 0.0 ? P::omega0_ratio * P::T : P::omega0);
   Spikes densitypos, densityneg;
   std::vector<double> vecE = make_mesh(); // Energies on the mesh
-  for (size_t j = 0; j < vecE.size(); j++) {
-    const double E = vecE[j];
+  for (double E : vecE) {
     weight_bucket valpos, valneg;
     for (const auto &i : fspos.bins) {
       const t_weight w = WEIGHT(i);

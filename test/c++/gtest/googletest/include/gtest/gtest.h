@@ -57,6 +57,8 @@
 #include <memory>
 #include <ostream>
 #include <type_traits>
+#include <utility>
+
 #include <vector>
 
 #include "gtest/internal/gtest-internal.h"
@@ -516,7 +518,7 @@ class GTEST_API_ Test {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Test);
 };
 
-typedef internal::TimeInMillis TimeInMillis;
+using TimeInMillis = internal::TimeInMillis;
 
 // A copyable object representing a user specified test property which can be
 // output as a key/value string pair.
@@ -527,8 +529,8 @@ class TestProperty {
   // C'tor.  TestProperty does NOT have a default constructor.
   // Always use this constructor (with parameters) to create a
   // TestProperty object.
-  TestProperty(const std::string& a_key, const std::string& a_value) :
-    key_(a_key), value_(a_value) {
+  TestProperty(std::string  a_key, std::string  a_value) :
+    key_(std::move(a_key)), value_(std::move(a_value)) {
   }
 
   // Gets the user supplied key.
@@ -671,11 +673,11 @@ class GTEST_API_ TestResult {
   // The vector of TestProperties
   std::vector<TestProperty> test_properties_;
   // Running count of death tests.
-  int death_test_count_;
+  int death_test_count_{0};
   // The start time, in milliseconds since UNIX Epoch.
-  TimeInMillis start_timestamp_;
+  TimeInMillis start_timestamp_{0};
   // The elapsed time, in milliseconds.
-  TimeInMillis elapsed_time_;
+  TimeInMillis elapsed_time_{0};
 
   // We disallow copying TestResult.
   GTEST_DISALLOW_COPY_AND_ASSIGN_(TestResult);
@@ -777,7 +779,7 @@ class GTEST_API_ TestInfo {
 
   // Constructs a TestInfo object. The newly constructed instance assumes
   // ownership of the factory object.
-  TestInfo(const std::string& test_suite_name, const std::string& name,
+  TestInfo(std::string  test_suite_name, std::string  name,
            const char* a_type_param,   // NULL if not a type-parameterized test
            const char* a_value_param,  // NULL if not a value-parameterized test
            internal::CodeLocation a_code_location,
@@ -813,7 +815,7 @@ class GTEST_API_ TestInfo {
   bool is_disabled_;                // True if this test is disabled
   bool matches_filter_;             // True if this test matches the
                                     // user-specified filter.
-  bool is_in_another_shard_;        // Will be run in another shard.
+  bool is_in_another_shard_{};        // Will be run in another shard.
   internal::TestFactoryBase* const factory_;  // The factory that creates
                                               // the test object
 
@@ -1045,7 +1047,7 @@ class GTEST_API_ TestSuite {
 class Environment {
  public:
   // The d'tor is virtual as we need to subclass Environment.
-  virtual ~Environment() {}
+  virtual ~Environment() = default;
 
   // Override this to define how to set up the environment.
   virtual void SetUp() {}
@@ -1075,7 +1077,7 @@ class GTEST_API_ AssertionException
 // the order the corresponding events are fired.
 class TestEventListener {
  public:
-  virtual ~TestEventListener() {}
+  virtual ~TestEventListener() = default;
 
   // Fired before any test activity starts.
   virtual void OnTestProgramStart(const UnitTest& unit_test) = 0;
@@ -1236,9 +1238,9 @@ class GTEST_API_ TestEventListeners {
   // The actual list of listeners.
   internal::TestEventRepeater* repeater_;
   // Listener responsible for the standard result output.
-  TestEventListener* default_result_printer_;
+  TestEventListener* default_result_printer_{nullptr};
   // Listener responsible for the creation of the XML output file.
-  TestEventListener* default_xml_generator_;
+  TestEventListener* default_xml_generator_{nullptr};
 
   // We disallow copying TestEventListeners.
   GTEST_DISALLOW_COPY_AND_ASSIGN_(TestEventListeners);
@@ -1847,8 +1849,8 @@ GTEST_API_ GTEST_ATTRIBUTE_PRINTF_(2, 3) void ColoredPrintf(GTestColor color,
 template <typename T>
 class WithParamInterface {
  public:
-  typedef T ParamType;
-  virtual ~WithParamInterface() {}
+  using ParamType = T;
+  virtual ~WithParamInterface() = default;
 
   // The current parameter value. Is also available in the test fixture's
   // constructor.

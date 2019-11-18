@@ -5,7 +5,7 @@ class SymmetryISOSZ : public SymField {
   public:
   SymmetryISOSZ() : SymField() { all_syms["ISOSZ"] = this; }
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     Sz.set("<Sz>", 2);
     Q2.set("<Q^2>", 3);
@@ -18,11 +18,11 @@ class SymmetryISOSZ : public SymField {
   }
 
   // Multiplicity of the I=(II,SSZ) subspace = (2I+1) = II.
-  int mult(const Invar &I) {
+  int mult(const Invar &I) override {
     return I.get("II"); // isospin multiplicity
   }
 
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) {
+  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
     SZspin ssz1  = I1.get("SSZ");
@@ -31,14 +31,14 @@ class SymmetryISOSZ : public SymField {
     return sszop == SPIN;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ")) && su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II"));
   }
 
   // We always must have I >= 0.
-  bool Invar_allowed(const Invar &I) { return I.get("II") > 0; }
+  bool Invar_allowed(const Invar &I) override { return I.get("II") > 0; }
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 1:
 #include "isosz/isosz-1ch-In2.dat"
@@ -54,7 +54,7 @@ class SymmetryISOSZ : public SymField {
     }
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_abs_diff(Ip, I1, "SSZ", 1);
 
     const Ispin iip = Ip.get("II");
@@ -64,7 +64,7 @@ class SymmetryISOSZ : public SymField {
     return isofactor;
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trIZ2; // Tr[S_z], Tr[S_z^2], Tr[I_z^2]
 
     LOOP_const(diag, is) {

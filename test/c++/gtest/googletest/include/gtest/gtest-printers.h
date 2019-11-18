@@ -865,11 +865,11 @@ template <typename T>
 void UniversalPrint(const T& value, ::std::ostream* os) {
   // A workarond for the bug in VC++ 7.1 that prevents us from instantiating
   // UniversalPrinter with T directly.
-  typedef T T1;
+  using T1 = T;
   UniversalPrinter<T1>::Print(value, os);
 }
 
-typedef ::std::vector< ::std::string> Strings;
+using Strings = ::std::vector< ::std::string>;
 
   // Tersely prints the first N fields of a tuple to a string vector,
   // one element for each field.

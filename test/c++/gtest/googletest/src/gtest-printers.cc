@@ -42,7 +42,7 @@
 // defines Foo.
 
 #include "gtest/gtest-printers.h"
-#include <stdio.h>
+#include <cstdio>
 #include <cctype>
 #include <cwchar>
 #include <ostream>  // NOLINT
@@ -144,7 +144,7 @@ inline bool IsPrintableAscii(wchar_t c) {
 // which is the type of c.
 template <typename UnsignedChar, typename Char>
 static CharFormat PrintAsCharLiteralTo(Char c, ostream* os) {
-  wchar_t w_c = static_cast<wchar_t>(c);
+  auto w_c = static_cast<wchar_t>(c);
   switch (w_c) {
     case L'\0':
       *os << "\\0";
@@ -359,7 +359,7 @@ void PrintTo(const wchar_t* s, ostream* os) {
 namespace {
 
 bool ContainsUnprintableControlCodes(const char* str, size_t length) {
-  const unsigned char *s = reinterpret_cast<const unsigned char *>(str);
+  const auto *s = reinterpret_cast<const unsigned char *>(str);
 
   for (size_t i = 0; i < length; i++) {
     unsigned char ch = *s++;
@@ -380,7 +380,7 @@ bool ContainsUnprintableControlCodes(const char* str, size_t length) {
 bool IsUTF8TrailByte(unsigned char t) { return 0x80 <= t && t<= 0xbf; }
 
 bool IsValidUTF8(const char* str, size_t length) {
-  const unsigned char *s = reinterpret_cast<const unsigned char *>(str);
+  const auto *s = reinterpret_cast<const unsigned char *>(str);
 
   for (size_t i = 0; i < length;) {
     unsigned char lead = s[i++];

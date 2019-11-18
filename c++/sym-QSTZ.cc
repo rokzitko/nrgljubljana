@@ -5,7 +5,7 @@ class SymmetryQSTZ : public Symmetry {
   public:
   SymmetryQSTZ() : Symmetry() { all_syms["QSTZ"] = this; }
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     Tz2.set("<Tz^2>", 2);
     Q.set("<Q>", 3);
@@ -21,16 +21,16 @@ class SymmetryQSTZ : public Symmetry {
   }
 
   // Multiplicity of the (Q,SS,TZ) subspace is (2S+1 = SS).
-  int mult(const Invar &I) { return I.get("SS"); }
+  int mult(const Invar &I) override { return I.get("SS"); }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && u1_equality(I1.get("TZ"), I2.get("TZ"), I3.get("TZ"));
   }
 
-  bool Invar_allowed(const Invar &I) { return I.get("SS") > 0; }
+  bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
 
-  void load() {
+  void load() override {
     my_assert(!substeps);
     my_assert(channels == 3);
 #include "qstz/qstz-In2.dat"
@@ -38,7 +38,7 @@ class SymmetryQSTZ : public Symmetry {
   } // load
 
   // Same as for SYMTYPE=QS, because spin operators are angular momentum singlets.
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) {
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "TZ", 0);
 
@@ -50,7 +50,7 @@ class SymmetryQSTZ : public Symmetry {
   }
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 1);
 
     const Sspin ssp = Ip.get("SS");
@@ -60,7 +60,7 @@ class SymmetryQSTZ : public Symmetry {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ2, trTZ2, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
 
     LOOP_const(diag, is) {

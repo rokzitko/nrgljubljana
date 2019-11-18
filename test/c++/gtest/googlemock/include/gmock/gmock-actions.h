@@ -38,7 +38,7 @@
 #define GMOCK_INCLUDE_GMOCK_GMOCK_ACTIONS_H_
 
 #ifndef _WIN32_WCE
-# include <errno.h>
+# include <cerrno>
 #endif
 
 #include <algorithm>
@@ -196,7 +196,7 @@ class DefaultValue {
   // Provides a factory function to be called to generate the default value.
   // This method can be used even if T is only move-constructible, but it is not
   // limited to that case.
-  typedef T (*FactoryFunction)();
+  using FactoryFunction = T (*)();
   static void SetFactory(FactoryFunction factory) {
     delete producer_;
     producer_ = new FactoryValueProducer(factory);
@@ -228,7 +228,7 @@ class DefaultValue {
  private:
   class ValueProducer {
    public:
-    virtual ~ValueProducer() {}
+    virtual ~ValueProducer() = default;
     virtual T Produce() = 0;
   };
 
@@ -311,11 +311,11 @@ T* DefaultValue<T&>::address_ = nullptr;
 template <typename F>
 class ActionInterface {
  public:
-  typedef typename internal::Function<F>::Result Result;
-  typedef typename internal::Function<F>::ArgumentTuple ArgumentTuple;
+  using Result = typename internal::Function<F>::Result;
+  using ArgumentTuple = typename internal::Function<F>::ArgumentTuple;
 
-  ActionInterface() {}
-  virtual ~ActionInterface() {}
+  ActionInterface() = default;
+  virtual ~ActionInterface() = default;
 
   // Performs the action.  This method is not const, as in general an
   // action can have side effects and be stateful.  For example, a
@@ -350,12 +350,12 @@ class Action {
   };
 
  public:
-  typedef typename internal::Function<F>::Result Result;
-  typedef typename internal::Function<F>::ArgumentTuple ArgumentTuple;
+  using Result = typename internal::Function<F>::Result;
+  using ArgumentTuple = typename internal::Function<F>::ArgumentTuple;
 
   // Constructs a null Action.  Needed for storing Action objects in
   // STL containers.
-  Action() {}
+  Action() = default;
 
   // Construct an Action from a specified callable.
   // This cannot take std::function directly, because then Action would not be
@@ -434,8 +434,8 @@ class PolymorphicAction {
   template <typename F>
   class MonomorphicImpl : public ActionInterface<F> {
    public:
-    typedef typename internal::Function<F>::Result Result;
-    typedef typename internal::Function<F>::ArgumentTuple ArgumentTuple;
+    using Result = typename internal::Function<F>::Result;
+    using ArgumentTuple = typename internal::Function<F>::ArgumentTuple;
 
     explicit MonomorphicImpl(const Impl& impl) : impl_(impl) {}
 
@@ -530,7 +530,7 @@ class ReturnAction {
     // in this case. Until MS fixes that bug we put Impl into the class scope
     // and put the typedef both here (for use in assert statement) and
     // in the Impl class. But both definitions must be the same.
-    typedef typename Function<F>::Result Result;
+    using Result = typename Function<F>::Result;
     GTEST_COMPILE_ASSERT_(
         !std::is_reference<Result>::value,
         use_ReturnRef_instead_of_Return_to_return_a_reference);
@@ -544,8 +544,8 @@ class ReturnAction {
   template <typename R_, typename F>
   class Impl : public ActionInterface<F> {
    public:
-    typedef typename Function<F>::Result Result;
-    typedef typename Function<F>::ArgumentTuple ArgumentTuple;
+    using Result = typename Function<F>::Result;
+    using ArgumentTuple = typename Function<F>::ArgumentTuple;
 
     // The implicit cast is necessary when Result has more than one
     // single-argument constructor (e.g. Result is std::vector<int>) and R
@@ -576,8 +576,8 @@ class ReturnAction {
   template <typename R_, typename F>
   class Impl<ByMoveWrapper<R_>, F> : public ActionInterface<F> {
    public:
-    typedef typename Function<F>::Result Result;
-    typedef typename Function<F>::ArgumentTuple ArgumentTuple;
+    using Result = typename Function<F>::Result;
+    using ArgumentTuple = typename Function<F>::ArgumentTuple;
 
     explicit Impl(const std::shared_ptr<R>& wrapper)
         : performed_(false), wrapper_(wrapper) {}
@@ -636,7 +636,7 @@ class ReturnRefAction {
   // used in ANY function that returns a reference to x's type.
   template <typename F>
   operator Action<F>() const {
-    typedef typename Function<F>::Result Result;
+    using Result = typename Function<F>::Result;
     // Asserts that the function return type is a reference.  This
     // catches the user error of using ReturnRef(x) when Return(x)
     // should be used, and generates some helpful error message.
@@ -650,8 +650,8 @@ class ReturnRefAction {
   template <typename F>
   class Impl : public ActionInterface<F> {
    public:
-    typedef typename Function<F>::Result Result;
-    typedef typename Function<F>::ArgumentTuple ArgumentTuple;
+    using Result = typename Function<F>::Result;
+    using ArgumentTuple = typename Function<F>::ArgumentTuple;
 
     explicit Impl(T& ref) : ref_(ref) {}  // NOLINT
 
@@ -682,7 +682,7 @@ class ReturnRefOfCopyAction {
   // used in ANY function that returns a reference to x's type.
   template <typename F>
   operator Action<F>() const {
-    typedef typename Function<F>::Result Result;
+    using Result = typename Function<F>::Result;
     // Asserts that the function return type is a reference.  This
     // catches the user error of using ReturnRefOfCopy(x) when Return(x)
     // should be used, and generates some helpful error message.
@@ -697,8 +697,8 @@ class ReturnRefOfCopyAction {
   template <typename F>
   class Impl : public ActionInterface<F> {
    public:
-    typedef typename Function<F>::Result Result;
-    typedef typename Function<F>::ArgumentTuple ArgumentTuple;
+    using Result = typename Function<F>::Result;
+    using ArgumentTuple = typename Function<F>::ArgumentTuple;
 
     explicit Impl(const T& value) : value_(value) {}  // NOLINT
 
@@ -839,7 +839,7 @@ class IgnoreResultAction {
     // in this case. Until MS fixes that bug we put Impl into the class scope
     // and put the typedef both here (for use in assert statement) and
     // in the Impl class. But both definitions must be the same.
-    typedef typename internal::Function<F>::Result Result;
+    using Result = typename internal::Function<F>::Result;
 
     // Asserts at compile time that F returns void.
     CompileAssertTypesEqual<void, Result>();
@@ -851,8 +851,8 @@ class IgnoreResultAction {
   template <typename F>
   class Impl : public ActionInterface<F> {
    public:
-    typedef typename internal::Function<F>::Result Result;
-    typedef typename internal::Function<F>::ArgumentTuple ArgumentTuple;
+    using Result = typename internal::Function<F>::Result;
+    using ArgumentTuple = typename internal::Function<F>::ArgumentTuple;
 
     explicit Impl(const A& action) : action_(action) {}
 
@@ -864,8 +864,7 @@ class IgnoreResultAction {
    private:
     // Type OriginalFunction is the same as F except that its return
     // type is IgnoredValue.
-    typedef typename internal::Function<F>::MakeResultIgnoredValue
-        OriginalFunction;
+    using OriginalFunction = typename internal::Function<F>::MakeResultIgnoredValue;
 
     const Action<OriginalFunction> action_;
 
@@ -956,7 +955,7 @@ struct DoAllAction {
 //   ...
 //   EXPECT_CALL(mock, Foo("abc", _, _)).WillOnce(Invoke(DistanceToOrigin));
 //   EXPECT_CALL(mock, Bar(5, _, _)).WillOnce(Invoke(DistanceToOrigin));
-typedef internal::IgnoredValue Unused;
+using Unused = internal::IgnoredValue;
 
 // Creates an action that does actions a1, a2, ..., sequentially in
 // each invocation.
@@ -1040,7 +1039,7 @@ internal::ByMoveWrapper<R> ByMove(R x) {
 
 // Creates an action that does the default action for the give mock function.
 inline internal::DoDefaultAction DoDefault() {
-  return internal::DoDefaultAction();
+  return {};
 }
 
 // Creates an action that sets the variable pointed by the N-th

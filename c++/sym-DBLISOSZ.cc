@@ -5,7 +5,7 @@ class SymmetryDBLISOSZ : public SymField {
   public:
   SymmetryDBLISOSZ() : SymField() { all_syms["DBLISOSZ"] = this; }
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     Sz.set("<Sz>", 2);
     Q12.set("<Q1^2>", 3);
@@ -19,7 +19,7 @@ class SymmetryDBLISOSZ : public SymField {
     InvarSinglet = Invar(1, 1, 0);
   }
 
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) {
+  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
     SZspin ssz1  = I1.get("SSZ");
@@ -28,19 +28,19 @@ class SymmetryDBLISOSZ : public SymField {
     return sszop == SPIN;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return su2_triangle_inequality(I1.get("II1"), I2.get("II1"), I3.get("II1"))
        && su2_triangle_inequality(I1.get("II2"), I2.get("II2"), I3.get("II2")) && u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ"));
   }
 
   // Multiplicity of the I=(II1,II2) subspace = (2I1+1)(2I2+1) = II1 II2.
-  int mult(const Invar &I) { return I.get("II1") * I.get("II2"); }
+  int mult(const Invar &I) override { return I.get("II1") * I.get("II2"); }
 
   // We always must have I1 >= 0 and I2 >= 0.
-  bool Invar_allowed(const Invar &I) { return (I.get("II1") > 0) && (I.get("II2") > 0); }
+  bool Invar_allowed(const Invar &I) override { return (I.get("II1") > 0) && (I.get("II2") > 0); }
 
   // TO DO: support for the doublets wrt the second quantum number
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_abs_diff(Ip, I1, "SSZ", 1);
 
     const Ispin ii1p = Ip.get("II1");
@@ -55,7 +55,7 @@ class SymmetryDBLISOSZ : public SymField {
     }
   }
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 2:
 #include "dblisosz/dblisosz-2ch-In2.dat"
@@ -66,7 +66,7 @@ class SymmetryDBLISOSZ : public SymField {
     }
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
     bucket trIZ12;      // Tr[I1_z^2]
     bucket trIZ22;      // Tr[I2_z^2]

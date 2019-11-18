@@ -5,7 +5,7 @@ class SymmetrySU2 : public Symmetry {
   public:
   SymmetrySU2() : Symmetry() { all_syms["SU2"] = this; }
 
-  void init() {
+  void init() override {
     Q2.set("<Q^2>", 1);
     InvarStructure InvStruc[] = {
        {"II", additive} // isospin
@@ -14,19 +14,19 @@ class SymmetrySU2 : public Symmetry {
     InvarSinglet = Invar(1);
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II"));
   }
 
   // Multiplicity of the I=(II) subspace = (2I+1) = II.
-  int mult(const Invar &I) {
+  int mult(const Invar &I) override {
     return I.get("II"); // isospin multiplicity
   }
 
   // We always must have I >= 0.
-  bool Invar_allowed(const Invar &I) { return I.get("II") > 0; }
+  bool Invar_allowed(const Invar &I) override { return I.get("II") > 0; }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     const Ispin iip = Ip.get("II");
     const Ispin ii1 = I1.get("II");
     my_assert(abs(ii1 - iip) == 1);
@@ -36,7 +36,7 @@ class SymmetrySU2 : public Symmetry {
     return isofactor;
   }
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 1:
 #include "su2/su2-1ch-In2.dat"
@@ -52,7 +52,7 @@ class SymmetrySU2 : public Symmetry {
     }
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trIZ2; // Tr[I_z^2]
 
     LOOP_const(diag, is) {

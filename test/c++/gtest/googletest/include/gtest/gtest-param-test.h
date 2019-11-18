@@ -295,7 +295,7 @@ template <typename ForwardIterator>
 internal::ParamGenerator<
     typename std::iterator_traits<ForwardIterator>::value_type>
 ValuesIn(ForwardIterator begin, ForwardIterator end) {
-  typedef typename std::iterator_traits<ForwardIterator>::value_type ParamType;
+  using ParamType = typename std::iterator_traits<ForwardIterator>::value_type;
   return internal::ParamGenerator<ParamType>(
       new internal::ValuesInIteratorRangeGenerator<ParamType>(begin, end));
 }

@@ -85,7 +85,7 @@ class GTEST_API_ ScopedFakeTestPartResultReporter
   void Init();
 
   const InterceptMode intercept_mode_;
-  TestPartResultReporterInterface* old_reporter_;
+  TestPartResultReporterInterface* old_reporter_{};
   TestPartResultArray* const result_;
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ScopedFakeTestPartResultReporter);
@@ -102,7 +102,7 @@ class GTEST_API_ SingleFailureChecker {
  public:
   // The constructor remembers the arguments.
   SingleFailureChecker(const TestPartResultArray* results,
-                       TestPartResult::Type type, const std::string& substr);
+                       TestPartResult::Type type, std::string  substr);
   ~SingleFailureChecker();
  private:
   const TestPartResultArray* const results_;
