@@ -1351,7 +1351,7 @@ yyreduce:
     {
       (yyval.dvec)       = new (struct vec);
       (yyval.dvec)->val  = (yyvsp[(1) - (1)].dval);
-      (yyval.dvec)->next = 0;
+      (yyval.dvec)->next = nullptr;
     } break;
 
     case 25:
@@ -1370,7 +1370,7 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 136 "parser.yy"
     {
-      (yyval.dvec) = 0;
+      (yyval.dvec) = nullptr;
     } break;
 
     case 27:
@@ -1388,7 +1388,7 @@ yyreduce:
     {
       (yyval.dmat)       = new (struct mat);
       (yyval.dmat)->vec  = (yyvsp[(1) - (1)].dvec);
-      (yyval.dmat)->next = 0;
+      (yyval.dmat)->next = nullptr;
     } break;
 
     case 29:
@@ -1407,7 +1407,7 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 153 "parser.yy"
     {
-      (yyval.dmat) = 0;
+      (yyval.dmat) = nullptr;
     } break;
 
     case 31:
@@ -1758,7 +1758,7 @@ void dump_vector(struct vec *dvec) {
   struct vec *ptr = dvec;
 
   while (ptr) {
-    OUT << ptr->val << (ptr->next != 0 ? " " : "");
+    OUT << ptr->val << (ptr->next != nullptr ? " " : "");
     ptr = ptr->next;
   }
   OUT << endl;
@@ -1769,26 +1769,26 @@ void dump_matrix(struct mat *dmat) {
 
   while (ptr) {
     dump_vector(ptr->vec);
-    if (ptr->next != 0) { OUT << prefix; }
+    if (ptr->next != nullptr) { OUT << prefix; }
     ptr = ptr->next;
   }
 }
 
 struct vec *duplicate_vector(struct vec *dvec) {
   struct vec *ptr      = dvec;
-  struct vec *previous = 0;
+  struct vec *previous = nullptr;
 
   while (ptr) {
     struct vec *new_node = new (struct vec);
     if (previous) { previous->next = new_node; }
     previous       = new_node;
     new_node->val  = ptr->val;
-    new_node->next = 0;
+    new_node->next = nullptr;
 
     ptr = ptr->next;
   }
 
-  return 0;
+  return nullptr;
 }
 
 double gammapolch(int i) {

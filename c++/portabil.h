@@ -161,7 +161,7 @@ double gettime(void) {
 #else
   struct timeval tv;
 
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, nullptr);
   const double MILLION = 1.0e6;
   return (double)(tv.tv_sec + tv.tv_usec / MILLION);
 #endif

@@ -122,7 +122,7 @@ void handle_qag(int status) {
 
 double calcim() {
   gsl_function F;
-  F.params = 0;
+  F.params = nullptr;
 
   if (abs(y) < LIM_DIRECT) {
     // Rescaled integration limits. Only the absolute value of y matters here.
@@ -224,7 +224,7 @@ double calcim() {
 
 double calcre() {
   gsl_function F;
-  F.params = 0;
+  F.params = nullptr;
 
   if (abs(y) < LIM_DIRECT) {
     // Rescaled integration limits. Only the absolute value of y matters here.

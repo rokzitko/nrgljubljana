@@ -30,8 +30,8 @@ bool verbose          = false;
 bool veryverbose      = false;
 const int OUTPUT_PREC = 18;
 
-const char *fn_val = 0;
-const char *fn_vec = 0;
+const char *fn_val = nullptr;
+const char *fn_vec = nullptr;
 
 double scale_factor = 1.0;
 
@@ -107,7 +107,7 @@ void diagonalize(unsigned int dim, DVEC &d) {
     cout << endl;
   }
 
-  if (fn_val != 0) {
+  if (fn_val != nullptr) {
     if (verbose) { cout << "Saving eigenvalues to " << fn_val << " [text]" << endl; }
 
     ofstream F(fn_val);
@@ -120,7 +120,7 @@ void diagonalize(unsigned int dim, DVEC &d) {
     F.close();
   }
 
-  if (fn_vec != 0 && output_text) {
+  if (fn_vec != nullptr && output_text) {
     if (verbose) { cout << "Saving eigenvectors to " << fn_vec << " [text]" << endl; }
 
     ofstream F(fn_vec);
@@ -136,7 +136,7 @@ void diagonalize(unsigned int dim, DVEC &d) {
     F.close();
   }
 
-  if (fn_vec != 0 && output_bin) {
+  if (fn_vec != nullptr && output_bin) {
     if (verbose) { cout << "Saving eigenvectors to " << fn_vec << " [bin]" << endl; }
 
     ofstream F(fn_vec, ios_base::binary);
