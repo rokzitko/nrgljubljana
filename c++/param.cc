@@ -78,7 +78,7 @@ template <class T> class param : public parambase {
   virtual void dump() { cout << _keyword << "=" << data << (!defaultval ? " *" : "") << endl; }
   // This line enables to access parameters using an object as a rvalue
   inline operator const T &() const { return data; }
-  inline T value(void) const { return data; }
+  inline T value() const { return data; }
   virtual void setvalue_str(string newvalue) {
     _value     = newvalue;
     data       = fromstring<T>(newvalue);
@@ -565,7 +565,7 @@ void allowed_coefchannel(size_t ch) {
 
 // Returns true if any of the CFS or related spectral function
 // calculations are requested.
-bool cfs_flags(void) { return (P::cfs || P::fdm); }
+bool cfs_flags() { return (P::cfs || P::fdm); }
 
 // Calculate some constant parameters (invariants), etc.
 // Called after parameters have been parsed and VALIDATED.

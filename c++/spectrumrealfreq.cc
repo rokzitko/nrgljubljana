@@ -4,7 +4,7 @@ class SpectrumRealFreq : public Spectrum {
   Bins fspos, fsneg; // Full spectral information
   void mergeNN2(ChainSpectrumBinning &cs);
   void mergeCFS(ChainSpectrumBinning &cs);
-  void weight_report(void);
+  void weight_report();
   void trim();
   void savebins();
   void continuous();
@@ -147,7 +147,7 @@ void SpectrumRealFreq::mergeNN2(ChainSpectrumBinning &cs) {
 
 const double IMAG_TOLERANCE = 1e-10;
 
-void SpectrumRealFreq::weight_report(void) {
+void SpectrumRealFreq::weight_report() {
   auto fmt = [](t_weight x) -> string {
     if (abs(x.imag()) < IMAG_TOLERANCE)
       return tostring(x.real());

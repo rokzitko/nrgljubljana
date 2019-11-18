@@ -20,7 +20,7 @@ using namespace std;
 #include <cstdio>
 #include <cstdlib>
 #endif
-void print_trace(void) {
+void print_trace() {
 #ifdef HAVE_EXECINFO_H
   const unsigned int max_trace_len = 100;
 
@@ -136,7 +136,7 @@ template <typename T> T finite_test_fnc(T x, const char *file, int line) {
 #include <sys/time.h>
 
 // Return time in seconds
-double gettime(void) {
+double gettime() {
 #ifdef HAVE_LIBRT
 // Low-level timing code pinched from glib-2.18.2
 // Other choices: CLOCK_MONOTONIC, CLOCK_PROCESS_CPUTIME_ID

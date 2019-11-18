@@ -19,12 +19,12 @@ class Timing {
     timer   = gettime();
     running = false;
   }
-  void start(void) {
+  void start() {
     my_assert(!running);
     running = true;
     timer   = gettime();
   }
-  double stop(void) {
+  double stop() {
     my_assert(running);
     running    = false;
     double end = gettime();
@@ -42,7 +42,7 @@ class Timing {
     double end = gettime();
     return end - all;
   }
-  void report(void) {
+  void report() {
     const int T_WIDTH  = 12;
     const double t_all = total();
     cout << endl;

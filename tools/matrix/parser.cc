@@ -936,7 +936,7 @@ int yyparse();
 #endif
 #else /* ! YYPARSE_PARAM */
 #if defined __STDC__ || defined __cplusplus
-int yyparse(void);
+int yyparse();
 #else
 int yyparse();
 #endif
@@ -963,7 +963,7 @@ int yyparse(YYPARSE_PARAM) void *YYPARSE_PARAM;
 #endif
 #else /* ! YYPARSE_PARAM */
 #if (defined __STDC__ || defined __C99__FUNC__ || defined __cplusplus || defined _MSC_VER)
-int yyparse(void)
+int yyparse()
 #else
 int yyparse()
 

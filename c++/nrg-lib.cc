@@ -1501,7 +1501,7 @@ namespace oprecalc {
    are also recomputed in the second run if fdmexpvn=-1. */
   set<string> s, p, g, d, v, t, q, ot;
 
-  void clear(void) {
+  void clear() {
     s.clear();
     p.clear();
     g.clear();
@@ -2841,7 +2841,7 @@ void start_run() {
 // === AFTER THE NRG ITERATION HAD COMPLETED =================================
 
 // Processing performed both after NRG and after DM runs.
-void finalize_common(void) {
+void finalize_common() {
   nrglog('@', "@ finalize_common()");
   TIME("broaden");
   for (auto &i : allspectra) i->clear(); // processing happens in the destructor
@@ -2860,7 +2860,7 @@ void dump_subspace_information() {
 }
 
 // Called after the first NRG run.
-void finalize_nrg(void) {
+void finalize_nrg() {
   nrglog('@', "@ finalize_nrg()");
   finalize_common();
   cout << endl << "Total energy: " << HIGHPREC(STAT::totalenergy) << endl;
@@ -2875,7 +2875,7 @@ void finalize_nrg(void) {
 }
 
 // Called after the second NRG run.
-void finalize_dmnrg(void) {
+void finalize_dmnrg() {
   nrglog('@', "@ finalize_dmnrg()");
   finalize_common();
   if (P::fdmexpv) {

@@ -37,7 +37,7 @@ class outfield {
       allfields.insert(begin(allfields) + pos, ptr);
   };
 
-  outfield(void) { _desc = ""; };
+  outfield() { _desc = ""; };
 
   outfield(string desc, int pos = -1) { set(desc, pos); }
 
