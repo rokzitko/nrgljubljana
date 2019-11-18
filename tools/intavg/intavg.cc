@@ -124,7 +124,7 @@ class LinInt {
   double fxmin{}, fxmax{};   // f(xmin), f(xmax)
 
   public:
-  LinInt()= default;;
+  LinInt()= default;
   LinInt(Vec &in_vec) : vec(in_vec) {
     len              = vec.size();
     index            = -1;
