@@ -2984,7 +2984,7 @@ void read_data() {
   read_energies(fdata, diagprev, nsubs);
   skip_comments(fdata);
   read_ireducf(fdata, diagprev);
-  while (1) {
+  while (true) {
     /* skip white space */
     while (!fdata.eof() && isspace(fdata.peek())) fdata.get();
     if (fdata.eof()) break;
