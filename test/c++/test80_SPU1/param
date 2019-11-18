@@ -1,0 +1,37 @@
+[extra]
+U=1.0
+Gamma=0.1
+delta=0.1
+B=0.1
+
+[param]
+symtype=SPU1
+model=SIAM
+variant=MAGFIELD
+
+bcsgap=0.01
+
+T=0.1
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Nmax=10
+keep=10
+
+ops=n_d A_d SZd pair_d
+specs=n_d-n_d SZd-SZd pair_d-pair_d
+specd=A_d-A_d-u A_d-A_d-d
+
+dumpannotated=10
+
+fdm=true
+fdmexpv=true
+fdmmats=true
+mats=3
+
+broaden_ratio=1.03
+broaden_max=10.0
+bins=200
+alpha=0.3

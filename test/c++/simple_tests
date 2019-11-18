@@ -70,6 +70,13 @@ test70_lastall=false
 test71_lastall=true
 test72_lastalloverride=false
 test73_lastalloverride=true
+test74_QSZ
+test75_QSZ_polarized
+test76_QSZ_polarized2
+test77_QSZ_polarized3
+test78_U1
+test79_NONE
 test7_z
+test80_SPU1
 test8_keep
 test9_keepenergy
