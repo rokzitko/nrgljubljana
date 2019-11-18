@@ -643,6 +643,7 @@ map<string, string> parsed_params;
 // Warning: there's no error checking for parameters.
 // Check the parameter dump to see if everything is OK.
 void read_parameters() {
+  parsed_params.clear(); // XXX: remove after building a nrg class
   parser(parsed_params, "param");
   for (const auto &i : allparams) {
     const string keyword = i->getkeyword();
