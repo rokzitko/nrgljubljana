@@ -866,7 +866,7 @@ TimeInMillis GetTimeInMillis() {
 
   return static_cast<TimeInMillis>(now.time) * 1000 + now.millitm;
 #elif GTEST_HAS_GETTIMEOFDAY_
-  struct timeval now;
+  struct timeval now{};
   gettimeofday(&now, nullptr);
   return static_cast<TimeInMillis>(now.tv_sec) * 1000 + now.tv_usec / 1000;
 #else
@@ -3735,7 +3735,7 @@ static bool PortableLocaltime(time_t seconds, struct tm* out) {
 // Converts the given epoch time in milliseconds to a date string in the ISO
 // 8601 format, without the timezone information.
 std::string FormatEpochTimeInMillisAsIso8601(TimeInMillis ms) {
-  struct tm time_struct;
+  struct tm time_struct{};
   if (!PortableLocaltime(static_cast<time_t>(ms / 1000), &time_struct))
     return "";
   // YYYY-MM-DDThh:mm:ss
@@ -4105,7 +4105,7 @@ static std::string FormatTimeInMillisAsDuration(TimeInMillis ms) {
 // Converts the given epoch time in milliseconds to a date string in the
 // RFC3339 format, without the timezone information.
 static std::string FormatEpochTimeInMillisAsRFC3339(TimeInMillis ms) {
-  struct tm time_struct;
+  struct tm time_struct{};
   if (!PortableLocaltime(static_cast<time_t>(ms / 1000), &time_struct))
     return "";
   // YYYY-MM-DDThh:mm:ss

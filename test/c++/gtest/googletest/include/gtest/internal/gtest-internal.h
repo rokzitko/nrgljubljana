@@ -700,7 +700,7 @@ class TypeParameterizedTest {
                            GenerateNames<DefaultNameGenerator, Types>()) {
     using Type = typename Types::Head;
     using FixtureClass = Fixture<Type>;
-    using TestClass = typename TestSel::template TestSel;::Bind<Type>::type;
+    using TestClass = typename TestSel::template TestSel;;::Bind<Type>::time;
 
     // First, registers the first type-parameterized test in the type
     // list.
@@ -1102,7 +1102,7 @@ class NativeArray {
   }
 
   const Element* array_;
-  size_t size_;
+  size_t size_{};
   void (NativeArray::*clone_)(const Element*, size_t);
 
   GTEST_DISALLOW_ASSIGN_(NativeArray);

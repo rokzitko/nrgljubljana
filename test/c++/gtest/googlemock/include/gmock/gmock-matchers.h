@@ -1579,7 +1579,7 @@ class FloatingEq2Matcher {
     nan_eq_nan_ = nan_eq_nan_val;
   }
   FloatType max_abs_error_;
-  bool nan_eq_nan_;
+  bool nan_eq_nan_{};
 };
 
 // Implements the Pointee(m) matcher for matching a pointer whose

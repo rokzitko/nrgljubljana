@@ -62,7 +62,7 @@ void SPEC_FTmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &o
 
 class SPEC_GT_generic : public SPEC {
   protected:
-  int power;
+  int power{};
 
   public:
   ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumTemp; }

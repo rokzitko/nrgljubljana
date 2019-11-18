@@ -815,7 +815,7 @@ class GTEST_API_ TestInfo {
   bool is_disabled_;                // True if this test is disabled
   bool matches_filter_;             // True if this test matches the
                                     // user-specified filter.
-  bool is_in_another_shard_;        // Will be run in another shard.
+  bool is_in_another_shard_{};        // Will be run in another shard.
   internal::TestFactoryBase* const factory_;  // The factory that creates
                                               // the test object
 

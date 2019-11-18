@@ -468,8 +468,8 @@ class OsStackTraceGetter : public OsStackTraceGetterInterface {
 
 // Information about a Google Test trace point.
 struct TraceInfo {
-  const char* file;
-  int line;
+  const char* file{};
+  int line{};
   std::string message;
 };
 

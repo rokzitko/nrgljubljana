@@ -85,7 +85,7 @@ class GTEST_API_ ScopedFakeTestPartResultReporter
   void Init();
 
   const InterceptMode intercept_mode_;
-  TestPartResultReporterInterface* old_reporter_;
+  TestPartResultReporterInterface* old_reporter_{};
   TestPartResultArray* const result_;
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ScopedFakeTestPartResultReporter);

@@ -6,7 +6,7 @@
 
 // This structure is used in spec*.cc
 struct DELTA {
-  double energy;
+  double energy{};
   t_weight weight;
 };
 

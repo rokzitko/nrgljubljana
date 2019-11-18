@@ -19,7 +19,7 @@ class outfield {
   protected:
   string _desc;     // description of the field
   string _value;    // value of the field
-  double _rawvalue; // unformatted value stored in the field
+  double _rawvalue{}; // unformatted value stored in the field
 
   public:
   static int width; // width of the output field

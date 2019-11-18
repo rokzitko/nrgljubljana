@@ -59,10 +59,10 @@ class sharedparam {
   // Parameters which have to be known to the slave processes (which only
   // perform diagonalizations).
   dr_value diagroutine;
-  double diagratio;
-  size_t dsyevrlimit;
-  size_t zheevrlimit;
-  bool logall;
+  double diagratio{};
+  size_t dsyevrlimit{};
+  size_t zheevrlimit{};
+  bool logall{};
   string log;
   void init();
 
@@ -1135,10 +1135,10 @@ class BaseSpectrum {
   size_t nr;     // number of operators
   const MatrixElements &op1, &op2, &op3;
   SpectrumPtr spec;
-  SPECTYPE spectype; // SPEC_FT, ...
+  SPECTYPE spectype{}; // SPEC_FT, ...
   axis a;            // axis::RealFreq, axis::Temp, axis::Matsubara, etc.
   matstype mt;       // matstype::bosonic, matstype::fermionic, etc.
-  int spin;          // -1 or +1, or 0 where irrelevant
+  int spin{};          // -1 or +1, or 0 where irrelevant
   string fullname() const {
     string s = name + " " + prefix + " " + spectype->name() + " " + axisstring(a);
     if (a != axis::RealFreq && a != axis::Temp) s += " " + matstypestring(mt);

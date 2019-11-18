@@ -21,10 +21,10 @@
 
 class Bins {
   private:
-  size_t binsperdecade;
-  size_t nrbins;
-  double emin, emax;
-  double log10emin, log10emax; // base-10 log of the limits
+  size_t binsperdecade{};
+  size_t nrbins{};
+  double emin{}, emax{};
+  double log10emin{}, log10emax{}; // base-10 log of the limits
   void setlimits();
   inline void add_std(double energy, t_weight weight);
   inline void add_acc(double energy, t_weight weight);

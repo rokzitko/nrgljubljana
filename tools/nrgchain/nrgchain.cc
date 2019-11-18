@@ -330,7 +330,7 @@ void load_tables() {
 
 class my_mpf {
   private:
-  mpf_t val;
+  mpf_t val{};
 
   public:
   my_mpf() { mpf_init(val); }

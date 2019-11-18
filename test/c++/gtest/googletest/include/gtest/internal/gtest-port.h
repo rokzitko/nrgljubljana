@@ -910,13 +910,13 @@ class GTEST_API_ RE {
 
  private:
   void Init(const char* regex);
-  const char* pattern_;
-  bool is_valid_;
+  const char* pattern_{};
+  bool is_valid_{};
 
 # if GTEST_USES_POSIX_RE
 
-  regex_t full_regex_;     // For FullMatch().
-  regex_t partial_regex_;  // For PartialMatch().
+  regex_t full_regex_{};     // For FullMatch().
+  regex_t partial_regex_{};  // For PartialMatch().
 
 # else  // GTEST_USES_SIMPLE_RE
 
@@ -1208,7 +1208,7 @@ class Notification {
   }
 
  private:
-  pthread_mutex_t mutex_;
+  pthread_mutex_t mutex_{};
   bool notified_{false};
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Notification);
@@ -1341,7 +1341,7 @@ class ThreadWithParam : public ThreadWithParamBase {
   // notifies.
   Notification* const thread_can_start_;
   bool finished_;  // true if we know that the thread function has finished.
-  pthread_t thread_;  // The native thread object.
+  pthread_t thread_{};  // The native thread object.
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ThreadWithParam);
 };
@@ -1692,7 +1692,7 @@ class MutexBase {
 // shares its API with MutexBase otherwise.
 class Mutex : public MutexBase {
  public:
-  Mutex() {
+  Mutex() : MutexBase() {
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_init(&mutex_, nullptr));
     has_owner_ = false;
   }

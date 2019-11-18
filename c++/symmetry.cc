@@ -51,9 +51,9 @@ sym_map all_syms;
 
 class Symmetry {
   protected:
-  size_t channels;
-  bool substeps;
-  int combs;
+  size_t channels{};
+  bool substeps{};
+  int combs{};
 
   public:
   Symmetry() = default;
