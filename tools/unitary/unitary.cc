@@ -47,7 +47,7 @@ bool input_ac_bin = false;
 const int OUTPUT_PREC = 18;
 double CHOP_TOL       = 1e-14;
 
-typedef ublas::matrix<double> MAT;
+using MAT = ublas::matrix<double>;
 
 void about() {
   if (!quiet) {

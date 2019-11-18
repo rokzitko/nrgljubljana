@@ -91,11 +91,11 @@ MemoryStats ms;
 string sym_string = "";
 
 // Quantum number types defined to enforce type checking
-typedef int Number;
-typedef int Ispin;
-typedef int Sspin;
-typedef int Tangmom;
-typedef int SZspin;
+using Number = int;
+using Ispin = int;
+using Sspin = int;
+using Tangmom = int;
+using SZspin = int;
 
 // Invariant subspace abstraction (container with quantum numbers)
 #include "invar.cc"
@@ -103,11 +103,11 @@ typedef int SZspin;
 // *** Commonly used types ***
 
 #ifdef NRG_REAL
-typedef double t_matel;                       // type for the matrix elements
-typedef double t_eigen;                       // type for the eigenvalues
-typedef double t_coef;                        // type for the Wilson chain coefficients
-typedef double t_factor;                      // type for various prefactors in recalculations
-typedef double t_expv;                        // type for expectation values of operators
+using t_matel = double;                       // type for the matrix elements
+using t_eigen = double;                       // type for the eigenvalues
+using t_coef = double;                        // type for the Wilson chain coefficients
+using t_factor = double;                      // type for various prefactors in recalculations
+using t_expv = double;                        // type for expectation values of operators
 inline double CONJ_ME(double x) { return x; } // Conjugation of matrix elements: no op
 #endif
 
@@ -121,17 +121,17 @@ typedef cmpl t_expv; // we allow the calculation of expectation values of
 inline cmpl CONJ_ME(cmpl z) { return conj(z); }
 #endif
 
-typedef cmpl t_weight; // spectral weight accumulators (complex in general)
+using t_weight = cmpl; // spectral weight accumulators (complex in general)
 
 // Type for arrays of eigenvalues
-typedef ublas::vector<t_eigen> EVEC;
-typedef std::vector<t_eigen> STDEVEC;
+using EVEC = ublas::vector<t_eigen>;
+using STDEVEC = std::vector<t_eigen>;
 
 // Type for arrays of coefficients for Wilson chains
-typedef ublas::vector<t_coef> CVEC;
+using CVEC = ublas::vector<t_coef>;
 
-typedef ublas::vector<double> DVEC;
-typedef ublas::vector<size_t> IVEC;
+using DVEC = ublas::vector<double>;
+using IVEC = ublas::vector<size_t>;
 
 /* NOTE: Row major is the C array format: A[0][0], A[0][1], A[0][2],
 A[1][0], A[1][1], etc. The default in UBLAS is row major, while LAPACK
@@ -154,7 +154,7 @@ typedef matrix<t_matel, ublas::row_major> Matrix;
 
 #include "numerics.h"
 
-typedef std::vector<Invar> InvarVec; // vector of Invars
+using InvarVec = std::vector<Invar>; // vector of Invars
 
 typedef pair<Invar, Invar> Twoinvar;
 typedef map<Twoinvar, Matrix> MatrixElements;
@@ -188,9 +188,9 @@ typedef map<string, MatrixElements> CustomOp;
 string NAME(const CustomOp::value_type &i) { return i.first; }
 
 // Vector containing irreducible matrix elements of f operators.
-typedef std::vector<MatrixElements> OpchChannel;
+using OpchChannel = std::vector<MatrixElements>;
 // Each channel contains P::perchannel OpchChannel matrices.
-typedef std::vector<OpchChannel> Opch;
+using Opch = std::vector<OpchChannel>;
 
 // Object of class IterInfo cotains full information when entering
 // stage N of the NRG iteration.
@@ -281,7 +281,7 @@ class DimSub {
 // Full information about the number of states and matrix dimensions
 // Example: dm[N].rmax[I] etc.
 typedef map<Invar, DimSub> Subs;
-typedef std::vector<Subs> AllSteps;
+using AllSteps = std::vector<Subs>;
 AllSteps dm;
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
@@ -417,7 +417,7 @@ class SPEC {
   virtual string merge() { return ""; } // what merging rule to use
 };
 
-typedef SPEC *SPECTYPE;
+using SPECTYPE = SPEC *;
 
 // In namespace NRG we store run-time information about the calculation.
 namespace NRG {
@@ -513,7 +513,7 @@ typedef unordered_map<t_eigen, t_eigen> mapdd;
 // Pair of energy and multiplicity. This is used to compute the true
 // grand-canonical partition function STAT::ZZ.
 typedef pair<t_eigen, int> energy_mult_type;
-typedef list<energy_mult_type> excitation_list;
+using excitation_list = list<energy_mult_type>;
 
 // Namespace for storing various statistical quantities calculated
 // during iteration.
@@ -1126,7 +1126,7 @@ ostream &operator<<(ostream &os, const axis a) { return os << axisstring(a); }
  as the spectrum type. Functions calc_specdens() et al. receive an
  object of this type as input. */
 
-typedef shared_ptr<Spectrum> SpectrumPtr;
+using SpectrumPtr = shared_ptr<Spectrum>;
 
 class BaseSpectrum {
   public:
@@ -1150,7 +1150,7 @@ class BaseSpectrum {
 };
 
 class speclist;
-typedef list<speclist *> lsl;
+using lsl = list<speclist *>;
 lsl allspectra; // list of list of spectra
 
 class speclist {

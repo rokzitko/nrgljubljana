@@ -21,7 +21,7 @@
 
 using namespace std;
 
-typedef std::vector<double> DVEC;
+using DVEC = std::vector<double>;
 
 bool output_bin       = false;
 bool output_text      = true;

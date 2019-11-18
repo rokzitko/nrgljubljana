@@ -555,7 +555,7 @@ CallReaction intToCallReaction(int mock_behavior) {
 
 namespace {
 
-typedef std::set<internal::UntypedFunctionMockerBase*> FunctionMockers;
+using FunctionMockers = std::set<internal::UntypedFunctionMockerBase *>;
 
 // The current state of a mock object.  Such information is needed for
 // detecting leaked mock objects and explicitly verifying a mock's

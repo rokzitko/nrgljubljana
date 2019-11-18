@@ -1026,9 +1026,9 @@ inline void FlushInfoLog() { fflush(nullptr); }
 // Note that the non-const reference will not have "const" added. This is
 // standard, and necessary so that "T" can always bind to "const T&".
 template <typename T>
-struct ConstRef { typedef const T& type; };
+struct ConstRef { using type = const T &; };
 template <typename T>
-struct ConstRef<T&> { typedef T& type; };
+struct ConstRef<T&> { using type = T &; };
 
 // The argument T must depend on some template parameters.
 #define GTEST_REFERENCE_TO_CONST_(T) \
@@ -1307,7 +1307,7 @@ extern "C" inline void* ThreadFuncWithCLinkage(void* thread) {
 template <typename T>
 class ThreadWithParam : public ThreadWithParamBase {
  public:
-  typedef void UserThreadFunc(T);
+  using UserThreadFunc = void (T);
 
   ThreadWithParam(UserThreadFunc* func, T param, Notification* thread_can_start)
       : func_(func),
@@ -1722,7 +1722,7 @@ class GTestMutexLock {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(GTestMutexLock);
 };
 
-typedef GTestMutexLock MutexLock;
+using MutexLock = GTestMutexLock;
 
 // Helpers for ThreadLocal.
 
@@ -2001,7 +2001,7 @@ inline bool IsDir(const StatStruct& st) {
 
 #else
 
-typedef struct stat StatStruct;
+using StatStruct = struct stat;
 
 inline int FileNo(FILE* file) { return fileno(file); }
 inline int IsATTY(int fd) { return isatty(fd); }
@@ -2127,7 +2127,7 @@ class TypeWithSize {
  public:
   // This prevents the user from using TypeWithSize<N> with incorrect
   // values of N.
-  typedef void UInt;
+  using UInt = void;
 };
 
 // The specialization for size 4.
@@ -2138,8 +2138,8 @@ class TypeWithSize<4> {
   //
   // As base/basictypes.h doesn't compile on Windows, we cannot use
   // uint32, uint64, and etc here.
-  typedef int Int;
-  typedef unsigned int UInt;
+  using Int = int;
+  using UInt = unsigned int;
 };
 
 // The specialization for size 8.
@@ -2156,11 +2156,11 @@ class TypeWithSize<8> {
 };
 
 // Integer types of known sizes.
-typedef TypeWithSize<4>::Int Int32;
-typedef TypeWithSize<4>::UInt UInt32;
-typedef TypeWithSize<8>::Int Int64;
-typedef TypeWithSize<8>::UInt UInt64;
-typedef TypeWithSize<8>::Int TimeInMillis;  // Represents time in milliseconds.
+using Int32 = TypeWithSize<4>::Int;
+using UInt32 = TypeWithSize<4>::UInt;
+using Int64 = TypeWithSize<8>::Int;
+using UInt64 = TypeWithSize<8>::UInt;
+using TimeInMillis = TypeWithSize<8>::Int;  // Represents time in milliseconds.
 
 // Utilities for command line flags and environment variables.
 

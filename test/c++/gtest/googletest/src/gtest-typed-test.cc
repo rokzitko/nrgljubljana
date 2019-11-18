@@ -59,7 +59,7 @@ static std::vector<std::string> SplitIntoTestNames(const char* src) {
 // aborts the program otherwise.
 const char* TypedTestSuitePState::VerifyRegisteredTestNames(
     const char* file, int line, const char* registered_tests) {
-  typedef RegisteredTestsMap::const_iterator RegisteredTestIter;
+  using RegisteredTestIter = RegisteredTestsMap::const_iterator;
   registered_ = true;
 
   std::vector<std::string> name_vec = SplitIntoTestNames(registered_tests);

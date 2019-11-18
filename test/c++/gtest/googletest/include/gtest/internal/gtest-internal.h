@@ -241,7 +241,7 @@ class FloatingPoint {
  public:
   // Defines the unsigned integer type that has the same size as the
   // floating point number.
-  typedef typename TypeWithSize<sizeof(RawType)>::UInt Bits;
+  using Bits = typename TypeWithSize<sizeof(RawType)>::UInt;
 
   // Constants.
 
@@ -395,8 +395,8 @@ inline double FloatingPoint<double>::Max() { return DBL_MAX; }
 
 // Typedefs the instances of the FloatingPoint template class that we
 // care to use.
-typedef FloatingPoint<float> Float;
-typedef FloatingPoint<double> Double;
+using Float = FloatingPoint<float>;
+using Double = FloatingPoint<double>;
 
 // In order to catch the mistake of putting tests that use different
 // test fixture classes in the same test suite, we need to assign
@@ -404,7 +404,7 @@ typedef FloatingPoint<double> Double;
 // used to hold such IDs.  The user should treat TypeId as an opaque
 // type: the only operation allowed on TypeId values is to compare
 // them for equality using the == operator.
-typedef const void* TypeId;
+using TypeId = const void *;
 
 template <typename T>
 class TypeIdHelper {
@@ -660,7 +660,7 @@ struct DefaultNameGenerator {
 
 template <typename Provided = DefaultNameGenerator>
 struct NameGeneratorSelector {
-  typedef Provided type;
+  using type = Provided;
 };
 
 template <typename NameGenerator>
@@ -698,9 +698,9 @@ class TypeParameterizedTest {
                        const char* case_name, const char* test_names, int index,
                        const std::vector<std::string>& type_names =
                            GenerateNames<DefaultNameGenerator, Types>()) {
-    typedef typename Types::Head Type;
-    typedef Fixture<Type> FixtureClass;
-    typedef typename GTEST_BIND_(TestSel, Type) TestClass;
+    using Type = typename Types::Head;
+    using FixtureClass = Fixture<Type>;
+    using TestClass = typename TestSel::template TestSel::Bind<Type>::type;
 
     // First, registers the first type-parameterized test in the type
     // list.
@@ -766,7 +766,7 @@ class TypeParameterizedTestSuite {
     }
     const CodeLocation& test_location = state->GetCodeLocation(test_name);
 
-    typedef typename Tests::Head Head;
+    using Head = typename Tests::Head;
 
     // First, register the first test in 'Test' for each type in 'Types'.
     TypeParameterizedTest<Fixture, Head, Types>::Register(
@@ -893,7 +893,7 @@ struct IsAProtocolMessage
 // Also note that the simpler approach of overloading
 // IsContainerTest(typename C::const_iterator*) and
 // IsContainerTest(...) doesn't work with Visual Age C++ and Sun C++.
-typedef int IsContainer;
+using IsContainer = int;
 template <class C,
           class Iterator = decltype(::std::declval<const C&>().begin()),
           class = decltype(::std::declval<const C&>().end()),
@@ -904,7 +904,7 @@ IsContainer IsContainerTest(int /* dummy */) {
   return 0;
 }
 
-typedef char IsNotContainer;
+using IsNotContainer = char;
 template <class C>
 IsNotContainer IsContainerTest(long /* dummy */) { return '\0'; }
 
@@ -1046,9 +1046,9 @@ template <typename Element>
 class NativeArray {
  public:
   // STL-style container typedefs.
-  typedef Element value_type;
-  typedef Element* iterator;
-  typedef const Element* const_iterator;
+  using value_type = Element;
+  using iterator = Element *;
+  using const_iterator = const Element *;
 
   // Constructs from a native array. References the source.
   NativeArray(const Element* array, size_t count, RelationToSourceReference) {

@@ -41,11 +41,11 @@ int nrmats;       // Number of Matsubara points
 double **buffers; // binary data buffers
 int *sizes;       // sizes of buffers
 
-typedef complex<double> cmpl;
+using cmpl = complex<double>;
 typedef map<double, cmpl> mapdc;
 typedef map<double, double> mapdd;
-typedef vector<double> vec;
-typedef vector<cmpl> cvec;
+using vec = vector<double>;
+using cvec = vector<cmpl>;
 
 mapdd spec;           // Spectrum
 unsigned int nr_spec; // Number of raw spectrum points

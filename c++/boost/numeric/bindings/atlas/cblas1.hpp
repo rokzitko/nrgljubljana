@@ -69,7 +69,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void scal (T const& alpha, Vct& x) {
 #ifndef BOOST_NUMERIC_BINDINGS_NO_TYPE_CHECK
-      typedef traits::vector_traits<Vct> vtraits;
+      using vtraits = traits::vector_traits<Vct>;
       BOOST_STATIC_ASSERT(
        (boost::is_same<T, typename vtraits::value_type>::value
         || 

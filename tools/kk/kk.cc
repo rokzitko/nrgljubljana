@@ -39,8 +39,8 @@
 using namespace std;
 
 typedef pair<double, double> XYPOINT;
-typedef vector<XYPOINT> XYFUNC;
-typedef vector<double> DVEC;
+using XYFUNC = vector<XYPOINT>;
+using DVEC = vector<double>;
 
 // number of digits of precision in the generated output file
 #define OUTPUT_PRECISION 16

@@ -8,8 +8,8 @@
 // iteration.
 class outfield;
 
-typedef outfield *outfieldPtr;
-typedef std::vector<outfieldPtr> vecoutptr;
+using outfieldPtr = outfield *;
+using vecoutptr = std::vector<outfieldPtr>;
 
 // Container for all fields
 vecoutptr allfields;

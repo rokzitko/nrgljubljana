@@ -16,7 +16,7 @@ bool fix_splittings(DiagInfo &diag) {
 }
 
 // Iterator over eigenvalues
-typedef STDEVEC::iterator svdi;
+using svdi = STDEVEC::iterator;
 
 void cluster_show(const svdi &i0, const svdi &i1) {
   cout << "[";

@@ -180,8 +180,8 @@ class Temp {
   Spikes v;
   void add_value(double energy, t_weight weight); // for ChainSpectrumTemp
   operator Spikes &() { return v; }
-  typedef Spikes::iterator iterator;
-  typedef Spikes::const_iterator const_iterator;
+  using iterator = Spikes::iterator;
+  using const_iterator = Spikes::const_iterator;
   iterator begin() { return v.begin(); }
   iterator end() { return v.end(); }
 };

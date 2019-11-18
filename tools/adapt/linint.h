@@ -7,7 +7,7 @@
 
 // Structures for storing tabulated data, such as rho(omega).
 typedef pair<double, double> Pair;
-typedef vector<Pair> Vec;
+using Vec = vector<Pair>;
 
 // Linear interpolation class
 class LinInt {

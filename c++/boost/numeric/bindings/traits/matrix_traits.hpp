@@ -39,8 +39,8 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   /// Note that  remove_const<MType>::type == MIdentifier 
   template <typename MIdentifier, typename MType>
   struct matrix_detail_traits {
-    typedef MIdentifier identifier_type;
-    typedef MType       matrix_type; 
+    using identifier_type = MIdentifier;
+    using matrix_type = MType; 
   };
 
   /// matrix_traits<> generic version: 
@@ -138,7 +138,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   template <typename SymmM> 
   inline 
   char matrix_uplo_tag (SymmM&) {
-      typedef typename matrix_traits<SymmM>::uplo_type uplo_t; 
+      using uplo_t = typename matrix_traits<SymmM>::uplo_type; 
       return detail::matrix_uplo_tag (uplo_t());
   }
   

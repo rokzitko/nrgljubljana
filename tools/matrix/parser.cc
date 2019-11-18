@@ -181,13 +181,13 @@ typedef union YYSTYPE {
 #ifdef YYTYPE_UINT8
 typedef YYTYPE_UINT8 yytype_uint8;
 #else
-typedef unsigned char yytype_uint8;
+using yytype_uint8 = unsigned char;
 #endif
 
 #ifdef YYTYPE_INT8
 typedef YYTYPE_INT8 yytype_int8;
 #elif (defined __STDC__ || defined __C99__FUNC__ || defined __cplusplus || defined _MSC_VER)
-typedef signed char yytype_int8;
+using yytype_int8 = signed char;
 #else
 typedef short int yytype_int8;
 #endif
@@ -195,13 +195,13 @@ typedef short int yytype_int8;
 #ifdef YYTYPE_UINT16
 typedef YYTYPE_UINT16 yytype_uint16;
 #else
-typedef unsigned short int yytype_uint16;
+using yytype_uint16 = unsigned short;
 #endif
 
 #ifdef YYTYPE_INT16
 typedef YYTYPE_INT16 yytype_int16;
 #else
-typedef short int yytype_int16;
+using yytype_int16 = short;
 #endif
 
 #ifndef YYSIZE_T

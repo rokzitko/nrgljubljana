@@ -72,7 +72,7 @@ IntLinInt intrho_pos, intrho_neg; // integrated rho
 LinInt g_pos, g_neg;              // g(x)
 LinInt f_pos, f_neg;
 
-typedef vector<double> Table;
+using Table = vector<double>;
 
 // Input to the tridiagonalisation.
 Table de_pos, de_neg, du_pos, du_neg;
@@ -343,7 +343,7 @@ class my_mpf {
   inline operator mpf_t &() { return val; }
 };
 
-typedef std::vector<my_mpf> vmpf;
+using vmpf = std::vector<my_mpf>;
 
 // Fix normalization of u_{n,m}, v_{n,m} to 1. IMPORTANT: pass by
 // reference!

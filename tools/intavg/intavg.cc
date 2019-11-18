@@ -32,8 +32,8 @@ string name;              // filename of binary files containing the raw data
 int Nz;                   // Number of spectra (1..Nz)
 
 typedef pair<double, double> Pair;
-typedef vector<Pair> Vec;
-typedef vector<double> dvec;
+using Vec = vector<Pair>;
+using dvec = vector<double>;
 
 vector<Vec> input; // input data
 dvec mesh;         // output mesh

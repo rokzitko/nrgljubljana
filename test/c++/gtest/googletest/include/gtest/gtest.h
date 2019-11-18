@@ -518,7 +518,7 @@ class GTEST_API_ Test {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Test);
 };
 
-typedef internal::TimeInMillis TimeInMillis;
+using TimeInMillis = internal::TimeInMillis;
 
 // A copyable object representing a user specified test property which can be
 // output as a key/value string pair.
@@ -1849,7 +1849,7 @@ GTEST_API_ GTEST_ATTRIBUTE_PRINTF_(2, 3) void ColoredPrintf(GTestColor color,
 template <typename T>
 class WithParamInterface {
  public:
-  typedef T ParamType;
+  using ParamType = T;
   virtual ~WithParamInterface() {}
 
   // The current parameter value. Is also available in the test fixture's

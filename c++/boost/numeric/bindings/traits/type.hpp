@@ -17,8 +17,8 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
    * unit and the resulting binary will still work!
    */
 #ifndef BOOST_NUMERIC_BINDINGS_USE_CUSTOM_COMPLEX_TYPE
-  typedef std::complex< float >  complex_f ;
-  typedef std::complex< double > complex_d ; 
+  using complex_f = std::complex<float> ;
+  using complex_d = std::complex<double> ; 
 #endif
 
   template <typename T> 

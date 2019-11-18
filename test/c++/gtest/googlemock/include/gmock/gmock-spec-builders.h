@@ -216,7 +216,7 @@ class GTEST_API_ UntypedFunctionMockerBase {
       GTEST_LOCK_EXCLUDED_(g_gmock_mutex);
 
  protected:
-  typedef std::vector<const void*> UntypedOnCallSpecs;
+  using UntypedOnCallSpecs = std::vector<const void *>;
 
   using UntypedExpectations = std::vector<std::shared_ptr<ExpectationBase>>;
 
@@ -293,8 +293,8 @@ class UntypedOnCallSpecBase {
 template <typename F>
 class OnCallSpec : public UntypedOnCallSpecBase {
  public:
-  typedef typename Function<F>::ArgumentTuple ArgumentTuple;
-  typedef typename Function<F>::ArgumentMatcherTuple ArgumentMatcherTuple;
+  using ArgumentTuple = typename Function<F>::ArgumentTuple;
+  using ArgumentMatcherTuple = typename Function<F>::ArgumentMatcherTuple;
 
   // Constructs an OnCallSpec object from the information inside
   // the parenthesis of an ON_CALL() statement.
@@ -573,10 +573,10 @@ class GTEST_API_ Expectation {
 class ExpectationSet {
  public:
   // A bidirectional iterator that can read a const element in the set.
-  typedef Expectation::Set::const_iterator const_iterator;
+  using const_iterator = Expectation::Set::const_iterator;
 
   // An object stored in the set.  This is an alias of Expectation.
-  typedef Expectation::Set::value_type value_type;
+  using value_type = Expectation::Set::value_type;
 
   // Constructs an empty set.
   ExpectationSet() {}
@@ -738,7 +738,7 @@ class GTEST_API_ ExpectationBase {
     kRetiresOnSaturation
   };
 
-  typedef std::vector<const void*> UntypedActions;
+  using UntypedActions = std::vector<const void *>;
 
   // Returns an Expectation object that references and co-owns this
   // expectation.
@@ -885,9 +885,9 @@ class GTEST_API_ ExpectationBase {
 template <typename F>
 class TypedExpectation : public ExpectationBase {
  public:
-  typedef typename Function<F>::ArgumentTuple ArgumentTuple;
-  typedef typename Function<F>::ArgumentMatcherTuple ArgumentMatcherTuple;
-  typedef typename Function<F>::Result Result;
+  using ArgumentTuple = typename Function<F>::ArgumentTuple;
+  using ArgumentMatcherTuple = typename Function<F>::ArgumentMatcherTuple;
+  using Result = typename Function<F>::Result;
 
   TypedExpectation(FunctionMocker<F>* owner, const char* a_file, int a_line,
                    const std::string& a_source_text,
@@ -1246,9 +1246,8 @@ GTEST_API_ void LogWithLocation(testing::internal::LogSeverity severity,
 template <typename F>
 class MockSpec {
  public:
-  typedef typename internal::Function<F>::ArgumentTuple ArgumentTuple;
-  typedef typename internal::Function<F>::ArgumentMatcherTuple
-      ArgumentMatcherTuple;
+  using ArgumentTuple = typename internal::Function<F>::ArgumentTuple;
+  using ArgumentMatcherTuple = typename internal::Function<F>::ArgumentMatcherTuple;
 
   // Constructs a MockSpec object, given the function mocker object
   // that the spec is associated with.
@@ -1336,7 +1335,7 @@ class ReferenceOrValueWrapper<T&> {
  public:
   // Workaround for debatable pass-by-reference lint warning (c-library-team
   // policy precludes NOLINT in this context)
-  typedef T& reference;
+  using reference = T &;
   explicit ReferenceOrValueWrapper(reference ref)
       : value_ptr_(&ref) {}
   T& Unwrap() { return *value_ptr_; }
@@ -1406,7 +1405,7 @@ class ActionResultHolder : public UntypedActionResultHolderBase {
   }
 
  private:
-  typedef ReferenceOrValueWrapper<T> Wrapper;
+  using Wrapper = ReferenceOrValueWrapper<T>;
 
   explicit ActionResultHolder(Wrapper result)
       : result_(std::move(result)) {
@@ -1605,7 +1604,7 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
   template <typename Function>
   friend class MockSpec;
 
-  typedef ActionResultHolder<Result> ResultHolder;
+  using ResultHolder = ActionResultHolder<Result>;
 
   // Adds and returns a default action spec for this mock function.
   OnCallSpec<F>& AddNewOnCallSpec(

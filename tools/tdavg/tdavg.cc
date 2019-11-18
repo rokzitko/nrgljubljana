@@ -41,15 +41,15 @@ string ref_name; // reference file (to be subtracted element by element)
 bool copycomments      = false;
 string lastcommentline = "";
 
-typedef vector<double> dvec;
+using dvec = vector<double>;
 
 typedef pair<double, dvec> Line;
-typedef vector<Line> multiVec;
+using multiVec = vector<Line>;
 
 typedef pair<double, double> dpair;
-typedef vector<dpair> Vec;
+using Vec = vector<dpair>;
 
-typedef vector<multiVec> DataType;
+using DataType = vector<multiVec>;
 DataType input;     // input data
 DataType reference; // reference data (to be subtracted element by element)
 dvec mesh;          // output mesh
@@ -307,8 +307,8 @@ dvec merge_meshes() {
   return mesh;
 }
 
-typedef vector<LinInt> LinIntVector;
-typedef vector<LinIntVector> IntType;
+using LinIntVector = vector<LinInt>;
+using IntType = vector<LinIntVector>;
 IntType f, reff; // interpolation objects
 
 IntType interpolate(const DataType &data) {

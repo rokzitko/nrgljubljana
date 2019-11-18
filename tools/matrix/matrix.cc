@@ -48,12 +48,12 @@ typedef uint16_t flex_uint16_t;
 typedef int32_t flex_int32_t;
 typedef uint32_t flex_uint32_t;
 #else
-typedef signed char flex_int8_t;
-typedef short int flex_int16_t;
-typedef int flex_int32_t;
-typedef unsigned char flex_uint8_t;
-typedef unsigned short int flex_uint16_t;
-typedef unsigned int flex_uint32_t;
+using flex_int8_t = signed char;
+using flex_int16_t = short;
+using flex_int32_t = int;
+using flex_uint8_t = unsigned char;
+using flex_uint16_t = unsigned short;
+using flex_uint32_t = unsigned int;
 #endif /* ! C99 */
 
 /* Limits of integral types. */
@@ -150,7 +150,7 @@ typedef unsigned int flex_uint32_t;
 
 #ifndef YY_TYPEDEF_YY_BUFFER_STATE
 #define YY_TYPEDEF_YY_BUFFER_STATE
-typedef struct yy_buffer_state *YY_BUFFER_STATE;
+using YY_BUFFER_STATE = struct yy_buffer_state *;
 #endif
 
 extern int yyleng;
@@ -178,7 +178,7 @@ extern FILE *yyin, *yyout;
 
 #ifndef YY_TYPEDEF_YY_SIZE_T
 #define YY_TYPEDEF_YY_SIZE_T
-typedef size_t yy_size_t;
+using yy_size_t = size_t;
 #endif
 
 #ifndef YY_STRUCT_YY_BUFFER_STATE
@@ -323,11 +323,11 @@ void yyfree(void *);
 
 /* Begin user sect3 */
 
-typedef unsigned char YY_CHAR;
+using YY_CHAR = unsigned char;
 
 FILE *yyin = (FILE *)nullptr, *yyout = (FILE *)nullptr;
 
-typedef int yy_state_type;
+using yy_state_type = int;
 
 extern int yylineno;
 

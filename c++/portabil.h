@@ -44,7 +44,7 @@ void print_trace() {
 
 bool my_isfinite(double x) { return std::isfinite(x); }
 
-typedef complex<double> cmpl;
+using cmpl = complex<double>;
 
 bool my_isfinite(cmpl z) { return std::isfinite(z.real()) && std::isfinite(z.imag()); }
 

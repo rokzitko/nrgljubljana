@@ -33,7 +33,7 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   /// functions.
   template <typename V, typename T = typename V::value_type >
   struct default_vector_traits {
-    typedef T                                                    value_type; 
+    using value_type = T; 
     typedef typename detail::generate_const<V,value_type>::type* pointer;      // if V is const, pointer will be a const value_type*
 
     static pointer storage (V& v) { return &v[0]; }
@@ -50,8 +50,8 @@ namespace boost { namespace numeric { namespace bindings { namespace traits {
   template <typename VIdentifier, typename VType>
   struct vector_detail_traits : default_vector_traits<VType, typename VType::value_type > 
   {
-    typedef VIdentifier identifier_type; 
-    typedef VType       vector_type; 
+    using identifier_type = VIdentifier; 
+    using vector_type = VType; 
   };
 
   // vector_traits<> generic version: 

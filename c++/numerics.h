@@ -22,9 +22,9 @@ template <typename T> class generic_bucket {
   inline operator T() const { return value; }
 };
 
-typedef generic_bucket<double> bucket;
-typedef generic_bucket<t_weight> weight_bucket;
-typedef generic_bucket<t_matel> matel_bucket;
+using bucket = generic_bucket<double>;
+using weight_bucket = generic_bucket<t_weight>;
+using matel_bucket = generic_bucket<t_matel>;
 
 #define IS_ODD(n) ((n)&1)
 #define IS_EVEN(n) (!(IS_ODD(n)))

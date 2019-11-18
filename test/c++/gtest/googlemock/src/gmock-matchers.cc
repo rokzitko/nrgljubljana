@@ -231,7 +231,7 @@ GTEST_API_ ElementMatcherPairs FindMaxBipartiteMatching(const MatchMatrix& g) {
 
 static void LogElementMatcherPairVec(const ElementMatcherPairs& pairs,
                                      ::std::ostream* stream) {
-  typedef ElementMatcherPairs::const_iterator Iter;
+  using Iter = ElementMatcherPairs::const_iterator;
   ::std::ostream& os = *stream;
   os << "{";
   const char* sep = "";

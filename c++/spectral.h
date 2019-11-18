@@ -13,7 +13,7 @@ struct DELTA {
 // Container for holding spectral information represented by delta
 // peaks. "Weight" is of type t_weight (complex).
 typedef pair<double, t_weight> t_delta_peak;
-typedef std::vector<t_delta_peak> Spikes;
+using Spikes = std::vector<t_delta_peak>;
 
 inline double ENERGY(const Spikes::value_type &i) { return i.first; }
 inline t_weight WEIGHT(const Spikes::value_type &i) { return i.second; }

@@ -9,8 +9,8 @@ inline double S(Sspin SS) { return (SS - 1.0) / 2.0; }
 inline double ISO(Ispin II) { return (II - 1.0) / 2.0; }
 inline double SZ(SZspin SSZ) { return (SSZ - 1.0) / 2.0; }
 
-typedef std::vector<int> InvType;
-typedef std::vector<int> QNType;
+using InvType = std::vector<int>;
+using QNType = std::vector<int>;
 typedef map<string, int> QNNameType;
 
 const int multiplicative = 0;

@@ -17,8 +17,8 @@
 
 #ifndef BOOST_NUMERIC_BINDINGS_USE_COMPLEX_STRUCT 
 
-typedef float  fcomplex_t ;
-typedef double dcomplex_t ;
+using fcomplex_t = float ;
+using dcomplex_t = double ;
 
 #else
 
@@ -39,6 +39,6 @@ struct {
  * Define a fortran LOGICAL as a void (for now).
  */
 
-typedef void logical_t ;
+using logical_t = void ;
 
 #endif /* BOOST_NUMERIC_BINDINGS_TRAITS_TYPE_H */

@@ -54,7 +54,7 @@ double **buffers; // binary data buffers
 int *sizes;       // sizes of buffers
 
 typedef map<double, double> mapdd;
-typedef vector<double> vec;
+using vec = vector<double>;
 
 mapdd spec;           // Spectrum
 unsigned int nr_spec; // Number of raw spectrum points
@@ -514,7 +514,7 @@ void calc_deriv(const vec &inta, vec &deriv) {
 }
 
 typedef pair<double, double> Pair;
-typedef vector<Pair> Vec;
+using Vec = vector<Pair>;
 
 // Linear interpolation class
 class LinInt {

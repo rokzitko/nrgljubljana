@@ -63,7 +63,7 @@ extern "C" {
 #if defined(LAPACK_F2C)
 typedef double lapack_float_return;
 #else
-typedef float lapack_float_return;
+using lapack_float_return = float;
 #endif
 
 /* Complex types are structures equivalent to the
@@ -117,15 +117,15 @@ typedef float lapack_float_return;
 *  to select eigenvalues to sort to the top left of the Schur form.
 *  The value is selected if function returns TRUE (non-zero). */
 
-typedef lapack_logical (*LAPACK_S_SELECT2)(const float *, const float *);
-typedef lapack_logical (*LAPACK_S_SELECT3)(const float *, const float *, const float *);
-typedef lapack_logical (*LAPACK_D_SELECT2)(const double *, const double *);
-typedef lapack_logical (*LAPACK_D_SELECT3)(const double *, const double *, const double *);
+using LAPACK_S_SELECT2 = int (*)(const float *, const float *);
+using LAPACK_S_SELECT3 = int (*)(const float *, const float *, const float *);
+using LAPACK_D_SELECT2 = int (*)(const double *, const double *);
+using LAPACK_D_SELECT3 = int (*)(const double *, const double *, const double *);
 
-typedef lapack_logical (*LAPACK_C_SELECT1)(const lapack_complex_float *);
-typedef lapack_logical (*LAPACK_C_SELECT2)(const lapack_complex_float *, const lapack_complex_float *);
-typedef lapack_logical (*LAPACK_Z_SELECT1)(const lapack_complex_double *);
-typedef lapack_logical (*LAPACK_Z_SELECT2)(const lapack_complex_double *, const lapack_complex_double *);
+using LAPACK_C_SELECT1 = int (*)(const std::complex<float> *);
+using LAPACK_C_SELECT2 = int (*)(const std::complex<float> *, const std::complex<float> *);
+using LAPACK_Z_SELECT1 = int (*)(const std::complex<double> *);
+using LAPACK_Z_SELECT2 = int (*)(const std::complex<double> *, const std::complex<double> *);
 
 #define LAPACK_lsame LAPACK_GLOBAL(lsame, LSAME)
 lapack_logical LAPACK_lsame(char *ca, char *cb, lapack_int lca, lapack_int lcb);

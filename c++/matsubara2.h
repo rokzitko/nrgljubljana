@@ -3,7 +3,7 @@
 
 class Matsubara2 {
   private:
-  typedef matrix<t_weight> matsgf2;
+  using matsgf2 = matrix<t_weight>;
   matsgf2 v;
   matstype mt;
 

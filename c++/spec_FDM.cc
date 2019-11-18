@@ -222,7 +222,7 @@ template <typename T> inline std::complex<T> boltz_fnc_noscale(T E1, T E2, T bzE
 // 6. numerical prefactors
 // 7. differences A vs. B: conjugation, index reversal
 
-typedef std::vector<matrix<t_weight>> res_t;
+using res_t = std::vector<matrix<t_weight> >;
 
 #undef LOOP_D
 #undef LOOP_K

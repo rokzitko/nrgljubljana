@@ -120,9 +120,9 @@ class ParamIteratorInterface {
 template <typename T>
 class ParamIterator {
  public:
-  typedef T value_type;
-  typedef const T& reference;
-  typedef ptrdiff_t difference_type;
+  using value_type = T;
+  using reference = const T &;
+  using difference_type = ptrdiff_t;
 
   // ParamIterator assumes ownership of the impl_ pointer.
   ParamIterator(const ParamIterator& other) : impl_(other.impl_->Clone()) {}
@@ -163,7 +163,7 @@ class ParamIterator {
 template <typename T>
 class ParamGeneratorInterface {
  public:
-  typedef T ParamType;
+  using ParamType = T;
 
   virtual ~ParamGeneratorInterface() {}
 
@@ -180,7 +180,7 @@ class ParamGeneratorInterface {
 template<typename T>
 class ParamGenerator {
  public:
-  typedef ParamIterator<T> iterator;
+  using iterator = ParamIterator<T>;
 
   explicit ParamGenerator(ParamGeneratorInterface<T>* impl) : impl_(impl) {}
   ParamGenerator(const ParamGenerator& other) : impl_(other.impl_) {}
@@ -302,7 +302,7 @@ class ValuesInIteratorRangeGenerator : public ParamGeneratorInterface<T> {
   }
 
  private:
-  typedef typename ::std::vector<T> ContainerType;
+  using ContainerType = typename ::std::vector<T>;
 
   class Iterator : public ParamIteratorInterface<T> {
    public:
@@ -391,7 +391,7 @@ void TestNotEmpty(const T&) {}
 template <class TestClass>
 class ParameterizedTestFactory : public TestFactoryBase {
  public:
-  typedef typename TestClass::ParamType ParamType;
+  using ParamType = typename TestClass::ParamType;
   explicit ParameterizedTestFactory(ParamType parameter) :
       parameter_(parameter) {}
   Test* CreateTest() override {
@@ -487,7 +487,7 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
   // AddTestSuiteInstantiation().
   using ParamType = typename TestSuite::ParamType;
   // A function that returns an instance of appropriate generator type.
-  typedef ParamGenerator<ParamType>(GeneratorCreationFunc)();
+  using GeneratorCreationFunc = ParamGenerator<ParamType> ();
   using ParamNameGeneratorFunc = std::string(const TestParamInfo<ParamType>&);
 
   explicit ParameterizedTestSuiteInfo(const char* name,
@@ -618,7 +618,7 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
       const char* file;
       int line;
   };
-  typedef ::std::vector<InstantiationInfo> InstantiationContainer;
+  using InstantiationContainer = ::std::vector<InstantiationInfo>;
 
   static bool IsValidParamName(const std::string& name) {
     // Check for empty string
@@ -751,7 +751,7 @@ template <typename... T>
 class CartesianProductGenerator
     : public ParamGeneratorInterface<::std::tuple<T...>> {
  public:
-  typedef ::std::tuple<T...> ParamType;
+  using ParamType = ::std::tuple<T...>;
 
   CartesianProductGenerator(const std::tuple<ParamGenerator<T>...>& g)
       : generators_(g) {}

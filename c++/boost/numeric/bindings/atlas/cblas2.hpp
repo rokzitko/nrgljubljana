@@ -94,7 +94,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void gemv (Matr const& a, VctX const& x, VctY& y) {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<Matr>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<Matr>::value_type; 
 #else
       typedef typename Matr::value_type val_t; 
 #endif 
@@ -219,7 +219,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void symv (SymmMatr const& a, VctX const& x, VctY& y) {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<SymmMatr>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<SymmMatr>::value_type; 
 #else
       typedef typename SymmMatr::value_type val_t; 
 #endif
@@ -298,7 +298,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void spmv (SymmMatr const& a, VctX const& x, VctY& y) {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<SymmMatr>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<SymmMatr>::value_type; 
 #else
       typedef typename SymmMatr::value_type val_t; 
 #endif
@@ -414,7 +414,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void hemv (HermMatr const& a, VctX const& x, VctY& y) {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<HermMatr>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<HermMatr>::value_type; 
 #else
       typedef typename HermMatr::value_type val_t; 
 #endif
@@ -481,7 +481,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void hpmv (HermMatr const& a, VctX const& x, VctY& y) {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<HermMatr>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<HermMatr>::value_type; 
 #else
       typedef typename HermMatr::value_type val_t; 
 #endif
@@ -538,7 +538,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void ger (VctX const& x, VctY const& y, Matr& a) {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<Matr>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<Matr>::value_type; 
 #else
       typedef typename Matr::value_type val_t; 
 #endif 
@@ -594,7 +594,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void geru (VctX const& x, VctY const& y, Matr& a) {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<Matr>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<Matr>::value_type; 
 #else
       typedef typename Matr::value_type val_t; 
 #endif 
@@ -650,7 +650,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void gerc (VctX const& x, VctY const& y, Matr& a) {
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<Matr>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<Matr>::value_type; 
 #else
       typedef typename Matr::value_type val_t; 
 #endif 
@@ -745,7 +745,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void syr (VctX const& x, SymmM& a) { 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<SymmM>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<SymmM>::value_type; 
 #else
       typedef typename SymmM::value_type val_t; 
 #endif 
@@ -804,7 +804,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void spr (VctX const& x, SymmM& a) { 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<SymmM>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<SymmM>::value_type; 
 #else
       typedef typename SymmM::value_type val_t; 
 #endif 
@@ -915,7 +915,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void syr2 (VctX const& x, VctY const& y, SymmM& a) { 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<SymmM>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<SymmM>::value_type; 
 #else
       typedef typename SymmM::value_type val_t; 
 #endif 
@@ -981,7 +981,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void spr2 (VctX const& x, VctY const& y, SymmM& a) { 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<SymmM>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<SymmM>::value_type; 
 #else
       typedef typename SymmM::value_type val_t; 
 #endif 
@@ -1076,11 +1076,11 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void her (VctX const& x, HermM& a) { 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<HermM>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<HermM>::value_type; 
 #else
       typedef typename HermM::value_type val_t; 
 #endif 
-      typedef typename traits::type_traits<val_t>::real_type real_t; 
+      using real_t = typename traits::type_traits<val_t>::real_type; 
       her ((real_t) 1, x, a); 
     }
 
@@ -1136,11 +1136,11 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void hpr (VctX const& x, HermM& a) { 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<HermM>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<HermM>::value_type; 
 #else
       typedef typename HermM::value_type val_t; 
 #endif 
-      typedef typename traits::type_traits<val_t>::real_type real_t; 
+      using real_t = typename traits::type_traits<val_t>::real_type; 
       hpr ((real_t) 1, x, a); 
     }
 
@@ -1248,7 +1248,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void her2 (VctX const& x, VctY const& y, HermM& a) { 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<HermM>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<HermM>::value_type; 
 #else
       typedef typename HermM::value_type val_t; 
 #endif 
@@ -1314,7 +1314,7 @@ namespace boost { namespace numeric { namespace bindings {
     inline 
     void hpr2 (VctX const& x, VctY const& y, HermM& a) { 
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
-      typedef typename traits::matrix_traits<HermM>::value_type val_t; 
+      using val_t = typename traits::matrix_traits<HermM>::value_type; 
 #else
       typedef typename HermM::value_type val_t; 
 #endif 
