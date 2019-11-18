@@ -1,3 +1,7 @@
+#include <utility>
+
+
+
 #ifndef _time_mem_h_
 #define _time_mem_h_
 
@@ -70,7 +74,7 @@ class TimeScope {
   string timer_name;
 
   public:
-  TimeScope(Timing &_timer, const string &_timer_name) : timer(_timer), timer_name(_timer_name) { timer.start(); }
+  TimeScope(Timing &_timer, string _timer_name) : timer(_timer), timer_name(std::move(_timer_name)) { timer.start(); }
   ~TimeScope() { timer.add(timer_name); }
 };
 

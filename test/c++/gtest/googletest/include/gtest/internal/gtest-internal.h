@@ -59,6 +59,8 @@
 #include <set>
 #include <string>
 #include <type_traits>
+#include <utility>
+
 #include <vector>
 
 #include "gtest/gtest-message.h"
@@ -478,8 +480,8 @@ using SetUpTestSuiteFunc = void (*)();
 using TearDownTestSuiteFunc = void (*)();
 
 struct CodeLocation {
-  CodeLocation(const std::string& a_file, int a_line)
-      : file(a_file), line(a_line) {}
+  CodeLocation(std::string  a_file, int a_line)
+      : file(std::move(a_file)), line(a_line) {}
 
   std::string file;
   int line;

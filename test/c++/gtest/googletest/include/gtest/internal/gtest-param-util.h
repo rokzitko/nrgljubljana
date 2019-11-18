@@ -492,7 +492,7 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
 
   explicit ParameterizedTestSuiteInfo(const char* name,
                                       CodeLocation code_location)
-      : test_suite_name_(name), code_location_(code_location) {}
+      : test_suite_name_(name), code_location_(std::move(code_location)) {}
 
   // Test case base name for display purposes.
   const std::string& GetTestSuiteName() const override {
@@ -601,12 +601,12 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
   //  <Instantiation name, Sequence generator creation function,
   //     Name generator function, Source file, Source line>
   struct InstantiationInfo {
-      InstantiationInfo(const std::string &name_in,
+      InstantiationInfo(std::string name_in,
                         GeneratorCreationFunc* generator_in,
                         ParamNameGeneratorFunc* name_func_in,
                         const char* file_in,
                         int line_in)
-          : name(name_in),
+          : name(std::move(name_in)),
             generator(generator_in),
             name_func(name_func_in),
             file(file_in),

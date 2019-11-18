@@ -546,7 +546,7 @@ class GTEST_API_ Expectation {
   typedef ::std::set<Expectation, Less> Set;
 
   Expectation(
-      const std::shared_ptr<internal::ExpectationBase>& expectation_base);
+      std::shared_ptr<internal::ExpectationBase>  expectation_base);
 
   // Returns the expectation this object references.
   const std::shared_ptr<internal::ExpectationBase>& expectation_base() const {
@@ -697,7 +697,7 @@ GTEST_API_ extern ThreadLocal<Sequence*> g_gmock_implicit_sequence;
 class GTEST_API_ ExpectationBase {
  public:
   // source_text is the EXPECT_CALL(...) source that created this Expectation.
-  ExpectationBase(const char* file, int line, const std::string& source_text);
+  ExpectationBase(const char* file, int line, std::string  source_text);
 
   virtual ~ExpectationBase();
 

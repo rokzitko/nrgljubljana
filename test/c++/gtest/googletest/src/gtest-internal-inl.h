@@ -44,6 +44,8 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
+
 #include <vector>
 
 #include "gtest/internal/gtest-port.h"
@@ -350,7 +352,7 @@ class TestPropertyKeyIs {
   // Constructor.
   //
   // TestPropertyKeyIs has NO default constructor.
-  explicit TestPropertyKeyIs(const std::string& key) : key_(key) {}
+  explicit TestPropertyKeyIs(std::string  key) : key_(std::move(key)) {}
 
   // Returns true if the test name of test property matches on key_.
   bool operator()(const TestProperty& test_property) const {

@@ -50,6 +50,8 @@
 #include <map>
 #include <ostream>  // NOLINT
 #include <sstream>
+#include <utility>
+
 #include <vector>
 
 #if GTEST_OS_LINUX
@@ -697,8 +699,8 @@ static AssertionResult HasOneFailure(const char* /* results_expr */,
 // substring the failure message should contain.
 SingleFailureChecker::SingleFailureChecker(const TestPartResultArray* results,
                                            TestPartResult::Type type,
-                                           const std::string& substr)
-    : results_(results), type_(type), substr_(substr) {}
+                                           std::string  substr)
+    : results_(results), type_(type), substr_(std::move(substr)) {}
 
 // The destructor of SingleFailureChecker verifies that the given
 // TestPartResultArray contains exactly one failure that has the given
@@ -2543,17 +2545,17 @@ bool Test::IsSkipped() {
 
 // Constructs a TestInfo object. It assumes ownership of the test factory
 // object.
-TestInfo::TestInfo(const std::string& a_test_suite_name,
-                   const std::string& a_name, const char* a_type_param,
+TestInfo::TestInfo(std::string  a_test_suite_name,
+                   std::string  a_name, const char* a_type_param,
                    const char* a_value_param,
                    internal::CodeLocation a_code_location,
                    internal::TypeId fixture_class_id,
                    internal::TestFactoryBase* factory)
-    : test_suite_name_(a_test_suite_name),
-      name_(a_name),
+    : test_suite_name_(std::move(a_test_suite_name)),
+      name_(std::move(a_name)),
       type_param_(a_type_param ? new std::string(a_type_param) : nullptr),
       value_param_(a_value_param ? new std::string(a_value_param) : nullptr),
-      location_(a_code_location),
+      location_(std::move(a_code_location)),
       fixture_class_id_(fixture_class_id),
       should_run_(false),
       is_disabled_(false),
@@ -5157,7 +5159,7 @@ void UnitTestImpl::PostFlagParsingInit() {
 class TestSuiteNameIs {
  public:
   // Constructor.
-  explicit TestSuiteNameIs(const std::string& name) : name_(name) {}
+  explicit TestSuiteNameIs(std::string  name) : name_(std::move(name)) {}
 
   // Returns true if the name of test_suite matches name_.
   bool operator()(const TestSuite* test_suite) const {

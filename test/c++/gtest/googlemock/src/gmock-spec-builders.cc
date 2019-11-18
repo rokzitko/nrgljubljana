@@ -41,6 +41,8 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
+
 #include <vector>
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -76,10 +78,10 @@ GTEST_API_ void LogWithLocation(testing::internal::LogSeverity severity,
 
 // Constructs an ExpectationBase object.
 ExpectationBase::ExpectationBase(const char* a_file, int a_line,
-                                 const std::string& a_source_text)
+                                 std::string  a_source_text)
     : file_(a_file),
       line_(a_line),
-      source_text_(a_source_text),
+      source_text_(std::move(a_source_text)),
       cardinality_specified_(false),
       cardinality_(Exactly(1)),
       call_count_(0),
@@ -835,8 +837,8 @@ void Mock::ClearDefaultActionsLocked(void* mock_obj)
 Expectation::Expectation() {}
 
 Expectation::Expectation(
-    const std::shared_ptr<internal::ExpectationBase>& an_expectation_base)
-    : expectation_base_(an_expectation_base) {}
+    std::shared_ptr<internal::ExpectationBase>  an_expectation_base)
+    : expectation_base_(std::move(an_expectation_base)) {}
 
 Expectation::~Expectation() {}
 

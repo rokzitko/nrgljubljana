@@ -49,6 +49,10 @@ int myrank() { return 0; }
 
 #include <omp.h>
 
+
+#include <utility>
+
+
 // Shared parameters for MPI parallelization.
 class sharedparam {
   public:
@@ -1007,7 +1011,7 @@ class Spectrum {
   public:
   string opname, filename;
   SPECTYPE spectype;
-  Spectrum(string _opname, string _filename, SPECTYPE _spectype) : opname(_opname), filename(_filename), spectype(_spectype){};
+  Spectrum(string _opname, string _filename, SPECTYPE _spectype) : opname(std::move(_opname)), filename(std::move(_filename)), spectype(_spectype){};
   virtual ~Spectrum(){};
   virtual void merge(ChainSpectrum *cs) = 0; // called from spec.cc as the very last step
   string name() { return opname; }

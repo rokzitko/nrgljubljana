@@ -1,3 +1,7 @@
+#include <utility>
+
+
+
 // misc.h - Miscelaneous functions
 // Copyright (C) 2005-2009 Rok Zitko
 
@@ -112,7 +116,7 @@ class string_token {
   list<string> l;
 
   public:
-  string_token(const string &_s) : s(_s) {
+  string_token(string _s) : s(std::move(_s)) {
     string::size_type pos = 0;
     string::size_type first, last;
     while ((first = s.find_first_not_of(" ", pos)) != string::npos) {

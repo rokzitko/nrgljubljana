@@ -656,9 +656,9 @@ bool CaseInsensitiveStringEquals(const StringType& s1,
 template <typename StringType>
 class StrEqualityMatcher {
  public:
-  StrEqualityMatcher(const StringType& str, bool expect_eq,
+  StrEqualityMatcher(StringType  str, bool expect_eq,
                      bool case_sensitive)
-      : string_(str), expect_eq_(expect_eq), case_sensitive_(case_sensitive) {}
+      : string_(std::move(str)), expect_eq_(expect_eq), case_sensitive_(case_sensitive) {}
 
 #if GTEST_HAS_ABSL
   bool MatchAndExplain(const absl::string_view& s,
@@ -727,8 +727,8 @@ class StrEqualityMatcher {
 template <typename StringType>
 class HasSubstrMatcher {
  public:
-  explicit HasSubstrMatcher(const StringType& substring)
-      : substring_(substring) {}
+  explicit HasSubstrMatcher(StringType  substring)
+      : substring_(std::move(substring)) {}
 
 #if GTEST_HAS_ABSL
   bool MatchAndExplain(const absl::string_view& s,
@@ -784,7 +784,7 @@ class HasSubstrMatcher {
 template <typename StringType>
 class StartsWithMatcher {
  public:
-  explicit StartsWithMatcher(const StringType& prefix) : prefix_(prefix) {
+  explicit StartsWithMatcher(StringType  prefix) : prefix_(std::move(prefix)) {
   }
 
 #if GTEST_HAS_ABSL
@@ -841,7 +841,7 @@ class StartsWithMatcher {
 template <typename StringType>
 class EndsWithMatcher {
  public:
-  explicit EndsWithMatcher(const StringType& suffix) : suffix_(suffix) {}
+  explicit EndsWithMatcher(StringType  suffix) : suffix_(std::move(suffix)) {}
 
 #if GTEST_HAS_ABSL
   bool MatchAndExplain(const absl::string_view& s,

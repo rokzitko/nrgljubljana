@@ -1,3 +1,7 @@
+#include <utility>
+
+
+
 // param.cc - Parameter parsing
 // Copyright (C) 2009-2019 Rok Zitko
 
@@ -40,7 +44,7 @@ class parambase {
   string _value;
 
   public:
-  parambase(string keyword, string desc, string defaultv) : _keyword(keyword), _desc(desc), _value(defaultv){};
+  parambase(string keyword, string desc, string defaultv) : _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
   virtual ~parambase(){};
   virtual void setvalue_str(string newvalue) = 0;
   virtual void dump()                        = 0;

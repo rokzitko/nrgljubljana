@@ -41,6 +41,8 @@
 
 #include <cstdio>
 #include <memory>
+#include <utility>
+
 
 namespace testing {
 namespace internal {
@@ -265,11 +267,11 @@ inline Matcher<const ::std::string&> MakeDeathTestMatcher(
 // RUN_ALL_TESTS was called.
 class InternalRunDeathTestFlag {
  public:
-  InternalRunDeathTestFlag(const std::string& a_file,
+  InternalRunDeathTestFlag(std::string  a_file,
                            int a_line,
                            int an_index,
                            int a_write_fd)
-      : file_(a_file), line_(a_line), index_(an_index),
+      : file_(std::move(a_file)), line_(a_line), index_(an_index),
         write_fd_(a_write_fd) {}
 
   ~InternalRunDeathTestFlag() {

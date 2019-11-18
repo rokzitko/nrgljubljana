@@ -57,6 +57,8 @@
 #include <memory>
 #include <ostream>
 #include <type_traits>
+#include <utility>
+
 #include <vector>
 
 #include "gtest/internal/gtest-internal.h"
@@ -527,8 +529,8 @@ class TestProperty {
   // C'tor.  TestProperty does NOT have a default constructor.
   // Always use this constructor (with parameters) to create a
   // TestProperty object.
-  TestProperty(const std::string& a_key, const std::string& a_value) :
-    key_(a_key), value_(a_value) {
+  TestProperty(std::string  a_key, std::string  a_value) :
+    key_(std::move(a_key)), value_(std::move(a_value)) {
   }
 
   // Gets the user supplied key.
@@ -777,7 +779,7 @@ class GTEST_API_ TestInfo {
 
   // Constructs a TestInfo object. The newly constructed instance assumes
   // ownership of the factory object.
-  TestInfo(const std::string& test_suite_name, const std::string& name,
+  TestInfo(std::string  test_suite_name, std::string  name,
            const char* a_type_param,   // NULL if not a type-parameterized test
            const char* a_value_param,  // NULL if not a value-parameterized test
            internal::CodeLocation a_code_location,
