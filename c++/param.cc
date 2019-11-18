@@ -8,34 +8,6 @@
 #ifndef _param_cc_
 #define _param_cc_
 
-// Abstraction type for (constant) values that may be initialized
-// only once and then only read. [Non-strict version: allow rewriting
-// by the same value using force_set().]
-template <class T> class readonly {
-  private:
-  T data;
-  bool init;
-
-  public:
-  readonly() { init = false; };
-  inline operator const T &() const {
-    my_assert(init);
-    return data;
-  }
-  void operator=(T newvalue) {
-    if (!init) {
-      data = newvalue;
-      init = true;
-    } else // the value must not change!
-      my_assert(data == newvalue);
-  }
-  // Don't abuse this one!
-  void force_set(T newvalue) {
-    data = newvalue;
-    init = true;
-  }
-};
-
 // Base class for parameter containers.
 class parambase {
   protected:
@@ -530,11 +502,11 @@ namespace P {
   // *******************************************
   // Internal parameters, not under user control
 
-  readonly<size_t> channels;     // Number of channels
-  readonly<size_t> coeffactor;   // coefchannels = coeffactor * channels (typically coeffactor=1)
-  readonly<size_t> coefchannels; // Number of coefficient sets (typically coefchannels=channels)
-  readonly<size_t> perchannel;   // f-matrices per channel (typically 1)
-  readonly<size_t> combs;        // dimension of new shell Hilbert space, 4 for single-channel, 16 for two-channel, etc.
+  size_t channels = 0;     // Number of channels
+  size_t coeffactor = 0;   // coefchannels = coeffactor * channels (typically coeffactor=1)
+  size_t coefchannels = 0; // Number of coefficient sets (typically coefchannels=channels)
+  size_t perchannel = 0;   // f-matrices per channel (typically 1)
+  size_t combs = 0;        // dimension of new shell Hilbert space, 4 for single-channel, 16 for two-channel, etc.
   bool ZBW    = false;           // Zero-bandwidth calculation if Nmax=Ninit.
   size_t Nlen = 0;               // Nlen=Nmax for regular calculations. Nlen=1 for ZBW.
   // Nlen is the length of wn, wnfactor, ZnD and dm vectors.
@@ -542,7 +514,7 @@ namespace P {
   // Spin expressed in terms of the spin multiplicity, 2S+1. For SL &
   // SL 3 symmetry types, P::spin is 1. Default value of 2 is valid
   // for all other symmetry types.
-  size_t spin;
+  size_t spin = 2;
   // Directory where we keep temporary files during the computation.
   // It should point to a storage device with ample space.
   string workdir = ".";

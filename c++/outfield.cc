@@ -1,5 +1,5 @@
 // outfield.cc - Code for flexible formatted output
-// Copyright (C) 2009-2015 Rok Zitko
+// Copyright (C) 2009-2019 Rok Zitko
 
 #ifndef _outfield_cc_
 #define _outfield_cc_
@@ -8,7 +8,7 @@
 // iteration.
 class outfield;
 
-using outfieldPtr = outfield *;
+using outfieldPtr = outfield *; // TODO: shared ptr
 using vecoutptr = std::vector<outfieldPtr>;
 
 // Container for all fields
@@ -28,13 +28,15 @@ class outfield {
   // Using "pos", we can define at which position the element is inserted
   // to the list of fields. The default is at the end of the list.
   void set(string desc, int pos = -1) {
-    my_assert(_desc == "");
+//    my_assert(_desc == ""); // XXX
     _desc           = desc;
     outfieldPtr ptr = this;
     if (pos == -1)
       allfields.push_back(ptr);
-    else
+    else {
+      my_assert(pos < allfields.size());
       allfields.insert(begin(allfields) + pos, ptr);
+    }
   };
 
   outfield() { _desc = ""; };
@@ -81,5 +83,31 @@ bool outfield_exists(string query) {
     if (i->name() == query) return true;
   return false;
 }
+
+// Setup output fields that will appear in the file "td".
+// Additional elements are defined in symmetry.cc.
+namespace TD {
+  outfield T, E, E2, C, F, S;
+  void init() {
+    allfields.clear();
+    T.set("T");
+    // insert others here (starting with pos=1, i.e. after the 1st element)
+    E.set("<E>");
+    E2.set("<E^2>");
+    C.set("C");
+    F.set("F");
+    S.set("S");
+  }
+  void save_TD_quantities(ostream &F) {
+    F << ' ';
+    for (const auto &i : allfields) i->put(F);
+    F << endl;
+  }
+  void save_header(ostream &F) {
+    F << '#';
+    for (const auto &i : allfields) i->putheader(F);
+    F << endl;
+  }
+} // namespace TD
 
 #endif // _outfield_cc_

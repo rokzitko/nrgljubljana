@@ -49,9 +49,7 @@ int myrank() { return 0; }
 
 #include <omp.h>
 
-
 #include <utility>
-
 
 // Shared parameters for MPI parallelization.
 class sharedparam {
@@ -438,28 +436,6 @@ namespace NRG {
 // Includes which require P:: parameters.
 #include "spectral.h"
 
-// Setup output fields that will appear in the file "td".
-// Additional elements are defined in symmetry.cc.
-namespace TD {
-  outfield T("T");
-  // insert others here (starting with pos=1, i.e. after the 1st element)
-  outfield E("<E>");
-  outfield E2("<E^2>");
-  outfield C("C");
-  outfield F("F");
-  outfield S("S");
-  void save_TD_quantities(ostream &F) {
-    F << ' ';
-    for (const auto &i : allfields) i->put(F);
-    F << endl;
-  }
-  void save_header(ostream &F) {
-    F << '#';
-    for (const auto &i : allfields) i->putheader(F);
-    F << endl;
-  }
-} // namespace TD
-
 // The factor that multiplies the eigenvalues of the length-N Wilson
 // chain Hamiltonian in order to obtain the energies on the original
 // scale. Also named the "reduced bandwidth". Note that STAT::scale =
@@ -705,11 +681,10 @@ class coef_table {
 
   public:
   // Read values from a stream f
-  void read_values(ifstream &f, bool update = true) {
+  void read_values(ifstream &f) {
     size_t len;
     f >> len; // get length (= last index n still included)
-    read_vector(f, t, len + 1, update);
-    if (update) my_assert(t.size() == len + 1);
+    read_vector(f, t, len + 1);
   }
   t_coef coef(size_t n) const {
     my_assert(n < t.size());
@@ -733,9 +708,9 @@ class set_of_tables {
 
   public:
   size_t nr_tabs() const { return tabs.size(); }
-  void read(ifstream &fdata, bool update = true) {
+  void read(ifstream &fdata) {
     tabs.resize(P::coefchannels);
-    for (auto &i : tabs) i.read_values(fdata, update);
+    for (auto &i : tabs) i.read_values(fdata);
   }
   t_coef operator()(size_t N, size_t alpha) const {
     allowed_coefchannel(alpha);
@@ -2934,141 +2909,35 @@ void init_openMP() {
   cout << endl;
 }
 
-// Called after the symmetry type is determined from the data file.
+// Called immediately after the symmetry type is determined from the data file. This ensures that Invar can be parsed correctly.
 void set_symmetry(const string &sym_string) {
-  my_assert(Sym == nullptr); // only once!
   if (all_syms.count(sym_string) != 1) exit1("Unknown symmetry " << sym_string);
+  cout << "SYMMETRY TYPE: " << sym_string << endl;
   Sym = all_syms[sym_string];
+  TD::init();
+  my_assert(P::channels > 0); // must be set at this point
   Sym->init();
-}
-
-// Parse the header of the data file and 1) check datafile version;
-// 2) determine the symmetry type.
-void parse_datafile_header(istream &fdata,
-                           int expected_version = 9) // version number
-{
-  int dataversion = -1;
-  while (fdata.peek() == '#') {
-    fdata.ignore(); // ignore '#'
-    if (fdata.peek() == '!') {
-      fdata.ignore(); // ignore '!'
-      fdata >> dataversion;
-    } else {
-      string line;
-      getline(fdata, line);
-      string::size_type pos = line.find("symtype", 1);
-      if (pos != string::npos) {
-        // Symmetry type declaration
-        string::size_type p = line.find_last_of(" \t");
-        if (p != string::npos && p < line.size() - 1) {
-          sym_string = line.substr(p + 1); // global variable
-          cout << "SYMMETRY TYPE: " << sym_string << endl;
-          if (!Sym) set_symmetry(sym_string);
-        }
-      }
-    }
-    if (fdata.peek() == '\n') fdata.ignore();
-  }
-  my_assert(dataversion == expected_version);
-}
-
-// Read all initial energies and matrix elements
-void read_data() {
-  cout << endl;
-  ifstream fdata("data");
-  if (!fdata) my_error("Can't load initial data.");
-  parse_datafile_header(fdata);
-  read_nr_channels(fdata);
-  read_Nmax(fdata);
-  size_t nsubs; // Number of invariant subspaces
-  fdata >> nsubs;
-  my_assert(nsubs > 0);
-  // Note: we are reading diagprev, not diag, since this is
-  // information from the previous (0-th) NRG step
-  skip_comments(fdata);
-  read_energies(fdata, diagprev, nsubs);
-  skip_comments(fdata);
-  read_ireducf(fdata, diagprev);
-  while (true) {
-    /* skip white space */
-    while (!fdata.eof() && isspace(fdata.peek())) fdata.get();
-    if (fdata.eof()) break;
-    char ch = fdata.get();
-    string opname;
-    getline(fdata, opname);
-    if (ch != '#') debug("Reading <||" << opname << "||> (" << ch << ")");
-    switch (ch) {
-      case '#':
-        // ignore embedded comment lines
-        break;
-      case 'e': read_gs_energy(fdata); break;
-      case 's': read_matrix_elements(fdata, a.ops[opname], diagprev); break;
-      case 'p': read_matrix_elements(fdata, a.opsp[opname], diagprev); break;
-      case 'g': read_matrix_elements(fdata, a.opsg[opname], diagprev); break;
-      case 'd': read_matrix_elements(fdata, a.opd[opname], diagprev); break;
-      case 't': read_matrix_elements(fdata, a.opt[opname], diagprev); break;
-      case 'o': read_matrix_elements(fdata, a.opot[opname], diagprev); break;
-      case 'q': read_matrix_elements(fdata, a.opq[opname], diagprev); break;
-      case 'z':
-        // Really read just in the first run!
-        xi.read(fdata, STAT::runtype == RUNTYPE::NRG);
-        zeta.read(fdata, STAT::runtype == RUNTYPE::NRG);
-        break;
-      case 'Z':
-        delta.read(fdata, STAT::runtype == RUNTYPE::NRG);
-        kappa.read(fdata, STAT::runtype == RUNTYPE::NRG);
-        break;
-      case 'X':
-        xiR.read(fdata, STAT::runtype == RUNTYPE::NRG);
-        zetaR.read(fdata, STAT::runtype == RUNTYPE::NRG);
-        break;
-      case 'T':
-        ep.read(fdata);
-        em.read(fdata);
-        u0p.read(fdata);
-        u0m.read(fdata);
-        break;
-      default: my_error("Unknown block %c in data file.", ch);
-    }
-  }
-}
-
-// Misc checks for validity of the input parameters and data file.
-void check_validity() {
-  if (P::substeps) my_assert(sym_string == "QS" || sym_string == "QSZ" || sym_string == "SPSU2" || sym_string == "SPU1");
-}
-
-// Determine Nmax from the length of the coefficient tables! Modify
-// it for substeps==true. Call after tridiagonalization routines (if
-// not using the tables computed by initial.m).
-void determine_Nmax() {
-  size_t length_coef_table = xi.max(0);
-  my_assert(length_coef_table == P::Nmax);
-  if (P::substeps) P::Nmax = P::channels * P::Nmax;
-  P::Nlen = P::Nmax;
-  if (P::Nmax == P::Ninit) {
-    cout << endl << "ZBW=true -> zero-bandwidth calculation" << endl;
-    P::ZBW  = true;
-    P::Nlen = P::Nmax + 1; // an additional element in the tables!
-  }
-  cout << endl << "length_coef_table=" << length_coef_table << " Nmax=" << P::Nmax << endl << endl;
-}
-
-void start_calculation() {
-  nrglog('@', "@ start_calculation()");
-  STAT::runtype = RUNTYPE::NRG;
-  a.cleanup();
-  read_data(); // read input data for NRG iteration
-  check_validity();
-  if (string(P::tri) == "cpp") tridiag();
-  determine_Nmax();
   Sym->set_combs(P::combs);
   Sym->set_channels(P::channels);
   Sym->set_substeps(P::substeps);
   Sym->load(); // This call actually initializes the data structures.
   Sym->report();
+}
+
+void read_data(); // read-input.cc
+
+void prep_run(RUNTYPE t)
+{
+  STAT::runtype = t;
+  a.cleanup();
+  read_data();
+}
+
+void start_calculation() {
+  nrglog('@', "@ start_calculation()");
+  prep_run(RUNTYPE::NRG);
   dm = AllSteps(P::Nlen);
-  start_run(); // NRG run
+  start_run();
   finalize_nrg();
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P::dm) return;
@@ -3079,11 +2948,9 @@ void start_calculation() {
     if (P::fdm) calc_fulldensitymatrix(rhoFDM);
   }
   if (string(P::stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-  STAT::runtype = RUNTYPE::DMNRG; // before read_data is called!
-  a.cleanup();
-  read_data();
+  prep_run(RUNTYPE::DMNRG);
   if (P::fdmexpv) init_fdmexpv();
-  start_run(); // DMNRG run
+  start_run();
   finalize_dmnrg();
 }
 
