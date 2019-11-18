@@ -114,7 +114,7 @@ void ExpectationBase::RetireAllPreRequisites()
     ExpectationBase* exp = expectations.back();
     expectations.pop_back();
 
-    for (ExpectationSet::const_iterator it =
+    for (auto it =
              exp->immediate_prerequisites_.begin();
          it != exp->immediate_prerequisites_.end(); ++it) {
       ExpectationBase* next = it->expectation_base().get();
@@ -136,7 +136,7 @@ bool ExpectationBase::AllPrerequisitesAreSatisfied() const
     const ExpectationBase* exp = expectations.back();
     expectations.pop_back();
 
-    for (ExpectationSet::const_iterator it =
+    for (auto it =
              exp->immediate_prerequisites_.begin();
          it != exp->immediate_prerequisites_.end(); ++it) {
       const ExpectationBase* next = it->expectation_base().get();
@@ -156,7 +156,7 @@ void ExpectationBase::FindUnsatisfiedPrerequisites(ExpectationSet* result) const
     const ExpectationBase* exp = expectations.back();
     expectations.pop_back();
 
-    for (ExpectationSet::const_iterator it =
+    for (auto it =
              exp->immediate_prerequisites_.begin();
          it != exp->immediate_prerequisites_.end(); ++it) {
       const ExpectationBase* next = it->expectation_base().get();
@@ -743,7 +743,7 @@ bool Mock::VerifyAndClearExpectationsLocked(void* mock_obj)
   bool expectations_met = true;
   FunctionMockers& mockers =
       g_mock_object_registry.states()[mock_obj].function_mockers;
-  for (FunctionMockers::const_iterator it = mockers.begin();
+  for (auto it = mockers.begin();
        it != mockers.end(); ++it) {
     if (!(*it)->VerifyAndClearExpectationsLocked()) {
       expectations_met = false;
@@ -803,7 +803,7 @@ void Mock::RegisterUseByOnCallOrExpectCall(const void* mock_obj,
 void Mock::UnregisterLocked(internal::UntypedFunctionMockerBase* mocker)
     GTEST_EXCLUSIVE_LOCK_REQUIRED_(internal::g_gmock_mutex) {
   internal::g_gmock_mutex.AssertHeld();
-  for (MockObjectRegistry::StateMap::iterator it =
+  for (auto it =
            g_mock_object_registry.states().begin();
        it != g_mock_object_registry.states().end(); ++it) {
     FunctionMockers& mockers = it->second.function_mockers;
@@ -831,7 +831,7 @@ void Mock::ClearDefaultActionsLocked(void* mock_obj)
   // object.
   FunctionMockers& mockers =
       g_mock_object_registry.states()[mock_obj].function_mockers;
-  for (FunctionMockers::const_iterator it = mockers.begin();
+  for (auto it = mockers.begin();
        it != mockers.end(); ++it) {
     (*it)->ClearDefaultActionsLocked();
   }

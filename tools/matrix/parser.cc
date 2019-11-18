@@ -1078,7 +1078,7 @@ yysetstate:
 
     {
       yytype_int16 *yyss1  = yyss;
-      union yyalloc *yyptr = (union yyalloc *)YYSTACK_ALLOC(YYSTACK_BYTES(yystacksize));
+      auto *yyptr = (union yyalloc *)YYSTACK_ALLOC(YYSTACK_BYTES(yystacksize));
       if (!yyptr) goto yyexhaustedlab;
       YYSTACK_RELOCATE(yyss_alloc, yyss);
       YYSTACK_RELOCATE(yyvs_alloc, yyvs);
@@ -1359,7 +1359,7 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 128 "parser.yy"
     {
-      struct vec *new_node = new (struct vec);
+      auto *new_node = new (struct vec);
       new_node->val        = (yyvsp[(1) - (3)].dval);
       new_node->next       = (yyvsp[(3) - (3)].dvec);
       (yyval.dvec)         = new_node;
@@ -1396,7 +1396,7 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 145 "parser.yy"
     {
-      struct mat *new_node = new (struct mat);
+      auto *new_node = new (struct mat);
       new_node->vec        = (yyvsp[(1) - (3)].dvec);
       new_node->next       = (yyvsp[(3) - (3)].dmat);
       (yyval.dmat)         = new_node;
@@ -1779,7 +1779,7 @@ struct vec *duplicate_vector(struct vec *dvec) {
   struct vec *previous = nullptr;
 
   while (ptr) {
-    struct vec *new_node = new (struct vec);
+    auto *new_node = new (struct vec);
     if (previous) { previous->next = new_node; }
     previous       = new_node;
     new_node->val  = ptr->val;

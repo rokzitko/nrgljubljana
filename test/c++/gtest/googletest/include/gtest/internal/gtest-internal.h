@@ -599,7 +599,7 @@ class GTEST_API_ TypedTestSuitePState {
   }
 
   const CodeLocation& GetCodeLocation(const std::string& test_name) const {
-    RegisteredTestsMap::const_iterator it = registered_tests_.find(test_name);
+    auto it = registered_tests_.find(test_name);
     GTEST_CHECK_(it != registered_tests_.end());
     return it->second;
   }
@@ -1085,7 +1085,7 @@ class NativeArray {
 
   // Initializes this object with a copy of the input.
   void InitCopy(const Element* array, size_t a_size) {
-    Element* const copy = new Element[a_size];
+    auto* const copy = new Element[a_size];
     CopyArray(array, a_size, copy);
     array_ = copy;
     size_ = a_size;

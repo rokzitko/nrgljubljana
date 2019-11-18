@@ -122,12 +122,12 @@ dvec split(const string &s) {
 }
 
 ostream &operator<<(ostream &os, const dvec &v) {
-  for (dvec::const_iterator i = v.begin(); i != v.end(); i++) { os << *i << " "; }
+  for (auto i = v.begin(); i != v.end(); i++) { os << *i << " "; }
   return os;
 }
 
 ostream &operator<<(ostream &os, const Vec &v) {
-  for (Vec::const_iterator i = v.begin(); i != v.end(); i++) { os << i->first << " " << i->second << endl; }
+  for (auto i = v.begin(); i != v.end(); i++) { os << i->first << " " << i->second << endl; }
   return os;
 }
 
@@ -302,7 +302,7 @@ dvec merge_meshes() {
     for (unsigned int j = 0; j < len; j++) { mesh.push_back(input[i][j].first); }
   }
   sort(mesh.begin(), mesh.end());
-  dvec::iterator new_end = unique(mesh.begin(), mesh.end(), eq_approx);
+  auto new_end = unique(mesh.begin(), mesh.end(), eq_approx);
   mesh.erase(new_end, mesh.end());
   return mesh;
 }

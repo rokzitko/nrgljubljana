@@ -30,7 +30,7 @@ bool cluster_splitting(const svdi &i0, const svdi &i1) {
   my_assert(i0 != i1);
   // We need to compare all distinct pairs.
   for (svdi i = i0; i != i1; ++i)
-    for (svdi j = i + 1; j != i1; ++j)
+    for (auto j = i + 1; j != i1; ++j)
       if (*i != *j) return true;
   return false;
 }

@@ -47,7 +47,7 @@ size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V') {
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK0, &LWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK    = int(WORK0[0]);
-  double *WORK = new double[LWORK];
+  auto *WORK = new double[LWORK];
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK, &LWORK, &INFO);
   if (INFO != 0) my_error("eigensolver failed. INFO=%i", INFO);
@@ -113,7 +113,7 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
   my_assert(INFO == 0);
   int LWORK    = int(WORK0[0]);
   int LIWORK   = IWORK0[0];
-  double *WORK = new double[LWORK];
+  auto *WORK = new double[LWORK];
   int *IWORK   = new int[LIWORK];
   // Step 2: perform the diagonalisation
   LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK, &LWORK,

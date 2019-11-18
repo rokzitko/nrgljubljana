@@ -215,7 +215,7 @@ dvec merge_meshes() {
   }
 
   sort(mesh.begin(), mesh.end());
-  dvec::iterator new_end = unique(mesh.begin(), mesh.end(), eq_approx);
+  auto new_end = unique(mesh.begin(), mesh.end(), eq_approx);
   mesh.erase(new_end, mesh.end());
   return mesh;
 }

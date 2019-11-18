@@ -281,7 +281,7 @@ inline int CountIf(const Container& c, Predicate predicate) {
   // Implemented as an explicit loop since std::count_if() in libCstd on
   // Solaris has a non-standard signature.
   int count = 0;
-  for (typename Container::const_iterator it = c.begin(); it != c.end(); ++it) {
+  for (auto it = c.begin(); it != c.end(); ++it) {
     if (predicate(*it))
       ++count;
   }
@@ -1016,7 +1016,7 @@ bool ParseNaturalNumber(const ::std::string& str, Integer* number) {
 
   GTEST_CHECK_(sizeof(Integer) <= sizeof(parsed));
 
-  const Integer result = static_cast<Integer>(parsed);
+  const auto result = static_cast<Integer>(parsed);
   if (parse_success && static_cast<BiggestConvertible>(result) == parsed) {
     *number = result;
     return true;

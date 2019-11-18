@@ -90,7 +90,7 @@ namespace boost { namespace numeric { namespace bindings {
 #endif
       // .. what about AtlasConj? 
 
-      CBLAS_ORDER const stor_ord
+      auto const stor_ord
         = enum_cast<CBLAS_ORDER const>
         (storage_order<
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS
@@ -189,7 +189,7 @@ namespace boost { namespace numeric { namespace bindings {
         assert (m == traits::matrix_size1 (b) 
                 && n == traits::matrix_size2 (b)); 
 
-        CBLAS_ORDER const stor_ord
+        auto const stor_ord
           = enum_cast<CBLAS_ORDER const>
           (storage_order<
 #ifndef BOOST_NUMERIC_BINDINGS_POOR_MANS_TRAITS

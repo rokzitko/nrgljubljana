@@ -1789,7 +1789,7 @@ class GTEST_API_ ThreadLocal {
   }
 
   T* GetOrCreateValue() const {
-    ThreadLocalValueHolderBase* const holder =
+    auto* const holder =
         static_cast<ThreadLocalValueHolderBase*>(pthread_getspecific(key_));
     if (holder != nullptr) {
       return CheckedDowncastToActualType<ValueHolder>(holder)->pointer();
@@ -1936,7 +1936,7 @@ inline bool IsXDigit(char ch) {
   return isxdigit(static_cast<unsigned char>(ch)) != 0;
 }
 inline bool IsXDigit(wchar_t ch) {
-  const unsigned char low_byte = static_cast<unsigned char>(ch);
+  const auto low_byte = static_cast<unsigned char>(ch);
   return ch == low_byte && isxdigit(low_byte) != 0;
 }
 

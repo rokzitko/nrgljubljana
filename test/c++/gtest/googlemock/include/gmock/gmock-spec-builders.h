@@ -905,7 +905,7 @@ class TypedExpectation : public ExpectationBase {
     // Check the validity of the action count if it hasn't been done
     // yet (for example, if the expectation was never used).
     CheckActionCountIfNotDone();
-    for (UntypedActions::const_iterator it = untyped_actions_.begin();
+    for (auto it = untyped_actions_.begin();
          it != untyped_actions_.end(); ++it) {
       delete static_cast<const Action<F>*>(*it);
     }
@@ -976,7 +976,7 @@ class TypedExpectation : public ExpectationBase {
                        ".RetiresOnSaturation().");
     last_clause_ = kAfter;
 
-    for (ExpectationSet::const_iterator it = s.begin(); it != s.end(); ++it) {
+    for (auto it = s.begin(); it != s.end(); ++it) {
       immediate_prerequisites_ += *it;
     }
     return *this;
@@ -1138,7 +1138,7 @@ class TypedExpectation : public ExpectationBase {
       ExpectationSet unsatisfied_prereqs;
       FindUnsatisfiedPrerequisites(&unsatisfied_prereqs);
       int i = 0;
-      for (ExpectationSet::const_iterator it = unsatisfied_prereqs.begin();
+      for (auto it = unsatisfied_prereqs.begin();
            it != unsatisfied_prereqs.end(); ++it) {
         it->expectation_base()->DescribeLocationTo(os);
         *os << "pre-requisite #" << i++ << "\n";
@@ -1495,10 +1495,10 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
   // L = *
   const OnCallSpec<F>* FindOnCallSpec(
       const ArgumentTuple& args) const {
-    for (UntypedOnCallSpecs::const_reverse_iterator it
+    for (auto it
              = untyped_on_call_specs_.rbegin();
          it != untyped_on_call_specs_.rend(); ++it) {
-      const OnCallSpec<F>* spec = static_cast<const OnCallSpec<F>*>(*it);
+      const auto* spec = static_cast<const OnCallSpec<F>*>(*it);
       if (spec->Matches(args))
         return spec;
     }
@@ -1542,7 +1542,7 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
   UntypedActionResultHolderBase* UntypedPerformDefaultAction(
       void* untyped_args,  // must point to an ArgumentTuple
       const std::string& call_description) const override {
-    ArgumentTuple* args = static_cast<ArgumentTuple*>(untyped_args);
+    auto* args = static_cast<ArgumentTuple*>(untyped_args);
     return ResultHolder::PerformDefaultAction(this, std::move(*args),
                                               call_description);
   }
@@ -1556,7 +1556,7 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
     // Make a copy of the action before performing it, in case the
     // action deletes the mock object (and thus deletes itself).
     const Action<F> action = *static_cast<const Action<F>*>(untyped_action);
-    ArgumentTuple* args = static_cast<ArgumentTuple*>(untyped_args);
+    auto* args = static_cast<ArgumentTuple*>(untyped_args);
     return ResultHolder::PerformAction(action, std::move(*args));
   }
 
@@ -1614,7 +1614,7 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
       const ArgumentMatcherTuple& m)
           GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
     Mock::RegisterUseByOnCallOrExpectCall(MockObject(), file, line);
-    OnCallSpec<F>* const on_call_spec = new OnCallSpec<F>(file, line, m);
+    auto* const on_call_spec = new OnCallSpec<F>(file, line, m);
     untyped_on_call_specs_.push_back(on_call_spec);
     return *on_call_spec;
   }
@@ -1625,7 +1625,7 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
                                          const ArgumentMatcherTuple& m)
       GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
     Mock::RegisterUseByOnCallOrExpectCall(MockObject(), file, line);
-    TypedExpectation<F>* const expectation =
+    auto* const expectation =
         new TypedExpectation<F>(this, file, line, source_text, m);
     const std::shared_ptr<ExpectationBase> untyped_expectation(expectation);
     // See the definition of untyped_expectations_ for why access to
@@ -1732,10 +1732,10 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
     g_gmock_mutex.AssertHeld();
     // See the definition of untyped_expectations_ for why access to
     // it is unprotected here.
-    for (typename UntypedExpectations::const_reverse_iterator it =
+    for (auto it =
              untyped_expectations_.rbegin();
          it != untyped_expectations_.rend(); ++it) {
-      TypedExpectation<F>* const exp =
+      auto* const exp =
           static_cast<TypedExpectation<F>*>(it->get());
       if (exp->ShouldHandleArguments(args)) {
         return exp;
@@ -1769,7 +1769,7 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
              "expectations, but none matched")
          << ":\n";
     for (size_t i = 0; i < count; i++) {
-      TypedExpectation<F>* const expectation =
+      auto* const expectation =
           static_cast<TypedExpectation<F>*>(untyped_expectations_[i].get());
       *why << "\n";
       expectation->DescribeLocationTo(why);

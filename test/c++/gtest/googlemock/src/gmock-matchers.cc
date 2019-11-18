@@ -235,7 +235,7 @@ static void LogElementMatcherPairVec(const ElementMatcherPairs& pairs,
   ::std::ostream& os = *stream;
   os << "{";
   const char* sep = "";
-  for (Iter it = pairs.begin(); it != pairs.end(); ++it) {
+  for (auto it = pairs.begin(); it != pairs.end(); ++it) {
     os << sep << "\n  ("
        << "element #" << it->first << ", "
        << "matcher #" << it->second << ")";

@@ -148,7 +148,7 @@ void load(int i) {
   if (verbose) cout << "len=" << len << " nr=" << nr << " data points" << endl;
   // Allocate the read buffer. The data will be kept in memory for the
   // duration of the calculation!
-  double *buffer = new double[rows * nr];
+  auto *buffer = new double[rows * nr];
   f.seekg(0, ios::beg); // Return to the beginning of the file.
   f.read((char *)buffer, len);
   if (f.fail()) {
@@ -183,7 +183,7 @@ void merge() {
     for (int l = 0; l < sizes[i]; l++) {
       double &freq      = buffers[i][rows * l];
       double &value     = buffers[i][rows * l + col];
-      mapdd::iterator I = spec.find(freq);
+      auto I = spec.find(freq);
       if (I == spec.end()) {
         spec[freq] = value;
       } else {
@@ -197,7 +197,7 @@ void merge() {
   // (frequency,weight) data in the form of linear vectors for faster
   // access in the ensuing calculations.
   double sum = 0.0;
-  for (mapdd::iterator I = spec.begin(); I != spec.end(); I++) {
+  for (auto I = spec.begin(); I != spec.end(); I++) {
     const double weight = (I->second /= Nz); // Normalize weight on the fly
     const double freq   = I->first;
     vfreq.push_back(freq);

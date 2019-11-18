@@ -1101,7 +1101,7 @@ namespace {
 class InternalStrings {
  public:
   size_t GetId(const std::string& str) {
-    IdMap::iterator it = ids_.find(str);
+    auto it = ids_.find(str);
     if (it != ids_.end()) return it->second;
     size_t id = ids_.size();
     return ids_[str] = id;
@@ -2589,7 +2589,7 @@ TestInfo* MakeAndRegisterTestInfo(
     const char* value_param, CodeLocation code_location,
     TypeId fixture_class_id, SetUpTestSuiteFunc set_up_tc,
     TearDownTestSuiteFunc tear_down_tc, TestFactoryBase* factory) {
-  TestInfo* const test_info =
+  auto* const test_info =
       new TestInfo(test_suite_name, name, type_param, value_param,
                    code_location, fixture_class_id, factory);
   GetUnitTestImpl()->AddTestInfo(set_up_tc, tear_down_tc, test_info);
