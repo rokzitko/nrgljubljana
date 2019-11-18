@@ -128,11 +128,11 @@ void init(XYFUNC &im) {
 
 void writetable(XYFUNC &re, ostream &F) {
   F << setprecision(OUTPUT_PRECISION);
-  for (auto i = re.begin(); i != re.end(); i++) F << i->first << " " << i->second << endl;
+  for (auto & i : re) F << i.first << " " << i.second << endl;
 }
 
 void resample(XYFUNC &grid) {
-  for (auto i = grid.begin(); i != grid.end(); i++) i->second = gsl_spline_eval(spline, i->first, acc);
+  for (auto & i : grid) i.second = gsl_spline_eval(spline, i.first, acc);
 }
 
 void done() {

@@ -239,9 +239,9 @@ void merge() {
   // (frequency,weight) data in the form of linear vectors for faster
   // access in the ensuing calculations.
   double sum = 0.0;
-  for (auto I = spec.begin(); I != spec.end(); I++) {
-    const double weight = (I->second /= Nz); // Normalize weight on the fly
-    const double freq   = I->first;
+  for (auto & I : spec) {
+    const double weight = (I.second /= Nz); // Normalize weight on the fly
+    const double freq   = I.first;
     vfreq.push_back(freq);
     vspec.push_back(weight);
     sum += weight;
@@ -434,9 +434,9 @@ void save(const string filename0, const mapdd &m, int iter = 0, double trim = 0.
     exit(1);
   }
 
-  for (auto I = m.begin(); I != m.end(); I++) {
-    if (trim != 0.0 && abs(I->first) < trim) { continue; }
-    F << I->first << " " << I->second << endl;
+  for (auto I : m) {
+    if (trim != 0.0 && abs(I.first) < trim) { continue; }
+    F << I.first << " " << I.second << endl;
   }
 }
 

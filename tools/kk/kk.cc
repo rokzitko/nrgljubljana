@@ -223,7 +223,7 @@ void calc(XYFUNC &re) {
 
 void writere(XYFUNC &re, ostream &F) {
   F << setprecision(OUTPUT_PRECISION);
-  for (auto i = re.begin(); i != re.end(); i++) F << i->first << " " << i->second << endl;
+  for (auto & i : re) F << i.first << " " << i.second << endl;
 }
 
 void done() {

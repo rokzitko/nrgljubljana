@@ -114,10 +114,8 @@ void ExpectationBase::RetireAllPreRequisites()
     ExpectationBase* exp = expectations.back();
     expectations.pop_back();
 
-    for (auto it =
-             exp->immediate_prerequisites_.begin();
-         it != exp->immediate_prerequisites_.end(); ++it) {
-      ExpectationBase* next = it->expectation_base().get();
+    for (const auto & immediate_prerequisite : exp->immediate_prerequisites_) {
+      ExpectationBase* next = immediate_prerequisite.expectation_base().get();
       if (!next->is_retired()) {
         next->Retire();
         expectations.push_back(next);
@@ -136,10 +134,8 @@ bool ExpectationBase::AllPrerequisitesAreSatisfied() const
     const ExpectationBase* exp = expectations.back();
     expectations.pop_back();
 
-    for (auto it =
-             exp->immediate_prerequisites_.begin();
-         it != exp->immediate_prerequisites_.end(); ++it) {
-      const ExpectationBase* next = it->expectation_base().get();
+    for (const auto & immediate_prerequisite : exp->immediate_prerequisites_) {
+      const ExpectationBase* next = immediate_prerequisite.expectation_base().get();
       if (!next->IsSatisfied()) return false;
       expectations.push_back(next);
     }
@@ -156,10 +152,8 @@ void ExpectationBase::FindUnsatisfiedPrerequisites(ExpectationSet* result) const
     const ExpectationBase* exp = expectations.back();
     expectations.pop_back();
 
-    for (auto it =
-             exp->immediate_prerequisites_.begin();
-         it != exp->immediate_prerequisites_.end(); ++it) {
-      const ExpectationBase* next = it->expectation_base().get();
+    for (const auto & immediate_prerequisite : exp->immediate_prerequisites_) {
+      const ExpectationBase* next = immediate_prerequisite.expectation_base().get();
 
       if (next->IsSatisfied()) {
         // If *it is satisfied and has a call count of 0, some of its
@@ -171,7 +165,7 @@ void ExpectationBase::FindUnsatisfiedPrerequisites(ExpectationSet* result) const
         // Now that we know next is unsatisfied, we are not so interested
         // in whether its pre-requisites are satisfied.  Therefore we
         // don't iterate into it here.
-        *result += *it;
+        *result += immediate_prerequisite;
       }
     }
   }
@@ -743,9 +737,8 @@ bool Mock::VerifyAndClearExpectationsLocked(void* mock_obj)
   bool expectations_met = true;
   FunctionMockers& mockers =
       g_mock_object_registry.states()[mock_obj].function_mockers;
-  for (auto it = mockers.begin();
-       it != mockers.end(); ++it) {
-    if (!(*it)->VerifyAndClearExpectationsLocked()) {
+  for (auto mocker : mockers) {
+    if (!mocker->VerifyAndClearExpectationsLocked()) {
       expectations_met = false;
     }
   }
@@ -831,9 +824,8 @@ void Mock::ClearDefaultActionsLocked(void* mock_obj)
   // object.
   FunctionMockers& mockers =
       g_mock_object_registry.states()[mock_obj].function_mockers;
-  for (auto it = mockers.begin();
-       it != mockers.end(); ++it) {
-    (*it)->ClearDefaultActionsLocked();
+  for (auto mocker : mockers) {
+    mocker->ClearDefaultActionsLocked();
   }
 
   // We don't clear the content of mockers, as they may still be

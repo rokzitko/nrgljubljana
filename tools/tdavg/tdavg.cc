@@ -122,12 +122,12 @@ dvec split(const string &s) {
 }
 
 ostream &operator<<(ostream &os, const dvec &v) {
-  for (auto i = v.begin(); i != v.end(); i++) { os << *i << " "; }
+  for (double i : v) { os << i << " "; }
   return os;
 }
 
 ostream &operator<<(ostream &os, const Vec &v) {
-  for (auto i = v.begin(); i != v.end(); i++) { os << i->first << " " << i->second << endl; }
+  for (const auto & i : v) { os << i.first << " " << i.second << endl; }
   return os;
 }
 

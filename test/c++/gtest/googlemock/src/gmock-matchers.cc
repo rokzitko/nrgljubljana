@@ -235,10 +235,10 @@ static void LogElementMatcherPairVec(const ElementMatcherPairs& pairs,
   ::std::ostream& os = *stream;
   os << "{";
   const char* sep = "";
-  for (auto it = pairs.begin(); it != pairs.end(); ++it) {
+  for (const auto & pair : pairs) {
     os << sep << "\n  ("
-       << "element #" << it->first << ", "
-       << "matcher #" << it->second << ")";
+       << "element #" << pair.first << ", "
+       << "matcher #" << pair.second << ")";
     sep = ",";
   }
   os << "\n}";
@@ -448,9 +448,9 @@ bool UnorderedElementsAreMatcherImplBase::FindPairing(
   if (matches.size() > 1) {
     if (listener->IsInterested()) {
       const char* sep = "where:\n";
-      for (size_t mi = 0; mi < matches.size(); ++mi) {
-        *listener << sep << " - element #" << matches[mi].first
-                  << " is matched by matcher #" << matches[mi].second;
+      for (auto & matche : matches) {
+        *listener << sep << " - element #" << matche.first
+                  << " is matched by matcher #" << matche.second;
         sep = ",\n";
       }
     }

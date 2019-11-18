@@ -187,9 +187,9 @@ class Temp {
 };
 
 inline void Temp::add_value(double energy, t_weight weight) {
-  for (size_t i = 0; i < v.size(); i++) {
-    if (v[i].first == energy) {
-      v[i].second += weight;
+  for (auto & i : v) {
+    if (i.first == energy) {
+      i.second += weight;
       return;
     }
   }

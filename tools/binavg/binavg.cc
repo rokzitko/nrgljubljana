@@ -185,9 +185,9 @@ void merge() {
   // (frequency,weight) data in the form of linear vectors for faster
   // access in the ensuing calculations.
   double sum = 0.0;
-  for (auto I = spec.begin(); I != spec.end(); I++) {
-    const double weight = (I->second /= Nz); // Normalize weight on the fly
-    const double freq   = I->first;
+  for (auto & I : spec) {
+    const double weight = (I.second /= Nz); // Normalize weight on the fly
+    const double freq   = I.first;
     vfreq.push_back(freq);
     vspec.push_back(weight);
     sum += weight;

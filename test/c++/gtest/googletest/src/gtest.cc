@@ -365,8 +365,8 @@ static bool GTestIsInitialized() { return GetArgvs().size() > 0; }
 static int SumOverTestSuiteList(const std::vector<TestSuite*>& case_list,
                                 int (TestSuite::*method)() const) {
   int sum = 0;
-  for (size_t i = 0; i < case_list.size(); i++) {
-    sum += (case_list[i]->*method)();
+  for (auto i : case_list) {
+    sum += (i->*method)();
   }
   return sum;
 }
@@ -1120,11 +1120,11 @@ std::vector<EditType> CalculateOptimalEdits(
   std::vector<size_t> left_ids, right_ids;
   {
     InternalStrings intern_table;
-    for (size_t i = 0; i < left.size(); ++i) {
-      left_ids.push_back(intern_table.GetId(left[i]));
+    for (const auto & i : left) {
+      left_ids.push_back(intern_table.GetId(i));
     }
-    for (size_t i = 0; i < right.size(); ++i) {
-      right_ids.push_back(intern_table.GetId(right[i]));
+    for (const auto & i : right) {
+      right_ids.push_back(intern_table.GetId(i));
     }
   }
   return CalculateOptimalEdits(left_ids, right_ids);
@@ -3500,8 +3500,8 @@ GTEST_REVERSE_REPEATER_METHOD_(OnTestProgramEnd, UnitTest)
 void TestEventRepeater::OnTestIterationStart(const UnitTest& unit_test,
                                              int iteration) {
   if (forwarding_enabled_) {
-    for (size_t i = 0; i < listeners_.size(); i++) {
-      listeners_[i]->OnTestIterationStart(unit_test, iteration);
+    for (auto & listener : listeners_) {
+      listener->OnTestIterationStart(unit_test, iteration);
     }
   }
 }
@@ -3641,8 +3641,7 @@ std::string XmlUnitTestResultPrinter::EscapeXml(
     const std::string& str, bool is_attribute) {
   Message m;
 
-  for (size_t i = 0; i < str.size(); ++i) {
-    const char ch = str[i];
+  for (char ch : str) {
     switch (ch) {
       case '<':
         m << "&lt;";
@@ -3687,9 +3686,9 @@ std::string XmlUnitTestResultPrinter::RemoveInvalidXmlCharacters(
     const std::string& str) {
   std::string output;
   output.reserve(str.size());
-  for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
-    if (IsValidXmlCharacter(*it))
-      output.push_back(*it);
+  for (char it : str)
+    if (IsValidXmlCharacter(it))
+      output.push_back(it);
 
   return output;
 }
@@ -4058,8 +4057,7 @@ void JsonUnitTestResultPrinter::OnTestIterationEnd(const UnitTest& unit_test,
 std::string JsonUnitTestResultPrinter::EscapeJson(const std::string& str) {
   Message m;
 
-  for (size_t i = 0; i < str.size(); ++i) {
-    const char ch = str[i];
+  for (char ch : str) {
     switch (ch) {
       case '\\':
       case '"':
@@ -5984,10 +5982,10 @@ static void LoadFlagsFromFile(const std::string& path) {
   posix::FClose(flagfile);
   std::vector<std::string> lines;
   SplitString(contents, '\n', &lines);
-  for (size_t i = 0; i < lines.size(); ++i) {
-    if (lines[i].empty())
+  for (auto & line : lines) {
+    if (line.empty())
       continue;
-    if (!ParseGoogleTestFlag(lines[i].c_str()))
+    if (!ParseGoogleTestFlag(line.c_str()))
       g_help_flag = true;
   }
 }

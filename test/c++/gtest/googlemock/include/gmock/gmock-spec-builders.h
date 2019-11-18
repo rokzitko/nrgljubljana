@@ -976,8 +976,8 @@ class TypedExpectation : public ExpectationBase {
                        ".RetiresOnSaturation().");
     last_clause_ = kAfter;
 
-    for (auto it = s.begin(); it != s.end(); ++it) {
-      immediate_prerequisites_ += *it;
+    for (const auto & it : s) {
+      immediate_prerequisites_ += it;
     }
     return *this;
   }
@@ -1138,9 +1138,8 @@ class TypedExpectation : public ExpectationBase {
       ExpectationSet unsatisfied_prereqs;
       FindUnsatisfiedPrerequisites(&unsatisfied_prereqs);
       int i = 0;
-      for (auto it = unsatisfied_prereqs.begin();
-           it != unsatisfied_prereqs.end(); ++it) {
-        it->expectation_base()->DescribeLocationTo(os);
+      for (const auto & unsatisfied_prereq : unsatisfied_prereqs) {
+        unsatisfied_prereq.expectation_base()->DescribeLocationTo(os);
         *os << "pre-requisite #" << i++ << "\n";
       }
       *os << "                   (end of pre-requisites)\n";

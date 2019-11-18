@@ -1193,9 +1193,8 @@ class Arguments {
   Arguments() { args_.push_back(nullptr); }
 
   ~Arguments() {
-    for (auto i = args_.begin(); i != args_.end();
-         ++i) {
-      free(*i);
+    for (auto & arg : args_) {
+      free(arg);
     }
   }
   void AddArgument(const char* argument) {

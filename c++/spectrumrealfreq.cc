@@ -226,8 +226,7 @@ void SpectrumRealFreq::continuous() {
   omega0 = (P::omega0 < 0.0 ? P::omega0_ratio * P::T : P::omega0);
   Spikes densitypos, densityneg;
   std::vector<double> vecE = make_mesh(); // Energies on the mesh
-  for (size_t j = 0; j < vecE.size(); j++) {
-    const double E = vecE[j];
+  for (double E : vecE) {
     weight_bucket valpos, valneg;
     for (const auto &i : fspos.bins) {
       const t_weight w = WEIGHT(i);
