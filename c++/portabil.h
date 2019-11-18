@@ -52,10 +52,9 @@ inline int isfinite(cmpl z) { return (std::isfinite(z.real()) && std::isfinite(z
 
 template <typename T> T finite_test_fnc(T x, const char *file, int line) {
   if (!my_isfinite(x)) {
-    cout << "Finiteness assertion failed." << endl;
-    cout << "File " << file << ", line " << line << "." << endl;
-    cout << "Exiting." << endl;
     cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;
+    cout << "File " << file << ", line " << line << "." << endl;
+    cout << "Finiteness assertion" << endl;
     print_trace();
     exit(1);
   }
@@ -65,12 +64,9 @@ template <typename T> T finite_test_fnc(T x, const char *file, int line) {
 #define my_assert(x)                                                                                                                                 \
   do {                                                                                                                                               \
     if (!(x)) {                                                                                                                                      \
-      cout << "Assertion failed." << endl;                                                                                                           \
-      cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                           \
-      const char sAssert[] = #x;                                                                                                                     \
-      cout << sAssert << endl;                                                                                                                       \
-      cout << "Exiting." << endl;                                                                                                                    \
       cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;                                                                                       \
+      cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                           \
+      cout << #x << endl;                                                                                                                       \
       print_trace();                                                                                                                                 \
       exit(1);                                                                                                                                       \
     }                                                                                                                                                \
@@ -80,14 +76,11 @@ template <typename T> T finite_test_fnc(T x, const char *file, int line) {
 #define my_assert_equal(a, b)                                                                                                                        \
   do {                                                                                                                                               \
     if (!(a == b)) {                                                                                                                                 \
-      cout << "Assertion of equality failed." << endl;                                                                                               \
-      cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                           \
-      const char sAssert_a[] = #a;                                                                                                                   \
-      const char sAssert_b[] = #b;                                                                                                                   \
-      cout << sAssert_a << "=" << a << endl;                                                                                                         \
-      cout << sAssert_b << "=" << b << endl;                                                                                                         \
-      cout << "Exiting." << endl;                                                                                                                    \
       cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;                                                                                       \
+      cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                           \
+      cout << #a << "=" << a << endl;                                                                                                         \
+      cout << #b << "=" << b << endl;                                                                                                         \
+      cout << "Exiting." << endl;                                                                                                                    \
       print_trace();                                                                                                                                 \
       exit(1);                                                                                                                                       \
     }                                                                                                                                                \
@@ -98,30 +91,27 @@ template <typename T> T finite_test_fnc(T x, const char *file, int line) {
     cout << "Warning." << endl;                                                                                                                      \
     cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                             \
     char buf[256];                                                                                                                                   \
-    sprintf(buf, __VA_ARGS__);                                                                                                                       \
+    snprintf(buf, 256, __VA_ARGS__);                                                                                                                       \
     cout << buf << endl;                                                                                                                             \
     cout << "Continuing." << endl;                                                                                                                   \
   } while (0)
 
 #define my_error(...)                                                                                                                                \
   do {                                                                                                                                               \
-    cout << "Error." << endl;                                                                                                                        \
+    cout << "#### EXITING DUE TO ERROR." << endl;                                                                                                    \
     cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                             \
     char buf[256];                                                                                                                                   \
-    sprintf(buf, __VA_ARGS__);                                                                                                                       \
+    snprintf(buf, 256, __VA_ARGS__);                                                                                                                       \
     cout << buf << endl;                                                                                                                             \
-    cout << "Exiting" << endl;                                                                                                                       \
-    cout << "#### EXITING DUE TO ERROR." << endl;                                                                                                    \
     print_trace();                                                                                                                                   \
     exit(1);                                                                                                                                         \
   } while (0)
 
 #define my_assert_not_reached()                                                                                                                      \
   do {                                                                                                                                               \
-    cout << "Should never be reached." << endl;                                                                                                      \
-    cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                             \
-    cout << "Exiting." << endl;                                                                                                                      \
     cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;                                                                                         \
+    cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                             \
+    cout << "Should never be reached." << endl;                                                                                                      \
     print_trace();                                                                                                                                   \
     exit(1);                                                                                                                                         \
   } while (0)
