@@ -36,7 +36,7 @@ class Matsubara {
   matstype mt;
 
   public:
-  Matsubara() {}
+  Matsubara() = default;
   Matsubara(size_t mats, matstype _mt) : mt(_mt) {
     my_assert(mt == matstype::bosonic || mt == matstype::fermionic);
     for (size_t n = 0; n < mats; n++) v.push_back(make_pair(w(n, mt), 0.0));

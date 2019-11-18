@@ -5,7 +5,7 @@ class SymmetryQSZ : public SymField {
   public:
   SymmetryQSZ() : SymField() { all_syms["QSZ"] = this; }
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     Sz.set("<Sz>", 2);
     Q.set("<Q>", 3);
@@ -19,7 +19,7 @@ class SymmetryQSZ : public SymField {
     Invar_f      = Invar(1, 2);
   }
 
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) {
+  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
     SZspin ssz1  = I1.get("SSZ");
@@ -28,11 +28,11 @@ class SymmetryQSZ : public SymField {
     return sszop == SPIN;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ"));
   }
 
-  void load() {
+  void load() override {
     if (!substeps) {
       switch (channels) {
         case 1:
@@ -61,7 +61,7 @@ class SymmetryQSZ : public SymField {
   void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
   void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
 
     LOOP_const(diag, is) {
@@ -88,7 +88,7 @@ class SymmetryQSZ : public SymField {
   HAS_GLOBAL;
   HAS_SUBSTEPS;
 
-  void show_coefficients();
+  void show_coefficients() override;
 };
 
 Symmetry *SymQSZ = new SymmetryQSZ;

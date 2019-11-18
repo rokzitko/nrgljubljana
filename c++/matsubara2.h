@@ -8,7 +8,7 @@ class Matsubara2 {
   matstype mt;
 
   public:
-  Matsubara2() {}
+  Matsubara2() = default;
   Matsubara2(size_t mats, matstype _mt) : mt(_mt) {
     my_assert(mt == matstype::bb || mt == matstype::bf || mt == matstype::fb);
     v = matsgf2(mats, mats);

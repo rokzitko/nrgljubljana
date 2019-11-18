@@ -1,10 +1,10 @@
 class SPEC_FT : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumBinning; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumBinning; }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "FT"; }
-  string merge() { return "NN2"; }
+            const Invar &) override;
+  string name() override { return "FT"; }
+  string merge() override { return "NN2"; }
 };
 
 const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
@@ -31,10 +31,10 @@ void SPEC_FT::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II
 
 class SPEC_FTmats : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &bs) { return new ChainSpectrumMatsubara(bs.mt); }
+  ChainSpectrum *make_cs(const BaseSpectrum &bs) override { return new ChainSpectrumMatsubara(bs.mt); }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "FTmats"; }
+            const Invar &) override;
+  string name() override { return "FTmats"; }
 };
 
 void SPEC_FTmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
@@ -65,28 +65,28 @@ class SPEC_GT_generic : public SPEC {
   int power;
 
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumTemp; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumTemp; }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "ERROR"; }
+            const Invar &) override;
+  string name() override { return "ERROR"; }
 };
 
 class SPEC_GT : public SPEC_GT_generic {
   public:
   SPEC_GT() { power = 0; }
-  string name() { return "GT"; }
+  string name() override { return "GT"; }
 };
 
 class SPEC_I1T : public SPEC_GT_generic {
   public:
   SPEC_I1T() { power = 1; }
-  string name() { return "I1T"; }
+  string name() override { return "I1T"; }
 };
 
 class SPEC_I2T : public SPEC_GT_generic {
   public:
   SPEC_I2T() { power = 2; }
-  string name() { return "I2T"; }
+  string name() override { return "I2T"; }
 };
 
 // Calculation of the temperature-dependent linear conductrance G(T) using
@@ -138,10 +138,10 @@ inline t_weight chit_weight(double En, double Em, double beta) {
 
 class SPEC_CHIT : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumTemp; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumTemp; }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "CHIT"; }
+            const Invar &) override;
+  string name() override { return "CHIT"; }
 };
 
 // Calculation of the temperature-dependent susceptibility chi_AB(T)

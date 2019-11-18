@@ -251,7 +251,7 @@ class FailureReporterInterface {
     kNonfatal, kFatal
   };
 
-  virtual ~FailureReporterInterface() {}
+  virtual ~FailureReporterInterface() = default;
 
   // Reports a failure that occurred at the given source file location.
   virtual void ReportFailure(FailureType type, const char* file, int line,
@@ -327,7 +327,7 @@ GTEST_API_ void Log(LogSeverity severity, const std::string& message,
 //
 class WithoutMatchers {
  private:
-  WithoutMatchers() {}
+  WithoutMatchers() = default;
   friend GTEST_API_ WithoutMatchers GetWithoutMatchers();
 };
 

@@ -5,7 +5,7 @@ class SymmetryQST : public Symmetry {
   public:
   SymmetryQST() : Symmetry() { all_syms["QST"] = this; }
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     Tz2.set("<Tz^2>", 2);
     Q.set("<Q>", 3);
@@ -21,20 +21,20 @@ class SymmetryQST : public Symmetry {
   }
 
   // Multiplicity of the (Q,SS,T) subspace is (2S+1 = SS) times (2T+1).
-  int mult(const Invar &I) { return I.get("SS") * (2 * I.get("T") + 1); }
+  int mult(const Invar &I) override { return I.get("SS") * (2 * I.get("T") + 1); }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && su2_triangle_inequality(2 * I1.get("T") + 1, 2 * I2.get("T") + 1, 2 * I3.get("T") + 1);
   }
 
-  bool Invar_allowed(const Invar &I) {
+  bool Invar_allowed(const Invar &I) override {
     const bool spin_ok   = I.get("SS") > 0;
     const bool angmom_ok = I.get("T") >= 0;
     return spin_ok && angmom_ok;
   }
 
-  void load() {
+  void load() override {
     my_assert(!substeps);
     my_assert(channels == 3);
 #include "qst/qst-In2.dat"
@@ -42,7 +42,7 @@ class SymmetryQST : public Symmetry {
   } // load
 
   // Same as for SYMTYPE=QS, because spin operators are angular momentum singlets.
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) {
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "T", 0);
 
@@ -53,7 +53,7 @@ class SymmetryQST : public Symmetry {
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
-  double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) {
+  double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "SS", 0);
 
@@ -68,7 +68,7 @@ class SymmetryQST : public Symmetry {
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !
   // See clebsch_gordan_qst.nb
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 1);
 
     const Sspin ssp = Ip.get("SS");
@@ -94,7 +94,7 @@ class SymmetryQST : public Symmetry {
     return spinfactor * angmomfactor;
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trTZ, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
 
     LOOP_const(diag, is) {

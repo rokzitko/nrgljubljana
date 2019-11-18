@@ -23,7 +23,7 @@ class LinInt {
   double fxmin, fxmax;   // f(xmin), f(xmax)
 
   public:
-  LinInt(){};
+  LinInt()= default;;
   LinInt(Vec &in_vec) : vec(in_vec) {
     len = vec.size();
     if (len < 2) {
@@ -50,7 +50,7 @@ class IntLinInt : public LinInt {
   double intfxmin, intfxmax; // int f(x) @ xmin and @ xmax
 
   public:
-  IntLinInt(){};
+  IntLinInt()= default;;
   IntLinInt(Vec &in_vec, Vec &in_intvec) : LinInt(in_vec), intvec(in_intvec) {
     intfxmin = intvec.front().second;
     intfxmax = intvec.back().second;

@@ -191,7 +191,7 @@ class GTEST_API_ Message {
 
   // We declare (but don't implement) this to prevent the compiler
   // from implementing the assignment operator.
-  void operator=(const Message&);
+  void operator=(const Message&) = delete;
 };
 
 // Streams a Message to an ostream.

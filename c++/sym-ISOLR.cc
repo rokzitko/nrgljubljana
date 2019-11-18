@@ -5,7 +5,7 @@ class SymmetryISOLRcommon : public SymLR {
   public:
   SymmetryISOLRcommon() : SymLR() {} // see below: ISOLR and ISO2LR
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     Q2.set("<Q^2>", 2);
     InvarStructure InvStruc[] = {
@@ -19,25 +19,25 @@ class SymmetryISOLRcommon : public SymLR {
   }
 
   // Multiplicity of the I=(II,SS,P) subspace = (2I+1)(2S+1) = II SS.
-  int mult(const Invar &I) {
+  int mult(const Invar &I) override {
     int mi = I.get("II"); // isospin multiplicity
     int ms = I.get("SS"); // spin multiplicity
     return mi * ms;
   }
 
   // We always must have S >= 0 and I >= 0.
-  bool Invar_allowed(const Invar &I) {
+  bool Invar_allowed(const Invar &I) override {
     const bool isospin_ok = I.get("II") > 0;
     const bool spin_ok    = I.get("SS") > 0;
     return isospin_ok && spin_ok;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && z2_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
@@ -52,7 +52,7 @@ class SymmetryISOLRcommon : public SymLR {
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
 
     LOOP_const(diag, is) {
@@ -74,7 +74,7 @@ class SymmetryISOLR : public SymmetryISOLRcommon {
   public:
   SymmetryISOLR() : SymmetryISOLRcommon() { all_syms["ISOLR"] = this; };
 
-  void load() {
+  void load() override {
     my_assert(channels == 2);
 #include "isolr/isolr-2ch-In2.dat"
 #include "isolr/isolr-2ch-QN.dat"
@@ -89,7 +89,7 @@ class SymmetryISO2LR : public SymmetryISOLRcommon {
   public:
   SymmetryISO2LR() : SymmetryISOLRcommon() { all_syms["ISO2LR"] = this; };
 
-  void load() {
+  void load() override {
     my_assert(channels == 2);
 #include "iso2lr/iso2lr-2ch-In2.dat"
 #include "iso2lr/iso2lr-2ch-QN.dat"

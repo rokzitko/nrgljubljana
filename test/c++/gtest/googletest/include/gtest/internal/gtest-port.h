@@ -1179,7 +1179,7 @@ inline void SleepMilliseconds(int n) {
 // use it in user tests, either directly or indirectly.
 class Notification {
  public:
-  Notification() : notified_(false) {
+  Notification()  {
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_init(&mutex_, nullptr));
   }
   ~Notification() {
@@ -1209,7 +1209,7 @@ class Notification {
 
  private:
   pthread_mutex_t mutex_;
-  bool notified_;
+  bool notified_{false};
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Notification);
 };
@@ -1277,7 +1277,7 @@ class GTEST_API_ Notification {
 // problem.
 class ThreadWithParamBase {
  public:
-  virtual ~ThreadWithParamBase() {}
+  virtual ~ThreadWithParamBase() = default;
   virtual void Run() = 0;
 };
 
@@ -1732,7 +1732,7 @@ using MutexLock = GTestMutexLock;
 // ThreadLocalValueHolderBase.
 class ThreadLocalValueHolderBase {
  public:
-  virtual ~ThreadLocalValueHolderBase() {}
+  virtual ~ThreadLocalValueHolderBase() = default;
 };
 
 // Called by pthread to delete thread-local data stored by
@@ -1803,8 +1803,8 @@ class GTEST_API_ ThreadLocal {
 
   class ValueHolderFactory {
    public:
-    ValueHolderFactory() {}
-    virtual ~ValueHolderFactory() {}
+    ValueHolderFactory() = default;
+    virtual ~ValueHolderFactory() = default;
     virtual ValueHolder* MakeNewHolder() const = 0;
 
    private:
@@ -1813,8 +1813,8 @@ class GTEST_API_ ThreadLocal {
 
   class DefaultValueHolderFactory : public ValueHolderFactory {
    public:
-    DefaultValueHolderFactory() {}
-    virtual ValueHolder* MakeNewHolder() const { return new ValueHolder(); }
+    DefaultValueHolderFactory() = default;
+    ValueHolder* MakeNewHolder() const override { return new ValueHolder(); }
 
    private:
     GTEST_DISALLOW_COPY_AND_ASSIGN_(DefaultValueHolderFactory);
@@ -1823,7 +1823,7 @@ class GTEST_API_ ThreadLocal {
   class InstanceValueHolderFactory : public ValueHolderFactory {
    public:
     explicit InstanceValueHolderFactory(const T& value) : value_(value) {}
-    virtual ValueHolder* MakeNewHolder() const {
+    ValueHolder* MakeNewHolder() const override {
       return new ValueHolder(value_);
     }
 

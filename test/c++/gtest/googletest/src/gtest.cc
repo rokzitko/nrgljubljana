@@ -1152,15 +1152,15 @@ class Hunk {
       case ' ':
         ++common_;
         FlushEdits();
-        hunk_.push_back(std::make_pair(' ', line));
+        hunk_.emplace_back(' ', line);
         break;
       case '-':
         ++removes_;
-        hunk_removes_.push_back(std::make_pair('-', line));
+        hunk_removes_.emplace_back('-', line);
         break;
       case '+':
         ++adds_;
-        hunk_adds_.push_back(std::make_pair('+', line));
+        hunk_adds_.emplace_back('+', line);
         break;
     }
   }
@@ -2034,11 +2034,10 @@ std::string AppendUserMessage(const std::string& gtest_msg,
 
 // Creates an empty TestResult.
 TestResult::TestResult()
-    : death_test_count_(0), start_timestamp_(0), elapsed_time_(0) {}
+     {}
 
 // D'tor.
-TestResult::~TestResult() {
-}
+TestResult::~TestResult() = default;
 
 // Returns the i-th test part result among all the results. i can
 // range from 0 to total_part_count() - 1. If i is not in that range,
@@ -2257,8 +2256,7 @@ Test::Test()
 // The d'tor restores the states of all flags.  The actual work is
 // done by the d'tor of the gtest_flag_saver_ field, and thus not
 // visible here.
-Test::~Test() {
-}
+Test::~Test() = default;
 
 // Sets up the test fixture.
 //
@@ -3109,7 +3107,7 @@ static void PrintFullTestCommentIfPresent(const TestInfo& test_info) {
 // Class PrettyUnitTestResultPrinter is copyable.
 class PrettyUnitTestResultPrinter : public TestEventListener {
  public:
-  PrettyUnitTestResultPrinter() {}
+  PrettyUnitTestResultPrinter() = default;
   static void PrintTestName(const char* test_suite, const char* test) {
     printf("%s.%s", test_suite, test);
   }
@@ -3394,7 +3392,7 @@ void PrettyUnitTestResultPrinter::OnTestIterationEnd(const UnitTest& unit_test,
 // This class forwards events to other event listeners.
 class TestEventRepeater : public TestEventListener {
  public:
-  TestEventRepeater() : forwarding_enabled_(true) {}
+  TestEventRepeater()  {}
   ~TestEventRepeater() override;
   void Append(TestEventListener *listener);
   TestEventListener* Release(TestEventListener* listener);
@@ -3429,7 +3427,7 @@ class TestEventRepeater : public TestEventListener {
  private:
   // Controls whether events will be forwarded to listeners_. Set to false
   // in death test child processes.
-  bool forwarding_enabled_;
+  bool forwarding_enabled_{true};
   // The list of listeners that receive events.
   std::vector<TestEventListener*> listeners_;
 
@@ -3841,7 +3839,7 @@ void XmlUnitTestResultPrinter::OutputXmlTestInfo(::std::ostream* stream,
       const std::string summary = location + "\n" + part.summary();
       *stream << "      <failure message=\""
               << EscapeXmlAttribute(summary.c_str())
-              << "\" type=\"\">";
+              << R"(" type="">)";
       const std::string detail = location + "\n" + part.message();
       OutputXmlCDataSection(stream, RemoveInvalidXmlCharacters(detail).c_str());
       *stream << "</failure>\n";
@@ -4218,7 +4216,7 @@ void JsonUnitTestResultPrinter::OutputJsonTestInfo(::std::ostream* stream,
                                                           part.line_number());
       const std::string message = EscapeJson(location + "\n" + part.message());
       *stream << kIndent << "  {\n"
-              << kIndent << "    \"failure\": \"" << message << "\",\n"
+              << kIndent << R"(    "failure": ")" << message << "\",\n"
               << kIndent << "    \"type\": \"\"\n"
               << kIndent << "  }";
     }
@@ -4535,9 +4533,8 @@ class ScopedPrematureExitFile {
 // class TestEventListeners
 
 TestEventListeners::TestEventListeners()
-    : repeater_(new internal::TestEventRepeater()),
-      default_result_printer_(nullptr),
-      default_xml_generator_(nullptr) {}
+    : repeater_(new internal::TestEventRepeater())
+      {}
 
 TestEventListeners::~TestEventListeners() { delete repeater_; }
 

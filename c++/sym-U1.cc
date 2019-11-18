@@ -5,7 +5,7 @@ class SymmetryU1 : public Symmetry {
   public:
   SymmetryU1() : Symmetry() { all_syms["U1"] = this; }
 
-  void init() {
+  void init() override {
     Q.set("<Q>", 1);
     Q2.set("<Q^2>", 2);
     InvarStructure InvStruc[] = {
@@ -15,9 +15,9 @@ class SymmetryU1 : public Symmetry {
     InvarSinglet = Invar(0);
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) { return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")); }
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override { return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")); }
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 1:
 #include "u1/u1-1ch-In2.dat"
@@ -38,7 +38,7 @@ class SymmetryU1 : public Symmetry {
     }
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trQ, trQ2; // Tr[Q], Tr[Q^2]
 
     LOOP_const(diag, is) {

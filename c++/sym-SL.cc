@@ -5,7 +5,7 @@ class SymmetrySL : public Symmetry {
   public:
   SymmetrySL() : Symmetry() { all_syms["SL"] = this; }
 
-  void init() {
+  void init() override {
     Q.set("<Q>", 1);
     Q2.set("<Q^2>", 2);
     sQ2.set("<sQ^2>", 3);
@@ -16,7 +16,7 @@ class SymmetrySL : public Symmetry {
     InvarSinglet = Invar(0);
   }
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 1:
 #include "sl/sl-1ch-In2.dat"
@@ -37,7 +37,7 @@ class SymmetrySL : public Symmetry {
     }
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trQ, trQ2; // Tr[Q], Tr[Q^2]
 
     LOOP_const(diag, is) {

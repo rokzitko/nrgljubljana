@@ -45,7 +45,7 @@ class parambase {
 
   public:
   parambase(string keyword, string desc, string defaultv) : _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
-  virtual ~parambase(){};
+  virtual ~parambase()= default;;
   virtual void setvalue_str(string newvalue) = 0;
   virtual void dump()                        = 0;
   string getkeyword() const { return _keyword; }
@@ -75,11 +75,11 @@ template <class T> class param : public parambase {
     }
     allparams.push_back((parambase *)this);
   }
-  virtual void dump() { cout << _keyword << "=" << data << (!defaultval ? " *" : "") << endl; }
+  void dump() override { cout << _keyword << "=" << data << (!defaultval ? " *" : "") << endl; }
   // This line enables to access parameters using an object as a rvalue
   inline operator const T &() const { return data; }
   inline T value() const { return data; }
-  virtual void setvalue_str(string newvalue) {
+  void setvalue_str(string newvalue) override {
     _value     = newvalue;
     data       = fromstring<T>(newvalue);
     defaultval = false;

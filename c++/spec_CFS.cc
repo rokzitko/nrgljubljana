@@ -4,32 +4,32 @@
 
 class SPEC_CFSls : virtual public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumBinning; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumBinning; }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "CFSls"; }
-  string merge() { return "CFS"; }
+            const Invar &) override;
+  string name() override { return "CFSls"; }
+  string merge() override { return "CFS"; }
 };
 
 class SPEC_CFSgt : virtual public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumBinning; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumBinning; }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
-            const Invar &);
-  string name() { return "CFSgt"; }
-  string merge() { return "CFS"; }
+            const Invar &) override;
+  string name() override { return "CFSgt"; }
+  string merge() override { return "CFS"; }
 };
 
 class SPEC_CFS : public SPEC_CFSls, public SPEC_CFSgt {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) { return new ChainSpectrumBinning; }
+  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumBinning; }
   void calc(const Eigen &a1, const Eigen &a2, const Matrix &a3, const Matrix &a4, const BaseSpectrum &a5, t_factor a6, ChainSpectrum *a7,
-            const Invar &a8, const Invar &a9) {
+            const Invar &a8, const Invar &a9) override {
     SPEC_CFSgt::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9);
     SPEC_CFSls::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9);
   }
-  string name() { return "CFS"; }
-  string merge() { return "CFS"; }
+  string name() override { return "CFS"; }
+  string merge() override { return "CFS"; }
 };
 
 //#define SPEC_CFS_OLD

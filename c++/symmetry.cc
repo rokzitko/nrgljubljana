@@ -56,8 +56,8 @@ class Symmetry {
   int combs;
 
   public:
-  Symmetry() {}
-  virtual ~Symmetry(){};
+  Symmetry() = default;
+  virtual ~Symmetry()= default;;
 
   virtual void init() { my_error("Bug: Initializer must be defined!"); };
 
@@ -158,40 +158,40 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
 
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
-  void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);                                                                \
-  void recalc_irreduc(const DiagInfo &diag)
+  void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) override;                                                                \
+  void recalc_irreduc(const DiagInfo &diag) override
 
 // Optional declaration
-#define HAS_DOUBLET void recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew)
-#define HAS_TRIPLET void recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew)
-#define HAS_ORB_TRIPLET void recalc_orb_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew)
-#define HAS_QUADRUPLET void recalc_quadruplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew)
-#define HAS_GLOBAL void recalc_global(DiagInfo &diag, string name, MatrixElements &cnew)
-#define HAS_SUBSTEPS void recalc_irreduc_substeps(const DiagInfo &diag, int M)
+#define HAS_DOUBLET void recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_TRIPLET void recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_ORB_TRIPLET void recalc_orb_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_QUADRUPLET void recalc_quadruplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_GLOBAL void recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) override
+#define HAS_SUBSTEPS void recalc_irreduc_substeps(const DiagInfo &diag, int M) override
 
 class SymField : public Symmetry {
   public:
   SymField() : Symmetry(){};
-  bool isfield() { return true; }
+  bool isfield() override { return true; }
 };
 
 class SymLR : public Symmetry {
   public:
   SymLR() : Symmetry(){};
-  bool islr() { return true; }
+  bool islr() override { return true; }
 };
 
 class SymC3 : public Symmetry {
   public:
   SymC3() : Symmetry(){};
-  bool isc3() { return true; }
+  bool isc3() override { return true; }
 };
 
 class SymFieldLR : public Symmetry {
   public:
   SymFieldLR() : Symmetry(){};
-  bool isfield() { return true; }
-  bool islr() { return true; }
+  bool isfield() override { return true; }
+  bool islr() override { return true; }
 };
 
 // Helper functions

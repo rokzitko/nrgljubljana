@@ -441,14 +441,14 @@ GTEST_API_ TypeId GetTestTypeId();
 // of a Test object.
 class TestFactoryBase {
  public:
-  virtual ~TestFactoryBase() {}
+  virtual ~TestFactoryBase() = default;
 
   // Creates a test instance to run. The instance is both created and destroyed
   // within TestInfoImpl::Run()
   virtual Test* CreateTest() = 0;
 
  protected:
-  TestFactoryBase() {}
+  TestFactoryBase() = default;
 
  private:
   GTEST_DISALLOW_COPY_AND_ASSIGN_(TestFactoryBase);
@@ -576,7 +576,7 @@ GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 // State of the definition of a type-parameterized test suite.
 class GTEST_API_ TypedTestSuitePState {
  public:
-  TypedTestSuitePState() : registered_(false) {}
+  TypedTestSuitePState()  {}
 
   // Adds the given test name to defined_test_names_ and return true
   // if the test suite hasn't been registered; otherwise aborts the
@@ -615,7 +615,7 @@ class GTEST_API_ TypedTestSuitePState {
  private:
   typedef ::std::map<std::string, CodeLocation> RegisteredTestsMap;
 
-  bool registered_;
+  bool registered_{false};
   RegisteredTestsMap registered_tests_;
 };
 
@@ -700,7 +700,7 @@ class TypeParameterizedTest {
                            GenerateNames<DefaultNameGenerator, Types>()) {
     using Type = typename Types::Head;
     using FixtureClass = Fixture<Type>;
-    using TestClass = typename TestSel::template TestSel::Bind<Type>::type;
+    using TestClass = typename TestSel::template TestSel;::Bind<Type>::type;
 
     // First, registers the first type-parameterized test in the type
     // list.
@@ -720,7 +720,7 @@ class TypeParameterizedTest {
 
     // Next, recurses (at compile time) with the tail of the type list.
     return TypeParameterizedTest<Fixture, TestSel,
-                                 typename Types::Tail>::Register(prefix,
+                                 typename Types::Tail>Register(prefix,
                                                                  code_location,
                                                                  case_name,
                                                                  test_names,

@@ -5,7 +5,7 @@ class SymmetryQJ : public Symmetry {
   public:
   SymmetryQJ() : Symmetry() { all_syms["QJ"] = this; }
 
-  void init() {
+  void init() override {
     Jz2.set("<Jz^2>", 1);
     Q.set("<Q>", 2);
     Q2.set("<Q^2>", 3);
@@ -19,23 +19,23 @@ class SymmetryQJ : public Symmetry {
   }
 
   // Multiplicity of the (Q,JJ) subspace is 2J+1 = JJ.
-  int mult(const Invar &I) { return I.get("JJ"); }
+  int mult(const Invar &I) override { return I.get("JJ"); }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("JJ"), I2.get("JJ"), I3.get("JJ"));
   }
 
-  bool Invar_allowed(const Invar &I) {
+  bool Invar_allowed(const Invar &I) override {
     const bool spin_ok = I.get("JJ") > 0;
     return spin_ok;
   }
 
-  void load() {
+  void load() override {
 #include "qj/qj-In2.dat"
 #include "qj/qj-QN.dat"
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trJZ2, trQ, trQ2; // Tr[J_z^2], Tr[Q], Tr[Q^2]
 
     LOOP_const(diag, is) {
@@ -55,7 +55,7 @@ class SymmetryQJ : public Symmetry {
   }
 
   // ClebschGordan[ket (p), op, bra (1)]
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 1);
 
     const Sspin jjp = Ip.get("JJ");
@@ -66,7 +66,7 @@ class SymmetryQJ : public Symmetry {
   }
 
   // See cg_factors_doublet_triplet_quadruplet.nb
-  double specdensquad_factor(const Invar &Ip, const Invar &I1) {
+  double specdensquad_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 1);
 
     const Sspin jjp = Ip.get("JJ");

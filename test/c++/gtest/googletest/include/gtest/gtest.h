@@ -673,11 +673,11 @@ class GTEST_API_ TestResult {
   // The vector of TestProperties
   std::vector<TestProperty> test_properties_;
   // Running count of death tests.
-  int death_test_count_;
+  int death_test_count_{0};
   // The start time, in milliseconds since UNIX Epoch.
-  TimeInMillis start_timestamp_;
+  TimeInMillis start_timestamp_{0};
   // The elapsed time, in milliseconds.
-  TimeInMillis elapsed_time_;
+  TimeInMillis elapsed_time_{0};
 
   // We disallow copying TestResult.
   GTEST_DISALLOW_COPY_AND_ASSIGN_(TestResult);
@@ -1047,7 +1047,7 @@ class GTEST_API_ TestSuite {
 class Environment {
  public:
   // The d'tor is virtual as we need to subclass Environment.
-  virtual ~Environment() {}
+  virtual ~Environment() = default;
 
   // Override this to define how to set up the environment.
   virtual void SetUp() {}
@@ -1077,7 +1077,7 @@ class GTEST_API_ AssertionException
 // the order the corresponding events are fired.
 class TestEventListener {
  public:
-  virtual ~TestEventListener() {}
+  virtual ~TestEventListener() = default;
 
   // Fired before any test activity starts.
   virtual void OnTestProgramStart(const UnitTest& unit_test) = 0;
@@ -1238,9 +1238,9 @@ class GTEST_API_ TestEventListeners {
   // The actual list of listeners.
   internal::TestEventRepeater* repeater_;
   // Listener responsible for the standard result output.
-  TestEventListener* default_result_printer_;
+  TestEventListener* default_result_printer_{nullptr};
   // Listener responsible for the creation of the XML output file.
-  TestEventListener* default_xml_generator_;
+  TestEventListener* default_xml_generator_{nullptr};
 
   // We disallow copying TestEventListeners.
   GTEST_DISALLOW_COPY_AND_ASSIGN_(TestEventListeners);
@@ -1850,7 +1850,7 @@ template <typename T>
 class WithParamInterface {
  public:
   using ParamType = T;
-  virtual ~WithParamInterface() {}
+  virtual ~WithParamInterface() = default;
 
   // The current parameter value. Is also available in the test fixture's
   // constructor.

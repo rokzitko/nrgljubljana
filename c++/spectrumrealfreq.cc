@@ -11,8 +11,8 @@ class SpectrumRealFreq : public Spectrum {
 
   public:
   SpectrumRealFreq(string _opname, string _filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype){};
-  void merge(ChainSpectrum *cs);
-  ~SpectrumRealFreq();
+  void merge(ChainSpectrum *cs) override;
+  ~SpectrumRealFreq() override;
 };
 
 SpectrumRealFreq::~SpectrumRealFreq() {

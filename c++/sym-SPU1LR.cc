@@ -5,7 +5,7 @@ class SymmetrySPU1LR : public SymFieldLR {
   public:
   SymmetrySPU1LR() : SymFieldLR() { all_syms["SPU1LR"] = this; }
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     Sz.set("<Sz>", 2);
     InvarStructure InvStruc[] = {
@@ -16,7 +16,7 @@ class SymmetrySPU1LR : public SymFieldLR {
     InvarSinglet = Invar(0, 1);
   }
 
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) {
+  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
     SZspin ssz1  = I1.get("SSZ");
@@ -25,11 +25,11 @@ class SymmetrySPU1LR : public SymFieldLR {
     return sszop == SPIN;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ")) && z2_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 1:
 #include "spu1lr/spu1lr-1ch-In2.dat"
@@ -45,7 +45,7 @@ class SymmetrySPU1LR : public SymFieldLR {
     }
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
 
     LOOP_const(diag, is) {

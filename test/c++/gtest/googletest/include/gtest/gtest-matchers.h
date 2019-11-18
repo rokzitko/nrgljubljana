@@ -110,14 +110,13 @@ class MatchResultListener {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(MatchResultListener);
 };
 
-inline MatchResultListener::~MatchResultListener() {
-}
+inline MatchResultListener::~MatchResultListener() = default;
 
 // An instance of a subclass of this knows how to describe itself as a
 // matcher.
 class MatcherDescriberInterface {
  public:
-  virtual ~MatcherDescriberInterface() {}
+  virtual ~MatcherDescriberInterface() = default;
 
   // Describes this matcher to an ostream.  The function should print
   // a verb phrase that describes the property a value matching this
@@ -294,7 +293,7 @@ class MatcherBase {
   }
 
  protected:
-  MatcherBase() {}
+  MatcherBase() = default;
 
   // Constructs a matcher from its implementation.
   explicit MatcherBase(const MatcherInterface<const T&>* impl) : impl_(impl) {}
@@ -311,7 +310,7 @@ class MatcherBase {
   MatcherBase(MatcherBase&&) = default;
   MatcherBase& operator=(MatcherBase&&) = default;
 
-  virtual ~MatcherBase() {}
+  virtual ~MatcherBase() = default;
 
  private:
   std::shared_ptr<const MatcherInterface<const T&>> impl_;
@@ -354,7 +353,7 @@ template <>
 class GTEST_API_ Matcher<const std::string&>
     : public internal::MatcherBase<const std::string&> {
  public:
-  Matcher() {}
+  Matcher() = default;
 
   explicit Matcher(const MatcherInterface<const std::string&>* impl)
       : internal::MatcherBase<const std::string&>(impl) {}
@@ -371,7 +370,7 @@ template <>
 class GTEST_API_ Matcher<std::string>
     : public internal::MatcherBase<std::string> {
  public:
-  Matcher() {}
+  Matcher() = default;
 
   explicit Matcher(const MatcherInterface<const std::string&>* impl)
       : internal::MatcherBase<std::string>(impl) {}
@@ -476,13 +475,13 @@ class PolymorphicMatcher {
    public:
     explicit MonomorphicImpl(Impl  impl) : impl_(std::move(impl)) {}
 
-    virtual void DescribeTo(::std::ostream* os) const { impl_.DescribeTo(os); }
+    void DescribeTo(::std::ostream* os) const override { impl_.DescribeTo(os); }
 
-    virtual void DescribeNegationTo(::std::ostream* os) const {
+    void DescribeNegationTo(::std::ostream* os) const override {
       impl_.DescribeNegationTo(os);
     }
 
-    virtual bool MatchAndExplain(T x, MatchResultListener* listener) const {
+    bool MatchAndExplain(T x, MatchResultListener* listener) const override {
       return impl_.MatchAndExplain(x, listener);
     }
 

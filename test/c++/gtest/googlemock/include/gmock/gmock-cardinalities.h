@@ -63,7 +63,7 @@ namespace testing {
 // The implementation of a cardinality.
 class CardinalityInterface {
  public:
-  virtual ~CardinalityInterface() {}
+  virtual ~CardinalityInterface() = default;
 
   // Conservative estimate on the lower/upper bound of the number of
   // calls allowed.
@@ -88,7 +88,7 @@ class GTEST_API_ Cardinality {
  public:
   // Constructs a null cardinality.  Needed for storing Cardinality
   // objects in STL containers.
-  Cardinality() {}
+  Cardinality() = default;
 
   // Constructs a Cardinality from its implementation.
   explicit Cardinality(const CardinalityInterface* impl) : impl_(impl) {}

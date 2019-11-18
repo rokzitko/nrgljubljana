@@ -3902,38 +3902,38 @@ inline PolymorphicMatcher<internal::EndsWithMatcher<std::wstring> > EndsWith(
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field == the second field.
-inline internal::Eq2Matcher Eq() { return internal::Eq2Matcher(); }
+inline internal::Eq2Matcher Eq() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field >= the second field.
-inline internal::Ge2Matcher Ge() { return internal::Ge2Matcher(); }
+inline internal::Ge2Matcher Ge() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field > the second field.
-inline internal::Gt2Matcher Gt() { return internal::Gt2Matcher(); }
+inline internal::Gt2Matcher Gt() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field <= the second field.
-inline internal::Le2Matcher Le() { return internal::Le2Matcher(); }
+inline internal::Le2Matcher Le() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field < the second field.
-inline internal::Lt2Matcher Lt() { return internal::Lt2Matcher(); }
+inline internal::Lt2Matcher Lt() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where the
 // first field != the second field.
-inline internal::Ne2Matcher Ne() { return internal::Ne2Matcher(); }
+inline internal::Ne2Matcher Ne() { return {}; }
 
 // Creates a polymorphic matcher that matches a 2-tuple where
 // FloatEq(first field) matches the second field.
 inline internal::FloatingEq2Matcher<float> FloatEq() {
-  return internal::FloatingEq2Matcher<float>();
+  return {};
 }
 
 // Creates a polymorphic matcher that matches a 2-tuple where
 // DoubleEq(first field) matches the second field.
 inline internal::FloatingEq2Matcher<double> DoubleEq() {
-  return internal::FloatingEq2Matcher<double>();
+  return {};
 }
 
 // Creates a polymorphic matcher that matches a 2-tuple where
@@ -3965,7 +3965,7 @@ inline internal::FloatingEq2Matcher<double> DoubleNear(double max_abs_error) {
 // equality.
 inline internal::FloatingEq2Matcher<float> NanSensitiveFloatNear(
     float max_abs_error) {
-  return internal::FloatingEq2Matcher<float>(max_abs_error, true);
+  return {max_abs_error, true};
 }
 
 // Creates a polymorphic matcher that matches a 2-tuple where
@@ -3973,7 +3973,7 @@ inline internal::FloatingEq2Matcher<float> NanSensitiveFloatNear(
 // equality.
 inline internal::FloatingEq2Matcher<double> NanSensitiveDoubleNear(
     double max_abs_error) {
-  return internal::FloatingEq2Matcher<double>(max_abs_error, true);
+  return {max_abs_error, true};
 }
 
 // Creates a matcher that matches any value of type T that m doesn't

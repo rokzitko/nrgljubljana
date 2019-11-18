@@ -5,7 +5,7 @@ class SymmetrySPSU2C3 : public SymC3 {
   public:
   SymmetrySPSU2C3() : SymC3() { all_syms["SPSU2C3"] = this; }
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     InvarStructure InvStruc[] = {
        {"SS", additive}, // spin
@@ -15,21 +15,21 @@ class SymmetrySPSU2C3 : public SymC3 {
     InvarSinglet = Invar(1, 0); // spin-singlet, C_3 P=0
   }
 
-  int mult(const Invar &I) { return I.get("SS"); }
+  int mult(const Invar &I) override { return I.get("SS"); }
 
-  bool Invar_allowed(const Invar &I) { return I.get("SS") > 0; }
+  bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS")) && c3_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }
 
-  void load() {
+  void load() override {
     my_assert(channels == 3);
 #include "spsu2c3/spsu2c3-In2.dat"
 #include "spsu2c3/spsu2c3-QN.dat"
   }
 
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) {
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
@@ -37,13 +37,13 @@ class SymmetrySPSU2C3 : public SymC3 {
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ2; // Tr[S_z^2]
 
     LOOP_const(diag, is) {

@@ -241,7 +241,7 @@ class Rmaxvals {
   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
 
   public:
-  Rmaxvals(){};
+  Rmaxvals()= default;;
   Rmaxvals(const Rmaxvals &v);
   Rmaxvals &operator=(const Rmaxvals &) = default;
   size_t rmax(size_t i) const;
@@ -265,7 +265,7 @@ class DimSub {
   Rmaxvals rmax;   // substructure of vectors omega
   EVEC eigenvalue; // all eigenvalues
   EVEC absenergy;  // absolute energies (for FDM)
-  DimSub(){};
+  DimSub()= default;;
   DimSub(size_t _kept, size_t _total) : kept(_kept), total(_total) {
     my_assert(kept <= total);
     discarded = total - kept;
@@ -938,8 +938,8 @@ CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &
 
 class ChainSpectrum {
   public:
-  ChainSpectrum(){};
-  virtual ~ChainSpectrum(){};
+  ChainSpectrum()= default;;
+  virtual ~ChainSpectrum()= default;;
   virtual void add(double energy, t_weight weight) = 0; // XXX
 };
 
@@ -948,12 +948,12 @@ class ChainSpectrumBinning : public ChainSpectrum {
   Bins spos, sneg;
 
   public:
-  ChainSpectrumBinning(){};
-  virtual ~ChainSpectrumBinning() {
+  ChainSpectrumBinning()= default;;
+  ~ChainSpectrumBinning() override {
     assert_isfinite(spos.total_weight()); // Bug trap
     assert_isfinite(sneg.total_weight());
   }
-  void add(double energy, t_weight weight) {
+  void add(double energy, t_weight weight) override {
     if (energy >= 0.0)
       spos.add(energy, weight);
     else
@@ -968,9 +968,9 @@ class ChainSpectrumTemp : public ChainSpectrum {
   Temp v;
 
   public:
-  ChainSpectrumTemp(){};
-  virtual ~ChainSpectrumTemp() {}
-  void add(double T, t_weight value) { v.add_value(T, value); }
+  ChainSpectrumTemp()= default;;
+  ~ChainSpectrumTemp() override = default;
+  void add(double T, t_weight value) override { v.add_value(T, value); }
   friend class SpectrumTemp;
 };
 
@@ -984,9 +984,9 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
   public:
   ChainSpectrumMatsubara() = delete;
   ChainSpectrumMatsubara(matstype _mt) : m(P::mats, _mt){};
-  virtual ~ChainSpectrumMatsubara() {}
+  ~ChainSpectrumMatsubara() override = default;
   void add(size_t n, t_weight w) { m.add(n, w); }
-  void add(double energy, t_weight w) { my_assert_not_reached(); }
+  void add(double energy, t_weight w) override { my_assert_not_reached(); }
   t_weight total_weight() const { return m.total_weight(); }
   friend class SpectrumMatsubara;
 };
@@ -998,9 +998,9 @@ class ChainSpectrumMatsubara2 : public ChainSpectrum {
   public:
   ChainSpectrumMatsubara2() = delete;
   ChainSpectrumMatsubara2(matstype _mt) : m(P::mats, _mt){};
-  virtual ~ChainSpectrumMatsubara2() {}
+  ~ChainSpectrumMatsubara2() override = default;
   void add(size_t i, size_t j, t_weight w) { m.add(i, j, w); }
-  void add(double energy, t_weight w) { my_assert_not_reached(); }
+  void add(double energy, t_weight w) override { my_assert_not_reached(); }
   t_weight total_weight() const { return m.total_weight(); }
   friend class SpectrumMatsubara2;
 };
@@ -1012,7 +1012,7 @@ class Spectrum {
   string opname, filename;
   SPECTYPE spectype;
   Spectrum(string _opname, string _filename, SPECTYPE _spectype) : opname(std::move(_opname)), filename(std::move(_filename)), spectype(_spectype){};
-  virtual ~Spectrum(){};
+  virtual ~Spectrum()= default;;
   virtual void merge(ChainSpectrum *cs) = 0; // called from spec.cc as the very last step
   string name() { return opname; }
 };
@@ -1026,8 +1026,8 @@ class SpectrumTemp : public Spectrum {
 
   public:
   SpectrumTemp(string _opname, string _filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
-  void merge(ChainSpectrum *cs);
-  ~SpectrumTemp();
+  void merge(ChainSpectrum *cs) override;
+  ~SpectrumTemp() override;
 };
 
 void SpectrumTemp::merge(ChainSpectrum *cs) {
@@ -1054,8 +1054,8 @@ class SpectrumMatsubara : public Spectrum {
   public:
   SpectrumMatsubara(string _opname, string _filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
-  void merge(ChainSpectrum *cs);
-  ~SpectrumMatsubara();
+  void merge(ChainSpectrum *cs) override;
+  ~SpectrumMatsubara() override;
 };
 
 void SpectrumMatsubara::merge(ChainSpectrum *cs) {
@@ -1077,8 +1077,8 @@ class SpectrumMatsubara2 : public Spectrum {
   public:
   SpectrumMatsubara2(string _opname, string _filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
-  void merge(ChainSpectrum *cs);
-  ~SpectrumMatsubara2();
+  void merge(ChainSpectrum *cs) override;
+  ~SpectrumMatsubara2() override;
 };
 
 void SpectrumMatsubara2::merge(ChainSpectrum *cs) {
@@ -1866,7 +1866,7 @@ inline t_eigen scaled_energy(t_eigen e, bool scaled = true, bool absolute = fals
 void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = false) {
   std::vector<pair<t_eigen, Invar>> seznam;
   for (const auto &is : diag)
-    for (const auto e : EIGEN(is).value) seznam.push_back(make_pair(e, INVAR(is)));
+    for (const auto e : EIGEN(is).value) seznam.emplace_back(e, INVAR(is));
   sort(begin(seznam), end(seznam));
   size_t len = min(seznam.size(), size_t(P::dumpannotated));
   // If states are clustered, we dump the full cluster
@@ -2476,7 +2476,7 @@ void nrg_determine_tasks() {
 // a side effect, we compute some statistics about matrix sizes.
 void sort_task_list() {
   std::vector<pair<size_t, Invar>> tasks_with_sizes;
-  for (const auto &i : NRG::tasks) tasks_with_sizes.push_back(make_pair(qsrmax[i].total(), i));
+  for (const auto &i : NRG::tasks) tasks_with_sizes.emplace_back(qsrmax[i].total(), i);
   // Sort in the *decreasing* order!
   sort(rbegin(tasks_with_sizes), rend(tasks_with_sizes));
   auto nr       = tasks_with_sizes.size();

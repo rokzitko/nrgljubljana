@@ -5,7 +5,7 @@ class SymmetryQS : public Symmetry {
   public:
   SymmetryQS() : Symmetry() { all_syms["QS"] = this; }
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     Q.set("<Q>", 2);
     Q2.set("<Q^2>", 3);
@@ -19,18 +19,18 @@ class SymmetryQS : public Symmetry {
   }
 
   // Multiplicity of the (Q,SS) subspace is 2S+1 = SS.
-  int mult(const Invar &I) { return I.get("SS"); }
+  int mult(const Invar &I) override { return I.get("SS"); }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"));
   }
 
-  bool Invar_allowed(const Invar &I) {
+  bool Invar_allowed(const Invar &I) override {
     const bool spin_ok = I.get("SS") > 0;
     return spin_ok;
   }
 
-  void load() {
+  void load() override {
     if (!substeps) {
       switch (channels) {
         case 1:
@@ -61,7 +61,7 @@ class SymmetryQS : public Symmetry {
     } // if
   }   // load
 
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) {
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 0);
 
     const Sspin ssp = Ip.get("SS");
@@ -82,7 +82,7 @@ class SymmetryQS : public Symmetry {
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 1);
 
     const Sspin ssp = Ip.get("SS");
@@ -92,7 +92,7 @@ class SymmetryQS : public Symmetry {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
 
     LOOP_const(diag, is) {
@@ -117,7 +117,7 @@ class SymmetryQS : public Symmetry {
   HAS_GLOBAL;
   HAS_SUBSTEPS;
 
-  void show_coefficients();
+  void show_coefficients() override;
 };
 
 Symmetry *SymQS = new SymmetryQS;

@@ -420,8 +420,8 @@ GTEST_API_ FilePath GetCurrentExecutableName();
 // The role interface for getting the OS stack trace as a string.
 class OsStackTraceGetterInterface {
  public:
-  OsStackTraceGetterInterface() {}
-  virtual ~OsStackTraceGetterInterface() {}
+  OsStackTraceGetterInterface() = default;
+  virtual ~OsStackTraceGetterInterface() = default;
 
   // Returns the current OS stack trace as an std::string.  Parameters:
   //
@@ -447,7 +447,7 @@ class OsStackTraceGetterInterface {
 // A working implementation of the OsStackTraceGetterInterface interface.
 class OsStackTraceGetter : public OsStackTraceGetterInterface {
  public:
-  OsStackTraceGetter() {}
+  OsStackTraceGetter() = default;
 
   std::string CurrentStackTrace(int max_depth, int skip_count) override;
   void UponLeavingGTest() override;

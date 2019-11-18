@@ -5,7 +5,7 @@ class SymmetryISOcommon : public Symmetry {
   public:
   SymmetryISOcommon() : Symmetry() {} // see below: ISO, ISO2
 
-  void init() {
+  void init() override {
     Sz2.set("<Sz^2>", 1);
     Q2.set("<Q^2>", 2);
     InvarStructure InvStruc[] = {
@@ -18,24 +18,24 @@ class SymmetryISOcommon : public Symmetry {
   }
 
   // Multiplicity of the I=(II,SS) subspace = (2I+1)(2S+1) = II SS.
-  int mult(const Invar &I) {
+  int mult(const Invar &I) override {
     int mi = I.get("II"); // isospin multiplicity
     int ms = I.get("SS"); // spin multiplicity
     return mi * ms;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS")) && su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II"));
   }
 
   // We always must have S >= 0 and I >= 0.
-  bool Invar_allowed(const Invar &I) {
+  bool Invar_allowed(const Invar &I) override {
     const bool isospin_ok = I.get("II") > 0;
     const bool spin_ok    = I.get("SS") > 0;
     return isospin_ok && spin_ok;
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) {
+  double specdens_factor(const Invar &Ip, const Invar &I1) override {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
@@ -50,7 +50,7 @@ class SymmetryISOcommon : public Symmetry {
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) {
+  void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
 
     LOOP_const(diag, is) {
@@ -72,7 +72,7 @@ class SymmetryISO : public SymmetryISOcommon {
   public:
   SymmetryISO() : SymmetryISOcommon() { all_syms["ISO"] = this; };
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 1:
 #include "iso/iso-1ch-In2.dat"
@@ -102,7 +102,7 @@ class SymmetryISO2 : public SymmetryISOcommon {
   public:
   SymmetryISO2() : SymmetryISOcommon() { all_syms["ISO2"] = this; };
 
-  void load() {
+  void load() override {
     switch (channels) {
       case 1:
 #include "iso2/iso2-1ch-In2.dat"

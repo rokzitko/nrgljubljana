@@ -124,7 +124,7 @@ class LinInt {
   double fxmin, fxmax;   // f(xmin), f(xmax)
 
   public:
-  LinInt(){};
+  LinInt()= default;;
   LinInt(Vec &in_vec) : vec(in_vec) {
     len              = vec.size();
     index            = -1;
@@ -223,7 +223,7 @@ dvec merge_meshes() {
 vector<LinInt> f; // interpolation objects
 
 void interpolate() {
-  for (int i = 0; i < Nz; i++) { f.push_back(LinInt(input[i])); }
+  for (int i = 0; i < Nz; i++) { f.emplace_back(input[i]); }
 }
 
 Vec avg() {

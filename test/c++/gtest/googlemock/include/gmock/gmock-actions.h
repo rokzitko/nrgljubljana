@@ -228,7 +228,7 @@ class DefaultValue {
  private:
   class ValueProducer {
    public:
-    virtual ~ValueProducer() {}
+    virtual ~ValueProducer() = default;
     virtual T Produce() = 0;
   };
 
@@ -314,8 +314,8 @@ class ActionInterface {
   using Result = typename internal::Function<F>::Result;
   using ArgumentTuple = typename internal::Function<F>::ArgumentTuple;
 
-  ActionInterface() {}
-  virtual ~ActionInterface() {}
+  ActionInterface() = default;
+  virtual ~ActionInterface() = default;
 
   // Performs the action.  This method is not const, as in general an
   // action can have side effects and be stateful.  For example, a
@@ -355,7 +355,7 @@ class Action {
 
   // Constructs a null Action.  Needed for storing Action objects in
   // STL containers.
-  Action() {}
+  Action() = default;
 
   // Construct an Action from a specified callable.
   // This cannot take std::function directly, because then Action would not be
@@ -1039,7 +1039,7 @@ internal::ByMoveWrapper<R> ByMove(R x) {
 
 // Creates an action that does the default action for the give mock function.
 inline internal::DoDefaultAction DoDefault() {
-  return internal::DoDefaultAction();
+  return {};
 }
 
 // Creates an action that sets the variable pointed by the N-th

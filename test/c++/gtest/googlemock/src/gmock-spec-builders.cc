@@ -93,7 +93,7 @@ ExpectationBase::ExpectationBase(const char* a_file, int a_line,
       action_count_checked_(false) {}
 
 // Destructs an ExpectationBase object.
-ExpectationBase::~ExpectationBase() {}
+ExpectationBase::~ExpectationBase() = default;
 
 // Explicitly specifies the cardinality of this expectation.  Used by
 // the subclasses to implement the .Times() clause.
@@ -298,9 +298,9 @@ void ReportUninterestingCall(CallReaction reaction, const std::string& msg) {
 }
 
 UntypedFunctionMockerBase::UntypedFunctionMockerBase()
-    : mock_obj_(nullptr), name_("") {}
+     {}
 
-UntypedFunctionMockerBase::~UntypedFunctionMockerBase() {}
+UntypedFunctionMockerBase::~UntypedFunctionMockerBase() = default;
 
 // Sets the mock object this mock method belongs to, and registers
 // this information in the global mock registry.  Will be called
@@ -562,15 +562,15 @@ using FunctionMockers = std::set<internal::UntypedFunctionMockerBase *>;
 // expectations.
 struct MockObjectState {
   MockObjectState()
-      : first_used_file(nullptr), first_used_line(-1), leakable(false) {}
+       {}
 
   // Where in the source file an ON_CALL or EXPECT_CALL is first
   // invoked on this mock object.
-  const char* first_used_file;
-  int first_used_line;
+  const char* first_used_file{nullptr};
+  int first_used_line{-1};
   ::std::string first_used_test_suite;
   ::std::string first_used_test;
-  bool leakable;  // true if it's OK to leak the object.
+  bool leakable{false};  // true if it's OK to leak the object.
   FunctionMockers function_mockers;  // All registered methods of the object.
 };
 
@@ -834,13 +834,13 @@ void Mock::ClearDefaultActionsLocked(void* mock_obj)
   // needed by VerifyAndClearExpectationsLocked().
 }
 
-Expectation::Expectation() {}
+Expectation::Expectation() = default;
 
 Expectation::Expectation(
     std::shared_ptr<internal::ExpectationBase>  an_expectation_base)
     : expectation_base_(std::move(an_expectation_base)) {}
 
-Expectation::~Expectation() {}
+Expectation::~Expectation() = default;
 
 // Adds an expectation to a sequence.
 void Sequence::AddExpectation(const Expectation& expectation) const {

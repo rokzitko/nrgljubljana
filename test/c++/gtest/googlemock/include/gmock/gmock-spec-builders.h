@@ -227,11 +227,11 @@ class GTEST_API_ UntypedFunctionMockerBase {
   // Address of the mock object this mock method belongs to.  Only
   // valid after this mock method has been called or
   // ON_CALL/EXPECT_CALL has been invoked on it.
-  const void* mock_obj_;  // Protected by g_gmock_mutex.
+  const void* mock_obj_{nullptr};  // Protected by g_gmock_mutex.
 
   // Name of the function being mocked.  Only valid after this mock
   // method has been called.
-  const char* name_;  // Protected by g_gmock_mutex.
+  const char* name_{""};  // Protected by g_gmock_mutex.
 
   // All default action specs for this function mocker.
   UntypedOnCallSpecs untyped_on_call_specs_;
@@ -579,7 +579,7 @@ class ExpectationSet {
   using value_type = Expectation::Set::value_type;
 
   // Constructs an empty set.
-  ExpectationSet() {}
+  ExpectationSet() = default;
 
   // This single-argument ctor must not be explicit, in order to support the
   //   ExpectationSet es = EXPECT_CALL(...);
@@ -1362,7 +1362,7 @@ GTEST_DISABLE_MSC_WARNINGS_PUSH_(4355)
 // Untyped base class for ActionResultHolder<T>.
 class UntypedActionResultHolderBase {
  public:
-  virtual ~UntypedActionResultHolderBase() {}
+  virtual ~UntypedActionResultHolderBase() = default;
 
   // Prints the held value as an action's result to os.
   virtual void PrintAsActionResult(::std::ostream* os) const = 0;
@@ -1445,7 +1445,7 @@ class ActionResultHolder<void> : public UntypedActionResultHolderBase {
   }
 
  private:
-  ActionResultHolder() {}
+  ActionResultHolder() = default;
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ActionResultHolder);
 };
 
@@ -1461,7 +1461,7 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
   using ArgumentTuple = std::tuple<Args...>;
   using ArgumentMatcherTuple = std::tuple<Matcher<Args>...>;
 
-  FunctionMocker() {}
+  FunctionMocker() = default;
 
   // There is no generally useful and implementable semantics of
   // copying a mock object, so copying a mock is usually a user error.
@@ -1841,7 +1841,7 @@ class MockFunction;
 template <typename R, typename... Args>
 class MockFunction<R(Args...)> {
  public:
-  MockFunction() {}
+  MockFunction() = default;
   MockFunction(const MockFunction&) = delete;
   MockFunction& operator=(const MockFunction&) = delete;
 
