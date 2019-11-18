@@ -57,7 +57,7 @@ class Symmetry {
 
   public:
   Symmetry() = default;
-  virtual ~Symmetry()= default;;
+  virtual ~Symmetry()= default;
 
   virtual void init() { my_error("Bug: Initializer must be defined!"); };
 

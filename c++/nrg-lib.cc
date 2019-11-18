@@ -241,7 +241,7 @@ class Rmaxvals {
   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
 
   public:
-  Rmaxvals()= default;;
+  Rmaxvals()= default;
   Rmaxvals(const Rmaxvals &v);
   Rmaxvals &operator=(const Rmaxvals &) = default;
   size_t rmax(size_t i) const;
@@ -265,7 +265,7 @@ class DimSub {
   Rmaxvals rmax;   // substructure of vectors omega
   EVEC eigenvalue; // all eigenvalues
   EVEC absenergy;  // absolute energies (for FDM)
-  DimSub()= default;;
+  DimSub()= default;
   DimSub(size_t _kept, size_t _total) : kept(_kept), total(_total) {
     my_assert(kept <= total);
     discarded = total - kept;
@@ -939,8 +939,8 @@ CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &
 
 class ChainSpectrum {
   public:
-  ChainSpectrum()= default;;
-  virtual ~ChainSpectrum()= default;;
+  ChainSpectrum()= default;
+  virtual ~ChainSpectrum()= default;
   virtual void add(double energy, t_weight weight) = 0; // XXX
 };
 
@@ -949,7 +949,7 @@ class ChainSpectrumBinning : public ChainSpectrum {
   Bins spos, sneg;
 
   public:
-  ChainSpectrumBinning()= default;;
+  ChainSpectrumBinning()= default;
   ~ChainSpectrumBinning() override {
     assert_isfinite(spos.total_weight()); // Bug trap
     assert_isfinite(sneg.total_weight());
@@ -969,7 +969,7 @@ class ChainSpectrumTemp : public ChainSpectrum {
   Temp v;
 
   public:
-  ChainSpectrumTemp()= default;;
+  ChainSpectrumTemp()= default;
   ~ChainSpectrumTemp() override = default;
   void add(double T, t_weight value) override { v.add_value(T, value); }
   friend class SpectrumTemp;
@@ -1013,7 +1013,7 @@ class Spectrum {
   string opname, filename;
   SPECTYPE spectype;
   Spectrum(string _opname, string _filename, SPECTYPE _spectype) : opname(std::move(_opname)), filename(std::move(_filename)), spectype(_spectype){};
-  virtual ~Spectrum()= default;;
+  virtual ~Spectrum()= default;
   virtual void merge(ChainSpectrum *cs) = 0; // called from spec.cc as the very last step
   string name() { return opname; }
 };

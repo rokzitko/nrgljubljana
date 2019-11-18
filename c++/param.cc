@@ -45,7 +45,7 @@ class parambase {
 
   public:
   parambase(string keyword, string desc, string defaultv) : _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
-  virtual ~parambase()= default;;
+  virtual ~parambase()= default;
   virtual void setvalue_str(string newvalue) = 0;
   virtual void dump()                        = 0;
   string getkeyword() const { return _keyword; }
