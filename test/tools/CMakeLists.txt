@@ -1,1 +1,2 @@
-add_subdirectory(adapt matrix)
+add_subdirectory(adapt)
+add_subdirectory(matrix)

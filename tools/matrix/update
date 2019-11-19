@@ -1,0 +1,6 @@
+#!/bin/bash
+bison parser.yy -o parser.cc
+
+
+
+

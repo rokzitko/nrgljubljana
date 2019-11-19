@@ -3,7 +3,7 @@
   (c) Rok Zitko, rok.zitko@ijs.si, 2005-2016
 *)
 
-Print["operators.m started"];
+MyPrint["operators.m started"];
 
 setkm[t_, sp_, op_, opimp_] := 
  Module[{opud, w1, w2, w3, s1, s2, s3, komp, temp},
@@ -563,7 +563,7 @@ t = {};
     
     (* Projection operators for three sites *)
     If[calcopq["Pthree"],
-     Print["Pthree"];
+     MyPrint["Pthree"];
      Module[{ops, proj, comb, Pstr, ll},
       ops = {d, a, b};
       proj = {projector0, projectorUP, projectorDO, projector2};
@@ -573,7 +573,7 @@ t = {};
                   nc[comb[[1, i]], comb[[2, j]], comb[[3, k]]]},
                   {i, 4}, {j, 4}, {k, 4}];
       ll = Flatten[ll, 2];
-      ll = Map[(Print[First[#]]; mtdoSingletOp[First[#],Last[#]])&, ll];
+      ll = Map[(MyPrint[First[#]]; mtdoSingletOp[First[#],Last[#]])&, ll];
       ll = Join @@ ll;
       t = Join[t, ll];            
      ];

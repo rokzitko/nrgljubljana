@@ -2,7 +2,7 @@
   NRG Ljubljana - Hamiltonian definitions
 *)
 
-Print["models started"];
+MyPrint["models started"];
 
 (* NOTE: One can add new models to this file or to "custommodels.m". *)
 

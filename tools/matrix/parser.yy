@@ -30,6 +30,8 @@ double coefzeta(int, int);
 void yyerror(const char *);
 int yylex();
 
+int nrchannels = 1;
+
 ostream & OUT = cout;
 string prefix = "";
 
@@ -187,11 +189,15 @@ void parse_param(int argc, char *argv[])
 {
   char c;
   
-  while ((c = getopt(argc, argv, "vpP")) != -1) {
+  while ((c = getopt(argc, argv, "c:vpP")) != -1) {
     switch (c) {
       case 'v':
         verbose = true;
 	break;
+  
+      case 'c':
+        nrchannels = atoi(optarg);
+        break;
 	
       case 'V':
         veryverbose = true;
@@ -211,13 +217,11 @@ void parse_param(int argc, char *argv[])
   }
 }
 
-int discretization_loaded = 0;
+vector<double> theta;
+vector<vector<double>> xi;
+vector<vector<double>> zeta;
 
-double theta = -1;
-vector<double> xi;
-vector<double> zeta;
-
-void load_vector(const char *filename, vector<double> &v)
+void load_vector(string filename, vector<double> &v)
 {
   ifstream F(filename);
   if (!F) {
@@ -239,22 +243,28 @@ void load_vector(const char *filename, vector<double> &v)
 
 void load_discretization()
 {
-  ifstream THETA("theta.dat");
-  if (!THETA) {
-    cerr << "Can't open theta.dat" << endl;
-    exit(1);
-  }
-  THETA >> theta;
-  THETA.close();
-  if (verbose) {
-    cerr << "theta=" << theta << endl;
-  }
-  assert(theta >= 0);
+  for (int ch = 1; ch <= nrchannels; ch++) {
+    if (verbose)
+      cerr << "Channel " << ch << endl;
+    string suffix = (nrchannels == 1 ? "" : to_string(ch)) + ".dat";
+    string fntheta = "theta" + suffix;
+    ifstream THETA(fntheta);
+    if (!THETA) {
+      cerr << "Can't open " << fntheta << endl;
+      exit(1);
+    }
+    THETA >> theta[ch-1];
+    THETA.close();
+    if (verbose) {
+      cerr << "theta[" << ch << "]=" << theta[ch-1] << endl;
+    }
+    assert(theta[ch-1] >= 0);
   
-  load_vector("xi.dat", xi);
-  load_vector("zeta.dat", zeta);
-
-  discretization_loaded = 1;
+    string fnxi = "xi" + suffix;
+    load_vector(fnxi, xi[ch-1]);
+    string fnzeta = "zeta" + suffix;
+    load_vector(fnzeta, zeta[ch-1]);
+  }
 }
 
 // Global variables with filenames
@@ -296,6 +306,10 @@ int main(int argc, char *argv[])
  cout << setprecision(18);
 
  parse_param(argc, argv);
+ 
+ theta.resize(nrchannels);
+ zeta.resize(nrchannels);
+ xi.resize(nrchannels);
  
  load_discretization();
 
@@ -365,24 +379,26 @@ struct vec * duplicate_vector(struct vec *dvec)
   return 0;
 }
 
-double gammapolch(int i)
+double gammapolch(int ch)
 {
-  assert(discretization_loaded);
   // In initial.m, gammaPolCh[] is defined as sqrt(theta/pi * Gamma) !!
-  return sqrt(theta/M_PI);
+  assert(1 <= ch && ch <= nrchannels);
+  return sqrt(theta[ch-1]/M_PI);
 }
 
 // channel nr. has offset 1
 double coefzeta(int ch, int i)
 {
-  assert(discretization_loaded);
-  return zeta[i];
+  assert(1 <= ch && ch <= nrchannels);
+  assert(i < zeta[ch-1].size());
+  return zeta[ch-1][i];
 }
 
 double coefxi(int ch, int i)
 {
-  assert(discretization_loaded);
-  return xi[i];
+  assert(1 <= ch && ch <= nrchannels);
+  assert(i < xi[ch-1].size());
+  return xi[ch-1][i];
 }
 
 void yyerror(const char *error)

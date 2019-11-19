@@ -260,13 +260,12 @@ VARIANT        = paramdefault["variant", ""];
 OPTIONS        = paramdefault["options", ""];
 PERTURB        = paramdefault["perturb", ""];
 OPS            = paramdefault["ops", ""];
-lambda         = N @ paramdefaultnum["Lambda", 1.0];
+lambda         = N @ paramdefaultnum["Lambda", 2.0];
 z              = N @ paramdefaultnum["z", 1.0];
 BAND           = paramdefault["band", "flat"];
 DEBUG          = paramdefaultnum["mmadebug", 1];
-bandrescale    = paramdefaultnum["bandrescale", 1]; (* YYY *)
-
-DISCRETIZATION = paramdefault["discretization", "Y"];
+bandrescale    = paramdefaultnum["bandrescale", 1];
+DISCRETIZATION = paramdefault["discretization", "Z"];
 
 If[StringLength[DISCRETIZATION] >= 1,
   DISCRETIZATION = StringTake[DISCRETIZATION, {1}] ];
@@ -652,7 +651,7 @@ HBAND[] := Module[{H0onsite, H0hop, H0bcs},
   
   If[RUNGS && CHANNELS == 2,
     H0r = Sum[coefrung[1,i] hop[fop[0, i], fop[1, i]], {i, 0, Ninit}];
-    Print["H0r=", H0r];
+    MyPrint["H0r=", H0r];
     H0 = H0 + H0r;
   ];
 
@@ -2138,7 +2137,6 @@ Module[{ss1, ss2, sz1, sz2, szop, op1, ud, t1, t2, tzop, cg1, cg2},
   op1 = op[CR, tzop, ud]; (* IMPORTANT: CR by default! *)
   cg1 = ClebschGordan[{SS2S[ss2],sz2},{1/2,szop},{SS2S[ss1],sz1}];
   cg2 = ClebschGordan[{t2,t2},{1,tzop},{t1,t1}];
-(*  MyPrint["inv1=", inv1, " inv2=", inv2, " op=", op1, " cg1=", cg1, " cg2=", cg2, " tzop=", tzop, " ud=", ud]; *)
   optransform[op1, inv1, inv2, cg1 cg2]
 ];
 
@@ -2829,6 +2827,7 @@ If[TRI == "manual" || TRI == "manual_nambu",
 ];
 If[option["GENERATE_TEMPLATE"],  
   dothelanczos = None;
+  Nmax = 0;
 ];
 
 (* Use arbitrary precision arithmetics *)

@@ -5,22 +5,6 @@
 // method. 4th-order Runge-Kutta ODE solver. Secant method for
 // refinement of parameter A.
 
-/*
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-  
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-  
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-
 // CHANGE LOG
 // 18.6.2009 - bug fix for Gamma(1)=0 case
 // 5.3.2010 - parameters 'hardgap' and 'boundary' for specifying an excluded
@@ -97,7 +81,7 @@ double rhs_G(double x, double y) {
 
 void save(ostream &OUT) { OUT << x << " " << y << endl; }
 
-bool check2 = false; // XXX
+bool check2 = false;
 
 // Perform a step of length (at most) try_dx. Returns actual dx used.
 double timestep(double try_dx, double (*rhs)(double, double)) {
@@ -340,7 +324,7 @@ double rhs_F(double x, double y) {
   double term2 = integral / denom;
 
   if (denom == 0.0) {
-    cout << "# Warning: denom=0 with integral=" << integral << endl;
+    cout << "# Warning: denom=0 with integral=" << integral << " at x=" << x << endl;
     cout << "# (denom=0 may arise from zeros in the hybridisation function)" << endl;
     term2 = 0.0;
   }
