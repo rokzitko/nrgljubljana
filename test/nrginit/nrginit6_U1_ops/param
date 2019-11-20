@@ -1,0 +1,16 @@
+[param]
+symtype=U1
+model=SIAM
+
+U=1.0
+Gamma=0.1
+delta=0.1
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Nmax=4
+keep=100
+
+ops=I n_d n_d^2 hop0 A_d_u A_d_d n_f q_f n_f^2 q_f^2 A_f_u A_f_d q_d flm q_d^2 hop0 hop0-n_d P0 P1 P2 SdSd SdSf n_dn_f q_dq_f ntot ntot^2 s^2 SZf0 SZ2f0 n_d_up n_d_u n_d_down n_d_d n_d_ud n_d_up^2 n_d_down^2 Pu Pd SZd SZ2d ntotUP ntotDO ntotUP^2 ntotDO^2 SXf0 SX2f0 SXd SX2d SPd SP2d SMd SM2d

@@ -1,0 +1,18 @@
+[param]
+symtype=SPU1
+model=SIAM
+
+U=1.0
+Gamma=0.1
+delta=0.1
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Nmax=4
+keep=100
+
+ops=n_d n_d^2 hop0 A_d pair_d n_f n_f^2 A_f Ac_f Ix_d Ix_d^2 Iz_d Iz_d^2 Ixy_d^2 SZd
+
+bcsgap=0.05
