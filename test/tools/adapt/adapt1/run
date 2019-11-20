@@ -3,3 +3,5 @@ export PATH=$1:$PATH
 adapt P
 adapt N
 nrgchain
+$2/test/compare.pl $3/ref
+

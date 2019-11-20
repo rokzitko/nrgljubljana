@@ -1052,15 +1052,9 @@ SS2S[ss_] = (ss-1)/2;
 II2I[ii_] = (ii-1)/2;
 JJ2J[jj_] = (jj-1)/2;
 
-(* We assign a unique filename to each (MODEL, VARIANT, SYMTYPE) combination. *)
-If[!SCRIPTMODEL,
-  uniquesuffix = MODEL <> "." <> VARIANT <> "." <> SYMTYPE,
-  uniquesuffix = "model." <> VARIANT <> "." <> SYMTYPE
-];
-fnprefix = paramdefault["writefnprefix", ""];
-basisfilename = fnprefix <> "basis." <> uniquesuffix;
-hamfilename = fnprefix <> "ham." <> uniquesuffix;
-opfilename = fnprefix <> "op." <> uniquesuffix;
+basisfilename = "basis";
+hamfilename = "ham";
+opfilename =  "op";
 
 writedir = paramdefault["writedir", ""];
 MyPut[x_, fn_, forcewrite_:False] := If[option["WRITE"] || forcewrite, Put[x, writedir <> fn]];
@@ -1716,10 +1710,8 @@ op2matrix[op_, inv1_, inv2_] := Module[{bz1, bz2, mm, b1, b2},
   b1 = bazavctransf[inv1];
   b2 = bazavctransf[inv2];
 
-  (* NEW, 30 Oct 2015 - for rotation symmetries such as C_3, the basis
-  is complex!  We conjugate the bras, transpose the kets. *)
+  (* For rotation symmetries such as C_3, the basis is complex!  We conjugate the bras, transpose the kets. *)
   Conjugate[b1].mm.Transpose[b2]
-  (* OLD: b1.mm.Transpose[b2] *) (* Just Transpose here, since basis vectors are real! *)
 ];
 
 op2matrix[op_, inv_] := op2matrix[op, inv, inv];
@@ -2627,8 +2619,7 @@ ireducorbsigmaTable[op_] := Module[{t, i, cp},
 
 (* 
  Call hierarchy: 
- maketable -> mtSingletOp -> mtOp ->
-   singletopTable -> singletopMatrixSpeedy -> op2matrix
+ maketable -> mtSingletOp -> mtOp -> singletopTable -> singletopMatrixSpeedy -> op2matrix
  NOTE: optransform is not used here!
 *)
 
@@ -2636,22 +2627,18 @@ singletopMatrixSpeedy[op_, inv_] := Module[{mat, vecs, res},
   mat = op2matrix[op, inv];
   AppendTo[opdata, {inv, mat}]; (* opdata is global! *)
   vecs = diagvc[inv] [[2]];
-
-  (* Unitarity transformation to the eigenbasis. This is essentially 
-     the same code as in optransform[]. *)
+  (* Unitarity transformation to the eigenbasis. This is essentially the same code as in optransform[]. *)
   res = Conjugate[vecs] . mat . Transpose[vecs]; (* conjugate bras, transpose kets *)
   res
 ];
 
 generalopMatrixSpeedy[op_, inv1_, inv2_] := Module[{mat0, mat, vecs1, vecs2},
   mat0 = op2matrix[op, inv1, inv2];
+  AppendTo[opdata, {inv1, inv2, mat0}]; (* opdata is global! *)
   vecs1 = diagvc[inv1] [[2]];
   vecs2 = diagvc[inv2] [[2]];
-  (* NEW, 31 Oct 2015: bras are conjugated, kets are transposed! *)
   mat = Conjugate[vecs1] . mat0 . Transpose[vecs2];
-  (* OLD: mat = vecs1 . mat0 . ConjugateTranspose[vecs2]; *)
   If[Total[mat^2, 2] == 0, Return[0]];  (* Null matrix? *)
-  AppendTo[opdata, {inv1, inv2, mat0}]; (* opdata is global! *)
   mat
 ];
 
@@ -2668,10 +2655,11 @@ singletopTable[op_] := Module[{t, i, inv, tmp},
   t
 ];
 
+(* Strategy: test all combinations of spaces if they give non-zero matrix elements. *)
 generalopTable[op_] := Module[{t, cnt, i, cp, mat},
   t = {};
   cnt = 0;
-  For[i = 1, i <= nrp, i++,
+  For[i = 1, i <= nrp, i++, (* nrp = length of subspacepairs *)
     cp = subspacepairs[[i]];
     mat = generalopMatrixSpeedy[op, First[cp], Last[cp]];
     If[mat =!= 0,
@@ -2684,72 +2672,29 @@ generalopTable[op_] := Module[{t, cnt, i, cp, mat},
   t (* Return *)
 ];
 
-(* Returns table lines for a singlet operator 'op' named 'opname'. *)
+(* low-level functions called from mtSingletOp, mtGlobalOp & mtGeneralOp with different OPTABLEFNC *)
 (* It first checks if the calculation of operator 'opname' was requested! *)
-(* This function is called from maketable[] and is one of the
-   essential functions in the program. *)
-mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] := If[calcopq[opname],
-    mtdoOp[opname, opinput, prefix, OPTABLEFNC], {} ];
-
-mtdoOp[opname_String, opinput_, prefix_, OPTABLEFNC_] := Module[{t, op},
-  op = Simplify[opinput];
-  t = {};
-  opfn = opfilename <> "." <> opname;
-  opdata = {}; (* Global variable ! *)
-
-  MyPrint["s: ", opname, " ", opfn, " ", op];
-  AppendTo[t, {prefix <> opname}];
-  t = Join[t, OPTABLEFNC[ op ] ];
-
-  MyPut[opdata, opfn];
-  t  
-];
-
-(* TO DO: opinput on Hold, evaluated only if the operator is
-to be recomputed. *)
-  
-mtSingletOp[opname_String, opinput_] :=
-  mtOp[opname, opinput, "s", singletopTable];
-
-mtdoSingletOp[opname_String, opinput_] :=
-  mtdoOp[opname, opinput, "s", singletopTable];
-
-(* General operators. Strategy: test all combinations of spaces if
-they give non-zero matrix elements.  XXX: Currently only works for
-odd-parity singlet operators. *)
-
-mtGeneralOp[opname_String, opinput_] := 
-  mtOp[opname, opinput, "p", generalopTable];
-
-(* Global operators are pretty much like singlet operators. *) 
-
-mtGlobalOp[opname_String, opinput_] :=
- mtOp[opname, opinput, "g", singletopTable];
-
-(* Note that op is used as the argument to ireducTable[] *)
-mtDoubletOp[opname_String, op_] := Module[{}, 
+mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] :=  Module[{t, op},
   If[calcopq[opname],
-    MyPrint["d: ", opname, " ", op];
-    Prepend[ireducTable[op], {"d" <> opname}], 
-    (* else *) {}
+    op = Expand[opinput];
+    MyPrint[prefix, ": ", opname, " ", op];
+    t = {};
+    opfn = opfilename <> "." <> opname;
+    opdata = {}; (* Global variable ! *)
+    AppendTo[t, {prefix <> opname}];
+    t = Join[t, OPTABLEFNC[ op ] ];
+    MyPut[opdata, opfn, option["GENERATE_TEMPLATE"]];
+    t,  
+  (* else *) {}
   ]
 ];
 
-mtTripletOp[opname_String, op_] := Module[{}, 
-  If[calcopq[opname],
-    MyPrint["t: ", opname, " ", op];
-    Prepend[ireducsigmaTable[op], {"t" <> opname}], 
-    (* else *) {}
-  ]
-];
-
-mtOrbTripletOp[opname_String, op_] := Module[{}, 
-  If[calcopq[opname],
-    MyPrint["ot: ", opname, " ", op];
-    Prepend[ireducorbsigmaTable[op], {"o" <> opname}], 
-    (* else *) {}
-  ]
-];
+mtSingletOp[opname_String, opinput_] := mtOp[opname, opinput, "s", singletopTable];
+mtGeneralOp[opname_String, opinput_] := mtOp[opname, opinput, "p", generalopTable];
+mtGlobalOp[opname_String, opinput_] := mtOp[opname, opinput, "g", singletopTable];
+mtDoubletOp[opname_String, opinput_] := mtOp[opname, opinput, "d", ireducTable];
+mtTripletOp[opname_String, opinput_] := mtOp[opname, opinput, "t", ireducsigmaTable];
+mtOrbTripletOp[opname_String, opinput_] := mtOp[opname, opinput, "ot", ireducorbsigmaTable[op]];
 
 (************* DIAGONALIZATION *************)
 

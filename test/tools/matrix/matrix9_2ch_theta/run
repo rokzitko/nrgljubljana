@@ -1,3 +1,4 @@
 #!/bin/sh
 export PATH=$1:$PATH
 matrix -v -c2 param matrix >result
+$2/test/compare.pl $3/ref
