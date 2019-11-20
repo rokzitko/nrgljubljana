@@ -1,0 +1,59 @@
+# Sample input file for calculation of Wilson chain coefficients
+# Rok Zitko, rok.zitko@ijs.si
+
+[param]
+
+# Parameters for the 'adapt' code
+# *******************************
+
+# Input file with tabulated density of states [default=Delta.dat]
+dos=Delta.dat
+
+# NRG discretization parameter Lambda [default=2]
+Lambda=2
+
+# Enable adaptable grid approach
+adapt=true
+
+# Range of mesh paramter x [1...xmax] [default=30]
+xmax=30
+
+# Stepsize for tabulating output functions g(x), f(x) [default=1/64]
+outputstep=0.015625
+
+# Range of parameter x where finer steps are used [default=5]
+xfine=5
+
+# Integration stepsize in [1..xfine] [default=1e-5]
+dx_fine=1e-5
+
+# Integration stepsize in [xfine..xmax] [default=1e-4]
+dx_fast=1e-4
+
+# Maximum error for adaptable stepsize [default=1e-10]
+allowed_error=1e-10
+
+# Maximum number of integration stepsize subdivisions [default=20]
+max_subdiv=20
+
+# Convergence limit for refinement of constant A [default=1e-4]
+secant_eps=1e-4
+
+# Maximum number of steps in the secant method refinement of A [default=10]
+secant_max_iter=10
+
+# Factor for determining initial approximation for secant method [default=1e-7]
+secant_factor=1e-7
+
+
+# Parameters for the 'nrgchain' code
+# **********************************
+
+# Number of discretization intervals
+mMAX=50
+
+# Number of chain sites
+Nmax=30
+
+# Twist parameter
+z=0.5

@@ -1,22 +1,6 @@
 // Calculation of NRG chain coefficients
 // Rok Zitko, rok.zitko@ijs.si, 2009-2019
 
-/*
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
- * 
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- * 
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- * */
-
 // CHANGE LOG
 // ----------
 // 1. 6. 2009 - additional error checking
@@ -262,11 +246,20 @@ double SCALE(int N) { return (1.0 - 1. / Lambda) / log(Lambda) * pow(Lambda, -(N
 inline double sqr(double x) { return x * x; }
 
 void tables() {
-  const double int_pos = integrate_ab(vecrho_pos, 0.0, 1.0);
-  const double int_neg = integrate_ab(vecrho_neg, 0.0, 1.0);
-  const double theta   = int_pos + int_neg;
-  cout << "# int_pos=" << int_pos << " int_neg=" << int_neg << " theta=" << theta << endl;
+  const double int_pos1 = integrate_ab(vecrho_pos, 0.0, 1.0);
+  const double int_neg1 = integrate_ab(vecrho_neg, 0.0, 1.0);
+  const double theta1   = int_pos1 + int_neg1;
+  cout << "# int_pos1=" << int_pos1 << " int_neg1=" << int_neg1 << " theta1=" << theta1 << endl;
+  const double int_pos2 = intrho_pos(eps_pos(z+1)) - intrho_pos(eps_pos(z + mMAX + 2));
+  const double int_neg2 = intrho_neg(eps_neg(z+1)) - intrho_neg(eps_neg(z + mMAX + 2));
+  const double theta2 = int_pos2 + int_neg2;
+  cout << "# int_pos2=" << int_pos2 << " int_neg2=" << int_neg2 << " theta2=" << theta2 << endl;
 
+  // For consistency with df_pos & df_neg, we use set 2
+  const double int_pos = int_pos2;
+  const double int_neg = int_neg2;
+  const double theta = theta2;
+  
   ofstream THETA;
   safe_open(THETA, "theta.dat"); // theta (hybridisation fnc. weight)
   THETA << theta << endl;

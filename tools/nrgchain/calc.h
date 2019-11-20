@@ -11,7 +11,7 @@
 // linear interpolation between the tabulated function values). Returns the
 // value of the integral over all data points.
 double integrate(Vec &vec) {
-  Vec temp(vec);
+  Vec temp(vec); // store copy
   int len = vec.size();
   assert(len >= 2);
   double sum = 0.0;

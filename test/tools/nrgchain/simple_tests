@@ -1,0 +1,17 @@
+nrgchain1
+nrgchain10_bandrescale3
+nrgchain11_rescalexi=true
+nrgchain12_flat
+nrgchain13_asym
+nrgchain14_low
+nrgchain15_lower
+nrgchain16_gap
+nrgchain17_gap2
+nrgchain2_mMAX=40
+nrgchain3_mMAX=50
+nrgchain4_mMAX=60
+nrgchain5_mMAX=200
+nrgchain6_Nmax
+nrgchain7_z
+nrgchain8_bandrescale
+nrgchain9_bandrescale2

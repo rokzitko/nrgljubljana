@@ -1,2 +1,12 @@
 adapt1
-adapt2-xrange
+adapt10_dxfast
+adapt11_allowederror
+adapt12_bandrescale
+adapt2_xrange
+adapt3_mesh
+adapt4_adapt=false
+adapt5_Lambda
+adapt6_Lambda2
+adapt7_xmax
+adapt8_outputstep
+adapt9_xfine

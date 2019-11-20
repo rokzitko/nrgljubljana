@@ -1,0 +1,6 @@
+#!/bin/sh
+export PATH=$1:$PATH
+adapt P
+adapt N
+$2/test/compare.pl $3/ref
+
