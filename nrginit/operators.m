@@ -105,7 +105,7 @@ t = {};
   t = Join[t, mtSingletOp["SZf0", spinz[f[0]] ] ];
   t = Join[t, mtSingletOp["SZ2f0", pow[spinz[f[0]],2] ] ];
 
-  t = Join[t, mtTripletOp["sigma_f", f[] ]]; (* Spin operator *)
+  t = Join[t, mtTripletOp["sigma_f", f[0] ]]; (* Spin operator *)
 
   t = Join[t, mtTripletOp["sigma_F", F ]]; (* Spin operator *)
   t = Join[t, mtOrbTripletOp["orbsigma_F", F]]; (* Orbital moment operator *)
