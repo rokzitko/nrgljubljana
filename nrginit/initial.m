@@ -187,7 +187,6 @@ If[!ValueQ[SYMTYPE],  SYMTYPE = "QS"];
  "SPSU2T", ==>             SU(2)_spin x SO(3)_orbital [three orbitals]
  "SL", ==>                 spinless fermions [U(1)_charge symmetry]
  "SL3", ==>                spinless fermions [threefold U(1)_charge]
- "ANYJ", ==>               U(1) x U(1), arbitrary spin of the conduction-band electrons
  "P", ==>                  Z_2 fermion parity,
  "PP", ==>                 (Z_2)^2 fermion parity,
  "NONE", ==>               no symmetry
@@ -204,7 +203,7 @@ knownsymtypes =
 {"QS", "QST", "QSTZ", "QSZTZ", "QJ", "ISO", "ISO2", "QSZ", "ISOLR", "ISO2LR", "QSLR", "QSC3",
 "QSZLR", "DBLSU2", "DBLISOSZ",
 "SU2", "U1", "SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2C3", "SPSU2T",
-"SL", "SL3", "ANYJ", "P", "PP", "NONE", "ISOSZ", "ISOSZLR"};
+"SL", "SL3", "P", "PP", "NONE", "ISOSZ", "ISOSZLR"};
 If[!(MemberQ[knownsymtypes, SYMTYPE]),
   MyError["Unknown SYMTYPE."];
 ];
@@ -238,7 +237,6 @@ isSPU1LR[] := (SYMTYPE === "SPU1LR");
 isSPSU2LR[] := (SYMTYPE === "SPSU2LR");
 isSL[] := (SYMTYPE === "SL");
 isSL3[] := (SYMTYPE === "SL3");
-isANYJ[] := (SYMTYPE === "ANYJ");
 isP[] := (SYMTYPE === "P");
 isPP[] := (SYMTYPE === "PP");
 isNONE[] := (SYMTYPE === "NONE");
@@ -437,15 +435,7 @@ GENERATE_TEMPLATE - generate a template file with no Wilson coefficients, to be 
 *)
 
 (* Spin of conduction-band electrons. *)
-BANDSPIN = 1/2; (* Default for all codes except ANYJ. *)
-
-If[SYMTYPE == "ANYJ",
-  If[!paramexists["spin"],
-    MyError["Define the spin of the conduction band electrons."];
-  ];
-  BANDSPIN = ((ToExpression @ param["spin"])-1)/2;
-  MyPrint["BAND SPIN=", BANDSPIN];
-];
+BANDSPIN = 1/2;
 
 (***************************** GENERAL STUFF *******************************)
 
@@ -1079,7 +1069,7 @@ If[GENERATEBASIS == True,
   (*** STEP 1: create basis operators ***)
 
   needqslist = {"QS", "QSLR", "ISO", "ISO2", "ISOLR", "ISO2LR"};
-  needqszlist = {"QSZ", "QSZLR", "ANYJ", "ISOSZ", "ISOSZLR"};
+  needqszlist = {"QSZ", "QSZLR", "ISOSZ", "ISOSZLR"};
   needqlist = {"SU2", "U1", "SL"};
 
   If[MemberQ[needqslist, SYMTYPE],
@@ -1278,12 +1268,6 @@ If[GENERATEBASIS == True,
     degnr[{q_Integer, sz_Integer, i___}] := 1;
   ];
   
-  If[isANYJ[],
-    (* Keep using half-integer quantum numbers! *)
-    bvc = bzop2bzvc[bz, vak];
-    degnr[{___}] := 1;
-    ];
-    
   If[isP[] || isPP[] || isNONE[] || isU1[] || isSL[] || isSL3[],
     bvc = bzop2bzvc[bz, vak];
     degnr[{___}] := 1;
@@ -1454,11 +1438,6 @@ If[GENERATEBASIS == True,
 
     If[isDBLISOSZ[],
       bvc = DBLISOSZaddspinketNRG[bvc, MAKESPINKET];
-      bz = bzvc2bzop[bvc];
-    ];
-
-    If[isANYJ[],
-      bvc = QSZaddspinket[bvc, MAKESPINKET];
       bz = bzvc2bzop[bvc];
     ];
 
@@ -1948,13 +1927,8 @@ coupledQ["SL3", {{q11_, q21_, q31_, i1___}, {q12_, q22_, q32_, i2___}}] :=
    (q11 == q12 && q21 == q22 && q31 == q32+1),
   True, False, MyError["oops"]];
  
-coupledQ["ANYJ", {{q1_, ssz1_, i1___}, {q2_, ssz2_, i2___}}] := 
- If[q1 == q2+1 && MemberQ[Table[spi, {spi, -BANDSPIN, BANDSPIN}], ssz1-ssz2], 
-  True, False, MyError["oops"]];
- 
 (* Bug trap *)
 coupledQ[s_String, a___] := MyError["coupledQ not defined for ", {s,a}];
-(* spincoupledQ[String_, ___] := MyError["spincoupledQ not defined"]; *)
 
 (* ======================= *)
 
@@ -2179,22 +2153,6 @@ ireducMatrixSpeedy["SL", op_, {inv1_, inv2_}, ___] := Module[{op1},
 
 ireducMatrixSpeedy["SL3", op_, {inv1_, inv2_}, ___] := Module[{op1},
   op1 = op[CR, UP]; (* Spinless = only spin-up electrons retained. *)
-  optransform[op1, inv1, inv2]
-];
-
-ireducMatrixSpeedy["ANYJ", op_, {inv1_, inv2_}, ___] := Module[
-  {ssz1, ssz2, szop, ud, op1},
-  ssz1 = inv1[[2]];
-  ssz2 = inv2[[2]];
-  szop = ssz1-ssz2;
-  If[BANDSPIN == 1/2,
-    ud = udf[szop];
-    op1 = op[CR, ud],
-  (* else *)
-    op1 = op[CR, szop],
-  (* *)
-    MyError["oops"]
-  ];
   optransform[op1, inv1, inv2]
 ];
 
