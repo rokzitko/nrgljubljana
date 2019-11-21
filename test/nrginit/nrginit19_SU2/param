@@ -1,0 +1,6 @@
+[param]
+symtype=SU2
+model=SIAM
+
+Nmax=2
+keep=20

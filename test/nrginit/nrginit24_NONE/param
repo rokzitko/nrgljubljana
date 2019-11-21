@@ -1,0 +1,8 @@
+[param]
+symtype=NONE
+model=SIAM
+
+bcsgap=0.1
+
+Nmax=2
+keep=20
