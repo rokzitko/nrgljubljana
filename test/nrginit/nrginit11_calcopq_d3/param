@@ -1,0 +1,21 @@
+[extra]
+U1=0.2
+eps1=0.3
+Gamma1=0.4
+
+[param]
+symtype=QSZ
+model=SIAM.m
+
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Ninit=1
+Nmax=6
+keep=100
+
+ops=A_f_i1 self_d
+
+options=WRITE

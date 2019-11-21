@@ -1,0 +1,22 @@
+[extra]
+U1=0.2
+eps1=0.3
+Gamma1=0.4
+
+[param]
+symtype=SPU1
+model=SIAM.m
+
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Nmax=4
+keep=100
+
+ops=Himp Hhyb Hpot
+
+bcsgap=0.05
+
+options=WRITE
