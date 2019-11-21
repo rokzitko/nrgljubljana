@@ -30,6 +30,7 @@ double coefzeta(int, int);
 void yyerror(const char *);
 int yylex();
 
+bool numberedch = false; // number suffix?
 int nrchannels = 1;
 
 ostream & OUT = cout;
@@ -197,6 +198,7 @@ void parse_param(int argc, char *argv[])
   
       case 'c':
         nrchannels = atoi(optarg);
+        numberch = true;
         break;
 	
       case 'V':
@@ -243,10 +245,10 @@ void load_vector(string filename, vector<double> &v)
 
 void load_discretization()
 {
-  for (int ch = 1; ch <= nrchannels; ch++) {
+  for (int ch = 1; ch <= nrchannels ; ch++) {
     if (verbose)
       cerr << "Channel " << ch << endl;
-    string suffix = (nrchannels == 1 ? "" : to_string(ch)) + ".dat";
+    string suffix = (numberch ? to_string(ch) : "") + ".dat";
     string fntheta = "theta" + suffix;
     ifstream THETA(fntheta);
     if (!THETA) {

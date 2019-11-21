@@ -89,6 +89,7 @@ double coefzeta(int, int);
 void yyerror(const char *);
 int yylex();
 
+bool numberedch = false; // number suffix?
 int nrchannels = 1;
 
 ostream & OUT = cout;
@@ -97,7 +98,7 @@ string prefix = "";
 bool verbose = false;
 bool veryverbose = false;
 
-#line 101 "parser.cc" /* yacc.c:339  */
+#line 102 "parser.cc" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -147,7 +148,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 42 "parser.yy" /* yacc.c:355  */
+#line 43 "parser.yy" /* yacc.c:355  */
 
 	double dval;
 	int ival;
@@ -156,7 +157,7 @@ union YYSTYPE
 	struct mat *dmat;
 	struct symtab *symp;
 
-#line 160 "parser.cc" /* yacc.c:355  */
+#line 161 "parser.cc" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -173,7 +174,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 177 "parser.cc" /* yacc.c:358  */
+#line 178 "parser.cc" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -471,10 +472,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    68,    68,    69,    72,    78,    79,    80,    81,    85,
-      88,    89,    90,    91,    97,    98,    99,   100,   101,   102,
-     110,   120,   121,   122,   125,   130,   138,   139,   142,   147,
-     155,   156
+       0,    69,    69,    70,    73,    79,    80,    81,    82,    86,
+      89,    90,    91,    92,    98,    99,   100,   101,   102,   103,
+     111,   121,   122,   123,   126,   131,   139,   140,   143,   148,
+     156,   157
 };
 #endif
 
@@ -1293,97 +1294,97 @@ yyreduce:
   switch (yyn)
     {
         case 4:
-#line 72 "parser.yy" /* yacc.c:1646  */
+#line 73 "parser.yy" /* yacc.c:1646  */
     {
                    if (veryverbose) {
 		     cerr << "Defining " << (yyvsp[-2].symp)->name << "=" << (yyvsp[0].dval) << endl;
 		   }
                    (yyvsp[-2].symp)->value = (yyvsp[0].dval); 
 		}
-#line 1304 "parser.cc" /* yacc.c:1646  */
+#line 1305 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 78 "parser.yy" /* yacc.c:1646  */
+#line 79 "parser.yy" /* yacc.c:1646  */
     { OUT << prefix << (yyvsp[0].dval) << endl; }
-#line 1310 "parser.cc" /* yacc.c:1646  */
+#line 1311 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 79 "parser.yy" /* yacc.c:1646  */
+#line 80 "parser.yy" /* yacc.c:1646  */
     { OUT << prefix; dump_vector((yyvsp[0].dvec)); }
-#line 1316 "parser.cc" /* yacc.c:1646  */
+#line 1317 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 80 "parser.yy" /* yacc.c:1646  */
+#line 81 "parser.yy" /* yacc.c:1646  */
     { OUT << prefix; dump_matrix((yyvsp[0].dmat)); }
-#line 1322 "parser.cc" /* yacc.c:1646  */
+#line 1323 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 81 "parser.yy" /* yacc.c:1646  */
+#line 82 "parser.yy" /* yacc.c:1646  */
     {
 	           /* We are done! */
 		   exit(1);
 		}
-#line 1331 "parser.cc" /* yacc.c:1646  */
+#line 1332 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 88 "parser.yy" /* yacc.c:1646  */
+#line 89 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[-2].dval) + (yyvsp[0].dval); }
-#line 1337 "parser.cc" /* yacc.c:1646  */
+#line 1338 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 11:
-#line 89 "parser.yy" /* yacc.c:1646  */
+#line 90 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[-2].dval) - (yyvsp[0].dval); }
-#line 1343 "parser.cc" /* yacc.c:1646  */
+#line 1344 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 90 "parser.yy" /* yacc.c:1646  */
+#line 91 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[-2].dval) * (yyvsp[0].dval); }
-#line 1349 "parser.cc" /* yacc.c:1646  */
+#line 1350 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 92 "parser.yy" /* yacc.c:1646  */
+#line 93 "parser.yy" /* yacc.c:1646  */
     {	if((yyvsp[0].dval) == 0.0)
 						yyerror("divide by zero");
 					else
 						(yyval.dval) = (yyvsp[-2].dval) / (yyvsp[0].dval);
 				}
-#line 1359 "parser.cc" /* yacc.c:1646  */
+#line 1360 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 97 "parser.yy" /* yacc.c:1646  */
+#line 98 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = -(yyvsp[0].dval); }
-#line 1365 "parser.cc" /* yacc.c:1646  */
+#line 1366 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 98 "parser.yy" /* yacc.c:1646  */
+#line 99 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[-1].dval); }
-#line 1371 "parser.cc" /* yacc.c:1646  */
+#line 1372 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 100 "parser.yy" /* yacc.c:1646  */
+#line 101 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[0].ival); }
-#line 1377 "parser.cc" /* yacc.c:1646  */
+#line 1378 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 101 "parser.yy" /* yacc.c:1646  */
+#line 102 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[0].symp)->value; }
-#line 1383 "parser.cc" /* yacc.c:1646  */
+#line 1384 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 102 "parser.yy" /* yacc.c:1646  */
+#line 103 "parser.yy" /* yacc.c:1646  */
     {
 			if((yyvsp[-3].symp)->funcptr)
 				(yyval.dval) = ((yyvsp[-3].symp)->funcptr)((yyvsp[-1].dval));
@@ -1392,11 +1393,11 @@ yyreduce:
 				(yyval.dval) = 0.0;
 			}
 		}
-#line 1396 "parser.cc" /* yacc.c:1646  */
+#line 1397 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 110 "parser.yy" /* yacc.c:1646  */
+#line 111 "parser.yy" /* yacc.c:1646  */
     {
 			if((yyvsp[-3].symp)->funcptr)
 				(yyval.dval) = ((yyvsp[-3].symp)->funcptr)((yyvsp[-1].dval));
@@ -1405,95 +1406,95 @@ yyreduce:
 				(yyval.dval) = 0.0;
 			}
 		}
-#line 1409 "parser.cc" /* yacc.c:1646  */
+#line 1410 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 120 "parser.yy" /* yacc.c:1646  */
+#line 121 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = gammapolch((yyvsp[-1].ival)); }
-#line 1415 "parser.cc" /* yacc.c:1646  */
+#line 1416 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 121 "parser.yy" /* yacc.c:1646  */
+#line 122 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = coefxi((yyvsp[-3].ival), (yyvsp[-1].ival)); }
-#line 1421 "parser.cc" /* yacc.c:1646  */
+#line 1422 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 122 "parser.yy" /* yacc.c:1646  */
+#line 123 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = coefzeta((yyvsp[-3].ival), (yyvsp[-1].ival)); }
-#line 1427 "parser.cc" /* yacc.c:1646  */
+#line 1428 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 125 "parser.yy" /* yacc.c:1646  */
+#line 126 "parser.yy" /* yacc.c:1646  */
     {
                 (yyval.dvec) = new(struct vec);
 		(yyval.dvec)->val = (yyvsp[0].dval);
     		(yyval.dvec)->next = 0;
             }
-#line 1437 "parser.cc" /* yacc.c:1646  */
+#line 1438 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 130 "parser.yy" /* yacc.c:1646  */
+#line 131 "parser.yy" /* yacc.c:1646  */
     {
                 struct vec *new_node = new(struct vec);
 		new_node->val = (yyvsp[-2].dval);
 		new_node->next = (yyvsp[0].dvec);
 		(yyval.dvec) = new_node;
 	    }
-#line 1448 "parser.cc" /* yacc.c:1646  */
+#line 1449 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 138 "parser.yy" /* yacc.c:1646  */
+#line 139 "parser.yy" /* yacc.c:1646  */
     { (yyval.dvec) = 0; }
-#line 1454 "parser.cc" /* yacc.c:1646  */
+#line 1455 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 139 "parser.yy" /* yacc.c:1646  */
+#line 140 "parser.yy" /* yacc.c:1646  */
     { (yyval.dvec) = (yyvsp[-1].dvec); }
-#line 1460 "parser.cc" /* yacc.c:1646  */
+#line 1461 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 142 "parser.yy" /* yacc.c:1646  */
+#line 143 "parser.yy" /* yacc.c:1646  */
     {
                (yyval.dmat) = new(struct mat);
 	       (yyval.dmat)->vec = (yyvsp[0].dvec);
 	       (yyval.dmat)->next = 0;
          }
-#line 1470 "parser.cc" /* yacc.c:1646  */
+#line 1471 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 147 "parser.yy" /* yacc.c:1646  */
+#line 148 "parser.yy" /* yacc.c:1646  */
     {
                 struct mat *new_node = new(struct mat);
 		new_node->vec = (yyvsp[-2].dvec);
 		new_node->next = (yyvsp[0].dmat);
 		(yyval.dmat) = new_node;
 	 }
-#line 1481 "parser.cc" /* yacc.c:1646  */
+#line 1482 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 155 "parser.yy" /* yacc.c:1646  */
+#line 156 "parser.yy" /* yacc.c:1646  */
     { (yyval.dmat) = 0; }
-#line 1487 "parser.cc" /* yacc.c:1646  */
+#line 1488 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 156 "parser.yy" /* yacc.c:1646  */
+#line 157 "parser.yy" /* yacc.c:1646  */
     { (yyval.dmat) = (yyvsp[-1].dmat); }
-#line 1493 "parser.cc" /* yacc.c:1646  */
+#line 1494 "parser.cc" /* yacc.c:1646  */
     break;
 
 
-#line 1497 "parser.cc" /* yacc.c:1646  */
+#line 1498 "parser.cc" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1721,7 +1722,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 159 "parser.yy" /* yacc.c:1906  */
+#line 160 "parser.yy" /* yacc.c:1906  */
 
 /* look up a symbol table entry, add if not present */
 struct symtab * symlook(char *s)
@@ -1763,6 +1764,7 @@ void parse_param(int argc, char *argv[])
   
       case 'c':
         nrchannels = atoi(optarg);
+        numberch = true;
         break;
 	
       case 'V':
@@ -1809,10 +1811,10 @@ void load_vector(string filename, vector<double> &v)
 
 void load_discretization()
 {
-  for (int ch = 1; ch <= nrchannels; ch++) {
+  for (int ch = 1; ch <= nrchannels ; ch++) {
     if (verbose)
       cerr << "Channel " << ch << endl;
-    string suffix = (nrchannels == 1 ? "" : to_string(ch)) + ".dat";
+    string suffix = (numberch ? to_string(ch) : "") + ".dat";
     string fntheta = "theta" + suffix;
     ifstream THETA(fntheta);
     if (!THETA) {
