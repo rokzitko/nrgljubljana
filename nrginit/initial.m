@@ -961,7 +961,7 @@ H = Expand[H];
 MyPrint["Hamiltonian generated. ", H];
 
 (* Is Hamiltonian Hermitian? *)
-If[paramdefaultbool["checkHc", True],
+If[paramdefaultbool["checkHc", True] && Not[option["GENERATE_TEMPLATE"]],
   Hc = conj[H];
   Hdiff = Simplify[Expand[H-Hc]];
   MyPrint["H-conj[H]=", Hdiff];
@@ -2492,8 +2492,8 @@ Module[{t, cp, i, mat, opfnsub},
     mat = Expand @ ireducMatrixSpeedy[SYMTYPE, op, cp, optional];
     AppendTo[t, Flatten[cp]];
     AppendTo[opdata, {cp, mat}];
-    If[!option["GENERATE_TEMPLATE"] || opfn == "",
-      t = Join[t, mat], 
+    If[!option["GENERATE_TEMPLATE"] || opfn === "",
+      t = Join[t, mat],
     (* else *)  
       opfnsub = opfn <> "_" <> Invar2String[cp[[1]]] <> "_" <> Invar2String[cp[[2]]];
       t = Join[t, {opfnsub}];
@@ -2774,7 +2774,7 @@ If[option["GENERATE_TEMPLATE"],
 
 (* Use arbitrary precision arithmetics *)
 PREC = paramdefaultnum["prec", defaultprec];
-MyPrint["PREC=", PREC];
+MyVPrint[2,"PREC=", PREC];
 setpr[expr_] := SetPrecision[expr, PREC];
 
 LAMBDA = setpr @ lambda;
@@ -2823,7 +2823,7 @@ If[DISCNMAX < 0 || DISCNMAX >= 999, MyError["Error"] ];
    be computed! *)
 mMAX = Max[{80, 2 DISCNMAX}]; (* **** WAS: DISCNMAX + 40 **** *)
 If[paramexists["mMAX"], mMAX = ToExpression @ param["mMAX"]];
-MyPrint["mMAX=", mMAX];
+MyVPrint[2,"mMAX=", mMAX];
 If[mMAX <= 0 || mMAX >= 999, MyError["Error."]];
 
 (* Override DISCNMAX in the case where the full tridiagonalisation
@@ -4264,7 +4264,7 @@ maketable[]:=Module[{t},
   (* Perform all diagonalisations *)  
   calcgsenergy[]; 
 
-  opfn={}; opdata={}; (* Prior to makeireducf[] call to silence errors *)
+  opfn=""; opdata={}; (* Prior to makeireducf[] call to silence errors *)
 
   t = Join[makeheader[],
            {{"# SCALE ", SCALE[Ninit]}},

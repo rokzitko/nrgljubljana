@@ -13,6 +13,6 @@ Lambda=2.0
 Nmax=4
 keep=100
 
-ops=n_d
+ops=n_d A_d sigma_d I
 
 options=GENERATE_TEMPLATE

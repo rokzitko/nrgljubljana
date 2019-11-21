@@ -198,7 +198,7 @@ void parse_param(int argc, char *argv[])
   
       case 'c':
         nrchannels = atoi(optarg);
-        numberch = true;
+        numberedch = true;
         break;
 	
       case 'V':
@@ -248,7 +248,7 @@ void load_discretization()
   for (int ch = 1; ch <= nrchannels ; ch++) {
     if (verbose)
       cerr << "Channel " << ch << endl;
-    string suffix = (numberch ? to_string(ch) : "") + ".dat";
+    string suffix = (numberedch ? to_string(ch) : "") + ".dat";
     string fntheta = "theta" + suffix;
     ifstream THETA(fntheta);
     if (!THETA) {
