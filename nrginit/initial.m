@@ -2482,17 +2482,23 @@ code, iii. specdens_factor() routine). *)
    
 ireducTable[op_, 
             optional___] :=  (* optional is passed to ireducMatrixSpeedy[] *)
-Module[{t, cp, i, mat},
+Module[{t, cp, i, mat, opfnsub},
   t = {{nrcp}};
   For[i = 1, i <= nrcp, i++,
     (* coupledpairs is a list of subspace pairs that are coupled
        by doublet operators [that increase charge, when charge conservation 
        is explicitly taken into account], i.e. creation operators! *)
     cp = coupledpairs[[i]];
-    mat = ireducMatrixSpeedy[SYMTYPE, op, cp, optional];
+    mat = Expand @ ireducMatrixSpeedy[SYMTYPE, op, cp, optional];
     AppendTo[t, Flatten[cp]];
-    t = Join[t, mat];
-    AppendTo[opdata, {cp, mat}]; (* opdata is global! *)
+    AppendTo[opdata, {cp, mat}];
+    If[!option["GENERATE_TEMPLATE"] || opfn == "",
+      t = Join[t, mat], 
+    (* else *)  
+      opfnsub = opfn <> "_" <> Invar2String[cp[[1]]] <> "_" <> Invar2String[cp[[2]]];
+      t = Join[t, {opfnsub}];
+      Put[mat, opfnsub];
+    ];
   ];
   t (* Return *)
 ];
@@ -2511,6 +2517,7 @@ ireducTable[ops_List] := Module[{norm, t, cp, i, mat},
   For[i = 1, i <= nrcp, i++,
     cp = coupledpairs[[i]];
     mat = Plus @@ Map[#[[1]]/norm * ireducMatrixSpeedy[SYMTYPE, #[[2]], cp] &, ops];
+    mat = Expand[mat];
     AppendTo[t, Flatten[cp]];
     t = Join[t, mat];
     AppendTo[opdata, {cp, mat}];
@@ -2593,7 +2600,7 @@ ireducorbsigmaTable[op_] := Module[{t, i, cp, mat},
   AppendTo[t, {nrorbcp}];
   For[i = 1, i <= nrorbcp, i++,
     cp = orbcoupledpairs[[i]];
-    mat =  ireducorbsigma[SYMTYPE, op, cp];
+    mat = ireducorbsigma[SYMTYPE, op, cp];
     AppendTo[t, Flatten[cp]];
     t = Join[t, mat];
     AppendTo[opdata, {cp, mat}];
@@ -4257,7 +4264,7 @@ maketable[]:=Module[{t},
   (* Perform all diagonalisations *)  
   calcgsenergy[]; 
 
-  opdata = {}; (* Prior to makeireducf[] call to silence errors *)
+  opfn={}; opdata={}; (* Prior to makeireducf[] call to silence errors *)
 
   t = Join[makeheader[],
            {{"# SCALE ", SCALE[Ninit]}},

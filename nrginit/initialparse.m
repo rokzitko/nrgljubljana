@@ -70,6 +70,7 @@ param[key_, group_:"param"] := evalstr[ data[group][key] ];
 
 (* For numerical quantities ImportString[] is used to handle C-like numeric
 expression such as 1e-3. Note: only the first number is returned! *)
+importnum[""] := Null;
 importnum[str_String] := First @ ImportString[ str, "List" ];
 paramnum[key_, group_:"param"] := importnum @ param[key, group];
 
