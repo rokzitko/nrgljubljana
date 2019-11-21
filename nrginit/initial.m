@@ -1,4 +1,3 @@
-
 (* 
    NRG Ljubljana -- initial.m -- Basis construction, initial Hamiltonian
    diagonalisation and calculation of irreducible matrix elements 
@@ -528,8 +527,6 @@ addexnames[] := Module[{exnames},
 values for nnop[]. *)
 
 adddots[nrdots_] := Module[{},
-  MyPrint["adddots, nrdots=", nrdots];
-
   H1 = 0; (* Zero-impurity cases and Kondo-like models with spin
              operators only. *)
 
@@ -704,8 +701,6 @@ InitPolarized[] := Module[{},
   If[POLARIZE && POL2x2,  
     MyError["POLARIZED or POL2x2? Choose one!"];
   ];
-  
-  MyPrint["COEFCHANNELS:", COEFCHANNELS];  
 ];
 
 (* Default settings for 1-channel models *)
@@ -883,13 +878,12 @@ If[StringLength[MODEL] >= 2 && StringTake[MODEL, -2] == ".m",
 
 addextraparams[];
 addparamnames[];
-MyPrint["params=", params];
+MyVPrint[2,"params=", params];
 
 If[NRDOTS == -1, MyError["NRDOTS = -1"]]; (* Bug trap *)
 If[CHANNELS == -1, MyError["CHANNELS = -1"]]; (* Bug trap *)
 
-MyPrint["NRDOTS:", NRDOTS];
-MyPrint["CHANNELS:", CHANNELS];
+MyPrint["NRDOTS:", NRDOTS, " CHANNELS:", CHANNELS, " COEFCHANNELS:", COEFCHANNELS];
 
 basopsch = Table[f[n], {n, 0, CHANNELS-1}];
 Do[basopsch = Join[basopsch, Table[f[n, i], {n, 0, CHANNELS-1}]], {i, 1, Ninit}];
@@ -897,8 +891,8 @@ basopsdot = Take[{d[], a[], b[], e[], g[]}, NRDOTS];
 basisops = basops = Sort[Join[basopsch, basopsdot]];
 
 MyPrint["basis:", basisops];
-MyPrint["lrchain:", lrchain];
-MyPrint["lrextrarule:", lrextrarule];
+If[lrchain =!= {}, MyPrint["lrchain:", lrchain]];
+If[lrextrarule =!= {}, MyPrint["lrextrarule:", lrextrarule]];
 
 (* Check for consistency between the number of operators and the numbers of
    dots and channels *)
@@ -906,9 +900,6 @@ NROPS = Length[basisops];
 If[NROPS != NRDOTS + CHANNELS (1+Ninit),
   MyError["Number of operators does not match what we were expecting."];
 ];
-
-MyPrint["NROPS:", NROPS];
-
 
 If[NRDOTS >= 1,
 (** We define some useful operators, such as total spin and total charge. **)
@@ -1212,9 +1203,7 @@ If[GENERATEBASIS == True,
     loadmodule[SYMTYPE <> "basis.m"];
   ];
 
-  MyPrint["Basis states generated."];
   MyVPrint[2, "Baza:", bz];
-
 
   (*** STEP 2: Transform to correct naming convention, apply necessary
   transformations, etc. ***)
@@ -1319,10 +1308,8 @@ If[GENERATEBASIS == True,
   If[nrstates1 != nrstates2,
     MyError["BUG: bz !~ bvc"];
   ];
-  MyPrint["BASIS NR=", nrstates1];
 
   MyVPrint[2, "Baza (step 2):", bz];
-
 
   (*** Step 3: Now it's time to apply eventual transformations of the
   basis states. ***)
@@ -1594,13 +1581,7 @@ If[GENERATEBASIS == True,
   (* Hook for possible changes of the basis states *)
   hookfile["hook_basis"];
 
-  (**** NEW: Basis states generally do not change for a given (MODEL,
-  VARIANT) pair, therefore we can store them to a file and reuse them
-  later. This can save considerable amount of time. ****)
-
-  MyPrint["Basis: " <> basisfilename];
   MyPut[bvc, basisfilename];
-  
   timeadd["basis"];
 ];
 
@@ -2567,13 +2548,15 @@ ireducsigma[SYMTYPE_, args___] :=
   " args=" <> ToString[{args}]];
 
 (* Table form for all irreducible matrix elements of a triplet operator sigma *)
-ireducsigmaTable[op_] := Module[{t, i, cp},
+ireducsigmaTable[op_] := Module[{t, i, cp, mat},
   t = {};
   AppendTo[t, {nrspincp}];
   For[i = 1, i <= nrspincp, i++,
     cp = spincoupledpairs[[i]];
+    mat = ireducsigma[SYMTYPE, op, cp];
     AppendTo[t, Flatten[cp]];
-    t = Join[t,  ireducsigma[SYMTYPE, op, cp]];
+    t = Join[t, mat];
+    AppendTo[opdata, {cp, mat}];
   ];
   t (* return *)
 ];
@@ -2605,13 +2588,15 @@ ireducorbsigma[SYMTYPE_, args___] :=
   " args=" <> ToString[{args}]];
 
 (* Table form for all irreducible matrix elements of a triplet operator sigma *)
-ireducorbsigmaTable[op_] := Module[{t, i, cp},
+ireducorbsigmaTable[op_] := Module[{t, i, cp, mat},
   t = {};
   AppendTo[t, {nrorbcp}];
   For[i = 1, i <= nrorbcp, i++,
     cp = orbcoupledpairs[[i]];
+    mat =  ireducorbsigma[SYMTYPE, op, cp];
     AppendTo[t, Flatten[cp]];
-    t = Join[t,  ireducorbsigma[SYMTYPE, op, cp]];
+    t = Join[t, mat];
+    AppendTo[opdata, {cp, mat}];
   ];
   t (* return *)
 ];
@@ -2722,6 +2707,8 @@ calcgsenergy[] := Module[{all, i, val, vec},
 ];
 
 (***********************************************************************)
+
+MyPrint["Wilson chain"];
 
 ClearAll[thetaCh]; (* Bug honey-pot *)
 
@@ -3833,7 +3820,6 @@ If[DZ,
 ];
 
 timestart["xi"];
-MyPrint["Diagonalisation."];
 
 hookfile["hook_pre_lanczosinit"];
 If[TRI != "manual" && TRI != "manual_nambu" && !option["GENERATE_TEMPLATE"],
@@ -4260,7 +4246,7 @@ to perform various extra tweaks, log parameters and other debugging info,
 check if parameters make any sense, etc. *) 
 
 maketable[]:=Module[{t},
-  MyPrint["\n\nmaketable[]\n", makeheader[]];
+  MyPrint["maketable[]"];
   timestart["maketable"];                   
 
   addexnames[]; (* To be on the safe side... *)
@@ -4338,8 +4324,6 @@ maketable[]:=Module[{t},
     t = t /. { 0. -> 0, Complex[0.,0.] -> 0 };
   ];
 
-  MyPrint["-- maketable[] done --"];
-
   timeadd["maketable"];
   timereport[];
 
@@ -4358,9 +4342,6 @@ makedata[filename_]:=Module[{suffix, fn, tabelca},
     tabelca[[3]] = "# COMPLEX";
   ];
   MyPrint[Export[fn, tabelca, "Table"]];
-
-  (* Various troubleshooting aids *)
-  MyPrint["gammaPol=", gammaPol /. params];
 ];
 
 MyPrint["--EOF--"];
