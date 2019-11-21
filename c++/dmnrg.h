@@ -426,7 +426,7 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
   nrglog('w', "tr1=" << tr1 << " tr2=" << tr2);
   // Sanity checks. The trace tr2 should be equal to the total
   // weight of the shell-N contribution to the full density matrix.
-  if (std::isfinite(tr1) && !num_equal(tr1, 1.0)) my_warning("tr1=%24.16Lf", tr1); // This is not fatal! (but weird)
+  // if (std::isfinite(tr1) && !num_equal(tr1, 1.0)) my_warning("tr1=%24.16Lf", tr1); // This is not fatal! (but weird)
   const double diff = (tr2 - STAT::wn[N]) / STAT::wn[N];                           // relative error
   if (std::isfinite(diff) && !num_equal(diff, 0.0, 1e-8)) {
     my_warning("diff=%24.16lf", diff); // This is more serious..
