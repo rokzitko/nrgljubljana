@@ -5,7 +5,8 @@
 
 use warnings;
 use File::Basename;
-my $scriptdir = dirname(__FILE__);
+use File::Spec;
+my $scriptdir = File::Spec->rel2abs(dirname(__FILE__));
 
 $refdir = shift;
 if (!defined($refdir)) {
