@@ -1,71 +1,25 @@
 (*
-  NRG Ljubljana - Additional operator definitions 
-  (c) Rok Zitko, rok.zitko@ijs.si, 2005-2016
+  NRG Ljubljana - Operator definitions 
+  (c) Rok Zitko, rok.zitko@ijs.si, 2005-2019
 *)
 
 MyPrint["operators.m started"];
-
-setkm[t_, sp_, op_, opimp_] := 
- Module[{opud, w1, w2, w3, s1, s2, s3, komp, temp},
-  opud = {op[AN, UP], op[AN, DO]};
-  w1 = 1/2 PauliX . opud;
-  w2 = 1/2 PauliY . opud;
-  w3 = 1/2 PauliZ . opud;
-  {s1, s2, s3} = spinxyz[opimp[]];
-  komp = If[sp == UP, 1, 2];
-  temp = w1[[komp]]~nc~s1 + w2[[komp]]~nc~s2 + w3[[komp]]~nc~s3 //Expand;
-  If[t == CR, conj[temp], temp (-1)^sp]
-];
-
-Module[{t}, 
-(* We start a new table to avoid interference. *)
-t = {}; 
-  (* === Misc. operators for testing === *)
-  
-  (* Identity operator. <I>=1. *)
-  t = Join[t, mtSingletOp["I", 1] ];
+Module[{t = {}}, 
+  t = Join[t, mtSingletOp["I", 1] ]; (* Identity operator. <I>=1. *)
 
   (* Parts of the total Hamiltonian *)
-  
-  If[calcopq["Himp"],
-    Module[{op},
-      If[!ValueQ[Himp],
-        Himp = H1; (* Default impurity Hamiltonian *)
-      ];
-      op = Expand[ Himp /. params ];
-      MPVCFAST = False; (* Workaround *)
-      t = Join[t, mtSingletOp["Himp", op]];
-      MPVCFAST = True;
-    ];
-  ];
+  If[!ValueQ[Himp], Himp = H1]; (* Default impurity Hamiltonian *)
+  If[!ValueQ[Hhyb], Hhyb = Hc]; (* Default hybridization Hamiltonian *)
+  If[!ValueQ[Hpot], Hpot = 0]; (* Default potential is zero *)
+  MPVCFAST = False; (* Workaround *)
+  t = Join[t, mtSingletOp["Himp", Himp /. params ]];
+  t = Join[t, mtSingletOp["Hhyb", Hhyb /. params ]];
+  t = Join[t, mtSingletOp["Hpot", Hpot /. params ]];
+  MPVCFAST = True;
 
-  If[calcopq["Hhyb"],
-    Module[{op},
-      If[!ValueQ[Hhyb],
-        Hhyb = Hc; (* Default hybridization Hamiltonian *)
-      ];
-      op = Expand[ Hhyb /. params ];
-      MPVCFAST = False;
-      t = Join[t, mtSingletOp["Hhyb", op]];
-      MPVCFAST = True;
-    ];
-  ];
-
-  (* Potential energy *)
-  If[calcopq["Hpot"],
-    Module[{op},
-      If[!ValueQ[Hpot],
-        Hpot = 0; (* Default is zero *)
-      ];
-      op = Expand[ Hpot /. params ];
-      MPVCFAST = False; (* Workaround *)
-      t = Join[t, mtSingletOp["Hpot", op]];
-      MPVCFAST = True;
-    ];
-  ];
   (* === Electron gas  === *)
 
-  (* 'Occupancy' of electron gas on the dot *)
+  (* Local 'occupancy' of the electron gas. f[0] is the first site of the Wilson chain. *)
   t = Join[t, mtSingletOp["n_f", number[f[0]] ]];
   t = Join[t, mtSingletOp["q_f", number[f[0]]-1 ]];
 
@@ -77,97 +31,60 @@ t = {};
   t = Join[t, mtSingletOp["pair_f", nc[f[CR, 0, UP], f[CR, 0, DO]] ] ];
 
   (* Spectral density of electron gas *)
-  t = Join[t, mtDoubletOp["A_f", f[#1, 0, #2]& ]];
-
+  t = Join[t, mtDoubletOp["A_f", f[0] ]];
   t = Join[t, mtDoubletOp["A_F", f ]];
       
-  (* Conjugated A_f operator for computing anomalous Green's
-     function. See ireducTable[] and ireducMatrixSpeedy[] in initial.m *)
-  If[calcopq["Ac_f"],
-    AppendTo[t, {"dAc_f"}];
-    t = Join[t, ireducTable[ ((-1)^#2 f[1-#1, 0, 1-#2])& ] ];
-  ];
-    
-  If[calcopq["A_f_u"], (* Spectral density of electron gas (spin UP) *)
-    AppendTo[t, {"dA_f_u"}];
-    t = Join[t, ireducTable[ f[0], UP ] ];
-  ];
-    
-  If[calcopq["A_f_d"], (* Spectral density of electron gas (spin DOWN) *)
-    AppendTo[t, {"dA_f_d"}];
-    t = Join[t, ireducTable[ f[0], DO ] ];
-  ];
+  (* Conjugated A_f operator for computing anomalous Green's function. *)
+  t = Join[t, mtDoubletOp["Ac_f", ((-1)^#2 f[1-#1, 0, 1-#2])& ]];
 
+  (* Spectral density of electron gas (spin projected) *)  
+  t = Join[t, mtDoubletOp["A_f_u", f[0], UP ]];
+  t = Join[t, mtDoubletOp["A_f_d", f[0], DO ]];
+
+  (* Spin operators *)
   t = Join[t, mtSingletOp["SXf0", spinx[f[0]] ] ];
   t = Join[t, mtSingletOp["SX2f0", pow[spinx[f[0]],2] ] ];
   t = Join[t, mtSingletOp["SYf0", spiny[f[0]] ] ];
   t = Join[t, mtSingletOp["SY2f0", pow[spiny[f[0]],2] ] ];
   t = Join[t, mtSingletOp["SZf0", spinz[f[0]] ] ];
   t = Join[t, mtSingletOp["SZ2f0", pow[spinz[f[0]],2] ] ];
+  t = Join[t, mtTripletOp["sigma_f", f[0] ]];
 
-  t = Join[t, mtTripletOp["sigma_f", f[0] ]]; (* Spin operator *)
-
+  (* For the following two, one needs to define spinz[F], spinplus[F], spinminus[F],
+  as well as orbmomentz[F], orbmomentplus[F], orbmomentminus[F]. *)
   t = Join[t, mtTripletOp["sigma_F", F ]]; (* Spin operator *)
   t = Join[t, mtOrbTripletOp["orbsigma_F", F]]; (* Orbital moment operator *)
-  (* For these two, one needs to define spinz[F], spinplus[F], spinminus[F],
-  and orbmomentz[F], orbmomentplus[F], orbmomentminus[F]. *)
 
   (* Additional sites along the Wilson chain *)
-
-  If[calcopq["A_f_i1"],
-    AppendTo[t, {"dA_f_i1"}];
-    t = Join[t, ireducTable[ f[#1, 0, 1, #2]& ] ];
-  ];
-  If[calcopq["A_f_i2"],
-    AppendTo[t, {"dA_f_i2"}];
-    t = Join[t, ireducTable[ f[#1, 0, 2, #2]& ] ];
-  ];
-  If[calcopq["A_f_i3"],
-    AppendTo[t, {"dA_f_i3"}];
-    t = Join[t, ireducTable[ f[#1, 0, 3, #2]& ] ];
-  ];
-  If[calcopq["A_f_i4"],
-    AppendTo[t, {"dA_f_i4"}];
-    t = Join[t, ireducTable[ f[#1, 0, 4, #2]& ] ];
-  ];
+  t = Join[t, mtDoubletOp["A_f_i1", f[#1, 0, 1, #2]& ]];
+  t = Join[t, mtDoubletOp["A_f_i2", f[#1, 0, 2, #2]& ]];
+  t = Join[t, mtDoubletOp["A_f_i3", f[#1, 0, 3, #2]& ]];
+  t = Join[t, mtDoubletOp["A_f_i4", f[#1, 0, 4, #2]& ]];
 
   (* === Add site 'd' === *)
 
-  (* Occupancy of embedded dot *)
+  (* Impurity occupancy *)
   t = Join[t, mtSingletOp["n_d", number[d[]] ]];
   t = Join[t, mtSingletOp["q_d", number[d[]]-1 ]];
-
-  (* Occupancy of embedded dot, spin up *)
   t = Join[t, mtSingletOp["n_d_up", number[d[], UP] ] ];
   t = Join[t, mtSingletOp["n_d_u", number[d[], UP] ] ];
-
-  (* Occupancy of embedded dot, spin down *)
   t = Join[t, mtSingletOp["n_d_down", number[d[], DO] ] ];
   t = Join[t, mtSingletOp["n_d_d", number[d[], DO] ] ];
-
-  (* Occupancy of embedded dot, double occupancy *)
   t = Join[t, mtSingletOp["n_d_ud", number[d[], DO] ~ nc ~ number[d[], UP] ] ];
 
   (* "Local-moment fraction" *)
   (* flm=n-2n_u n_d=2n-n^2=Projector[1] *)
   t = Join[t, mtSingletOp["flm", number[d[]] - 2 number[d[], DO] ~ nc ~ number[d[], UP] ] ];
 
-  (* Square of occupancy of embedded dot *)
   t = Join[t, mtSingletOp["n_d^2", pow[number[d[]],2] ] ];
-
-  (* Square of occupancy of embedded dot, spin up *)
   t = Join[t, mtSingletOp["n_d_up^2", pow[number[d[], UP],2] ] ];
-
-  (* Square of occupancy of embedded dot, spin down *)
   t = Join[t, mtSingletOp["n_d_down^2", pow[number[d[], DO],2] ] ];
 
-  (* Charge fluctuations of embedded dot, for isospin symmetry! *)
+  (* Charge fluctuations for sym=ISO *)
   t = Join[t, mtSingletOp["q_d^2", pow[number[d[]]-1, 2] ] ];
 
   (* Hopping amplitude from impurity to the lead *)
   t = Join[t, mtSingletOp["hop0", hop[d[], f[0]] ] ];
-
-  (* Hopping amplitude from impurity to the lead, squared *)
   t = Join[t, mtSingletOp["hop0^2", pow[hop[d[], f[0]],2] ] ];
 
   (* Hopping-n_d combination; used for testing the sum rules. *)
@@ -176,16 +93,12 @@ t = {};
   (* Current operator *) 
   t = Join[t, mtSingletOp["cur0", current[d[], f[0]] ] ];
  
-  (* Isospin operator, x component *)
+  (* Isospin operators *)
   t = Join[t, mtSingletOp["pair_d", nc[d[CR,UP], d[CR, DO]] ] ];
   t = Join[t, mtSingletOp["Ix_d", isospinx[d[]] ] ];
   t = Join[t, mtSingletOp["Ix_d^2", pow[isospinx[d[]],2] ] ];
-
-  (* Isospin operator, y component *)
   t = Join[t, mtSingletOp["Iy_d", isospiny[d[]] ] ];
   t = Join[t, mtSingletOp["Iy_d^2", pow[isospiny[d[]],2] ] ];
-
-  (* Isospin operator, z component (Iz_d is equal to 1/2 q_d) *)
   t = Join[t, mtSingletOp["Iz_d", isospinz[d[]] ] ];
   t = Join[t, mtSingletOp["Iz_d^2", pow[isospinz[d[]],2] ] ];
   
@@ -199,17 +112,10 @@ t = {};
   (* Transverse isospin squared *)
   t = Join[t, mtSingletOp["Ixy_d^2", pow[isospinx[d[]],2] + pow[isospiny[d[]],2] ] ];
   
-  t = Join[t, mtSingletOp["pnup_d", 
-    nc[number[d[], UP], d[CR,UP], d[CR, DO]] ] ];
-  t = Join[t, mtSingletOp["pndo_d", 
-    nc[number[d[], DO], d[CR,UP], d[CR, DO]] ] ];
-
-  t = Join[t, mtSingletOp["pn_d",
-    nc[number[d[]], d[CR,UP], d[CR, DO]] ] ];
+  t = Join[t, mtSingletOp["pnup_d", nc[number[d[], UP], d[CR,UP], d[CR, DO]] ] ];
+  t = Join[t, mtSingletOp["pndo_d", nc[number[d[], DO], d[CR,UP], d[CR, DO]] ] ];
+  t = Join[t, mtSingletOp["pn_d", nc[number[d[]], d[CR,UP], d[CR, DO]] ] ];
   
-    (* Recall that <AB> = \int_-\infty^0 (-1/Pi)Im <<A;B>>(omega) at
-       zero temperature (GS). *)
-    
   (* Spin-resolved current/hopping operators *)
   (* R/I = Re vs. Im, U/D = UP vs. DO *)
   t = Join[t, mtSingletOp["jRU",     hop[d[], f[0], UP] ] ];
@@ -229,28 +135,19 @@ t = {};
 
   (* Current from one lead to another, spin UP only. Use this 
      for spin-less models! *)
-  t = Join[t, mtSingletOp["cur", 
-    current[d[], f[0], UP] - current[d[], f[1], UP]
-  ] ];
+  t = Join[t, mtSingletOp["cur", current[d[], f[0], UP] - current[d[], f[1], UP] ]];
 
   (* Both spin orientations. Use this for the spin-full models! *)
-  t = Join[t, mtSingletOp["curUD",
-    current[d[], f[0]] - current[d[], f[1]]
-  ] ];
+  t = Join[t, mtSingletOp["curUD", current[d[], f[0]] - current[d[], f[1]] ]];
   
-
  If[CHANNELS >= 2,
-    (* 'Occupancy' of electron gas on the dot *)
+    (* Local 'occupancy' of electron gas *)
     t = Join[t, mtSingletOp["q_f1", number[f[1]]-1 ] ];
-
-    (* Square of occupancy of electron gas *)
     t = Join[t, mtSingletOp["q_f1^2", pow[number[f[1]]-1, 2] ] ];
-
     t = Join[t, mtSingletOp["hop1", hop[d[], f[1]] ] ];
 
     (* Symmetric and antisymmetric combinations *)
-    t = Join[t, mtSingletOp["hops",
-      1/Sqrt[2] (hop[d[], f[0]] + hop[d[], f[1]]) ] ];
+    t = Join[t, mtSingletOp["hops", 1/Sqrt[2] (hop[d[], f[0]] + hop[d[], f[1]]) ]];
 
     If[isLR[],
       t = Join[t, mtGeneralOp["hopa",
@@ -268,92 +165,43 @@ t = {};
   ];
   
   If[CHANNELS >= 3,
-    (* 'Occupancy' of electron gas on the dot *)                                             
     t = Join[t, mtSingletOp["q_f2", number[f[2]]-1 ] ];
-  
-    (* Square of occupancy of electron gas *)                                                
     t = Join[t, mtSingletOp["q_f2^2", pow[number[f[2]]-1, 2] ] ];                            
-  
     t = Join[t, mtSingletOp["hop2", hop[d[], f[2]] ] ]; 
-
-    t = Join[t, mtSingletOp["q_f012",
-      number[f[0]] + number[f[1]] + number[f[2]] - 3 ] ];
+    t = Join[t, mtSingletOp["q_f012", number[f[0]] + number[f[1]] + number[f[2]] - 3 ] ];
   ];
   
-  (* Spectral density of embedded dot *)
+  (* Impurity spectral density *)
   t = Join[t, mtDoubletOp["A_d", d ]];
     
-  (* NOTE: A_d_u, A_d_d etc. are to be used with U1 symmetry type. There
-     are also U_d, D_d etc. operators which correspont to spin-projected
-     operators. rz, 14 Aug 2014 *)
-  If[calcopq["A_d_u"], (* Spectral density (spin UP) *)
-    AppendTo[t, {"dA_d_u"}];
-    t = Join[t, ireducTable[ d[#1, #2]&, UP ] ];
-  ];
+  (* A_d_u, A_d_d are to be used with U1 symmetry type. There are also U_d, D_d etc. operators 
+     which correspont to spin-projected operators. *)
+  t = Join[t, mtDoubletOp["A_d_u", d[#1, #2]&, UP ]];
+  t = Join[t, mtDoubletOp["A_d_d", d[#1, #2]&, DO ]];
   
-  If[calcopq["A_d_d"], (* Spectral density (spin DOWN) *)
-    AppendTo[t, {"dA_d_d"}];
-    t = Join[t, ireducTable[ d[#1, #2]&, DO ] ];
-  ];
-  
-  (* Spin-projected doublet operators. Note that these are not SU(2)_spin doublets,
-     thus they should never be used in calculations with such symmetry types. They
-     are fine for QSZ and SPU1 symtypes. *)
-  If[calcopq["U_d"],
-    AppendTo[t, {"dU_d"}];
-    t = Join[t, ireducTable[ (If[#2 == UP, 1, 0] d[#1, #2])& ] ];
-  ];
-
-  If[calcopq["D_d"],
-    AppendTo[t, {"dD_d"}];
-    t = Join[t, ireducTable[ (If[#2 == DO, 1, 0] d[#1, #2])& ] ];
-  ];
+  (* Spin-projected doublet operators. *)
+  t = Join[t, mtDoubletOp["U_d", (If[#2 == UP, 1, 0] d[#1, #2])& ]];
+  t = Join[t, mtDoubletOp["D_d", (If[#2 == DO, 1, 0] d[#1, #2])& ]];
 
   (* Version of the above, explicitly defined to be the creation operators.
      Should be exactly equivalent to U_d & D_d for QSZ and SPU1 symmetries, 
      since #1 is always CR for those cases. *)
-  If[calcopq["CU_d"],
-    AppendTo[t, {"dCU_d"}];
-    t = Join[t, ireducTable[ (If[#1 == CR, 1, 0] If[#2 == UP, 1, 0] d[#1, #2])& ] ];
-  ];
-
-  If[calcopq["CD_d"],
-    AppendTo[t, {"dCD_d"}];
-    t = Join[t, ireducTable[ (If[#1 == CR, 1, 0] If[#2 == DO, 1, 0] d[#1, #2])& ] ];
-  ];
+  t = Join[t, mtDoubletOp["CU_d", (If[#1 == CR, 1, 0] If[#2 == UP, 1, 0] d[#1, #2])& ]];
+  t = Join[t, mtDoubletOp["CD_d", (If[#1 == CR, 1, 0] If[#2 == DO, 1, 0] d[#1, #2])& ]];
 
   (* Important implementation note: argument #2 is the spin of the excitation described by 
      the operator, i.e., which invariant subspaces it links. For SPU1 #1 is always CR.
      Creation operator will increase spin, annihilation operator will decrease it. 
      We therefore need to invert (1-#2) the argument to obtain the correct operator for 
      particle annihilation. *)
-  If[calcopq["AD_d"],
-    AppendTo[t, {"dAD_d"}];
-    t = Join[t, ireducTable[ (If[#1 == CR, 1, 0] If[#2 == UP, 1, 0] d[1-#1, 1-#2])& ] ];
-  ];
+  t = Join[t, mtDoubletOp["AD_d", (If[#1 == CR, 1, 0] If[#2 == UP, 1, 0] d[1-#1, 1-#2])& ]];
+  t = Join[t, mtDoubletOp["AU_d", (If[#1 == CR, 1, 0] If[#2 == DO, 1, 0] d[1-#1, 1-#2])& ]];
 
-  If[calcopq["AU_d"],
-    AppendTo[t, {"dAU_d"}];
-    t = Join[t, ireducTable[ (If[#1 == CR, 1, 0] If[#2 == DO, 1, 0] d[1-#1, 1-#2])& ] ];
-  ];
-
-  (* For SYMTYPE == "NONE" *)
-  If[calcopq["A_d_0"], (* Spectral density (type 0) *)
-    AppendTo[t, {"dA_d_0"}];
-    t = Join[t, ireducTable[ d[#1, #2]&, 0 ] ];
-  ];
-  If[calcopq["A_d_1"], (* Spectral density (type 1) *)
-    AppendTo[t, {"dA_d_1"}];
-    t = Join[t, ireducTable[ d[#1, #2]&, 1 ] ];
-  ];
-  If[calcopq["A_d_2"], (* Spectral density (type 2) *)
-    AppendTo[t, {"dA_d_2"}];
-    t = Join[t, ireducTable[ d[#1, #2]&, 2 ] ];
-  ];
-  If[calcopq["A_d_3"], (* Spectral density (type 3) *)
-    AppendTo[t, {"dA_d_3"}];
-    t = Join[t, ireducTable[ d[#1, #2]&, 3 ] ];
-  ];
+  (* For SYMTYPE == "NONE" *) 
+  t = Join[t, mtDoubletOp["A_d_0", d[#1, #2]&, 0 ]];
+  t = Join[t, mtDoubletOp["A_d_1", d[#1, #2]&, 1 ]];
+  t = Join[t, mtDoubletOp["A_d_2", d[#1, #2]&, 2 ]];
+  t = Join[t, mtDoubletOp["A_d_3", d[#1, #2]&, 3 ]];
 
   (* For SYMTYPE == "NONE" *)
   (* Note that this is not consistent with A_d & Ac_d operators for other
@@ -367,12 +215,7 @@ t = {};
   (* See symmetry_test__self_operators_for_ISO.nb. B_d is the operator which 
   results from [Iz^2,d], i.e. from the Coulomb repulsion term expressed in an
   isospin-symmetric way. *)
-  If[calcopq["B_d"],
-    AppendTo[t, {"dB_d"}];
-    t = Join[t, ireducTable[
-      d[#1, #2] ~ nc ~ (d[CR,1-#2] ~ nc ~ d[AN,1-#2] - 1/2)  If[#1==AN,-1,1]&,
-    nnop[d[]] ] ];
-  ];
+  t = Join[t, mtDoubletOp["B_d", d[#1,#2]~nc~(d[CR,1-#2]~nc~d[AN,1-#2]-1/2) If[#1==AN,-1,1]&, nnop[d[]] ]];
 
   (* Conjugated A_d operator for computing anomalous Green's
      function. See ireducTable[] and ireducMatrixSpeedy[] in initial.m *)
@@ -382,100 +225,39 @@ t = {};
   (* WARNING: the minus sign is conventional, some people use different definitions! 
      Be careful! *)
 
-  If[calcopq["Ac_d"],
-    AppendTo[t, {"dAc_d"}];
-    t = Join[t, ireducTable[ ((-1)^#2 d[1-#1, 1-#2])& ] ];
-  ];
+  t = Join[t, mtDoubletOp["Ac_d", ((-1)^#2 d[1-#1, 1-#2])& ]];
   
   (* QSZ only! *)
-  If[calcopq["nAc_d"],
-    AppendTo[t, {"dnAc_d"}];
-    t = Join[t, ireducTable[ (nc[number[d[], #2], d[1-#1, 1-#2]])& ] ];
-  ];
+  t = Join[t, mtDoubletOp["nAc_d", (nc[number[d[], #2], d[1-#1, 1-#2]])& ]];
 
   (* As Ac_d, but with no sign flipping!! Don't use this for SU(2)
      symmetric cases, since it doesn't have the correct symmetry properties!! *)
-  If[calcopq["AC_d"],
-    AppendTo[t, {"dAC_d"}];
-    t = Join[t, ireducTable[ (d[1-#1, 1-#2])& ] ];
-  ];
+  t = Join[t, mtDoubletOp["AC_d", (d[1-#1, 1-#2])& ]];
 
   t = Join[t, mtTripletOp["sigma_d", d[] ]]; (* Spin operator *)
 
   (* Support for automatically generated operator for calculating
-     the generalized Green's function for the self-energy trick.
-     Added 6. 6. 2012 *)
-  If[calcopq["self_d"],
-    AppendTo[t, {"dself_d"}];
-    MPVCFAST = False; (* selfopd can be a complicated expression *)
-    t = Join[t, ireducTable[ selfopd ]];
-    MPVCFAST = True;
-  ];
+     the generalized Green's function for the self-energy trick. *)
 
-  If[calcopq["selfc_d"],
-    AppendTo[t, {"dselfc_d"}];
-    MPVCFAST = False; (* selfopd can be a complicated expression *)
-    t = Join[t, ireducTable[ selfopcd ]];
-    MPVCFAST = True;
-  ];
-
-  (* To be used with SYMTYPE=U1, etc. *)
-  (* Added 6. 9. 2012 *)
-  If[calcopq["self_d_u"],
-    AppendTo[t, {"dself_d_u"}];
-    MPVCFAST = False; (* selfopd can be a complicated expression *)
-    t = Join[t, ireducTable[ selfopd, UP ]];
-    MPVCFAST = True;
-  ];
-
-  If[calcopq["self_d_d"],
-    AppendTo[t, {"dself_d_d"}];
-    MPVCFAST = False; (* selfopd can be a complicated expression *)
-    t = Join[t, ireducTable[ selfopd, DO ]];
-    MPVCFAST = True;
-  ];
-    
-  (* By analogy with self_d *)  
-
-  If[calcopq["self_a"],
-    AppendTo[t, {"dself_a"}];
-    MPVCFAST = False; (* selfopd can be a complicated expression *)
-    t = Join[t, ireducTable[ selfopa ]];
-    MPVCFAST = True;
-  ];
-
-  If[calcopq["selfc_a"],
-    AppendTo[t, {"dselfc_a"}];
-    MPVCFAST = False; (* selfopd can be a complicated expression *)
-    t = Join[t, ireducTable[ selfopca ]];
-    MPVCFAST = True;
-  ];
-
-  If[calcopq["self_a_u"],
-    AppendTo[t, {"dself_a_u"}];
-    MPVCFAST = False; (* selfopd can be a complicated expression *)
-    t = Join[t, ireducTable[ selfopa, UP ]];
-    MPVCFAST = True;
-  ];
-
-  If[calcopq["self_a_d"],
-    AppendTo[t, {"dself_a_d"}];
-    MPVCFAST = False; (* selfopd can be a complicated expression *)
-    t = Join[t, ireducTable[ selfopa, DO ]];
-    MPVCFAST = True;
-  ];
+  MPVCFAST = False; (* selfopd can be a complex expression *)
+  t = Join[t, mtDoubletOp["self_d", selfopd ]];
+  t = Join[t, mtDoubletOp["selfc_d", selfopcd ]];
+  t = Join[t, mtDoubletOp["self_d_u", selfopd, UP ]];
+  t = Join[t, mtDoubletOp["self_d_d", selfopd, DO ]];
+  t = Join[t, mtDoubletOp["self_a", selfopa ]];
+  t = Join[t, mtDoubletOp["selfc_a", selfopca ]];
+  t = Join[t, mtDoubletOp["self_a_u", selfopa, UP ]];
+  t = Join[t, mtDoubletOp["self_a_d", selfopa, DO ]];
+  MPVCFAST = True;
 
   (* Generalized operator for computing the T-matrix (i.e.,
   conductance and other transport properties) for arbitrary
   hybridization operators. 7.3.2013 *)
 
   (*
-  If[calcopq["hyb_f"],
-    AppendTo[t, {"dhyb_f"}];
-    MPVCFAST = False;
-    t = Join[t, ireducTable[ hybopf ]];
-    MPVCFAST = True;
-    ];
+  MPVCFAST = False;
+  t = Join[t, mtDoubletOp["hyb_f", hybopf ]];
+  MPVCFAST = True;
   *)
 
   (** Projection operators **)
@@ -582,10 +364,10 @@ t = {};
 
  (** Correlations *)
 
-  (* Spin on the dot *)
+  (* Spin on the impurity *)
   t = Join[t, mtSingletOp["SdSd", spinspin[d[], d[]]] ];
 
-  (* Scalar product of spin operators on dot and in electron liquid *)
+  (* Scalar product of spin operators on impurity and in electron liquid *)
   t = Join[t, mtSingletOp["SdSf", spinspin[d[], f[0]]] ];
 
   t = Join[t, mtSingletOp["n_dn_f", nc[number[d[]], number[f[0]]] ] ];
@@ -650,17 +432,10 @@ t = {};
  (* NEW, 18.9.2007: for computing spectral functions in models
      with electron-phonon coupling using the self-energy trick. *)
 
-  If[calcopq["M_d"], (* M_sigma = (a+a^\dag) d_\sigma *)
-    AppendTo[t, {"dM_d"}];
-    opfn = nc[displop, d[#1, #2]] &;
-    t = Join[t, ireducTable[ opfn ]];
-  ];
-
-  If[calcopq["N_d"], (* N_sigma = (a+a^\dag) f_{0\sigma} *)
-    AppendTo[t, {"dN_d"}];
-    opfn = nc[displop, f[#1, 0, #2]] &;
-    t = Join[t, ireducTable[ opfn ]];
-  ];
+  (* M_sigma = (a+a^\dag) d_\sigma *)
+  t = Join[t, mtDoubletOp["M_d", nc[displop, d[#1, #2]] & ]];
+  (* N_sigma = (a+a^\dag) f_{0\sigma} *)
+  t = Join[t, mtDoubletOp["N_d", nc[displop, f[#1, 0, #2]] & ]];
 
   (* Spectral function of an arbitrary linear combination of orbitals. 
      Specified as, for example, A_x(d[]+a[]) or A_x(d[]-2a[]+b[]), etc.*)
@@ -688,89 +463,36 @@ t = {};
     
   (* === Add site 'a' === *)
   If[NRDOTS >= 2,
-  
-    (* Occupancy of side dot *)
     t = Join[t, mtSingletOp["n_a", number[a[]] ] ];
-
-    (* Occupancy of side dot *)
     t = Join[t, mtSingletOp["q_a", number[a[]]-1 ] ];
-    
-    (* Square of occupancy of side dot *)
     t = Join[t, mtSingletOp["n_a^2", pow[number[a[]], 2] ] ];
-    
-    (* Charge fluctuations of side dot, for isospin symmetry! *)
     t = Join[t, mtSingletOp["q_a^2", pow[number[a[]]-1, 2] ] ];
-
-    (* Occupancy of side dot, double occupancy *)
     t = Join[t, mtSingletOp["n_a_ud", number[a[], DO] ~ nc ~ number[a[], UP] ] ];
-
-    (* Spin on the dot *)
     t = Join[t, mtSingletOp["SaSa", spinspin[a[], a[]]] ];
-
-    (* Correlation side dot <-> electron liquid *)
     t = Join[t, mtSingletOp["SaSf", spinspin[a[], f[0]]] ];
-
-    (* Correlation side dot <-> embedded dot *)
     t = Join[t, mtSingletOp["SaSd", spinspin[a[], d[]]] ];
 
     (* s1s2sym = 1/N \sum_<ij> S_i . S_j, also for N >= 2 *)
     t = Join[t, mtSingletOp["s1s2sym", spinspinsymmetric[basopsdot] ] ];
 
-    (* Isospin correlation side dot <-> embedded dot *)
+    (* Isospin correlation *)
     t = Join[t, mtSingletOp["IaId", isoiso[a[], d[]]] ];
 
-    (* Out-of-diagonal number correlation *)
     t = Join[t, mtSingletOp["n_an_d", nc[number[a[]], number[d[]]] ] ];
-
-    (* Out-of-diagonal number correlation *)
     t = Join[t, mtSingletOp["q_aq_d", nc[number[a[]]-1, number[d[]]-1] ] ];
-
-    (* Out-of-diagonal number correlation with the Fermi sea *)
     t = Join[t, mtSingletOp["n_an_f", nc[number[a[]], number[f[0]]] ] ];
-
-    If[calcopq["A_a"], (* Spectral density of side dot *)
-      AppendTo[t, {"dA_a"}];
-      t = Join[t, ireducTable[ a[] ] ];
-    ];
+  
+    t = Join[t, mtDoubletOp["A_a", a[] ]];
+    t = Join[t, mtDoubletOp["A_even", {{1, d[]}, {1, a[]}} ]];
+    t = Join[t, mtDoubletOp["A_odd", {{1, d[]}, {-1, a[]}} ]];
       
-    If[calcopq["A_even"], (* even combination *)  
-      AppendTo[t, {"dA_even"}];
-      t = Join[t, ireducTable[ {{1, d[]}, {1, a[]}} ] ];
-    ];
-    If[calcopq["A_odd"], (* odd combination *)
-      AppendTo[t, {"dA_odd"}];
-      t = Join[t, ireducTable[ {{1, d[]}, {-1, a[]}} ] ];
-    ];
+    t = Join[t, mtTripletOp["sigma_a", a[] ]]; (* Spin operator *)
 
-    If[calcopq["sigma_a"], (* Dynamic spin-susceptibility on the other dot *)
-      AppendTo[t, {"tsigma_a"}];
-      t = Join[t, ireducsigmaTable[ a[] ] ];
-    ];
-
-    If[calcopq["self_a"],
-      AppendTo[t, {"dself_a"}];
-      MPVCFAST = False; (* selfopa can be a complicated expression *)
-      t = Join[t, ireducTable[ selfopa ]];
-      MPVCFAST = True;
-    ];
-      
-    If[calcopq["selfc_a"],
-      AppendTo[t, {"dselfc_a"}];
-      MPVCFAST = False; (* selfopd can be a complicated expression *)
-      t = Join[t, ireducTable[ selfopca ]];
-      MPVCFAST = True;
-    ];
-
-    (* Isospin operator, x component *)
     t = Join[t, mtSingletOp["pair_a", nc[a[CR,UP], a[CR, DO]] ] ];
     t = Join[t, mtSingletOp["Ix_a", isospinx[a[]] ] ];
     t = Join[t, mtSingletOp["Ix_a^2", pow[isospinx[a[]],2] ] ];
-
-    (* Isospin operator, y component *)
     t = Join[t, mtSingletOp["Iy_a", isospiny[a[]] ] ];
     t = Join[t, mtSingletOp["Iy_a^2", pow[isospiny[a[]],2] ] ];
-
-    (* Isospin operator, z component (Iz_a is equal to 1/2 q_a) *)
     t = Join[t, mtSingletOp["Iz_a", isospinz[a[]] ] ];
     t = Join[t, mtSingletOp["Iz_a^2", pow[isospinz[a[]],2] ] ];
 
@@ -837,16 +559,9 @@ t = {};
 
   (* === Add site 'b' === *)
   If[ NRDOTS >= 3,
-    (* Occupancy of 2nd side dot *)
     t = Join[t, mtSingletOp["n_b", number[b[]] ] ];
-
-    (* Occupancy of 2nd side dot *)
     t = Join[t, mtSingletOp["q_b", number[b[]]-1 ] ];
-    
-    (* Square of occupancy of the2nd side dot *)
     t = Join[t, mtSingletOp["n_b^2", pow[number[b[]], 2] ] ];
-
-    (* Charge fluctuations of side dot, for isospin symmetry! *)
     t = Join[t, mtSingletOp["q_b^2", pow[number[b[]]-1, 2] ] ];
 
     (* Symmetrized fluctuations of side dots, for QSLR code *)
@@ -857,14 +572,9 @@ t = {};
     t = Join[t, mtSingletOp["q_ab^2", 
       1/2 (pow[number[b[]]-1, 2] + pow[number[b[]]-1, 2]) ] ];
 
-    (* Out-of-diagonal number correlations *)
     t = Join[t, mtSingletOp["n_bn_d", nc[number[b[]], number[d[]]] ] ];
     t = Join[t, mtSingletOp["n_an_b", nc[number[a[]], number[b[]]] ] ];
-    
-    (* Correlation 2nd side dot <-> embedded dot *)
     t = Join[t, mtSingletOp["SbSd", spinspin[b[], d[]]] ];
-
-    (* Correlation 1st side dot <-> 2nd side dot *)
     t = Join[t, mtSingletOp["SaSb", spinspin[a[], b[]]] ];
 
     (* Symmetrized correlation for LR symmetric triangular TQD *)
@@ -906,18 +616,11 @@ t = {};
     t = Join[t, mtSingletOp["nmox", nmox] ];
     t = Join[t, mtSingletOp["nmox^2", nmox2] ];
 
-    (* Hop a-b *)
     hpab = hop[a[], b[]];
     t = Join[t, mtSingletOp["hopab", hpab] ];
-
-    (* Square of hopping operator *)
     t = Join[t, mtSingletOp["hopab^2", pow[hpab,2] ] ];
-
-    (* Hop b-d *)
     hpbd = hop[b[], d[]];
     t = Join[t, mtSingletOp["hopbd", hpbd] ];
-
-    (* Square of hopping operator *)
     t = Join[t, mtSingletOp["hopbd^2", pow[hpbd,2] ] ];
 
     t = Join[t, mtSingletOp["SZb", spinz[b[]] ] ];
@@ -927,12 +630,8 @@ t = {};
     t = Join[t, mtSingletOp["Ix_b", isospinx[b[]] ] ];
     t = Join[t, mtSingletOp["Ix_b^2", pow[isospinx[b[]],2] ] ];
 
-    If[calcopq["A_b"], (* Spectral density of 2nd side dot *)
-      AppendTo[t, {"dA_b"}];
-      t = Join[t, ireducTable[ b[] ] ];
-    ];
+    t = Join[t, mtDoubletOp["A_b", b[] ]];
   ];
-
 
   (* === Add site 'e' === *)
   If[ NRDOTS >= 4,
@@ -946,10 +645,7 @@ t = {};
     t = Join[t, mtSingletOp["SaSe", spinspin[a[], e[]]] ];
     t = Join[t, mtSingletOp["SbSe", spinspin[b[], e[]]] ];
     t = Join[t, mtSingletOp["SdSe", spinspin[d[], e[]]] ];
-    If[calcopq["A_e"],
-      AppendTo[t, {"dA_e"}];
-      t = Join[t, ireducTable[ e[] ] ];
-    ];
+    t = Join[t, mtDoubletOp["A_e", e[] ]];
   ];
 
   (* === Add site 'g' === *)
@@ -959,15 +655,10 @@ t = {};
     t = Join[t, mtSingletOp["n_g^2", pow[number[g[]], 2] ] ];
     t = Join[t, mtSingletOp["q_g^2", pow[number[g[]]-1, 2] ] ];
     t = Join[t, mtSingletOp["SdSg", spinspin[d[], g[]]] ];
-    If[calcopq["A_g"],
-      AppendTo[t, {"dA_g"}];
-      t = Join[t, ireducTable[ g[] ] ];
-    ];
+    t = Join[t, mtDoubletOp["A_g", g[] ]];
   ];
 
   texportable = t;
 ];
-
 MyPrint["operators.m done"];
-
 texportable

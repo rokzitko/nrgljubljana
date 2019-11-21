@@ -2501,16 +2501,17 @@ code, iii. specdens_factor() routine). *)
    
 ireducTable[op_, 
             optional___] :=  (* optional is passed to ireducMatrixSpeedy[] *)
-Module[{t, cp, i},
-  MyPrint["ireducTable: ", op, {optional}];
+Module[{t, cp, i, mat},
   t = {{nrcp}};
   For[i = 1, i <= nrcp, i++,
     (* coupledpairs is a list of subspace pairs that are coupled
        by doublet operators [that increase charge, when charge conservation 
        is explicitly taken into account], i.e. creation operators! *)
     cp = coupledpairs[[i]];
+    mat = ireducMatrixSpeedy[SYMTYPE, op, cp, optional];
     AppendTo[t, Flatten[cp]];
-    t = Join[t, ireducMatrixSpeedy[SYMTYPE, op, cp, optional] ];
+    t = Join[t, mat];
+    AppendTo[opdata, {cp, mat}]; (* opdata is global! *)
   ];
   t (* Return *)
 ];
@@ -2521,16 +2522,17 @@ the doublet irreducible matrix elements for an orbital described by a linear
 combinations of "atomic" orbitals. The appropriate normalization is
 automatically computed. *)
 
-ireducTable[ops_List] := Module[{norm, t, cp, i},
+ireducTable[ops_List] := Module[{norm, t, cp, i, mat},
   MyPrint[ops];
   norm = Norm @ ops[[All,1]];
   t = {};
   AppendTo[t, {nrcp}];
   For[i = 1, i <= nrcp, i++,
     cp = coupledpairs[[i]];
+    mat = Plus @@ Map[#[[1]]/norm * ireducMatrixSpeedy[SYMTYPE, #[[2]], cp] &, ops];
     AppendTo[t, Flatten[cp]];
-    t = Join[t, Plus @@ Map[#[[1]]/norm *
-      ireducMatrixSpeedy[SYMTYPE, #[[2]], cp] &, ops] ];
+    t = Join[t, mat];
+    AppendTo[opdata, {cp, mat}];
   ];
   t (* Return *)
 ];
@@ -2693,6 +2695,7 @@ mtSingletOp[opname_String, opinput_] := mtOp[opname, opinput, "s", singletopTabl
 mtGeneralOp[opname_String, opinput_] := mtOp[opname, opinput, "p", generalopTable];
 mtGlobalOp[opname_String, opinput_] := mtOp[opname, opinput, "g", singletopTable];
 mtDoubletOp[opname_String, opinput_] := mtOp[opname, opinput, "d", ireducTable];
+mtDoubletOp[opname_String, opinput_, opt_] := mtOp[opname, opinput, "d", ireducTable[#1,opt]& ];
 mtTripletOp[opname_String, opinput_] := mtOp[opname, opinput, "t", ireducsigmaTable];
 mtOrbTripletOp[opname_String, opinput_] := mtOp[opname, opinput, "ot", ireducorbsigmaTable[op]];
 
@@ -4267,6 +4270,8 @@ maketable[]:=Module[{t},
 
   (* Perform all diagonalisations *)  
   calcgsenergy[]; 
+
+  opdata = {}; (* Prior to makeireducf[] call to silence errors *)
 
   t = Join[makeheader[],
            {{"# SCALE ", SCALE[Ninit]}},
