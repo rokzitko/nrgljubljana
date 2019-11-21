@@ -55,8 +55,10 @@ if(ANALYZE_SOURCES)
 	  --std=c++14
 	  --template=gcc
 	  --verbose
+	  --force
 	  --quiet
           ${sources}
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
   else()
     message(STATUS "cppcheck not found in $PATH. Please consider installing cppcheck for additional checks!")
