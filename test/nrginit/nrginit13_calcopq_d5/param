@@ -1,6 +1,10 @@
+[extra]
+B=1.1
+
 [param]
 symtype=NONE
 model=SIAM
+variant=MAGFIELD
 
 U=1.022
 Gamma=0.133

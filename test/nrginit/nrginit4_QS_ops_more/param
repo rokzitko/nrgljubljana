@@ -13,4 +13,4 @@ Lambda=2.0
 Nmax=4
 keep=100
 
-ops=n_d n_d^2 hop0 sigma_d A_d n_f q_f n_f^2 q_f^2 A_f q_d flm q_d^2 hop0 hop0-n_d P0 P1 P2 SdSd SdSf n_dn_f q_dq_f ntot ntot^2 s^2 sigma_f
+ops=n_d n_d^2 hop0 sigma_d A_d n_f q_f n_f^2 q_f^2 A_f q_d flm q_d^2 hop0 hop0-n_d P0 P1 P2 SdSd SdSf n_dn_f q_dq_f ntot ntot^2 s^2

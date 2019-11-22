@@ -1,6 +1,10 @@
+[extra]
+B=0.1
+
 [param]
 symtype=P
 model=SIAM
+variant=MAGFIELD
 
 U=0.66
 delta=0.17
