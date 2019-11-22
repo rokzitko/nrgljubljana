@@ -1,0 +1,7 @@
+{{(U - 2*coefzeta[1, 0])/2, coefdelta[1, 0], 0, 0, 0, 0}, 
+ {coefdelta[1, 0], U/2 + coefzeta[1, 0], -gammaPolCh[1], gammaPolCh[1], 0, 
+  0}, {0, -gammaPolCh[1], delta, 0, -gammaPolCh[1], 0}, 
+ {0, gammaPolCh[1], 0, delta, gammaPolCh[1], 0}, 
+ {0, 0, -gammaPolCh[1], gammaPolCh[1], (4*delta + U - 2*coefzeta[1, 0])/2, 
+  coefdelta[1, 0]}, {0, 0, 0, 0, coefdelta[1, 0], 
+  2*delta + U/2 + coefzeta[1, 0]}}

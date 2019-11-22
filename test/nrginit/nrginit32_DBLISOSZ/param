@@ -1,0 +1,6 @@
+[param]
+symtype=DBLISOSZ
+model=ZERO
+
+Nmax=2
+keep=20

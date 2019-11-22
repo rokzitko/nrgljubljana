@@ -1,0 +1,6 @@
+[param]
+symtype=QSLR
+model=ZERO
+
+Nmax=2
+keep=20

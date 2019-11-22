@@ -1,0 +1,8 @@
+[param]
+symtype=SPU1LR
+model=ZERO
+
+bcsgap=0.1
+
+Nmax=2
+keep=20

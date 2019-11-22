@@ -13,7 +13,7 @@ Lambda=2.0
 Nmax=4
 keep=100
 
-ops=Ac_f A_f_u A_f_d A_d_u A_d_d U_d D_d CU_d AD_d AD_u B_d Ac_d nAc_d
+ops=AC_d
 
 bcsgap=0.05
 
