@@ -2,9 +2,9 @@
 symtype=NONE
 model=SIAM
 
-U=1.0
-Gamma=0.1
-delta=0.1
+U=1.022
+Gamma=0.133
+delta=0.14
 band=flat
 
 discretization=Z

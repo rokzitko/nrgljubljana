@@ -3,4 +3,4 @@
 # $2 = CMAKE_CURRENT_SOURCE_DIR/${test}
 # $3 = Mathematica kernel executable
 $1/nrginit/nrginit $3
-$1/test/compare.pl $2/ref
+$1/test/compare-ignoresigns.pl $2/ref

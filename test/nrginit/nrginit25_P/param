@@ -2,7 +2,9 @@
 symtype=P
 model=SIAM
 
-bcsgap=0.1
+U=0.66
+delta=0.17
+bcsgap=0.13
 
 Nmax=2
 keep=20
