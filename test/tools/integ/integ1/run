@@ -1,0 +1,7 @@
+#!/bin/sh
+$1/integ -w -T 0.501 imaw.dat >result.dat
+$1/integ -w -f -T 0.501 imaw.dat >result-f.dat
+$1/integ -w -p -T 0.501 imaw.dat >result-p.dat
+$1/integ -w -n -T 0.501 imaw.dat >result-n.dat
+$1/integ -w -a -T 0.501 imaw.dat >result-a.dat
+$2/test/compare.pl $3/ref

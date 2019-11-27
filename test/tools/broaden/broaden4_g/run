@@ -1,0 +1,3 @@
+#!/bin/sh
+$1/broaden -f 0.2 -g -r 1.1 -o spec.bin 1 0.03 0.8
+$2/test/compare.pl $3/ref

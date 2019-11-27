@@ -1,0 +1,3 @@
+#!/bin/sh
+$1/diag -vV mat.dat -o val.dat -O vec.dat
+$2/test/compare.pl $3/ref

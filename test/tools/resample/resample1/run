@@ -1,0 +1,3 @@
+#!/bin/sh
+$1/resample input.dat grid.dat output.dat
+$2/test/compare.pl $3/ref

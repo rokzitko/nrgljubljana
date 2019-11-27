@@ -1,0 +1,3 @@
+#!/bin/sh
+$1/intavg GT.dat 2
+$2/test/compare.pl $3/ref
