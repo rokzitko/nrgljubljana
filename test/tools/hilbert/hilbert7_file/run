@@ -1,0 +1,3 @@
+#!/bin/sh
+$1/hilb points.dat >results.dat
+$2/test/compare.pl $3/ref

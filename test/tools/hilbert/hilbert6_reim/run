@@ -1,0 +1,3 @@
+#!/bin/sh
+$1/hilb -G 0.1 1e-6 >result.dat
+$2/test/compare.pl $3/ref

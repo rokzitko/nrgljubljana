@@ -1,0 +1,3 @@
+#!/bin/sh
+$1/hilb -v -d DOS.dat resigma.dat imsigma.dat reaw.dat imaw.dat
+$2/test/compare.pl $3/ref

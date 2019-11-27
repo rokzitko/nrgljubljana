@@ -1,0 +1,10 @@
+#!/usr/bin/env perl
+
+use Math::Trig;
+
+open (O, ">DOS.dat");
+
+for ($x = -1; $x <= +1.0001; $x += 0.01) {
+  $y = (abs($x) <= 1 ? 2/pi * sqrt(1-$x**2) : 0);
+  print O "$x $y\n";
+}
