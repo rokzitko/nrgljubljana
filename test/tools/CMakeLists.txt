@@ -1,4 +1,6 @@
 add_subdirectory(adapt)
 add_subdirectory(hilbert)
-add_subdirectory(nrgchain)
+add_subdirectory(kk)
 add_subdirectory(matrix)
+add_subdirectory(mats)
+add_subdirectory(nrgchain)
