@@ -178,11 +178,11 @@ if(Build_Tests)
 endif()
 
 # Build the documentation
-#option(Build_Documentation "Build documentation" OFF)
-#if(Build_Documentation)
-#  message(STATUS "Documentation Build enabled")
-#  add_subdirectory(doc)
-#endif()
+option(Build_Documentation "Build documentation" OFF)
+if(Build_Documentation)
+  message(STATUS "Documentation Build enabled")
+  add_subdirectory(doc)
+endif()
 
 # Additional configuration files
 add_subdirectory(share)

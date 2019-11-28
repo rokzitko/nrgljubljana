@@ -1,0 +1,41 @@
+# -*- coding: utf-8 -*-
+#
+# documentation build configuration file
+
+import sys
+sys.path.insert(0, "@PROJECT_SOURCE_DIR@/doc/sphinxext/numpydoc")
+
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.mathjax',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.doctest',
+              'sphinx.ext.todo',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.autosummary',
+              'numpydoc'
+              ]
+
+source_suffix = '.rst'
+
+project = u'NRG Ljubljana - numerical renormalization group code'
+copyright = u'2016-2019 R. Žitko, Jozef Stefan Institute, Ljubljana'
+version = '@PROJECT_VERSION@'
+
+mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=default"
+templates_path = ['@PROJECT_SOURCE_DIR@/doc/_templates']
+
+html_theme = 'triqs'
+html_theme_path = ['@PROJECT_SOURCE_DIR@/doc/themes']
+html_show_sphinx = False
+html_context = {'header_title': 'NRG Ljubljana',
+                'header_subtitle': 'Numerical renormalization group for quantum impurity problems',
+                'header_links': [['Install', 'install'],
+                                 ['Documentation', 'documentation'],
+                                 ['Issues', 'issues'],
+                                 ['About NRG Ljubljana', 'about']]}
+html_static_path = ['@PROJECT_SOURCE_DIR@/doc/_static']
+html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
+
+htmlhelp_basename = 'NRGLjubljanadoc'
+
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
