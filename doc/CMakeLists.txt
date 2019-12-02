@@ -15,14 +15,14 @@ macro(generate_docs header_file)
     COMMAND
       c++2rst
       ${header_file}
-      -N app4triqs
+      -N nrgljubljana
       --output_directory ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
       -I${PROJECT_SOURCE_DIR}/c++
       --cxxflags="${nrgljubljana_CXXFLAGS}"
   )
 endmacro(generate_docs)
 
-generate_docs(${PROJECT_SOURCE_DIR}/c++/app4triqs/app4triqs.hpp)
+#generate_docs(${PROJECT_SOURCE_DIR}/c++/nrgljubljana/nrgljubljana.hpp)
 
 # --------------------------------------------------------
 # Build & Run the C++ doc examples and capture the output
@@ -54,10 +54,6 @@ add_custom_command(
 
 option(Sphinx_Only "When building the documentation, skip the Python Modules and the generation of C++ Api and example outputs" OFF)
 if(NOT Sphinx_Only)
-  # Autodoc usage requires the python modules to be built first
-  get_property(CPP2PY_MODULES_LIST GLOBAL PROPERTY CPP2PY_MODULES_LIST)
-  add_dependencies(docs_sphinx ${CPP2PY_MODULES_LIST})
-
   # Generation of C++ Api and Example Outputs
   add_dependencies(docs_sphinx docs_cpp2rst docs_example_output)
 endif()
@@ -65,7 +61,7 @@ endif()
 # ---------------------------------
 # Install
 # ---------------------------------
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ COMPONENT documentation DESTINATION share/doc/app4triqs
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ COMPONENT documentation DESTINATION share/doc/nrgljubljana
   FILES_MATCHING
   REGEX "\\.(html|pdf|png|gif|jpg|svg|js|xsl|css|py|txt|inv|bib)$"
   PATTERN "_*"
