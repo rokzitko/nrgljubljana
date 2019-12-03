@@ -4,3 +4,4 @@ build
 build.*
 build_*
 run_tests*
+*.pyc
