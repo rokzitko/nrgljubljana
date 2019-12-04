@@ -22,6 +22,6 @@ foreach (<*>) {
   -f $fn or next;
   -f "$here/$fn" or die "Result $fn does not exist.";
   print "Comparing $fn\n";
-  system("$scriptdir/mycomp.pl $fn $here/$fn") == 0 or die "diff failed: $?";
+  system("$scriptdir/mycomp.pl", "$fn", "$here/$fn") == 0 or die "diff failed: $?";
 }
 print "OK!\n";

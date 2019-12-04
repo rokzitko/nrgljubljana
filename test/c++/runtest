@@ -2,5 +2,5 @@
 # $1 = $PROJECT_SOURCE_DIR
 # $2 = $PROJECT_BINARY_DIR
 # $3 = $CMAKE_CURRENT_SOURCE_DIR/${test}
-$2/c++/nrg
-$1/test/compare.pl $3/ref
+"$2/c++/nrg"
+"$1/test/compare.pl" "$3/ref"
