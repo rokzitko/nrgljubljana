@@ -2808,8 +2808,7 @@ void start_run() {
   }
   if (P::ZBW) doZBW(); // in both NRG and DMNRG runs
   nrg_main_loop();
-  if (nrgrun) // leave files open in dmnrg run
-    close_output_files();
+  close_output_files();
   cout << endl << "** Iteration completed." << endl << endl;
 }
 
