@@ -506,7 +506,6 @@ namespace STAT {
    E/T = E_N * scale / (scale / betabar) = betabar E_N. P::betabar
    determines the factor c in the expression T_N = c Lambda^-(N-1)/2. */
   void set_N(int newN) {
-    if (newN < 0) my_warning("setting N to a negative value: %i", newN); // XXX
     N = (newN >= 0 ? newN : 0);                                          // N is used as an array index, must be non-negative
     // The following is evaluated with newN, which may be negative!
     scale = SCALE(newN + 1); // Current energy scale in units of bandwidth D
