@@ -1,7 +1,7 @@
 # GSL
-find_package(GSL 2.0 REQUIRED)
+find_package(GSL REQUIRED)
 add_library(gsl INTERFACE)
-target_include_directories(gsl SYSTEM INTERFACE ${GSL_INCLUIDE_DIRS})
+target_include_directories(gsl SYSTEM INTERFACE ${GSL_INCLUDE_DIRS})
 target_link_libraries(gsl INTERFACE ${GSL_LIBRARIES})
 install(TARGETS gsl EXPORT nrgljubljana-targets)
 
