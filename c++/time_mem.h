@@ -1,7 +1,5 @@
 #include <utility>
 
-
-
 #ifndef _time_mem_h_
 #define _time_mem_h_
 
@@ -11,10 +9,9 @@ class Timing {
   double all, timer;
   bool running;
   map<string, double> t;
-  bool reportonexit;
 
   public:
-  Timing(bool _reportonexit = true) : reportonexit(_reportonexit) {
+  Timing() {
     all     = gettime();
     timer   = gettime();
     running = false;
@@ -61,9 +58,6 @@ class Timing {
     cout << setw(T_WIDTH) << "Other"
          << ": " << long(t_all - t_sum) << " s" << endl;
   }
-  ~Timing() {
-    if (reportonexit) report();
-  }
 };
 
 // Higher-level timing code: time a section for as long as the object
@@ -92,11 +86,10 @@ class TimeScope {
 class MemoryStats {
   private:
   map<string, int> maxvals;
-  bool reportonexit;
   int peakusage;
 
   public:
-  MemoryStats(bool rpexit = true) : reportonexit(rpexit) { peakusage = 0; }
+  MemoryStats() { peakusage = 0; }
   // Intermediate level routine.
   int used() {
     const int memused = memoryused();
@@ -124,9 +117,6 @@ class MemoryStats {
     my_assert(topusage <= peakusage);
     F << endl << "Peak usage: " << peakusage << " kB" << endl;
 #endif
-  }
-  ~MemoryStats() {
-    if (reportonexit) report();
   }
 };
 

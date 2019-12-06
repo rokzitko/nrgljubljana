@@ -39,6 +39,13 @@
 #include "param.cc"
 #include "outfield.cc"
 
+// Timing of various parts of the code and memory statistics
+Timing t;
+MemoryStats ms;
+
+void timing_report() { t.report(); }
+void memory_report() { ms.report(); }
+
 #ifdef NRG_MPI
 mpi::environment *mpienv;
 mpi::communicator *mpiw;
@@ -79,11 +86,6 @@ class sharedparam {
 sharedparam sP;
 
 const int COUT_PRECISION = 16; // default precision for cout stream
-
-// Timing of various parts of the executing code and memory
-// statistics
-Timing t;
-MemoryStats ms;
 
 // Symmetry type specification
 string sym_string = "";
