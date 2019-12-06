@@ -1363,6 +1363,7 @@ string SDNAME(string a, string b, int SPIN = 0) {
 // Formatted output of the computed expectation values
 class ExpvOutput {
   private:
+//  string filename;        // input file
   ostream &F;             // output stream
   map<string, t_expv> &m; // reference to the name->value mapping
   list<string> fields;    // list of fields to be output (may be a subset
@@ -1645,9 +1646,13 @@ void close_output_files() {
     F.close();
     Ftd.close();
     Fannotated.close();
+    delete custom;
     Fcustom.close();
   }
-  if (dmnrgrun) Fcustomfdm.close();
+  if (dmnrgrun && P::fdmexpv) {
+    delete customfdm;
+    Fcustomfdm.close();
+  }
 }
 
 // DM-NRG: initialization of the density matrix -----------------------------
@@ -1969,8 +1974,16 @@ void nrg_clear_eigenvectors(DiagInfo &diag) {
 void nrg_measure_singlet1(const DiagInfo &dg, const CustomOp::value_type &op, double Z_S) {
   const string name = NAME(op);
   const t_expv expv = calc_trace_singlet(dg, op.second) / Z_S;
-  cout << "<" << name << ">=" << output_val(expv) << endl;
   STAT::expv[name] = expv;
+  cout << "<" << name << ">=" << output_val(expv) << endl;
+}
+
+// Expectation values using FDM algorithm
+void nrg_measure_singlet1_fdm(const DiagInfo &dg, const CustomOp::value_type &op) {
+  const string name   = NAME(op);
+  const t_expv expv   = calc_trace_fdm_kept(dg, op.second);
+  STAT::fdmexpv[name] = expv;
+  cout << "<" << name << ">_fdm=" << output_val(expv) << endl;
 }
 
 // Measure thermodynamic expectation values of singlet operators
@@ -1982,18 +1995,12 @@ void nrg_measure_singlet(const DiagInfo &dg) {
   custom->field_values();
 }
 
-// Expectation values using FDM algorithm
-void nrg_measure_singlet1_fdm(const DiagInfo &dg, const CustomOp::value_type &op) {
-  if (STAT::N != P::fdmexpvn) return;
-  const string name   = NAME(op);
-  const t_expv expv   = calc_trace_fdm_kept(dg, op.second);
-  STAT::fdmexpv[name] = expv;
-  cout << "<" << name << ">_fdm=" << expv << endl;
-}
-
 void nrg_measure_singlet_fdm(const DiagInfo &dg) {
+  if (STAT::N != P::fdmexpvn) return;
+  nrglog('@', "@ nrg_measure_singlet_fdm()");
   for (const auto &op : a.ops) nrg_measure_singlet1_fdm(dg, op);
   for (const auto &op : a.opsg) nrg_measure_singlet1_fdm(dg, op);
+  customfdm->field_values(P::T);
 }
 
 void check_operator_sumrules(DiagInfo &diag) {
@@ -2005,9 +2012,10 @@ void check_operator_sumrules(DiagInfo &diag) {
   for (auto &op : a.opq) quadruplet_check_norm(op, diag, 0);
 }
 
-void init_fdmexpv() {
-  for (const auto &op : a.ops) STAT::fdmexpv[op.first] = 0.0;
-}
+// XXX
+//void init_fdmexpv() {
+//  for (const auto &op : a.ops) STAT::fdmexpv[op.first] = 0.0;
+//}
 
 // Recalculate operator matrix representations
 void nrg_recalculate_operators(DiagInfo &dg) {
@@ -2852,11 +2860,6 @@ void finalize_nrg() {
 void finalize_dmnrg() {
   nrglog('@', "@ finalize_dmnrg()");
   finalize_common();
-  if (P::fdmexpv) {
-    cout << endl << "FDM expectation values" << endl;
-    for (const auto &v : STAT::fdmexpv) cout << "<" << v.first << ">=" << output_val(v.second) << endl;
-    customfdm->field_values(P::T); // save to file
-  }
   // These two should match if value_raw and value vectors are
   // handled correctly. GSenergy was computed in the first NRG run,
   // while totalenergy is recomputed in the second DMNRG run.
@@ -2947,7 +2950,7 @@ void start_calculation() {
   }
   if (string(P::stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
   prep_run(RUNTYPE::DMNRG);
-  if (P::fdmexpv) init_fdmexpv();
+//  if (P::fdmexpv) init_fdmexpv(); XXX
   start_run();
   finalize_dmnrg();
 }
