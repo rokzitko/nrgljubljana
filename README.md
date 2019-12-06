@@ -140,12 +140,13 @@ NRG calculations on computer clusters.
    Since Nov 2019, the code uses cmake for the configuration stage.
    The compilation thus consists of the following steps:
 
+```shell
    mkdir build
    cd build
    cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/
    make
    make install
-
+```
    For debugging, add -DCMAKE_BUILD_TYPE=Debug to cmake.
 
 
@@ -160,6 +161,7 @@ NRG calculations on computer clusters.
 
    "NRG Ljubljana" home-page: http://nrgljubljana.ijs.si/
 
+```
    Rok Zitko
    "Jozef Stefan" Institute
    F1 - Theoretical physics
@@ -168,7 +170,7 @@ NRG calculations on computer clusters.
    Slovenia
 
    rok.zitko@ijs.si
-
+```
 
 6. Acknowledgements
 
