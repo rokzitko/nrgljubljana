@@ -173,9 +173,9 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
     DVEC::const_iterator energies_beginI1 = begin(diagI1.value);
     if (dimA && dimp) {
       Matrix op2II_m_rho;
-      const matrix_range<const Matrix> op2II_TK(op2II, range(0, op2II.size1()), range(0, rhoNIp.size2()));
+      const matrix_range<const Matrix> op2II_TK(op2II, range(0, op2II.size1()), range(0, rhoNIp.size1()));
       op2II_m_rho = Matrix(op2II_TK.size1(), rhoNIp.size2());
-      atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoNIp, op2II_TK, 0.0, op2II_m_rho); // rhoNEW <- rhoNEW + factor T U
+      atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2II_TK, rhoNIp, 0.0, op2II_m_rho); // rhoNEW <- rhoNEW + factor T U
       for (size_t rl = dim1; rl < dimA; rl++) {
         const double El = *(energies_beginI1 + rl);
         for (size_t rk = 0; rk < dimp; rk++) {
@@ -224,8 +224,8 @@ void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
     if (dim1 && dimB) {
       const matrix_range<const Matrix> op1II_KT(op1II, range(0, rhoNI1.size1()), range(0, op1II.size2()));
       Matrix op1II_m_rho(rhoNI1.size2(), op1II_KT.size2());
-      atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoNI1, op1II_KT, 0.0, op1II_m_rho); // rhoNEW <- rhoNEW + factor T U
-      for (size_t rk = 0; rk < dim1; rk++) {                                            // ii-term, Eq. (15), negative frequency excitations
+      atlas::gemm(CblasTrans, CblasNoTrans, 1.0, rhoNI1, op1II_KT, 0.0, op1II_m_rho); // rhoNEW <- rhoNEW + factor T U
+      for (size_t rk = 0; rk < dim1; rk++) {                                          // ii-term, Eq. (15), negative frequency excitations
         const double Ek = *(energies_beginI1 + rk);
         for (size_t rl = dimp; rl < dimB; rl++) {
           const double El       = *(energies_beginIp + rl);
