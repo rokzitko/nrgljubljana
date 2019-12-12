@@ -771,12 +771,17 @@ set_of_tables u0p, u0m; // u_{0,m} coefficients
 #include "recalc.cc"
 
 // Select which symmetries to compile in.
+#ifdef NRG_SYM_BASIC
 #include "sym-QS.cc"
 #include "sym-QSZ.cc"
+#endif
+#ifdef NRG_SYM_MORE
 #include "sym-ISO.cc"
 #include "sym-ISOSZ.cc"
 #include "sym-SPSU2.cc"
 #include "sym-SPU1.cc"
+#endif
+#ifdef NRG_SYM_ALL
 #include "sym-DBLSU2.cc"
 #include "sym-DBLISOSZ.cc"
 #include "sym-ISOLR.cc"
@@ -799,6 +804,7 @@ set_of_tables u0p, u0m; // u_{0,m} coefficients
 #include "sym-QSZLR.cc"
 #include "sym-QJ.cc"
 #include "sym-U1.cc"
+#endif
 
 #include "read-input.cc"
 

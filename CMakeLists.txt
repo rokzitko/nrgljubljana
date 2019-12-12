@@ -125,10 +125,21 @@ if(Mathematica_FOUND)
   message(STATUS "Mathematica executable ${Mathematica_KERNEL_EXECUTABLE}")
 endif()
 
+# Symmetry types to compile in
+option(SYM_MORE "Compile an extended set of symmetry types" ON)
+option(SYM_ALL  "Compile the full set of symmetry types (long compilation time)" ON)
+
+if(SYM_MORE)
+  message(STATUS "Building an extended set of symmetry types")
+endif()
+if(SYM_ALL)
+  message(STATUS "Building the full set of symmetry types")
+endif()
+
 # Dynamic Analyzer Checks
 
-option(ASAN OFF "Compile library and executables with LLVM Address Sanitizer")
-option(UBSAN OFF "Compile library and executables with LLVM Undefined Behavior Sanitizer")
+option(ASAN  "Compile library and executables with LLVM Address Sanitizer" OFF)
+option(UBSAN "Compile library and executables with LLVM Undefined Behavior Sanitizer" OFF)
 
 if(ASAN)
   if(NOT TARGET asan)

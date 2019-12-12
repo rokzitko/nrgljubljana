@@ -9,9 +9,12 @@ target_compile_options(nrgljubljana_c PRIVATE -fPIC -std=c++14)
 target_include_directories(nrgljubljana_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_include_directories(nrgljubljana_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew>)
 target_compile_definitions(nrgljubljana_c PUBLIC
-				NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
+# (Not used)			NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
 				NRG_REAL
 				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
+				NRG_SYM_BASIC
+				$<$<BOOL:${SYM_MORE}>:NRG_SYM_MORE>
+				$<$<BOOL:${SYM_ALL}>:NRG_SYM_ALL>
 )
 
 # Link dependencies
