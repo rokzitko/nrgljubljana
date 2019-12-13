@@ -1697,8 +1697,7 @@ void init_rho(const DiagInfo &diag, DensMatElements &rho) {
     const Invar I    = INVAR(is);
     rho[I]           = Matrix(dim, dim);
     rho[I].clear();
-    Matrix &rhoI = rho[I]; // XXX: simplify code.
-    for (size_t i = 0; i < dim; i++) rhoI(i, i) = exp(-EIGEN(is).value(i) * STAT::scale / P::T) / ZZ;
+    for (size_t i = 0; i < dim; i++) rho[I](i, i) = exp(-EIGEN(is).value(i) * STAT::scale / P::T) / ZZ;
   }
   const double Tr = trace(rho);
   my_assert(num_equal(Tr, 1.0, 1e-8));
@@ -1817,24 +1816,23 @@ void calc_ZnD() {
   cout << "Zft (last shell)=  " << HIGHPREC(STAT::Zft) << endl;
   // Weights for specific shells, w_n
   STAT::wn = std::vector<double>(P::Nlen, 0.0);
+  STAT::wnfactor = std::vector<double>(P::Nlen, 0.0);
   bucket sumwn;
   for (size_t N = P::Ninit; N < P::Nlen; N++) {
     // This is w_n defined after Eq. (8) in the WvD paper.
     const double wn = pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnD[N] / Z;
-    nrglog('w', "wn[" << N << "]=" << HIGHPREC(wn));
     STAT::wn[N] = wn;
     sumwn += wn;
+    const double w = pow(double(P::combs), int(P::Nlen - N - 1)) / Z;
+    STAT::wnfactor[N] = w; // These ratios enter the terms for the spectral function.
   }
+  for (size_t N = P::Ninit; N < P::Nlen; N++) 
+    nrglog('w', "wn[" << N << "]=" << HIGHPREC(STAT::wn[N]));
   nrglog('w', "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0);
+  for (size_t N = P::Ninit; N < P::Nlen; N++)
+    nrglog('w', "wnfactor[" << N << "]=" << HIGHPREC(STAT::wnfactor[N]));
   // Check the sum-rule.
   my_assert(num_equal(sumwn, 1.0));
-  // These ratios enter the terms for the spectral function.
-  STAT::wnfactor = std::vector<double>(P::Nlen, 0.0);
-  for (size_t N = P::Ninit; N < P::Nlen; N++) {
-    const double w    = STAT::wn[N] / STAT::ZnD[N];
-    STAT::wnfactor[N] = (!isnan(w) ? w : 0.0);
-    nrglog('w', "wnfactor[" << N << "]=" << STAT::wnfactor[N]);
-  }
 }
 
 // Actually truncate matrices. Drop subspaces with no states kept.
@@ -2020,20 +2018,14 @@ void check_operator_sumrules(DiagInfo &diag) {
   for (auto &op : a.opq) quadruplet_check_norm(op, diag, 0);
 }
 
-// XXX
-//void init_fdmexpv() {
-//  for (const auto &op : a.ops) STAT::fdmexpv[op.first] = 0.0;
-//}
-
 // Recalculate operator matrix representations
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void nrg_recalculate_operators(DiagInfo &dg) {
   nrglog('@', "@ nrg_recalculate_operators()");
   for (auto &op : a.ops) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1); }, dg, op, "s", oprecalc::do_s);
   for (auto &op : a.opsp) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, -1); }, dg, op, "p", oprecalc::do_p);
   for (auto &op : a.opsg) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1); }, dg, op, "g", oprecalc::do_g);
-  for (auto &op : a.opd)
-    recalc_common([](auto &a, auto &b, auto &c) { Sym->recalc_doublet(a, b, c); }, // XXX: const correctness in sym*
-                  dg, op, "d", oprecalc::do_d);
+  for (auto &op : a.opd) recalc_common([](auto &a, auto &b, auto &c) { Sym->recalc_doublet(a, b, c); }, dg, op, "d", oprecalc::do_d);
   for (auto &op : a.opt) recalc_common([](auto &a, auto &b, auto &c) { Sym->recalc_triplet(a, b, c); }, dg, op, "t", oprecalc::do_t);
   for (auto &op : a.opot) recalc_common([](auto &a, auto &b, auto &c) { Sym->recalc_orb_triplet(a, b, c); }, dg, op, "ot", oprecalc::do_ot);
   for (auto &op : a.opq) recalc_common([](auto &a, auto &b, auto &c) { Sym->recalc_quadruplet(a, b, c); }, dg, op, "q", oprecalc::do_q);
@@ -2958,7 +2950,6 @@ void start_calculation() {
   }
   if (string(P::stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
   prep_run(RUNTYPE::DMNRG);
-//  if (P::fdmexpv) init_fdmexpv(); XXX
   start_run();
   finalize_dmnrg();
 }

@@ -9,11 +9,23 @@
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
-namespace SL {
+
+
+
+
+
+
+  
+
+
+
+
+
+   namespace SL {
 #include "sl/sl-1ch-def.dat"
 #include "sl/sl-2ch-def.dat"
 #include "sl/sl-3ch-def.dat"
-} // namespace SL
+}
 
 // Recalculate matrix elements of a doublet tensor operator
 void SymmetrySL::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
@@ -22,53 +34,38 @@ void SymmetrySL::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "sl/sl-1ch-doublet.dat"
-                    << ", len=" << SL::LENGTH_D_1CH << ", Iop=" << Invar(1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "sl/sl-1ch-doublet.dat" << ", len=" << SL::LENGTH_D_1CH << ", Iop=" << Invar(1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "sl/sl-1ch-doublet.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_1CH, Invar(1));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "sl/sl-2ch-doublet.dat"
-                    << ", len=" << SL::LENGTH_D_2CH << ", Iop=" << Invar(1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
-#include "sl/sl-2ch-doublet.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_2CH, Invar(1));
-          }
-        }
-      } break;
-      case 3: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "sl/sl-3ch-doublet.dat"
-                    << ", len=" << SL::LENGTH_D_3CH << ", Iop=" << Invar(1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
-#include "sl/sl-3ch-doublet.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_3CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_3CH, Invar(1));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_1CH, Invar(1));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "sl/sl-2ch-doublet.dat" << ", len=" << SL::LENGTH_D_2CH << ", Iop=" << Invar(1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
+#include "sl/sl-2ch-doublet.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_2CH, Invar(1));
+  }
+} } break;
+  case 3: { {
+  nrglog('f', "RECALC(fn=" << "sl/sl-3ch-doublet.dat" << ", len=" << SL::LENGTH_D_3CH << ", Iop=" << Invar(1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
+#include "sl/sl-3ch-doublet.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_3CH, Invar(1));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
   }
 }
 
@@ -79,92 +76,66 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "sl/sl-1ch-a.dat"
-                    << ", ch=" << 0 << ", len=" << SL::LENGTH_I_1CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC_F(fn=" << "sl/sl-1ch-a.dat" << ", ch=" << 0 << ", len=" << SL::LENGTH_I_1CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "sl/sl-1ch-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_1CH);
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "sl/sl-2ch-a.dat"
-                    << ", ch=" << 0 << ", len=" << SL::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "sl/sl-2ch-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
-          }
-        };
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "sl/sl-2ch-b.dat"
-                    << ", ch=" << 1 << ", len=" << SL::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "sl/sl-2ch-b.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
-          }
-        }
-      } break;
-      case 3: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "sl/sl-3ch-a.dat"
-                    << ", ch=" << 0 << ", len=" << SL::LENGTH_I_3CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "sl/sl-3ch-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
-          }
-        };
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "sl/sl-3ch-b.dat"
-                    << ", ch=" << 1 << ", len=" << SL::LENGTH_I_3CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "sl/sl-3ch-b.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
-            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
-          }
-        };
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "sl/sl-3ch-c.dat"
-                    << ", ch=" << 2 << ", len=" << SL::LENGTH_I_3CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "sl/sl-3ch-c.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
-            recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_1CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_1CH);
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC_F(fn=" << "sl/sl-2ch-a.dat" << ", ch=" << 0 << ", len=" << SL::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "sl/sl-2ch-a.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
+  }
+}; {
+  nrglog('f', "RECALC_F(fn=" << "sl/sl-2ch-b.dat" << ", ch=" << 1 << ", len=" << SL::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "sl/sl-2ch-b.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
+  }
+} } break;
+  case 3: { {
+  nrglog('f', "RECALC_F(fn=" << "sl/sl-3ch-a.dat" << ", ch=" << 0 << ", len=" << SL::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "sl/sl-3ch-a.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
+  }
+}; {
+  nrglog('f', "RECALC_F(fn=" << "sl/sl-3ch-b.dat" << ", ch=" << 1 << ", len=" << SL::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "sl/sl-3ch-b.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
+  }
+};
+          {
+  nrglog('f', "RECALC_F(fn=" << "sl/sl-3ch-c.dat" << ", ch=" << 2 << ", len=" << SL::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "sl/sl-3ch-c.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
+  }
+}  } break;
+  default: my_assert_not_reached();
+  };
   }
 }
 

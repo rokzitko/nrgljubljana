@@ -9,7 +9,19 @@
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
-namespace SL3 {
+
+
+
+
+
+
+  
+
+
+
+
+
+   namespace SL3 {
 #include "sl3/sl3-3ch-def.dat"
 }
 
@@ -22,18 +34,15 @@ void SymmetrySL3::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
     Number q31 = I1.get("Q3");
     Invar Ip   = Invar(q11 - 1, q21, q31); // This is a channel 1 operator
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "sl3/sl3-3ch-doublet.dat"
-                << ", len=" << SL::LENGTH_D_3CH << ", Iop=" << Invar(1, 0, 0) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "sl3/sl3-3ch-doublet.dat" << ", len=" << SL::LENGTH_D_3CH << ", Iop=" << Invar(1, 0, 0) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "sl3/sl3-3ch-doublet.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_3CH, Invar(1, 0, 0));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_3CH, Invar(1, 0, 0));
+  }
+};
   }
 }
 
@@ -49,48 +58,39 @@ void SymmetrySL3::recalc_irreduc(const DiagInfo &diag) {
 
     I1 = Invar(q1p + 1, q2p, q3p);
     {
-      nrglog('f',
-             "RECALC_F(fn="
-                << "sl3/sl3-3ch-a.dat"
-                << ", ch=" << 0 << ", len=" << SL3::LENGTH_I_3CH << ")");
-      if (diag.count(I1)) {
-        struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "sl3/sl3-3ch-a.dat" << ", ch=" << 0 << ", len=" << SL3::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "sl3/sl3-3ch-a.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
-        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
+  }
+};
 
     I1 = Invar(q1p, q2p + 1, q3p);
     {
-      nrglog('f',
-             "RECALC_F(fn="
-                << "sl3/sl3-3ch-b.dat"
-                << ", ch=" << 1 << ", len=" << SL3::LENGTH_I_3CH << ")");
-      if (diag.count(I1)) {
-        struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "sl3/sl3-3ch-b.dat" << ", ch=" << 1 << ", len=" << SL3::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "sl3/sl3-3ch-b.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
-        recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
+  }
+};
 
     I1 = Invar(q1p, q2p, q3p + 1);
     {
-      nrglog('f',
-             "RECALC_F(fn="
-                << "sl3/sl3-3ch-c.dat"
-                << ", ch=" << 2 << ", len=" << SL3::LENGTH_I_3CH << ")");
-      if (diag.count(I1)) {
-        struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "sl3/sl3-3ch-c.dat" << ", ch=" << 2 << ", len=" << SL3::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "sl3/sl3-3ch-c.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
-        recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
+  }
+};
   }
 }
 

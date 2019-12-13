@@ -9,10 +9,22 @@
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
-namespace ISOSZ {
+
+
+
+
+
+
+  
+
+
+
+
+
+   namespace ISOSZ {
 #include "isosz/isosz-1ch-def.dat"
 #include "isosz/isosz-2ch-def.dat"
-} // namespace ISOSZ
+}
 
 // Recalculate matrix elements of a doublet tenzor operator
 void SymmetryISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
@@ -24,143 +36,103 @@ void SymmetryISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixE
 
     Ip = Invar(ii1 - 1, ssz1 + 1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-1ch-doubletmp.dat"
-                    << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, -1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletmp.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, -1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-doubletmp.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, -1));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-2ch-doubletmp.dat"
-                    << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, -1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, -1));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletmp.dat" << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, -1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-doubletmp.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, -1));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
-
-    Ip = Invar(ii1 - 1, ssz1 - 1);
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, -1));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
+      
+    Ip = Invar(ii1-1, ssz1-1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-1ch-doubletmm.dat"
-                    << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, +1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletmm.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, +1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-doubletmm.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, +1));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-2ch-doubletmm.dat"
-                    << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, +1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, +1));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletmm.dat" << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, +1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-doubletmm.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, +1));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, +1));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
 
-    Ip = Invar(ii1 + 1, ssz1 + 1);
+    Ip = Invar(ii1+1, ssz1+1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-1ch-doubletpp.dat"
-                    << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, -1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletpp.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, -1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-doubletpp.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, -1));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-2ch-doubletpp.dat"
-                    << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, -1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, -1));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletpp.dat" << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, -1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-doubletpp.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, -1));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, -1));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
 
-    Ip = Invar(ii1 + 1, ssz1 - 1);
+    Ip = Invar(ii1+1, ssz1-1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-1ch-doubletpm.dat"
-                    << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, +1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletpm.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, +1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-doubletpm.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, +1));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-2ch-doubletpm.dat"
-                    << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, +1) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
-#include "isosz/isosz-2ch-doubletpm.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, +1));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, +1));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletpm.dat" << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, +1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
+#include "isosz/isosz-2ch-doubletpm.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, +1));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
   }
 }
 
@@ -184,195 +156,143 @@ void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag) {
 
     I1 = Invar(iip + 1, sszp + 1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-1ch-spinup-isoupa.dat"
-                    << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spinup-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-1ch-spinup-isoupa.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_1CH);
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-2ch-spinup-isoupa.dat"
-                    << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_1CH);
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spinup-isoupa.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
-          }
-        };
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-2ch-spinup-isoupb.dat"
-                    << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
+  }
+};
+	    {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isoupb.dat" << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spinup-isoupb.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
-
-    I1 = Invar(iip + 1, sszp - 1);
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
+    
+    I1 = Invar(iip+1, sszp-1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-1ch-spindown-isoupa.dat"
-                    << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spindown-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-1ch-spindown-isoupa.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_1CH);
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-2ch-spindown-isoupa.dat"
-                    << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_1CH);
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spindown-isoupa.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
-          }
-        };
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-2ch-spindown-isoupb.dat"
-                    << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
+  }
+};
+	    {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isoupb.dat" << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spindown-isoupb.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
 
-    I1 = Invar(iip - 1, sszp + 1);
+    I1 = Invar(iip-1, sszp+1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-1ch-spinup-isodowna.dat"
-                    << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spinup-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-1ch-spinup-isodowna.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_1CH);
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-2ch-spinup-isodowna.dat"
-                    << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_1CH);
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spinup-isodowna.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
-          }
-        };
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-2ch-spinup-isodownb.dat"
-                    << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
+  }
+};
+  	    {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isodownb.dat" << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spinup-isodownb.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
 
-    I1 = Invar(iip - 1, sszp - 1);
+    I1 = Invar(iip-1, sszp-1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-1ch-spindown-isodowna.dat"
-                    << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spindown-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-1ch-spindown-isodowna.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_1CH);
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-2ch-spindown-isodowna.dat"
-                    << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "isosz/isosz-2ch-spindown-isodowna.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
-          }
-        };
-        {
-          nrglog('f',
-                 "RECALC_F(fn="
-                    << "isosz/isosz-2ch-spindown-isodownb.dat"
-                    << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "isosz/isosz-2ch-spindown-isodownb.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_1CH);
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "isosz/isosz-2ch-spindown-isodowna.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
+  }
+};
+	    {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isodownb.dat" << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "isosz/isosz-2ch-spindown-isodownb.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISOSZ::LENGTH_I_2CH);
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
   }
 }
 
@@ -386,108 +306,78 @@ void SymmetryISOSZ::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixE
 
     Ip = Invar(ii1, ssz1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-1ch-triplets.dat"
-                    << ", len=" << ISOSZ::LENGTH_T0_1CH << ", Iop=" << Invar(1, 0) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-triplets.dat" << ", len=" << ISOSZ::LENGTH_T0_1CH << ", Iop=" << Invar(1, 0) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-triplets.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_T0_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_T0_1CH, Invar(1, 0));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-2ch-triplets.dat"
-                    << ", len=" << ISOSZ::LENGTH_T0_2CH << ", Iop=" << Invar(1, 0) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_T0_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_T0_1CH, Invar(1, 0));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-triplets.dat" << ", len=" << ISOSZ::LENGTH_T0_2CH << ", Iop=" << Invar(1, 0) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-triplets.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_T0_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_T0_2CH, Invar(1, 0));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_T0_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_T0_2CH, Invar(1, 0));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
 
-    Ip = Invar(ii1, ssz1 + 2);
+    Ip = Invar(ii1, ssz1+2);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-1ch-tripletp.dat"
-                    << ", len=" << ISOSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, -2) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-tripletp.dat" << ", len=" << ISOSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, -2) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-tripletp.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_1CH, Invar(1, -2));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-2ch-tripletp.dat"
-                    << ", len=" << ISOSZ::LENGTH_Tpm_2CH << ", Iop=" << Invar(1, -2) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_1CH, Invar(1, -2));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-tripletp.dat" << ", len=" << ISOSZ::LENGTH_Tpm_2CH << ", Iop=" << Invar(1, -2) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-tripletp.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_2CH, Invar(1, -2));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_2CH, Invar(1, -2));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
 
-    Ip = Invar(ii1, ssz1 - 2);
+    Ip = Invar(ii1, ssz1-2);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-1ch-tripletm.dat"
-                    << ", len=" << ISOSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, +2) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-tripletm.dat" << ", len=" << ISOSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, +2) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-tripletm.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_1CH, Invar(1, +2));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "isosz/isosz-2ch-tripletm.dat"
-                    << ", len=" << ISOSZ::LENGTH_Tpm_2CH << ", Iop=" << Invar(1, +2) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
-#include "isosz/isosz-2ch-tripletm.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_2CH, Invar(1, +2));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_1CH, Invar(1, +2));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-tripletm.dat" << ", len=" << ISOSZ::LENGTH_Tpm_2CH << ", Iop=" << Invar(1, +2) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
+#include "isosz/isosz-2ch-tripletm.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_2CH, Invar(1, +2));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
   }
 }
 

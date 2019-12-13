@@ -9,7 +9,19 @@
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
-namespace QSTZ {
+
+
+
+
+
+
+  
+
+
+
+
+
+   namespace QSTZ {
 #include "qstz/qstz-def.dat"
 }
 
@@ -32,93 +44,75 @@ void SymmetryQSTZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEl
 
     Ip = Invar(q1 - 1, ss1 + 1, tz1 - 1);
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "qstz/qstz-doubletp-1.dat"
-                << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, +1) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletp-1.dat" << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, +1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "qstz/qstz-doubletp-1.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, +1));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, +1));
+  }
+};
 
     Ip = Invar(q1 - 1, ss1 - 1, tz1 - 1);
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "qstz/qstz-doubletm-1.dat"
-                << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, +1) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletm-1.dat" << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, +1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "qstz/qstz-doubletm-1.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, +1));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, +1));
+  }
+};
 
     Ip = Invar(q1 - 1, ss1 + 1, tz1);
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "qstz/qstz-doubletp0.dat"
-                << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, 0) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletp0.dat" << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, 0) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "qstz/qstz-doubletp0.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, 0));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, 0));
+  }
+};
 
     Ip = Invar(q1 - 1, ss1 - 1, tz1);
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "qstz/qstz-doubletm0.dat"
-                << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, 0) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletm0.dat" << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, 0) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "qstz/qstz-doubletm0.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, 0));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, 0));
+  }
+};
 
     Ip = Invar(q1 - 1, ss1 + 1, tz1 + 1);
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "qstz/qstz-doubletp+1.dat"
-                << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, -1) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletp+1.dat" << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, -1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "qstz/qstz-doubletp+1.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, -1));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, -1));
+  }
+};
 
     Ip = Invar(q1 - 1, ss1 - 1, tz1 + 1);
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "qstz/qstz-doubletm+1.dat"
-                << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, -1) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletm+1.dat" << ", len=" << QSTZ::LENGTH_D_3CH << ", Iop=" << Invar(1, 2, -1) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "qstz/qstz-doubletm+1.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, -1));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, -1));
+  }
+};
   }
 }
 
@@ -147,98 +141,80 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag) {
     nrglog('f', "spinup+1");
     I1 = Invar(qp + 1, ssp + 1, tzp + 1);
     {
-      nrglog('f',
-             "RECALC_F(fn="
-                << "qstz/qstz-spinup+1.dat"
-                << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
-      if (diag.count(I1)) {
-        struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "qstz/qstz-spinup+1.dat" << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "qstz/qstz-spinup+1.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+  }
+};
 
     nrglog('f', "spinup0");
     I1 = Invar(qp + 1, ssp + 1, tzp);
     {
-      nrglog('f',
-             "RECALC_F(fn="
-                << "qstz/qstz-spinup0.dat"
-                << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
-      if (diag.count(I1)) {
-        struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "qstz/qstz-spinup0.dat" << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "qstz/qstz-spinup0.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+  }
+};
 
     nrglog('f', "spinup-1");
     I1 = Invar(qp + 1, ssp + 1, tzp - 1);
     {
-      nrglog('f',
-             "RECALC_F(fn="
-                << "qstz/qstz-spinup-1.dat"
-                << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
-      if (diag.count(I1)) {
-        struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "qstz/qstz-spinup-1.dat" << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "qstz/qstz-spinup-1.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+  }
+};
 
     nrglog('f', "spindo+1");
     I1 = Invar(qp + 1, ssp - 1, tzp + 1);
     {
-      nrglog('f',
-             "RECALC_F(fn="
-                << "qstz/qstz-spindo+1.dat"
-                << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
-      if (diag.count(I1)) {
-        struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "qstz/qstz-spindo+1.dat" << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "qstz/qstz-spindo+1.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+  }
+};
 
     nrglog('f', "spindo0");
     I1 = Invar(qp + 1, ssp - 1, tzp);
     {
-      nrglog('f',
-             "RECALC_F(fn="
-                << "qstz/qstz-spindo0.dat"
-                << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
-      if (diag.count(I1)) {
-        struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "qstz/qstz-spindo0.dat" << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "qstz/qstz-spindo0.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+  }
+};
 
     nrglog('f', "spindo-1");
     I1 = Invar(qp + 1, ssp - 1, tzp - 1);
     {
-      nrglog('f',
-             "RECALC_F(fn="
-                << "qstz/qstz-spindo-1.dat"
-                << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
-      if (diag.count(I1)) {
-        struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "qstz/qstz-spindo-1.dat" << ", ch=" << 0 << ", len=" << QSTZ::LENGTH_I_3CH << ")");
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "qstz/qstz-spindo-1.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-        recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+  }
+};
   }
 }
 
@@ -253,47 +229,38 @@ void SymmetryQSTZ::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixEl
 
     Ip = Invar(q1, ss1, tz1);
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "qstz/qstz-triplets.dat"
-                << ", len=" << QSTZ::LENGTH_T0_3CH << ", Iop=" << Invar(0, 3, 0) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "qstz/qstz-triplets.dat" << ", len=" << QSTZ::LENGTH_T0_3CH << ", Iop=" << Invar(0, 3, 0) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "qstz/qstz-triplets.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_T0_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_T0_3CH, Invar(0, 3, 0));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_T0_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_T0_3CH, Invar(0, 3, 0));
+  }
+};
 
     Ip = Invar(q1, ss1 + 2, tz1);
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "qstz/qstz-tripletp.dat"
-                << ", len=" << QSTZ::LENGTH_Tpm_3CH << ", Iop=" << Invar(0, 3, 0) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "qstz/qstz-tripletp.dat" << ", len=" << QSTZ::LENGTH_Tpm_3CH << ", Iop=" << Invar(0, 3, 0) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "qstz/qstz-tripletp.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_Tpm_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_Tpm_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+  }
+};
 
     Ip = Invar(q1, ss1 - 2, tz1);
     {
-      nrglog('f',
-             "RECALC(fn="
-                << "qstz/qstz-tripletm.dat"
-                << ", len=" << QSTZ::LENGTH_Tpm_3CH << ", Iop=" << Invar(0, 3, 0) << ")");
-      if (diag.count(Ip)) {
-        struct Recalc recalc_table[] = {
+  nrglog('f', "RECALC(fn=" << "qstz/qstz-tripletm.dat" << ", len=" << QSTZ::LENGTH_Tpm_3CH << ", Iop=" << Invar(0, 3, 0) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "qstz/qstz-tripletm.dat"
-        };
-        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_Tpm_3CH);
-        recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
-      }
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_Tpm_3CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+  }
+};
   }
 }

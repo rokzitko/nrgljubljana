@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace QS {
+namespace QS {
 #include "qs/qs-1ch-def.dat"
 #include "qs/qs-2ch-def.dat"
 #include "qs/qs-3ch-def.dat"
@@ -14,6 +14,7 @@ include(recalc-macros.m4)
 }
 
 // Recalculate matrix elements of a doublet tensor operator
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     LOOP(diag, is1) {
@@ -55,6 +56,7 @@ void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 // See Krishna-Murthy p. 1034, equation (B10).
 
 // Driver routine for recalc_f()
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_irreduc(const DiagInfo &diag) {
   my_assert(!substeps);
   LOOP_const(diag, isp) {
@@ -99,6 +101,7 @@ void SymmetryQS::recalc_irreduc(const DiagInfo &diag) {
 }
 
 // Driver routine for recalc_f()
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, int M) {
   my_assert(substeps);
   LOOP_const(diag, isp) {
@@ -116,6 +119,7 @@ void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, int M) {
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     LOOP(diag, is1) {
@@ -159,6 +163,7 @@ void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 #undef QTOT
 #define QTOT(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
 
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
     LOOP(diag, is1) {

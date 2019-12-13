@@ -9,10 +9,22 @@
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
-namespace SU2 {
+
+
+
+
+
+
+  
+
+
+
+
+
+   namespace SU2 {
 #include "su2/su2-1ch-def.dat"
 #include "su2/su2-2ch-def.dat"
-} // namespace SU2
+}
 
 // Recalculate matrix elements of a doublet tenzor operator
 void SymmetrySU2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
@@ -23,81 +35,63 @@ void SymmetrySU2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 
     Ip = Invar(ii1 - 1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "su2/su2-1ch-doubletm.dat"
-                    << ", len=" << SU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "su2/su2-1ch-doubletm.dat" << ", len=" << SU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "su2/su2-1ch-doubletm.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "su2/su2-2ch-doubletm.dat"
-                    << ", len=" << SU2::LENGTH_D_2CH << ", Iop=" << Invar(2) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "su2/su2-2ch-doubletm.dat" << ", len=" << SU2::LENGTH_D_2CH << ", Iop=" << Invar(2) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "su2/su2-2ch-doubletm.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
-
-    Ip = Invar(ii1 + 1);
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
+      
+    Ip = Invar(ii1+1);
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "su2/su2-1ch-doubletp.dat"
-                    << ", len=" << SU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "su2/su2-1ch-doubletp.dat" << ", len=" << SU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "su2/su2-1ch-doubletp.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "su2/su2-2ch-doubletp.dat"
-                    << ", len=" << SU2::LENGTH_D_2CH << ", Iop=" << Invar(2) << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
-#include "su2/su2-2ch-doubletp.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "su2/su2-2ch-doubletp.dat" << ", len=" << SU2::LENGTH_D_2CH << ", Iop=" << Invar(2) << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
+#include "su2/su2-2ch-doubletp.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
   }
 }
 
 // Override the recalc_f definition: we need to track the type (1 or 2) of
 // the f-matrices.
 
-// Driver routine for recalc_f()
-void SymmetrySU2::recalc_irreduc(const DiagInfo &diag) {
+
+
+   // Driver routine for recalc_f()
+   void SymmetrySU2::recalc_irreduc(const DiagInfo &diag) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);
@@ -115,129 +109,121 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag) {
 
     I1 = Invar(iip + 1);
     switch (channels) {
-      case 1: {
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+  case 1: { {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "su2/su2-1ch-type1-isoup-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+  }
+};
+            {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "su2/su2-1ch-type2-isoup-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
-          }
-        }
-      } break;
-      case 2: {
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
+    recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+  }
+} } break;
+  case 2: { {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type1-isoup-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+  }
+};
+	    {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type1-isoup-b.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+  }
+};
+            {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type2-isoup-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+  }
+};
+	    {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type2-isoup-b.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
-
-    I1 = Invar(iip - 1);
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
+    
+    I1 = Invar(iip-1);
     switch (channels) {
-      case 1: {
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+  case 1: { {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
 #include "su2/su2-1ch-type1-isodown-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "su2/su2-1ch-type2-isodown-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
-          }
-        }
-      } break;
-      case 2: {
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "su2/su2-2ch-type1-isodown-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "su2/su2-2ch-type1-isodown-b.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "su2/su2-2ch-type2-isodown-a.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
-#include "su2/su2-2ch-type2-isodown-b.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+  }
+};
+            {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "su2/su2-1ch-type2-isodown-a.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
+    recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+  }
+} } break;
+  case 2: { {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "su2/su2-2ch-type1-isodown-a.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+  }
+};
+	    {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "su2/su2-2ch-type1-isodown-b.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+  }
+};
+            {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "su2/su2-2ch-type2-isodown-a.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+  }
+};
+	    {
+  if (diag.count(I1)) {
+    struct Recalc_f recalc_table[] = {
+#include "su2/su2-2ch-type2-isodown-b.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
+    recalc_f(diag, a.opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
   }
 }
 

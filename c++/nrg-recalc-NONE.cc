@@ -14,73 +14,83 @@ namespace NONE {
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
-// Driver routine for recalc_f()
-void SymmetryNONE::recalc_irreduc(const DiagInfo &diag) {
+
+
+
+
+
+
+  
+
+
+
+
+
+   
+
+   // Driver routine for recalc_f()
+   void SymmetryNONE::recalc_irreduc(const DiagInfo &diag) {
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);
     Invar I1 = Invar();
 
     switch (channels) {
-      case 1: {
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+  case 1: { {
+     if (diag.count(I1)) {
+       struct Recalc_f recalc_table[] = {
 #include "none/none-1ch-a-CR-DO.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+       };
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_1CH);
+       recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
+     }
+   };
+            {
+     if (diag.count(I1)) {
+       struct Recalc_f recalc_table[] = {
 #include "none/none-1ch-a-CR-UP.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_1CH);
-            recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
-          }
-        };
-      } break;
-      case 2: {
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+       };
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_1CH);
+       recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
+     }
+   }; } break;
+  case 2: { {
+     if (diag.count(I1)) {
+       struct Recalc_f recalc_table[] = {
 #include "none/none-2ch-a-CR-DO.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+       };
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
+       recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+     }
+   };
+	    {
+     if (diag.count(I1)) {
+       struct Recalc_f recalc_table[] = {
 #include "none/none-2ch-b-CR-DO.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+       };
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
+       recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+     }
+   };
+            {
+     if (diag.count(I1)) {
+       struct Recalc_f recalc_table[] = {
 #include "none/none-2ch-a-CR-UP.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
-          }
-        };
-        {
-          if (diag.count(I1)) {
-            struct Recalc_f recalc_table[] = {
+       };
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
+       recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+     }
+   };
+            {
+     if (diag.count(I1)) {
+       struct Recalc_f recalc_table[] = {
 #include "none/none-2ch-b-CR-UP.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-            recalc_f(diag, a.opch[1][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
-    };
+       };
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
+       recalc_f(diag, a.opch[1][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+     }
+   } } break;
+  default: my_assert_not_reached();
+  };
   }
 }
 
@@ -91,38 +101,28 @@ void SymmetryNONE::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEl
     Invar Ip = Invar();
 
     switch (channels) {
-      case 1: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "none/none-1ch-doublet.dat"
-                    << ", len=" << NONE::LENGTH_D_1CH << ", Iop=" << Invar() << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
+  case 1: { {
+  nrglog('f', "RECALC(fn=" << "none/none-1ch-doublet.dat" << ", len=" << NONE::LENGTH_D_1CH << ", Iop=" << Invar() << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
 #include "none/none-1ch-doublet.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_1CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, NONE::LENGTH_D_1CH, Invar());
-          }
-        }
-      } break;
-      case 2: {
-        {
-          nrglog('f',
-                 "RECALC(fn="
-                    << "none/none-2ch-doublet.dat"
-                    << ", len=" << NONE::LENGTH_D_2CH << ", Iop=" << Invar() << ")");
-          if (diag.count(Ip)) {
-            struct Recalc recalc_table[] = {
-#include "none/none-2ch-doublet.dat"
-            };
-            BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_2CH);
-            recalc_general(diag, cold, cnew, I1, Ip, recalc_table, NONE::LENGTH_D_2CH, Invar());
-          }
-        }
-      } break;
-      default: my_assert_not_reached();
     };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_1CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, NONE::LENGTH_D_1CH, Invar());
+  }
+} } break;
+  case 2: { {
+  nrglog('f', "RECALC(fn=" << "none/none-2ch-doublet.dat" << ", len=" << NONE::LENGTH_D_2CH << ", Iop=" << Invar() << ")");
+  if (diag.count(Ip)) {
+    struct Recalc recalc_table[] = {
+#include "none/none-2ch-doublet.dat"
+    };
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_2CH);
+    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, NONE::LENGTH_D_2CH, Invar());
+  }
+} } break;
+  default: my_assert_not_reached();
+  };
   }
 }
 
