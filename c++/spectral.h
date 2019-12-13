@@ -45,31 +45,23 @@ void save_densfunc(ostream &F, const Spikes &xy, bool imagpart = false) {
 
 // cf. A. Weichselbaum and J. von Delft, cond-mat/0607497
 
-// Globally defined smoothing parameters.
-double alpha;
-double omega0;
-
-// When gamma=alpha/4, the log-Gaussian broadening kernel is
-// symmetric with respect to its arguments (omega,omega' or
-// e,ept as called here).
-#define gamma (alpha / 4.0)
-
 // Modified log-Gaussian broadening kernel. For gamma=alpha/4, the
 // kernel is symmetric in both arguments.
-inline double BR_L(double e, double ept) {
+inline double BR_L(double e, double ept, double alpha, double omega0) {
   if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
   if (ept == 0.0) return 0.0;
+  const double gamma = alpha/4.0;
   return exp(-sqr(log(e / ept) / alpha - gamma)) / (alpha * abs(e) * M_SQRTPI);
 }
 
 // Normalized to 1, width omega0. The kernel is symmetric in both
 // arguments.
-inline double BR_G(double e, double ept) { return exp(-sqr((e - ept) / omega0)) / (omega0 * M_SQRTPI); }
+inline double BR_G(double e, double ept, double omega0) { return exp(-sqr((e - ept) / omega0)) / (omega0 * M_SQRTPI); }
 
 // Note: 'ept' is the energy of the delta peak in the raw spectrum,
 // 'e' is the energy of the data point in the broadened spectrum.
-inline double BR_NEW(double e, double ept) {
-  double part_l = BR_L(e, ept);
+inline double BR_NEW(double e, double ept, double alpha, double omega0) {
+  double part_l = BR_L(e, ept, alpha, omega0);
   // Most of the time we only need to compute part_l (loggaussian)
   if (abs(e) > omega0) return part_l;
   // Note: this is DIFFERENT from the broadening kernel proposed by
@@ -79,7 +71,7 @@ inline double BR_NEW(double e, double ept) {
   // with the self-energy trick.
   double BR_h = exp(-sqr(log(abs(e) / omega0) / alpha));
   my_assert(BR_h >= 0.0 && BR_h <= 1.0);
-  return part_l * BR_h + BR_G(e, ept) * (1.0 - BR_h);
+  return part_l * BR_h + BR_G(e, ept, omega0) * (1.0 - BR_h);
 }
 
 CONSTFNC t_weight sum_weights(const Spikes &s) {

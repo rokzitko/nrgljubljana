@@ -31,9 +31,7 @@ void saveMatrix(boost::archive::binary_oarchive &oa, const Matrix &m) {
   const size_t size2 = m.size2();
   oa << size1 << size2;
   for (size_t i = 0; i < size1; i++) {
-    matrix_row<const Matrix> mr = matrix_row<const Matrix>(m, i);
-    ublas::vector<t_matel> vec  = ublas::vector<t_matel>(size2);
-    vec                         = mr;
+    ublas::vector<t_matel> vec = matrix_row<const Matrix>(m, i);
     oa << vec;
   }
 }

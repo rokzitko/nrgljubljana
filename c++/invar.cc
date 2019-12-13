@@ -165,10 +165,10 @@ void initInvar(const InvarStructure *structure, size_t len) {
   qntype.resize(invdim);
   for (size_t i = 0; i < invdim; i++) {
     name[structure[i].qn_name] = i;
-    const int t                = structure[i].qn_type;
-    my_assert(t == additive || t == multiplicative || t == mod3);
-    qntype[i] = t;
-    cout << i << " " << structure[i].qn_name << " " << typestr(t) << endl;
+    const int ty               = structure[i].qn_type;
+    my_assert(ty == additive || ty == multiplicative || ty == mod3);
+    qntype[i] = ty;
+    cout << i << " " << structure[i].qn_name << " " << typestr(ty) << endl;
   }
 }
 

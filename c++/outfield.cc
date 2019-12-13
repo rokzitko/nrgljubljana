@@ -4,15 +4,12 @@
 #ifndef _outfield_cc_
 #define _outfield_cc_
 
-// Storage of various statistical quantities calculated during the
-// iteration.
+// Storage of various statistical quantities calculated during the iteration.
 class outfield;
 
 using outfieldPtr = outfield *; // TODO: shared ptr
 using vecoutptr = std::vector<outfieldPtr>;
-
-// Container for all fields
-vecoutptr allfields;
+vecoutptr allfields; // Container for all fields
 
 // Base class for output field containers.
 class outfield {
@@ -20,15 +17,13 @@ class outfield {
   string _desc;     // description of the field
   string _value;    // value of the field
   double _rawvalue{}; // unformatted value stored in the field
-
   public:
   static int width; // width of the output field
   static int prec;  // numerical precision of the output field
-
+  outfield() : _desc{""} {};
   // Using "pos", we can define at which position the element is inserted
   // to the list of fields. The default is at the end of the list.
   void set(string desc, int pos = -1) {
-//    my_assert(_desc == ""); // XXX
     _desc           = desc;
     outfieldPtr ptr = this;
     if (pos == -1)
@@ -38,29 +33,7 @@ class outfield {
       allfields.insert(begin(allfields) + pos, ptr);
     }
   };
-
-  outfield() { _desc = ""; };
-
   outfield(string desc, int pos = -1) { set(desc, pos); }
-
-  string name() const { return _desc; }
-
-  double rawvalue() const { return _rawvalue; }
-
-  // output the header
-  // Warning: *_width must be set to the correct value before
-  // this member function is called!
-  void putheader(ostream &F) const {
-    my_assert(width != 0);
-    F << setw(width) << _desc << " ";
-  }
-
-  // Output the value of the field.
-  void put(ostream &F) const {
-    my_assert(width != 0);
-    F << setw(width) << _value << " ";
-  }
-
   // We store a double precision number which is converted to an
   // appropriately formatted string.
   void setvalue(double newvalue) {
@@ -70,8 +43,21 @@ class outfield {
     _value    = tmp.str();
     _rawvalue = newvalue;
   }
-
   void operator=(double newvalue) { setvalue(newvalue); }
+  string name() const { return _desc; }
+  double rawvalue() const { return _rawvalue; }
+  // output the header
+  // Warning: *_width must be set to the correct value before
+  // this member function is called!
+  void putheader(ostream &F) const {
+    my_assert(width != 0);
+    F << setw(width) << _desc << " ";
+  }
+  // Output the value of the field.
+  void put(ostream &F) const {
+    my_assert(width != 0);
+    F << setw(width) << _value << " ";
+  }
 };
 
 int outfield::prec  = 0;

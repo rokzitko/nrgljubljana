@@ -222,8 +222,8 @@ void SpectrumRealFreq::trim() {
 
 void SpectrumRealFreq::continuous() {
   if (!P::broaden) return;
-  alpha  = P::alpha;
-  omega0 = (P::omega0 < 0.0 ? P::omega0_ratio * P::T : P::omega0);
+  const double alpha  = P::alpha;
+  const double omega0 = (P::omega0 < 0.0 ? P::omega0_ratio * P::T : P::omega0);
   Spikes densitypos, densityneg;
   std::vector<double> vecE = make_mesh(); // Energies on the mesh
   for (double E : vecE) {
@@ -232,15 +232,15 @@ void SpectrumRealFreq::continuous() {
       const t_weight w = WEIGHT(i);
       const double e   = ENERGY(i);
       my_assert(e > 0.0);
-      valpos += w * BR_NEW(E, e);
-      valneg += w * BR_NEW(-E, e);
+      valpos += w * BR_NEW(E, e, alpha, omega0);
+      valneg += w * BR_NEW(-E, e, alpha, omega0);
     }
     for (const auto &i : fsneg.bins) {
       const t_weight w = WEIGHT(i);
       const double e   = ENERGY(i);
       my_assert(e > 0.0); // attention!
-      valneg += w * BR_NEW(-E, -e);
-      valpos += w * BR_NEW(E, -e);
+      valneg += w * BR_NEW(-E, -e, alpha, omega0);
+      valpos += w * BR_NEW(E, -e, alpha, omega0);
     }
     densitypos.push_back(make_pair(E, valpos));
     densityneg.push_back(make_pair(-E, valneg));

@@ -192,8 +192,8 @@ using OpchChannel = std::vector<MatrixElements>;
 // Each channel contains P::perchannel OpchChannel matrices.
 using Opch = std::vector<OpchChannel>;
 
-// Object of class IterInfo cotains full information when entering
-// stage N of the NRG iteration.
+// Object of class IterInfo cotains full information about matrix representations 
+// when entering stage N of the NRG iteration.
 class IterInfo {
   public:
   Opch opch;     // f operators (channels)
@@ -236,16 +236,24 @@ class Rmaxvals {
   private:
   IVEC values;
   friend ostream &operator<<(ostream &os, const Rmaxvals &rmax);
-  void store(IVEC &rmx);
+  void store(IVEC &rmx) {
+    my_assert(rmx.size() == P::combs);
+    values = rmx;
+  }
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
-
   public:
-  Rmaxvals()= default;
-  Rmaxvals(const Rmaxvals &v);
+  Rmaxvals() = default;
+  Rmaxvals(const Rmaxvals &v) : values(v.values) {};
   Rmaxvals &operator=(const Rmaxvals &) = default;
-  size_t rmax(size_t i) const;
-  size_t offset(size_t i) const;
+  size_t rmax(size_t i) const {
+    allowed_block_index(i);
+    return values[i - 1]; // FOR COMPATIBILITY OFFSET 1!
+  } 
+  size_t offset(size_t i) const {
+    allowed_block_index(i);
+    return accumulate(begin(values), begin(values) + (i - 1), 0);
+  }
   size_t operator[](size_t i) const { return rmax(i); }
   // The only way to set up the values in Rmaxvals is by calling
   // determine_ranges(), or by using the copy constructor.
@@ -574,24 +582,6 @@ class runtypedmnrg {
   public:
   operator bool() { return STAT::runtype == RUNTYPE::DMNRG; }
 } dmnrgrun;
-
-Rmaxvals::Rmaxvals(const Rmaxvals &v) { values = v.values; }
-
-void Rmaxvals::store(IVEC &rmx) {
-  my_assert(rmx.size() == P::combs);
-  values = rmx;
-}
-
-// Returns 0 if no values are stored!
-size_t Rmaxvals::rmax(size_t i) const {
-  allowed_block_index(i);
-  return values[i - 1]; // FOR COMPATIBILITY OFFSET 1!
-}
-
-size_t Rmaxvals::offset(size_t i) const {
-  allowed_block_index(i);
-  return accumulate(begin(values), begin(values) + (i - 1), 0);
-}
 
 ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
   for (const auto &x : rmax.values) os << x << ' ';
@@ -1128,8 +1118,10 @@ class BaseSpectrum {
     return s;
   }
   void about() { cout << "Spectrum: " << fullname() << endl; }
-  BaseSpectrum(const MatrixElements &_op1, const MatrixElements &_op2) : op1(_op1), op2(_op2), op3(_op2) { nr = 2; } // op3 initialization is a hack
-  BaseSpectrum(const MatrixElements &_op1, const MatrixElements &_op2, const MatrixElements &_op3) : op1(_op1), op2(_op2), op3(_op3) { nr = 3; }
+  BaseSpectrum(const MatrixElements &_op1, const MatrixElements &_op2) : 
+     op1(_op1), op2(_op2), op3(_op2), a(axis::RealFreq), mt(matstype::fermionic) { nr = 2; } // op3 initialization is a hack
+  BaseSpectrum(const MatrixElements &_op1, const MatrixElements &_op2, const MatrixElements &_op3) : 
+     op1(_op1), op2(_op2), op3(_op3), a(axis::RealFreq), mt(matstype::fermionic) { nr = 3; }
 };
 
 class speclist;
@@ -1336,10 +1328,9 @@ double calc_Z(const DiagInfo &diag) {
   return Z;
 }
 
-/* Function newcombination_allowed() checks if states |q,ss,i>_{N+1} can be
- formed for a given spin. Some combinations might be forbidden even when
- the corresponding |q',ss'> subspaces exist at iteration step N (Invar In).
- */
+// Function newcombination_allowed() checks if states |q,ss,i>_{N+1} can be
+// formed for a given spin. Some combinations might be forbidden even when
+// the corresponding |q',ss'> subspaces exist at iteration step N (Invar In).
 bool newcombination_allowed(size_t i, const Invar &I, const Invar &In) { return Sym->triangle_inequality(I, In, QN[i]); }
 
 // Determine the ranges of index r
@@ -1353,7 +1344,7 @@ void Rmaxvals::determine_ranges(const Invar &I, const InvarVec &In) {
 
 // *********************************** NRG RUN **********************************
 
-ofstream F;          // all energies (different file for NRG and for DMNRG)
+ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
 ofstream Ftd;        // magnetic and charge susceptibility
 ofstream Fcustom;    // expectation values
 ofstream Fcustomfdm; // expectation values at T (FDM algorithm)
@@ -1625,7 +1616,7 @@ void open_output_files() {
   // We dump all energies to separate files for NRG and DM-NRG runs.
   // This is a very convenient way to check if both runs produce the
   // same results.
-  if (P::dumpenergies) F.open((nrgrun ? FN_ENERGIES_NRG : FN_ENERGIES_DMNRG));
+  if (P::dumpenergies) Fenergies.open((nrgrun ? FN_ENERGIES_NRG : FN_ENERGIES_DMNRG));
   if (nrgrun) {
     open_Ftd(Ftd);
     if (P::dumpannotated) Fannotated.open(FN_ANNOTATED);
@@ -1651,7 +1642,7 @@ void open_output_files() {
 // if the files are actually open.
 void close_output_files() {
   if (nrgrun) {
-    F.close();
+    Fenergies.close();
     Ftd.close();
     Fannotated.close();
     delete custom;
@@ -2633,7 +2624,7 @@ void nrg_after_diag() {
     if (!(P::resume && int(STAT::N) <= P::laststored)) store_transformations(STAT::N, diag);
   }
   // Logging of ALL states (not only those that remain after truncation)
-  if (P::dumpenergies) dumptofile(diag, F);
+  if (P::dumpenergies) dumptofile(diag, Fenergies);
   // Measurements are performed before the truncation!
   nrg_perform_measurements(diag);
   // Consistency checks
@@ -2718,7 +2709,7 @@ void docalc0() {
   nrg_perform_measurements(diagprev);
   nrg_calculate_spectral_and_expv(diagprev);
   // Logging of ALL states (prior to truncation!)
-  if (P::dumpenergies) dumptofile(diagprev, F);
+  if (P::dumpenergies) dumptofile(diagprev, Fenergies);
   if (P::checksumrules) check_operator_sumrules(diagprev);
 }
 
