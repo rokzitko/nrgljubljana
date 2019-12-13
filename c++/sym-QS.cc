@@ -138,6 +138,7 @@ Symmetry *SymQS = new SymmetryQS;
 #undef RUNGHOP
 #define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(STAT::N + 1, 0), h, qq)
 
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
   Sspin ss = I.get("SS");
 
