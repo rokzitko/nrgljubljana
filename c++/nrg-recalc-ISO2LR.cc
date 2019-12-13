@@ -22,7 +22,7 @@
 
 
 
-   namespace ISO2LR {
+namespace ISO2LR {
 #include "iso2lr/iso2lr-2ch-def.dat"
 }
 
@@ -35,7 +35,7 @@ double sign(double x) {
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
 // Driver routine for recalc_f()
-void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);
@@ -71,7 +71,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spinup-isoupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -81,7 +81,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spinup-isoupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -93,7 +93,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spindown-isoupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -103,7 +103,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spindown-isoupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -115,7 +115,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spinup-isodowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -125,7 +125,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spinup-isodownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -137,7 +137,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spindown-isodowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -147,7 +147,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spindown-isodownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -161,7 +161,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spinup-isoupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -171,7 +171,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spinup-isoupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -183,7 +183,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spindown-isoupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -193,7 +193,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spindown-isoupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -205,7 +205,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spinup-isodowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -215,7 +215,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spinup-isodowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -227,7 +227,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spindown-isodowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -237,7 +237,7 @@ void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
 #include "iso2lr/iso2lr-2ch-spindown-isodowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
   }

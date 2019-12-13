@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace SPSU2T {
+namespace SPSU2T {
 #include "spsu2t/spsu2t-def.dat"
 }
 
@@ -46,7 +46,7 @@ void SymmetrySPSU2T::recalc_doublet(DiagInfo &diag, MatrixElements &cold, Matrix
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2T::recalc_irreduc(const DiagInfo &diag) {
+void SymmetrySPSU2T::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!substeps);
 
   LOOP_const(diag, isp) {

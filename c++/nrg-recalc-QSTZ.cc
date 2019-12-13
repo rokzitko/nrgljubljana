@@ -21,7 +21,7 @@
 
 
 
-   namespace QSTZ {
+namespace QSTZ {
 #include "qstz/qstz-def.dat"
 }
 
@@ -121,7 +121,7 @@ void SymmetryQSTZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEl
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   nrglog('f', "QSTZ::recalc_irreduc() called");
   my_assert(!substeps);
 
@@ -147,7 +147,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag) {
 #include "qstz/qstz-spinup+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -160,7 +160,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag) {
 #include "qstz/qstz-spinup0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -173,7 +173,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag) {
 #include "qstz/qstz-spinup-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -186,7 +186,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag) {
 #include "qstz/qstz-spindo+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -199,7 +199,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag) {
 #include "qstz/qstz-spindo0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -212,7 +212,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag) {
 #include "qstz/qstz-spindo-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
   }

@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace QJ {
+namespace QJ {
 #include "qj/qj-def.dat"
 }
 
@@ -60,7 +60,7 @@ void SymmetryQJ::recalc_quadruplet(DiagInfo &diag, MatrixElements &cold, MatrixE
   nrglog('f', "QJ::recalc_quadruplet() end");
 }
 
-void SymmetryQJ::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   nrglog('f', "SymmetryQJ::recalc_irreduc() start");
 
   LOOP_const(diag, isp) {

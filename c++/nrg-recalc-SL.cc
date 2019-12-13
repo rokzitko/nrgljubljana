@@ -21,7 +21,7 @@
 
 
 
-   namespace SL {
+namespace SL {
 #include "sl/sl-1ch-def.dat"
 #include "sl/sl-2ch-def.dat"
 #include "sl/sl-3ch-def.dat"
@@ -70,7 +70,7 @@ void SymmetrySL::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 }
 
 // Driver routine for recalc_f()
-void SymmetrySL::recalc_irreduc(const DiagInfo &diag) {
+void SymmetrySL::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip  = INVAR(isp);
     Number qp = Ip.get("Q");
@@ -83,7 +83,7 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag) {
 #include "sl/sl-1ch-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_1CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_1CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -93,7 +93,7 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag) {
 #include "sl/sl-2ch-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
   }
 }; {
   nrglog('f', "RECALC_F(fn=" << "sl/sl-2ch-b.dat" << ", ch=" << 1 << ", len=" << SL::LENGTH_I_2CH << ")");
@@ -102,7 +102,7 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag) {
 #include "sl/sl-2ch-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
   }
 } } break;
   case 3: { {
@@ -112,7 +112,7 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag) {
 #include "sl/sl-3ch-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
   }
 }; {
   nrglog('f', "RECALC_F(fn=" << "sl/sl-3ch-b.dat" << ", ch=" << 1 << ", len=" << SL::LENGTH_I_3CH << ")");
@@ -121,7 +121,7 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag) {
 #include "sl/sl-3ch-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
   }
 };
           {
@@ -131,7 +131,7 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag) {
 #include "sl/sl-3ch-c.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[2][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
   }
 }  } break;
   default: my_assert_not_reached();

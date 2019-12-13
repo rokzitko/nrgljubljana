@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace SL3 {
+namespace SL3 {
 #include "sl3/sl3-3ch-def.dat"
 }
 
@@ -23,7 +23,7 @@ void SymmetrySL3::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 }
 
 // Driver routine for recalc_f()
-void SymmetrySL3::recalc_irreduc(const DiagInfo &diag) {
+void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip   = INVAR(isp);
     Number q1p = Ip.get("Q1");

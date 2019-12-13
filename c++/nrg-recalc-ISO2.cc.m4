@@ -7,7 +7,7 @@
 
 include(recalc-macros.m4)
 
-   namespace ISO2 {
+namespace ISO2 {
 #include "iso2/iso2-1ch-def.dat"
 #include "iso2/iso2-2ch-def.dat"
 }
@@ -41,7 +41,7 @@ void SymmetryISO2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEl
 // (ISO): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISO2::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryISO2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);

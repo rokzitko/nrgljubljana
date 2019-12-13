@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace ISOSZ {
+namespace ISOSZ {
 #include "isosz/isosz-1ch-def.dat"
 #include "isosz/isosz-2ch-def.dat"
 }
@@ -40,7 +40,7 @@ void SymmetryISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixE
 // (ISOSZ): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);

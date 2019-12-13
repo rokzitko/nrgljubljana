@@ -149,16 +149,16 @@ void read_matrix_elements(ifstream &fdata, MatrixElements &m, DiagInfo &dg) {
   my_assert(m.size() == nf);
 }
 
-void read_ireducf(ifstream &fdata, DiagInfo &dg) {
-  a.opch = Opch(P::channels);
+void read_ireducf(ifstream &fdata, DiagInfo &dg, Opch &opch) {
+  opch = Opch(P::channels);
   for (size_t i = 0; i < P::channels; i++) {
-    a.opch[i] = OpchChannel(P::perchannel);
+    opch[i] = OpchChannel(P::perchannel);
     for (size_t j = 0; j < P::perchannel; j++) {
       char ch;
       size_t iread, jread;
       fdata >> ch >> iread >> jread;
       my_assert(ch == 'f' && i == iread && j == jread);
-      read_matrix_elements(fdata, a.opch[i][j], diagprev);
+      read_matrix_elements(fdata, opch[i][j], diagprev);
     }
   }
 }
@@ -186,8 +186,9 @@ void determine_Nmax() {
 }
 
 // Read all initial energies and matrix elements
-void read_data() {
+void read_data(IterInfo &iterinfo) {
   cout << endl;
+  iterinfo.cleanup();
   ifstream fdata("data");
   if (!fdata) my_error("Can't load initial data.");
   parse_datafile_header(fdata);
@@ -200,7 +201,7 @@ void read_data() {
   // information from the previous (0-th) NRG step
   read_energies(fdata, diagprev, nsubs);
   skip_comments(fdata);
-  read_ireducf(fdata, diagprev);
+  read_ireducf(fdata, diagprev, iterinfo.opch);
   while (true) {
     /* skip white space */
     while (!fdata.eof() && isspace(fdata.peek())) fdata.get();
@@ -214,13 +215,13 @@ void read_data() {
         // ignore embedded comment lines
         break;
       case 'e': read_gs_energy(fdata); break;
-      case 's': read_matrix_elements(fdata, a.ops[opname], diagprev); break;
-      case 'p': read_matrix_elements(fdata, a.opsp[opname], diagprev); break;
-      case 'g': read_matrix_elements(fdata, a.opsg[opname], diagprev); break;
-      case 'd': read_matrix_elements(fdata, a.opd[opname], diagprev); break;
-      case 't': read_matrix_elements(fdata, a.opt[opname], diagprev); break;
-      case 'o': read_matrix_elements(fdata, a.opot[opname], diagprev); break;
-      case 'q': read_matrix_elements(fdata, a.opq[opname], diagprev); break;
+      case 's': read_matrix_elements(fdata, iterinfo.ops[opname], diagprev); break;
+      case 'p': read_matrix_elements(fdata, iterinfo.opsp[opname], diagprev); break;
+      case 'g': read_matrix_elements(fdata, iterinfo.opsg[opname], diagprev); break;
+      case 'd': read_matrix_elements(fdata, iterinfo.opd[opname], diagprev); break;
+      case 't': read_matrix_elements(fdata, iterinfo.opt[opname], diagprev); break;
+      case 'o': read_matrix_elements(fdata, iterinfo.opot[opname], diagprev); break;
+      case 'q': read_matrix_elements(fdata, iterinfo.opq[opname], diagprev); break;
       case 'z':
         xi.read(fdata);
         zeta.read(fdata);

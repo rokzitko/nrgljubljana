@@ -21,7 +21,7 @@
 
 
 
-   namespace DBLISOSZ {
+namespace DBLISOSZ {
 #include "dblisosz/dblisosz-2ch-def.dat"
 }
 
@@ -133,7 +133,7 @@ void SymmetryDBLISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, Matr
 }
 
 // Driver routine for recalc_f()
-void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);
@@ -157,7 +157,7 @@ void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
 #include "dblisosz/dblisosz-2ch-type1-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLISOSZ::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
   }
 };
 
@@ -169,7 +169,7 @@ void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
 #include "dblisosz/dblisosz-2ch-type2-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLISOSZ::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
   }
 };
 
@@ -181,7 +181,7 @@ void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
 #include "dblisosz/dblisosz-2ch-type1-isoup-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLISOSZ::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
   }
 };
 
@@ -193,7 +193,7 @@ void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
 #include "dblisosz/dblisosz-2ch-type2-isoup-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLISOSZ::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
   }
 };
 
@@ -205,7 +205,7 @@ void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
 #include "dblisosz/dblisosz-2ch-type1-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLISOSZ::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
   }
 };
 
@@ -217,7 +217,7 @@ void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
 #include "dblisosz/dblisosz-2ch-type2-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLISOSZ::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
   }
 };
 
@@ -229,7 +229,7 @@ void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
 #include "dblisosz/dblisosz-2ch-type1-isodown-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLISOSZ::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
   }
 };
 
@@ -241,7 +241,7 @@ void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
 #include "dblisosz/dblisosz-2ch-type2-isodown-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLISOSZ::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, DBLISOSZ::LENGTH_I_2CH);
   }
 };
   }

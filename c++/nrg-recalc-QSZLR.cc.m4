@@ -10,8 +10,8 @@ namespace QSZLR {
 
 include(recalc-macros.m4)
 
-   // Driver routine for recalc_f()
-   void SymmetryQSZLR::recalc_irreduc(const DiagInfo &diag) {
+// Driver routine for recalc_f()
+void SymmetryQSZLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip    = INVAR(isp);
     Number qp   = Ip.get("Q");

@@ -26,8 +26,8 @@ namespace SPU1LR {
 
 
 
-   // Recalculate matrix elements of a doublet tensor operator
-   void SymmetrySPU1LR::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+// Recalculate matrix elements of a doublet tensor operator
+void SymmetrySPU1LR::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   LOOP(diag, is1) {
     Invar I1    = INVAR(is1);
     SZspin ssz1 = I1.get("SSZ");
@@ -87,7 +87,7 @@ namespace SPU1LR {
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
+void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip    = INVAR(isp);
     SZspin sszp = Ip.get("SSZ");
@@ -105,7 +105,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-1ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_1CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -115,7 +115,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-2ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
 	    {
@@ -125,7 +125,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-2ch-spinupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -140,7 +140,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-1ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_1CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -150,7 +150,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-2ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
             {
@@ -160,7 +160,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-2ch-spindownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -177,7 +177,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-2ch-spinupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
       {
@@ -187,7 +187,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-2ch-spinupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
 
@@ -199,7 +199,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-2ch-spindowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
       {
@@ -209,7 +209,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
 #include "spu1lr/spu1lr-2ch-spindowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
     }

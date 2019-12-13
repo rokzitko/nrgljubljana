@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace QSZ {
+namespace QSZ {
 #include "qsz/qsz-1ch-def.dat"
 #include "qsz/qsz-2ch-def.dat"
 #include "qsz/qsz-3ch-def.dat"
@@ -57,7 +57,7 @@ void SymmetryQSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 }
 
 // Driver routine for recalc_f()
-void SymmetryQSZ::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!substeps);
   LOOP_const(diag, isp) {
     Invar Ip    = INVAR(isp);
@@ -90,7 +90,7 @@ void SymmetryQSZ::recalc_irreduc(const DiagInfo &diag) {
   } // loop
 }
 
-void SymmetryQSZ::recalc_irreduc_substeps(const DiagInfo &diag, int M) {
+void SymmetryQSZ::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
   my_assert(substeps);
   LOOP_const(diag, isp) {
     Invar Ip    = INVAR(isp);

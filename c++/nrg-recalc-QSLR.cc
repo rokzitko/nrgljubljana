@@ -21,12 +21,12 @@
 
 
 
-   namespace QSLR {
+namespace QSLR {
 #include "qslr/qslr-2ch-def.dat"
 }
 
 // Driver routine for recalc_f()
-void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // CONVENTION: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip  = INVAR(isp);
@@ -57,7 +57,7 @@ void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
 #include "qslr/qslr-2ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
   }
 };
     {
@@ -67,7 +67,7 @@ void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
 #include "qslr/qslr-2ch-spinupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
   }
 };
 
@@ -79,7 +79,7 @@ void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
 #include "qslr/qslr-2ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
   }
 };
     {
@@ -89,7 +89,7 @@ void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
 #include "qslr/qslr-2ch-spindownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
   }
 };
 
@@ -103,7 +103,7 @@ void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
 #include "qslr/qslr-2ch-spinupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
   }
 };
     {
@@ -113,7 +113,7 @@ void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
 #include "qslr/qslr-2ch-spinupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
   }
 };
 
@@ -125,7 +125,7 @@ void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
 #include "qslr/qslr-2ch-spindowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
   }
 };
     {
@@ -135,7 +135,7 @@ void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
 #include "qslr/qslr-2ch-spindowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QSLR::LENGTH_I_2CH);
   }
 };
   }

@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace DBLISOSZ {
+namespace DBLISOSZ {
 #include "dblisosz/dblisosz-2ch-def.dat"
 }
 
@@ -46,7 +46,7 @@ void SymmetryDBLISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, Matr
 }
 
 // Driver routine for recalc_f()
-void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);

@@ -41,8 +41,8 @@ void recalc_f(const DiagInfo &dg, MatrixElements &ff, const Invar &Ip, const Inv
     const size_t rmax1 = qsrmax[I1].rmax(table[j].i1);
     const size_t rmaxp = qsrmax[Ip].rmax(table[j].ip);
     if (!(rmax1 > 0 && rmaxp > 0)) continue;
-    const Invar &Ianc1 = a.ancestors[I1][table[j].i1];
-    const Invar &Iancp = a.ancestors[Ip][table[j].ip];
+    const Invar &Ianc1 = iterinfo.ancestors[I1][table[j].i1];
+    const Invar &Iancp = iterinfo.ancestors[Ip][table[j].ip];
     if (logletter('f')) {
       nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
       nrgdump2(Ianc1, Iancp) << endl;
@@ -151,8 +151,8 @@ void recalc_general(const DiagInfo &dg, const MatrixElements &cold, MatrixElemen
     const size_t rmaxp = qsrmax[Ip].rmax(table[j].ip);
     // Proceed if this combination of i1/ip contributes.
     if (rmax1 == 0 || rmaxp == 0) continue;
-    const Invar IN1 = a.ancestors[I1][table[j].i1];
-    const Invar INp = a.ancestors[Ip][table[j].ip];
+    const Invar IN1 = iterinfo.ancestors[I1][table[j].i1];
+    const Invar INp = iterinfo.ancestors[Ip][table[j].ip];
     my_assert(IN1 == table[j].IN1 && INp == table[j].INp);
     const Twoinvar ININ = make_pair(table[j].IN1, table[j].INp);
     const size_t cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.
@@ -216,8 +216,8 @@ void recalc1_global(DiagInfo &dg, const Invar &I, Matrix &m, size_t i1, size_t i
   const size_t rmaxp = qsrmax[I].rmax(ip);
   my_assert(rmax1 == rmaxp);
   if (rmax1 == 0 || rmaxp == 0) return;
-  const Invar IN1  = a.ancestors[I][i1];
-  const Invar INp  = a.ancestors[I][ip];
+  const Invar IN1  = iterinfo.ancestors[I][i1];
+  const Invar INp  = iterinfo.ancestors[I][ip];
   const Matrix &U1 = dgI.blocks[i1 - 1];
   const Matrix &Up = dgI.blocks[ip - 1];
   my_assert(U1.size1() == dim && U1.size2() == rmax1);

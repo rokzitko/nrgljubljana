@@ -25,8 +25,8 @@ namespace QSZLR {
 
 
 
-   // Driver routine for recalc_f()
-   void SymmetryQSZLR::recalc_irreduc(const DiagInfo &diag) {
+// Driver routine for recalc_f()
+void SymmetryQSZLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip    = INVAR(isp);
     Number qp   = Ip.get("Q");
@@ -47,7 +47,7 @@ namespace QSZLR {
 #include "qszlr/qszlr-2ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
   }
 };
     {
@@ -57,7 +57,7 @@ namespace QSZLR {
 #include "qszlr/qszlr-2ch-spinupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
   }
 };
 
@@ -69,7 +69,7 @@ namespace QSZLR {
 #include "qszlr/qszlr-2ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
   }
 };
     {
@@ -79,7 +79,7 @@ namespace QSZLR {
 #include "qszlr/qszlr-2ch-spindownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
   }
 };
 
@@ -93,7 +93,7 @@ namespace QSZLR {
 #include "qszlr/qszlr-2ch-spinupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
   }
 };
     {
@@ -103,7 +103,7 @@ namespace QSZLR {
 #include "qszlr/qszlr-2ch-spinupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
   }
 };
 
@@ -115,7 +115,7 @@ namespace QSZLR {
 #include "qszlr/qszlr-2ch-spindowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
   }
 };
     {
@@ -125,7 +125,7 @@ namespace QSZLR {
 #include "qszlr/qszlr-2ch-spindowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZLR::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QSZLR::LENGTH_I_2CH);
   }
 };
   }

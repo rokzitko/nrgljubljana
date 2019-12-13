@@ -27,8 +27,8 @@ namespace SPSU2 {
 
 
 
-   // Recalculate matrix elements of a doublet tensor operator
-   void SymmetrySPSU2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+// Recalculate matrix elements of a doublet tensor operator
+void SymmetrySPSU2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     LOOP(diag, is1) {
       Invar I1  = INVAR(is1);
@@ -139,7 +139,7 @@ namespace SPSU2 {
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
+void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!substeps);
   LOOP_const(diag, isp) {
     Invar Ip  = INVAR(isp);
@@ -155,7 +155,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-1ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_1CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_1CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -165,7 +165,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-2ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_2CH);
   }
 };
 	   {
@@ -175,7 +175,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-2ch-spinupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_2CH);
   }
 } } break;
   case 3: { {
@@ -185,7 +185,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-3ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_0);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_0);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_0);
   }
 };
 	   {
@@ -195,7 +195,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-3ch-spinupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_1);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_1);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_1);
   }
 };
 	   {
@@ -205,7 +205,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-3ch-spinupc.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_2);
-    recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_2);
+    recalc_f(diag, iterinfo.opch[2][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_2);
   }
 } } break;
   default: my_assert_not_reached();
@@ -220,7 +220,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-1ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_1CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_1CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -230,7 +230,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-2ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_2CH);
   }
 };
            {
@@ -240,7 +240,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-2ch-spindownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_2CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_2CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_2CH);
   }
 } } break;
   case 3: { {
@@ -250,7 +250,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-3ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_0);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_0);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_0);
   }
 };
            {
@@ -260,7 +260,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-3ch-spindownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_1);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_1);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_1);
   }
 };
            {
@@ -270,7 +270,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 #include "spsu2/spsu2-3ch-spindownc.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_2);
-    recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_2);
+    recalc_f(diag, iterinfo.opch[2][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_3CH_2);
   }
 } } break;
   default: my_assert_not_reached();
@@ -283,7 +283,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag) {
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2::recalc_irreduc_substeps(const DiagInfo &diag, int M) {
+void SymmetrySPSU2::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
   my_assert(substeps);
   LOOP_const(diag, isp) {
     Invar Ip  = INVAR(isp);
@@ -298,7 +298,7 @@ void SymmetrySPSU2::recalc_irreduc_substeps(const DiagInfo &diag, int M) {
 #include "spsu2/spsu2-1ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_1CH);
-    recalc_f(diag, a.opch[M][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_1CH);
+    recalc_f(diag, iterinfo.opch[M][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_1CH);
   }
 };
 
@@ -310,7 +310,7 @@ void SymmetrySPSU2::recalc_irreduc_substeps(const DiagInfo &diag, int M) {
 #include "spsu2/spsu2-1ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_1CH);
-    recalc_f(diag, a.opch[M][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_1CH);
+    recalc_f(diag, iterinfo.opch[M][0], Ip, I1, recalc_table, SPSU2::LENGTH_I_1CH);
   }
 };
   }

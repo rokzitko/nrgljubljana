@@ -11,8 +11,8 @@ namespace SPU1 {
 
 include(recalc-macros.m4)
 
-   // Recalculate matrix elements of a doublet tensor operator
-   void SymmetrySPU1::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+// Recalculate matrix elements of a doublet tensor operator
+void SymmetrySPU1::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!P::substeps) {
     LOOP(diag, is1) {
       Invar I1    = INVAR(is1);
@@ -43,7 +43,7 @@ include(recalc-macros.m4)
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag) {
+void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!P::substeps);
 
   LOOP_const(diag, isp) {
@@ -66,7 +66,7 @@ void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag) {
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, int M) {
+void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
   my_assert(P::substeps);
 
   LOOP_const(diag, isp) {

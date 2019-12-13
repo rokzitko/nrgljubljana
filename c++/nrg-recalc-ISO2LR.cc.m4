@@ -7,7 +7,7 @@
 
 include(recalc-macros.m4)
 
-   namespace ISO2LR {
+namespace ISO2LR {
 #include "iso2lr/iso2lr-2ch-def.dat"
 }
 
@@ -20,7 +20,7 @@ double sign(double x) {
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
 // Driver routine for recalc_f()
-void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryISO2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);

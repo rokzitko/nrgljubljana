@@ -12,8 +12,8 @@ namespace U1 {
 
 include(recalc-macros.m4)
 
-   // Recalculate matrix elements of a doublet tensor operator
-   void SymmetryU1::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+// Recalculate matrix elements of a doublet tensor operator
+void SymmetryU1::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   LOOP(diag, is1) {
     Invar I1  = INVAR(is1);
     Number q1 = I1.get("Q");
@@ -33,12 +33,12 @@ define(`RECALC_F_TAB_U1', {
 #include $1
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-    recalc_f(diag, a.opch[$2][$3], Ip, I1, recalc_table, $4);
+    recalc_f(diag, opch[$2][$3], Ip, I1, recalc_table, $4);
   }
 })
 
-   // Driver routine for recalc_f()
-   void SymmetryU1::recalc_irreduc(const DiagInfo &diag) {
+// Driver routine for recalc_f()
+void SymmetryU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip  = INVAR(isp);
     Number qp = Ip.get("Q");

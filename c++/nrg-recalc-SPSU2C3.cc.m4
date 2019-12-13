@@ -12,8 +12,8 @@ include(recalc-macros.m4)
 
 #define xRECALC_F_TAB(a, b, c) 0;
 
-   // Driver routine for recalc_f()
-   void SymmetrySPSU2C3::recalc_irreduc(const DiagInfo &diag) {
+// Driver routine for recalc_f()
+void SymmetrySPSU2C3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #ifdef NRG_COMPLEX
   // CONVENTION: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {

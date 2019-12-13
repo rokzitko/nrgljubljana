@@ -13,7 +13,7 @@ include(recalc-macros.m4)
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
 // Driver routine for recalc_f()
-void SymmetryISOLR::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryISOLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);

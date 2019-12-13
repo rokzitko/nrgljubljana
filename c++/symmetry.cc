@@ -135,9 +135,9 @@ class Symmetry {
 
   virtual void calculate_TD(const DiagInfo &diag, double factor) = 0;
 
-  virtual void recalc_irreduc(const DiagInfo &diag) { my_error("Not implemented."); }
+  virtual void recalc_irreduc(const DiagInfo &diag, Opch &opch) { my_error("Not implemented."); }
 
-  virtual void recalc_irreduc_substeps(const DiagInfo &diag, int M) { my_error("Not implemented."); }
+  virtual void recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) { my_error("Not implemented."); }
 
   virtual void recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
 
@@ -159,7 +159,7 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
   void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) override;                                                                \
-  void recalc_irreduc(const DiagInfo &diag) override
+  void recalc_irreduc(const DiagInfo &diag, Opch &opch) override
 
 // Optional declaration
 #define HAS_DOUBLET void recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
@@ -167,7 +167,7 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
 #define HAS_ORB_TRIPLET void recalc_orb_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
 #define HAS_QUADRUPLET void recalc_quadruplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
 #define HAS_GLOBAL void recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) override
-#define HAS_SUBSTEPS void recalc_irreduc_substeps(const DiagInfo &diag, int M) override
+#define HAS_SUBSTEPS void recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) override
 
 class SymField : public Symmetry {
   public:

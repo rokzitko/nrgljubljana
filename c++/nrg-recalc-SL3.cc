@@ -21,7 +21,7 @@
 
 
 
-   namespace SL3 {
+namespace SL3 {
 #include "sl3/sl3-3ch-def.dat"
 }
 
@@ -47,7 +47,7 @@ void SymmetrySL3::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 }
 
 // Driver routine for recalc_f()
-void SymmetrySL3::recalc_irreduc(const DiagInfo &diag) {
+void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip   = INVAR(isp);
     Number q1p = Ip.get("Q1");
@@ -64,7 +64,7 @@ void SymmetrySL3::recalc_irreduc(const DiagInfo &diag) {
 #include "sl3/sl3-3ch-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
   }
 };
 
@@ -76,7 +76,7 @@ void SymmetrySL3::recalc_irreduc(const DiagInfo &diag) {
 #include "sl3/sl3-3ch-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
   }
 };
 
@@ -88,7 +88,7 @@ void SymmetrySL3::recalc_irreduc(const DiagInfo &diag) {
 #include "sl3/sl3-3ch-c.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
-    recalc_f(diag, a.opch[2][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
+    recalc_f(diag, iterinfo.opch[2][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
   }
 };
   }

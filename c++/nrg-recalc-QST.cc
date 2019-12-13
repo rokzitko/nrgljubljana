@@ -123,7 +123,7 @@ void SymmetryQST::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQST::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQST::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   nrglog('f', "QST::recalc_irreduc() called");
   my_assert(!substeps);
 
@@ -150,7 +150,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag) {
 #include "qst/qst-spinup+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_0);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_0);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_0);
   }
 };
 
@@ -163,7 +163,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag) {
 #include "qst/qst-spinup0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_1);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_1);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_1);
   }
 };
 
@@ -176,7 +176,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag) {
 #include "qst/qst-spinup-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_2);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_2);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_2);
   }
 };
 
@@ -189,7 +189,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag) {
 #include "qst/qst-spindo+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_0);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_0);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_0);
   }
 };
 
@@ -202,7 +202,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag) {
 #include "qst/qst-spindo0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_1);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_1);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_1);
   }
 };
 
@@ -215,7 +215,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag) {
 #include "qst/qst-spindo-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_2);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_2);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_2);
   }
 };
   }

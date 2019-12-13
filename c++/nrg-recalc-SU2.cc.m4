@@ -37,12 +37,12 @@ define(`RECALC_F_TAB_SU2', {
 #include $1
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-    recalc_f(diag, a.opch[$2][$3], Ip, I1, recalc_table, $4);
+    recalc_f(diag, opch[$2][$3], Ip, I1, recalc_table, $4);
   }
 })
 
-   // Driver routine for recalc_f()
-   void SymmetrySU2::recalc_irreduc(const DiagInfo &diag) {
+// Driver routine for recalc_f()
+void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);

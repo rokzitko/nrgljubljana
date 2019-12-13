@@ -21,7 +21,7 @@
 
 
 
-   namespace QJ {
+namespace QJ {
 #include "qj/qj-def.dat"
 }
 
@@ -129,7 +129,7 @@ void SymmetryQJ::recalc_quadruplet(DiagInfo &diag, MatrixElements &cold, MatrixE
   nrglog('f', "QJ::recalc_quadruplet() end");
 }
 
-void SymmetryQJ::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   nrglog('f', "SymmetryQJ::recalc_irreduc() start");
 
   LOOP_const(diag, isp) {
@@ -147,7 +147,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag) {
 #include "qj/qj-spin_j3_2-jz3_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jz3_2);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz3_2);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz3_2);
   }
 };
 
@@ -159,7 +159,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag) {
 #include "qj/qj-spin_j1_2-jz1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j1_2_jz1_2);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j1_2_jz1_2);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j1_2_jz1_2);
   }
 };
     {
@@ -169,7 +169,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag) {
 #include "qj/qj-spin_j3_2-jz1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jz1_2);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz1_2);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz1_2);
   }
 };
 
@@ -181,7 +181,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag) {
 #include "qj/qj-spin_j1_2-jz-1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j1_2_jzM1_2);
-    recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j1_2_jzM1_2);
+    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j1_2_jzM1_2);
   }
 };
     {
@@ -191,7 +191,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag) {
 #include "qj/qj-spin_j3_2-jz-1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jzM1_2);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM1_2);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM1_2);
   }
 };
 
@@ -203,7 +203,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag) {
 #include "qj/qj-spin_j3_2-jz-3_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jzM3_2);
-    recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM3_2);
+    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM3_2);
   }
 };
   }

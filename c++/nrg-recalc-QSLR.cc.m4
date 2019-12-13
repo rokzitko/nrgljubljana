@@ -6,12 +6,12 @@
 
 include(recalc-macros.m4)
 
-   namespace QSLR {
+namespace QSLR {
 #include "qslr/qslr-2ch-def.dat"
 }
 
 // Driver routine for recalc_f()
-void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // CONVENTION: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip  = INVAR(isp);

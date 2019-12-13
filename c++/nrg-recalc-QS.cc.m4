@@ -57,7 +57,7 @@ void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQS::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!substeps);
   LOOP_const(diag, isp) {
     Invar Ip  = INVAR(isp);
@@ -102,7 +102,7 @@ void SymmetryQS::recalc_irreduc(const DiagInfo &diag) {
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, int M) {
+void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
   my_assert(substeps);
   LOOP_const(diag, isp) {
     Invar Ip  = INVAR(isp);

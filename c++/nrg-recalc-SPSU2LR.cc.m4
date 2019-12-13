@@ -10,8 +10,8 @@ namespace SPSU2LR {
 
 include(recalc-macros.m4)
 
-   // Recalculate matrix elements of a doublet tensor operator
-   void SymmetrySPSU2LR::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+// Recalculate matrix elements of a doublet tensor operator
+void SymmetrySPSU2LR::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   LOOP(diag, is1) {
     Invar I1  = INVAR(is1);
     Sspin ss1 = I1.get("SS");
@@ -27,7 +27,7 @@ include(recalc-macros.m4)
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag) {
+void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip  = INVAR(isp);
     Sspin ssp = Ip.get("SS");

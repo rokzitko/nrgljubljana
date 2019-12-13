@@ -6,14 +6,14 @@
 
 include(recalc-macros.m4)
 
-   namespace QSC3 {
+namespace QSC3 {
 #include "qsc3/qsc3-def.dat"
 }
 
 #define xRECALC_F_TAB(a, b, c) 0;
 
 // Driver routine for recalc_f()
-void SymmetryQSC3::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQSC3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #ifdef NRG_COMPLEX
   // CONVENTION: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {

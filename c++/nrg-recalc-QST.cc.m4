@@ -54,7 +54,7 @@ void SymmetryQST::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQST::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQST::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   nrglog('f', "QST::recalc_irreduc() called");
   my_assert(!substeps);
 

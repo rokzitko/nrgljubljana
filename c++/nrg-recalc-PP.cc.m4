@@ -11,18 +11,18 @@ namespace PP {
 
 include(recalc-macros.m4)
 
-   define(`RECALC_F_TAB_P', {
+define(`RECALC_F_TAB_P', {
      if (diag.count(I1)) {
        struct Recalc_f recalc_table[] = {
 #include $1
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-       recalc_f(diag, a.opch[$2][$3], Ip, I1, recalc_table, $4);
+       recalc_f(diag, opch[$2][$3], Ip, I1, recalc_table, $4);
      }
    })
 
-   // Driver routine for recalc_f()
-   void SymmetryPP::recalc_irreduc(const DiagInfo &diag) {
+// Driver routine for recalc_f()
+void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);
     int pa   = Ip.get("Pa");

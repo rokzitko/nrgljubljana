@@ -6,12 +6,12 @@
 
 include(recalc-macros.m4)
 
-   namespace ISOSZLR {
+namespace ISOSZLR {
 #include "isoszlr/isoszlr-2ch-def.dat"
 }
 
 // Driver routine for recalc_f()
-void SymmetryISOSZLR::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryISOSZLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);

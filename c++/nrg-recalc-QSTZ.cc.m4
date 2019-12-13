@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace QSTZ {
+namespace QSTZ {
 #include "qstz/qstz-def.dat"
 }
 
@@ -52,7 +52,7 @@ void SymmetryQSTZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEl
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   nrglog('f', "QSTZ::recalc_irreduc() called");
   my_assert(!substeps);
 

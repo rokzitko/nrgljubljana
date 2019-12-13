@@ -26,10 +26,10 @@ namespace NONE {
 
 
 
-   
 
-   // Driver routine for recalc_f()
-   void SymmetryNONE::recalc_irreduc(const DiagInfo &diag) {
+
+// Driver routine for recalc_f()
+void SymmetryNONE::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);
     Invar I1 = Invar();
@@ -41,7 +41,7 @@ namespace NONE {
 #include "none/none-1ch-a-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_1CH);
-       recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
+       recalc_f(diag, opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
      }
    };
             {
@@ -50,7 +50,7 @@ namespace NONE {
 #include "none/none-1ch-a-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_1CH);
-       recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
+       recalc_f(diag, opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
      }
    }; } break;
   case 2: { {
@@ -59,7 +59,7 @@ namespace NONE {
 #include "none/none-2ch-a-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-       recalc_f(diag, a.opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+       recalc_f(diag, opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
      }
    };
 	    {
@@ -68,7 +68,7 @@ namespace NONE {
 #include "none/none-2ch-b-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-       recalc_f(diag, a.opch[1][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+       recalc_f(diag, opch[1][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
      }
    };
             {
@@ -77,7 +77,7 @@ namespace NONE {
 #include "none/none-2ch-a-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-       recalc_f(diag, a.opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+       recalc_f(diag, opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
      }
    };
             {
@@ -86,7 +86,7 @@ namespace NONE {
 #include "none/none-2ch-b-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-       recalc_f(diag, a.opch[1][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+       recalc_f(diag, opch[1][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
      }
    } } break;
   default: my_assert_not_reached();

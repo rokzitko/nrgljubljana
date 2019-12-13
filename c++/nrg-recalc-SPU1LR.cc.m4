@@ -11,8 +11,8 @@ namespace SPU1LR {
 
 include(recalc-macros.m4)
 
-   // Recalculate matrix elements of a doublet tensor operator
-   void SymmetrySPU1LR::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+// Recalculate matrix elements of a doublet tensor operator
+void SymmetrySPU1LR::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   LOOP(diag, is1) {
     Invar I1    = INVAR(is1);
     SZspin ssz1 = I1.get("SSZ");
@@ -30,7 +30,7 @@ include(recalc-macros.m4)
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag) {
+void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   LOOP_const(diag, isp) {
     Invar Ip    = INVAR(isp);
     SZspin sszp = Ip.get("SSZ");

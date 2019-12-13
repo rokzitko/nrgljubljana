@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace ISO1 {
+namespace ISO1 {
 #include "iso/iso-1ch-def.dat"
 #include "iso/iso-2ch-def.dat"
 #include "iso/iso-3ch-def.dat"
@@ -41,7 +41,7 @@ void SymmetryISO::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 // (ISO): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISO::recalc_irreduc(const DiagInfo &diag) {
+void SymmetryISO::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   LOOP_const(diag, isp) {
     Invar Ip = INVAR(isp);

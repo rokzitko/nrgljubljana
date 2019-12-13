@@ -56,7 +56,7 @@ void offdiag_build(size_t i, size_t j,
                    size_t ch,      // channel number
                    size_t fnr,     // extra index for <||f||>, usually 0
                    t_matel factor, // may be complex (in principle)
-                   Matrix &h, const Rmaxvals &qq, const InvarVec &In) {
+                   Matrix &h, const Rmaxvals &qq, const InvarVec &In, Opch &opch) {
   // We are building the upper triangular part of the symmetric Hamiltonian
   // matrix! Thus usually i > j. If not, we must conjugate transpose
   // the contribution!
@@ -79,22 +79,22 @@ void offdiag_build(size_t i, size_t j,
   const t_matel factor_scaled = factor / SCALE(STAT::N + 1);
 #define F_EPSILON 1e-8
   if (abs(factor_scaled) < F_EPSILON) return; // Doesn't contribute after all. Factors are usually order 1.
-  const size_t cnt = a.opch[ch][fnr].count(II);
+  const size_t cnt = opch[ch][fnr].count(II);
   if (cnt != 1) {
     cout << "offdiag_function() critical error: <||f||> subspace does not exist." << endl;
     cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor_scaled=" << factor_scaled << endl;
     cout << "II=" << II << " cnt=" << cnt << endl;
     exit(1);
   }
-  my_assert(size1 == a.opch[ch][fnr][II].size1());
-  my_assert(size2 == a.opch[ch][fnr][II].size2());
+  my_assert(size1 == opch[ch][fnr][II].size1());
+  my_assert(size2 == opch[ch][fnr][II].size2());
   nrglog('i', "offdiag i=" << i << " j=" << j << " factor_scaled=" << factor_scaled << " II=" << II);
   if (transpose) {
     matrix_range<Matrix> hsub(h, range(begin2, begin2 + size2), range(begin1, begin1 + size1));
-    noalias(hsub) += CONJ_ME(factor_scaled) * herm(a.opch[ch][fnr][II]);
+    noalias(hsub) += CONJ_ME(factor_scaled) * herm(opch[ch][fnr][II]);
   } else {
     matrix_range<Matrix> hsub(h, range(begin1, begin1 + size1), range(begin2, begin2 + size2));
-    noalias(hsub) += factor_scaled * a.opch[ch][fnr][II];
+    noalias(hsub) += factor_scaled * opch[ch][fnr][II];
   }
 }
 
@@ -104,7 +104,7 @@ void offdiag_function(size_t i, size_t j,
                       t_matel factor, // may be complex (in principle)
                       Matrix &h, const Rmaxvals &qq, const InvarVec &In) {
   const bool contributes = offdiag_contributes(i, j, ch, qq);
-  if (contributes) offdiag_build(i, j, ch, fnr, factor, h, qq, In);
+  if (contributes) offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch);
 }
 
 // TRICK: this macro is used when the evaluation of 'factor' could
@@ -114,7 +114,7 @@ void offdiag_function(size_t i, size_t j,
 #define offdiag_macro(i, j, ch, fnr, factor, h, qq, In)                                                                                              \
   {                                                                                                                                                  \
     const bool contributes = offdiag_contributes(i, j, ch, qq);                                                                                      \
-    if (contributes) { offdiag_build(i, j, ch, fnr, factor, h, qq, In); };                                                                           \
+    if (contributes) { offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch); };                                                            \
   }
 
 /* +++ Shift the diagonal matrix elements by the number of electrons
