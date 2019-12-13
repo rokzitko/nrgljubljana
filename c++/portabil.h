@@ -225,4 +225,16 @@ ofstream safeopen(string filename, bool binary = false) {
   return F;
 }
 
+#if defined(__clang__) || defined (__GNUC__)
+# define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#else
+# define ATTRIBUTE_NO_SANITIZE_ADDRESS
+#endif
+
+#if defined(__clang__) || defined (__GNUC__)
+# define ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO __attribute__((no_sanitize("float-divide-by-zero")))
+#else
+# define ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
+#endif
+
 #endif

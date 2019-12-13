@@ -101,13 +101,18 @@ inline void Bins::add(double energy, t_weight weight) {
 }
 
 inline void Bins::add_std(double energy, t_weight weight) {
-  const double lg  = log10(energy);
-  const double pos = (lg - log10emin) * binsperdecade;
-  const long index = long(pos); // must be signed!
   // Important: if 'energy' is lower than the lower limit of the
   // first interval, the weight is assigned to the first bin. This
   // is especially relevant for collecting the omega=0 data in
   // bosonic correlators. (rz, 25 Oct 2012)
+  const double zero_epsilon = 1e-14;
+  if (energy < zero_epsilon) { // handle this special case separately
+    bins[0].second += weight;
+    return;
+  }
+  const double log10e  = log10(energy);
+  const double pos = (log10e - log10emin) * binsperdecade;
+  const long index = long(pos); // must be signed!
   if (index < 0) {
     bins[0].second += weight;
     return;
