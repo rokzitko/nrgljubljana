@@ -418,7 +418,7 @@ class BaseSpectrum;
 
 class SPEC {
   public:
-  virtual ~SPEC() {};
+  virtual ~SPEC() = default;
   virtual ChainSpectrum *make_cs(const BaseSpectrum &) = 0;
   virtual void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *cs, const Invar &,
                     const Invar &){};
