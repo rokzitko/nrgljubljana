@@ -206,7 +206,6 @@ class SPEC_FDM_v3mm : public SPEC {
 };
 
 template <typename T> inline std::complex<T> boltz_fnc_noscale(T E1, T E2, T bzE1, T bzE2, T wn, short n) {
-  const T WEIGHT_TOL = 1e-8;
   if (n != 0 || abs(E1 - E2) > WEIGHT_TOL)    // integer test first!!
     return (bzE1 - bzE2) / cmpl(E1 - E2, wn); // bzE1 = exp(-E1/T), bzE2 = exp(-E2/T)
   else

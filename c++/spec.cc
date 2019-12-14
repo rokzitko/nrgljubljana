@@ -13,6 +13,8 @@
 const double S_FERMIONIC = -1.0;
 const double S_BOSONIC   = 1.0;
 
+const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
+
 #include "spec_FT.cc"
 #include "spec_DMNRG.cc"
 #include "spec_FDM.cc"
