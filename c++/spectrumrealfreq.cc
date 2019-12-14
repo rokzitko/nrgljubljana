@@ -2,8 +2,8 @@
 class SpectrumRealFreq : public Spectrum {
   private:
   Bins fspos, fsneg; // Full spectral information
-  void mergeNN2(ChainSpectrumBinning &cs);
-  void mergeCFS(ChainSpectrumBinning &cs);
+  void mergeNN2(const ChainSpectrumBinning &cs);
+  void mergeCFS(const ChainSpectrumBinning &cs);
   void weight_report();
   void trim();
   void savebins();
@@ -34,7 +34,7 @@ void SpectrumRealFreq::merge(ChainSpectrum *cs) {
 }
 
 // Spectrum merging for complete Fock space calculation.
-void SpectrumRealFreq::mergeCFS(ChainSpectrumBinning &cs) {
+void SpectrumRealFreq::mergeCFS(const ChainSpectrumBinning &cs) {
   nrglog('*', "weight=" << cs.total_weight());
   fspos.merge(cs.spos);
   fsneg.merge(cs.sneg);
@@ -138,7 +138,7 @@ bool N_for_merging(int N) {
 // current choice seems to be working quite all right.
 // See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001).
 
-void SpectrumRealFreq::mergeNN2(ChainSpectrumBinning &cs) {
+void SpectrumRealFreq::mergeNN2(const ChainSpectrumBinning &cs) {
   nrglog('*', "weight=" << cs.total_weight());
   if (!N_for_merging(STAT::N)) return;
   mergeNN2half(fspos, cs.spos);
