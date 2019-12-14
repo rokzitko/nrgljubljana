@@ -284,17 +284,15 @@ class DimSub {
   EVEC eigenvalue; // all eigenvalues
   EVEC absenergy;  // absolute energies (for FDM)
   DimSub() = default;
-  DimSub(size_t _kept, size_t _total, Rmaxvals _rmax, EVEC _eigenvalue, EVEC _absenergy) : 
+  DimSub(size_t _kept, size_t _total, const Rmaxvals &_rmax, const EVEC &_eigenvalue, const EVEC &_absenergy) : 
      kept(_kept), total(_total), rmax(_rmax), eigenvalue(_eigenvalue), absenergy(_absenergy) {
     my_assert(kept <= total);
     discarded = total - kept;
   }
-//  DimSub(const DimSub &ds) { // XXX ?
-//    kept      = ds.kept;
-//    discarded = ds.discarded;
-//    total     = ds.total;
-//  }
+  DimSub(const DimSub &) = default;
+  DibSub(DimSub &&) = default;
   DimSub &operator=(const DimSub &) = default;
+  DimSub &operator=(DimSub &&) = default;
   ~DimSub() = default;
 };
 
@@ -320,14 +318,9 @@ class Eigen {
   // using the efficient BLAS routines when performing recalculations of
   // the matrix elements.
   std::vector<Matrix> blocks;
-  // Various assertion checks; to be called after the
-  // diagonalisation routine or reading Eigen objects through MPI or
-  // from disk.
-  void perform_checks() const;
-  // Copy constructor
-  Eigen(const Eigen &t) : nr(t.nr), rmax(t.rmax), nrpost(t.nrpost), shift(t.shift), value(t.value), absenergy(t.absenergy), matrix0(t.matrix0) {
-    perform_checks();
-  }
+  Eigen() = default;
+  Eigen(const Eigen &t) = default;
+  Eigen(Eigen &&t) = default;
   // nr - number of eigenpairs, rmax - dimensionality of the matrix space
   Eigen(size_t _nr, size_t _rmax) : nr(_nr), rmax(_rmax) {
     my_assert(rmax >= nr);
@@ -336,13 +329,11 @@ class Eigen {
     matrix0.resize(nr, rmax);
     perform_checks();
   }
-  Eigen() {
-    value.resize(nr);
-    matrix0.resize(nr, nr);
-  };
   Eigen &operator=(const Eigen &) = default;
   Eigen &operator=(Eigen &&) = default;
   ~Eigen() = default;
+  // Various assertion checks; to be called after the diagonalisation routine or reading Eigen objects through MPI or from disk.
+  void perform_checks() const;
   // Accessor routine for j-th element of i-th eigenvector.
   inline t_matel &vektor(size_t i, size_t j) { return matrix0(i, j); }
   // Returns the number of eigenpairs CURRENTLY STORED.
@@ -368,7 +359,6 @@ class Eigen {
     shift     = 0.0;
     matrix0   = identity_matrix<t_eigen>(nr);
   }
-
   private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
@@ -472,14 +462,14 @@ double SCALE(int N) // int is correct here, this N may be negative
   double scale = 0.0;
   if (string(P::discretization) == "Y")
     // Yoshida,Whitaker,Oliveira PRB 41 9403 Eq. (39)
-    scale = 0.5 * (1. + 1. / P::Lambda);
+    scale = 0.5 * (1. + 1. / P::Lambda); // NOLINT
   if (string(P::discretization) == "C" || string(P::discretization) == "Z")
     // Campo, Oliveira PRB 72 104432, Eq. (46) [+ Lanczos]
-    scale = (1.0 - 1. / P::Lambda) / log(P::Lambda);
+    scale = (1.0 - 1. / P::Lambda) / log(P::Lambda); // NOLINT
   if (!P::substeps)
-    scale *= pow(P::Lambda, -(N - 1) / 2. + 1 - P::z);
+    scale *= pow(P::Lambda, -(N - 1) / 2. + 1 - P::z); // NOLINT
   else
-    scale *= pow(P::Lambda, -N / (2. * P::channels) + 3 / 2. - P::z);
+    scale *= pow(P::Lambda, -N / (2. * P::channels) + 3 / 2. - P::z); // NOLINT
   my_assert(scale != 0.0);        // yes, != is intentional here.
   scale = scale * P::bandrescale; // RESCALE
   return scale;
@@ -498,8 +488,8 @@ double scale_fix(size_t N) {
   tie(Ntrue, M) = get_Ntrue_M(N);
   my_assert(N == Ntrue * P::channels + M);
   size_t N_at_end_of_full_step     = Ntrue * P::channels + P::channels - 1; // M=0,...,channels-1
-  double scale_now                 = SCALE(N + 1);
-  double scale_at_end_of_full_step = SCALE(N_at_end_of_full_step + 1);
+  double scale_now                 = SCALE(N + 1); // NOLINT
+  double scale_at_end_of_full_step = SCALE(N_at_end_of_full_step + 1); // NOLINT
   return scale_now / scale_at_end_of_full_step;
 }
 
@@ -655,12 +645,13 @@ const string default_workdir = ".";
 
 void create_workdir(string &workdir) {
   string workdir_template = workdir + "/XXXXXX";
-  char x[workdir_template.length() + 1];
+  auto x = new char[workdir_template.length() + 1];
   strncpy(x, workdir_template.c_str(), workdir_template.length() + 1);
   if (char *w = mkdtemp(x)) // create a unique directory
     P::workdir = w;
   else
     P::workdir = default_workdir;
+  delete[] x;
   cout << "workdir=" << P::workdir << endl << endl;
   atexit(remove_workdir);
 }
@@ -672,10 +663,11 @@ void set_workdir(string &workdir_) {
   create_workdir(workdir);
 }
 
-void set_workdir(int argc, char *argv[]) {
+void set_workdir(int argc, char **argv) {
+  vector<string> args(argv+1, argv+argc);
   string workdir = default_workdir;
   if (const char *env_w = std::getenv("NRG_WORKDIR")) workdir = env_w;
-  if (argc == 3 && strcmp(argv[1], "-w") == 0) workdir = argv[2];
+  if (args.size() == 2 && args[0] == "-w") workdir = args[1];
   create_workdir(workdir);
 }
 
@@ -1708,15 +1700,15 @@ void init_rho(const DiagInfo &diag, DensMatElements &rho) {
 
 // Calculate the shell-N statistical sum as used in the FDM algorithm.
 double calc_ZnD_one(size_t N, double T) {
-  long double ZZ = 0;
+  double ZZ = 0;
   for (const auto &j : dm[N]) {
     // Determine which states count as discarded in the FDM sense
     const size_t min = (LAST_ITERATION(N) ? 0 : j.second.kept);
     const size_t max = j.second.total;
     for (size_t i = min; i < max; i++) {
-      const long double Eabs = j.second.absenergy[i] - STAT::GSenergy;
+      const double Eabs = j.second.absenergy[i] - STAT::GSenergy;
       my_assert(Eabs >= 0.0);
-      const long double betaE = Eabs / T;
+      const double betaE = Eabs / T;
       ZZ += mult(j.first) * expl(-betaE);
     }
   }
