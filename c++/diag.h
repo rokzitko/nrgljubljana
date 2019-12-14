@@ -273,7 +273,7 @@ Eigen diagonalise(Matrix &m) {
 #endif
 #ifdef NRG_COMPLEX
   const size_t mdim = m.size1();
-  if (dim < sP.zheevrlimit) dr = diagzheev;
+  if (mdim < sP.zheevrlimit) dr = diagzheev;
   if (dr == diagzheev) M = diagonalise_zheev(m, d, 'V');
   if (dr == diagzheevr) M = diagonalise_zheevr(m, d, 'V', sP.diagratio);
 #endif
