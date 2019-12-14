@@ -33,7 +33,7 @@ class outfield {
       allfields.insert(begin(allfields) + pos, ptr);
     }
   };
-  outfield(string &desc, int pos = -1) { set(desc, pos); }
+  explicit outfield(string &desc, int pos = -1) { set(desc, pos); }
   // We store a double precision number which is converted to an
   // appropriately formatted string.
   void setvalue(double newvalue) {

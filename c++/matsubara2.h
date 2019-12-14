@@ -24,7 +24,7 @@ class Matsubara2 {
     matstype mt1 = (mt == matstype::fb ? matstype::fermionic : matstype::bosonic);
     matstype mt2 = (mt == matstype::bf ? matstype::fermionic : matstype::bosonic);
     for (size_t m = 0; m < v.size1(); m++)
-      for (size_t n = 0; n < v.size2(); n++) output(F, w(m, mt1), w(n, mt2), v(m, n), true);
+      for (size_t n = 0; n < v.size2(); n++) output(F, ww(m, mt1), ww(n, mt2), v(m, n), true);
   }
   t_weight total_weight() const {
     weight_bucket sum;

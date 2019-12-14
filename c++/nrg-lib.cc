@@ -954,10 +954,9 @@ class ChainSpectrumTemp : public ChainSpectrum {
 class ChainSpectrumMatsubara : public ChainSpectrum {
   private:
   Matsubara m;
-
   public:
   ChainSpectrumMatsubara() = delete;
-  ChainSpectrumMatsubara(matstype _mt) : m(P::mats, _mt){};
+  explicit ChainSpectrumMatsubara(matstype _mt) : m(P::mats, _mt){};
   ~ChainSpectrumMatsubara() override = default;
   void add(size_t n, t_weight w) { m.add(n, w); }
   void add(double energy, t_weight w) override { my_assert_not_reached(); }
@@ -968,10 +967,9 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
 class ChainSpectrumMatsubara2 : public ChainSpectrum {
   private:
   Matsubara2 m;
-
   public:
   ChainSpectrumMatsubara2() = delete;
-  ChainSpectrumMatsubara2(matstype _mt) : m(P::mats, _mt){};
+  explicit ChainSpectrumMatsubara2(matstype _mt) : m(P::mats, _mt){};
   ~ChainSpectrumMatsubara2() override = default;
   void add(size_t i, size_t j, t_weight w) { m.add(i, j, w); }
   void add(double energy, t_weight w) override { my_assert_not_reached(); }

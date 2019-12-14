@@ -17,6 +17,15 @@ const int multiplicative = 0;
 const int additive       = 1;
 const int mod3           = 3;
 
+std::string typestr(int t) {
+  switch (t) {
+    case additive: return "additive";
+    case multiplicative: return "multiplicative";
+    case mod3: return "mod3";
+    default: my_assert_not_reached();
+  }
+}
+
 // GLOBAL VARIABLE: 'qntype' must be defined before calls to
 // Invar::combine() and Invar::invert().
 QNType qntype;
@@ -34,18 +43,16 @@ size_t invdim = 0; // 0 before initialization!
 class Invar {
   protected:
   InvType data;
-
   private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &data; }
-
   public:
   Invar() : data(invdim) {}
-  Invar(const InvType &d) {
+  explicit Invar(const InvType &d) {
     my_assert(d.size() == data.size());
     data = d;
   }
-  Invar(int i0) : data{i0} { // (int) constructor
+  explicit Invar(int i0) : data{i0} { // (int) constructor
     my_assert(invdim == 1);
   }
   Invar(int i0, int i1) : data{i0, i1} { // (int,int) constructor
@@ -149,15 +156,6 @@ struct InvarStructure {
   string qn_name;
   int qn_type;
 };
-
-std::string typestr(int t) {
-  switch (t) {
-    case additive: return "additive";
-    case multiplicative: return "multiplicative";
-    case mod3: return "mod3";
-    default: my_assert_not_reached();
-  }
-}
 
 void initInvar(const InvarStructure *structure, size_t len) {
   invdim = len; // global variable!

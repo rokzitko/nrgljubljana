@@ -1,15 +1,12 @@
-#include <utility>
-
-
-
 // misc.h - Miscelaneous functions
 // Copyright (C) 2005-2009 Rok Zitko
 
 #ifndef _misc_h_
 #define _misc_h_
 
-// Conversion functions
+#include <utility>
 
+// Conversion functions
 template <class T> T fromstring(const string &str) {
   T result;
   try {
@@ -17,17 +14,17 @@ template <class T> T fromstring(const string &str) {
   } catch (boost::bad_lexical_cast &) { my_error("Lexical cast [%s] failed.", str.c_str()); }
   return result;
 }
-
 template <> bool fromstring(const string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
 
-template <class T> string tostring(const T val) { return boost::lexical_cast<string>(val); }
+// XXX template <class T> string tostring(const T val) { return boost::lexical_cast<string>(val); }
 
+// switch statement with three cases
 template <typename T, typename T1> T switch3(T1 x0, T1 x1, T y1, T1 x2, T y2, T1 x3, T y3) {
   if (x0 == x1) return y1;
   if (x0 == x2) return y2;
   if (x0 == x3) return y3;
   my_assert_not_reached();
-  return 0.0; // avoid warnings
+// XXX  return 0.0; // avoid warnings
 }
 
 // Get next line from stream F, skipping empty lines and comments.
@@ -77,6 +74,7 @@ void parse_block(map<string, string> &parsed_params, ifstream &F) {
   }
 }
 
+// Open a file and hard exit upon an error
 void safe_open(ifstream &F, const string &filename) {
   F.open(filename.c_str());
   if (!F) exit1("Can't open " << filename << " for reading.");
@@ -95,6 +93,7 @@ bool find_block(ifstream &F, const string &s) {
   return !F.fail(); // True if found.
 }
 
+// Parse the [param] block of an input file.
 void parser(map<string, string> &parsed_params, const string &filename) {
   ifstream F;
   safe_open(F, filename);
@@ -102,21 +101,19 @@ void parser(map<string, string> &parsed_params, const string &filename) {
 }
 
 // Input/output
-
 template <typename T1, typename T2> ostream &operator<<(ostream &os, const pair<T1, T2> &p) { return os << p.first << ' ' << p.second; }
-
 template <typename T> ostream &operator<<(ostream &os, const std::vector<T> &vec) {
   for (const auto &x : vec) os << x << " ";
   return os;
 }
 
+// Simple tokenizer class
 class string_token {
   private:
   string s;
   list<string> l;
-
   public:
-  string_token(string _s) : s(std::move(_s)) {
+  explicit string_token(string _s) : s(std::move(_s)) {
     string::size_type pos = 0;
     string::size_type first, last;
     while ((first = s.find_first_not_of(" ", pos)) != string::npos) {

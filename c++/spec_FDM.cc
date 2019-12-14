@@ -152,9 +152,9 @@ void SPEC_FDMmats::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &
   dB.energy = dA.energy;
   dB.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P::T); // a[ij] b[ji] sign exp(-beta e[j])
 #pragma omp parallel for schedule(static)
-  for (size_t n = 1; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, w(n, bs.mt)) - dA.energy));
+  for (size_t n = 1; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, ww(n, bs.mt)) - dA.energy));
   if (bs.mt == matstype::fermionic || abs(dA.energy) > WEIGHT_TOL)
-    csm->add(size_t(0), (dA.weight + dB.weight) / (cmpl(0, w(0, bs.mt)) - dA.energy));
+    csm->add(size_t(0), (dA.weight + dB.weight) / (cmpl(0, ww(0, bs.mt)) - dA.energy));
   else // bosonic w=0 && Ei=Ej case
     csm->add(size_t(0), (-dA.weight / t_weight(P::T)));
 }
@@ -171,7 +171,7 @@ if (retj > 0 && alli > 0) {
   dB.energy = dA.energy;
   dB.weight = spinfactor * CONJ_ME(op1II(j, i)) * rho_op2(j, i) * (-sign);
 #pragma omp parallel for schedule(static)
-  for (size_t n = 0; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, w(n, bs.mt)) - dB.energy));
+  for (size_t n = 0; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, ww(n, bs.mt)) - dB.energy));
 }
 }
 }
@@ -187,7 +187,7 @@ if (allj > 0 && reti > 0) {
   dB.energy = dA.energy;
   dB.weight = spinfactor * (-sign) * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ej / P::T);
 #pragma omp parallel for schedule(static)
-  for (size_t n = 0; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, w(n, bs.mt)) - dA.energy));
+  for (size_t n = 0; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, ww(n, bs.mt)) - dA.energy));
 }
 }
 }
