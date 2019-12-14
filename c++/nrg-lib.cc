@@ -45,6 +45,13 @@ MemoryStats ms;
 
 void timing_report() { tm.report(); }
 void memory_report() { ms.report(); }
+void memory_time_brief_report()
+{
+#ifdef HAS_MEMORY_USAGE
+  cout << "Memory used: " << long(ms.used() / 1024) << " MB "; // NOLINT
+#endif
+  cout << "Time elapsed: " << long(tm.total()) << " s" << endl;
+}
 
 #ifdef NRG_MPI
 mpi::environment *mpienv;
@@ -245,9 +252,9 @@ class Rmaxvals {
   public:
   Rmaxvals() = default;
   Rmaxvals(const Rmaxvals &) = default;
-  Rmaxvals(const Rmaxvals &&) = default;
+  Rmaxvals(Rmaxvals &&) = default;
   Rmaxvals &operator=(const Rmaxvals &) = default;
-  Rmaxvals &operator=(const Rmaxvals &&) = default;
+  Rmaxvals &operator=(Rmaxvals &&) = default;
   ~Rmaxvals() = default;
   size_t rmax(size_t i) const {
     allowed_block_index(i);
@@ -318,7 +325,7 @@ class Eigen {
   // from disk.
   void perform_checks() const;
   // Copy constructor
-  explicit Eigen(const Eigen &t) : nr(t.nr), rmax(t.rmax), nrpost(t.nrpost), shift(t.shift), value(t.value), absenergy(t.absenergy), matrix0(t.matrix0) {
+  Eigen(const Eigen &t) : nr(t.nr), rmax(t.rmax), nrpost(t.nrpost), shift(t.shift), value(t.value), absenergy(t.absenergy), matrix0(t.matrix0) {
     perform_checks();
   }
   // nr - number of eigenpairs, rmax - dimensionality of the matrix space
@@ -333,8 +340,9 @@ class Eigen {
     value.resize(nr);
     matrix0.resize(nr, nr);
   };
-  ~Eigen() = default;
   Eigen &operator=(const Eigen &) = default;
+  Eigen &operator=(Eigen &&) = default;
+  ~Eigen() = default;
   // Accessor routine for j-th element of i-th eigenvector.
   inline t_matel &vektor(size_t i, size_t j) { return matrix0(i, j); }
   // Returns the number of eigenpairs CURRENTLY STORED.
@@ -2686,11 +2694,7 @@ void nrg_after_diag(IterInfo &iterinfo) {
 void nrg_iterate(IterInfo &iterinfo) {
   nrg_do_diag();
   nrg_after_diag(iterinfo);
-#ifdef HAS_MEMORY_USAGE
-  cout << "Memory used: " << long(ms.used() / 1024) << " MB" // NOLINT
-       << "  ";
-#endif
-  cout << "Time elapsed: " << long(t.total()) << " s" << endl;
+  memory_time_brief_report();
 }
 
 void docalc0ht(unsigned int extra_steps) {
