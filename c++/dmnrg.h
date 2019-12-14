@@ -411,11 +411,11 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
       const double Eabs = j.second.absenergy[i] - STAT::GSenergy;
       my_assert(Eabs >= 0.0);
       const double betaE = Eabs / P::T;
-      double val1        = expl(-betaE) / ZZ;
+      double val1        = exp(-betaE) / ZZ;
       val1                    = std::isfinite(val1) ? val1 : 0.0;
       tr1 += mult(I) * val1;
       const double ratio = STAT::wn[N] / ZZ;
-      double val2        = expl(-betaE) * ratio;
+      double val2        = exp(-betaE) * ratio;
       val2                    = std::isfinite(val2) ? val2 : 0.0;
       rhoI(i, i)              = double(val2);
       tr2 += mult(I) * val2;
