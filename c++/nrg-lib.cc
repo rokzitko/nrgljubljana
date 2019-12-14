@@ -63,14 +63,14 @@ class sharedparam {
   public:
   // Parameters which have to be known to the slave processes (which only
   // perform diagonalizations).
-  dr_value diagroutine;
+  dr_value diagroutine{undefined};
   double diagratio{};
   size_t dsyevrlimit{};
   size_t zheevrlimit{};
   bool logall{};
   string log;
   void init();
-  sharedparam() : diagroutine(undefined) {};
+//  sharedparam() {};
   private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
@@ -112,11 +112,11 @@ inline double CONJ_ME(double x) { return x; } // Conjugation of matrix elements:
 #endif
 
 #ifdef NRG_COMPLEX
-typedef cmpl t_matel;
-typedef double t_eigen;
-typedef cmpl t_coef;
-typedef cmpl t_factor;
-typedef cmpl t_expv; // we allow the calculation of expectation values of
+using t_matel = cmpl;
+using t_eigen = double;
+using t_coef = cmpl;
+using t_factor = cmpl;
+using t_expv = cmpl; // we allow the calculation of expectation values of
                      // non-Hermitian operators!
 inline cmpl CONJ_ME(cmpl z) { return conj(z); }
 #endif
@@ -150,7 +150,7 @@ Thus, as always:
  "right index the same as inner loop variable".
 */
 
-typedef matrix<t_matel, ublas::row_major> Matrix;
+using Matrix = matrix<t_matel, ublas::row_major>;
 
 #include "numerics.h"
 
@@ -245,7 +245,9 @@ class Rmaxvals {
   public:
   Rmaxvals() = default;
   Rmaxvals(const Rmaxvals &) = default;
+  Rmaxvals(const Rmaxvals &&) = default;
   Rmaxvals &operator=(const Rmaxvals &) = default;
+  Rmaxvals &operator=(const Rmaxvals &&) = default;
   ~Rmaxvals() = default;
   size_t rmax(size_t i) const {
     allowed_block_index(i);
@@ -274,17 +276,19 @@ class DimSub {
   Rmaxvals rmax;   // substructure of vectors omega
   EVEC eigenvalue; // all eigenvalues
   EVEC absenergy;  // absolute energies (for FDM)
-  DimSub()= default;
-  DimSub(size_t _kept, size_t _total) : kept(_kept), total(_total) {
+  DimSub() = default;
+  DimSub(size_t _kept, size_t _total, Rmaxvals _rmax, EVEC _eigenvalue, EVEC _absenergy) : 
+     kept(_kept), total(_total), rmax(_rmax), eigenvalue(_eigenvalue), absenergy(_absenergy) {
     my_assert(kept <= total);
     discarded = total - kept;
   }
-  DimSub(const DimSub &ds) {
-    kept      = ds.kept;
-    discarded = ds.discarded;
-    total     = ds.total;
-  }
+//  DimSub(const DimSub &ds) { // XXX ?
+//    kept      = ds.kept;
+//    discarded = ds.discarded;
+//    total     = ds.total;
+//  }
   DimSub &operator=(const DimSub &) = default;
+  ~DimSub() = default;
 };
 
 // Full information about the number of states and matrix dimensions
@@ -314,7 +318,7 @@ class Eigen {
   // from disk.
   void perform_checks() const;
   // Copy constructor
-  Eigen(const Eigen &t) : nr(t.nr), rmax(t.rmax), nrpost(t.nrpost), shift(t.shift), value(t.value), absenergy(t.absenergy), matrix0(t.matrix0) {
+  explicit Eigen(const Eigen &t) : nr(t.nr), rmax(t.rmax), nrpost(t.nrpost), shift(t.shift), value(t.value), absenergy(t.absenergy), matrix0(t.matrix0) {
     perform_checks();
   }
   // nr - number of eigenpairs, rmax - dimensionality of the matrix space
@@ -1243,12 +1247,12 @@ size_t size_subspace_prev(const Invar &I) { return diagprev[I].getnr(); }
 
 // Generate an info string for headers
 void infostring() {
-  string info = " ***** [" + (string)(nrgrun ? "NRG" : "DM") + "] " + "Iteration " + tostring(STAT::N + 1) + "/" + tostring(P::Nmax) + " (scale "
-     + tostring(STAT::scale) + ")" + " ***** ";
+  string info = " ***** [" + (string)(nrgrun ? "NRG" : "DM") + "] " + "Iteration " + to_string(STAT::N + 1) + "/" + to_string(P::Nmax) + " (scale "
+     + to_string(STAT::scale) + ")" + " ***** ";
   if (P::substeps) {
     size_t Ntrue, M;
     tie(Ntrue, M) = get_Ntrue_M(STAT::N);
-    info += " step " + tostring(Ntrue + 1) + " substep " + tostring(M + 1);
+    info += " step " + to_string(Ntrue + 1) + " substep " + to_string(M + 1);
   }
   cout << endl << info << endl;
 }
@@ -1865,7 +1869,7 @@ void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = fa
       size_t total_degeneracy = 0; // Total number of levels (incl multiplicity)
       const size_t i0         = i;
       while (i < len && my_fcmp(seznam[i].first, seznam[i0].first, P::grouptol) == 0) {
-        QNstrings.push_back(tostring(seznam[i].second));
+        QNstrings.push_back(to_string(seznam[i].second));
         total_degeneracy += mult(seznam[i].second);
         i++;
       }
@@ -2583,7 +2587,7 @@ void nrg_do_diag() {
   } while (nrgrun && P::restart && NRG::notenough);
 }
 
-typedef map<string, double> mapSD;
+using mapSD = map<string, double>;
 std::vector<mapSD> td_data;
 
 // Store all the results from the TD calculation in the form of a map
@@ -2647,12 +2651,9 @@ void nrg_after_diag(IterInfo &iterinfo) {
   size_t nrkept = 0;
   LOOP_const(diag, i) {
     const Invar I  = INVAR(i);
-    dm[STAT::N][I] = DimSub(NRSTATES(i), RMAX(i));
+    dm[STAT::N][I] = DimSub(NRSTATES(i), RMAX(i), qsrmax[I], EIGEN(i).value, EIGEN(i).absenergy);
     nrall += RMAX(i);
     nrkept += NRSTATES(i);
-    dm[STAT::N][I].rmax       = qsrmax[I];
-    dm[STAT::N][I].eigenvalue = EIGEN(i).value;
-    dm[STAT::N][I].absenergy  = EIGEN(i).absenergy;
   }
   double ratio = double(nrkept) / nrall;
   cout << "Kept: " << nrkept << " out of " << nrall << ", ratio=" << setprecision(3) << ratio << endl;
