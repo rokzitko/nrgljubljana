@@ -290,7 +290,7 @@ class DimSub {
     discarded = total - kept;
   }
   DimSub(const DimSub &) = default;
-  DibSub(DimSub &&) = default;
+  DimSub(DimSub &&) = default;
   DimSub &operator=(const DimSub &) = default;
   DimSub &operator=(DimSub &&) = default;
   ~DimSub() = default;
@@ -664,7 +664,7 @@ void set_workdir(string &workdir_) {
 }
 
 void set_workdir(int argc, char **argv) {
-  vector<string> args(argv+1, argv+argc);
+  std::vector<string> args(argv+1, argv+argc);
   string workdir = default_workdir;
   if (const char *env_w = std::getenv("NRG_WORKDIR")) workdir = env_w;
   if (args.size() == 2 && args[0] == "-w") workdir = args[1];
