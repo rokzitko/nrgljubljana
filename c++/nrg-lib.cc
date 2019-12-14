@@ -1101,16 +1101,13 @@ ostream &operator<<(ostream &os, const axis a) { return os << axisstring(a); }
  spectrum: pointers to the operator data and miscelaneous data, such
  as the spectrum type. Functions calc_specdens() et al. receive an
  object of this type as input. */
-
-using SpectrumPtr = shared_ptr<Spectrum>;
-
 class BaseSpectrum {
   public:
   string name;
   string prefix; // "dens", "corr", etc.
   size_t nr;     // number of operators
   const MatrixElements &op1, &op2, &op3;
-  SpectrumPtr spec;
+  shared_ptr<Spectrum> spec;
   SPECTYPE spectype{}; // SPEC_FT, ...
   axis a;            // axis::RealFreq, axis::Temp, axis::Matsubara, etc.
   matstype mt;       // matstype::bosonic, matstype::fermionic, etc.
@@ -1413,15 +1410,13 @@ void open_Ftd(ofstream &Ftd) {
 
 void open_files(speclist &sl, BaseSpectrum &spec, SPECTYPE spectype, axis a) {
   const string fn = spec.prefix + "_" + spectype->name() + "_dens_" + spec.name; // no suffix (.dat vs. .bin)
-  SpectrumPtr sp;
   switch (a) {
-    case axis::RealFreq: sp = SpectrumPtr(new SpectrumRealFreq(spec.name, fn, spectype)); break;
-    case axis::Temp: sp = SpectrumPtr(new SpectrumTemp(spec.name, fn, spectype)); break;
-    case axis::Matsubara: sp = SpectrumPtr(new SpectrumMatsubara(spec.name, fn, spectype, spec.mt)); break;
-    case axis::Matsubara2: sp = SpectrumPtr(new SpectrumMatsubara2(spec.name, fn, spectype, spec.mt)); break;
+    case axis::RealFreq: spec.spec = make_shared<SpectrumRealFreq>(spec.name, fn, spectype); break;
+    case axis::Temp: spec.spec = make_shared<SpectrumTemp>(spec.name, fn, spectype); break;
+    case axis::Matsubara: spec.spec = make_shared<SpectrumMatsubara>(spec.name, fn, spectype, spec.mt); break;
+    case axis::Matsubara2: spec.spec = make_shared<SpectrumMatsubara2>(spec.name, fn, spectype, spec.mt); break;
     default: my_assert_not_reached();
   }
-  spec.spec     = sp;
   spec.spectype = spectype;
   spec.a        = a;
   nrglog('c', "Spectrum " << spec.fullname() << " -> " << fn);
