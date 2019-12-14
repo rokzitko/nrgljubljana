@@ -21,6 +21,7 @@
 
 class Bins {
   private:
+  double base{10}; // NOLINT
   size_t binsperdecade{};
   size_t nrbins{};
   double emin{}, emax{};
@@ -30,10 +31,11 @@ class Bins {
   inline void add_acc(double energy, t_weight weight);
   void loggrid_std(); // standard NRG logarithmic mesh for spec. funcions
   void loggrid_acc(); // log grid with shifted accumulation point
-
+  void loggrid();
   public:
   Spikes bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs
-  void loggrid();
+  operator const Spikes &() const { return bins; }
+  operator Spikes &() { return bins; }
   Bins() { loggrid(); } // default: logarithmic grid
   inline void add(double energy, t_weight weight);
   void merge(const Bins &b);
@@ -49,8 +51,8 @@ const double MIN_BIN_SHIFT = 2.0;
 void Bins::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the
   // conduction band!!
-  emax = (P::emax > 0 ? P::emax : SCALE(0) * pow(10, MAX_BIN_SHIFT));
-  emin = (P::emin > 0 ? P::emin : LAST_STEP_SCALE() / pow(10, MIN_BIN_SHIFT));
+  emax = (P::emax > 0 ? P::emax : SCALE(0) * pow(base, MAX_BIN_SHIFT));
+  emin = (P::emin > 0 ? P::emin : LAST_STEP_SCALE() / pow(base, MIN_BIN_SHIFT));
   // Trick: use ceil/floor to obtain uniform binning grids for
   // different values of the twist parameter z!
   log10emin = floor(log10(emin));
@@ -71,7 +73,7 @@ void Bins::loggrid_acc() {
   const double a = P::accumulation;
   my_assert(a > 0.0);
   bins.resize(0);
-  for (double e = emin; e <= emax; e *= pow(10.0, 1.0 / binsperdecade)) {
+  for (double e = emin; e <= emax; e *= pow(base, 1.0 / binsperdecade)) {
     double x = (emax - a) / emax * e + a;
     bins.push_back(make_pair(x, 0.0));
   }
@@ -88,7 +90,7 @@ void Bins::loggrid_acc() {
 void Bins::loggrid_std() {
   nrbins = (size_t)((log10emax - log10emin) * binsperdecade + 1.0);
   bins.resize(nrbins); // Note: Spikes is a vector type!
-  for (size_t i = 0; i < nrbins; i++) bins[i] = make_pair(pow(10.0, log10emin + (double)i / binsperdecade), 0.0);
+  for (size_t i = 0; i < nrbins; i++) bins[i] = make_pair(pow(base, log10emin + (double)i / binsperdecade), 0.0);
 }
 
 // Unbiased assignment of the spectral weight to bins.
@@ -111,8 +113,9 @@ inline void Bins::add_std(double energy, t_weight weight) {
     return;
   }
   const double log10e  = log10(energy);
-  const double pos = (log10e - log10emin) * binsperdecade;
-  const long index = long(pos); // must be signed!
+  const double x = (log10e - log10emin) * binsperdecade;
+  const double int_part = floor(x);
+  const long index = long(int_part); // must be signed
   if (index < 0) {
     bins[0].second += weight;
     return;
@@ -120,7 +123,7 @@ inline void Bins::add_std(double energy, t_weight weight) {
     bins[nrbins - 1].second += weight;
     return;
   }
-  const double rem = pos - index;
+  const double rem = x - int_part;
   bins[index].second += (1.0 - rem) * weight;
   bins[index + 1].second += rem * weight;
 }
@@ -162,13 +165,13 @@ void Bins::trim() {
   bins2.reserve(nr);
   // nr-1, because we need to compute the energy interval size 'ewidth'
   for (size_t i = 0; i < nr - 1; i++) {
-    const double e     = bins[i].first;
-    const t_weight w   = bins[i].second;
+    const double e      = bins[i].first;
+    const t_weight wg   = bins[i].second;
     const double enext = bins[i + 1].first; // increasing!
     my_assert(enext > e);
     const double ewidth = enext - e;
-    if (abs(w) < P::discard_trim * ewidth)
-      discarded_weight_abs += abs(w);
+    if (abs(wg) < P::discard_trim * ewidth)
+      discarded_weight_abs += abs(wg);
     else
       bins2.push_back(bins[i]);
   }
@@ -177,7 +180,8 @@ void Bins::trim() {
   // has been performed.
   bins2.push_back(bins[nr - 1]);
   bins.swap(bins2);
-  if (discarded_weight_abs > 1e-8) cout << "WARNING: we are probably discarding too much weight!" << endl;
+  const double discarded_weight_warn_limit = 1e-8;
+  if (discarded_weight_abs > discarded_weight_warn_limit) cout << "WARNING: we are probably discarding too much weight!" << endl;
 }
 
 class Temp {
