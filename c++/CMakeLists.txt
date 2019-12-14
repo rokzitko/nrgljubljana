@@ -60,7 +60,10 @@ if(ANALYZE_SOURCES)
 	  --verbose
 	  --force
 	  --quiet
-          ${sources}
+    --suppress=*:*bindings*/*
+#    --suppress=*:*cblas*
+#    --suppress=*:*coewfnew*
+    ${sources}
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
   else()
