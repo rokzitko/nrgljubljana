@@ -5,7 +5,7 @@
 #define _dmnrg_h_
 
 // Routines for saving the density matrix to disk
-string saverhofn(const string &prefix, int N) { return P::workdir + "/" + prefix + tostring(N); }
+string saverhofn(const string &prefix, int N) { return P::workdir + "/" + prefix + to_string(N); }
 
 // Choose one!
 #define LINEBYLINE
@@ -137,7 +137,7 @@ void loadRho(size_t N, const string &prefix, DensMatElements &rho) {
   loadRho_split(N, prefix, rho);
 }
 
-string unitaryfn(size_t N) { return P::workdir + "/" + FN_UNITARY + tostring(N); }
+string unitaryfn(size_t N) { return P::workdir + "/" + FN_UNITARY + to_string(N); }
 
 /* storetransformations() stores all required information (energies,
  transformation matrices, subspace labels, dimensions of 'alpha' subspaces)

@@ -150,9 +150,9 @@ const double IMAG_TOLERANCE = 1e-10;
 void SpectrumRealFreq::weight_report() {
   auto fmt = [](t_weight x) -> string {
     if (abs(x.imag()) < IMAG_TOLERANCE)
-      return tostring(x.real());
+      return to_string(x.real());
     else
-      return tostring(x);
+      return to_string(x);
   };
   const t_weight twneg = fsneg.total_weight();
   const t_weight twpos = fspos.total_weight();

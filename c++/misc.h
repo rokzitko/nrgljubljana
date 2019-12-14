@@ -15,8 +15,8 @@ template <class T> T fromstring(const string &str) {
   return result;
 }
 template <> bool fromstring(const string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
-
-// XXX template <class T> string tostring(const T val) { return boost::lexical_cast<string>(val); }
+// for T=int, std::to_string is used
+template <class T> string to_string(const T val) { return boost::lexical_cast<string>(val); }
 
 // switch statement with three cases
 template <typename T, typename T1> T switch3(T1 x0, T1 x1, T y1, T1 x2, T y2, T1 x3, T y3) {
