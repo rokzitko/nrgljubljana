@@ -395,7 +395,7 @@ using DiagInfo = map<Invar, Eigen>;
 #define LOOP_const(diag, var) for (const auto &var : diag)
 
 Invar INVAR(const DiagInfo::value_type &i) { return i.first; }
-Eigen &EIGEN(DiagInfo::value_type &i) { return i.second; }
+Eigen &EIGEN(DiagInfo::value_type &i) { return i.second; } // XXX can i be const?
 Eigen const &EIGEN(const DiagInfo::value_type &i) { return i.second; }
 
 // Number of calculated states
@@ -1351,8 +1351,6 @@ void Rmaxvals::determine_ranges(const Invar &I, const InvarVec &In) {
 
 ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
 ofstream Ftd;        // magnetic and charge susceptibility
-ofstream Fcustom;    // expectation values
-ofstream Fcustomfdm; // expectation values at T (FDM algorithm)
 ofstream Fannotated; // annotated eigenvalue spectrum
 
 // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
@@ -1367,7 +1365,7 @@ string SDNAME(const string &a, const string &b, int SPIN = 0) {
 // Formatted output of the computed expectation values
 class ExpvOutput {
   private:
-  ostream &F;             // output stream
+  ofstream F;             // output stream
   map<string, t_expv> &m; // reference to the name->value mapping
   list<string> fields;    // list of fields to be output (may be a subset
                           // of the fields actually present in m)
@@ -1386,7 +1384,6 @@ class ExpvOutput {
     for (const auto &op : fields) formatted_output(F, op);
     F << endl;
   }
-
   public:
   // Output the current values for the label and for all the fields
   void field_values(double labelvalue = STAT::Teff) {
@@ -1395,13 +1392,15 @@ class ExpvOutput {
     for (const auto &op : fields) formatted_output(F, m[op]);
     F << endl;
   }
-  ExpvOutput(ostream &_F, map<string, t_expv> &_m, const list<string> &_fields) : F(_F), m(_m), fields(_fields) {
+  ExpvOutput(const string &fn, map<string, t_expv> &_m, const list<string> &_fields) : m(_m), fields(_fields) {
+    F.open(fn);
     field_numbers();
     field_names();
   }
 };
 
-ExpvOutput *custom, *customfdm;
+unique_ptr<ExpvOutput> custom, customfdm;
+//ExpvOutput *custom, *customfdm; XXX
 
 // Prepare "td" for output: write header with parameters and
 // a line with field names.
@@ -1615,7 +1614,7 @@ namespace oprecalc {
 } // namespace oprecalc
 
 // Open output files and write headers
-void open_output_files(IterInfo &iterinfo) {
+void open_output_files(const IterInfo &iterinfo) {
   nrglog('@', "@ open_output_files()");
   // We dump all energies to separate files for NRG and DM-NRG runs.
   // This is a very convenient way to check if both runs produce the
@@ -1628,16 +1627,10 @@ void open_output_files(IterInfo &iterinfo) {
   list<string> ops;
   for (const auto &op : iterinfo.ops) ops.push_back(NAME(op));
   for (const auto &op : iterinfo.opsg) ops.push_back(NAME(op));
-  if (nrgrun) {
-    // Singlet operator expectation values. Generate header with names
-    // of operators.
-    Fcustom.open(FN_CUSTOM);
-    custom = new ExpvOutput(Fcustom, STAT::expv, ops);
-  }
-  if (dmnrgrun && P::fdmexpv) {
-    Fcustomfdm.open(FN_CUSTOMFDM);
-    customfdm = new ExpvOutput(Fcustomfdm, STAT::fdmexpv, ops);
-  }
+  if (nrgrun)
+    custom = make_unique<ExpvOutput>(FN_CUSTOM, STAT::expv, ops);
+  if (dmnrgrun && P::fdmexpv) 
+    customfdm = make_unique<ExpvOutput>(FN_CUSTOMFDM, STAT::fdmexpv, ops);
   oprecalc::reset_operator_lists_and_open_spectrum_files(iterinfo);
 }
 
@@ -1649,13 +1642,9 @@ void close_output_files() {
     Fenergies.close();
     Ftd.close();
     Fannotated.close();
-    delete custom;
-    Fcustom.close();
+    custom.reset();
   }
-  if (dmnrgrun && P::fdmexpv) {
-    delete customfdm;
-    Fcustomfdm.close();
-  }
+  if (dmnrgrun && P::fdmexpv) customfdm.reset();
 }
 
 // DM-NRG: initialization of the density matrix -----------------------------
@@ -1709,7 +1698,7 @@ double calc_ZnD_one(size_t N, double T) {
       const double Eabs = j.second.absenergy[i] - STAT::GSenergy;
       my_assert(Eabs >= 0.0);
       const double betaE = Eabs / T;
-      ZZ += mult(j.first) * expl(-betaE);
+      ZZ += mult(j.first) * exp(-betaE);
     }
   }
   nrglog('w', "ZnD[" << N << "]=" << HIGHPREC(ZZ));
