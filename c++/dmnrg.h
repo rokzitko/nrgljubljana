@@ -324,18 +324,19 @@ void calc_densitymatrix_iterN(DiagInfo &diag,
   // loop over all subspaces at *previous* iteration
   for (const auto &ii : dm[N - 1]) {
     const Invar I     = ii.first;
-    const InvarVec In = dmnrg_subspaces(I);
+    const InvarVec input = dmnrg_subspaces(I);
     size_t dim        = ii.second.kept;
     nrglog('D', "dm I=" << I << " dim=" << dim);
     rhoPrev[I] = Matrix(dim, dim);
     rhoPrev[I].clear();
     if (!dim) continue;
     for (size_t i = 1; i <= P::combs; i++) {
-      const t_factor coef = double(mult(In[i])) / double(mult(I));
-      nrglog('D', "i=" << i << " In[i]=" << In[i] << " coef=" << coef);
-      const size_t cnt1 = rho.count(In[i]);
-      const size_t cnt2 = diag.count(In[i]);
-      if (cnt1 && cnt2) cdmI(i, In[i], rho[In[i]], diag[In[i]], rhoPrev[I], N, coef);
+      const auto ii = input[i];
+      const t_factor coef = double(mult(ii)) / double(mult(I));
+      nrglog('D', "i=" << i << " input[i]=" << ii << " coef=" << coef);
+      const size_t cnt1 = rho.count(ii);
+      const size_t cnt2 = diag.count(ii);
+      if (cnt1 && cnt2) cdmI(i, ii, rho[ii], diag[ii], rhoPrev[I], N, coef);
     }
   } // loop over invariant spaces
 }
@@ -398,8 +399,8 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
   nrglog('@', "@ init_rho_FDM(" << N << ")");
   double ZZ = STAT::ZnD[N];
   rhoFDM.clear();
-  long double tr1 = 0.0;
-  long double tr2 = 0.0;
+  double tr1 = 0.0;
+  double tr2 = 0.0;
   for (const auto &j : dm[N]) {
     const Invar I    = j.first;
     const size_t min = (LAST_ITERATION(N) ? 0 : j.second.kept);
@@ -408,14 +409,14 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
     rhoFDM[I].clear();
     Matrix &rhoI = rhoFDM[I];
     for (size_t i = min; i < max; i++) {
-      const long double Eabs = j.second.absenergy[i] - STAT::GSenergy;
+      const double Eabs = j.second.absenergy[i] - STAT::GSenergy;
       my_assert(Eabs >= 0.0);
-      const long double betaE = Eabs / P::T;
-      long double val1        = expl(-betaE) / ZZ;
+      const double betaE = Eabs / P::T;
+      double val1        = expl(-betaE) / ZZ;
       val1                    = std::isfinite(val1) ? val1 : 0.0;
       tr1 += mult(I) * val1;
-      const long double ratio = STAT::wn[N] / ZZ;
-      long double val2        = expl(-betaE) * ratio;
+      const double ratio = STAT::wn[N] / ZZ;
+      double val2        = expl(-betaE) * ratio;
       val2                    = std::isfinite(val2) ? val2 : 0.0;
       rhoI(i, i)              = double(val2);
       tr2 += mult(I) * val2;
@@ -432,35 +433,36 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
   }
 }
 
-void calc_fulldensitymatrix_iterN(DiagInfo &diag,
-                                  DensMatElements &rhoFDM,     // input
-                                  DensMatElements &rhoFDMPrev, // output
+void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
+                                  const DensMatElements &rhoFDM, // input
+                                  DensMatElements &rhoFDMPrev,   // output
                                   size_t N) {
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
   if (!LAST_ITERATION(N)) init_rho_FDM(rhoDD, N);
   // loop over all subspaces at *previous* iteration
   for (const auto &ii : dm[N - 1]) {
-    const Invar I     = ii.first;
-    const InvarVec In = dmnrg_subspaces(I);
-    size_t dim        = ii.second.kept;
+    const Invar I        = ii.first;
+    const InvarVec input = dmnrg_subspaces(I);
+    size_t dim           = ii.second.kept;
     nrglog('D', "fdm I=" << I << " dim=" << dim);
     rhoFDMPrev[I] = Matrix(dim, dim);
     rhoFDMPrev[I].clear();
     if (!dim) continue;
     for (size_t i = 1; i <= P::combs; i++) {
+      const auto ii = input[i];
       // DM construction for non-Abelian symmetries: must include
       // the ratio of multiplicities as a coefficient.
-      const t_factor coef = double(mult(In[i])) / double(mult(I));
+      const t_factor coef = double(mult(ii)) / double(mult(I));
       // Contribution from the KK sector. (Exception: for the N-1 iteration,
       // the rhoPrev is already initialized with the DD sector of the last
       // iteration.)
       nrglog('D', "KK sector");
-      cdmI(i, In[i], rhoFDM[In[i]], diag[In[i]], rhoFDMPrev[I], N, coef);
+      cdmI(i, In[i], rhoFDM[ii], diag[ii], rhoFDMPrev[I], N, coef);
       // Contribution from the DD sector. rhoDD -> rhoFDMPrev
       if (!LAST_ITERATION(N)) {
         nrglog('D', "DD sector");
-        cdmI(i, In[i], rhoDD[In[i]], diag[In[i]], rhoFDMPrev[I], N, coef);
+        cdmI(i, In[i], rhoDD[ii], diag[ii], rhoFDMPrev[I], N, coef);
       }
     }
   } // loop over invariant spaces

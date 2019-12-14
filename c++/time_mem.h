@@ -99,7 +99,7 @@ class MemoryStats {
   // Sample memory usage at an arbitrarily named "breakpoint".
   int check(string breakpoint) {
     const int memused = used();
-    if (maxvals.count(breakpoint) == 0) maxvals[breakpoint] = 0;
+//    if (maxvals.count(breakpoint) == 0) maxvals[breakpoint] = 0; // XXX
     maxvals[breakpoint] = max(maxvals[breakpoint], memused);
     return memused;
   }

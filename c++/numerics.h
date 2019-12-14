@@ -158,9 +158,8 @@ void assert_norm1(const DVEC &v) { my_assert(my_fcmp(norm_2(v), 1.0, 1.e-8) == 0
 // STL or an ublas vector). Check that values are finite and assert for no
 // reading failure. If update=false, we read values without changing the
 // values in the vector.
-template <typename T> void read_vector(istream &F, ublas::vector<T> &vec, int len, bool update = true) {
+template <typename T> void read_vector(istream &F, ublas::vector<T> &vec, size_t len, bool update = true) {
   my_assert(F);
-  my_assert(len >= 0);
   if (update) vec.resize(len);
   for (int j = 0; j < len; j++) {
     T x;
@@ -174,10 +173,8 @@ template <typename T> void read_vector(istream &F, ublas::vector<T> &vec, int le
 }
 
 // Read 'size1' x 'size2' ublas matrix of type T.
-template <typename T> void read_matrix(istream &F, ublas::matrix<T> &m, int size1, int size2) {
+template <typename T> void read_matrix(istream &F, ublas::matrix<T> &m, size_t size1, size_t size2) {
   my_assert(F);
-  my_assert(size1 >= 0);
-  my_assert(size2 >= 0);
   m = ublas::matrix<T>(size1, size2);
   for (int j1 = 0; j1 < size1; j1++)
     for (int j2 = 0; j2 < size2; j2++) {

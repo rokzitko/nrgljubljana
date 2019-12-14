@@ -643,12 +643,12 @@ void remove_workdir() { remove(P::workdir.c_str()); }
 
 const string default_workdir = ".";
 
-void create_workdir(string &workdir) {
+void create_workdir(const string &workdir) {
   string workdir_template = workdir + "/XXXXXX";
   size_t len = workdir_template.length()+1;
   char x[len]; // NOLINT
-  strncpy(x, workdir_template.c_str(), len);
-  if (char *w = mkdtemp(x)) // create a unique directory
+  strncpy((char*)x, workdir_template.c_str(), len);
+  if (char *w = mkdtemp((char*)x)) // create a unique directory
     P::workdir = w;
   else
     P::workdir = default_workdir;
@@ -664,7 +664,7 @@ void set_workdir(string &workdir_) {
 }
 
 void set_workdir(int argc, char **argv) {
-  std::vector<string> args(argv+1, argv+argc);
+  std::vector<string> args(argv+1, argv+argc); // NOLINT
   string workdir = default_workdir;
   if (const char *env_w = std::getenv("NRG_WORKDIR")) workdir = env_w;
   if (args.size() == 2 && args[0] == "-w") workdir = args[1];
@@ -1395,7 +1395,7 @@ class ExpvOutput {
     for (const auto &op : fields) formatted_output(F, m[op]);
     F << endl;
   }
-  ExpvOutput(ostream &_F, map<string, t_expv> &_m, list<string> &_fields) : F(_F), m(_m), fields(_fields) {
+  ExpvOutput(ostream &_F, map<string, t_expv> &_m, const list<string> &_fields) : F(_F), m(_m), fields(_fields) {
     field_numbers();
     field_names();
   }
@@ -2015,7 +2015,7 @@ void check_operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
 
 // Recalculate operator matrix representations
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void nrg_recalculate_operators(DiagInfo &dg, IterInfo &a) {
+void nrg_recalculate_operators(const DiagInfo &dg, IterInfo &a) {
   nrglog('@', "@ nrg_recalculate_operators()");
   for (auto &op : a.ops) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1); }, dg, op, "s", oprecalc::do_s);
   for (auto &op : a.opsp) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, -1); }, dg, op, "p", oprecalc::do_p);
@@ -2123,11 +2123,11 @@ void nrg_make_subspaces_list(list<Invar> &subspaces) {
   for (const auto &ii : diagprev)
     if (NRSTATES(ii)) {
       const Invar I = INVAR(ii);
-      InvarVec In   = input_subspaces(); // make a new copy of subspaces list
+      InvarVec input = input_subspaces(); // make a new copy of subspaces list
       for (size_t i = 1; i <= P::combs; i++) {
-        In[i].inverse(); // IMPORTANT!
-        In[i].combine(I);
-        if (Sym->Invar_allowed(In[i])) subspaces.push_back(In[i]);
+        input[i].inverse(); // IMPORTANT!
+        input[i].combine(I);
+        if (Sym->Invar_allowed(input[i])) subspaces.push_back(input[i]);
       }
     }
   subspaces.sort();
@@ -2148,18 +2148,18 @@ t_eigen EigenvaluePrev(const Invar &I, size_t r) { return diagprev[I].value(r); 
 
 Matrix nrg_prepare_task_for_diag(const Invar &I) {
   nrglog('@', "@ nrg_prepare_task_for_diag()");
-  InvarVec &In     = iterinfo.ancestors[I];
-  Rmaxvals &qq     = qsrmax[I];
-  const size_t dim = qq.total();
+  const InvarVec &anc = iterinfo.ancestors[I];
+  Rmaxvals &qq         = qsrmax[I];
+  const size_t dim     = qq.total();
   nrglog('i', endl << "Subspace (" << I << ") dim=" << dim); // skip a line
-  logancestors(I, In, qsrmax[I]);
+  logancestors(I, anc, qq);
   Matrix h(dim, dim);
   h.clear();
   double scalefactor = (!P::substeps ? sqrt(P::Lambda) : pow(P::Lambda, 1. / (2. * P::channels))); // NOLINT
   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (size_t i = 1; i <= P::combs; i++) {
     const size_t offset = qq.offset(i);
-    for (size_t r = 0; r < qq.rmax(i); r++) h(offset + r, offset + r) = scalefactor * EigenvaluePrev(In[i], r);
+    for (size_t r = 0; r < qq.rmax(i); r++) h(offset + r, offset + r) = scalefactor * EigenvaluePrev(anc[i], r);
   }
   // Symmetry-type-specific matrix initialization steps.
   Sym->makematrix(h, qq, I, In);
@@ -2463,7 +2463,7 @@ void sort_task_list() {
   if (logletter('S'))
     for (const auto &i : tasks_with_sizes) cout << "size(" << i.second << ")=" << i.first << endl;
   // Update the task list NRG::tasks with the sorted list of subspaces
-  transform(begin(tasks_with_sizes), end(tasks_with_sizes), begin(NRG::tasks), [](auto &p) { return p.second; });
+  transform(begin(tasks_with_sizes), end(tasks_with_sizes), begin(NRG::tasks), [](const auto &p) { return p.second; });
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
@@ -2499,7 +2499,7 @@ void nrg_recalc_f(DiagInfo &diag, Opch &opch) {
   }
 }
 
-void nrg_dump_f(Opch &opch) {
+void nrg_dump_f(const Opch &opch) {
   cout << endl;
   for (size_t i = 0; i < P::channels; i++)
     for (size_t j = 0; j < P::perchannel; j++) {

@@ -149,7 +149,7 @@ void read_matrix_elements(ifstream &fdata, MatrixElements &m, DiagInfo &dg) {
   my_assert(m.size() == nf);
 }
 
-void read_ireducf(ifstream &fdata, DiagInfo &dg, Opch &opch) {
+void read_ireducf(ifstream &fdata, const DiagInfo &diagprev, Opch &opch) {
   opch = Opch(P::channels);
   for (size_t i = 0; i < P::channels; i++) {
     opch[i] = OpchChannel(P::perchannel);

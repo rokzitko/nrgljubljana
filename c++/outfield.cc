@@ -23,7 +23,7 @@ class outfield {
   outfield() : _desc{""} {};
   // Using "pos", we can define at which position the element is inserted
   // to the list of fields. The default is at the end of the list.
-  void set(string desc, int pos = -1) {
+  void set(const string &desc, int pos = -1) {
     _desc           = desc;
     outfieldPtr ptr = this;
     if (pos == -1)
@@ -33,7 +33,7 @@ class outfield {
       allfields.insert(begin(allfields) + pos, ptr);
     }
   };
-  explicit outfield(string &desc, int pos = -1) { set(desc, pos); }
+  explicit outfield(const string &desc, int pos = -1) { set(desc, pos); }
   // We store a double precision number which is converted to an
   // appropriately formatted string.
   void setvalue(double newvalue) {
@@ -64,10 +64,8 @@ int outfield::prec  = 0;
 int outfield::width = 0;
 
 // Return true if a field named 'query' exists.
-bool outfield_exists(const string &query) {
-  for (const auto &i : allfields)
-    if (i->name() == query) return true;
-  return false;
+bool outfield_exists(const string &query) const {
+  any_of(begin(allfields), end(allfields), [query](const auto &i){ return i->name() == query };
 }
 
 // Setup output fields that will appear in the file "td".
