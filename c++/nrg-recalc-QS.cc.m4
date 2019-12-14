@@ -17,7 +17,7 @@ namespace QS {
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP(diag, is1) {
+    LOOP_const(diag, is1) {
       Invar I1  = INVAR(is1);
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
@@ -36,7 +36,7 @@ void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
            `RECALC_TAB("qs/qs-4ch-doubletm.dat", QS::LENGTH_D_4CH, Invar(1, 2))');
     }
   } else {
-    LOOP(diag, is1) {
+    LOOP_const(diag, is1) {
       Invar I1  = INVAR(is1);
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
@@ -122,7 +122,7 @@ void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP(diag, is1) {
+    LOOP_const(diag, is1) {
       Invar I1  = INVAR(is1);
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
@@ -166,7 +166,7 @@ void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
-    LOOP(diag, is1) {
+    LOOP_const(diag, is1) {
       Invar I1          = INVAR(is1);
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
@@ -180,7 +180,7 @@ void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Q1") {
-    LOOP(diag, is1) {
+    LOOP_const(diag, is1) {
       Invar I1          = INVAR(is1);
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
@@ -194,7 +194,7 @@ void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Q2") {
-    LOOP(diag, is1) {
+    LOOP_const(diag, is1) {
       Invar I1          = INVAR(is1);
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
@@ -208,7 +208,7 @@ void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Qtot") {
-    LOOP(diag, is1) {
+    LOOP_const(diag, is1) {
       Invar I1          = INVAR(is1);
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
