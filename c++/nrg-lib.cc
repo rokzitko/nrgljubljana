@@ -270,7 +270,7 @@ class Rmaxvals {
   void determine_ranges(const Invar &I, const InvarVec &In);
   // total() returns the total number of states. There is therefore
   // no need to store this value separately.
-  size_t total() { return accumulate(begin(values), end(values), 0); }
+  size_t total() const { return accumulate(begin(values), end(values), 0); }
 };
 
 // Information about the number of states, kept and discarded, rmax,
@@ -2015,7 +2015,7 @@ void check_operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
 
 // Recalculate operator matrix representations
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void nrg_recalculate_operators(const DiagInfo &dg, IterInfo &a) {
+void nrg_recalculate_operators(DiagInfo &dg, IterInfo &a) { // XXX: DiagInfo should be const, but all recalc* files would need to be fixed first
   nrglog('@', "@ nrg_recalculate_operators()");
   for (auto &op : a.ops) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1); }, dg, op, "s", oprecalc::do_s);
   for (auto &op : a.opsp) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, -1); }, dg, op, "p", oprecalc::do_p);
@@ -2149,8 +2149,8 @@ t_eigen EigenvaluePrev(const Invar &I, size_t r) { return diagprev[I].value(r); 
 Matrix nrg_prepare_task_for_diag(const Invar &I) {
   nrglog('@', "@ nrg_prepare_task_for_diag()");
   const InvarVec &anc = iterinfo.ancestors[I];
-  Rmaxvals &qq         = qsrmax[I];
-  const size_t dim     = qq.total();
+  const Rmaxvals &qq  = qsrmax[I];
+  const size_t dim    = qq.total();
   nrglog('i', endl << "Subspace (" << I << ") dim=" << dim); // skip a line
   logancestors(I, anc, qq);
   Matrix h(dim, dim);
@@ -2162,7 +2162,7 @@ Matrix nrg_prepare_task_for_diag(const Invar &I) {
     for (size_t r = 0; r < qq.rmax(i); r++) h(offset + r, offset + r) = scalefactor * EigenvaluePrev(anc[i], r);
   }
   // Symmetry-type-specific matrix initialization steps.
-  Sym->makematrix(h, qq, I, In);
+  Sym->makematrix(h, qq, I, anc);
   if (logletter('m')) dump_matrix(h);
   return h;
 }
@@ -2910,8 +2910,6 @@ void set_symmetry(const string &sym_string) {
   Sym->load(); // This call actually initializes the data structures.
   Sym->report();
 }
-
-void read_data(Opch &); // read-input.cc
 
 void prep_run(RUNTYPE t)
 {
