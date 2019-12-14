@@ -33,7 +33,7 @@ class outfield {
       allfields.insert(begin(allfields) + pos, ptr);
     }
   };
-  outfield(string desc, int pos = -1) { set(desc, pos); }
+  outfield(string &desc, int pos = -1) { set(desc, pos); }
   // We store a double precision number which is converted to an
   // appropriately formatted string.
   void setvalue(double newvalue) {
@@ -64,7 +64,7 @@ int outfield::prec  = 0;
 int outfield::width = 0;
 
 // Return true if a field named 'query' exists.
-bool outfield_exists(string query) {
+bool outfield_exists(const string &query) {
   for (const auto &i : allfields)
     if (i->name() == query) return true;
   return false;
