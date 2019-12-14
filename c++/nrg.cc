@@ -2,7 +2,7 @@
 #include "nrg-lib.h"     // exposed in library
 #include "nrg.h"         // specific to executable
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
 #ifdef NRG_MPI
   mpi::environment env(argc, argv);
   mpi::communicator world;

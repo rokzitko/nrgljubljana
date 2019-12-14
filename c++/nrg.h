@@ -5,6 +5,6 @@
 
 #define NRG_EXECUTABLE
 
-void set_workdir(int argc, char *argv[]);
+void set_workdir(int argc, char **argv);
 
 #endif
