@@ -174,8 +174,6 @@ extern FILE *yyin, *yyout;
     YY_DO_BEFORE_ACTION; /* set up yytext again */                                                                                                   \
   } while (0)
 
-#define unput(c) yyunput(c, (yytext_ptr))
-
 #ifndef YY_TYPEDEF_YY_SIZE_T
 #define YY_TYPEDEF_YY_SIZE_T
 using yy_size_t = size_t;
@@ -504,8 +502,6 @@ extern int yywrap(void);
 #endif
 #endif
 
-static void yyunput(int c, char *buf_ptr);
-
 #ifndef yytext_ptr
 static void yy_flex_strncpy(char *, yyconst char *, int);
 #endif
@@ -517,7 +513,6 @@ static int yy_flex_strlen(yyconst char *);
 #ifndef YY_NO_INPUT
 
 #ifdef __cplusplus
-static int yyinput();
 #else
 static int input(void);
 #endif
@@ -1152,39 +1147,8 @@ static yy_state_type yy_try_NUL_trans(yy_state_type yy_current_state) {
   return yy_is_jam ? 0 : yy_current_state;
 }
 
-static void yyunput(int c, char *yy_bp) {
-  char *yy_cp;
-
-  yy_cp = (yy_c_buf_p);
-
-  /* undo effects of setting up yytext */
-  *yy_cp = (yy_hold_char);
-
-  if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2) { /* need to shift things up to make room */
-                                                         /* +2 for EOB chars. */
-    int number_to_move = (yy_n_chars) + 2;
-    char *dest         = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
-    char *source       = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
-
-    while (source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf) *--dest = *--source;
-
-    yy_cp += (int)(dest - source);
-    yy_bp += (int)(dest - source);
-    YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
-
-    if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2) YY_FATAL_ERROR("flex scanner push-back overflow");
-  }
-
-  *--yy_cp = (char)c;
-
-  (yytext_ptr)   = yy_bp;
-  (yy_hold_char) = *yy_cp;
-  (yy_c_buf_p)   = yy_cp;
-}
-
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
-static int yyinput()
 #else
 static int input()
 #endif
@@ -1228,7 +1192,6 @@ static int input()
 
           if (!(yy_did_buffer_switch_on_eof)) YY_NEW_FILE;
 #ifdef __cplusplus
-          return yyinput();
 #else
           return input();
 #endif
