@@ -216,8 +216,6 @@ void recalc1_global(DiagInfo &dg, const Invar &I, Matrix &m, size_t i1, size_t i
   const size_t rmaxp = qsrmax[I].rmax(ip);
   my_assert(rmax1 == rmaxp);
   if (rmax1 == 0 || rmaxp == 0) return;
-  const Invar IN1  = iterinfo.ancestors[I][i1];
-  const Invar INp  = iterinfo.ancestors[I][ip];
   const Matrix &U1 = dgI.blocks[i1 - 1];
   const Matrix &Up = dgI.blocks[ip - 1];
   my_assert(U1.size1() == dim && U1.size2() == rmax1);

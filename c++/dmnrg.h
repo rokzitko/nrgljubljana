@@ -304,12 +304,12 @@ void cdmI(size_t i,            // Subspace index (alpha=1,...,P::combs)
 }
 
 InvarVec dmnrg_subspaces(const Invar &I) {
-  InvarVec In = input_subspaces();
+  InvarVec input = input_subspaces();
   for (size_t i = 1; i <= P::combs; i++) {
-    In[i].inverse();
-    In[i].combine(I);
+    input[i].inverse();
+    input[i].combine(I);
   }
-  return In;
+  return input;
 }
 
 // Calculation of the shell-N REDUCED DENSITY MATRICES:
@@ -342,7 +342,7 @@ void calc_densitymatrix_iterN(DiagInfo &diag,
 
 // Returns true if all the required density matrices are already
 // saved on the disk.
-bool already_computed(string prefix) {
+bool already_computed(const string &prefix) {
   for (size_t N = P::Nmax - 1; N > P::Ninit; N--) {
     const string fn = saverhofn(prefix, N - 1); // note the minus 1
     size_t nrsubs   = dm[N].size();
@@ -374,10 +374,10 @@ void calc_densitymatrix(DensMatElements &rho) {
   TIME("DM");
   for (size_t N = P::Nmax - 1; N > P::Ninit; N--) {
     cout << "[DM] " << N << endl;
-    DiagInfo diag;
-    load_transformations(N, diag);
+    DiagInfo diag_loaded;
+    load_transformations(N, diag_loaded);
     DensMatElements rhoPrev;
-    calc_densitymatrix_iterN(diag, rho, rhoPrev, N);
+    calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N);
     check_trace_rho(rhoPrev); // Make sure rho is normalized to 1.
     saveRho(N - 1, FN_RHO, rhoPrev);
     rho.swap(rhoPrev);
@@ -483,10 +483,10 @@ void calc_fulldensitymatrix(DensMatElements &rhoFDM) {
   TIME("FDM");
   for (size_t N = P::Nmax - 1; N > P::Ninit; N--) {
     cout << "[FDM] " << N << endl;
-    DiagInfo diag;
-    load_transformations(N, diag);
+    DiagInfo diag_loaded;
+    load_transformations(N, diag_loaded);
     DensMatElements rhoFDMPrev;
-    calc_fulldensitymatrix_iterN(diag, rhoFDM, rhoFDMPrev, N);
+    calc_fulldensitymatrix_iterN(diag_loaded, rhoFDM, rhoFDMPrev, N);
     double tr       = trace(rhoFDMPrev);
     double expected = sum_wn(N);
     double diff     = (tr - expected) / expected;

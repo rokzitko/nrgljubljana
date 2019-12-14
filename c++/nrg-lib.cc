@@ -284,7 +284,7 @@ class DimSub {
   EVEC eigenvalue; // all eigenvalues
   EVEC absenergy;  // absolute energies (for FDM)
   DimSub() = default;
-  DimSub(size_t _kept, size_t _total, const Rmaxvals &_rmax, const EVEC &_eigenvalue, const EVEC &_absenergy) : 
+  DimSub(size_t _kept, size_t _total, const Rmaxvals &_rmax, const EVEC &_eigenvalue, const EVEC &_absenergy) : // NOLINT
      kept(_kept), total(_total), rmax(_rmax), eigenvalue(_eigenvalue), absenergy(_absenergy) {
     my_assert(kept <= total);
     discarded = total - kept;
@@ -645,13 +645,13 @@ const string default_workdir = ".";
 
 void create_workdir(string &workdir) {
   string workdir_template = workdir + "/XXXXXX";
-  auto x = new char[workdir_template.length() + 1];
-  strncpy(x, workdir_template.c_str(), workdir_template.length() + 1);
+  size_t len = workdir_template.length()+1;
+  char x[len]; // NOLINT
+  strncpy(x, workdir_template.c_str(), len);
   if (char *w = mkdtemp(x)) // create a unique directory
     P::workdir = w;
   else
     P::workdir = default_workdir;
-  delete[] x;
   cout << "workdir=" << P::workdir << endl << endl;
   atexit(remove_workdir);
 }
@@ -1014,8 +1014,8 @@ void SpectrumTemp::merge(ChainSpectrum *cs) {
 SpectrumTemp::~SpectrumTemp() {
   string fn = filename + ".dat";
   cout << "Spectrum: " << opname << " " << spectype->name() << " -> " << fn << endl;
-  Spikes d;
-  for (const auto &i : results) d.push_back(i);
+  Spikes d(results);
+//  for (const auto &i : results) d.push_back(i); XXX
   sort(begin(d), end(d), sortfirst());
   ofstream Fd = safeopen(fn);
   save_densfunc(Fd, d, P::reim);
@@ -1358,10 +1358,10 @@ ofstream Fannotated; // annotated eigenvalue spectrum
 // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
 // If SPIN == 1 or SPIN == -1, '-u' or '-d' is appended to the string.
 string SDNAME(const string &a, const string &b, int SPIN = 0) {
-  string name = a + "-" + b;
-  if (SPIN == 1) name += "-u";
-  if (SPIN == -1) name += "-d";
-  return name;
+  string sdname = a + "-" + b;
+  if (SPIN == 1) sdname += "-u";
+  if (SPIN == -1) sdname += "-d";
+  return sdname;
 }
 
 // Formatted output of the computed expectation values
@@ -1536,12 +1536,12 @@ namespace oprecalc {
     for (const auto &op2 : set2)                                                                                                                     \
       for (const auto &op3 : set3) { job; }
 
-  void OPENSPEC(const CustomOp::value_type &op1, const CustomOp::value_type &op2, const string_token &stringtoken, speclist &spectra, string prefix,
+  void OPENSPEC(const CustomOp::value_type &op1, const CustomOp::value_type &op2, const string_token &stringtoken, speclist &spectra, const string &prefix,
                 set<string> &rec1, set<string> &rec2, matstype mt, int Spin = 0) {
-    const string name = SDNAME(NAME(op1), NAME(op2), Spin);
-    if (stringtoken.find(name)) {
+    const string spname = SDNAME(NAME(op1), NAME(op2), Spin);
+    if (stringtoken.find(spname)) {
       BaseSpectrum spec(op1.second, op2.second);
-      spec.name   = name;
+      spec.name   = spname;
       spec.prefix = prefix;
       spec.mt     = mt;
       spec.spin   = Spin;
@@ -1552,11 +1552,11 @@ namespace oprecalc {
   }
 
   void OPENSPEC3(const CustomOp::value_type &op1, const CustomOp::value_type &op2, const CustomOp::value_type &op3, const string_token &stringtoken,
-                 speclist &spectra, string prefix, set<string> &rec1, set<string> &rec2, set<string> &rec3, matstype mt) {
-    const string name = NAME(op1) + "-" + NAME(op2) + "-" + NAME(op3);
-    if (stringtoken.find(name)) {
+                 speclist &spectra, const string &prefix, set<string> &rec1, set<string> &rec2, set<string> &rec3, matstype mt) {
+    const string spname = NAME(op1) + "-" + NAME(op2) + "-" + NAME(op3);
+    if (stringtoken.find(spname)) {
       BaseSpectrum spec(op1.second, op2.second, op3.second);
-      spec.name   = name;
+      spec.name   = spname;
       spec.prefix = prefix;
       spec.mt     = mt;
       open_files_spec3(spectra, spec);
@@ -1889,7 +1889,7 @@ void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = fa
  This implementation is generic for all the symmetry types! */
 void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElements &nnew, int parity) {
   std::vector<Recalc> recalc_table(P::combs);
-  const InvarVec In = input_subspaces();
+  const InvarVec input = input_subspaces();
   if (Sym->islr())
     my_assert(parity == 1 || parity == -1);
   else
@@ -1903,7 +1903,7 @@ void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElem
       r.i1 = r.ip = i;
       r.factor    = 1.0;
       Invar ancI  = I1;
-      ancI.combine(In[i]);
+      ancI.combine(input[i]);
       r.IN1 = r.INp = ancI;
       if (parity == -1) r.INp.InvertParity();
       recalc_table[i - 1] = r; // mind the -1 shift!
@@ -1973,18 +1973,18 @@ void nrg_clear_eigenvectors(DiagInfo &diag) {
 
 // Z_S is the appropriate statistical sum
 void nrg_measure_singlet1(const DiagInfo &dg, const CustomOp::value_type &op, double Z_S) {
-  const string name = NAME(op);
+  const string opname = NAME(op);
   const t_expv expv = calc_trace_singlet(dg, op.second) / Z_S;
-  STAT::expv[name] = expv;
-  cout << "<" << name << ">=" << output_val(expv) << endl;
+  STAT::expv[opname] = expv;
+  cout << "<" << opname << ">=" << output_val(expv) << endl;
 }
 
 // Expectation values using FDM algorithm
 void nrg_measure_singlet1_fdm(const DiagInfo &dg, const CustomOp::value_type &op) {
-  const string name   = NAME(op);
+  const string opname   = NAME(op);
   const t_expv expv   = calc_trace_fdm_kept(dg, op.second);
-  STAT::fdmexpv[name] = expv;
-  cout << "<" << name << ">_fdm=" << output_val(expv) << endl;
+  STAT::fdmexpv[opname] = expv;
+  cout << "<" << opname << ">_fdm=" << output_val(expv) << endl;
 }
 
 // Measure thermodynamic expectation values of singlet operators
@@ -2155,7 +2155,7 @@ Matrix nrg_prepare_task_for_diag(const Invar &I) {
   logancestors(I, In, qsrmax[I]);
   Matrix h(dim, dim);
   h.clear();
-  double scalefactor = (!P::substeps ? sqrt(P::Lambda) : pow(P::Lambda, 1. / (2. * P::channels)));
+  double scalefactor = (!P::substeps ? sqrt(P::Lambda) : pow(P::Lambda, 1. / (2. * P::channels))); // NOLINT
   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (size_t i = 1; i <= P::combs; i++) {
     const size_t offset = qq.offset(i);
@@ -2172,7 +2172,7 @@ void nrg_diagonalisations_OpenMP() {
   nrglog('(', "OpenMP diag");
   size_t nr    = NRG::tasks.size();
   size_t itask = 0;
-  int nth      = P::diagth;
+  int nth      = P::diagth; // NOLINT
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {
     Invar I  = NRG::tasks[itask];
@@ -2244,9 +2244,7 @@ void mpi_send_matrix_linebyline(int dest, const Matrix &m) {
   mpiw->send(dest, TAG_MATRIX_SIZE, size2);
   nrglog('M', "Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
   for (size_t i = 0; i < size1; i++) {
-    ublas::vector<t_matel> vec  = ublas::vector<t_matel>(size2);
-    matrix_row<const Matrix> mr = matrix_row<const Matrix>(m, i);
-    vec                         = mr;
+    ublas::vector<t_matel> vec  = matrix_row<const Matrix>(m, i);
     mpiw->send(dest, TAG_MATRIX_LINE, vec);
   }
 }
@@ -2334,9 +2332,9 @@ void nrg_diagonalisations_MPI() {
   mpi_sync_params();
   // List of all the remaining tasks
   size_t nrtasks = NRG::tasks.size();
-  list<Invar> todo;
-  for (const auto &i : NRG::tasks) todo.push_back(i);
-  my_assert(todo.size() == nrtasks);
+  list<Invar> todo(NRG::tasks);
+//  for (const auto &i : NRG::tasks) todo.push_back(i); //XXX
+//  my_assert(todo.size() == nrtasks);
   // List of finished tasks.
   list<Invar> done;
   // List of the available computation nodes (including the master,
@@ -2436,11 +2434,11 @@ void nrg_determine_tasks(map<Invar, InvarVec> &ancestors) {
   NRG::tasks.clear();
   for (const auto &I : subspaces) {
     // Determine which subspaces contribute to the Hamiltonian being built
-    InvarVec In = input_subspaces();
-    for (size_t i = 1; i <= P::combs; i++) In[i].combine(I); // In is the list of differences wrt I
-    ancestors[I] = In;
+    InvarVec input = input_subspaces();
+    for (size_t i = 1; i <= P::combs; i++) input[i].combine(I); // In is the list of differences wrt I
+    ancestors[I] = input;
     // Determine the range(s) of index r
-    qsrmax[I].determine_ranges(I, In);
+    qsrmax[I].determine_ranges(I, input);
     // nr is actually the size of the Hamiltonian submatrix!
     const size_t nr = qsrmax[I].total();
     // Note that NRG::tasks is not the same list as 'subspaces',
@@ -2957,7 +2955,7 @@ void sharedparam::init() {
 #ifdef NRG_MPI
 int mpidebuglevel = 0;
 
-void mpidebug(string str) {
+void mpidebug(const string &str) {
   if (mpidebuglevel > 0) cout << "MPI process " << mpiw->rank() << " " << str << endl;
 }
 
