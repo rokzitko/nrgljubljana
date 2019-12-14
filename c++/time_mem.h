@@ -72,7 +72,7 @@ class TimeScope {
   ~TimeScope() { timer.add(timer_name); }
 };
 
-#define TIME(timer_name) TimeScope timer(t, timer_name)
+#define TIME(timer_name) TimeScope timer(tm, timer_name)
 #define TIME_SECTION(timer_name, section)                                                                                                            \
   {                                                                                                                                                  \
     TIME(timer_name);                                                                                                                                \
