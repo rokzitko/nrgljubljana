@@ -135,21 +135,30 @@ void read_energies(ifstream &fdata, DiagInfo &diag, size_t nsubs) {
 
 // Read irreducible matrix elements from stream fdata and store them in a
 // map of matrices m. The format is specified in file "data.spec"
-void read_matrix_elements(ifstream &fdata, MatrixElements &m, DiagInfo &dg) {
+void read_matrix_elements(ifstream &fdata, MatrixElements &m, const DiagInfo &dg) {
+  nrglog('@', "read_matrix_elements");
   m.clear();
   size_t nf; // Number of I1 x I2 combinations
   fdata >> nf;
   for (size_t i = 1; i <= nf; i++) {
     Invar I1, I2;
     fdata >> I1 >> I2;
-    const size_t size1 = dg[I1].getnr();
-    const size_t size2 = dg[I2].getnr();
-    read_matrix(fdata, m[make_pair(I1, I2)], size1, size2);
+    const auto it1 = dg.find(I1);
+    const auto it2 = dg.find(I2);
+    if (it1 != dg.end() && it2 != dg.end()) {
+      const size_t size1 = it1->second.getnr();
+      const size_t size2 = it2->second.getnr();
+      nrglog('(', "reading matrix block " << i << " [" << I1 << "] [" << I2 << "] (" << size1 << "x" << size2 << ")");
+      read_matrix(fdata, m[make_pair(I1, I2)], size1, size2);
+    } else {
+      my_error("Corrupted input file. Stopped in read_matrix_elements()");
+    }
   }
   my_assert(m.size() == nf);
 }
 
 void read_ireducf(ifstream &fdata, const DiagInfo &diagprev, Opch &opch) {
+  nrglog('@', "read_ireducf()");
   opch = Opch(P::channels);
   for (size_t i = 0; i < P::channels; i++) {
     opch[i] = OpchChannel(P::perchannel);
