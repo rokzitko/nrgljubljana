@@ -429,7 +429,7 @@ class SPEC {
   virtual string merge() { return ""; } // what merging rule to use
 };
 
-using SPECTYPE = SPEC *;
+using SPECTYPE = shared_ptr<SPEC>;
 
 // In namespace NRG we store run-time information about the calculation.
 namespace NRG {
@@ -1427,41 +1427,41 @@ void open_files(speclist &sl, BaseSpectrum &spec, SPECTYPE spectype, axis a) {
 // for storing spectral information.
 void open_files_spec(speclist &sl, BaseSpectrum &spec) {
   if (spec.prefix == "gt") {
-    if (nrgrun) open_files(sl, spec, new SPEC_GT(), axis::Temp);
+    if (nrgrun) open_files(sl, spec, make_shared<SPEC_GT>(), axis::Temp);
     return;
   }
   if (spec.prefix == "i1t") {
-    if (nrgrun) open_files(sl, spec, new SPEC_I1T(), axis::Temp);
+    if (nrgrun) open_files(sl, spec, make_shared<SPEC_I1T>(), axis::Temp);
     return;
   }
   if (spec.prefix == "i2t") {
-    if (nrgrun) open_files(sl, spec, new SPEC_I2T(), axis::Temp);
+    if (nrgrun) open_files(sl, spec, make_shared<SPEC_I2T>(), axis::Temp);
     return;
   }
   if (spec.prefix == "chit") {
-    if (nrgrun) open_files(sl, spec, new SPEC_CHIT(), axis::Temp);
+    if (nrgrun) open_files(sl, spec, make_shared<SPEC_CHIT>(), axis::Temp);
     return;
   }
   // If we did not return from this funciton by this point, what we
   // are computing is the spectral function. There are several
   // possibilities in this case, all of which may be enabled at the
   // same time.
-  if (nrgrun && P::finite) open_files(sl, spec, new SPEC_FT(), axis::RealFreq);
-  if (nrgrun && P::finitemats) open_files(sl, spec, new SPEC_FTmats(), axis::Matsubara);
-  if (dmnrgrun && P::dmnrg) open_files(sl, spec, new SPEC_DMNRG(), axis::RealFreq);
-  if (dmnrgrun && P::dmnrgmats) open_files(sl, spec, new SPEC_DMNRGmats(), axis::Matsubara);
-  if (dmnrgrun && P::cfs) open_files(sl, spec, new SPEC_CFS(), axis::RealFreq);
-  if (dmnrgrun && P::cfsgt) open_files(sl, spec, new SPEC_CFSgt(), axis::RealFreq);
-  if (dmnrgrun && P::cfsls) open_files(sl, spec, new SPEC_CFSls(), axis::RealFreq);
-  if (dmnrgrun && P::fdm) open_files(sl, spec, new SPEC_FDM(), axis::RealFreq);
-  if (dmnrgrun && P::fdmgt) open_files(sl, spec, new SPEC_FDMgt(), axis::RealFreq);
-  if (dmnrgrun && P::fdmls) open_files(sl, spec, new SPEC_FDMls(), axis::RealFreq);
-  if (dmnrgrun && P::fdmmats) open_files(sl, spec, new SPEC_FDMmats(), axis::Matsubara);
+  if (nrgrun && P::finite) open_files(sl, spec, make_shared<SPEC_FT>(), axis::RealFreq);
+  if (nrgrun && P::finitemats) open_files(sl, spec, make_shared<SPEC_FTmats>(), axis::Matsubara);
+  if (dmnrgrun && P::dmnrg) open_files(sl, spec, make_shared<SPEC_DMNRG>(), axis::RealFreq);
+  if (dmnrgrun && P::dmnrgmats) open_files(sl, spec, make_shared<SPEC_DMNRGmats>(), axis::Matsubara);
+  if (dmnrgrun && P::cfs) open_files(sl, spec, make_shared<SPEC_CFS>(), axis::RealFreq);
+  if (dmnrgrun && P::cfsgt) open_files(sl, spec, make_shared<SPEC_CFSgt>(), axis::RealFreq);
+  if (dmnrgrun && P::cfsls) open_files(sl, spec, make_shared<SPEC_CFSls>(), axis::RealFreq);
+  if (dmnrgrun && P::fdm) open_files(sl, spec, make_shared<SPEC_FDM>(), axis::RealFreq);
+  if (dmnrgrun && P::fdmgt) open_files(sl, spec, make_shared<SPEC_FDMgt>(), axis::RealFreq);
+  if (dmnrgrun && P::fdmls) open_files(sl, spec, make_shared<SPEC_FDMls>(), axis::RealFreq);
+  if (dmnrgrun && P::fdmmats) open_files(sl, spec, make_shared<SPEC_FDMmats>(), axis::Matsubara);
 }
 
 void open_files_spec3(speclist &sl, BaseSpectrum &spec) {
   if (dmnrgrun && P::fdm && P::v3mm) // both options, fdm and v3mm
-    open_files(sl, spec, new SPEC_FDM_v3mm(), axis::Matsubara2);
+    open_files(sl, spec, make_shared<SPEC_FDM_v3mm>(), axis::Matsubara2);
 }
 
 namespace oprecalc {
