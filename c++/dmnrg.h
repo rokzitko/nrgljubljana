@@ -316,27 +316,26 @@ InvarVec dmnrg_subspaces(const Invar &I) {
 // Calculate rho at previous iteration (N-1, rhoPrev) from rho at
 // the current iteration (N, rho)
 
-void calc_densitymatrix_iterN(DiagInfo &diag,
-                              DensMatElements &rho,     // input
-                              DensMatElements &rhoPrev, // output
+void calc_densitymatrix_iterN(const DiagInfo &diag,
+                              const DensMatElements &rho, // input
+                              DensMatElements &rhoPrev,   // output
                               size_t N) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
-  // loop over all subspaces at *previous* iteration
-  for (const auto &ii : dm[N - 1]) {
-    const Invar I     = ii.first;
-    const InvarVec input = dmnrg_subspaces(I);
-    size_t dim        = ii.second.kept;
-    nrglog('D', "dm I=" << I << " dim=" << dim);
-    rhoPrev[I] = Matrix(dim, dim);
-    rhoPrev[I].clear();
+  for (const auto &ii : dm[N - 1]) { // loop over all subspaces at *previous* iteration
+    const Invar I       = ii.first;
+    const InvarVec subs = dmnrg_subspaces(I);
+    size_t dim          = ii.second.kept;
+    rhoPrev[I]          = Matrix(dim, dim);
     if (!dim) continue;
+    rhoPrev[I].clear();
     for (size_t i = 1; i <= P::combs; i++) {
-      const auto ii = input[i];
-      const t_factor coef = double(mult(ii)) / double(mult(I));
-      nrglog('D', "i=" << i << " input[i]=" << ii << " coef=" << coef);
-      const size_t cnt1 = rho.count(ii);
-      const size_t cnt2 = diag.count(ii);
-      if (cnt1 && cnt2) cdmI(i, ii, rho[ii], diag[ii], rhoPrev[I], N, coef);
+      Invar sub = subs[i];
+      const auto x = rho.find(sub);
+      const auto y = diag.find(sub);
+      if (x != rho.end() && y != diag.end()) {
+        const t_factor coef = double(mult(sub)) / double(mult(I));
+        cdmI(i, sub, x->second, y->second, rhoPrev[I], N, coef);
+      }
     }
   } // loop over invariant spaces
 }
@@ -440,32 +439,32 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
   if (!LAST_ITERATION(N)) init_rho_FDM(rhoDD, N);
-  // loop over all subspaces at *previous* iteration
-  for (const auto &ii : dm[N - 1]) {
-    const Invar I        = ii.first;
-    const InvarVec input = dmnrg_subspaces(I);
-    size_t dim           = ii.second.kept;
-    nrglog('D', "fdm I=" << I << " dim=" << dim);
-    rhoFDMPrev[I] = Matrix(dim, dim);
-    rhoFDMPrev[I].clear();
+  for (const auto &ii : dm[N - 1]) { // loop over all subspaces at *previous* iteration
+    const Invar I       = ii.first;
+    const InvarVec subs = dmnrg_subspaces(I);
+    size_t dim          = ii.second.kept;
+    rhoFDMPrev[I]       = Matrix(dim, dim);
     if (!dim) continue;
+    rhoFDMPrev[I].clear();
     for (size_t i = 1; i <= P::combs; i++) {
-      const auto ii = input[i];
+      const auto sub = subs[i];
       // DM construction for non-Abelian symmetries: must include
       // the ratio of multiplicities as a coefficient.
-      const t_factor coef = double(mult(ii)) / double(mult(I));
-      // Contribution from the KK sector. (Exception: for the N-1 iteration,
-      // the rhoPrev is already initialized with the DD sector of the last
-      // iteration.)
-      nrglog('D', "KK sector");
-      cdmI(i, In[i], rhoFDM[ii], diag[ii], rhoFDMPrev[I], N, coef);
+      const t_factor coef = double(mult(sub)) / double(mult(I));
+      // Contribution from the KK sector.
+      const auto x1 = rhoFDM.find(sub);
+      const auto y = diag.find(sub);
+      if (x1 != rhoFDM.end() && y != diag.end())
+        cdmI(i, sub, x1->second, y->second, rhoFDMPrev[I], N, coef);
       // Contribution from the DD sector. rhoDD -> rhoFDMPrev
       if (!LAST_ITERATION(N)) {
-        nrglog('D', "DD sector");
-        cdmI(i, In[i], rhoDD[ii], diag[ii], rhoFDMPrev[I], N, coef);
+        const auto x2 = rhoDD.find(sub);
+        if (x2 !=rhoDD.end() && y != diag.end())
+          cdmI(i, sub, x2->second, y->second, rhoFDMPrev[I], N, coef);
       }
-    }
-  } // loop over invariant spaces
+      // (Exception: for the N-1 iteration, the rhoPrev is already initialized with the DD sector of the last iteration.) }
+    } // over combinations
+  } // over subspaces
 }
 
 // Sum of statistical weights from site N to the end of the Wilson chain.
