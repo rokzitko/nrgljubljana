@@ -418,6 +418,7 @@ class BaseSpectrum;
 
 class SPEC {
   public:
+  virtual ~SPEC() {};
   virtual ChainSpectrum *make_cs(const BaseSpectrum &) = 0;
   virtual void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *cs, const Invar &,
                     const Invar &){};
@@ -1389,7 +1390,7 @@ class ExpvOutput {
     for (const auto &op : fields) formatted_output(F, m[op]);
     F << endl;
   }
-  ExpvOutput(const string &fn, map<string, t_expv> &_m, const list<string> &_fields) : m(_m), fields(_fields) {
+   ExpvOutput(const string &fn, map<string, t_expv> &_m, list<string> _fields) : m(_m), fields(std::move(_fields)) {
     F.open(fn);
     field_numbers();
     field_names();
@@ -1397,7 +1398,6 @@ class ExpvOutput {
 };
 
 unique_ptr<ExpvOutput> custom, customfdm;
-//ExpvOutput *custom, *customfdm; XXX
 
 // Prepare "td" for output: write header with parameters and
 // a line with field names.
@@ -1624,7 +1624,7 @@ void open_output_files(const IterInfo &iterinfo) {
   for (const auto &op : iterinfo.opsg) ops.push_back(NAME(op));
   if (nrgrun)
     custom = make_unique<ExpvOutput>(FN_CUSTOM, STAT::expv, ops);
-  if (dmnrgrun && P::fdmexpv) 
+  else if (dmnrgrun && P::fdmexpv) 
     customfdm = make_unique<ExpvOutput>(FN_CUSTOMFDM, STAT::fdmexpv, ops);
   oprecalc::reset_operator_lists_and_open_spectrum_files(iterinfo);
 }
@@ -2312,19 +2312,14 @@ Invar read_from(int source) {
 
 void nrg_diagonalisations_MPI() {
   nrglog('@', "@ nrg_diagonalisations_MPI()");
-  // Synchronise parameters
-  mpi_sync_params();
-  // List of all the remaining tasks
-  size_t nrtasks = NRG::tasks.size();
-  list<Invar> todo(NRG::tasks);
-//  for (const auto &i : NRG::tasks) todo.push_back(i); //XXX
-//  my_assert(todo.size() == nrtasks);
-  // List of finished tasks.
-  list<Invar> done;
+  mpi_sync_params(); // Synchronise parameters
+  list<Invar> todo(NRG::tasks); // List of all the remaining tasks
+  list<Invar> done; // List of finished tasks.
   // List of the available computation nodes (including the master,
   // which is always at the very beginnig of the deque).
   deque<int> nodes;
   for (size_t i = 0; i < mpiw->size(); i++) nodes.push_back(i);
+  size_t nrtasks = NRG::tasks.size();
   nrglog('M', "nrtasks=" << nrtasks << " nrnodes=" << mpiw->size());
   while (!todo.empty()) {
     my_assert(!nodes.empty());
