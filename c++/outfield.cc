@@ -64,8 +64,8 @@ int outfield::prec  = 0;
 int outfield::width = 0;
 
 // Return true if a field named 'query' exists.
-bool outfield_exists(const string &query) const {
-  any_of(begin(allfields), end(allfields), [query](const auto &i){ return i->name() == query };
+bool outfield_exists(const string &query) {
+  return any_of(begin(allfields), end(allfields), [query](const auto &i){ return i->name() == query; });
 }
 
 // Setup output fields that will appear in the file "td".
