@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <functional>
 #include <limits>
+#include <memory>
 
 using namespace std;
 
