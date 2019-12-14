@@ -40,10 +40,10 @@
 #include "outfield.cc"
 
 // Timing of various parts of the code and memory statistics
-Timing t;
+Timing tm;
 MemoryStats ms;
 
-void timing_report() { t.report(); }
+void timing_report() { tm.report(); }
 void memory_report() { ms.report(); }
 
 #ifdef NRG_MPI
