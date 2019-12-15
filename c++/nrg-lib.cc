@@ -657,7 +657,7 @@ void create_workdir(const string &workdir) {
   atexit(remove_workdir);
 }
 
-void set_workdir(string &workdir_) {
+void set_workdir(const string &workdir_) {
   string workdir = default_workdir;
   if (const char *env_w = std::getenv("NRG_WORKDIR")) workdir = env_w;
   if (!workdir_.empty()) workdir = workdir_;
