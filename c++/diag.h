@@ -30,7 +30,7 @@ void copy_values(t_eigen *eigenvalues, EVEC &diagvalue, int M) {
 
 #ifdef NRG_REAL
 size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V') {
-  Timing t;
+  time_mem::Timing t;
   const size_t dim = m.size1();
   nrglog('A',
          "LAPACK, dim=" << dim << " (dsyev)"
@@ -68,7 +68,7 @@ size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V') {
 size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
                           double ratio = 1.0) // reduction ratio for dsyevr
 {
-  Timing t;
+  time_mem::Timing t;
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
@@ -140,7 +140,7 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
 
 #ifdef NRG_COMPLEX
 size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
-  Timing t;
+  time_mem::Timing t;
   const size_t dim = m.size1();
   nrglog('A',
          "LAPACK, dim=" << dim << " (zheev)"
@@ -176,7 +176,7 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
 }
 
 size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1.0) {
-  Timing t;
+  time_mem::Timing t;
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
@@ -308,7 +308,6 @@ Eigen diagonalise(Matrix &m) {
       }
   }
   nrglog('%', "max=" << d.value[M - 1] << " min=" << d.value[0]);
-  ms.check("diag_h");
   return d;
 }
 

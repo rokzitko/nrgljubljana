@@ -1,20 +1,21 @@
-#include <utility>
-
 #ifndef _time_mem_h_
 #define _time_mem_h_
+
+#include <utility>
+
+namespace time_mem {
 
 // Warning: not thread safe!
 class Timing {
   private:
-  double all, timer;
+  double start_time, timer;
   bool running;
   map<string, double> t;
-
   public:
   Timing() {
-    all     = gettime();
-    timer   = gettime();
-    running = false;
+    start_time = gettime();
+    timer      = gettime();
+    running    = false;
   }
   void start() {
     my_assert(!running);
@@ -28,16 +29,16 @@ class Timing {
     return end - timer;
   }
   void add(string timer) {
-    if (!t.count(timer)) t[timer] = 0.0; // initialize
+// XXX    if (!t.count(timer)) t[timer] = 0.0; // initialize
     t[timer] += stop();
   }
-  double value(string timer) const {
-    if (!t.count(timer)) return 0.0;
-    return t.find(timer)->second;
-  }
+//  double value(string timer) const {
+// XXX    if (!t.count(timer)) return 0.0;
+//    return t.find(timer)->second;
+//  }
   double total() {
-    double end = gettime();
-    return end - all;
+    double end_time = gettime();
+    return end_time - start_time;
   }
   void report() {
     const int T_WIDTH  = 12;
@@ -66,13 +67,12 @@ class TimeScope {
   private:
   Timing &timer;
   string timer_name;
-
   public:
   TimeScope(Timing &_timer, string _timer_name) : timer(_timer), timer_name(std::move(_timer_name)) { timer.start(); }
   ~TimeScope() { timer.add(timer_name); }
 };
 
-#define TIME(timer_name) TimeScope timer(tm, timer_name)
+#define TIME(timer_name) time_mem::TimeScope timer(time_mem::tm, timer_name)
 #define TIME_SECTION(timer_name, section)                                                                                                            \
   {                                                                                                                                                  \
     TIME(timer_name);                                                                                                                                \
@@ -87,10 +87,8 @@ class MemoryStats {
   private:
   map<string, int> maxvals;
   int peakusage;
-
   public:
   MemoryStats() { peakusage = 0; }
-  // Intermediate level routine.
   int used() {
     const int memused = memoryused();
     peakusage         = max(peakusage, memused);
@@ -99,7 +97,6 @@ class MemoryStats {
   // Sample memory usage at an arbitrarily named "breakpoint".
   int check(string breakpoint) {
     const int memused = used();
-//    if (maxvals.count(breakpoint) == 0) maxvals[breakpoint] = 0; // XXX
     maxvals[breakpoint] = max(maxvals[breakpoint], memused);
     return memused;
   }
@@ -120,4 +117,5 @@ class MemoryStats {
   }
 };
 
+} // namespace time_mem
 #endif

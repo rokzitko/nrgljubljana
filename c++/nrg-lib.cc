@@ -40,18 +40,18 @@
 #include "outfield.cc"
 
 // Timing of various parts of the code and memory statistics
+namespace time_mem {
 Timing tm;
 MemoryStats ms;
-
 void timing_report() { tm.report(); }
 void memory_report() { ms.report(); }
-void memory_time_brief_report()
-{
+void memory_time_brief_report() {
 #ifdef HAS_MEMORY_USAGE
   cout << "Memory used: " << long(ms.used() / 1024) << " MB "; // NOLINT
 #endif
   cout << "Time elapsed: " << long(tm.total()) << " s" << endl;
 }
+} // namespace time_mem
 
 #ifdef NRG_MPI
 mpi::environment *mpienv;
@@ -2537,7 +2537,7 @@ void nrg_do_diag() {
       calc_boltzmann_factors(diag);
       if (P::removefiles) remove_transformation_files(STAT::N);
     }
-    ms.check("after diag");
+    time_mem::ms.check("diag");
     find_groundstate(diag);
     subtract_groundstate_energy(diag);
     copy_sort_energies(diag, STAT::energies);
@@ -2550,7 +2550,7 @@ void nrg_do_diag() {
       find_clusters(STAT::energies, P::fixeps, STAT::cluster_mapping);
     }
     nrg_truncate_prepare(diag);
-    ms.check("after trunc");
+    time_mem::ms.check("trunc");
     if (NRG::notenough) {
       cout << "Insufficient number of states computed." << endl;
       if (P::restart) {
@@ -2615,7 +2615,7 @@ void nrg_after_diag(IterInfo &iterinfo) {
   }
   if (!P::ZBW) {
     split_in_blocks(diag);
-    ms.check("after split");
+    time_mem::ms.check("split");
   }
   if (do_recalc_all()) { // Either ...
     nrg_recalculate_operators(diag, iterinfo);
@@ -2647,12 +2647,12 @@ void nrg_after_diag(IterInfo &iterinfo) {
     nrg_calculate_spectral_and_expv(diag, iterinfo);
   }
   if (P::checksumrules) check_operator_sumrules(diag, iterinfo);
-  ms.check("after recalc");
+  time_mem::ms.check("recalc");
   if (!P::ZBW) {
     // Free up memory that contains information we no longer need
     nrg_trim_matrices(diag, iterinfo);
     nrg_clear_eigenvectors(diag);
-    ms.check("after trim");
+    time_mem::ms.check("trim");
     diagprev.swap(diag); // IMPORTANT: we need to retain the eigenenergies!
   }
   // Store TD data (all outfields)
@@ -2663,7 +2663,7 @@ void nrg_after_diag(IterInfo &iterinfo) {
 void nrg_iterate(IterInfo &iterinfo) {
   nrg_do_diag();
   nrg_after_diag(iterinfo);
-  memory_time_brief_report();
+  time_mem::memory_time_brief_report();
 }
 
 void docalc0ht(unsigned int extra_steps) {
