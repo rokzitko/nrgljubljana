@@ -118,7 +118,7 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
       } else {                                                                                                                                       \
         factor = factor0;                                                                                                                            \
       }                                                                                                                                              \
-      offdiag_build(i, j, ch, fnr, factor, h, qq, In);                                                                                               \
+      offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch);                                                                                \
     }                                                                                                                                                \
   };
 

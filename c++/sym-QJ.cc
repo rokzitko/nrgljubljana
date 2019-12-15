@@ -120,7 +120,7 @@ void SymmetryQJ::offdiag_function_QJ(unsigned int i, unsigned int j,
 
   const bool contributes = offdiag_contributes(i, j, ch, qq);
 
-  if (triangle && contributes) { offdiag_build(i, j, ch, fnr, factor, h, qq, In); }
+  if (triangle && contributes) { offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch); }
 }
 
 // *** Helper macros for makematrix() members in matrix.cc
