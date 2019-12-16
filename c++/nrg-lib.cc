@@ -412,6 +412,8 @@ using QSrmax = map<Invar, Rmaxvals>;
 class ChainSpectrum;
 class BaseSpectrum;
 
+using spCS_t = shared_ptr<ChainSpectrum>;
+
 class SPEC {
   public:
   SPEC() = default;
@@ -420,13 +422,13 @@ class SPEC {
   SPEC &operator=(const SPEC &) = default;
   SPEC &operator=(SPEC &&) = default;
   virtual ~SPEC() = default;
-  virtual ChainSpectrum *make_cs(const BaseSpectrum &) = 0;
-  virtual void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *cs, const Invar &,
+  virtual spCS_t make_cs(const BaseSpectrum &) = 0;
+  virtual void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
                     const Invar &){};
   virtual void calc_A(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      ChainSpectrum *, const Invar &, const Invar &, const Invar &){};
+                      spCS_t, const Invar &, const Invar &, const Invar &){};
   virtual void calc_B(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      ChainSpectrum *, const Invar &, const Invar &, const Invar &){};
+                      spCS_t, const Invar &, const Invar &, const Invar &){};
   virtual string name() = 0;
   virtual string merge() { return ""; } // what merging rule to use
 };
@@ -982,7 +984,7 @@ class Spectrum {
   Spectrum &operator=(const Spectrum &) = default;
   Spectrum &operator=(Spectrum &&) = default;
   virtual ~Spectrum()= default; // required (the destructor saves the results to a file)
-  virtual void merge(ChainSpectrum *cs) = 0; // called from spec.cc as the very last step
+  virtual void merge(spCS_t) = 0; // called from spec.cc as the very last step
   string name() { return opname; }
 };
 
@@ -994,7 +996,7 @@ class SpectrumTemp : public Spectrum {
   std::vector<pair<double, t_weight>> results;
   public:
   SpectrumTemp(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
-  void merge(ChainSpectrum *cs) override;
+  void merge(spCS_t) override;
   SpectrumTemp(const SpectrumTemp &) = default;
   SpectrumTemp(SpectrumTemp &&) = default;
   SpectrumTemp &operator=(const SpectrumTemp &) = default;
@@ -1002,9 +1004,9 @@ class SpectrumTemp : public Spectrum {
   ~SpectrumTemp() override;
 };
 
-void SpectrumTemp::merge(ChainSpectrum *cs) {
-  auto &t = dynamic_cast<ChainSpectrumTemp &>(*cs);
-  copy(begin(t.v), end(t.v), back_inserter(results));
+void SpectrumTemp::merge(spCS_t cs) {
+  auto t = dynamic_pointer_cast<ChainSpectrumTemp>(cs);
+  copy(begin(t->v), end(t->v), back_inserter(results));
 }
 
 SpectrumTemp::~SpectrumTemp() {
@@ -1024,7 +1026,7 @@ class SpectrumMatsubara : public Spectrum {
   public:
   SpectrumMatsubara(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
-  void merge(ChainSpectrum *cs) override;
+  void merge(spCS_t) override;
   SpectrumMatsubara(const SpectrumMatsubara &) = default;
   SpectrumMatsubara(SpectrumMatsubara &&) = default;
   SpectrumMatsubara &operator=(const SpectrumMatsubara &) = default;
@@ -1032,10 +1034,10 @@ class SpectrumMatsubara : public Spectrum {
   ~SpectrumMatsubara() override;
 };
 
-void SpectrumMatsubara::merge(ChainSpectrum *cs) {
-  auto &t = dynamic_cast<ChainSpectrumMatsubara &>(*cs);
-  nrglog('*', "weight=" << t.total_weight()); // useful for debugging
-  for (size_t n = 0; n < P::mats; n++) results.v[n].second += t.m.v[n].second;
+void SpectrumMatsubara::merge(spCS_t cs) {
+  auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
+  nrglog('*', "weight=" << t->total_weight()); // useful for debugging
+  for (size_t n = 0; n < P::mats; n++) results.v[n].second += t->m.v[n].second;
 }
 
 SpectrumMatsubara::~SpectrumMatsubara() {
@@ -1047,11 +1049,10 @@ SpectrumMatsubara::~SpectrumMatsubara() {
 class SpectrumMatsubara2 : public Spectrum {
   private:
   Matsubara2 results;
-
   public:
   SpectrumMatsubara2(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
-  void merge(ChainSpectrum *cs) override;
+  void merge(spCS_t) override;
   SpectrumMatsubara2(const SpectrumMatsubara2 &) = default;
   SpectrumMatsubara2(SpectrumMatsubara2 &&) = default;
   SpectrumMatsubara2 &operator=(const SpectrumMatsubara2 &) = default;
@@ -1059,11 +1060,11 @@ class SpectrumMatsubara2 : public Spectrum {
   ~SpectrumMatsubara2() override;
 };
 
-void SpectrumMatsubara2::merge(ChainSpectrum *cs) {
-  auto &t = dynamic_cast<ChainSpectrumMatsubara2 &>(*cs);
-  nrglog('*', "weight=" << t.total_weight());
+void SpectrumMatsubara2::merge(spCS_t cs) {
+  auto t = dynamic_pointer_cast<ChainSpectrumMatsubara2>(cs);
+  nrglog('*', "weight=" << t->total_weight());
   for (size_t m = 0; m < P::mats; m++)
-    for (size_t n = 0; n < P::mats; n++) results.v(m, n) += t.m.v(m, n);
+    for (size_t n = 0; n < P::mats; n++) results.v(m, n) += t->m.v(m, n);
 }
 
 SpectrumMatsubara2::~SpectrumMatsubara2() {

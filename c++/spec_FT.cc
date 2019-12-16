@@ -1,7 +1,7 @@
 class SPEC_FT : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumBinning; }
-  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
+  spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
+  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
             const Invar &) override;
   string name() override { return "FT"; }
   string merge() override { return "NN2"; }
@@ -12,7 +12,7 @@ class SPEC_FT : public SPEC {
 // s=1 for bosons, s=-1 for fermions
 // See Eq.(9) in Peters, Pruschke, Anders, PRB (74) 245114 (2006)
 void SPEC_FT::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                   ChainSpectrum *cs, const Invar &Ip, const Invar &I1) {
+                   spCS_t cs, const Invar &Ip, const Invar &I1) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   using namespace STAT;
   for (size_t r1 = 0; r1 < diagI1.getnr(); r1++) {
@@ -29,17 +29,17 @@ void SPEC_FT::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II
 
 class SPEC_FTmats : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &bs) override { return new ChainSpectrumMatsubara(bs.mt); }
-  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
+  spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(bs.mt); }
+  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
             const Invar &) override;
   string name() override { return "FTmats"; }
 };
 
 void SPEC_FTmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
-                       t_factor spinfactor, ChainSpectrum *cs, const Invar &Ip, const Invar &I1) {
+                       t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1) {
   const size_t cutoff = P::mats;
   double sign         = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
-  auto *csm           = dynamic_cast<ChainSpectrumMatsubara *>(cs);
+  auto csm            = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   using namespace STAT;
   for (size_t r1 = 0; r1 < diagI1.getnr(); r1++) {
     const t_eigen E1 = diagI1.value(r1);
@@ -61,10 +61,9 @@ void SPEC_FTmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &o
 class SPEC_GT_generic : public SPEC {
   protected:
   int power{};
-
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumTemp; }
-  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
+  spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumTemp>(); }
+  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
             const Invar &) override;
   string name() override { return "ERROR"; }
 };
@@ -93,7 +92,7 @@ class SPEC_I2T : public SPEC_GT_generic {
 // peaks), but rather a tabulated G(T), so binning needs to be turned off.
 // See Yoshida, Seridonio, Oliveira, arxiv:0906.4289, Eq. (8).
 void SPEC_GT_generic::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
-                           t_factor spinfactor, ChainSpectrum *cs, const Invar &Ip, const Invar &I1) {
+                           t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   my_assert(sign == S_FERMIONIC);                  // restricted implementation
   const double temperature = P::gtp * STAT::scale; // in absolute units!
@@ -136,8 +135,8 @@ inline t_weight chit_weight(double En, double Em, double beta) {
 
 class SPEC_CHIT : public SPEC {
   public:
-  ChainSpectrum *make_cs(const BaseSpectrum &) override { return new ChainSpectrumTemp; }
-  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *, const Invar &,
+  spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumTemp>(); }
+  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
             const Invar &) override;
   string name() override { return "CHIT"; }
 };
@@ -150,7 +149,7 @@ class SPEC_CHIT : public SPEC {
 // following equation.
 // NOTE: The output is chi/beta = k_B T chi, as we prefer.
 void SPEC_CHIT::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                     ChainSpectrum *cs, const Invar &Ip, const Invar &I1) {
+                     spCS_t cs, const Invar &Ip, const Invar &I1) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   my_assert(sign == S_BOSONIC); // restricted implementation
   const size_t dimp = diagIp.getnr();

@@ -36,7 +36,7 @@ void calc_generic(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &facto
     if (bs.op1.count(II) && bs.op2.count(II))
       if (checkspinfnc(INVAR(j), INVAR(i), bs.spin)) tasks.push_back(II);
   }
-  ChainSpectrum *cs = bs.spectype->make_cs(bs);
+  auto cs = bs.spectype->make_cs(bs);
   for (const auto &II : tasks) {
     Invar Ij, Ii;
     tie(Ij, Ii)        = II;
@@ -54,12 +54,11 @@ void calc_generic(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &facto
   }
   nrglog('*', "Merging " << bs.fullname());
   bs.spec->merge(cs);
-  delete cs;
 }
 
 template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &factorfnc) {
   nrglog('g', "calc_generic3() " << bs.fullname());
-  ChainSpectrum *cs = bs.spectype->make_cs(bs);
+  auto cs = bs.spectype->make_cs(bs);
   LOOP_const(diag, i) LOOP_const(diag, j) LOOP_const(diag, l) {
     const Invar Ii     = INVAR(i);
     const Invar Ij     = INVAR(j);
@@ -94,7 +93,6 @@ template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const D
   }
   nrglog('*', "Merging " << bs.fullname());
   bs.spec->merge(cs);
-  delete cs;
 }
 
 #endif // _spec_cc_

@@ -2,16 +2,15 @@
 class SpectrumRealFreq : public Spectrum {
   private:
   Bins fspos, fsneg; // Full spectral information
-  void mergeNN2(const ChainSpectrumBinning &cs);
-  void mergeCFS(const ChainSpectrumBinning &cs);
+  void mergeNN2(spCS_t);
+  void mergeCFS(spCS_t);
   void weight_report();
   void trim();
   void savebins();
   void continuous();
-
   public:
   SpectrumRealFreq(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype){};
-  void merge(ChainSpectrum *cs) override;
+  void merge(spCS_t) override;
   ~SpectrumRealFreq() override;
 };
 
@@ -27,17 +26,18 @@ SpectrumRealFreq::~SpectrumRealFreq() {
 /* Merge the spectrum for a finite Wilson chain into the "true" NRG
  spectrum. For complete Fock space NRG calculation, the merging tricks are
  not necessary: we just collect all the delta peaks from all iterations. */
-void SpectrumRealFreq::merge(ChainSpectrum *cs) {
-  if (spectype->merge() == "NN2") return mergeNN2(dynamic_cast<ChainSpectrumBinning &>(*cs));
-  if (spectype->merge() == "CFS") return mergeCFS(dynamic_cast<ChainSpectrumBinning &>(*cs));
+void SpectrumRealFreq::merge(spCS_t cs) {
+  if (spectype->merge() == "NN2") return mergeNN2(cs);
+  if (spectype->merge() == "CFS") return mergeCFS(cs);
   my_error("should not be reached");
 }
 
 // Spectrum merging for complete Fock space calculation.
-void SpectrumRealFreq::mergeCFS(const ChainSpectrumBinning &cs) {
-  nrglog('*', "weight=" << cs.total_weight());
-  fspos.merge(cs.spos);
-  fsneg.merge(cs.sneg);
+void SpectrumRealFreq::mergeCFS(spCS_t cs) {
+  auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
+  nrglog('*', "weight=" << csb->total_weight());
+  fspos.merge(csb->spos);
+  fsneg.merge(csb->sneg);
 }
 
 // energy scale factor that is exponentiated
@@ -55,10 +55,7 @@ double getfactor() {
   return factor;
 }
 
-// sets the scale - in relative units of STAT::scale !!
-double getE0() {
-  return P::goodE; // (patching parameter p)
-}
+double getE0() { return P::goodE; }
 
 // Note: in the current iteration, spectral peaks in the [0:Emin] are
 // discarded.
@@ -138,11 +135,12 @@ bool N_for_merging(int N) {
 // current choice seems to be working quite all right.
 // See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001).
 
-void SpectrumRealFreq::mergeNN2(const ChainSpectrumBinning &cs) {
-  nrglog('*', "weight=" << cs.total_weight());
+void SpectrumRealFreq::mergeNN2(spCS_t cs) {
+  auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
+  nrglog('*', "weight=" << csb->total_weight());
   if (!N_for_merging(STAT::N)) return;
-  mergeNN2half(fspos, cs.spos);
-  mergeNN2half(fsneg, cs.sneg);
+  mergeNN2half(fspos, csb->spos);
+  mergeNN2half(fsneg, csb->sneg);
 }
 
 const double IMAG_TOLERANCE = 1e-10;
