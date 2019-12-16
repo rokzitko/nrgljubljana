@@ -7,3 +7,4 @@ unreadVariable:sym-*.cc
 shadowFunction:spec*.cc
 shadowFunction:nrg-recalc-*.cc
 passedByValue:nrg-recalc-*.cc
+constParameter:sym-*.cc

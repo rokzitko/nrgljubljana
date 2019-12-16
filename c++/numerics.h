@@ -18,7 +18,6 @@ template <typename T> class generic_bucket {
     for (const auto &i : v) value += i.second;
   }
   inline T operator+=(T x) { return value += x; }
-  //   inline operator T () const { return assert_isfinite(value); } // XXXXXXXXXXXXXXXXXXXXX
   inline operator T() const { return value; }
 };
 

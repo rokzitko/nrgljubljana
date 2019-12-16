@@ -24,7 +24,6 @@ template <typename T, typename T1> T switch3(T1 x0, T1 x1, T y1, T1 x2, T y2, T1
   if (x0 == x2) return y2;
   if (x0 == x3) return y3;
   my_assert_not_reached();
-// XXX  return 0.0; // avoid warnings
 }
 
 // Get next line from stream F, skipping empty lines and comments.

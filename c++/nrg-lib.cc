@@ -130,13 +130,9 @@ inline cmpl CONJ_ME(cmpl z) { return conj(z); }
 
 using t_weight = cmpl; // spectral weight accumulators (complex in general)
 
-// Type for arrays of eigenvalues
-using EVEC = ublas::vector<t_eigen>;
+using EVEC = ublas::vector<t_eigen>; // Type for arrays of eigenvalues
 using STDEVEC = std::vector<t_eigen>;
-
-// Type for arrays of coefficients for Wilson chains
-using CVEC = ublas::vector<t_coef>;
-
+using CVEC = ublas::vector<t_coef>; // Type for arrays of coefficients for Wilson chains
 using DVEC = ublas::vector<double>;
 using IVEC = ublas::vector<size_t>;
 
@@ -418,6 +414,11 @@ class BaseSpectrum;
 
 class SPEC {
   public:
+  SPEC() = default;
+  SPEC(const SPEC &) = default;
+  SPEC(SPEC &&) = default;
+  SPEC &operator=(const SPEC &) = default;
+  SPEC &operator=(SPEC &&) = default;
   virtual ~SPEC() = default;
   virtual ChainSpectrum *make_cs(const BaseSpectrum &) = 0;
   virtual void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, ChainSpectrum *cs, const Invar &,
@@ -736,20 +737,20 @@ set_of_tables zeta; // f^dag_N f_N terms
 // while P::channels...2*P::channels-1 correspond to spin down.
 // Compare P::channels and P::coefchannels (which reflects the same
 // convention in initial.m, i.e. CHANNELS vs. COEFCHANNELS).
-#define xiUP(N, ch) xi((N), (ch))
-#define xiDOWN(N, ch) xi((N), (ch) + P::channels)
-#define zetaUP(N, ch) zeta((N), (ch))
-#define zetaDOWN(N, ch) zeta((N), (ch) + P::channels)
+t_coef xiUP(size_t N, size_t ch) { return xi(N, ch); }
+t_coef xiDOWN(size_t N, size_t ch) { return xi(N, ch + P::channels); }
+t_coef zetaUP(size_t N, size_t ch) { return zeta(N, ch); }
+t_coef zetaDOWN(size_t N, size_t ch) { return zeta(N, ch + P::channels); }
 
 // Support for conduction bands with full 2x2 matrix structure, a
 // generalization of P::polarized. The total number of "channels" is
 // here multiplied by 4, i.e., the index runs from 0 to
 // 4*P::channels-1. Numbers 2*P::channels...3*P::channels-1 correspond
 // to UP/DO, 3*P::channels...4*P::channels-1 correspond to DO/UP.
-#define xiUPDO(N, ch) xi((N), (ch) + 2 * P::channels)
-#define xiDOUP(N, ch) xi((N), (ch) + 3 * P::channels)
-#define zetaUPDO(N, ch) zeta((N), (ch) + 2 * P::channels)
-#define zetaDOUP(N, ch) zeta((N), (ch) + 3 * P::channels)
+t_coef xiUPDO(size_t N, size_t ch) { return xi(N, ch + 2 * P::channels); }
+t_coef xiDOUP(size_t N, size_t ch) { return xi(N, ch + 3 * P::channels); }
+t_coef zetaUPDO(size_t N, size_t ch) { return zeta(N, ch + 2 * P::channels); }
+t_coef zetaDOUP(size_t N, size_t ch) { return zeta(N, ch + 3 * P::channels); }
 
 // Support for channel-mixing Wilson chains
 set_of_tables xiR;
@@ -917,21 +918,13 @@ CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &
 
 class ChainSpectrum {
   public:
-  ChainSpectrum()= default;
-  virtual ~ChainSpectrum()= default;
-  virtual void add(double energy, t_weight weight) = 0; // XXX
+  virtual void add(double energy, t_weight weight) = 0;
 };
 
 class ChainSpectrumBinning : public ChainSpectrum {
   private:
   Bins spos, sneg;
-
   public:
-  ChainSpectrumBinning()= default;
-  ~ChainSpectrumBinning() override {
-    assert_isfinite(spos.total_weight()); // Bug trap
-    assert_isfinite(sneg.total_weight());
-  }
   void add(double energy, t_weight weight) override {
     if (energy >= 0.0)
       spos.add(energy, weight);
@@ -945,10 +938,7 @@ class ChainSpectrumBinning : public ChainSpectrum {
 class ChainSpectrumTemp : public ChainSpectrum {
   private:
   Temp v;
-
   public:
-  ChainSpectrumTemp()= default;
-  ~ChainSpectrumTemp() override = default;
   void add(double T, t_weight value) override { v.add_value(T, value); }
   friend class SpectrumTemp;
 };
@@ -962,7 +952,6 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
   public:
   ChainSpectrumMatsubara() = delete;
   explicit ChainSpectrumMatsubara(matstype _mt) : m(P::mats, _mt){};
-  ~ChainSpectrumMatsubara() override = default;
   void add(size_t n, t_weight w) { m.add(n, w); }
   void add(double energy, t_weight w) override { my_assert_not_reached(); }
   t_weight total_weight() const { return m.total_weight(); }
@@ -975,7 +964,6 @@ class ChainSpectrumMatsubara2 : public ChainSpectrum {
   public:
   ChainSpectrumMatsubara2() = delete;
   explicit ChainSpectrumMatsubara2(matstype _mt) : m(P::mats, _mt){};
-  ~ChainSpectrumMatsubara2() override = default;
   void add(size_t i, size_t j, t_weight w) { m.add(i, j, w); }
   void add(double energy, t_weight w) override { my_assert_not_reached(); }
   t_weight total_weight() const { return m.total_weight(); }
@@ -989,7 +977,11 @@ class Spectrum {
   string opname, filename;
   SPECTYPE spectype;
   Spectrum(const string &_opname, const string &_filename, SPECTYPE _spectype) : opname(_opname), filename(_filename), spectype(_spectype){};
-  virtual ~Spectrum()= default;
+  Spectrum(const Spectrum &) = default;
+  Spectrum(Spectrum &&) = default;
+  Spectrum &operator=(const Spectrum &) = default;
+  Spectrum &operator=(Spectrum &&) = default;
+  virtual ~Spectrum()= default; // required (the destructor saves the results to a file)
   virtual void merge(ChainSpectrum *cs) = 0; // called from spec.cc as the very last step
   string name() { return opname; }
 };
@@ -1000,10 +992,13 @@ class Spectrum {
 class SpectrumTemp : public Spectrum {
   private:
   std::vector<pair<double, t_weight>> results;
-
   public:
   SpectrumTemp(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
   void merge(ChainSpectrum *cs) override;
+  SpectrumTemp(const SpectrumTemp &) = default;
+  SpectrumTemp(SpectrumTemp &&) = default;
+  SpectrumTemp &operator=(const SpectrumTemp &) = default;
+  SpectrumTemp &operator=(SpectrumTemp &&) = default;
   ~SpectrumTemp() override;
 };
 
@@ -1016,7 +1011,6 @@ SpectrumTemp::~SpectrumTemp() {
   string fn = filename + ".dat";
   cout << "Spectrum: " << opname << " " << spectype->name() << " -> " << fn << endl;
   Spikes d(results);
-//  for (const auto &i : results) d.push_back(i); XXX
   sort(begin(d), end(d), sortfirst());
   ofstream Fd = safeopen(fn);
   save_densfunc(Fd, d, P::reim);
@@ -1027,11 +1021,14 @@ SpectrumTemp::~SpectrumTemp() {
 class SpectrumMatsubara : public Spectrum {
   private:
   Matsubara results;
-
   public:
   SpectrumMatsubara(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
   void merge(ChainSpectrum *cs) override;
+  SpectrumMatsubara(const SpectrumMatsubara &) = default;
+  SpectrumMatsubara(SpectrumMatsubara &&) = default;
+  SpectrumMatsubara &operator=(const SpectrumMatsubara &) = default;
+  SpectrumMatsubara &operator=(SpectrumMatsubara &&) = default;
   ~SpectrumMatsubara() override;
 };
 
@@ -1055,6 +1052,10 @@ class SpectrumMatsubara2 : public Spectrum {
   SpectrumMatsubara2(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
   void merge(ChainSpectrum *cs) override;
+  SpectrumMatsubara2(const SpectrumMatsubara2 &) = default;
+  SpectrumMatsubara2(SpectrumMatsubara2 &&) = default;
+  SpectrumMatsubara2 &operator=(const SpectrumMatsubara2 &) = default;
+  SpectrumMatsubara2 &operator=(SpectrumMatsubara2 &&) = default;
   ~SpectrumMatsubara2() override;
 };
 
@@ -1149,36 +1150,13 @@ speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI
 
 /**** CALCULATION OF SPECTRAL FUNCTIONS ****/
 
-auto CorrelatorFactorFnc = [](const Invar &Ip, const Invar &I1) {
-  // For odd-parity operators, the quantum numbers may change, but
-  // the multiplicity should be the same for bra and ket subspaces.
-  my_assert(mult(I1) == mult(Ip));
-  return mult(I1); // S_z unchanged by singlet operators
-};
-
-auto trivialCheckSpinFnc = [](const Invar &, const Invar &, int) { return true; };
-
+auto CorrelatorFactorFnc = [](const Invar &Ip, const Invar &I1) { return mult(I1); };
+auto SpecdensFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdens_factor(Ip, I1); };
+auto SpecdensquadFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdensquad_factor(Ip, I1); };
+auto SpinSuscFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->dynamicsusceptibility_factor(Ip, I1); };
+auto OrbSuscFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->dynamic_orb_susceptibility_factor(Ip, I1); };
+auto TrivialCheckSpinFnc = [](const Invar &, const Invar &, int) { return true; };
 auto SpecdensCheckSpinFnc = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
-
-auto SpecdensFactorFnc = [](const Invar &Ip, const Invar &I1) {
-  t_factor factor = Sym->specdens_factor(Ip, I1);
-  return assert_isfinite(factor);
-};
-
-auto SpecdensquadFactorFnc = [](const Invar &Ip, const Invar &I1) {
-  t_factor factor = Sym->specdensquad_factor(Ip, I1);
-  return assert_isfinite(factor);
-};
-
-auto SpinSuscFactorFnc = [](const Invar &Ip, const Invar &I1) {
-  t_factor factor = Sym->dynamicsusceptibility_factor(Ip, I1);
-  return assert_isfinite(factor);
-};
-
-auto OrbSuscFactorFnc = [](const Invar &Ip, const Invar &I1) {
-  t_factor factor = Sym->dynamic_orb_susceptibility_factor(Ip, I1);
-  return assert_isfinite(factor);
-};
 
 void doublet_check_norm(const CustomOp::value_type &op, const DiagInfo &diag, int SPIN) {
   weight_bucket sum;
@@ -2014,12 +1992,12 @@ void nrg_recalculate_operators(DiagInfo &dg, IterInfo &a) { // XXX: DiagInfo sho
 void nrg_spectral_densities(const DiagInfo &diag) {
   nrglog('@', "@ nrg_spectral_densities()");
   TIME("spec");
-  for (auto &i : spectraS) calc_generic(i, diag, CorrelatorFactorFnc, trivialCheckSpinFnc);
-  for (auto &i : spectraCHIT) calc_generic(i, diag, CorrelatorFactorFnc, trivialCheckSpinFnc);
+  for (auto &i : spectraS) calc_generic(i, diag, CorrelatorFactorFnc, TrivialCheckSpinFnc);
+  for (auto &i : spectraCHIT) calc_generic(i, diag, CorrelatorFactorFnc, TrivialCheckSpinFnc);
   for (auto &i : spectraD) calc_generic(i, diag, SpecdensFactorFnc, SpecdensCheckSpinFnc);
-  for (auto &i : spectraT) calc_generic(i, diag, SpinSuscFactorFnc, trivialCheckSpinFnc);
-  for (auto &i : spectraOT) calc_generic(i, diag, OrbSuscFactorFnc, trivialCheckSpinFnc);
-  for (auto &i : spectraQ) calc_generic(i, diag, SpecdensquadFactorFnc, trivialCheckSpinFnc);
+  for (auto &i : spectraT) calc_generic(i, diag, SpinSuscFactorFnc, TrivialCheckSpinFnc);
+  for (auto &i : spectraOT) calc_generic(i, diag, OrbSuscFactorFnc, TrivialCheckSpinFnc);
+  for (auto &i : spectraQ) calc_generic(i, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc);
   for (auto &i : spectraGT) calc_generic(i, diag, SpecdensFactorFnc, SpecdensCheckSpinFnc);
   for (auto &i : spectraI1T) calc_generic(i, diag, SpecdensFactorFnc, SpecdensCheckSpinFnc);
   for (auto &i : spectraI2T) calc_generic(i, diag, SpecdensFactorFnc, SpecdensCheckSpinFnc);
