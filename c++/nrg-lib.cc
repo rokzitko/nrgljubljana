@@ -645,11 +645,11 @@ void remove_workdir() { remove(P::workdir.c_str()); }
 const string default_workdir = ".";
 
 void create_workdir(const string &workdir) {
-  string workdir_template = workdir + "/XXXXXX";
+  const string workdir_template = workdir + "/XXXXXX";
   size_t len = workdir_template.length()+1;
-  char x[len]; // NOLINT
-  strncpy((char*)x, workdir_template.c_str(), len);
-  if (char *w = mkdtemp((char*)x)) // create a unique directory
+  auto x = make_unique<char[]>(len);
+  strncpy(x.get(), workdir_template.c_str(), len);
+  if (char *w = mkdtemp(x.get())) // create a unique directory
     P::workdir = w;
   else
     P::workdir = default_workdir;
