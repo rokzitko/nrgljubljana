@@ -1,0 +1,9 @@
+*:*bindings*/*
+useStlAlgorithm:spectral.h
+useStlAlgorithm:bins.h
+useStlAlgorithm:nrg-lib.cc
+unreadVariable:diag.h
+unreadVariable:sym-*.cc
+shadowFunction:spec*.cc
+shadowFunction:nrg-recalc-*.cc
+passedByValue:nrg-recalc-*.cc

@@ -60,7 +60,9 @@ if(ANALYZE_SOURCES)
 	  --verbose
 	  --force
 	  --quiet
-    --suppress=*:*bindings*/*
+    --suppressions-list=suppressions.txt
+    --inline-suppr
+#    --suppress=*:*bindings*/*
 #    --suppress=*:*cblas*
 #    --suppress=*:*coewfnew*
     ${sources}

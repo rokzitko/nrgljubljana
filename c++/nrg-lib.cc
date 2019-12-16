@@ -988,7 +988,7 @@ class Spectrum {
   public:
   string opname, filename;
   SPECTYPE spectype;
-  Spectrum(string _opname, string _filename, SPECTYPE _spectype) : opname(std::move(_opname)), filename(std::move(_filename)), spectype(_spectype){};
+  Spectrum(const string &_opname, const string &_filename, SPECTYPE _spectype) : opname(_opname), filename(_filename), spectype(_spectype){};
   virtual ~Spectrum()= default;
   virtual void merge(ChainSpectrum *cs) = 0; // called from spec.cc as the very last step
   string name() { return opname; }
@@ -1002,7 +1002,7 @@ class SpectrumTemp : public Spectrum {
   std::vector<pair<double, t_weight>> results;
 
   public:
-  SpectrumTemp(string _opname, string _filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
+  SpectrumTemp(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
   void merge(ChainSpectrum *cs) override;
   ~SpectrumTemp() override;
 };
@@ -1029,7 +1029,7 @@ class SpectrumMatsubara : public Spectrum {
   Matsubara results;
 
   public:
-  SpectrumMatsubara(string _opname, string _filename, SPECTYPE _spectype, matstype _mt)
+  SpectrumMatsubara(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
   void merge(ChainSpectrum *cs) override;
   ~SpectrumMatsubara() override;
@@ -1052,7 +1052,7 @@ class SpectrumMatsubara2 : public Spectrum {
   Matsubara2 results;
 
   public:
-  SpectrumMatsubara2(string _opname, string _filename, SPECTYPE _spectype, matstype _mt)
+  SpectrumMatsubara2(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P::mats, _mt) {}
   void merge(ChainSpectrum *cs) override;
   ~SpectrumMatsubara2() override;
@@ -1898,7 +1898,7 @@ void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElem
 
 // Wrapper routine for recalculations. Called from nrg_recalculate_operators().
 template <class RecalcFnc>
-void recalc_common(RecalcFnc recalc_fnc, DiagInfo &dg, CustomOp::value_type &op, string tip, bool (*testfn)(const string &)) {
+void recalc_common(RecalcFnc recalc_fnc, DiagInfo &dg, CustomOp::value_type &op, const string &tip, bool (*testfn)(const string &)) {
   if (testfn(NAME(op))) {
     TIME("recalc " + tip);
     nrglog('0', "Recalculate " << tip << " " << NAME(op));
@@ -2156,6 +2156,7 @@ void nrg_diagonalisations_OpenMP() {
   nrglog('(', "OpenMP diag");
   size_t nr    = NRG::tasks.size();
   size_t itask = 0;
+  // cppcheck-suppress unreadVariable symbolName=nth
   int nth      = P::diagth; // NOLINT
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {

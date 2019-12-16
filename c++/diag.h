@@ -264,15 +264,14 @@ Eigen diagonalise(Matrix &m) {
   size_t M = 0; // number of computed eigenvalues
   // dr is the preferred LAPACK diagonalization routine
   dr_value dr = sP.diagroutine;
+  const size_t mdim = m.size1();
 #ifdef NRG_REAL
   // Reevaluate the situation: for small dim, dsyev is faster.
-  const size_t mdim = m.size1();
   if (mdim < sP.dsyevrlimit) dr = diagdsyev;
   if (dr == diagdsyev) M = diagonalise_dsyev(m, d, 'V');
   if (dr == diagdsyevr) M = diagonalise_dsyevr(m, d, 'V', sP.diagratio);
 #endif
 #ifdef NRG_COMPLEX
-  const size_t mdim = m.size1();
   if (mdim < sP.zheevrlimit) dr = diagzheev;
   if (dr == diagzheev) M = diagonalise_zheev(m, d, 'V');
   if (dr == diagzheevr) M = diagonalise_zheevr(m, d, 'V', sP.diagratio);
