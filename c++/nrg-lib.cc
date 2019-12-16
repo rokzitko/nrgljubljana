@@ -921,6 +921,12 @@ CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &
 class ChainSpectrum {
   public:
   virtual void add(double energy, t_weight weight) = 0;
+  ChainSpectrum() = default;
+  ChainSpectrum(const ChainSpectrum &) = default;
+  ChainSpectrum(ChainSpectrum &&) = default;
+  ChainSpectrum &operator=(const ChainSpectrum &) = default;
+  ChainSpectrum &operator=(ChainSpectrum &&) = default;
+  virtual ~ChainSpectrum() = default; // required, because there are virtual members
 };
 
 class ChainSpectrumBinning : public ChainSpectrum {
