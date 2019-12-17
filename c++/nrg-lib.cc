@@ -387,10 +387,11 @@ void Eigen::perform_checks() const {
 // Full information after diagonalizations.
 using DiagInfo = map<Invar, Eigen>;
 
-#define LOOP(diag, var) for (auto &var : diag)
-#define LOOP_const(diag, var) for (const auto &var : diag)
+#define LOOP(diag, var) for (auto &var : diag) // NOLINT
+#define LOOP_const(diag, var) for (const auto &var : diag) // NOLINT
 
 Invar INVAR(const DiagInfo::value_type &i) { return i.first; }
+// cppcheck-suppress constParameter symbolName=i
 Eigen &EIGEN(DiagInfo::value_type &i) { return i.second; } // XXX can i be const?
 Eigen const &EIGEN(const DiagInfo::value_type &i) { return i.second; }
 
@@ -650,7 +651,7 @@ const string default_workdir = ".";
 void create_workdir(const string &workdir) {
   const string workdir_template = workdir + "/XXXXXX";
   size_t len = workdir_template.length()+1;
-  auto x = make_unique<char[]>(len);
+  auto x = make_unique<char[]>(len); // NOLINT
   strncpy(x.get(), workdir_template.c_str(), len);
   if (char *w = mkdtemp(x.get())) // create a unique directory
     P::workdir = w;
@@ -984,7 +985,7 @@ class Spectrum {
   public:
   string opname, filename;
   SPECTYPE spectype;
-  Spectrum(const string &_opname, const string &_filename, SPECTYPE _spectype) : opname(_opname), filename(_filename), spectype(_spectype){};
+  Spectrum(const string &_opname, const string &_filename, SPECTYPE _spectype) : opname(_opname), filename(_filename), spectype(_spectype){}; // NOLINT
   Spectrum(const Spectrum &) = default;
   Spectrum(Spectrum &&) = default;
   Spectrum &operator=(const Spectrum &) = default;
@@ -1247,8 +1248,9 @@ void show_coefficients() {
   if (!P::substeps) {
     using namespace STAT;
     for (size_t i = 0; i < P::coefchannels; i++) {
+      double scale = SCALE(static_cast<int>(N)+1);
       cout << "[" << i + 1 << "]"
-           << " xi(" << N << ")=" << xi(N, i) << " xi_scaled(" << N << ")=" << xi(N, i) / SCALE(N + 1) << " zeta(" << N + 1 << ")=" << zeta(N + 1, i)
+           << " xi(" << N << ")=" << xi(N, i) << " xi_scaled(" << N << ")=" << xi(N, i)/scale << " zeta(" << N + 1 << ")=" << zeta(N + 1, i)
            << endl;
     }
   } else {
@@ -1509,11 +1511,11 @@ namespace oprecalc {
 
 #define LOOPOVER(set1, set2, job)                                                                                                                    \
   for (const auto &op1 : set1)                                                                                                                       \
-    for (const auto &op2 : set2) { job; }
+    for (const auto &op2 : set2) { job; } // NOLINT
 #define LOOPOVER3(set1, set2, set3, job)                                                                                                             \
   for (const auto &op1 : set1)                                                                                                                       \
     for (const auto &op2 : set2)                                                                                                                     \
-      for (const auto &op3 : set3) { job; }
+      for (const auto &op3 : set3) { job; } // NOLINT
 
   void OPENSPEC(const CustomOp::value_type &op1, const CustomOp::value_type &op2, const string_token &stringtoken, speclist &spectra, const string &prefix,
                 set<string> &rec1, set<string> &rec2, matstype mt, int Spin = 0) {
@@ -2653,8 +2655,8 @@ void nrg_iterate(IterInfo &iterinfo) {
 }
 
 void docalc0ht(unsigned int extra_steps) {
-  for (int i = -extra_steps; i <= -1; i++) {
-    STAT::set_N(P::Ninit - 1 + i);
+  for (int i = -dynamic_cast<int>(extra_steps); i <= -1; i++) {
+    STAT::set_N(dynamic_cast<int>(P::Ninit) - 1 + i);
     double E_rescale_factor = pow(P::Lambda, i / 2.0); // NOLINT
     nrg_calculate_TD(diagprev, E_rescale_factor);
   }
@@ -2663,7 +2665,7 @@ void docalc0ht(unsigned int extra_steps) {
 // Perform calculations with quantities from 'data' file
 void docalc0(const IterInfo &iterinfo) {
   nrglog('@', "@ docalc0()");
-  STAT::set_N(P::Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
+  STAT::set_N(dynamic_cast<int>(P::Ninit) - 1); // in the usual case with Ninit=0, this will result in N=-1
   cout << endl << "Before NRG iteration";
   cout << " (N=" << STAT::N << ")" << endl;
   nrg_perform_measurements(diagprev);
@@ -2679,7 +2681,7 @@ void docalc0(const IterInfo &iterinfo) {
 void doZBW(IterInfo &iterinfo) {
   cout << endl << "Zero bandwidth calculation" << endl;
   // TRICK: scale will be that for N=Ninit-1, but STAT::N=Ninit.
-  STAT::set_N(P::Ninit - 1);
+  STAT::set_N(dynamic_cast<int>(P::Ninit) - 1);
   STAT::N = P::Ninit; // this is a hack!
   // begin nrg_do_diag() equivalent
   if (nrgrun) diag = diagprev;
