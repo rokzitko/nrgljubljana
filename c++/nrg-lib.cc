@@ -2655,8 +2655,8 @@ void nrg_iterate(IterInfo &iterinfo) {
 }
 
 void docalc0ht(unsigned int extra_steps) {
-  for (int i = -dynamic_cast<int>(extra_steps); i <= -1; i++) {
-    STAT::set_N(dynamic_cast<int>(P::Ninit) - 1 + i);
+  for (int i = -int(extra_steps); i <= -1; i++) {
+    STAT::set_N(int(P::Ninit) - 1 + i);
     double E_rescale_factor = pow(P::Lambda, i / 2.0); // NOLINT
     nrg_calculate_TD(diagprev, E_rescale_factor);
   }
@@ -2665,7 +2665,7 @@ void docalc0ht(unsigned int extra_steps) {
 // Perform calculations with quantities from 'data' file
 void docalc0(const IterInfo &iterinfo) {
   nrglog('@', "@ docalc0()");
-  STAT::set_N(dynamic_cast<int>(P::Ninit) - 1); // in the usual case with Ninit=0, this will result in N=-1
+  STAT::set_N(int(P::Ninit) - 1); // in the usual case with Ninit=0, this will result in N=-1
   cout << endl << "Before NRG iteration";
   cout << " (N=" << STAT::N << ")" << endl;
   nrg_perform_measurements(diagprev);
@@ -2681,7 +2681,7 @@ void docalc0(const IterInfo &iterinfo) {
 void doZBW(IterInfo &iterinfo) {
   cout << endl << "Zero bandwidth calculation" << endl;
   // TRICK: scale will be that for N=Ninit-1, but STAT::N=Ninit.
-  STAT::set_N(dynamic_cast<int>(P::Ninit) - 1);
+  STAT::set_N(int(P::Ninit) - 1);
   STAT::N = P::Ninit; // this is a hack!
   // begin nrg_do_diag() equivalent
   if (nrgrun) diag = diagprev;
