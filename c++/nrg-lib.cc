@@ -1509,13 +1509,8 @@ namespace oprecalc {
   bool do_q(const string &name) { return q.count(name); }
   bool do_ot(const string &name) { return ot.count(name); }
 
-#define LOOPOVER(set1, set2, job)                                                                                                                    \
-  for (const auto &op1 : set1)                                                                                                                       \
-    for (const auto &op2 : set2) { job; } // NOLINT
-#define LOOPOVER3(set1, set2, set3, job)                                                                                                             \
-  for (const auto &op1 : set1)                                                                                                                       \
-    for (const auto &op2 : set2)                                                                                                                     \
-      for (const auto &op3 : set3) { job; } // NOLINT
+#define LOOPOVER(set1, set2, job) for (const auto &op1 : set1) for (const auto &op2 : set2) { job; } // NOLINT
+#define LOOPOVER3(set1, set2, set3, job) for (const auto &op1 : set1) for (const auto &op2 : set2) for (const auto &op3 : set3) { job; } // NOLINT
 
   void OPENSPEC(const CustomOp::value_type &op1, const CustomOp::value_type &op2, const string_token &stringtoken, speclist &spectra, const string &prefix,
                 set<string> &rec1, set<string> &rec2, matstype mt, int Spin = 0) {
