@@ -392,7 +392,7 @@ using DiagInfo = map<Invar, Eigen>;
 
 Invar INVAR(const DiagInfo::value_type &i) { return i.first; }
 // cppcheck-suppress constParameter symbolName=i
-Eigen &EIGEN(DiagInfo::value_type &i) { return i.second; } // XXX can i be const?
+Eigen &EIGEN(DiagInfo::value_type &i) { return i.second; } // NOLINT
 Eigen const &EIGEN(const DiagInfo::value_type &i) { return i.second; }
 
 // Number of calculated states
