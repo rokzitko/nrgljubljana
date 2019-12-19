@@ -1,21 +1,10 @@
-// Computes \int rho(E)/(z-E) dE for given z and tabulated density
-// of states rho(E).
+// Computes \int rho(E)/(z-E) dE for given z and tabulated density of states rho(E).
 //
-// Mode 1: <Re z> <Im z> as imput. Returns Im part by default, or both Re and Im parts
-// if the -G switch is used.
+// Mode 1: <Re z> <Im z> as imput. Returns Im part by default, or both Re and Im parts if the -G switch is used.
 // Mode 2: read x and y from a file.
 // Mode 3: convert imsigma/resigma.dat to imaw/reaw.dat files in the DMFT loop.
 //
 // Rok Zitko, rok.zitko@ijs.si, 2009-2019
-
-// CHANGE LOG
-// 5.1.2017 - improved usage message
-// 9.1.2017 - support for Im(z)<0
-//          - integrand functions renamed for clarity
-//          - support for calculating Re and Im parts.
-// 22.11.2017 - support for imsigma/resigma -> imaw/reaw computation
-// 13.12.2017 - Monotone cubic interpolation: gsl_interp_cspline -> gsl_interp_steffen
-// 6. 11.2019 - reverted to cspline for compatibility
 
 #include <iostream>
 #include <fstream>
@@ -44,6 +33,8 @@ double x, y; // argument z=x+Iy. Global variable for simplicity.
 
 double scale = 1.0;         // scale factor
 double B     = 1.0 / scale; // half-bandwidth
+double Xmin = -B;
+double Xmax = +B;
 
 const size_t limit = 1000;
 gsl_integration_workspace *w;
@@ -66,7 +57,6 @@ double rho_Bethe(double e) { return 2.0 / M_PI * scale * sqrt(1 - sqr(e * scale)
 using DVEC = std::vector<double>;
 
 DVEC Xpts, Ypts;
-double Xmin, Xmax;
 
 gsl_interp_accel *acc;
 gsl_spline *spline;
@@ -74,7 +64,7 @@ gsl_spline *spline;
 bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
 
 double rho(double e) {
-  if (abs(e) >= B) {
+  if (e > Xmax || e < Xmin) {
     return 0.0;
   } else {
     if (tabulated) {
@@ -448,7 +438,7 @@ void load_dos(char *dosfilename) {
   Xmin = Xpts[0];
   Xmax = Xpts[len - 1];
   assert(Xmin < Xmax);
-  B = max(Xmin, Xmax);
+  B = max(abs(Xmin), abs(Xmax));
 
   double sum = gsl_spline_eval_integ(spline, Xmin, Xmax, acc);
 
@@ -509,12 +499,16 @@ void parse_param_run(int argc, char *argv[]) {
       case 's':
         scale = atof(optarg);
         B     = 1 / scale;
+        Xmin = -B;
+        Xmax = +B;
         if (verbose) { cout << "scale=" << scale << " B=" << B << endl; }
         break;
 
       case 'B':
         B     = atof(optarg);
         scale = 1 / B;
+        Xmin = -B;
+        Xmax = +B;
         if (verbose) { cout << "scale=" << scale << " B=" << B << endl; }
         break;
 
