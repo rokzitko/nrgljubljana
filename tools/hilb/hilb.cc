@@ -66,7 +66,7 @@ bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
 double rho(double e) {
   if (e > Xmax || e < Xmin) {
     return 0.0;
-  } else {
+  } else { // x in [Xmin:Xmax], boundary points included!
     if (tabulated) {
       return gsl_spline_eval(spline, e, acc);
     } else {
