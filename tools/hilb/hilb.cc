@@ -126,24 +126,30 @@ double calcim() {
     double lim2down = 1;
     double lim2up   = -1;
 
+    bool inside;
+    
     // x within the band
     if (W1 < 0 && W2 > 0) {
       lim1down = ln1016;
       lim1up   = log(-W1);
       lim2down = ln1016;
       lim2up   = log(W2);
-    }
-
+      inside = true;
+    } else
     // x above the band
     if (W1 > 0 && W2 > 0) {
       lim2down = log(W1);
       lim2up   = log(W2);
-    }
-
+      inside = false;
+    } else
     // x below the band
     if (W1 < 0 && W2 < 0) {
       lim1down = log(-W2);
       lim1up   = log(-W1);
+      inside = false;
+    // boundary points
+    } else {
+      inside = true; 
     }
 
     if (veryverbose) {
@@ -182,7 +188,7 @@ double calcim() {
     // Contribution from the direct term
     double result3;
 
-    if (W1 < 0 && W2 > 0) {
+    if (inside) {
       result3 = rho(x) * atg(x, y);
     } else {
       result3 = 0.0;
@@ -228,24 +234,29 @@ double calcre() {
     double lim2down = 1;
     double lim2up   = -1;
 
+    bool inside;
+    
     // x within the band
     if (W1 < 0 && W2 > 0) {
       lim1down = ln1016;
       lim1up   = log(-W1);
       lim2down = ln1016;
       lim2up   = log(W2);
-    }
-
+      inside = true;
+    }  else
     // x above the band
     if (W1 > 0 && W2 > 0) {
       lim2down = log(W1);
       lim2up   = log(W2);
-    }
-
+      inside = false;
+    } else
     // x below the band
     if (W1 < 0 && W2 < 0) {
       lim1down = log(-W2);
       lim1up   = log(-W1);
+      inside = false;
+    } else { // boundary
+      inside = true;
     }
 
     if (veryverbose) {
@@ -284,7 +295,7 @@ double calcre() {
     // Contribution from the direct term
     double result3;
 
-    if (W1 < 0 && W2 > 0) {
+    if (inside) {
       result3 = rho(x) * logs(x, y);
     } else {
       result3 = 0.0;
