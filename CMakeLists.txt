@@ -111,8 +111,8 @@ install(TARGETS boost EXPORT nrgljubljana-targets)
 # BLAS/Lapack
 find_package(LAPACK REQUIRED)
 add_library(blas_lapack INTERFACE)
-target_compile_options(blas_lapack INTERFACE ${LAPACK_LINKER_FLAGS})
-target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES})
+target_compile_options(blas_lapack INTERFACE ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
+target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
 install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
 
 # GMP
