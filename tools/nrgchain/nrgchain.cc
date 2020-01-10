@@ -1,16 +1,5 @@
 // Calculation of NRG chain coefficients
-// Rok Zitko, rok.zitko@ijs.si, 2009-2019
-
-// CHANGE LOG
-// ----------
-// 1. 6. 2009 - additional error checking
-// 16.3. 2010 - support for analytical coefficients for band="flat"
-//            - support for loading/saving coefficient tables
-// 9. 6. 2010 - bugfix for default parameters of nrgchain_*
-//            - mMAX now defaults to 2*Nmax
-// 6. 1. 2015 - bug fix for my_mpf class (copy constructor)
-// 23.9. 2016 - support for bandrescale
-// 11.11.2019 - switchable rescaling of xi coefficients (new default: no rescaling)
+// Rok Zitko, rok.zitko@ijs.si, 2009-2020
 
 #include <iostream>
 #include <fstream>
@@ -486,6 +475,9 @@ void tridiag() {
     double dzeta     = mpf_get_d(mpzeta);
     double coef_xi   = dxi / (rescalexi == true ? SCALE(n + 1) : 1.0);
     double coef_zeta = dzeta; // NEVER RESCALED!!!
+    
+    coef_xi = coef_xi * bandrescale; // by analogy with initial.m
+    coef_zeta = coef_zeta * bandrescale;
 
     XI << coef_xi << endl;
     ZETA << coef_zeta << endl;
