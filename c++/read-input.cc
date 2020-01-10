@@ -127,6 +127,8 @@ void read_energies(ifstream &fdata, DiagInfo &diag, size_t nsubs) {
     my_assert(nrr > 0);
     EVEC energies = EVEC(nrr);
     read_vector(fdata, energies, nrr);
+    if (!P::data_has_rescaled_energies) 
+      energies /= SCALE(P::Ninit); // rescale to the suitable energy scale
     diag[I] = Eigen(nrr, nrr);
     diag[I].diagonal(energies);
   }

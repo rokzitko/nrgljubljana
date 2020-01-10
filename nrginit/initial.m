@@ -4011,6 +4011,8 @@ the N-dependence of xi[N] for large N. When more than one site of the Wilson
 chain is included in the initial cluster (i.e. Ninit!=0), SCALE[0] is to be
 replaced with SCALE[Ninit]. *)
 
+If[paramdefaultbool["data_has_rescaled_energies", True], energiesscale = SCALE[Ninit], energiesscale = 1];
+  
 makeenergies[] := Module[{i, inv, val, line},
   Flatten1 @ Table[
       inv = subspaces[[i]];
@@ -4018,7 +4020,7 @@ makeenergies[] := Module[{i, inv, val, line},
       If[option["TEMPLATE"] || option["GENERATE_TEMPLATE"],
         line = {"DIAG ", hamfn[inv]},
       (* else *)
-        line = (val-GSenergy)/SCALE[Ninit]; (* FC *)
+        line = (val-GSenergy)/energiesscale
       ];
       { inv, {dim[inv]}, line},
     {i, nrsub}
@@ -4225,7 +4227,7 @@ maketable[]:=Module[{t},
   opfn=""; opdata={}; (* Prior to makeireducf[] call to silence errors *)
 
   t = Join[makeheader[],
-           {{"# SCALE ", SCALE[Ninit]}},
+           {{"# SCALE ", energiesscale}},
            {{"# Energies (GS energy subtracted, multiplied by 1/SCALE):"}},
            makeenergies[],
            {{"# Irreducible matrix elements for Wilson chains:"}},

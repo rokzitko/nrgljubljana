@@ -499,6 +499,10 @@ namespace P {
   // Check if the density matrix for CFS has trace 1.
   param<bool> checkrho("checkrho", "Test tr(rho)=1", "false"); // N
 
+  // **********************************
+  // Backwards compatibility parameters
+  param<bool> data_has_rescaled_energies("data_has_rescaled_energies", "Rescaled eigenvalues?", "true");
+   
   // *******************************************
   // Internal parameters, not under user control
 
