@@ -15,7 +15,7 @@ macro(add_tool exec_name)
   target_compile_options(${exec_name} PRIVATE -fPIC -std=c++17)
   target_include_directories(${exec_name} PRIVATE $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}>)
   target_compile_definitions(${exec_name} PRIVATE
-				NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
+# (not used)				NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
 				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
 			  )
 
