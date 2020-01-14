@@ -57,6 +57,8 @@ namespace atlas = boost::numeric::bindings::atlas;
 #define ADD_
 #include "cblas_globals.c"
 #include "cblas_dgemm.c"
+#include "cblas_zgemm.c"
+#include "cblas_xerbla.c"
 #endif
 
 #include <boost/lexical_cast.hpp>
