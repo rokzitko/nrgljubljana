@@ -110,10 +110,23 @@ install(TARGETS boost EXPORT nrgljubljana-targets)
 
 # BLAS/Lapack
 find_package(LAPACK REQUIRED)
+find_package(BLAS REQUIRED)
 add_library(blas_lapack INTERFACE)
 target_compile_options(blas_lapack INTERFACE ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
 target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
 install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
+
+# Check for availability of cblas interface
+set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
+set(CMAKE_REQUIRED_FLAGS ${BLAS_LINKER_FLAGS})
+check_function_exists(cblas_dgemm HAVE_CBLAS)
+unset(CMAKE_REQUIRED_LIBRARIES)
+unset(CMAKE_REQUIRED_FLAGS)
+if(HAVE_CBLAS)
+  message(STATUS "cblas interface found")
+else()
+  message(FATAL_ERROR "cblas interface is required")
+endif()
 
 # GMP
 find_package(GMP REQUIRED)
