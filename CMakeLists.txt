@@ -124,20 +124,28 @@ target_link_libraries(gsl INTERFACE ${GSL_LIBRARIES})
 install(TARGETS gsl EXPORT nrgljubljana-targets)
 
 # Check for availability of cblas interface
-set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
-set(CMAKE_REQUIRED_FLAGS ${BLAS_LINKER_FLAGS})
+set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+set(CMAKE_REQUIRED_FLAGS ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
 check_function_exists(cblas_dgemm HAVE_CBLAS)
 unset(CMAKE_REQUIRED_LIBRARIES)
 unset(CMAKE_REQUIRED_FLAGS)
 if(HAVE_CBLAS)
-  message(STATUS "cblas interface found")
+  message(STATUS "cblas interface found in blas library")
 else()
-#  message(FATAL_ERROR "cblas interface is required")
-  message(WARNING "cblas interface not found; will try linking GSL cblas as a workaround, but this will hurt performance")
-  set(BLAS_LIBRARIES "${BLAS_LIBRARIES} ${GSL_CBLAS_LIBRARY}")
-  message(WARNING "Using: ${BLAS_LIBRARIES} [appended ${GSL_CBLAS_LIBRARY}]")
-  set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
-  set(CMAKE_REQUIRED_FLAGS ${BLAS_LINKER_FLAGS})
+  message(WARNING "cblas interface not found; will try linking cblas as a workaround, but this will hurt performance")
+
+  # https://github.com/CNugteren/CLBlast/blob/master/cmake/Modules/FindCBLAS.cmake
+  find_library(CBLAS_LIBRARIES
+    NAMES cblas
+    PATH_SUFFIXES lib lib64 lib/x86_64 lib/x64 lib/x86 openblas/lib blis/lib lib/atlas-base
+    PATHS /usr /usr/local /usr/local/opt
+    DOC "cblas interface")
+
+  # Check again
+  set(BLAS_LIBRARIES "${BLAS_LIBRARIES} ${CBLAS_LIBRARIES}")
+  message(WARNING "Using: ${BLAS_LIBRARIES} [appended ${CBLAS_LIBRARIES}]")
+  set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+  set(CMAKE_REQUIRED_FLAGS ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
   check_function_exists(cblas_dgemm HAVE_CBLAS_TEST)
   unset(CMAKE_REQUIRED_LIBRARIES)
   unset(CMAKE_REQUIRED_FLAGS)
