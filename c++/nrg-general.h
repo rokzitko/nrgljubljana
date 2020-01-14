@@ -53,6 +53,12 @@ using namespace boost::numeric::ublas;
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 namespace atlas = boost::numeric::bindings::atlas;
 
+#ifdef CBLAS_WORKAROUND
+#define ADD_
+#include "cblas_globals.c"
+#include "cblas_dgemm.c"
+#endif
+
 #include <boost/lexical_cast.hpp>
 #include <boost/io/ios_state.hpp>
 

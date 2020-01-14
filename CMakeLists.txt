@@ -131,29 +131,10 @@ unset(CMAKE_REQUIRED_LIBRARIES)
 unset(CMAKE_REQUIRED_FLAGS)
 if(HAVE_CBLAS)
   message(STATUS "cblas interface found in blas library")
+  set(CBLAS_WORKAROUND OFF)
 else()
-  message(WARNING "cblas interface not found; will try linking cblas as a workaround, but this will hurt performance")
-
-  # https://github.com/CNugteren/CLBlast/blob/master/cmake/Modules/FindCBLAS.cmake
-  find_library(CBLAS_LIBRARIES
-    NAMES cblas
-    PATH_SUFFIXES lib lib64 lib/x86_64 lib/x64 lib/x86 openblas/lib blis/lib lib/atlas-base
-    PATHS /usr /usr/local /usr/local/opt
-    DOC "cblas interface")
-
-  # Check again
-  set(BLAS_LIBRARIES "${BLAS_LIBRARIES} ${CBLAS_LIBRARIES}")
-  message(WARNING "Using: ${BLAS_LIBRARIES} [appended ${CBLAS_LIBRARIES}]")
-  set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-  set(CMAKE_REQUIRED_FLAGS ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
-  check_function_exists(cblas_dgemm HAVE_CBLAS_TEST)
-  unset(CMAKE_REQUIRED_LIBRARIES)
-  unset(CMAKE_REQUIRED_FLAGS)
-  if(HAVE_CBLAS_TEST)
-    message(STATUS "cblas workaround works")
-  else()
-    message(FATAL_ERROR "cblas workaround failed")
-  endif()
+  message(WARNING "cblas interface not found; will provide a workaround")
+  set(CBLAS_WORKAROUND ON)
 endif()
 
 # GMP
