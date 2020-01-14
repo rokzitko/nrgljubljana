@@ -39,6 +39,17 @@
 #include "param.cc"
 #include "outfield.cc"
 
+// This is included in the library only. Should not be used if cblas library is available.
+#ifdef CBLAS_WORKAROUND
+ #define ADD_
+ #include "cblas_globals.c"
+ #include "cblas_dgemm.c"
+ #ifdef NRG_COMPLEX
+  #include "cblas_zgemm.c"
+ #endif
+ #include "cblas_xerbla.c"
+#endif
+
 // Timing of various parts of the code and memory statistics
 namespace time_mem {
 Timing tm;
