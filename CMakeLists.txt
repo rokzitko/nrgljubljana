@@ -135,6 +135,7 @@ else()
 #  message(FATAL_ERROR "cblas interface is required")
   message(WARNING "cblas interface not found; will try linking GSL cblas as a workaround, but this will hurt performance")
   string(APPEND BLAS_LIBRARIES ${GSL_CBLAS_LIBRARY})
+  message(WARNING "Using: ${BLAS_LIBRARIES} [appended ${GSL_CBLAS_LIBRARY}]"}
   set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
   set(CMAKE_REQUIRED_FLAGS ${BLAS_LINKER_FLAGS})
   check_function_exists(cblas_dgemm HAVE_CBLAS_TEST)
