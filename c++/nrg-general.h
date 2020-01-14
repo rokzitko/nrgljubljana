@@ -57,7 +57,9 @@ namespace atlas = boost::numeric::bindings::atlas;
 #define ADD_
 #include "cblas_globals.c"
 #include "cblas_dgemm.c"
-#include "cblas_zgemm.c"
+ #ifdef NRG_COMPLEX
+ #include "cblas_zgemm.c"
+ #endif
 #include "cblas_xerbla.c"
 #endif
 
