@@ -116,6 +116,13 @@ target_compile_options(blas_lapack INTERFACE ${LAPACK_LINKER_FLAGS} ${BLAS_LINKE
 target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
 install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
 
+# GSL
+find_package(GSL REQUIRED)
+add_library(gsl INTERFACE)
+target_include_directories(gsl SYSTEM INTERFACE ${GSL_INCLUDE_DIRS})
+target_link_libraries(gsl INTERFACE ${GSL_LIBRARIES})
+install(TARGETS gsl EXPORT nrgljubljana-targets)
+
 # Check for availability of cblas interface
 set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
 set(CMAKE_REQUIRED_FLAGS ${BLAS_LINKER_FLAGS})
@@ -125,7 +132,19 @@ unset(CMAKE_REQUIRED_FLAGS)
 if(HAVE_CBLAS)
   message(STATUS "cblas interface found")
 else()
-  message(FATAL_ERROR "cblas interface is required")
+#  message(FATAL_ERROR "cblas interface is required")
+  message(WARNING "cblas interface not found; will try linking GSL cblas as a workaround, but this will hurt performance")
+  string(APPEND BLAS_LIBRARIES ${GSL_CBLAS_LIBRARY})
+  set(CMAKE_REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
+  set(CMAKE_REQUIRED_FLAGS ${BLAS_LINKER_FLAGS})
+  check_function_exists(cblas_dgemm HAVE_CBLAS_TEST)
+  unset(CMAKE_REQUIRED_LIBRARIES)
+  unset(CMAKE_REQUIRED_FLAGS)
+  if(HAVE_CBLAS_TEST)
+    message(STATUS "cblas workaround works")
+  else()
+    message(FATAL_ERROR "cblas workaround failed")
+  endif()
 endif()
 
 # GMP

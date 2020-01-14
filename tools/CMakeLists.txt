@@ -1,10 +1,3 @@
-# GSL
-find_package(GSL REQUIRED)
-add_library(gsl INTERFACE)
-target_include_directories(gsl SYSTEM INTERFACE ${GSL_INCLUDE_DIRS})
-target_link_libraries(gsl INTERFACE ${GSL_LIBRARIES})
-install(TARGETS gsl EXPORT nrgljubljana-targets)
-
 macro(add_tool exec_name)
   add_executable(${exec_name} ${exec_name}/${exec_name}.cc)
 
