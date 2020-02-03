@@ -3043,5 +3043,5 @@ void run_nrg_slave() {
   } // while(!done)
 }
 #else
-void run_nrg_scale() {}
+void run_nrg_slave() {}
 #endif
