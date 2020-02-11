@@ -2,7 +2,7 @@
    NRG Ljubljana -- initial.m -- Basis construction, initial Hamiltonian
    diagonalisation and calculation of irreducible matrix elements 
   
-   Copyright (C) 2005-2019 Rok Zitko
+   Copyright (C) 2005-2020 Rok Zitko
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2019.11";
+VERSION = "2020.02";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -351,8 +351,8 @@ MyStringSplit[l_]:=Module[{c, p},
 MyStringSplit[""] := {};      
 
 (* OPS is a space delimited list of operators that we request to compute
-during the NRG iteration. *)
-(* 7.3.2016: sort alphabetically *)
+during the NRG iteration. It is sorted alphabetically to ensure consistency
+of the generated data file irrespective of the ordering in the input file. *)
 lops = Sort @ MyStringSplit[OPS];
 
 (* calcopq[op] returns True if we requested calculation of operator 'op'. 
@@ -877,7 +877,10 @@ MyPrint["NRDOTS:", NRDOTS, " CHANNELS:", CHANNELS, " COEFCHANNELS:", COEFCHANNEL
 
 basopsch = Table[f[n], {n, 0, CHANNELS-1}];
 Do[basopsch = Join[basopsch, Table[f[n, i], {n, 0, CHANNELS-1}]], {i, 1, Ninit}];
-basopsdot = Take[{d[], a[], b[], e[], g[]}, NRDOTS];
+If[Length[basopsdot]==0 && Length[impuritybasis]==0,
+  basopsdot = Take[{d[], a[], b[], e[], g[]}, NRDOTS];
+];
+If[Length[impuritybasis]>0, basopsdot = impuritybasis];
 basisops = basops = Sort[Join[basopsch, basopsdot]];
 
 MyPrint["basis:", basisops];
