@@ -2977,11 +2977,8 @@ void run_nrg_master() {
   for (int i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_EXIT, 0);
   cout << "Master exiting." << endl;
 #endif
-  if (P::done) {
-    // Indicate completion by creating a flag file 'DONE'.
-    ofstream D("DONE");
-    if (!D) cout << "Can't create DONE." << endl;
-  }
+  if (P::done) { ofstream D("DONE"); } // Indicate completion by creating a flag file
+  remove_workdir(); // Ok to make this call multiple times
 }
 
 #ifdef NRG_MPI
