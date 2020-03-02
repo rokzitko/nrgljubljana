@@ -1,11 +1,11 @@
 // dmnrg.h - Density-matrix NRG
-// Copyright (C) 2009-2019 Rok Zitko
+// Copyright (C) 2009-2020 Rok Zitko
 
 #ifndef _dmnrg_h_
 #define _dmnrg_h_
 
-// Routines for saving the density matrix to disk
-string saverhofn(const string &prefix, int N) { return P::workdir + "/" + prefix + to_string(N); }
+string rhofn(const string &prefix, int N) { return P::workdir + "/" + prefix + to_string(N); }
+string unitaryfn(size_t N) { return P::workdir + "/" + FN_UNITARY + to_string(N); }
 
 // Choose one!
 #define LINEBYLINE
@@ -13,11 +13,8 @@ string saverhofn(const string &prefix, int N) { return P::workdir + "/" + prefix
 
 #ifdef WHOLEMATRIX
 void saveMatrix(boost::archive::binary_oarchive &oa, const Matrix &m) { oa << m; }
-
 void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m) { ia >> m; }
-
 void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) { oa << m; }
-
 void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) { ia >> m; }
 #endif
 
@@ -60,8 +57,10 @@ void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
 }
 #endif
 
-void saveRho_split(size_t N, const string &prefix, const DensMatElements &rho) {
-  const string fn = saverhofn(prefix, N);
+void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
+  my_assert(P::Ninit <= N && N <= P::Nmax - 1);
+  nrglog('H', "Storing density matrices... ");
+  const string fn = rhofn(prefix, N);
   std::ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
   if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
   boost::archive::binary_oarchive oa(MATRIXF);
@@ -70,37 +69,24 @@ void saveRho_split(size_t N, const string &prefix, const DensMatElements &rho) {
   size_t cnt   = 0;
   size_t total = 0;
   for (const auto &i : rho) {
-    const Invar inv = i.first;
-    oa << inv;
-    ostringstream fni;
-    fni << fn << "-" << cnt;
-    std::ofstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::out);
-    if (!ONEMATRIX) my_error("Can't open file %s for writing.", fni.str().c_str());
-    boost::archive::binary_oarchive oaone(ONEMATRIX);
-    saveMatrix(oaone, i.second);
-    // Check each time..
-    if (ONEMATRIX.bad()) my_error("Error writing %s", fni.str().c_str());
-    ONEMATRIX.close();
+    oa << i.first;
+    saveMatrix(oa, i.second);
+    if (MATRIXF.bad()) my_error("Error writing %s", fn.c_str());  // Check each time
     cnt++;
     total += i.second.size1();
   }
   my_assert(cnt == nr);
   nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
-  // Check once at the end.
-  if (MATRIXF.bad()) my_error("Error writing %s", fn.c_str());
   MATRIXF.close();
-}
-
-void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
-  my_assert(P::Ninit <= N && N <= P::Nmax - 1);
-  nrglog('H', "Storing density matrices... ");
-  saveRho_split(N, prefix, rho);
 }
 
 int remove(string filename) { return remove(filename.c_str()); }
 
-void loadRho_split(size_t N, const string &prefix, DensMatElements &rho) {
-  const string fn = saverhofn(prefix, N);
+void loadRho(size_t N, const string &prefix, DensMatElements &rho) {
+  my_assert(P::Ninit <= N && N <= P::Nmax - 1);
+  rho.clear();
+  nrglog('H', "Loading density matrices...");
+  const string fn = rhofn(prefix, N);
   std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
   if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
   boost::archive::binary_iarchive ia(MATRIXF);
@@ -110,34 +96,16 @@ void loadRho_split(size_t N, const string &prefix, DensMatElements &rho) {
   for (size_t cnt = 0; cnt < nr; cnt++) {
     Invar inv;
     ia >> inv;
-    ostringstream fni;
-    fni << fn << "-" << cnt;
-    std::ifstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::in);
-    if (!ONEMATRIX) my_error("Can't open file %s for reading.", fni.str().c_str());
-    boost::archive::binary_iarchive iaone(ONEMATRIX);
-    loadMatrix(iaone, rho[inv]);
+    loadMatrix(ia, rho[inv]);
     my_assert(rho[inv].size1() <= diag[inv].value.size());
-    if (ONEMATRIX.bad()) my_error("Error reading %s", fni.str().c_str());
-    ONEMATRIX.close();
-    if (P::removefiles)
-      if (remove(fni.str())) my_error("Error removing %s", fni.str().c_str());
+    if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());  // Check each time
     total += diag[inv].value.size();
   }
   nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
-  if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());
   MATRIXF.close();
   if (P::removefiles)
     if (remove(fn)) my_error("Error removing %s", fn.c_str());
 }
-
-void loadRho(size_t N, const string &prefix, DensMatElements &rho) {
-  my_assert(P::Ninit <= N && N <= P::Nmax - 1);
-  rho.clear();
-  nrglog('H', "Loading density matrices...");
-  loadRho_split(N, prefix, rho);
-}
-
-string unitaryfn(size_t N) { return P::workdir + "/" + FN_UNITARY + to_string(N); }
 
 /* storetransformations() stores all required information (energies,
  transformation matrices, subspace labels, dimensions of 'alpha' subspaces)
@@ -149,7 +117,15 @@ string unitaryfn(size_t N) { return P::workdir + "/" + FN_UNITARY + to_string(N)
  (eigenvalue, eigenvector) pairs. NOTE: if diag=dsyevr, we effectively
  perform a truncation at the moment of the partial diagonalization!! */
 
-void store_transformations_split(size_t N, const DiagInfo &diag) {
+void store_transformations(size_t N, const DiagInfo &diag) {
+  // P::Ninit-1 corresponds to the zero-th step, when diag contains the
+  // eigenvalues from the initial diagonalization and the unitary matrices
+  // are all identity matrices.
+  if (!P::ZBW) {
+    my_assert(N + 1 >= P::Ninit && N + 1 <= P::Nmax);
+  } else
+    my_assert(N == P::Ninit);
+  nrglog('H', "Storing transformation matrices...");
   const string fn = unitaryfn(N);
   ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
   if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
@@ -161,62 +137,13 @@ void store_transformations_split(size_t N, const DiagInfo &diag) {
   LOOP_const(diag, i) {
     const Invar I = INVAR(i);
     oa << I;
-    ostringstream fni;
-    fni << fn << "-" << cnt;
-    ofstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::out);
-    if (!ONEMATRIX) my_error("Can't open file %s for writing.", fni.str().c_str());
-    boost::archive::binary_oarchive oaone(ONEMATRIX);
-    saveEigen(oaone, i.second);
-    // Here check after each write.
-    if (ONEMATRIX.bad()) my_error("Error writing %s", fni.str().c_str());
-    ONEMATRIX.close();
+    saveEigen(oa, i.second);
+    if (MATRIXF.bad()) my_error("Error writing %s", fn.c_str()); // Check after each write.
     cnt++;
     total += i.second.value.size();
   }
   my_assert(cnt == nr);
   nrglog('H', "[total=" << total << " nr subspaces=" << cnt << "]");
-  // Here make a single check at the end, not for each write..
-  if (MATRIXF.bad()) my_error("Error writing %s", fn.c_str());
-  MATRIXF.close();
-}
-
-void store_transformations(size_t N, const DiagInfo &diag) {
-  // P::Ninit-1 corresponds to the zero-th step, when diag contains the
-  // eigenvalues from the initial diagonalization and the unitary matrices
-  // are all identity matrices.
-  if (!P::ZBW) {
-    my_assert(N + 1 >= P::Ninit && N + 1 <= P::Nmax);
-  } else
-    my_assert(N == P::Ninit);
-  nrglog('H', "Storing transformation matrices...");
-  store_transformations_split(N, diag);
-}
-
-void load_transformations_split(size_t N, DiagInfo &diag) {
-  const string fn = unitaryfn(N);
-  std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
-  if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
-  boost::archive::binary_iarchive ia(MATRIXF);
-  size_t nr; // Number of subspaces
-  ia >> nr;
-  size_t total = 0;
-  for (size_t cnt = 0; cnt < nr; cnt++) {
-    Invar inv;
-    ia >> inv;
-    ostringstream fni;
-    fni << fn << "-" << cnt;
-    std::ifstream ONEMATRIX(fni.str().c_str(), ios::binary | ios::in);
-    if (!ONEMATRIX) my_error("Can't open file %s for reading.", fni.str().c_str());
-    my_assert(diag.count(inv) == 0); // added 18.8.2015
-    boost::archive::binary_iarchive iaone(ONEMATRIX);
-    loadEigen(iaone, diag[inv]);
-    diag[inv].perform_checks(); // basic checks, added 9.11.2015
-    if (ONEMATRIX.bad()) my_error("Error reading %s", fni.str().c_str());
-    ONEMATRIX.close();
-    total += diag[inv].value.size();
-  }
-  nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
-  if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());
   MATRIXF.close();
 }
 
@@ -227,21 +154,29 @@ void load_transformations(size_t N, DiagInfo &diag) {
     my_assert(N == P::Ninit);
   diag.clear(); // blank state, no subspaces present
   nrglog('H', "Loading transformation matrices...");
-  load_transformations_split(N, diag);
-}
-
-void remove_transformation_files_split(size_t N) {
   const string fn = unitaryfn(N);
-  if (remove(fn)) my_error("Error removing %s", fn.c_str());
-  for (size_t cnt = 0; cnt < diag.size(); cnt++) {
-    ostringstream fni;
-    fni << fn << "-" << cnt;
-    if (remove(fni.str())) my_error("Error removing %s", fni.str().c_str());
+  std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
+  if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
+  boost::archive::binary_iarchive ia(MATRIXF);
+  size_t nr; // Number of subspaces
+  ia >> nr;
+  size_t total = 0;
+  for (size_t cnt = 0; cnt < nr; cnt++) {
+    Invar inv;
+    ia >> inv;
+    loadEigen(ia, diag[inv]);
+    diag[inv].perform_checks(); // basic checks, added 9.11.2015
+    if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());
+    total += diag[inv].value.size();
   }
+  nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
+  MATRIXF.close();
 }
 
 void remove_transformation_files(size_t N) {
-  if (P::removefiles) remove_transformation_files_split(N);
+  if (!P::removefiles) return;
+  const string fn = unitaryfn(N);
+  if (remove(fn)) my_error("Error removing %s", fn.c_str());
 }
 
 // Calculation of the contribution from subspace I1 of rhoN (density
@@ -340,20 +275,20 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
   } // loop over invariant spaces
 }
 
+bool file_exists(const string &fn)
+{
+  ofstream F(fn.c_str(), ios::binary | ios::out);
+  return bool(F);
+}
+
 // Returns true if all the required density matrices are already
 // saved on the disk.
 bool already_computed(const string &prefix) {
   for (size_t N = P::Nmax - 1; N > P::Ninit; N--) {
-    const string fn = saverhofn(prefix, N - 1); // note the minus 1
-    size_t nrsubs   = dm[N].size();
-    for (size_t i = 0; i <= nrsubs; i++) {
-      ostringstream fni;
-      fni << fn << "-" << i;
-      ofstream F(fni.str().c_str(), ios::binary | ios::out);
-      if (!F) {
-        cout << fn << " not found. Computing." << endl;
-        return false;
-      }
+    const string fn = rhofn(prefix, N - 1); // note the minus 1
+    if (!file_exists(fn)) {
+      cout << fn << " not found. Computing." << endl;
+      return false;
     }
   }
   return true;
