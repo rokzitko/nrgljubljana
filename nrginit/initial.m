@@ -29,7 +29,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2020.02";
+VERSION = "2020.03";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -616,8 +616,8 @@ HBANDhop[ch_, i_] := Module[{reg, ireg},
           coefxi[ch+3*CHANNELS, i-1] hop[fop[ch-1, i-1], fop[ch-1, i], DO, UP];
   ];          
 
-  (* Add support for RUNGS *)
-
+  (* Support for anomalous hopping terms in the presence of superconductivity:
+     these are the f^\dag_{i-1} f^\dag_i terms. *)
   ireg = coefkappa[ch, i-1] anomaloushop[fop[ch-1, i-1], fop[ch-1, i]];
   reg + ireg
 ];
@@ -3409,9 +3409,16 @@ loaddiscretizationtables[] := Module[{imp1,imp2},
 
 loadtablescdelta[] := Module[{imp1,imp2},
   MyPrint["Loading scdelta from a file."];
-  MyAssert[COEFCHANNELS == 1];
-  imp1=Flatten[ImportTable["scdelta.dat"]];
-  Print["scdelta=", Table[ scdelta[_][n] = imp1[[n+1]], {n,0,DISCNMAX} ]];
+  If[COEFCHANNELS == 1,
+    imp1=Flatten[ImportTable["scdelta.dat"]];
+    Print["scdelta=", Table[ scdelta[_][n] = imp1[[n+1]], {n,0,DISCNMAX} ]];
+  ];
+  If[COEFCHANNELS > 1,  
+    Do[
+      imp1=Flatten[ImportTable["scdelta" <> ToString[nrch] <> ".dat"]];
+      Print["scdelta=", Table[ scdelta[nrch][n] = imp1[[n+1]], {n,0,DISCNMAX} ]],
+      {nrch, COEFCHANNELS}];
+  ];
 ];
   
 (* Use the following for debugging purposes. *)
@@ -3577,6 +3584,7 @@ If[DZ,
       tab = Sort[tab];
       tab = Prepend[tab, {0, tab[[1, 2]]}];
       tab = setpr @ tab;
+      If[tab[[-1,1]] < 1.0, tab = Append[tab, {1, tab[[-1,2]]}]; ]; (* fix boundary *)      
       rho = Interpolation[tab, InterpolationOrder -> 1]; (* Linear interpolation!! *)
       intrho[a][omega_] = Integrate[rho[omega], omega];
 
@@ -3597,6 +3605,7 @@ If[DZ,
       tabneg = Sort[tabneg];
       tabneg = Prepend[tabneg, {0, tab[[1,2]]}];
       tabneg = setpr @ tabneg;
+      If[tab[[-1,1]] < 1.0, tab = Append[tab, {1, tab[[-1,2]]}]; ]; (* fix boundary *)
       rhoneg = Interpolation[tabneg, InterpolationOrder -> 1]; (* Linear interpolation!! *)
       intrhoneg[a][omega_] = Integrate[rhoneg[omega], omega];
 
@@ -3802,10 +3811,11 @@ If[TRI == "manual_nambu",
   If[SYMTYPE == "SPU1",
     sckappa[a_][n_] := 0;
     scdelta[a_][n_] := 1(zetaR[a][n]); (* on-site 'rung' term is the same as pairing *)
+    (* zetaR is loaded only if RUNGS=True. Beware: not tested, implementation not complete. *)
   ];
   If[SYMTYPE == "SPSU2",
-    sckappa[a_][n_] := 0;
-    loadtablescdelta[];
+    sckappa[a_][n_] := 0; (* zero for problems without energy-dependence of phases *)
+    loadtablescdelta[]; (* loaded from scdelta.dat *)
   ];
   If[SYMTYPE == "P" || SYMTYPE == "PP",
     sckappa[a_][n_] := 0;
