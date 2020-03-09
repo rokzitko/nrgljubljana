@@ -35,6 +35,7 @@
 #include "time_mem.h"
 #include "debug.h"
 #include "misc.h"
+#include "openmp.h"
 
 #include "param.cc"
 #include "outfield.cc"
@@ -71,8 +72,6 @@ int myrank() { return mpiw->rank(); } // used in diag.h, time_mem.h
 #else
 int myrank() { return 0; }
 #endif
-
-#include <omp.h>
 
 #include <utility>
 
@@ -624,7 +623,7 @@ int getnn() { return STAT::N; }
 // Energy scale at the last NRG iteration
 double LAST_STEP_SCALE() { return SCALE(P::Nmax); }
 
-void validateparameters();
+void validate_parameters();
 
 map<string, string> parsed_params;
 
@@ -2825,46 +2824,10 @@ void finalize_dmnrg() {
 
 /************************ MAIN ****************************************/
 
-void outOfMemory() { exit1("Memory exhausted."); }
-
-// Info on program, version, symmetry type, compiler, etc.
-// This data is important for regression testing!
-void print_about_message(ostream &F) {
-  F << "NRG Ljubljana"
-    << " - (c) "
-    << "rok.zitko@ijs.si" << endl;
-  F << "Timestamp: " << __TIMESTAMP__ << endl;
-  F << "Compiled on " << __DATE__ << " at " << __TIME__ << endl << endl;
-}
-
-#ifdef MKL
-#include <mkl_service.h>
-#include <mkl_types.h>
-#endif
-
-// OpenMP parallelization support
-void init_openMP() {
-  cout << "[OMP] Max. number of threads: " << omp_get_max_threads() << endl;
-  cout << "[OMP] Number of processors: " << omp_get_num_procs() << endl;
-  cout << "[OMP] Dynamic thread adjustment: " << omp_get_dynamic() << endl;
-  cout << "[OMP] Nested parallelism: " << omp_get_nested() << endl << endl;
-#ifdef MKL
-  MKLVersion version;
-  mkl_get_version(&version);
-  cout << "Using Intel MKL library " << version.MajorVersion << "." << version.MinorVersion << "." << version.UpdateVersion << endl;
-  cout << "Processor optimization: " << version.Processor << endl;
-  int max_threads = mkl_get_max_threads();
-// Portability hack
-#ifdef MKL_DOMAIN_BLAS
-#define NRG_MKL_DOMAIN_BLAS MKL_DOMAIN_BLAS
-#else
-#define NRG_MKL_DOMAIN_BLAS MKL_BLAS
-#endif
-  int blas_max_threads = mkl_domain_get_max_threads(NRG_MKL_DOMAIN_BLAS);
-  int dynamic          = mkl_get_dynamic();
-  cout << "max_threads=" << max_threads << " blas_max_threads=" << blas_max_threads << " dynamic=" << dynamic << endl << endl;
-#endif
-  cout << endl;
+void print_about_message(ostream &s) {
+  s << "NRG Ljubljana - (c) rok.zitko@ijs.si" << endl;
+  s << "Timestamp: " << __TIMESTAMP__ << endl;
+  s << "Compiled on " << __DATE__ << " at " << __TIME__ << endl << endl;
 }
 
 // Called immediately after the symmetry type is determined from the data file. This ensures that Invar can be parsed correctly.
@@ -2952,15 +2915,11 @@ void init_laststored() {
   }
 }
 
+// Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
-  // Master process does most of the i/o and passes calculations to
-  // the slaves.
-  print_about_message(cout);
-  init_openMP();
-  set_new_handler(outOfMemory);
-  cout << setprecision(std::numeric_limits<double>::max_digits10); // no precision loss
+  cout << setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
   read_parameters();
-  validateparameters();
+  validate_parameters();
   calculate_invariants();
   init_laststored();
   dump_parameters();

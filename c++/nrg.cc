@@ -3,6 +3,8 @@
 #include "nrg.h"         // specific to executable
 
 int main(int argc, char **argv) {
+  print_about_message();
+  report_openMP();
 #ifdef NRG_MPI
   mpi::environment env(argc, argv);
   mpi::communicator world;

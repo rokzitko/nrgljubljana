@@ -85,7 +85,7 @@ size_t read_nsubs(ifstream &fdata)
 
 // Check if the parameters make sense.
 // Also initialize maps related to parameters (switch for string type).
-void validateparameters() {
+void validate_parameters() {
   my_assert(P::keep > 1);
   if (P::keepenergy > 0.0) my_assert(P::keepmin <= P::keep);
   if (P::dmnrg || cfs_flags()) P::dm.setvalue(true);
