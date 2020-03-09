@@ -2,7 +2,7 @@
  "NRG Ljubljana" - Numerical renormalization group for multiple
  impurities and an arbitrary number of channels
 
- Copyright (C) 2005-2019 Rok Zitko
+ Copyright (C) 2005-2020 Rok Zitko
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ void memory_time_brief_report() {
 #ifdef HAS_MEMORY_USAGE
   cout << "Memory used: " << long(ms.used() / 1024) << " MB "; // NOLINT
 #endif
-  cout << "Time elapsed: " << long(tm.total()) << " s" << endl;
+  cout << "Time elapsed: " << prec3(tm.total_in_seconds()) << " s" << endl;
 }
 } // namespace time_mem
 
@@ -102,8 +102,6 @@ class sharedparam {
 };
 
 sharedparam sP;
-
-const int COUT_PRECISION = 16; // default precision for cout stream
 
 // Symmetry type specification
 string sym_string = "";
@@ -830,10 +828,10 @@ CONSTFNC double calculate_Z(const DiagInfo::value_type &is, double rescale_facto
   return assert_isfinite(sumZ);
 }
 
-// Formated output for the expectation values.
-template <typename T> string output_val(const T &x) {
+// Formated output for the expectation values
+template <typename T> string output_val(const T &x, size_t prec = std::numeric_limits<double>::max_digits10) {
   ostringstream F;
-  F << setprecision(COUT_PRECISION) << x;
+  F << setprecision(prec) << x;
   return F.str();
 }
 
@@ -1256,6 +1254,7 @@ void infostring() {
 // coefficients of interest). This should ideally be a call to a
 // method in class Symmetry.
 void show_coefficients() {
+  cout << setprecision(std::numeric_limits<double>::max_digits10);
   if (!P::substeps) {
     using namespace STAT;
     for (size_t i = 0; i < P::coefchannels; i++) {
@@ -2591,7 +2590,7 @@ void nrg_after_diag(IterInfo &iterinfo) {
   nrglog('@', "@ nrg_after_diag()");
   // Contribution to the total energy.
   STAT::totalenergy += STAT::Egs * STAT::scale;
-  cout << "Total energy=" << STAT::totalenergy << "  Egs=" << STAT::Egs << endl;
+  cout << "Total energy=" << setprecision(std::numeric_limits<double>::max_digits10) << STAT::totalenergy << "  Egs=" << STAT::Egs << endl;
   if (nrgrun) calc_abs_energies(diag);
   if (P::dm && nrgrun) {
     // Store eigenenergies and eigenvectors in all subspaces.
@@ -2628,7 +2627,6 @@ void nrg_after_diag(IterInfo &iterinfo) {
   }
   double ratio = double(nrkept) / nrall;
   cout << "Kept: " << nrkept << " out of " << nrall << ", ratio=" << setprecision(3) << ratio << endl;
-  cout << setprecision(COUT_PRECISION);
   if (!LAST_ITERATION()) {
     nrg_recalc_f(diag, iterinfo.opch);
     if (P::dump_f) nrg_dump_f(iterinfo.opch);
@@ -2960,7 +2958,7 @@ void run_nrg_master() {
   print_about_message(cout);
   init_openMP();
   set_new_handler(outOfMemory);
-  cout << setprecision(COUT_PRECISION);
+  cout << setprecision(std::numeric_limits<double>::max_digits10); // no precision loss
   read_parameters();
   validateparameters();
   calculate_invariants();

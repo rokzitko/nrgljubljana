@@ -135,7 +135,7 @@ CONSTFNC inline double psgn(int n) { return (n % 2 == 0 ? 1.0 : -1.0); }
 
 void dump_matrix(const Matrix &m, ostream &fout = cout) {
   boost::io::ios_base_all_saver ofs(fout);
-  fout << setprecision(16);
+  fout << setprecision(std::numeric_limits<double>::max_digits10);
   for (size_t r1 = 0; r1 < m.size1(); r1++) {
     for (size_t r2 = 0; r2 < m.size2(); r2++) fout << setw(23) << m(r1, r2) << " ";
     fout << endl;

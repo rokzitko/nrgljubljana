@@ -58,7 +58,7 @@ size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V') {
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = ham[dim * r + j];
     d.perform_checks();
   }
-  nrglog('t', "Elapsed: " << t.total() << " [" << myrank() << "]");
+  nrglog('t', "Elapsed: " << t.total_in_seconds() << " [" << myrank() << "]");
   delete[] WORK;
   return dim;
 }
@@ -131,7 +131,7 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = Z[dim * r + j];
     d.perform_checks();
   }
-  nrglog('t', "Elapsed: " << t.total() << " [" << myrank() << "]");
+  nrglog('t', "Elapsed: " << t.total_in_seconds() << " [" << myrank() << "]");
   delete[] WORK;
   delete[] IWORK;
   return M;
@@ -170,7 +170,7 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = ham[dim * r + j];
     d.perform_checks();
   }
-  nrglog('t', "Elapsed: " << t.total() << " [" << myrank() << "]");
+  nrglog('t', "Elapsed: " << t.total_in_seconds() << " [" << myrank() << "]");
   delete[] WORK;
   return dim;
 }
@@ -243,7 +243,7 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = Z[dim * r + j];
     d.perform_checks();
   }
-  nrglog('t', "Elapsed: " << t.total() << " [" << myrank() << "]");
+  nrglog('t', "Elapsed: " << t.total_in_seconds() << " [" << myrank() << "]");
   delete[] WORK;
   delete[] RWORK;
   delete[] IWORK;

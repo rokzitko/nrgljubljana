@@ -91,7 +91,7 @@ namespace mpi = boost::mpi;
 #define FN_RHOFDM "rhofdm"
 #define FN_SUBSPACES "subspaces.dat"
 
-#define HIGHPREC(val) setw(30) << setprecision(16) << (val) << setprecision(COUT_PRECISION)
+#define HIGHPREC(val) setw(30) << setprecision(std::numeric_limits<double>::max_digits10) << (val)
 
 int myrank();
 

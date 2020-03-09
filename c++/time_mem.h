@@ -2,62 +2,80 @@
 #define _time_mem_h_
 
 #include <utility>
+#include <chrono>
 
+// Returns a string with a floating value in fixed (non-exponential) format with 
+// N digits of precision after the decimal point.
+string prec(double x, int N)
+{
+  ostringstream s;
+  s << std::fixed << std::setprecision(N) << x;
+  return s.str();
+}
+
+string prec3(double x)
+{
+  return prec(x, 3);
+}
+   
 namespace time_mem {
 
 // Warning: not thread safe!
 class Timing {
   private:
-  double start_time, timer;
-  bool running;
-  map<string, double> t;
+    using tp = chrono::steady_clock::time_point;
+    using dp = chrono::duration<double>;
+    tp start_time;     // time when Timing object constructed
+    tp timer;          // start time for timing sections
+    bool running;      // currently timing a section
+    map<string, dp> t; // accumulators
   public:
+  tp now() noexcept {
+    return chrono::steady_clock::now();
+  }
   Timing() {
-    start_time = gettime();
-    timer      = gettime();
+    start_time = now();
     running    = false;
   }
   void start() {
     my_assert(!running);
     running = true;
-    timer   = gettime();
+    timer   = now();
   }
-  double stop() {
+  dp stop() {
     my_assert(running);
-    running    = false;
-    double end = gettime();
+    running = false;
+    tp end  = now();
     return end - timer;
   }
   void add(string timer) {
-// XXX    if (!t.count(timer)) t[timer] = 0.0; // initialize
     t[timer] += stop();
   }
-//  double value(string timer) const {
-// XXX    if (!t.count(timer)) return 0.0;
-//    return t.find(timer)->second;
-//  }
-  double total() {
-    double end_time = gettime();
+  dp total() {
+    tp end_time = now();
     return end_time - start_time;
+  }
+  double total_in_seconds() {
+    return total().count();
   }
   void report() {
     const int T_WIDTH  = 12;
-    const double t_all = total();
+    const dp t_all = total();
     cout << endl;
     cout << "Timing report [" << myrank() << "]" << endl;
     cout << "=============" << endl;
     cout << setw(T_WIDTH) << "All"
-         << ": " << long(t_all) << " s" << endl;
-    double t_sum = 0.0;
+         << ": " << prec3(t_all.count()) << " s" << endl;
+    dp t_sum;
     for (const auto &i : t) {
       // Only show those that contribute more than 1% of the total time!
-      if ((i.second / t_all) > 0.01) {
-        cout << setw(T_WIDTH) << i.first << ": " << long(i.second) << " s" << endl;
+      if (i.second/t_all > 0.01) {
+        cout << setw(T_WIDTH) << i.first << ": " << prec3(i.second.count()) << " s" << endl;
         if (i.first[0] != '*') t_sum += i.second;
       }
     }
     cout << setw(T_WIDTH) << "Other"
-         << ": " << long(t_all - t_sum) << " s" << endl;
+         << ": " << prec3((t_all-t_sum).count()) << " s" << endl;
   }
 };
 

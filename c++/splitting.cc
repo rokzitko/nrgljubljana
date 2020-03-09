@@ -20,9 +20,8 @@ using svdi = STDEVEC::iterator;
 
 void cluster_show(const svdi &i0, const svdi &i1) {
   cout << "[";
-  cout << setprecision(18);
-  for (svdi j = i0; j != i1; ++j) { cout << *j << " "; }
-  cout << "]" << setprecision(COUT_PRECISION) << endl;
+  for (svdi j = i0; j != i1; ++j) { cout << HIGHPREC(*j) << " "; }
+  cout << "]" << endl;
 }
 
 // Returns true if not all the states have the same energy.
@@ -51,7 +50,7 @@ void find_clusters(STDEVEC &energies, double epsilon, mapdd &cluster_mapping) {
       if (cluster_size > 1) {            // is this a real cluster?
         if (cluster_splitting(i0, i1)) { // are the states actually split?
           t_eigen replace_with = *i0;    // use the lowest eigenvalue of the cluster
-          if (logletter('X')) cout << " -> " << setprecision(18) << replace_with << setprecision(COUT_PRECISION) << endl;
+          if (logletter('X')) cout << " -> " << setprecision(std::numeric_limits<double>::max_digits10) << replace_with << endl;
           for (auto j = (i0 + 1); j != i1; ++j) // skip 1st
             if (*j != *i0) cluster_mapping.insert(make_pair(*j, replace_with));
         }

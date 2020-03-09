@@ -1,8 +1,10 @@
 // portabil.h - Portability code. Low-level stuff belongs here.
-// Copyright (C) 2005-2019 Rok Zitko
+// Copyright (C) 2005-2020 Rok Zitko
 
 #ifndef _portabil_h_
 #define _portabil_h_
+
+#include <boost/stacktrace.hpp>
 
 using namespace std;
 
@@ -11,33 +13,8 @@ using namespace std;
 #define sqr(x) ((x) * (x))
 #endif
 
-// Backtrace. The code needs to be linked using the -rdynamic flag on
-// systems using GNU ld to make the function names available to the
-// program.
-#ifdef HAVE_EXECINFO_H
-#include <execinfo.h>
-
-#include <cstdio>
-#include <cstdlib>
-#endif
 void print_trace() {
-#ifdef HAVE_EXECINFO_H
-  const unsigned int max_trace_len = 100;
-
-  void *array[max_trace_len];
-  size_t size;
-  char **strings;
-  size_t i;
-
-  size    = backtrace(array, max_trace_len);
-  strings = backtrace_symbols(array, size);
-
-  printf("Obtained %zu stack frames.\n", size);
-
-  for (i = 0; i < size; i++) printf("%s\n", strings[i]);
-
-  free(strings);
-#endif
+  cout << "Backtrace:" << endl << boost::stacktrace::stacktrace() << endl;
 }
 
 #define assert_isfinite(x) finite_test_fnc(x, __FILE__, __LINE__)
@@ -129,33 +106,6 @@ template <typename T> T finite_test_fnc(T x, const char *file, int line) {
 #ifndef CLIP
 #define CLIP(x, xmin, xmax) min(max(x, xmin), xmax)
 #endif
-
-// *** Timing
-
-#include <ctime>
-#include <sys/time.h>
-
-// Return time in seconds
-double gettime() {
-#ifdef HAVE_LIBRT
-// Low-level timing code pinched from glib-2.18.2
-// Other choices: CLOCK_MONOTONIC, CLOCK_PROCESS_CPUTIME_ID
-#define USE_CLOCK CLOCK_REALTIME
-#define NSEC_PER_SEC 1000000000
-
-  struct timespec tv;
-
-  clock_gettime(USE_CLOCK, &tv);
-
-  return tv.tv_sec + (double)tv.tv_nsec / NSEC_PER_SEC;
-#else
-  struct timeval tv{};
-
-  gettimeofday(&tv, nullptr);
-  const double MILLION = 1.0e6;
-  return (double)(tv.tv_sec + tv.tv_usec / MILLION);
-#endif
-}
 
 // *** Memory usage
 
