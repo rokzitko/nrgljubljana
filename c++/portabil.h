@@ -5,6 +5,7 @@
 #define _portabil_h_
 
 #include <boost/stacktrace.hpp>
+#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 
 using namespace std;
 
