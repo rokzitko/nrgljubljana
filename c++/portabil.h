@@ -4,15 +4,15 @@
 #ifndef _portabil_h_
 #define _portabil_h_
 
-#include <boost/stacktrace.hpp>
-#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
-
 using namespace std;
 
 // Square raises x to the power of two
 #ifndef HAVE_SQR
 #define sqr(x) ((x) * (x))
 #endif
+
+#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+#include <boost/stacktrace.hpp>
 
 void print_trace() {
   cout << "Backtrace:" << endl << boost::stacktrace::stacktrace() << endl;
