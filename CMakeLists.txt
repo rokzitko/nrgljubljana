@@ -116,8 +116,12 @@ message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
 string(FIND "${BLAS_LIBRARIES}" "mkl_core" MKL_FIND_POS)
 if(MKL_FIND_POS GREATER -1)
-  list(APPEND BLAS_LINKER_FLAGS "-DMKL")
   message(STATUS "Using MKL for linear algebra")
+  # commented out, linking problem
+  # list(APPEND BLAS_LINKER_FLAGS "-DMKL")
+  # https://software.intel.com/en-us/forums/intel-math-kernel-library/topic/759670
+  # Possible workaround: link against libmkl_rt.so
+  # https://software.intel.com/en-us/articles/a-new-linking-model-single-dynamic-library-mkl_rt-since-intel-mkl-103
 endif()
 target_compile_options(blas_lapack INTERFACE ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
 target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
