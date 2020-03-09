@@ -1,6 +1,7 @@
 #include "nrg-general.h" // common
 #include "nrg-lib.h"     // exposed in library
 #include "nrg.h"         // specific to executable
+#include "openmp.h"
 
 int main(int argc, char **argv) {
   print_about_message();

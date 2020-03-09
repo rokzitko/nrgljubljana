@@ -11,7 +11,6 @@ void run_nrg_master();
 void run_nrg_slave(); // note: only defined if compled using NRG_MPI
 void set_workdir(const std::string &workdir);
 void print_about_message(ostream &s = std::cout);
-void report_openMP(ostream &s = std::cout);
 
 namespace time_mem {
   void timing_report();
