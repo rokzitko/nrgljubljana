@@ -1,5 +1,5 @@
 set(sources nrg-lib.cc)
-add_library(nrgljubljana_c STATIC ${sources})
+add_library(nrgljubljana_c SHARED ${sources})
 
 # Enable warnings
 target_link_libraries(nrgljubljana_c PRIVATE project_warnings)
