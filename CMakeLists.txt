@@ -108,17 +108,32 @@ target_include_directories(boost SYSTEM INTERFACE ${Boost_INCLUDE_DIRS})
 target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
 install(TARGETS boost EXPORT nrgljubljana-targets)
 
+# GSL
+find_package(GSL REQUIRED)
+add_library(gsl INTERFACE)
+target_include_directories(gsl SYSTEM INTERFACE ${GSL_INCLUDE_DIRS})
+target_link_libraries(gsl INTERFACE ${GSL_LIBRARIES})
+install(TARGETS gsl EXPORT nrgljubljana-targets)
+
+# GMP
+find_package(GMP REQUIRED)
+install(TARGETS gmp EXPORT nrgljubljana-targets)
+
+# Mathematica (optional)
+find_package(Mathematica)
+if(Mathematica_FOUND)
+  message(STATUS "Mathematica executable ${Mathematica_KERNEL_EXECUTABLE}")
+endif()
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/BLAS_LAPACK)
 # BLAS/Lapack
-find_package(LAPACK REQUIRED)
-find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED) # also looks up BLAS
 add_library(blas_lapack INTERFACE)
-string(FIND "${BLAS_LIBRARIES}" "mkl_core" MKL_FIND_POS)
+string(FIND "${BLAS_LIBRARIES}" "libmkl_rt" MKL_FIND_POS)
 if(MKL_FIND_POS GREATER -1)
-  message(STATUS "Using MKL for linear algebra")
-  # commented out, leads to linking problems
-  # list(APPEND BLAS_LINKER_FLAGS "-DMKL")
+  message(STATUS "Using MKL (libmkl_rt) for linear algebra")
+  list(APPEND BLAS_LINKER_FLAGS "-DMKL")
   # https://software.intel.com/en-us/forums/intel-math-kernel-library/topic/759670
-  # Possible workaround: link against libmkl_rt.so
   # https://software.intel.com/en-us/articles/a-new-linking-model-single-dynamic-library-mkl_rt-since-intel-mkl-103
 endif()
 message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
@@ -128,13 +143,6 @@ message(STATUS "LAPACK_LINKER_FLAGS=${LAPACK_LINKER_FLAGS}")
 target_compile_options(blas_lapack INTERFACE ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
 target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
 install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
-
-# GSL
-find_package(GSL REQUIRED)
-add_library(gsl INTERFACE)
-target_include_directories(gsl SYSTEM INTERFACE ${GSL_INCLUDE_DIRS})
-target_link_libraries(gsl INTERFACE ${GSL_LIBRARIES})
-install(TARGETS gsl EXPORT nrgljubljana-targets)
 
 # Check for availability of cblas interface
 set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
@@ -148,16 +156,6 @@ if(HAVE_CBLAS)
 else()
   message(WARNING "cblas interface not found; will provide a workaround")
   set(CBLAS_WORKAROUND ON)
-endif()
-
-# GMP
-find_package(GMP REQUIRED)
-install(TARGETS gmp EXPORT nrgljubljana-targets)
-
-# Mathematica (optional)
-find_package(Mathematica)
-if(Mathematica_FOUND)
-  message(STATUS "Mathematica executable ${Mathematica_KERNEL_EXECUTABLE}")
 endif()
 
 # Symmetry types to compile in
