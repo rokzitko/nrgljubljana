@@ -3605,7 +3605,7 @@ If[DZ,
       tabneg = Sort[tabneg];
       tabneg = Prepend[tabneg, {0, tab[[1,2]]}];
       tabneg = setpr @ tabneg;
-      If[tab[[-1,1]] < 1.0, tab = Append[tab, {1, tab[[-1,2]]}]; ]; (* fix boundary *)
+      If[tabneg[[-1,1]] < 1.0, tabneg = Append[tabneg, {1, tabneg[[-1,2]]}]; ]; (* fix boundary *)
       rhoneg = Interpolation[tabneg, InterpolationOrder -> 1]; (* Linear interpolation!! *)
       intrhoneg[a][omega_] = Integrate[rhoneg[omega], omega];
 
