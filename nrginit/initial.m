@@ -506,7 +506,6 @@ called from maketable[] or manually when debugging! *)
 
 addexnames[] := Module[{exnames},
   exnames = Map[StringDrop[#,5]&, Names["extra*"]];
-  MyPrint["exnames=", exnames];
   snegrealconstants @@ Map[Symbol, exnames];
 ];
 
@@ -4228,7 +4227,6 @@ to perform various extra tweaks, log parameters and other debugging info,
 check if parameters make any sense, etc. *) 
 
 maketable[]:=Module[{t},
-  MyPrint["maketable[]"];
   timestart["maketable"];                   
 
   addexnames[]; (* To be on the safe side... *)
@@ -4325,7 +4323,3 @@ makedata[filename_]:=Module[{suffix, fn, tabelca},
   ];
   MyPrint[Export[fn, tabelca, "Table"]];
 ];
-
-MyPrint["--EOF--"];
-
-"initial.m loaded"
