@@ -46,13 +46,13 @@ void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m) {
 
 void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
   oa << m.nr << m.rmax << m.nrpost;
-  oa << m.value << m.shift << m.absenergy;
+  oa << m.value << m.shift << m.absenergyG; // only G !!
   saveMatrix(oa, m.matrix0);
 }
 
 void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
   ia >> m.nr >> m.rmax >> m.nrpost;
-  ia >> m.value >> m.shift >> m.absenergy;
+  ia >> m.value >> m.shift >> m.absenergyG;
   loadMatrix(ia, m.matrix0);
 }
 #endif
@@ -331,35 +331,28 @@ void calc_densitymatrix(DensMatElements &rho) {
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
 void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
   nrglog('@', "@ init_rho_FDM(" << N << ")");
-  const double ZN = STAT::ZnD[N];
   rhoFDM.clear();
-  double tr1 = 0.0;
-  double tr2 = 0.0;
+  double tr = 0.0;
   for (const auto &j : dm[N]) {
     const Invar I = j.first;
     rhoFDM[I]     = Matrix(j.second.max(), j.second.max());
     rhoFDM[I].clear();
     Matrix &rhoI = rhoFDM[I];
     for (size_t i = j.second.min(); i < j.second.max(); i++) {
-      const double betaE = j.second.absenergy[i] / P::T;
-      double val1        = exp(-betaE) / ZN;
-      val1               = std::isfinite(val1) ? val1 : 0.0;
-      tr1 += mult(I) * val1;
-      const double ratio = STAT::wn[N] / ZN;
+      const double betaE = j.second.absenergyN[i] / P::T;
+      const double ratio = STAT::wn[N] / STAT::ZnDprime[N];
       double val2        = exp(-betaE) * ratio;
       val2               = std::isfinite(val2) ? val2 : 0.0;
       rhoI(i, i)         = val2;
-      tr2 += mult(I) * val2;
+      tr += mult(I) * val2;
     }
   }
-  nrglog('w', "tr1=" << tr1 << " tr2=" << tr2);
-  // Sanity checks. The trace tr2 should be equal to the total
-  // weight of the shell-N contribution to the full density matrix.
-  // if (std::isfinite(tr1) && !num_equal(tr1, 1.0)) my_warning("tr1=%24.16Lf", tr1); // This is not fatal! (but weird)
-  const double diff = (tr2 - STAT::wn[N]) / STAT::wn[N];                           // relative error
+  // Trace should be equal to the total weight of the shell-N contribution to the FDM.
+  const double diff = (tr - STAT::wn[N]) / STAT::wn[N]; // relative error
+  nrglog('w', "tr=" << tr << " diff=" << diff);
   if (std::isfinite(diff) && !num_equal(diff, 0.0, 1e-8)) {
-    my_warning("diff=%24.16lf", diff); // This is more serious..
-    my_assert(STAT::wn[N] < 1e-12);    // ..but OK if small enough overall.
+    my_warning("diff=%24.16lf", diff); 
+    my_assert(STAT::wn[N] < 1e-12);    // ..OK if small enough overall.
   }
 }
 

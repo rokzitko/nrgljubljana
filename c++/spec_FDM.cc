@@ -32,10 +32,10 @@ class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
 
 #define LOOP_D(n)                                                                                                                                    \
   for (size_t n = ret##n; n < all##n; n++) {                                                                                                         \
-    const t_eigen E##n = diagI##n.absenergy(n);
+    const t_eigen E##n = diagI##n.absenergyG(n);
 #define LOOP_K(n)                                                                                                                                    \
   for (size_t n = 0; n < ret##n; n++) {                                                                                                              \
-    const t_eigen E##n = diagI##n.absenergy(n);
+    const t_eigen E##n = diagI##n.absenergyG(n);
 
 // *********** Greater correlation function ***********
 void SPEC_FDMgt::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
@@ -231,9 +231,9 @@ using res_t = std::vector<matrix<t_weight> >;
 #define LOOP_X(n) for (size_t n = 0; n < all##n; n++)
 
 #define LOOPVARS                                                                                                                                     \
-  const t_eigen Ei   = diagi.absenergy(i);                                                                                                           \
-  const t_eigen Ej   = diagj.absenergy(j);                                                                                                           \
-  const t_eigen El   = diagl.absenergy(l);                                                                                                           \
+  const t_eigen Ei   = diagi.absenergyG(i);                                                                                                           \
+  const t_eigen Ej   = diagj.absenergyG(j);                                                                                                           \
+  const t_eigen El   = diagl.absenergyG(l);                                                                                                           \
   const t_eigen bzEi = diagi.boltzmann(i);                                                                                                           \
   const t_eigen bzEj = diagj.boltzmann(j);                                                                                                           \
   const t_eigen bzEl = diagl.boltzmann(l);
@@ -277,9 +277,9 @@ void SPEC_FDM_v3mm::calc_A(const Eigen &diagi, const Eigen &diagj, const Eigen &
   my_assert(op2.size2() == alll);
   my_assert(op3.size1() == alll);
   my_assert(op3.size2() == alli);
-  my_assert(diagi.absenergy.size() == alli);
-  my_assert(diagj.absenergy.size() == allj);
-  my_assert(diagl.absenergy.size() == alll);
+  my_assert(diagi.absenergyG.size() == alli);
+  my_assert(diagj.absenergyG.size() == allj);
+  my_assert(diagl.absenergyG.size() == alll);
   my_assert(diagi.boltzmann.size() == alli);
   my_assert(diagj.boltzmann.size() == allj);
   my_assert(diagl.boltzmann.size() == alll);
@@ -531,9 +531,9 @@ void SPEC_FDM_v3mm::calc_B(const Eigen &diagi, const Eigen &diagj, const Eigen &
   my_assert(op2.size2() == allj);
   my_assert(op3.size1() == alll);
   my_assert(op3.size2() == alli);
-  my_assert(diagi.absenergy.size() == alli);
-  my_assert(diagj.absenergy.size() == allj);
-  my_assert(diagl.absenergy.size() == alll);
+  my_assert(diagi.absenergyG.size() == alli);
+  my_assert(diagj.absenergyG.size() == allj);
+  my_assert(diagl.absenergyG.size() == alll);
   my_assert(diagi.boltzmann.size() == alli);
   my_assert(diagj.boltzmann.size() == allj);
   my_assert(diagl.boltzmann.size() == alll);
