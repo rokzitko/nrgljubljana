@@ -340,7 +340,7 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
     Matrix &rhoI = rhoFDM[I];
     for (size_t i = j.second.min(); i < j.second.max(); i++) {
       const double betaE = j.second.absenergyN[i] / P::T;
-      const double ratio = STAT::wn[N] / STAT::ZnDprime[N];
+      const double ratio = STAT::wn[N] / STAT::ZnDN[N];
       double val2        = exp(-betaE) * ratio;
       val2               = std::isfinite(val2) ? val2 : 0.0;
       rhoI(i, i)         = val2;

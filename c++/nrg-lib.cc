@@ -590,10 +590,10 @@ namespace STAT {
   // Containers related to the FDM-NRG approach
   // ==========================================
   // Consult A. Weichselbaum, J. von Delft, PRL 99, 076402 (2007).
-  std::vector<double> ZnD;      // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n
-  std::vector<double> ZnDprime; // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
+  std::vector<double> ZnDG;     // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n
+  std::vector<double> ZnDN;     // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
   std::vector<double> wn;       // Weights w_n. They sum to 1.
-  std::vector<double> wnfactor; // wn/ZnD
+  std::vector<double> wnfactor; // wn/ZnDG
   double ZZ;                    // grand-canonical partition function (full-shell),
                                 // evaluated at the temperature P::T
   double F_fdm;                 // free-energy at temperature T
@@ -603,8 +603,8 @@ namespace STAT {
     rel_Egs = std::vector<double>(Nlen);
     abs_Egs = std::vector<double>(Nlen);
     energy_offsets = std::vector<double>(Nlen);
-    ZnD = std::vector<double>(Nlen, 0.0);
-    ZnDprime = std::vector<double>(Nlen, 0.0);
+    ZnDG = std::vector<double>(Nlen, 0.0);
+    ZnDN = std::vector<double>(Nlen, 0.0);
     wn = std::vector<double>(Nlen, 0.0);
     wnfactor = std::vector<double>(Nlen, 0.0);
   }
@@ -1784,34 +1784,29 @@ void nrg_truncate_prepare(DiagInfo &diag) {
 
 // Calculate the shell-N statistical sum as used in the FDM algorithm.
 pair<double,double> calc_ZnD_one(const AllSteps &dm, size_t N, double T) {
-  double ZnD = 0.0;
-  double ZnDprime = 0.0;
+  double ZnDG = 0.0;
+  double ZnDN = 0.0;
   for (const auto &j : dm[N])
     for (size_t i = j.second.min(); i < j.second.max(); i++) {
-      ZnD += mult(j.first) * exp(-j.second.absenergyG[i] / T); // absenergyG >= 0.
-      ZnDprime += mult(j.first) * exp(-j.second.absenergyN[i]/ T); // absenergyN >= 0.0
+      ZnDG += mult(j.first) * exp(-j.second.absenergyG[i] / T); // absenergyG >= 0.0
+      ZnDN += mult(j.first) * exp(-j.second.absenergyN[i]/ T); // absenergyN >= 0.0
     }
-  return make_pair(ZnD, ZnDprime);
+  return make_pair(ZnDG, ZnDN);
 }
 
-// Calculate partial statistical sums, ZnD, and the grand canonical Z
-// (STAT::ZZ), computed with respect to absolute excitation
-// energies! This implies that the absolute energies have to be used
-// in function calc_generic_FDM(), since 1/ZnD are used as prefactors.
+// Calculate partial statistical sums, ZnD*, and the grand canonical Z
+// (STAT::ZZ), computed with respect to absolute energies.
 // calc_ZnD() must be called before the second NRG run.
-// STAT::ZZ is the grand-canonical partition function (over all shells!!), 
-// i.e. \sum \exp(-beta E) for all (!!) states in the complete Fock space, 
-// where E is the absolute energy.
 void calc_ZnD(const AllSteps &dm) {
   for (size_t N = P::Ninit; N < P::Nlen; N++) // here size_t, because Ninit>=0
-    tie(STAT::ZnD[N], STAT::ZnDprime[N]) = calc_ZnD_one(dm, N, P::T);
+    tie(STAT::ZnDG[N], STAT::ZnDN[N]) = calc_ZnD_one(dm, N, P::T);
   // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
   STAT::ZZ = 0.0;
-  for (size_t N = P::Ninit; N < P::Nlen; N++) STAT::ZZ += pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnD[N];
+  for (size_t N = P::Ninit; N < P::Nlen; N++) STAT::ZZ += pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnDG[N];
   bucket sumwn;
   for (size_t N = P::Ninit; N < P::Nlen; N++) {
     // This is w_n defined after Eq. (8) in the WvD paper.
-    const double wn = pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnD[N] / STAT::ZZ;
+    const double wn = pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnDG[N] / STAT::ZZ;
     STAT::wn[N] = wn;
     sumwn += wn;
     const double w = pow(double(P::combs), int(P::Nlen - N - 1)) / STAT::ZZ;
@@ -1826,9 +1821,9 @@ void fdm_thermodynamics(const AllSteps &dm)
   //  cout << "Zft (last shell)=  " << HIGHPREC(STAT::Zft) << endl;
   if (logletter('w')) {
     for (size_t N = P::Ninit; N < P::Nlen; N++) 
-      cout << "Z[" << N << "]=" << HIGHPREC(STAT::ZnD[N]) << endl;
+      cout << "ZG[" << N << "]=" << HIGHPREC(STAT::ZnDG[N]) << endl;
     for (size_t N = P::Ninit; N < P::Nlen; N++) 
-      cout << "Z'[" << N << "]=" << HIGHPREC(STAT::ZnDprime[N]) << endl;
+      cout << "ZN[" << N << "]=" << HIGHPREC(STAT::ZnDN[N]) << endl;
     for (size_t N = P::Ninit; N < P::Nlen; N++) 
       cout << "w[" << N << "]=" << HIGHPREC(STAT::wn[N]) << endl;
     for (size_t N = P::Ninit; N < P::Nlen; N++)
@@ -1843,7 +1838,7 @@ void fdm_thermodynamics(const AllSteps &dm)
     if (STAT::wn[N] > 1e-16) 
       for (const auto &j : dm[N]) 
         for (size_t i = j.second.min(); i < j.second.max(); i++)
-          E += STAT::wn[N] * mult(j.first) * j.second.absenergy[i] * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDprime[N];
+          E += STAT::wn[N] * mult(j.first) * j.second.absenergy[i] * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N];
   STAT::E_fdm = E;
   cout << "E_fdm=" << HIGHPREC(STAT::E_fdm) << endl;
 }
