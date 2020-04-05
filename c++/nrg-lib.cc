@@ -287,13 +287,15 @@ class DimSub {
   size_t total = 0;
   Rmaxvals rmax;   // substructure of vectors omega
   EVEC eigenvalue; // all eigenvalues
+  EVEC absenergy;  // absolute energies
   EVEC absenergyG; // absolute energies referred to the overall ground-state energy
   EVEC absenergyN; // absolute energies referred to the step-N ground-state energy
   bool is_last = false;
   DimSub() = default;
   DimSub(size_t _kept, size_t _total, const Rmaxvals &_rmax, const EVEC &_eigenvalue, 
-         const EVEC &_absenergyG, const EVEC &_absenergyN, bool _is_last) : // NOLINT
-     kept(_kept), total(_total), rmax(_rmax), eigenvalue(_eigenvalue), absenergyG(_absenergyG), absenergyN(_absenergyN), is_last(_is_last) {}
+         const EVEC &_absenergy, const EVEC &_absenergyG, const EVEC &_absenergyN, bool _is_last) : // NOLINT
+     kept(_kept), total(_total), rmax(_rmax), eigenvalue(_eigenvalue), 
+     absenergy(_absenergy), absenergyG(_absenergyG), absenergyN(_absenergyN), is_last(_is_last) {}
   DimSub(const DimSub &) = default;
   DimSub(DimSub &&) = default;
   DimSub &operator=(const DimSub &) = default;
@@ -320,6 +322,7 @@ class Eigen {
   size_t nrpost = 0;   // number of eigenpairs after truncation
   double shift  = 0.0; // shift of eigenvalues (0 or Egs)
   EVEC value;          // eigenvalues
+  EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
   EVEC absenergyN;     // absolute energies (referenced to the lowest energy in the N-th step)
   EVEC boltzmann;      // Boltzmann factors
@@ -1840,8 +1843,7 @@ void fdm_thermodynamics(const AllSteps &dm)
     if (STAT::wn[N] > 1e-16) 
       for (const auto &j : dm[N]) 
         for (size_t i = j.second.min(); i < j.second.max(); i++)
-//          * j.second.absenergy[i] 
-          E += STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDprime[N];
+          E += STAT::wn[N] * mult(j.first) * j.second.absenergy[i] * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDprime[N];
   STAT::E_fdm = E;
   cout << "E_fdm=" << HIGHPREC(STAT::E_fdm) << endl;
 }
@@ -2523,6 +2525,7 @@ void nrg_dump_f(const Opch &opch) {
 // spectral functions. This is different from subtract_groundstate_energy().
 // Called from nrg_do_diag() when diag is loaded from a stored file during
 // the second pass of the NRG iteration.
+// XXX: remove this. Use absenergyG in dm.
 void shift_abs_energies(DiagInfo &diag) {
   LOOP(diag, i)
   for (auto &x : EIGEN(i).absenergyG) x -= STAT::GS_energy;
@@ -2621,10 +2624,12 @@ void store_td() {
 void calc_abs_energies(DiagInfo &diag) {
   nrglog('@', "@ calc_abs_energies()");
   LOOP(diag, is) {
-    EIGEN(is).absenergyN = EIGEN(is).value; // unscaled energies, referenced to the lowest energy in current NRG step (not modified later on)
-    for (auto &x : EIGEN(is).absenergyN) x *= STAT::scale;
+    EIGEN(is).absenergy = EIGEN(is).value;
+    for (auto &x : EIGEN(is).absenergy) x = x * STAT::scale + STAT::total_energy;
     EIGEN(is).absenergyG = EIGEN(is).value;
     for (auto &x : EIGEN(is).absenergyG) x = x * STAT::scale + STAT::total_energy;
+    EIGEN(is).absenergyN = EIGEN(is).value; // unscaled energies, referenced to the lowest energy in current NRG step (not modified later on)
+    for (auto &x : EIGEN(is).absenergyN) x *= STAT::scale;
   }
 }
 
@@ -2671,7 +2676,7 @@ void nrg_after_diag(IterInfo &iterinfo) {
   size_t nrkept = 0;
   LOOP_const(diag, i) {
     const Invar I  = INVAR(i);
-    dm[STAT::N][I] = DimSub(NRSTATES(i), RMAX(i), qsrmax[I], EIGEN(i).value, EIGEN(i).absenergyG, EIGEN(i).absenergyN, LAST_ITERATION());
+    dm[STAT::N][I] = DimSub(NRSTATES(i), RMAX(i), qsrmax[I], EIGEN(i).value, EIGEN(i).absenergy, EIGEN(i).absenergyG, EIGEN(i).absenergyN, LAST_ITERATION());
     nrall += RMAX(i);
     nrkept += NRSTATES(i);
   }
