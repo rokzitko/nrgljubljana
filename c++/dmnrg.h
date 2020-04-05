@@ -331,28 +331,24 @@ void calc_densitymatrix(DensMatElements &rho) {
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
 void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
   nrglog('@', "@ init_rho_FDM(" << N << ")");
-  double ZZ = STAT::ZnD[N];
+  const double ZN = STAT::ZnD[N];
   rhoFDM.clear();
   double tr1 = 0.0;
   double tr2 = 0.0;
   for (const auto &j : dm[N]) {
-    const Invar I    = j.first;
-    const size_t min = (LAST_ITERATION(N) ? 0 : j.second.kept);
-    const size_t max = j.second.total;
-    rhoFDM[I]        = Matrix(max, max);
+    const Invar I = j.first;
+    rhoFDM[I]     = Matrix(j.second.max(), j.second.max());
     rhoFDM[I].clear();
     Matrix &rhoI = rhoFDM[I];
-    for (size_t i = min; i < max; i++) {
-      const double Eabs = j.second.absenergy[i] - STAT::GSenergy;
-      my_assert(Eabs >= 0.0);
-      const double betaE = Eabs / P::T;
-      double val1        = exp(-betaE) / ZZ;
-      val1                    = std::isfinite(val1) ? val1 : 0.0;
+    for (size_t i = j.second.min(); i < j.second.max(); i++) {
+      const double betaE = j.second.absenergy[i] / P::T;
+      double val1        = exp(-betaE) / ZN;
+      val1               = std::isfinite(val1) ? val1 : 0.0;
       tr1 += mult(I) * val1;
-      const double ratio = STAT::wn[N] / ZZ;
+      const double ratio = STAT::wn[N] / ZN;
       double val2        = exp(-betaE) * ratio;
-      val2                    = std::isfinite(val2) ? val2 : 0.0;
-      rhoI(i, i)              = double(val2);
+      val2               = std::isfinite(val2) ? val2 : 0.0;
+      rhoI(i, i)         = val2;
       tr2 += mult(I) * val2;
     }
   }

@@ -113,8 +113,8 @@ void validate_parameters() {
 
 // Read the ground state energy from data file ('e' flag)
 void read_gs_energy(ifstream &fdata) {
-  fdata >> STAT::totalenergy;
-  assert_isfinite(STAT::totalenergy);
+  fdata >> STAT::total_energy;
+  assert_isfinite(STAT::total_energy);
 }
 
 // Read energies of initial states. nsubs is the number of subspaces.

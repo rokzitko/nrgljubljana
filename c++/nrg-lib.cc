@@ -277,27 +277,28 @@ class Rmaxvals {
   size_t total() const { return accumulate(begin(values), end(values), 0); }
 };
 
+// TO DO: there is duplication between DimSub and Eigen. Simplify!
+
 // Information about the number of states, kept and discarded, rmax,
-// and eigenenergies.
+// and eigenenergies. Required for the density-matrix construction.
 class DimSub {
   public:
-  size_t kept      = 0;
-  size_t discarded = 0;
-  size_t total     = 0;
+  size_t kept  = 0; 
+  size_t total = 0;
   Rmaxvals rmax;   // substructure of vectors omega
   EVEC eigenvalue; // all eigenvalues
   EVEC absenergy;  // absolute energies (for FDM)
+  bool is_last = false;
   DimSub() = default;
-  DimSub(size_t _kept, size_t _total, const Rmaxvals &_rmax, const EVEC &_eigenvalue, const EVEC &_absenergy) : // NOLINT
-     kept(_kept), total(_total), rmax(_rmax), eigenvalue(_eigenvalue), absenergy(_absenergy) {
-    my_assert(kept <= total);
-    discarded = total - kept;
-  }
+  DimSub(size_t _kept, size_t _total, const Rmaxvals &_rmax, const EVEC &_eigenvalue, const EVEC &_absenergy, bool _is_last) : // NOLINT
+     kept(_kept), total(_total), rmax(_rmax), eigenvalue(_eigenvalue), absenergy(_absenergy), is_last(_is_last) {}
   DimSub(const DimSub &) = default;
   DimSub(DimSub &&) = default;
   DimSub &operator=(const DimSub &) = default;
   DimSub &operator=(DimSub &&) = default;
   ~DimSub() = default;
+  size_t min() const { return (is_last ? 0 : kept); } // min(), max() return the range of D states to be summed over in FDM
+  size_t max() const { return total; }
 };
 
 // Full information about the number of states and matrix dimensions
@@ -315,6 +316,7 @@ class Eigen {
   double shift  = 0.0; // shift of eigenvalues (0 or Egs)
   EVEC value;          // eigenvalues
   EVEC absenergy;      // absolute energies (0 is the absolute ground state of the system)
+  EVEC absenergy0;     // absolute energies (referenced to the lowest energy in the NRG step) [UNUSED]
   EVEC boltzmann;      // Boltzmann factors
   Matrix matrix0;      // eigenvectors in matrix form
   // 'blocks' contains eigenvectors separated according to the invariant
@@ -329,7 +331,6 @@ class Eigen {
   Eigen(size_t _nr, size_t _rmax) : nr(_nr), rmax(_rmax) {
     my_assert(rmax >= nr);
     value.resize(nr);
-    absenergy.resize(nr);
     matrix0.resize(nr, rmax);
     perform_checks();
   }
@@ -371,9 +372,13 @@ class Eigen {
     ar &value;
     ar &shift;
     ar &absenergy;
+//  ar &absenergy0;
     ar &matrix0;
   }
 };
+
+// TO DO: derived class from Eigen, which contains results in addition to raw eigenvalues/eigenvectors
+// e.g. absenergy, etc. belong here
 
 void Eigen::truncate_perform() {
   for (auto &i : blocks) {
@@ -520,6 +525,8 @@ using excitation_list = list<energy_mult_type>;
 
 // Namespace for storing various statistical quantities calculated
 // during iteration.
+// XXX: split into run-time variables & statistical quantities. Multiple classes + derived classes.
+// XXX: convert this into a class. To be constructured as soon as Nlen is determined.
 namespace STAT {
   RUNTYPE runtype; // NRG vs. DM-NRG run
   size_t N;        // iteration step, N>=0
@@ -559,21 +566,31 @@ namespace STAT {
   using t_mapexpv = map<string, t_expv>;
   t_mapexpv expv;    // expectation values of custom operators
   t_mapexpv fdmexpv; // Expectation values computed using the FDM algorithm
-                     // Total energy of the ground state. This is the sum of all the zero state
-  // energies for all the iteration steps.
-  t_eigen totalenergy;
-  // This is the value of the variable "totalenergy" at the end of the
+
+  // Energies
+  // ========
+  // total_energy is the total energy of the ground state at the current iteration. This is the sum of all the 
+  // zero state energies for all the iteration steps so far.
+  t_eigen total_energy;
+  // GS_energy is the value of the variable "total_energy" at the end of the
   // iteration. This is different from 'Egs'.
-  t_eigen GSenergy;
-  // Containers related to the FDM-NRG approach.
+  t_eigen GS_energy;
+  std::vector<double> rel_Egs; // Values of 'Egs' for all NRG steps.
+  std::vector<double> abs_Egs; // Values of 'Egs' (multiplied by scale, i.e. in absolute scale) for all NRG steps.
+  std::vector<double> energy_offsets; // Values of "total_energy" for all NRG steps.
+
+  // Containers related to the FDM-NRG approach
+  // ==========================================
   // Consult A. Weichselbaum, J. von Delft, PRL 99, 076402 (2007).
   std::vector<double> ZnD;      // Z_n^D=\sum_s^D exp(-beta E^n_s),
                                 // sum over **discarded** states at shell n
                                 // cf. Eq. (8) and below in WvD paper
   std::vector<double> wn;       // Weights w_n. They sum to 1.
   std::vector<double> wnfactor; // wn/ZnD
-  double ZZ = 0;                // grand-canonical partition function (full-shell),
+  double ZZ;                    // grand-canonical partition function (full-shell),
                                 // evaluated at the temperature P::T
+  double F_fdm;                 // free-energy at temperature T
+  double E_fdm;                 // energy at temperature T
 } // namespace STAT
 
 // Return true if this is the first step of the NRG iteration
@@ -1673,24 +1690,6 @@ void init_rho(const DiagInfo &diag, DensMatElements &rho) {
   my_assert(num_equal(Tr, 1.0, 1e-8)); // NOLINT
 }
 
-// Calculate the shell-N statistical sum as used in the FDM algorithm.
-double calc_ZnD_one(size_t N, double T) {
-  double ZZ = 0;
-  for (const auto &j : dm[N]) {
-    // Determine which states count as discarded in the FDM sense
-    const size_t min = (LAST_ITERATION(N) ? 0 : j.second.kept);
-    const size_t max = j.second.total;
-    for (size_t i = min; i < max; i++) {
-      const double Eabs = j.second.absenergy[i] - STAT::GSenergy;
-      my_assert(Eabs >= 0.0);
-      const double betaE = Eabs / T;
-      ZZ += mult(j.first) * exp(-betaE);
-    }
-  }
-  nrglog('w', "ZnD[" << N << "]=" << HIGHPREC(ZZ));
-  return ZZ;
-}
-
 /*** Truncation ***/
 
 // Determine the number of states to be retained.
@@ -1766,27 +1765,34 @@ void nrg_truncate_prepare(DiagInfo &diag) {
   nrgdump3(Emax, nrkept, nrkeptmult) << endl;
 }
 
+// Calculate the shell-N statistical sum as used in the FDM algorithm.
+double calc_ZnD_one(const AllSteps &dm, size_t N, double T) {
+  double ZZ = 0;
+  for (const auto &j : dm[N])
+    for (size_t i = j.second.min(); i < j.second.max(); i++)
+      ZZ += mult(j.first) * exp(-j.second.absenergy[i] / T);
+  return ZZ;
+}
+
 // Calculate partial statistical sums, ZnD, and the grand canonical Z
-// (STAT::ZZ). calc_ZnD() must be called before the second NRG run.
-void calc_ZnD() {
-  // Partial statistical sums, computed with respect to absolute excitation
-  // energies! This implies that the absolute energies have to be used
-  // in the calc_generic_FDM() function, since 1/ZnD are used as prefactors.
-  STAT::ZnD = std::vector<double>(P::Nlen, 0.0);
+// (STAT::ZZ), computed with respect to absolute excitation
+// energies! This implies that the absolute energies have to be used
+// in function calc_generic_FDM(), since 1/ZnD are used as prefactors.
+// calc_ZnD() must be called before the second NRG run.
+// STAT::ZZ is the grand-canonical partition function (over all shells!!), 
+// i.e. \sum \exp(-beta E) for all (!!) states in the complete Fock space, 
+// where E is the absolute energy.
+void calc_ZnD(const AllSteps &dm) {
+  STAT::ZnD = std::vector<double>(P::Nlen, 0.0); // XXX: move to constructor
   for (size_t N = P::Ninit; N < P::Nlen; N++) // here size_t, because Ninit>=0
-    STAT::ZnD[N] = calc_ZnD_one(N, P::T);
+    STAT::ZnD[N] = calc_ZnD_one(dm, N, P::T);
   // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
-  // Grand-canonical partition function (over all shells!!), i.e. \sum
-  // \exp(-beta E) for all (!!) states in the complete Fock space, where
-  // E is the absolute energy.
   bucket Z;
   for (size_t N = P::Ninit; N < P::Nlen; N++) Z += pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnD[N];
   STAT::ZZ = Z;
-  cout << "Grand canonical Z= " << HIGHPREC(Z) << endl;
-  cout << "Zft (last shell)=  " << HIGHPREC(STAT::Zft) << endl;
   // Weights for specific shells, w_n
-  STAT::wn = std::vector<double>(P::Nlen, 0.0);
-  STAT::wnfactor = std::vector<double>(P::Nlen, 0.0);
+  STAT::wn = std::vector<double>(P::Nlen, 0.0); // XXX
+  STAT::wnfactor = std::vector<double>(P::Nlen, 0.0); // XXX
   bucket sumwn;
   for (size_t N = P::Ninit; N < P::Nlen; N++) {
     // This is w_n defined after Eq. (8) in the WvD paper.
@@ -1796,13 +1802,31 @@ void calc_ZnD() {
     const double w = pow(double(P::combs), int(P::Nlen - N - 1)) / Z;
     STAT::wnfactor[N] = w; // These ratios enter the terms for the spectral function.
   }
+  cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << endl;
+  my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
+}
+
+void fdm_thermodynamics(const AllSteps &dm)
+{
+  //  cout << "Zft (last shell)=  " << HIGHPREC(STAT::Zft) << endl;
+  if (logletter('w')) {
+    for (size_t N = P::Ninit; N < P::Nlen; N++) 
+      cout << "ZnD[" << N << "]=" << HIGHPREC(STAT::ZnD[N]) << endl;
+    for (size_t N = P::Ninit; N < P::Nlen; N++) 
+      cout << "wn[" << N << "]=" << HIGHPREC(STAT::wn[N]) << endl;
+    for (size_t N = P::Ninit; N < P::Nlen; N++)
+      cout << "wnfactor[" << N << "]=" << HIGHPREC(STAT::wnfactor[N]) << endl;
+  }
+  cout << endl;
+  cout << "Grand canonical Z= " << HIGHPREC(STAT::ZZ) << endl;
+  STAT::F_fdm = log(STAT::ZZ)/P::T;
+  cout << "F_fdm=" << HIGHPREC(STAT::F_fdm) << endl;
+  bucket E;
   for (size_t N = P::Ninit; N < P::Nlen; N++) 
-    nrglog('w', "wn[" << N << "]=" << HIGHPREC(STAT::wn[N]));
-  nrglog('w', "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0);
-  for (size_t N = P::Ninit; N < P::Nlen; N++)
-    nrglog('w', "wnfactor[" << N << "]=" << HIGHPREC(STAT::wnfactor[N]));
-  // Check the sum-rule.
-  my_assert(num_equal(sumwn, 1.0));
+    for (const auto &j : dm[N]) {
+    }
+  STAT::E_fdm = E;
+  cout << "E_fdm=" << HIGHPREC(STAT::E_fdm) << endl;
 }
 
 // Actually truncate matrices. Drop subspaces with no states kept.
@@ -1813,7 +1837,7 @@ void nrg_truncate_perform(DiagInfo &diag) {
 // scaled = true -> output scaled energies (i.e. do not multiply
 // by the rescale factor)
 inline t_eigen scaled_energy(t_eigen e, bool scaled = true, bool absolute = false) {
-  return e * (scaled ? 1.0 : STAT::scale) + (absolute ? STAT::totalenergy : 0.0);
+  return e * (scaled ? 1.0 : STAT::scale) + (absolute ? STAT::total_energy : 0.0);
 }
 
 /* Store (eigenvalue/quantum numbers) pairs at given NRG iteration.
@@ -2260,7 +2284,6 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   mpiw->send(dest, TAG_EIGEN_INT, eig.rmax);
   mpiw->send(dest, TAG_EIGEN_INT, eig.nrpost);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value);
-  mpiw->send(dest, TAG_EIGEN_VEC, eig.absenergy); // XXX: necessary?
   mpi_send_matrix_linebyline(dest, eig.matrix0);
 }
 
@@ -2277,8 +2300,6 @@ void mpi_receive_eigen_linebyline(int source, Eigen &eig) {
   status = mpiw->recv(source, TAG_EIGEN_INT, eig.nrpost);
   check_status(status);
   status = mpiw->recv(source, TAG_EIGEN_VEC, eig.value);
-  check_status(status);
-  status = mpiw->recv(source, TAG_EIGEN_VEC, eig.absenergy); // XXX
   check_status(status);
   mpi_receive_matrix_linebyline(source, eig.matrix0);
 }
@@ -2484,15 +2505,23 @@ void nrg_dump_f(const Opch &opch) {
 // to zero. This is required in the FDM approach for calculating the
 // spectral functions. This is different from subtract_groundstate_energy().
 // Called from nrg_do_diag() when diag is loaded from a stored file during
-// the second pass of the NRG iteration. Note that the values in absenergy[]
-// are not yet shifted when ZnD is calculated in calc_ZnD_one, but it is
-// already shifted when calc_generic_FDM(), calc_trace_fdm_discarded/kept()
-// are called.
+// the second pass of the NRG iteration.
 void shift_abs_energies(DiagInfo &diag) {
   LOOP(diag, i)
-  for (auto &x : EIGEN(i).absenergy) x -= STAT::GSenergy;
+  for (auto &x : EIGEN(i).absenergy) x -= STAT::GS_energy;
 }
-
+  
+// called before calc_ZnD()
+void shift_abs_energies(AllSteps &dm)
+{
+  for (size_t N = P::Ninit; N < P::Nlen; N++)
+    for (auto &j : dm[N])
+      for (size_t i = 0; i < j.second.total; i++) {
+        j.second.absenergy[i] -= STAT::GS_energy;
+        my_assert(j.second.absenergy[i] >= 0.0);
+      }
+}
+  
 // Used in evaluation of vertex functions to speed up the computation.
 void calc_boltzmann_factors(DiagInfo &diag) {
   LOOP(diag, i) {
@@ -2568,15 +2597,17 @@ void store_td() {
 }
 
 // Absolute energies. Must be called in the first NRG run after
-// STAT::totalenergy has been updated, but before
+// STAT::total_energy has been updated, but before
 // store_transformations(). These energies are initially not
 // referrenced to absolute 0. This is done in the second NRG run in
-// shift_abs_energies().
+// shift_abs_energies(diag).
 void calc_abs_energies(DiagInfo &diag) {
   nrglog('@', "@ calc_abs_energies()");
   LOOP(diag, is) {
+    EIGEN(is).absenergy0 = EIGEN(is).value; // unscaled energies, referenced to the lowest energy in current NRG step (not modified later on)
+    for (auto &x : EIGEN(is).absenergy0) x *= STAT::scale;
     EIGEN(is).absenergy = EIGEN(is).value;
-    for (auto &x : EIGEN(is).absenergy) x = STAT::totalenergy + x * STAT::scale;
+    for (auto &x : EIGEN(is).absenergy) x = x * STAT::scale + STAT::total_energy;
   }
 }
 
@@ -2588,8 +2619,11 @@ void calc_abs_energies(DiagInfo &diag) {
 void nrg_after_diag(IterInfo &iterinfo) {
   nrglog('@', "@ nrg_after_diag()");
   // Contribution to the total energy.
-  STAT::totalenergy += STAT::Egs * STAT::scale;
-  cout << "Total energy=" << setprecision(std::numeric_limits<double>::max_digits10) << STAT::totalenergy << "  Egs=" << STAT::Egs << endl;
+  STAT::total_energy += STAT::Egs * STAT::scale;
+  cout << "Total energy=" << HIGHPREC(STAT::total_energy) << "  Egs=" << HIGHPREC(STAT::Egs) << endl;
+  STAT::rel_Egs[STAT::N] = STAT::Egs;
+  STAT::abs_Egs[STAT::N] = STAT::Egs * STAT::scale;
+  STAT::energy_offsets[STAT::N] = STAT::total_energy;
   if (nrgrun) calc_abs_energies(diag);
   if (P::dm && nrgrun) {
     // Store eigenenergies and eigenvectors in all subspaces.
@@ -2620,7 +2654,7 @@ void nrg_after_diag(IterInfo &iterinfo) {
   size_t nrkept = 0;
   LOOP_const(diag, i) {
     const Invar I  = INVAR(i);
-    dm[STAT::N][I] = DimSub(NRSTATES(i), RMAX(i), qsrmax[I], EIGEN(i).value, EIGEN(i).absenergy);
+    dm[STAT::N][I] = DimSub(NRSTATES(i), RMAX(i), qsrmax[I], EIGEN(i).value, EIGEN(i).absenergy, LAST_ITERATION());
     nrall += RMAX(i);
     nrkept += NRSTATES(i);
   }
@@ -2801,14 +2835,18 @@ void dump_subspace_information() {
 void finalize_nrg() {
   nrglog('@', "@ finalize_nrg()");
   finalize_common();
-  cout << endl << "Total energy: " << HIGHPREC(STAT::totalenergy) << endl;
-  // True ground state energy is just the value of totalenergy at the end
+  cout << endl << "Total energy: " << HIGHPREC(STAT::total_energy) << endl;
+  // True ground state energy is just the value of total_energy at the end
   // of the iteration. This is the energy of the lowest energy state in the
   // last iteration. All other states (incl. from previous shells)
   // obviously have higher energies.
-  STAT::GSenergy = STAT::totalenergy;
+  STAT::GS_energy = STAT::total_energy;
   calc_TKW();
-  if (P::fdm) calc_ZnD();
+  if (P::fdm) {
+    shift_abs_energies(dm);
+    calc_ZnD(dm);
+    fdm_thermodynamics(dm);
+  }
   if (P::dumpsubspaces) dump_subspace_information();
 }
 
@@ -2817,9 +2855,9 @@ void finalize_dmnrg() {
   nrglog('@', "@ finalize_dmnrg()");
   finalize_common();
   // These two should match if value_raw and value vectors are
-  // handled correctly. GSenergy was computed in the first NRG run,
-  // while totalenergy is recomputed in the second DMNRG run.
-  my_assert(num_equal(STAT::GSenergy, STAT::totalenergy));
+  // handled correctly. GS_energy was computed in the first NRG run,
+  // while total_energy is recomputed in the second DMNRG run.
+  my_assert(num_equal(STAT::GS_energy, STAT::total_energy));
 }
 
 /************************ MAIN ****************************************/
@@ -2854,7 +2892,11 @@ void prep_run(RUNTYPE t)
 void start_calculation(IterInfo &iterinfo) {
   nrglog('@', "@ start_calculation()");
   prep_run(RUNTYPE::NRG);
+  // Initialize all containers for storing information
   dm = AllSteps(P::Nlen);
+  STAT::rel_Egs = std::vector<double>(P::Nlen); // XXX: move to constructor
+  STAT::abs_Egs = std::vector<double>(P::Nlen); // XXX
+  STAT::energy_offsets = std::vector<double>(P::Nlen); // XXX
   start_run(iterinfo);
   finalize_nrg();
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
