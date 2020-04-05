@@ -526,11 +526,6 @@ enum class RUNTYPE { NRG, DMNRG };
 // to fixed eigenvalues.
 using mapdd = unordered_map<t_eigen, t_eigen>;
 
-// Pair of energy and multiplicity. This is used to compute the true
-// grand-canonical partition function STAT::ZZ.
-using energy_mult_type = pair<t_eigen, int>;
-using excitation_list = list<energy_mult_type>;
-
 // Namespace for storing various statistical quantities calculated
 // during iteration.
 // XXX: split into run-time variables & statistical quantities. Multiple classes + derived classes.
@@ -594,8 +589,8 @@ namespace STAT {
   std::vector<double> ZnDN;     // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
   std::vector<double> wn;       // Weights w_n. They sum to 1.
   std::vector<double> wnfactor; // wn/ZnDG
-  double ZZ;                    // grand-canonical partition function (full-shell),
-                                // evaluated at the temperature P::T
+  double ZZ;                    // grand-canonical partition function (full-shell) at the temperature P::T
+  double ZZG;                   // grand-canonical partition function with energies referred to the ground state energy
   double F_fdm;                 // free-energy at temperature T
   double E_fdm;                 // energy at temperature T
 
@@ -1678,10 +1673,10 @@ void close_output_files() {
 // conventional approach, as well as STAT::Zgt for G(T) calculations,
 // STAT::Zchit for chi(T) calculations.
 double calc_grand_canonical_Z(const DiagInfo &diag, double temperature = P::T) {
-  bucket ZZ;
-  LOOP_const(diag, is) for (const auto &x : EIGEN(is).value) ZZ += mult(INVAR(is)) * exp(-x * (STAT::scale / temperature));
-  my_assert(ZZ >= 1.0);
-  return ZZ;
+  bucket ZN;
+  LOOP_const(diag, is) for (const auto &x : EIGEN(is).value) ZN += mult(INVAR(is)) * exp(-x * (STAT::scale / temperature));
+  my_assert(ZN >= 1.0);
+  return ZN;
 }
 
 // Calculate rho_N, the density matrix at the last NRG iteration. It is
@@ -1693,7 +1688,7 @@ double calc_grand_canonical_Z(const DiagInfo &diag, double temperature = P::T) {
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
 void init_rho(const DiagInfo &diag, DensMatElements &rho) {
   nrglog('@', "@ init_rho()");
-  const double ZZ = calc_grand_canonical_Z(diag);
+  const double ZN = calc_grand_canonical_Z(diag);
   rho.clear();
   LOOP_const(diag, is) {
     // The size of the matrix is determined by NRSTATES().
@@ -1701,7 +1696,7 @@ void init_rho(const DiagInfo &diag, DensMatElements &rho) {
     const Invar I    = INVAR(is);
     rho[I]           = Matrix(dim, dim);
     rho[I].clear();
-    for (size_t i = 0; i < dim; i++) rho[I](i, i) = exp(-EIGEN(is).value(i) * STAT::scale / P::T) / ZZ;
+    for (size_t i = 0; i < dim; i++) rho[I](i, i) = exp(-EIGEN(is).value(i) * STAT::scale / P::T) / ZN;
   }
   const double Tr = trace(rho);
   my_assert(num_equal(Tr, 1.0, 1e-8)); // NOLINT
@@ -1795,21 +1790,21 @@ pair<double,double> calc_ZnD_one(const AllSteps &dm, size_t N, double T) {
 }
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z
-// (STAT::ZZ), computed with respect to absolute energies.
+// (STAT::ZZ*), computed with respect to absolute energies.
 // calc_ZnD() must be called before the second NRG run.
 void calc_ZnD(const AllSteps &dm) {
   for (size_t N = P::Ninit; N < P::Nlen; N++) // here size_t, because Ninit>=0
     tie(STAT::ZnDG[N], STAT::ZnDN[N]) = calc_ZnD_one(dm, N, P::T);
   // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
-  STAT::ZZ = 0.0;
-  for (size_t N = P::Ninit; N < P::Nlen; N++) STAT::ZZ += pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnDG[N];
+  STAT::ZZG = 0.0;
+  for (size_t N = P::Ninit; N < P::Nlen; N++) STAT::ZZG += pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnDG[N];
   bucket sumwn;
   for (size_t N = P::Ninit; N < P::Nlen; N++) {
     // This is w_n defined after Eq. (8) in the WvD paper.
-    const double wn = pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnDG[N] / STAT::ZZ;
+    const double wn = pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnDG[N] / STAT::ZZG;
     STAT::wn[N] = wn;
     sumwn += wn;
-    const double w = pow(double(P::combs), int(P::Nlen - N - 1)) / STAT::ZZ;
+    const double w = pow(double(P::combs), int(P::Nlen - N - 1)) / STAT::ZZG;
     STAT::wnfactor[N] = w; // These ratios enter the terms for the spectral function.
   }
   cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << endl;
@@ -1830,9 +1825,9 @@ void fdm_thermodynamics(const AllSteps &dm)
       cout << "wfactor[" << N << "]=" << HIGHPREC(STAT::wnfactor[N]) << endl;
   }
   cout << endl;
-  cout << "Grand canonical Z= " << HIGHPREC(STAT::ZZ) << endl;
-  STAT::F_fdm = log(STAT::ZZ)/P::T;
-  cout << "F_fdm=" << HIGHPREC(STAT::F_fdm) << endl;
+//  cout << "Grand canonical Z= " << HIGHPREC(STAT::ZZ) << endl;
+//  STAT::F_fdm = log(STAT::ZZ)/P::T;
+//  cout << "F_fdm=" << HIGHPREC(STAT::F_fdm) << endl;
   bucket E;
   for (size_t N = P::Ninit; N < P::Nlen; N++)
     if (STAT::wn[N] > 1e-16) 
