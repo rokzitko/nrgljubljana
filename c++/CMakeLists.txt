@@ -19,7 +19,8 @@ target_compile_definitions(nrgljubljana_c PUBLIC
 )
 
 # Link dependencies
-target_link_libraries(nrgljubljana_c PUBLIC openmp boost blas_lapack gmp dl quadmath
+target_link_libraries(nrgljubljana_c PUBLIC openmp boost blas_lapack gmp dl
+  # mpfr
   $<$<BOOL:${ASAN}>:asan>
   $<$<BOOL:${UBSAN}>:ubsan>
 )

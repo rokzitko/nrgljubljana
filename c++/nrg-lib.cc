@@ -1824,6 +1824,8 @@ void calc_ZnD(const AllSteps &dm) {
   }
 }
 
+// TO DO: use Boost.Multiprecision instead of low-level GMP calls
+// https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
 void fdm_thermodynamics(const AllSteps &dm)
 {
   allfields.clear(); // reuse!
@@ -1835,11 +1837,13 @@ void fdm_thermodynamics(const AllSteps &dm)
   TD::T = P::T;
   STAT::Z_fdm = STAT::ZZG*exp(-STAT::GS_energy/P::T); // this is the true partition function
   TD::F = STAT::F_fdm = -log(STAT::ZZG)*P::T+STAT::GS_energy; // F = -k_B*T*log(Z)
+  // We use multiple precision arithmetics to ensure sufficient accuracy in the calculation of
+  // the variance of energy and thus the heat capacity.
+  // TO DO: use this approach throughout.
   mpf_set_default_prec(200); // this is number of bits!
   my_mpf E, E2;
   mpf_set_d(E, 0.0);
   mpf_set_d(E2, 0.0);
-//  bucket E, E2;
   for (size_t N = P::Ninit; N < P::Nlen; N++)
     if (STAT::wn[N] > 1e-16) 
       for (const auto &j : dm[N]) 
