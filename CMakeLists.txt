@@ -92,6 +92,12 @@ target_compile_options(project_warnings
 # ############
 # Dependencies
 
+# Quadmath
+find_package(Quadmath REQUIRED)
+add_library(quadmath INTERFACE)
+target_link_libraries(quadmath INTERFACE ${QUADMATH_LIBRARIES})
+install(TARGETS quadmath EXPORT nrgljubljana-targets)
+
 # OpenMP
 find_package(OpenMP REQUIRED)
 add_library(openmp INTERFACE)
