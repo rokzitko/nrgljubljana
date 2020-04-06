@@ -593,6 +593,7 @@ namespace STAT {
   double Z_fdm;                 // grand-canonical partition function (full-shell) at temperature T
   double F_fdm;                 // free-energy at temperature T
   double E_fdm;                 // energy at temperature T
+  double C_fdm;                 // heat capacity at temperature T
   double S_fdm;                 // entropy at temperature T
 
   void init_vectors(size_t Nlen) {
@@ -1827,18 +1828,22 @@ void fdm_thermodynamics(const AllSteps &dm)
 {
   STAT::Z_fdm = STAT::ZZG*exp(-STAT::GS_energy/P::T); // this is the true partition function
   STAT::F_fdm = -log(STAT::ZZG)*P::T+STAT::GS_energy; // F = -k_B*T*log(Z)
-  bucket E;
+  bucket E, E2;
   for (size_t N = P::Ninit; N < P::Nlen; N++)
     if (STAT::wn[N] > 1e-16) 
       for (const auto &j : dm[N]) 
-        for (size_t i = j.second.min(); i < j.second.max(); i++)
-          E += STAT::wn[N] * mult(j.first) * j.second.absenergy[i] * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N];
+        for (size_t i = j.second.min(); i < j.second.max(); i++) {
+          E  += STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N] * j.second.absenergy[i];
+          E2 += STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N] * pow(j.second.absenergy[i], 2);
+        }
   STAT::E_fdm = E;
+  STAT::C_fdm = (E2-pow(double(E),2))/pow(double(P::T),2);
   STAT::S_fdm = (STAT::E_fdm-STAT::F_fdm)/P::T;
   cout << endl;
   cout << "Z_fdm=" << HIGHPREC(STAT::Z_fdm) << endl;
   cout << "F_fdm=" << HIGHPREC(STAT::F_fdm) << endl;
   cout << "E_fdm=" << HIGHPREC(STAT::E_fdm) << endl;
+  cout << "C_fdm=" << HIGHPREC(STAT::C_fdm) << endl;
   cout << "S_fdm=" << HIGHPREC(STAT::S_fdm) << endl;
   cout << endl;
 }

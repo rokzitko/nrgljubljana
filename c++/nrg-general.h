@@ -84,6 +84,7 @@ namespace mpi = boost::mpi;
 #define FN_ENERGIES_DMNRG "energies.dmnrg"
 #define FN_ANNOTATED "annotated.dat"
 #define FN_TD "td"
+#define FN_TDFDM "tdfdm"
 #define FN_CUSTOM "custom"
 #define FN_CUSTOMFDM "customfdm"
 #define FN_UNITARY "unitary"
