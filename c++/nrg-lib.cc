@@ -589,10 +589,11 @@ namespace STAT {
   std::vector<double> ZnDN;     // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
   std::vector<double> wn;       // Weights w_n. They sum to 1.
   std::vector<double> wnfactor; // wn/ZnDG
-  double ZZ;                    // grand-canonical partition function (full-shell) at the temperature P::T
   double ZZG;                   // grand-canonical partition function with energies referred to the ground state energy
+  double Z_fdm;                 // grand-canonical partition function (full-shell) at temperature T
   double F_fdm;                 // free-energy at temperature T
   double E_fdm;                 // energy at temperature T
+  double S_fdm;                 // entropy at temperature T
 
   void init_vectors(size_t Nlen) {
     rel_Egs = std::vector<double>(Nlen);
@@ -1790,7 +1791,7 @@ pair<double,double> calc_ZnD_one(const AllSteps &dm, size_t N, double T) {
 }
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z
-// (STAT::ZZ*), computed with respect to absolute energies.
+// (STAT::ZZG), computed with respect to absolute energies.
 // calc_ZnD() must be called before the second NRG run.
 void calc_ZnD(const AllSteps &dm) {
   for (size_t N = P::Ninit; N < P::Nlen; N++) // here size_t, because Ninit>=0
@@ -1807,13 +1808,9 @@ void calc_ZnD(const AllSteps &dm) {
     const double w = pow(double(P::combs), int(P::Nlen - N - 1)) / STAT::ZZG;
     STAT::wnfactor[N] = w; // These ratios enter the terms for the spectral function.
   }
+  cout << "ZZG=" << HIGHPREC(STAT::ZZG) << endl;
   cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << endl;
   my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
-}
-
-void fdm_thermodynamics(const AllSteps &dm)
-{
-  //  cout << "Zft (last shell)=  " << HIGHPREC(STAT::Zft) << endl;
   if (logletter('w')) {
     for (size_t N = P::Ninit; N < P::Nlen; N++) 
       cout << "ZG[" << N << "]=" << HIGHPREC(STAT::ZnDG[N]) << endl;
@@ -1824,10 +1821,12 @@ void fdm_thermodynamics(const AllSteps &dm)
     for (size_t N = P::Ninit; N < P::Nlen; N++)
       cout << "wfactor[" << N << "]=" << HIGHPREC(STAT::wnfactor[N]) << endl;
   }
-  cout << endl;
-//  cout << "Grand canonical Z= " << HIGHPREC(STAT::ZZ) << endl;
-//  STAT::F_fdm = log(STAT::ZZ)/P::T;
-//  cout << "F_fdm=" << HIGHPREC(STAT::F_fdm) << endl;
+}
+
+void fdm_thermodynamics(const AllSteps &dm)
+{
+  STAT::Z_fdm = STAT::ZZG*exp(-STAT::GS_energy/P::T); // this is the true partition function
+  STAT::F_fdm = -log(STAT::ZZG)*P::T+STAT::GS_energy; // F = -k_B*T*log(Z)
   bucket E;
   for (size_t N = P::Ninit; N < P::Nlen; N++)
     if (STAT::wn[N] > 1e-16) 
@@ -1835,7 +1834,13 @@ void fdm_thermodynamics(const AllSteps &dm)
         for (size_t i = j.second.min(); i < j.second.max(); i++)
           E += STAT::wn[N] * mult(j.first) * j.second.absenergy[i] * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N];
   STAT::E_fdm = E;
+  STAT::S_fdm = (STAT::E_fdm-STAT::F_fdm)/P::T;
+  cout << endl;
+  cout << "Z_fdm=" << HIGHPREC(STAT::Z_fdm) << endl;
+  cout << "F_fdm=" << HIGHPREC(STAT::F_fdm) << endl;
   cout << "E_fdm=" << HIGHPREC(STAT::E_fdm) << endl;
+  cout << "S_fdm=" << HIGHPREC(STAT::S_fdm) << endl;
+  cout << endl;
 }
 
 // Actually truncate matrices. Drop subspaces with no states kept.
