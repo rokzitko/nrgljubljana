@@ -4,9 +4,6 @@
 #ifndef _tridiag_h_
 #define _tridiag_h_
 
-#define TRIDIAG
-#ifdef TRIDIAG
-
 #include <gmp.h>
 
 // Wrapper class for arbitrary precision numbers
@@ -201,7 +198,5 @@ void tridiag() {
   my_assert(P::coefchannels >= 1);
   for (unsigned int alpha = 0; alpha < P::coefchannels; alpha++) tridiag_ch(alpha);
 }
-
-#endif // TRIDIAG
 
 #endif // _tridiag_h_

@@ -1835,16 +1835,32 @@ void fdm_thermodynamics(const AllSteps &dm)
   TD::T = P::T;
   STAT::Z_fdm = STAT::ZZG*exp(-STAT::GS_energy/P::T); // this is the true partition function
   TD::F = STAT::F_fdm = -log(STAT::ZZG)*P::T+STAT::GS_energy; // F = -k_B*T*log(Z)
-  bucket E, E2;
+  mpf_set_default_prec(200); // this is number of bits!
+  my_mpf E, E2;
+  mpf_set_d(E, 0.0);
+  mpf_set_d(E2, 0.0);
+//  bucket E, E2;
   for (size_t N = P::Ninit; N < P::Nlen; N++)
     if (STAT::wn[N] > 1e-16) 
       for (const auto &j : dm[N]) 
         for (size_t i = j.second.min(); i < j.second.max(); i++) {
-          E  += STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N] * j.second.absenergy[i];
-          E2 += STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N] * pow(j.second.absenergy[i], 2);
+          my_mpf weight;
+          mpf_set_d(weight, STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N]);
+          my_mpf e;
+          mpf_set_d(e, j.second.absenergy[i]);
+          my_mpf e2;
+          mpf_mul(e2, e, e);
+          mpf_mul(e, e, weight);
+          mpf_mul(e2, e2, weight);
+          mpf_add(E, E, e);
+          mpf_add(E2, E2, e2);
         }
-  TD::E = STAT::E_fdm = E;
-  TD::C = STAT::C_fdm = (E2-pow(double(E),2))/pow(double(P::T),2);
+  TD::E = STAT::E_fdm = mpf_get_d(E);
+  my_mpf sqrE;
+  mpf_mul(sqrE, E, E);
+  my_mpf varE;
+  mpf_sub(varE, E2, sqrE);
+  TD::C = STAT::C_fdm = mpf_get_d(varE)/pow(double(P::T),2);
   TD::S = STAT::S_fdm = (STAT::E_fdm-STAT::F_fdm)/P::T;
   cout << endl;
   cout << "Z_fdm=" << HIGHPREC(STAT::Z_fdm) << endl;

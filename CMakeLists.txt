@@ -93,10 +93,11 @@ target_compile_options(project_warnings
 # Dependencies
 
 # Quadmath
-find_package(Quadmath REQUIRED)
-add_library(quadmath INTERFACE)
-target_link_libraries(quadmath INTERFACE ${QUADMATH_LIBRARIES})
-install(TARGETS quadmath EXPORT nrgljubljana-targets)
+#find_package(Quadmath REQUIRED)
+#add_library(quadmath INTERFACE)
+#target_link_libraries(quadmath INTERFACE ${QUADMATH_LIBRARIES})
+#install(TARGETS quadmath EXPORT nrgljubljana-targets)
+### Commented out. Not fully supported in Clang (as of April 2020). Use GMP instead.
 
 # OpenMP
 find_package(OpenMP REQUIRED)
