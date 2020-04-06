@@ -1424,8 +1424,6 @@ class ExpvOutput {
   }
 };
 
-unique_ptr<ExpvOutput> custom, customfdm;
-
 // Prepare "td" for output: write header with parameters and
 // a line with field names.
 void open_Ftd(ofstream &Ftd) {
@@ -1630,6 +1628,8 @@ namespace oprecalc {
   }
 } // namespace oprecalc
 
+unique_ptr<ExpvOutput> custom, customfdm;
+
 // Open output files and write headers
 void open_output_files(const IterInfo &iterinfo) {
   nrglog('@', "@ open_output_files()");
@@ -1659,7 +1659,7 @@ void close_output_files() {
     Fenergies.close();
     Ftd.close();
     Fannotated.close();
-    custom.reset();
+    custom.reset(); // reseting unique_ptr closes the file
   }
   if (dmnrgrun && P::fdmexpv) customfdm.reset();
 }
@@ -1826,8 +1826,15 @@ void calc_ZnD(const AllSteps &dm) {
 
 void fdm_thermodynamics(const AllSteps &dm)
 {
+  allfields.clear(); // reuse!
+  TD::T.set("T");
+  TD::E.set("E_fdm");
+  TD::C.set("C_fdm");
+  TD::F.set("F_fdm");
+  TD::S.set("S_fdm");
+  TD::T = P::T;
   STAT::Z_fdm = STAT::ZZG*exp(-STAT::GS_energy/P::T); // this is the true partition function
-  STAT::F_fdm = -log(STAT::ZZG)*P::T+STAT::GS_energy; // F = -k_B*T*log(Z)
+  TD::F = STAT::F_fdm = -log(STAT::ZZG)*P::T+STAT::GS_energy; // F = -k_B*T*log(Z)
   bucket E, E2;
   for (size_t N = P::Ninit; N < P::Nlen; N++)
     if (STAT::wn[N] > 1e-16) 
@@ -1836,9 +1843,9 @@ void fdm_thermodynamics(const AllSteps &dm)
           E  += STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N] * j.second.absenergy[i];
           E2 += STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N] * pow(j.second.absenergy[i], 2);
         }
-  STAT::E_fdm = E;
-  STAT::C_fdm = (E2-pow(double(E),2))/pow(double(P::T),2);
-  STAT::S_fdm = (STAT::E_fdm-STAT::F_fdm)/P::T;
+  TD::E = STAT::E_fdm = E;
+  TD::C = STAT::C_fdm = (E2-pow(double(E),2))/pow(double(P::T),2);
+  TD::S = STAT::S_fdm = (STAT::E_fdm-STAT::F_fdm)/P::T;
   cout << endl;
   cout << "Z_fdm=" << HIGHPREC(STAT::Z_fdm) << endl;
   cout << "F_fdm=" << HIGHPREC(STAT::F_fdm) << endl;
@@ -1846,6 +1853,9 @@ void fdm_thermodynamics(const AllSteps &dm)
   cout << "C_fdm=" << HIGHPREC(STAT::C_fdm) << endl;
   cout << "S_fdm=" << HIGHPREC(STAT::S_fdm) << endl;
   cout << endl;
+  ofstream Ftdfdm(FN_TDFDM);
+  TD::save_header(Ftdfdm);
+  TD::save_TD_quantities(Ftdfdm);
 }
 
 // Actually truncate matrices. Drop subspaces with no states kept.
@@ -2006,7 +2016,7 @@ void nrg_measure_singlet1_fdm(const DiagInfo &dg, const CustomOp::value_type &op
 }
 
 // Measure thermodynamic expectation values of singlet operators
-void nrg_measure_singlet(const DiagInfo &dg, const IterInfo &a) {
+void nrg_measure_singlet(const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &custom) {
   nrglog('@', "@ nrg_measure_singlet()");
   const double Z_S = calc_Z(dg);
   for (const auto &op : a.ops) nrg_measure_singlet1(dg, op, Z_S);
@@ -2014,7 +2024,7 @@ void nrg_measure_singlet(const DiagInfo &dg, const IterInfo &a) {
   custom->field_values();
 }
 
-void nrg_measure_singlet_fdm(const DiagInfo &dg, const IterInfo &a) {
+void nrg_measure_singlet_fdm(const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &customfdm) {
   if (STAT::N != P::fdmexpvn) return;
   nrglog('@', "@ nrg_measure_singlet_fdm()");
   for (const auto &op : a.ops) nrg_measure_singlet1_fdm(dg, op);
@@ -2121,8 +2131,8 @@ void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iteri
     if (P::fdm) loadRho(STAT::N, FN_RHOFDM, rhoFDM);
   }
   nrg_spectral_densities(diag);
-  if (nrgrun) nrg_measure_singlet(diag, iterinfo);
-  if (dmnrgrun && P::fdmexpv) nrg_measure_singlet_fdm(diag, iterinfo);
+  if (nrgrun) nrg_measure_singlet(diag, iterinfo, custom);
+  if (dmnrgrun && P::fdmexpv) nrg_measure_singlet_fdm(diag, iterinfo, customfdm);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG
