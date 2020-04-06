@@ -601,8 +601,8 @@ namespace STAT {
     rel_Egs = std::vector<double>(Nlen);
     abs_Egs = std::vector<double>(Nlen);
     energy_offsets = std::vector<double>(Nlen);
-    ZnDG = std::vector<my_mpf>(Nlen);
-    ZnDN = std::vector<my_mpf>(Nlen);
+    ZnDG = vmpf(Nlen);
+    ZnDN = vmpf(Nlen);
     wn = std::vector<double>(Nlen, 0.0);
     wnfactor = std::vector<double>(Nlen, 0.0);
   }
@@ -1780,29 +1780,26 @@ void nrg_truncate_prepare(DiagInfo &diag) {
   nrgdump3(Emax, nrkept, nrkeptmult) << endl;
 }
 
-// Calculate the shell-N statistical sum as used in the FDM algorithm.
-pair<my_mpf,my_mpf> calc_ZnD_one(const AllSteps &dm, size_t N, double T) {
-  my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
-  mpf_set_d(ZnDG, 0.0);
-  mpf_set_d(ZnDN, 0.0);
-  for (const auto &j : dm[N])
-    for (size_t i = j.second.min(); i < j.second.max(); i++) {
-      my_mpf g, n;
-      mpf_set_d(g, mult(j.first) * exp(-j.second.absenergyG[i]/T)); // absenergyG >= 0.0
-      mpf_set_d(n, mult(j.first) * exp(-j.second.absenergyN[i]/T)); // absenergyN >= 0.0
-      mpf_add(ZnDG, ZnDG, g);
-      mpf_add(ZnDN, ZnDN, n);
-    }
-  return make_pair(ZnDG, ZnDN);
-}
-
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z
 // (STAT::ZZG), computed with respect to absolute energies.
 // calc_ZnD() must be called before the second NRG run.
 void calc_ZnD(const AllSteps &dm) {
-  mpf_set_default_prec(200); // this is number of bits!
-  for (size_t N = P::Ninit; N < P::Nlen; N++) // here size_t, because Ninit>=0
-    tie(STAT::ZnDG[N], STAT::ZnDN[N]) = calc_ZnD_one(dm, N, P::T);
+  mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
+  for (size_t N = P::Ninit; N < P::Nlen; N++) { // here size_t, because Ninit>=0
+    my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
+    mpf_set_d(ZnDG, 0.0);
+    mpf_set_d(ZnDN, 0.0);
+    for (const auto &j : dm[N])
+      for (size_t i = j.second.min(); i < j.second.max(); i++) {
+        my_mpf g, n;
+        mpf_set_d(g, mult(j.first) * exp(-j.second.absenergyG[i]/P::T)); // absenergyG >= 0.0
+        mpf_set_d(n, mult(j.first) * exp(-j.second.absenergyN[i]/P::T)); // absenergyN >= 0.0
+        mpf_add(ZnDG, ZnDG, g);
+        mpf_add(ZnDN, ZnDN, n);
+      }
+    mpf_set(STAT::ZnDG[N], ZnDG);
+    mpf_set(STAT::ZnDN[N], ZnDN);
+  }
   // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
   my_mpf ZZG;
   mpf_set_d(ZZG, 0.0);
@@ -1828,17 +1825,17 @@ void calc_ZnD(const AllSteps &dm) {
   }
   cout << "ZZG=" << HIGHPREC(STAT::ZZG) << endl;
   cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << endl;
-  my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
   if (logletter('w')) {
     for (size_t N = P::Ninit; N < P::Nlen; N++) 
-      cout << "ZG[" << N << "]=" << HIGHPREC(STAT::ZnDG[N]) << endl;
+      cout << "ZG[" << N << "]=" << HIGHPREC(mpf_get_d(STAT::ZnDG[N])) << endl;
     for (size_t N = P::Ninit; N < P::Nlen; N++) 
-      cout << "ZN[" << N << "]=" << HIGHPREC(STAT::ZnDN[N]) << endl;
+      cout << "ZN[" << N << "]=" << HIGHPREC(mpf_get_d(STAT::ZnDN[N])) << endl;
     for (size_t N = P::Ninit; N < P::Nlen; N++) 
       cout << "w[" << N << "]=" << HIGHPREC(STAT::wn[N]) << endl;
     for (size_t N = P::Ninit; N < P::Nlen; N++)
       cout << "wfactor[" << N << "]=" << HIGHPREC(STAT::wnfactor[N]) << endl;
   }
+  my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
 }
 
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
@@ -1856,7 +1853,6 @@ void fdm_thermodynamics(const AllSteps &dm)
   TD::F = STAT::F_fdm = -log(STAT::ZZG)*P::T+STAT::GS_energy; // F = -k_B*T*log(Z)
   // We use multiple precision arithmetics to ensure sufficient accuracy in the calculation of
   // the variance of energy and thus the heat capacity.
-  // TO DO: use this approach throughout.
   my_mpf E, E2;
   mpf_set_d(E, 0.0);
   mpf_set_d(E2, 0.0);
