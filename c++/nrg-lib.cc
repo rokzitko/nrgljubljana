@@ -36,6 +36,7 @@
 #include "debug.h"
 #include "misc.h"
 #include "openmp.h"
+#include "mp.h"
 
 #include "param.cc"
 #include "outfield.cc"
@@ -585,8 +586,8 @@ namespace STAT {
   // Containers related to the FDM-NRG approach
   // ==========================================
   // Consult A. Weichselbaum, J. von Delft, PRL 99, 076402 (2007).
-  std::vector<double> ZnDG;     // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n
-  std::vector<double> ZnDN;     // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
+  vmpf ZnDG;                    // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n
+  vmpf ZnDN;                    // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
   std::vector<double> wn;       // Weights w_n. They sum to 1.
   std::vector<double> wnfactor; // wn/ZnDG
   double ZZG;                   // grand-canonical partition function with energies referred to the ground state energy
@@ -600,8 +601,8 @@ namespace STAT {
     rel_Egs = std::vector<double>(Nlen);
     abs_Egs = std::vector<double>(Nlen);
     energy_offsets = std::vector<double>(Nlen);
-    ZnDG = std::vector<double>(Nlen, 0.0);
-    ZnDN = std::vector<double>(Nlen, 0.0);
+    ZnDG = std::vector<my_mpf>(Nlen);
+    ZnDN = std::vector<my_mpf>(Nlen);
     wn = std::vector<double>(Nlen, 0.0);
     wnfactor = std::vector<double>(Nlen, 0.0);
   }
@@ -1780,13 +1781,17 @@ void nrg_truncate_prepare(DiagInfo &diag) {
 }
 
 // Calculate the shell-N statistical sum as used in the FDM algorithm.
-pair<double,double> calc_ZnD_one(const AllSteps &dm, size_t N, double T) {
-  double ZnDG = 0.0;
-  double ZnDN = 0.0;
+pair<my_mpf,my_mpf> calc_ZnD_one(const AllSteps &dm, size_t N, double T) {
+  my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
+  mpf_set_d(ZnDG, 0.0);
+  mpf_set_d(ZnDN, 0.0);
   for (const auto &j : dm[N])
     for (size_t i = j.second.min(); i < j.second.max(); i++) {
-      ZnDG += mult(j.first) * exp(-j.second.absenergyG[i] / T); // absenergyG >= 0.0
-      ZnDN += mult(j.first) * exp(-j.second.absenergyN[i]/ T); // absenergyN >= 0.0
+      my_mpf g, n;
+      mpf_set_d(g, mult(j.first) * exp(-j.second.absenergyG[i]/T)); // absenergyG >= 0.0
+      mpf_set_d(n, mult(j.first) * exp(-j.second.absenergyN[i]/T)); // absenergyN >= 0.0
+      mpf_add(ZnDG, ZnDG, g);
+      mpf_add(ZnDN, ZnDN, n);
     }
   return make_pair(ZnDG, ZnDN);
 }
@@ -1795,15 +1800,27 @@ pair<double,double> calc_ZnD_one(const AllSteps &dm, size_t N, double T) {
 // (STAT::ZZG), computed with respect to absolute energies.
 // calc_ZnD() must be called before the second NRG run.
 void calc_ZnD(const AllSteps &dm) {
+  mpf_set_default_prec(200); // this is number of bits!
   for (size_t N = P::Ninit; N < P::Nlen; N++) // here size_t, because Ninit>=0
     tie(STAT::ZnDG[N], STAT::ZnDN[N]) = calc_ZnD_one(dm, N, P::T);
   // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
-  STAT::ZZG = 0.0;
-  for (size_t N = P::Ninit; N < P::Nlen; N++) STAT::ZZG += pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnDG[N];
+  my_mpf ZZG;
+  mpf_set_d(ZZG, 0.0);
+  for (size_t N = P::Ninit; N < P::Nlen; N++) {
+    my_mpf a;
+    mpf_set(a, STAT::ZnDG[N]);
+    my_mpf b;
+    mpf_set_d(b, P::combs);
+    mpf_pow_ui(b, b, P::Nlen - N - 1);
+    my_mpf c;
+    mpf_mul(c, a, b);
+    mpf_add(ZZG, ZZG, c);
+  }
+  STAT::ZZG = mpf_get_d(ZZG);
   bucket sumwn;
   for (size_t N = P::Ninit; N < P::Nlen; N++) {
     // This is w_n defined after Eq. (8) in the WvD paper.
-    const double wn = pow(double(P::combs), int(P::Nlen - N - 1)) * STAT::ZnDG[N] / STAT::ZZG;
+    const double wn = pow(double(P::combs), int(P::Nlen - N - 1)) * mpf_get_d(STAT::ZnDG[N]) / STAT::ZZG;
     STAT::wn[N] = wn;
     sumwn += wn;
     const double w = pow(double(P::combs), int(P::Nlen - N - 1)) / STAT::ZZG;
@@ -1840,7 +1857,6 @@ void fdm_thermodynamics(const AllSteps &dm)
   // We use multiple precision arithmetics to ensure sufficient accuracy in the calculation of
   // the variance of energy and thus the heat capacity.
   // TO DO: use this approach throughout.
-  mpf_set_default_prec(200); // this is number of bits!
   my_mpf E, E2;
   mpf_set_d(E, 0.0);
   mpf_set_d(E2, 0.0);
@@ -1849,7 +1865,8 @@ void fdm_thermodynamics(const AllSteps &dm)
       for (const auto &j : dm[N]) 
         for (size_t i = j.second.min(); i < j.second.max(); i++) {
           my_mpf weight;
-          mpf_set_d(weight, STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T)/STAT::ZnDN[N]);
+          mpf_set_d(weight, STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T));
+          mpf_div(weight, weight, STAT::ZnDN[N]);
           my_mpf e;
           mpf_set_d(e, j.second.absenergy[i]);
           my_mpf e2;

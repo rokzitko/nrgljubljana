@@ -4,25 +4,7 @@
 #ifndef _tridiag_h_
 #define _tridiag_h_
 
-#include <gmp.h>
-
-// Wrapper class for arbitrary precision numbers
-class my_mpf {
-  private:
-  mpf_t val{};
-
-  public:
-  my_mpf() { mpf_init(val); }
-  // Copy constructor is mendatory!
-  my_mpf(const my_mpf &x) {
-    mpf_init(val);
-    mpf_set(val, x.val);
-  }
-  ~my_mpf() { mpf_clear(val); }
-  inline operator mpf_t &() { return val; }
-};
-
-using vmpf = std::vector<my_mpf>;
+#include "mp.h"
 
 // Fix normalization of u_{n,m}, v_{n,m} to 1. IMPORTANT: pass by
 // reference!
