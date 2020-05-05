@@ -74,3 +74,8 @@ test7_z
 test8_keep
 test9_keepenergy
 test200_data_has
+test201_dmnrg_spec
+regr2defaults
+regr2lastall_false
+regr2lastall_false-calc_rho_after
+regr2lastall_true

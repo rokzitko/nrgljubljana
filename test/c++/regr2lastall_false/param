@@ -1,0 +1,18 @@
+[param]
+symtype=QS
+discretization=Z
+Lambda=4
+Tmin=1e-3
+keep=10
+
+model=model.m
+
+ops=A_f
+specd=A_f-A_f
+
+dmnrg=true
+
+log=GAt
+
+# Fails with lastall=false!!
+lastall=false

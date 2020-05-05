@@ -21,8 +21,8 @@ void SPEC_DMNRG::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
   using namespace STAT;
   const Matrix &rhoNIp = rho[Ip]; // hand optimised out of the loops
   const Matrix &rhoNI1 = rho[I1];
-  auto dimp            = rhoNIp.size1();
-  auto dim1            = rhoNI1.size1();
+  auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
+  auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
   for (size_t rm = 0; rm < dimp; rm++) {
     const t_eigen Em = diagIp.value(rm);
     for (size_t rj = 0; rj < dim1; rj++) {
@@ -59,8 +59,8 @@ void SPEC_DMNRGmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix
   using namespace STAT;
   const Matrix &rhoNIp = rho[Ip]; // hand optimised out of the loops
   const Matrix &rhoNI1 = rho[I1];
-  auto dimp            = rhoNIp.size1();
-  auto dim1            = rhoNI1.size1();
+  auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
+  auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
   for (size_t rm = 0; rm < dimp; rm++) {
     const t_eigen Em = diagIp.value(rm);
     for (size_t rj = 0; rj < dim1; rj++) {

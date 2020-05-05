@@ -434,12 +434,15 @@ namespace P {
 
   param<bool> done("done", "Create DONE file?", "true");                         // N
   param<bool> calc0("calc0", "Perform calculations at 0-th iteration?", "true"); // N
+   
+  // Evaluate rho with full or truncated spectrum of states. This is different from the
+  // number of states used in the evaluation of spectra (cf. lastall). Relevant for calculations 
+  // where only the DMNRG algorithm is enabled.
+  param<bool> calc_rho_after_truncation("calc_rho_after_truncation", "Calculation mode for DMNRG", "false");
 
   // If dmnrg=true, cfs=false, fdm=false, setting lastall=true will
   // enforce "keeping" all states in the last step of the NRG
-  // iteration. For cfs=true and/or fdm=true, lastall is
-  // automatically enable (unless this is overriden by setting
-  // lastalloverride=true).
+  // iteration.
   param<bool> lastall("lastall", "Keep all states in the last iteratio for DMNRG", "false"); // N
 
   // If lastalloverride=true, then "lastall" is not set to true

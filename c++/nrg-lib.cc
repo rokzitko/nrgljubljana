@@ -1754,13 +1754,12 @@ void nrg_truncate_prepare(DiagInfo &diag) {
     // Count the number of elements to keep
     size_t count = count_if(begin(EIGEN(is).value), end(EIGEN(is).value), [=](double e) { return e <= Emax; });
     my_assert(count <= nrc);
-    // In CFS=true, we keep all states in the last iteration.
-    if (cfs_flags() && LAST_ITERATION() && !P::lastalloverride) count = nrc;
-    // Exception: in the last iteration of the density-matrix run, we
-    // may override strategy=kept and keep all (computed) states if
-    // lastall=true. This is only relevant if CFS=false and
-    // DMNRG=true.
-    if (dmnrgrun && LAST_ITERATION() && P::lastall) count = nrc;
+    if (LAST_ITERATION()) {  // Overrides
+      // Full Fock space algorithms: keep all states in the last iteration
+      if (cfs_flags() && !P::lastalloverride) count = nrc;
+      // lastall -> Unconditionally keep all states in the last iteration
+      if (P::lastall) count = nrc;
+    }
     if (count == nrc && EIGEN(is).value(nrc - 1) != Emax) {
       /* We determined that all calculated states in this invariant
         subspace will be retained (and that perhaps additional should
@@ -2906,7 +2905,7 @@ void finalize_nrg() {
   // last iteration. All other states (incl. from previous shells)
   // obviously have higher energies.
   STAT::GS_energy = STAT::total_energy;
-  calc_TKW();
+  calc_TKW(); // deprecated
   if (P::fdm) {
     shift_abs_energies(dm);
     calc_ZnD(dm);
@@ -2964,7 +2963,11 @@ void start_calculation(IterInfo &iterinfo) {
   finalize_nrg();
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P::dm) return;
-  init_rho(diagprev, rho);
+  if (P::calc_rho_after_truncation) { // relevant if lastall=false
+    init_rho(diag, rho);
+  } else {
+    init_rho(diagprev, rho);
+  }
   if (P::fdm) init_rho_FDM(rhoFDM, STAT::N);
   if (!P::ZBW) {
     calc_densitymatrix(rho);

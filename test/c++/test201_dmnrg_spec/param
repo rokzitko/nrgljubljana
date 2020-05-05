@@ -1,0 +1,30 @@
+[param]
+symtype=QSZ
+model=SIAM
+
+U=1.0
+Gamma=0.1
+delta=0.1
+T=0.1
+band=flat
+
+discretization=Z
+Lambda=4.0
+z=0.25
+
+Tmin=1e-10
+keep=10
+
+ops=n_d A_d
+specs=n_d-n_d
+specd=A_d-A_d-u A_d-A_d-d
+
+dumpannotated=10
+
+dmnrg=true
+broaden=false
+savebins=true
+bins=500
+
+goodE=2.0
+NN1=true
