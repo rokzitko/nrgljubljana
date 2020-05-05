@@ -229,21 +229,6 @@ if (BLA_VENDOR STREQUAL "All")
   endif()
 endif ()
 
-#if (BLA_VENDOR MATCHES "MKL" OR BLA_VENDOR STREQUAL "All")
-#  if (NOT BLAS_LIBRARIES)
-#    check_fortran_libraries(
-#      BLAS_LIBRARIES
-#      BLAS
-#      sgemm
-#      ""
-#      "mkl_rt"
-#      "-lpthread;-lm;-ldl"
-#      ""
-#     )
-#     message(STATUS "result=[${BLAS_LIBRARIES}]")
-#  endif()
-#endif()
-
 #BLAS in intel mkl 10+ library? (em64t 64bit)
 if (BLA_VENDOR MATCHES "Intel" OR BLA_VENDOR STREQUAL "All")
   if (NOT BLAS_LIBRARIES)
