@@ -11,6 +11,7 @@ target_include_directories(nrgljubljana_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOU
 target_compile_definitions(nrgljubljana_c PUBLIC
 # (Not used)			NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
 				NRG_REAL
+				$<$<BOOL:${NRG_MPI}>:NRG_MPI>
 				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
 				NRG_SYM_BASIC
 				$<$<BOOL:${SYM_MORE}>:NRG_SYM_MORE>
@@ -23,11 +24,17 @@ target_link_libraries(nrgljubljana_c PUBLIC openmp boost blas_lapack gmp dl
   # mpfr
   $<$<BOOL:${ASAN}>:asan>
   $<$<BOOL:${UBSAN}>:ubsan>
+  $<$<BOOL:${NRG_MPI}>:mpi>
 )
 
 # Compile nrg executable
 add_executable(nrg nrg.cc)
-target_link_libraries(nrg PRIVATE nrgljubljana_c)
+target_link_libraries(nrg PRIVATE nrgljubljana_c
+  $<$<BOOL:${NRG_MPI}>:mpi>
+)
+target_compile_definitions(nrg PUBLIC
+	$<$<BOOL:${NRG_MPI}>:NRG_MPI>
+)
 
 # Install library and headers
 install(TARGETS nrgljubljana_c EXPORT nrgljubljana-targets DESTINATION lib)

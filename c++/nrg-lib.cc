@@ -2383,7 +2383,8 @@ Invar read_from(int source) {
 void nrg_diagonalisations_MPI() {
   nrglog('@', "@ nrg_diagonalisations_MPI()");
   mpi_sync_params(); // Synchronise parameters
-  list<Invar> todo(NRG::tasks); // List of all the remaining tasks
+  list<Invar> todo; // List of all the tasks to handle
+  copy(begin(NRG::tasks), end(NRG::tasks), back_inserter(todo));
   list<Invar> done; // List of finished tasks.
   // List of the available computation nodes (including the master,
   // which is always at the very beginnig of the deque).
@@ -3063,8 +3064,6 @@ void slave_diag() {
 }
 
 void run_nrg_slave() {
-  set_new_handler(outOfMemory);
-  cout << "MPI slave rank " << mpiw->rank() << endl;
   const int MASTER = 0;
   bool done        = false;
   while (!done) {
@@ -3090,7 +3089,9 @@ void run_nrg_slave() {
           mpidebug("sync");
           mpi_sync_params();
           break;
-        default: cout << "MPI error: unknown tag on " << mpiw->rank() << endl; break;
+        default: 
+          cout << "MPI error: unknown tag on " << mpiw->rank() << endl; 
+          break;
       } // switch
     } else {
       // No message received. We sleep for a while to reduce the

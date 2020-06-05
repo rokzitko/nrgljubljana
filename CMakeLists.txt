@@ -26,12 +26,8 @@ endif()
 
 # ############
 # Define Project
-project(NRGLJUBLJANA VERSION 2019.11 LANGUAGES C CXX)
+project(NRGLJUBLJANA VERSION 2020.06 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
-
-# ############
-# Load CPP2PY
-# find_package(Cpp2Py 1.6 REQUIRED)
 
 # Get the git hash & print status
 execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_VARIABLE PROJECT_GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -89,6 +85,50 @@ target_compile_options(project_warnings
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
 )
 
+# ###########
+# MPI support
+
+if (IS_SUBPROJECT)
+  # Turn off internal MPI parallelization by default when embedded (e.g. in NRGLjubljana_interface)
+  option(NRG_MPI "MPI Parallelization" OFF)
+else()
+  option(NRG_MPI "MPI Parallelization" ON)
+endif()
+
+if (NRG_MPI)
+  message(STATUS "-------- MPI detection -------------")
+  unset(MPIEXEC_EXECUTABLE CACHE)
+  find_package(MPI REQUIRED)
+
+  # Backward compatibility for older FindMPI.cmake
+  if(NOT MPIEXEC_EXECUTABLE)
+    set(MPIEXEC_EXECUTABLE ${MPIEXEC} CACHE FILENAME "MPI Executable")
+  endif()
+
+  # Compatibility to Open-MPI 3.0.0: check whether MPI executable has option --oversubscribe and add it
+  execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ls ${MPIEXEC_POSTFLAGS} RESULT_VARIABLE HAS_NO_OVERSUBSCRIBE OUTPUT_QUIET ERROR_QUIET)
+  if(NOT HAS_NO_OVERSUBSCRIBE)
+    list(APPEND MPIEXEC_PREFLAGS --oversubscribe)
+    set(MPIEXEC_PREFLAGS ${MPIEXEC_PREFLAGS} CACHE STRING "These flags will be directly before the executable that is being run by mpiexec." FORCE)
+  endif()
+
+  message(STATUS "MPI_FOUND: ${MPI_FOUND} VERSION: ${MPI_VERSION}")
+  message(STATUS "MPI_CXX_COMPILER: ${MPI_CXX_COMPILER}")
+  message(STATUS "MPIEXEC: ${MPIEXEC}")
+  message(STATUS "MPIEXEC_EXECUTABLE: ${MPIEXEC_EXECUTABLE}")
+  message(STATUS "MPIEXEC_NUMPROC_FLAG: ${MPIEXEC_NUMPROC_FLAG}")
+  message(STATUS "MPIEXEC_PREFLAGS: ${MPIEXEC_PREFLAGS}")
+  message(STATUS "MPIEXEC_POSTFLAGS: ${MPIEXEC_POSTFLAGS}")
+
+  # Create an interface target
+  add_library(mpi INTERFACE)
+  target_include_directories(mpi SYSTEM INTERFACE ${MPI_C_INCLUDE_PATH})
+  target_link_libraries(mpi INTERFACE ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
+  separate_arguments(MPI_C_COMPILE_FLAGS) # Convert to list
+  target_compile_options(mpi INTERFACE ${MPI_C_COMPILE_FLAGS})
+  install(TARGETS mpi EXPORT nrgljubljana-targets)
+endif()
+
 # ############
 # Dependencies
 
@@ -109,8 +149,12 @@ install(TARGETS openmp EXPORT nrgljubljana-targets)
 # Boost
 set(Boost_NO_BOOST_CMAKE ON)
 set(Boost_USE_STATIC_LIBS OFF)
-find_package(Boost 1.53 REQUIRED COMPONENTS serialization)
-# note: header-only libraries such as multiprecision do not need to be listed 
+if(NRG_MPI)
+  find_package(Boost 1.53 REQUIRED COMPONENTS serialization mpi)
+else()
+  find_package(Boost 1.53 REQUIRED COMPONENTS serialization)
+endif()
+# note: header-only libraries such as multiprecision do not need to be listed
 # as components in find_package()
 add_library(boost INTERFACE)
 target_include_directories(boost SYSTEM INTERFACE ${Boost_INCLUDE_DIRS})
