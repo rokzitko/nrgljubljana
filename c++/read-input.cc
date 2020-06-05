@@ -93,7 +93,8 @@ void validate_parameters() {
   P::diagroutine = undefined;
   if (NRG::v == "real") {
     if (string(P::diag) == "default") P::diag.setvalue("dsyev");
-    if (string(P::diag) == "dsyev") P::diagroutine = diagdsyev;
+    if (string(P::diag) == "dsyev")  P::diagroutine = diagdsyev;
+    if (string(P::diag) == "dsyevd") P::diagroutine = diagdsyevd;
     if (string(P::diag) == "dsyevr") P::diagroutine = diagdsyevr;
   }
   if (NRG::v == "complex") {

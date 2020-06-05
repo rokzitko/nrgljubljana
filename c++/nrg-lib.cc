@@ -83,8 +83,6 @@ class sharedparam {
   // perform diagonalizations).
   dr_value diagroutine{undefined};
   double diagratio{};
-  size_t dsyevrlimit{};
-  size_t zheevrlimit{};
   bool logall{};
   string log;
   void init();
@@ -94,8 +92,6 @@ class sharedparam {
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
     ar &diagroutine;
     ar &diagratio;
-    ar &dsyevrlimit;
-    ar &zheevrlimit;
     ar &logall;
     ar &log;
   }
@@ -2987,7 +2983,6 @@ void start_calculation(IterInfo &iterinfo) {
 void sharedparam::init() {
   diagroutine = P::diagroutine;
   diagratio   = NRG::diagratio;
-  dsyevrlimit = P::dsyevrlimit;
   logall      = P::logall;
   log         = P::log;
 }
