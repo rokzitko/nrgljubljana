@@ -1,7 +1,7 @@
 // *** WARNING!!! Modify nrg-recalc-QSZ.cc.m4, not nrg-recalc-QSZ.cc !!!
 
 // Quantum number dependant recalculation routines
-// Rok Zitko, rok.zitko@ijs.si, 2006-2017
+// Rok Zitko, rok.zitko@ijs.si, 2006-2020
 // This file pertains to (Q,SZ) subspaces
 
 // m4 macros for nrg-recalc-*.cc files
@@ -428,6 +428,11 @@ void SymmetryQSZ::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#undef Q1U
+#define Q1U(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#undef Q1D
+#define Q1D(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+
 
 void SymmetryQSZ::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
@@ -444,6 +449,32 @@ void SymmetryQSZ::recalc_global(DiagInfo &diag, string name, MatrixElements &cne
           break;
         case 3:
 #include "qsz/qsz-3ch-spinz.dat"
+          break;
+        default: my_assert_not_reached();
+      }
+    } // LOOP
+  }
+  if (name == "Q1u") {
+    LOOP(diag, is1) {
+      Invar I1          = INVAR(is1);
+      const Twoinvar II = make_pair(I1, I1);
+      Matrix &cn        = cnew[II];
+      switch (channels) {
+        case 1:
+#include "qsz/qsz-1ch-q1u.dat"
+          break;
+        default: my_assert_not_reached();
+      }
+    } // LOOP
+  }
+  if (name == "Q1d") {
+    LOOP(diag, is1) {
+      Invar I1          = INVAR(is1);
+      const Twoinvar II = make_pair(I1, I1);
+      Matrix &cn        = cnew[II];
+      switch (channels) {
+        case 1:
+#include "qsz/qsz-1ch-q1d.dat"
           break;
         default: my_assert_not_reached();
       }
