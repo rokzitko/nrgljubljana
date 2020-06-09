@@ -1934,6 +1934,7 @@ void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = fa
       Fannotated << " [" << total_degeneracy << "]" << endl;
     }
   } else {
+    seznam.resize(len); // truncate!
     for (const auto &i : seznam) Fannotated << scaled_energy(i.first, scaled, absolute) << " " << i.second << endl;
   }
   // Consecutive iterations are separated by an empty line
