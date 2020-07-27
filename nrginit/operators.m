@@ -524,7 +524,7 @@ Module[{t = {}},
     (* The following only works for (Q, S_z) basis, since individual
     projectors do NOT transform as SU(2) multiplets. *)
     (* Mind the order: the first one is 'd', the second is 'a' *)
-    If[isQSZ[] || isISOSZ[],
+    If[isQSZ[] || isISOSZ[] || isDBLISOSZ[],
       t = Join[t, mtSingletOp["Puu", 
         nc[projectorUP[d[]], projectorUP[a[]] ] ]];
       t = Join[t, mtSingletOp["Pud", 
