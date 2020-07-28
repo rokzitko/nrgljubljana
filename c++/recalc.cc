@@ -48,7 +48,7 @@ void recalc_f(const DiagInfo &dg, MatrixElements &ff, const Invar &Ip, const Inv
       nrgdump2(Ianc1, Iancp) << endl;
     }
     my_assert(Ianc1 == Iancp);
-    my_assert(std::isfinite(table[j].factor));
+    my_assert(my_isfinite(table[j].factor));
     my_assert(rmax1 == rmaxp);
     const Matrix &U1 = dgI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
     const Matrix &Up = dgIp.blocks[table[j].ip - 1];
@@ -174,7 +174,7 @@ void recalc_general(const DiagInfo &dg, const MatrixElements &cold, MatrixElemen
     }
     // This assertion should be performed after the triangle
     // inequality test above!
-    my_assert(std::isfinite(table[j].factor));
+    my_assert(my_isfinite(table[j].factor));
     // Additional sanity test: factors are in general order O(1)
     my_assert(abs(table[j].factor) < 1000);
     // If we made it this far, this subspace contributes.

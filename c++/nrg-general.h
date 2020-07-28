@@ -60,6 +60,9 @@ namespace atlas = boost::numeric::bindings::atlas;
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
+#ifdef NRG_COMPLEX
+ #include <boost/serialization/complex.hpp>
+#endif
 
 // This must be set manually through CXXFLAG=-DNRG_MPI
 #ifdef NRG_MPI

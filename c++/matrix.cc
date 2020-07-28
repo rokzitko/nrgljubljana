@@ -70,7 +70,7 @@ void offdiag_build(size_t i, size_t j,
   my_assert(size1 && size2);
   // < In[i] r | f^\dag | In[j] r' >
   const Twoinvar II = make_pair(In[i], In[j]);
-  if (!std::isfinite(factor)) {
+  if (!my_isfinite(factor)) {
     cout << "offdiag_function() critical error: factor is not finite." << endl;
     cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor=" << factor << endl;
     cout << "source subspaces II=" << II << endl;

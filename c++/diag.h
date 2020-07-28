@@ -168,21 +168,21 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
 #ifdef NRG_COMPLEX
 size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
   const size_t dim = m.size1();
-  t_matel *ham = bindings::traits::matrix_storage(m);
+  lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
   int LDA    = dim;         // the leading dimension of the array a
   int INFO   = 0;           // 0 on successful exit
   int LWORK0 = -1;          // length of the WORK array (-1 == query!)
-  cmpl WORK0[1];
+  lapack_complex_double WORK0[1];
   int RWORKdim = max(1ul, 3 * dim - 2);
   double RWORK[RWORKdim];
   // Step 1: determine optimal LWORK
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK0, &LWORK0, RWORK, &INFO);
   my_assert(INFO == 0);
-  int LWORK  = int(WORK0[0].real());
-  cmpl *WORK = new cmpl[LWORK];
+  int LWORK  = int(WORK0[0].real);
+  lapack_complex_double *WORK = new lapack_complex_double[LWORK];
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK, &LWORK, RWORK, &INFO);
   if (INFO != 0) my_error("zheev failed. INFO=%i", INFO);
@@ -190,7 +190,10 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
   copy_values(eigenvalues, d.value, dim);
   if (jobz == 'V') {
     for (size_t r = 0; r < dim; r++)
-      for (size_t j = 0; j < dim; j++) d.vektor(r, j) = ham[dim * r + j];
+      for (size_t j = 0; j < dim; j++) {
+        lapack_complex_double v = ham[dim * r + j];
+        d.vektor(r, j) = cmpl(v.real, v.imag);
+      }
     d.perform_checks();
   }
   delete[] WORK;
@@ -211,7 +214,7 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1
     RANGE = 'I';
   } else
     RANGE = 'A';
-  t_matel *ham = bindings::traits::matrix_storage(m);
+  lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix
@@ -230,21 +233,21 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1
   //  The support of the eigenvectors in Z, i.e., the indices
   //  indicating the nonzero elements in Z.  The i-th eigenvector is
   //  nonzero only in elements ISUPPZ( 2*i-1 ) through ISUPPZ(2*i).
-  std::vector<t_matel> Z(LDZ * M); // eigenvectors
+  std::vector<lapack_complex_double> Z(LDZ * M); // eigenvectors
   int LWORK0 = -1;                 // length of the WORK array (-1 == query!)
-  cmpl WORK0[1];
+  lapack_complex_double WORK0[1];
   int LRWORK0 = -1; // query
-  cmpl RWORK0[1];
+  double RWORK0[1];
   int LIWORK0 = -1; // query
   int IWORK0[1];
   // Step 1: determine optimal LWORK, LRWORK, and LIWORK
   LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK0, &LWORK0,
                 RWORK0, &LRWORK0, IWORK0, &LIWORK0, &INFO);
   my_assert(INFO == 0);
-  int LWORK   = int(WORK0[0].real());
-  cmpl *WORK  = new cmpl[LWORK];
-  int LRWORK  = int(RWORK0[0].real());
-  cmpl *RWORK = new cmpl[LRWORK];
+  int LWORK   = int(WORK0[0].real);
+  lapack_complex_double *WORK  = new lapack_complex_double[LWORK];
+  int LRWORK  = int(RWORK0[0]);
+  double *RWORK = new double[LRWORK];
   int LIWORK  = IWORK0[0];
   int *IWORK  = new int[LIWORK];
   // Step 2: perform the diagonalisation
@@ -260,7 +263,10 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1
   copy_values(eigenvalues, d.value, M);
   if (jobz == 'V') {
     for (size_t r = 0; r < M; r++)
-      for (size_t j = 0; j < dim; j++) d.vektor(r, j) = Z[dim * r + j];
+      for (size_t j = 0; j < dim; j++) {
+        lapack_complex_double v = Z[dim * r + j];
+        d.vektor(r, j) = cmpl(v.real, v.imag);
+      }
     d.perform_checks();
   }
   delete[] WORK;
