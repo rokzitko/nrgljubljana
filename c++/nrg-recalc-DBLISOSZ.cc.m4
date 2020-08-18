@@ -20,28 +20,28 @@ void SymmetryDBLISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, Matr
     Invar Ip;
 
     Ip = Invar(ii11 - 1, ii21, ssz1 - 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doubletm0m.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 0, -1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doubletm0m.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 1, +1));
 
     Ip = Invar(ii11 - 1, ii21, ssz1 + 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doubletm0p.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 0, +1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doubletm0p.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 1, -1));
 
     Ip = Invar(ii11 + 1, ii21, ssz1 - 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doubletp0m.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 0, -1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doubletp0m.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 1, +1));
 
     Ip = Invar(ii11 + 1, ii21, ssz1 + 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doubletp0p.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 0, +1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doubletp0p.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 1, -1));
 
     Ip = Invar(ii11, ii21 - 1, ssz1 - 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0mm.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(0, 2, -1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0mm.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(1, 2, +1));
 
     Ip = Invar(ii11, ii21 - 1, ssz1 + 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0mp.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(0, 2, +1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0mp.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(1, 2, -1));
 
     Ip = Invar(ii11, ii21 + 1, ssz1 - 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0pm.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(0, 2, -1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0pm.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(1, 2, +1));
 
     Ip = Invar(ii11, ii21 + 1, ssz1 + 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0pp.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(0, 2, +1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0pp.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(1, 2, -1));
   }
 }
 

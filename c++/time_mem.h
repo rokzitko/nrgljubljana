@@ -118,19 +118,21 @@ class MemoryStats {
     maxvals[breakpoint] = max(maxvals[breakpoint], memused);
     return memused;
   }
-  void report(ostream &F = cout) const {
+  // Usually only the peak memory usage is relevant (e.g. to constrain memory in job submissions).
+  void report(ostream &F = cout, bool verbose = false) const {
 #ifdef HAS_MEMORY_USAGE
-    const int MS_WIDTH = 12;
-    F << endl;
-    F << "Memory usage report [" << myrank() << "]" << endl;
-    F << "===================" << endl;
-    int topusage = 0; // top usage recorded by check()
-    for (const auto &i : maxvals) topusage = max(topusage, i.second);
-    if (topusage != 0) {
-      for (const auto &i : maxvals) F << setw(MS_WIDTH) << i.first << ": " << i.second << " kB" << endl;
+    if (verbose) {
+      const int MS_WIDTH = 12;
+      F << endl;
+      F << "Memory usage report [" << myrank() << "]" << endl;
+      F << "===================" << endl;
+      int topusage = 0; // top usage recorded by check()
+      for (const auto &i : maxvals) topusage = max(topusage, i.second);
+      if (topusage != 0)
+        for (const auto &i : maxvals) F << setw(MS_WIDTH) << i.first << ": " << i.second << " kB" << endl;
+      my_assert(topusage <= peakusage);
     }
-    my_assert(topusage <= peakusage);
-    F << endl << "Peak usage: " << peakusage << " kB" << endl;
+    F << endl << "Peak usage: " <<  peakusage / 1024 << " MB " << endl; // NOLINT
 #endif
   }
 };

@@ -47,6 +47,8 @@ void calc_generic(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &facto
     // multiplicity factor in play here.
     const t_factor spinfactor = factorfnc(Ii, Ij);
     my_assert(!num_equal(spinfactor, 0.0)); // bug trap
+    // XXX: if (num_equal(spinfactor, 0.0)) 
+    // XXX:  break; // does not contribute
     const Matrix &op1II = bs.op1.find(II)->second;
     const Matrix &op2II = bs.op2.find(II)->second;
     if (logletter('G')) nrgdump2(Ij, Ii) << endl;

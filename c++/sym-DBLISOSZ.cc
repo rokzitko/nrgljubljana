@@ -39,20 +39,35 @@ class SymmetryDBLISOSZ : public SymField {
   // We always must have I1 >= 0 and I2 >= 0.
   bool Invar_allowed(const Invar &I) override { return (I.get("II1") > 0) && (I.get("II2") > 0); }
 
-  // TO DO: support for the doublets wrt the second quantum number
+  // This function supports isospin doublets with respect to either first or the
+  // second isospin quantum number. Since the doublet operators are either doublets
+  // with respect to one or another, this function should always return a non-zero
+  // value!
   double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_abs_diff(Ip, I1, "SSZ", 1);
 
     const Ispin ii1p = Ip.get("II1");
     const Ispin ii11 = I1.get("II1");
+    const Ispin ii2p = Ip.get("II2");
+    const Ispin ii21 = I1.get("II2");
 
     if (abs(ii11 - ii1p) == 1) {
-      const double isofactor = (ii11 == ii1p + 1 ? ISO(ii1p) + 1.0 : ISO(ii1p));
-      return isofactor;
-    } else {
-      // Doublet wrt the 2nd quantum number. Currently unsupported.
-      return 0.0;
+      const double isofactor1 = (ii11 == ii1p + 1 ? ISO(ii1p) + 1.0 : ISO(ii1p));
+      my_assert(ii2p == ii21);
+      my_assert(ii2p >= 1);
+      const double isofactor2 = ii2p; // multiplicity wrt 2nd isospin quantum number
+      return isofactor1 * isofactor2;
     }
+
+    if (abs(ii21 - ii2p) == 1) {
+      const double isofactor1 = (ii21 == ii2p + 1 ? ISO(ii2p) + 1.0 : ISO(ii2p));
+      my_assert(ii1p == ii11);
+      my_assert(ii1p >= 1);
+      const double isofactor2 = ii1p;
+      return isofactor1 * isofactor2;
+    }
+
+    my_assert_not_reached();
   }
 
   void load() override {

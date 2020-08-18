@@ -139,7 +139,7 @@ int memoryused() {
 #if defined(__linux)
 #include <string.h>
 #include <stdio.h>
-// Returns the number of kB blocks of memory used by this process (self)
+// Returns the number of kB blocks of memory used by this process (self). 
 int memoryused() {
   int used = 0;
 
@@ -149,7 +149,8 @@ int memoryused() {
     int val;
 
     while (fgets(buf, sizeof(buf), info)) {
-      if (!strncmp(buf, "VmSize:", 7) && sscanf(buf + 7, "%d", &val)) used = val;
+//      if (!strncmp(buf, "VmSize:", 7) && sscanf(buf + 7, "%d", &val)) used = val;
+      if (!strncmp(buf, "VmPeak:", 7) && sscanf(buf + 7, "%d", &val)) used = val; // peak usage is more useful information!!
     }
     fclose(info);
   }
