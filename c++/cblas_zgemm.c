@@ -99,8 +99,11 @@ void cblas_zgemm(const enum CBLAS_ORDER Order, const enum CBLAS_TRANSPOSE TransA
          F77_TB = C2F_CHAR(&TB);
       #endif
 
-      F77_zgemm(F77_TA, F77_TB, &F77_N, &F77_M, &F77_K, alpha, B,
-                  &F77_ldb, A, &F77_lda, beta, C, &F77_ldc);
+     F77_zgemm(F77_TA, F77_TB, &F77_N, &F77_M, &F77_K, static_cast<const double*>(alpha), 
+               static_cast<const double*>(B),
+               &F77_ldb, static_cast<const double*>(A), &F77_lda, 
+               static_cast<const double*>(beta), 
+               static_cast<const double*>(C), &F77_ldc);
    } 
    else  cblas_xerbla(1, "cblas_zgemm", "Illegal Order setting, %d\n", Order);
    CBLAS_CallFromC = 0;
