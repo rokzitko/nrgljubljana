@@ -1,15 +1,11 @@
 // tdavg - Averaging with interpolation for thermodynamics
 // Part of "NRG Ljubljana", Rok Zitko, rok.zitko@ijs.si, Aug 2009
 
-// CHANGE LOG
-// 28.8.2009 - first version
-// 21.4.2010 - copy comment line
-
 #define PROGRAM "tdavg"
 #define DESCRIPTION "thermodynamics averaging tool"
-#define VERSION "0.2"
+#define VERSION "0.2.1"
 #define USAGE "[input] [reference]"
-#define AUTHOR "Rok Zitko, rok.zitko@ijs.si, 2009"
+#define AUTHOR "Rok Zitko, rok.zitko@ijs.si, 2020"
 
 #include <iostream>
 #include <fstream>
@@ -90,7 +86,7 @@ void cmd_line(int argc, char *argv[]) {
     name = string("td.dat");
   }
   if (remaining >= 2) {
-    ref_name = string(argv[optind]); // Reference filename
+    ref_name = string(argv[optind+1]); // Reference filename
   } else {
     const string ref_name_default = "td-ref.dat";
     if (file_exists("td-ref.dat")) {
