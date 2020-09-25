@@ -905,28 +905,34 @@ void formatted_output(ostream &F, cmpl val) {
   F << setw(P::width_custom) << str.str() << ' ';
 }
 
+void dump_diagonal(const Matrix &m, size_t max_nr, ostream &F = std::cout)
+{
+  my_assert(m.size1() == m.size2());
+  for (auto r = 0; r < std::min<size_t>(m.size1(), max_nr); r++)
+    F << m(r,r) << ' ';
+  F << std::endl;
+}
+
 /* "Trace" of a singlet operator: actually this is the statistical average
  with respect to exp(-beta H), but without the 1/Z factor. I.e.
  \sum_n <n|exp(-beta H) O|n>, for a given singlet operator 'O'.  As a
  side effect, dump the matrix elements to stream F if so requested
  (parameter "dumpdiagonal").  */
-CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n, ostream &F = cout) {
+CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n, ostream &F = std::cout) {
   matel_bucket tr; // note: t_matel = t_expv
-  LOOP_const(diag, is) {
-    const Twoinvar I = make_pair(INVAR(is), INVAR(is));
-    if (n.count(I) != 1) exit1("ERROR: calc_trace_singlet() I=(" << I << ") cnt=" << n.count(I));
+  for (const auto &[i, eig] : diag) {
+    const Twoinvar I{i,i};
+    my_assert(n.count(I) == 1);
     const Matrix &nI = n.find(I)->second;
-    const size_t dim = NRSTATES(is);
+    const size_t dim = eig.getnr();
     my_assert(dim == nI.size2());
     matel_bucket sum;
-    for (size_t r = 0; r < dim; r++) sum += exp(-P::betabar * EIGEN(is).value(r)) * nI(r, r);
+    for (size_t r = 0; r < dim; r++) sum += exp(-P::betabar * eig.value(r)) * nI(r, r);
     if (P::dumpdiagonal != 0) {
-      F << INVAR(is) << ": ";
-      for (size_t r = 0; r < dim; r++)
-        if (r < P::dumpdiagonal) F << nI(r, r) << ' ';
-      F << endl;
+      F << i << ": ";
+      dump_diagonal(nI, P::dumpdiagonal, F);
     }
-    tr += t_matel(mult(INVAR(is))) * t_matel(sum);
+    tr += mult(i) * t_matel(sum);
   }
   return tr;
 }
