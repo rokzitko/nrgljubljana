@@ -3043,7 +3043,7 @@ void run_nrg_master() {
 
 #ifdef NRG_MPI
 // Handle a diagonalisation request:
-void slave_diag(const auto master) {
+void slave_diag(const int master) {
   // 1. receive the matrix and the subspace identification
   mpidebug("recv");
   auto m = mpi_receive_matrix(master);
