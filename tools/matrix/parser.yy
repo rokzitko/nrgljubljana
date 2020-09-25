@@ -194,8 +194,7 @@ void usage()
 void parse_param(int argc, char *argv[])
 {
   char c;
-  
-  while ((c = getopt(argc, argv, "hc:vpP")) != -1) {
+  while (c = getopt(argc, argv, "hc:vpP"), c != -1) {
   switch (c) {
     case 'h':
       usage();

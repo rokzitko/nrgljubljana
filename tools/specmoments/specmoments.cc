@@ -69,7 +69,7 @@ void cmd_line(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
   }
   char c;
-  while ((c = getopt(argc, argv, "vol:h:pnc")) != -1) {
+  while (c = getopt(argc, argv, "vol:h:pnc"), c != -1) {
     switch (c) {
       case 'v':
         verbose = true;

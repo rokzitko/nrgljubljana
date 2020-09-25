@@ -5,7 +5,7 @@ macro(add_tool exec_name)
   target_link_libraries(${exec_name} PRIVATE project_warnings)
 
   # Configure compilation
-  target_compile_options(${exec_name} PRIVATE -fPIC -std=c++17)
+  target_compile_options(${exec_name} PRIVATE -fPIC -std=c++17 -fconcepts)
   target_include_directories(${exec_name} PRIVATE $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}>)
   target_compile_definitions(${exec_name} PRIVATE
 # (not used)				NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}

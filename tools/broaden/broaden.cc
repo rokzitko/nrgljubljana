@@ -105,7 +105,7 @@ void cmd_line(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
   }
   char c;
-  while ((c = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNAB")) != -1) {
+  while (c = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNAB"), c != -1) {
     switch (c) {
       case 'c': cumulative = true; break;
 

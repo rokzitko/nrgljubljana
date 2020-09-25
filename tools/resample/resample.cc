@@ -55,7 +55,7 @@ void usage() {
 
 void cmd_line(int argc, char *argv[]) {
   char c;
-  while ((c = getopt(argc, argv, "hv")) != -1) {
+  while (c = getopt(argc, argv, "hv"), c != -1) {
     switch (c) {
       case 'h':
         usage();

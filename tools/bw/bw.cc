@@ -74,8 +74,7 @@ void usage(ostream &F = cout) {
 
 void cmd_line(int argc, char *argv[]) {
   char c;
-
-  while ((c = getopt(argc, argv, "hvVm:M:r:n:t:pq:sSx:d:o")) != -1) {
+  while (c = getopt(argc, argv, "hvVm:M:r:n:t:pq:sSx:d:o"), c != -1) {
     switch (c) {
       case 'h':
         usage();

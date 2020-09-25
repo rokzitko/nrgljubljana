@@ -70,8 +70,7 @@ void usage() {
 
 void cmd_line(int argc, char *argv[]) {
   char c;
-
-  while ((c = getopt(argc, argv, "hvVwt:T:pnaf")) != -1) {
+  while (c = getopt(argc, argv, "hvVwt:T:pnaf"), c != -1) {
     switch (c) {
       case 'h':
         usage();

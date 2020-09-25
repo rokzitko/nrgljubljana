@@ -493,12 +493,12 @@ void safeopen(ofstream &F, char *filename) {
 }
 
 void parse_param_run(int argc, char *argv[]) {
-  char c;
 
   ostream *OUT = &cout;
   ofstream OUTFILE;
 
-  while ((c = getopt(argc, argv, "hGd:vVs:B:o:")) != -1) {
+  char c;
+  while (c = getopt(argc, argv, "hGd:vVs:B:o:"), c != -1) {
     switch (c) {
       case 'h':
         usage();
