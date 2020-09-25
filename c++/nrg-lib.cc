@@ -913,6 +913,13 @@ void dump_diagonal(const Matrix &m, size_t max_nr, ostream &F = std::cout)
   F << std::endl;
 }
 
+template <typename K>
+const Matrix & subspace_matrix(const MatrixElements &n, const K key)
+{
+  my_assert(n.count(key) == 1);
+  return n.find(key)->second;
+}
+
 /* "Trace" of a singlet operator: actually this is the statistical average
  with respect to exp(-beta H), but without the 1/Z factor. I.e.
  \sum_n <n|exp(-beta H) O|n>, for a given singlet operator 'O'.  As a
@@ -921,9 +928,7 @@ void dump_diagonal(const Matrix &m, size_t max_nr, ostream &F = std::cout)
 CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n, ostream &F = std::cout) {
   matel_bucket tr; // note: t_matel = t_expv
   for (const auto &[i, eig] : diag) {
-    const Twoinvar I{i,i};
-    my_assert(n.count(I) == 1);
-    const Matrix &nI = n.find(I)->second;
+    const auto & nI = subspace_matrix(n, Twoinvar{i,i});
     const size_t dim = eig.getnr();
     my_assert(dim == nI.size2());
     matel_bucket sum;
@@ -939,16 +944,13 @@ CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n
 
 CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &n) {
   matel_bucket tr;
-  LOOP_const(diag, is) {
-    const Invar I     = INVAR(is);
-    const Twoinvar II = make_pair(INVAR(is), INVAR(is));
-    my_assert(n.count(II) == 1);
-    const Matrix &nI  = n.find(II)->second;
-    const size_t ret  = dm[STAT::N][I].kept;
+  for (const auto &[i, eig] : diag) {
+    const auto & nI  = subspace_matrix(n, Twoinvar{i,i});
+    const size_t ret  = dm[STAT::N][i].kept;
     matel_bucket sum;
-    for (size_t i = 0; i < ret; i++) // over kept states ONLY
-      for (size_t j = 0; j < ret; j++) sum += rhoFDM[I](i, j) * nI(j, i);
-    tr += t_matel(mult(INVAR(is))) * t_matel(sum);
+    for (size_t k = 0; k < ret; k++) // over kept states ONLY
+      for (size_t j = 0; j < ret; j++) sum += rhoFDM[i](k, j) * nI(j, k);
+    tr += mult(i) * t_matel(sum);
   }
   return tr;
 }
