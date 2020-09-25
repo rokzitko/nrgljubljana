@@ -2180,8 +2180,8 @@ auto nrg_make_subspaces_list() {
   list<Invar> subspaces;
   for (const auto &ii : diagprev)
     if (NRSTATES(ii)) {
-      const Invar I = INVAR(ii);
-      InvarVec input = input_subspaces(); // make a new copy of subspaces list
+      const auto I = INVAR(ii);
+      auto input = input_subspaces(); // make a new copy of subspaces list
       for (size_t i = 1; i <= P::combs; i++) {
         input[i].inverse(); // IMPORTANT!
         input[i].combine(I);
@@ -2262,7 +2262,7 @@ const int TAG_EIGEN_RMAXVALS = 12;
 
 void mpi_sync_params();
 
-void check_status(mpi::status &status) {
+void check_status(mpi::status status) {
   if (status.error()) {
     cout << "MPI communication error. rank=" << mpiw->rank() << endl;
     mpienv->abort(1);
@@ -2289,51 +2289,52 @@ void check_status(mpi::status &status) {
 #define mpi_receive_eigen mpi_receive_eigen_linebyline
 #endif
 
-void mpi_send_matrix_wholematrix(int dest, Matrix &m) { mpiw->send(dest, TAG_MATRIX, m); }
+void mpi_send_matrix_wholematrix(int dest, Matrix &m) { 
+  mpiw->send(dest, TAG_MATRIX, m); 
+}
 
-void mpi_receive_matrix_wholematrix(int source, Matrix &m) {
-  mpi::status status;
-  status = mpiw->recv(source, TAG_MATRIX, m);
-  check_status(status);
+auto mpi_receive_matrix_wholematrix(int source) {
+  Matrix m;
+  check_status(mpiw->recv(source, TAG_MATRIX, m));
+  return m;
 }
 
 void mpi_send_matrix_linebyline(int dest, const Matrix &m) {
-  size_t size1 = m.size1();
+  auto size1 = m.size1();
   mpiw->send(dest, TAG_MATRIX_SIZE, size1);
-  size_t size2 = m.size2();
+  auto size2 = m.size2();
   mpiw->send(dest, TAG_MATRIX_SIZE, size2);
   nrglog('M', "Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
   for (size_t i = 0; i < size1; i++) {
-    ublas::vector<t_matel> vec  = matrix_row<const Matrix>(m, i);
+    ublas::vector<t_matel> vec = matrix_row<const Matrix>(m, i);
     mpiw->send(dest, TAG_MATRIX_LINE, vec);
   }
 }
 
-void mpi_receive_matrix_linebyline(int source, Matrix &m) {
-  mpi::status status;
+auto mpi_receive_matrix_linebyline(int source) {
   size_t size1;
-  status = mpiw->recv(source, TAG_MATRIX_SIZE, size1);
-  check_status(status);
+  check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size1));
   size_t size2;
-  status = mpiw->recv(source, TAG_MATRIX_SIZE, size2);
-  check_status(status);
+  check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size2));
   nrglog('M', "Receiving matrix of size " << size1 << " x " << size2 << " line by line from " << source);
-  m = Matrix(size1, size2);
-  for (size_t i = 0; i < size1; i++) {
+  Matrix m(size1, size2);
+  for (auto i = 0; i < size1; i++) {
     ublas::vector<t_matel> vec;
-    status = mpiw->recv(source, TAG_MATRIX_LINE, vec);
-    check_status(status);
+    check_status(mpiw->recv(source, TAG_MATRIX_LINE, vec));
     my_assert(vec.size() == size2);
     matrix_row<Matrix>(m, i) = vec;
   }
+  return m;
 }
 
-void mpi_send_eigen_whole(int dest, const Eigen &eig) { mpiw->send(dest, TAG_EIGEN, eig); }
+void mpi_send_eigen_whole(int dest, const Eigen &eig) { 
+  mpiw->send(dest, TAG_EIGEN, eig); 
+}
 
-void mpi_receive_eigen_whole(int source, Eigen &eig) {
-  mpi::status status;
-  status = mpiw->recv(source, TAG_EIGEN, eig);
-  check_status(status);
+auto mpi_receive_eigen_whole(int source) {
+  Eigen eig;
+  check_status(mpiw->recv(source, TAG_EIGEN, eig));
+  return eig;
 }
 
 void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
@@ -2347,32 +2348,25 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   mpi_send_matrix_linebyline(dest, eig.matrix0);
 }
 
-void mpi_receive_eigen_linebyline(int source, Eigen &eig) {
+auto mpi_receive_eigen_linebyline(int source) {
   nrglog('M', "Receiving eigen from " << source << " on " << mpiw->rank());
-  mpi::status status;
   Eigen eigmock;
-  status = mpiw->recv(source, TAG_EIGEN, eigmock);
-  check_status(status);
-  status = mpiw->recv(source, TAG_EIGEN_INT, eig.nr);
-  check_status(status);
-  status = mpiw->recv(source, TAG_EIGEN_INT, eig.rmax);
-  check_status(status);
-  status = mpiw->recv(source, TAG_EIGEN_INT, eig.nrpost);
-  check_status(status);
-  status = mpiw->recv(source, TAG_EIGEN_VEC, eig.value);
-  check_status(status);
-  mpi_receive_matrix_linebyline(source, eig.matrix0);
+  check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
+  Eigen eig;
+  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nr));
+  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.rmax));
+  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nrpost));
+  check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value));
+  eig.matrix0 = mpi_receive_matrix_linebyline(source);
+  return eig;
 }
 
 // Read results from a slave process.
 Invar read_from(int source) {
   nrglog('M', "Reading results from " << source);
-  mpi::status readst;
-  Eigen eig;
-  mpi_receive_eigen(source, eig);
+  auto eig = mpi_receive_eigen(source);
   Invar Irecv;
-  readst = mpiw->recv(source, TAG_INVAR, Irecv);
-  check_status(readst);
+  check_status(mpiw->recv(source, TAG_INVAR, Irecv));
   nrglog('M', "Received results for subspace " << Irecv << " [nr=" << eig.getnr() << ", dim=" << eig.getrmax() << "]");
   // Some consistency checks
   my_assert(eig.matrix0.size1() == eig.getnr());
@@ -2392,8 +2386,8 @@ void nrg_diagonalisations_MPI() {
   // List of the available computation nodes (including the master,
   // which is always at the very beginnig of the deque).
   deque<int> nodes;
-  for (size_t i = 0; i < mpiw->size(); i++) nodes.push_back(i);
-  size_t nrtasks = NRG::tasks.size();
+  for (auto i = 0; i < mpiw->size(); i++) nodes.push_back(i);
+  auto nrtasks = NRG::tasks.size();
   nrglog('M', "nrtasks=" << nrtasks << " nrnodes=" << mpiw->size());
   while (!todo.empty()) {
     my_assert(!nodes.empty());
@@ -2418,10 +2412,8 @@ void nrg_diagonalisations_MPI() {
       I = todo.front();
       todo.pop_front();
     }
-    Matrix h = nrg_prepare_task_for_diag(I);
-    nrglog('M',
-           "Scheduler: job " << I << " (dim=" << h.size1() << ")"
-                             << " on node " << i);
+    auto h = nrg_prepare_task_for_diag(I);
+    nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
       diag[I] = diagonalise(h);
@@ -2433,10 +2425,9 @@ void nrg_diagonalisations_MPI() {
       mpiw->send(i, TAG_INVAR, I);
     }
     // Check for terminated jobs
-    boost::optional<mpi::status> status;
-    while (status = mpiw->iprobe(mpi::any_source, TAG_EIGEN)) {
+    while (auto status = mpiw->iprobe(mpi::any_source, TAG_EIGEN)) {
       nrglog('M', "Receiveing results from " << status->source());
-      Invar Irecv = read_from(status->source());
+      auto Irecv = read_from(status->source());
       done.push_back(Irecv);
       // The node is now available for new tasks!
       nodes.push_back(status->source());
@@ -2444,11 +2435,11 @@ void nrg_diagonalisations_MPI() {
   }
   // Keep reading results sent from the slave processes until all
   // tasks have been completed.
-  size_t nrdone = done.size();
+  auto nrdone = done.size();
   while (nrdone != nrtasks) {
     nrglog('M', "So far: " << nrdone << "/" << nrtasks);
-    mpi::status status = mpiw->probe(mpi::any_source, TAG_EIGEN);
-    Invar Irecv        = read_from(status.source());
+    auto status = mpiw->probe(mpi::any_source, TAG_EIGEN);
+    auto Irecv  = read_from(status.source());
     done.push_back(Irecv);
     nrdone++;
   }
@@ -2716,7 +2707,7 @@ void nrg_after_diag(IterInfo &iterinfo) {
   size_t nrall  = 0;
   size_t nrkept = 0;
   LOOP_const(diag, i) {
-    const Invar I  = INVAR(i);
+    const auto I  = INVAR(i);
     dm[STAT::N][I] = DimSub(NRSTATES(i), RMAX(i), qsrmax[I], EIGEN(i).value, EIGEN(i).absenergy, EIGEN(i).absenergyG, EIGEN(i).absenergyN, LAST_ITERATION());
     nrall += RMAX(i);
     nrkept += NRSTATES(i);
@@ -2888,8 +2879,8 @@ void dump_subspace_information() {
   for (size_t N = P::Ninit; N < P::Nmax; N++) {
     O << "Iteration " << N << endl;
     O << "len_dm=" << dm[N].size() << endl;
-    for (const auto &i : dm[N])
-      O << "I=" << i.first << " len=" << i.second.eigenvalue.size() << " kept=" << i.second.kept << " total=" << i.second.total << endl;
+    for (const auto &[I, DS] : dm[N])
+      O << "I=" << I << " len=" << DS.eigenvalue.size() << " kept=" << DS.kept << " total=" << DS.total << endl;
     O << endl;
   }
 }
@@ -3046,46 +3037,39 @@ void run_nrg_master() {
 
 #ifdef NRG_MPI
 // Handle a diagonalisation request:
-void slave_diag() {
-  mpi::status status;
-  const int MASTER = 0;
+void slave_diag(const auto master) {
   // 1. receive the matrix and the subspace identification
   mpidebug("recv");
-  Matrix m;
-  mpi_receive_matrix(MASTER, m);
+  auto m = mpi_receive_matrix(master);
   Invar I;
-  status = mpiw->recv(MASTER, TAG_INVAR, I);
-  check_status(status);
+  check_status(mpiw->recv(master, TAG_INVAR, I));
   // 2. preform the diagonalisation
   mpidebug("diagonalise");
   Eigen eig = diagonalise(m);
   // 3. send back the results
   mpidebug("send");
-  mpi_send_eigen(MASTER, eig);
-  mpiw->send(MASTER, TAG_INVAR, I);
+  mpi_send_eigen(master, eig);
+  mpiw->send(master, TAG_INVAR, I);
 }
 
 void run_nrg_slave() {
-  const int MASTER = 0;
-  bool done        = false;
-  while (!done) {
-    boost::optional<mpi::status> probestatus;
-    if (probestatus = mpiw->iprobe(MASTER, mpi::any_tag)) {
-      // A message can be received.
+  constexpr auto master = 0;
+  for (;;) {
+    if (mpiw->iprobe(master, mpi::any_tag)) { // message can be received.
       int task;
-      mpi::status status;
-      status = mpiw->recv(MASTER, mpi::any_tag, task);
+      auto status = mpiw->recv(master, mpi::any_tag, task);
       check_status(status);
       nrglog('M', "Slave " << mpiw->rank() << " received message with tag " << status.tag());
       switch (status.tag()) {
-        case TAG_HELLO: mpidebug("ready"); break;
+        case TAG_HELLO: 
+          mpidebug("ready"); 
+          break;
         case TAG_EXIT:
           mpidebug("exiting");
-          done = true;
-          break;
+          return; // exit from run_nrg_slave()
         case TAG_DIAG:
           mpidebug("diag");
-          slave_diag();
+          slave_diag(master);
           break;
         case TAG_SYNC:
           mpidebug("sync");
@@ -3094,13 +3078,9 @@ void run_nrg_slave() {
         default: 
           cout << "MPI error: unknown tag on " << mpiw->rank() << endl; 
           break;
-      } // switch
-    } else {
-      // No message received. We sleep for a while to reduce the
-      // load on the computer. (OpenMPI "feature" workaround)
-      usleep(100);
-    }
-  } // while(!done)
+      }
+    } else usleep(100); // sleep to reduce the load on the computer. (OpenMPI "feature" workaround)
+  }
 }
 #else
 void run_nrg_slave() {}
