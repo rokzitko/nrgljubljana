@@ -4,7 +4,7 @@
 #define PROGRAM "tdavg"
 #define DESCRIPTION "thermodynamics averaging tool"
 #define VERSION "0.2.1"
-#define USAGE "[input] [reference]"
+#define USAGE "[-h] [input] [reference]"
 #define AUTHOR "Rok Zitko, rok.zitko@ijs.si, 2020"
 
 #include <iostream>
@@ -67,8 +67,11 @@ bool file_exists(string filename) {
 
 void cmd_line(int argc, char *argv[]) {
   char c;
-  while ((c = getopt(argc, argv, "vVc")) != -1) {
+  while ((c = getopt(argc, argv, "hvVc")) != -1) {
     switch (c) {
+      case 'h':
+        usage();
+        exit(EXIT_SUCCESS);
       case 'v': verbose = true; break;
       case 'V': veryverbose = true; break;
       case 'c': copycomments = true; break;

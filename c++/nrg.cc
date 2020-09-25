@@ -8,6 +8,15 @@ mpi::environment *mpienv;
 mpi::communicator *mpiw;
 #endif
 
+inline void help(int argc, char **argv, std::string help_message)
+{
+  std::vector<std::string> args(argv+1, argv+argc); // NOLINT
+  if (args.size() >= 1 && args[0] == "-h") {
+    std::cout << help_message << std::endl;
+    exit(EXIT_SUCCESS);
+  }
+}
+
 int main(int argc, char **argv) {
 #ifdef NRG_MPI
   mpi::environment env(argc, argv);
@@ -21,6 +30,7 @@ int main(int argc, char **argv) {
 #endif
     print_about_message();
     report_openMP();
+    help(argc, argv, "Usage: nrg [-h] [-w workdir]");
     set_workdir(argc, argv);
     run_nrg_master();
     time_mem::memory_report();

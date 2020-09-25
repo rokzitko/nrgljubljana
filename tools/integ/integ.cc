@@ -56,7 +56,8 @@ void about() {
 }
 
 void usage() {
-  cout << "\nUsage: integ [-v] [-V] [-w] [-T temp] <input> [-p|n|a|f]" << endl;
+  cout << "\nUsage: integ [-h] [-v] [-V] [-w] [-T temp] <input> [-p|n|a|f]" << endl;
+  cout << "-h: show help" << endl;
   cout << "-v: toggle verbose messages (now=" << verbose << ")" << endl;
   cout << "-V: toggle very verbose messages (now=" << veryverbose << ")" << endl;
   cout << "-w: toggle warnings (now=" << showwarnings << ")" << endl;
@@ -70,8 +71,12 @@ void usage() {
 void cmd_line(int argc, char *argv[]) {
   char c;
 
-  while ((c = getopt(argc, argv, "vVwt:T:pnaf")) != -1) {
+  while ((c = getopt(argc, argv, "hvVwt:T:pnaf")) != -1) {
     switch (c) {
+      case 'h':
+        usage();
+        exit(EXIT_SUCCESS);
+      
       case 'v': verbose = true; break;
 
       case 'V': veryverbose = true; break;

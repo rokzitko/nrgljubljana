@@ -51,6 +51,7 @@ void usage(ostream &F = cout) {
   F << "Usage: specmoments <name> <Nz>\n";
   F << endl;
   F << "Optional parameters:" << endl;
+  F << " -h -- show help (when used as sole cmd line switch)" << endl;
   F << " -v -- verbose" << endl;
   F << " -o -- one .dat file" << endl;
   F << " -l -- filter out low-frequency raw data" << endl;
@@ -63,6 +64,10 @@ void usage(ostream &F = cout) {
 }
 
 void cmd_line(int argc, char *argv[]) {
+  if (argc == 2 && string(argv[1]) == "-h") {
+    usage();
+    exit(EXIT_SUCCESS);
+  }
   char c;
   while ((c = getopt(argc, argv, "vol:h:pnc")) != -1) {
     switch (c) {

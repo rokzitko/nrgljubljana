@@ -241,13 +241,17 @@ void about() {
 }
 
 void usage() {
-  cout << "\nUsage: kk <input> <output>\n";
+  cout << "\nUsage: kk [-h] <input> <output>\n";
   cout << "\nAlternative usage: kk -\n";
   cout << "\nIn this mode, kk reads from STDIN and outputs to STDOUT." << endl;
 }
 
 int main(int argv, char *argc[]) {
   mode = UNDEF;
+  if (argv == 2 && strcmp(argc[1], "-h") == 0) {
+    usage();
+    exit(EXIT_SUCCESS);
+  }
   if (argv == 3) mode = FILES;
   if (argv == 2 && strcmp(argc[1], "-") == 0) mode = STD;
   if (mode != STD) about();

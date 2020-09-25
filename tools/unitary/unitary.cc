@@ -56,8 +56,6 @@ void about() {
   }
 }
 
-void usage() { cout << "Usage: unitary <A> <B> <C>" << endl; }
-
 void safeopen(ifstream &F, char *filename) {
   F.open(filename);
   if (!F) {
@@ -183,10 +181,18 @@ void save(char *filename, MAT &M) {
   F.close();
 }
 
+void usage(ostream &F = cout)
+{
+  F << "Usage: unitary [-h] [-b | -B] [-qvV] [-tl] [-s scale] [-o output_fn] [-c chop_tol] <A> <B> <C>" << endl;
+}
+
 void parse_param(int argc, char *argv[]) {
   char c;
-  while ((c = getopt(argc, argv, "bBqvVtls:o:c:")) != -1) {
+  while ((c = getopt(argc, argv, "hbBqvVtls:o:c:")) != -1) {
     switch (c) {
+      case 'h':
+        usage();
+        exit(EXIT_SUCCESS);
       case 'b': input_ac_bin = false; break;
       case 'B': input_ac_bin = true; break;
       case 'q': quiet = true; break;

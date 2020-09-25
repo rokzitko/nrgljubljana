@@ -112,8 +112,17 @@ void about(ostream &F = cout) {
   F << "# Rok Zitko, rok.zitko@ijs.si, 2009" << endl;
 }
 
+void usage(ostream &F = cout) {
+  F << "Usage: nrgchain [-h] [s|l]" << endl;
+}
+
 // Called before the parser.
-void cmd_line(int argc, char *argv[]) {}
+void cmd_line(int argc, char *argv[]) {
+  if (argc >= 2 && string(argv[1]) == "-h") {
+    usage();
+    exit(EXIT_SUCCESS);
+  }
+}
 
 // Called after the parser.
 void cmd_line_post(int argc, char *argv[]) {

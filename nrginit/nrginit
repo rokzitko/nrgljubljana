@@ -3,6 +3,12 @@
 # initialisation script
 # Rok Zitko, rok.zitko@ijs.si, 2009-2018
 
+if [ "$1" = "-h" ]
+then
+  echo Usage: nrginit
+  exit 0
+fi
+
 NRGDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 NRG_INITSCRIPT=${NRGDIR}/nrginit.m
 ${1:-math} -batchinput -batchoutput <<EOF

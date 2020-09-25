@@ -127,7 +127,7 @@ double calcim() {
     double lim2up   = -1;
 
     bool inside;
-    
+
     // x within the band
     if (W1 < 0 && W2 > 0) {
       lim1down = ln1016;
@@ -235,7 +235,7 @@ double calcre() {
     double lim2up   = -1;
 
     bool inside;
-    
+
     // x within the band
     if (W1 < 0 && W2 > 0) {
       lim1down = ln1016;
@@ -335,6 +335,7 @@ void usage() {
   cout << "Usage (3): hilb [options] <resigma.dat> <imsigma.dat> <reaw.dat> <imaw.dat>" << endl;
   cout << endl;
   cout << "Options:" << endl;
+  cout << "-h        show help" << endl;
   cout << "-d <dos>  Load the density of state data from file 'dos'" << endl;
   cout << "          If this option is not used, the Bethe lattice DOS is assumed." << endl;
   cout << "-v        Increase verbosity" << endl;
@@ -497,8 +498,12 @@ void parse_param_run(int argc, char *argv[]) {
   ostream *OUT = &cout;
   ofstream OUTFILE;
 
-  while ((c = getopt(argc, argv, "Gd:vVs:B:o:")) != -1) {
+  while ((c = getopt(argc, argv, "hGd:vVs:B:o:")) != -1) {
     switch (c) {
+      case 'h':
+        usage();
+        exit(EXIT_SUCCESS);
+
       case 'G': G = true; break;
 
       case 'd': load_dos(optarg); break;

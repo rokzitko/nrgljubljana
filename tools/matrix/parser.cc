@@ -1752,20 +1752,29 @@ void addfunc(const char *name, double (*func)(double))
    sp->funcptr = func;
 }
 
+void usage()
+{
+  std::cout << "Usage: matrix [-h] [-vV] [-c channels] [-p | -P] <file1> <file2> ..." << std::endl;
+}
+
 void parse_param(int argc, char *argv[])
 {
   char c;
   
-  while ((c = getopt(argc, argv, "c:vpP")) != -1) {
-    switch (c) {
-      case 'v':
-        verbose = true;
-	break;
+  while ((c = getopt(argc, argv, "hc:vpP")) != -1) {
+  switch (c) {
+    case 'h':
+      usage();
+      exit(EXIT_SUCCESS);
   
-      case 'c':
-        nrchannels = atoi(optarg);
-        numberedch = true;
-        break;
+    case 'v':
+       verbose = true;
+       break;
+  
+    case 'c':
+       nrchannels = atoi(optarg);
+       numberedch = true;
+       break;
 	
       case 'V':
         veryverbose = true;

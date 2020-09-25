@@ -68,13 +68,19 @@ vec mesh; // Frequency mesh
 vec a;                // Spectral function [current approximation]
 vec inta, intb, intc; // Integrated spectral functions
 
-void usage(ostream &F = cout) { F << "Usage: bw <name> <b0> <Nz>\n"; }
+void usage(ostream &F = cout) { 
+  F << "Usage: bw [-h] [-vVpsSo] [-m min] [-M max] [-r ratio] [-n nr_iter] [-t trim] [-q q] <name> <b0> <Nz>\n"; 
+}
 
 void cmd_line(int argc, char *argv[]) {
   char c;
 
-  while ((c = getopt(argc, argv, "vVm:M:r:n:t:pq:sSx:d:o")) != -1) {
+  while ((c = getopt(argc, argv, "hvVm:M:r:n:t:pq:sSx:d:o")) != -1) {
     switch (c) {
+      case 'h':
+        usage();
+        exit(EXIT_SUCCESS);
+
       case 'v': verbose = true; break;
 
       case 'V': veryverbose = true; break;

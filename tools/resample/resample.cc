@@ -49,14 +49,18 @@ void about() {
 }
 
 void usage() {
-  cout << "\nUsage: resample [-v] <input> <grid> <output>" << endl;
+  cout << "\nUsage: resample [-h] [-v] <input> <grid> <output>" << endl;
   cout << "-v: toggle verbose messages (now=" << verbose << ")" << endl;
 }
 
 void cmd_line(int argc, char *argv[]) {
   char c;
-  while ((c = getopt(argc, argv, "v")) != -1) {
+  while ((c = getopt(argc, argv, "hv")) != -1) {
     switch (c) {
+      case 'h':
+        usage();
+        exit(EXIT_SUCCESS);
+      
       case 'v': verbose = true; break;
       default: abort();
     }

@@ -42,8 +42,6 @@ void about(ostream &OUT = cout) {
   }
 }
 
-void usage(ostream &OUT = cout) { OUT << "Usage: diag <input file>" << endl; }
-
 inline int MAX(int a, int b) { return (a > b ? a : b); }
 
 #include "lapack.h"
@@ -178,11 +176,19 @@ void diag_stream(istream &F) {
   diagonalize(N, data);
 }
 
+void usage(ostream &OUT = cout) { 
+  OUT << "Usage: diag [-h] [-t | -T] [-b | -B] [-vVq] [-o fn_val] [-O fn_vec] [-s scale] <input file>" << endl; 
+}
+
 void parse_param(int argc, char *argv[]) {
   char c;
 
-  while ((c = getopt(argc, argv, "tTbBvVqo:O:s:")) != -1) {
+  while ((c = getopt(argc, argv, "htTbBvVqo:O:s:")) != -1) {
     switch (c) {
+      case 'h':
+        usage();
+        exit(EXIT_SUCCESS);
+
       case 't': output_text = false; break;
 
       case 'T': output_text = true; break;

@@ -2176,7 +2176,8 @@ void nrg_perform_measurements(DiagInfo &diag) {
  use the quantum number differences in array In[] (obtained by a call to
  function input_subspaces), make a list of all possible subspaces and
  remove duplicates. */
-void nrg_make_subspaces_list(list<Invar> &subspaces) {
+auto nrg_make_subspaces_list() {
+  list<Invar> subspaces;
   for (const auto &ii : diagprev)
     if (NRSTATES(ii)) {
       const Invar I = INVAR(ii);
@@ -2189,6 +2190,7 @@ void nrg_make_subspaces_list(list<Invar> &subspaces) {
     }
   subspaces.sort();
   subspaces.unique();
+  return subspaces;
 }
 
 /* Define recalculation strategy
@@ -2475,8 +2477,7 @@ void nrg_diagonalisations() {
 void nrg_determine_tasks(map<Invar, InvarVec> &ancestors) {
   nrglog('@', "@ nrg_determine_tasks()");
   // Make a list of all subspaces to consider.
-  list<Invar> subspaces;
-  nrg_make_subspaces_list(subspaces);
+  auto subspaces = nrg_make_subspaces_list();
   // Auxiliary information: ancestor subspaces and their dimensions.
   qsrmax.clear();
   ancestors.clear();

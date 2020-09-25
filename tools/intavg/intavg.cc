@@ -38,13 +38,17 @@ using dvec = vector<double>;
 vector<Vec> input; // input data
 dvec mesh;         // output mesh
 
-void usage(ostream &F = cout) { F << "Usage: intavg <name> <Nz>\n"; }
+void usage(ostream &F = cout) { F << "Usage: intavg [-h] [-vV] <name> <Nz>\n"; }
 
 void cmd_line(int argc, char *argv[]) {
   char c;
 
-  while ((c = getopt(argc, argv, "vV")) != -1) {
+  while ((c = getopt(argc, argv, "hvV")) != -1) {
     switch (c) {
+      case 'h':
+        usage();
+        exit(EXIT_SUCCESS);
+
       case 'v': verbose = true; break;
 
       case 'V': veryverbose = true; break;

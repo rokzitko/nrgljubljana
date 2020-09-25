@@ -338,7 +338,18 @@ double rhs_F(double x, double y) {
 
 void about(ostream &F = cout) {
   F << "# Discretization ODE solver" << endl;
-  F << "# Rok Zitko, rok.zitko@ijs.si, 2008-2019" << endl;
+  F << "# Rok Zitko, rok.zitko@ijs.si, 2008-2020" << endl;
+}
+
+const std::string usage{"Usage: adapt [-h] [P|N] [param_filename]"};
+
+inline void help(int argc, char **argv, std::string help_message)
+{
+  std::vector<std::string> args(argv+1, argv+argc); // NOLINT
+  if (args.size() >= 1 && args[0] == "-h") {
+    std::cout << help_message << std::endl;
+    exit(EXIT_SUCCESS);
+  }
 }
 
 void cmd_line(int argc, char *argv[]) {
@@ -347,7 +358,7 @@ void cmd_line(int argc, char *argv[]) {
     switch (first) {
       case 'P': sign = POS; break;
       case 'N': sign = NEG; break;
-      default: cerr << "Usage: adapt [P|N] [param_filename]" << endl; exit(1);
+      default: cerr << usage << endl; exit(1);
     }
   }
 
@@ -370,7 +381,7 @@ void load_init_rho() {
   string rhofn = Pstr("dos", "Delta.dat");
   vecrho       = load_rho(rhofn, sign);
   add_zero_point(vecrho);
-      
+
   rescalevecxy(vecrho, 1.0 / bandrescale, bandrescale);
   minmaxvec(vecrho, "rho");
   rho = LinInt(vecrho);
@@ -484,6 +495,7 @@ int main(int argc, char *argv[]) {
   clock_t start_clock = clock();
 
   about();
+  help(argc, argv, usage);
   cmd_line(argc, argv);
   parser(param_fn);
   set_parameters();

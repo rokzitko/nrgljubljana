@@ -47,6 +47,7 @@ void usage(ostream &F = cout) {
   F << "Usage: binavg <name> <Nz>" << endl;
   F << endl;
   F << "Optional parameters:" << endl;
+  F << " -h -- show help" << endl;
   F << " -v -- verbose" << endl;
   F << " -o -- one .dat file" << endl;
   F << " -2 -- use the 2nd column for weight values (complex spectra)" << endl;
@@ -56,8 +57,12 @@ void usage(ostream &F = cout) {
 void cmd_line(int argc, char *argv[]) {
   char c;
 
-  while ((c = getopt(argc, argv, "vo23")) != -1) {
+  while ((c = getopt(argc, argv, "hvo23")) != -1) {
     switch (c) {
+      case 'h':
+       usage();
+       exit(EXIT_SUCCESS);
+
       case 'v': verbose = true; break;
 
       case 'o': one = true; break;

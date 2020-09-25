@@ -76,6 +76,7 @@ void usage(ostream &F = cout) {
   F << "Usage: broaden <name> <Nz> <alpha> <T> [omega0_ratio]" << endl;
   F << endl;
   F << "Optional parameters:" << endl;
+  F << " -h -- show help (when used as sole cmd line switch)" << endl;
   F << " -v -- verbose" << endl;
   F << " -m <min> -- minimal mesh frequency" << endl;
   F << " -M <max> -- maximal mesh frequency" << endl;
@@ -99,8 +100,11 @@ void usage(ostream &F = cout) {
 }
 
 void cmd_line(int argc, char *argv[]) {
+  if (argc == 2 && string(argv[1]) == "-h") {
+    usage();
+    exit(EXIT_SUCCESS);
+  }
   char c;
-
   while ((c = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNAB")) != -1) {
     switch (c) {
       case 'c': cumulative = true; break;

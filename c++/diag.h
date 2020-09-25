@@ -43,9 +43,9 @@ size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V') {
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK0, &LWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK    = int(WORK0[0]);
-  auto *WORK = new double[LWORK];
+  auto WORK = std::make_unique<double[]>(LWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK, &LWORK, &INFO);
+  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, &INFO);
   if (INFO != 0) my_error("dsyev failed. INFO=%i", INFO);
   d = Eigen(dim, dim);
   copy_values(eigenvalues, d.value, dim);
@@ -54,7 +54,6 @@ size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V') {
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = ham[dim * r + j];
     d.perform_checks();
   }
-  delete[] WORK;
   return dim;
 }
 #endif
@@ -78,11 +77,16 @@ size_t diagonalise_dsyevd(Matrix &m, Eigen &d, char jobz = 'V')
   my_assert(INFO == 0);
   LWORK = int(WORK0[0]);
   LIWORK = IWORK0[0];
-  auto *WORK = new double[LWORK];
-  auto *IWORK = new int[LIWORK];
-  LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK, &LWORK,
-                IWORK, &LIWORK, &INFO);
-  if (INFO != 0) my_error("dsyevd failed. INFO=%i", INFO);
+  auto WORK = std::make_unique<double[]>(LWORK);
+  auto IWORK = std::make_unique<int[]>(LIWORK);
+  LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK,
+                IWORK.get(), &LIWORK, &INFO);
+  if (INFO != 0) {
+    // dsyevd sometimes fails to converge (INFO>0). In such cases we do not trigger
+    // an error but return 0, to permit error recovery.
+    if (INFO > 0) return 0;
+    my_error("dsyevd failed. INFO=%i", INFO);
+  }
   d = Eigen(dim, dim);
   copy_values(eigenvalues, d.value, dim);
   if (jobz == 'V') {
@@ -90,8 +94,6 @@ size_t diagonalise_dsyevd(Matrix &m, Eigen &d, char jobz = 'V')
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = ham[dim * r + j];
     d.perform_checks();
   }
-  delete[] WORK;
-  delete[] IWORK;
   return dim;
 }
 #endif  
@@ -141,11 +143,11 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
   my_assert(INFO == 0);
   int LWORK    = int(WORK0[0]);
   int LIWORK   = IWORK0[0];
-  auto *WORK = new double[LWORK];
-  int *IWORK   = new int[LIWORK];
+  auto WORK = std::make_unique<double[]>(LWORK);
+  auto IWORK  = std::make_unique<int[]>(LIWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK, &LWORK,
-                IWORK, &LIWORK, &INFO);
+  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK.get(), &LWORK,
+                IWORK.get(), &LIWORK, &INFO);
   if (INFO != 0) my_error("dsyevr failed. INFO=%i", INFO);
   if (MM != int(M)) {
     cout << "dsyevr computed " << MM << "/" << M << endl;
@@ -159,8 +161,6 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = Z[dim * r + j];
     d.perform_checks();
   }
-  delete[] WORK;
-  delete[] IWORK;
   return M;
 }
 #endif
@@ -182,9 +182,9 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK0, &LWORK0, RWORK, &INFO);
   my_assert(INFO == 0);
   int LWORK  = int(WORK0[0].real);
-  lapack_complex_double *WORK = new lapack_complex_double[LWORK];
+  auto WORK = std::make_unique<lapack_complex_double[]>(LWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK, &LWORK, RWORK, &INFO);
+  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, RWORK, &INFO);
   if (INFO != 0) my_error("zheev failed. INFO=%i", INFO);
   d = Eigen(dim, dim);
   copy_values(eigenvalues, d.value, dim);
@@ -196,7 +196,6 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
       }
     d.perform_checks();
   }
-  delete[] WORK;
   return dim;
 }
 #endif
@@ -245,14 +244,14 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1
                 RWORK0, &LRWORK0, IWORK0, &LIWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK   = int(WORK0[0].real);
-  lapack_complex_double *WORK  = new lapack_complex_double[LWORK];
+  auto WORK  = std::make_unique<lapack_complex_double[]>(LWORK);
   int LRWORK  = int(RWORK0[0]);
-  double *RWORK = new double[LRWORK];
+  auto RWORK = std::make_unique<double[]>(LRWORK);
   int LIWORK  = IWORK0[0];
-  int *IWORK  = new int[LIWORK];
+  auto IWORK  = std::make_unique<int[]>(LIWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK, &LWORK,
-                RWORK, &LRWORK, IWORK, &LIWORK, &INFO);
+  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK.get(), &LWORK,
+                RWORK.get(), &LRWORK, IWORK.get(), &LIWORK, &INFO);
   if (INFO != 0) my_error("zheevr failed. INFO=%i", INFO);
   if (MM != int(M)) {
     cout << "zheevr computed " << MM << "/" << M << endl;
@@ -269,9 +268,6 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1
       }
     d.perform_checks();
   }
-  delete[] WORK;
-  delete[] RWORK;
-  delete[] IWORK;
   return M;
 }
 #endif
@@ -293,7 +289,13 @@ Eigen diagonalise(Matrix &m) {
   dr_value dr = sP.diagroutine;
 #ifdef NRG_REAL
   if (dr == diagdsyev) M = diagonalise_dsyev(m, d, 'V');
-  if (dr == diagdsyevd) M = diagonalise_dsyevd(m, d, 'V');
+  if (dr == diagdsyevd) {
+    M = diagonalise_dsyevd(m, d, 'V');
+    if (M == 0) {
+      std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
+      M = diagonalise_dsyev(m, d, 'V');
+    }
+  }
   if (dr == diagdsyevr) M = diagonalise_dsyevr(m, d, 'V', sP.diagratio);
 #endif
 #ifdef NRG_COMPLEX
