@@ -7,8 +7,8 @@ target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
 target_link_libraries(nrgljubljanacmpl_c PRIVATE project_warnings)
 
 # Configure compilation
-target_compile_options(nrgljubljana_c     PRIVATE -fPIC -std=c++17 -fconcepts)
-target_compile_options(nrgljubljanacmpl_c PRIVATE -fPIC -std=c++17 -fconcepts)
+target_compile_options(nrgljubljana_c     PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
+target_compile_options(nrgljubljanacmpl_c PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
 target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_include_directories(nrgljubljanacmpl_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew>)
