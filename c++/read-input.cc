@@ -93,17 +93,17 @@ void validate_parameters() {
   if (P::dmnrg || cfs_flags()) P::dm.setvalue(true);
   my_assert(P::Lambda > 1.0);
   P::diagroutine = undefined;
-  if (NRG::v == "real") {
-    if (string(P::diag) == "default") P::diag.setvalue("dsyev");
-    if (string(P::diag) == "dsyev")  P::diagroutine = diagdsyev;
-    if (string(P::diag) == "dsyevd") P::diagroutine = diagdsyevd;
-    if (string(P::diag) == "dsyevr") P::diagroutine = diagdsyevr;
-  }
-  if (NRG::v == "complex") {
-    if (string(P::diag) == "default") P::diag.setvalue("zheev");
-    if (string(P::diag) == "zheev") P::diagroutine = diagzheev;
-    if (string(P::diag) == "zheevr") P::diagroutine = diagzheevr;
-  }
+#ifdef NRG_REAL
+  if (string(P::diag) == "default") P::diag.setvalue("dsyev");
+  if (string(P::diag) == "dsyev")  P::diagroutine = diagdsyev;
+  if (string(P::diag) == "dsyevd") P::diagroutine = diagdsyevd;
+  if (string(P::diag) == "dsyevr") P::diagroutine = diagdsyevr;
+#endif
+#ifdef NRG_COMPLEX
+  if (string(P::diag) == "default") P::diag.setvalue("zheev");
+  if (string(P::diag) == "zheev") P::diagroutine = diagzheev;
+  if (string(P::diag) == "zheevr") P::diagroutine = diagzheevr;
+#endif
   if (P::diagroutine == undefined) my_error("Unknown diagonalization routine.");
   if (P::diagroutine == diagdsyevr || P::diagroutine == diagzheevr) {
     my_assert(0.0 < P::diagratio && P::diagratio <= 1.0);

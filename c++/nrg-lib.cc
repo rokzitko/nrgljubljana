@@ -424,14 +424,6 @@ using SPECTYPE = shared_ptr<SPEC>;
 namespace NRG {
   // Diagratio for the following diagonalisation call
   double diagratio;
-  // Invariant subspaces to be computed.
-  std::vector<Invar> tasks;
-#ifdef NRG_REAL
-  const string v = "real";
-#endif
-#ifdef NRG_COMPLEX
-  const string v = "complex";
-#endif
 } // namespace NRG
 
 // Includes which require P:: parameters.
@@ -2200,17 +2192,17 @@ Matrix nrg_prepare_task_for_diag(const Invar &I, const Opch &opch, const DiagInf
   return h;
 }
 
-void nrg_diagonalisations_OpenMP(const Opch &opch, const DiagInfo &diagprev) {
+void nrg_diagonalisations_OpenMP(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
   nrglog('@', "@ nrg_diagonalisations_OpenMP()");
   nrglog('(', "OpenMP diag");
-  size_t nr    = NRG::tasks.size();
+  size_t nr = tasks.size();
   size_t itask = 0;
   // cppcheck-suppress unreadVariable symbolName=nth
-  int nth      = P::diagth; // NOLINT
+  int nth = P::diagth; // NOLINT
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {
-    Invar I  = NRG::tasks[itask];
-    Matrix h = nrg_prepare_task_for_diag(I, opch, diagprev);
+    const Invar I  = tasks[itask];
+    auto h = nrg_prepare_task_for_diag(I, opch, diagprev);
     int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
@@ -2351,18 +2343,17 @@ Invar read_from(int source) {
   return Irecv;
 }
 
-void nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev) {
+void nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
   nrglog('@', "@ nrg_diagonalisations_MPI()");
   mpi_sync_params(); // Synchronise parameters
   list<Invar> todo; // List of all the tasks to handle
-  copy(begin(NRG::tasks), end(NRG::tasks), back_inserter(todo));
+  copy(begin(tasks), end(tasks), back_inserter(todo));
   list<Invar> done; // List of finished tasks.
   // List of the available computation nodes (including the master,
   // which is always at the very beginnig of the deque).
   deque<int> nodes;
   for (auto i = 0; i < mpiw->size(); i++) nodes.push_back(i);
-  auto nrtasks = NRG::tasks.size();
-  nrglog('M', "nrtasks=" << nrtasks << " nrnodes=" << mpiw->size());
+  nrglog('M', "nrtasks=" << tasks.size() << " nrnodes=" << mpiw->size());
   while (!todo.empty()) {
     my_assert(!nodes.empty());
     // i is the node to which the next job will be scheduled
@@ -2407,21 +2398,17 @@ void nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev) {
       nodes.push_back(status->source());
     }
   }
-  // Keep reading results sent from the slave processes until all
-  // tasks have been completed.
-  auto nrdone = done.size();
-  while (nrdone != nrtasks) {
-    nrglog('M', "So far: " << nrdone << "/" << nrtasks);
+  // Keep reading results sent from the slave processes until all tasks have been completed.
+  while (done.size() != tasks.size()) {
     auto status = mpiw->probe(mpi::any_source, TAG_EIGEN);
     auto Irecv  = read_from(status.source());
     done.push_back(Irecv);
-    nrdone++;
   }
 }
 #endif
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
-void nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev) {
+void nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
   nrglog('@', "@ nrg_diagonalisations()");
   // This needs to be called here, because class Timing is not
   // thread-safe.
@@ -2431,42 +2418,38 @@ void nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev) {
   sP.init();
   diag.clear();
 #ifdef NRG_MPI
-  nrg_diagonalisations_MPI(opch, diagprev);
+  nrg_diagonalisations_MPI(opch, diagprev, tasks);
 #else
-  nrg_diagonalisations_OpenMP(opch, diagprev);
+  nrg_diagonalisations_OpenMP(opch, diagprev, tasks);
 #endif
 }
 
-// Determine the list of invariant subspaces in which diagonalisations need
-// to be performed.
-void nrg_determine_tasks(const DiagInfo &diagprev) {
+// Determine the list of invariant subspaces in which diagonalisations need to be performed.
+std::vector<Invar> nrg_determine_tasks(const DiagInfo &diagprev) {
   nrglog('@', "@ nrg_determine_tasks()");
-  // Make a list of all subspaces to consider.
-  auto subspaces = nrg_make_subspaces_list(diagprev);
   // Auxiliary information: ancestor subspaces and their dimensions.
   qsrmax.clear();
   // Container holding all the subspaces that appear in the new
   // iteration.
-  NRG::tasks.clear();
-  for (const auto &I : subspaces) {
+  std::vector<Invar> tasks;
+  for (const auto &I : nrg_make_subspaces_list(diagprev)) {
     // Determine which subspaces contribute to the Hamiltonian being built
     InvarVec input = ancestors(I);
     // Determine the range(s) of index r
     qsrmax[I].determine_ranges(I, input, diagprev);
     // nr is actually the size of the Hamiltonian submatrix!
     const size_t nr = qsrmax[I].total();
-    // Note that NRG::tasks is not the same list as 'subspaces',
-    // since some possible subspaces may have dimension 0 and thus
-    // do not really exist.
-    if (nr) NRG::tasks.push_back(I);
+    // Some possible subspaces may have dimension 0 and thus do not really exist.
+    if (nr) tasks.push_back(I);
   }
+  return tasks;
 }
 
-// Sort NRG::tasks in the decreasing order of the submatrix size. As
-// a side effect, we compute some statistics about matrix sizes.
-void sort_task_list() {
+// Sort the tasks in the decreasing order of the matrix size. As a side effect, we compute some statistics about the
+// matrix sizes.
+std::vector<Invar> sort_task_list(std::vector<Invar> tasks) {
   std::vector<pair<size_t, Invar>> tasks_with_sizes;
-  for (const auto &i : NRG::tasks) tasks_with_sizes.emplace_back(qsrmax[i].total(), i);
+  for (const auto &I : tasks) tasks_with_sizes.emplace_back(qsrmax[I].total(), I);
   // Sort in the *decreasing* order!
   sort(rbegin(tasks_with_sizes), rend(tasks_with_sizes));
   auto nr       = tasks_with_sizes.size();
@@ -2475,9 +2458,10 @@ void sort_task_list() {
   cout << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << endl;
   // Report matrix sizes
   if (logletter('S'))
-    for (const auto &i : tasks_with_sizes) cout << "size(" << i.second << ")=" << i.first << endl;
-  // Update the task list NRG::tasks with the sorted list of subspaces
-  transform(begin(tasks_with_sizes), end(tasks_with_sizes), begin(NRG::tasks), [](const auto &p) { return p.second; });
+    for (const auto &[size, I] : tasks_with_sizes) cout << "size(" << I << ")=" << size << endl;
+  std::vector<Invar> sorted_tasks;
+  transform(cbegin(tasks_with_sizes), cend(tasks_with_sizes), std::back_inserter(sorted_tasks), [](const auto &p) { return p.second; });
+  return sorted_tasks;
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
@@ -2563,14 +2547,13 @@ void nrg_do_diag(IterInfo &iterinfo, DiagInfo &diagprev) {
   nrglog('@', "@ nrg_do_diag()");
   infostring();
   show_coefficients();
-  nrg_determine_tasks(diagprev);
-  sort_task_list();
+  auto tasks = sort_task_list(nrg_determine_tasks(diagprev));
   NRG::diagratio = P::diagratio;
   bool notenough;
   do {
     if (nrgrun) {
       if (!(P::resume && int(STAT::N) <= P::laststored))
-        nrg_diagonalisations(iterinfo.opch, diagprev); // compute in first run
+        nrg_diagonalisations(iterinfo.opch, diagprev, tasks); // compute in first run
       else
         load_transformations(STAT::N, diag); // or read from disk
     }
