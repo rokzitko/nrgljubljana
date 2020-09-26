@@ -13,9 +13,8 @@ namespace ISO1 {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryISO::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+void SymmetryISO::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
     Invar Ip;
@@ -23,7 +22,7 @@ void SymmetryISO::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
     Ip = Invar(ii1 - 1, ss1 + 1);
     ONETWO(`RECALC_TAB("iso/iso-1ch-doubletmp.dat", ISO1::LENGTH_D_1CH, Invar(2, 2))',
            `RECALC_TAB("iso/iso-2ch-doubletmp.dat", ISO1::LENGTH_D_2CH, Invar(2, 2))');
-      
+
     Ip = Invar(ii1-1, ss1-1);
     ONETWO(`RECALC_TAB("iso/iso-1ch-doubletmm.dat", ISO1::LENGTH_D_1CH, Invar(2, 2))',
     	   `RECALC_TAB("iso/iso-2ch-doubletmm.dat", ISO1::LENGTH_D_2CH, Invar(2, 2))');
@@ -99,9 +98,8 @@ void SymmetryISO::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISO::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+void SymmetryISO::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
     Invar Ip;

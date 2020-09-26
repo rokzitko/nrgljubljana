@@ -207,7 +207,7 @@ void recalc_general(const DiagInfo &dg, const MatrixElements &cold, MatrixElemen
 
 // This routine is used for recalculation of global operators in
 // nrg-recalc-*.cc
-void recalc1_global(DiagInfo &dg, const Invar &I, Matrix &m, size_t i1, size_t ip, t_factor value) {
+void recalc1_global(const DiagInfo &dg, const Invar &I, Matrix &m, size_t i1, size_t ip, t_factor value) {
   nrglog('r', "recalc1_global: " << I);
   const Eigen &dgI = dg.find(I)->second;
   const size_t dim = dgI.getnr();

@@ -142,9 +142,8 @@ void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-void SymmetryQSLR::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+void SymmetryQSLR::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin ss1 = I1.get("SS");
     int p1    = I1.get("P");
@@ -177,9 +176,8 @@ void SymmetryQSLR::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEl
 }
 
 // Recalculate matrix elements of a triplet tenzor operator [EVEN PARITY]
-void SymmetryQSLR::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+void SymmetryQSLR::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin ss1 = I1.get("SS");
     int p1    = I1.get("P");

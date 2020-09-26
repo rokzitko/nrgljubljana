@@ -37,9 +37,8 @@ void SymmetryNONE::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryNONE::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1 = INVAR(is1);
+void SymmetryNONE::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Invar Ip = Invar();
 
     ONETWO(`RECALC_TAB("none/none-1ch-doublet.dat", NONE::LENGTH_D_1CH, Invar())',
@@ -88,12 +87,11 @@ void SymmetryNONE::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEl
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value *ISOFACTOR)
 
-void SymmetryNONE::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryNONE::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II{I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "none/none-1ch-spinz.dat"
@@ -108,10 +106,9 @@ void SymmetryNONE::recalc_global(DiagInfo &diag, string name, MatrixElements &cn
 
 #ifdef NRG_COMPLEX
   if (name == "SYtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II{I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "none/none-1ch-spiny.dat"
@@ -126,10 +123,9 @@ void SymmetryNONE::recalc_global(DiagInfo &diag, string name, MatrixElements &cn
 #endif
 
   if (name == "SXtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II{I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "none/none-1ch-spinx.dat"
@@ -143,10 +139,9 @@ void SymmetryNONE::recalc_global(DiagInfo &diag, string name, MatrixElements &cn
   }
 
   if (name == "Qtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II{I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "none/none-1ch-Qtot.dat"
@@ -213,10 +208,9 @@ void SymmetryNONE::recalc_global(DiagInfo &diag, string name, MatrixElements &cn
 #endif
 
   if (name == "Iptot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II {I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "none/none-1ch-Iptot.dat"
@@ -230,10 +224,9 @@ void SymmetryNONE::recalc_global(DiagInfo &diag, string name, MatrixElements &cn
   }
 
   if (name == "Imtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II {I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "none/none-1ch-Imtot.dat"

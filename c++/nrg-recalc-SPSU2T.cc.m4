@@ -11,9 +11,8 @@ namespace SPSU2T {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPSU2T::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1   = INVAR(is1);
+void SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Sspin ss1  = I1.get("SS");
     Tangmom t1 = I1.get("T");
     double T   = t1; // trick!
@@ -89,9 +88,8 @@ void SymmetrySPSU2T::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPSU2T::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1   = INVAR(is1);
+void SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Sspin ss1  = I1.get("SS");
     Tangmom t1 = I1.get("T");
     double T   = t1; // trick!

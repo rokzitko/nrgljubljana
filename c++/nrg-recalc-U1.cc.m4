@@ -13,9 +13,8 @@ namespace U1 {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryU1::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+void SymmetryU1::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
     ONE23(`RECALC_TAB("u1/u1-1ch-doublet.dat", U1::LENGTH_D_1CH, Invar(1))',
@@ -72,10 +71,9 @@ void SymmetryU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
-void SymmetryU1::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryU1::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -95,8 +93,7 @@ void SymmetryU1::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
 
 #ifdef NRG_COMPLEX
   if (name == "SYtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -116,8 +113,7 @@ void SymmetryU1::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
 #endif
 
   if (name == "SXtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {

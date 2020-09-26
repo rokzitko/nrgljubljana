@@ -87,10 +87,9 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value *ISOFACTOR)
 
-void SymmetryPP::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryPP::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -104,8 +103,7 @@ void SymmetryPP::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
 
 #ifdef NRG_COMPLEX
   if (name == "SYtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -119,8 +117,7 @@ void SymmetryPP::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
 #endif
 
   if (name == "SXtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -133,8 +130,7 @@ void SymmetryPP::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Qtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -147,8 +143,7 @@ void SymmetryPP::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Iztot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -161,8 +156,7 @@ void SymmetryPP::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Ixtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -176,8 +170,7 @@ void SymmetryPP::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
 
 #ifdef NRG_COMPLEX
   if (name == "Iytot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -191,8 +184,7 @@ void SymmetryPP::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
 #endif
 
   if (name == "Iptot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -205,8 +197,7 @@ void SymmetryPP::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Imtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {

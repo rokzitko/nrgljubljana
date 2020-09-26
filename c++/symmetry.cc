@@ -139,15 +139,15 @@ class Symmetry {
 
   virtual void recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) { my_error("Not implemented."); }
 
-  virtual void recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
 
-  virtual void recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
 
-  virtual void recalc_orb_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_orb_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
 
-  virtual void recalc_quadruplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_quadruplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
 
-  virtual void recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) { my_error("Not implemented."); }
 
   virtual void show_coefficients() {}
 };
@@ -162,11 +162,11 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
   void recalc_irreduc(const DiagInfo &diag, Opch &opch) override
 
 // Optional declaration
-#define HAS_DOUBLET void recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_TRIPLET void recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_ORB_TRIPLET void recalc_orb_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_QUADRUPLET void recalc_quadruplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_GLOBAL void recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) override
+#define HAS_DOUBLET void recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_TRIPLET void recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_ORB_TRIPLET void recalc_orb_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_QUADRUPLET void recalc_quadruplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_GLOBAL void recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) override
 #define HAS_SUBSTEPS void recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) override
 
 class SymField : public Symmetry {

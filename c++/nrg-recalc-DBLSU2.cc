@@ -26,9 +26,8 @@ namespace DBLSU2 {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryDBLSU2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1   = INVAR(is1);
+void SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Ispin ii11 = I1.get("II1");
     Ispin ii21 = I1.get("II2");
     Invar Ip;
@@ -205,12 +204,11 @@ void SymmetryDBLSU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
-void SymmetryDBLSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryDBLSU2::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+   for(const auto &[I1, eig]: diag) {
+      const Twoinvar II{I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 2:
 #include "dblsu2/dblsu2-2ch-spinz.dat"
@@ -222,10 +220,9 @@ void SymmetryDBLSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &
 
 #ifdef NRG_COMPLEX
   if (name == "SYtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+   for(const auto &[I1, eig]: diag) {
+      const Twoinvar II{I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 2:
 #include "dblsu2/dblsu2-2ch-spiny.dat"
@@ -237,10 +234,9 @@ void SymmetryDBLSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &
 #endif // NRG_COMPLEX
 
   if (name == "SXtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+   for(const auto &[I1, eig]: diag) {
+      const Twoinvar II{I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 2:
 #include "dblsu2/dblsu2-2ch-spinx.dat"

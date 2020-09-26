@@ -15,10 +15,9 @@ namespace QS {
 
 // Recalculate matrix elements of a doublet tensor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP_const(diag, is1) {
-      Invar I1  = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
       Invar Ip;
@@ -28,7 +27,7 @@ void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
            `RECALC_TAB("qs/qs-2ch-doubletp.dat", QS::LENGTH_D_2CH, Invar(1, 2))',
            `RECALC_TAB("qs/qs-3ch-doubletp.dat", QS::LENGTH_D_3CH, Invar(1, 2))',
            `RECALC_TAB("qs/qs-4ch-doubletp.dat", QS::LENGTH_D_4CH, Invar(1, 2))');
-      
+
     Ip = Invar(q1-1, ss1-1);
     ONE234(`RECALC_TAB("qs/qs-1ch-doubletm.dat", QS::LENGTH_D_1CH, Invar(1, 2))',
            `RECALC_TAB("qs/qs-2ch-doubletm.dat", QS::LENGTH_D_2CH, Invar(1, 2))',
@@ -36,8 +35,7 @@ void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
            `RECALC_TAB("qs/qs-4ch-doubletm.dat", QS::LENGTH_D_4CH, Invar(1, 2))');
     }
   } else {
-    LOOP_const(diag, is1) {
-      Invar I1  = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
       Invar Ip;
@@ -70,7 +68,7 @@ void SymmetryQS::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 
     I1 = Invar(qp + 1, ssp + 1);
     ONE234(`RECALC_F_TAB("qs/qs-1ch-spinupa.dat", 0, QS::LENGTH_I_1CH)',
-    
+
            `RECALC_F_TAB("qs/qs-2ch-spinupa.dat", 0, QS::LENGTH_I_2CH);
 	    RECALC_F_TAB("qs/qs-2ch-spinupb.dat", 1, QS::LENGTH_I_2CH)',
 
@@ -82,10 +80,10 @@ void SymmetryQS::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 	    RECALC_F_TAB("qs/qs-4ch-spinupb.dat", 1, QS::LENGTH_I_4CH_1);
 	    RECALC_F_TAB("qs/qs-4ch-spinupc.dat", 2, QS::LENGTH_I_4CH_2);
 	    RECALC_F_TAB("qs/qs-4ch-spinupd.dat", 3, QS::LENGTH_I_4CH_3)');
-    
+
     I1 = Invar(qp+1, ssp-1);
     ONE234(`RECALC_F_TAB("qs/qs-1ch-spindowna.dat", 0, QS::LENGTH_I_1CH)',
-    
+
            `RECALC_F_TAB("qs/qs-2ch-spindowna.dat", 0, QS::LENGTH_I_2CH);
             RECALC_F_TAB("qs/qs-2ch-spindownb.dat", 1, QS::LENGTH_I_2CH)',
 
@@ -120,10 +118,9 @@ void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M
 
 // Recalculate matrix elements of a triplet tenzor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP_const(diag, is1) {
-      Invar I1  = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
       Invar Ip;
@@ -133,13 +130,13 @@ void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElem
            `RECALC_TAB("qs/qs-2ch-triplets.dat", QS::LENGTH_T0_2CH, Invar(0, 3))',
            `RECALC_TAB("qs/qs-3ch-triplets.dat", QS::LENGTH_T0_3CH, Invar(0, 3))',
            `RECALC_TAB("qs/qs-4ch-triplets.dat", QS::LENGTH_T0_4CH, Invar(0, 3))');
-      
+
     Ip = Invar(q1, ss1+2);
     ONE234(`RECALC_TAB("qs/qs-1ch-tripletp.dat", QS::LENGTH_Tpm_1CH, Invar(0, 3))',
            `RECALC_TAB("qs/qs-2ch-tripletp.dat", QS::LENGTH_Tpm_2CH, Invar(0, 3))',
            `RECALC_TAB("qs/qs-3ch-tripletp.dat", QS::LENGTH_Tpm_3CH, Invar(0, 3))',
            `RECALC_TAB("qs/qs-4ch-tripletp.dat", QS::LENGTH_Tpm_4CH, Invar(0, 3))');
-      
+
     Ip = Invar(q1, ss1-2);
     ONE234(`RECALC_TAB("qs/qs-1ch-tripletm.dat", QS::LENGTH_Tpm_1CH, Invar(0, 3))',
            `RECALC_TAB("qs/qs-2ch-tripletm.dat", QS::LENGTH_Tpm_2CH, Invar(0, 3))',
@@ -164,10 +161,9 @@ void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 #define QTOT(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
 
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryQS::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
-    LOOP_const(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -180,8 +176,7 @@ void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Q1") {
-    LOOP_const(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -194,8 +189,7 @@ void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Q2") {
-    LOOP_const(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -208,8 +202,7 @@ void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Qtot") {
-    LOOP_const(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {

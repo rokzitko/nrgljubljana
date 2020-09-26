@@ -13,9 +13,8 @@ namespace SL {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySL::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+void SymmetrySL::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
     ONE23(`RECALC_TAB("sl/sl-1ch-doublet.dat", SL::LENGTH_D_1CH, Invar(1))',
@@ -52,10 +51,9 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #undef N3
 #define N3(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
 
-void SymmetrySL::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetrySL::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -68,8 +66,7 @@ void SymmetrySL::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Qtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -82,8 +79,7 @@ void SymmetrySL::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "N1") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -96,8 +92,7 @@ void SymmetrySL::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "N2") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -110,8 +105,7 @@ void SymmetrySL::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "N3") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {

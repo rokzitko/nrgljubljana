@@ -31,10 +31,9 @@ namespace QSZ {
 // in between. Thus Q[p] + Q[op] = Q[1].
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP(diag, is1) {
-      Invar I1    = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
       SZspin ssz1 = I1.get("SSZ");
       Invar Ip;
@@ -79,7 +78,7 @@ void SymmetryQSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 } } break;
   default: my_assert_not_reached();
   };
-      
+
     Ip = Invar(q1-1, ssz1-1);
     switch (channels) {
   case 1: { {
@@ -116,8 +115,7 @@ void SymmetryQSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixEle
   };
     }      // loop
   } else { // substeps
-    LOOP(diag, is1) {
-      Invar I1    = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
       SZspin ssz1 = I1.get("SSZ");
       Invar Ip;
@@ -328,10 +326,9 @@ void SymmetryQSZ::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int 
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSZ::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP(diag, is1) {
-      Invar I1    = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
       SZspin ssz1 = I1.get("SSZ");
       Invar Ip;
@@ -433,11 +430,9 @@ void SymmetryQSZ::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixEle
 #undef Q1D
 #define Q1D(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
 
-
-void SymmetryQSZ::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryQSZ::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -455,8 +450,7 @@ void SymmetryQSZ::recalc_global(DiagInfo &diag, string name, MatrixElements &cne
     } // LOOP
   }
   if (name == "Q1u") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -468,8 +462,7 @@ void SymmetryQSZ::recalc_global(DiagInfo &diag, string name, MatrixElements &cne
     } // LOOP
   }
   if (name == "Q1d") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {

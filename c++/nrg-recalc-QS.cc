@@ -30,10 +30,9 @@ namespace QS {
 
 // Recalculate matrix elements of a doublet tensor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP_const(diag, is1) {
-      Invar I1  = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
       Invar Ip;
@@ -82,7 +81,7 @@ void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 } } break;
   default: my_assert_not_reached();
 };
-      
+
     Ip = Invar(q1-1, ss1-1);
     switch (channels) {
   case 1: { {
@@ -129,8 +128,7 @@ void SymmetryQS::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 };
     }
   } else {
-    LOOP_const(diag, is1) {
-      Invar I1  = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
       Invar Ip;
@@ -283,7 +281,7 @@ void SymmetryQS::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 } } break;
   default: my_assert_not_reached();
 };
-    
+
     I1 = Invar(qp+1, ssp-1);
     switch (channels) {
   case 1: { {
@@ -429,10 +427,9 @@ void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M
 
 // Recalculate matrix elements of a triplet tenzor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP_const(diag, is1) {
-      Invar I1  = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
       Invar Ip;
@@ -481,7 +478,7 @@ void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 } } break;
   default: my_assert_not_reached();
 };
-      
+
     Ip = Invar(q1, ss1+2);
     switch (channels) {
   case 1: { {
@@ -526,7 +523,7 @@ void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 } } break;
   default: my_assert_not_reached();
 };
-      
+
     Ip = Invar(q1, ss1-2);
     switch (channels) {
   case 1: { {
@@ -590,10 +587,9 @@ void SymmetryQS::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 #define QTOT(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
 
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryQS::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
-    LOOP_const(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -606,8 +602,7 @@ void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Q1") {
-    LOOP_const(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -620,8 +615,7 @@ void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Q2") {
-    LOOP_const(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -634,8 +628,7 @@ void SymmetryQS::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew
   }
 
   if (name == "Qtot") {
-    LOOP_const(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {

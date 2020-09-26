@@ -26,11 +26,10 @@ namespace QJ {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQJ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQJ::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   nrglog('f', "QJ::recalc_doublet() called");
 
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+  for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
     Invar Ip;
@@ -67,11 +66,10 @@ void SymmetryQJ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElem
 #define If(cond, a, b) (cond ? a : b)
 
 // Recalculate matrix elements of a quadruplet tensor operator
-void SymmetryQJ::recalc_quadruplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   nrglog('f', "QJ::recalc_quadruplet() called");
 
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+  for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
     //    double J = (jj1-1.0)/2.0;

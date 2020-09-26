@@ -28,10 +28,9 @@ namespace SPSU2 {
 
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPSU2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP(diag, is1) {
-      Invar I1  = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
       Invar Ip;
 
@@ -69,7 +68,7 @@ void SymmetrySPSU2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixE
 } } break;
   default: my_assert_not_reached();
   };
-      
+
     Ip = Invar(ss1-1);
     switch (channels) {
   case 1: { {
@@ -106,8 +105,7 @@ void SymmetrySPSU2::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixE
   };
     }
   } else {
-    LOOP(diag, is1) {
-      Invar I1  = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
       Invar Ip;
 
@@ -317,10 +315,9 @@ void SymmetrySPSU2::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, in
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPSU2::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
-    LOOP(diag, is1) {
-      Invar I1  = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
       Invar Ip;
 
@@ -358,7 +355,7 @@ void SymmetrySPSU2::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixE
 } } break;
   default: my_assert_not_reached();
   };
-      
+
     Ip = Invar(ss1+2);
     switch (channels) {
   case 1: { {
@@ -393,7 +390,7 @@ void SymmetrySPSU2::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixE
 } } break;
   default: my_assert_not_reached();
   };
-      
+
     Ip = Invar(ss1-2);
     switch (channels) {
   case 1: { {
@@ -452,12 +449,11 @@ void SymmetrySPSU2::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixE
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value *psgn(getnn() + 1))
 
-void SymmetrySPSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetrySPSU2::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   // NOTE: none of these are implemented for substeps==true.
 
   if (name == "Qtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -473,8 +469,7 @@ void SymmetrySPSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &c
   }
 
   if (name == "Qdiff") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -501,8 +496,7 @@ void SymmetrySPSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &c
   }
 
   if (name == "Q2") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -515,8 +509,7 @@ void SymmetrySPSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &c
   }
 
   if (name == "Iztot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -532,8 +525,7 @@ void SymmetrySPSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &c
   }
 
   if (name == "Ixtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -549,8 +541,7 @@ void SymmetrySPSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &c
   }
 
   if (name == "Iptot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {
@@ -566,8 +557,7 @@ void SymmetrySPSU2::recalc_global(DiagInfo &diag, string name, MatrixElements &c
   }
 
   if (name == "Imtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {

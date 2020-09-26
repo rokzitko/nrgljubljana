@@ -26,9 +26,8 @@ namespace SL3 {
 }
 
 // Recalculate matrix elements of a "doublet" tensor operator
-void SymmetrySL3::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1   = INVAR(is1);
+void SymmetrySL3::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Number q11 = I1.get("Q1");
     Number q21 = I1.get("Q2");
     Number q31 = I1.get("Q3");
@@ -106,10 +105,9 @@ void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #undef N3
 #define N3(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
 
-void SymmetrySL3::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetrySL3::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-qtot.dat"
@@ -117,8 +115,7 @@ void SymmetrySL3::recalc_global(DiagInfo &diag, string name, MatrixElements &cne
   }
 
   if (name == "N1") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-N1.dat"
@@ -126,8 +123,7 @@ void SymmetrySL3::recalc_global(DiagInfo &diag, string name, MatrixElements &cne
   }
 
   if (name == "N2") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-N2.dat"
@@ -135,8 +131,7 @@ void SymmetrySL3::recalc_global(DiagInfo &diag, string name, MatrixElements &cne
   }
 
   if (name == "N3") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-N3.dat"

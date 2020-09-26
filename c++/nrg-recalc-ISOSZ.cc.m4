@@ -12,9 +12,8 @@ namespace ISOSZ {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1    = INVAR(is1);
+void SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
     Invar Ip;
@@ -22,7 +21,7 @@ void SymmetryISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixE
     Ip = Invar(ii1 - 1, ssz1 + 1);
     ONETWO(`RECALC_TAB("isosz/isosz-1ch-doubletmp.dat", ISOSZ::LENGTH_D_1CH, Invar(2, -1))',
            `RECALC_TAB("isosz/isosz-2ch-doubletmp.dat", ISOSZ::LENGTH_D_2CH, Invar(2, -1))');
-      
+
     Ip = Invar(ii1-1, ssz1-1);
     ONETWO(`RECALC_TAB("isosz/isosz-1ch-doubletmm.dat", ISOSZ::LENGTH_D_1CH, Invar(2, +1))',
     	   `RECALC_TAB("isosz/isosz-2ch-doubletmm.dat", ISOSZ::LENGTH_D_2CH, Invar(2, +1))');
@@ -60,7 +59,7 @@ void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 
            `RECALC_F_TAB("isosz/isosz-2ch-spinup-isoupa.dat", 0, ISOSZ::LENGTH_I_2CH);
 	    RECALC_F_TAB("isosz/isosz-2ch-spinup-isoupb.dat", 1, ISOSZ::LENGTH_I_2CH)');
-    
+
     I1 = Invar(iip+1, sszp-1);
     ONETWO(`RECALC_F_TAB("isosz/isosz-1ch-spindown-isoupa.dat", 0, ISOSZ::LENGTH_I_1CH)',
 
@@ -75,16 +74,15 @@ void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 
     I1 = Invar(iip-1, sszp-1);
     ONETWO(`RECALC_F_TAB("isosz/isosz-1ch-spindown-isodowna.dat", 0, ISOSZ::LENGTH_I_1CH)',
-    
+
     	   `RECALC_F_TAB("isosz/isosz-2ch-spindown-isodowna.dat", 0, ISOSZ::LENGTH_I_2CH);
 	    RECALC_F_TAB("isosz/isosz-2ch-spindown-isodownb.dat", 1, ISOSZ::LENGTH_I_2CH)');
   }
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISOSZ::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1    = INVAR(is1);
+void SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
     Invar Ip;
@@ -106,12 +104,11 @@ void SymmetryISOSZ::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixE
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
 
-void SymmetryISOSZ::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryISOSZ::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II{I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "isosz/isosz-1ch-spinz.dat"

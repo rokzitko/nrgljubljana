@@ -27,9 +27,8 @@ namespace ISOSZ {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1    = INVAR(is1);
+void SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
     Invar Ip;
@@ -58,7 +57,7 @@ void SymmetryISOSZ::recalc_doublet(DiagInfo &diag, MatrixElements &cold, MatrixE
 } } break;
   default: my_assert_not_reached();
   };
-      
+
     Ip = Invar(ii1-1, ssz1-1);
     switch (channels) {
   case 1: { {
@@ -188,7 +187,7 @@ void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 } } break;
   default: my_assert_not_reached();
   };
-    
+
     I1 = Invar(iip+1, sszp-1);
     switch (channels) {
   case 1: { {
@@ -297,9 +296,8 @@ void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISOSZ::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1    = INVAR(is1);
+void SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+  for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
     Invar Ip;
@@ -384,12 +382,11 @@ void SymmetryISOSZ::recalc_triplet(DiagInfo &diag, MatrixElements &cold, MatrixE
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
 
-void SymmetryISOSZ::recalc_global(DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryISOSZ::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II{I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "isosz/isosz-1ch-spinz.dat"
