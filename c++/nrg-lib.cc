@@ -201,9 +201,6 @@ template <typename T>
 // Map of operators matrices
 using CustomOp = map<string, MatrixElements>;
 
-// Name of the operator corresponding to a CustomOp map element
-string NAME(const CustomOp::value_type &i) { return i.first; }
-
 // Vector containing irreducible matrix elements of f operators.
 using OpchChannel = std::vector<MatrixElements>;
 // Each channel contains P::perchannel OpchChannel matrices.
@@ -1375,15 +1372,6 @@ ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
 ofstream Ftd;        // magnetic and charge susceptibility
 ofstream Fannotated; // annotated eigenvalue spectrum
 
-// Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
-// If SPIN == 1 or SPIN == -1, '-u' or '-d' is appended to the string.
-string SDNAME(const string &a, const string &b, int SPIN = 0) {
-  string sdname = a + "-" + b;
-  if (SPIN == 1) sdname += "-u";
-  if (SPIN == -1) sdname += "-d";
-  return sdname;
-}
-
 // Formatted output of the computed expectation values
 class ExpvOutput {
   private:
@@ -1544,38 +1532,49 @@ namespace oprecalc {
   bool do_q(const string &name) { return q.count(name); }
   bool do_ot(const string &name) { return ot.count(name); }
 
-#define LOOPOVER(set1, set2, job) for (const auto &op1 : set1) for (const auto &op2 : set2) { job; } // NOLINT
-#define LOOPOVER3(set1, set2, set3, job) for (const auto &op1 : set1) for (const auto &op2 : set2) for (const auto &op3 : set3) { job; } // NOLINT
+   // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
+   // If SPIN == 1 or SPIN == -1, '-u' or '-d' is appended to the string.
+   string sdname(const string &a, const string &b, int spin = 0) {
+     return a + "-" + b + (spin == 0 ? "" : (spin == 1 ? "-u" : "-d"));
+   }
 
-//  void loopover(const CustomOp &set1, const CustomOp &set2, 
-   
-  void OPENSPEC(const CustomOp::value_type &op1, const CustomOp::value_type &op2, const string_token &stringtoken, speclist &spectra, const string &prefix,
-                set<string> &rec1, set<string> &rec2, matstype mt, int Spin = 0) {
-    const string spname = SDNAME(NAME(op1), NAME(op2), Spin);
-    if (stringtoken.find(spname)) {
-      BaseSpectrum spec(op1.second, op2.second);
-      spec.name   = spname;
-      spec.prefix = prefix;
-      spec.mt     = mt;
-      spec.spin   = Spin;
-      open_files_spec(spectra, spec);
-      rec1.insert(NAME(op1));
-      rec2.insert(NAME(op2));
+   void loopover(const CustomOp &set1, const CustomOp &set2,
+                 const string_token &stringtoken, speclist &spectra, const string &prefix,
+                 set<string> &rec1, set<string> &rec2, matstype mt, int spin = 0) {
+    for (const auto &[name1, op1] : set1) {
+      for (const auto &[name2, op2] : set2) {
+        if (const auto spname = sdname(name1, name2, spin); stringtoken.find(spname)) {
+          BaseSpectrum spec(op1, op2);
+          spec.name   = spname;
+          spec.prefix = prefix;
+          spec.mt     = mt;
+          spec.spin   = spin;
+          open_files_spec(spectra, spec);
+          rec1.insert(name1);
+          rec2.insert(name2);
+        }
+      }
     }
   }
-
-  void OPENSPEC3(const CustomOp::value_type &op1, const CustomOp::value_type &op2, const CustomOp::value_type &op3, const string_token &stringtoken,
-                 speclist &spectra, const string &prefix, set<string> &rec1, set<string> &rec2, set<string> &rec3, matstype mt) {
-    const string spname = NAME(op1) + "-" + NAME(op2) + "-" + NAME(op3);
-    if (stringtoken.find(spname)) {
-      BaseSpectrum spec(op1.second, op2.second, op3.second);
-      spec.name   = spname;
-      spec.prefix = prefix;
-      spec.mt     = mt;
-      open_files_spec3(spectra, spec);
-      rec1.insert(NAME(op1));
-      rec2.insert(NAME(op2));
-      rec3.insert(NAME(op3));
+   
+  void loopover3(const CustomOp &set1, const CustomOp &set2, const CustomOp &set3,
+                 const string_token &stringtoken, speclist &spectra, const string &prefix, 
+                 set<string> &rec1, set<string> &rec2, set<string> &rec3, matstype mt) {
+    for (const auto &[name1, op1] : set1) {
+      for (const auto &[name2, op2] : set2) {
+        for (const auto &[name3, op3] : set3) {
+          if (const auto spname = name1 + "-" + name2 + "-" + name3; stringtoken.find(spname)) {
+            BaseSpectrum spec(op1, op2, op3);
+            spec.name   = spname;
+            spec.prefix = prefix;
+            spec.mt     = mt;
+            open_files_spec3(spectra, spec);
+            rec1.insert(name1);
+            rec2.insert(name2);
+            rec3.insert(name3);
+          }
+        }
+      }
     }
   }
 
@@ -1584,43 +1583,43 @@ namespace oprecalc {
     oprecalc::clear();
     // Correlators (singlet operators of all kinds).
     string_token sts(P::specs);
-    LOOPOVER(a.ops, a.ops, OPENSPEC(op1, op2, sts, spectraS, "corr", s, s, matstype::bosonic));
-    LOOPOVER(a.opsp, a.opsp, OPENSPEC(op1, op2, sts, spectraS, "corr", p, p, matstype::bosonic));
-    LOOPOVER(a.opsg, a.opsg, OPENSPEC(op1, op2, sts, spectraS, "corr", g, g, matstype::bosonic));
-    LOOPOVER(a.ops, a.opsg, OPENSPEC(op1, op2, sts, spectraS, "corr", s, g, matstype::bosonic));
-    LOOPOVER(a.opsg, a.ops, OPENSPEC(op1, op2, sts, spectraS, "corr", g, s, matstype::bosonic));
+    loopover(a.ops,  a.ops,  sts, spectraS, "corr", s, s, matstype::bosonic);
+    loopover(a.opsp, a.opsp, sts, spectraS, "corr", p, p, matstype::bosonic);
+    loopover(a.opsg, a.opsg, sts, spectraS, "corr", g, g, matstype::bosonic);
+    loopover(a.ops,  a.opsg, sts, spectraS, "corr", s, g, matstype::bosonic);
+    loopover(a.opsg, a.ops,  sts, spectraS, "corr", g, s, matstype::bosonic);
     // Global susceptibilities (global singlet operators).
     string_token stchit(P::specchit);
-    LOOPOVER(a.ops, a.ops, OPENSPEC(op1, op2, stchit, spectraCHIT, "chit", s, s, matstype::bosonic));
-    LOOPOVER(a.ops, a.opsg, OPENSPEC(op1, op2, stchit, spectraCHIT, "chit", s, g, matstype::bosonic));
-    LOOPOVER(a.opsg, a.ops, OPENSPEC(op1, op2, stchit, spectraCHIT, "chit", g, s, matstype::bosonic));
-    LOOPOVER(a.opsg, a.opsg, OPENSPEC(op1, op2, stchit, spectraCHIT, "chit", g, g, matstype::bosonic));
+    loopover(a.ops,  a.ops,  stchit, spectraCHIT, "chit", s, s, matstype::bosonic);
+    loopover(a.ops,  a.opsg, stchit, spectraCHIT, "chit", s, g, matstype::bosonic);
+    loopover(a.opsg, a.ops,  stchit, spectraCHIT, "chit", g, s, matstype::bosonic);
+    loopover(a.opsg, a.opsg, stchit, spectraCHIT, "chit", g, g, matstype::bosonic);
     // Dynamic spin susceptibilities (triplet operators).
     string_token stt(P::spect);
-    LOOPOVER(a.opt, a.opt, OPENSPEC(op1, op2, stt, spectraT, "spin", t, t, matstype::bosonic));
+    loopover(a.opt, a.opt, stt, spectraT, "spin", t, t, matstype::bosonic);
     string_token stot(P::specot);
-    LOOPOVER(a.opot, a.opot, OPENSPEC(op1, op2, stot, spectraOT, "orbspin", ot, ot, matstype::bosonic));
+    loopover(a.opot, a.opot, stot, spectraOT, "orbspin", ot, ot, matstype::bosonic);
     const int varmin = (Sym->isfield() ? -1 : 0);
     const int varmax = (Sym->isfield() ? +1 : 0);
     // Spectral functions (doublet operators).
     string_token std(P::specd);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      LOOPOVER(a.opd, a.opd, OPENSPEC(op1, op2, std, spectraD, "spec", d, d, matstype::fermionic, SPIN));
+      loopover(a.opd, a.opd, std, spectraD, "spec", d, d, matstype::fermionic, SPIN);
     string_token stgt(P::specgt);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      LOOPOVER(a.opd, a.opd, OPENSPEC(op1, op2, stgt, spectraGT, "gt", d, d, matstype::fermionic, SPIN));
+      loopover(a.opd, a.opd, stgt, spectraGT, "gt", d, d, matstype::fermionic, SPIN);
     string_token sti1t(P::speci1t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      LOOPOVER(a.opd, a.opd, OPENSPEC(op1, op2, sti1t, spectraI1T, "i1t", d, d, matstype::fermionic, SPIN));
+      loopover(a.opd, a.opd, sti1t, spectraI1T, "i1t", d, d, matstype::fermionic, SPIN);
     string_token sti2t(P::speci2t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      LOOPOVER(a.opd, a.opd, OPENSPEC(op1, op2, sti2t, spectraI2T, "i2t", d, d, matstype::fermionic, SPIN));
+      loopover(a.opd, a.opd, sti2t, spectraI2T, "i2t", d, d, matstype::fermionic, SPIN);
     // Spectral functions (quadruplet operators).
     string_token stq(P::specq);
-    LOOPOVER(a.opq, a.opq, OPENSPEC(op1, op2, stq, spectraQ, "specq", q, q, matstype::fermionic));
+    loopover(a.opq, a.opq, stq, spectraQ, "specq", q, q, matstype::fermionic);
     // Vertex functions
     string_token stv3(P::specv3);
-    LOOPOVER3(a.opd, a.opd, a.ops, OPENSPEC3(op1, op2, op3, stv3, spectraV3, "specv3", d, d, s, matstype::fb));
+    loopover3(a.opd, a.opd, a.ops, stv3, spectraV3, "specv3", d, d, s, matstype::fb);
     oprecalc::report();
     cout << endl << "Computing the following spectra:" << endl;
     for (const auto &i : allspectra) i->about();
