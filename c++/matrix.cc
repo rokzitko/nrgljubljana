@@ -1,5 +1,5 @@
 // matrix.cc - Symmetry dependent code for Hamiltonian matrix generation
-// Copyright (C) 2009-2019 Rok Zitko
+// Copyright (C) 2009-2020 Rok Zitko
 
 #ifndef _matrix_cc_
 #define _matrix_cc_
@@ -52,69 +52,48 @@ bool offdiag_contributes(size_t i, size_t j, size_t ch, const Rmaxvals &qq) {
 // qq - matrix dimensions data (to determine the position in the matrix)
 // In - In[i] and In[j] are the invariant subspaces of required <||f||>
 //      matrix elements
-void offdiag_build(size_t i, size_t j,
-                   size_t ch,      // channel number
-                   size_t fnr,     // extra index for <||f||>, usually 0
-                   t_matel factor, // may be complex (in principle)
-                   Matrix &h, const Rmaxvals &qq, const InvarVec &In, Opch &opch) {
-  // We are building the upper triangular part of the symmetric Hamiltonian
-  // matrix! Thus usually i > j. If not, we must conjugate transpose
-  // the contribution!
-  const bool transpose = i > j;
-  const size_t begin1  = qq.offset(i);
-  const size_t begin2  = qq.offset(j);
-  const size_t size1   = qq.rmax(i);
-  const size_t size2   = qq.rmax(j);
-  // already checked in offdiag_contributes(), but we do it
-  // again out of paranoia...
-  my_assert(size1 && size2);
-  // < In[i] r | f^\dag | In[j] r' >
-  const Twoinvar II = make_pair(In[i], In[j]);
-  if (!my_isfinite(factor)) {
-    cout << "offdiag_function() critical error: factor is not finite." << endl;
-    cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor=" << factor << endl;
-    cout << "source subspaces II=" << II << endl;
-    exit(1);
-  }
-  const t_matel factor_scaled = factor / SCALE(STAT::N + 1);
-#define F_EPSILON 1e-8
-  if (abs(factor_scaled) < F_EPSILON) return; // Doesn't contribute after all. Factors are usually order 1.
-  const size_t cnt = opch[ch][fnr].count(II);
-  if (cnt != 1) {
-    cout << "offdiag_function() critical error: <||f||> subspace does not exist." << endl;
-    cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor_scaled=" << factor_scaled << endl;
-    cout << "II=" << II << " cnt=" << cnt << endl;
-    exit(1);
-  }
-  my_assert(size1 == opch[ch][fnr][II].size1());
-  my_assert(size2 == opch[ch][fnr][II].size2());
-  nrglog('i', "offdiag i=" << i << " j=" << j << " factor_scaled=" << factor_scaled << " II=" << II);
-  if (transpose) {
-    matrix_range<Matrix> hsub(h, range(begin2, begin2 + size2), range(begin1, begin1 + size1));
-    noalias(hsub) += CONJ_ME(factor_scaled) * herm(opch[ch][fnr][II]);
-  } else {
-    matrix_range<Matrix> hsub(h, range(begin1, begin1 + size1), range(begin2, begin2 + size2));
-    noalias(hsub) += factor_scaled * opch[ch][fnr][II];
-  }
-}
-
 void offdiag_function(size_t i, size_t j,
                       size_t ch,      // channel number
                       size_t fnr,     // extra index for <||f||>, usually 0
                       t_matel factor, // may be complex (in principle)
-                      Matrix &h, const Rmaxvals &qq, const InvarVec &In) {
-  const bool contributes = offdiag_contributes(i, j, ch, qq);
-  if (contributes) offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch);
-}
-
-// TRICK: this macro is used when the evaluation of 'factor' could lead to a seg fault. Here we check if the
-// submatrix exists before the expression in 'factor' is evaluated.
-
-#define offdiag_macro(i, j, ch, fnr, factor, h, qq, In)                                                                                              \
-  {                                                                                                                                                  \
-    const bool contributes = offdiag_contributes(i, j, ch, qq);                                                                                      \
-    if (contributes) { offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch); };                                                            \
+                      Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) {
+  if (!offdiag_contributes(i, j, ch, qq))
+    return;
+  if (!my_isfinite(factor)) {
+    cout << "offdiag_function() critical error: factor is not finite." << endl;
+    cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor=" << factor << endl;
+    exit(1);
   }
+  const size_t begin1 = qq.offset(i);
+  const size_t begin2 = qq.offset(j);
+  const size_t size1  = qq.rmax(i);
+  const size_t size2  = qq.rmax(j);
+  // already checked in offdiag_contributes(), but we do it again out of paranoia...
+  my_assert(size1 && size2);
+  // < In[i] r | f^\dag | In[j] r' >
+  const Twoinvar II {In[i], In[j]};
+  const t_matel factor_scaled = factor / SCALE(STAT::N + 1);
+  const auto f = opch[ch][fnr].find(II);
+  if (f == opch[ch][fnr].cend()) {
+    cout << "offdiag_function() critical error: subspace does not exist." << endl;
+    cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor_scaled=" << factor_scaled << endl;
+    cout << "source subspaces II=" << II << endl;
+    exit(1);
+  }
+  const auto &mat = f->second;
+  my_assert(size1 == mat.size1() && size2 == mat.size2());
+  nrglog('i', "offdiag i=" << i << " j=" << j << " factor_scaled=" << factor_scaled << " II=" << II);
+  // We are building the upper triangular part of the Hermitian Hamiltonian.
+  // Thus usually i < j. If not, we must conjugate transpose the contribution!
+  const bool conj_transpose = i > j;
+  if (conj_transpose) {
+    matrix_range<Matrix> hsub(h, range(begin2, begin2 + size2), range(begin1, begin1 + size1));
+    noalias(hsub) += CONJ_ME(factor_scaled) * herm(mat);
+  } else {
+    matrix_range<Matrix> hsub(h, range(begin1, begin1 + size1), range(begin2, begin2 + size2));
+    noalias(hsub) += factor_scaled * mat;
+  }
+}
 
 /* +++ Shift the diagonal matrix elements by the number of electrons
  multiplied by the required constant(s) zeta. +++

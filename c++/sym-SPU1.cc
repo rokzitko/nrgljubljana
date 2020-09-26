@@ -47,8 +47,8 @@ class SymmetrySPU1 : public SymField {
     }
   }
 
-  void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
-  void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
+  void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
@@ -78,15 +78,15 @@ Symmetry *SymSPU1 = new SymmetrySPU1;
 #define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(STAT::N + 1, ch), h, qq)
 
 #undef ANOMALOUS
-#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * kappa(STAT::N, ch), h, qq, In)
+#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * kappa(STAT::N, ch), h, qq, In, opch)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
 
-void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (!P::substeps) {
     switch (channels) {
       case 1:
@@ -115,10 +115,10 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const 
 #define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, M, t_matel(factor) * 2.0 * (M == 1 ? -1.0 : 1.0) * delta(Ntrue + 1, M), h, qq)
 
 #undef ANOMALOUS
-#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, M, 0, t_matel(factor) * kappa(Ntrue, M), h, qq, In)
+#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, M, 0, t_matel(factor) * kappa(Ntrue, M), h, qq, In, opch)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(STAT::N), h, qq, In)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(STAT::N), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, M, number, zeta(Ntrue + 1, M), h, qq)
@@ -134,22 +134,22 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const 
 #define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(STAT::N + 1, ch), h, qq)
 
 #undef ANOMALOUS
-#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * kappa(STAT::N, ch), h, qq, In)
+#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * kappa(STAT::N, ch), h, qq, In, opch)
 
 #undef OFFDIAG_UP
 #undef OFFDIAG_DOWN
 #undef DIAG_UP
 #undef DIAG_DOWN
 
-#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUP(STAT::N, ch), h, qq, In)
+#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUP(STAT::N, ch), h, qq, In, opch)
 
-#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiDOWN(STAT::N, ch), h, qq, In)
+#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiDOWN(STAT::N, ch), h, qq, In, opch)
 
 #define DIAG_UP(i, j, ch, number) diag_function_half(i, ch, number, zetaUP(STAT::N + 1, ch), h, qq)
 
 #define DIAG_DOWN(i, j, ch, number) diag_function_half(i, ch, number, zetaDOWN(STAT::N + 1, ch), h, qq)
 
-void SymmetrySPU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetrySPU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (!P::substeps) {
     switch (channels) {
       case 1:
@@ -177,11 +177,11 @@ void SymmetrySPU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inv
   }
 }
 
-void SymmetrySPU1::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetrySPU1::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (P::polarized) {
-    makematrix_polarized(h, qq, I, In);
+    makematrix_polarized(h, qq, I, In, opch);
   } else {
-    makematrix_nonpolarized(h, qq, I, In);
+    makematrix_nonpolarized(h, qq, I, In, opch);
   }
 }
 

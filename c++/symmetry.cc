@@ -24,6 +24,24 @@ namespace STAT {
 
 std::vector<Invar> In, QN;
 
+InvarVec input_subspaces() { return In; } // XXX remove?
+
+Invar ancestor(Invar I, int i)
+{
+  const auto input = input_subspaces();
+  Invar anc = I;
+  anc.combine(input[i]);
+  return anc; // I.combine(input[i]) == input[i].combine(I)
+}
+
+InvarVec ancestors(Invar I)
+{
+  auto input = input_subspaces();
+  for (size_t i = 1; i <= P::combs; i++)
+    input[i].combine(I); // In is the list of differences wrt I
+  return input;
+}
+
 // Check if the triangle inequality is satisfied (i.e. if
 // Clebsch-Gordan coefficient can be different from zero). This is
 // important, for example, for triplet operators, which are zero when
@@ -117,7 +135,7 @@ class Symmetry {
   // Is an invariant subspace with given quantum numbers allowed?
   virtual bool Invar_allowed(const Invar &I) { return true; }
 
-  virtual void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) = 0;
+  virtual void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) = 0;
 
   // Called from recalc_dynamicsusceptibility().  This is the factor due
   // to the spin degeneracy when calculating the trace of Sz.Sz.
@@ -153,7 +171,7 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
 
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
-  void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) override;                                                                \
+  void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) override;                                     \
   void recalc_irreduc(const DiagInfo &diag, Opch &opch) override
 
 // Optional declaration

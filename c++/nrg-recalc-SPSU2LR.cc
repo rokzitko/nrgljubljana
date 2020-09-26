@@ -75,7 +75,7 @@ void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spsu2lr/spsu2lr-2ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -85,7 +85,7 @@ void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spsu2lr/spsu2lr-2ch-spinupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
   }
 };
 
@@ -97,7 +97,7 @@ void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spsu2lr/spsu2lr-2ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -107,7 +107,7 @@ void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spsu2lr/spsu2lr-2ch-spindownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
   }
 };
 
@@ -121,7 +121,7 @@ void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spsu2lr/spsu2lr-2ch-spinupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -131,7 +131,7 @@ void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spsu2lr/spsu2lr-2ch-spinupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
   }
 };
 
@@ -143,7 +143,7 @@ void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spsu2lr/spsu2lr-2ch-spindowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -153,7 +153,7 @@ void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spsu2lr/spsu2lr-2ch-spindowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SPSU2LR::LENGTH_I_2CH);
   }
 };
   }

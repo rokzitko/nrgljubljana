@@ -85,9 +85,9 @@ class Invar {
     my_assert(i < data.size());
     return data[i];
   }
-  // Quantum number addition laws for forming tensor products. For
-  // SU(2) and U(1) (additive quantum numbers) this is simply
-  // addition.
+
+  // Quantum number addition laws for forming tensor products. For SU(2) and U(1) (additive quantum numbers) this is
+  // simply addition.
   void combine(const Invar &invar2) {
     for (size_t i = 0; i < invdim; i++) switch (qntype[i]) {
         case additive:

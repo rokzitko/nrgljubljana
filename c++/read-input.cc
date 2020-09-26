@@ -139,7 +139,7 @@ void read_energies(ifstream &fdata, DiagInfo &diag, size_t nsubs) {
 
 // Read irreducible matrix elements from stream fdata and store them in a
 // map of matrices m. The format is specified in file "data.spec"
-void read_matrix_elements(ifstream &fdata, MatrixElements &m, const DiagInfo &dg) {
+void read_matrix_elements(ifstream &fdata, MatrixElements &m, const DiagInfo &diag) {
   nrglog('@', "read_matrix_elements");
   m.clear();
   size_t nf; // Number of I1 x I2 combinations
@@ -147,9 +147,9 @@ void read_matrix_elements(ifstream &fdata, MatrixElements &m, const DiagInfo &dg
   for (size_t i = 1; i <= nf; i++) {
     Invar I1, I2;
     fdata >> I1 >> I2;
-    const auto it1 = dg.find(I1);
-    const auto it2 = dg.find(I2);
-    if (it1 != dg.end() && it2 != dg.end()) {
+    const auto it1 = diag.find(I1);
+    const auto it2 = diag.find(I2);
+    if (it1 != diag.end() && it2 != diag.end()) {
       const size_t size1 = it1->second.getnr();
       const size_t size2 = it2->second.getnr();
       nrglog('(', "reading matrix block " << i << " [" << I1 << "] [" << I2 << "] (" << size1 << "x" << size2 << ")");
@@ -161,8 +161,8 @@ void read_matrix_elements(ifstream &fdata, MatrixElements &m, const DiagInfo &dg
   my_assert(m.size() == nf);
 }
 
-void read_ireducf(ifstream &fdata, const DiagInfo &diagprev, Opch &opch) {
-  nrglog('@', "read_ireducf()");
+void read_irreduc_f(ifstream &fdata, const DiagInfo &diag, Opch &opch) {
+  nrglog('@', "read_irreduc_f()");
   opch = Opch(P::channels);
   for (size_t i = 0; i < P::channels; i++) {
     opch[i] = OpchChannel(P::perchannel);
@@ -171,7 +171,7 @@ void read_ireducf(ifstream &fdata, const DiagInfo &diagprev, Opch &opch) {
       size_t iread, jread;
       fdata >> ch >> iread >> jread;
       my_assert(ch == 'f' && i == iread && j == jread);
-      read_matrix_elements(fdata, opch[i][j], diagprev);
+      read_matrix_elements(fdata, opch[i][j], diag);
     }
   }
 }
@@ -193,10 +193,11 @@ void determine_Nmax() {
   cout << endl << "length_coef_table=" << length_coef_table << " Nmax=" << P::Nmax << endl << endl;
 }
 
+inline void skipline(ostream &F = std::cout) { F << std::endl; }
+
 // Read all initial energies and matrix elements
-void read_data(IterInfo &iterinfo, DiagInfo &diagprev) {
-  cout << endl;
-  iterinfo.cleanup();
+std::tuple<DiagInfo, IterInfo> read_data() {
+  skipline();
   ifstream fdata("data");
   if (!fdata) my_error("Can't load initial data.");
   auto sym_string = parse_datafile_header(fdata);
@@ -205,11 +206,11 @@ void read_data(IterInfo &iterinfo, DiagInfo &diagprev) {
   read_Nmax(fdata);
   size_t nsubs = read_nsubs(fdata);
   skip_comments(fdata);
-  // Note: we are reading diagprev, not diag, since this is
-  // information from the previous (0-th) NRG step
-  read_energies(fdata, diagprev, nsubs);
+  DiagInfo diag0; // 0-th step of the NRG iteration
+  read_energies(fdata, diag0, nsubs);
   skip_comments(fdata);
-  read_ireducf(fdata, diagprev, iterinfo.opch);
+  IterInfo iterinfo0;
+  read_irreduc_f(fdata, diag0, iterinfo0.opch);
   while (true) {
     /* skip white space */
     while (!fdata.eof() && isspace(fdata.peek())) fdata.get();
@@ -223,13 +224,13 @@ void read_data(IterInfo &iterinfo, DiagInfo &diagprev) {
         // ignore embedded comment lines
         break;
       case 'e': read_gs_energy(fdata); break;
-      case 's': read_matrix_elements(fdata, iterinfo.ops[opname], diagprev); break;
-      case 'p': read_matrix_elements(fdata, iterinfo.opsp[opname], diagprev); break;
-      case 'g': read_matrix_elements(fdata, iterinfo.opsg[opname], diagprev); break;
-      case 'd': read_matrix_elements(fdata, iterinfo.opd[opname], diagprev); break;
-      case 't': read_matrix_elements(fdata, iterinfo.opt[opname], diagprev); break;
-      case 'o': read_matrix_elements(fdata, iterinfo.opot[opname], diagprev); break;
-      case 'q': read_matrix_elements(fdata, iterinfo.opq[opname], diagprev); break;
+      case 's': read_matrix_elements(fdata, iterinfo0.ops[opname],  diag0); break;
+      case 'p': read_matrix_elements(fdata, iterinfo0.opsp[opname], diag0); break;
+      case 'g': read_matrix_elements(fdata, iterinfo0.opsg[opname], diag0); break;
+      case 'd': read_matrix_elements(fdata, iterinfo0.opd[opname],  diag0); break;
+      case 't': read_matrix_elements(fdata, iterinfo0.opt[opname],  diag0); break;
+      case 'o': read_matrix_elements(fdata, iterinfo0.opot[opname], diag0); break;
+      case 'q': read_matrix_elements(fdata, iterinfo0.opq[opname],  diag0); break;
       case 'z':
         xi.read(fdata);
         zeta.read(fdata);
@@ -253,6 +254,7 @@ void read_data(IterInfo &iterinfo, DiagInfo &diagprev) {
   }
   if (string(P::tri) == "cpp") tridiag(); // before determine_Nmax()
   determine_Nmax();
+  return {diag0, iterinfo0};
 }
 
 #endif

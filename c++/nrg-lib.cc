@@ -98,9 +98,6 @@ class sharedparam {
 
 sharedparam sP;
 
-// Symmetry type specification
-//string sym_string = ""; // used in recalc.cc : XXX remove from global scope!
-
 // Quantum number types defined to enforce type checking
 using Number = int;
 using Ispin = int;
@@ -217,29 +214,7 @@ class IterInfo {
   CustomOp opt;  // triplet operators (dynamical spin susceptibility)
   CustomOp opq;  // quadruplet operators (spectral functions for J=3/2)
   CustomOp opot; // orbital triplet operators
-
-  // For debugging purposes we also store the information about the
-  // ancestors of each invariant subspace. Ancestors are those invariant
-  // subspaces which are combined with the states on the newly added
-  // lattice site(s) to give each new invariant subspace.
-  map<Invar, InvarVec> ancestors;
-
-  // Erases all information in the structures of IterInfo object. This is
-  // called at the start-up and before the DM-NRG run, so that the data
-  // structures are properly reset. opch is erased in read_ireducf().
-  void cleanup() {
-    ops.clear();
-    opsp.clear();
-    opsg.clear();
-    opd.clear();
-    opt.clear();
-    opq.clear();
-    opot.clear();
-    ancestors.clear();
-  }
 };
-
-IterInfo iterinfo; // NOTE: global object! (directly used in matrix.cc, recalc.cc, nrg-recalc-*
 
 class Eigen;
 using DiagInfo = map<Invar, Eigen>; // Full information after diagonalizations
@@ -1238,9 +1213,6 @@ double quadruplet_norm(const MatrixElements &m, const DiagInfo &diag, int SPIN) 
 }
 
 #include "spec.cc"
-
-InvarVec input_subspaces() { return In; }
-
 #include "dmnrg.h"
 
 // **** Helper functions for the NRG RUN ****
@@ -1950,16 +1922,15 @@ void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElem
     my_assert(parity == 1 || parity == -1);
   else
     my_assert(parity == 1);
-  for (const auto &[I1, eig] : diag) { // XXX: eig not used. simplify!
-    Invar Ip = I1;
+  for (const auto &[I, eig] : diag) { // XXX: eig not used. simplify!
+    const Invar I1 = I;
+    Invar Ip = I;
     if (parity == -1) Ip.InvertParity();
     for (size_t i = 1; i <= P::combs; i++) {
       Recalc r;
       r.i1 = r.ip = i;
       r.factor    = 1.0;
-      Invar ancI  = I1;
-      ancI.combine(input[i]);
-      r.IN1 = r.INp = ancI;
+      r.IN1 = r.INp = ancestor(I, i);
       if (parity == -1) r.INp.InvertParity();
       recalc_table[i - 1] = r; // mind the -1 shift!
     }
@@ -1969,7 +1940,7 @@ void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElem
 
 // Wrapper routine for recalculations. Called from nrg_recalculate_operators().
 template <class RecalcFnc>
-  void recalc_common(RecalcFnc recalc_fnc, DiagInfo &dg, std::string name, MatrixElements &m, const string &tip, bool (*testfn)(const string &)) {
+  void recalc_common(RecalcFnc recalc_fnc, const DiagInfo &dg, std::string name, MatrixElements &m, const string &tip, bool (*testfn)(const string &)) {
   if (testfn(name)) {
     nrglog('0', "Recalculate " << tip << " " << name);
     MatrixElements mstore;
@@ -2070,7 +2041,7 @@ void check_operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
 
 // Recalculate operator matrix representations
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void nrg_recalculate_operators(DiagInfo &dg, IterInfo &a) { // XXX: DiagInfo should be const, but all recalc* files would need to be fixed first
+void nrg_recalculate_operators(const DiagInfo &dg, IterInfo &a) {
   nrglog('@', "@ nrg_recalculate_operators()");
   for (auto &[name, m] : a.ops)  recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1);       }, dg, name, m, "s",  oprecalc::do_s);
   for (auto &[name, m] : a.opsp) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, -1);      }, dg, name, m, "p",  oprecalc::do_p);
@@ -2207,9 +2178,9 @@ inline t_eigen Eigenvalue(const DiagInfo &diag, const Invar &I, const size_t r) 
     my_error("Eigenvalue not found. Should never happen.");
 }
 
-Matrix nrg_prepare_task_for_diag(const Invar &I, const DiagInfo &diagprev) {
+Matrix nrg_prepare_task_for_diag(const Invar &I, const Opch &opch, const DiagInfo &diagprev) {
   nrglog('@', "@ nrg_prepare_task_for_diag()");
-  const InvarVec &anc = iterinfo.ancestors[I];
+  const auto anc = ancestors(I);
   const Rmaxvals &qq  = qsrmax[I];
   const size_t dim    = qq.total();
   nrglog('i', endl << "Subspace (" << I << ") dim=" << dim); // skip a line
@@ -2224,12 +2195,12 @@ Matrix nrg_prepare_task_for_diag(const Invar &I, const DiagInfo &diagprev) {
       h(offset + r, offset + r) = scalefactor * Eigenvalue(diagprev, anc[i], r);
   }
   // Symmetry-type-specific matrix initialization steps.
-  Sym->makematrix(h, qq, I, anc);
+  Sym->makematrix(h, qq, I, anc, opch);
   if (logletter('m')) dump_matrix(h);
   return h;
 }
 
-void nrg_diagonalisations_OpenMP(const DiagInfo &diagprev) {
+void nrg_diagonalisations_OpenMP(const Opch &opch, const DiagInfo &diagprev) {
   nrglog('@', "@ nrg_diagonalisations_OpenMP()");
   nrglog('(', "OpenMP diag");
   size_t nr    = NRG::tasks.size();
@@ -2239,7 +2210,7 @@ void nrg_diagonalisations_OpenMP(const DiagInfo &diagprev) {
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {
     Invar I  = NRG::tasks[itask];
-    Matrix h = nrg_prepare_task_for_diag(I, diagprev);
+    Matrix h = nrg_prepare_task_for_diag(I, opch, diagprev);
     int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
@@ -2380,7 +2351,7 @@ Invar read_from(int source) {
   return Irecv;
 }
 
-void nrg_diagonalisations_MPI(const DiagInfo &diagprev) {
+void nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev) {
   nrglog('@', "@ nrg_diagonalisations_MPI()");
   mpi_sync_params(); // Synchronise parameters
   list<Invar> todo; // List of all the tasks to handle
@@ -2415,7 +2386,7 @@ void nrg_diagonalisations_MPI(const DiagInfo &diagprev) {
       I = todo.front();
       todo.pop_front();
     }
-    auto h = nrg_prepare_task_for_diag(I, diagprev);
+    auto h = nrg_prepare_task_for_diag(I, opch, diagprev);
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
@@ -2450,7 +2421,7 @@ void nrg_diagonalisations_MPI(const DiagInfo &diagprev) {
 #endif
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
-void nrg_diagonalisations(const DiagInfo &diagprev) {
+void nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev) {
   nrglog('@', "@ nrg_diagonalisations()");
   // This needs to be called here, because class Timing is not
   // thread-safe.
@@ -2460,29 +2431,26 @@ void nrg_diagonalisations(const DiagInfo &diagprev) {
   sP.init();
   diag.clear();
 #ifdef NRG_MPI
-  nrg_diagonalisations_MPI(diagprev);
+  nrg_diagonalisations_MPI(opch, diagprev);
 #else
-  nrg_diagonalisations_OpenMP(diagprev);
+  nrg_diagonalisations_OpenMP(opch, diagprev);
 #endif
 }
 
 // Determine the list of invariant subspaces in which diagonalisations need
 // to be performed.
-void nrg_determine_tasks(map<Invar, InvarVec> &ancestors, const DiagInfo &diagprev) {
+void nrg_determine_tasks(const DiagInfo &diagprev) {
   nrglog('@', "@ nrg_determine_tasks()");
   // Make a list of all subspaces to consider.
   auto subspaces = nrg_make_subspaces_list(diagprev);
   // Auxiliary information: ancestor subspaces and their dimensions.
   qsrmax.clear();
-  ancestors.clear();
   // Container holding all the subspaces that appear in the new
   // iteration.
   NRG::tasks.clear();
   for (const auto &I : subspaces) {
     // Determine which subspaces contribute to the Hamiltonian being built
-    InvarVec input = input_subspaces();
-    for (size_t i = 1; i <= P::combs; i++) input[i].combine(I); // In is the list of differences wrt I
-    ancestors[I] = input;
+    InvarVec input = ancestors(I);
     // Determine the range(s) of index r
     qsrmax[I].determine_ranges(I, input, diagprev);
     // nr is actually the size of the Hamiltonian submatrix!
@@ -2591,18 +2559,18 @@ void calc_boltzmann_factors(DiagInfo &diag) {
 /* NRG diagonalisation driver: calls nrg_diagionalisations() or
  load_transformations(), as necessary, and performs the truncation. All other
  calculations are done in nrg_after_diag(). Called from nrg_iterate(). */
-void nrg_do_diag(DiagInfo &diagprev) {
+void nrg_do_diag(IterInfo &iterinfo, DiagInfo &diagprev) {
   nrglog('@', "@ nrg_do_diag()");
   infostring();
   show_coefficients();
-  nrg_determine_tasks(iterinfo.ancestors, diagprev);
+  nrg_determine_tasks(diagprev);
   sort_task_list();
   NRG::diagratio = P::diagratio;
   bool notenough;
   do {
     if (nrgrun) {
       if (!(P::resume && int(STAT::N) <= P::laststored))
-        nrg_diagonalisations(diagprev); // compute in first run
+        nrg_diagonalisations(iterinfo.opch, diagprev); // compute in first run
       else
         load_transformations(STAT::N, diag); // or read from disk
     }
@@ -2748,7 +2716,7 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diagprev) {
 
 // Perform one iteration step
 void nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev) {
-  nrg_do_diag(diagprev);
+  nrg_do_diag(iterinfo, diagprev);
   nrg_after_diag(iterinfo, diagprev);
   time_mem::memory_time_brief_report();
 }
@@ -2950,16 +2918,10 @@ void set_symmetry(const string &sym_string) {
   Sym->report();
 }
 
-void prep_run(RUNTYPE t, DiagInfo &diagprev)
-{
-  STAT::runtype = t;
-  read_data(iterinfo, diagprev);
-}
-
-void calculation(IterInfo &iterinfo) {
-  nrglog('@', "@ start_calculation()");
-  DiagInfo diagprev;
-  prep_run(RUNTYPE::NRG, diagprev);
+void calculation() {
+  nrglog('@', "@ calculation()");
+  STAT::runtype = RUNTYPE::NRG;
+  auto [diagprev, iterinfo] = read_data();
   // Initialize all containers for storing information
   dm = AllSteps(P::Nlen);
   STAT::init_vectors(P::Nlen);
@@ -2978,8 +2940,9 @@ void calculation(IterInfo &iterinfo) {
     if (P::fdm) calc_fulldensitymatrix(rhoFDM);
   }
   if (string(P::stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-  prep_run(RUNTYPE::DMNRG, diagprev);
-  start_run(iterinfo, diagprev);
+  STAT::runtype = RUNTYPE::DMNRG;
+  auto [diagprev2, iterinfo2] = read_data();
+  start_run(iterinfo2, diagprev2);
   finalize_dmnrg();
 }
 
@@ -3032,7 +2995,7 @@ void run_nrg_master() {
 #ifdef NRG_MPI
   for (int i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_HELLO, 0);
 #endif
-  calculation(iterinfo);
+  calculation();
 #ifdef NRG_MPI
   cout << "Master done. Terminating slave processes." << endl;
   for (int i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_EXIT, 0);

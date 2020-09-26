@@ -94,7 +94,7 @@ class SymmetryQJ : public Symmetry {
   }
 
   void offdiag_function_QJ(unsigned int i, unsigned int j, unsigned int ch, unsigned int fnr, t_matel factor, Matrix &h, const Rmaxvals &qq,
-                           const InvarVec &In);
+                           const InvarVec &In, const Opch &opch);
 
   HAS_DOUBLET;
   HAS_QUADRUPLET;
@@ -111,21 +111,19 @@ void SymmetryQJ::offdiag_function_QJ(unsigned int i, unsigned int j,
                                      unsigned int ch,  // channel number
                                      unsigned int fnr, // extra index for <||f||>, usually 0
                                      t_matel factor,   // may be complex (in principle)
-                                     Matrix &h, const Rmaxvals &qq, const InvarVec &In) {
+                                     Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) {
   const Invar Iop     = (ch == 0 ? Invar(1, 2) : Invar(1, 4));
   const Invar I1      = In[i];
   const Invar I2      = In[j];
   const bool triangle = triangle_inequality(I1, I2, Iop); // I1 = I2+Iop
 
-  const bool contributes = offdiag_contributes(i, j, ch, qq);
-
-  if (triangle && contributes) { offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch); }
+  if (triangle) { offdiag_function(i, j, ch, fnr, factor, h, qq, In, opch); }
 }
 
 // *** Helper macros for makematrix() members in matrix.cc
 // Jndx = 0 for doublet, Jndx = 1 for quadruplet
 #undef OFFDIAG
-#define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(i, j, Jndx, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In)
+#define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(i, j, Jndx, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, number) diag_function(i, 0, number, zeta(STAT::N + 1, 0), h, qq)
@@ -134,7 +132,7 @@ inline double J(int JJ) {
   return (JJ - 1.0) / 2.0; // JJ=2J+1
 }
 
-void SymmetryQJ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryQJ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin jj = I.get("JJ");
 
 #include "qj/qj-offdiag.dat"

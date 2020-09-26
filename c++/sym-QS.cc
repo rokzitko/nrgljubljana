@@ -63,32 +63,17 @@ class SymmetryQS : public Symmetry {
 
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 0);
-
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
-
-    // Ce I1 in Ip singleta, ss1=ssp=1, je rezultat 1/3. Moral bi biti 0.
-    // Ce I1 in Ip dubleta, ss1=ssp=2, je resultat 2/3.
-    // Ce I1 in Ip tripleta, ss1=ssp=3, je rezultat 1.
-
-    // ss1=ssp=1 je posebni primer, vendar ni tezav, ker so itak tedaj
-    // tudi ireducibilni matricni elementi enaki 0. V splosnem pa je
-    // potrebna posebna obravnava tega limitnega primera.
-
-    // En singlet, en triplet: ss1=1, ssp=3 => 1/3; ss1=3, ssp=1 => 1.
-    // Ni simetricno, vrstni red je pomemben!
-
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
   double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 1);
-
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
-
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
@@ -123,7 +108,7 @@ Symmetry *SymQS = new SymmetryQS;
 
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
 
 /* i - subspace index
    ch - channel (0 or 1)
@@ -132,13 +117,13 @@ Symmetry *SymQS = new SymmetryQS;
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
 
 #undef OFFDIAG_MIX
-#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(STAT::N, ch), h, qq, In)
+#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(STAT::N, ch), h, qq, In, opch)
 
 #undef RUNGHOP
 #define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(STAT::N + 1, 0), h, qq)
 
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
 
   if (!substeps) {
@@ -177,7 +162,7 @@ void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const
 // Here we need scale_fix, because SCALE() function is different from
 // the convention for rescaling in regular two-channel cases.
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(STAT::N), h, qq, In)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(STAT::N), h, qq, In, opch)
 
 // No scale_fix here, because SCALE() is defined as it should be.
 #undef DIAG

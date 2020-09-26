@@ -34,13 +34,8 @@ void recalc_f(const DiagInfo &dg, MatrixElements &ff, const Invar &Ip, const Inv
     const size_t rmax1 = qsrmax[I1].rmax(table[j].i1);
     const size_t rmaxp = qsrmax[Ip].rmax(table[j].ip);
     if (!(rmax1 > 0 && rmaxp > 0)) continue;
-    const Invar &Ianc1 = iterinfo.ancestors[I1][table[j].i1];
-    const Invar &Iancp = iterinfo.ancestors[Ip][table[j].ip];
-    if (logletter('f')) {
+    if (logletter('f'))
       nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
-      nrgdump2(Ianc1, Iancp) << endl;
-    }
-    my_assert(Ianc1 == Iancp);
     my_assert(my_isfinite(table[j].factor));
     my_assert(rmax1 == rmaxp);
     const Matrix &U1 = dgI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
@@ -105,12 +100,10 @@ void split_in_blocks(DiagInfo &diag) {
     split_in_blocks_Eigen(I, eig);
 }
 
-/* Recalculate the (irreducible) matrix elements of various operators. This
- is the most important routine in this program, so it is heavily
- instrumentalized for debugging purposes. It is called from
- recalc_doublet(), recalc_singlet(), and other routines. The inner-most
- for() loops can be found here, so this is the right spot that one should
- try to hand optimize. */
+// Recalculate the (irreducible) matrix elements of various operators. This is the most important routine in this
+// program, so it is heavily instrumentalized for debugging purposes. It is called from recalc_doublet(),
+// recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
+// one should try to hand optimize.
 
 void recalc_general(const DiagInfo &dg, const MatrixElements &cold, MatrixElements &cnew,
                     const Invar &I1, // target subspace (bra)
@@ -143,8 +136,8 @@ void recalc_general(const DiagInfo &dg, const MatrixElements &cold, MatrixElemen
     const size_t rmaxp = qsrmax[Ip].rmax(table[j].ip);
     // Proceed if this combination of i1/ip contributes.
     if (rmax1 == 0 || rmaxp == 0) continue;
-    const Invar IN1 = iterinfo.ancestors[I1][table[j].i1];
-    const Invar INp = iterinfo.ancestors[Ip][table[j].ip];
+    const auto IN1 = ancestor(I1, table[j].i1);
+    const auto INp = ancestor(Ip, table[j].ip);
     my_assert(IN1 == table[j].IN1 && INp == table[j].INp);
     const Twoinvar ININ = make_pair(table[j].IN1, table[j].INp);
     const size_t cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.

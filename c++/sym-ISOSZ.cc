@@ -91,9 +91,9 @@ class SymmetryISOSZ : public SymField {
 Symmetry *SymISOSZ = new SymmetryISOSZ;
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
 
-void SymmetryISOSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryISOSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Ispin ii = I.get("II");
   int NN   = getnn();
 

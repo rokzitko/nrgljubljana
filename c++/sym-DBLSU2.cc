@@ -76,11 +76,11 @@ Symmetry *SymDBLSU2 = new SymmetryDBLSU2;
 // see sym-SU2.cc
 
 #undef OFFDIAG_1
-#define OFFDIAG_1(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(STAT::N, ch), h, qq, In)
+#define OFFDIAG_1(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(STAT::N, ch), h, qq, In, opch)
 #undef OFFDIAG_2
-#define OFFDIAG_2(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(STAT::N, ch), h, qq, In)
+#define OFFDIAG_2(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(STAT::N, ch), h, qq, In, opch)
 
-void SymmetryDBLSU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryDBLSU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 2:
 #include "dblsu2/dblsu2-2ch-offdiag-1.dat"

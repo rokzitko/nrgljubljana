@@ -103,7 +103,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-1ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_1CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -113,7 +113,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-2ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
 	    {
@@ -123,7 +123,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-2ch-spinupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -138,7 +138,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-1ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_1CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -148,7 +148,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-2ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
             {
@@ -158,7 +158,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-2ch-spindownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -175,7 +175,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-2ch-spinupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
       {
@@ -185,7 +185,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-2ch-spinupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
 
@@ -197,7 +197,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-2ch-spindowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
       {
@@ -207,7 +207,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "spu1lr/spu1lr-2ch-spindowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    recalc_f(diag, iterinfo.opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
+    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
     }

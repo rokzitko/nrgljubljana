@@ -26,8 +26,8 @@ class SymmetryNONE : public Symmetry {
     }
   }
 
-  void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
-  void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
+  void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
   void calculate_TD(const DiagInfo &diag, double factor) override{};
 
@@ -41,8 +41,8 @@ Symmetry *SymNONE = new SymmetryNONE;
 #undef OFFDIAG_CR_DO
 #undef OFFDIAG_CR_UP
 
-#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(STAT::N, ch), h, qq, In)
-#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(STAT::N, ch), h, qq, In)
+#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(STAT::N, ch), h, qq, In, opch)
 
 #undef ISOSPINX
 #define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(STAT::N + 1, ch), h, qq)
@@ -50,7 +50,7 @@ Symmetry *SymNONE = new SymmetryNONE;
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
 
-void SymmetryNONE::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryNONE::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 1:
 #include "none/none-1ch-offdiag-CR-UP.dat"
@@ -73,8 +73,8 @@ void SymmetryNONE::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const 
 #undef OFFDIAG_CR_DO
 #undef OFFDIAG_CR_UP
 
-#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiDOWN(STAT::N, ch), h, qq, In)
-#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xiUP(STAT::N, ch), h, qq, In)
+#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiDOWN(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xiUP(STAT::N, ch), h, qq, In, opch)
 
 #undef ISOSPINX
 #define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(STAT::N + 1, ch), h, qq)
@@ -85,7 +85,7 @@ void SymmetryNONE::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const 
 #undef DIAG_DOWN
 #define DIAG_DOWN(i, j, ch, number) diag_function(i, ch, number, zetaDOWN(STAT::N + 1, ch), h, qq)
 
-void SymmetryNONE::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryNONE::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 1:
 #include "none/none-1ch-offdiag-CR-UP.dat"
@@ -107,11 +107,11 @@ void SymmetryNONE::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inv
   }
 }
 
-void SymmetryNONE::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryNONE::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (P::polarized) {
-    makematrix_polarized(h, qq, I, In);
+    makematrix_polarized(h, qq, I, In, opch);
   } else {
-    makematrix_nonpolarized(h, qq, I, In);
+    makematrix_nonpolarized(h, qq, I, In, opch);
   }
 }
 

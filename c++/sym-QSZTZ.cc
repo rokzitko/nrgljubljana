@@ -74,12 +74,12 @@ Symmetry *SymQSZTZ = new SymmetryQSZTZ;
 // because all three set are exactly the same due to orbital
 // symmetry. [XXXX Can be generalized for symmetry-broken cases.]
 #undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_function(i, j, 0, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In)
+#define OFFDIAG(i, j, factor0) offdiag_function(i, j, 0, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, number) diag_function(i, 0, number, zeta(STAT::N + 1, 0), h, qq)
 
-void SymmetryQSZTZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryQSZTZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   my_assert(!substeps);
   my_assert(channels == 3);
 

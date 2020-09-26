@@ -145,7 +145,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qstz/qstz-spinup+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -158,7 +158,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qstz/qstz-spinup0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -171,7 +171,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qstz/qstz-spinup-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -184,7 +184,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qstz/qstz-spindo+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -197,7 +197,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qstz/qstz-spindo0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
 
@@ -210,7 +210,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qstz/qstz-spindo-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_I_3CH);
-    recalc_f(diag, iterinfo.opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
+    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QSTZ::LENGTH_I_3CH);
   }
 };
   }

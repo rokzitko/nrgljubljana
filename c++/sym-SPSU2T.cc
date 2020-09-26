@@ -89,7 +89,7 @@ class SymmetrySPSU2T : public Symmetry {
   HAS_TRIPLET;
 
   bool recalc_f_coupled(const Invar I1, const Invar I2, const Invar If) override {
-        return triangle_inequality(I1, I2, If);
+    return triangle_inequality(I1, I2, If);
   }
 };
 
@@ -111,7 +111,7 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
   return false;
 }
 
-#define offdiag_spsu2t(i, j, ch, fnr, factor0, h, qq, In, I)                                                                                         \
+#define offdiag_spsu2t(i, j, ch, fnr, factor0, h, qq, In, I, opch)                                                                                   \
   {                                                                                                                                                  \
     const bool contributes = offdiag_contributes(i, j, ch, qq);                                                                                      \
     if (contributes) {                                                                                                                               \
@@ -121,7 +121,7 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
       } else {                                                                                                                                       \
         factor = factor0;                                                                                                                            \
       }                                                                                                                                              \
-      offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch);                                                                                \
+      offdiag_function(i, j, ch, fnr, factor, h, qq, In, opch);                                                                                      \
     }                                                                                                                                                \
   };
 
@@ -129,7 +129,7 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
 // because all three set are exactly the same due to orbital
 // symmetry.
 #undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_spsu2t(i, j, 0, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In, I)
+#define OFFDIAG(i, j, factor0) offdiag_spsu2t(i, j, 0, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In, I, opch)
 
 #undef DIAG
 #define DIAG(i, number) diag_function(i, 0, number, zeta(STAT::N + 1, 0), h, qq)
@@ -138,9 +138,9 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
 #define ISOSPINX(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * 2.0 * delta(STAT::N + 1, 0), h, qq)
 
 #undef ANOMALOUS
-#define ANOMALOUS(i, j, factor) offdiag_function(i, j, 0, 0, t_matel(factor) * kappa(STAT::N, 0), h, qq, In)
+#define ANOMALOUS(i, j, factor) offdiag_function(i, j, 0, 0, t_matel(factor) * kappa(STAT::N, 0), h, qq, In, opch)
 
-void SymmetrySPSU2T::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetrySPSU2T::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss  = I.get("SS");
   Tangmom t = I.get("T");
   double T  = t; // crucially important to use floating point!

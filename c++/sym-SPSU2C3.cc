@@ -66,12 +66,12 @@ Symmetry *SymSPSU2C3 = new SymmetrySPSU2C3;
 #define ISOSPINX(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * 2.0 * delta(STAT::N + 1, 0), h, qq)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, number) diag_function(i, 0, number, zeta(STAT::N + 1, 0), h, qq)
 
-void SymmetrySPSU2C3::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetrySPSU2C3::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
 #ifdef NRG_REAL
   my_assert_not_reached();
 #endif

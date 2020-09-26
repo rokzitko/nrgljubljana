@@ -112,9 +112,9 @@ class SymmetryDBLISOSZ : public SymField {
 Symmetry *SymDBLISOSZ = new SymmetryDBLISOSZ;
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
 
-void SymmetryDBLISOSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryDBLISOSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 2:
 #include "dblisosz/dblisosz-2ch-offdiag.dat"

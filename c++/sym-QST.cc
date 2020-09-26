@@ -141,7 +141,7 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
   return false;
 }
 
-#define offdiag_qst(i, j, ch, fnr, factor0, h, qq, In, I)                                                                                            \
+#define offdiag_qst(i, j, ch, fnr, factor0, h, qq, In, I, opch)                                                                                      \
   {                                                                                                                                                  \
     const bool contributes = offdiag_contributes(i, j, ch, qq);                                                                                      \
     if (contributes) {                                                                                                                               \
@@ -151,7 +151,7 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
       } else {                                                                                                                                       \
         factor = factor0;                                                                                                                            \
       }                                                                                                                                              \
-      offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch);                                                                                \
+      offdiag_function(i, j, ch, fnr, factor, h, qq, In, opch);                                                                                      \
     }                                                                                                                                                \
   };
 
@@ -159,12 +159,12 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
 // because all three set are exactly the same due to orbital
 // symmetry.
 #undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_qst(i, j, 0, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In, I)
+#define OFFDIAG(i, j, factor0) offdiag_qst(i, j, 0, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In, I, opch)
 
 #undef DIAG
 #define DIAG(i, number) diag_function(i, 0, number, zeta(STAT::N + 1, 0), h, qq)
 
-void SymmetryQST::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryQST::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss  = I.get("SS");
   Tangmom t = I.get("T");
   double T  = t; // crucially important to use floating point!

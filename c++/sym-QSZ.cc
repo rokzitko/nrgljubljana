@@ -58,8 +58,8 @@ class SymmetryQSZ : public SymField {
     } // if
   }
 
-  void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
-  void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In);
+  void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
@@ -94,7 +94,7 @@ Symmetry *SymQSZ = new SymmetryQSZ;
 
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
 
 /* i - subspace index
    ch - channel (0 or 1)
@@ -110,7 +110,7 @@ Symmetry *SymQSZ = new SymmetryQSZ;
 // matrix in the new step, i.e., the f_{N} from the f^\dag_{N_1} f_{N} hopping
 // term.
 #undef OFFDIAG_MIX
-#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(STAT::N, ch), h, qq, In)
+#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(STAT::N, ch), h, qq, In, opch)
 
 #undef RUNGHOP
 #define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(STAT::N + 1, 0), h, qq)
@@ -118,7 +118,7 @@ Symmetry *SymQSZ = new SymmetryQSZ;
 // "non-polarized" here means that the coefficients xi do not depend on
 // spin. Note, however, that there is support for a global magnetic field,
 // cf. P::globalB.
-void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (!substeps) {
     switch (channels) {
       case 1:
@@ -152,7 +152,7 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const I
 
     // Overrides. See sym-QS.cc for explanations!
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(STAT::N), h, qq, In)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(STAT::N), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, M, number, zeta(Ntrue + 1, M), h, qq)
@@ -168,9 +168,9 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const I
   }
 }
 
-#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUP(STAT::N, ch), h, qq, In)
+#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUP(STAT::N, ch), h, qq, In, opch)
 
-#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiDOWN(STAT::N, ch), h, qq, In)
+#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiDOWN(STAT::N, ch), h, qq, In, opch)
 
 #define DIAG_UP(i, j, ch, number) diag_function_half(i, ch, number, zetaUP(STAT::N + 1, ch), h, qq)
 
@@ -179,7 +179,7 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const I
 #undef SPINZ
 #define SPINZ(i, j, ch, factor) spinz_function(i, j, ch, t_matel(factor), h, qq)
 
-void SymmetryQSZ::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryQSZ::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   my_assert(!substeps); // not implemented!
 
   switch (channels) {
@@ -218,11 +218,11 @@ void SymmetryQSZ::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inva
   }
 }
 
-void SymmetryQSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In) {
+void SymmetryQSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (P::polarized) {
-    makematrix_polarized(h, qq, I, In);
+    makematrix_polarized(h, qq, I, In, opch);
   } else {
-    makematrix_nonpolarized(h, qq, I, In);
+    makematrix_nonpolarized(h, qq, I, In, opch);
   }
 }
 
