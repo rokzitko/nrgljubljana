@@ -53,11 +53,10 @@ class SymmetryISOcommon : public Symmetry {
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
 
-    LOOP_const(diag, is) {
-      const Invar I     = INVAR(is);
+    for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
       const Sspin ss    = I.get("SS");
-      const double sumZ = calculate_Z(is, factor);
+      const double sumZ = calculate_Z(I, eig, factor);
 
       trSZ += sumZ * (ss * ss - 1) / 12.; // isospin multiplicity contained in sumZ
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ

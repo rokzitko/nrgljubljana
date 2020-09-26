@@ -97,12 +97,11 @@ class SymmetryQST : public Symmetry {
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trTZ, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
 
-    LOOP_const(diag, is) {
-      const Invar I     = INVAR(is);
+    for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
       const Sspin ss    = I.get("SS");
       const Tangmom t   = I.get("T");
-      const double sumZ = calculate_Z(is, factor);
+      const double sumZ = calculate_Z(I, eig, factor);
 
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;

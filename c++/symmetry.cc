@@ -1,11 +1,11 @@
 // symmetry.cc - Classes representing various symmetry types
-// Copyright (C) 2009-2019 Rok Zitko
+// Copyright (C) 2009-2020 Rok Zitko
 
 #ifndef _symmetry_cc_
 #define _symmetry_cc_
 
 // some forward declarations
-CONSTFNC double calculate_Z(const DiagInfo::value_type &is, double factor);
+CONSTFNC double calculate_Z(const Invar, const Eigen &, double);
 namespace STAT {
   double Z; // statistical sum (at shell n)
 }

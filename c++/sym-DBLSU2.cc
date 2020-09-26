@@ -53,11 +53,10 @@ class SymmetryDBLSU2 : public Symmetry {
     bucket trIZ12; // Tr[I1_z^2]
     bucket trIZ22; // Tr[I2_z^2]
 
-    LOOP_const(diag, is) {
-      const Invar I     = INVAR(is);
+    for (const auto &[I, eig]: diag) {
       const Number ii1  = I.get("II1");
       const Number ii2  = I.get("II2");
-      const double sumZ = calculate_Z(is, factor);
+      const double sumZ = calculate_Z(I, eig, factor);
 
       trIZ12 += sumZ * (ii1 * ii1 - 1) / 12.;
       trIZ22 += sumZ * (ii2 * ii2 - 1) / 12.;

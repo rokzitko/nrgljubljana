@@ -41,12 +41,11 @@ class SymmetryQSZTZ : public Symmetry {
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trTZ, trTZ2, trQ, trQ2;
 
-    LOOP_const(diag, is) {
-      const Invar I     = INVAR(is);
+    for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
       const Sspin ssz   = I.get("SZ");
       const Tangmom tz  = I.get("TZ");
-      const double sumZ = calculate_Z(is, factor);
+      const double sumZ = calculate_Z(I, eig, factor);
 
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;

@@ -53,10 +53,9 @@ class SymmetrySPU1 : public SymField {
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
 
-    LOOP_const(diag, is) {
-      const Invar I     = INVAR(is);
+    for (const auto &[I, eig]: diag) {
       const SZspin ssz  = I.get("SSZ");
-      const double sumZ = calculate_Z(is, factor);
+      const double sumZ = calculate_Z(I, eig, factor);
 
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * sqr(SZ(ssz));

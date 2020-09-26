@@ -71,11 +71,10 @@ class SymmetrySPSU2T : public Symmetry {
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ2, trTZ2; // Tr[S_z^2], Tr[T_z^2]
 
-    LOOP_const(diag, is) {
-      const Invar I     = INVAR(is);
+    for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
       const Tangmom t   = I.get("T");
-      const double sumZ = calculate_Z(is, factor);
+      const double sumZ = calculate_Z(I, eig, factor);
 
       trSZ2 += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
       trTZ2 += sumZ * t * (t + 1) / 3.;

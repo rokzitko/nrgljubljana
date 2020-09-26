@@ -847,11 +847,10 @@ set_of_tables u0p, u0m; // u_{0,m} coefficients
 /**** Calculation of traces ****/
 
 // Used in calculate_TD().
-CONSTFNC double calculate_Z(const DiagInfo::value_type &is, double rescale_factor) {
+CONSTFNC double calculate_Z(const Invar I, const Eigen &eig, double rescale_factor) {
   double sumZ = 0;
-  for (const auto &x : EIGEN(is).value) sumZ += exp(-rescale_factor * x);
-  sumZ *= mult(INVAR(is));
-  return assert_isfinite(sumZ);
+  for (const auto &x : eig.value) sumZ += exp(-rescale_factor * x);
+  return mult(I) * sumZ;
 }
 
 // Formated output for the expectation values
@@ -1910,8 +1909,9 @@ inline t_eigen scaled_energy(t_eigen e, bool scaled = true, bool absolute = fals
  possible phase transitions between various different ground states. */
 void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = false) {
   std::vector<pair<t_eigen, Invar>> seznam;
-  for (const auto &is : diag)
-    for (const auto e : EIGEN(is).value) seznam.emplace_back(e, INVAR(is));
+  for (const auto &[I, eig] : diag)
+    for (const auto e : eig.value) 
+      seznam.emplace_back(e, I);
   sort(begin(seznam), end(seznam));
   size_t len = min(seznam.size(), size_t(P::dumpannotated));
   // If states are clustered, we dump the full cluster

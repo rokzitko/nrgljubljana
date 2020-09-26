@@ -38,11 +38,10 @@ class SymmetryQJ : public Symmetry {
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trJZ2, trQ, trQ2; // Tr[J_z^2], Tr[Q], Tr[Q^2]
 
-    LOOP_const(diag, is) {
-      const Invar I     = INVAR(is);
+    for (const auto &[I, eig]: diag) {
       const Sspin jj    = I.get("JJ");
       const Number q    = I.get("Q");
-      const double sumZ = calculate_Z(is, factor);
+      const double sumZ = calculate_Z(I, eig, factor);
 
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;

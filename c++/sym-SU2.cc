@@ -55,10 +55,9 @@ class SymmetrySU2 : public Symmetry {
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trIZ2; // Tr[I_z^2]
 
-    LOOP_const(diag, is) {
-      const Invar I     = INVAR(is);
+    for (const auto &[I, eig]: diag) {
       const Number ii   = I.get("II");
-      const double sumZ = calculate_Z(is, factor);
+      const double sumZ = calculate_Z(I, eig, factor);
 
       trIZ2 += sumZ * (ii * ii - 1) / 12.;
     }
