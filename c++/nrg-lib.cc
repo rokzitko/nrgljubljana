@@ -2978,12 +2978,6 @@ void sharedparam::init() {
 }
 
 #ifdef NRG_MPI
-int mpidebuglevel = 0;
-
-void mpidebug(const string &str) {
-  if (mpidebuglevel > 0) cout << "MPI process " << mpiw->rank() << " " << str << endl;
-}
-
 void mpi_sync_params() {
   // Synchronize global parameters
   if (mpiw->rank() == 0) {
@@ -3035,15 +3029,12 @@ void run_nrg_master() {
 // Handle a diagonalisation request:
 void slave_diag(const int master) {
   // 1. receive the matrix and the subspace identification
-  mpidebug("recv");
   auto m = mpi_receive_matrix(master);
   Invar I;
   check_status(mpiw->recv(master, TAG_INVAR, I));
   // 2. preform the diagonalisation
-  mpidebug("diagonalise");
   Eigen eig = diagonalise(m);
   // 3. send back the results
-  mpidebug("send");
   mpi_send_eigen(master, eig);
   mpiw->send(master, TAG_INVAR, I);
 }
@@ -3058,17 +3049,13 @@ void run_nrg_slave() {
       nrglog('M', "Slave " << mpiw->rank() << " received message with tag " << status.tag());
       switch (status.tag()) {
         case TAG_HELLO: 
-          mpidebug("ready"); 
           break;
         case TAG_EXIT:
-          mpidebug("exiting");
           return; // exit from run_nrg_slave()
         case TAG_DIAG:
-          mpidebug("diag");
           slave_diag(master);
           break;
         case TAG_SYNC:
-          mpidebug("sync");
           mpi_sync_params();
           break;
         default: 
