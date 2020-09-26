@@ -131,14 +131,14 @@ inline void Bins::add_std(double energy, t_weight weight) {
 inline void Bins::add_acc(double energy, t_weight weight) {
   const size_t len = bins.size();
   for (size_t i = 0; i < len - 1; i++) {
-    const double e1 = bins[i].first;
-    const double e2 = bins[i + 1].first;
+    auto &[e1, w1] = bins[i];
+    auto &[e2, w2] = bins[i+1];
     my_assert(e1 < e2);
     if (e1 < energy && energy < e2) {
       const double dx      = e2 - e1;
       const double reldist = (energy - e1) / dx;
-      bins[i].second += (1.0 - reldist) * weight;
-      bins[i + 1].second += reldist * weight;
+      w1 += (1.0 - reldist) * weight;
+      w2 += reldist * weight;
       return;
     }
   }
@@ -152,8 +152,10 @@ void Bins::merge(const Bins &b) {
   my_assert(bins.size() == b.bins.size());
   my_assert(bins.size() == nrbins);
   for (size_t i = 0; i < nrbins; i++) {
-    my_assert(bins[i].first == b.bins[i].first);
-    bins[i].second += b.bins[i].second;
+    auto &[e1, w1] = bins[i];
+    auto &[e2, w2] = b.bins[i];
+    my_assert(e1 == e2);
+    w1 += w2;
   }
 }
 
@@ -165,8 +167,7 @@ void Bins::trim() {
   bins2.reserve(nr);
   // nr-1, because we need to compute the energy interval size 'ewidth'
   for (size_t i = 0; i < nr - 1; i++) {
-    const double e      = bins[i].first;
-    const t_weight wg   = bins[i].second;
+    const auto [e, wg] = bins[i];
     const double enext = bins[i + 1].first; // increasing!
     my_assert(enext > e);
     const double ewidth = enext - e;
@@ -196,9 +197,9 @@ class Temp {
 };
 
 inline void Temp::add_value(double energy, t_weight weight) {
-  for (auto & i : v) {
-    if (i.first == energy) {
-      i.second += weight;
+  for (auto & [e, w] : v) {
+    if (e == energy) {
+      w += weight;
       return;
     }
   }

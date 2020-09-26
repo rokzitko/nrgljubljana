@@ -68,12 +68,12 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
   oa << nr;
   size_t cnt   = 0;
   size_t total = 0;
-  for (const auto &i : rho) {
-    oa << i.first;
-    saveMatrix(oa, i.second);
+  for (const auto &[I, mat] : rho) {
+    oa << I;
+    saveMatrix(oa, mat);
     if (MATRIXF.bad()) my_error("Error writing %s", fn.c_str());  // Check each time
     cnt++;
-    total += i.second.size1();
+    total += mat.size1();
   }
   my_assert(cnt == nr);
   nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
@@ -255,10 +255,9 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
                               DensMatElements &rhoPrev,   // output
                               size_t N) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
-  for (const auto &ii : dm[N - 1]) { // loop over all subspaces at *previous* iteration
-    const Invar I       = ii.first;
+  for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = dmnrg_subspaces(I);
-    size_t dim          = ii.second.kept;
+    size_t dim          = dimsub.kept;
     rhoPrev[I]          = Matrix(dim, dim);
     if (!dim) continue;
     rhoPrev[I].clear();
@@ -332,13 +331,12 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
   nrglog('@', "@ init_rho_FDM(" << N << ")");
   rhoFDM.clear();
   double tr = 0.0;
-  for (const auto &j : dm[N]) {
-    const Invar I = j.first;
-    rhoFDM[I]     = Matrix(j.second.max(), j.second.max());
+  for (const auto &[I, dimsub] : dm[N]) {
+    rhoFDM[I]     = Matrix(dimsub.max(), dimsub.max());
     rhoFDM[I].clear();
     Matrix &rhoI = rhoFDM[I];
-    for (size_t i = j.second.min(); i < j.second.max(); i++) {
-      const double betaE = j.second.absenergyN[i] / P::T;
+    for (size_t i = dimsub.min(); i < dimsub.max(); i++) {
+      const double betaE = dimsub.absenergyN[i] / P::T;
       const double ratio = STAT::wn[N] / mpf_get_d(STAT::ZnDN[N]);
       double val2        = exp(-betaE) * ratio;
       val2               = std::isfinite(val2) ? val2 : 0.0;
@@ -362,10 +360,9 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
   if (!LAST_ITERATION(N)) init_rho_FDM(rhoDD, N);
-  for (const auto &ii : dm[N - 1]) { // loop over all subspaces at *previous* iteration
-    const Invar I       = ii.first;
+  for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = dmnrg_subspaces(I);
-    size_t dim          = ii.second.kept;
+    size_t dim          = dimsub.kept;
     rhoFDMPrev[I]       = Matrix(dim, dim);
     if (!dim) continue;
     rhoFDMPrev[I].clear();
