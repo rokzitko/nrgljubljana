@@ -9,19 +9,12 @@ struct Recalc_f {
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called
 // from recalc_irreduc() in nrg-recalc-* files.
-void recalc_f(const DiagInfo &dg, MatrixElements &ff, const Invar &Ip, const Invar &I1, const struct Recalc_f table[], size_t jmax) {
-  nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
-  // TO DO: implement and *test* this for other symmetry types.
-  // TO DO: Implement this in Sym class!!
-  // TO DO: For sym=QJ two types of operators with different QNs. Thus the QNs should
-  // be passed to recalc_f() in order to perform such checks.
-  if (sym_string == "QST" || sym_string == "SPSU2T")
-    // SYMMETRY CHECK. Important: If we return at this point, (I1, Ip)
-    // combination of subspaces is not created in matrix ff
-    if (!Sym->triangle_inequality(I1, Ip, Sym->Invar_f)) {
-      nrglog('f', "Does not fulfill the triangle inequalities.");
-      return;
-    }
+void recalc_f(const DiagInfo &dg, MatrixElements &ff, const Invar &Ip, const Invar &I1, const struct Recalc_f table[], size_t jmax, const Invar If = Sym->Invar_f) {
+  nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ") If=(" << If << ")");
+  if (!Sym->recalc_f_coupled(I1, Ip, If)) {
+    nrglog('f', "Does not fulfill the triangle inequalities.");
+    return;
+  }
   const Eigen &dgI1 = dg.find(I1)->second;
   const Eigen &dgIp = dg.find(Ip)->second;
   // Number of states in Ip and in I1, i.e. the dimension of the
@@ -57,8 +50,7 @@ void recalc_f(const DiagInfo &dg, MatrixElements &ff, const Invar &Ip, const Inv
     if (U1.size2() == 0) my_assert_not_reached(); // ??
     my_assert(rmax1 == U1.size2());
     my_assert(rmaxp == Up.size2());
-    // Additional sanity test: factors are in general order O(1)
-    my_assert(abs(table[j].factor) < 1000);
+    my_assert(abs(table[j].factor) < 1000); // Additional sanity test: factors are in general order O(1)
     atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(table[j].factor), U1, Up, t_factor(1.0), f);
   } // loop over j
   if (logletter('F')) dump_matrix(f);

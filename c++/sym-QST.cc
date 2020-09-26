@@ -119,6 +119,10 @@ class SymmetryQST : public Symmetry {
   HAS_DOUBLET;
   HAS_TRIPLET;
   HAS_ORB_TRIPLET;
+   
+  bool recalc_f_coupled(const Invar I1, const Invar I2, const Invar If) override { 
+    return triangle_inequality(I1, I2, If);
+  }
 };
 
 Symmetry *SymQST = new SymmetryQST;

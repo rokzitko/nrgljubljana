@@ -143,6 +143,8 @@ class Symmetry {
   virtual void recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) { my_error("Not implemented."); }
 
   virtual void show_coefficients() {}
+   
+  virtual bool recalc_f_coupled(const Invar I1, const Invar I2, const Invar If) { return true; } // used in recalc_f()
 };
 
 Symmetry *Sym = nullptr;

@@ -4,8 +4,9 @@
 void set_symmetry(const string &sym_string);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
-void parse_datafile_header(istream &fdata, int expected_version = 9)
+std::string parse_datafile_header(istream &fdata, const int expected_version = 9)
 {
+  std::string sym_string = "";
   int dataversion = -1;
   while (fdata.peek() == '#') {
     fdata.ignore(); // ignore '#'
@@ -26,11 +27,12 @@ void parse_datafile_header(istream &fdata, int expected_version = 9)
     if (fdata.peek() == '\n') fdata.ignore();
   }
   my_assert(dataversion == expected_version);
+  return sym_string;
 }
 
 // Read the number of channels from data file. Also sets P::combs
 // accordingly, depending on the spin of the conduction band electrons.
-void read_nr_channels(ifstream &fdata) {
+void read_nr_channels(ifstream &fdata, std::string sym_string) {
   size_t channels;
   fdata >> channels;
   my_assert(channels >= 1);
@@ -174,11 +176,6 @@ void read_ireducf(ifstream &fdata, const DiagInfo &diagprev, Opch &opch) {
   }
 }
 
-// Misc checks for validity of the input parameters and data file.
-void check_validity() {
-  if (P::substeps) my_assert(sym_string == "QS" || sym_string == "QSZ" || sym_string == "SPSU2" || sym_string == "SPU1");
-}
-
 // Determine Nmax from the length of the coefficient tables! Modify
 // it for substeps==true. Call after tridiagonalization routines (if
 // not using the tables computed by initial.m).
@@ -202,8 +199,8 @@ void read_data(IterInfo &iterinfo) {
   iterinfo.cleanup();
   ifstream fdata("data");
   if (!fdata) my_error("Can't load initial data.");
-  parse_datafile_header(fdata);
-  read_nr_channels(fdata);
+  auto sym_string = parse_datafile_header(fdata);
+  read_nr_channels(fdata, sym_string);
   set_symmetry(sym_string);
   read_Nmax(fdata);
   size_t nsubs = read_nsubs(fdata);
@@ -254,7 +251,6 @@ void read_data(IterInfo &iterinfo) {
       default: my_error("Unknown block %c in data file.", ch);
     }
   }
-  check_validity();
   if (string(P::tri) == "cpp") tridiag(); // before determine_Nmax()
   determine_Nmax();
 }

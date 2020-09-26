@@ -87,6 +87,10 @@ class SymmetrySPSU2T : public Symmetry {
   DECL;
   HAS_DOUBLET;
   HAS_TRIPLET;
+
+  bool recalc_f_coupled(const Invar I1, const Invar I2, const Invar If) override {
+        return triangle_inequality(I1, I2, If);
+  }
 };
 
 Symmetry *SymSPSU2T = new SymmetrySPSU2T;

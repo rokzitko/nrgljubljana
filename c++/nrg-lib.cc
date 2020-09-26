@@ -54,16 +54,16 @@
 
 // Timing of various parts of the code and memory statistics
 namespace time_mem {
-Timing tm;
-MemoryStats ms;
-void timing_report() { tm.report(); }
-void memory_report() { ms.report(); }
-void memory_time_brief_report() {
+ Timing tm;
+ MemoryStats ms;
+ void timing_report() { tm.report(); }
+ void memory_report() { ms.report(); }
+ void memory_time_brief_report() {
 #ifdef HAS_MEMORY_USAGE
-  cout << "Memory used: " << long(ms.used() / 1024) << " MB "; // NOLINT
+   cout << "Memory used: " << long(ms.used() / 1024) << " MB "; // NOLINT
 #endif
-  cout << "Time elapsed: " << prec3(tm.total_in_seconds()) << " s" << endl;
-}
+   cout << "Time elapsed: " << prec3(tm.total_in_seconds()) << " s" << endl;
+ }
 } // namespace time_mem
 
 #ifdef NRG_MPI
@@ -79,8 +79,7 @@ int myrank() { return 0; }
 // Shared parameters for MPI parallelization.
 class sharedparam {
   public:
-  // Parameters which have to be known to the slave processes (which only
-  // perform diagonalizations).
+  // Parameters which have to be known to the slave processes (which only perform diagonalizations).
   dr_value diagroutine{undefined};
   double diagratio{};
   bool logall{};
@@ -100,7 +99,7 @@ class sharedparam {
 sharedparam sP;
 
 // Symmetry type specification
-string sym_string = "";
+//string sym_string = ""; // used in recalc.cc : XXX remove from global scope!
 
 // Quantum number types defined to enforce type checking
 using Number = int;
