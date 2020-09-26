@@ -16,7 +16,7 @@ namespace QSZ {
 // in between. Thus Q[p] + Q[op] = Q[1].
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
@@ -103,7 +103,7 @@ void SymmetryQSZ::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int 
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");

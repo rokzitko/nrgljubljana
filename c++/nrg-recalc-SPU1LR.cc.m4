@@ -12,7 +12,7 @@ namespace SPU1LR {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -21,7 +21,7 @@ void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, 
     Ip = Invar(ssz1 + 1);
     ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-doubletp.dat", SPU1LR::LENGTH_D_1CH, Invar(-1, 1))',
            `RECALC_TAB("spu1lr/spu1lr-2ch-doubletp.dat", SPU1LR::LENGTH_D_2CH, Invar(-1, 1))');
-      
+
     Ip = Invar(ssz1-1);
     ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-doubletm.dat", SPU1LR::LENGTH_D_1CH, Invar(+1, 1))',
            `RECALC_TAB("spu1lr/spu1lr-2ch-doubletm.dat", SPU1LR::LENGTH_D_2CH, Invar(+1, 1))');
@@ -42,7 +42,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 
            `RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupa.dat", 0, SPU1LR::LENGTH_I_2CH);
 	    RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupb.dat", 1, SPU1LR::LENGTH_I_2CH)');
-    
+
     I1 = Invar(sszp-1, pp);
     ONETWO(`RECALC_F_TAB("spu1lr/spu1lr-1ch-spindowna.dat", 0, SPU1LR::LENGTH_I_1CH)',
 
@@ -64,7 +64,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");

@@ -28,7 +28,7 @@ namespace U1 {
 
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryU1::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryU1::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);

@@ -28,7 +28,7 @@ namespace SPSU2 {
 
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
@@ -313,7 +313,7 @@ void SymmetrySPSU2::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, in
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");

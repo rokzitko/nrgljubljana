@@ -27,7 +27,7 @@ namespace SPU1LR {
 
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -57,7 +57,7 @@ void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, 
 } } break;
   default: my_assert_not_reached();
   };
-      
+
     Ip = Invar(ssz1-1);
     switch (channels) {
   case 1: { {
@@ -128,7 +128,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 } } break;
   default: my_assert_not_reached();
   };
-    
+
     I1 = Invar(sszp-1, pp);
     switch (channels) {
   case 1: { {
@@ -215,7 +215,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");

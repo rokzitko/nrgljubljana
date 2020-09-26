@@ -66,7 +66,7 @@ void SymmetryQSC3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSC3::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSC3::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
 #ifdef NRG_COMPLEX
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
@@ -86,7 +86,7 @@ void SymmetryQSC3::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, Ma
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSC3::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSC3::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
 #ifdef NRG_COMPLEX
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");

@@ -12,7 +12,7 @@ namespace SPU1 {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   if (!P::substeps) {
     for(const auto &[I1, eig]: diag) {
       SZspin ssz1 = I1.get("SSZ");
@@ -79,7 +79,7 @@ void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPU1::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   if (!P::substeps) {
     for(const auto &[I1, eig]: diag) {
       SZspin ssz1 = I1.get("SSZ");

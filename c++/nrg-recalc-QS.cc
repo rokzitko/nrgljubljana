@@ -30,7 +30,7 @@ namespace QS {
 
 // Recalculate matrix elements of a doublet tensor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
@@ -425,7 +425,7 @@ void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M
 
 // Recalculate matrix elements of a triplet tenzor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");

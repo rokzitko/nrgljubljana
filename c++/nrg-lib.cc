@@ -170,15 +170,22 @@ using DensMatElements = map<Invar, Matrix>;
 
 using ThreeInvar = tuple<Invar, Invar, Invar>; // For 3-leg vertex functions
 
-// Dump irreducible matrix elements between two subspaces
+// Dump matrix elements: one matrix
+void dump_matrix_elements(const Matrix &m, ostream &fout = cout,
+                          const double chopsmall = 1e-8, const size_t maxdump = 10) {
+  for (auto r1 = 0; r1 < std::min(m.size1(), maxdump); r1++) {
+    for (auto r2 = 0; r2 < std::min(m.size2(), maxdump); r2++) 
+      fout << chop(m(r1, r2), chopsmall) << ' ';
+    fout << endl;
+  }
+}
+
+// Dump matrix elements: all subspace pairs
 void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
                           const double chopsmall = 1e-8, const size_t maxdump = 10) {
-  for (const auto &i : m) {
-    fout << "----" << i.first << "----" << endl;
-    for (size_t r1 = 0; r1 < min(i.second.size1(), maxdump); r1++) {
-      for (size_t r2 = 0; r2 < min(i.second.size2(), maxdump); r2++) fout << chop((i.second)(r1, r2), chopsmall) << ' ';
-      fout << endl;
-    }
+  for (const auto &[II, mat] : m) {
+    fout << "----" << II << "----" << endl;
+    dump_matrix_elements(mat, fout, chopsmall, maxdump);
   }
 }
 
@@ -186,7 +193,10 @@ void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
 DensMatElements rho;
 DensMatElements rhoFDM;
 
-template <typename T> inline pair<T, T> reverse_pair(const pair<T, T> &i) { return make_pair(i.second, i.first); }
+template <typename T> 
+  inline pair<T, T> reverse_pair(const pair<T, T> &i) { 
+    return make_pair(i.second, i.first); 
+  }
 
 // Map of operators matrices
 using CustomOp = map<string, MatrixElements>;
@@ -1192,13 +1202,13 @@ auto OrbSuscFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->dynam
 auto TrivialCheckSpinFnc = [](const Invar &, const Invar &, int) { return true; };
 auto SpecdensCheckSpinFnc = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
 
-void doublet_check_norm(const CustomOp::value_type &op, const DiagInfo &diag, int SPIN) {
+double doublet_norm(const MatrixElements &m, const DiagInfo &diag, int SPIN) { // XXX
   weight_bucket sum;
   for (const auto &[Ip, eigp] : diag) {
     for (const auto &[I1, eig1] : diag) {
       const Twoinvar II{I1, Ip};
-      auto it = op.second.find(II);
-      if (it != op.second.end()) {
+      auto it = m.find(II);
+      if (it != m.end()) {
         if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
         t_factor spinfactor = Sym->specdens_factor(Ip, I1);
         auto mat = it->second;
@@ -1208,18 +1218,17 @@ void doublet_check_norm(const CustomOp::value_type &op, const DiagInfo &diag, in
       }
     }
   }
-  const double result = 2.0 * cmpl(sum).real();
   // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
-  cout << "check_norm[" << NAME(op) << "]=" << result << endl;
+  return 2.0 * cmpl(sum).real();
 }
 
-void quadruplet_check_norm(const CustomOp::value_type &op, const DiagInfo &diag, int SPIN) {
+double quadruplet_norm(const MatrixElements &m, const DiagInfo &diag, int SPIN) {
   weight_bucket sum;
   for (const auto &[Ip, eigp] : diag) {
     for (const auto &[I1, eig1] : diag) {
       const Twoinvar II{I1, Ip};
-      auto it = op.second.find(II);
-      if (it != op.second.end()) {
+      auto it = m.find(II);
+      if (it != m.end()) {
         if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
         t_factor spinfactor = Sym->specdensquad_factor(Ip, I1);
         auto mat = it->second;
@@ -1229,9 +1238,8 @@ void quadruplet_check_norm(const CustomOp::value_type &op, const DiagInfo &diag,
       }
     }
   }
-  const double result = 2.0 * cmpl(sum).real();
   // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
-  cout << "check_norm[" << NAME(op) << "]=" << result << endl;
+  return 2.0 * cmpl(sum).real();
 }
 
 #include "spec.cc"
@@ -1539,6 +1547,8 @@ namespace oprecalc {
 #define LOOPOVER(set1, set2, job) for (const auto &op1 : set1) for (const auto &op2 : set2) { job; } // NOLINT
 #define LOOPOVER3(set1, set2, set3, job) for (const auto &op1 : set1) for (const auto &op2 : set2) for (const auto &op3 : set3) { job; } // NOLINT
 
+//  void loopover(const CustomOp &set1, const CustomOp &set2, 
+   
   void OPENSPEC(const CustomOp::value_type &op1, const CustomOp::value_type &op2, const string_token &stringtoken, speclist &spectra, const string &prefix,
                 set<string> &rec1, set<string> &rec2, matstype mt, int Spin = 0) {
     const string spname = SDNAME(NAME(op1), NAME(op2), Spin);
@@ -1631,8 +1641,8 @@ void open_output_files(const IterInfo &iterinfo) {
     if (P::dumpannotated) Fannotated.open(FN_ANNOTATED);
   }
   list<string> ops;
-  for (const auto &op : iterinfo.ops) ops.push_back(NAME(op));
-  for (const auto &op : iterinfo.opsg) ops.push_back(NAME(op));
+  for (const auto &[name, m] : iterinfo.ops) ops.push_back(name);
+  for (const auto &[name, m] : iterinfo.opsg) ops.push_back(name);
   if (nrgrun)
     custom = make_unique<ExpvOutput>(FN_CUSTOM, STAT::expv, ops);
   else if (dmnrgrun && P::fdmexpv) 
@@ -1957,17 +1967,16 @@ void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElem
 
 // Wrapper routine for recalculations. Called from nrg_recalculate_operators().
 template <class RecalcFnc>
-void recalc_common(RecalcFnc recalc_fnc, DiagInfo &dg, CustomOp::value_type &op, const string &tip, bool (*testfn)(const string &)) {
-  if (testfn(NAME(op))) {
-    TIME("recalc " + tip);
-    nrglog('0', "Recalculate " << tip << " " << NAME(op));
-    MatrixElements opstore;
-    opstore.swap(op.second);
-    op.second.clear();
-    recalc_fnc(dg, opstore, op.second);
-    if (tip == "g") Sym->recalc_global(dg, NAME(op), op.second);
+  void recalc_common(RecalcFnc recalc_fnc, DiagInfo &dg, std::string name, MatrixElements &m, const string &tip, bool (*testfn)(const string &)) {
+  if (testfn(name)) {
+    nrglog('0', "Recalculate " << tip << " " << name);
+    MatrixElements mstore;
+    mstore.swap(m);
+    m.clear();
+    recalc_fnc(dg, mstore, m);
+    if (tip == "g") Sym->recalc_global(dg, name, m);
   } else
-    op.second.clear(); // save memory!
+    m.clear(); // save memory!
 }
 
 /* We trim the matrices containing the irreducible matrix elements of the
@@ -2016,35 +2025,33 @@ void nrg_clear_eigenvectors(DiagInfo &diag) {
 }
 
 // Z_S is the appropriate statistical sum
-void nrg_measure_singlet1(const DiagInfo &dg, const CustomOp::value_type &op, double Z_S) {
-  const string opname = NAME(op);
-  const t_expv expv = calc_trace_singlet(dg, op.second) / Z_S;
-  STAT::expv[opname] = expv;
-  cout << "<" << opname << ">=" << output_val(expv) << endl;
+void nrg_measure_singlet1(const DiagInfo &dg, std::string name, const MatrixElements &m, double Z_S) {
+  const t_expv expv = calc_trace_singlet(dg, m) / Z_S;
+  STAT::expv[name] = expv;
+  cout << "<" << name << ">=" << output_val(expv) << endl;
 }
 
 // Expectation values using FDM algorithm
-void nrg_measure_singlet1_fdm(const DiagInfo &dg, const CustomOp::value_type &op) {
-  const string opname   = NAME(op);
-  const t_expv expv   = calc_trace_fdm_kept(dg, op.second);
-  STAT::fdmexpv[opname] = expv;
-  cout << "<" << opname << ">_fdm=" << output_val(expv) << endl;
+void nrg_measure_singlet1_fdm(const DiagInfo &dg, std::string name, const MatrixElements &m) {
+  const t_expv expv   = calc_trace_fdm_kept(dg, m);
+  STAT::fdmexpv[name] = expv;
+  cout << "<" << name << ">_fdm=" << output_val(expv) << endl;
 }
 
 // Measure thermodynamic expectation values of singlet operators
 void nrg_measure_singlet(const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &custom) {
   nrglog('@', "@ nrg_measure_singlet()");
   const double Z_S = calc_Z(dg);
-  for (const auto &op : a.ops) nrg_measure_singlet1(dg, op, Z_S);
-  for (const auto &op : a.opsg) nrg_measure_singlet1(dg, op, Z_S);
+  for (const auto &[name, m] : a.ops)  nrg_measure_singlet1(dg, name, m, Z_S);
+  for (const auto &[name, m] : a.opsg) nrg_measure_singlet1(dg, name, m, Z_S);
   custom->field_values();
 }
 
 void nrg_measure_singlet_fdm(const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &customfdm) {
   if (STAT::N != P::fdmexpvn) return;
   nrglog('@', "@ nrg_measure_singlet_fdm()");
-  for (const auto &op : a.ops) nrg_measure_singlet1_fdm(dg, op);
-  for (const auto &op : a.opsg) nrg_measure_singlet1_fdm(dg, op);
+  for (const auto &[name, m] : a.ops)  nrg_measure_singlet1_fdm(dg, name, m);
+  for (const auto &[name, m] : a.opsg) nrg_measure_singlet1_fdm(dg, name, m);
   customfdm->field_values(P::T);
 }
 
@@ -2053,21 +2060,23 @@ void check_operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
   // We check sum rules wrt some given spin (+1/2, by convention).
   // For non-spin-polarized calculations, this is irrelevant (0).
   const int SPIN = (Sym->isfield() ? 1 : 0);
-  for (const auto &op : a.opd) doublet_check_norm(op, diag, SPIN);
-  for (const auto &op : a.opq) quadruplet_check_norm(op, diag, 0);
+  for (const auto &[name, m] : a.opd)
+    cout << "check_norm[" << name << "]=" << doublet_norm(m, diag, SPIN) << std::endl;
+  for (const auto &[name, m] : a.opq)
+    cout << "check_norm[" << name << "]=" << quadruplet_norm(m, diag, 0) << std::endl;
 }
 
 // Recalculate operator matrix representations
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void nrg_recalculate_operators(DiagInfo &dg, IterInfo &a) { // XXX: DiagInfo should be const, but all recalc* files would need to be fixed first
   nrglog('@', "@ nrg_recalculate_operators()");
-  for (auto &op : a.ops) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1); }, dg, op, "s", oprecalc::do_s);
-  for (auto &op : a.opsp) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, -1); }, dg, op, "p", oprecalc::do_p);
-  for (auto &op : a.opsg) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1); }, dg, op, "g", oprecalc::do_g);
-  for (auto &op : a.opd) recalc_common([](auto &a, auto &b, auto &c) { Sym->recalc_doublet(a, b, c); }, dg, op, "d", oprecalc::do_d);
-  for (auto &op : a.opt) recalc_common([](auto &a, auto &b, auto &c) { Sym->recalc_triplet(a, b, c); }, dg, op, "t", oprecalc::do_t);
-  for (auto &op : a.opot) recalc_common([](auto &a, auto &b, auto &c) { Sym->recalc_orb_triplet(a, b, c); }, dg, op, "ot", oprecalc::do_ot);
-  for (auto &op : a.opq) recalc_common([](auto &a, auto &b, auto &c) { Sym->recalc_quadruplet(a, b, c); }, dg, op, "q", oprecalc::do_q);
+  for (auto &[name, m] : a.ops)  recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1);       }, dg, name, m, "s",  oprecalc::do_s);
+  for (auto &[name, m] : a.opsp) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, -1);      }, dg, name, m, "p",  oprecalc::do_p);
+  for (auto &[name, m] : a.opsg) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1);       }, dg, name, m, "g",  oprecalc::do_g);
+  for (auto &[name, m] : a.opd)  recalc_common([](const auto &a, const auto &b, auto &c) { Sym->recalc_doublet(a, b, c);     }, dg, name, m, "d",  oprecalc::do_d);
+  for (auto &[name, m] : a.opt)  recalc_common([](const auto &a, const auto &b, auto &c) { Sym->recalc_triplet(a, b, c);     }, dg, name, m, "t",  oprecalc::do_t);
+  for (auto &[name, m] : a.opot) recalc_common([](const auto &a, const auto &b, auto &c) { Sym->recalc_orb_triplet(a, b, c); }, dg, name, m, "ot", oprecalc::do_ot);
+  for (auto &[name, m] : a.opq)  recalc_common([](const auto &a, const auto &b, auto &c) { Sym->recalc_quadruplet(a, b, c);  }, dg, name, m, "q",  oprecalc::do_q);
 }
 
 // Calculate spectral densities

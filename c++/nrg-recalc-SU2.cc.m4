@@ -12,7 +12,7 @@ include(recalc-macros.m4)
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetrySU2::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySU2::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Invar Ip;

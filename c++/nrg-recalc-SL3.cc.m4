@@ -11,7 +11,7 @@ namespace SL3 {
 }
 
 // Recalculate matrix elements of a "doublet" tensor operator
-void SymmetrySL3::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySL3::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Number q11 = I1.get("Q1");
     Number q21 = I1.get("Q2");

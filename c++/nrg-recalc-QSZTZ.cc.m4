@@ -11,7 +11,7 @@ namespace QSZTZ {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   nrglog('f', "QSZTZ::recalc_doublet() called");
   for(const auto &[I1, eig]: diag) {
     Number q1   = I1.get("Q");
@@ -87,7 +87,7 @@ void SymmetryQSZTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Number q1   = I1.get("Q");
     Sspin ssz1  = I1.get("SZ");

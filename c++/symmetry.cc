@@ -130,23 +130,16 @@ class Symmetry {
   // Called from calc_specdens().
   // See spectral_density_clebschgordan.nb and DMNRG_clebschgordan.nb.
   virtual double specdens_factor(const Invar &Ip, const Invar &I1) { return 1.0; }
-
   virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) { return 1.0; }
 
   virtual void calculate_TD(const DiagInfo &diag, double factor) = 0;
 
   virtual void recalc_irreduc(const DiagInfo &diag, Opch &opch) { my_error("Not implemented."); }
-
   virtual void recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) { my_error("Not implemented."); }
-
-  virtual void recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-
-  virtual void recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-
-  virtual void recalc_orb_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-
-  virtual void recalc_quadruplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-
+  virtual void recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_orb_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_quadruplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
   virtual void recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) { my_error("Not implemented."); }
 
   virtual void show_coefficients() {}
@@ -162,10 +155,10 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
   void recalc_irreduc(const DiagInfo &diag, Opch &opch) override
 
 // Optional declaration
-#define HAS_DOUBLET void recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_TRIPLET void recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_ORB_TRIPLET void recalc_orb_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_QUADRUPLET void recalc_quadruplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_DOUBLET void recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_TRIPLET void recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_ORB_TRIPLET void recalc_orb_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_QUADRUPLET void recalc_quadruplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) override
 #define HAS_GLOBAL void recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) override
 #define HAS_SUBSTEPS void recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) override
 
