@@ -16,8 +16,7 @@ include(recalc-macros.m4)
 void SymmetrySPSU2C3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #ifdef NRG_COMPLEX
   // CONVENTION: primed indeces are on the right side (ket)
-  LOOP_const(diag, isp) {
-    Invar Ip  = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     int p     = Ip.get("P");
 

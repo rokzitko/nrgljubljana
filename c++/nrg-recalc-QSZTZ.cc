@@ -121,9 +121,7 @@ void SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, M
 void SymmetryQSZTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   nrglog('f', "QSZTZ::recalc_irreduc() called");
   my_assert(!substeps);
-
-  LOOP_const(diag, isp) {
-    Invar Ip    = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     Sspin sszp  = Ip.get("SZ");
     Tangmom tzp = Ip.get("TZ");

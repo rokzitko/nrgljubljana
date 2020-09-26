@@ -119,8 +119,7 @@ void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, Ma
 void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!P::substeps);
 
-  LOOP_const(diag, isp) {
-    Invar Ip    = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
     Invar I1;
 
@@ -200,8 +199,7 @@ void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
   my_assert(P::substeps);
 
-  LOOP_const(diag, isp) {
-    Invar Ip    = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
     Invar I1;
 
@@ -465,8 +463,7 @@ void SymmetrySPU1::recalc_global(const DiagInfo &diag, string name, MatrixElemen
   }
 
   if (name == "Imtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {

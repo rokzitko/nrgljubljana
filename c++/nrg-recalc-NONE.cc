@@ -30,8 +30,7 @@ namespace NONE {
 
 // Driver routine for recalc_f()
 void SymmetryNONE::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
-  LOOP_const(diag, isp) {
-    Invar Ip = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Invar I1 = Invar();
 
     switch (channels) {
@@ -234,10 +233,9 @@ void SymmetryNONE::recalc_global(const DiagInfo &diag, string name, MatrixElemen
   }
 
   if (name == "Iztot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II {I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "none/none-1ch-Iztot.dat"
@@ -251,10 +249,9 @@ void SymmetryNONE::recalc_global(const DiagInfo &diag, string name, MatrixElemen
   }
 
   if (name == "Ixtot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II {I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "none/none-1ch-Ixtot.dat"
@@ -269,10 +266,9 @@ void SymmetryNONE::recalc_global(const DiagInfo &diag, string name, MatrixElemen
 
 #ifdef NRG_COMPLEX
   if (name == "Iytot") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
-      const Twoinvar II = make_pair(I1, I1);
-      Matrix &cn        = cnew[II];
+    for(const auto &[I1, eig]: diag) {
+      const Twoinvar II {I1, I1};
+      Matrix &cn = cnew[II];
       switch (channels) {
         case 1:
 #include "none/none-1ch-Iytot.dat"

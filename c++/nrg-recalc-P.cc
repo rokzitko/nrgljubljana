@@ -30,8 +30,7 @@ namespace P {
 
 // Driver routine for recalc_f()
 void SymmetryP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
-  LOOP_const(diag, isp) {
-    Invar Ip = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     int p    = Ip.get("P");
 
     Invar I1 = Invar(-p); // always the opposite fermion parity!

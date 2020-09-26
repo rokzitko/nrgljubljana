@@ -134,13 +134,12 @@ void store_transformations(size_t N, const DiagInfo &diag) {
   oa << nr;
   size_t cnt   = 0;
   size_t total = 0;
-  LOOP_const(diag, i) {
-    const Invar I = INVAR(i);
+  for(const auto &[I, eig]: diag) {
     oa << I;
-    saveEigen(oa, i.second);
+    saveEigen(oa, eig);
     if (MATRIXF.bad()) my_error("Error writing %s", fn.c_str()); // Check after each write.
     cnt++;
-    total += i.second.value.size();
+    total += eig.value.size();
   }
   my_assert(cnt == nr);
   nrglog('H', "[total=" << total << " nr subspaces=" << cnt << "]");

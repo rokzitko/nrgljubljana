@@ -47,8 +47,7 @@ void SymmetrySL3::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, Mat
 
 // Driver routine for recalc_f()
 void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
-  LOOP_const(diag, isp) {
-    Invar Ip   = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number q1p = Ip.get("Q1");
     Number q2p = Ip.get("Q2");
     Number q3p = Ip.get("Q3");

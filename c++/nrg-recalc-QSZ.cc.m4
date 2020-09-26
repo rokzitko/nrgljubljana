@@ -57,8 +57,7 @@ void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, Mat
 // Driver routine for recalc_f()
 void SymmetryQSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!substeps);
-  LOOP_const(diag, isp) {
-    Invar Ip    = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     SZspin sszp = Ip.get("SSZ");
     Invar I1;
@@ -90,8 +89,7 @@ void SymmetryQSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 
 void SymmetryQSZ::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
   my_assert(substeps);
-  LOOP_const(diag, isp) {
-    Invar Ip    = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     SZspin sszp = Ip.get("SSZ");
     Invar I1;

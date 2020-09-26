@@ -25,8 +25,7 @@ void SymmetrySL::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, Matr
 
 // Driver routine for recalc_f()
 void SymmetrySL::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
-  LOOP_const(diag, isp) {
-    Invar Ip  = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
     ONE23(`RECALC_F_TAB("sl/sl-1ch-a.dat", 0, SL::LENGTH_I_1CH)',

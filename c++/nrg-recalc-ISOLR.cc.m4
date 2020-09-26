@@ -15,8 +15,7 @@ include(recalc-macros.m4)
 // Driver routine for recalc_f()
 void SymmetryISOLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
-  LOOP_const(diag, isp) {
-    Invar Ip = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
     // NOTE: ii,ss only couples to ii+-1,ss+-1 in general, even for

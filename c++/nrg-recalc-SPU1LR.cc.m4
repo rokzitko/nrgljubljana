@@ -30,8 +30,7 @@ void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, 
 
 // Driver routine for recalc_f()
 void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
-  LOOP_const(diag, isp) {
-    Invar Ip    = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
     int pp      = Ip.get("P");
     Invar I1;

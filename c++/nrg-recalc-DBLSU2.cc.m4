@@ -47,8 +47,7 @@ define(`RECALC_F_TAB_SU2', {
 // Driver routine for recalc_f()
 void SymmetryDBLSU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
-  LOOP_const(diag, isp) {
-    Invar Ip = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
     Ispin ii1p = Ip.get("II1");

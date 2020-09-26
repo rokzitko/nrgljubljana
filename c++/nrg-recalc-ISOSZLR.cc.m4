@@ -13,8 +13,7 @@ namespace ISOSZLR {
 // Driver routine for recalc_f()
 void SymmetryISOSZLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
-  LOOP_const(diag, isp) {
-    Invar Ip = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
     Ispin iip   = Ip.get("II");

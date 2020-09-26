@@ -4,14 +4,12 @@
 // Fix splittings of eigenvalues. Returns true if any changes had been made.
 bool fix_splittings(DiagInfo &diag) {
   bool changes_made = false;
-  LOOP(diag, is)
-  for (auto &r : EIGEN(is).value) {
-    const auto m = STAT::cluster_mapping.find(r);
-    if (m != end(STAT::cluster_mapping)) {
-      r            = m->second;
-      changes_made = true;
-    }
-  }
+  for(auto &[I, eig]: diag) 
+    for (auto &r : eig.value) 
+      if (auto m = STAT::cluster_mapping.find(r); m != end(STAT::cluster_mapping)) {
+        r            = m->second;
+        changes_made = true;
+      }
   return changes_made;
 }
 

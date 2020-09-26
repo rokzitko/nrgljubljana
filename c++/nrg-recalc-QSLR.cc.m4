@@ -13,8 +13,7 @@ namespace QSLR {
 // Driver routine for recalc_f()
 void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // CONVENTION: primed indeces are on the right side (ket)
-  LOOP_const(diag, isp) {
-    Invar Ip  = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin ssp = Ip.get("SS");
     Invar I1;

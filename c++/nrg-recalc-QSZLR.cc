@@ -27,8 +27,7 @@ namespace QSZLR {
 
 // Driver routine for recalc_f()
 void SymmetryQSZLR::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
-  LOOP_const(diag, isp) {
-    Invar Ip    = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     SZspin sszp = Ip.get("SSZ");
     int pp      = Ip.get("P");

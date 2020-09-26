@@ -116,9 +116,7 @@ void SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, 
 // Driver routine for recalc_f()
 void SymmetrySPSU2T::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!substeps);
-
-  LOOP_const(diag, isp) {
-    Invar Ip   = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Sspin ssp  = Ip.get("SS");
     Tangmom tp = Ip.get("T");
     double T   = tp; // trick!

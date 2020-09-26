@@ -141,8 +141,7 @@ void SymmetryISO::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, Mat
 // Driver routine for recalc_f()
 void SymmetryISO::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
-  LOOP_const(diag, isp) {
-    Invar Ip = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
     // NOTE: ii,ss only couples to ii+-1,ss+-1 in general, even for

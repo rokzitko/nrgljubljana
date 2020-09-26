@@ -139,8 +139,7 @@ void SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, M
 // Driver routine for recalc_f()
 void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!substeps);
-  LOOP_const(diag, isp) {
-    Invar Ip  = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     Invar I1;
 
@@ -283,8 +282,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 // Driver routine for recalc_f()
 void SymmetrySPSU2::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
   my_assert(substeps);
-  LOOP_const(diag, isp) {
-    Invar Ip  = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     Invar I1;
 
@@ -482,8 +480,7 @@ void SymmetrySPSU2::recalc_global(const DiagInfo &diag, string name, MatrixEleme
   }
 
   if (name == "Q1") {
-    LOOP(diag, is1) {
-      Invar I1          = INVAR(is1);
+    for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
       switch (channels) {

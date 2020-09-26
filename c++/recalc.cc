@@ -109,8 +109,8 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e) {
 }
 
 void split_in_blocks(DiagInfo &diag) {
-  LOOP(diag, i)
-  split_in_blocks_Eigen(i.first, i.second);
+  for(auto &[I, eig]: diag) // XXX: ranges::for_each in C++20
+    split_in_blocks_Eigen(I, eig);
 }
 
 /* Recalculate the (irreducible) matrix elements of various operators. This

@@ -55,8 +55,7 @@ void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   nrglog('f', "QSTZ::recalc_irreduc() called");
   my_assert(!substeps);
 
-  LOOP_const(diag, isp) {
-    Invar Ip    = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     Sspin ssp   = Ip.get("SS");
     Tangmom tzp = Ip.get("TZ");

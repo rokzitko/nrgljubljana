@@ -129,9 +129,7 @@ void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, MatrixElements &cold, M
 
 void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   nrglog('f', "SymmetryQJ::recalc_irreduc() start");
-
-  LOOP_const(diag, isp) {
-    Invar Ip  = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin jjp = Ip.get("JJ");
     double j  = J(jjp);

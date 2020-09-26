@@ -168,8 +168,7 @@ void SymmetryQS::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, Matr
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   my_assert(!substeps);
-  LOOP_const(diag, isp) {
-    Invar Ip  = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin ssp = Ip.get("SS");
     Invar I1;
@@ -393,8 +392,7 @@ void SymmetryQS::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
   my_assert(substeps);
-  LOOP_const(diag, isp) {
-    Invar Ip  = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin ssp = Ip.get("SS");
     Invar I1;

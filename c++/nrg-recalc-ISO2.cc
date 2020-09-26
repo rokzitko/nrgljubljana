@@ -29,8 +29,7 @@ namespace ISO2 {
 
 // Recalculate matrix elements of a doublet tensor operator
 void SymmetryISO2::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+  for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
     Invar Ip;
@@ -142,8 +141,7 @@ void SymmetryISO2::recalc_doublet(const DiagInfo &diag, MatrixElements &cold, Ma
 // Driver routine for recalc_f()
 void SymmetryISO2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
-  LOOP_const(diag, isp) {
-    Invar Ip = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
     // NOTE: ii,ss only couples to ii+-1,ss+-1 in general, even for
@@ -299,8 +297,7 @@ void SymmetryISO2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 
 // Recalculate matrix elements of a triplet tenzor operator
 void SymmetryISO2::recalc_triplet(const DiagInfo &diag, MatrixElements &cold, MatrixElements &cnew) {
-  LOOP(diag, is1) {
-    Invar I1  = INVAR(is1);
+  for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
     Invar Ip;

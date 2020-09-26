@@ -38,8 +38,7 @@ define(`RECALC_F_TAB_U1', {
 
 // Driver routine for recalc_f()
 void SymmetryU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
-  LOOP_const(diag, isp) {
-    Invar Ip  = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
     ONE23(`RECALC_F_TAB_U1("u1/u1-1ch-a-DO.dat", 0, 1, U1::LENGTH_I_1CH);

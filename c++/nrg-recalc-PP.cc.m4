@@ -23,8 +23,7 @@ define(`RECALC_F_TAB_P', {
 
 // Driver routine for recalc_f()
 void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
-  LOOP_const(diag, isp) {
-    Invar Ip = INVAR(isp);
+  for(const auto &[Ip, eig]: diag) {
     int pa   = Ip.get("Pa");
     int pb   = Ip.get("Pb");
 
