@@ -171,13 +171,12 @@ using DensMatElements = map<Invar, Matrix>;
 using ThreeInvar = tuple<Invar, Invar, Invar>; // For 3-leg vertex functions
 
 // Dump irreducible matrix elements between two subspaces
-void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout) {
-  const double CHOPSMALL = 1e-8;
-  const size_t MAXDUMP   = 10;
+void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
+                          const double chopsmall = 1e-8, const size_t maxdump = 10) {
   for (const auto &i : m) {
     fout << "----" << i.first << "----" << endl;
-    for (size_t r1 = 0; r1 < min(i.second.size1(), MAXDUMP); r1++) {
-      for (size_t r2 = 0; r2 < min(i.second.size2(), MAXDUMP); r2++) fout << chop((i.second)(r1, r2), CHOPSMALL) << ' ';
+    for (size_t r1 = 0; r1 < min(i.second.size1(), maxdump); r1++) {
+      for (size_t r2 = 0; r2 < min(i.second.size2(), maxdump); r2++) fout << chop((i.second)(r1, r2), chopsmall) << ' ';
       fout << endl;
     }
   }
@@ -1212,18 +1211,17 @@ auto SpecdensCheckSpinFnc = [](const Invar &I1, const Invar &Ip, int SPIN) { ret
 
 void doublet_check_norm(const CustomOp::value_type &op, const DiagInfo &diag, int SPIN) {
   weight_bucket sum;
-  LOOP_const(diag, isp) {
-    const Invar Ip = INVAR(isp);
-    LOOP_const(diag, is1) {
-      const Invar I1    = INVAR(is1);
-      const Twoinvar II = make_pair(I1, Ip);
+  for (const auto &[Ip, eigp] : diag) {
+    for (const auto &[I1, eig1] : diag) {
+      const Twoinvar II{I1, Ip};
       auto it = op.second.find(II);
       if (it != op.second.end()) {
         if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
         t_factor spinfactor = Sym->specdens_factor(Ip, I1);
         auto mat = it->second;
         for (size_t r1 = 0; r1 < mat.size1(); r1++)
-          for (size_t rp = 0; rp < mat.size2(); rp++) sum += spinfactor * sqr(abs(mat(r1, rp)));
+          for (size_t rp = 0; rp < mat.size2(); rp++) 
+            sum += spinfactor * sqr(abs(mat(r1, rp)));
       }
     }
   }
@@ -1234,18 +1232,17 @@ void doublet_check_norm(const CustomOp::value_type &op, const DiagInfo &diag, in
 
 void quadruplet_check_norm(const CustomOp::value_type &op, const DiagInfo &diag, int SPIN) {
   weight_bucket sum;
-  LOOP_const(diag, isp) {
-    const Invar Ip = INVAR(isp);
-    LOOP_const(diag, is1) {
-      const Invar I1    = INVAR(is1);
-      const Twoinvar II = make_pair(I1, Ip);
+  for (const auto &[Ip, eigp] : diag) {
+    for (const auto &[I1, eig1] : diag) {
+      const Twoinvar II{I1, Ip};
       auto it = op.second.find(II);
       if (it != op.second.end()) {
         if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
         t_factor spinfactor = Sym->specdensquad_factor(Ip, I1);
         auto mat = it->second;
         for (size_t r1 = 0; r1 < mat.size1(); r1++)
-          for (size_t rp = 0; rp < mat.size2(); rp++) sum += spinfactor * sqr(abs(mat(r1, rp)));
+          for (size_t rp = 0; rp < mat.size2(); rp++) 
+            sum += spinfactor * sqr(abs(mat(r1, rp)));
       }
     }
   }
@@ -1264,7 +1261,8 @@ InvarVec input_subspaces() { return In; }
 
 void copy_sort_energies(const DiagInfo &diag, STDEVEC &energies) {
   energies.clear();
-  LOOP_const(diag, is) energies.insert(end(energies), begin(EIGEN(is).value), end(EIGEN(is).value));
+  for (const auto &[i, eig]: diag)
+    energies.insert(end(energies), begin(eig.value), end(eig.value));
   sort(begin(energies), end(energies));
 }
 
@@ -1323,13 +1321,13 @@ void logancestors(const Invar &I, const InvarVec &In, const Rmaxvals &rmx) {
 // Find the ground state in the current NRG shell.
 void find_groundstate(const DiagInfo &diag) {
   STAT::Egs = DBL_MAX;
-  LOOP_const(diag, is) {
-    my_assert(EIGEN(is).value.size() > 0);
-    t_eigen Emin = EIGEN(is).value(0); // Eigenvalues are sorted
-    Emin += EIGEN(is).shift;           // if something was subtracted, we add it back
+  for (const auto &[i, eig]: diag) {
+    my_assert(eig.value.size() > 0);
+    t_eigen Emin = eig.value(0); // Eigenvalues are sorted
+    Emin += eig.shift;           // if something was subtracted, we add it back
     if (Emin < STAT::Egs) {
       STAT::Egs    = Emin;
-      STAT::ground = INVAR(is);
+      STAT::ground = i;
     }
   }
 }
@@ -1337,9 +1335,10 @@ void find_groundstate(const DiagInfo &diag) {
 // Dump all energies in diag to a file
 void dumptofile(const DiagInfo &diag, ostream &file) {
   file << endl << "===== Iteration number: " << STAT::N << endl;
-  LOOP_const(diag, is) {
-    file << "Subspace: " << is.first << endl;
-    for (const auto &x : EIGEN(is).value) file << x << ' ';
+  for (const auto &[i, eig]: diag) {
+    file << "Subspace: " << i << endl;
+    for (const auto &x : eig.value) 
+      file << x << ' ';
     file << endl;
   }
 }
@@ -1347,10 +1346,10 @@ void dumptofile(const DiagInfo &diag, ostream &file) {
 /*** Subtract ground state energy ***/
 void subtract_groundstate_energy(DiagInfo &diag) {
   if (nrgrun) // should be done only once!
-    LOOP(diag, is) {
-      for (auto &x : EIGEN(is).value) x -= STAT::Egs;
-      EIGEN(is).shift = STAT::Egs;
-      my_assert(EIGEN(is).value[0] >= 0.0);
+    for (auto &[i, eig] : diag) {
+      for (auto &x : eig.value) x -= STAT::Egs;
+      eig.shift = STAT::Egs;
+      my_assert(eig.value[0] >= 0.0);
     }
 }
 
@@ -1359,7 +1358,9 @@ void subtract_groundstate_energy(DiagInfo &diag) {
 // Used in nrg_measure_singlet().
 double calc_Z(const DiagInfo &diag) {
   bucket Z;
-  LOOP_const(diag, is) for (const auto &x : EIGEN(is).value) Z += mult(INVAR(is)) * exp(-P::betabar * x);
+  for (const auto &[i, eig] : diag) 
+    for (const auto &x : eig.value) 
+      Z += mult(i) * exp(-P::betabar * x);
   return Z;
 }
 
@@ -1681,7 +1682,9 @@ void close_output_files() {
 // STAT::Zchit for chi(T) calculations.
 double calc_grand_canonical_Z(const DiagInfo &diag, double temperature = P::T) {
   bucket ZN;
-  LOOP_const(diag, is) for (const auto &x : EIGEN(is).value) ZN += mult(INVAR(is)) * exp(-x * (STAT::scale / temperature));
+  for (const auto &[i, eig]: diag) 
+    for (const auto &x : eig.value) 
+      ZN += mult(i) * exp(-x * (STAT::scale / temperature));
   my_assert(ZN >= 1.0);
   return ZN;
 }
@@ -1697,13 +1700,12 @@ void init_rho(const DiagInfo &diag, DensMatElements &rho) {
   nrglog('@', "@ init_rho()");
   const double ZN = calc_grand_canonical_Z(diag);
   rho.clear();
-  LOOP_const(diag, is) {
-    // The size of the matrix is determined by NRSTATES().
-    const size_t dim = NRSTATES(is);
-    const Invar I    = INVAR(is);
-    rho[I]           = Matrix(dim, dim);
+  for (const auto &[I, eig]: diag) {
+    const auto dim = eig.getnr();
+    rho[I]         = Matrix(dim, dim);
     rho[I].clear();
-    for (size_t i = 0; i < dim; i++) rho[I](i, i) = exp(-EIGEN(is).value(i) * STAT::scale / P::T) / ZN;
+    for (size_t i = 0; i < dim; i++) 
+      rho[I](i, i) = exp(-eig.value(i) * STAT::scale / P::T) / ZN;
   }
   const double Tr = trace(rho);
   my_assert(num_equal(Tr, 1.0, 1e-8)); // NOLINT
@@ -1750,13 +1752,11 @@ void nrg_truncate_prepare(DiagInfo &diag) {
   size_t nrkept     = 0; // counter of states actually retained
   size_t nrkeptmult = 0; // counter of states actually retained,
                          // taking into account the multiplicity
-  LOOP(diag, is) {
-    const Invar I             = INVAR(is);
-    const size_t multiplicity = mult(INVAR(is));
-    const size_t nrc          = NRSTATES(is); // number of (calculated) states in the subspace
+  for (auto &[I, eig] : diag) {
+    const size_t nrc = eig.getnr(); // number of (calculated) states in the subspace
     my_assert(nrc > 0);
     // Count the number of elements to keep
-    size_t count = count_if(begin(EIGEN(is).value), end(EIGEN(is).value), [=](double e) { return e <= Emax; });
+    size_t count = count_if(begin(eig.value), end(eig.value), [=](double e) { return e <= Emax; });
     my_assert(count <= nrc);
     if (LAST_ITERATION()) {  // Overrides
       // Full Fock space algorithms: keep all states in the last iteration
@@ -1764,7 +1764,7 @@ void nrg_truncate_prepare(DiagInfo &diag) {
       // lastall -> Unconditionally keep all states in the last iteration
       if (P::lastall) count = nrc;
     }
-    if (count == nrc && EIGEN(is).value(nrc - 1) != Emax) {
+    if (count == nrc && eig.value(nrc - 1) != Emax) {
       /* We determined that all calculated states in this invariant
         subspace will be retained (and that perhaps additional should
         have been computed). RMAX() gives actual dimensionality of
@@ -1773,12 +1773,12 @@ void nrg_truncate_prepare(DiagInfo &diag) {
         the number of actually calculated states, which is only equal
         to the dimensionality if in the computational scheme used all
         the states are retained. */
-      const size_t truedim = RMAX(is);
+      const size_t truedim = eig.getrmax();
       if (nrc < truedim) NRG::notenough = true;
     }
     diag[I].truncate_prepare(count);
     nrkept += count;
-    nrkeptmult += count * multiplicity;
+    nrkeptmult += count * mult(I);
   }
   nrgdump3(Emax, nrkept, nrkeptmult) << endl;
 }
@@ -1959,9 +1959,8 @@ void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElem
     my_assert(parity == 1 || parity == -1);
   else
     my_assert(parity == 1);
-  LOOP_const(diag, is1) {
-    const Invar I1 = INVAR(is1);
-    Invar Ip       = I1;
+  for (const auto &[I1, eig] : diag) { // XXX: eig not used. simplify!
+    Invar Ip = I1;
     if (parity == -1) Ip.InvertParity();
     for (size_t i = 1; i <= P::combs; i++) {
       Recalc r;
@@ -2032,8 +2031,9 @@ void nrg_trim_matrices(DiagInfo &dg, IterInfo &a) {
 }
 
 void nrg_clear_eigenvectors(DiagInfo &diag) {
-  LOOP(diag, i)
-  for (auto &j : i.second.blocks) j = Matrix(0, 0);
+  for (auto &[i, eig] : diag)
+    for (auto &j : eig.blocks) 
+      j = Matrix(0, 0);
 }
 
 // Z_S is the appropriate statistical sum
@@ -2121,9 +2121,9 @@ void nrg_calculate_TD(DiagInfo &diag, double additional_factor = 1.0) {
   // (Teff=scale/betabar).
   double rescale_factor = P::betabar * additional_factor;
   bucket Z, E, E2; // Statistical sum, Tr[beta H], Tr[(beta H)^2]
-  LOOP(diag, is) {
+  for (auto &[i, eig] : diag) {
     bucket sumZ, sumE, sumE2;
-    for (const auto &x : EIGEN(is).value) {
+    for (const auto &x : eig.value) {
       const double betaE = rescale_factor * x;
       const double expo  = exp(-betaE);
       sumE += betaE * expo;
@@ -2131,7 +2131,7 @@ void nrg_calculate_TD(DiagInfo &diag, double additional_factor = 1.0) {
       sumZ += expo;
     }
     // Take into account the multiplicity
-    const int multip = mult(INVAR(is));
+    const int multip = mult(i);
     Z += multip * sumZ;
     E += multip * sumE;
     E2 += multip * sumE2;
@@ -2567,8 +2567,9 @@ void nrg_dump_f(const Opch &opch) {
 // the second pass of the NRG iteration.
 // XXX: remove this. Use absenergyG in dm.
 void shift_abs_energies(DiagInfo &diag) {
-  LOOP(diag, i)
-  for (auto &x : EIGEN(i).absenergyG) x -= STAT::GS_energy;
+  for (auto &[i, eig] : diag)
+    for (auto &x : eig.absenergyG) 
+      x -= STAT::GS_energy;
 }
   
 // called before calc_ZnD()
@@ -2584,10 +2585,11 @@ void shift_abs_energies(AllSteps &dm)
   
 // Used in evaluation of vertex functions to speed up the computation.
 void calc_boltzmann_factors(DiagInfo &diag) {
-  LOOP(diag, i) {
-    const size_t len = EIGEN(i).absenergyG.size();
-    EIGEN(i).boltzmann.resize(len);
-    for (size_t j = 0; j < len; j++) EIGEN(i).boltzmann[j] = exp(-EIGEN(i).absenergyG[j] / P::T);
+  for (auto &[i, eig] : diag) {
+    const auto len = eig.absenergyG.size();
+    eig.boltzmann.resize(len);
+    for (size_t j = 0; j < len; j++) 
+      eig.boltzmann[j] = exp(-eig.absenergyG[j] / P::T);
   }
 }
 
@@ -2663,13 +2665,16 @@ void store_td() {
 // shift_abs_energies(diag).
 void calc_abs_energies(DiagInfo &diag) {
   nrglog('@', "@ calc_abs_energies()");
-  LOOP(diag, is) {
-    EIGEN(is).absenergy = EIGEN(is).value;
-    for (auto &x : EIGEN(is).absenergy) x = x * STAT::scale + STAT::total_energy;
-    EIGEN(is).absenergyG = EIGEN(is).value;
-    for (auto &x : EIGEN(is).absenergyG) x = x * STAT::scale + STAT::total_energy;
-    EIGEN(is).absenergyN = EIGEN(is).value; // unscaled energies, referenced to the lowest energy in current NRG step (not modified later on)
-    for (auto &x : EIGEN(is).absenergyN) x *= STAT::scale;
+  for (auto &[i, eig] : diag) {
+    eig.absenergy = eig.value;
+    for (auto &x : eig.absenergy) 
+      x = x * STAT::scale + STAT::total_energy;
+    eig.absenergyG = eig.value;
+    for (auto &x : eig.absenergyG) 
+      x = x * STAT::scale + STAT::total_energy;
+    eig.absenergyN = eig.value; // unscaled energies, referenced to the lowest energy in current NRG step (not modified later on)
+    for (auto &x : eig.absenergyN) 
+      x *= STAT::scale;
   }
 }
 
@@ -2697,9 +2702,10 @@ void nrg_after_diag(IterInfo &iterinfo) {
   // Measurements are performed before the truncation!
   nrg_perform_measurements(diag);
   // Consistency checks
-  LOOP_const(diag, i) {
-    my_assert(EIGEN(i).matrix0.size1() <= EIGEN(i).matrix0.size2());
-    if (!P::ZBW) my_assert(EIGEN(i).matrix0.size2() == qsrmax[INVAR(i)].total());
+  for (const auto &[i, eig]: diag) {
+    my_assert(eig.matrix0.size1() <= eig.matrix0.size2());
+    if (!P::ZBW) 
+      my_assert(eig.matrix0.size2() == qsrmax[i].total());
   }
   if (!P::ZBW) {
     split_in_blocks(diag);
@@ -2714,11 +2720,10 @@ void nrg_after_diag(IterInfo &iterinfo) {
   // Store information about subspaces and states
   size_t nrall  = 0;
   size_t nrkept = 0;
-  LOOP_const(diag, i) {
-    const auto I  = INVAR(i);
-    dm[STAT::N][I] = DimSub(NRSTATES(i), RMAX(i), qsrmax[I], EIGEN(i).value, EIGEN(i).absenergy, EIGEN(i).absenergyG, EIGEN(i).absenergyN, LAST_ITERATION());
-    nrall += RMAX(i);
-    nrkept += NRSTATES(i);
+  for (const auto &[I, eig]: diag) { // XXX - there should be only 1 copy
+    dm[STAT::N][I] = DimSub(eig.getnr(), eig.getrmax(), qsrmax[I], eig.value, eig.absenergy, eig.absenergyG, eig.absenergyN, LAST_ITERATION());
+    nrall += eig.getrmax();
+    nrkept += eig.getnr();
   }
   double ratio = double(nrkept) / nrall;
   cout << "Kept: " << nrkept << " out of " << nrall << ", ratio=" << setprecision(3) << ratio << endl;
@@ -2838,21 +2843,26 @@ void calc_TKW() {
 // Total number of states (symmetry taken into account)
 size_t count_states(const DiagInfo &dg) {
   size_t states = 0;
-  LOOP_const(dg, i) states += Sym->mult(INVAR(i)) * NRSTATES(i);
+  for (const auto &[i, eig]: dg) 
+    states += Sym->mult(i) * eig.getnr();
   return states;
 }
 
 // Count non-empty subspaces
 size_t count_subspaces(const DiagInfo &dg) {
   size_t subspaces = 0;
-  LOOP_const(dg, i) if (NRSTATES(i)) subspaces++;
+  for (const auto &[i, eig]: dg) 
+    if (eig.getnr()) 
+      subspaces++;
   return subspaces;
 }
 
-// Dump information about states.
+// Dump information about states (e.g. before the start of the iteration).
 void states_report(const DiagInfo &dg, ostream &fout = cout) {
   fout << "Number of invariant subspaces: " << count_subspaces(dg) << endl;
-  LOOP_const(dg, is) if (NRSTATES(is)) fout << "(" << INVAR(is) << ") " << NRSTATES(is) << " states: " << is.second.value << endl;
+  for (const auto &[i, eig]: dg) 
+    if (eig.getnr()) 
+      fout << "(" << i << ") " << eig.getnr() << " states: " << eig.value << endl;
   fout << "Number of states (multiplicity taken into account): " << count_states(dg) << endl << endl;
 }
 
