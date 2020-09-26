@@ -146,12 +146,12 @@ void store_transformations(size_t N, const DiagInfo &diag) {
   MATRIXF.close();
 }
 
-void load_transformations(size_t N, DiagInfo &diag) {
+DiagInfo load_transformations(size_t N) {
+  DiagInfo diag;
   if (!P::ZBW) {
     my_assert(N + 1 >= P::Ninit && N + 1 <= P::Nmax);
   } else
     my_assert(N == P::Ninit);
-  diag.clear(); // blank state, no subspaces present
   nrglog('H', "Loading transformation matrices...");
   const string fn = unitaryfn(N);
   std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
@@ -170,6 +170,7 @@ void load_transformations(size_t N, DiagInfo &diag) {
   }
   nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
   MATRIXF.close();
+  return diag;
 }
 
 void remove_transformation_files(size_t N) {
@@ -307,8 +308,7 @@ void calc_densitymatrix(DensMatElements &rho) {
   TIME("DM");
   for (size_t N = P::Nmax - 1; N > P::Ninit; N--) {
     cout << "[DM] " << N << endl;
-    DiagInfo diag_loaded;
-    load_transformations(N, diag_loaded);
+    DiagInfo diag_loaded = load_transformations(N);
     DensMatElements rhoPrev;
     calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N);
     check_trace_rho(rhoPrev); // Make sure rho is normalized to 1.
@@ -404,8 +404,7 @@ void calc_fulldensitymatrix(DensMatElements &rhoFDM) {
   TIME("FDM");
   for (size_t N = P::Nmax - 1; N > P::Ninit; N--) {
     cout << "[FDM] " << N << endl;
-    DiagInfo diag_loaded;
-    load_transformations(N, diag_loaded);
+    DiagInfo diag_loaded = load_transformations(N);
     DensMatElements rhoFDMPrev;
     calc_fulldensitymatrix_iterN(diag_loaded, rhoFDM, rhoFDMPrev, N);
     double tr       = trace(rhoFDMPrev);

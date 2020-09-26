@@ -2192,9 +2192,10 @@ Matrix nrg_prepare_task_for_diag(const Invar &I, const Opch &opch, const DiagInf
   return h;
 }
 
-void nrg_diagonalisations_OpenMP(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
+DiagInfo nrg_diagonalisations_OpenMP(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
   nrglog('@', "@ nrg_diagonalisations_OpenMP()");
   nrglog('(', "OpenMP diag");
+  DiagInfo diagnew;
   size_t nr = tasks.size();
   size_t itask = 0;
   // cppcheck-suppress unreadVariable symbolName=nth
@@ -2208,8 +2209,9 @@ void nrg_diagonalisations_OpenMP(const Opch &opch, const DiagInfo &diagprev, con
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
     Eigen e = diagonalise(h);
 #pragma omp critical
-    { diag[I] = e; }
+    { diagnew[I] = e; }
   }
+  return diagnew;
 }
 
 #ifdef NRG_MPI
@@ -2328,7 +2330,7 @@ auto mpi_receive_eigen_linebyline(int source) {
 }
 
 // Read results from a slave process.
-Invar read_from(int source) {
+std::pair<Invar, Eigen> read_from(int source) {
   nrglog('M', "Reading results from " << source);
   auto eig = mpi_receive_eigen(source);
   Invar Irecv;
@@ -2339,12 +2341,12 @@ Invar read_from(int source) {
   my_assert(eig.matrix0.size2() == eig.getrmax());
   my_assert(eig.matrix0.size1() <= eig.matrix0.size2());
   my_assert(eig.getrmax() == qsrmax[Irecv].total());
-  diag[Irecv] = eig;
-  return Irecv;
+  return {Irecv, eig};
 }
 
-void nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
+DiagInfo nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
   nrglog('@', "@ nrg_diagonalisations_MPI()");
+  DiagInfo diagnew;
   mpi_sync_params(); // Synchronise parameters
   list<Invar> todo; // List of all the tasks to handle
   copy(begin(tasks), end(tasks), back_inserter(todo));
@@ -2381,7 +2383,7 @@ void nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, const 
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
-      diag[I] = diagonalise(h);
+      diagnew[I] = diagonalise(h);
       nodes.push_back(0);
       done.push_back(I);
     } else {
@@ -2392,7 +2394,8 @@ void nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, const 
     // Check for terminated jobs
     while (auto status = mpiw->iprobe(mpi::any_source, TAG_EIGEN)) {
       nrglog('M', "Receiveing results from " << status->source());
-      auto Irecv = read_from(status->source());
+      auto [Irecv, eig] = read_from(status->source());
+      diagnew[Irecv] = eig;
       done.push_back(Irecv);
       // The node is now available for new tasks!
       nodes.push_back(status->source());
@@ -2401,14 +2404,16 @@ void nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, const 
   // Keep reading results sent from the slave processes until all tasks have been completed.
   while (done.size() != tasks.size()) {
     auto status = mpiw->probe(mpi::any_source, TAG_EIGEN);
-    auto Irecv  = read_from(status.source());
+    auto [Irecv, eig]  = read_from(status.source());
+    diagnew[Irecv] = eig;
     done.push_back(Irecv);
   }
+  return diagnew;
 }
 #endif
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
-void nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
+DiagInfo nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
   nrglog('@', "@ nrg_diagonalisations()");
   // This needs to be called here, because class Timing is not
   // thread-safe.
@@ -2416,11 +2421,10 @@ void nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev, const std:
   // Call init() again here, because NRG::diagratio might have
   // changed!
   sP.init();
-  diag.clear();
 #ifdef NRG_MPI
-  nrg_diagonalisations_MPI(opch, diagprev, tasks);
+  return nrg_diagonalisations_MPI(opch, diagprev, tasks);
 #else
-  nrg_diagonalisations_OpenMP(opch, diagprev, tasks);
+  return nrg_diagonalisations_OpenMP(opch, diagprev, tasks);
 #endif
 }
 
@@ -2540,25 +2544,25 @@ void calc_boltzmann_factors(DiagInfo &diag) {
   }
 }
 
-/* NRG diagonalisation driver: calls nrg_diagionalisations() or
- load_transformations(), as necessary, and performs the truncation. All other
- calculations are done in nrg_after_diag(). Called from nrg_iterate(). */
-void nrg_do_diag(IterInfo &iterinfo, DiagInfo &diagprev) {
+// NRG diagonalisation driver: calls nrg_diagionalisations() or load_transformations(), as necessary, and performs
+// the truncation. All other calculations are done in nrg_after_diag(). Called from nrg_iterate().
+DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev) {
   nrglog('@', "@ nrg_do_diag()");
   infostring();
   show_coefficients();
   auto tasks = sort_task_list(nrg_determine_tasks(diagprev));
-  NRG::diagratio = P::diagratio;
+  NRG::diagratio = P::diagratio; // XXX
+  DiagInfo diag;
   bool notenough;
   do {
     if (nrgrun) {
       if (!(P::resume && int(STAT::N) <= P::laststored))
-        nrg_diagonalisations(iterinfo.opch, diagprev, tasks); // compute in first run
+        diag = nrg_diagonalisations(iterinfo.opch, diagprev, tasks); // compute in first run
       else
-        load_transformations(STAT::N, diag); // or read from disk
+        diag = load_transformations(STAT::N); // or read from disk
     }
     if (dmnrgrun) {
-      load_transformations(STAT::N, diag); // read from disk in second run
+      diag = load_transformations(STAT::N); // read from disk in second run
       // IMPORTANT: subtract the absolute (!) GS energy in the
       // abs_energy vector. The overall (all shells, all invariant
       // subspaces) lowest abs_energy will thus be equal to zero.
@@ -2591,6 +2595,7 @@ void nrg_do_diag(IterInfo &iterinfo, DiagInfo &diagprev) {
       }
     }
   } while (nrgrun && P::restart && notenough);
+  return diag;
 }
 
 using mapSD = map<string, double>;
@@ -2629,7 +2634,7 @@ void calc_abs_energies(DiagInfo &diag) {
 // - diag contains all information about the eigenstates.
 // - STAT::Egs had been computed
 // Also called from doZBW() as a final step.
-void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diagprev) {
+void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diagprev, DiagInfo &diag) {
   nrglog('@', "@ nrg_after_diag()");
   // Contribution to the total energy.
   STAT::total_energy += STAT::Egs * STAT::scale;
@@ -2686,6 +2691,8 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diagprev) {
   }
   if (P::checksumrules) check_operator_sumrules(diag, iterinfo);
   time_mem::ms.check("recalc");
+  // Store TD data (all outfields)
+  store_td();
   if (!P::ZBW) {
     // Free up memory that contains information we no longer need
     nrg_trim_matrices(diag, iterinfo);
@@ -2693,14 +2700,12 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diagprev) {
     time_mem::ms.check("trim");
     diagprev.swap(diag); // IMPORTANT: we need to retain the eigenenergies!
   }
-  // Store TD data (all outfields)
-  store_td();
 }
 
 // Perform one iteration step
 void nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev) {
-  nrg_do_diag(iterinfo, diagprev);
-  nrg_after_diag(iterinfo, diagprev);
+  diag = nrg_do_diag(iterinfo, diagprev);
+  nrg_after_diag(iterinfo, diagprev, diag);
   time_mem::memory_time_brief_report();
 }
 
@@ -2736,7 +2741,7 @@ void doZBW(IterInfo &iterinfo, DiagInfo &diagprev) {
   // begin nrg_do_diag() equivalent
   if (nrgrun) diag = diagprev;
   if (dmnrgrun) {
-    load_transformations(STAT::N, diag);
+    diag = load_transformations(STAT::N);
     shift_abs_energies(diag);
     calc_boltzmann_factors(diag); // !!
     remove_transformation_files(STAT::N);
@@ -2746,7 +2751,7 @@ void doZBW(IterInfo &iterinfo, DiagInfo &diagprev) {
   copy_sort_energies(diag, STAT::energies); // required in nrg_truncate_prepare()
   nrg_truncate_prepare(diag);               // determine # of kept and discarded states
   // end nrg_do_diag() equivalent
-  nrg_after_diag(iterinfo, diagprev);
+  nrg_after_diag(iterinfo, diagprev, diag);
 }
 
 // ****************************  Main NRG loop ****************************
