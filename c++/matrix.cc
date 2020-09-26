@@ -107,9 +107,8 @@ void offdiag_function(size_t i, size_t j,
   if (contributes) offdiag_build(i, j, ch, fnr, factor, h, qq, In, iterinfo.opch);
 }
 
-// TRICK: this macro is used when the evaluation of 'factor' could
-// lead to a seg fault. Here we check if the submatrix exists before
-// the expression in 'factor' is evaluated.
+// TRICK: this macro is used when the evaluation of 'factor' could lead to a seg fault. Here we check if the
+// submatrix exists before the expression in 'factor' is evaluated.
 
 #define offdiag_macro(i, j, ch, fnr, factor, h, qq, In)                                                                                              \
   {                                                                                                                                                  \

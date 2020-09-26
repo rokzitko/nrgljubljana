@@ -194,7 +194,7 @@ void determine_Nmax() {
 }
 
 // Read all initial energies and matrix elements
-void read_data(IterInfo &iterinfo) {
+void read_data(IterInfo &iterinfo, DiagInfo &diagprev) {
   cout << endl;
   iterinfo.cleanup();
   ifstream fdata("data");
