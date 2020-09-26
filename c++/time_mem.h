@@ -97,8 +97,7 @@ class TimeScope {
     section                                                                                                                                          \
   }
 
-// Stores maximal memory usage at various breakpoints.
-// This is useful for estimating memory requirements at various
+// Stores maximal memory usage at various breakpoints. This is useful for estimating memory requirements at various
 // points of the execution path.
 
 class MemoryStats {
@@ -132,7 +131,7 @@ class MemoryStats {
         for (const auto &i : maxvals) F << setw(MS_WIDTH) << i.first << ": " << i.second << " kB" << endl;
       my_assert(topusage <= peakusage);
     }
-    F << endl << "Peak usage: " <<  peakusage / 1024 << " MB " << endl; // NOLINT
+      F << endl << "Peak usage: " <<  peakusage / 1024 << " MB " << endl; // NOLINT
 #endif
   }
 };

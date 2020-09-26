@@ -404,20 +404,6 @@ void Eigen::perform_checks() const {
 // Full information after diagonalizations.
 using DiagInfo = map<Invar, Eigen>;
 
-#define LOOP(diag, var) for (auto &var : diag) // NOLINT
-#define LOOP_const(diag, var) for (const auto &var : diag) // NOLINT
-
-Invar INVAR(const DiagInfo::value_type &i) { return i.first; }
-// cppcheck-suppress constParameter symbolName=i
-Eigen &EIGEN(DiagInfo::value_type &i) { return i.second; } // NOLINT
-Eigen const &EIGEN(const DiagInfo::value_type &i) { return i.second; }
-
-// Number of calculated states
-size_t NRSTATES(const DiagInfo::value_type &i) { return i.second.getnr(); }
-
-// Dimensionality of the subspace (dim)
-size_t RMAX(const DiagInfo::value_type &i) { return i.second.getrmax(); }
-
 ostream &operator<<(ostream &os, const Twoinvar &p) { return os << "(" << p.first << ") (" << p.second << ")"; }
 
 template <typename T> ostream &operator<<(ostream &os, const ublas::vector<T> &v) {
@@ -455,8 +441,6 @@ using SPECTYPE = shared_ptr<SPEC>;
 
 // In namespace NRG we store run-time information about the calculation.
 namespace NRG {
-  // Flag to signal an insufficient number of states computed.
-  bool notenough;
   // Diagratio for the following diagonalisation call
   double diagratio;
   // Invariant subspaces to be computed.
@@ -1741,12 +1725,12 @@ t_eigen highest_retained_energy(const STDEVEC &energies) {
   return energies[nrkeep - 1];
 }
 
-// This function doesn't really perform the truncation in the sense
-// of deleting matrix elements. It just computes the number of states
-// to keep for each invariant subspace. Truncation is performed by
-// nrg_trucate_perform().
-void nrg_truncate_prepare(DiagInfo &diag) {
+// nrg_truncate_prepare() computes the number of states to keep for each invariant subspace, while the actual
+// runcation is performed by nrg_trucate_perform(). Returns true if an insufficient number of states has been
+// obtained in the diagonalization and we need to compute more states.
+bool nrg_truncate_prepare(DiagInfo &diag) {
   nrglog('@', "@ nrg_truncate_prepare()");
+  bool notenough = false;
   t_eigen Emax      = highest_retained_energy(STAT::energies);
   size_t nrkept     = 0; // counter of states actually retained
   size_t nrkeptmult = 0; // counter of states actually retained,
@@ -1763,23 +1747,18 @@ void nrg_truncate_prepare(DiagInfo &diag) {
       // lastall -> Unconditionally keep all states in the last iteration
       if (P::lastall) count = nrc;
     }
-    if (count == nrc && eig.value(nrc - 1) != Emax) {
-      /* We determined that all calculated states in this invariant
-        subspace will be retained (and that perhaps additional should
-        have been computed). RMAX() gives actual dimensionality of
-        the invariant subspace (i.e. the maximal number of
-        eigenpairs), while the variable nrc given by NRSTATES() is
-        the number of actually calculated states, which is only equal
-        to the dimensionality if in the computational scheme used all
-        the states are retained. */
-      const size_t truedim = eig.getrmax();
-      if (nrc < truedim) NRG::notenough = true;
-    }
+    if (count == nrc && eig.value(nrc - 1) != Emax && nrc < eig.getrmax())
+      notenough = true;
+    // We determined that all calculated states in this invariant subspace will be retained (and that perhaps
+    // additional should have been computed). getrmax() returns the dimensionality of the invariant subspace (i.e.
+    // the maximal number of eigenpairs), while the variable nrc is the number of actually calculated states, which
+    // is only equal to the dimensionality if in the computational scheme used all the states are retained.
     diag[I].truncate_prepare(count);
     nrkept += count;
     nrkeptmult += count * mult(I);
   }
   nrgdump3(Emax, nrkept, nrkeptmult) << endl;
+  return notenough;
 }
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z
@@ -1895,7 +1874,7 @@ void fdm_thermodynamics(const AllSteps &dm)
 
 // Actually truncate matrices. Drop subspaces with no states kept.
 void nrg_truncate_perform(DiagInfo &diag) {
-  for (auto &i : diag) EIGEN(i).truncate_perform(); // Truncate subspace to appropriate size
+  for (auto &[I, eig] : diag) eig.truncate_perform(); // Truncate subspace to appropriate size
 }
 
 // scaled = true -> output scaled energies (i.e. do not multiply
@@ -2186,9 +2165,8 @@ void nrg_perform_measurements(DiagInfo &diag) {
  remove duplicates. */
 auto nrg_make_subspaces_list() {
   list<Invar> subspaces;
-  for (const auto &ii : diagprev)
-    if (NRSTATES(ii)) {
-      const auto I = INVAR(ii);
+  for (const auto &[I, eig] : diagprev)
+    if (eig.getnr()) {
       auto input = input_subspaces(); // make a new copy of subspaces list
       for (size_t i = 1; i <= P::combs; i++) {
         input[i].inverse(); // IMPORTANT!
@@ -2603,8 +2581,8 @@ void nrg_do_diag() {
   nrg_determine_tasks(iterinfo.ancestors);
   sort_task_list();
   NRG::diagratio = P::diagratio;
+  bool notenough;
   do {
-    NRG::notenough = false;
     if (nrgrun) {
       if (!(P::resume && int(STAT::N) <= P::laststored))
         nrg_diagonalisations(); // compute in first run
@@ -2632,9 +2610,9 @@ void nrg_do_diag() {
       copy_sort_energies(diag, STAT::energies);
       find_clusters(STAT::energies, P::fixeps, STAT::cluster_mapping);
     }
-    nrg_truncate_prepare(diag);
+    notenough = nrg_truncate_prepare(diag);
     time_mem::ms.check("trunc");
-    if (NRG::notenough) {
+    if (notenough) {
       cout << "Insufficient number of states computed." << endl;
       if (P::restart) {
         NRG::diagratio = min(NRG::diagratio * P::restartfactor, 1.0);
@@ -2644,7 +2622,7 @@ void nrg_do_diag() {
              << endl;
       }
     }
-  } while (nrgrun && P::restart && NRG::notenough);
+  } while (nrgrun && P::restart && notenough);
 }
 
 using mapSD = map<string, double>;
