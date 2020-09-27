@@ -82,7 +82,7 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
 
 int remove(string filename) { return remove(filename.c_str()); }
 
-DensMatElements loadRho(size_t N, const string &prefix) {
+DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
   my_assert(P::Ninit <= N && N <= P::Nmax - 1);
   nrglog('H', "Loading density matrices...");
   DensMatElements rho;
@@ -102,6 +102,8 @@ DensMatElements loadRho(size_t N, const string &prefix) {
   }
   nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
   MATRIXF.close();
+  if (checkrho) 
+    check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
   if (P::removefiles)
     if (remove(fn)) my_error("Error removing %s", fn.c_str());
   return rho;

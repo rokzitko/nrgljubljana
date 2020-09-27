@@ -4,7 +4,7 @@ class SPEC_FDMls : virtual public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &) override;
+            const Invar &, const DensMatElements &) override;
   string name() override { return "FDMls"; }
   string merge() override { return "CFS"; }
   string rho_type() override { return "rhoFDM"; }
@@ -14,7 +14,7 @@ class SPEC_FDMgt : virtual public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &) override;
+            const Invar &, const DensMatElements &) override;
   string name() override { return "FDMgt"; }
   string merge() override { return "CFS"; }
   string rho_type() override { return "rhoFDM"; }
@@ -24,9 +24,9 @@ class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
   void calc(const Eigen &a1, const Eigen &a2, const Matrix &a3, const Matrix &a4, const BaseSpectrum &a5, t_factor a6, spCS_t a7,
-            const Invar &a8, const Invar &a9) override {
-    SPEC_FDMgt::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9);
-    SPEC_FDMls::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9);
+            const Invar &a8, const Invar &a9, const DensMatElements &rhoFDM) override {
+    SPEC_FDMgt::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9, rhoFDM);
+    SPEC_FDMls::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9, rhoFDM);
   }
   string name() override { return "FDM"; }
   string merge() override { return "CFS"; }
@@ -42,7 +42,7 @@ class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
 
 // *********** Greater correlation function ***********
 void SPEC_FDMgt::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                      spCS_t cs, const Invar &Ii, const Invar &Ij) {
+                      spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDMX) {
   const double wnf   = STAT::wnfactor[STAT::N];
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
@@ -84,7 +84,7 @@ if (allj > 0 && reti > 0) {
 
 // ************ Lesser correlation functions ***************
 void SPEC_FDMls::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                      spCS_t cs, const Invar &Ii, const Invar &Ij) {
+                      spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDMX) {
   double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const double wnf   = STAT::wnfactor[STAT::N];
   const Matrix &rhoi = rhoFDM[Ii];
@@ -129,14 +129,14 @@ class SPEC_FDMmats : public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(bs.mt); }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &) override;
+            const Invar &, const DensMatElements &) override;
   string name() override { return "FDMmats"; }
 };
 
 // *********** Matsubara axis version  ***********
 
 void SPEC_FDMmats::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
-                        t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij) {
+                        t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDMX) {
   const size_t cutoff = P::mats;
   // (-sign)=1 for fermionic case, (-sign)=-1 for bosonic case
   double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
@@ -203,9 +203,9 @@ class SPEC_FDM_v3mm : public SPEC {
   spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara2>(matstype::fb); }
   string name() override { return "FDM_v3mm"; }
   void calc_A(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-              spCS_t, const Invar &, const Invar &, const Invar &) override;
+              spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &) override;
   void calc_B(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-              spCS_t, const Invar &, const Invar &, const Invar &) override;
+              spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &) override;
   string rho_type() override { return "rho"; }
 };
 
@@ -253,7 +253,7 @@ using res_t = std::vector<matrix<t_weight> >;
   }
 
 void SPEC_FDM_v3mm::calc_A(const Eigen &diagi, const Eigen &diagj, const Eigen &diagl, const Matrix &op1, const Matrix &op2, const Matrix &op3,
-                           const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il) {
+                           const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, const DensMatElements &rhoFDMX) {
   const double v3mmcutoff = P::v3mmcutoff * sqr(P::T); // order of contributions is prop to 1/T^2
   size_t nr               = omp_get_max_threads();
   nrglog('G', "nr=" << nr);
@@ -506,7 +506,7 @@ void SPEC_FDM_v3mm::calc_A(const Eigen &diagi, const Eigen &diagj, const Eigen &
 }
 
 void SPEC_FDM_v3mm::calc_B(const Eigen &diagi, const Eigen &diagj, const Eigen &diagl, const Matrix &op1, const Matrix &op2, const Matrix &op3,
-                           const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il) {
+                           const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, const DensMatElements &rhoFDMX) {
   //   cout << "B" << endl;
   const double v3mmcutoff = P::v3mmcutoff * sqr(P::T); // order of contributions is prop to 1/T^2
   size_t nr               = omp_get_max_threads();

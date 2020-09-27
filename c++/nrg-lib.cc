@@ -187,15 +187,7 @@ void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
 
 // (Reduced) density matrix
 DensMatElements rho; // YYY
-DensMatElements rhoFDM;
-
-const Matrix & get(const DensMatElements &rho, Invar I)
-{
-  auto f = rho.find(I);
-  if (f == rho.cend())
-    my_error("unexpected error in get(rho,I)");
-  return f->second;
-}
+DensMatElements rhoFDM; // XXX
 
 template <typename T> 
   inline pair<T, T> reverse_pair(const pair<T, T> &i) { 
@@ -417,11 +409,11 @@ class SPEC {
   virtual ~SPEC() = default;
   virtual spCS_t make_cs(const BaseSpectrum &) = 0;
   virtual void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-                    const Invar &){};
+                    const Invar &, const DensMatElements &){};
   virtual void calc_A(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &){};
+                      spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &){};
   virtual void calc_B(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &){};
+                      spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &){};
   virtual string name() = 0;
   virtual string merge() { return ""; } // what merging rule to use
   virtual string rho_type() { return ""; } // what rho type is required
@@ -875,12 +867,13 @@ void dump_diagonal(const Matrix &m, size_t max_nr, ostream &F = std::cout)
   F << std::endl;
 }
 
-template <typename K>
-const Matrix & subspace_matrix(const MatrixElements &n, const K key)
-{
-  my_assert(n.count(key) == 1);
-  return n.find(key)->second;
-}
+// XXX
+//template <typename K>
+//const Matrix & subspace_matrix(const MatrixElements &n, const K key)
+//{
+//  my_assert(n.count(key) == 1);
+//  return n.find(key)->second;
+//}
 
 /* "Trace" of a singlet operator: actually this is the statistical average
  with respect to exp(-beta H), but without the 1/Z factor. I.e.
@@ -890,7 +883,10 @@ const Matrix & subspace_matrix(const MatrixElements &n, const K key)
 CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n, ostream &F = std::cout) {
   matel_bucket tr; // note: t_matel = t_expv
   for (const auto &[i, eig] : diag) {
-    const auto & nI = subspace_matrix(n, Twoinvar{i,i});
+//    const auto & nI = subspace_matrix(n, Twoinvar{i,i}); XXX
+    const auto f = n.find(Twoinvar{i,i});
+    if (f == n.cend()) my_error("unexpected failture in calc_trace_singlet()");
+    const auto & nI = f->second;
     const size_t dim = eig.getnr();
     my_assert(dim == nI.size2());
     matel_bucket sum;
@@ -907,11 +903,14 @@ CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n
 CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM) {
   matel_bucket tr;
   for (const auto &[i, eig] : diag) {
-    const auto & nI  = subspace_matrix(n, Twoinvar{i,i});
+//    const auto & nI  = subspace_matrix(n, Twoinvar{i,i}); XXX
+    const auto f1 = n.find(Twoinvar{i,i});
+    if (f1 == n.cend()) my_error("unexpected failure in calc_trace_fdm_kept(): n");
+    const auto & nI = f1->second;
     const auto ret  = dm[STAT::N][i].kept;
-    const auto f = rhoFDM.find(i);
-    if (f == rhoFDM.cend()) my_error("unexpected failure in calc_trace_fdm_kept()");
-    const auto &mat = f->second;
+    const auto f2 = rhoFDM.find(i);
+    if (f2 == rhoFDM.cend()) my_error("unexpected failure in calc_trace_fdm_kept(); rhoFDM");
+    const auto &mat = f2->second;
     matel_bucket sum;
     for (auto k = 0; k < ret; k++) // over kept states ONLY
       for (auto j = 0; j < ret; j++) 
@@ -1649,8 +1648,8 @@ double calc_grand_canonical_Z(const DiagInfo &diag, double temperature = P::T) {
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-DensMatElements init_rho(const DiagInfo &diag) {
-  nrglog('@', "@ init_rho()");
+DensMatElements init_rho_impl(const DiagInfo &diag) {
+  nrglog('@', "@ init_rho_impl()");
   const double ZN = calc_grand_canonical_Z(diag);
   DensMatElements rho;
   for (const auto &[I, eig]: diag) {
@@ -1662,6 +1661,13 @@ DensMatElements init_rho(const DiagInfo &diag) {
   }
   my_assert(num_equal(trace(rho), 1.0, 1e-8)); // NOLINT
   return rho;
+}
+
+DiagInfo diag_before_truncation, diag_after_truncation;
+
+DensMatElements init_rho()
+{
+  return P::lastall ? init_rho_impl(diag_before_truncation) : init_rho_impl(diag_after_truncation);
 }
 
 /*** Truncation ***/
@@ -2094,6 +2100,10 @@ void nrg_calculate_TD(const DiagInfo &diag, double additional_factor = 1.0) {
   if (nrgrun) TD::save_TD_quantities(Ftd);
 }
 
+//std::pair<DensMatElements, DensMatElements> load_density_matrix()
+//{
+//}
+
 void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iterinfo) {
   nrglog('@', "@ nrg_calculate_spectral_and_expv()");
   // Zft is used in the spectral function calculations using the
@@ -2108,12 +2118,15 @@ void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iteri
     double CHITtemperature = P::chitp * STAT::scale;
     STAT::Zchit            = calc_grand_canonical_Z(diag, CHITtemperature);
   }
-//  DensMatElements rho, rhoFDM; // YYY
-  if (dmnrgrun && !LAST_ITERATION()) {
-    rho = loadRho(STAT::N, FN_RHO);
-    if (P::checkrho) check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
-    if (P::fdm) 
-      rhoFDM = loadRho(STAT::N, FN_RHOFDM);
+//  auto [rho, rhoFDM] = load_density_matrix();
+//  DensMatElements rho, rhoFDM;
+  if (dmnrgrun) {
+    if (!LAST_ITERATION()) {
+      // if (P::cfs || P::dmnrg)
+      rho = loadRho(STAT::N, FN_RHO, P::checkrho);
+      if (P::fdm) 
+        rhoFDM = loadRho(STAT::N, FN_RHOFDM);
+    }
   }
   nrg_spectral_densities(diag, rho, rhoFDM);
   if (nrgrun) nrg_measure_singlet(diag, iterinfo, custom);
@@ -2624,8 +2637,6 @@ void calc_abs_energies(DiagInfo &diag) {
   }
 }
 
-DiagInfo diag_before_truncation, diag_after_truncation;
-
 // Perform processing after a successful NRG step.
 // At function call:
 // - diag contains all information about the eigenstates.
@@ -2669,6 +2680,7 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag) {
   diag_before_truncation = diag;
   if (!P::ZBW) 
     nrg_truncate_perform(diag);
+  diag_after_truncation = diag; // ZZZ
   // Store information about subspaces and states
   size_t nrall  = 0;
   size_t nrkept = 0;
@@ -2702,7 +2714,7 @@ DiagInfo nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev) {
   nrg_after_diag(iterinfo, diag);
   nrg_trim_matrices(diag, iterinfo);
   nrg_clear_eigenvectors(diag);
-  diag_after_truncation = diag;
+  diag_after_truncation = diag; // replace with the trimmed version set in nrg_after_diag()
   time_mem::memory_time_brief_report();
   return diag;
 }
@@ -2729,8 +2741,8 @@ void docalc0(const IterInfo &iterinfo, const DiagInfo &diag0) {
 }
 
 // doZBW() takes the place of nrg_iterate() called from nrg_main_loop() in the case of zero-bandwidth calculation.
-// Thus it replaces nrg_do_diag() + nrg_after_diag().
-DiagInfo doZBW(IterInfo &iterinfo, DiagInfo &diag0) {
+// Thus it replaces nrg_do_diag() + nrg_after_diag() (it calls the latter as the last step!).
+DiagInfo doZBW(IterInfo &iterinfo, const DiagInfo &diag0) {
   cout << endl << "Zero bandwidth calculation" << endl;
   // TRICK: scale will be that for N=Ninit-1, but STAT::N=Ninit.
   STAT::set_N(int(P::Ninit) - 1);
@@ -2818,7 +2830,7 @@ void states_report(const DiagInfo &dg, ostream &fout = cout) {
   fout << "Number of states (multiplicity taken into account): " << count_states(dg) << endl << endl;
 }
 
-DiagInfo start_run(IterInfo &iterinfo, DiagInfo &diag0) {
+DiagInfo start_run(IterInfo &iterinfo, const DiagInfo &diag0) {
   nrglog('@', "@ start_run()");
   states_report(diag0);
   open_output_files(iterinfo);
@@ -2917,20 +2929,24 @@ void calculation() {
   auto diag = start_run(iterinfo, diag0);
   finalize_nrg();
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
-  if (!P::dm) return; // if density-matrix algorithms are not enabled, we are done here!
+  if (!P::dm) return; // if density-matrix algorithms are not enabled, we are done!
   // XXX: not needed if only fdm enabled!
-  {
-    auto rho = P::lastall ? init_rho(diag_before_truncation) : init_rho(diag_after_truncation);
+  // if (P::cfs || P::dmnrg)
+  { // auto
+    rho = init_rho();
+    // ZZZ saveRho(STAT::N, FN_RHO, rho);
     if (!P::ZBW) calc_densitymatrix(rho);
   }
   if (P::fdm) {
-    auto rhoFDM = init_rho_FDM(STAT::N);
+    // auto
+    rhoFDM = init_rho_FDM(STAT::N);
+    // ZZZ saveRho(STAT::N, FN_RHOFDM, rhoFDM);
     if (!P::ZBW) calc_fulldensitymatrix(rhoFDM);
   }
   if (string(P::stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
   STAT::runtype = RUNTYPE::DMNRG;
-  auto [diagprev2, iterinfo2] = read_data();
-  start_run(iterinfo2, diagprev2);
+  auto [diag0_dm, iterinfo_dm] = read_data();
+  start_run(iterinfo_dm, diag0_dm);
   finalize_dmnrg();
 }
 
