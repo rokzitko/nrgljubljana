@@ -7,6 +7,7 @@ class SPEC_FDMls : virtual public SPEC {
             const Invar &) override;
   string name() override { return "FDMls"; }
   string merge() override { return "CFS"; }
+  string rho_type() override { return "rhoFDM"; }
 };
 
 class SPEC_FDMgt : virtual public SPEC {
@@ -16,6 +17,7 @@ class SPEC_FDMgt : virtual public SPEC {
             const Invar &) override;
   string name() override { return "FDMgt"; }
   string merge() override { return "CFS"; }
+  string rho_type() override { return "rhoFDM"; }
 };
 
 class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
@@ -28,6 +30,7 @@ class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
   }
   string name() override { return "FDM"; }
   string merge() override { return "CFS"; }
+  string rho_type() override { return "rhoFDM"; }
 };
 
 #define LOOP_D(n)                                                                                                                                    \
@@ -203,6 +206,7 @@ class SPEC_FDM_v3mm : public SPEC {
               spCS_t, const Invar &, const Invar &, const Invar &) override;
   void calc_B(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
               spCS_t, const Invar &, const Invar &, const Invar &) override;
+  string rho_type() override { return "rho"; }
 };
 
 template <typename T> inline std::complex<T> boltz_fnc_noscale(T E1, T E2, T bzE1, T bzE2, T wn, short n) {

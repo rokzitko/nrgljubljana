@@ -189,6 +189,14 @@ void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
 DensMatElements rho; // YYY
 DensMatElements rhoFDM;
 
+const Matrix & get(const DensMatElements &rho, Invar I)
+{
+  auto f = rho.find(I);
+  if (f == rho.cend())
+    my_error("unexpected error in get(rho,I)");
+  return f->second;
+}
+
 template <typename T> 
   inline pair<T, T> reverse_pair(const pair<T, T> &i) { 
     return make_pair(i.second, i.first); 
@@ -416,6 +424,7 @@ class SPEC {
                       spCS_t, const Invar &, const Invar &, const Invar &){};
   virtual string name() = 0;
   virtual string merge() { return ""; } // what merging rule to use
+  virtual string rho_type() { return ""; } // what rho type is required
 };
 
 using SPECTYPE = shared_ptr<SPEC>;
@@ -1109,10 +1118,9 @@ string axisstring(axis a) {
 
 ostream &operator<<(ostream &os, const axis a) { return os << axisstring(a); }
 
-/* class BaseSpectrum contains all information about calculating the
- spectrum: pointers to the operator data and miscelaneous data, such
- as the spectrum type. Functions calc_specdens() et al. receive an
- object of this type as input. */
+// class BaseSpectrum contains all information about calculating the spectrum: pointers to the operator data and
+// miscelaneous data, such as the spectrum type. Functions calc_specdens() et al. receive an object of this type as
+// input.
 class BaseSpectrum {
   public:
   string name;
@@ -1136,6 +1144,7 @@ class BaseSpectrum {
      op1(_op1), op2(_op2), op3(_op3), a(axis::RealFreq), mt(matstype::fermionic) { nr = 3; }
 };
 
+// XXX: remove this, if possible
 class speclist;
 using lsl = list<speclist *>;
 lsl allspectra; // list of list of spectra

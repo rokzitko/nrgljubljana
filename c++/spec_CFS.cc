@@ -9,6 +9,7 @@ class SPEC_CFSls : virtual public SPEC {
             const Invar &) override;
   string name() override { return "CFSls"; }
   string merge() override { return "CFS"; }
+  string rho_type() override { return "rho"; }
 };
 
 class SPEC_CFSgt : virtual public SPEC {
@@ -18,6 +19,7 @@ class SPEC_CFSgt : virtual public SPEC {
             const Invar &) override;
   string name() override { return "CFSgt"; }
   string merge() override { return "CFS"; }
+  string rho_type() override { return "rho"; }
 };
 
 class SPEC_CFS : public SPEC_CFSls, public SPEC_CFSgt {
@@ -30,6 +32,7 @@ class SPEC_CFS : public SPEC_CFSls, public SPEC_CFSgt {
   }
   string name() override { return "CFS"; }
   string merge() override { return "CFS"; }
+  string rho_type() override { return "rho"; }
 };
 
 //#define SPEC_CFS_OLD

@@ -7,6 +7,7 @@ class SPEC_DMNRG : public SPEC {
             const Invar &) override;
   string name() override { return "DMNRG"; }
   string merge() override { return "NN2"; }
+  string rho_type() override { return "rho"; }
 };
 
 void SPEC_DMNRG::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
@@ -50,6 +51,7 @@ class SPEC_DMNRGmats : public SPEC {
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
             const Invar &) override;
   string name() override { return "DMNRGmats"; }
+  string rho_type() override { return "rho"; }
 };
 
 void SPEC_DMNRGmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
