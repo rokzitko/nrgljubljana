@@ -186,7 +186,7 @@ void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
 }
 
 // (Reduced) density matrix
-DensMatElements rho;
+DensMatElements rho; // YYY
 DensMatElements rhoFDM;
 
 template <typename T> 
@@ -895,14 +895,18 @@ CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n
   return tr;
 }
 
-CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &n) {
+CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM) {
   matel_bucket tr;
   for (const auto &[i, eig] : diag) {
     const auto & nI  = subspace_matrix(n, Twoinvar{i,i});
-    const size_t ret  = dm[STAT::N][i].kept;
+    const auto ret  = dm[STAT::N][i].kept;
+    const auto f = rhoFDM.find(i);
+    if (f == rhoFDM.cend()) my_error("unexpected failure in calc_trace_fdm_kept()");
+    const auto &mat = f->second;
     matel_bucket sum;
-    for (size_t k = 0; k < ret; k++) // over kept states ONLY
-      for (size_t j = 0; j < ret; j++) sum += rhoFDM[i](k, j) * nI(j, k);
+    for (auto k = 0; k < ret; k++) // over kept states ONLY
+      for (auto j = 0; j < ret; j++) 
+        sum += mat(k, j) * nI(j, k);
     tr += mult(i) * t_matel(sum);
   }
   return tr;
@@ -1080,7 +1084,8 @@ SpectrumMatsubara2::~SpectrumMatsubara2() {
 // This is mathematical trace, i.e. the sum of the diagonal elements.
 CONSTFNC double trace(const DensMatElements &m) {
   double tr = 0.0;
-  for (const auto &i : m) tr += mult(i.first) * trace_real_nochecks(i.second);
+  for (const auto &i : m) tr += mult(i.first) * trace_real_nochecks(i.second); // XXX std::accumulate(m.cbegin(), m.cend(), 0.0, 
+//  [] (const auto &x, const auto &i) { const auto &[I, mat] = i; return x + mult(I) * trace_real_nochecks(mat); };
   return tr;
 }
 
@@ -1165,7 +1170,8 @@ auto SpecdensCheckSpinFnc = [](const Invar &I1, const Invar &Ip, int SPIN) { ret
 
 using IIfnc = std::function<t_factor(const Invar &, const Invar &)>;
 
-double check_norm(const MatrixElements &m, const DiagInfo &diag, IIfnc factor_fnc, int SPIN) {
+// Operator sumrules.
+double norm(const MatrixElements &m, const DiagInfo &diag, IIfnc factor_fnc, int SPIN) {
   weight_bucket sum;
   for (const auto &[Ip, eigp] : diag) {
     for (const auto &[I1, eig1] : diag) {
@@ -1634,10 +1640,10 @@ double calc_grand_canonical_Z(const DiagInfo &diag, double temperature = P::T) {
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-void init_rho(const DiagInfo &diag, DensMatElements &rho) {
+DensMatElements init_rho(const DiagInfo &diag) {
   nrglog('@', "@ init_rho()");
   const double ZN = calc_grand_canonical_Z(diag);
-  rho.clear();
+  DensMatElements rho;
   for (const auto &[I, eig]: diag) {
     const auto dim = eig.getnr();
     rho[I]         = Matrix(dim, dim);
@@ -1645,8 +1651,8 @@ void init_rho(const DiagInfo &diag, DensMatElements &rho) {
     for (size_t i = 0; i < dim; i++) 
       rho[I](i, i) = exp(-eig.value(i) * STAT::scale / P::T) / ZN;
   }
-  const double Tr = trace(rho);
-  my_assert(num_equal(Tr, 1.0, 1e-8)); // NOLINT
+  my_assert(num_equal(trace(rho), 1.0, 1e-8)); // NOLINT
+  return rho;
 }
 
 /*** Truncation ***/
@@ -1976,8 +1982,8 @@ void nrg_measure_singlet1(const DiagInfo &dg, std::string name, const MatrixElem
 }
 
 // Expectation values using FDM algorithm
-void nrg_measure_singlet1_fdm(const DiagInfo &dg, std::string name, const MatrixElements &m) {
-  const t_expv expv   = calc_trace_fdm_kept(dg, m);
+void nrg_measure_singlet1_fdm(const DiagInfo &dg, std::string name, const MatrixElements &m, const DensMatElements &rhoFDM) {
+  const t_expv expv   = calc_trace_fdm_kept(dg, m, rhoFDM);
   STAT::fdmexpv[name] = expv;
   cout << "<" << name << ">_fdm=" << output_val(expv) << endl;
 }
@@ -1991,23 +1997,23 @@ void nrg_measure_singlet(const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvO
   custom->field_values();
 }
 
-void nrg_measure_singlet_fdm(const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &customfdm) {
+void nrg_measure_singlet_fdm(const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &customfdm, const DensMatElements &rhoFDM) {
   if (STAT::N != P::fdmexpvn) return;
   nrglog('@', "@ nrg_measure_singlet_fdm()");
-  for (const auto &[name, m] : a.ops)  nrg_measure_singlet1_fdm(dg, name, m);
-  for (const auto &[name, m] : a.opsg) nrg_measure_singlet1_fdm(dg, name, m);
+  for (const auto &[name, m] : a.ops)  nrg_measure_singlet1_fdm(dg, name, m, rhoFDM);
+  for (const auto &[name, m] : a.opsg) nrg_measure_singlet1_fdm(dg, name, m, rhoFDM);
   customfdm->field_values(P::T);
 }
 
-void check_operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
+void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
   nrglog('@', "@ check_operator_sumrules()");
   // We check sum rules wrt some given spin (+1/2, by convention).
   // For non-spin-polarized calculations, this is irrelevant (0).
   const int SPIN = (Sym->isfield() ? 1 : 0);
   for (const auto &[name, m] : a.opd)
-    cout << "check_norm[" << name << "]=" << check_norm(m, diag, SpecdensFactorFnc, SPIN) << std::endl;
+    cout << "norm[" << name << "]=" << norm(m, diag, SpecdensFactorFnc, SPIN) << std::endl;
   for (const auto &[name, m] : a.opq)
-    cout << "check_norm[" << name << "]=" << check_norm(m, diag, SpecdensquadFactorFnc, 0) << std::endl;
+    cout << "norm[" << name << "]=" << norm(m, diag, SpecdensquadFactorFnc, 0) << std::endl;
 }
 
 // Recalculate operator matrix representations
@@ -2062,8 +2068,7 @@ void nrg_calculate_TD(const DiagInfo &diag, double additional_factor = 1.0) {
       sumE2 += sqr(betaE) * expo;
       sumZ += expo;
     }
-    // Take into account the multiplicity
-    const int multip = mult(i);
+    const int multip = mult(i);     // take into account the multiplicity
     Z += multip * sumZ;
     E += multip * sumE;
     E2 += multip * sumE2;
@@ -2094,14 +2099,16 @@ void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iteri
     double CHITtemperature = P::chitp * STAT::scale;
     STAT::Zchit            = calc_grand_canonical_Z(diag, CHITtemperature);
   }
+//  DensMatElements rho, rhoFDM; // YYY
   if (dmnrgrun && !LAST_ITERATION()) {
-    loadRho(STAT::N, FN_RHO, rho);
+    rho = loadRho(STAT::N, FN_RHO);
     if (P::checkrho) check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
-    if (P::fdm) loadRho(STAT::N, FN_RHOFDM, rhoFDM);
+    if (P::fdm) 
+      rhoFDM = loadRho(STAT::N, FN_RHOFDM);
   }
   nrg_spectral_densities(diag);
   if (nrgrun) nrg_measure_singlet(diag, iterinfo, custom);
-  if (dmnrgrun && P::fdmexpv) nrg_measure_singlet_fdm(diag, iterinfo, customfdm);
+  if (dmnrgrun && P::fdmexpv) nrg_measure_singlet_fdm(diag, iterinfo, customfdm, rhoFDM);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG
@@ -2674,7 +2681,7 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag) {
   if (do_no_recalc()) { // ... or this
     nrg_calculate_spectral_and_expv(diag, iterinfo);
   }
-  if (P::checksumrules) check_operator_sumrules(diag, iterinfo);
+  if (P::checksumrules) operator_sumrules(diag, iterinfo);
   time_mem::ms.check("recalc");
   // Store TD data (all outfields)
   store_td();
@@ -2691,25 +2698,25 @@ DiagInfo nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev) {
   return diag;
 }
 
-void docalc0ht(const DiagInfo &diagprev, unsigned int extra_steps) {
+void docalc0ht(const DiagInfo &diag0, unsigned int extra_steps) {
   for (int i = -int(extra_steps); i <= -1; i++) {
     STAT::set_N(int(P::Ninit) - 1 + i);
     double E_rescale_factor = pow(P::Lambda, i / 2.0); // NOLINT
-    nrg_calculate_TD(diagprev, E_rescale_factor);
+    nrg_calculate_TD(diag0, E_rescale_factor);
   }
 }
 
 // Perform calculations with quantities from 'data' file
-void docalc0(const IterInfo &iterinfo, const DiagInfo &diagprev) {
+void docalc0(const IterInfo &iterinfo, const DiagInfo &diag0) {
   nrglog('@', "@ docalc0()");
   STAT::set_N(int(P::Ninit) - 1); // in the usual case with Ninit=0, this will result in N=-1
   cout << endl << "Before NRG iteration";
   cout << " (N=" << STAT::N << ")" << endl;
-  nrg_perform_measurements(diagprev);
-  nrg_calculate_spectral_and_expv(diagprev, iterinfo);
+  nrg_perform_measurements(diag0);
+  nrg_calculate_spectral_and_expv(diag0, iterinfo);
   // Logging of ALL states (prior to truncation!)
-  if (P::dumpenergies) dumptofile(diagprev, Fenergies);
-  if (P::checksumrules) check_operator_sumrules(diagprev, iterinfo);
+  if (P::dumpenergies) dumptofile(diag0, Fenergies);
+  if (P::checksumrules) operator_sumrules(diag0, iterinfo);
 }
 
 // doZBW() takes the place of nrg_iterate() called from nrg_main_loop() in the case of zero-bandwidth calculation.
@@ -2901,16 +2908,15 @@ void calculation() {
   auto diag = start_run(iterinfo, diag0);
   finalize_nrg();
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
-  if (!P::dm) return;
-  if (P::lastall)
-    init_rho(diag_before_truncation, rho); // usual case: lastall=true
-  else
-    init_rho(diag_after_truncation, rho);  // exception: lastall=false
-  if (P::fdm) 
-    init_rho_FDM(rhoFDM, STAT::N);
-  if (!P::ZBW) {
-    calc_densitymatrix(rho);
-    if (P::fdm) calc_fulldensitymatrix(rhoFDM);
+  if (!P::dm) return; // if density-matrix algorithms are not enabled, we are done here!
+  // XXX: not needed if only fdm enabled!
+  {
+    auto rho = P::lastall ? init_rho(diag_before_truncation) : init_rho(diag_after_truncation);
+    if (!P::ZBW) calc_densitymatrix(rho);
+  }
+  if (P::fdm) {
+    auto rhoFDM = init_rho_FDM(STAT::N);
+    if (!P::ZBW) calc_fulldensitymatrix(rhoFDM);
   }
   if (string(P::stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
   STAT::runtype = RUNTYPE::DMNRG;

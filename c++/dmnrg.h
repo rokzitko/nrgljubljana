@@ -82,10 +82,10 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
 
 int remove(string filename) { return remove(filename.c_str()); }
 
-void loadRho(size_t N, const string &prefix, DensMatElements &rho) {
+DensMatElements loadRho(size_t N, const string &prefix) {
   my_assert(P::Ninit <= N && N <= P::Nmax - 1);
-  rho.clear();
   nrglog('H', "Loading density matrices...");
+  DensMatElements rho;
   const string fn = rhofn(prefix, N);
   std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
   if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
@@ -104,6 +104,7 @@ void loadRho(size_t N, const string &prefix, DensMatElements &rho) {
   MATRIXF.close();
   if (P::removefiles)
     if (remove(fn)) my_error("Error removing %s", fn.c_str());
+  return rho;
 }
 
 /* storetransformations() stores all required information (energies,
@@ -326,9 +327,9 @@ void calc_densitymatrix(DensMatElements &rho) {
 // A. Weichselbaum, J. von Delft, Phys. Rev. Lett. 99, 076402 (2007)
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
-void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
+DensMatElements init_rho_FDM(size_t N) { // XXX: dm
   nrglog('@', "@ init_rho_FDM(" << N << ")");
-  rhoFDM.clear();
+  DensMatElements rhoFDM;
   double tr = 0.0;
   for (const auto &[I, dimsub] : dm[N]) {
     rhoFDM[I]     = Matrix(dimsub.max(), dimsub.max());
@@ -350,6 +351,7 @@ void init_rho_FDM(DensMatElements &rhoFDM, size_t N) {
     my_warning("diff=%24.16lf", diff); 
     my_assert(STAT::wn[N] < 1e-12);    // ..OK if small enough overall.
   }
+  return rhoFDM;
 }
 
 void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
@@ -358,7 +360,8 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
                                   size_t N) {
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
-  if (!LAST_ITERATION(N)) init_rho_FDM(rhoDD, N);
+  if (!LAST_ITERATION(N)) 
+    rhoDD = init_rho_FDM(N);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = dmnrg_subspaces(I);
     size_t dim          = dimsub.kept;
