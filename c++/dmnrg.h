@@ -97,9 +97,9 @@ void loadRho(size_t N, const string &prefix, DensMatElements &rho) {
     Invar inv;
     ia >> inv;
     loadMatrix(ia, rho[inv]);
-    my_assert(rho[inv].size1() <= diag[inv].value.size());
+// XXX    my_assert(rho[inv].size1() <= diag[inv].value.size());
     if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());  // Check each time
-    total += diag[inv].value.size();
+    total += rho[inv].size1();
   }
   nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
   MATRIXF.close();

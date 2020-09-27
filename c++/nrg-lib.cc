@@ -591,7 +591,7 @@ ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
 
 // Data structures containing NRG eigenvalues and eigenvectors
 
-DiagInfo diag;     // holds eigenvalues and unitary matrices for all subspaces
+//XXXDiagInfo diag;     // holds eigenvalues and unitary matrices for all subspaces
 QSrmax qsrmax;     // holds the number of states for |r,1>, |r,2>,...
 
 // Returns true if option 'c' is selected for logging
@@ -2629,12 +2629,14 @@ void calc_abs_energies(DiagInfo &diag) {
   }
 }
 
+DiagInfo diag_before_truncation, diag_after_truncation;
+
 // Perform processing after a successful NRG step.
 // At function call:
 // - diag contains all information about the eigenstates.
 // - STAT::Egs had been computed
 // Also called from doZBW() as a final step.
-void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diagprev, DiagInfo &diag) {
+void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag) {
   nrglog('@', "@ nrg_after_diag()");
   // Contribution to the total energy.
   STAT::total_energy += STAT::Egs * STAT::scale;
@@ -2642,11 +2644,13 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diagprev, DiagInfo &diag) {
   STAT::rel_Egs[STAT::N] = STAT::Egs;
   STAT::abs_Egs[STAT::N] = STAT::Egs * STAT::scale;
   STAT::energy_offsets[STAT::N] = STAT::total_energy;
-  if (nrgrun) calc_abs_energies(diag);
+  if (nrgrun) 
+    calc_abs_energies(diag);
   if (P::dm && nrgrun) {
     // Store eigenenergies and eigenvectors in all subspaces.
     // NOTE: we store before the truncation!
-    if (!(P::resume && int(STAT::N) <= P::laststored)) store_transformations(STAT::N, diag);
+    if (!(P::resume && int(STAT::N) <= P::laststored)) 
+      store_transformations(STAT::N, diag);
   }
   // Logging of ALL states (not only those that remain after truncation)
   if (P::dumpenergies) dumptofile(diag, Fenergies);
@@ -2667,7 +2671,9 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diagprev, DiagInfo &diag) {
     nrg_calculate_spectral_and_expv(diag, iterinfo);
   }
   // Actual truncation occurs at this point
-  if (!P::ZBW) nrg_truncate_perform(diag);
+  diag_before_truncation = diag;
+  if (!P::ZBW) 
+    nrg_truncate_perform(diag);
   // Store information about subspaces and states
   size_t nrall  = 0;
   size_t nrkept = 0;
@@ -2693,20 +2699,17 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diagprev, DiagInfo &diag) {
   time_mem::ms.check("recalc");
   // Store TD data (all outfields)
   store_td();
-  if (!P::ZBW) {
-    // Free up memory that contains information we no longer need
-    nrg_trim_matrices(diag, iterinfo);
-    nrg_clear_eigenvectors(diag);
-    time_mem::ms.check("trim");
-    diagprev.swap(diag); // IMPORTANT: we need to retain the eigenenergies!
-  }
 }
 
 // Perform one iteration step
-void nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev) {
-  diag = nrg_do_diag(iterinfo, diagprev);
-  nrg_after_diag(iterinfo, diagprev, diag);
+DiagInfo nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev) {
+  auto diag = nrg_do_diag(iterinfo, diagprev);
+  nrg_after_diag(iterinfo, diag);
+  nrg_trim_matrices(diag, iterinfo);
+  nrg_clear_eigenvectors(diag);
+  diag_after_truncation = diag;
   time_mem::memory_time_brief_report();
+  return diag;
 }
 
 void docalc0ht(const DiagInfo &diagprev, unsigned int extra_steps) {
@@ -2730,16 +2733,17 @@ void docalc0(const IterInfo &iterinfo, const DiagInfo &diagprev) {
   if (P::checksumrules) check_operator_sumrules(diagprev, iterinfo);
 }
 
-// doZBW() takes the place of nrg_iterate() called from
-// nrg_main_loop() in the case of zero-bandwidth calculation.
+// doZBW() takes the place of nrg_iterate() called from nrg_main_loop() in the case of zero-bandwidth calculation.
 // Thus it replaces nrg_do_diag() + nrg_after_diag().
-void doZBW(IterInfo &iterinfo, DiagInfo &diagprev) {
+DiagInfo doZBW(IterInfo &iterinfo, DiagInfo &diag0) {
   cout << endl << "Zero bandwidth calculation" << endl;
   // TRICK: scale will be that for N=Ninit-1, but STAT::N=Ninit.
   STAT::set_N(int(P::Ninit) - 1);
   STAT::N = P::Ninit; // this is a hack!
   // begin nrg_do_diag() equivalent
-  if (nrgrun) diag = diagprev;
+  DiagInfo diag;
+  if (nrgrun) 
+    diag = diag0;
   if (dmnrgrun) {
     diag = load_transformations(STAT::N);
     shift_abs_energies(diag);
@@ -2751,21 +2755,23 @@ void doZBW(IterInfo &iterinfo, DiagInfo &diagprev) {
   copy_sort_energies(diag, STAT::energies); // required in nrg_truncate_prepare()
   nrg_truncate_prepare(diag);               // determine # of kept and discarded states
   // end nrg_do_diag() equivalent
-  nrg_after_diag(iterinfo, diagprev, diag);
+  nrg_after_diag(iterinfo, diag);
+  return diag;
 }
 
 // ****************************  Main NRG loop ****************************
 
-void nrg_main_loop(IterInfo &iterinfo, DiagInfo &diagprev) {
+DiagInfo nrg_main_loop(IterInfo &iterinfo, const DiagInfo &diag0) {
   nrglog('@', "@ nrg_main_loop()");
-
+  DiagInfo diag = diag0;
   // N denotes the order of the Hamiltonian. N=0 corresponds to H_0, i.e.
   // the initial Hamiltonian (cf. Krishna-Murty I)
   for (size_t N = P::Ninit; N < P::Nmax; N++) { // here size_t, because Ninit>=0. Note that N is int.
     if (nrgrun && P::forcestop == int(N)) exit1("*** Stop request at iteration " << P::forcestop);
     STAT::set_N(N);
-    nrg_iterate(iterinfo, diagprev);
+    diag = nrg_iterate(iterinfo, diag);
   }
+  return diag;
 }
 
 // Estimate the Kondo temperature (Wilson's definition). This
@@ -2817,20 +2823,20 @@ void states_report(const DiagInfo &dg, ostream &fout = cout) {
   fout << "Number of states (multiplicity taken into account): " << count_states(dg) << endl << endl;
 }
 
-void start_run(IterInfo &iterinfo, DiagInfo &diagprev) {
+DiagInfo start_run(IterInfo &iterinfo, DiagInfo &diag0) {
   nrglog('@', "@ start_run()");
-  states_report(diagprev);
+  states_report(diag0);
   open_output_files(iterinfo);
   // If setting calc0 is set to true, a calculation of TD quantities
   // is performed before starting the NRG iteration.
   if (nrgrun && P::calc0 && !P::ZBW) {
-    docalc0ht(diagprev, P::tdht);
-    docalc0(iterinfo, diagprev);
+    docalc0ht(diag0, P::tdht);
+    docalc0(iterinfo, diag0);
   }
-  if (P::ZBW) doZBW(iterinfo, diagprev); // in both NRG and DMNRG runs
-  nrg_main_loop(iterinfo, diagprev);
+  DiagInfo diag = P::ZBW ? doZBW(iterinfo, diag0) : nrg_main_loop(iterinfo, diag0);
   close_output_files();
   cout << endl << "** Iteration completed." << endl << endl;
+  return diag;
 }
 
 // === AFTER THE NRG ITERATION HAD COMPLETED =================================
@@ -2909,20 +2915,22 @@ void set_symmetry(const string &sym_string) {
 void calculation() {
   nrglog('@', "@ calculation()");
   STAT::runtype = RUNTYPE::NRG;
-  auto [diagprev, iterinfo] = read_data();
+  auto [diag0, iterinfo] = read_data();
   // Initialize all containers for storing information
   dm = AllSteps(P::Nlen);
   STAT::init_vectors(P::Nlen);
-  start_run(iterinfo, diagprev);
+  auto diag = start_run(iterinfo, diag0);
   finalize_nrg();
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P::dm) return;
-  if (P::calc_rho_after_truncation) { // relevant if lastall=false
-    init_rho(diag, rho);
+// XXX  init_rho(diag_after_truncation, rho);
+  if (!(P::lastall == false)) { // XXX && P::calc_rho_after_truncation == true)) {
+    init_rho(diag_before_truncation, rho); // usual case: lastall=true
   } else {
-    init_rho(diagprev, rho);
+    init_rho(diag_after_truncation, rho); // exception: lastall=false
   }
-  if (P::fdm) init_rho_FDM(rhoFDM, STAT::N);
+  if (P::fdm) 
+    init_rho_FDM(rhoFDM, STAT::N);
   if (!P::ZBW) {
     calc_densitymatrix(rho);
     if (P::fdm) calc_fulldensitymatrix(rhoFDM);
