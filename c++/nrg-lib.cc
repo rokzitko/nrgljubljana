@@ -2100,9 +2100,8 @@ void nrg_calculate_TD(const DiagInfo &diag, double additional_factor = 1.0) {
   if (nrgrun) TD::save_TD_quantities(Ftd);
 }
 
-//std::pair<DensMatElements, DensMatElements> load_density_matrix()
-//{
-//}
+inline bool need_rho() { return P::cfs || P::dmnrg; }
+inline bool need_rhoFDM() { return P::fdm; }
 
 void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iterinfo) {
   nrglog('@', "@ nrg_calculate_spectral_and_expv()");
@@ -2122,9 +2121,9 @@ void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iteri
 //  DensMatElements rho, rhoFDM;
   if (dmnrgrun) {
     if (!LAST_ITERATION()) {
-      // if (P::cfs || P::dmnrg)
-      rho = loadRho(STAT::N, FN_RHO, P::checkrho);
-      if (P::fdm) 
+      if (need_rho())
+        rho = loadRho(STAT::N, FN_RHO, P::checkrho);
+      if (need_rhoFDM()) 
         rhoFDM = loadRho(STAT::N, FN_RHOFDM);
     }
   }
@@ -2930,14 +2929,12 @@ void calculation() {
   finalize_nrg();
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P::dm) return; // if density-matrix algorithms are not enabled, we are done!
-  // XXX: not needed if only fdm enabled!
-  // if (P::cfs || P::dmnrg)
-  { // auto
+  if (need_rho()) { // auto
     rho = init_rho();
     // ZZZ saveRho(STAT::N, FN_RHO, rho);
     if (!P::ZBW) calc_densitymatrix(rho);
   }
-  if (P::fdm) {
+  if (need_rhoFDM()) {
     // auto
     rhoFDM = init_rho_FDM(STAT::N);
     // ZZZ saveRho(STAT::N, FN_RHOFDM, rhoFDM);
