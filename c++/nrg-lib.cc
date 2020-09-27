@@ -1092,7 +1092,7 @@ SpectrumMatsubara2::~SpectrumMatsubara2() {
 // This is mathematical trace, i.e. the sum of the diagonal elements.
 CONSTFNC double trace(const DensMatElements &m) {
   double tr = 0.0;
-  for (const auto &i : m) tr += mult(i.first) * trace_real_nochecks(i.second); // XXX std::accumulate(m.cbegin(), m.cend(), 0.0, 
+  for (const auto &[I, mat] : m) tr += mult(I) * trace_real_nochecks(mat); // XXX std::accumulate(m.cbegin(), m.cend(), 0.0, 
 //  [] (const auto &x, const auto &i) { const auto &[I, mat] = i; return x + mult(I) * trace_real_nochecks(mat); };
   return tr;
 }
@@ -1101,6 +1101,16 @@ CONSTFNC double trace(const DensMatElements &m) {
 void check_trace_rho(const DensMatElements &m, double ref_value = 1.0) {
   const double tr = trace(m);
   if (!num_equal(trace(m), ref_value)) exit1("check_trace_rho() failed: " << tr << " instead of " << ref_value);
+}
+
+void stats(const DensMatElements &m) {
+  int nrstates = 0;
+  int nrsub = 0;
+  for (const auto &[I, mat] : m) {
+    nrstates += mat.size1();
+    nrsub++;
+  }
+  std::cout << "[" << nrstates << " states in " << nrsub << " subspaces]" << std::endl;
 }
 
 enum class axis { RealFreq, Temp, Matsubara, Matsubara2 };
@@ -2120,12 +2130,12 @@ void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iteri
 //  auto [rho, rhoFDM] = load_density_matrix();
 //  DensMatElements rho, rhoFDM;
   if (dmnrgrun) {
-    if (!LAST_ITERATION()) {
+//    if (!LAST_ITERATION()) {
       if (need_rho())
         grho = loadRho(STAT::N, FN_RHO, P::checkrho);
       if (need_rhoFDM()) 
         grhoFDM = loadRho(STAT::N, FN_RHOFDM);
-    }
+//    }
   }
   nrg_spectral_densities(diag, grho, grhoFDM);
   if (nrgrun) nrg_measure_singlet(diag, iterinfo, custom);
@@ -2931,13 +2941,13 @@ void calculation() {
   if (!P::dm) return; // if density-matrix algorithms are not enabled, we are done!
   if (need_rho()) { // auto
     grho = init_rho();
-    // ZZZ saveRho(STAT::N, FN_RHO, rho);
+    saveRho(STAT::N, FN_RHO, grho);
     if (!P::ZBW) calc_densitymatrix(grho);
   }
   if (need_rhoFDM()) {
     // auto
     grhoFDM = init_rho_FDM(STAT::N);
-    // ZZZ saveRho(STAT::N, FN_RHOFDM, rhoFDM);
+    saveRho(STAT::N, FN_RHOFDM, grhoFDM);
     if (!P::ZBW) calc_fulldensitymatrix(grhoFDM);
   }
   if (string(P::stopafter) == "rho") exit1("*** Stopped after the DM calculation.");

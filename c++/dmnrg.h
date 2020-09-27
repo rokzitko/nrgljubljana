@@ -59,7 +59,7 @@ void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
 
 void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
   my_assert(P::Ninit <= N && N <= P::Nmax - 1);
-  nrglog('H', "Storing density matrices... ");
+  nrglog('H', "Storing density matrices [N=" << N << "]... ");
   const string fn = rhofn(prefix, N);
   std::ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
   if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
@@ -76,7 +76,7 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
     total += mat.size1();
   }
   my_assert(cnt == nr);
-  nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
+  nrglog('H', "[total=" << total << " subspaces=" << nr << "]");
   MATRIXF.close();
 }
 
@@ -84,7 +84,7 @@ int remove(string filename) { return remove(filename.c_str()); }
 
 DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
   my_assert(P::Ninit <= N && N <= P::Nmax - 1);
-  nrglog('H', "Loading density matrices...");
+  nrglog('H', "Loading density matrices [N=" << N << "]...");
   DensMatElements rho;
   const string fn = rhofn(prefix, N);
   std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
@@ -100,7 +100,7 @@ DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
     if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());  // Check each time
     total += rho[inv].size1();
   }
-  nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
+  nrglog('H', "[total=" << total << " subspaces=" << nr << "]");
   MATRIXF.close();
   if (checkrho) 
     check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
@@ -127,7 +127,7 @@ void store_transformations(size_t N, const DiagInfo &diag) {
     my_assert(N + 1 >= P::Ninit && N + 1 <= P::Nmax);
   } else
     my_assert(N == P::Ninit);
-  nrglog('H', "Storing transformation matrices...");
+  nrglog('H', "Storing transformation matrices (N=" << N << ")...");
   const string fn = unitaryfn(N);
   ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
   if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
@@ -144,7 +144,7 @@ void store_transformations(size_t N, const DiagInfo &diag) {
     total += eig.value.size();
   }
   my_assert(cnt == nr);
-  nrglog('H', "[total=" << total << " nr subspaces=" << cnt << "]");
+  nrglog('H', "[total=" << total << " subspaces=" << cnt << "]");
   MATRIXF.close();
 }
 
@@ -154,7 +154,7 @@ DiagInfo load_transformations(size_t N) {
     my_assert(N + 1 >= P::Ninit && N + 1 <= P::Nmax);
   } else
     my_assert(N == P::Ninit);
-  nrglog('H', "Loading transformation matrices...");
+  nrglog('H', "Loading transformation matrices (N=" << N << ")...");
   const string fn = unitaryfn(N);
   std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
   if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
@@ -170,7 +170,7 @@ DiagInfo load_transformations(size_t N) {
     if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());
     total += diag[inv].value.size();
   }
-  nrglog('H', "[total=" << total << " nr subspaces=" << nr << "]");
+  nrglog('H', "[total=" << total << " subspaces=" << nr << "]");
   MATRIXF.close();
   return diag;
 }

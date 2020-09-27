@@ -26,3 +26,4 @@ broaden_max=10.0
 bins=200
 alpha=0.3
 
+log=H
