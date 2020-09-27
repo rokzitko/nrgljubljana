@@ -186,8 +186,8 @@ void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
 }
 
 // (Reduced) density matrix
-DensMatElements rho; // YYY
-DensMatElements rhoFDM; // XXX
+DensMatElements grho; // YYY
+DensMatElements grhoFDM; // XXX
 
 template <typename T> 
   inline pair<T, T> reverse_pair(const pair<T, T> &i) { 
@@ -2122,14 +2122,14 @@ void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iteri
   if (dmnrgrun) {
     if (!LAST_ITERATION()) {
       if (need_rho())
-        rho = loadRho(STAT::N, FN_RHO, P::checkrho);
+        grho = loadRho(STAT::N, FN_RHO, P::checkrho);
       if (need_rhoFDM()) 
-        rhoFDM = loadRho(STAT::N, FN_RHOFDM);
+        grhoFDM = loadRho(STAT::N, FN_RHOFDM);
     }
   }
-  nrg_spectral_densities(diag, rho, rhoFDM);
+  nrg_spectral_densities(diag, grho, grhoFDM);
   if (nrgrun) nrg_measure_singlet(diag, iterinfo, custom);
-  if (dmnrgrun && P::fdmexpv) nrg_measure_singlet_fdm(diag, iterinfo, customfdm, rhoFDM);
+  if (dmnrgrun && P::fdmexpv) nrg_measure_singlet_fdm(diag, iterinfo, customfdm, grhoFDM);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG
@@ -2930,15 +2930,15 @@ void calculation() {
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P::dm) return; // if density-matrix algorithms are not enabled, we are done!
   if (need_rho()) { // auto
-    rho = init_rho();
+    grho = init_rho();
     // ZZZ saveRho(STAT::N, FN_RHO, rho);
-    if (!P::ZBW) calc_densitymatrix(rho);
+    if (!P::ZBW) calc_densitymatrix(grho);
   }
   if (need_rhoFDM()) {
     // auto
-    rhoFDM = init_rho_FDM(STAT::N);
+    grhoFDM = init_rho_FDM(STAT::N);
     // ZZZ saveRho(STAT::N, FN_RHOFDM, rhoFDM);
-    if (!P::ZBW) calc_fulldensitymatrix(rhoFDM);
+    if (!P::ZBW) calc_fulldensitymatrix(grhoFDM);
   }
   if (string(P::stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
   STAT::runtype = RUNTYPE::DMNRG;
