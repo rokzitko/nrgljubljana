@@ -84,7 +84,7 @@ class sharedparam {
   double diagratio{};
   bool logall{};
   string log;
-  void init();
+  void init(double _diagratio);
 //  sharedparam() {};
   private:
   friend class boost::serialization::access;
@@ -285,7 +285,7 @@ class DimSub {
 // Example: dm[N].rmax[I] etc.
 using Subs = map<Invar, DimSub>;
 using AllSteps = std::vector<Subs>;
-AllSteps dm;
+AllSteps dm; // XXX
 
 // NOTE: "absolute" energy means that it is expressed in the absolute energy scale, not relative to SCALE(N). It is a statement
 // about scaling, not about possible linear shifts/offsets.
@@ -416,12 +416,6 @@ class SPEC {
 };
 
 using SPECTYPE = shared_ptr<SPEC>;
-
-// In namespace NRG we store run-time information about the calculation.
-namespace NRG {
-  // Diagratio for the following diagonalisation call
-  double diagratio;
-} // namespace NRG
 
 // Includes which require P:: parameters.
 #include "spectral.h"
@@ -588,7 +582,7 @@ ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
 
 // Data structures containing NRG eigenvalues and eigenvectors
 
-QSrmax qsrmax;     // holds the number of states for |r,1>, |r,2>,...
+QSrmax qsrmax;     // holds the number of states for |r,1>, |r,2>,...   // XXX: global!
 
 // Returns true if option 'c' is selected for logging
 bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::npos); }
@@ -602,9 +596,7 @@ int getnn() { return STAT::N; }
 // Energy scale at the last NRG iteration
 double LAST_STEP_SCALE() { return SCALE(P::Nmax); }
 
-void validate_parameters();
-
-map<string, string> parsed_params;
+map<string, string> parsed_params; // XXX
 
 // Parse command line and parameter file
 // Warning: there's no error checking for parameters.
@@ -863,14 +855,6 @@ void dump_diagonal(const Matrix &m, size_t max_nr, ostream &F = std::cout)
   F << std::endl;
 }
 
-// XXX
-//template <typename K>
-//const Matrix & subspace_matrix(const MatrixElements &n, const K key)
-//{
-//  my_assert(n.count(key) == 1);
-//  return n.find(key)->second;
-//}
-
 /* "Trace" of a singlet operator: actually this is the statistical average
  with respect to exp(-beta H), but without the 1/Z factor. I.e.
  \sum_n <n|exp(-beta H) O|n>, for a given singlet operator 'O'.  As a
@@ -879,7 +863,6 @@ void dump_diagonal(const Matrix &m, size_t max_nr, ostream &F = std::cout)
 CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n, ostream &F = std::cout) {
   matel_bucket tr; // note: t_matel = t_expv
   for (const auto &[i, eig] : diag) {
-//    const auto & nI = subspace_matrix(n, Twoinvar{i,i}); XXX
     const auto f = n.find(Twoinvar{i,i});
     if (f == n.cend()) my_error("unexpected failture in calc_trace_singlet()");
     const auto & nI = f->second;
@@ -899,7 +882,6 @@ CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n
 CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM) {
   matel_bucket tr;
   for (const auto &[i, eig] : diag) {
-//    const auto & nI  = subspace_matrix(n, Twoinvar{i,i}); XXX
     const auto f1 = n.find(Twoinvar{i,i});
     if (f1 == n.cend()) my_error("unexpected failure in calc_trace_fdm_kept(): n");
     const auto & nI = f1->second;
@@ -1088,8 +1070,7 @@ SpectrumMatsubara2::~SpectrumMatsubara2() {
 // This is mathematical trace, i.e. the sum of the diagonal elements.
 CONSTFNC double trace(const DensMatElements &m) {
   double tr = 0.0;
-  for (const auto &[I, mat] : m) tr += mult(I) * trace_real_nochecks(mat); // XXX std::accumulate(m.cbegin(), m.cend(), 0.0, 
-//  [] (const auto &x, const auto &i) { const auto &[I, mat] = i; return x + mult(I) * trace_real_nochecks(mat); };
+  for (const auto &[I, mat] : m) tr += mult(I) * trace_real_nochecks(mat);
   return tr;
 }
 
@@ -1334,6 +1315,7 @@ void Rmaxvals::determine_ranges(const Invar &I, const InvarVec &In, const DiagIn
 
 // *********************************** NRG RUN **********************************
 
+// XXX: why global?
 ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
 ofstream Ftd;        // magnetic and charge susceptibility
 ofstream Fannotated; // annotated eigenvalue spectrum
@@ -1669,7 +1651,7 @@ DensMatElements init_rho_impl(const DiagInfo &diag) {
   return rho;
 }
 
-DiagInfo diag_before_truncation, diag_after_truncation;
+DiagInfo diag_before_truncation, diag_after_truncation; // ZZZ
 
 DensMatElements init_rho()
 {
@@ -2123,16 +2105,16 @@ void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iteri
     double CHITtemperature = P::chitp * STAT::scale;
     STAT::Zchit            = calc_grand_canonical_Z(diag, CHITtemperature);
   }
-  DensMatElements grho, grhoFDM;
+  DensMatElements rho, rhoFDM;
   if (dmnrgrun) {
       if (need_rho())
-        grho = loadRho(STAT::N, FN_RHO, P::checkrho);
+        rho = loadRho(STAT::N, FN_RHO, P::checkrho);
       if (need_rhoFDM()) 
-        grhoFDM = loadRho(STAT::N, FN_RHOFDM);
+        rhoFDM = loadRho(STAT::N, FN_RHOFDM);
   }
-  nrg_spectral_densities(diag, grho, grhoFDM);
+  nrg_spectral_densities(diag, rho, rhoFDM);
   if (nrgrun) nrg_measure_singlet(diag, iterinfo, custom);
-  if (dmnrgrun && P::fdmexpv) nrg_measure_singlet_fdm(diag, iterinfo, customfdm, grhoFDM);
+  if (dmnrgrun && P::fdmexpv) nrg_measure_singlet_fdm(diag, iterinfo, customfdm, rhoFDM);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG
@@ -2225,7 +2207,6 @@ DiagInfo nrg_diagonalisations_OpenMP(const Opch &opch, const DiagInfo &diagprev,
 }
 
 #ifdef NRG_MPI
-const int TAG_HELLO          = 1;
 const int TAG_EXIT           = 2;
 const int TAG_DIAG           = 3;
 const int TAG_SYNC           = 4;
@@ -2423,14 +2404,13 @@ DiagInfo nrg_diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, co
 #endif
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
-DiagInfo nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
+DiagInfo nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev, 
+                              const std::vector<Invar> &tasks, double diagratio) {
   nrglog('@', "@ nrg_diagonalisations()");
   // This needs to be called here, because class Timing is not
   // thread-safe.
   TIME("diag");
-  // Call init() again here, because NRG::diagratio might have
-  // changed!
-  sP.init();
+  sP.init(diagratio);
 #ifdef NRG_MPI
   return nrg_diagonalisations_MPI(opch, diagprev, tasks);
 #else
@@ -2561,13 +2541,13 @@ DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev) {
   infostring();
   show_coefficients();
   auto tasks = sort_task_list(nrg_determine_tasks(diagprev));
-  NRG::diagratio = P::diagratio; // XXX
+  double diagratio = P::diagratio;
   DiagInfo diag;
   bool notenough;
   do {
     if (nrgrun) {
       if (!(P::resume && int(STAT::N) <= P::laststored))
-        diag = nrg_diagonalisations(iterinfo.opch, diagprev, tasks); // compute in first run
+        diag = nrg_diagonalisations(iterinfo.opch, diagprev, tasks, diagratio); // compute in first run
       else
         diag = load_transformations(STAT::N); // or read from disk
     }
@@ -2597,10 +2577,10 @@ DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev) {
     if (notenough) {
       cout << "Insufficient number of states computed." << endl;
       if (P::restart) {
-        NRG::diagratio = min(NRG::diagratio * P::restartfactor, 1.0);
+        diagratio = min(diagratio * P::restartfactor, 1.0);
         cout << endl
              << "Restarting this iteration step. "
-             << "diagratio=" << NRG::diagratio << endl
+             << "diagratio=" << diagratio << endl
              << endl;
       }
     }
@@ -2609,7 +2589,7 @@ DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev) {
 }
 
 using mapSD = map<string, double>;
-std::vector<mapSD> td_data;
+std::vector<mapSD> td_data; // XXX
 
 // Store all the results from the TD calculation in the form of a map
 // (string -> double).
@@ -2716,7 +2696,7 @@ DiagInfo nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev) {
   nrg_after_diag(iterinfo, diag);
   nrg_trim_matrices(diag, iterinfo);
   nrg_clear_eigenvectors(diag);
-  diag_after_truncation = diag; // replace with the trimmed version set in nrg_after_diag()
+  diag_after_truncation = diag; // ZZZ, replace with the trimmed version set in nrg_after_diag()
   time_mem::memory_time_brief_report();
   return diag;
 }
@@ -2933,14 +2913,14 @@ void calculation() {
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P::dm) return; // if density-matrix algorithms are not enabled, we are done!
   if (need_rho()) {
-    auto grho = init_rho();
-    saveRho(STAT::N, FN_RHO, grho);
-    if (!P::ZBW) calc_densitymatrix(grho);
+    auto rho = init_rho();
+    saveRho(STAT::N, FN_RHO, rho);
+    if (!P::ZBW) calc_densitymatrix(rho);
   }
   if (need_rhoFDM()) {
-    auto grhoFDM = init_rho_FDM(STAT::N);
-    saveRho(STAT::N, FN_RHOFDM, grhoFDM);
-    if (!P::ZBW) calc_fulldensitymatrix(grhoFDM);
+    auto rhoFDM = init_rho_FDM(STAT::N);
+    saveRho(STAT::N, FN_RHOFDM, rhoFDM);
+    if (!P::ZBW) calc_fulldensitymatrix(rhoFDM);
   }
   if (string(P::stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
   STAT::runtype = RUNTYPE::DMNRG;
@@ -2949,14 +2929,12 @@ void calculation() {
   finalize_dmnrg();
 }
 
-// Copy parameters to an object that is synchronised accross all
-// processes. Warning: init() has to be called at the beginning of
-// the program (after parsing the parameters in P), but also before
-// each series of diagonalizations, because NRG::diagratio might have
-// changed!
-void sharedparam::init() {
+// Copy parameters to an object that is synchronised accross all processes. Warning: init() has to be called at the
+// beginning of the program (after parsing the parameters in P), but also before each series of diagonalizations,
+// because diagratio might have changed!
+void sharedparam::init(double _diagratio) {
   diagroutine = P::diagroutine;
-  diagratio   = NRG::diagratio;
+  diagratio   = _diagratio;
   logall      = P::logall;
   log         = P::log;
 }
@@ -2964,10 +2942,8 @@ void sharedparam::init() {
 #ifdef NRG_MPI
 void mpi_sync_params() {
   // Synchronize global parameters
-  if (mpiw->rank() == 0) {
-    sP.init();
+  if (mpiw->rank() == 0)
     for (size_t i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_SYNC, 0);
-  }
   mpi::broadcast(*mpiw, sP, 0);
 }
 #endif
@@ -2994,10 +2970,7 @@ void run_nrg_master() {
   calculate_invariants();
   init_laststored();
   dump_parameters();
-  sP.init(); // copy parameters for MPI
-#ifdef NRG_MPI
-  for (int i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_HELLO, 0);
-#endif
+  sP.init(P::diagratio); // copy parameters for MPI
   calculation();
 #ifdef NRG_MPI
   cout << "Master done. Terminating slave processes." << endl;
@@ -3031,16 +3004,14 @@ void run_nrg_slave() {
       check_status(status);
       nrglog('M', "Slave " << mpiw->rank() << " received message with tag " << status.tag());
       switch (status.tag()) {
-        case TAG_HELLO: 
-          break;
-        case TAG_EXIT:
-          return; // exit from run_nrg_slave()
-        case TAG_DIAG:
-          slave_diag(master);
-          break;
         case TAG_SYNC:
           mpi_sync_params();
           break;
+        case TAG_DIAG:
+          slave_diag(master);
+          break;
+        case TAG_EXIT:
+          return; // exit from run_nrg_slave()
         default: 
           cout << "MPI error: unknown tag on " << mpiw->rank() << endl; 
           break;
