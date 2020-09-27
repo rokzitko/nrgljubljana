@@ -97,7 +97,6 @@ void loadRho(size_t N, const string &prefix, DensMatElements &rho) {
     Invar inv;
     ia >> inv;
     loadMatrix(ia, rho[inv]);
-// XXX    my_assert(rho[inv].size1() <= diag[inv].value.size());
     if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());  // Check each time
     total += rho[inv].size1();
   }

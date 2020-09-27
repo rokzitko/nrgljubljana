@@ -591,7 +591,6 @@ ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
 
 // Data structures containing NRG eigenvalues and eigenvectors
 
-//XXXDiagInfo diag;     // holds eigenvalues and unitary matrices for all subspaces
 QSrmax qsrmax;     // holds the number of states for |r,1>, |r,2>,...
 
 // Returns true if option 'c' is selected for logging
@@ -1164,36 +1163,16 @@ auto OrbSuscFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->dynam
 auto TrivialCheckSpinFnc = [](const Invar &, const Invar &, int) { return true; };
 auto SpecdensCheckSpinFnc = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
 
-double doublet_norm(const MatrixElements &m, const DiagInfo &diag, int SPIN) { // XXX
-  weight_bucket sum;
-  for (const auto &[Ip, eigp] : diag) {
-    for (const auto &[I1, eig1] : diag) {
-      const Twoinvar II{I1, Ip};
-      auto it = m.find(II);
-      if (it != m.end()) {
-        if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
-        t_factor spinfactor = Sym->specdens_factor(Ip, I1);
-        auto mat = it->second;
-        for (size_t r1 = 0; r1 < mat.size1(); r1++)
-          for (size_t rp = 0; rp < mat.size2(); rp++) 
-            sum += spinfactor * sqr(abs(mat(r1, rp)));
-      }
-    }
-  }
-  // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
-  return 2.0 * cmpl(sum).real();
-}
+using IIfnc = std::function<t_factor(const Invar &, const Invar &)>;
 
-double quadruplet_norm(const MatrixElements &m, const DiagInfo &diag, int SPIN) {
+double check_norm(const MatrixElements &m, const DiagInfo &diag, IIfnc factor_fnc, int SPIN) {
   weight_bucket sum;
   for (const auto &[Ip, eigp] : diag) {
     for (const auto &[I1, eig1] : diag) {
-      const Twoinvar II{I1, Ip};
-      auto it = m.find(II);
-      if (it != m.end()) {
-        if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
-        t_factor spinfactor = Sym->specdensquad_factor(Ip, I1);
-        auto mat = it->second;
+      if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
+      if (auto it = m.find(Twoinvar{I1, Ip}); it != m.end()) {
+        const auto mat = it->second;
+        const auto spinfactor = factor_fnc(Ip, I1);
         for (size_t r1 = 0; r1 < mat.size1(); r1++)
           for (size_t rp = 0; rp < mat.size2(); rp++) 
             sum += spinfactor * sqr(abs(mat(r1, rp)));
@@ -2026,9 +2005,9 @@ void check_operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
   // For non-spin-polarized calculations, this is irrelevant (0).
   const int SPIN = (Sym->isfield() ? 1 : 0);
   for (const auto &[name, m] : a.opd)
-    cout << "check_norm[" << name << "]=" << doublet_norm(m, diag, SPIN) << std::endl;
+    cout << "check_norm[" << name << "]=" << check_norm(m, diag, SpecdensFactorFnc, SPIN) << std::endl;
   for (const auto &[name, m] : a.opq)
-    cout << "check_norm[" << name << "]=" << quadruplet_norm(m, diag, 0) << std::endl;
+    cout << "check_norm[" << name << "]=" << check_norm(m, diag, SpecdensquadFactorFnc, 0) << std::endl;
 }
 
 // Recalculate operator matrix representations
@@ -2923,12 +2902,10 @@ void calculation() {
   finalize_nrg();
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P::dm) return;
-// XXX  init_rho(diag_after_truncation, rho);
-  if (!(P::lastall == false)) { // XXX && P::calc_rho_after_truncation == true)) {
+  if (P::lastall)
     init_rho(diag_before_truncation, rho); // usual case: lastall=true
-  } else {
-    init_rho(diag_after_truncation, rho); // exception: lastall=false
-  }
+  else
+    init_rho(diag_after_truncation, rho);  // exception: lastall=false
   if (P::fdm) 
     init_rho_FDM(rhoFDM, STAT::N);
   if (!P::ZBW) {
