@@ -185,10 +185,6 @@ void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
   }
 }
 
-// (Reduced) density matrix
-DensMatElements grho; // YYY
-DensMatElements grhoFDM; // XXX
-
 template <typename T> 
   inline pair<T, T> reverse_pair(const pair<T, T> &i) { 
     return make_pair(i.second, i.first); 
@@ -2127,15 +2123,12 @@ void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iteri
     double CHITtemperature = P::chitp * STAT::scale;
     STAT::Zchit            = calc_grand_canonical_Z(diag, CHITtemperature);
   }
-//  auto [rho, rhoFDM] = load_density_matrix();
-//  DensMatElements rho, rhoFDM;
+  DensMatElements grho, grhoFDM;
   if (dmnrgrun) {
-//    if (!LAST_ITERATION()) {
       if (need_rho())
         grho = loadRho(STAT::N, FN_RHO, P::checkrho);
       if (need_rhoFDM()) 
         grhoFDM = loadRho(STAT::N, FN_RHOFDM);
-//    }
   }
   nrg_spectral_densities(diag, grho, grhoFDM);
   if (nrgrun) nrg_measure_singlet(diag, iterinfo, custom);
@@ -2939,14 +2932,13 @@ void calculation() {
   finalize_nrg();
   if (string(P::stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P::dm) return; // if density-matrix algorithms are not enabled, we are done!
-  if (need_rho()) { // auto
-    grho = init_rho();
+  if (need_rho()) {
+    auto grho = init_rho();
     saveRho(STAT::N, FN_RHO, grho);
     if (!P::ZBW) calc_densitymatrix(grho);
   }
   if (need_rhoFDM()) {
-    // auto
-    grhoFDM = init_rho_FDM(STAT::N);
+    auto grhoFDM = init_rho_FDM(STAT::N);
     saveRho(STAT::N, FN_RHOFDM, grhoFDM);
     if (!P::ZBW) calc_fulldensitymatrix(grhoFDM);
   }
