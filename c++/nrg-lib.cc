@@ -2039,20 +2039,20 @@ void nrg_recalculate_operators(const DiagInfo &dg, IterInfo &a) {
 }
 
 // Calculate spectral densities
-void nrg_spectral_densities(const DiagInfo &diag) {
+void nrg_spectral_densities(const DiagInfo &diag, const DensMatElements &rho, const DensMatElements &rhoFDM) {
   nrglog('@', "@ nrg_spectral_densities()");
   TIME("spec");
-  for (auto &i : spectraS) calc_generic(i, diag, CorrelatorFactorFnc, TrivialCheckSpinFnc);
-  for (auto &i : spectraCHIT) calc_generic(i, diag, CorrelatorFactorFnc, TrivialCheckSpinFnc);
-  for (auto &i : spectraD) calc_generic(i, diag, SpecdensFactorFnc, SpecdensCheckSpinFnc);
-  for (auto &i : spectraT) calc_generic(i, diag, SpinSuscFactorFnc, TrivialCheckSpinFnc);
-  for (auto &i : spectraOT) calc_generic(i, diag, OrbSuscFactorFnc, TrivialCheckSpinFnc);
-  for (auto &i : spectraQ) calc_generic(i, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc);
-  for (auto &i : spectraGT) calc_generic(i, diag, SpecdensFactorFnc, SpecdensCheckSpinFnc);
-  for (auto &i : spectraI1T) calc_generic(i, diag, SpecdensFactorFnc, SpecdensCheckSpinFnc);
-  for (auto &i : spectraI2T) calc_generic(i, diag, SpecdensFactorFnc, SpecdensCheckSpinFnc);
+  for (auto &i : spectraS)    calc_generic(i, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraCHIT) calc_generic(i, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraD)    calc_generic(i, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
+  for (auto &i : spectraT)    calc_generic(i, diag, SpinSuscFactorFnc,     TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraOT)   calc_generic(i, diag, OrbSuscFactorFnc,      TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraQ)    calc_generic(i, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraGT)   calc_generic(i, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
+  for (auto &i : spectraI1T)  calc_generic(i, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
+  for (auto &i : spectraI2T)  calc_generic(i, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
   // no CheckSpinFnc!! One must use A_u_d, etc. objects for sym=QSZ.
-  for (auto &i : spectraV3) calc_generic3(i, diag, SpecdensFactorFnc);
+  for (auto &i : spectraV3)   calc_generic3(i, diag, SpecdensFactorFnc, rho, rhoFDM);
 }
 
 /* We calculate thermodynamic quantities before truncation to make better
@@ -2115,7 +2115,7 @@ void nrg_calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iteri
     if (P::fdm) 
       rhoFDM = loadRho(STAT::N, FN_RHOFDM);
   }
-  nrg_spectral_densities(diag);
+  nrg_spectral_densities(diag, rho, rhoFDM);
   if (nrgrun) nrg_measure_singlet(diag, iterinfo, custom);
   if (dmnrgrun && P::fdmexpv) nrg_measure_singlet_fdm(diag, iterinfo, customfdm, rhoFDM);
 }
