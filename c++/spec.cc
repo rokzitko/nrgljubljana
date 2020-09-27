@@ -26,10 +26,10 @@ const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 // the two.
 
 template <typename FactorFnc, typename CheckSpinFnc>
-void calc_generic(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &factorfnc, CheckSpinFnc &checkspinfnc, const DensMatElements &rho, const DensMatElements &rhoFDM) {
+void calc_generic(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &factorfnc, CheckSpinFnc &checkspinfnc, DensMatElements &rho, DensMatElements &rhoFDM) {
   nrglog('g', "calc_generic() " << bs.fullname());
   auto cs = bs.spectype->make_cs(bs);
-  const auto & rho_here = bs.spectype->rho_type() == "rho" ? rho : (bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : DensMatElements{});
+  auto & rho_here = bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : rho;
   // Strategy: we loop through all subspace pairs and check whether
   // they have non-zero irreducible matrix elements.
   for(const auto &[Ii, diagi]: diag) {
@@ -50,10 +50,10 @@ void calc_generic(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &facto
   bs.spec->merge(cs);
 }
 
-template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &factorfnc, const DensMatElements &rho, const DensMatElements &rhoFDM) {
+template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &factorfnc, DensMatElements &rho, DensMatElements &rhoFDM) {
   nrglog('g', "calc_generic3() " << bs.fullname());
   auto cs = bs.spectype->make_cs(bs);
-  const auto & rho_here = bs.spectype->rho_type() == "rho" ? rho : (bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : DensMatElements{});
+  auto & rho_here = bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : rho;
   for(const auto &[Ii, diagi]: diag) {
     for(const auto &[Ij, diagj]: diag) {
       for(const auto &[Il, diagl]: diag) {

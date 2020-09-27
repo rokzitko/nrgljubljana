@@ -4,14 +4,14 @@ class SPEC_DMNRG : public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &, const DensMatElements &) override;
+            const Invar &, DensMatElements &) override;
   string name() override { return "DMNRG"; }
   string merge() override { return "NN2"; }
   string rho_type() override { return "rho"; }
 };
 
 void SPEC_DMNRG::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rhoX) {
+                      spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &rho) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   double Emin = getEmin(); // used in optimization
   double Emax = getEmax();
@@ -49,13 +49,13 @@ class SPEC_DMNRGmats : public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(bs.mt); }
   void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &, const DensMatElements &) override;
+            const Invar &, DensMatElements &) override;
   string name() override { return "DMNRGmats"; }
   string rho_type() override { return "rho"; }
 };
 
 void SPEC_DMNRGmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
-                          t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rhoX) {
+                          t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &rho) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   auto csm   = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   using namespace STAT;

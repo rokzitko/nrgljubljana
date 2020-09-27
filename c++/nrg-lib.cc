@@ -409,11 +409,11 @@ class SPEC {
   virtual ~SPEC() = default;
   virtual spCS_t make_cs(const BaseSpectrum &) = 0;
   virtual void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-                    const Invar &, const DensMatElements &){};
+                    const Invar &, DensMatElements &){};
   virtual void calc_A(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &){};
+                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &){};
   virtual void calc_B(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &){};
+                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &){};
   virtual string name() = 0;
   virtual string merge() { return ""; } // what merging rule to use
   virtual string rho_type() { return ""; } // what rho type is required
@@ -2045,7 +2045,7 @@ void nrg_recalculate_operators(const DiagInfo &dg, IterInfo &a) {
 }
 
 // Calculate spectral densities
-void nrg_spectral_densities(const DiagInfo &diag, const DensMatElements &rho, const DensMatElements &rhoFDM) {
+void nrg_spectral_densities(const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM) {
   nrglog('@', "@ nrg_spectral_densities()");
   TIME("spec");
   for (auto &i : spectraS)    calc_generic(i, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM);
