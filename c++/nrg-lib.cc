@@ -215,18 +215,13 @@ class IterInfo {
 class Eigen;
 using DiagInfo = map<Invar, Eigen>; // Full information after diagonalizations
 
-// We need to store the dimensions of the invariant subspaces |r,1>,
-// |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
+// Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
 // the index "r" which ranges from 1 through rmax.
 
 class Rmaxvals {
   private:
   IVEC values;
   friend ostream &operator<<(ostream &os, const Rmaxvals &rmax);
-  void store(IVEC &rmx) {
-    my_assert(rmx.size() == P::combs);
-    values = rmx;
-  }
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
   public:
@@ -245,12 +240,8 @@ class Rmaxvals {
     return accumulate(begin(values), begin(values) + (i - 1), 0);
   }
   size_t operator[](size_t i) const { return rmax(i); }
-  // The only way to set up the values in Rmaxvals is by calling
-  // determine_ranges(), or by using the copy constructor.
-  void determine_ranges(const Invar &I, const InvarVec &In, const DiagInfo &diagprev);
-  // total() returns the total number of states. There is therefore
-  // no need to store this value separately.
-  size_t total() const { return accumulate(begin(values), end(values), 0); }
+  Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev);
+  size_t total() const { return accumulate(begin(values), end(values), 0); } // total number of states
 };
 
 // TO DO: there is duplication between DimSub and Eigen. Simplify!
@@ -389,6 +380,7 @@ template <typename T> ostream &operator<<(ostream &os, const ublas::vector<T> &v
 }
 
 using QSrmax = map<Invar, Rmaxvals>;
+QSrmax qsrmax; // temp
 
 class ChainSpectrum;
 class BaseSpectrum;
@@ -579,10 +571,6 @@ ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
   for (const auto &x : rmax.values) os << x << ' ';
   return os;
 }
-
-// Data structures containing NRG eigenvalues and eigenvectors
-
-QSrmax qsrmax;     // holds the number of states for |r,1>, |r,2>,...   // XXX: global!
 
 // Returns true if option 'c' is selected for logging
 bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::npos); }
@@ -1304,13 +1292,10 @@ double calc_Z(const DiagInfo &diag) {
 bool newcombination_allowed(size_t i, const Invar &I, const Invar &In) { return Sym->triangle_inequality(I, In, QN[i]); }
 
 // Determine the ranges of index r
-void Rmaxvals::determine_ranges(const Invar &I, const InvarVec &In, const DiagInfo &diagprev) {
-  IVEC rmx(P::combs);
-  rmx.clear();
+Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev) {
+  values.resize(P::combs);
   for (size_t i = 0; i < P::combs; i++)
-    if (newcombination_allowed(i + 1, I, In[i + 1])) 
-      rmx[i] = size_subspace(diagprev, In[i + 1]);
-  store(rmx);
+      values[i] = newcombination_allowed(i + 1, I, In[i + 1]) ? size_subspace(diagprev, In[i + 1]) : 0;
 }
 
 // *********************************** NRG RUN **********************************
@@ -2165,21 +2150,21 @@ inline t_eigen Eigenvalue(const DiagInfo &diag, const Invar &I, const size_t r) 
 Matrix nrg_prepare_task_for_diag(const Invar &I, const Opch &opch, const DiagInfo &diagprev) {
   nrglog('@', "@ nrg_prepare_task_for_diag()");
   const auto anc = ancestors(I);
-  const Rmaxvals &qq  = qsrmax[I];
-  const size_t dim    = qq.total();
+  const Rmaxvals rm{I, anc, diagprev};
+  const size_t dim = rm.total();
   nrglog('i', endl << "Subspace (" << I << ") dim=" << dim); // skip a line
-  logancestors(I, anc, qq);
+  logancestors(I, anc, rm);
   Matrix h(dim, dim);
   h.clear();
   double scalefactor = (!P::substeps ? sqrt(P::Lambda) : pow(P::Lambda, 1. / (2. * P::channels))); // NOLINT
   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (size_t i = 1; i <= P::combs; i++) {
-    const size_t offset = qq.offset(i);
-    for (size_t r = 0; r < qq.rmax(i); r++) 
+    const size_t offset = rm.offset(i);
+    for (size_t r = 0; r < rm.rmax(i); r++) 
       h(offset + r, offset + r) = scalefactor * Eigenvalue(diagprev, anc[i], r);
   }
   // Symmetry-type-specific matrix initialization steps.
-  Sym->makematrix(h, qq, I, anc, opch);
+  Sym->makematrix(h, rm, I, anc, opch);
   if (logletter('m')) dump_matrix(h);
   return h;
 }
@@ -2331,7 +2316,6 @@ std::pair<Invar, Eigen> read_from(int source) {
   my_assert(eig.matrix0.size1() == eig.getnr());
   my_assert(eig.matrix0.size2() == eig.getrmax());
   my_assert(eig.matrix0.size1() <= eig.matrix0.size2());
-  my_assert(eig.getrmax() == qsrmax[Irecv].total());
   return {Irecv, eig};
 }
 
@@ -2418,24 +2402,19 @@ DiagInfo nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev,
 #endif
 }
 
-// Determine the list of invariant subspaces in which diagonalisations need to be performed.
-std::vector<Invar> nrg_determine_tasks(const DiagInfo &diagprev) {
-  nrglog('@', "@ nrg_determine_tasks()");
-  // Auxiliary information: ancestor subspaces and their dimensions.
-  qsrmax.clear();
-  // Container holding all the subspaces that appear in the new
-  // iteration.
+// Determine the structure of matrices in the new NRG shell
+QSrmax get_qsrmax(const DiagInfo &diagprev) {
+  QSrmax qsrmax;
+  for (const auto &I : nrg_make_subspaces_list(diagprev))
+    qsrmax[I] = Rmaxvals{I, ancestors(I), diagprev};
+  return qsrmax;
+}
+
+// List of invariant subspaces in which diagonalisations need to be performed
+std::vector<Invar> nrg_determine_tasks(const QSrmax &qsrmax) {
   std::vector<Invar> tasks;
-  for (const auto &I : nrg_make_subspaces_list(diagprev)) {
-    // Determine which subspaces contribute to the Hamiltonian being built
-    InvarVec input = ancestors(I);
-    // Determine the range(s) of index r
-    qsrmax[I].determine_ranges(I, input, diagprev);
-    // nr is actually the size of the Hamiltonian submatrix!
-    const size_t nr = qsrmax[I].total();
-    // Some possible subspaces may have dimension 0 and thus do not really exist.
-    if (nr) tasks.push_back(I);
-  }
+  for (const auto &[I, rm] : qsrmax)
+    if (rm.total()) tasks.push_back(I);
   return tasks;
 }
 
@@ -2540,7 +2519,8 @@ DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev) {
   nrglog('@', "@ nrg_do_diag()");
   infostring();
   show_coefficients();
-  auto tasks = sort_task_list(nrg_determine_tasks(diagprev));
+  qsrmax = get_qsrmax(diagprev);
+  auto tasks = sort_task_list(nrg_determine_tasks(qsrmax));
   double diagratio = P::diagratio;
   DiagInfo diag;
   bool notenough;
@@ -2647,8 +2627,6 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag) {
   // Consistency checks
   for (const auto &[i, eig]: diag) {
     my_assert(eig.matrix0.size1() <= eig.matrix0.size2());
-    if (!P::ZBW) 
-      my_assert(eig.matrix0.size2() == qsrmax[i].total());
   }
   if (!P::ZBW) {
     split_in_blocks(diag);
