@@ -21,8 +21,8 @@ void recalc_f(const DiagInfo &dg,
     nrglog('f', "Does not fulfill the triangle inequalities.");
     return;
   }
-  const Eigen &dgI1 = dg.find(I1)->second;
-  const Eigen &dgIp = dg.find(Ip)->second;
+  const Eigen &dgI1 = dg.at(I1);
+  const Eigen &dgIp = dg.at(Ip);
   // Number of states in Ip and in I1, i.e. the dimension of the
   // <||f||> matrix of irreducible matrix elements.
   const size_t dim1 = dgI1.getnr();
@@ -128,8 +128,8 @@ void recalc_general(const DiagInfo &dg,
   // triangle_inequality() malfunctions, this will trigger errors in
   // calc_trace_singlet().
   if (!Sym->triangle_inequality(I1, Ip, Iop)) return;
-  const Eigen &dgI1 = dg.find(I1)->second;
-  const Eigen &dgIp = dg.find(Ip)->second;
+  const Eigen &dgI1 = dg.at(I1);
+  const Eigen &dgIp = dg.at(Ip);
   const size_t dim1 = dgI1.getnr();
   const size_t dimp = dgIp.getnr();
   const Twoinvar II = make_pair(I1, Ip);
@@ -176,7 +176,7 @@ void recalc_general(const DiagInfo &dg,
      i1=1...P::combs. It is clearly equal to the dimension of the invariant
      subspace IN1 from the previous (N-th) iteration. */
     // m: irreducible elements at previous stage
-    const Matrix &m = cold.find(ININ)->second;
+    const Matrix &m = cold.at(ININ);
     my_assert_equal(rmax1, m.size1());
     my_assert_equal(rmaxp, m.size2());
     const Matrix &U1 = dgI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
@@ -206,7 +206,7 @@ void recalc1_global(const DiagInfo &dg,
                     size_t i1, size_t ip, 
                     t_factor value) {
   nrglog('r', "recalc1_global: " << I);
-  const Eigen &dgI = dg.find(I)->second;
+  const Eigen &dgI = dg.at(I);
   const size_t dim = dgI.getnr();
   if (dim == 0) return;
   const size_t rmax1 = qsrmax.at(I).rmax(i1);

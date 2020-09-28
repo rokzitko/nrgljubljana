@@ -600,7 +600,8 @@ void read_parameters() {
   }
   if (parsed_params.size()) {
     cout << "Unused settings: " << endl;
-    for (const auto &i : parsed_params) cout << " " << i.first << "=" << i.second << endl;
+    for (const auto &[key, value] : parsed_params) 
+      cout << " " << key << "=" << value << endl;
     cout << endl;
   }
 }
@@ -850,9 +851,7 @@ void dump_diagonal(const Matrix &m, size_t max_nr, ostream &F = std::cout)
 CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n, ostream &F = std::cout) {
   matel_bucket tr; // note: t_matel = t_expv
   for (const auto &[i, eig] : diag) {
-    const auto f = n.find(Twoinvar{i,i});
-    if (f == n.cend()) my_error("unexpected failture in calc_trace_singlet()");
-    const auto & nI = f->second;
+    const auto & nI = n.at(Twoinvar{i,i});
     const size_t dim = eig.getnr();
     my_assert(dim == nI.size2());
     matel_bucket sum;
@@ -869,13 +868,9 @@ CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n
 CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM) {
   matel_bucket tr;
   for (const auto &[i, eig] : diag) {
-    const auto f1 = n.find(Twoinvar{i,i});
-    if (f1 == n.cend()) my_error("unexpected failure in calc_trace_fdm_kept(): n");
-    const auto & nI = f1->second;
+    const auto & nI = n.at(Twoinvar{i,i});
     const auto ret  = dm[STAT::N][i].kept;
-    const auto f2 = rhoFDM.find(i);
-    if (f2 == rhoFDM.cend()) my_error("unexpected failure in calc_trace_fdm_kept(); rhoFDM");
-    const auto &mat = f2->second;
+    const auto & mat = rhoFDM.at(i);
     matel_bucket sum;
     for (auto k = 0; k < ret; k++) // over kept states ONLY
       for (auto j = 0; j < ret; j++) 
@@ -1718,11 +1713,11 @@ void calc_ZnD(const AllSteps &dm) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
     mpf_set_d(ZnDG, 0.0);
     mpf_set_d(ZnDN, 0.0);
-    for (const auto &j : dm[N])
-      for (size_t i = j.second.min(); i < j.second.max(); i++) {
+    for (const auto &[I, ds] : dm[N])
+      for (size_t i = ds.min(); i < ds.max(); i++) {
         my_mpf g, n;
-        mpf_set_d(g, mult(j.first) * exp(-j.second.absenergyG[i]/P::T)); // absenergyG >= 0.0
-        mpf_set_d(n, mult(j.first) * exp(-j.second.absenergyN[i]/P::T)); // absenergyN >= 0.0
+        mpf_set_d(g, mult(I) * exp(-ds.absenergyG[i]/P::T)); // absenergyG >= 0.0
+        mpf_set_d(n, mult(I) * exp(-ds.absenergyN[i]/P::T)); // absenergyN >= 0.0
         mpf_add(ZnDG, ZnDG, g);
         mpf_add(ZnDN, ZnDN, n);
       }
@@ -1787,13 +1782,13 @@ void fdm_thermodynamics(const AllSteps &dm)
   mpf_set_d(E2, 0.0);
   for (size_t N = P::Ninit; N < P::Nlen; N++)
     if (STAT::wn[N] > 1e-16) 
-      for (const auto &j : dm[N]) 
-        for (size_t i = j.second.min(); i < j.second.max(); i++) {
+      for (const auto &[I, ds] : dm[N]) 
+        for (size_t i = ds.min(); i < ds.max(); i++) {
           my_mpf weight;
-          mpf_set_d(weight, STAT::wn[N] * mult(j.first) * exp(-j.second.absenergyN[i]/P::T));
+          mpf_set_d(weight, STAT::wn[N] * mult(I) * exp(-ds.absenergyN[i]/P::T));
           mpf_div(weight, weight, STAT::ZnDN[N]);
           my_mpf e;
-          mpf_set_d(e, j.second.absenergy[i]);
+          mpf_set_d(e, ds.absenergy[i]);
           my_mpf e2;
           mpf_mul(e2, e, e);
           mpf_mul(e, e, weight);
@@ -1870,7 +1865,8 @@ void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = fa
     }
   } else {
     seznam.resize(len); // truncate!
-    for (const auto &i : seznam) Fannotated << scaled_energy(i.first, scaled, absolute) << " " << i.second << endl;
+    for (const auto &[e, I] : seznam) 
+      Fannotated << scaled_energy(e, scaled, absolute) << " " << I << endl;
   }
   // Consecutive iterations are separated by an empty line
   Fannotated << endl;
@@ -1922,12 +1918,11 @@ template <class RecalcFnc>
  recalculations. Note: this is only needed for strategy=all; copying is
  avoided for strategy=kept. */
 void nrg_trim_matel(DiagInfo &dg, MatrixElements &op) {
-  for (auto &m : op) {
-    const Invar &I1 = m.first.first;
-    const Invar &I2 = m.first.second;
+  for (auto &[II, mat] : op) {
+    const auto &[I1, I2] = II;
     // Current matrix dimensions
-    const auto size1 = m.second.size1();
-    const auto size2 = m.second.size2();
+    const auto size1 = mat.size1();
+    const auto size2 = mat.size2();
     if (size1 == 0 || size2 == 0) continue;
     // Target matrix dimensions
     const auto nr1 = dg[I1].getnr();
@@ -1935,14 +1930,15 @@ void nrg_trim_matel(DiagInfo &dg, MatrixElements &op) {
     my_assert(nr1 <= size1 && nr2 <= size2);
     if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
       continue;
-    matrix_range<Matrix> m2(m.second, range(0, nr1), range(0, nr2));
+    matrix_range<Matrix> m2(mat, range(0, nr1), range(0, nr2));
     Matrix m2new = m2;
-    m.second.swap(m2new);
+    mat.swap(m2new);
   }
 }
 
 void nrg_trim_op(DiagInfo &dg, CustomOp &allops) {
-  for (auto &op : allops) nrg_trim_matel(dg, op.second);
+  for (auto &[name, op] : allops) 
+    nrg_trim_matel(dg, op);
 }
 
 void nrg_trim_matrices(DiagInfo &dg, IterInfo &a) {
@@ -2140,10 +2136,7 @@ bool do_recalc_all() { return !do_recalc_kept() && !P::ZBW; }
 bool do_no_recalc() { return P::ZBW; }
 
 inline t_eigen Eigenvalue(const DiagInfo &diag, const Invar &I, const size_t r) {
-  if (const auto f = diag.find(I); f != diag.cend())
-    return f->second.value(r);
-  else
-    my_error("Eigenvalue not found. Should never happen.");
+  return diag.at(I).value(r);
 }
 
 Matrix nrg_prepare_task_for_diag(const Invar &I, const Opch &opch, const DiagInfo &diagprev) {
@@ -2432,17 +2425,12 @@ std::vector<Invar> task_list(const QSrmax &qsrmax) {
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
-// Called from nrg_after_diag().
 void nrg_recalc_f(DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   nrglog('@', "@ nrg_recalc_f()");
   TIME("recalc f");
   if (!P::substeps) {
     for (size_t i = 0; i < P::channels; i++)
       for (size_t j = 0; j < P::perchannel; j++) opch[i][j].clear(); // Clear all channels
-    // In principle, one could also use recalc_doublet() function
-    // to simplify the code. OTOH, recalc_irreduc() is probably
-    // better because it does not accumulate floating point
-    // round-off errors.
     Sym->recalc_irreduc(diag, qsrmax, opch);
   } else {
     size_t Ntrue, M;
@@ -2490,10 +2478,10 @@ void shift_abs_energies(DiagInfo &diag) {
 void shift_abs_energies(AllSteps &dm)
 {
   for (size_t N = P::Ninit; N < P::Nlen; N++)
-    for (auto &j : dm[N])
-      for (size_t i = 0; i < j.second.total; i++) {
-        j.second.absenergyG[i] -= STAT::GS_energy;
-        my_assert(j.second.absenergyG[i] >= 0.0);
+    for (auto &[I, ds] : dm[N])
+      for (size_t i = 0; i < ds.total; i++) {
+        ds.absenergyG[i] -= STAT::GS_energy;
+        my_assert(ds.absenergyG[i] >= 0.0);
       }
 }
   
@@ -2795,8 +2783,6 @@ DiagInfo start_run(IterInfo &iterinfo, const DiagInfo &diag0) {
   return diag;
 }
 
-// === AFTER THE NRG ITERATION HAD COMPLETED =================================
-
 // Processing performed both after NRG and after DM runs.
 void finalize_common() {
   nrglog('@', "@ finalize_common()");
@@ -2821,10 +2807,9 @@ void finalize_nrg() {
   nrglog('@', "@ finalize_nrg()");
   finalize_common();
   cout << endl << "Total energy: " << HIGHPREC(STAT::total_energy) << endl;
-  // True ground state energy is just the value of total_energy at the end
-  // of the iteration. This is the energy of the lowest energy state in the
-  // last iteration. All other states (incl. from previous shells)
-  // obviously have higher energies.
+  // True ground state energy is just the value of total_energy at the end of the iteration. This is the energy of
+  // the lowest energy state in the last iteration. All other states (incl. from previous shells) obviously have
+  // higher energies.
   STAT::GS_energy = STAT::total_energy;
   calc_TKW(); // deprecated
   if (P::fdm) {

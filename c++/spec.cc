@@ -39,8 +39,8 @@ void calc_generic(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &facto
         // Note that rho is always "diagonal in subspace indexes", i.e. rho(I1,I2)=delta_(I1,I2) rho_I1. There is thus only one multiplicity factor in play here.
         const t_factor spinfactor = factorfnc(Ii, Ij);
         my_assert(!num_equal(spinfactor, 0.0)); // bug trap
-        const Matrix &op1II = bs.op1.find(II)->second;
-        const Matrix &op2II = bs.op2.find(II)->second;
+        const Matrix &op1II = bs.op1.at(II);
+        const Matrix &op2II = bs.op2.at(II);
         if (logletter('G')) nrgdump2(Ij, Ii) << endl;
         bs.spectype->calc(diagi, diagj, op1II, op2II, bs, spinfactor, cs, Ii, Ij, rho_here);
       }
@@ -65,9 +65,9 @@ template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const D
           if (logletter('G')) nrgdump3(Ii, Ij, Il) << endl;
           const t_factor spinfactor = factorfnc(Ii, Ij);
           my_assert(!num_equal(spinfactor, 0.0));       // bug trap
-          const Matrix &op1 = bs.op1.find(cji)->second; // conj : A_ij=(a)_ij=(a+)_ji*
-          const Matrix &op2 = bs.op2.find(jl)->second;  // B_jl=(b+)_jl
-          const Matrix &op3 = bs.op3.find(li)->second;  // C_li=n_li
+          const Matrix &op1 = bs.op1.at(cji); // conj : A_ij=(a)_ij=(a+)_ji*
+          const Matrix &op2 = bs.op2.at(jl);  // B_jl=(b+)_jl
+          const Matrix &op3 = bs.op3.at(li);  // C_li=n_li
           bs.spectype->calc_A(diagi, diagj, diagl, op1, op2, op3, bs, spinfactor, cs, Ii, Ij, Il, rho_here);
         }
         const auto ij  = make_pair(Ii, Ij);
@@ -76,9 +76,9 @@ template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const D
           if (logletter('G')) nrgdump3(Ii, Ij, Il) << endl;
           const t_factor spinfactor = factorfnc(Ii, Ij); // XXX
           my_assert(!num_equal(spinfactor, 0.0));        // bug trap
-          const Matrix &op1 = bs.op1.find(clj)->second;  // conj : A_jl=(a)_jl=(a+)_lj*
-          const Matrix &op2 = bs.op2.find(ij)->second;   // B_ij=(b+)_ij
-          const Matrix &op3 = bs.op3.find(li)->second;   // C_li=n_li
+          const Matrix &op1 = bs.op1.at(clj);  // conj : A_jl=(a)_jl=(a+)_lj*
+          const Matrix &op2 = bs.op2.at(ij);   // B_ij=(b+)_ij
+          const Matrix &op3 = bs.op3.at(li);   // C_li=n_li
           bs.spectype->calc_B(diagi, diagj, diagl, op1, op2, op3, bs, spinfactor, cs, Ii, Ij, Il, rho_here);
         }
       }
