@@ -1879,7 +1879,7 @@ void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = fa
 /* recalc_singlet() recalculates irreducible matrix elements of a
  singlet operator (nold) and stores them in a new matrix (nnew).
  This implementation is generic for all the symmetry types! */
-void recalc_singlet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &nold, MatrixElements &nnew, int parity) {
+void recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, MatrixElements &nnew, int parity) {
   std::vector<Recalc> recalc_table(P::combs);
   const InvarVec input = input_subspaces();
   if (Sym->islr())
@@ -2410,13 +2410,13 @@ QSrmax get_qsrmax(const DiagInfo &diagprev) {
 }
 
 // List of invariant subspaces in which diagonalisations need to be performed
-std::vector<Invar> task_list(QSrmax &qsrmax) {
+std::vector<Invar> task_list(const QSrmax &qsrmax) {
   std::vector<Invar> tasks;
   for (const auto &[I, rm] : qsrmax)
     if (rm.total()) tasks.push_back(I);
   std::vector<pair<size_t, Invar>> tasks_with_sizes;
   for (const auto &I : tasks) 
-    tasks_with_sizes.emplace_back(qsrmax[I].total(), I);
+    tasks_with_sizes.emplace_back(qsrmax.at(I).total(), I);
   // Sort in the *decreasing* order!
   sort(rbegin(tasks_with_sizes), rend(tasks_with_sizes));
   auto nr       = tasks_with_sizes.size();
@@ -2590,6 +2590,22 @@ void calc_abs_energies(DiagInfo &diag) {
   }
 }
 
+void store_to_dm(const DiagInfo &diag, const QSrmax &qsrmax)
+{
+  size_t nrall  = 0;
+  size_t nrkept = 0;
+  for (const auto &[I, eig]: diag) { // XXX - there should be only 1 copy
+    const auto f = qsrmax.find(I);
+    dm[STAT::N][I] = DimSub(eig.getnr(), eig.getrmax(),
+                            f != qsrmax.cend() ? f->second : Rmaxvals{},
+                            eig.value, eig.absenergy, eig.absenergyG, eig.absenergyN, LAST_ITERATION());
+    nrall += eig.getrmax();
+    nrkept += eig.getnr();
+  }
+  double ratio = double(nrkept) / nrall;
+  cout << "Kept: " << nrkept << " out of " << nrall << ", ratio=" << setprecision(3) << ratio << endl;
+}
+
 // Perform processing after a successful NRG step.
 // At function call:
 // - diag contains all information about the eigenstates.
@@ -2605,41 +2621,24 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax) {
   STAT::energy_offsets[STAT::N] = STAT::total_energy;
   if (nrgrun) 
     calc_abs_energies(diag);
-  if (P::dm && nrgrun) {
-    // Store eigenenergies and eigenvectors in all subspaces.
-    // NOTE: we store before the truncation!
-    if (!(P::resume && int(STAT::N) <= P::laststored)) 
-      store_transformations(STAT::N, diag);
-  }
+  if (nrgrun && P::dm && !(P::resume && int(STAT::N) <= P::laststored))
+    store_transformations(STAT::N, diag);
   // Logging of ALL states (not only those that remain after truncation)
-  if (P::dumpenergies) dumptofile(diag, Fenergies);
+  if (P::dumpenergies) 
+    dumptofile(diag, Fenergies);
   // Measurements are performed before the truncation!
   nrg_perform_measurements(diag);
-  // Consistency checks
-  for (const auto &[i, eig]: diag) {
-    my_assert(eig.matrix0.size1() <= eig.matrix0.size2());
-  }
   if (!P::ZBW)
     split_in_blocks(diag, qsrmax);
   if (do_recalc_all()) { // Either ...
     nrg_recalculate_operators(diag, qsrmax, iterinfo);
     nrg_calculate_spectral_and_expv(diag, iterinfo);
   }
-  // Actual truncation occurs at this point
   diag_before_truncation = diag;
   if (!P::ZBW) 
-    nrg_truncate_perform(diag);
+    nrg_truncate_perform(diag); // Actual truncation occurs at this point
   diag_after_truncation = diag; // ZZZ
-  // Store information about subspaces and states
-  size_t nrall  = 0;
-  size_t nrkept = 0;
-  for (const auto &[I, eig]: diag) { // XXX - there should be only 1 copy
-    dm[STAT::N][I] = DimSub(eig.getnr(), eig.getrmax(), qsrmax[I], eig.value, eig.absenergy, eig.absenergyG, eig.absenergyN, LAST_ITERATION());
-    nrall += eig.getrmax();
-    nrkept += eig.getnr();
-  }
-  double ratio = double(nrkept) / nrall;
-  cout << "Kept: " << nrkept << " out of " << nrall << ", ratio=" << setprecision(3) << ratio << endl;
+  store_to_dm(diag, qsrmax); // Store information about subspaces and states for DM algorithms
   if (!LAST_ITERATION()) {
     nrg_recalc_f(diag, qsrmax, iterinfo.opch);
     if (P::dump_f) nrg_dump_f(iterinfo.opch);
@@ -2688,7 +2687,7 @@ void docalc0(const IterInfo &iterinfo, const DiagInfo &diag0) {
   if (P::checksumrules) operator_sumrules(diag0, iterinfo);
 }
 
-static QSrmax empty_qsrmax{};
+QSrmax empty_qsrmax{};
 
 // doZBW() takes the place of nrg_iterate() called from nrg_main_loop() in the case of zero-bandwidth calculation.
 // Thus it replaces nrg_do_diag() + nrg_after_diag() (it calls the latter as the last step!).

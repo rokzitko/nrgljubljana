@@ -12,7 +12,7 @@ namespace SPU1 {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!P::substeps) {
     for(const auto &[I1, eig]: diag) {
       SZspin ssz1 = I1.get("SSZ");
@@ -41,7 +41,7 @@ void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const Ma
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   my_assert(!P::substeps);
 
   for(const auto &[Ip, eig]: diag) {
@@ -63,7 +63,7 @@ void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &op
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch, int M) {
+void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
   my_assert(P::substeps);
 
   for(const auto &[Ip, eig]: diag) {
@@ -79,7 +79,7 @@ void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, QSrmax &qsrmax,
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPU1::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!P::substeps) {
     for(const auto &[I1, eig]: diag) {
       SZspin ssz1 = I1.get("SSZ");
@@ -156,7 +156,7 @@ void SymmetrySPU1::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const Ma
 #undef Q2DO
 #define Q2DO(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetrySPU1::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetrySPU1::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

@@ -15,7 +15,7 @@ namespace QS {
 
 // Recalculate matrix elements of a doublet tensor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
@@ -55,7 +55,7 @@ void SymmetryQS::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const Matr
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetryQS::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   my_assert(!substeps);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
@@ -99,7 +99,7 @@ void SymmetryQS::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch, int M) {
+void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
   my_assert(substeps);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
@@ -116,7 +116,7 @@ void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, QSrmax &qsrmax, O
 
 // Recalculate matrix elements of a triplet tenzor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
@@ -159,7 +159,7 @@ void SymmetryQS::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const Matr
 #define QTOT(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryQS::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

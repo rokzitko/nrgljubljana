@@ -22,7 +22,7 @@ define(`RECALC_F_TAB_NONE', {
    })
 
 // Driver routine for recalc_f()
-void SymmetryNONE::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetryNONE::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     Invar I1 = Invar();
 
@@ -36,7 +36,7 @@ void SymmetryNONE::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &op
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryNONE::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Invar Ip = Invar();
 
@@ -86,7 +86,7 @@ void SymmetryNONE::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const Ma
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
-void SymmetryNONE::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryNONE::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

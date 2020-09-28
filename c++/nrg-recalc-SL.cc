@@ -28,7 +28,7 @@ namespace SL {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySL::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySL::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
@@ -69,7 +69,7 @@ void SymmetrySL::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const Matr
 }
 
 // Driver routine for recalc_f()
-void SymmetrySL::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetrySL::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
@@ -152,7 +152,7 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch
 #undef N3
 #define N3(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetrySL::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetrySL::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

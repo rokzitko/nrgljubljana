@@ -10,7 +10,7 @@ struct Recalc_f {
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called
 // from recalc_irreduc() in nrg-recalc-* files.
 void recalc_f(const DiagInfo &dg, 
-              QSrmax &qsrmax, 
+              const QSrmax &qsrmax, 
               MatrixElements &ff, 
               const Invar &Ip, const Invar &I1, 
               const struct Recalc_f table[], 
@@ -37,8 +37,8 @@ void recalc_f(const DiagInfo &dg,
   // are given by i1, ip in the Recalc_f type tables.
   for (size_t j = 0; j < jmax; j++) {
     // rmax1, rmaxp are the dimensions of the invariant subspaces
-    const size_t rmax1 = qsrmax[I1].rmax(table[j].i1);
-    const size_t rmaxp = qsrmax[Ip].rmax(table[j].ip);
+    const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
+    const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
     if (!(rmax1 > 0 && rmaxp > 0)) continue;
     if (logletter('f'))
       nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
@@ -81,14 +81,14 @@ struct Recalc {
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
 // in the recalculation of matrix elements. Note that the original (matrix0) data is discarded after the splitting
 // had completed!
-void split_in_blocks_Eigen(const Invar &I, Eigen &e, QSrmax &qsrmax) {
+void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
   e.blocks.resize(P::combs);
   const size_t nr = e.getnr(); // nr. of eigenpairs
   my_assert(nr > 0);
   my_assert(nr <= e.getrmax()); // rmax = length of eigenvectors
   for (size_t block = 0; block < P::combs; block++) {
-    const size_t rmax   = qsrmax[I].rmax(block + 1); // offset 1
-    const size_t offset = qsrmax[I].offset(block + 1);
+    const size_t rmax   = qsrmax.at(I).rmax(block + 1); // offset 1
+    const size_t offset = qsrmax.at(I).offset(block + 1);
     my_assert(e.matrix0.size1() >= nr);
     my_assert(e.matrix0.size2() >= offset + rmax);
     matrix_range<Matrix> Up(e.matrix0, range(0, nr), range(offset, offset + rmax));
@@ -99,7 +99,7 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e, QSrmax &qsrmax) {
   e.matrix0 = Matrix(0, 0); // We don't need matrix0 anymore.
 }
 
-void split_in_blocks(DiagInfo &diag, QSrmax &qsrmax) {
+void split_in_blocks(DiagInfo &diag, const QSrmax &qsrmax) {
   for(auto &[I, eig]: diag) // XXX: ranges::for_each in C++20
     split_in_blocks_Eigen(I, eig, qsrmax);
 }
@@ -110,7 +110,7 @@ void split_in_blocks(DiagInfo &diag, QSrmax &qsrmax) {
 // one should try to hand optimize.
 
 void recalc_general(const DiagInfo &dg, 
-                    QSrmax &qsrmax, // information about the matrix structure
+                    const QSrmax &qsrmax, // information about the matrix structure
                     const MatrixElements &cold,
                     MatrixElements &cnew,
                     const Invar &I1, // target subspace (bra)
@@ -139,8 +139,8 @@ void recalc_general(const DiagInfo &dg,
   for (size_t j = 0; j < jmax; j++) { // loop over combinations of i/ip
     if (logletter('r')) RECALC_GENERAL_DUMP;
     if (!Sym->Invar_allowed(table[j].IN1) || !Sym->Invar_allowed(table[j].INp)) continue;
-    const size_t rmax1 = qsrmax[I1].rmax(table[j].i1);
-    const size_t rmaxp = qsrmax[Ip].rmax(table[j].ip);
+    const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
+    const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
     // Proceed if this combination of i1/ip contributes.
     if (rmax1 == 0 || rmaxp == 0) continue;
     const auto IN1 = ancestor(I1, table[j].i1);
@@ -200,7 +200,7 @@ void recalc_general(const DiagInfo &dg,
 // This routine is used for recalculation of global operators in
 // nrg-recalc-*.cc
 void recalc1_global(const DiagInfo &dg,
-                    QSrmax &qsrmax,
+                    const QSrmax &qsrmax,
                     const Invar &I, 
                     Matrix &m, 
                     size_t i1, size_t ip, 
@@ -209,8 +209,8 @@ void recalc1_global(const DiagInfo &dg,
   const Eigen &dgI = dg.find(I)->second;
   const size_t dim = dgI.getnr();
   if (dim == 0) return;
-  const size_t rmax1 = qsrmax[I].rmax(i1);
-  const size_t rmaxp = qsrmax[I].rmax(ip);
+  const size_t rmax1 = qsrmax.at(I).rmax(i1);
+  const size_t rmaxp = qsrmax.at(I).rmax(ip);
   my_assert(rmax1 == rmaxp);
   if (rmax1 == 0 || rmaxp == 0) return;
   const Matrix &U1 = dgI.blocks[i1 - 1];

@@ -11,7 +11,7 @@ include(recalc-macros.m4)
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQST::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   nrglog('f', "QST::recalc_doublet() called");
   for(const auto &[I1, eig]: diag) {
     Number q1  = I1.get("Q");
@@ -53,7 +53,7 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const Mat
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQST::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetryQST::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   nrglog('f', "QST::recalc_irreduc() called");
   my_assert(!substeps);
 
@@ -97,7 +97,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opc
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQST::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Number q1  = I1.get("Q");
     Sspin ss1  = I1.get("SS");
@@ -118,7 +118,7 @@ void SymmetryQST::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const Mat
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   nrglog('r', "recalc_orb_triplet");
 
   for(const auto &[I1, eig]: diag) {

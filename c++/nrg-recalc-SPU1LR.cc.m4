@@ -12,7 +12,7 @@ namespace SPU1LR {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -29,7 +29,7 @@ void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const 
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
     int pp      = Ip.get("P");
@@ -64,7 +64,7 @@ void SymmetrySPU1LR::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -103,7 +103,7 @@ void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const 
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(getnn() + 1))
 
-void SymmetrySPU1LR::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetrySPU1LR::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

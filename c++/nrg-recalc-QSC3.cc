@@ -28,7 +28,7 @@ namespace QSC3 {
 #define xRECALC_F_TAB(a, b, c) 0;
 
 // Driver routine for recalc_f()
-void SymmetryQSC3::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetryQSC3::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
 #ifdef NRG_COMPLEX
   // CONVENTION: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
@@ -243,7 +243,7 @@ void SymmetryQSC3::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &op
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSC3::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSC3::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
 #ifdef NRG_COMPLEX
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
@@ -263,7 +263,7 @@ void SymmetryQSC3::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const Ma
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSC3::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSC3::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
 #ifdef NRG_COMPLEX
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");

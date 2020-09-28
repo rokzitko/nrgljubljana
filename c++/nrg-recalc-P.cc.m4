@@ -22,7 +22,7 @@ define(`RECALC_F_TAB_P', {
    })
 
 // Driver routine for recalc_f()
-void SymmetryP::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     int p    = Ip.get("P");
 
@@ -44,7 +44,7 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch)
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryP::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     int p1   = I1.get("P");
     Invar Ip = Invar(-p1); // always the opposite fermion parity!
@@ -95,7 +95,7 @@ void SymmetryP::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const Matri
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
-void SymmetryP::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryP::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};

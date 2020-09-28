@@ -12,7 +12,7 @@ namespace ISOSZ {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -39,7 +39,7 @@ void SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const M
 // (ISOSZ): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -80,7 +80,7 @@ void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &o
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -103,7 +103,7 @@ void SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const M
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetryISOSZ::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryISOSZ::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

@@ -27,7 +27,7 @@
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetrySU2::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Invar Ip;
@@ -90,7 +90,7 @@ void SymmetrySU2::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const Mat
 
 
 // Driver routine for recalc_f()
-void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -237,7 +237,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opc
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
-void SymmetrySU2::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetrySU2::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

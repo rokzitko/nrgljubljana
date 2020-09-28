@@ -22,7 +22,7 @@ define(`RECALC_F_TAB_P', {
    })
 
 // Driver routine for recalc_f()
-void SymmetryPP::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetryPP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     int pa   = Ip.get("Pa");
     int pb   = Ip.get("Pb");
@@ -86,7 +86,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
-void SymmetryPP::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryPP::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

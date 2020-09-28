@@ -28,7 +28,7 @@
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
 // Driver routine for recalc_f()
-void SymmetryISOLR::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void SymmetryISOLR::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -236,7 +236,7 @@ void SymmetryISOLR::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &o
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-void SymmetryISOLR::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryISOLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -294,7 +294,7 @@ void SymmetryISOLR::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const M
 }
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
-void SymmetryISOLR::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryISOLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
