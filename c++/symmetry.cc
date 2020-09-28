@@ -152,13 +152,13 @@ class Symmetry {
 
   virtual void calculate_TD(const DiagInfo &diag, double factor) = 0;
 
-  virtual void recalc_irreduc(const DiagInfo &diag, Opch &opch) { my_error("Not implemented."); }
-  virtual void recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) { my_error("Not implemented."); }
-  virtual void recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-  virtual void recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-  virtual void recalc_orb_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-  virtual void recalc_quadruplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-  virtual void recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) { my_error("Not implemented."); }
+  virtual void recalc_irreduc_substeps(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch, int M) { my_error("Not implemented."); }
+  virtual void recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_orb_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_quadruplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) { my_error("Not implemented."); }
 
   virtual void show_coefficients() {}
    
@@ -172,15 +172,15 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
   void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) override;                                     \
-  void recalc_irreduc(const DiagInfo &diag, Opch &opch) override
+  void recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) override
 
 // Optional declaration
-#define HAS_DOUBLET void recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_TRIPLET void recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_ORB_TRIPLET void recalc_orb_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_QUADRUPLET void recalc_quadruplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_GLOBAL void recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) override
-#define HAS_SUBSTEPS void recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) override
+#define HAS_DOUBLET void recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_TRIPLET void recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_ORB_TRIPLET void recalc_orb_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_QUADRUPLET void recalc_quadruplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_GLOBAL void recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) override
+#define HAS_SUBSTEPS void recalc_irreduc_substeps(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch, int M) override
 
 class SymField : public Symmetry {
   public:

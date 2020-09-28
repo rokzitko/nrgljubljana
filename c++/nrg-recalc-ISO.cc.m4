@@ -13,7 +13,7 @@ namespace ISO1 {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryISO::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryISO::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -40,7 +40,7 @@ void SymmetryISO::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 // (ISO): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISO::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
+void SymmetryISO::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -97,7 +97,7 @@ void SymmetryISO::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISO::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryISO::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");

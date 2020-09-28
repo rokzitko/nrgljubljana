@@ -28,7 +28,7 @@ namespace U1 {
 
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryU1::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryU1::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
@@ -74,7 +74,7 @@ void SymmetryU1::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold
 
 
 // Driver routine for recalc_f()
-void SymmetryU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
+void SymmetryU1::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
@@ -193,18 +193,18 @@ void SymmetryU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 #undef SPINX
-#define SPINX(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define SPINX(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #ifdef NRG_COMPLEX
 #undef SPINY
-#define SPINY(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define SPINY(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
-void SymmetryU1::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryU1::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

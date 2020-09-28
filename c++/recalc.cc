@@ -77,13 +77,11 @@ struct Recalc {
     nrgdump(table[j].factor) << endl;                                                                                                                \
   }
 
-// We split the matrices of eigenvectors in blocks according to the
-// partition into "ancestor subspaces". At the price of some copying,
-// this increases memory localisation of data and thus improves
-// numerical performence of gemm calls in the recalculation of matrix
-// elements. Note that the original (matrix0) data is discarded after
-// the splitting had completed!
-void split_in_blocks_Eigen(const Invar &I, Eigen &e) {
+// We split the matrices of eigenvectors in blocks according to the partition into "ancestor subspaces". At the price
+// of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
+// in the recalculation of matrix elements. Note that the original (matrix0) data is discarded after the splitting
+// had completed!
+void split_in_blocks_Eigen(const Invar &I, Eigen &e, QSrmax &qsrmax) {
   e.blocks.resize(P::combs);
   const size_t nr = e.getnr(); // nr. of eigenpairs
   my_assert(nr > 0);
@@ -101,9 +99,9 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e) {
   e.matrix0 = Matrix(0, 0); // We don't need matrix0 anymore.
 }
 
-void split_in_blocks(DiagInfo &diag) {
+void split_in_blocks(DiagInfo &diag, QSrmax &qsrmax) {
   for(auto &[I, eig]: diag) // XXX: ranges::for_each in C++20
-    split_in_blocks_Eigen(I, eig);
+    split_in_blocks_Eigen(I, eig, qsrmax);
 }
 
 // Recalculate the (irreducible) matrix elements of various operators. This is the most important routine in this
@@ -202,9 +200,11 @@ void recalc_general(const DiagInfo &dg,
 // This routine is used for recalculation of global operators in
 // nrg-recalc-*.cc
 void recalc1_global(const DiagInfo &dg,
-// XXX                    QSrmax &qsrmax,
+                    QSrmax &qsrmax,
                     const Invar &I, 
-                    Matrix &m, size_t i1, size_t ip, t_factor value) {
+                    Matrix &m, 
+                    size_t i1, size_t ip, 
+                    t_factor value) {
   nrglog('r', "recalc1_global: " << I);
   const Eigen &dgI = dg.find(I)->second;
   const size_t dim = dgI.getnr();

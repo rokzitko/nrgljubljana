@@ -26,7 +26,7 @@ namespace DBLSU2 {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Ispin ii11 = I1.get("II1");
     Ispin ii21 = I1.get("II2");
@@ -88,7 +88,7 @@ void SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const MatrixElements &
 
 
 // Driver routine for recalc_f()
-void SymmetryDBLSU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
+void SymmetryDBLSU2::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -192,18 +192,18 @@ void SymmetryDBLSU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 #undef SPINX
-#define SPINX(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define SPINX(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #ifdef NRG_COMPLEX
 #undef SPINY
-#define SPINY(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define SPINY(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
-void SymmetryDBLSU2::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryDBLSU2::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

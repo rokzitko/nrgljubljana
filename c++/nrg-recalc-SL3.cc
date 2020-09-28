@@ -26,7 +26,7 @@ namespace SL3 {
 }
 
 // Recalculate matrix elements of a "doublet" tensor operator
-void SymmetrySL3::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySL3::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Number q11 = I1.get("Q1");
     Number q21 = I1.get("Q2");
@@ -46,7 +46,7 @@ void SymmetrySL3::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 }
 
 // Driver routine for recalc_f()
-void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
+void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     Number q1p = Ip.get("Q1");
     Number q2p = Ip.get("Q2");
@@ -93,18 +93,18 @@ void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 #undef QTOT
-#define QTOT(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define QTOT(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef N1
-#define N1(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define N1(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef N2
-#define N2(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define N2(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef N3
-#define N3(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define N3(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetrySL3::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetrySL3::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

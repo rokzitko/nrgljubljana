@@ -380,7 +380,6 @@ template <typename T> ostream &operator<<(ostream &os, const ublas::vector<T> &v
 }
 
 using QSrmax = map<Invar, Rmaxvals>;
-QSrmax qsrmax; // temp
 
 class ChainSpectrum;
 class BaseSpectrum;
@@ -1880,7 +1879,7 @@ void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = fa
 /* recalc_singlet() recalculates irreducible matrix elements of a
  singlet operator (nold) and stores them in a new matrix (nnew).
  This implementation is generic for all the symmetry types! */
-void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElements &nnew, int parity) {
+void recalc_singlet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &nold, MatrixElements &nnew, int parity) {
   std::vector<Recalc> recalc_table(P::combs);
   const InvarVec input = input_subspaces();
   if (Sym->islr())
@@ -1905,14 +1904,14 @@ void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElem
 
 // Wrapper routine for recalculations. Called from nrg_recalculate_operators().
 template <class RecalcFnc>
-  void recalc_common(RecalcFnc recalc_fnc, const DiagInfo &dg, std::string name, MatrixElements &m, const string &tip, bool (*testfn)(const string &)) {
+  void recalc_common(RecalcFnc recalc_fnc, const DiagInfo &dg, QSrmax &qsrmax, std::string name, MatrixElements &m, const string &tip, bool (*testfn)(const string &)) {
   if (testfn(name)) {
     nrglog('0', "Recalculate " << tip << " " << name);
     MatrixElements mstore;
     mstore.swap(m);
     m.clear();
-    recalc_fnc(dg, mstore, m);
-    if (tip == "g") Sym->recalc_global(dg, name, m);
+    recalc_fnc(dg, qsrmax, mstore, m);
+    if (tip == "g") Sym->recalc_global(dg, qsrmax, name, m);
   } else
     m.clear(); // save memory!
 }
@@ -2006,15 +2005,15 @@ void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
 
 // Recalculate operator matrix representations
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void nrg_recalculate_operators(const DiagInfo &dg, IterInfo &a) {
+void nrg_recalculate_operators(const DiagInfo &dg, QSrmax &qsrmax, IterInfo &a) {
   nrglog('@', "@ nrg_recalculate_operators()");
-  for (auto &[name, m] : a.ops)  recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1);       }, dg, name, m, "s",  oprecalc::do_s);
-  for (auto &[name, m] : a.opsp) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, -1);      }, dg, name, m, "p",  oprecalc::do_p);
-  for (auto &[name, m] : a.opsg) recalc_common([](const auto &a, const auto &b, auto &c) { recalc_singlet(a, b, c, 1);       }, dg, name, m, "g",  oprecalc::do_g);
-  for (auto &[name, m] : a.opd)  recalc_common([](const auto &a, const auto &b, auto &c) { Sym->recalc_doublet(a, b, c);     }, dg, name, m, "d",  oprecalc::do_d);
-  for (auto &[name, m] : a.opt)  recalc_common([](const auto &a, const auto &b, auto &c) { Sym->recalc_triplet(a, b, c);     }, dg, name, m, "t",  oprecalc::do_t);
-  for (auto &[name, m] : a.opot) recalc_common([](const auto &a, const auto &b, auto &c) { Sym->recalc_orb_triplet(a, b, c); }, dg, name, m, "ot", oprecalc::do_ot);
-  for (auto &[name, m] : a.opq)  recalc_common([](const auto &a, const auto &b, auto &c) { Sym->recalc_quadruplet(a, b, c);  }, dg, name, m, "q",  oprecalc::do_q);
+  for (auto &[name, m] : a.ops)  recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { recalc_singlet(a, b, c, d, 1);       }, dg, qsrmax, name, m, "s",  oprecalc::do_s);
+  for (auto &[name, m] : a.opsp) recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { recalc_singlet(a, b, c, d, -1);      }, dg, qsrmax, name, m, "p",  oprecalc::do_p);
+  for (auto &[name, m] : a.opsg) recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { recalc_singlet(a, b, c, d, 1);       }, dg, qsrmax, name, m, "g",  oprecalc::do_g);
+  for (auto &[name, m] : a.opd)  recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { Sym->recalc_doublet(a, b, c, d);     }, dg, qsrmax, name, m, "d",  oprecalc::do_d);
+  for (auto &[name, m] : a.opt)  recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { Sym->recalc_triplet(a, b, c, d);     }, dg, qsrmax, name, m, "t",  oprecalc::do_t);
+  for (auto &[name, m] : a.opot) recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { Sym->recalc_orb_triplet(a, b, c, d); }, dg, qsrmax, name, m, "ot", oprecalc::do_ot);
+  for (auto &[name, m] : a.opq)  recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { Sym->recalc_quadruplet(a, b, c, d);  }, dg, qsrmax, name, m, "q",  oprecalc::do_q);
 }
 
 // Calculate spectral densities
@@ -2411,27 +2410,22 @@ QSrmax get_qsrmax(const DiagInfo &diagprev) {
 }
 
 // List of invariant subspaces in which diagonalisations need to be performed
-std::vector<Invar> nrg_determine_tasks(const QSrmax &qsrmax) {
+std::vector<Invar> task_list(QSrmax &qsrmax) {
   std::vector<Invar> tasks;
   for (const auto &[I, rm] : qsrmax)
     if (rm.total()) tasks.push_back(I);
-  return tasks;
-}
-
-// Sort the tasks in the decreasing order of the matrix size. As a side effect, we compute some statistics about the
-// matrix sizes.
-std::vector<Invar> sort_task_list(std::vector<Invar> tasks) {
   std::vector<pair<size_t, Invar>> tasks_with_sizes;
-  for (const auto &I : tasks) tasks_with_sizes.emplace_back(qsrmax[I].total(), I);
+  for (const auto &I : tasks) 
+    tasks_with_sizes.emplace_back(qsrmax[I].total(), I);
   // Sort in the *decreasing* order!
   sort(rbegin(tasks_with_sizes), rend(tasks_with_sizes));
   auto nr       = tasks_with_sizes.size();
   auto min_size = tasks_with_sizes.back().first;
   auto max_size = tasks_with_sizes.front().first;
   cout << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << endl;
-  // Report matrix sizes
-  if (logletter('S'))
-    for (const auto &[size, I] : tasks_with_sizes) cout << "size(" << I << ")=" << size << endl;
+  if (logletter('S'))   // report matrix sizes
+    for (const auto &[size, I] : tasks_with_sizes) 
+      cout << "size(" << I << ")=" << size << endl;
   std::vector<Invar> sorted_tasks;
   transform(cbegin(tasks_with_sizes), cend(tasks_with_sizes), std::back_inserter(sorted_tasks), [](const auto &p) { return p.second; });
   return sorted_tasks;
@@ -2439,7 +2433,7 @@ std::vector<Invar> sort_task_list(std::vector<Invar> tasks) {
 
 // Recalculate irreducible matrix elements for Wilson chains.
 // Called from nrg_after_diag().
-void nrg_recalc_f(DiagInfo &diag, Opch &opch) {
+void nrg_recalc_f(DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   nrglog('@', "@ nrg_recalc_f()");
   TIME("recalc f");
   if (!P::substeps) {
@@ -2449,21 +2443,21 @@ void nrg_recalc_f(DiagInfo &diag, Opch &opch) {
     // to simplify the code. OTOH, recalc_irreduc() is probably
     // better because it does not accumulate floating point
     // round-off errors.
-    Sym->recalc_irreduc(diag, opch);
+    Sym->recalc_irreduc(diag, qsrmax, opch);
   } else {
     size_t Ntrue, M;
     tie(Ntrue, M) = get_Ntrue_M(STAT::N);
     for (size_t i = 0; i < P::channels; i++) {
       if (i == M) {
         for (size_t j = 0; j < P::perchannel; j++) opch[M][j].clear(); // Clear channel M
-        Sym->recalc_irreduc_substeps(diag, opch, M);
+        Sym->recalc_irreduc_substeps(diag, qsrmax, opch, M);
       } else {
         for (size_t j = 0; j < P::perchannel; j++) {
           MatrixElements &f = opch[i][j];
           MatrixElements opstore;
           opstore.swap(f);
           f.clear();
-          Sym->recalc_doublet(diag, opstore, f);
+          Sym->recalc_doublet(diag, qsrmax, opstore, f);
         }
       }
     }
@@ -2519,7 +2513,7 @@ DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrma
   nrglog('@', "@ nrg_do_diag()");
   infostring();
   show_coefficients();
-  auto tasks = sort_task_list(nrg_determine_tasks(qsrmax));
+  auto tasks = task_list(qsrmax);
   double diagratio = P::diagratio;
   DiagInfo diag;
   bool notenough;
@@ -2539,7 +2533,6 @@ DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrma
       calc_boltzmann_factors(diag);
       if (P::removefiles) remove_transformation_files(STAT::N);
     }
-    time_mem::ms.check("diag");
     find_groundstate(diag);
     subtract_groundstate_energy(diag);
     copy_sort_energies(diag, STAT::energies);
@@ -2552,7 +2545,6 @@ DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrma
       find_clusters(STAT::energies, P::fixeps, STAT::cluster_mapping);
     }
     notenough = nrg_truncate_prepare(diag);
-    time_mem::ms.check("trunc");
     if (notenough) {
       cout << "Insufficient number of states computed." << endl;
       if (P::restart) {
@@ -2627,12 +2619,10 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax) {
   for (const auto &[i, eig]: diag) {
     my_assert(eig.matrix0.size1() <= eig.matrix0.size2());
   }
-  if (!P::ZBW) {
-    split_in_blocks(diag);
-    time_mem::ms.check("split");
-  }
+  if (!P::ZBW)
+    split_in_blocks(diag, qsrmax);
   if (do_recalc_all()) { // Either ...
-    nrg_recalculate_operators(diag, iterinfo);
+    nrg_recalculate_operators(diag, qsrmax, iterinfo);
     nrg_calculate_spectral_and_expv(diag, iterinfo);
   }
   // Actual truncation occurs at this point
@@ -2651,25 +2641,23 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax) {
   double ratio = double(nrkept) / nrall;
   cout << "Kept: " << nrkept << " out of " << nrall << ", ratio=" << setprecision(3) << ratio << endl;
   if (!LAST_ITERATION()) {
-    nrg_recalc_f(diag, iterinfo.opch);
+    nrg_recalc_f(diag, qsrmax, iterinfo.opch);
     if (P::dump_f) nrg_dump_f(iterinfo.opch);
   }
   if (do_recalc_kept()) { // ... or ...
-    nrg_recalculate_operators(diag, iterinfo);
+    nrg_recalculate_operators(diag, qsrmax, iterinfo);
     nrg_calculate_spectral_and_expv(diag, iterinfo);
   }
   if (do_no_recalc()) { // ... or this
     nrg_calculate_spectral_and_expv(diag, iterinfo);
   }
   if (P::checksumrules) operator_sumrules(diag, iterinfo);
-  time_mem::ms.check("recalc");
-  // Store TD data (all outfields)
-  store_td();
+  store_td(); // Store TD data (all outfields)
 }
 
 // Perform one iteration step
 DiagInfo nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev) {
-  qsrmax = get_qsrmax(diagprev);
+  QSrmax qsrmax = get_qsrmax(diagprev);
   auto diag = nrg_do_diag(iterinfo, diagprev, qsrmax);
   nrg_after_diag(iterinfo, diag, qsrmax);
   nrg_trim_matrices(diag, iterinfo);
@@ -2700,6 +2688,8 @@ void docalc0(const IterInfo &iterinfo, const DiagInfo &diag0) {
   if (P::checksumrules) operator_sumrules(diag0, iterinfo);
 }
 
+static QSrmax empty_qsrmax{};
+
 // doZBW() takes the place of nrg_iterate() called from nrg_main_loop() in the case of zero-bandwidth calculation.
 // Thus it replaces nrg_do_diag() + nrg_after_diag() (it calls the latter as the last step!).
 DiagInfo doZBW(IterInfo &iterinfo, const DiagInfo &diag0) {
@@ -2707,7 +2697,7 @@ DiagInfo doZBW(IterInfo &iterinfo, const DiagInfo &diag0) {
   // TRICK: scale will be that for N=Ninit-1, but STAT::N=Ninit.
   STAT::set_N(int(P::Ninit) - 1);
   STAT::N = P::Ninit; // this is a hack!
-  // begin nrg_do_diag() equivalent
+  // --- begin nrg_do_diag() equivalent
   DiagInfo diag;
   if (nrgrun) 
     diag = diag0;
@@ -2721,8 +2711,8 @@ DiagInfo doZBW(IterInfo &iterinfo, const DiagInfo &diag0) {
   subtract_groundstate_energy(diag);
   copy_sort_energies(diag, STAT::energies); // required in nrg_truncate_prepare()
   nrg_truncate_prepare(diag);               // determine # of kept and discarded states
-  // end nrg_do_diag() equivalent
-  nrg_after_diag(iterinfo, diag, qsrmax); // XXX: empty qsrmax?
+  // --- end nrg_do_diag() equivalent
+  nrg_after_diag(iterinfo, diag, empty_qsrmax); // qsrmax is not used if ZBW=true
   return diag;
 }
 

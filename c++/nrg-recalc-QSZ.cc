@@ -31,7 +31,7 @@ namespace QSZ {
 // in between. Thus Q[p] + Q[op] = Q[1].
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
@@ -148,7 +148,7 @@ void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 }
 
 // Driver routine for recalc_f()
-void SymmetryQSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
+void SymmetryQSZ::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   my_assert(!substeps);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
@@ -290,7 +290,7 @@ void SymmetryQSZ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
   } // loop
 }
 
-void SymmetryQSZ::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
+void SymmetryQSZ::recalc_irreduc_substeps(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch, int M) {
   my_assert(substeps);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
@@ -324,7 +324,7 @@ void SymmetryQSZ::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int 
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
@@ -422,13 +422,13 @@ void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const MatrixElements &col
 }
 
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 #undef Q1U
-#define Q1U(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q1U(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 #undef Q1D
-#define Q1D(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q1D(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetryQSZ::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryQSZ::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

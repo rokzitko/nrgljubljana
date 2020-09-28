@@ -30,7 +30,7 @@ namespace QS {
 
 // Recalculate matrix elements of a doublet tensor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
@@ -166,7 +166,7 @@ void SymmetryQS::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
+void SymmetryQS::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   my_assert(!substeps);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
@@ -390,7 +390,7 @@ void SymmetryQS::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
+void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch, int M) {
   my_assert(substeps);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
@@ -425,7 +425,7 @@ void SymmetryQS::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M
 
 // Recalculate matrix elements of a triplet tenzor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQS::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
@@ -573,19 +573,19 @@ void SymmetryQS::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold
 }
 
 #undef QDIFF
-#define QDIFF(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define QDIFF(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q1
-#define Q1(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q1(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q2
-#define Q2(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q2(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef QTOT
-#define QTOT(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define QTOT(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetryQS::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

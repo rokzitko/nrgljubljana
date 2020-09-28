@@ -11,7 +11,7 @@ namespace QJ {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQJ::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQJ::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   nrglog('f', "QJ::recalc_doublet() called");
 
   for(const auto &[I1, eig]: diag) {
@@ -33,7 +33,7 @@ void SymmetryQJ::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold
 #define If(cond, a, b) (cond ? a : b)
 
 // Recalculate matrix elements of a quadruplet tensor operator
-void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   nrglog('f', "QJ::recalc_quadruplet() called");
 
   for(const auto &[I1, eig]: diag) {
@@ -58,7 +58,7 @@ void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const MatrixElements &c
   nrglog('f', "QJ::recalc_quadruplet() end");
 }
 
-void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
+void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   nrglog('f', "SymmetryQJ::recalc_irreduc() start");
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");

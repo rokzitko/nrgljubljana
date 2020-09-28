@@ -112,7 +112,7 @@ class MemoryStats {
     return memused;
   }
   // Sample memory usage at an arbitrarily named "breakpoint".
-  int check(string breakpoint) {
+  [[deprecated]] int check(string breakpoint) {
     const int memused = used();
     maxvals[breakpoint] = max(maxvals[breakpoint], memused);
     return memused;

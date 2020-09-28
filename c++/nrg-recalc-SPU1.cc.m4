@@ -12,7 +12,7 @@ namespace SPU1 {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!P::substeps) {
     for(const auto &[I1, eig]: diag) {
       SZspin ssz1 = I1.get("SSZ");
@@ -41,7 +41,7 @@ void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, const MatrixElements &co
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
+void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   my_assert(!P::substeps);
 
   for(const auto &[Ip, eig]: diag) {
@@ -63,7 +63,7 @@ void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int M) {
+void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch, int M) {
   my_assert(P::substeps);
 
   for(const auto &[Ip, eig]: diag) {
@@ -79,7 +79,7 @@ void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, Opch &opch, int
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPU1::recalc_triplet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySPU1::recalc_triplet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   if (!P::substeps) {
     for(const auto &[I1, eig]: diag) {
       SZspin ssz1 = I1.get("SSZ");
@@ -115,48 +115,48 @@ void SymmetrySPU1::recalc_triplet(const DiagInfo &diag, const MatrixElements &co
 }
 
 #undef CHARGE
-#define CHARGE(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define CHARGE(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef ISOSPINZ
-#define ISOSPINZ(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define ISOSPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 // NOTE: the transverse components of the isospin depend on the site
 // index! This is taken into account by appropriately multiplying 'value'
 // by (-1)^N.
 
 #undef ISOSPINX
-#define ISOSPINX(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value *psgn(getnn() + 1))
+#define ISOSPINX(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(getnn() + 1))
 
 #undef ISOSPINP
-#define ISOSPINP(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value *psgn(getnn() + 1))
+#define ISOSPINP(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(getnn() + 1))
 
 #undef ISOSPINM
-#define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value *psgn(getnn() + 1))
+#define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(getnn() + 1))
 
 // 2-channel only
 
 #undef QDIFF
-#define QDIFF(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define QDIFF(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q1
-#define Q1(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q1(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q2
-#define Q2(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q2(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q1UP
-#define Q1UP(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q1UP(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q2UP
-#define Q2UP(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q2UP(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q1DO
-#define Q1DO(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q1DO(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q2DO
-#define Q2DO(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define Q2DO(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetrySPU1::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetrySPU1::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

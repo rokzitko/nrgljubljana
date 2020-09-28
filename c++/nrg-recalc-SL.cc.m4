@@ -13,7 +13,7 @@ namespace SL {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySL::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold, MatrixElements &cnew) {
+void SymmetrySL::recalc_doublet(const DiagInfo &diag, QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
@@ -24,7 +24,7 @@ void SymmetrySL::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold
 }
 
 // Driver routine for recalc_f()
-void SymmetrySL::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
+void SymmetrySL::recalc_irreduc(const DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
@@ -36,21 +36,21 @@ void SymmetrySL::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 }
 
 #undef QDIFF
-#define QDIFF(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define QDIFF(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef QTOT
-#define QTOT(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define QTOT(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef N1
-#define N1(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define N1(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef N2
-#define N2(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define N2(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef N3
-#define N3(i1, ip, ch, value) recalc1_global(diag, I1, cn, i1, ip, value)
+#define N3(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetrySL::recalc_global(const DiagInfo &diag, string name, MatrixElements &cnew) {
+void SymmetrySL::recalc_global(const DiagInfo &diag, QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
