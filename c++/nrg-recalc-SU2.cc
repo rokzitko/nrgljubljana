@@ -41,7 +41,7 @@ void SymmetrySU2::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "su2/su2-1ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
   }
 } } break;
   case 2: { {
@@ -51,7 +51,7 @@ void SymmetrySU2::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "su2/su2-2ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
   }
 } } break;
   default: my_assert_not_reached();
@@ -66,7 +66,7 @@ void SymmetrySU2::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "su2/su2-1ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
   }
 } } break;
   case 2: { {
@@ -76,7 +76,7 @@ void SymmetrySU2::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "su2/su2-2ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
   }
 } } break;
   default: my_assert_not_reached();
@@ -113,7 +113,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-1ch-type1-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
   }
 };
             {
@@ -122,7 +122,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-1ch-type2-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-    recalc_f(diag, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -131,7 +131,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-2ch-type1-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
 	    {
@@ -140,7 +140,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-2ch-type1-isoup-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
             {
@@ -149,7 +149,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-2ch-type2-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
 	    {
@@ -158,7 +158,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-2ch-type2-isoup-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -172,7 +172,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-1ch-type1-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
   }
 };
             {
@@ -181,7 +181,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-1ch-type2-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-    recalc_f(diag, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -190,7 +190,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-2ch-type1-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
 	    {
@@ -199,7 +199,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-2ch-type1-isodown-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
             {
@@ -208,7 +208,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-2ch-type2-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
 	    {
@@ -217,7 +217,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "su2/su2-2ch-type2-isodown-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();

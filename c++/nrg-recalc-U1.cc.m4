@@ -32,7 +32,7 @@ define(`RECALC_F_TAB_U1', {
 #include $1
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-    recalc_f(diag, opch[$2][$3], Ip, I1, recalc_table, $4);
+    recalc_f(diag, qsrmax, opch[$2][$3], Ip, I1, recalc_table, $4);
   }
 })
 

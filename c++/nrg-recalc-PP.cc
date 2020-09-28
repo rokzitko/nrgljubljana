@@ -42,7 +42,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "pp/pp-2ch-a-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, opch[0][0], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, P::LENGTH_I_2CH);
      }
    };
       {
@@ -51,7 +51,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "pp/pp-2ch-a-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, opch[0][1], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, P::LENGTH_I_2CH);
      }
    };
       {
@@ -60,7 +60,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "pp/pp-2ch-a-AN-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, opch[0][2], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[0][2], Ip, I1, recalc_table, P::LENGTH_I_2CH);
      }
    };
       {
@@ -69,7 +69,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "pp/pp-2ch-a-AN-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, opch[0][3], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[0][3], Ip, I1, recalc_table, P::LENGTH_I_2CH);
      }
    };
     }
@@ -82,7 +82,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "pp/pp-2ch-b-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, opch[1][0], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, P::LENGTH_I_2CH);
      }
    };
       {
@@ -91,7 +91,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "pp/pp-2ch-b-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, opch[1][1], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, P::LENGTH_I_2CH);
      }
    };
       {
@@ -100,7 +100,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "pp/pp-2ch-b-AN-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, opch[1][2], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[1][2], Ip, I1, recalc_table, P::LENGTH_I_2CH);
      }
    };
       {
@@ -109,7 +109,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "pp/pp-2ch-b-AN-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, opch[1][3], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[1][3], Ip, I1, recalc_table, P::LENGTH_I_2CH);
      }
    };
     }

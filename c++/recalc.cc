@@ -9,7 +9,13 @@ struct Recalc_f {
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called
 // from recalc_irreduc() in nrg-recalc-* files.
-void recalc_f(const DiagInfo &dg, MatrixElements &ff, const Invar &Ip, const Invar &I1, const struct Recalc_f table[], size_t jmax, const Invar If = Sym->Invar_f) {
+void recalc_f(const DiagInfo &dg, 
+              QSrmax &qsrmax, 
+              MatrixElements &ff, 
+              const Invar &Ip, const Invar &I1, 
+              const struct Recalc_f table[], 
+              size_t jmax, 
+              const Invar If = Sym->Invar_f) {
   nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ") If=(" << If << ")");
   if (!Sym->recalc_f_coupled(I1, Ip, If)) {
     nrglog('f', "Does not fulfill the triangle inequalities.");
@@ -105,7 +111,10 @@ void split_in_blocks(DiagInfo &diag) {
 // recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
 // one should try to hand optimize.
 
-void recalc_general(const DiagInfo &dg, const MatrixElements &cold, MatrixElements &cnew,
+void recalc_general(const DiagInfo &dg, 
+                    QSrmax &qsrmax, // information about the matrix structure
+                    const MatrixElements &cold,
+                    MatrixElements &cnew,
                     const Invar &I1, // target subspace (bra)
                     const Invar &Ip, // target subspace (ket)
                     const struct Recalc table[],
@@ -192,7 +201,10 @@ void recalc_general(const DiagInfo &dg, const MatrixElements &cold, MatrixElemen
 
 // This routine is used for recalculation of global operators in
 // nrg-recalc-*.cc
-void recalc1_global(const DiagInfo &dg, const Invar &I, Matrix &m, size_t i1, size_t ip, t_factor value) {
+void recalc1_global(const DiagInfo &dg,
+// XXX                    QSrmax &qsrmax,
+                    const Invar &I, 
+                    Matrix &m, size_t i1, size_t ip, t_factor value) {
   nrglog('r', "recalc1_global: " << I);
   const Eigen &dgI = dg.find(I)->second;
   const size_t dim = dgI.getnr();

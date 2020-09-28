@@ -42,7 +42,7 @@ void SymmetryQJ::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold
 #include "qj/qj-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_D_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_D_3CH, Invar(1, 2));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_D_3CH, Invar(1, 2));
   }
 };
 
@@ -54,7 +54,7 @@ void SymmetryQJ::recalc_doublet(const DiagInfo &diag, const MatrixElements &cold
 #include "qj/qj-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_D_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_D_3CH, Invar(1, 2));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_D_3CH, Invar(1, 2));
   }
 };
   }
@@ -83,7 +83,7 @@ void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const MatrixElements &c
 #include "qj/qj-quad1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_Q1_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q1_3CH, Invar(1, 4));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q1_3CH, Invar(1, 4));
   }
 };
 
@@ -95,7 +95,7 @@ void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const MatrixElements &c
 #include "qj/qj-quad2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_Q2_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q2_3CH, Invar(1, 4));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q2_3CH, Invar(1, 4));
   }
 };
 
@@ -107,7 +107,7 @@ void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const MatrixElements &c
 #include "qj/qj-quad3.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_Q2_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q2_3CH, Invar(1, 4));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q2_3CH, Invar(1, 4));
   }
 };
 
@@ -119,7 +119,7 @@ void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const MatrixElements &c
 #include "qj/qj-quad4.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_Q1_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q1_3CH, Invar(1, 4));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q1_3CH, Invar(1, 4));
   }
 };
   }
@@ -143,7 +143,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qj/qj-spin_j3_2-jz3_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jz3_2);
-    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz3_2);
+    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz3_2);
   }
 };
 
@@ -155,7 +155,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qj/qj-spin_j1_2-jz1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j1_2_jz1_2);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j1_2_jz1_2);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j1_2_jz1_2);
   }
 };
     {
@@ -165,7 +165,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qj/qj-spin_j3_2-jz1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jz1_2);
-    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz1_2);
+    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz1_2);
   }
 };
 
@@ -177,7 +177,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qj/qj-spin_j1_2-jz-1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j1_2_jzM1_2);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j1_2_jzM1_2);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j1_2_jzM1_2);
   }
 };
     {
@@ -187,7 +187,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qj/qj-spin_j3_2-jz-1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jzM1_2);
-    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM1_2);
+    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM1_2);
   }
 };
 
@@ -199,7 +199,7 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qj/qj-spin_j3_2-jz-3_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jzM3_2);
-    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM3_2);
+    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM3_2);
   }
 };
   }

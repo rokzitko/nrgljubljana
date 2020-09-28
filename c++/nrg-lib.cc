@@ -1899,7 +1899,7 @@ void recalc_singlet(const DiagInfo &diag, const MatrixElements &nold, MatrixElem
       if (parity == -1) r.INp.InvertParity();
       recalc_table[i - 1] = r; // mind the -1 shift!
     }
-    recalc_general(diag, nold, nnew, Ip, I1, &recalc_table[0], P::combs, Sym->InvarSinglet);
+    recalc_general(diag, qsrmax, nold, nnew, Ip, I1, &recalc_table[0], P::combs, Sym->InvarSinglet);
   } // loop over is
 }
 
@@ -2515,11 +2515,10 @@ void calc_boltzmann_factors(DiagInfo &diag) {
 
 // NRG diagonalisation driver: calls nrg_diagionalisations() or load_transformations(), as necessary, and performs
 // the truncation. All other calculations are done in nrg_after_diag(). Called from nrg_iterate().
-DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev) {
+DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrmax) {
   nrglog('@', "@ nrg_do_diag()");
   infostring();
   show_coefficients();
-  qsrmax = get_qsrmax(diagprev);
   auto tasks = sort_task_list(nrg_determine_tasks(qsrmax));
   double diagratio = P::diagratio;
   DiagInfo diag;
@@ -2604,7 +2603,7 @@ void calc_abs_energies(DiagInfo &diag) {
 // - diag contains all information about the eigenstates.
 // - STAT::Egs had been computed
 // Also called from doZBW() as a final step.
-void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag) {
+void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax) {
   nrglog('@', "@ nrg_after_diag()");
   // Contribution to the total energy.
   STAT::total_energy += STAT::Egs * STAT::scale;
@@ -2670,8 +2669,9 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag) {
 
 // Perform one iteration step
 DiagInfo nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev) {
-  auto diag = nrg_do_diag(iterinfo, diagprev);
-  nrg_after_diag(iterinfo, diag);
+  qsrmax = get_qsrmax(diagprev);
+  auto diag = nrg_do_diag(iterinfo, diagprev, qsrmax);
+  nrg_after_diag(iterinfo, diag, qsrmax);
   nrg_trim_matrices(diag, iterinfo);
   nrg_clear_eigenvectors(diag);
   diag_after_truncation = diag; // ZZZ, replace with the trimmed version set in nrg_after_diag()
@@ -2722,7 +2722,7 @@ DiagInfo doZBW(IterInfo &iterinfo, const DiagInfo &diag0) {
   copy_sort_energies(diag, STAT::energies); // required in nrg_truncate_prepare()
   nrg_truncate_prepare(diag);               // determine # of kept and discarded states
   // end nrg_do_diag() equivalent
-  nrg_after_diag(iterinfo, diag);
+  nrg_after_diag(iterinfo, diag, qsrmax); // XXX: empty qsrmax?
   return diag;
 }
 

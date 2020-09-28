@@ -39,7 +39,7 @@ void SymmetrySL3::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "sl3/sl3-3ch-doublet.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_3CH, Invar(1, 0, 0));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_3CH, Invar(1, 0, 0));
   }
 };
   }
@@ -62,7 +62,7 @@ void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "sl3/sl3-3ch-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
   }
 };
 
@@ -74,7 +74,7 @@ void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "sl3/sl3-3ch-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
-    recalc_f(diag, opch[1][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
+    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
   }
 };
 
@@ -86,7 +86,7 @@ void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "sl3/sl3-3ch-c.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL3::LENGTH_I_3CH);
-    recalc_f(diag, opch[2][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
+    recalc_f(diag, qsrmax, opch[2][0], Ip, I1, recalc_table, SL3::LENGTH_I_3CH);
   }
 };
   }

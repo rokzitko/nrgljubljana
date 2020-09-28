@@ -51,7 +51,7 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "qst/qst-doubletp-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_a);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
   }
 };
 
@@ -63,7 +63,7 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "qst/qst-doubletm-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_a);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
   }
 };
 
@@ -75,7 +75,7 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "qst/qst-doubletp0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_b);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_b, Invar(1, 2, 1));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_b, Invar(1, 2, 1));
   }
 };
 
@@ -87,7 +87,7 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "qst/qst-doubletm0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_b);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_b, Invar(1, 2, 1));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_b, Invar(1, 2, 1));
   }
 };
 
@@ -99,7 +99,7 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "qst/qst-doubletp+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_a);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
   }
 };
 
@@ -111,7 +111,7 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, const MatrixElements &col
 #include "qst/qst-doubletm+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_a);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
   }
 };
   }
@@ -148,7 +148,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qst/qst-spinup+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_0);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_0);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_0);
   }
 };
 
@@ -161,7 +161,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qst/qst-spinup0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_1);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_1);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_1);
   }
 };
 
@@ -174,7 +174,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qst/qst-spinup-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_2);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_2);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_2);
   }
 };
 
@@ -187,7 +187,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qst/qst-spindo+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_0);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_0);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_0);
   }
 };
 
@@ -200,7 +200,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qst/qst-spindo0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_1);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_1);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_1);
   }
 };
 
@@ -213,7 +213,7 @@ void SymmetryQST::recalc_irreduc(const DiagInfo &diag, Opch &opch) {
 #include "qst/qst-spindo-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_2);
-    recalc_f(diag, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_2);
+    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, QST::LENGTH_I_3CH_2);
   }
 };
   }
@@ -237,7 +237,7 @@ void SymmetryQST::recalc_triplet(const DiagInfo &diag, const MatrixElements &col
 #include "qst/qst-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_T0_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_T0_3CH, Invar(0, 3, 0));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_T0_3CH, Invar(0, 3, 0));
   }
 };
 
@@ -249,7 +249,7 @@ void SymmetryQST::recalc_triplet(const DiagInfo &diag, const MatrixElements &col
 #include "qst/qst-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_Tpm_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_Tpm_3CH, Invar(0, 3, 0));
   }
 };
 
@@ -261,7 +261,7 @@ void SymmetryQST::recalc_triplet(const DiagInfo &diag, const MatrixElements &col
 #include "qst/qst-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_Tpm_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_Tpm_3CH, Invar(0, 3, 0));
   }
 };
   }
@@ -292,7 +292,7 @@ void SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const MatrixElements 
 #include "qst/qst-orb-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_OT0_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_OT0_3CH, Invar(0, 1, 1));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_OT0_3CH, Invar(0, 1, 1));
   }
 };
 
@@ -305,7 +305,7 @@ void SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const MatrixElements 
 #include "qst/qst-orb-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_OTpm_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_OTpm_3CH, Invar(0, 1, 1));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_OTpm_3CH, Invar(0, 1, 1));
   }
 };
 
@@ -318,7 +318,7 @@ void SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const MatrixElements 
 #include "qst/qst-orb-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_OTpm_3CH);
-    recalc_general(diag, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_OTpm_3CH, Invar(0, 1, 1));
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QST::LENGTH_OTpm_3CH, Invar(0, 1, 1));
   }
 };
   }
