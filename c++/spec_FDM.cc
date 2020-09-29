@@ -54,7 +54,7 @@ void SPEC_FDMgt::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op
   LOOP_D(j) // A3
      DELTA d;
   d.energy = Ej - Ei;
-  d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P::T);
+  d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
   cs->add(d.energy, d.weight);
 }
 }
@@ -62,7 +62,7 @@ LOOP_D(i)
 LOOP_K(j) // A2
    DELTA d;
 d.energy = Ej - Ei;
-d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P::T);
+d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
 cs->add(d.energy, d.weight);
 }
 }
@@ -97,7 +97,7 @@ void SPEC_FDMls::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op
   LOOP_D(j) // B3
      DELTA d;
   d.energy = Ej - Ei;
-  d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P::T);
+  d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
   cs->add(d.energy, d.weight);
 }
 }
@@ -119,7 +119,7 @@ LOOP_K(i)
 LOOP_D(j) // B1
    DELTA d;
 d.energy = Ej - Ei;
-d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P::T);
+d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
 cs->add(d.energy, d.weight);
 }
 }
@@ -138,7 +138,7 @@ class SPEC_FDMmats : public SPEC {
 
 void SPEC_FDMmats::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                         t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, DensMatElements &rhoFDM) {
-  const size_t cutoff = P::mats;
+  const size_t cutoff = P.mats;
   // (-sign)=1 for fermionic case, (-sign)=-1 for bosonic case
   double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   auto csm           = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
@@ -151,16 +151,16 @@ void SPEC_FDMmats::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &
   const size_t allj  = diagIj.getnr();
   LOOP_D(i) LOOP_D(j) DELTA dA; // A3
   dA.energy = Ej - Ei;
-  dA.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P::T); // a[ij] b[ji] exp(-beta e[i])
+  dA.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T); // a[ij] b[ji] exp(-beta e[i])
   DELTA dB;                                                                            // B3
   dB.energy = dA.energy;
-  dB.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P::T); // a[ij] b[ji] sign exp(-beta e[j])
+  dB.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T); // a[ij] b[ji] sign exp(-beta e[j])
 #pragma omp parallel for schedule(static)
   for (size_t n = 1; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, ww(n, bs.mt)) - dA.energy));
   if (bs.mt == matstype::fermionic || abs(dA.energy) > WEIGHT_TOL)
     csm->add(size_t(0), (dA.weight + dB.weight) / (cmpl(0, ww(0, bs.mt)) - dA.energy));
   else // bosonic w=0 && Ei=Ej case
-    csm->add(size_t(0), (-dA.weight / t_weight(P::T)));
+    csm->add(size_t(0), (-dA.weight / t_weight(P.T)));
 }
 }
 if (retj > 0 && alli > 0) {
@@ -170,7 +170,7 @@ if (retj > 0 && alli > 0) {
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
   LOOP_D(i) LOOP_K(j) DELTA dA; // A2
   dA.energy = Ej - Ei;
-  dA.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P::T);
+  dA.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
   DELTA dB; // B2
   dB.energy = dA.energy;
   dB.weight = spinfactor * CONJ_ME(op1II(j, i)) * rho_op2(j, i) * (-sign);
@@ -189,7 +189,7 @@ if (allj > 0 && reti > 0) {
   dA.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2_rho(j, i);
   DELTA dB; // B1
   dB.energy = dA.energy;
-  dB.weight = spinfactor * (-sign) * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ej / P::T);
+  dB.weight = spinfactor * (-sign) * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ej / P.T);
 #pragma omp parallel for schedule(static)
   for (size_t n = 0; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, ww(n, bs.mt)) - dA.energy));
 }
@@ -214,14 +214,14 @@ template <typename T> inline std::complex<T> boltz_fnc_noscale(T E1, T E2, T bzE
   if (n != 0 || abs(E1 - E2) > WEIGHT_TOL)    // integer test first!!
     return (bzE1 - bzE2) / cmpl(E1 - E2, wn); // bzE1 = exp(-E1/T), bzE2 = exp(-E2/T)
   else
-    return -bzE1 / P::T;
+    return -bzE1 / P.T;
 }
 
 // Check list:
 // 1. wn vs. 1, OK
-// 2. factor /P::T vs *scT, OK
+// 2. factor .P.T vs *scT, OK
 // 3. absolute energies (absenergy), no scale* factors, OK
-// 4. rho*exp(Ei/P::T) vs. 1, OK
+// 4. rho*exp(Ei.P.T) vs. 1, OK
 // 5. KKK correctness, OK
 // 6. numerical prefactors
 // 7. differences A vs. B: conjugation, index reversal
@@ -255,11 +255,11 @@ using res_t = std::vector<matrix<t_weight> >;
 
 void SPEC_FDM_v3mm::calc_A(const Eigen &diagi, const Eigen &diagj, const Eigen &diagl, const Matrix &op1, const Matrix &op2, const Matrix &op3,
                            const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, DensMatElements &rhoFDM) {
-  const double v3mmcutoff = P::v3mmcutoff * sqr(P::T); // order of contributions is prop to 1/T^2
+  const double v3mmcutoff = P.v3mmcutoff * sqr(P.T); // order of contributions is prop to 1/T^2
   size_t nr               = omp_get_max_threads();
   nrglog('G', "nr=" << nr);
-  const short maxn = P::mats;
-  const short maxm = P::mats;
+  const short maxn = P.mats;
+  const short maxm = P.mats;
   res_t res(nr);
   for (size_t j = 0; j < nr; j++) {
     res[j].resize(maxn, maxm); // (n,m) order
@@ -509,11 +509,11 @@ void SPEC_FDM_v3mm::calc_A(const Eigen &diagi, const Eigen &diagj, const Eigen &
 void SPEC_FDM_v3mm::calc_B(const Eigen &diagi, const Eigen &diagj, const Eigen &diagl, const Matrix &op1, const Matrix &op2, const Matrix &op3,
                            const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, DensMatElements &rhoFDM) {
   //   cout << "B" << endl;
-  const double v3mmcutoff = P::v3mmcutoff * sqr(P::T); // order of contributions is prop to 1/T^2
+  const double v3mmcutoff = P.v3mmcutoff * sqr(P.T); // order of contributions is prop to 1/T^2
   size_t nr               = omp_get_max_threads();
   nrglog('G', "nr=" << nr);
-  const short maxn = P::mats;
-  const short maxm = P::mats;
+  const short maxn = P.mats;
+  const short maxm = P.mats;
   res_t res(nr);
   for (size_t j = 0; j < nr; j++) {
     res[j].resize(maxn, maxm); // (n,m) order

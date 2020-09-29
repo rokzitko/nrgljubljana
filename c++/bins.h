@@ -4,7 +4,7 @@
 #ifndef _bins_h_
 #define _bins_h_
 
-// Binned spectral peaks. P::bins defines the number of bins per
+// Binned spectral peaks. P.bins defines the number of bins per
 // energy decade. The lowest and highest energies are defined by the
 // zero-th and last NRG energy scale.
 
@@ -51,8 +51,8 @@ const double MIN_BIN_SHIFT = 2.0;
 void Bins::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the
   // conduction band!!
-  emax = (P::emax > 0 ? P::emax : SCALE(0) * pow(base, MAX_BIN_SHIFT));
-  emin = (P::emin > 0 ? P::emin : LAST_STEP_SCALE() / pow(base, MIN_BIN_SHIFT));
+  emax = (P.emax > 0 ? P.emax : SCALE(0) * pow(base, MAX_BIN_SHIFT));
+  emin = (P.emin > 0 ? P.emin : LAST_STEP_SCALE() / pow(base, MIN_BIN_SHIFT));
   // Trick: use ceil/floor to obtain uniform binning grids for
   // different values of the twist parameter z!
   log10emin = floor(log10(emin));
@@ -60,26 +60,26 @@ void Bins::setlimits() {
 }
 
 void Bins::loggrid() {
-  my_assert(P::bins > 0);
-  binsperdecade = P::bins;
+  my_assert(P.bins > 0);
+  binsperdecade = P.bins;
   setlimits();
-  if (P::accumulation > 0.0)
+  if (P.accumulation > 0.0)
     loggrid_acc();
   else
     loggrid_std();
 }
 
 void Bins::loggrid_acc() {
-  const double a = P::accumulation;
+  const double a = P.accumulation;
   my_assert(a > 0.0);
   bins.resize(0);
   for (double e = emin; e <= emax; e *= pow(base, 1.0 / binsperdecade)) {
     double x = (emax - a) / emax * e + a;
     bins.push_back(make_pair(x, 0.0));
   }
-  if (P::linstep != 0.0) {
-    my_assert(P::linstep > 0.0);
-    for (double e = a; e > 0.0; e -= P::linstep) bins.push_back(make_pair(e, 0.0));
+  if (P.linstep != 0.0) {
+    my_assert(P.linstep > 0.0);
+    for (double e = a; e > 0.0; e -= P.linstep) bins.push_back(make_pair(e, 0.0));
   }
   bins.push_back(make_pair(DBL_MIN, 0.0)); // add zero point
   sort(begin(bins), end(bins), sortfirst());
@@ -95,8 +95,8 @@ void Bins::loggrid_std() {
 
 // Unbiased assignment of the spectral weight to bins.
 inline void Bins::add(double energy, t_weight weight) {
-  if (abs(weight) < P::discard_immediately * energy) return;
-  if (P::accumulation > 0.0)
+  if (abs(weight) < P.discard_immediately * energy) return;
+  if (P.accumulation > 0.0)
     add_acc(energy, weight);
   else
     add_std(energy, weight);
@@ -171,7 +171,7 @@ void Bins::trim() {
     const double enext = bins[i + 1].first; // increasing!
     my_assert(enext > e);
     const double ewidth = enext - e;
-    if (abs(wg) < P::discard_trim * ewidth)
+    if (abs(wg) < P.discard_trim * ewidth)
       discarded_weight_abs += abs(wg);
     else
       bins2.push_back(bins[i]);

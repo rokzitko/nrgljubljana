@@ -4,10 +4,10 @@
 // Rok Zitko, rok.zitko@ijs.si, July 2017
 // This file pertains to the case with only fermion number parity.
 
-namespace P {
+namespace symP {
 #include "p/p-1ch-def.dat"
 #include "p/p-2ch-def.dat"
-} // namespace P
+}
 
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2015
@@ -41,8 +41,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-1ch-a-CR-DO.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, P::LENGTH_I_1CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_1CH);
+       recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, symP::LENGTH_I_1CH);
      }
    };
             {
@@ -50,8 +50,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-1ch-a-CR-UP.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, P::LENGTH_I_1CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_1CH);
+       recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, symP::LENGTH_I_1CH);
      }
    };
             {
@@ -59,8 +59,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-1ch-a-AN-DO.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][2], Ip, I1, recalc_table, P::LENGTH_I_1CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_1CH);
+       recalc_f(diag, qsrmax, opch[0][2], Ip, I1, recalc_table, symP::LENGTH_I_1CH);
      }
    };
             {
@@ -68,8 +68,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-1ch-a-AN-UP.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][3], Ip, I1, recalc_table, P::LENGTH_I_1CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_1CH);
+       recalc_f(diag, qsrmax, opch[0][3], Ip, I1, recalc_table, symP::LENGTH_I_1CH);
      }
    }; } break;
   case 2: { {
@@ -77,8 +77,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-2ch-a-CR-DO.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
      }
    };
 	    {
@@ -86,8 +86,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-2ch-b-CR-DO.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
      }
    };
             {
@@ -95,8 +95,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-2ch-a-CR-UP.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
      }
    };
             {
@@ -104,8 +104,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-2ch-b-CR-UP.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
      }
    };
     	    {
@@ -113,8 +113,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-2ch-a-AN-DO.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][2], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[0][2], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
      }
    };
 	    {
@@ -122,8 +122,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-2ch-b-AN-DO.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][2], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[1][2], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
      }
    };
             {
@@ -131,8 +131,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-2ch-a-AN-UP.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][3], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[0][3], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
      }
    };
             {
@@ -140,8 +140,8 @@ void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch 
        struct Recalc_f recalc_table[] = {
 #include "p/p-2ch-b-AN-UP.dat"
        };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][3], Ip, I1, recalc_table, P::LENGTH_I_2CH);
+       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
+       recalc_f(diag, qsrmax, opch[1][3], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
      }
    } } break;
   default: my_assert_not_reached();
@@ -157,23 +157,23 @@ void SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const
 
     switch (channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "p/p-1ch-doublet.dat" << ", len=" << P::LENGTH_D_1CH << ", Iop=" << Invar(-1) << ")");
+  nrglog('f', "RECALC(fn=" << "p/p-1ch-doublet.dat" << ", len=" << symP::LENGTH_D_1CH << ", Iop=" << Invar(-1) << ")");
   if (diag.count(Ip)) {
     struct Recalc recalc_table[] = {
 #include "p/p-1ch-doublet.dat"
     };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_D_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, P::LENGTH_D_1CH, Invar(-1));
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_D_1CH);
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, symP::LENGTH_D_1CH, Invar(-1));
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "p/p-2ch-doublet.dat" << ", len=" << P::LENGTH_D_2CH << ", Iop=" << Invar(-1) << ")");
+  nrglog('f', "RECALC(fn=" << "p/p-2ch-doublet.dat" << ", len=" << symP::LENGTH_D_2CH << ", Iop=" << Invar(-1) << ")");
   if (diag.count(Ip)) {
     struct Recalc recalc_table[] = {
 #include "p/p-2ch-doublet.dat"
     };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == P::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, P::LENGTH_D_2CH, Invar(-1));
+    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_D_2CH);
+    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, symP::LENGTH_D_2CH, Invar(-1));
   }
 } } break;
   default: my_assert_not_reached();

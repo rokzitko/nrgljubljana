@@ -54,7 +54,7 @@ Symmetry *SymPP = new SymmetryPP;
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
 
-void SymmetryPP::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void Symmetry.P.makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
 
     case 2:
@@ -89,7 +89,7 @@ void SymmetryPP::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const In
 #undef DIAG_DOWN
 #define DIAG_DOWN(i, j, ch, number) diag_function(i, ch, number, zetaDOWN(STAT::N + 1, ch), h, qq)
 
-void SymmetryPP::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void Symmetry.P.makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
 
     case 2:
@@ -106,8 +106,8 @@ void SymmetryPP::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar
   }
 }
 
-void SymmetryPP::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (P::polarized) {
+void Symmetry.P.makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+  if (P.polarized) {
     makematrix_polarized(h, qq, I, In, opch);
   } else {
     makematrix_nonpolarized(h, qq, I, In, opch);

@@ -29,18 +29,18 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch
 
     {
       Invar I1 = Invar(-pa, pb);
-      RECALC_F_TAB_P("pp/pp-2ch-a-CR-DO.dat", 0, 0, P::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-a-CR-UP.dat", 0, 1, P::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-a-AN-DO.dat", 0, 2, P::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-a-AN-UP.dat", 0, 3, P::LENGTH_I_2CH);
+      RECALC_F_TAB_P("pp/pp-2ch-a-CR-DO.dat", 0, 0, PP::LENGTH_I_2CH);
+      RECALC_F_TAB_P("pp/pp-2ch-a-CR-UP.dat", 0, 1, PP::LENGTH_I_2CH);
+      RECALC_F_TAB_P("pp/pp-2ch-a-AN-DO.dat", 0, 2, PP::LENGTH_I_2CH);
+      RECALC_F_TAB_P("pp/pp-2ch-a-AN-UP.dat", 0, 3, PP::LENGTH_I_2CH);
     }
 
     {
       Invar I1 = Invar(pa, -pb);
-      RECALC_F_TAB_P("pp/pp-2ch-b-CR-DO.dat", 1, 0, P::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-b-CR-UP.dat", 1, 1, P::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-b-AN-DO.dat", 1, 2, P::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-b-AN-UP.dat", 1, 3, P::LENGTH_I_2CH);
+      RECALC_F_TAB_P("pp/pp-2ch-b-CR-DO.dat", 1, 0, PP::LENGTH_I_2CH);
+      RECALC_F_TAB_P("pp/pp-2ch-b-CR-UP.dat", 1, 1, PP::LENGTH_I_2CH);
+      RECALC_F_TAB_P("pp/pp-2ch-b-AN-DO.dat", 1, 2, PP::LENGTH_I_2CH);
+      RECALC_F_TAB_P("pp/pp-2ch-b-AN-UP.dat", 1, 3, PP::LENGTH_I_2CH);
     }
   }
 }

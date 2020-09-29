@@ -4,8 +4,8 @@
 #ifndef _dmnrg_h_
 #define _dmnrg_h_
 
-string rhofn(const string &prefix, int N) { return P::workdir + "/" + prefix + to_string(N); }
-string unitaryfn(size_t N) { return P::workdir + "/" + FN_UNITARY + to_string(N); }
+string rhofn(const string &prefix, int N) { return P.workdir + "/" + prefix + to_string(N); }
+string unitaryfn(size_t N) { return P.workdir + "/" + FN_UNITARY + to_string(N); }
 
 // Choose one!
 #define LINEBYLINE
@@ -58,7 +58,7 @@ void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
 #endif
 
 void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
-  my_assert(P::Ninit <= N && N <= P::Nmax - 1);
+  my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Storing density matrices [N=" << N << "]... ");
   const string fn = rhofn(prefix, N);
   std::ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
@@ -83,7 +83,7 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
 int remove(string filename) { return remove(filename.c_str()); }
 
 DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
-  my_assert(P::Ninit <= N && N <= P::Nmax - 1);
+  my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Loading density matrices [N=" << N << "]...");
   DensMatElements rho;
   const string fn = rhofn(prefix, N);
@@ -104,7 +104,7 @@ DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
   MATRIXF.close();
   if (checkrho) 
     check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
-  if (P::removefiles)
+  if (P.removefiles)
     if (remove(fn)) my_error("Error removing %s", fn.c_str());
   return rho;
 }
@@ -120,13 +120,13 @@ DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
  perform a truncation at the moment of the partial diagonalization!! */
 
 void store_transformations(size_t N, const DiagInfo &diag) {
-  // P::Ninit-1 corresponds to the zero-th step, when diag contains the
+  // P.Ninit-1 corresponds to the zero-th step, when diag contains the
   // eigenvalues from the initial diagonalization and the unitary matrices
   // are all identity matrices.
-  if (!P::ZBW) {
-    my_assert(N + 1 >= P::Ninit && N + 1 <= P::Nmax);
+  if (!P.ZBW) {
+    my_assert(N + 1 >= P.Ninit && N + 1 <= P.Nmax);
   } else
-    my_assert(N == P::Ninit);
+    my_assert(N == P.Ninit);
   nrglog('H', "Storing transformation matrices (N=" << N << ")...");
   const string fn = unitaryfn(N);
   ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
@@ -150,10 +150,10 @@ void store_transformations(size_t N, const DiagInfo &diag) {
 
 DiagInfo load_transformations(size_t N) {
   DiagInfo diag;
-  if (!P::ZBW) {
-    my_assert(N + 1 >= P::Ninit && N + 1 <= P::Nmax);
+  if (!P.ZBW) {
+    my_assert(N + 1 >= P.Ninit && N + 1 <= P.Nmax);
   } else
-    my_assert(N == P::Ninit);
+    my_assert(N == P.Ninit);
   nrglog('H', "Loading transformation matrices (N=" << N << ")...");
   const string fn = unitaryfn(N);
   std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
@@ -176,14 +176,14 @@ DiagInfo load_transformations(size_t N) {
 }
 
 void remove_transformation_files(size_t N) {
-  if (!P::removefiles) return;
+  if (!P.removefiles) return;
   const string fn = unitaryfn(N);
   if (remove(fn)) my_error("Error removing %s", fn.c_str());
 }
 
 // Calculation of the contribution from subspace I1 of rhoN (density
 // matrix at iteration N) to rhoNEW (density matrix at iteration N-1)
-void cdmI(size_t i,            // Subspace index (alpha=1,...,P::combs)
+void cdmI(size_t i,            // Subspace index (alpha=1,...,P.combs)
           const Invar &I1,     // Quantum numbers corresponding to subspace i
           const Matrix &rhoN,  // rho^N
           const Eigen &diagI1, // contains U_{I1}
@@ -242,7 +242,7 @@ void cdmI(size_t i,            // Subspace index (alpha=1,...,P::combs)
 
 InvarVec dmnrg_subspaces(const Invar &I) {
   InvarVec input = input_subspaces();
-  for (size_t i = 1; i <= P::combs; i++) {
+  for (size_t i = 1; i <= P.combs; i++) {
     input[i].inverse();
     input[i].combine(I);
   }
@@ -264,7 +264,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
     rhoPrev[I]          = Matrix(dim, dim);
     if (!dim) continue;
     rhoPrev[I].clear();
-    for (size_t i = 1; i <= P::combs; i++) {
+    for (size_t i = 1; i <= P.combs; i++) {
       Invar sub = subs[i];
       const auto x = rho.find(sub);
       const auto y = diag.find(sub);
@@ -285,7 +285,7 @@ bool file_exists(const string &fn)
 // Returns true if all the required density matrices are already
 // saved on the disk.
 bool already_computed(const string &prefix) {
-  for (size_t N = P::Nmax - 1; N > P::Ninit; N--) {
+  for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     const string fn = rhofn(prefix, N - 1); // note the minus 1
     if (!file_exists(fn)) {
       cout << fn << " not found. Computing." << endl;
@@ -301,14 +301,14 @@ bool already_computed(const string &prefix) {
 
 void calc_densitymatrix(DensMatElements &rho) {
   nrglog('@', "@ calc_densitymatrix");
-  if (P::resume && already_computed(FN_RHO)) {
+  if (P.resume && already_computed(FN_RHO)) {
     cout << "Not necessary: already computed!" << endl;
     return;
   }
   check_trace_rho(rho); // Must be 1.
-  if (P::ZBW) return;
+  if (P.ZBW) return;
   TIME("DM");
-  for (size_t N = P::Nmax - 1; N > P::Ninit; N--) {
+  for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     cout << "[DM] " << N << endl;
     DiagInfo diag_loaded = load_transformations(N);
     DensMatElements rhoPrev;
@@ -338,7 +338,7 @@ DensMatElements init_rho_FDM(size_t N) { // XXX: dm
     rhoFDM[I].clear();
     Matrix &rhoI = rhoFDM[I];
     for (size_t i = dimsub.min(); i < dimsub.max(); i++) {
-      const double betaE = dimsub.absenergyN[i] / P::T;
+      const double betaE = dimsub.absenergyN[i] / P.T;
       const double ratio = STAT::wn[N] / mpf_get_d(STAT::ZnDN[N]);
       double val2        = exp(-betaE) * ratio;
       val2               = std::isfinite(val2) ? val2 : 0.0;
@@ -370,7 +370,7 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
     rhoFDMPrev[I]       = Matrix(dim, dim);
     if (!dim) continue;
     rhoFDMPrev[I].clear();
-    for (size_t i = 1; i <= P::combs; i++) {
+    for (size_t i = 1; i <= P.combs; i++) {
       const auto sub = subs[i];
       // DM construction for non-Abelian symmetries: must include
       // the ratio of multiplicities as a coefficient.
@@ -394,19 +394,19 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
 // Sum of statistical weights from site N to the end of the Wilson chain.
 double sum_wn(size_t N) {
   double sum = 0.0;
-  for (size_t n = P::Nmax - 1; n >= N; n--) sum += STAT::wn[n];
+  for (size_t n = P.Nmax - 1; n >= N; n--) sum += STAT::wn[n];
   return sum;
 }
 
 void calc_fulldensitymatrix(DensMatElements &rhoFDM) {
   nrglog('@', "@ calc_densitymatrix");
-  if (P::resume && already_computed(FN_RHOFDM)) {
+  if (P.resume && already_computed(FN_RHOFDM)) {
     cout << "Not necessary: already computed!" << endl;
     return;
   }
-  if (P::ZBW) return;
+  if (P.ZBW) return;
   TIME("FDM");
-  for (size_t N = P::Nmax - 1; N > P::Ninit; N--) {
+  for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     cout << "[FDM] " << N << endl;
     DiagInfo diag_loaded = load_transformations(N);
     DensMatElements rhoFDMPrev;

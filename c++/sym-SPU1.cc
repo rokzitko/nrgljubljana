@@ -27,7 +27,7 @@ class SymmetrySPU1 : public SymField {
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override { return u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ")); }
 
   void load() override {
-    if (!P::substeps) {
+    if (!P.substeps) {
       switch (channels) {
         case 1:
 #include "spu1/spu1-1ch-In2.dat"
@@ -87,7 +87,7 @@ Symmetry *SymSPU1 = new SymmetrySPU1;
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
 
 void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (!P::substeps) {
+  if (!P.substeps) {
     switch (channels) {
       case 1:
 #include "spu1/spu1-1ch-offdiag.dat"
@@ -106,7 +106,7 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const 
       default: my_assert_not_reached();
     }
   } else {
-    my_assert(P::coeffactor == 1);
+    my_assert(P.coeffactor == 1);
     int Ntrue, M;
     tie(Ntrue, M) = get_Ntrue_M(STAT::N);
 
@@ -150,7 +150,7 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const 
 #define DIAG_DOWN(i, j, ch, number) diag_function_half(i, ch, number, zetaDOWN(STAT::N + 1, ch), h, qq)
 
 void SymmetrySPU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (!P::substeps) {
+  if (!P.substeps) {
     switch (channels) {
       case 1:
 #include "spu1/spu1-1ch-offdiag-UP.dat"
@@ -178,7 +178,7 @@ void SymmetrySPU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inv
 }
 
 void SymmetrySPU1::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (P::polarized) {
+  if (P.polarized) {
     makematrix_polarized(h, qq, I, In, opch);
   } else {
     makematrix_nonpolarized(h, qq, I, In, opch);

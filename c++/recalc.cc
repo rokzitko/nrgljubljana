@@ -82,11 +82,11 @@ struct Recalc {
 // in the recalculation of matrix elements. Note that the original (matrix0) data is discarded after the splitting
 // had completed!
 void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
-  e.blocks.resize(P::combs);
+  e.blocks.resize(P.combs);
   const size_t nr = e.getnr(); // nr. of eigenpairs
   my_assert(nr > 0);
   my_assert(nr <= e.getrmax()); // rmax = length of eigenvectors
-  for (size_t block = 0; block < P::combs; block++) {
+  for (size_t block = 0; block < P.combs; block++) {
     const size_t rmax   = qsrmax.at(I).rmax(block + 1); // offset 1
     const size_t offset = qsrmax.at(I).offset(block + 1);
     my_assert(e.matrix0.size1() >= nr);
@@ -173,7 +173,7 @@ void recalc_general(const DiagInfo &dg,
     if (logletter('r')) cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << endl;
     /* RECALL: rmax1 - dimension of the subspace of invariant subspace I1
      spanned by the states originating from the combination |I1>_i1, where
-     i1=1...P::combs. It is clearly equal to the dimension of the invariant
+     i1=1...P.combs. It is clearly equal to the dimension of the invariant
      subspace IN1 from the previous (N-th) iteration. */
     // m: irreducible elements at previous stage
     const Matrix &m = cold.at(ININ);

@@ -37,7 +37,7 @@ Invar ancestor(Invar I, int i)
 InvarVec ancestors(Invar I)
 {
   auto input = input_subspaces();
-  for (size_t i = 1; i <= P::combs; i++)
+  for (size_t i = 1; i <= P.combs; i++)
     input[i].combine(I); // In is the list of differences wrt I
   return input;
 }
@@ -128,8 +128,8 @@ class Symmetry {
 
   void report() {
     if (!logletter('Q')) return;
-    for (size_t i = 1; i <= P::combs; i++) cout << "In[" << i << "]=(" << In[i] << ")" << endl;
-    for (size_t i = 1; i <= P::combs; i++) cout << "QN[" << i << "]=(" << QN[i] << ")" << endl;
+    for (size_t i = 1; i <= P.combs; i++) cout << "In[" << i << "]=(" << In[i] << ")" << endl;
+    for (size_t i = 1; i <= P.combs; i++) cout << "QN[" << i << "]=(" << QN[i] << ")" << endl;
   }
 
   // Is an invariant subspace with given quantum numbers allowed?

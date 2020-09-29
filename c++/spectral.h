@@ -35,7 +35,7 @@ void output(ostream &F, double x1, double x2, t_weight y, bool imagpart) {
 }
 
 void save_densfunc(ostream &F, const Spikes &xy, bool imagpart = false) {
-  F << setprecision(P::prec_xy);
+  F << setprecision(P.prec_xy);
   for (const auto &i : xy) output(F, i.first, i.second, imagpart);
 }
 

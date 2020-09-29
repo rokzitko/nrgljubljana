@@ -15,7 +15,7 @@ void SPEC_DMNRG::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   double Emin = getEmin(); // used in optimization
   double Emax = getEmax();
-  if (P::ZBW) {
+  if (P.ZBW) {
     Emin = 0;
     Emax = std::numeric_limits<double>::max(); // infinity
   }
@@ -76,11 +76,11 @@ void SPEC_DMNRGmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix
       for (size_t ri = 0; ri < dim1; ri++) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
       t_weight weightB = t_weight(sumB) * op2II(rj, rm);
       d.weight         = spinfactor * (weightA + (-sign) * weightB);
-      for (size_t n = 1; n < P::mats; n++) csm->add(n, d.weight / (cmpl(0, ww(n, bs.mt)) - scale * d.energy));
+      for (size_t n = 1; n < P.mats; n++) csm->add(n, d.weight / (cmpl(0, ww(n, bs.mt)) - scale * d.energy));
       if (abs(d.energy) > WEIGHT_TOL || bs.mt == matstype::fermionic)
         csm->add(size_t(0), d.weight / (cmpl(0, ww(0, bs.mt)) - scale * d.energy));
       else // bosonic w=0 && E1=Ep case
-        csm->add(size_t(0), spinfactor * (-weightA / t_weight(P::T)));
+        csm->add(size_t(0), spinfactor * (-weightA / t_weight(P.T)));
     }
   }
 }

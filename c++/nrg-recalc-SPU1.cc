@@ -28,7 +28,7 @@ namespace SPU1 {
 
 // Recalculate matrix elements of a doublet tensor operator
 void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  if (!P::substeps) {
+  if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       SZspin ssz1 = I1.get("SSZ");
       Invar Ip;
@@ -117,7 +117,7 @@ void SymmetrySPU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
 
 // Driver routine for recalc_f()
 void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  my_assert(!P::substeps);
+  my_assert(!P.substeps);
 
   for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
@@ -197,7 +197,7 @@ void SymmetrySPU1::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Op
 
 // Driver routine for recalc_f()
 void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
-  my_assert(P::substeps);
+  my_assert(P.substeps);
 
   for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
@@ -231,7 +231,7 @@ void SymmetrySPU1::recalc_irreduc_substeps(const DiagInfo &diag, const QSrmax &q
 
 // Recalculate matrix elements of a triplet tenzor operator
 void SymmetrySPU1::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  if (!P::substeps) {
+  if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       SZspin ssz1 = I1.get("SSZ");
       Invar Ip;

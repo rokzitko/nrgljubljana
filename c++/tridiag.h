@@ -43,8 +43,8 @@ void tridiag_ch(int alpha) {
   my_assert(u0p.max(alpha) == mMAX);
   my_assert(u0m.max(alpha) == mMAX);
 
-  mpf_set_default_prec(P::preccpp);
-  cout << "Using precision of " << P::preccpp << " digits." << endl;
+  mpf_set_default_prec(P.preccpp);
+  cout << "Using precision of " << P.preccpp << " digits." << endl;
 
   // Constants
   my_mpf mpZERO;
@@ -84,7 +84,7 @@ void tridiag_ch(int alpha) {
 
   fix_norm(up_prev, um_prev, mMAX);
 
-  for (unsigned int n = 0; n <= P::Nmax; n++) {
+  for (unsigned int n = 0; n <= P.Nmax; n++) {
     // Calculate zeta_n, xi2_n and xi_n
     mpf_set(mpzeta, mpZERO);
     mpf_set(xi2, mpZERO);
@@ -153,8 +153,8 @@ void tridiag_ch(int alpha) {
     // Save results
     double dxi       = mpf_get_d(mpxi);
     double dzeta     = mpf_get_d(mpzeta);
-    double coef_xi   = dxi * P::bandrescale;
-    double coef_zeta = dzeta * P::bandrescale;
+    double coef_xi   = dxi * P.bandrescale;
+    double coef_zeta = dzeta * P.bandrescale;
 
     xi.setvalue(n, alpha, coef_xi);
     zeta.setvalue(n, alpha, coef_zeta);
@@ -177,8 +177,8 @@ void tridiag_ch(int alpha) {
 
 void tridiag() {
   TIME("tridiag");
-  my_assert(P::coefchannels >= 1);
-  for (unsigned int alpha = 0; alpha < P::coefchannels; alpha++) tridiag_ch(alpha);
+  my_assert(P.coefchannels >= 1);
+  for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha);
 }
 
 #endif // _tridiag_h_

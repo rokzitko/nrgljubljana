@@ -132,7 +132,7 @@ void SymmetrySPSU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, co
       default: my_assert_not_reached();
     }
   } else {
-    my_assert(P::coeffactor == 1);
+    my_assert(P.coeffactor == 1);
     int Ntrue, M;
     tie(Ntrue, M) = get_Ntrue_M(STAT::N);
 

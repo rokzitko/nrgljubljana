@@ -20,7 +20,7 @@ class Matsubara2 {
     v(m, n) += w;
   }
   void save(ostream &F) const {
-    F << setprecision(P::prec_xy);
+    F << setprecision(P.prec_xy);
     matstype mt1 = (mt == matstype::fb ? matstype::fermionic : matstype::bosonic);
     matstype mt2 = (mt == matstype::bf ? matstype::fermionic : matstype::bosonic);
     for (size_t m = 0; m < v.size1(); m++)

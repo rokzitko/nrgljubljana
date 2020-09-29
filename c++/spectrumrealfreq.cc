@@ -48,14 +48,14 @@ void SpectrumRealFreq::mergeCFS(spCS_t cs) {
 // omega_N*goodE*Lambda^2.
 double getfactor() {
   double factor;
-  if (P::channels == 1 && !P::NN1)
-    factor = P::Lambda; // N/N+2 patching
+  if (P.channels == 1 && !P.NN1)
+    factor = P.Lambda; // N/N+2 patching
   else
-    factor = sqrt(P::Lambda); // N/N+1 patching
+    factor = sqrt(P.Lambda); // N/N+1 patching
   return factor;
 }
 
-double getE0() { return P::goodE; }
+double getE0() { return P.goodE; }
 
 // Note: in the current iteration, spectral peaks in the [0:Emin] are
 // discarded.
@@ -69,7 +69,7 @@ double getEmax() { return getE0() * sqr(getfactor()); }
 // Window function: f(0)=0, f(1)=1.
 inline double fnc_linear(double x) { return x; }
 
-inline double fnc_tanh_0(double x) { return tanh(P::NNtanh * (x - 0.5)); }
+inline double fnc_tanh_0(double x) { return tanh(P.NNtanh * (x - 0.5)); }
 
 inline double fnc_tanh(double x) {
   const double f0 = fnc_tanh_0(0.0);
@@ -79,7 +79,7 @@ inline double fnc_tanh(double x) {
 }
 
 inline double fnc(double x) {
-  if (P::NNtanh > 0.0)
+  if (P.NNtanh > 0.0)
     return fnc_tanh(x);
   else
     return fnc_linear(x);
@@ -91,7 +91,7 @@ inline double windowfunction(double E, double Emin, double Ex, double Emax) {
   // Exception 2
   if (E >= Ex && FIRST_ITERATION()) return 1.0;
   // Exception 3
-  if (P::ZBW) return 1.0;
+  if (P.ZBW) return 1.0;
   if (E <= Emin || E >= Emax) return 0.0;
   if (Emin < E && E <= Ex) return fnc((E - Emin) / (Ex - Emin));
   if (Ex < E && E < Emax) return 1.0 - fnc((E - Ex) / (Emax - Ex));
@@ -105,7 +105,7 @@ void mergeNN2half(Bins &fullspec, const Bins &cs) {
   double Emin = STAT::scale * getEmin(); // p
   double Ex   = STAT::scale * getEx();   // p Lambda
   double Emax = STAT::scale * getEmax(); // p Lambda^2
-  if (P::ZBW) {                          // override for zero bandwidth calculation
+  if (P.ZBW) {                          // override for zero bandwidth calculation
     Emin = 0;
     Emax = std::numeric_limits<double>::max(); // infinity
   }
@@ -115,7 +115,7 @@ void mergeNN2half(Bins &fullspec, const Bins &cs) {
     const double energy   = cs.bins[i].first;
     const t_weight weight = cs.bins[i].second;
     if (Emin < energy && energy < Emax && weight != 0.0) {
-      const double factor = (P::NN2avg ? 0.5 : 1.0);
+      const double factor = (P.NN2avg ? 0.5 : 1.0);
       fullspec.bins[i].second += factor * weight * windowfunction(energy, Emin, Ex, Emax);
     }
   }
@@ -124,10 +124,10 @@ void mergeNN2half(Bins &fullspec, const Bins &cs) {
 // Return true if the spectral-function merging is to be performed at the
 // current NRG iteration.
 bool N_for_merging(int N) {
-  if (P::NN1) return true;
-  if (P::NN2avg) return true;
+  if (P.NN1) return true;
+  if (P.NN2avg) return true;
   const bool even = IS_EVEN(N);
-  return (P::NN2even ? even : !even);
+  return (P.NN2even ? even : !even);
 }
 
 // Spectrum merging using the N/N+n patching. One has to be careful about
@@ -161,31 +161,31 @@ void SpectrumRealFreq::weight_report() {
   const t_weight mom2 = moment(fsneg.bins, fspos.bins, 2);
   const t_weight mom3 = moment(fsneg.bins, fspos.bins, 3);
   const t_weight mom4 = moment(fsneg.bins, fspos.bins, 4);
-  const t_weight f    = fd_fermi(fsneg.bins, fspos.bins, P::T);
-  const t_weight b    = fd_bose(fsneg.bins, fspos.bins, P::T);
+  const t_weight f    = fd_fermi(fsneg.bins, fspos.bins, P.T);
+  const t_weight b    = fd_bose(fsneg.bins, fspos.bins, P.T);
   cout << "mu1=" << fmt(mom1) << " mu2=" << fmt(mom2) << " mu3=" << fmt(mom3) << " mu4=" << fmt(mom4) << endl;
   cout << "f=" << fmt(f) << " b=" << fmt(b) << endl;
 }
 
 /* Here we set the lowest frequency at which we will evaluate the spectral
  density. If the value is not predefined in the parameters file, use the
- smallest scale from the calculation multiplied by P::broaden_min_ratio. */
+ smallest scale from the calculation multiplied by P.broaden_min_ratio. */
 
-double get_broaden_min() { return (P::broaden_min <= 0.0 ? P::broaden_min_ratio * LAST_STEP_SCALE() : P::broaden_min); }
+double get_broaden_min() { return (P.broaden_min <= 0.0 ? P.broaden_min_ratio * LAST_STEP_SCALE() : P.broaden_min); }
 
 // Energy mesh for spectral functions
 std::vector<double> make_mesh() {
   const double broaden_min = get_broaden_min();
   std::vector<double> vecE; // Energies on the mesh
-  for (double E = P::broaden_max; E > broaden_min; E /= P::broaden_ratio) vecE.push_back(E);
+  for (double E = P.broaden_max; E > broaden_min; E /= P.broaden_ratio) vecE.push_back(E);
   return vecE;
 }
 
 // Save binary raw (binned) spectral function. If using complex
-// numbers and P::reim==true, we save triplets (energy,real part,imag
+// numbers and P.reim==true, we save triplets (energy,real part,imag
 // part).
 void SpectrumRealFreq::savebins() {
-  if (!P::savebins) return;
+  if (!P.savebins) return;
   string fn = filename + ".bin";
   cout << " " << fn;
   ofstream Fbins = safeopen(fn, true); // true=binary!
@@ -195,7 +195,7 @@ void SpectrumRealFreq::savebins() {
     my_assert(e > 0.0);
     Fbins.write((char *)&e, sizeof(double));
     Fbins.write((char *)&w, sizeof(double));
-    if (P::reim) {
+    if (P.reim) {
       const double wi = WEIGHT(i).imag();
       Fbins.write((char *)&wi, sizeof(double));
     }
@@ -206,7 +206,7 @@ void SpectrumRealFreq::savebins() {
     my_assert(e < 0.0); // attention!
     Fbins.write((char *)&e, sizeof(double));
     Fbins.write((char *)&w, sizeof(double));
-    if (P::reim) {
+    if (P.reim) {
       const double wi = WEIGHT(i).imag();
       Fbins.write((char *)&wi, sizeof(double));
     }
@@ -219,9 +219,9 @@ void SpectrumRealFreq::trim() {
 }
 
 void SpectrumRealFreq::continuous() {
-  if (!P::broaden) return;
-  const double alpha  = P::alpha;
-  const double omega0 = (P::omega0 < 0.0 ? P::omega0_ratio * P::T : P::omega0);
+  if (!P.broaden) return;
+  const double alpha  = P.alpha;
+  const double omega0 = (P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0);
   Spikes densitypos, densityneg;
   std::vector<double> vecE = make_mesh(); // Energies on the mesh
   for (double E : vecE) {
@@ -248,6 +248,6 @@ void SpectrumRealFreq::continuous() {
   string fn = filename + ".dat";
   cout << " " << fn;
   ofstream Fdensity = safeopen(fn);
-  save_densfunc(Fdensity, densityneg, P::reim);
-  save_densfunc(Fdensity, densitypos, P::reim);
+  save_densfunc(Fdensity, densityneg, P.reim);
+  save_densfunc(Fdensity, densitypos, P.reim);
 }

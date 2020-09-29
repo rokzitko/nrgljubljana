@@ -108,7 +108,7 @@ void SymmetryNONE::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inv
 }
 
 void SymmetryNONE::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (P::polarized) {
+  if (P.polarized) {
     makematrix_polarized(h, qq, I, In, opch);
   } else {
     makematrix_nonpolarized(h, qq, I, In, opch);

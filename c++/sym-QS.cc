@@ -136,7 +136,7 @@ void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const
       case 2:
 #include "qs/qs-2ch-diag.dat"
 #include "qs/qs-2ch-offdiag.dat"
-        if (P::rungs) {
+        if (P.rungs) {
 #include "qs/qs-2ch-offdiag-mix.dat"
 #include "qs/qs-2ch-runghop.dat"
         }
@@ -155,7 +155,7 @@ void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const
       default: my_assert_not_reached();
     }
   } else {
-    my_assert(P::coeffactor == 1);
+    my_assert(P.coeffactor == 1);
     int Ntrue, M;
     tie(Ntrue, M) = get_Ntrue_M(STAT::N);
 
@@ -171,14 +171,14 @@ void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const
 #include "qs/qs-1ch-offdiag.dat"
 #include "qs/qs-1ch-diag.dat"
 
-    if (P::rungs) my_error("Not implemented.");
+    if (P.rungs) my_error("Not implemented.");
   }
 }
 
 void SymmetryQS::show_coefficients() {
-  if (P::rungs) {
+  if (P.rungs) {
     using namespace STAT;
-    for (unsigned int i = 0; i < P::channels; i++) {
+    for (unsigned int i = 0; i < P.channels; i++) {
       cout << "[" << i + 1 << "]"
            << " xi_rung(" << N << ")=" << xiR(N, i) << " zeta_rung(" << N + 1 << ")=" << zetaR(N + 1, i) << endl;
     }

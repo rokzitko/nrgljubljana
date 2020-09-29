@@ -37,7 +37,7 @@ class SPEC_FTmats : public SPEC {
 
 void SPEC_FTmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                        t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &) {
-  const size_t cutoff = P::mats;
+  const size_t cutoff = P.mats;
   double sign         = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   auto csm            = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   using namespace STAT;
@@ -53,7 +53,7 @@ void SPEC_FTmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &o
       if (abs(d.energy) > WEIGHT_TOL || bs.mt == matstype::fermionic)
         csm->add(size_t(0), d.weight / (cmpl(0, ww(0, bs.mt)) - scale * d.energy));
       else // bosonic w=0 && E1=Ep case
-        csm->add(size_t(0), (spinfactor / Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * (-exp(-E1 * scT) / P::T));
+        csm->add(size_t(0), (spinfactor / Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * (-exp(-E1 * scT) / P.T));
     }
   }
 }
@@ -95,7 +95,7 @@ void SPEC_GT_generic::calc(const Eigen &diagIp, const Eigen &diagI1, const Matri
                            t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   my_assert(sign == S_FERMIONIC);                  // restricted implementation
-  const double temperature = P::gtp * STAT::scale; // in absolute units!
+  const double temperature = P.gtp * STAT::scale; // in absolute units!
   const double beta        = 1.0 / temperature;
   weight_bucket value;
   for (size_t r1 = 0; r1 < diagI1.getnr(); r1++) {
@@ -155,7 +155,7 @@ void SPEC_CHIT::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1
   const size_t dimp = diagIp.getnr();
   const size_t dim1 = diagI1.getnr();
   my_assert(dim1 == dimp);
-  const double temperature = P::chitp * STAT::scale; // in absolute units!
+  const double temperature = P.chitp * STAT::scale; // in absolute units!
   const double beta        = 1.0 / temperature;
   weight_bucket w;
   for (size_t r1 = 0; r1 < dim1; r1++) {

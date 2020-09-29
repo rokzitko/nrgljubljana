@@ -307,12 +307,12 @@ Eigen diagonalise(Matrix &m) {
   my_assert(M == d.matrix0.size1());
   my_assert(d.matrix0.size1() <= m.size1());
   my_assert(d.matrix0.size2() == m.size2());
-  if (logletter('e')) { // Dump the first P::logenumber eigenvalues
+  if (logletter('e')) { // Dump the first P.logenumber eigenvalues
     cout << "eig= ";
-    for_each(begin(d.value), begin(d.value) + min(P::logenumber.value(), M), [](t_eigen x) { cout << x << ' '; });
+    for_each(begin(d.value), begin(d.value) + min(P.logenumber.value(), M), [](t_eigen x) { cout << x << ' '; });
     cout << endl;
   }
-  if (P::checkdiag) { // default is false (since Nov 2019)
+  if (P.checkdiag) { // default is false (since Nov 2019)
     const size_t dim = d.getrmax();
     my_assert(d.matrix0.size2() == dim);
     for (size_t r = 0; r < M; r++) {

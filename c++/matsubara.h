@@ -14,17 +14,17 @@ string matstypestring(matstype mt) {
   }
 }
 
-// Note: range limited to short numbers. P::piT is const double.
+// Note: range limited to short numbers. P.piT is const double.
 inline double ww(short n, matstype mt)
 {
   switch (mt) {
-    case matstype::bosonic: return P::Tpi * (2 * n);
-    case matstype::fermionic: return P::Tpi * (2 * n + 1);
+    case matstype::bosonic: return P.Tpi * (2 * n);
+    case matstype::fermionic: return P.Tpi * (2 * n + 1);
     default: my_assert_not_reached();
   }
 }
-inline double wb(short n) { return P::Tpi * (2 * n); }
-inline double wf(short n) { return P::Tpi * (2 * n + 1); }
+inline double wb(short n) { return P.Tpi * (2 * n); }
+inline double wf(short n) { return P.Tpi * (2 * n + 1); }
 
 class Matsubara {
   private:
@@ -39,7 +39,7 @@ class Matsubara {
   }
   void add(size_t n, t_weight w) { v[n].second += w; }
   void save(ostream &F) const {
-    F << setprecision(P::prec_xy);
+    F << setprecision(P.prec_xy);
     for (const auto &i : v) output(F, i.first, i.second, true);
   }
   t_weight total_weight() const {

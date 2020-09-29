@@ -4,7 +4,7 @@
 #ifndef _matrix_cc_
 #define _matrix_cc_
 
-// TO DO: remove P::, move all the required information to the
+// TO DO: remove P., move all the required information to the
 // symmetry class where it belongs.
 
 // Check i,j,ch parameters of *diag_function().
@@ -113,7 +113,7 @@ void diag_function(size_t i, size_t ch, double number, t_coef sc_zeta, Matrix &h
   const size_t begin1 = qq.offset(i);
   const size_t size1  = qq.rmax(i);
   // For convenience we subtract the average site occupancy.
-  const double avgoccup = ((double)P::spin) / 2; // multiplicity divided by 2
+  const double avgoccup = ((double)P.spin) / 2; // multiplicity divided by 2
   /* Energy shift of the diagonal matrix elements in the NRG Hamiltonian.
    WARNING: for N=0, we are not adding the first site of the Wilson chain
    (indexed as 0), but the second one (indexed as 1). Therefore the
@@ -127,11 +127,11 @@ void diag_function(size_t i, size_t ch, double number, t_coef sc_zeta, Matrix &h
 // Compare with diag_function()
 void diag_function_half(size_t i, size_t ch, double number, t_matel sc_zeta, Matrix &h, const Rmaxvals &qq) {
   allowed_block_index(i);
-  my_assert(0.0 <= number && number <= P::spin);
+  my_assert(0.0 <= number && number <= P.spin);
   const size_t begin1 = qq.offset(i);
   const size_t size1  = qq.rmax(i);
   // For convenience we subtract the average site occupancy.
-  const double avgoccup = ((double)P::spin) / 2; // multiplicity divided by 2
+  const double avgoccup = ((double)P.spin) / 2; // multiplicity divided by 2
   // avgoccup is divided by a further factor of 2 compared
   // to diag_function() above!
   const t_matel shift = sc_zeta * (number - avgoccup / 2) / SCALE(STAT::N + 1);
@@ -145,7 +145,7 @@ void spinz_function(size_t i, size_t j, size_t ch, t_matel spinz, Matrix &h, con
   my_assert(i == j);
 
   // compare with the ISOSPINX macro
-  const t_matel shift = spinz * double(P::globalB) / SCALE(STAT::N + 1);
+  const t_matel shift = spinz * double(P.globalB) / SCALE(STAT::N + 1);
 
   const size_t begin1 = qq.offset(i);
   const size_t size1  = qq.rmax(i);
@@ -155,7 +155,7 @@ void spinz_function(size_t i, size_t j, size_t ch, t_matel spinz, Matrix &h, con
 
 void spinx_function(size_t i, size_t j, size_t ch, t_matel spinx, Matrix &h, const Rmaxvals &qq) {
   check_ijch(i, j, ch);
-  const t_matel shift = spinx * double(P::globalBx) / SCALE(STAT::N + 1);
+  const t_matel shift = spinx * double(P.globalBx) / SCALE(STAT::N + 1);
   if (i > j) return; // only upper triangular part
   size_t begin1    = qq.offset(i);
   size_t size1     = qq.rmax(i);

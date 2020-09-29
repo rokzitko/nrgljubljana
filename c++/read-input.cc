@@ -30,51 +30,51 @@ std::string parse_datafile_header(istream &fdata, const int expected_version = 9
   return sym_string;
 }
 
-// Read the number of channels from data file. Also sets P::combs
+// Read the number of channels from data file. Also sets P.combs
 // accordingly, depending on the spin of the conduction band electrons.
 void read_nr_channels(ifstream &fdata, std::string sym_string) {
   size_t channels;
   fdata >> channels;
   my_assert(channels >= 1);
-  P::channels = channels;
+  P.channels = channels;
   // Number of tables of coefficients. It is doubled in the case of
   // spin-polarized conduction bands. The first half corresponds to
   // spin-up, the second half to spin-down. It is quadrupled in the
   // case of full 2x2 matrix structure in the spin space.
-  if (P::pol2x2)
-    P::coeffactor = 4;
-  else if (P::polarized)
-    P::coeffactor = 2;
+  if (P.pol2x2)
+    P.coeffactor = 4;
+  else if (P.polarized)
+    P.coeffactor = 2;
   else
-    P::coeffactor = 1;
-  P::coefchannels = P::coeffactor * P::channels;
-  nrglog('!', "coefchannels=" << P::coefchannels);
+    P.coeffactor = 1;
+  P.coefchannels = P.coeffactor * P.channels;
+  nrglog('!', "coefchannels=" << P.coefchannels);
   if (sym_string == "U1" || sym_string == "SU2" || sym_string == "DBLSU2") {
-    P::perchannel = 2; // We distinguish spin-up and spin-down operators.
+    P.perchannel = 2; // We distinguish spin-up and spin-down operators.
   } else if (sym_string == "NONE" || sym_string == "P" || sym_string == "PP") {
-    P::perchannel = 4; // We distinguish CR/AN and spin UP/DO.
+    P.perchannel = 4; // We distinguish CR/AN and spin UP/DO.
   } else {
-    P::perchannel = 1;
+    P.perchannel = 1;
   }
-  nrglog('!', "perchannel=" << P::perchannel);
-  my_assert(P::perchannel >= 1);
+  nrglog('!', "perchannel=" << P.perchannel);
+  my_assert(P.perchannel >= 1);
   if (sym_string == "SL" || sym_string == "SL3")
-    P::spin = 1;
+    P.spin = 1;
   else
-    P::spin = 2;
-  const int statespersite = pow(2, P::spin);
-  if (!P::substeps)
-    P::combs = pow(statespersite, P::channels);
+    P.spin = 2;
+  const int statespersite = pow(2, P.spin);
+  if (!P.substeps)
+    P.combs = pow(statespersite, P.channels);
   else
-    P::combs = statespersite;
-  nrglog('!', "combs=" << P::combs);
+    P.combs = statespersite;
+  nrglog('!', "combs=" << P.combs);
 }
 
 // Read the length of the Wilson chain
 void read_Nmax(ifstream &fdata) {
   size_t nmax;
   fdata >> nmax;
-  P::Nmax = nmax;
+  P.Nmax = nmax;
 }
 
 size_t read_nsubs(ifstream &fdata)
@@ -88,29 +88,29 @@ size_t read_nsubs(ifstream &fdata)
 // Check if the parameters make sense.
 // Also initialize maps related to parameters (switch for string type).
 void validate_parameters() {
-  my_assert(P::keep > 1);
-  if (P::keepenergy > 0.0) my_assert(P::keepmin <= P::keep);
-  if (P::dmnrg || cfs_flags()) P::dm.setvalue(true);
-  my_assert(P::Lambda > 1.0);
-  P::diagroutine = undefined;
+  my_assert(P.keep > 1);
+  if (P.keepenergy > 0.0) my_assert(P.keepmin <= P.keep);
+  if (P.dmnrg || cfs_flags()) P.dm.setvalue(true);
+  my_assert(P.Lambda > 1.0);
+  P.diagroutine = undefined;
 #ifdef NRG_REAL
-  if (string(P::diag) == "default") P::diag.setvalue("dsyev");
-  if (string(P::diag) == "dsyev")  P::diagroutine = diagdsyev;
-  if (string(P::diag) == "dsyevd") P::diagroutine = diagdsyevd;
-  if (string(P::diag) == "dsyevr") P::diagroutine = diagdsyevr;
+  if (string(P.diag) == "default") P.diag.setvalue("dsyev");
+  if (string(P.diag) == "dsyev")  P.diagroutine = diagdsyev;
+  if (string(P.diag) == "dsyevd") P.diagroutine = diagdsyevd;
+  if (string(P.diag) == "dsyevr") P.diagroutine = diagdsyevr;
 #endif
 #ifdef NRG_COMPLEX
-  if (string(P::diag) == "default") P::diag.setvalue("zheev");
-  if (string(P::diag) == "zheev") P::diagroutine = diagzheev;
-  if (string(P::diag) == "zheevr") P::diagroutine = diagzheevr;
+  if (string(P.diag) == "default") P.diag.setvalue("zheev");
+  if (string(P.diag) == "zheev") P.diagroutine = diagzheev;
+  if (string(P.diag) == "zheevr") P.diagroutine = diagzheevr;
 #endif
-  if (P::diagroutine == undefined) my_error("Unknown diagonalization routine.");
-  if (P::diagroutine == diagdsyevr || P::diagroutine == diagzheevr) {
-    my_assert(0.0 < P::diagratio && P::diagratio <= 1.0);
-    if (cfs_flags() && P::diagratio != 1.0) my_error("CFS/FDM is not compatible with partial diagonalisation.");
+  if (P.diagroutine == undefined) my_error("Unknown diagonalization routine.");
+  if (P.diagroutine == diagdsyevr || P.diagroutine == diagzheevr) {
+    my_assert(0.0 < P.diagratio && P.diagratio <= 1.0);
+    if (cfs_flags() && P.diagratio != 1.0) my_error("CFS/FDM is not compatible with partial diagonalisation.");
   }
   // dumpabs=true and dumpscaled=true is a meaningless combination
-  my_assert(!(P::dumpabs && P::dumpscaled));
+  my_assert(!(P.dumpabs && P.dumpscaled));
 }
 
 // Read the ground state energy from data file ('e' flag)
@@ -129,8 +129,8 @@ void read_energies(ifstream &fdata, DiagInfo &diag, size_t nsubs) {
     my_assert(nrr > 0);
     EVEC energies = EVEC(nrr);
     read_vector(fdata, energies, nrr);
-    if (!P::data_has_rescaled_energies) 
-      energies /= SCALE(P::Ninit); // rescale to the suitable energy scale
+    if (!P.data_has_rescaled_energies) 
+      energies /= SCALE(P.Ninit); // rescale to the suitable energy scale
     diag[I] = Eigen(nrr, nrr);
     diag[I].diagonal(energies);
   }
@@ -163,10 +163,10 @@ void read_matrix_elements(ifstream &fdata, MatrixElements &m, const DiagInfo &di
 
 void read_irreduc_f(ifstream &fdata, const DiagInfo &diag, Opch &opch) {
   nrglog('@', "read_irreduc_f()");
-  opch = Opch(P::channels);
-  for (size_t i = 0; i < P::channels; i++) {
-    opch[i] = OpchChannel(P::perchannel);
-    for (size_t j = 0; j < P::perchannel; j++) {
+  opch = Opch(P.channels);
+  for (size_t i = 0; i < P.channels; i++) {
+    opch[i] = OpchChannel(P.perchannel);
+    for (size_t j = 0; j < P.perchannel; j++) {
       char ch;
       size_t iread, jread;
       fdata >> ch >> iread >> jread;
@@ -181,16 +181,16 @@ void read_irreduc_f(ifstream &fdata, const DiagInfo &diag, Opch &opch) {
 // not using the tables computed by initial.m).
 void determine_Nmax() {
   size_t length_coef_table = xi.max(0); // all channels have same nr. of coefficients
-  cout << endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P::Nmax << endl << endl;
-  my_assert(length_coef_table == P::Nmax);
-  if (P::substeps) P::Nmax = P::channels * P::Nmax;
-  P::Nlen = P::Nmax;
-  if (P::Nmax == P::Ninit) {
+  cout << endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << endl << endl;
+  my_assert(length_coef_table == P.Nmax);
+  if (P.substeps) P.Nmax = P.channels * P.Nmax;
+  P.Nlen = P.Nmax;
+  if (P.Nmax == P.Ninit) {
     cout << endl << "ZBW=true -> zero-bandwidth calculation" << endl;
-    P::ZBW  = true;
-    P::Nlen = P::Nmax + 1; // an additional element in the tables!
+    P.ZBW  = true;
+    P.Nlen = P.Nmax + 1; // an additional element in the tables!
   }
-  cout << endl << "length_coef_table=" << length_coef_table << " Nmax=" << P::Nmax << endl << endl;
+  cout << endl << "length_coef_table=" << length_coef_table << " Nmax=" << P.Nmax << endl << endl;
 }
 
 inline void skipline(ostream &F = std::cout) { F << std::endl; }
@@ -252,7 +252,7 @@ std::tuple<DiagInfo, IterInfo> read_data() {
       default: my_error("Unknown block %c in data file.", ch);
     }
   }
-  if (string(P::tri) == "cpp") tridiag(); // before determine_Nmax()
+  if (string(P.tri) == "cpp") tridiag(); // before determine_Nmax()
   determine_Nmax();
   return {diag0, iterinfo0};
 }

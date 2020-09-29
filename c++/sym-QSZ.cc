@@ -117,21 +117,21 @@ Symmetry *SymQSZ = new SymmetryQSZ;
 
 // "non-polarized" here means that the coefficients xi do not depend on
 // spin. Note, however, that there is support for a global magnetic field,
-// cf. P::globalB.
+// cf. P.globalB.
 void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (!substeps) {
     switch (channels) {
       case 1:
 #include "qsz/qsz-1ch-offdiag.dat"
 #include "qsz/qsz-1ch-diag.dat"
-#include "qsz/qsz-1ch-spinz.dat" // for P::globalB
+#include "qsz/qsz-1ch-spinz.dat" // for P.globalB
         break;
 
       case 2:
 #include "qsz/qsz-2ch-offdiag.dat"
 #include "qsz/qsz-2ch-diag.dat"
-#include "qsz/qsz-2ch-spinz.dat" // for P::globalB
-        if (P::rungs) {
+#include "qsz/qsz-2ch-spinz.dat" // for P.globalB
+        if (P.rungs) {
 #include "qsz/qsz-2ch-offdiag-mix.dat"
 #include "qsz/qsz-2ch-runghop.dat"
         }
@@ -140,13 +140,13 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const I
       case 3:
 #include "qsz/qsz-3ch-offdiag.dat"
 #include "qsz/qsz-3ch-diag.dat"
-#include "qsz/qsz-3ch-spinz.dat" // for P::globalB
+#include "qsz/qsz-3ch-spinz.dat" // for P.globalB
         break;
 
       default: my_assert_not_reached();
     }
   } else { // substeps
-    my_assert(P::coeffactor == 1);
+    my_assert(P.coeffactor == 1);
     int Ntrue, M;
     tie(Ntrue, M) = get_Ntrue_M(STAT::N);
 
@@ -162,9 +162,9 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const I
 
 #include "qsz/qsz-1ch-offdiag.dat"
 #include "qsz/qsz-1ch-diag.dat"
-#include "qsz/qsz-1ch-spinz.dat" // for P::globalB
+#include "qsz/qsz-1ch-spinz.dat" // for P.globalB
 
-    if (P::rungs) my_error("Not implemented.");
+    if (P.rungs) my_error("Not implemented.");
   }
 }
 
@@ -197,7 +197,7 @@ void SymmetryQSZ::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inva
 #include "qsz/qsz-2ch-diag-UP.dat"
 #include "qsz/qsz-2ch-diag-DOWN.dat"
 #include "qsz/qsz-2ch-spinz.dat"
-      if (P::rungs) {
+      if (P.rungs) {
         //#include "qsz/qsz-2ch-offdiag-mix-UP.dat"
         //#include "qsz/qsz-2ch-offdiag-mix-DOWN.dat"
         //#include "qsz/qsz-2ch-runghop-UP.dat"
@@ -219,7 +219,7 @@ void SymmetryQSZ::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inva
 }
 
 void SymmetryQSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (P::polarized) {
+  if (P.polarized) {
     makematrix_polarized(h, qq, I, In, opch);
   } else {
     makematrix_nonpolarized(h, qq, I, In, opch);
@@ -227,9 +227,9 @@ void SymmetryQSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, cons
 }
 
 void SymmetryQSZ::show_coefficients() {
-  if (P::rungs) {
+  if (P.rungs) {
     using namespace STAT;
-    for (unsigned int i = 0; i < P::channels; i++) {
+    for (unsigned int i = 0; i < P.channels; i++) {
       cout << "[" << i + 1 << "]"
            << " xi_rung(" << N << ")=" << xiR(N, i) << " zeta_rung(" << N + 1 << ")=" << zetaR(N + 1, i) << endl;
     }

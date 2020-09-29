@@ -106,8 +106,8 @@ void SymmetryU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar
 #include "u1/u1-1ch-offdiag-DO.dat"
 #include "u1/u1-1ch-diag-UP.dat"
 #include "u1/u1-1ch-diag-DOWN.dat"
-#include "u1/u1-1ch-spinz.dat" // P::globalB
-#include "u1/u1-1ch-spinx.dat" // P::globalBx
+#include "u1/u1-1ch-spinz.dat" // P.globalB
+#include "u1/u1-1ch-spinx.dat" // P.globalBx
       break;
 
     case 2:
@@ -115,8 +115,8 @@ void SymmetryU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar
 #include "u1/u1-2ch-offdiag-DO.dat"
 #include "u1/u1-2ch-diag-UP.dat"
 #include "u1/u1-2ch-diag-DOWN.dat"
-#include "u1/u1-2ch-spinz.dat" // P::globalB
-#include "u1/u1-2ch-spinx.dat" // P::globalBx
+#include "u1/u1-2ch-spinz.dat" // P.globalB
+#include "u1/u1-2ch-spinx.dat" // P.globalBx
       break;
 
     case 3:
@@ -124,8 +124,8 @@ void SymmetryU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar
 #include "u1/u1-3ch-offdiag-DO.dat"
 #include "u1/u1-3ch-diag-UP.dat"
 #include "u1/u1-3ch-diag-DOWN.dat"
-#include "u1/u1-3ch-spinz.dat" // P::globalB
-#include "u1/u1-3ch-spinx.dat" // P::globalBx
+#include "u1/u1-3ch-spinz.dat" // P.globalB
+#include "u1/u1-3ch-spinx.dat" // P.globalBx
       break;
 
     default: my_assert_not_reached();
@@ -143,8 +143,8 @@ void SymmetryU1::makematrix_pol2x2(Matrix &h, const Rmaxvals &qq, const Invar &I
 #include "u1/u1-1ch-diag-UP.dat"
 #include "u1/u1-1ch-diag-DOWN.dat"
 #include "u1/u1-1ch-diag-DOUP.dat"
-#include "u1/u1-1ch-spinz.dat" // P::globalB
-#include "u1/u1-1ch-spinx.dat" // P::globalBx
+#include "u1/u1-1ch-spinz.dat" // P.globalB
+#include "u1/u1-1ch-spinx.dat" // P.globalBx
       break;
 
     case 2:
@@ -155,8 +155,8 @@ void SymmetryU1::makematrix_pol2x2(Matrix &h, const Rmaxvals &qq, const Invar &I
 #include "u1/u1-2ch-diag-UP.dat"
 #include "u1/u1-2ch-diag-DOWN.dat"
 #include "u1/u1-2ch-diag-DOUP.dat"
-#include "u1/u1-2ch-spinz.dat" // P::globalB
-#include "u1/u1-2ch-spinx.dat" // P::globalBx
+#include "u1/u1-2ch-spinz.dat" // P.globalB
+#include "u1/u1-2ch-spinx.dat" // P.globalBx
       break;
 
     case 3:
@@ -167,8 +167,8 @@ void SymmetryU1::makematrix_pol2x2(Matrix &h, const Rmaxvals &qq, const Invar &I
 #include "u1/u1-3ch-diag-UP.dat"
 #include "u1/u1-3ch-diag-DOWN.dat"
 #include "u1/u1-3ch-diag-DOUP.dat"
-#include "u1/u1-3ch-spinz.dat" // P::globalB
-#include "u1/u1-3ch-spinx.dat" // P::globalBx
+#include "u1/u1-3ch-spinz.dat" // P.globalB
+#include "u1/u1-3ch-spinx.dat" // P.globalBx
       break;
 
     default: my_assert_not_reached();
@@ -187,24 +187,24 @@ void SymmetryU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const In
 #include "u1/u1-1ch-offdiag-UP.dat"
 #include "u1/u1-1ch-offdiag-DO.dat"
 #include "u1/u1-1ch-diag.dat"
-#include "u1/u1-1ch-spinz.dat" // P::globalB
-#include "u1/u1-1ch-spinx.dat" // P::globalBx
+#include "u1/u1-1ch-spinz.dat" // P.globalB
+#include "u1/u1-1ch-spinx.dat" // P.globalBx
       break;
 
     case 2:
 #include "u1/u1-2ch-offdiag-UP.dat"
 #include "u1/u1-2ch-offdiag-DO.dat"
 #include "u1/u1-2ch-diag.dat"
-#include "u1/u1-2ch-spinz.dat" // P::globalB
-#include "u1/u1-2ch-spinx.dat" // P::globalBx
+#include "u1/u1-2ch-spinz.dat" // P.globalB
+#include "u1/u1-2ch-spinx.dat" // P.globalBx
       break;
 
     case 3:
 #include "u1/u1-3ch-offdiag-UP.dat"
 #include "u1/u1-3ch-offdiag-DO.dat"
 #include "u1/u1-3ch-diag.dat"
-#include "u1/u1-3ch-spinz.dat" // P::globalB
-#include "u1/u1-3ch-spinx.dat" // P::globalBx
+#include "u1/u1-3ch-spinz.dat" // P.globalB
+#include "u1/u1-3ch-spinx.dat" // P.globalBx
       break;
 
     default: my_assert_not_reached();
@@ -212,9 +212,9 @@ void SymmetryU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const In
 }
 
 void SymmetryU1::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (P::pol2x2) {
+  if (P.pol2x2) {
     makematrix_pol2x2(h, qq, I, In, opch);
-  } else if (P::polarized) {
+  } else if (P.polarized) {
     makematrix_polarized(h, qq, I, In, opch);
   } else {
     makematrix_nonpolarized(h, qq, I, In, opch);
