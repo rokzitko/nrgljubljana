@@ -1056,7 +1056,8 @@ CONSTFNC double trace(const DensMatElements &m) {
 // Check if the trace of the density matrix equals 'ref_value'.
 void check_trace_rho(const DensMatElements &m, double ref_value = 1.0) {
   const double tr = trace(m);
-  if (!num_equal(trace(m), ref_value)) exit1("check_trace_rho() failed: " << tr << " instead of " << ref_value);
+  if (!num_equal(trace(m), ref_value)) 
+    throw std::runtime_error("check_trace_rho() failed");
 }
 
 void stats(const DensMatElements &m) {
@@ -2837,7 +2838,8 @@ void print_about_message(ostream &s) {
 
 // Called immediately after the symmetry type is determined from the data file. This ensures that Invar can be parsed correctly.
 void set_symmetry(const string &sym_string) {
-  if (all_syms.count(sym_string) != 1) exit1("Unknown symmetry " << sym_string);
+  if (all_syms.count(sym_string) != 1) 
+    throw std::runtime_error("Unknown symmetry " + sym_string);
   cout << "SYMMETRY TYPE: " << sym_string << endl;
   Sym = all_syms[sym_string];
   TD::init();

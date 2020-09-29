@@ -82,8 +82,14 @@ class Symmetry {
   Invar InvarSinglet; // QNs for singlet operator
   Invar Invar_f;      // QNs for f operator
 
+  // XXX: set in init() ?
   void set_channels(size_t ch) { channels = ch; }
   void set_substeps(bool sb) { substeps = sb; }
+  void set_combs(int _combs) {
+    combs = _combs;
+    In.resize(combs + 1); // XXX: global
+    QN.resize(combs + 1); // XXX
+  }
 
   // For some symmetry types with two-channels we distinguish between
   // even and odd parity with respect to the channel-interchange
@@ -115,12 +121,6 @@ class Symmetry {
   // important, for example, for triplet operators which are zero
   // when evaluated between two singlet states.
   virtual bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) { return true; }
-
-  void set_combs(int _combs) {
-    combs = _combs;
-    In.resize(combs + 1);
-    QN.resize(combs + 1);
-  }
 
   // Setup the combinations of quantum numbers that are used in the
   // construction of the Hamiltonian matrix.
