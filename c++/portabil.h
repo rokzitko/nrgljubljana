@@ -14,21 +14,22 @@ using namespace std;
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 #include <boost/stacktrace.hpp>
 
-void print_trace() {
+inline void print_trace() {
   cout << "Backtrace:" << endl << boost::stacktrace::stacktrace() << endl;
 }
 
 #define assert_isfinite(x) finite_test_fnc(x, __FILE__, __LINE__)
 
-bool my_isfinite(double x) { return std::isfinite(x); }
+inline bool my_isfinite(double x) { return std::isfinite(x); }
 
 using cmpl = complex<double>;
 
-bool my_isfinite(cmpl z) { return std::isfinite(z.real()) && std::isfinite(z.imag()); }
+inline bool my_isfinite(cmpl z) { return std::isfinite(z.real()) && std::isfinite(z.imag()); }
 
 inline int isfinite(cmpl z) { return (std::isfinite(z.real()) && std::isfinite(z.imag()) ? 1 : 0); }
 
-template <typename T> T finite_test_fnc(T x, const char *file, int line) {
+template <typename T> 
+inline  T finite_test_fnc(T x, const char *file, int line) {
   if (!my_isfinite(x)) {
     cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;
     cout << "File " << file << ", line " << line << "." << endl;
@@ -115,7 +116,7 @@ template <typename T> T finite_test_fnc(T x, const char *file, int line) {
 #include <mach/task.h>
 
 // Source: http://blog.kuriositaet.de/?p=257
-int getmem(unsigned int *rss, unsigned int *vs) {
+inline int getmem(unsigned int *rss, unsigned int *vs) {
   struct task_basic_info t_info{};
   mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
 
@@ -125,7 +126,7 @@ int getmem(unsigned int *rss, unsigned int *vs) {
   return 0;
 }
 
-int memoryused() {
+inline int memoryused() {
   unsigned int rss;
   unsigned int vs;
 
@@ -140,7 +141,7 @@ int memoryused() {
 #include <string.h>
 #include <stdio.h>
 // Returns the number of kB blocks of memory used by this process (self). 
-int memoryused() {
+inline int memoryused() {
   int used = 0;
 
   // See /usr/src/linux/Documentation/filesystems/proc.txt
@@ -162,20 +163,28 @@ int memoryused() {
 
 // Fall-back
 #if !defined(HAS_MEMORY_USAGE)
-int memoryused() { return 0; }
+inline int memoryused() { return 0; }
 #endif
 
-// More considerate way of opening output files:
-// - check if we really want to open the file (non-empty filename)
-// - check for open errors
-ofstream safeopen(string filename, bool binary = false) {
+inline ofstream safe_open(string filename, bool binary = false) {
   my_assert(filename != "");
   ios::openmode flag = ios::out;
   if (binary) flag |= ios::binary;
-  ofstream F(filename.c_str(), flag);
-  if (!F) my_error("safeopen: Can't open %s", filename.c_str());
+  ofstream F(filename, flag);
+  if (!F) my_error("Can't open %s for writing", filename.c_str());
   return F;
 }
+
+inline ifstream safe_open_for_reading(string filename, bool binary = false) {
+  my_assert(filename != "");
+  ios::openmode flag = ios::in;
+  if (binary) flag |= ios::binary;
+  ifstream F(filename, flag);
+  if (!F) my_error("Can't open %s for reading", filename.c_str());
+  return F;
+}
+
+inline int remove(const string &filename) { return remove(filename.c_str()); } // C function
 
 #if defined(__clang__) || defined (__GNUC__)
 # define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))

@@ -188,7 +188,7 @@ void SpectrumRealFreq::savebins() {
   if (!P.savebins) return;
   string fn = filename + ".bin";
   cout << " " << fn;
-  ofstream Fbins = safeopen(fn, true); // true=binary!
+  ofstream Fbins = safe_open(fn, true); // true=binary!
   for (const auto &i : fspos.bins) {
     const double w = WEIGHT(i).real();
     const double e = ENERGY(i);
@@ -247,7 +247,7 @@ void SpectrumRealFreq::continuous() {
   sort(begin(densitypos), end(densitypos), sortfirst());
   string fn = filename + ".dat";
   cout << " " << fn;
-  ofstream Fdensity = safeopen(fn);
+  ofstream Fdensity = safe_open(fn);
   save_densfunc(Fdensity, densityneg, P.reim);
   save_densfunc(Fdensity, densitypos, P.reim);
 }

@@ -1,10 +1,8 @@
 // misc.h - Miscelaneous functions
-// Copyright (C) 2005-2009 Rok Zitko
+// Copyright (C) 2005-2020 Rok Zitko
 
 #ifndef _misc_h_
 #define _misc_h_
-
-#include <utility>
 
 // Conversion functions
 template <class T> T fromstring(const string &str) {
@@ -51,7 +49,8 @@ void strip_trailing_whitespace(string &s) {
 }
 
 // Parse a block of "keyword=value" lines.
-void parse_block(map<string, string> &parsed_params, ifstream &F) {
+auto parse_block(ifstream &F) {
+  map<string, string> parsed_params; 
   while (F) {
     string line = getnextline(F);
     if (!F) break;
@@ -65,18 +64,11 @@ void parse_block(map<string, string> &parsed_params, ifstream &F) {
     // Important: Strip trailing whitespace to avoid hard-to-detect problems!
     // (Note: INI parsers do this by convention!)
     strip_trailing_whitespace(value);
-    if (parsed_params.count(keyword)) {
-      cout << "Duplicate keyword: " << keyword << endl;
-      exit(1);
-    }
+    if (parsed_params.count(keyword))
+      throw std::runtime_error("Duplicate keyword: " + keyword);
     parsed_params[keyword] = value;
   }
-}
-
-// Open a file and hard exit upon an error
-void safe_open(ifstream &F, const string &filename) {
-  F.open(filename.c_str());
-  if (!F) exit1("Can't open " << filename << " for reading.");
+  return parsed_params;
 }
 
 // Locate block [name] in a file stream. Returns true if succeessful.
@@ -93,10 +85,11 @@ bool find_block(ifstream &F, const string &s) {
 }
 
 // Parse the [param] block of an input file.
-void parser(map<string, string> &parsed_params, const string &filename) {
-  ifstream F;
-  safe_open(F, filename);
-  if (find_block(F, "param")) parse_block(parsed_params, F);
+map<string, string> parser(string filename, string block = "param") {
+  ifstream F = safe_open_for_reading(filename);
+  if (find_block(F, block))
+    return parse_block(F);
+  return {};
 }
 
 // Input/output

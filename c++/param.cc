@@ -1,9 +1,5 @@
-#include <utility>
-
-
-
 // param.cc - Parameter parsing
-// Copyright (C) 2009-2019 Rok Zitko
+// Copyright (C) 2009-2020 Rok Zitko
 
 #ifndef _param_cc_
 #define _param_cc_
@@ -16,7 +12,8 @@ class parambase {
   string _value;
 
   public:
-  parambase(string keyword, string desc, string defaultv) : _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
+  parambase(string keyword, string desc, string defaultv) : 
+     _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
   virtual ~parambase()= default;
   virtual void setvalue_str(string newvalue) = 0;
   virtual void dump()                        = 0;
@@ -30,21 +27,19 @@ list<parambase *> allparams;
 // Templated specialized classes for various storage types (int, double,
 // string, bool)
 
-template <class T> class param : public parambase {
+template <typename T> 
+ class param : public parambase {
   private:
   T data;
   bool defaultval = true;
 
   public:
-  // Constructor: keyword is a CASE SENSITIVE name of the parameter,
-  // desc is at this time used as in-line documentation and defaultv
-  // is a string containing a default value which is immediately
-  // parsed.
+  // Constructor: keyword is a CASE SENSITIVE name of the parameter, desc is at this time used as in-line
+  // documentation and defaultv is a string containing a default value which is immediately parsed.
   param(const string &keyword, const string &desc, const string &defaultv) : parambase(keyword, desc, defaultv) {
     data = fromstring<T>(_value);
-    for (auto &i : allparams) {
-      if (i->getkeyword() == keyword) my_error("Internal error: keyword conflict.");
-    }
+    for (auto &i : allparams)
+      if (i->getkeyword() == keyword) my_error("param class internal error: keyword conflict.");
     allparams.push_back((parambase *)this);
   }
   void dump() override { cout << _keyword << "=" << data << (!defaultval ? " *" : "") << endl; }
@@ -60,9 +55,8 @@ template <class T> class param : public parambase {
   bool operator == (const T &b) const { return data == b; }
 };
 
-// CONVENTION: parameters that are user configurable are declared as
-// param<T>, other parameters (set at runtime) are defined as basic
-// types T.
+// CONVENTION: parameters that are user configurable are declared as param<T>, other parameters (set at runtime) are
+// defined as basic types T.
 
 // Interfacing:
 // S = solver, C = constructor, L = low-level, * = hide (deprecated & experimental)

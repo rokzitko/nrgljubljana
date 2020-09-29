@@ -61,7 +61,7 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
   my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Storing density matrices [N=" << N << "]... ");
   const string fn = rhofn(prefix, N);
-  std::ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
+  std::ofstream MATRIXF(fn, ios::binary | ios::out);
   if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
   boost::archive::binary_oarchive oa(MATRIXF);
   size_t nr = rho.size();
@@ -80,14 +80,12 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
   MATRIXF.close();
 }
 
-int remove(string filename) { return remove(filename.c_str()); }
-
 DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
   my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Loading density matrices [N=" << N << "]...");
   DensMatElements rho;
   const string fn = rhofn(prefix, N);
-  std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
+  std::ifstream MATRIXF(fn, ios::binary | ios::in);
   if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
   boost::archive::binary_iarchive ia(MATRIXF);
   size_t nr;
@@ -129,7 +127,7 @@ void store_transformations(size_t N, const DiagInfo &diag) {
     my_assert(N == P.Ninit);
   nrglog('H', "Storing transformation matrices (N=" << N << ")...");
   const string fn = unitaryfn(N);
-  ofstream MATRIXF(fn.c_str(), ios::binary | ios::out);
+  ofstream MATRIXF(fn, ios::binary | ios::out);
   if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
   boost::archive::binary_oarchive oa(MATRIXF);
   size_t nr = diag.size();
@@ -156,7 +154,7 @@ DiagInfo load_transformations(size_t N) {
     my_assert(N == P.Ninit);
   nrglog('H', "Loading transformation matrices (N=" << N << ")...");
   const string fn = unitaryfn(N);
-  std::ifstream MATRIXF(fn.c_str(), ios::binary | ios::in);
+  std::ifstream MATRIXF(fn, ios::binary | ios::in);
   if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
   boost::archive::binary_iarchive ia(MATRIXF);
   size_t nr; // Number of subspaces
@@ -278,7 +276,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
 
 bool file_exists(const string &fn)
 {
-  ofstream F(fn.c_str(), ios::binary | ios::out);
+  ofstream F(fn, ios::binary | ios::out);
   return bool(F);
 }
 

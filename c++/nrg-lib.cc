@@ -584,14 +584,10 @@ int getnn() { return STAT::N; }
 // Energy scale at the last NRG iteration
 double LAST_STEP_SCALE() { return SCALE(P.Nmax); }
 
-map<string, string> parsed_params; // XXX
-
-// Parse command line and parameter file
-// Warning: there's no error checking for parameters.
-// Check the parameter dump to see if everything is OK.
-void read_parameters() {
-  parsed_params.clear(); // XXX: remove after building a nrg class
-  parser(parsed_params, "param");
+// Warning: there is limited error checking for parameters.
+// Check the parameter dump to see if everything is as expected.
+void read_parameters(string filename = "param", string block = "param") {
+  auto parsed_params = parser(filename, block);
   for (const auto &i : allparams) {
     const string keyword = i->getkeyword();
     if (parsed_params.count(keyword) == 1) {
@@ -612,7 +608,7 @@ void dump_parameters() {
   for (const auto &i : allparams) i->dump();
 }
 
-void remove_workdir() { remove(P.workdir.c_str()); }
+void remove_workdir() { remove(P.workdir); }
 
 const string default_workdir = ".";
 
@@ -991,7 +987,7 @@ SpectrumTemp::~SpectrumTemp() {
   cout << "Spectrum: " << opname << " " << spectype->name() << " -> " << fn << endl;
   Spikes d(results);
   sort(begin(d), end(d), sortfirst());
-  ofstream Fd = safeopen(fn);
+  ofstream Fd = safe_open(fn);
   save_densfunc(Fd, d, P.reim);
 }
 
@@ -1019,7 +1015,7 @@ void SpectrumMatsubara::merge(spCS_t cs) {
 
 SpectrumMatsubara::~SpectrumMatsubara() {
   cout << "Spectrum: " << opname << " " << spectype->name() << endl;
-  ofstream Fd = safeopen(filename + ".dat");
+  ofstream Fd = safe_open(filename + ".dat");
   results.save(Fd);
 }
 
@@ -1046,7 +1042,7 @@ void SpectrumMatsubara2::merge(spCS_t cs) {
 
 SpectrumMatsubara2::~SpectrumMatsubara2() {
   cout << "Spectrum: " << opname << " " << spectype->name() << endl;
-  ofstream Fd = safeopen(filename + ".dat");
+  ofstream Fd = safe_open(filename + ".dat");
   results.save(Fd);
 }
 
@@ -2907,8 +2903,8 @@ void init_laststored() {
     P.laststored = -1;
     for (size_t N = P.Ninit; N < P.Nmax; N++) {
       const string fn = unitaryfn(N);
-      ifstream F(fn.c_str()); // open file
-      if (F.good())           // successful?
+      ifstream F(fn);
+      if (F.good())
         P.laststored = N;
     }
     cout << "Last unitary file found: " << P.laststored << endl;
