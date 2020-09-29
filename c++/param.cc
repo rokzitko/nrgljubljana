@@ -57,27 +57,8 @@ template <class T> class param : public parambase {
     defaultval = false;
   }
   void setvalue(T newdata) { data = newdata; }
+  bool operator == (const T &b) const { return data == b; }
 };
-
-enum dr_value { undefined, diagdsyev, diagdsyevd, diagdsyevr, diagzheev, diagzheevr };
-
-string dr_to_string(dr_value dr)
-{
-  switch (dr) {
-  case diagdsyev:
-    return "dsyev";
-  case diagdsyevd:
-    return "dsyevd";
-  case diagdsyevr:
-    return "dsyevr";
-  case diagzheev:
-    return "zheev";
-  case diagzheevr:
-    return "zheevr";
-  default:
-    return "UNDEFINED";
-  }
-}
 
 // CONVENTION: parameters that are user configurable are declared as
 // param<T>, other parameters (set at runtime) are defined as basic
@@ -427,7 +408,6 @@ struct Params {
    A - eigensolver diagnostics (routine used, matrix size)
    t - timing for eigensolver routines
    e - dump eigenvalues in function diagonalize_h()
-   % - min and max energy (see also tdeA)
    d - eigenvalue computation [low-level]
    T - spectral peak trimming statistics
    * - merging details
@@ -490,7 +470,7 @@ struct Params {
   param<bool> dump_f{"dump_f", "Dump <f> matrix elements", "false"}; // N
 
   param<bool> dumpenergies{"dumpenergies", "Dump (all) energies to file?", "false"};  // N
-  param<size_t> logenumber{"logenumber", "# of eigenvalues to show for log=e", "10"}; // N
+  // OBSOLETE: param<size_t> logenumber{"logenumber", "# of eigenvalues to show for log=e", "10"}; // N
 
   // stopafter=nrg, stops calculation after the first sweep
   // stopafter=rho, stops calculation after computing the density matrix
@@ -540,7 +520,6 @@ struct Params {
   // Directory where we keep temporary files during the computation.
   // It should point to a storage device with ample space.
   string workdir = ".";
-  dr_value diagroutine;
 };
 
 Params P;

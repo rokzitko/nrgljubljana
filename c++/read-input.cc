@@ -92,20 +92,15 @@ void validate_parameters() {
   if (P.keepenergy > 0.0) my_assert(P.keepmin <= P.keep);
   if (P.dmnrg || cfs_flags()) P.dm.setvalue(true);
   my_assert(P.Lambda > 1.0);
-  P.diagroutine = undefined;
 #ifdef NRG_REAL
-  if (string(P.diag) == "default") P.diag.setvalue("dsyev");
-  if (string(P.diag) == "dsyev")  P.diagroutine = diagdsyev;
-  if (string(P.diag) == "dsyevd") P.diagroutine = diagdsyevd;
-  if (string(P.diag) == "dsyevr") P.diagroutine = diagdsyevr;
+  if (P.diag == "default"s) P.diag.setvalue("dsyev"s);
+  my_assert(P.diag == "dsyev"s || P.diag == "dsyevd"s || P.diag == "dsyevr"s);
 #endif
 #ifdef NRG_COMPLEX
-  if (string(P.diag) == "default") P.diag.setvalue("zheev");
-  if (string(P.diag) == "zheev") P.diagroutine = diagzheev;
-  if (string(P.diag) == "zheevr") P.diagroutine = diagzheevr;
+  if (P.diag == "default"s) P.diag.setvalue("zheev"s);
+  my_assert(P.diag == "zheev"s || P.diag == "zheevr"s);
 #endif
-  if (P.diagroutine == undefined) my_error("Unknown diagonalization routine.");
-  if (P.diagroutine == diagdsyevr || P.diagroutine == diagzheevr) {
+  if (P.diag == "dsyevr"s || P.diag =="zheevr"s) {
     my_assert(0.0 < P.diagratio && P.diagratio <= 1.0);
     if (cfs_flags() && P.diagratio != 1.0) my_error("CFS/FDM is not compatible with partial diagonalisation.");
   }

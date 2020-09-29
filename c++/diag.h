@@ -29,7 +29,7 @@ void copy_values(t_eigen *eigenvalues, EVEC &diagvalue, int M) {
 // jobz: 'N' for values only, 'V' for values and vectors
 
 #ifdef NRG_REAL
-size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V') {
+Eigen diagonalise_dsyev(Matrix &m, char jobz = 'V') {
   const size_t dim = m.size1();
   t_matel *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
@@ -47,19 +47,19 @@ size_t diagonalise_dsyev(Matrix &m, Eigen &d, char jobz = 'V') {
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, &INFO);
   if (INFO != 0) my_error("dsyev failed. INFO=%i", INFO);
-  d = Eigen(dim, dim);
+  Eigen d(dim, dim);
   copy_values(eigenvalues, d.value, dim);
   if (jobz == 'V') {
     for (size_t r = 0; r < dim; r++)
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = ham[dim * r + j];
     d.perform_checks();
   }
-  return dim;
+  return d;
 }
 #endif
 
 #ifdef NRG_REAL
-size_t diagonalise_dsyevd(Matrix &m, Eigen &d, char jobz = 'V')
+Eigen diagonalise_dsyevd(Matrix &m, char jobz = 'V')
 {
   const size_t dim = m.size1();
   t_matel *ham = bindings::traits::matrix_storage(m);
@@ -84,23 +84,22 @@ size_t diagonalise_dsyevd(Matrix &m, Eigen &d, char jobz = 'V')
   if (INFO != 0) {
     // dsyevd sometimes fails to converge (INFO>0). In such cases we do not trigger
     // an error but return 0, to permit error recovery.
-    if (INFO > 0) return 0;
+    if (INFO > 0) return Eigen{};
     my_error("dsyevd failed. INFO=%i", INFO);
   }
-  d = Eigen(dim, dim);
+  Eigen d(dim, dim);
   copy_values(eigenvalues, d.value, dim);
   if (jobz == 'V') {
     for (size_t r = 0; r < dim; r++)
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = ham[dim * r + j];
     d.perform_checks();
   }
-  return dim;
+  return d;
 }
 #endif  
 
 #ifdef NRG_REAL
-size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
-                          double ratio = 1.0) // reduction ratio for dsyevr
+Eigen diagonalise_dsyevr(Matrix &m, double ratio = 1.0,  char jobz = 'V')
 {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
@@ -154,19 +153,19 @@ size_t diagonalise_dsyevr(Matrix &m, Eigen &d, char jobz = 'V',
     M = MM;
     my_assert(M > 0); // at least one
   }
-  d = Eigen(M, dim);
+  Eigen d(M, dim);
   copy_values(eigenvalues, d.value, M);
   if (jobz == 'V') {
     for (size_t r = 0; r < M; r++)
       for (size_t j = 0; j < dim; j++) d.vektor(r, j) = Z[dim * r + j];
     d.perform_checks();
   }
-  return M;
+  return d;
 }
 #endif
 
 #ifdef NRG_COMPLEX
-size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
+Eigen diagonalise_zheev(Matrix &m, char jobz = 'V') {
   const size_t dim = m.size1();
   lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
@@ -186,7 +185,7 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, RWORK, &INFO);
   if (INFO != 0) my_error("zheev failed. INFO=%i", INFO);
-  d = Eigen(dim, dim);
+  Eigen d(dim, dim);
   copy_values(eigenvalues, d.value, dim);
   if (jobz == 'V') {
     for (size_t r = 0; r < dim; r++)
@@ -196,12 +195,12 @@ size_t diagonalise_zheev(Matrix &m, Eigen &d, char jobz = 'V') {
       }
     d.perform_checks();
   }
-  return dim;
+  return d;
 }
 #endif
   
 #ifdef NRG_COMPLEX
-size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1.0) {
+Eigen diagonalise_zheevr(Matrix &m, double ratio = 1.0, char jobz = 'V') {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
@@ -258,7 +257,7 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1
     M = MM;
     my_assert(M > 0); // at least one
   }
-  d = Eigen(M, dim);
+  Eigen d(M, dim);
   copy_values(eigenvalues, d.value, M);
   if (jobz == 'V') {
     for (size_t r = 0; r < M; r++)
@@ -268,73 +267,78 @@ size_t diagonalise_zheevr(Matrix &m, Eigen &d, char jobz = 'V', double ratio = 1
       }
     d.perform_checks();
   }
-  return M;
+  return d;
 }
 #endif
 
-const double NORMALIZATION_EPSILON = 1e-12;
-const double ORTHOGONALITY_EPSILON = 1e-12;
+void checkdiag(const Eigen &d, 
+               const double NORMALIZATION_EPSILON = 1e-12,
+               const double ORTHOGONALITY_EPSILON = 1e-12)
+{
+  const auto M = d.value.size(); // number of eigenpairs
+  const auto dim = d.getrmax(); // dimension of the eigenvector
+  my_assert(d.matrix0.size2() == dim);
+  // Check normalization
+  for (auto r = 0; r < M; r++) {
+    assert_isfinite(d.value(r));
+    double sumabs = 0.0;
+    for (size_t j = 0; j < dim; j++) {
+      assert_isfinite(d.vektor(r, j));
+      sumabs += sqr(abs(d.vektor(r, j)));
+    }
+    my_assert(num_equal(sumabs, 1.0, NORMALIZATION_EPSILON));
+  }
+  // Check orthogonality
+  for (size_t r1 = 0; r1 < M; r1++)
+    for (size_t r2 = r1 + 1; r2 < M; r2++) {
+      t_matel skpdt = 0.0;
+      for (size_t j = 0; j < dim; j++) skpdt += CONJ_ME(d.vektor(r1, j)) * d.vektor(r2, j);
+      my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
+    }
+}
 
-// Wrapper for the diagonalization of the Hamiltonian matrix in the
-// NRG iteration. The number of pairs returned does NOT need to be
-// equal to the dimension of the matrix h. m is destroyed in the
-// process, thus no const attribute!
+void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t>::max())
+{
+  cout << "eig= ";
+  for_each_n(cbegin(d.value), min(d.value.size(), max_nr), 
+           [](const t_eigen x) { cout << x << ' '; });
+  cout << endl;
+}
+
+// Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
+// equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
 Eigen diagonalise(Matrix &m) {
   time_mem::Timing t;
   check_is_matrix_upper(m);
-  const size_t mdim = m.size1();
   Eigen d;
-  size_t M = 0; // number of computed eigenvalues
-  // dr is the preferred LAPACK diagonalization routine
-  dr_value dr = sP.diagroutine;
 #ifdef NRG_REAL
-  if (dr == diagdsyev) M = diagonalise_dsyev(m, d, 'V');
-  if (dr == diagdsyevd) {
-    M = diagonalise_dsyevd(m, d, 'V');
-    if (M == 0) {
+  if (sP.diag == "dsyev"s) 
+    d = diagonalise_dsyev(m);
+  if (sP.diag == "dsyevd"s) {
+    d = diagonalise_dsyevd(m);
+    if (d.value.size() == 0) {
       std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
-      M = diagonalise_dsyev(m, d, 'V');
+      d = diagonalise_dsyev(m);
     }
   }
-  if (dr == diagdsyevr) M = diagonalise_dsyevr(m, d, 'V', sP.diagratio);
+  if (sP.diag == "dsyevr"s) 
+    d = diagonalise_dsyevr(m, sP.diagratio);
 #endif
 #ifdef NRG_COMPLEX
-  if (dr == diagzheev) M = diagonalise_zheev(m, d, 'V');
-  if (dr == diagzheevr) M = diagonalise_zheevr(m, d, 'V', sP.diagratio);
+  if (sP.diag == "zheev"s)  
+    d = diagonalise_zheev(m);
+  if (sP.diag == "zheevr"s) 
+    d = diagonalise_zheevr(m, sP.diagratio);
 #endif
-  my_assert(M > 0);
-  my_assert(M == d.value.size());
-  my_assert(M == d.matrix0.size1());
+  my_assert(d.value.size() > 0);
+  my_assert(d.value.size() == d.matrix0.size1());
   my_assert(d.matrix0.size1() <= m.size1());
   my_assert(d.matrix0.size2() == m.size2());
-  if (logletter('e')) { // Dump the first P.logenumber eigenvalues
-    cout << "eig= ";
-    for_each(begin(d.value), begin(d.value) + min(P.logenumber.value(), M), [](t_eigen x) { cout << x << ' '; });
-    cout << endl;
-  }
-  if (P.checkdiag) { // default is false (since Nov 2019)
-    const size_t dim = d.getrmax();
-    my_assert(d.matrix0.size2() == dim);
-    for (size_t r = 0; r < M; r++) {
-      assert_isfinite(d.value(r));
-      double sumabs = 0.0;
-      for (size_t j = 0; j < dim; j++) {
-        assert_isfinite(d.vektor(r, j));
-        sumabs += sqr(abs(d.vektor(r, j)));
-      }
-      my_assert(num_equal(sumabs, 1.0, NORMALIZATION_EPSILON));
-    }
-    // Check orthogonality
-    for (size_t r1 = 0; r1 < M; r1++)
-      for (size_t r2 = r1 + 1; r2 < M; r2++) {
-        t_matel skpdt = 0.0;
-        for (size_t j = 0; j < dim; j++) skpdt += CONJ_ME(d.vektor(r1, j)) * d.vektor(r2, j);
-        my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
-      }
-  }
-  nrglog('A', "LAPACK, dim=" << mdim << " diag=" << dr_to_string(dr)
-                        << " M=" << M << " [" << myrank() << "]");
-  nrglog('%', "max=" << d.value[M - 1] << " min=" << d.value[0]);
+  if (logletter('e'))
+    dump_eigenvalues(d);
+  if (P.checkdiag)
+    checkdiag(d);
+  nrglog('A', "LAPACK, dim=" << m.size1() << " M=" << d.value.size() << " [" << myrank() << "]");
   nrglog('t', "Elapsed: " << setprecision(3) << t.total_in_seconds() << " [" << myrank() << "]");
   return d;
 }

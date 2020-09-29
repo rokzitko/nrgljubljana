@@ -80,7 +80,7 @@ int myrank() { return 0; }
 class sharedparam {
   public:
   // Parameters which have to be known to the slave processes (which only perform diagonalizations).
-  dr_value diagroutine{undefined};
+  std::string diag{};
   double diagratio{};
   bool logall{};
   string log;
@@ -89,7 +89,7 @@ class sharedparam {
   private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
-    ar &diagroutine;
+    ar &diag;
     ar &diagratio;
     ar &logall;
     ar &log;
@@ -316,6 +316,7 @@ class Eigen {
   void perform_checks() const;
   // Accessor routine for j-th element of i-th eigenvector.
   inline t_matel &vektor(size_t i, size_t j) { return matrix0(i, j); }
+  inline const t_matel &vektor(size_t i, size_t j) const { return matrix0(i, j); }
   // Returns the number of eigenpairs CURRENTLY STORED.
   size_t getnr() const { return nr; }
   // Returns the dimensionality of a subspace, i.e. the number of
@@ -2885,10 +2886,10 @@ void calculation() {
 // beginning of the program (after parsing the parameters in P), but also before each series of diagonalizations,
 // because diagratio might have changed!
 void sharedparam::init(double _diagratio) {
-  diagroutine = P.diagroutine;
-  diagratio   = _diagratio;
-  logall      = P.logall;
-  log         = P.log;
+  diag      = P.diag;
+  diagratio = _diagratio;
+  logall    = P.logall;
+  log       = P.log;
 }
 
 #ifdef NRG_MPI
