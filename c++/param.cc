@@ -641,6 +641,30 @@ struct Params {
     allowed_block_index(j);
     allowed_channel(ch);
   }
+  
+  // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the
+  // energies on the original scale. Also named the "reduced bandwidth". Note that stats.scale = SCALE(stats.N+1)
+  // [see function set_N], thus for Ninit=0 and calc0, setting N=-1 results in a call SCALE(0). In the actual NRG
+  // run, the scale is at least SCALE(1). This is important for correct handling of rescaling for substeps==true.
+  double SCALE(int N) {
+    double scale = 0.0;
+    if (discretization == "Y"s)
+      // Yoshida,Whitaker,Oliveira PRB 41 9403 Eq. (39)
+      scale = 0.5 * (1. + 1. / Lambda); // NOLINT
+    if (string(discretization) == "C"s || string(discretization) == "Z"s)
+      // Campo, Oliveira PRB 72 104432, Eq. (46) [+ Lanczos]
+      scale = (1.0 - 1. / Lambda) / std::log(Lambda); // NOLINT
+    if (!substeps)
+      scale *= pow(Lambda, -(N - 1) / 2. + 1 - z); // NOLINT
+    else
+      scale *= pow(Lambda, -N / (2. * channels) + 3 / 2. - z); // NOLINT
+    my_assert(scale != 0.0);        // yes, != is intentional here.
+    scale = scale * bandrescale; // RESCALE
+    return scale;
+  }
+  
+  // Energy scale at the last NRG iteration
+  double last_step_scale() { return SCALE(Nmax); }
 };
 
 Params P;

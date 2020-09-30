@@ -171,7 +171,7 @@ void SpectrumRealFreq::weight_report() {
  density. If the value is not predefined in the parameters file, use the
  smallest scale from the calculation multiplied by P.broaden_min_ratio. */
 
-double get_broaden_min() { return (P.broaden_min <= 0.0 ? P.broaden_min_ratio * LAST_STEP_SCALE() : P.broaden_min); }
+double get_broaden_min() { return (P.broaden_min <= 0.0 ? P.broaden_min_ratio * P.last_step_scale() : P.broaden_min); }
 
 // Energy mesh for spectral functions
 std::vector<double> make_mesh() {

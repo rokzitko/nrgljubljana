@@ -51,8 +51,8 @@ const double MIN_BIN_SHIFT = 2.0;
 void Bins::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the
   // conduction band!!
-  emax = (P.emax > 0 ? P.emax : SCALE(0) * pow(base, MAX_BIN_SHIFT));
-  emin = (P.emin > 0 ? P.emin : LAST_STEP_SCALE() / pow(base, MIN_BIN_SHIFT));
+  emax = (P.emax > 0 ? P.emax : P.SCALE(0) * pow(base, MAX_BIN_SHIFT));
+  emin = (P.emin > 0 ? P.emin : P.last_step_scale() / pow(base, MIN_BIN_SHIFT));
   // Trick: use ceil/floor to obtain uniform binning grids for
   // different values of the twist parameter z!
   log10emin = floor(log10(emin));

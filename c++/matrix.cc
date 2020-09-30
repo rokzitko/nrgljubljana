@@ -65,7 +65,7 @@ void offdiag_function(size_t i, size_t j,
   my_assert(size1 && size2);
   // < In[i] r | f^\dag | In[j] r' >
   const Twoinvar II {In[i], In[j]};
-  const t_matel factor_scaled = factor / SCALE(stats.N + 1);
+  const t_matel factor_scaled = factor / P.SCALE(stats.N + 1);
   const auto f = opch[ch][fnr].find(II);
   if (f == opch[ch][fnr].cend()) {
     cout << "offdiag_function() critical error: subspace does not exist." << endl;
@@ -112,7 +112,7 @@ void diag_function(size_t i, size_t ch, double number, t_coef sc_zeta, Matrix &h
    (indexed as 0), but the second one (indexed as 1). Therefore the
    appropriate zeta is not zeta(0), but zeta(1). zeta(0) is the shift
    applied to the f[0] orbital in initial.m !!! */
-  const t_coef shift = sc_zeta * (number - avgoccup) / SCALE(stats.N + 1);
+  const t_coef shift = sc_zeta * (number - avgoccup) / P.SCALE(stats.N + 1);
   nrglog('i', "diag i=" << i << " shift=" << shift);
   for (size_t j = begin1; j < begin1 + size1; j++) h(j, j) += shift;
 }
@@ -127,7 +127,7 @@ void diag_function_half(size_t i, size_t ch, double number, t_matel sc_zeta, Mat
   const double avgoccup = ((double)P.spin) / 2; // multiplicity divided by 2
   // avgoccup is divided by a further factor of 2 compared
   // to diag_function() above!
-  const t_matel shift = sc_zeta * (number - avgoccup / 2) / SCALE(stats.N + 1);
+  const t_matel shift = sc_zeta * (number - avgoccup / 2) / P.SCALE(stats.N + 1);
   nrglog('i', "diag_half i=" << i << " shift=" << shift);
   for (size_t j = begin1; j < begin1 + size1; j++) h(j, j) += shift;
 }
@@ -138,7 +138,7 @@ void spinz_function(size_t i, size_t j, size_t ch, t_matel spinz, Matrix &h, con
   my_assert(i == j);
 
   // compare with the ISOSPINX macro
-  const t_matel shift = spinz * double(P.globalB) / SCALE(stats.N + 1);
+  const t_matel shift = spinz * double(P.globalB) / P.SCALE(stats.N + 1);
 
   const size_t begin1 = qq.offset(i);
   const size_t size1  = qq.rmax(i);
@@ -148,7 +148,7 @@ void spinz_function(size_t i, size_t j, size_t ch, t_matel spinz, Matrix &h, con
 
 void spinx_function(size_t i, size_t j, size_t ch, t_matel spinx, Matrix &h, const Rmaxvals &qq) {
   P.allowed_ijch(i, j, ch);
-  const t_matel shift = spinx * double(P.globalBx) / SCALE(stats.N + 1);
+  const t_matel shift = spinx * double(P.globalBx) / P.SCALE(stats.N + 1);
   if (i > j) return; // only upper triangular part
   size_t begin1    = qq.offset(i);
   size_t size1     = qq.rmax(i);
@@ -173,7 +173,7 @@ void diag_offdiag_function(size_t i, size_t j, size_t chin, t_matel factor, Matr
   bool contributes = (size1 > 0) && (size2 > 0);
   if (!contributes) return;
   my_assert(size1 == size2);
-  const t_matel factor_scaled = factor / SCALE(stats.N + 1);
+  const t_matel factor_scaled = factor / P.SCALE(stats.N + 1);
   nrglog('i', "diag_offdiag i=" << i << " j=" << j << " factor_scaled=" << factor_scaled);
   for (size_t l = 0; l < size1; l++) h(begin1 + l, begin2 + l) += factor_scaled;
 }

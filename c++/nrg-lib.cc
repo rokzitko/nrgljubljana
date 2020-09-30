@@ -382,31 +382,6 @@ using SPECTYPE = shared_ptr<SPEC>;
 // Includes which require P. parameters.
 #include "spectral.h"
 
-// The factor that multiplies the eigenvalues of the length-N Wilson
-// chain Hamiltonian in order to obtain the energies on the original
-// scale. Also named the "reduced bandwidth". Note that stats.scale =
-// SCALE(stats.N+1) [see function set_N], thus for Ninit=0 and calc0,
-// setting N=-1 results in a call SCALE(0). In the actual NRG run,
-// the scale is at least SCALE(1). This is important for correct
-// handling of rescaling for substeps==true.
-double SCALE(int N) // int is correct here, this N may be negative
-{
-  double scale = 0.0;
-  if (string(P.discretization) == "Y")
-    // Yoshida,Whitaker,Oliveira PRB 41 9403 Eq. (39)
-    scale = 0.5 * (1. + 1. / P.Lambda); // NOLINT
-  if (string(P.discretization) == "C" || string(P.discretization) == "Z")
-    // Campo, Oliveira PRB 72 104432, Eq. (46) [+ Lanczos]
-    scale = (1.0 - 1. / P.Lambda) / log(P.Lambda); // NOLINT
-  if (!P.substeps)
-    scale *= pow(P.Lambda, -(N - 1) / 2. + 1 - P.z); // NOLINT
-  else
-    scale *= pow(P.Lambda, -N / (2. * P.channels) + 3 / 2. - P.z); // NOLINT
-  my_assert(scale != 0.0);        // yes, != is intentional here.
-  scale = scale * P.bandrescale; // RESCALE
-  return scale;
-}
-
 // M ranges 0..channels-1
 pair<size_t, size_t> get_Ntrue_M(size_t N) {
   size_t i = N / P.channels;
@@ -416,12 +391,11 @@ pair<size_t, size_t> get_Ntrue_M(size_t N) {
 // Compensate for different definition of SCALE in initial.m and C++
 // code in case of substeps==true.
 double scale_fix(size_t N) {
-  size_t Ntrue, M;
-  tie(Ntrue, M) = get_Ntrue_M(N);
+  const auto [Ntrue, M] = get_Ntrue_M(N);
   my_assert(N == Ntrue * P.channels + M);
   size_t N_at_end_of_full_step     = Ntrue * P.channels + P.channels - 1; // M=0,...,channels-1
-  double scale_now                 = SCALE(N + 1); // NOLINT
-  double scale_at_end_of_full_step = SCALE(N_at_end_of_full_step + 1); // NOLINT
+  double scale_now                 = P.SCALE(N + 1); // NOLINT
+  double scale_at_end_of_full_step = P.SCALE(N_at_end_of_full_step + 1); // NOLINT
   return scale_now / scale_at_end_of_full_step;
 }
 
@@ -447,7 +421,7 @@ class Stats {
   void set_N(int newN) {
     N = (newN >= 0 ? newN : 0);                                          // N is used as an array index, must be non-negative
     // The following is evaluated with newN, which may be negative!
-    scale = SCALE(newN + 1); // Current energy scale in units of bandwidth D
+    scale = P.SCALE(newN + 1); // Current energy scale in units of bandwidth D
     Teff  = scale / P.betabar;
     scT   = scale / P.T; // Boltzmann weight
   }
@@ -545,98 +519,7 @@ bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::np
 // cf. nrg-makematrix-ISO.cc
 int getnn() { return stats.N; }
 
-// Energy scale at the last NRG iteration
-double LAST_STEP_SCALE() { return SCALE(P.Nmax); }
-
-// XXX: coefficients belong to symmetry.cc
-
-// This class holds table of generalized xi/zeta/etc. coefficients
-class coef_table {
-  private:
-   ublas::vector<t_coef> t;
-
-  public:
-  // Read values from a stream f
-  void read_values(ifstream &f) {
-    t = read_vector<t_coef>(f, true); // len=nr+1
-  }
-  t_coef coef(size_t n) const {
-    my_assert(n < t.size());
-    return t[n];
-  }
-  // Returns the index of the last coefficient still included in the table.
-  size_t max() const {
-    my_assert(t.size() >= 1);
-    return t.size() - 1;
-  }
-  void setvalue(size_t n, t_coef val) {
-    if (n + 1 > t.size()) t.resize(n + 1);
-    t[n] = val;
-  }
-};
-
-// NOTE: One table of discretization coefficients for each channel
-class set_of_tables {
-  private:
-  std::vector<coef_table> tabs;
-
-  public:
-  size_t nr_tabs() const { return tabs.size(); }
-  void read(ifstream &fdata) {
-    tabs.resize(P.coefchannels);
-    for (auto &i : tabs) i.read_values(fdata);
-  }
-  t_coef operator()(size_t N, size_t alpha) const {
-    P.allowed_coefchannel(alpha);
-    my_assert(alpha < tabs.size());
-    return tabs[alpha].coef(N);
-  }
-  size_t max(size_t alpha) const {
-    P.allowed_coefchannel(alpha);
-    my_assert(alpha < tabs.size());
-    return tabs[alpha].max();
-  }
-  void setvalue(size_t N, size_t alpha, t_coef val) {
-    P.allowed_coefchannel(alpha);
-    my_assert(alpha < tabs.size() && N <= P.Nmax);
-    tabs[alpha].setvalue(N, val);
-  }
-};
-
-set_of_tables xi;   // f^dag_N f_N+1 terms
-set_of_tables zeta; // f^dag_N f_N terms
-
-// Support for spin-polarized conduction bands. See also P.polarized.
-// Hack: the total number of channels is doubled, the index runs from
-// 0...2*P.channels-1. Numbers 0...P.channels-1 correspond to spin up,
-// while P.channels...2*P.channels-1 correspond to spin down.
-// Compare P.channels and P.coefchannels (which reflects the same
-// convention in initial.m, i.e. CHANNELS vs. COEFCHANNELS).
-t_coef xiUP(size_t N, size_t ch) { return xi(N, ch); }
-t_coef xiDOWN(size_t N, size_t ch) { return xi(N, ch + P.channels); }
-t_coef zetaUP(size_t N, size_t ch) { return zeta(N, ch); }
-t_coef zetaDOWN(size_t N, size_t ch) { return zeta(N, ch + P.channels); }
-
-// Support for conduction bands with full 2x2 matrix structure, a
-// generalization of P.polarized. The total number of "channels" is
-// here multiplied by 4, i.e., the index runs from 0 to
-// 4*P.channels-1. Numbers 2*P.channels...3*P.channels-1 correspond
-// to UP/DO, 3*P.channels...4*P.channels-1 correspond to DO/UP.
-t_coef xiUPDO(size_t N, size_t ch) { return xi(N, ch + 2 * P.channels); }
-t_coef xiDOUP(size_t N, size_t ch) { return xi(N, ch + 3 * P.channels); }
-t_coef zetaUPDO(size_t N, size_t ch) { return zeta(N, ch + 2 * P.channels); }
-t_coef zetaDOUP(size_t N, size_t ch) { return zeta(N, ch + 3 * P.channels); }
-
-// Support for channel-mixing Wilson chains
-set_of_tables xiR;
-set_of_tables zetaR;
-// Support for superconducting bands.
-set_of_tables delta; // f^dag_up,N f^dag_down,N terms
-set_of_tables kappa; // f^dag_N f^dag_down,N+1 terms
-
-set_of_tables ep, em;   // e_n coefficients
-set_of_tables u0p, u0m; // u_{0,m} coefficients
-
+#include "coef.cc"
 #include "tridiag.h"
 #include "diag.h"
 #include "symmetry.cc"
@@ -1089,8 +972,7 @@ void infostring() {
   string info = " ***** [" + (string)(nrgrun ? "NRG" : "DM") + "] " + "Iteration " + to_string(stats.N + 1) + "/" + to_string(P.Nmax) + " (scale "
      + to_string(stats.scale) + ")" + " ***** ";
   if (P.substeps) {
-    size_t Ntrue, M;
-    tie(Ntrue, M) = get_Ntrue_M(stats.N);
+    const auto [Ntrue, M] = get_Ntrue_M(stats.N);
     info += " step " + to_string(Ntrue + 1) + " substep " + to_string(M + 1);
   }
   cout << endl << info << endl;
@@ -1103,14 +985,13 @@ void show_coefficients() {
   cout << setprecision(std::numeric_limits<double>::max_digits10);
   if (!P.substeps) {
     for (size_t i = 0; i < P.coefchannels; i++) {
-      double scale = SCALE(static_cast<int>(stats.N)+1);
+      double scale = P.SCALE(static_cast<int>(stats.N)+1);
       cout << "[" << i + 1 << "]"
            << " xi(" << stats.N << ")=" << xi(stats.N, i) << " xi_scaled(" << stats.N << ")=" << xi(stats.N, i)/stats.scale << " zeta(" << stats.N + 1 << ")=" << zeta(stats.N + 1, i)
            << endl;
     }
   } else {
-    size_t Ntrue, M;
-    tie(Ntrue, M) = get_Ntrue_M(stats.N);
+    const auto [Ntrue, M] = get_Ntrue_M(stats.N);
     for (size_t i = 0; i < P.coeffactor; i++) {
       size_t index = M + P.channels * i;
       cout << "[" << index << "]"
@@ -2333,8 +2214,7 @@ void recalc_f(DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
       for (size_t j = 0; j < P.perchannel; j++) opch[i][j].clear(); // Clear all channels
     Sym->recalc_irreduc(diag, qsrmax, opch);
   } else {
-    size_t Ntrue, M;
-    tie(Ntrue, M) = get_Ntrue_M(stats.N);
+    const auto [Ntrue, M] = get_Ntrue_M(stats.N);
     for (size_t i = 0; i < P.channels; i++) {
       if (i == M) {
         for (size_t j = 0; j < P.perchannel; j++) opch[M][j].clear(); // Clear channel M
