@@ -1,20 +1,18 @@
 // Code for correcting floating-point roundoff errors
 // Rok Zitko, rok.zitko@ijs.si
 
+using mapdd = unordered_map<t_eigen, t_eigen>;
+
 // Fix splittings of eigenvalues. Returns true if any changes had been made.
-bool fix_splittings(DiagInfo &diag) {
-  bool changes_made = false;
+void fix_splittings(DiagInfo &diag, const mapdd &cluster_mapping) {
   for(auto &[I, eig]: diag) 
     for (auto &r : eig.value) 
-      if (auto m = STAT::cluster_mapping.find(r); m != end(STAT::cluster_mapping)) {
-        r            = m->second;
-        changes_made = true;
-      }
-  return changes_made;
+      if (auto m = cluster_mapping.find(r); m != end(cluster_mapping))
+        r = m->second;
 }
 
 // Iterator over eigenvalues
-using svdi = STDEVEC::iterator;
+using svdi = STDEVEC::const_iterator;
 
 void cluster_show(const svdi &i0, const svdi &i1) {
   cout << "[";
@@ -33,11 +31,12 @@ bool cluster_splitting(const svdi &i0, const svdi &i1) {
 }
 
 // Find clusters of values which differ by at most 'epsilon'
-void find_clusters(STDEVEC &energies, double epsilon, mapdd &cluster_mapping) {
+mapdd find_clusters(const STDEVEC &energies, double epsilon) {
+  mapdd cluster_mapping;
   my_assert(energies.size() > 0);
-  t_eigen e0       = energies[0];     // energy of the lower boundary of the cluster, [e0:e1]
-  auto i0          = begin(energies); // iterator to the lower boundary of the cluster, [i0:i1]
-  int cluster_size = 1;               // number of states in the current cluster
+  t_eigen e0       = energies[0];      // energy of the lower boundary of the cluster, [e0:e1]
+  svdi i0          = cbegin(energies); // iterator to the lower boundary of the cluster, [i0:i1]
+  int cluster_size = 1;                // number of states in the current cluster
 
   for (auto i = begin(energies); i != end(energies); ++i) {
     if ((*i - e0) < epsilon) { // in the cluster
@@ -58,4 +57,5 @@ void find_clusters(STDEVEC &energies, double epsilon, mapdd &cluster_mapping) {
       cluster_size = 1;
     }
   }
+  return cluster_mapping;
 }

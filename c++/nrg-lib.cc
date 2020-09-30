@@ -431,11 +431,6 @@ double scale_fix(size_t N) {
 
 enum class RUNTYPE { NRG, DMNRG };
 
-// Map from double to double. This is used for the "fixeps" trick as a data
-// structure which holds the transformation rules from original eigenvalues
-// to fixed eigenvalues.
-using mapdd = unordered_map<t_eigen, t_eigen>;
-
 // Namespace for storing various statistical quantities calculated
 // during iteration.
 // XXX: split into run-time variables & statistical quantities. Multiple classes + derived classes.
@@ -462,11 +457,8 @@ namespace STAT {
   // Ground-state subspace and energy at the current NRG iteration
   Invar ground;
   t_eigen Egs;
-  // All energies, sorted in increasing order
-  STDEVEC energies;
   // Mapping old_energy -> new_energy for curing small splittings due to
   // the floating point roundoff errors.
-  mapdd cluster_mapping;
   double Zft;   // grand-canonical partition function (at shell n)
   double Zgt;   // grand-canonical partition function for computing G(T)
   double Zchit; // grand-canonical partition function for computing chi(T)
@@ -1087,11 +1079,12 @@ double norm(const MatrixElements &m, const DiagInfo &diag, IIfnc factor_fnc, int
 
 // **** Helper functions for the NRG RUN ****
 
-void copy_sort_energies(const DiagInfo &diag, STDEVEC &energies) {
-  energies.clear();
+STDEVEC sort_energies(const DiagInfo &diag) {
+  STDEVEC energies;
   for (const auto &[i, eig]: diag)
     energies.insert(end(energies), begin(eig.value), end(eig.value));
   sort(begin(energies), end(energies));
+  return energies;
 }
 
 #include "splitting.cc"
@@ -1557,7 +1550,8 @@ DensMatElements init_rho(const Params &P)
 
 // Determine the number of states to be retained.
 // Returns Emax - the highest energy to still be retained.
-t_eigen highest_retained_energy(const STDEVEC &energies) {
+t_eigen highest_retained_energy(const DiagInfo &diag) {
+  auto energies = sort_energies(diag);
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
   const size_t totalnumber = energies.size();
   size_t nrkeep;
@@ -1590,7 +1584,7 @@ t_eigen highest_retained_energy(const STDEVEC &energies) {
 bool nrg_truncate_prepare(DiagInfo &diag) {
   nrglog('@', "@ nrg_truncate_prepare()");
   bool notenough = false;
-  t_eigen Emax      = highest_retained_energy(STAT::energies);
+  t_eigen Emax      = highest_retained_energy(diag);
   size_t nrkept     = 0; // counter of states actually retained
   size_t nrkeptmult = 0; // counter of states actually retained,
                          // taking into account the multiplicity
@@ -2442,15 +2436,8 @@ DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrma
     }
     find_groundstate(diag);
     subtract_groundstate_energy(diag);
-    copy_sort_energies(diag, STAT::energies);
-    find_clusters(STAT::energies, P.fixeps, STAT::cluster_mapping);
-    bool recopy_required = fix_splittings(diag);
-    // fix_splittings() returns true if any changes had been made. If so,
-    // we determine the clusters again (just to see what the result is).
-    if (recopy_required) {
-      copy_sort_energies(diag, STAT::energies);
-      find_clusters(STAT::energies, P.fixeps, STAT::cluster_mapping);
-    }
+    auto cluster_mapping = find_clusters(sort_energies(diag), P.fixeps);
+    fix_splittings(diag, cluster_mapping);
     notenough = nrg_truncate_prepare(diag);
     if (notenough) {
       cout << "Insufficient number of states computed." << endl;
@@ -2602,8 +2589,7 @@ DiagInfo doZBW(IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
   }
   find_groundstate(diag);
   subtract_groundstate_energy(diag);
-  copy_sort_energies(diag, STAT::energies); // required in nrg_truncate_prepare()
-  nrg_truncate_prepare(diag);               // determine # of kept and discarded states
+  nrg_truncate_prepare(diag); // determine # of kept and discarded states
   // --- end nrg_do_diag() equivalent
   QSrmax empty_qsrmax{};
   AllSteps empty_dm{};
@@ -2695,7 +2681,6 @@ void finalize_nrg(AllSteps &dm, const Params &P) {
   // the lowest energy state in the last iteration. All other states (incl. from previous shells) obviously have
   // higher energies.
   STAT::GS_energy = STAT::total_energy;
-  calc_TKW(); // deprecated
   if (P.fdm) {
     shift_abs_energies(dm);
     calc_ZnD(dm);
