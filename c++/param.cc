@@ -561,6 +561,7 @@ struct Params {
 
   void dump() {
     all.sort([](auto a, auto b) { return a->getkeyword() < b->getkeyword(); });
+    cout << setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
     for (const auto &i : all) i->dump();
   }
 
@@ -605,5 +606,35 @@ struct Params {
 };
 
 Params P;
+
+// Shared parameters for MPI parallelization.
+class sharedParam {
+ public:
+   // Parameters which have to be known to the slave processes (which only perform diagonalizations).
+   std::string diag{};
+   double diagratio{};
+   bool logall{};
+   string log;
+   
+   void init(Params &P, double _diagratio = -1) {
+     // init() has to be called at the beginning of the program (after parsing the parameters in P), but also before
+     // each series of diagonalizations, because diagratio might have changed!
+     diag      = P.diag;
+     diagratio = _diagratio > 0 ? _diagratio : P.diagratio;
+     logall    = P.logall;
+     log       = P.log;
+   }
+   
+ private:
+   friend class boost::serialization::access;
+   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
+      ar &diag;
+      ar &diagratio;
+      ar &logall;
+      ar &log;
+   }
+};
+
+sharedParam sP;
 
 #endif // _param_cc_

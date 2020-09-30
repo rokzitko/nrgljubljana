@@ -74,30 +74,6 @@ int myrank() { return mpiw->rank(); } // used in diag.h, time_mem.h
 int myrank() { return 0; }
 #endif
 
-#include <utility>
-
-// Shared parameters for MPI parallelization.
-class sharedparam {
-  public:
-  // Parameters which have to be known to the slave processes (which only perform diagonalizations).
-  std::string diag{};
-  double diagratio{};
-  bool logall{};
-  string log;
-  void init(double _diagratio);
-//  sharedparam() {};
-  private:
-  friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive &ar, const unsigned int version) {
-    ar &diag;
-    ar &diagratio;
-    ar &logall;
-    ar &log;
-  }
-};
-
-sharedparam sP;
-
 // Quantum number types defined to enforce type checking
 using Number = int;
 using Ispin = int;
@@ -2363,7 +2339,7 @@ DiagInfo nrg_diagonalisations(const Opch &opch, const DiagInfo &diagprev,
   // This needs to be called here, because class Timing is not
   // thread-safe.
   TIME("diag");
-  sP.init(diagratio);
+  sP.init(P, diagratio);
 #ifdef NRG_MPI
   return nrg_diagonalisations_MPI(opch, diagprev, tasks);
 #else
@@ -2859,16 +2835,6 @@ void calculation() {
   finalize_dmnrg();
 }
 
-// Copy parameters to an object that is synchronised accross all processes. Warning: init() has to be called at the
-// beginning of the program (after parsing the parameters in P), but also before each series of diagonalizations,
-// because diagratio might have changed!
-void sharedparam::init(double _diagratio) {
-  diag      = P.diag;
-  diagratio = _diagratio;
-  logall    = P.logall;
-  log       = P.log;
-}
-
 #ifdef NRG_MPI
 void mpi_sync_params() {
   // Synchronize global parameters
@@ -2880,9 +2846,8 @@ void mpi_sync_params() {
 
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
-  cout << setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
   P.read_parameters();
-  sP.init(P.diagratio); // copy parameters for MPI
+  sP.init(P);
   calculation();
 #ifdef NRG_MPI
   cout << "Master done. Terminating slave processes." << endl;
