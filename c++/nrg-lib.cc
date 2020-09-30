@@ -252,7 +252,6 @@ class DimSub {
 // Example: dm[N].rmax[I] etc.
 using Subs = map<Invar, DimSub>;
 using AllSteps = std::vector<Subs>;
-AllSteps dm; // XXX
 
 // NOTE: "absolute" energy means that it is expressed in the absolute energy scale, not relative to SCALE(N). It is a statement
 // about scaling, not about possible linear shifts/offsets.
@@ -2519,7 +2518,7 @@ void store_to_dm(const DiagInfo &diag, const QSrmax &qsrmax, AllSteps &dm)
 // - diag contains all information about the eigenstates.
 // - STAT::Egs had been computed
 // Also called from doZBW() as a final step.
-void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax) {
+void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax, AllSteps &dm) {
   nrglog('@', "@ nrg_after_diag()");
   // Contribution to the total energy.
   STAT::total_energy += STAT::Egs * STAT::scale;
@@ -2563,10 +2562,10 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax) {
 }
 
 // Perform one iteration step
-DiagInfo nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev, const Params &P) {
+DiagInfo nrg_iterate(IterInfo &iterinfo, DiagInfo &diagprev, AllSteps &dm, const Params &P) {
   QSrmax qsrmax = get_qsrmax(diagprev);
   auto diag = nrg_do_diag(iterinfo, diagprev, qsrmax, P);
-  nrg_after_diag(iterinfo, diag, qsrmax);
+  nrg_after_diag(iterinfo, diag, qsrmax, dm);
   nrg_trim_matrices(diag, iterinfo);
   nrg_clear_eigenvectors(diag);
   diag_after_truncation = diag; // ZZZ, replace with the trimmed version set in nrg_after_diag()
@@ -2589,13 +2588,12 @@ void docalc0(const IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
   cout << endl << "Before NRG iteration";
   cout << " (N=" << STAT::N << ")" << endl;
   nrg_perform_measurements(diag0);
-  nrg_calculate_spectral_and_expv(diag0, iterinfo, dm, P); // XXX: what dm here?
+  AllSteps empty_dm{};
+  nrg_calculate_spectral_and_expv(diag0, iterinfo, empty_dm, P);
   // Logging of ALL states (prior to truncation!)
   if (P.dumpenergies) dumptofile(diag0, Fenergies);
   if (P.checksumrules) operator_sumrules(diag0, iterinfo);
 }
-
-QSrmax empty_qsrmax{};
 
 // doZBW() takes the place of nrg_iterate() called from nrg_main_loop() in the case of zero-bandwidth calculation.
 // Thus it replaces nrg_do_diag() + nrg_after_diag() (it calls the latter as the last step!).
@@ -2619,13 +2617,15 @@ DiagInfo doZBW(IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
   copy_sort_energies(diag, STAT::energies); // required in nrg_truncate_prepare()
   nrg_truncate_prepare(diag);               // determine # of kept and discarded states
   // --- end nrg_do_diag() equivalent
-  nrg_after_diag(iterinfo, diag, empty_qsrmax); // qsrmax is not used if ZBW=true
+  QSrmax empty_qsrmax{};
+  AllSteps empty_dm{};
+  nrg_after_diag(iterinfo, diag, empty_qsrmax, empty_dm); // qsrmax,dm are not used if ZBW=true
   return diag;
 }
 
 // ****************************  Main NRG loop ****************************
 
-DiagInfo nrg_main_loop(IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
+DiagInfo nrg_main_loop(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   nrglog('@', "@ nrg_main_loop()");
   DiagInfo diag = diag0;
   // N denotes the order of the Hamiltonian. N=0 corresponds to H_0, i.e.
@@ -2633,7 +2633,7 @@ DiagInfo nrg_main_loop(IterInfo &iterinfo, const DiagInfo &diag0, const Params &
   for (size_t N = P.Ninit; N < P.Nmax; N++) { // here size_t, because Ninit>=0. Note that N is int.
     if (nrgrun && P.forcestop == int(N)) exit1("*** Stop request at iteration " << P.forcestop);
     STAT::set_N(N);
-    diag = nrg_iterate(iterinfo, diag, P);
+    diag = nrg_iterate(iterinfo, diag, dm, P);
   }
   return diag;
 }
@@ -2687,7 +2687,7 @@ void states_report(const DiagInfo &dg, ostream &fout = cout) {
   fout << "Number of states (multiplicity taken into account): " << count_states(dg) << endl << endl;
 }
 
-DiagInfo start_run(IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
+void start_run(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   nrglog('@', "@ start_run()");
   states_report(diag0);
   open_output_files(iterinfo, P);
@@ -2697,10 +2697,9 @@ DiagInfo start_run(IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
     docalc0ht(diag0, P.tdht, P);
     docalc0(iterinfo, diag0, P);
   }
-  DiagInfo diag = P.ZBW ? doZBW(iterinfo, diag0, P) : nrg_main_loop(iterinfo, diag0, P);
+  DiagInfo diag = P.ZBW ? doZBW(iterinfo, diag0, P) : nrg_main_loop(iterinfo, diag0, dm, P);
   close_output_files();
   cout << endl << "** Iteration completed." << endl << endl;
-  return diag;
 }
 
 // Processing performed both after NRG and after DM runs.
@@ -2723,7 +2722,7 @@ void dump_subspace_information(const AllSteps &dm, const Params &P) {
 }
 
 // Called after the first NRG run.
-void finalize_nrg(const Params &P) {
+void finalize_nrg(AllSteps &dm, const Params &P) {
   nrglog('@', "@ finalize_nrg()");
   finalize_common();
   cout << endl << "Total energy: " << HIGHPREC(STAT::total_energy) << endl;
@@ -2779,10 +2778,10 @@ void calculation(const Params &p) {
   STAT::runtype = RUNTYPE::NRG;
   auto [diag0, iterinfo] = read_data(P);
   // Initialize all containers for storing information
-  dm = AllSteps(P.Nlen);
+  AllSteps dm(P.Nlen);
   STAT::init_vectors(P.Nlen);
-  auto diag = start_run(iterinfo, diag0, P);
-  finalize_nrg(P);
+  start_run(iterinfo, diag0, dm, P);
+  finalize_nrg(dm, P);
   if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P.dm) return; // if density-matrix algorithms are not enabled, we are done!
   if (need_rho()) {
@@ -2791,14 +2790,14 @@ void calculation(const Params &p) {
     if (!P.ZBW) calc_densitymatrix(rho, dm, P);
   }
   if (need_rhoFDM()) {
-    auto rhoFDM = init_rho_FDM(STAT::N, P);
+    auto rhoFDM = init_rho_FDM(STAT::N, dm, P);
     saveRho(STAT::N, FN_RHOFDM, rhoFDM, P);
     if (!P.ZBW) calc_fulldensitymatrix(rhoFDM, dm, P);
   }
   if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
   STAT::runtype = RUNTYPE::DMNRG;
   auto [diag0_dm, iterinfo_dm] = read_data(P);
-  start_run(iterinfo_dm, diag0_dm, P);
+  start_run(iterinfo_dm, diag0, dm, P);
   finalize_dmnrg();
 }
 

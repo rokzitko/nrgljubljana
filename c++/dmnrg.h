@@ -323,7 +323,7 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &
 // A. Weichselbaum, J. von Delft, Phys. Rev. Lett. 99, 076402 (2007)
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
-DensMatElements init_rho_FDM(size_t N, const Params &P) { // XXX: dm
+DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Params &P) { // XXX: dm
   nrglog('@', "@ init_rho_FDM(" << N << ")");
   DensMatElements rhoFDM;
   double tr = 0.0;
@@ -357,7 +357,7 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
   if (!LAST_ITERATION(N)) 
-    rhoDD = init_rho_FDM(N, P);
+    rhoDD = init_rho_FDM(N, dm, P);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = dmnrg_subspaces(I);
     size_t dim          = dimsub.kept;
