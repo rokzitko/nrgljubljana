@@ -2568,7 +2568,7 @@ void docalc0(const IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
-void doZBW(IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
+void nrg_ZBW(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   cout << endl << "Zero bandwidth calculation" << endl;
   // TRICK: scale will be that for N=Ninit-1, but STAT::N=Ninit.
   STAT::set_N(int(P.Ninit) - 1);
@@ -2588,14 +2588,13 @@ void doZBW(IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
   truncate_prepare(diag); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax empty_qsrmax{};
-  AllSteps empty_dm{};
-  after_diag(iterinfo, diag, empty_qsrmax, empty_dm); // qsrmax,dm are not used if ZBW=true
+  after_diag(iterinfo, diag, empty_qsrmax, dm);
 }
 
 // ****************************  Main NRG loop ****************************
 
-void main_loop(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
-  nrglog('@', "@ main_loop()");
+void nrg_loop(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
+  nrglog('@', "@ nrg_loop()");
   DiagInfo diag = diag0;
   // N denotes the order of the Hamiltonian. N=0 corresponds to H_0, i.e.
   // the initial Hamiltonian (cf. Krishna-Murty I)
@@ -2643,9 +2642,9 @@ void run_nrg(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Para
     docalc0(iterinfo, diag0, P);
   }
   if (P.ZBW)
-    doZBW(iterinfo, diag0, P);
+    nrg_ZBW(iterinfo, diag0, dm, P);
   else 
-    main_loop(iterinfo, diag0, dm, P);
+    nrg_loop(iterinfo, diag0, dm, P);
   close_output_files();
   cout << endl << "** Iteration completed." << endl << endl;
 }
