@@ -559,39 +559,6 @@ int getnn() { return STAT::N; }
 // Energy scale at the last NRG iteration
 double LAST_STEP_SCALE() { return SCALE(P.Nmax); }
 
-void remove_workdir() { remove(P.workdir); }
-
-const string default_workdir = ".";
-
-void create_workdir(const string &workdir) {
-  const string workdir_template = workdir + "/XXXXXX";
-  size_t len = workdir_template.length()+1;
-  auto x = make_unique<char[]>(len); // NOLINT
-  strncpy(x.get(), workdir_template.c_str(), len);
-  if (char *w = mkdtemp(x.get())) // create a unique directory
-    P.workdir = w;
-  else
-    P.workdir = default_workdir;
-  cout << "workdir=" << P.workdir << endl << endl;
-  atexit(remove_workdir);
-}
-
-void set_workdir(const string &workdir_) {
-  string workdir = default_workdir;
-  if (const char *env_w = std::getenv("NRG_WORKDIR")) workdir = env_w;
-  if (!workdir_.empty()) workdir = workdir_;
-  create_workdir(workdir);
-}
-
-void set_workdir(int argc, char **argv) {
-  std::vector<string> args(argv+1, argv+argc); // NOLINT
-  string workdir = default_workdir;
-  if (const char *env_w = std::getenv("NRG_WORKDIR")) workdir = env_w;
-  if (args.size() == 2 && args[0] == "-w") workdir = args[1];
-  create_workdir(workdir);
-}
-
-
 // XXX: coefficients belong to symmetry.cc
 
 // This class holds table of generalized xi/zeta/etc. coefficients
@@ -2846,7 +2813,7 @@ void mpi_sync_params() {
 
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
-  P.read_parameters();
+  P.read_parameters(workdir);
   sP.init(P);
   calculation(P);
 #ifdef NRG_MPI
@@ -2855,7 +2822,6 @@ void run_nrg_master() {
   cout << "Master exiting." << endl;
 #endif
   if (P.done) { ofstream D("DONE"); } // Indicate completion by creating a flag file
-  remove_workdir(); // Ok to make this call multiple times
 }
 
 #ifdef NRG_MPI

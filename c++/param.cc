@@ -4,6 +4,50 @@
 #ifndef _param_cc_
 #define _param_cc_
 
+const std::string default_workdir{"."s};
+
+class Workdir {
+ private:
+   std::string workdir{};
+   
+ public:
+   // TODO: option to disable removing (for checkpoint-restart)
+   void remove() { if (workdir != "") { ::remove(workdir); } }
+   ~Workdir() { remove(); }
+
+   void create(const string &dir) {
+     const std::string workdir_template = dir + "/XXXXXX";
+     size_t len = workdir_template.length()+1;
+     auto x = std::make_unique<char[]>(len); // NOLINT
+     strncpy(x.get(), workdir_template.c_str(), len);
+     if (char *w = mkdtemp(x.get())) // create a unique directory
+       workdir = w;
+     else
+       workdir = default_workdir;
+     cout << "workdir=" << workdir << endl << endl;
+   }
+   
+   std::string rhofn(const string &fn, int N) const { return workdir + "/" + fn + to_string(N); }
+   std::string unitaryfn(size_t N) const { return workdir + "/" + FN_UNITARY + to_string(N); }
+};
+
+Workdir workdir;
+
+void set_workdir(const string &dir_) {
+  std::string dir = default_workdir;
+  if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
+  if (!dir_.empty()) dir = dir_;
+  workdir.create(dir);
+}
+
+void set_workdir(int argc, char **argv) {
+  std::string dir = default_workdir;
+  if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
+  std::vector<string> args(argv+1, argv+argc); // NOLINT
+  if (args.size() == 2 && args[0] == "-w") dir = args[1];
+  workdir.create(dir);
+}
+
 // Base class for parameter containers.
 class parambase {
   protected:
@@ -509,23 +553,17 @@ struct Params {
   // SL 3 symmetry types, P.spin is 1. Default value of 2 is valid
   // for all other symmetry types.
   size_t spin = 2;
-  // Directory where we keep temporary files during the computation.
-  // It should point to a storage device with ample space.
-  string workdir = ".";
 
   // Returns true if any of the CFS or related spectral function
   // calculations are requested.
   bool cfs_flags() const { return cfs || fdm; }
 
-  string rhofn(const string &fn, int N) const { return workdir + "/" + fn + to_string(N); }
-  string unitaryfn(size_t N) const { return workdir + "/" + FN_UNITARY + to_string(N); }
-  
   // What is the last iteration completed in the previous NRG runs?
-  void init_laststored() {
+  void init_laststored(const Workdir &workdir) {
     if (resume) {
       laststored = -1;
       for (size_t N = Ninit; N < Nmax; N++) {
-        const string fn = unitaryfn(N);
+        const string fn = workdir.unitaryfn(N);
         ifstream F(fn);
         if (F.good())
           laststored = N;
@@ -556,7 +594,6 @@ struct Params {
     discretization.setvalue(string(discretization, 0, 1));
     if (chitp_ratio > 0.0) chitp.setvalue(chitp_ratio / betabar);
     Tpi = T * M_PI;
-    init_laststored();
   }
 
   void dump() {
@@ -565,7 +602,7 @@ struct Params {
     for (const auto &i : all) i->dump();
   }
 
-  void read_parameters(string filename = "param", string block = "param") {
+  void read_parameters(const Workdir &workdir, string filename = "param", string block = "param") {
     auto parsed_params = parser(filename, block);
     for (const auto &i : all) {
       const string keyword = i->getkeyword();
@@ -581,6 +618,7 @@ struct Params {
       cout << endl;
     }
     validate();
+    init_laststored(workdir);
     dump();
   }
 
