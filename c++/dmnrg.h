@@ -54,7 +54,7 @@ void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
 }
 #endif
 
-void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
+void saveRho(size_t N, const string &prefix, const DensMatElements &rho, const Params &P) {
   my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Storing density matrices [N=" << N << "]... ");
   const string fn = P.rhofn(prefix, N);
@@ -77,7 +77,7 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
   MATRIXF.close();
 }
 
-DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
+DensMatElements loadRho(size_t N, const string &prefix, const Params &P) {
   my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Loading density matrices [N=" << N << "]...");
   DensMatElements rho;
@@ -97,14 +97,12 @@ DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
   }
   nrglog('H', "[total=" << total << " subspaces=" << nr << "]");
   MATRIXF.close();
-  if (checkrho) 
-    check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
   if (P.removefiles)
     if (remove(fn)) my_error("Error removing %s", fn.c_str());
   return rho;
 }
 
-/* storetransformations() stores all required information (energies,
+/* save_transformations() stores all required information (energies,
  transformation matrices, subspace labels, dimensions of 'alpha' subspaces)
  that is needed to calculate reduced density matrix in the DM-NRG
  technique. Matrices are stored on disk as binary files.
@@ -114,7 +112,7 @@ DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
  (eigenvalue, eigenvector) pairs. NOTE: if diag=dsyevr, we effectively
  perform a truncation at the moment of the partial diagonalization!! */
 
-void store_transformations(size_t N, const DiagInfo &diag) {
+void save_transformations(size_t N, const DiagInfo &diag, const Params &P) {
   // P.Ninit-1 corresponds to the zero-th step, when diag contains the
   // eigenvalues from the initial diagonalization and the unitary matrices
   // are all identity matrices.
@@ -143,7 +141,7 @@ void store_transformations(size_t N, const DiagInfo &diag) {
   MATRIXF.close();
 }
 
-DiagInfo load_transformations(size_t N) {
+DiagInfo load_transformations(size_t N, const Params &P) {
   DiagInfo diag;
   if (!P.ZBW) {
     my_assert(N + 1 >= P.Ninit && N + 1 <= P.Nmax);
@@ -170,7 +168,7 @@ DiagInfo load_transformations(size_t N) {
   return diag;
 }
 
-void remove_transformation_files(size_t N) {
+void remove_transformation_files(size_t N, const Params &P) {
   if (!P.removefiles) return;
   const string fn = P.unitaryfn(N);
   if (remove(fn)) my_error("Error removing %s", fn.c_str());
@@ -184,7 +182,8 @@ void cdmI(size_t i,            // Subspace index (alpha=1,...,P.combs)
           const Eigen &diagI1, // contains U_{I1}
           Matrix &rhoNEW,      // rho^{N-1}
           size_t N,
-          t_factor factor) // multiplicative factor that accounts for multiplicity
+          t_factor factor,
+          const AllSteps &dm) // multiplicative factor that accounts for multiplicity
 {
   nrglog('D', "cdmI i=" << i << " I1=" << I1 << " factor=" << factor);
   // Range of indexes r and r' in matrix C^{QS,N}_{r,r'}, cf. Eq. (3.55)
@@ -199,7 +198,7 @@ void cdmI(size_t i,            // Subspace index (alpha=1,...,P.combs)
   if (nromega == 0 || dim == 0) return;
   // rmax (info[I1].rmax[i]) is the range of r in U^N_I1(omega|ri), only
   // those states that we actually kept..
-  const size_t rmax = dm[N][I1].rmax.rmax(i);
+  const size_t rmax = dm[N].at(I1).rmax.rmax(i);
   // rmax can be zero in the case a subspace has been completely truncated
   if (rmax == 0) return;
   // Otherwise, rmax must equal dim
@@ -218,7 +217,7 @@ void cdmI(size_t i,            // Subspace index (alpha=1,...,P.combs)
   }
   // offset gives the offset that is added to r1,rp to find the
   // elements ri in U^N_I1(omega|ri)
-  const size_t offset = dm[N][I1].rmax.offset(i);
+  const size_t offset = dm[N].at(I1).rmax.offset(i);
   const size_t d1     = diagI1.matrix0.size1();
   const size_t d2     = diagI1.matrix0.size2();
   if (!(nromega <= d1 && offset + dim <= d2)) {
@@ -251,7 +250,7 @@ InvarVec dmnrg_subspaces(const Invar &I) {
 void calc_densitymatrix_iterN(const DiagInfo &diag,
                               const DensMatElements &rho, // input
                               DensMatElements &rhoPrev,   // output
-                              size_t N) {
+                              size_t N, const AllSteps &dm, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = dmnrg_subspaces(I);
@@ -265,7 +264,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
       const auto y = diag.find(sub);
       if (x != rho.end() && y != diag.end()) {
         const t_factor coef = double(mult(sub)) / double(mult(I));
-        cdmI(i, sub, x->second, y->second, rhoPrev[I], N, coef);
+        cdmI(i, sub, x->second, y->second, rhoPrev[I], N, coef, dm);
       }
     }
   } // loop over invariant spaces
@@ -294,7 +293,7 @@ bool already_computed(const string &prefix) {
  the second time. Here we calculate the shell-N density matrices for all
  iteration steps. */
 
-void calc_densitymatrix(DensMatElements &rho) {
+void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &P) {
   nrglog('@', "@ calc_densitymatrix");
   if (P.resume && already_computed(FN_RHO)) {
     cout << "Not necessary: already computed!" << endl;
@@ -305,11 +304,11 @@ void calc_densitymatrix(DensMatElements &rho) {
   TIME("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     cout << "[DM] " << N << endl;
-    DiagInfo diag_loaded = load_transformations(N);
+    DiagInfo diag_loaded = load_transformations(N, P);
     DensMatElements rhoPrev;
-    calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N);
+    calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N, dm, P);
     check_trace_rho(rhoPrev); // Make sure rho is normalized to 1.
-    saveRho(N - 1, FN_RHO, rhoPrev);
+    saveRho(N - 1, FN_RHO, rhoPrev, P);
     rho.swap(rhoPrev);
   }
 }
@@ -324,7 +323,7 @@ void calc_densitymatrix(DensMatElements &rho) {
 // A. Weichselbaum, J. von Delft, Phys. Rev. Lett. 99, 076402 (2007)
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
-DensMatElements init_rho_FDM(size_t N) { // XXX: dm
+DensMatElements init_rho_FDM(size_t N, const Params &P) { // XXX: dm
   nrglog('@', "@ init_rho_FDM(" << N << ")");
   DensMatElements rhoFDM;
   double tr = 0.0;
@@ -354,11 +353,11 @@ DensMatElements init_rho_FDM(size_t N) { // XXX: dm
 void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
                                   const DensMatElements &rhoFDM, // input
                                   DensMatElements &rhoFDMPrev,   // output
-                                  size_t N) {
+                                  size_t N, const AllSteps &dm, const Params &P) {
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
   if (!LAST_ITERATION(N)) 
-    rhoDD = init_rho_FDM(N);
+    rhoDD = init_rho_FDM(N, P);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = dmnrg_subspaces(I);
     size_t dim          = dimsub.kept;
@@ -374,12 +373,12 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
       const auto x1 = rhoFDM.find(sub);
       const auto y = diag.find(sub);
       if (x1 != rhoFDM.end() && y != diag.end())
-        cdmI(i, sub, x1->second, y->second, rhoFDMPrev[I], N, coef);
+        cdmI(i, sub, x1->second, y->second, rhoFDMPrev[I], N, coef, dm);
       // Contribution from the DD sector. rhoDD -> rhoFDMPrev
       if (!LAST_ITERATION(N)) {
         const auto x2 = rhoDD.find(sub);
         if (x2 !=rhoDD.end() && y != diag.end())
-          cdmI(i, sub, x2->second, y->second, rhoFDMPrev[I], N, coef);
+          cdmI(i, sub, x2->second, y->second, rhoFDMPrev[I], N, coef, dm);
       }
       // (Exception: for the N-1 iteration, the rhoPrev is already initialized with the DD sector of the last iteration.) }
     } // over combinations
@@ -393,7 +392,7 @@ double sum_wn(size_t N) {
   return sum;
 }
 
-void calc_fulldensitymatrix(DensMatElements &rhoFDM) {
+void calc_fulldensitymatrix(DensMatElements &rhoFDM, const AllSteps &dm, const Params &P) {
   nrglog('@', "@ calc_densitymatrix");
   if (P.resume && already_computed(FN_RHOFDM)) {
     cout << "Not necessary: already computed!" << endl;
@@ -403,15 +402,15 @@ void calc_fulldensitymatrix(DensMatElements &rhoFDM) {
   TIME("FDM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     cout << "[FDM] " << N << endl;
-    DiagInfo diag_loaded = load_transformations(N);
+    DiagInfo diag_loaded = load_transformations(N, P);
     DensMatElements rhoFDMPrev;
-    calc_fulldensitymatrix_iterN(diag_loaded, rhoFDM, rhoFDMPrev, N);
+    calc_fulldensitymatrix_iterN(diag_loaded, rhoFDM, rhoFDMPrev, N, dm, P);
     double tr       = trace(rhoFDMPrev);
     double expected = sum_wn(N);
     double diff     = (tr - expected) / expected;
     nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
     my_assert(num_equal(diff, 0.0));
-    saveRho(N - 1, FN_RHOFDM, rhoFDMPrev);
+    saveRho(N - 1, FN_RHOFDM, rhoFDMPrev, P);
     rhoFDM.swap(rhoFDMPrev);
   }
 }
