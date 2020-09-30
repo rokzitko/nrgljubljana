@@ -11,40 +11,38 @@ void fix_splittings(DiagInfo &diag, const mapdd &cluster_mapping) {
         r = m->second;
 }
 
-// Iterator over eigenvalues
-using svdi = STDEVEC::const_iterator;
-
-void cluster_show(const svdi &i0, const svdi &i1) {
-  cout << "[";
-  for (svdi j = i0; j != i1; ++j) { cout << HIGHPREC(*j) << " "; }
-  cout << "]" << endl;
-}
+template<typename T>
+  void cluster_show(const T &i0, const T &i1) {
+    cout << "[";
+    for (auto j = i0; j != i1; ++j) { cout << HIGHPREC(*j) << " "; }
+    cout << "]" << endl;
+  }
 
 // Returns true if not all the states have the same energy.
-bool cluster_splitting(const svdi &i0, const svdi &i1) {
-  my_assert(i0 != i1);
-  // We need to compare all distinct pairs.
-  for (svdi i = i0; i != i1; ++i)
-    for (auto j = i + 1; j != i1; ++j)
-      if (*i != *j) return true;
-  return false;
-}
+template<typename T>
+  bool cluster_splitting(const T &i0, const T &i1) {
+    my_assert(i0 != i1); // non-empty set
+    // We need to compare all distinct pairs.
+    for (auto i = i0; i != i1; ++i)
+      for (auto j = i + 1; j != i1; ++j)
+        if (*i != *j) return true;
+    return false;
+  }
 
 // Find clusters of values which differ by at most 'epsilon'
-mapdd find_clusters(const STDEVEC &energies, double epsilon) {
+mapdd find_clusters(const std::vector<t_eigen> &energies, double epsilon) {
+  my_assert(energies.size());
   mapdd cluster_mapping;
-  my_assert(energies.size() > 0);
-  t_eigen e0       = energies[0];      // energy of the lower boundary of the cluster, [e0:e1]
-  svdi i0          = cbegin(energies); // iterator to the lower boundary of the cluster, [i0:i1]
-  int cluster_size = 1;                // number of states in the current cluster
-
+  auto e0 = energies[0];      // energy of the lower boundary of the cluster, [e0:e1]
+  auto i0 = cbegin(energies); // iterator to the lower boundary of the cluster, [i0:i1]
+  int size = 1;                // number of states in the current cluster
   for (auto i = begin(energies); i != end(energies); ++i) {
     if ((*i - e0) < epsilon) { // in the cluster
-      cluster_size++;
+      size++;
     } else { // end of cluster detected
       auto i1 = i;
       if (logletter('X')) cluster_show(i0, i1);
-      if (cluster_size > 1) {            // is this a real cluster?
+      if (size > 1) {            // is this a real cluster?
         if (cluster_splitting(i0, i1)) { // are the states actually split?
           t_eigen replace_with = *i0;    // use the lowest eigenvalue of the cluster
           if (logletter('X')) cout << " -> " << setprecision(std::numeric_limits<double>::max_digits10) << replace_with << endl;
@@ -52,9 +50,9 @@ mapdd find_clusters(const STDEVEC &energies, double epsilon) {
             if (*j != *i0) cluster_mapping.insert(make_pair(*j, replace_with));
         }
       }
-      e0           = *i;
-      i0           = i;
-      cluster_size = 1;
+      e0   = *i;
+      i0   = i;
+      size = 1;
     }
   }
   return cluster_mapping;

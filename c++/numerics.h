@@ -113,12 +113,6 @@ void check_are_matrices_equal(const Matrix &m1, const Matrix &m2) {
     for (size_t j = 0; j < m1.size2(); j++) my_assert(m1(i, j) == m2(i, j));
 }
 
-// Dump range [jmin;jmax] of vector v to cout.
-void coutloop(const DVEC &v, int jmin, int jmax) {
-  for (int j = jmin; j <= jmax; j++) cout << v[j] << " ";
-  cout << endl;
-}
-
 // x raised to the power of n
 CONSTFNC inline int pow(int x, int n) {
   my_assert(n >= 0);
@@ -149,9 +143,6 @@ void assert_issquare(const Matrix &m) { my_assert(m.size1() == m.size2()); }
 
 // Powers, such as (-1)^n, appear in the coupling coefficients.
 CONSTFNC inline double Power(double i, double nn) { return pow(i, nn); }
-
-// Assert that vector "v" is (approximately) normalized to 1.
-void assert_norm1(const DVEC &v) { my_assert(my_fcmp(norm_2(v), 1.0, 1.e-8) == 0); }
 
 // Read 'len' values of type T into a ublas vector<T>.
 template <typename T> 

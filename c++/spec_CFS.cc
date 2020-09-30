@@ -171,9 +171,9 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
     }
   } else {
     // iii-term, Eq. (16), positive frequency excitations
-    const size_t dimA                     = diagI1.getnr();
-    DVEC::const_iterator energies_beginIp = begin(diagIp.value);
-    DVEC::const_iterator energies_beginI1 = begin(diagI1.value);
+    const size_t dimA     = diagI1.getnr();
+    auto energies_beginIp = begin(diagIp.value);
+    auto energies_beginI1 = begin(diagI1.value);
     if (dimA && dimp) {
       Matrix op2II_m_rho;
       const matrix_range<const Matrix> op2II_TK(op2II, range(0, op2II.size1()), range(0, rhoNIp.size1()));
@@ -221,9 +221,9 @@ void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
       }
     }
   } else {
-    const size_t dimB                     = diagIp.getnr();
-    DVEC::const_iterator energies_beginIp = begin(diagIp.value);
-    DVEC::const_iterator energies_beginI1 = begin(diagI1.value);
+    const size_t dimB     = diagIp.getnr();
+    auto energies_beginIp = begin(diagIp.value);
+    auto energies_beginI1 = begin(diagI1.value);
     if (dim1 && dimB) {
       const matrix_range<const Matrix> op1II_KT(op1II, range(0, rhoNI1.size1()), range(0, op1II.size2()));
       Matrix op1II_m_rho(rhoNI1.size2(), op1II_KT.size2());
