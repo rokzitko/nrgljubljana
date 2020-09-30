@@ -55,12 +55,12 @@ class SymmetryQSZTZ : public Symmetry {
       trTZ2 += sumZ * tz * tz;
     }
 
-    Sz  = trSZ / STAT::Z;
-    Sz2 = trSZ2 / STAT::Z;
-    Tz  = trTZ / STAT::Z;
-    Tz2 = trTZ2 / STAT::Z;
-    Q   = trQ / STAT::Z;
-    Q2  = trQ2 / STAT::Z;
+    Sz  = trSZ / stats.Z;
+    Sz2 = trSZ2 / stats.Z;
+    Tz  = trTZ / stats.Z;
+    Tz2 = trTZ2 / stats.Z;
+    Q   = trQ / stats.Z;
+    Q2  = trQ2 / stats.Z;
   }
 
   DECL;
@@ -74,10 +74,10 @@ Symmetry *SymQSZTZ = new SymmetryQSZTZ;
 // because all three set are exactly the same due to orbital
 // symmetry. [XXXX Can be generalized for symmetry-broken cases.]
 #undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_function(i, j, 0, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In, opch)
+#define OFFDIAG(i, j, factor0) offdiag_function(i, j, 0, 0, t_matel(factor0) * xi(stats.N, 0), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(i, 0, number, zeta(STAT::N + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(i, 0, number, zeta(stats.N + 1, 0), h, qq)
 
 void SymmetryQSZTZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   my_assert(!substeps);

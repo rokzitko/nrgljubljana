@@ -64,8 +64,8 @@ class SymmetryISOLRcommon : public SymLR {
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
 
-    Sz2 = trSZ / STAT::Z;
-    Q2  = (4 * trIZ) / STAT::Z;
+    Sz2 = trSZ / stats.Z;
+    Q2  = (4 * trIZ) / stats.Z;
   }
 };
 
@@ -104,7 +104,7 @@ Symmetry *SymISO2LR = new SymmetryISO2LR;
 
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 void SymmetryISOLR::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");

@@ -98,10 +98,10 @@ class SymmetryDBLISOSZ : public SymField {
       trIZ22 += sumZ * (ii2 * ii2 - 1) / 12.;
     }
 
-    Sz  = trSZ / STAT::Z;
-    Sz2 = trSZ2 / STAT::Z;
-    Q12 = (4 * trIZ12) / STAT::Z;
-    Q22 = (4 * trIZ22) / STAT::Z;
+    Sz  = trSZ / stats.Z;
+    Sz2 = trSZ2 / stats.Z;
+    Q12 = (4 * trIZ12) / stats.Z;
+    Q22 = (4 * trIZ22) / stats.Z;
   }
 
   DECL;
@@ -112,7 +112,7 @@ class SymmetryDBLISOSZ : public SymField {
 Symmetry *SymDBLISOSZ = new SymmetryDBLISOSZ;
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 void SymmetryDBLISOSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {

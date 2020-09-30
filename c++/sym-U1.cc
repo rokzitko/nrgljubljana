@@ -49,8 +49,8 @@ class SymmetryU1 : public Symmetry {
       trQ2 += sumZ * q * q;
     }
 
-    Q  = trQ / STAT::Z;
-    Q2 = trQ2 / STAT::Z;
+    Q  = trQ / stats.Z;
+    Q2 = trQ2 / stats.Z;
   }
 
   void makematrix_pol2x2(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
@@ -65,7 +65,7 @@ class SymmetryU1 : public Symmetry {
 Symmetry *SymU1 = new SymmetryU1;
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
 
 #undef OFFDIAG_UP
 #undef OFFDIAG_DO
@@ -75,24 +75,24 @@ Symmetry *SymU1 = new SymmetryU1;
 #undef DIAG_DOWN
 #undef DIAG_DOUP
 
-#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUP(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUP(stats.N, ch), h, qq, In, opch)
 
-#define OFFDIAG_DO(i, j, ch, factor0) offdiag_function(i, j, ch, 1, t_matel(factor0) * xiDOWN(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_DO(i, j, ch, factor0) offdiag_function(i, j, ch, 1, t_matel(factor0) * xiDOWN(stats.N, ch), h, qq, In, opch)
 
 // UPDO -> <f> from previous site for spin UP (index fnr=0)
-#define OFFDIAG_UPDO(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUPDO(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_UPDO(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUPDO(stats.N, ch), h, qq, In, opch)
 
 // DOUP -> <f> from previous site for spin DO (index fnr=1)
-#define OFFDIAG_DOUP(i, j, ch, factor0) offdiag_function(i, j, ch, 1, t_matel(factor0) * xiDOUP(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_DOUP(i, j, ch, factor0) offdiag_function(i, j, ch, 1, t_matel(factor0) * xiDOUP(stats.N, ch), h, qq, In, opch)
 
 // Note the _half !!
-#define DIAG_UP(i, j, ch, number) diag_function_half(i, ch, number, zetaUP(STAT::N + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) diag_function_half(i, ch, number, zetaUP(stats.N + 1, ch), h, qq)
 
-#define DIAG_DOWN(i, j, ch, number) diag_function_half(i, ch, number, zetaDOWN(STAT::N + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) diag_function_half(i, ch, number, zetaDOWN(stats.N + 1, ch), h, qq)
 
 // Compare with ISOSPINX for symtype=SPSU2 case
 // See also coefnew/u1/u1.m
-#define DIAG_DOUP(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * zetaDOUP(STAT::N + 1, ch), h, qq)
+#define DIAG_DOUP(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * zetaDOUP(stats.N + 1, ch), h, qq)
 
 #undef SPINZ
 #define SPINZ(i, j, ch, factor) spinz_function(i, j, ch, t_matel(factor), h, qq)
@@ -178,8 +178,8 @@ void SymmetryU1::makematrix_pol2x2(Matrix &h, const Rmaxvals &qq, const Invar &I
 #undef OFFDIAG_DO
 #undef OFFDIAG_UP
 
-#define OFFDIAG_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(STAT::N, ch), h, qq, In, opch)
-#define OFFDIAG_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(stats.N, ch), h, qq, In, opch)
+#define OFFDIAG_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(stats.N, ch), h, qq, In, opch)
 
 void SymmetryU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {

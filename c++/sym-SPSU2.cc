@@ -75,7 +75,7 @@ class SymmetrySPSU2 : public Symmetry {
       trSZ += sumZ * (ss * ss - 1) / 12.;
     }
 
-    Sz2 = trSZ / STAT::Z;
+    Sz2 = trSZ / stats.Z;
   }
 
   DECL;
@@ -92,16 +92,16 @@ Symmetry *SymSPSU2 = new SymmetrySPSU2;
 // pairing operator.
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(STAT::N + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(stats.N + 1, ch), h, qq)
 
 #undef ANOMALOUS
-#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * kappa(STAT::N, ch), h, qq, In, opch)
+#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * kappa(stats.N, ch), h, qq, In, opch)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
 
 void SymmetrySPSU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
@@ -134,7 +134,7 @@ void SymmetrySPSU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, co
   } else {
     my_assert(P.coeffactor == 1);
     int Ntrue, M;
-    tie(Ntrue, M) = get_Ntrue_M(STAT::N);
+    tie(Ntrue, M) = get_Ntrue_M(stats.N);
 
 // Careful: for historical reasons (argh!) there is a minus sign in
 // the coefficients for the second Wilson chain; see also function
@@ -148,7 +148,7 @@ void SymmetrySPSU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, co
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, M, 0, t_matel(factor) * kappa(Ntrue, M), h, qq, In, opch)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(STAT::N), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(stats.N), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, M, number, zeta(Ntrue + 1, M), h, qq)

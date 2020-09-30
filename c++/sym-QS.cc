@@ -90,9 +90,9 @@ class SymmetryQS : public Symmetry {
       trSZ += sumZ * (ss * ss - 1) / 12.;
     }
 
-    Sz2 = trSZ / STAT::Z;
-    Q   = trQ / STAT::Z;
-    Q2  = trQ2 / STAT::Z;
+    Sz2 = trSZ / stats.Z;
+    Q   = trQ / stats.Z;
+    Q2  = trQ2 / stats.Z;
   }
 
   DECL;
@@ -108,19 +108,19 @@ Symmetry *SymQS = new SymmetryQS;
 
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 /* i - subspace index
    ch - channel (0 or 1)
    number - number of electrons added in channel 'ch' in subspace 'i' */
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
 
 #undef OFFDIAG_MIX
-#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(stats.N, ch), h, qq, In, opch)
 
 #undef RUNGHOP
-#define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(STAT::N + 1, 0), h, qq)
+#define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(stats.N + 1, 0), h, qq)
 
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
@@ -157,12 +157,12 @@ void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const
   } else {
     my_assert(P.coeffactor == 1);
     int Ntrue, M;
-    tie(Ntrue, M) = get_Ntrue_M(STAT::N);
+    tie(Ntrue, M) = get_Ntrue_M(stats.N);
 
 // Here we need scale_fix, because SCALE() function is different from
 // the convention for rescaling in regular two-channel cases.
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(STAT::N), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(stats.N), h, qq, In, opch)
 
 // No scale_fix here, because SCALE() is defined as it should be.
 #undef DIAG
@@ -176,13 +176,10 @@ void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const
 }
 
 void SymmetryQS::show_coefficients() {
-  if (P.rungs) {
-    using namespace STAT;
-    for (unsigned int i = 0; i < P.channels; i++) {
+  if (P.rungs)
+    for (unsigned int i = 0; i < P.channels; i++)
       cout << "[" << i + 1 << "]"
-           << " xi_rung(" << N << ")=" << xiR(N, i) << " zeta_rung(" << N + 1 << ")=" << zetaR(N + 1, i) << endl;
-    }
-  }
+           << " xi_rung(" << stats.N << ")=" << xiR(stats.N, i) << " zeta_rung(" << stats.N + 1 << ")=" << zetaR(stats.N + 1, i) << endl;
 }
 
 #include "nrg-recalc-QS.cc"

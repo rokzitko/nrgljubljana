@@ -102,9 +102,9 @@ inline double windowfunction(double E, double Emin, double Ex, double Emax) {
 // Note that we use a windowfunction (see above) to accomplish the
 // smooth combining of data.
 void mergeNN2half(Bins &fullspec, const Bins &cs) {
-  double Emin = STAT::scale * getEmin(); // p
-  double Ex   = STAT::scale * getEx();   // p Lambda
-  double Emax = STAT::scale * getEmax(); // p Lambda^2
+  double Emin = stats.scale * getEmin(); // p
+  double Ex   = stats.scale * getEx();   // p Lambda
+  double Emax = stats.scale * getEmax(); // p Lambda^2
   if (P.ZBW) {                          // override for zero bandwidth calculation
     Emin = 0;
     Emax = std::numeric_limits<double>::max(); // infinity
@@ -138,7 +138,7 @@ bool N_for_merging(int N) {
 void SpectrumRealFreq::mergeNN2(spCS_t cs) {
   auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
   nrglog('*', "weight=" << csb->total_weight());
-  if (!N_for_merging(STAT::N)) return;
+  if (!N_for_merging(stats.N)) return;
   mergeNN2half(fspos, csb->spos);
   mergeNN2half(fsneg, csb->sneg);
 }

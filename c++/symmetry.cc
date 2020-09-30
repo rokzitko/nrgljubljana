@@ -6,9 +6,6 @@
 
 // some forward declarations
 CONSTFNC double calculate_Z(const Invar, const Eigen &, double);
-namespace STAT {
-  double Z; // statistical sum (at shell n)
-}
 
 // In and QN are global variables. They contain information about
 // how the invariant subspaces at consecutive iteration steps are

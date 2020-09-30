@@ -65,9 +65,9 @@ class SymmetryISOSZLR : public SymFieldLR {
       trIZ2 += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
 
-    Sz  = trSZ / STAT::Z;
-    Sz2 = trSZ2 / STAT::Z;
-    Q2  = (4 * trIZ2) / STAT::Z;
+    Sz  = trSZ / stats.Z;
+    Sz2 = trSZ2 / stats.Z;
+    Q2  = (4 * trIZ2) / stats.Z;
   }
 
   DECL;
@@ -78,7 +78,7 @@ class SymmetryISOSZLR : public SymFieldLR {
 Symmetry *SymISOSZLR = new SymmetryISOSZLR;
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 void SymmetryISOSZLR::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Ispin ii = I.get("II");

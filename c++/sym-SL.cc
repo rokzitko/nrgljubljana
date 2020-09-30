@@ -48,10 +48,10 @@ class SymmetrySL : public Symmetry {
       trQ2 += sumZ * q * q;
     }
 
-    Q  = trQ / STAT::Z;
-    Q2 = trQ2 / STAT::Z;
+    Q  = trQ / stats.Z;
+    Q2 = trQ2 / stats.Z;
     // charge fluctuations -> susceptibility
-    sQ2 = (trQ2 / STAT::Z) - pow(trQ / STAT::Z, 2);
+    sQ2 = (trQ2 / stats.Z) - pow(trQ / stats.Z, 2);
   }
 
   DECL;
@@ -62,10 +62,10 @@ class SymmetrySL : public Symmetry {
 Symmetry *SymSL = new SymmetrySL;
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
 
 void SymmetrySL::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {

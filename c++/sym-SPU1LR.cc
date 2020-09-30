@@ -56,8 +56,8 @@ class SymmetrySPU1LR : public SymFieldLR {
       trSZ2 += sumZ * sqr(SZ(ssz));
     }
 
-    Sz2 = trSZ2 / STAT::Z;
-    Sz  = trSZ / STAT::Z;
+    Sz2 = trSZ2 / stats.Z;
+    Sz  = trSZ / stats.Z;
   }
 
   DECL;
@@ -69,16 +69,16 @@ class SymmetrySPU1LR : public SymFieldLR {
 Symmetry *SymSPU1LR = new SymmetrySPU1LR;
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(STAT::N + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(stats.N + 1, ch), h, qq)
 
 #undef ANOMALOUS
-#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * kappa(STAT::N, ch), h, qq, In, opch)
+#define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * kappa(stats.N, ch), h, qq, In, opch)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
 
 void SymmetrySPU1LR::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {

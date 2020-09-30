@@ -67,9 +67,9 @@ class SymmetryQSC3 : public SymC3 {
       trSZ2 += sumZ * (ss * ss - 1) / 12.;
     }
 
-    Sz2 = trSZ2 / STAT::Z;
-    Q   = trQ / STAT::Z;
-    Q2  = trQ2 / STAT::Z;
+    Sz2 = trSZ2 / stats.Z;
+    Q   = trQ / stats.Z;
+    Q2  = trQ2 / stats.Z;
   }
 
   DECL;
@@ -80,10 +80,10 @@ class SymmetryQSC3 : public SymC3 {
 Symmetry *SymQSC3 = new SymmetryQSC3;
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(i, 0, number, zeta(STAT::N + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(i, 0, number, zeta(stats.N + 1, 0), h, qq)
 
 void SymmetryQSC3::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
 #ifdef NRG_REAL

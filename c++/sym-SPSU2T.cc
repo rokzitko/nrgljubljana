@@ -80,8 +80,8 @@ class SymmetrySPSU2T : public Symmetry {
       trTZ2 += sumZ * t * (t + 1) / 3.;
     }
 
-    Sz2 = trSZ2 / STAT::Z;
-    Tz2 = trTZ2 / STAT::Z;
+    Sz2 = trSZ2 / stats.Z;
+    Tz2 = trTZ2 / stats.Z;
   }
 
   DECL;
@@ -129,16 +129,16 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
 // because all three set are exactly the same due to orbital
 // symmetry.
 #undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_spsu2t(i, j, 0, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In, I, opch)
+#define OFFDIAG(i, j, factor0) offdiag_spsu2t(i, j, 0, 0, t_matel(factor0) * xi(stats.N, 0), h, qq, In, I, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(i, 0, number, zeta(STAT::N + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(i, 0, number, zeta(stats.N + 1, 0), h, qq)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * 2.0 * delta(STAT::N + 1, 0), h, qq)
+#define ISOSPINX(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * 2.0 * delta(stats.N + 1, 0), h, qq)
 
 #undef ANOMALOUS
-#define ANOMALOUS(i, j, factor) offdiag_function(i, j, 0, 0, t_matel(factor) * kappa(STAT::N, 0), h, qq, In, opch)
+#define ANOMALOUS(i, j, factor) offdiag_function(i, j, 0, 0, t_matel(factor) * kappa(stats.N, 0), h, qq, In, opch)
 
 void SymmetrySPSU2T::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss  = I.get("SS");
@@ -150,10 +150,10 @@ void SymmetrySPSU2T::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, c
 
 #include "spsu2t/spsu2t-offdiag.dat"
 #include "spsu2t/spsu2t-diag.dat"
-  if (!num_equal(delta(STAT::N + 1, 0), 0.0)) {
+  if (!num_equal(delta(stats.N + 1, 0), 0.0)) {
 #include "spsu2t/spsu2t-isospinx.dat"
   }
-  if (!num_equal(kappa(STAT::N, 0), 0.0)) {
+  if (!num_equal(kappa(stats.N, 0), 0.0)) {
 #include "spsu2t/spsu2t-anomalous.dat"
   }
 }

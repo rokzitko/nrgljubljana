@@ -75,10 +75,10 @@ class SymmetryQSZ : public SymField {
       trQ2 += sumZ * sqr(q);
     }
 
-    Sz2 = trSZ2 / STAT::Z;
-    Sz  = trSZ / STAT::Z;
-    Q   = trQ / STAT::Z;
-    Q2  = trQ2 / STAT::Z;
+    Sz2 = trSZ2 / stats.Z;
+    Sz  = trSZ / stats.Z;
+    Q   = trQ / stats.Z;
+    Q2  = trQ2 / stats.Z;
   }
 
   DECL;
@@ -94,14 +94,14 @@ Symmetry *SymQSZ = new SymmetryQSZ;
 
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 /* i - subspace index
    ch - channel (0 or 1)
    number - number of electrons added in channel 'ch' in subspace 'i' */
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
 
 #undef SPINZ
 #define SPINZ(i, j, ch, factor) spinz_function(i, j, ch, t_matel(factor), h, qq)
@@ -110,10 +110,10 @@ Symmetry *SymQSZ = new SymmetryQSZ;
 // matrix in the new step, i.e., the f_{N} from the f^\dag_{N_1} f_{N} hopping
 // term.
 #undef OFFDIAG_MIX
-#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(stats.N, ch), h, qq, In, opch)
 
 #undef RUNGHOP
-#define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(STAT::N + 1, 0), h, qq)
+#define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(stats.N + 1, 0), h, qq)
 
 // "non-polarized" here means that the coefficients xi do not depend on
 // spin. Note, however, that there is support for a global magnetic field,
@@ -148,11 +148,11 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const I
   } else { // substeps
     my_assert(P.coeffactor == 1);
     int Ntrue, M;
-    tie(Ntrue, M) = get_Ntrue_M(STAT::N);
+    tie(Ntrue, M) = get_Ntrue_M(stats.N);
 
     // Overrides. See sym-QS.cc for explanations!
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(STAT::N), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(stats.N), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, M, number, zeta(Ntrue + 1, M), h, qq)
@@ -168,13 +168,13 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const I
   }
 }
 
-#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUP(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUP(stats.N, ch), h, qq, In, opch)
 
-#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiDOWN(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiDOWN(stats.N, ch), h, qq, In, opch)
 
-#define DIAG_UP(i, j, ch, number) diag_function_half(i, ch, number, zetaUP(STAT::N + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) diag_function_half(i, ch, number, zetaUP(stats.N + 1, ch), h, qq)
 
-#define DIAG_DOWN(i, j, ch, number) diag_function_half(i, ch, number, zetaDOWN(STAT::N + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) diag_function_half(i, ch, number, zetaDOWN(stats.N + 1, ch), h, qq)
 
 #undef SPINZ
 #define SPINZ(i, j, ch, factor) spinz_function(i, j, ch, t_matel(factor), h, qq)
@@ -219,21 +219,17 @@ void SymmetryQSZ::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inva
 }
 
 void SymmetryQSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (P.polarized) {
+  if (P.polarized) 
     makematrix_polarized(h, qq, I, In, opch);
-  } else {
+  else
     makematrix_nonpolarized(h, qq, I, In, opch);
-  }
 }
 
 void SymmetryQSZ::show_coefficients() {
-  if (P.rungs) {
-    using namespace STAT;
-    for (unsigned int i = 0; i < P.channels; i++) {
+  if (P.rungs) 
+    for (unsigned int i = 0; i < P.channels; i++) 
       cout << "[" << i + 1 << "]"
-           << " xi_rung(" << N << ")=" << xiR(N, i) << " zeta_rung(" << N + 1 << ")=" << zetaR(N + 1, i) << endl;
-    }
-  }
+           << " xi_rung(" << stats.N << ")=" << xiR(stats.N, i) << " zeta_rung(" << stats.N + 1 << ")=" << zetaR(stats.N + 1, i) << endl;
 }
 
 #include "nrg-recalc-QSZ.cc"

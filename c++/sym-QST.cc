@@ -109,10 +109,10 @@ class SymmetryQST : public Symmetry {
       trTZ += sumZ * t * (t + 1) / 3.;
     }
 
-    Sz2 = trSZ / STAT::Z;
-    Tz2 = trTZ / STAT::Z;
-    Q   = trQ / STAT::Z;
-    Q2  = trQ2 / STAT::Z;
+    Sz2 = trSZ / stats.Z;
+    Tz2 = trTZ / stats.Z;
+    Q   = trQ / stats.Z;
+    Q2  = trQ2 / stats.Z;
   }
 
   DECL;
@@ -159,10 +159,10 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
 // because all three set are exactly the same due to orbital
 // symmetry.
 #undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_qst(i, j, 0, 0, t_matel(factor0) * xi(STAT::N, 0), h, qq, In, I, opch)
+#define OFFDIAG(i, j, factor0) offdiag_qst(i, j, 0, 0, t_matel(factor0) * xi(stats.N, 0), h, qq, In, I, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(i, 0, number, zeta(STAT::N + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(i, 0, number, zeta(stats.N + 1, 0), h, qq)
 
 void SymmetryQST::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss  = I.get("SS");

@@ -333,7 +333,7 @@ DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Params &P) { //
     Matrix &rhoI = rhoFDM[I];
     for (size_t i = dimsub.min(); i < dimsub.max(); i++) {
       const double betaE = dimsub.absenergyN[i] / P.T;
-      const double ratio = STAT::wn[N] / mpf_get_d(STAT::ZnDN[N]);
+      const double ratio = stats.wn[N] / mpf_get_d(stats.ZnDN[N]);
       double val2        = exp(-betaE) * ratio;
       val2               = std::isfinite(val2) ? val2 : 0.0;
       rhoI(i, i)         = val2;
@@ -341,11 +341,11 @@ DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Params &P) { //
     }
   }
   // Trace should be equal to the total weight of the shell-N contribution to the FDM.
-  const double diff = (tr - STAT::wn[N]) / STAT::wn[N]; // relative error
+  const double diff = (tr - stats.wn[N]) / stats.wn[N]; // relative error
   nrglog('w', "tr=" << tr << " diff=" << diff);
   if (std::isfinite(diff) && !num_equal(diff, 0.0, 1e-8)) {
     my_warning("diff=%24.16lf", diff); 
-    my_assert(STAT::wn[N] < 1e-12);    // ..OK if small enough overall.
+    my_assert(stats.wn[N] < 1e-12);    // ..OK if small enough overall.
   }
   return rhoFDM;
 }
@@ -388,7 +388,7 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
 // Sum of statistical weights from site N to the end of the Wilson chain.
 double sum_wn(size_t N) {
   double sum = 0.0;
-  for (size_t n = P.Nmax - 1; n >= N; n--) sum += STAT::wn[n];
+  for (size_t n = P.Nmax - 1; n >= N; n--) sum += stats.wn[n];
   return sum;
 }
 

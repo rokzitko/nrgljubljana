@@ -146,7 +146,7 @@ struct Params {
   // temperature(=energy) scale still considered, Tmin. In other
   // words, if Tmin>0, the parameter Nmax is recomputed so that T at
   // the Nmax-th iteration is equal or higher than the minimal
-  // temperature Tmin. NOTE: STAT::N runs from 0 to Nmax-1
+  // temperature Tmin. NOTE: stats.N runs from 0 to Nmax-1
   // (including), the coefficient indexes run from 0 to Nmax (due to
   // the inclusion of the zero-th site of the Wilson chain)!
   size_t Nmax = 0; // 0 means non-initialized.

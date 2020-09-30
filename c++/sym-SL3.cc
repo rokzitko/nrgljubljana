@@ -54,20 +54,20 @@ class SymmetrySL3 : public Symmetry {
       trQ32 += sumZ * q3 * q3;
     }
 
-    Q1  = trQ1 / STAT::Z;
-    Q12 = trQ12 / STAT::Z;
+    Q1  = trQ1 / stats.Z;
+    Q12 = trQ12 / stats.Z;
     // charge fluctuations -> susceptibility
-    sQ12 = (trQ12 / STAT::Z) - pow(trQ1 / STAT::Z, 2);
+    sQ12 = (trQ12 / stats.Z) - pow(trQ1 / stats.Z, 2);
 
-    Q2  = trQ2 / STAT::Z;
-    Q22 = trQ22 / STAT::Z;
+    Q2  = trQ2 / stats.Z;
+    Q22 = trQ22 / stats.Z;
     // charge fluctuations -> susceptibility
-    sQ22 = (trQ22 / STAT::Z) - pow(trQ2 / STAT::Z, 2);
+    sQ22 = (trQ22 / stats.Z) - pow(trQ2 / stats.Z, 2);
 
-    Q3  = trQ3 / STAT::Z;
-    Q32 = trQ32 / STAT::Z;
+    Q3  = trQ3 / stats.Z;
+    Q32 = trQ32 / stats.Z;
     // charge fluctuations -> susceptibility
-    sQ32 = (trQ32 / STAT::Z) - pow(trQ3 / STAT::Z, 2);
+    sQ32 = (trQ32 / stats.Z) - pow(trQ3 / stats.Z, 2);
   }
 
   DECL;
@@ -78,10 +78,10 @@ class SymmetrySL3 : public Symmetry {
 Symmetry *SymSL3 = new SymmetrySL3;
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
 
 void SymmetrySL3::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {

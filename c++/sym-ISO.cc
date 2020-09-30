@@ -62,8 +62,8 @@ class SymmetryISOcommon : public Symmetry {
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
 
-    Sz2 = trSZ / STAT::Z;
-    Q2  = (4 * trIZ) / STAT::Z;
+    Sz2 = trSZ / stats.Z;
+    Q2  = (4 * trIZ) / stats.Z;
   }
 };
 
@@ -126,10 +126,10 @@ Symmetry *SymISO  = new SymmetryISO;
 Symmetry *SymISO2 = new SymmetryISO2;
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(STAT::N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(STAT::N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
 
 void SymmetryISO::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");

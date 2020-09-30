@@ -87,8 +87,8 @@ size_t read_nsubs(ifstream &fdata)
 
 // Read the ground state energy from data file ('e' flag)
 void read_gs_energy(ifstream &fdata) {
-  fdata >> STAT::total_energy;
-  assert_isfinite(STAT::total_energy);
+  fdata >> stats.total_energy;
+  assert_isfinite(stats.total_energy);
 }
 
 // Read energies of initial states. nsubs is the number of subspaces.
