@@ -232,11 +232,11 @@ class Rmaxvals {
   Rmaxvals &operator=(Rmaxvals &&) = default;
   ~Rmaxvals() = default;
   size_t rmax(size_t i) const {
-    allowed_block_index(i);
+    P.allowed_block_index(i);
     return values[i - 1]; // FOR COMPATIBILITY OFFSET 1!
   } 
   size_t offset(size_t i) const {
-    allowed_block_index(i);
+    P.allowed_block_index(i);
     return accumulate(begin(values), begin(values) + (i - 1), 0);
   }
   size_t operator[](size_t i) const { return rmax(i); }
@@ -572,7 +572,7 @@ ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
   return os;
 }
 
-// Returns true if option 'c' is selected for logging
+// Returns true if option 'c' is selected for logging // XXX move to P?
 bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::npos); }
 
 // Index 'n' of the last site in the existing chain, f_n (at iteration 'N').
@@ -616,6 +616,9 @@ void set_workdir(int argc, char **argv) {
   create_workdir(workdir);
 }
 
+
+// XXX: coefficients belong to symmetry.cc
+
 // This class holds table of generalized xi/zeta/etc. coefficients
 class coef_table {
   private:
@@ -655,17 +658,17 @@ class set_of_tables {
     for (auto &i : tabs) i.read_values(fdata);
   }
   t_coef operator()(size_t N, size_t alpha) const {
-    allowed_coefchannel(alpha);
+    P.allowed_coefchannel(alpha);
     my_assert(alpha < tabs.size());
     return tabs[alpha].coef(N);
   }
   size_t max(size_t alpha) const {
-    allowed_coefchannel(alpha);
+    P.allowed_coefchannel(alpha);
     my_assert(alpha < tabs.size());
     return tabs[alpha].max();
   }
   void setvalue(size_t N, size_t alpha, t_coef val) {
-    allowed_coefchannel(alpha);
+    P.allowed_coefchannel(alpha);
     my_assert(alpha < tabs.size() && N <= P.Nmax);
     tabs[alpha].setvalue(N, val);
   }

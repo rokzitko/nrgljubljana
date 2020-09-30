@@ -582,22 +582,28 @@ struct Params {
     validate();
     dump();
   }
+
+  // Is i an allowed block index?
+  void allowed_block_index(size_t i) { my_assert(1 <= i && i <= combs); }
+
+  // Is ch an allowed channel index (0..P.channels-1)?
+  void allowed_channel(size_t ch) { my_assert(ch < channels); }
+  
+  // Is ch an allowed index for coefficient table? There can be more coefficient tables than actual channels (for
+  // example in the case of spin-polarized conduction bands).
+  void allowed_coefchannel(size_t ch) {
+    my_assert(coefchannels >= channels);
+    my_assert(ch < coefchannels);
+  }
+  
+  // Check i,j,ch parameters of *diag_function() in matrix construction
+  void allowed_ijch(size_t i, size_t j, size_t ch) {
+    allowed_block_index(i);
+    allowed_block_index(j);
+    allowed_channel(ch);
+  }
 };
 
 Params P;
-
-// Is i an allowed block index?
-void allowed_block_index(size_t i) { my_assert(1 <= i && i <= P.combs); }
-
-// Is ch an allowed channel index (0..P.channels-1)?
-void allowed_channel(size_t ch) { my_assert(ch < P.channels); }
-
-// Is ch an allowed index for coefficient table? There can be more
-// coefficient tables than actual channels (for example in the case of
-// spin-polarized conduction bands).
-void allowed_coefchannel(size_t ch) {
-  my_assert(P.coefchannels >= P.channels);
-  my_assert(ch < P.coefchannels);
-}
 
 #endif // _param_cc_

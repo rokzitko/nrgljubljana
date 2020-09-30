@@ -7,13 +7,6 @@
 // TO DO: remove P., move all the required information to the
 // symmetry class where it belongs.
 
-// Check i,j,ch parameters of *diag_function().
-void check_ijch(size_t i, size_t j, size_t ch) {
-  allowed_block_index(i);
-  allowed_block_index(j);
-  allowed_channel(ch);
-}
-
 /* +++ Construct an offdiagonal part of the Hamiltonian. +++
 
  i,j - indexes of matrix blocks that constitue the total Hamiltonian matrix
@@ -31,7 +24,7 @@ void check_ijch(size_t i, size_t j, size_t ch) {
 */
 
 bool offdiag_contributes(size_t i, size_t j, size_t ch, const Rmaxvals &qq) {
-  check_ijch(i, j, ch);
+  P.allowed_ijch(i, j, ch);
   my_assert(i != j);
   const size_t size1 = qq.rmax(i);
   const size_t size2 = qq.rmax(j);
@@ -108,7 +101,7 @@ void offdiag_function(size_t i, size_t j,
  routine should be used. 
 */
 void diag_function(size_t i, size_t ch, double number, t_coef sc_zeta, Matrix &h, const Rmaxvals &qq) {
-  allowed_block_index(i);
+  P.allowed_block_index(i);
   my_assert(number >= 0.0 && number <= 14.0);
   const size_t begin1 = qq.offset(i);
   const size_t size1  = qq.rmax(i);
@@ -126,7 +119,7 @@ void diag_function(size_t i, size_t ch, double number, t_coef sc_zeta, Matrix &h
 
 // Compare with diag_function()
 void diag_function_half(size_t i, size_t ch, double number, t_matel sc_zeta, Matrix &h, const Rmaxvals &qq) {
-  allowed_block_index(i);
+  P.allowed_block_index(i);
   my_assert(0.0 <= number && number <= P.spin);
   const size_t begin1 = qq.offset(i);
   const size_t size1  = qq.rmax(i);
@@ -141,7 +134,7 @@ void diag_function_half(size_t i, size_t ch, double number, t_matel sc_zeta, Mat
 
 // Compare with diag_function() above.
 void spinz_function(size_t i, size_t j, size_t ch, t_matel spinz, Matrix &h, const Rmaxvals &qq) {
-  check_ijch(i, j, ch);
+  P.allowed_ijch(i, j, ch);
   my_assert(i == j);
 
   // compare with the ISOSPINX macro
@@ -154,7 +147,7 @@ void spinz_function(size_t i, size_t j, size_t ch, t_matel spinz, Matrix &h, con
 }
 
 void spinx_function(size_t i, size_t j, size_t ch, t_matel spinx, Matrix &h, const Rmaxvals &qq) {
-  check_ijch(i, j, ch);
+  P.allowed_ijch(i, j, ch);
   const t_matel shift = spinx * double(P.globalBx) / SCALE(STAT::N + 1);
   if (i > j) return; // only upper triangular part
   size_t begin1    = qq.offset(i);
@@ -171,7 +164,7 @@ void spinx_function(size_t i, size_t j, size_t ch, t_matel spinx, Matrix &h, con
 // +++ Shift the offdiagonal matrix elements by factor. +++
 
 void diag_offdiag_function(size_t i, size_t j, size_t chin, t_matel factor, Matrix &h, const Rmaxvals &qq) {
-  check_ijch(i, j, chin);
+  P.allowed_ijch(i, j, chin);
   if (i > j) return; // only upper triangular part
   size_t begin1    = qq.offset(i);
   size_t size1     = qq.rmax(i);
