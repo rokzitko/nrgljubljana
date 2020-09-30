@@ -2466,17 +2466,6 @@ DiagInfo nrg_do_diag(IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrma
   return diag;
 }
 
-using mapSD = map<string, double>;
-std::vector<mapSD> td_data; // XXX
-
-// Store all the results from the TD calculation in the form of a map
-// (string -> double).
-void store_td() {
-  mapSD td;
-  for (const auto &i : allfields) td[i->name()] = i->rawvalue();
-  td_data.push_back(td);
-}
-
 // Absolute energies. Must be called in the first NRG run after
 // STAT::total_energy has been updated, but before
 // store_transformations(). These energies are initially not
@@ -2558,7 +2547,6 @@ void nrg_after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax, AllSteps
     nrg_calculate_spectral_and_expv(diag, iterinfo, dm, P);
   }
   if (P.checksumrules) operator_sumrules(diag, iterinfo);
-  store_td(); // Store TD data (all outfields)
 }
 
 // Perform one iteration step
@@ -2636,29 +2624,6 @@ DiagInfo nrg_main_loop(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, 
     diag = nrg_iterate(iterinfo, diag, dm, P);
   }
   return diag;
-}
-
-// Estimate the Kondo temperature (Wilson's definition). This
-// calculation only makes sense for the SIAM and the Kondo model and
-// even then only if Tmin << TKW, B=0, and Sz^2 is computed.
-void calc_TKW() {
-  const size_t len = td_data.size();
-  if (!(outfield_exists("<Sz^2>") && len > 2)) return;
-  const double T0chiT0 = td_data[len - 1]["<Sz^2>"];
-  const double y       = T0chiT0 + 0.07;
-  // Linear interpolation
-  double T = 0.0;
-  for (size_t i = len - 1; i >= 1; i--) {
-    const double x0 = td_data[i]["T"];          // lower T
-    const double x1 = td_data[i - 1]["T"];      // higher T
-    const double y0 = td_data[i]["<Sz^2>"];     // lower Tchi(T)
-    const double y1 = td_data[i - 1]["<Sz^2>"]; // higher Tchi(T)
-    if (y0 <= y && y <= y1) {
-      T = x0 + (x1 - x0) / (y1 - y0) * (y - y0);
-      break;
-    }
-  }
-  cout << "TKW=" << T << endl;
 }
 
 // Total number of states (symmetry taken into account)
