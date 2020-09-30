@@ -32,7 +32,7 @@ std::string parse_datafile_header(istream &fdata, const int expected_version = 9
 
 // Read the number of channels from data file. Also sets P.combs
 // accordingly, depending on the spin of the conduction band electrons.
-void read_nr_channels(ifstream &fdata, std::string sym_string) {
+void read_nr_channels(ifstream &fdata, std::string sym_string, Params &P) {
   size_t channels;
   fdata >> channels;
   my_assert(channels >= 1);
@@ -71,7 +71,7 @@ void read_nr_channels(ifstream &fdata, std::string sym_string) {
 }
 
 // Read the length of the Wilson chain
-void read_Nmax(ifstream &fdata) {
+void read_Nmax(ifstream &fdata, Params &P) {
   size_t nmax;
   fdata >> nmax;
   P.Nmax = nmax;
@@ -92,8 +92,8 @@ void read_gs_energy(ifstream &fdata) {
 }
 
 // Read energies of initial states. nsubs is the number of subspaces.
-void read_energies(ifstream &fdata, DiagInfo &diag, size_t nsubs) {
-  diag.clear(); // clean-up first!
+DiagInfo read_energies(ifstream &fdata, size_t nsubs, Params &P) {
+  DiagInfo diag;
   for (size_t i = 1; i <= nsubs; i++) {
     Invar I;
     size_t nrr;
@@ -101,39 +101,33 @@ void read_energies(ifstream &fdata, DiagInfo &diag, size_t nsubs) {
     my_assert(nrr > 0);
     EVEC energies = EVEC(nrr);
     read_vector(fdata, energies, nrr);
-    if (!P.data_has_rescaled_energies) 
+    if (!P.data_has_rescaled_energies)
       energies /= SCALE(P.Ninit); // rescale to the suitable energy scale
     diag[I] = Eigen(nrr, nrr);
     diag[I].diagonal(energies);
   }
   my_assert(diag.size() == nsubs);
+  return diag;
 }
 
-// Read irreducible matrix elements from stream fdata and store them in a
-// map of matrices m. The format is specified in file "data.spec"
-void read_matrix_elements(ifstream &fdata, MatrixElements &m, const DiagInfo &diag) {
-  nrglog('@', "read_matrix_elements");
-  m.clear();
+// Read irreducible matrix elements from stream fdata and store them in a map of matrices.
+MatrixElements read_matrix_elements(ifstream &fdata, const DiagInfo &diag) {
+  MatrixElements m;
   size_t nf; // Number of I1 x I2 combinations
   fdata >> nf;
   for (size_t i = 1; i <= nf; i++) {
     Invar I1, I2;
     fdata >> I1 >> I2;
-    const auto it1 = diag.find(I1);
-    const auto it2 = diag.find(I2);
-    if (it1 != diag.end() && it2 != diag.end()) {
-      const size_t size1 = it1->second.getnr();
-      const size_t size2 = it2->second.getnr();
-      nrglog('(', "reading matrix block " << i << " [" << I1 << "] [" << I2 << "] (" << size1 << "x" << size2 << ")");
-      read_matrix(fdata, m[make_pair(I1, I2)], size1, size2);
-    } else {
+    if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
+      read_matrix(fdata, m[{I1, I2}], it1->second.getnr(), it2->second.getnr());
+    else
       my_error("Corrupted input file. Stopped in read_matrix_elements()");
-    }
   }
   my_assert(m.size() == nf);
+  return m;
 }
 
-void read_irreduc_f(ifstream &fdata, const DiagInfo &diag, Opch &opch) {
+void read_irreduc_f(ifstream &fdata, const DiagInfo &diag, Opch &opch, Params &P) {
   nrglog('@', "read_irreduc_f()");
   opch = Opch(P.channels);
   for (size_t i = 0; i < P.channels; i++) {
@@ -143,15 +137,14 @@ void read_irreduc_f(ifstream &fdata, const DiagInfo &diag, Opch &opch) {
       size_t iread, jread;
       fdata >> ch >> iread >> jread;
       my_assert(ch == 'f' && i == iread && j == jread);
-      read_matrix_elements(fdata, opch[i][j], diag);
+      opch[i][j] = read_matrix_elements(fdata, diag);
     }
   }
 }
 
-// Determine Nmax from the length of the coefficient tables! Modify
-// it for substeps==true. Call after tridiagonalization routines (if
-// not using the tables computed by initial.m).
-void determine_Nmax() {
+// Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
+// tridiagonalization routines (if not using the tables computed by initial.m).
+void determine_Nmax(Params &P) {
   size_t length_coef_table = xi.max(0); // all channels have same nr. of coefficients
   cout << endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << endl << endl;
   my_assert(length_coef_table == P.Nmax);
@@ -168,21 +161,21 @@ void determine_Nmax() {
 inline void skipline(ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
-std::tuple<DiagInfo, IterInfo> read_data() {
+std::tuple<DiagInfo, IterInfo> read_data(Params &P) {
   skipline();
   ifstream fdata("data");
   if (!fdata) my_error("Can't load initial data.");
   auto sym_string = parse_datafile_header(fdata);
-  read_nr_channels(fdata, sym_string);
+  read_nr_channels(fdata, sym_string, P);
   set_symmetry(sym_string);
-  read_Nmax(fdata);
+  read_Nmax(fdata, P);
   size_t nsubs = read_nsubs(fdata);
   skip_comments(fdata);
   DiagInfo diag0; // 0-th step of the NRG iteration
-  read_energies(fdata, diag0, nsubs);
+  diag0 = read_energies(fdata, nsubs, P);
   skip_comments(fdata);
   IterInfo iterinfo0;
-  read_irreduc_f(fdata, diag0, iterinfo0.opch);
+  read_irreduc_f(fdata, diag0, iterinfo0.opch, P);
   while (true) {
     /* skip white space */
     while (!fdata.eof() && isspace(fdata.peek())) fdata.get();
@@ -196,13 +189,13 @@ std::tuple<DiagInfo, IterInfo> read_data() {
         // ignore embedded comment lines
         break;
       case 'e': read_gs_energy(fdata); break;
-      case 's': read_matrix_elements(fdata, iterinfo0.ops[opname],  diag0); break;
-      case 'p': read_matrix_elements(fdata, iterinfo0.opsp[opname], diag0); break;
-      case 'g': read_matrix_elements(fdata, iterinfo0.opsg[opname], diag0); break;
-      case 'd': read_matrix_elements(fdata, iterinfo0.opd[opname],  diag0); break;
-      case 't': read_matrix_elements(fdata, iterinfo0.opt[opname],  diag0); break;
-      case 'o': read_matrix_elements(fdata, iterinfo0.opot[opname], diag0); break;
-      case 'q': read_matrix_elements(fdata, iterinfo0.opq[opname],  diag0); break;
+      case 's': iterinfo0.ops[opname]  = read_matrix_elements(fdata, diag0); break;
+      case 'p': iterinfo0.opsp[opname] = read_matrix_elements(fdata, diag0); break;
+      case 'g': iterinfo0.opsg[opname] = read_matrix_elements(fdata, diag0); break;
+      case 'd': iterinfo0.opd[opname]  = read_matrix_elements(fdata, diag0); break;
+      case 't': iterinfo0.opt[opname]  = read_matrix_elements(fdata, diag0); break;
+      case 'o': iterinfo0.opot[opname] = read_matrix_elements(fdata, diag0); break;
+      case 'q': iterinfo0.opq[opname]  = read_matrix_elements(fdata, diag0); break;
       case 'z':
         xi.read(fdata);
         zeta.read(fdata);
@@ -225,7 +218,7 @@ std::tuple<DiagInfo, IterInfo> read_data() {
     }
   }
   if (string(P.tri) == "cpp") tridiag(); // before determine_Nmax()
-  determine_Nmax();
+  determine_Nmax(P);
   return {diag0, iterinfo0};
 }
 

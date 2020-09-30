@@ -2807,10 +2807,10 @@ void set_symmetry(const string &sym_string) {
   Sym->report();
 }
 
-void calculation() {
+void calculation(Params &p) {
   nrglog('@', "@ calculation()");
   STAT::runtype = RUNTYPE::NRG;
-  auto [diag0, iterinfo] = read_data();
+  auto [diag0, iterinfo] = read_data(P);
   // Initialize all containers for storing information
   dm = AllSteps(P.Nlen);
   STAT::init_vectors(P.Nlen);
@@ -2830,7 +2830,7 @@ void calculation() {
   }
   if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
   STAT::runtype = RUNTYPE::DMNRG;
-  auto [diag0_dm, iterinfo_dm] = read_data();
+  auto [diag0_dm, iterinfo_dm] = read_data(P);
   start_run(iterinfo_dm, diag0_dm);
   finalize_dmnrg();
 }
@@ -2848,7 +2848,7 @@ void mpi_sync_params() {
 void run_nrg_master() {
   P.read_parameters();
   sP.init(P);
-  calculation();
+  calculation(P);
 #ifdef NRG_MPI
   cout << "Master done. Terminating slave processes." << endl;
   for (int i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_EXIT, 0);
