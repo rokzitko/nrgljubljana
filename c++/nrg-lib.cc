@@ -307,10 +307,9 @@ class Eigen {
     my_assert(nrpost <= nr);
   }
   void truncate_perform();
-  // Initialize the data structures with eigenvalues 'v'. The eigenvectors
-  // form an identity matrix. This is used to represent the spectral
-  // decomposition in the eigenbasis itself.
-  void diagonal(EVEC &v) {
+  // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
+  // represent the spectral decomposition in the eigenbasis itself.
+  void diagonal(const EVEC &v) {
     nr = rmax = v.size();
     value     = v;
     shift     = 0.0;
@@ -603,9 +602,7 @@ class coef_table {
   public:
   // Read values from a stream f
   void read_values(ifstream &f) {
-    size_t len;
-    f >> len; // get length (= last index n still included)
-    read_vector(f, t, len + 1);
+    t = read_vector<t_coef>(f, true); // len=nr+1
   }
   t_coef coef(size_t n) const {
     my_assert(n < t.size());

@@ -153,23 +153,20 @@ CONSTFNC inline double Power(double i, double nn) { return pow(i, nn); }
 // Assert that vector "v" is (approximately) normalized to 1.
 void assert_norm1(const DVEC &v) { my_assert(my_fcmp(norm_2(v), 1.0, 1.e-8) == 0); }
 
-// Read 'len' values of type T into a vector 'vec' (which may be either an
-// STL or an ublas vector). Check that values are finite and assert for no
-// reading failure. If update=false, we read values without changing the
-// values in the vector.
-template <typename T> void read_vector(istream &F, ublas::vector<T> &vec, size_t len, bool update = true) {
-  my_assert(F);
-  if (update) vec.resize(len);
-  for (int j = 0; j < len; j++) {
-    T x;
-    F >> x;
-    if (update) {
-      assert_isfinite(x);
-      vec[j] = x;
-    }
+// Read 'len' values of type T into a ublas vector<T>.
+template <typename T> 
+  ublas::vector<T> read_vector(istream &F, bool nr_is_max_index = false) {
+    my_assert(F);
+    size_t nr;
+    F >> nr;
+    // nr is either vector dimension or the value of maximum index
+    size_t len = nr_is_max_index ? nr+1 : nr;
+    ublas::vector<T> vec(len);
+    for (int j = 0; j < len; j++)
+      F >> vec[j];
+    if (F.fail()) my_error("read_vector() error. Input file is corrupted.");
+    return vec;
   }
-  if (F.fail()) my_error("read_vector() error. 'data' file is corrupted.");
-}
 
 // Read 'size1' x 'size2' ublas matrix of type T.
 template <typename T> void read_matrix(istream &F, ublas::matrix<T> &m, size_t size1, size_t size2) {

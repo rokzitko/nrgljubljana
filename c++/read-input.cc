@@ -96,14 +96,10 @@ DiagInfo read_energies(ifstream &fdata, size_t nsubs, Params &P) {
   DiagInfo diag;
   for (size_t i = 1; i <= nsubs; i++) {
     Invar I;
-    size_t nrr;
-    fdata >> I >> nrr;
-    my_assert(nrr > 0);
-    EVEC energies = EVEC(nrr);
-    read_vector(fdata, energies, nrr);
+    fdata >> I;
+    auto energies = read_vector<double>(fdata);
     if (!P.data_has_rescaled_energies)
       energies /= SCALE(P.Ninit); // rescale to the suitable energy scale
-    diag[I] = Eigen(nrr, nrr);
     diag[I].diagonal(energies);
   }
   my_assert(diag.size() == nsubs);
