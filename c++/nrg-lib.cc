@@ -588,7 +588,7 @@ double LAST_STEP_SCALE() { return SCALE(P.Nmax); }
 // Check the parameter dump to see if everything is as expected.
 void read_parameters(string filename = "param", string block = "param") {
   auto parsed_params = parser(filename, block);
-  for (const auto &i : allparams) {
+  for (const auto &i : P.all) {
     const string keyword = i->getkeyword();
     if (parsed_params.count(keyword) == 1) {
       i->setvalue_str(parsed_params[keyword]);
@@ -604,8 +604,8 @@ void read_parameters(string filename = "param", string block = "param") {
 }
 
 void dump_parameters() {
-  allparams.sort([](auto a, auto b) { return a->getkeyword() < b->getkeyword(); });
-  for (const auto &i : allparams) i->dump();
+  P.all.sort([](auto a, auto b) { return a->getkeyword() < b->getkeyword(); });
+  for (const auto &i : P.all) i->dump();
 }
 
 void remove_workdir() { remove(P.workdir); }
