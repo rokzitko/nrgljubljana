@@ -512,6 +512,76 @@ struct Params {
   // Directory where we keep temporary files during the computation.
   // It should point to a storage device with ample space.
   string workdir = ".";
+
+  // Returns true if any of the CFS or related spectral function
+  // calculations are requested.
+  bool cfs_flags() const { return cfs || fdm; }
+
+  string rhofn(const string &fn, int N) const { return workdir + "/" + fn + to_string(N); }
+  string unitaryfn(size_t N) const { return workdir + "/" + FN_UNITARY + to_string(N); }
+  
+  // What is the last iteration completed in the previous NRG runs?
+  void init_laststored() {
+    if (resume) {
+      laststored = -1;
+      for (size_t N = Ninit; N < Nmax; N++) {
+        const string fn = unitaryfn(N);
+        ifstream F(fn);
+        if (F.good())
+          laststored = N;
+      }
+      cout << "Last unitary file found: " << laststored << endl;
+    }
+  }
+
+  void validate() {
+    my_assert(keep > 1);
+    if (keepenergy > 0.0) my_assert(keepmin <= keep);
+    if (dmnrg || cfs_flags()) dm.setvalue(true);
+    my_assert(Lambda > 1.0);
+#ifdef NRG_REAL
+    if (diag == "default"s) diag.setvalue("dsyev"s);
+    my_assert(diag == "dsyev"s || diag == "dsyevd"s || diag == "dsyevr"s);
+#endif
+#ifdef NRG_COMPLEX
+    if (diag == "default"s) diag.setvalue("zheev"s);
+    my_assert(diag == "zheev"s || diag == "zheevr"s);
+#endif
+    if (diag == "dsyevr"s || diag =="zheevr"s) {
+      my_assert(0.0 < diagratio && diagratio <= 1.0);
+      if (cfs_flags() && diagratio != 1.0) my_error("CFS/FDM is not compatible with partial diagonalisation.");
+    }
+    my_assert(!(dumpabs && dumpscaled)); // dumpabs=true and dumpscaled=true is a meaningless combination
+    // Take the first character (for backward compatibility)
+    discretization.setvalue(string(discretization, 0, 1));
+    if (chitp_ratio > 0.0) chitp.setvalue(chitp_ratio / betabar);
+    Tpi = T * M_PI;
+    init_laststored();
+  }
+
+  void dump() {
+    all.sort([](auto a, auto b) { return a->getkeyword() < b->getkeyword(); });
+    for (const auto &i : all) i->dump();
+  }
+
+  void read_parameters(string filename = "param", string block = "param") {
+    auto parsed_params = parser(filename, block);
+    for (const auto &i : all) {
+      const string keyword = i->getkeyword();
+      if (parsed_params.count(keyword) == 1) {
+        i->setvalue_str(parsed_params[keyword]);
+        parsed_params.erase(keyword);
+      }
+    }
+    if (parsed_params.size()) {
+      cout << "Unused settings: " << endl;
+      for (const auto &[key, value] : parsed_params) 
+        cout << " " << key << "=" << value << endl;
+      cout << endl;
+    }
+    validate();
+    dump();
+  }
 };
 
 Params P;
@@ -528,19 +598,6 @@ void allowed_channel(size_t ch) { my_assert(ch < P.channels); }
 void allowed_coefchannel(size_t ch) {
   my_assert(P.coefchannels >= P.channels);
   my_assert(ch < P.coefchannels);
-}
-
-// Returns true if any of the CFS or related spectral function
-// calculations are requested.
-bool cfs_flags() { return (P.cfs || P.fdm); }
-
-// Calculate some constant parameters (invariants), etc.
-// Called after parameters have been parsed and VALIDATED.
-void calculate_invariants() {
-  // Take the first character (for backward compatibility)
-  P.discretization.setvalue(string(P.discretization, 0, 1));
-  if (P.chitp_ratio > 0.0) P.chitp.setvalue(P.chitp_ratio / P.betabar);
-  P.Tpi = P.T * M_PI;
 }
 
 #endif // _param_cc_

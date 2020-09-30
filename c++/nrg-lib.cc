@@ -584,30 +584,6 @@ int getnn() { return STAT::N; }
 // Energy scale at the last NRG iteration
 double LAST_STEP_SCALE() { return SCALE(P.Nmax); }
 
-// Warning: there is limited error checking for parameters.
-// Check the parameter dump to see if everything is as expected.
-void read_parameters(string filename = "param", string block = "param") {
-  auto parsed_params = parser(filename, block);
-  for (const auto &i : P.all) {
-    const string keyword = i->getkeyword();
-    if (parsed_params.count(keyword) == 1) {
-      i->setvalue_str(parsed_params[keyword]);
-      parsed_params.erase(keyword);
-    }
-  }
-  if (parsed_params.size()) {
-    cout << "Unused settings: " << endl;
-    for (const auto &[key, value] : parsed_params) 
-      cout << " " << key << "=" << value << endl;
-    cout << endl;
-  }
-}
-
-void dump_parameters() {
-  P.all.sort([](auto a, auto b) { return a->getkeyword() < b->getkeyword(); });
-  for (const auto &i : P.all) i->dump();
-}
-
 void remove_workdir() { remove(P.workdir); }
 
 const string default_workdir = ".";
@@ -1684,7 +1660,7 @@ bool nrg_truncate_prepare(DiagInfo &diag) {
     my_assert(count <= nrc);
     if (LAST_ITERATION()) {  // Overrides
       // Full Fock space algorithms: keep all states in the last iteration
-      if (cfs_flags() && !P.lastalloverride) count = nrc;
+      if (P.cfs_flags() && !P.lastalloverride) count = nrc;
       // lastall -> Unconditionally keep all states in the last iteration
       if (P.lastall) count = nrc;
     }
@@ -2127,7 +2103,7 @@ auto nrg_make_subspaces_list(const DiagInfo &diagprev) {
  all: Recalculate using all vectors
  kept: Recalculate using vectors kept after truncation
  VERY IMPORTANT: Override in the case of CFS (in the second run) */
-bool do_recalc_kept() { return string(P.strategy) == "kept" && !(cfs_flags() && dmnrgrun) && !P.ZBW; }
+bool do_recalc_kept() { return string(P.strategy) == "kept" && !(P.cfs_flags() && dmnrgrun) && !P.ZBW; }
 
 bool do_recalc_all() { return !do_recalc_kept() && !P.ZBW; }
 
@@ -2899,28 +2875,10 @@ void mpi_sync_params() {
 }
 #endif
 
-// What is the last iteration completed in the previous NRG runs?
-void init_laststored() {
-  if (P.resume) {
-    P.laststored = -1;
-    for (size_t N = P.Ninit; N < P.Nmax; N++) {
-      const string fn = unitaryfn(N);
-      ifstream F(fn);
-      if (F.good())
-        P.laststored = N;
-    }
-    cout << "Last unitary file found: " << P.laststored << endl;
-  }
-}
-
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
   cout << setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
-  read_parameters();
-  validate_parameters();
-  calculate_invariants();
-  init_laststored();
-  dump_parameters();
+  P.read_parameters();
   sP.init(P.diagratio); // copy parameters for MPI
   calculation();
 #ifdef NRG_MPI

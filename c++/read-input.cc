@@ -85,29 +85,6 @@ size_t read_nsubs(ifstream &fdata)
   return nsubs;
 }
 
-// Check if the parameters make sense.
-// Also initialize maps related to parameters (switch for string type).
-void validate_parameters() {
-  my_assert(P.keep > 1);
-  if (P.keepenergy > 0.0) my_assert(P.keepmin <= P.keep);
-  if (P.dmnrg || cfs_flags()) P.dm.setvalue(true);
-  my_assert(P.Lambda > 1.0);
-#ifdef NRG_REAL
-  if (P.diag == "default"s) P.diag.setvalue("dsyev"s);
-  my_assert(P.diag == "dsyev"s || P.diag == "dsyevd"s || P.diag == "dsyevr"s);
-#endif
-#ifdef NRG_COMPLEX
-  if (P.diag == "default"s) P.diag.setvalue("zheev"s);
-  my_assert(P.diag == "zheev"s || P.diag == "zheevr"s);
-#endif
-  if (P.diag == "dsyevr"s || P.diag =="zheevr"s) {
-    my_assert(0.0 < P.diagratio && P.diagratio <= 1.0);
-    if (cfs_flags() && P.diagratio != 1.0) my_error("CFS/FDM is not compatible with partial diagonalisation.");
-  }
-  // dumpabs=true and dumpscaled=true is a meaningless combination
-  my_assert(!(P.dumpabs && P.dumpscaled));
-}
-
 // Read the ground state energy from data file ('e' flag)
 void read_gs_energy(ifstream &fdata) {
   fdata >> STAT::total_energy;

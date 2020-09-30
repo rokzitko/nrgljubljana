@@ -4,9 +4,6 @@
 #ifndef _dmnrg_h_
 #define _dmnrg_h_
 
-string rhofn(const string &prefix, int N) { return P.workdir + "/" + prefix + to_string(N); }
-string unitaryfn(size_t N) { return P.workdir + "/" + FN_UNITARY + to_string(N); }
-
 // Choose one!
 #define LINEBYLINE
 //#define WHOLEMATRIX
@@ -60,7 +57,7 @@ void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
 void saveRho(size_t N, const string &prefix, const DensMatElements &rho) {
   my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Storing density matrices [N=" << N << "]... ");
-  const string fn = rhofn(prefix, N);
+  const string fn = P.rhofn(prefix, N);
   std::ofstream MATRIXF(fn, ios::binary | ios::out);
   if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
   boost::archive::binary_oarchive oa(MATRIXF);
@@ -84,7 +81,7 @@ DensMatElements loadRho(size_t N, const string &prefix, bool checkrho = false) {
   my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Loading density matrices [N=" << N << "]...");
   DensMatElements rho;
-  const string fn = rhofn(prefix, N);
+  const string fn = P.rhofn(prefix, N);
   std::ifstream MATRIXF(fn, ios::binary | ios::in);
   if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
   boost::archive::binary_iarchive ia(MATRIXF);
@@ -126,7 +123,7 @@ void store_transformations(size_t N, const DiagInfo &diag) {
   } else
     my_assert(N == P.Ninit);
   nrglog('H', "Storing transformation matrices (N=" << N << ")...");
-  const string fn = unitaryfn(N);
+  const string fn = P.unitaryfn(N);
   ofstream MATRIXF(fn, ios::binary | ios::out);
   if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
   boost::archive::binary_oarchive oa(MATRIXF);
@@ -153,7 +150,7 @@ DiagInfo load_transformations(size_t N) {
   } else
     my_assert(N == P.Ninit);
   nrglog('H', "Loading transformation matrices (N=" << N << ")...");
-  const string fn = unitaryfn(N);
+  const string fn = P.unitaryfn(N);
   std::ifstream MATRIXF(fn, ios::binary | ios::in);
   if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
   boost::archive::binary_iarchive ia(MATRIXF);
@@ -175,7 +172,7 @@ DiagInfo load_transformations(size_t N) {
 
 void remove_transformation_files(size_t N) {
   if (!P.removefiles) return;
-  const string fn = unitaryfn(N);
+  const string fn = P.unitaryfn(N);
   if (remove(fn)) my_error("Error removing %s", fn.c_str());
 }
 
@@ -284,7 +281,7 @@ bool file_exists(const string &fn)
 // saved on the disk.
 bool already_computed(const string &prefix) {
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
-    const string fn = rhofn(prefix, N - 1); // note the minus 1
+    const string fn = P.rhofn(prefix, N - 1); // note the minus 1
     if (!file_exists(fn)) {
       cout << fn << " not found. Computing." << endl;
       return false;
