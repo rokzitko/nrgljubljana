@@ -1351,7 +1351,7 @@ void open_output_files(const RUNTYPE &runtype, const IterInfo &iterinfo, const P
   // We dump all energies to separate files for NRG and DM-NRG runs.
   // This is a very convenient way to check if both runs produce the
   // same results.
-  if (P.dumpenergies) Fenergies.open((step.nrg() ? FN_ENERGIES_NRG : FN_ENERGIES_DMNRG));
+  if (P.dumpenergies) Fenergies.open(step.nrg() ? FN_ENERGIES_NRG : FN_ENERGIES_DMNRG);
   if (step.nrg()) {
     open_Ftd(Ftd);
     if (P.dumpannotated) Fannotated.open(FN_ANNOTATED);
@@ -1804,20 +1804,20 @@ void recalculate_operators(const DiagInfo &dg, QSrmax &qsrmax, IterInfo &a) {
 }
 
 // Calculate spectral densities
-void spectral_densities(const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM) {
+void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM) {
   nrglog('@', "@ spectral_densities()");
   TIME("spec");
-  for (auto &i : spectraS)    calc_generic(i, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraCHIT) calc_generic(i, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraD)    calc_generic(i, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
-  for (auto &i : spectraT)    calc_generic(i, diag, SpinSuscFactorFnc,     TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraOT)   calc_generic(i, diag, OrbSuscFactorFnc,      TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraQ)    calc_generic(i, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraGT)   calc_generic(i, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
-  for (auto &i : spectraI1T)  calc_generic(i, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
-  for (auto &i : spectraI2T)  calc_generic(i, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
+  for (auto &i : spectraS)    calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraCHIT) calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraD)    calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
+  for (auto &i : spectraT)    calc_generic(i, step, diag, SpinSuscFactorFnc,     TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraOT)   calc_generic(i, step, diag, OrbSuscFactorFnc,      TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraQ)    calc_generic(i, step, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc,  rho, rhoFDM);
+  for (auto &i : spectraGT)   calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
+  for (auto &i : spectraI1T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
+  for (auto &i : spectraI2T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
   // no CheckSpinFnc!! One must use A_u_d, etc. objects for sym=QSZ.
-  for (auto &i : spectraV3)   calc_generic3(i, diag, SpecdensFactorFnc, rho, rhoFDM);
+  for (auto &i : spectraV3)   calc_generic3(i, step, diag, SpecdensFactorFnc, rho, rhoFDM);
 }
 
 /* We calculate thermodynamic quantities before truncation to make better
@@ -1882,7 +1882,7 @@ void calculate_spectral_and_expv(const Step &step, const DiagInfo &diag, const I
       if (need_rhoFDM()) 
         rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);
   }
-  spectral_densities(diag, rho, rhoFDM);
+  spectral_densities(step, diag, rho, rhoFDM);
   if (step.nrg()) measure_singlet(step, diag, iterinfo, custom);
   if (step.dmnrg() && P.fdmexpv) measure_singlet_fdm(step, diag, iterinfo, customfdm, rhoFDM, dm);
 }

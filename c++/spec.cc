@@ -26,7 +26,7 @@ const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 // the two.
 
 template <typename FactorFnc, typename CheckSpinFnc>
-void calc_generic(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &factorfnc, CheckSpinFnc &checkspinfnc, DensMatElements &rho, DensMatElements &rhoFDM) {
+void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, FactorFnc &factorfnc, CheckSpinFnc &checkspinfnc, DensMatElements &rho, DensMatElements &rhoFDM) {
   nrglog('g', "calc_generic() " << bs.fullname());
   auto cs = bs.spectype->make_cs(bs);
   auto & rho_here = bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : rho;
@@ -50,7 +50,7 @@ void calc_generic(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &facto
   bs.spec->merge(cs);
 }
 
-template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const DiagInfo &diag, FactorFnc &factorfnc, DensMatElements &rho, DensMatElements &rhoFDM) {
+template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, FactorFnc &factorfnc, DensMatElements &rho, DensMatElements &rhoFDM) {
   nrglog('g', "calc_generic3() " << bs.fullname());
   auto cs = bs.spectype->make_cs(bs);
   auto & rho_here = bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : rho;
