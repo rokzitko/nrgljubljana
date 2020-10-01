@@ -131,7 +131,7 @@ Symmetry *SymISO2 = new SymmetryISO2;
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
-void SymmetryISO::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryISO::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
   // nn is the index of the last site in the chain, while nn+1 is the
@@ -157,7 +157,7 @@ void SymmetryISO::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, cons
   }
 }
 
-void SymmetryISO2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryISO2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
   int NN   = step.getnn();

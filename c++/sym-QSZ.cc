@@ -58,8 +58,8 @@ class SymmetryQSZ : public SymField {
     } // if
   }
 
-  void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
-  void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
@@ -87,7 +87,7 @@ class SymmetryQSZ : public SymField {
   HAS_GLOBAL;
   HAS_SUBSTEPS;
 
-  void show_coefficients() override;
+  void show_coefficients(const Step &, const Params &) override;
 };
 
 Symmetry *SymQSZ = new SymmetryQSZ;
@@ -118,7 +118,7 @@ Symmetry *SymQSZ = new SymmetryQSZ;
 // "non-polarized" here means that the coefficients xi do not depend on
 // spin. Note, however, that there is support for a global magnetic field,
 // cf. P.globalB.
-void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (!substeps) {
     switch (channels) {
       case 1:
@@ -178,7 +178,7 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const I
 #undef SPINZ
 #define SPINZ(i, j, ch, factor) spinz_function(i, j, ch, t_matel(factor), h, qq)
 
-void SymmetryQSZ::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSZ::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   my_assert(!substeps); // not implemented!
 
   switch (channels) {
@@ -217,14 +217,15 @@ void SymmetryQSZ::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inva
   }
 }
 
-void SymmetryQSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSZ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (P.polarized) 
-    makematrix_polarized(h, qq, I, In, opch);
+    makematrix_polarized(h, step, qq, I, In, opch);
   else
-    makematrix_nonpolarized(h, qq, I, In, opch);
+    makematrix_nonpolarized(h, step, qq, I, In, opch);
 }
 
-void SymmetryQSZ::show_coefficients() {
+void SymmetryQSZ::show_coefficients(const Step &step, const Params &P) {
+  Symmetry::show_coefficients(step, P);
   if (P.rungs) 
     for (unsigned int i = 0; i < P.channels; i++) 
       cout << "[" << i + 1 << "]"

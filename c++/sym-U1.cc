@@ -54,8 +54,8 @@ class SymmetryU1 : public Symmetry {
   }
 
   void makematrix_pol2x2(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
-  void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
-  void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
   DECL;
   HAS_DOUBLET;
@@ -99,7 +99,7 @@ Symmetry *SymU1 = new SymmetryU1;
 #undef SPINX
 #define SPINX(i, j, ch, factor) spinx_function(i, j, ch, t_matel(factor), h, qq)
 
-void SymmetryU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryU1::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 1:
 #include "u1/u1-1ch-offdiag-UP.dat"
@@ -181,7 +181,7 @@ void SymmetryU1::makematrix_pol2x2(Matrix &h, const Rmaxvals &qq, const Invar &I
 #define OFFDIAG_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
 #define OFFDIAG_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetryU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryU1::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 1:
 #include "u1/u1-1ch-offdiag-UP.dat"
@@ -211,13 +211,13 @@ void SymmetryU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const In
   }
 }
 
-void SymmetryU1::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryU1::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (P.pol2x2) {
-    makematrix_pol2x2(h, qq, I, In, opch);
+    makematrix_pol2x2(h, step, qq, I, In, opch);
   } else if (P.polarized) {
-    makematrix_polarized(h, qq, I, In, opch);
+    makematrix_polarized(h, step, qq, I, In, opch);
   } else {
-    makematrix_nonpolarized(h, qq, I, In, opch);
+    makematrix_nonpolarized(h, step, qq, I, In, opch);
   }
 }
 

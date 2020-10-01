@@ -164,7 +164,7 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
 #undef DIAG
 #define DIAG(i, number) diag_function(i, 0, number, zeta(step.N() + 1, 0), h, qq)
 
-void SymmetryQST::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQST::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss  = I.get("SS");
   Tangmom t = I.get("T");
   double T  = t; // crucially important to use floating point!

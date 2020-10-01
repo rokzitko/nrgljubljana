@@ -412,7 +412,7 @@ class Step {
    }
    // Compensate for different definition of SCALE in initial.m and C++ code in case of substeps==true.
    // Used in sym-qs.cc and sym-qsz.cc
-   double scale_fix() {
+   double scale_fix() const {
      const auto [N, M] = NM();
      my_assert(ndxN == N * P.channels + M);
      size_t N_at_end_of_full_step     = N * P.channels + P.channels - 1; // M=0,...,channels-1
@@ -980,29 +980,6 @@ inline size_t size_subspace(const DiagInfo &diag, const Invar &I) {
     return f->second.getnr();
   else
     return 0;
-}
-
-// TODO: generalize to all symmetry types! (i.e. add additional
-// coefficients of interest). This should ideally be a call to a
-// method in class Symmetry.
-void show_coefficients(const Step &step) {
-  cout << setprecision(std::numeric_limits<double>::max_digits10);
-  if (!P.substeps) {
-    for (size_t i = 0; i < P.coefchannels; i++) {
-      auto N = step.N();
-      cout << "[" << i + 1 << "]"
-           << " xi(" << N << ")=" << xi(N, i) << " xi_scaled(" << N << ")=" << xi(N, i)/step.scale()
-           << " zeta(" << N+1 << ")=" << zeta(N+1, i) << endl;
-    }
-  } else {
-    const auto [N, M] = step.NM();
-    for (auto i = 0; i < P.coeffactor; i++) {
-      auto index = M + P.channels * i;
-      cout << "[" << index << "]"
-           << " xi(" << N << ")=" << xi(N, index) << " zeta(" << N+1 << ")=" << zeta(N+1, index) << endl;
-    }
-  }
-  Sym->show_coefficients();
 }
 
 // Information about ancestor subspaces
@@ -1926,7 +1903,7 @@ inline t_eigen Eigenvalue(const DiagInfo &diag, const Invar &I, const size_t r) 
   return diag.at(I).value(r);
 }
 
-Matrix prepare_task_for_diag(const Invar &I, const Opch &opch, const DiagInfo &diagprev) {
+Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const DiagInfo &diagprev) {
   nrglog('@', "@ prepare_task_for_diag()");
   const auto anc = ancestors(I);
   const Rmaxvals rm{I, anc, diagprev};
@@ -1943,12 +1920,12 @@ Matrix prepare_task_for_diag(const Invar &I, const Opch &opch, const DiagInfo &d
       h(offset + r, offset + r) = scalefactor * Eigenvalue(diagprev, anc[i], r);
   }
   // Symmetry-type-specific matrix initialization steps.
-  Sym->makematrix(h, rm, I, anc, opch);
+  Sym->makematrix(h, step, rm, I, anc, opch);
   if (logletter('m')) dump_matrix(h);
   return h;
 }
 
-DiagInfo diagonalisations_OpenMP(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
+DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
   nrglog('@', "@ diagonalisations_OpenMP()");
   nrglog('(', "OpenMP diag");
   DiagInfo diagnew;
@@ -1959,7 +1936,7 @@ DiagInfo diagonalisations_OpenMP(const Opch &opch, const DiagInfo &diagprev, con
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {
     const Invar I  = tasks[itask];
-    auto h = prepare_task_for_diag(I, opch, diagprev);
+    auto h = prepare_task_for_diag(step, I, opch, diagprev);
     int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
@@ -2098,7 +2075,7 @@ std::pair<Invar, Eigen> read_from(int source) {
   return {Irecv, eig};
 }
 
-DiagInfo diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
+DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
   nrglog('@', "@ diagonalisations_MPI()");
   DiagInfo diagnew;
   mpi_sync_params(); // Synchronise parameters
@@ -2133,7 +2110,7 @@ DiagInfo diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, const 
       I = todo.front();
       todo.pop_front();
     }
-    auto h = prepare_task_for_diag(I, opch, diagprev);
+    auto h = prepare_task_for_diag(step, I, opch, diagprev);
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
@@ -2167,17 +2144,17 @@ DiagInfo diagonalisations_MPI(const Opch &opch, const DiagInfo &diagprev, const 
 #endif
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
-DiagInfo diagonalisations(const Opch &opch, const DiagInfo &diagprev, 
-                              const std::vector<Invar> &tasks, double diagratio) {
+DiagInfo diagonalisations(const Step &step, const Opch &opch, const DiagInfo &diagprev, 
+                          const std::vector<Invar> &tasks, double diagratio) {
   nrglog('@', "@ diagonalisations()");
   // This needs to be called here, because class Timing is not
   // thread-safe.
   TIME("diag");
   sP.init(P, diagratio);
 #ifdef NRG_MPI
-  return diagonalisations_MPI(opch, diagprev, tasks);
+  return diagonalisations_MPI(step, opch, diagprev, tasks);
 #else
-  return diagonalisations_OpenMP(opch, diagprev, tasks);
+  return diagonalisations_OpenMP(step, opch, diagprev, tasks);
 #endif
 }
 
@@ -2286,7 +2263,7 @@ void calc_boltzmann_factors(DiagInfo &diag) {
 DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
   nrglog('@', "@ do_diag()");
   step.infostring();
-  show_coefficients(step);
+  Sym->show_coefficients(step, P);
   auto tasks = task_list(qsrmax);
   double diagratio = P.diagratio;
   DiagInfo diag;
@@ -2294,7 +2271,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev,
   do {
     if (step.nrg()) {
       if (!(P.resume && int(step.ndx()) <= P.laststored))
-        diag = diagonalisations(iterinfo.opch, diagprev, tasks, diagratio); // compute in first run
+        diag = diagonalisations(step, iterinfo.opch, diagprev, tasks, diagratio); // compute in first run
       else
         diag = load_transformations(step.ndx(), P); // or read from disk
     }

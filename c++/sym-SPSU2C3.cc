@@ -71,7 +71,7 @@ Symmetry *SymSPSU2C3 = new SymmetrySPSU2C3;
 #undef DIAG
 #define DIAG(i, number) diag_function(i, 0, number, zeta(step.N() + 1, 0), h, qq)
 
-void SymmetrySPSU2C3::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySPSU2C3::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
 #ifdef NRG_REAL
   my_assert_not_reached();
 #endif

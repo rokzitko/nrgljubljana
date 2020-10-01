@@ -47,8 +47,8 @@ class SymmetrySPU1 : public SymField {
     }
   }
 
-  void makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
-  void makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
   void calculate_TD(const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
@@ -86,7 +86,7 @@ Symmetry *SymSPU1 = new SymmetrySPU1;
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
-void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (!P.substeps) {
     switch (channels) {
       case 1:
@@ -148,7 +148,7 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const 
 
 #define DIAG_DOWN(i, j, ch, number) diag_function_half(i, ch, number, zetaDOWN(step.N() + 1, ch), h, qq)
 
-void SymmetrySPU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySPU1::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (!P.substeps) {
     switch (channels) {
       case 1:
@@ -176,11 +176,11 @@ void SymmetrySPU1::makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Inv
   }
 }
 
-void SymmetrySPU1::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySPU1::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (P.polarized) {
-    makematrix_polarized(h, qq, I, In, opch);
+    makematrix_polarized(h, step, qq, I, In, opch);
   } else {
-    makematrix_nonpolarized(h, qq, I, In, opch);
+    makematrix_nonpolarized(h, step, qq, I, In, opch);
   }
 }
 

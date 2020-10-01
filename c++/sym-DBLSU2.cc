@@ -80,7 +80,7 @@ Symmetry *SymDBLSU2 = new SymmetryDBLSU2;
 #undef OFFDIAG_2
 #define OFFDIAG_2(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetryDBLSU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryDBLSU2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 2:
 #include "dblsu2/dblsu2-2ch-offdiag-1.dat"

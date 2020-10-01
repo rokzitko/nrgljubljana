@@ -70,7 +70,7 @@ Symmetry *SymQSZLR = new SymmetryQSZLR;
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
-void SymmetryQSZLR::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSZLR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
 #include "qszlr/qszlr-2ch-offdiag.dat"
 #include "qszlr/qszlr-2ch-diag.dat"
 }

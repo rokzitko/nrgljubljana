@@ -140,7 +140,7 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, factor) offdiag_function(i, j, 0, 0, t_matel(factor) * kappa(step.N(), 0), h, qq, In, opch)
 
-void SymmetrySPSU2T::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySPSU2T::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss  = I.get("SS");
   Tangmom t = I.get("T");
   double T  = t; // crucially important to use floating point!

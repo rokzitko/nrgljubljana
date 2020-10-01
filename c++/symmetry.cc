@@ -132,7 +132,7 @@ class Symmetry {
   // Is an invariant subspace with given quantum numbers allowed?
   virtual bool Invar_allowed(const Invar &I) { return true; }
 
-  virtual void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) = 0;
+  virtual void makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) = 0;
 
   // Called from recalc_dynamicsusceptibility().  This is the factor due
   // to the spin degeneracy when calculating the trace of Sz.Sz.
@@ -157,7 +157,24 @@ class Symmetry {
   virtual void recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
   virtual void recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) { my_error("Not implemented."); }
 
-  virtual void show_coefficients() {}
+  virtual void show_coefficients(const Step &step, const Params &P) {
+    cout << setprecision(std::numeric_limits<double>::max_digits10);
+    if (!P.substeps) {
+      for (size_t i = 0; i < P.coefchannels; i++) {
+        auto N = step.N();
+        cout << "[" << i + 1 << "]"
+          << " xi(" << N << ")=" << xi(N, i) << " xi_scaled(" << N << ")=" << xi(N, i)/step.scale()
+            << " zeta(" << N+1 << ")=" << zeta(N+1, i) << endl;
+      }
+    } else {
+      const auto [N, M] = step.NM();
+      for (auto i = 0; i < P.coeffactor; i++) {
+        auto index = M + P.channels * i;
+        cout << "[" << index << "]"
+          << " xi(" << N << ")=" << xi(N, index) << " zeta(" << N+1 << ")=" << zeta(N+1, index) << endl;
+      }
+    }
+  }
    
   virtual bool recalc_f_coupled(const Invar I1, const Invar I2, const Invar If) { return true; } // used in recalc_f()
 };
@@ -168,7 +185,7 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
 
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
-  void makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) override;                                     \
+  void makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) override;                                     \
   void recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) override
 
 // Optional declaration

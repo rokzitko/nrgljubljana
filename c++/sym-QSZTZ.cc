@@ -79,7 +79,7 @@ Symmetry *SymQSZTZ = new SymmetryQSZTZ;
 #undef DIAG
 #define DIAG(i, number) diag_function(i, 0, number, zeta(step.N() + 1, 0), h, qq)
 
-void SymmetryQSZTZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSZTZ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   my_assert(!substeps);
   my_assert(channels == 3);
 

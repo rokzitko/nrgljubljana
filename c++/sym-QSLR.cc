@@ -82,7 +82,7 @@ Symmetry *SymQSLR = new SymmetryQSLR;
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
-void SymmetryQSLR::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSLR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
 #include "qslr/qslr-2ch-diag.dat"
 #include "qslr/qslr-2ch-offdiag.dat"

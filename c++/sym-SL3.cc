@@ -83,7 +83,7 @@ Symmetry *SymSL3 = new SymmetrySL3;
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
-void SymmetrySL3::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySL3::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 3:
 #include "sl3/sl3-3ch-offdiag.dat"

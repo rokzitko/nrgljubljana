@@ -80,7 +80,7 @@ Symmetry *SymISOSZLR = new SymmetryISOSZLR;
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetryISOSZLR::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryISOSZLR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Ispin ii = I.get("II");
 
 #include "isoszlr/isoszlr-2ch-offdiag.dat"

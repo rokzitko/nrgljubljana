@@ -77,7 +77,7 @@ Symmetry *SymSPSU2LR = new SymmetrySPSU2LR;
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
-void SymmetrySPSU2LR::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySPSU2LR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   my_assert(channels == 2);
   Sspin ss = I.get("SS");
 #include "spsu2lr/spsu2lr-2ch-diag.dat"

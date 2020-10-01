@@ -101,7 +101,7 @@ class SymmetryQS : public Symmetry {
   HAS_GLOBAL;
   HAS_SUBSTEPS;
 
-  void show_coefficients() override;
+  void show_coefficients(const Step &, const Params &P) override;
 };
 
 Symmetry *SymQS = new SymmetryQS;
@@ -123,7 +123,7 @@ Symmetry *SymQS = new SymmetryQS;
 #define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(step.N() + 1, 0), h, qq)
 
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
 
   if (!substeps) {
@@ -174,7 +174,8 @@ void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const
   }
 }
 
-void SymmetryQS::show_coefficients() {
+void SymmetryQS::show_coefficients(const Step &step, const Params &P) {
+  Symmetry::show_coefficients(step, P);
   if (P.rungs)
     for (unsigned int i = 0; i < P.channels; i++)
       cout << "[" << i + 1 << "]"

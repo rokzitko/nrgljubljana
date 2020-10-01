@@ -97,7 +97,7 @@ Symmetry *SymQSTZ = new SymmetryQSTZ;
 #undef DIAG
 #define DIAG(i, number) diag_function(i, 0, number, zeta(step.N() + 1, 0), h, qq)
 
-void SymmetryQSTZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSTZ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
 
   my_assert(!substeps);

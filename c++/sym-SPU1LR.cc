@@ -80,7 +80,7 @@ Symmetry *SymSPU1LR = new SymmetrySPU1LR;
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
-void SymmetrySPU1LR::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySPU1LR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 1:
 #include "spu1lr/spu1lr-1ch-offdiag.dat"

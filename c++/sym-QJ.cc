@@ -132,7 +132,7 @@ inline double J(int JJ) {
   return (JJ - 1.0) / 2.0; // JJ=2J+1
 }
 
-void SymmetryQJ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQJ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin jj = I.get("JJ");
 
 #include "qj/qj-offdiag.dat"
