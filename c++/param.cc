@@ -8,13 +8,18 @@ const std::string default_workdir{"."s};
 
 class Workdir {
  private:
-   std::string workdir{};
+   std::string workdir {};
    
  public:
-   // TODO: option to disable removing (for checkpoint-restart)
-   void remove() { if (workdir != "") { ::remove(workdir); } }
-   ~Workdir() { remove(); }
-
+   bool remove_at_exit {true}; // XXX: tie to P.removefiles?
+   void remove() { 
+     if (workdir != "") 
+       ::remove(workdir); 
+   }
+   ~Workdir() { 
+     if (remove_at_exit) 
+       remove(); 
+   }
    void create(const string &dir) {
      const std::string workdir_template = dir + "/XXXXXX";
      size_t len = workdir_template.length()+1;
@@ -26,7 +31,6 @@ class Workdir {
        workdir = default_workdir;
      cout << "workdir=" << workdir << endl << endl;
    }
-   
    std::string rhofn(const string &fn, int N) const { return workdir + "/" + fn + to_string(N); }
    std::string unitaryfn(size_t N) const { return workdir + "/" + FN_UNITARY + to_string(N); }
 };
@@ -508,7 +512,7 @@ struct Params {
 
   // For testing or for partial NRG calculations. If set to non-zero
   // value, the calculation is stopped at chosen step.
-  param<int> forcestop{"forcestop", "Stop iteration?", "-1", all}; // N
+  // OBSOLETE: param<int> forcestop{"forcestop", "Stop iteration?", "-1", all}; // N
 
   // If set to false, the unitary transformation matrix and density
   // matrix files are kept after the calculation.

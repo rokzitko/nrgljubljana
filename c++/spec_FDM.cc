@@ -46,8 +46,8 @@ void SPEC_FDMgt::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
-  const size_t reti  = (LAST_ITERATION() ? 0 : rhoi.size1());
-  const size_t retj  = (LAST_ITERATION() ? 0 : rhoj.size1());
+  const size_t reti  = (step.last() ? 0 : rhoi.size1());
+  const size_t retj  = (step.last() ? 0 : rhoj.size1());
   const size_t alli  = diagIi.getnr();
   const size_t allj  = diagIj.getnr();
   LOOP_D(i)
@@ -89,8 +89,8 @@ void SPEC_FDMls::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
-  const size_t reti  = (LAST_ITERATION() ? 0 : rhoi.size1());
-  const size_t retj  = (LAST_ITERATION() ? 0 : rhoj.size1());
+  const size_t reti  = (step.last() ? 0 : rhoi.size1());
+  const size_t retj  = (step.last() ? 0 : rhoj.size1());
   const size_t alli  = diagIi.getnr();
   const size_t allj  = diagIj.getnr();
   LOOP_D(i)
@@ -145,8 +145,8 @@ void SPEC_FDMmats::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
-  const size_t reti  = (LAST_ITERATION() ? 0 : rhoi.size1());
-  const size_t retj  = (LAST_ITERATION() ? 0 : rhoj.size1());
+  const size_t reti  = (step.last() ? 0 : rhoi.size1());
+  const size_t retj  = (step.last() ? 0 : rhoj.size1());
   const size_t alli  = diagIi.getnr();
   const size_t allj  = diagIj.getnr();
   LOOP_D(i) LOOP_D(j) DELTA dA; // A3
@@ -270,9 +270,9 @@ void SPEC_FDM_v3mm::calc_A(const Eigen &diagi, const Eigen &diagj, const Eigen &
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
   const Matrix &rhol = rhoFDM[Il];
-  const size_t reti  = (LAST_ITERATION() ? 0 : rhoi.size1()); // retained states
-  const size_t retj  = (LAST_ITERATION() ? 0 : rhoj.size1());
-  const size_t retl  = (LAST_ITERATION() ? 0 : rhol.size1());
+  const size_t reti  = (step.last() ? 0 : rhoi.size1()); // retained states
+  const size_t retj  = (step.last() ? 0 : rhoj.size1());
+  const size_t retl  = (step.last() ? 0 : rhol.size1());
   const size_t alli  = diagi.getnr(); // all states
   const size_t allj  = diagj.getnr();
   const size_t alll  = diagl.getnr();
@@ -524,9 +524,9 @@ void SPEC_FDM_v3mm::calc_B(const Eigen &diagi, const Eigen &diagj, const Eigen &
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
   const Matrix &rhol = rhoFDM[Il];
-  const size_t reti  = (LAST_ITERATION() ? 0 : rhoi.size1()); // retained states
-  const size_t retj  = (LAST_ITERATION() ? 0 : rhoj.size1());
-  const size_t retl  = (LAST_ITERATION() ? 0 : rhol.size1());
+  const size_t reti  = (step.last() ? 0 : rhoi.size1()); // retained states
+  const size_t retj  = (step.last() ? 0 : rhoj.size1());
+  const size_t retl  = (step.last() ? 0 : rhol.size1());
   const size_t alli  = diagi.getnr(); // all states
   const size_t allj  = diagj.getnr();
   const size_t alll  = diagl.getnr();

@@ -55,7 +55,7 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
   // typical calculation only a small contribution to the total
   // weight comes from this term. (This is the case both for T=0 and
   // T!=0 calculation.)
-  if (LAST_ITERATION()) {
+  if (step.last()) {
     dim1 = diagI1.getnr(); // override
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
@@ -100,7 +100,7 @@ void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
   // typical calculation only a small contribution to the total
   // weight comes from this term. (This is the case both for T=0 and
   // T!=0 calculation.)
-  if (LAST_ITERATION()) {
+  if (step.last()) {
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
@@ -148,7 +148,7 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
   // i.e. it has the form of the usual Lehmann representation. In a
   // typical calculation only a small contribution to the total
   // weight comes from this term.
-  if (LAST_ITERATION()) {
+  if (step.last()) {
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
@@ -196,7 +196,7 @@ void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
   // i.e. it has the form of the usual Lehmann representation. In a
   // typical calculation only a small contribution to the total
   // weight comes from this term.
-  if (LAST_ITERATION()) {
+  if (step.last()) {
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {

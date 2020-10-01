@@ -87,9 +87,9 @@ inline double fnc(double x) {
 
 inline double windowfunction(double E, double Emin, double Ex, double Emax) {
   // Exception 1
-  if (E <= Ex && LAST_ITERATION()) return 1.0;
+  if (E <= Ex && step.last()) return 1.0;
   // Exception 2
-  if (E >= Ex && FIRST_ITERATION()) return 1.0;
+  if (E >= Ex && step.first()) return 1.0;
   // Exception 3
   if (P.ZBW) return 1.0;
   if (E <= Emin || E >= Emax) return 0.0;

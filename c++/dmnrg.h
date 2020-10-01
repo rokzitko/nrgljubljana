@@ -55,8 +55,8 @@ void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
 #endif
 
 void saveRho(size_t N, const string &prefix, const DensMatElements &rho, const Params &P) {
-  my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Storing density matrices [N=" << N << "]... ");
+  my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   const string fn = workdir.rhofn(prefix, N);
   std::ofstream MATRIXF(fn, ios::binary | ios::out);
   if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
@@ -78,8 +78,8 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho, const P
 }
 
 DensMatElements loadRho(size_t N, const string &prefix, const Params &P) {
-  my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   nrglog('H', "Loading density matrices [N=" << N << "]...");
+  my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   DensMatElements rho;
   const string fn = workdir.rhofn(prefix, N);
   std::ifstream MATRIXF(fn, ios::binary | ios::in);
@@ -356,7 +356,7 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
                                   size_t N, const AllSteps &dm, const Params &P) {
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
-  if (!LAST_ITERATION(N)) 
+  if (!step.last(N))
     rhoDD = init_rho_FDM(N, dm, P);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = dmnrg_subspaces(I);
@@ -375,7 +375,7 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
       if (x1 != rhoFDM.end() && y != diag.end())
         cdmI(i, sub, x1->second, y->second, rhoFDMPrev[I], N, coef, dm);
       // Contribution from the DD sector. rhoDD -> rhoFDMPrev
-      if (!LAST_ITERATION(N)) {
+      if (!step.last(N)) {
         const auto x2 = rhoDD.find(sub);
         if (x2 !=rhoDD.end() && y != diag.end())
           cdmI(i, sub, x2->second, y->second, rhoFDMPrev[I], N, coef, dm);
