@@ -147,7 +147,7 @@ class Symmetry {
   virtual double specdens_factor(const Invar &Ip, const Invar &I1) { return 1.0; }
   virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) { return 1.0; }
 
-  virtual void calculate_TD(const DiagInfo &diag, double factor) = 0;
+  virtual void calculate_TD(const Step &step, const DiagInfo &diag, double factor) = 0;
 
   virtual void recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) { my_error("Not implemented."); }
   virtual void recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) { my_error("Not implemented."); }

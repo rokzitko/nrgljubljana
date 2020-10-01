@@ -61,7 +61,7 @@ class SymmetryQSZ : public SymField {
   void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
   void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
-  void calculate_TD(const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
 
     for (const auto &[I, eig]: diag) {

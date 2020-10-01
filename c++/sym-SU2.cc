@@ -52,7 +52,7 @@ class SymmetrySU2 : public Symmetry {
     }
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
     bucket trIZ2; // Tr[I_z^2]
 
     for (const auto &[I, eig]: diag) {

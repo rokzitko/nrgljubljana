@@ -65,7 +65,7 @@ class SymmetrySPSU2 : public Symmetry {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
     bucket trSZ; // Tr[S_z^2]
 
     for (const auto &[I, eig]: diag) {

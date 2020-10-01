@@ -68,7 +68,7 @@ class SymmetrySPSU2T : public Symmetry {
     return spinfactor * angmomfactor;
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
     bucket trSZ2, trTZ2; // Tr[S_z^2], Tr[T_z^2]
 
     for (const auto &[I, eig]: diag) {

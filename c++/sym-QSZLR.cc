@@ -39,7 +39,7 @@ class SymmetryQSZLR : public SymFieldLR {
 #include "qszlr/qszlr-2ch-QN.dat"
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
 
     for (const auto &[I, eig]: diag) {

@@ -35,7 +35,7 @@ class SymmetrySL3 : public Symmetry {
     }
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
     bucket trQ1, trQ12; // Tr[Q], Tr[Q^2]
     bucket trQ2, trQ22;
     bucket trQ3, trQ32;

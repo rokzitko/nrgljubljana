@@ -38,7 +38,7 @@ class SymmetryQSZTZ : public Symmetry {
 #include "qsztz/qsztz-QN.dat"
   } // load
 
-  void calculate_TD(const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trTZ, trTZ2, trQ, trQ2;
 
     for (const auto &[I, eig]: diag) {

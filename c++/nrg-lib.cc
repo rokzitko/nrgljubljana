@@ -1122,19 +1122,19 @@ void open_files(speclist &sl, BaseSpectrum &spec, SPECTYPE spectype, axis a) {
 // for storing spectral information.
 void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec) {
   if (spec.prefix == "gt") {
-    if (step.nrg()) open_files(sl, spec, make_shared<SPEC_GT>(), axis::Temp);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_GT>(), axis::Temp);
     return;
   }
   if (spec.prefix == "i1t") {
-    if (step.nrg()) open_files(sl, spec, make_shared<SPEC_I1T>(), axis::Temp);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_I1T>(), axis::Temp);
     return;
   }
   if (spec.prefix == "i2t") {
-    if (step.nrg()) open_files(sl, spec, make_shared<SPEC_I2T>(), axis::Temp);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_I2T>(), axis::Temp);
     return;
   }
   if (spec.prefix == "chit") {
-    if (step.nrg()) open_files(sl, spec, make_shared<SPEC_CHIT>(), axis::Temp);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_CHIT>(), axis::Temp);
     return;
   }
   // If we did not return from this funciton by this point, what we
@@ -1202,12 +1202,14 @@ namespace oprecalc {
     report(F, "ot", ot);
   }
 
+//  bool do_s(const Step &step, const string &name, const Params &P) {
   bool do_s(const string &name) {
     if (step.nrg()) return true;                             // for expectation values
     if (P.fdmexpv && step.N() <= P.fdmexpvn) return true; // Calculate <O> using FDM algorithm
     return s.count(name);
   }
 
+//  bool do_g(const Step &step, const string &name, const Params &P) {
   bool do_g(const string &name) {
     if (step.nrg()) return true;                             // for expectation values
     if (P.fdmexpv && step.N() <= P.fdmexpvn) return true; // Calculate <O> using FDM algorithm
@@ -1325,17 +1327,17 @@ void open_output_files(const RUNTYPE &runtype, const IterInfo &iterinfo, const P
   // We dump all energies to separate files for NRG and DM-NRG runs.
   // This is a very convenient way to check if both runs produce the
   // same results.
-  if (P.dumpenergies) Fenergies.open(step.nrg() ? FN_ENERGIES_NRG : FN_ENERGIES_DMNRG);
-  if (step.nrg()) {
+  if (P.dumpenergies) Fenergies.open(runtype == RUNTYPE::NRG ? FN_ENERGIES_NRG : FN_ENERGIES_DMNRG);
+  if (runtype == RUNTYPE::NRG) {
     open_Ftd(Ftd);
     if (P.dumpannotated) Fannotated.open(FN_ANNOTATED);
   }
   list<string> ops;
   for (const auto &[name, m] : iterinfo.ops) ops.push_back(name);
   for (const auto &[name, m] : iterinfo.opsg) ops.push_back(name);
-  if (step.nrg())
+  if (runtype == RUNTYPE::NRG)
     custom = make_unique<ExpvOutput>(FN_CUSTOM, stats.expv, ops);
-  else if (step.dmnrg() && P.fdmexpv) 
+  else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
     customfdm = make_unique<ExpvOutput>(FN_CUSTOMFDM, stats.fdmexpv, ops);
   oprecalc::reset_operator_lists_and_open_spectrum_files(runtype, iterinfo);
 }
@@ -1343,14 +1345,14 @@ void open_output_files(const RUNTYPE &runtype, const IterInfo &iterinfo, const P
 // Close files. This has to be called explicitly, because there can be two
 // separate runs (NRG and DMNRG). No error checking is done, nor do we test
 // if the files are actually open.
-void close_output_files() {
-  if (step.nrg()) {
+void close_output_files(const RUNTYPE &runtype) {
+  if (runtype == RUNTYPE::NRG) {
     Fenergies.close();
     Ftd.close();
     Fannotated.close();
     custom.reset(); // reseting unique_ptr closes the file
   }
-  if (step.dmnrg() && P.fdmexpv) customfdm.reset();
+  if (runtype == RUNTYPE::DMNRG && P.fdmexpv) customfdm.reset();
 }
 
 // DM-NRG: initialization of the density matrix -----------------------------
@@ -1363,7 +1365,7 @@ void close_output_files() {
 // stats.Zft, that is used to compute the spectral function with the
 // conventional approach, as well as stats.Zgt for G(T) calculations,
 // stats.Zchit for chi(T) calculations.
-double calc_grand_canonical_Z(const DiagInfo &diag, double T) {
+double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, double T) {
   bucket ZN;
   for (const auto &[i, eig]: diag) 
     for (const auto &x : eig.value) 
@@ -1379,9 +1381,9 @@ double calc_grand_canonical_Z(const DiagInfo &diag, double T) {
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-DensMatElements init_rho_impl(const DiagInfo &diag, double T) {
+DensMatElements init_rho_impl(const Step &step, const DiagInfo &diag, double T) {
   nrglog('@', "@ init_rho_impl()");
-  const double ZN = calc_grand_canonical_Z(diag, T);
+  const double ZN = calc_grand_canonical_Z(step, diag, T);
   DensMatElements rho;
   for (const auto &[I, eig]: diag) {
     const auto dim = eig.getnr();
@@ -1396,9 +1398,9 @@ DensMatElements init_rho_impl(const DiagInfo &diag, double T) {
 
 DiagInfo diag_before_truncation, diag_after_truncation; // ZZZ
 
-DensMatElements init_rho(const Params &P)
+DensMatElements init_rho(const Step &step, const Params &P)
 {
-  return P.lastall ? init_rho_impl(diag_before_truncation, P.T) : init_rho_impl(diag_after_truncation, P.T);
+  return P.lastall ? init_rho_impl(step, diag_before_truncation, P.T) : init_rho_impl(step, diag_after_truncation, P.T);
 }
 
 /*** Truncation ***/
@@ -1436,7 +1438,7 @@ t_eigen highest_retained_energy(const DiagInfo &diag) {
 // truncate_prepare() computes the number of states to keep for each invariant subspace, while the actual
 // runcation is performed by trucate_perform(). Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
-bool truncate_prepare(DiagInfo &diag) {
+bool truncate_prepare(const Step &step, DiagInfo &diag) {
   nrglog('@', "@ truncate_prepare()");
   bool notenough = false;
   t_eigen Emax      = highest_retained_energy(diag);
@@ -1587,14 +1589,14 @@ void truncate_perform(DiagInfo &diag) {
 
 // scaled = true -> output scaled energies (i.e. do not multiply
 // by the rescale factor)
-inline t_eigen scaled_energy(t_eigen e, bool scaled = true, bool absolute = false) {
+inline t_eigen scaled_energy(t_eigen e, const Step &step, bool scaled = true, bool absolute = false) {
   return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0);
 }
 
 /* Store (eigenvalue/quantum numbers) pairs at given NRG iteration.
  Eigenenergies are useful for determining RG flows and checking for
  possible phase transitions between various different ground states. */
-void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = false) {
+void dump_annotated(const Step &step, const DiagInfo &diag, bool scaled = true, bool absolute = false) {
   std::vector<pair<t_eigen, Invar>> seznam;
   for (const auto &[I, eig] : diag)
     for (const auto e : eig.value) 
@@ -1612,10 +1614,11 @@ void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = fa
   }
   my_assert(len <= seznam.size());
   Fannotated << setprecision(P.dumpprecision);
+  auto scale = [&step, &scaled, &absolute](auto x) { return scaled_energy(x, step, scaled, absolute); };
   if (P.dumpgroups) {
     // Group by degeneracies
     for (size_t i = 0; i < len;) { // i increased in the while loop below
-      Fannotated << scaled_energy(seznam[i].first, scaled, absolute);
+      Fannotated << scale(seznam[i].first);
       std::vector<string> QNstrings;
       size_t total_degeneracy = 0; // Total number of levels (incl multiplicity)
       const size_t i0         = i;
@@ -1631,7 +1634,7 @@ void dump_annotated(const DiagInfo &diag, bool scaled = true, bool absolute = fa
   } else {
     seznam.resize(len); // truncate!
     for (const auto &[e, I] : seznam) 
-      Fannotated << scaled_energy(e, scaled, absolute) << " " << I << endl;
+      Fannotated << scale(e) << " " << I << endl;
   }
   // Consecutive iterations are separated by an empty line
   Fannotated << endl;
@@ -1798,7 +1801,7 @@ void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements 
  use of the available states. Here we compute quantities which are defined
  for all symmetry types. Other calculations are performed by calculate_TD
  member functions defined in symmetry.cc. */
-void calculate_TD(const DiagInfo &diag, double additional_factor = 1.0) {
+void calculate_TD(const Step &step, const DiagInfo &diag, double additional_factor = 1.0) {
   nrglog('@', "@ calculate_TD()");
   TD::T = step.Teff();
   // Rescale factor for energies. The energies are expressed in
@@ -1829,7 +1832,7 @@ void calculate_TD(const DiagInfo &diag, double additional_factor = 1.0) {
   TD::F = stats.F = -log(Z);                 // F/(k_B T)=-ln(Z)
   TD::S = stats.S = stats.E - stats.F;       // S/k_B=beta<H>+ln(Z)
   // Call quantum number specific calculation routine
-  Sym->calculate_TD(diag, rescale_factor);
+  Sym->calculate_TD(step, diag, rescale_factor);
   if (step.nrg()) TD::save_TD_quantities(Ftd);
 }
 
@@ -1841,11 +1844,11 @@ void calculate_spectral_and_expv(const Step &step, const DiagInfo &diag, const I
   // Zft is used in the spectral function calculations using the
   // conventional approach. We calculate it here, in order to avoid
   // recalculations later on.
-  stats.Zft = calc_grand_canonical_Z(diag, P.T);
+  stats.Zft = calc_grand_canonical_Z(step, diag, P.T);
   if (string(P.specgt) != "" || string(P.speci1t) != "" || string(P.speci2t) != "")
-    stats.Zgt = calc_grand_canonical_Z(diag, step.GTtemperature());
+    stats.Zgt = calc_grand_canonical_Z(step, diag, step.GTtemperature());
   if (string(P.specchit) != "") 
-    stats.Zchit = calc_grand_canonical_Z(diag, step.CHITtemperature());
+    stats.Zchit = calc_grand_canonical_Z(step, diag, step.CHITtemperature());
   DensMatElements rho, rhoFDM;
   if (step.dmnrg()) {
       if (need_rho()) {
@@ -1863,10 +1866,10 @@ void calculate_spectral_and_expv(const Step &step, const DiagInfo &diag, const I
 
 // Perform calculations of physical quantities. Called prior to NRG
 // iteration (if calc0=true) and after each NRG step.
-void perform_measurements(const DiagInfo &diag) {
+void perform_measurements(const Step &step, const DiagInfo &diag) {
   nrglog('@', "@ perform_measurements()");
-  calculate_TD(diag);
-  if (step.nrg() && P.dumpannotated) dump_annotated(diag, P.dumpscaled, P.dumpabs);
+  calculate_TD(step, diag);
+  if (step.nrg() && P.dumpannotated) dump_annotated(step, diag, P.dumpscaled, P.dumpabs);
 }
 
 // Make a list of subspaces for the new iteration. Generic implementation: use the quantum number differences in
@@ -1893,11 +1896,11 @@ auto make_subspaces_list(const DiagInfo &diagprev) {
  all: Recalculate using all vectors
  kept: Recalculate using vectors kept after truncation
  VERY IMPORTANT: Override in the case of CFS (in the second run) */
-bool do_recalc_kept() { return string(P.strategy) == "kept" && !(P.cfs_flags() && step.dmnrg()) && !P.ZBW; }
+bool do_recalc_kept(const Step &step, const Params &P) { return string(P.strategy) == "kept" && !(P.cfs_flags() && step.dmnrg()) && !P.ZBW; }
 
-bool do_recalc_all() { return !do_recalc_kept() && !P.ZBW; }
+bool do_recalc_all(const Step &step, const Params &P) { return !do_recalc_kept(step, P) && !P.ZBW; }
 
-bool do_no_recalc() { return P.ZBW; }
+bool do_no_recalc(const Step &step, const Params &P) { return P.ZBW; }
 
 inline t_eigen Eigenvalue(const DiagInfo &diag, const Invar &I, const size_t r) {
   return diag.at(I).value(r);
@@ -2288,7 +2291,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev,
     subtract_groundstate_energy(step, diag);
     auto cluster_mapping = find_clusters(sort_energies(diag), P.fixeps);
     fix_splittings(diag, cluster_mapping);
-    notenough = truncate_prepare(diag);
+    notenough = truncate_prepare(step, diag);
     if (notenough) {
       cout << "Insufficient number of states computed." << endl;
       if (P.restart) {
@@ -2308,7 +2311,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev,
 // store_transformations(). These energies are initially not
 // referrenced to absolute 0. This is done in the second NRG run in
 // shift_abs_energies(diag).
-void calc_abs_energies(DiagInfo &diag) {
+void calc_abs_energies(const Step &step, DiagInfo &diag) {
   nrglog('@', "@ calc_abs_energies()");
   for (auto &[i, eig] : diag) {
     eig.absenergy = eig.value;
@@ -2323,7 +2326,7 @@ void calc_abs_energies(DiagInfo &diag) {
   }
 }
 
-void store_to_dm(const DiagInfo &diag, const QSrmax &qsrmax, AllSteps &dm)
+void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, AllSteps &dm)
 {
   size_t nrall  = 0;
   size_t nrkept = 0;
@@ -2353,17 +2356,17 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
   stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
   stats.energy_offsets[step.ndx()] = stats.total_energy;
   if (step.nrg()) 
-    calc_abs_energies(diag);
+    calc_abs_energies(step, diag);
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
   // Logging of ALL states (not only those that remain after truncation)
   if (P.dumpenergies) 
     dumptofile(step, diag, Fenergies);
   // Measurements are performed before the truncation!
-  perform_measurements(diag);
+  perform_measurements(step, diag);
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
-  if (do_recalc_all()) { // Either ...
+  if (do_recalc_all(step, P)) { // Either ...
     recalculate_operators(diag, qsrmax, iterinfo);
     calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
@@ -2371,16 +2374,16 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
   if (!P.ZBW) 
     truncate_perform(diag); // Actual truncation occurs at this point
   diag_after_truncation = diag; // ZZZ
-  store_to_dm(diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
+  store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_f(step, diag, qsrmax, iterinfo.opch);
     if (P.dump_f) dump_f(iterinfo.opch);
   }
-  if (do_recalc_kept()) { // ... or ...
+  if (do_recalc_kept(step, P)) { // ... or ...
     recalculate_operators(diag, qsrmax, iterinfo);
     calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
-  if (do_no_recalc()) { // ... or this
+  if (do_no_recalc(step, P)) { // ... or this
     calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
   if (P.checksumrules) operator_sumrules(diag, iterinfo);
@@ -2402,7 +2405,7 @@ void docalc0ht(Step &step, const DiagInfo &diag0, unsigned int extra_steps, cons
   for (int i = -int(extra_steps); i <= -1; i++) {
     step.set(P.Ninit - 1 + i);
     double E_rescale_factor = pow(P.Lambda, i / 2.0); // NOLINT
-    calculate_TD(diag0, E_rescale_factor);
+    calculate_TD(step, diag0, E_rescale_factor);
   }
 }
 
@@ -2412,7 +2415,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, const 
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   cout << endl << "Before NRG iteration";
   cout << " (N=" << step.N() << ")" << endl;
-  perform_measurements(diag0);
+  perform_measurements(step, diag0);
   AllSteps empty_dm{};
   calculate_spectral_and_expv(step, diag0, iterinfo, empty_dm, P);
   // Logging of ALL states (prior to truncation!)
@@ -2437,7 +2440,7 @@ void nrg_ZBW(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm
   }
   find_groundstate(diag);
   subtract_groundstate_energy(step, diag);
-  truncate_prepare(diag); // determine # of kept and discarded states
+  truncate_prepare(step, diag); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax empty_qsrmax{};
   after_diag(step, iterinfo, diag, empty_qsrmax, dm);
@@ -2493,7 +2496,7 @@ void run_nrg(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm
     nrg_ZBW(step, iterinfo, diag0, dm, P);
   else 
     nrg_loop(step, iterinfo, diag0, dm, P);
-  close_output_files(); // XXX
+  close_output_files(step.runtype); // XXX
   cout << endl << "** Iteration completed." << endl << endl;
 }
 
@@ -2579,7 +2582,7 @@ void calculation(const Params &p) {
   if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P.dm) return; // if density-matrix algorithms are not enabled, we are done!
   if (need_rho()) {
-    auto rho = init_rho(P);
+    auto rho = init_rho(step, P); // XXX raw step here
     saveRho(step.lastndx(), FN_RHO, rho, P);
     if (!P.ZBW) calc_densitymatrix(rho, dm, P);
   }

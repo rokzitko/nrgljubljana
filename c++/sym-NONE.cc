@@ -29,7 +29,7 @@ class SymmetryNONE : public Symmetry {
   void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
   void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
-  void calculate_TD(const DiagInfo &diag, double factor) override{};
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override{};
 
   DECL;
   HAS_DOUBLET;

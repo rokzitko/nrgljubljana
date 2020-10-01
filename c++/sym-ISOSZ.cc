@@ -64,7 +64,7 @@ class SymmetryISOSZ : public SymField {
     return isofactor;
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2, trIZ2; // Tr[S_z], Tr[S_z^2], Tr[I_z^2]
 
     for (const auto &[I, eig]: diag) {

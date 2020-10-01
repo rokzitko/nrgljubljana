@@ -81,7 +81,7 @@ class SymmetryDBLISOSZ : public SymField {
     }
   }
 
-  void calculate_TD(const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
     bucket trIZ12;      // Tr[I1_z^2]
     bucket trIZ22;      // Tr[I2_z^2]
