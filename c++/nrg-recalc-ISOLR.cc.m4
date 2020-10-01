@@ -13,7 +13,7 @@ include(recalc-macros.m4)
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
 // Driver routine for recalc_f()
-void SymmetryISOLR::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryISOLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -29,7 +29,7 @@ void SymmetryISOLR::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, O
 
     // nn is index n of f_n, the last site in the chain prior to adding
     // the new site (f_{n+1}).
-    int NN = getnn();
+    int NN = step.getnn();
 
     // Both parities yield non-zero <I+-1/2, S+-1/2, P| a^\mu_\nu
     // |I,S,P'>.  Coefficients *DO* depend on P,P', or more accurately,

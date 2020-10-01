@@ -133,8 +133,7 @@ void SymmetrySPSU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, co
     }
   } else {
     my_assert(P.coeffactor == 1);
-    int Ntrue, M;
-    tie(Ntrue, M) = get_Ntrue_M(step.N());
+    const auto [Ntrue, M] = step.NM();
 
 // Careful: for historical reasons (argh!) there is a minus sign in
 // the coefficients for the second Wilson chain; see also function
@@ -148,7 +147,7 @@ void SymmetrySPSU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, co
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(i, j, M, 0, t_matel(factor) * kappa(Ntrue, M), h, qq, In, opch)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(step.N()), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / step.scale_fix(), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, M, number, zeta(Ntrue + 1, M), h, qq)

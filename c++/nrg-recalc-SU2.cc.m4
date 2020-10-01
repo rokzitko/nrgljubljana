@@ -41,7 +41,7 @@ define(`RECALC_F_TAB_SU2', {
 })
 
 // Driver routine for recalc_f()
-void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -49,7 +49,7 @@ void SymmetrySU2::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opc
     Ispin iip = Ip.get("II");
     // NN is index n of f_n, the last site in the chain prior to adding
     // the new site (f_{n+1}).
-    int NN = getnn();
+    int NN = step.getnn();
 
     // RECALC_F_TAB_... (filename, channel_number, matrix_number, array_length)
 

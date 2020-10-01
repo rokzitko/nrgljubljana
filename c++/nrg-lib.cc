@@ -405,12 +405,21 @@ class Step {
    double Teff() const { return scale()/P.betabar; }  // effective temperature for thermodynamic calculations
    double scT() const { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
    RUNTYPE runtype; // NRG vs. DM-NRG run
-   pair<size_t, size_t> NM(size_t NN) const {
-     size_t i = NN / P.channels;
-     size_t j = NN - i * P.channels; // M ranges 0..channels-1
-     return {i, j};
+   pair<size_t, size_t> NM() const {
+     size_t N = ndxN / P.channels;
+     size_t M = ndxN - N*P.channels; // M ranges 0..channels-1
+     return {N, M};
    }
-   pair<size_t, size_t> NM() const { return NM(ndxN); }
+   // Compensate for different definition of SCALE in initial.m and C++ code in case of substeps==true.
+   // Used in sym-qs.cc and sym-qsz.cc
+   double scale_fix() {
+     const auto [N, M] = NM();
+     my_assert(ndxN == N * P.channels + M);
+     size_t N_at_end_of_full_step     = N * P.channels + P.channels - 1; // M=0,...,channels-1
+     double scale_now                 = P.SCALE(ndxN + 1); // NOLINT
+     double scale_at_end_of_full_step = P.SCALE(N_at_end_of_full_step + 1); // NOLINT
+     return scale_now / scale_at_end_of_full_step;
+   }
    void infostring() const {
      string info = " ***** [" + (runtype == RUNTYPE::NRG ? "NRG"s : "DM"s) + "] " 
        + "Iteration " + to_string(ndxN + 1) + "/" + to_string(P.Nmax) 
@@ -434,7 +443,7 @@ class Step {
      return P.NN2even ? IS_EVEN(ndxN) : IS_ODD(ndxN);
    }
    size_t firstndx() const { return P.Ninit; }
-   size_t lastndx() const { return P.Nmax-1; }
+   size_t lastndx() const { return P.ZBW ? P.Ninit : P.Nmax-1; }
    // Return true if this is the first step of the NRG iteration
    bool first() const { return ndxN == firstndx(); }
    // Return true if N is the last step of the NRG iteration
@@ -446,19 +455,13 @@ class Step {
    // NOTE: for ZBWcalculations, Ninit=0 and Nmax=0, so that first() == true and last() == true for ndxN=0.
    bool nrg() const { return runtype == RUNTYPE::NRG; }
    bool dmnrg() const { return runtype == RUNTYPE::DMNRG; }
+   // Index 'n' of the last site in the existing chain, f_n (at iteration 'N'). The site being added is f_{n+1}. This
+   // is the value that we use in building the matrix, cf. nrg-makematrix-ISO.cc
+   int getnn() const { return ndxN; }
 };
 
 Step step{P};
 
-// Compensate for different definition of SCALE in initial.m and C++ code in case of substeps==true.
-double scale_fix(size_t NN) {
-  const auto [N, M] = step.NM(NN);
-  my_assert(NN == N * P.channels + M);
-  size_t N_at_end_of_full_step     = N * P.channels + P.channels - 1; // M=0,...,channels-1
-  double scale_now                 = P.SCALE(NN + 1); // NOLINT
-  double scale_at_end_of_full_step = P.SCALE(N_at_end_of_full_step + 1); // NOLINT
-  return scale_now / scale_at_end_of_full_step;
-}
 
 ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
   for (const auto &x : rmax.values) os << x << ' ';
@@ -530,12 +533,6 @@ Stats stats;
 
 // Returns true if option 'c' is selected for logging // XXX move to P?
 bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::npos); }
-
-// Index 'n' of the last site in the existing chain, f_n (at iteration 'N').
-// The site being added is f_{n+1}.
-// This is the value that we use in building the matrix,
-// cf. nrg-makematrix-ISO.cc
-int getnn() { return step.N(); }
 
 #include "coef.cc"
 #include "tridiag.h"
@@ -2215,19 +2212,19 @@ std::vector<Invar> task_list(const QSrmax &qsrmax) {
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
-void recalc_f(DiagInfo &diag, QSrmax &qsrmax, Opch &opch) {
+void recalc_f(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   nrglog('@', "@ recalc_f()");
   TIME("recalc f");
   if (!P.substeps) {
     for (size_t i = 0; i < P.channels; i++)
       for (size_t j = 0; j < P.perchannel; j++) opch[i][j].clear(); // Clear all channels
-    Sym->recalc_irreduc(diag, qsrmax, opch);
+    Sym->recalc_irreduc(step, diag, qsrmax, opch);
   } else {
     const auto [N, M] = step.NM();
     for (size_t i = 0; i < P.channels; i++) {
       if (i == M) {
         for (size_t j = 0; j < P.perchannel; j++) opch[M][j].clear(); // Clear channel M
-        Sym->recalc_irreduc_substeps(diag, qsrmax, opch, M);
+        Sym->recalc_irreduc_substeps(step, diag, qsrmax, opch, M);
       } else {
         for (size_t j = 0; j < P.perchannel; j++) {
           MatrixElements &f = opch[i][j];
@@ -2399,7 +2396,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
   diag_after_truncation = diag; // ZZZ
   store_to_dm(diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
-    recalc_f(diag, qsrmax, iterinfo.opch);
+    recalc_f(step, diag, qsrmax, iterinfo.opch);
     if (P.dump_f) dump_f(iterinfo.opch);
   }
   if (do_recalc_kept()) { // ... or ...

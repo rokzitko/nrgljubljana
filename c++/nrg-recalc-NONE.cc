@@ -29,7 +29,7 @@ namespace NONE {
 
 
 // Driver routine for recalc_f()
-void SymmetryNONE::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     Invar I1 = Invar();
 
@@ -134,7 +134,7 @@ void SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
 #define USEISOFACTOR
 
 #if defined(USEISOFACTOR)
-#define ISOFACTOR psgn(getnn() + 1)
+#define ISOFACTOR psgn(step.getnn() + 1)
 #else
 #define ISOFACTOR 1
 #endif

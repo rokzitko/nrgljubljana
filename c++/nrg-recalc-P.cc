@@ -29,7 +29,7 @@ namespace symP {
 
 
 // Driver routine for recalc_f()
-void SymmetryP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     int p    = Ip.get("P");
 
@@ -191,7 +191,7 @@ void SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const
 #define USEISOFACTOR
 
 #if defined(USEISOFACTOR)
-#define ISOFACTOR psgn(getnn() + 1)
+#define ISOFACTOR psgn(step.getnn() + 1)
 #else
 #define ISOFACTOR 1
 #endif

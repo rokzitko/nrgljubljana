@@ -84,7 +84,7 @@ Symmetry *SymSU2 = new SymmetrySU2;
 
 void SymmetrySU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Ispin ii = I.get("II");
-  int NN   = getnn();
+  int NN   = step.getnn();
 
   switch (channels) {
     case 1:

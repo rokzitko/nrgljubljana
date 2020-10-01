@@ -161,7 +161,7 @@ void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const
 // Here we need scale_fix, because SCALE() function is different from
 // the convention for rescaling in regular two-channel cases.
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(N, M) / scale_fix(step.N()), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(N, M) / step.scale_fix(), h, qq, In, opch)
 
 // No scale_fix here, because SCALE() is defined as it should be.
 #undef DIAG

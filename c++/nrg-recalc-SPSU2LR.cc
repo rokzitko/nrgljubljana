@@ -59,7 +59,7 @@ void SymmetrySPSU2LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax,
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2LR::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetrySPSU2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     int pp    = Ip.get("P");

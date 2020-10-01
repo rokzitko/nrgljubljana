@@ -11,7 +11,7 @@ namespace ISOSZLR {
 }
 
 // Driver routine for recalc_f()
-void SymmetryISOSZLR::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -22,7 +22,7 @@ void SymmetryISOSZLR::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax,
 
     // nn is index n of f_n, the last site in the chain prior to adding
     // the new site (f_{n+1}).
-    int NN = getnn();
+    int NN = step.getnn();
 
     // ****** CASE I: SAME PARITY ******
 

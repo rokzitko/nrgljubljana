@@ -22,7 +22,7 @@ define(`RECALC_F_TAB_P', {
    })
 
 // Driver routine for recalc_f()
-void SymmetryPP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     int pa   = Ip.get("Pa");
     int pb   = Ip.get("Pb");
@@ -55,7 +55,7 @@ void SymmetryPP::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch
 #define USEISOFACTOR
 
 #if defined(USEISOFACTOR)
-#define ISOFACTOR psgn(getnn() + 1)
+#define ISOFACTOR psgn(step.getnn() + 1)
 #else
 #define ISOFACTOR 1
 #endif

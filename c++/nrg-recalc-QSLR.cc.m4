@@ -11,7 +11,7 @@ namespace QSLR {
 }
 
 // Driver routine for recalc_f()
-void SymmetryQSLR::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // CONVENTION: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");

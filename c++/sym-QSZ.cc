@@ -151,7 +151,7 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const I
 
     // Overrides. See sym-QS.cc for explanations!
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(N, M) / scale_fix(step.N()), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(N, M) / step.scale_fix(), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(i, M, number, zeta(N + 1, M), h, qq)

@@ -45,7 +45,7 @@ void SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax
 }
 
 // Driver routine for recalc_f()
-void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -56,7 +56,7 @@ void SymmetryDBLISOSZ::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax
 
     // NN is index n of f_n, the last site in the chain prior to adding
     // the new site (f_{n+1}).
-    int NN = getnn();
+    int NN = step.getnn();
 
     // RECALC_F_TAB_... (filename, channel_number, array_length)
 

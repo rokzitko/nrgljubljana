@@ -28,7 +28,7 @@ namespace QSC3 {
 #define xRECALC_F_TAB(a, b, c) 0;
 
 // Driver routine for recalc_f()
-void SymmetryQSC3::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
 #ifdef NRG_COMPLEX
   // CONVENTION: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {

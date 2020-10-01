@@ -46,7 +46,7 @@ void SymmetrySL3::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, con
 }
 
 // Driver routine for recalc_f()
-void SymmetrySL3::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetrySL3::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     Number q1p = Ip.get("Q1");
     Number q2p = Ip.get("Q2");

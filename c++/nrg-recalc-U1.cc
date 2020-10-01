@@ -74,7 +74,7 @@ void SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, cons
 
 
 // Driver routine for recalc_f()
-void SymmetryU1::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);

@@ -44,7 +44,7 @@ void SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, c
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   my_assert(!substeps);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
@@ -73,7 +73,7 @@ void SymmetrySPSU2::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, O
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2::recalc_irreduc_substeps(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
+void SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
   my_assert(substeps);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
@@ -134,13 +134,13 @@ void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, c
 // by (-1)^N.
 
 #undef ISOSPINX
-#define ISOSPINX(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(getnn() + 1))
+#define ISOSPINX(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 #undef ISOSPINP
-#define ISOSPINP(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(getnn() + 1))
+#define ISOSPINP(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 #undef ISOSPINM
-#define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(getnn() + 1))
+#define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 void SymmetrySPSU2::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   // NOTE: none of these are implemented for substeps==true.

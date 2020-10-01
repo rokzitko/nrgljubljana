@@ -138,7 +138,7 @@ void SymmetryISO::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, cons
   // index of the site that is being added to the chain in this
   // iteration.  This is consistent with the definition in
   // isospin-1ch-automatic.nb.
-  int NN = getnn();
+  int NN = step.getnn();
 
   switch (channels) {
     case 1:
@@ -160,7 +160,7 @@ void SymmetryISO::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, cons
 void SymmetryISO2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
-  int NN   = getnn();
+  int NN   = step.getnn();
 
   switch (channels) {
     case 1:

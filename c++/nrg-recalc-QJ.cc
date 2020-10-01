@@ -127,8 +127,8 @@ void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, c
   nrglog('f', "QJ::recalc_quadruplet() end");
 }
 
-void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  nrglog('f', "SymmetryQJ::recalc_irreduc() start");
+void SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+  nrglog('f', "SymmetryQJ::recalc_irreduc(const Step &step, ) start");
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin jjp = Ip.get("JJ");
@@ -204,5 +204,5 @@ void SymmetryQJ::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch
 };
   }
 
-  nrglog('f', "SymmetryQJ::recalc_irreduc() end");
+  nrglog('f', "SymmetryQJ::recalc_irreduc(const Step &step, ) end");
 }

@@ -139,7 +139,7 @@ void SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
 // (ISO): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISO2::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -151,7 +151,7 @@ void SymmetryISO2::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Op
     Sspin ssp = Ip.get("SS");
     // NN is index n of f_n, the last site in the chain prior to adding
     // the new site (f_{n+1}).
-    int NN = getnn();
+    int NN = step.getnn();
 
     I1 = Invar(iip + 1, ssp + 1);
     switch (channels) {

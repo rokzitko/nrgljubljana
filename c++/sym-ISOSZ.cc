@@ -95,7 +95,7 @@ Symmetry *SymISOSZ = new SymmetryISOSZ;
 
 void SymmetryISOSZ::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Ispin ii = I.get("II");
-  int NN   = getnn();
+  int NN   = step.getnn();
 
   switch (channels) {
     case 1:

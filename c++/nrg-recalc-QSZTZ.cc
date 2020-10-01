@@ -118,8 +118,8 @@ void SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, c
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQSZTZ::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  nrglog('f', "QSZTZ::recalc_irreduc() called");
+void SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+  nrglog('f', "QSZTZ::recalc_irreduc(const Step &step, ) called");
   my_assert(!substeps);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");

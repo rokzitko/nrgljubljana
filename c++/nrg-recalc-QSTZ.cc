@@ -120,8 +120,8 @@ void SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQSTZ::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  nrglog('f', "QSTZ::recalc_irreduc() called");
+void SymmetryQSTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+  nrglog('f', "QSTZ::recalc_irreduc(const Step &step, ) called");
   my_assert(!substeps);
 
   for(const auto &[Ip, eig]: diag) {

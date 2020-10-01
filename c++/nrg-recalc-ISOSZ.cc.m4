@@ -39,7 +39,7 @@ void SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, c
 // (ISOSZ): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   // Convention: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -51,7 +51,7 @@ void SymmetryISOSZ::recalc_irreduc(const DiagInfo &diag, const QSrmax &qsrmax, O
     SZspin sszp = Ip.get("SSZ");
     // NN is index n of f_n, the last site in the chain prior to adding
     // the new site (f_{n+1}).
-    int NN = getnn();
+    int NN = step.getnn();
 
     I1 = Invar(iip + 1, sszp + 1);
     ONETWO(`RECALC_F_TAB("isosz/isosz-1ch-spinup-isoupa.dat", 0, ISOSZ::LENGTH_I_1CH)',
