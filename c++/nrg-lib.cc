@@ -405,13 +405,13 @@ class Step {
    double Teff() const { return scale()/P.betabar; }  // effective temperature for thermodynamic calculations
    double scT() const { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
    RUNTYPE runtype; // NRG vs. DM-NRG run
-   pair<size_t, size_t> NM(size_t NN) {
+   pair<size_t, size_t> NM(size_t NN) const {
      size_t i = NN / P.channels;
      size_t j = NN - i * P.channels; // M ranges 0..channels-1
      return {i, j};
    }
-   pair<size_t, size_t> NM() { return NM(ndxN); }
-   void infostring() {
+   pair<size_t, size_t> NM() const { return NM(ndxN); }
+   void infostring() const {
      string info = " ***** [" + (runtype == RUNTYPE::NRG ? "NRG"s : "DM"s) + "] " 
        + "Iteration " + to_string(ndxN + 1) + "/" + to_string(P.Nmax) 
          + " (scale " + to_string(scale()) + ")" + " ***** ";
@@ -427,8 +427,8 @@ class Step {
    }
    double GTtemperature() const { return P.gtp * scale(); }
    double CHITtemperature() const { return P.chitp * scale(); }
-   // Return true if the spectral-function merging is to be performed at the current step.
-   bool N_for_merging() {
+   // Return true if the spectral-function merging is to be performed at the current step
+   bool N_for_merging() const {
      if (P.NN1) return true;
      if (P.NN2avg) return true;
      return P.NN2even ? IS_EVEN(ndxN) : IS_ODD(ndxN);
@@ -436,16 +436,16 @@ class Step {
    size_t firstndx() const { return P.Ninit; }
    size_t lastndx() const { return P.Nmax-1; }
    // Return true if this is the first step of the NRG iteration
-   bool first() { return ndxN == firstndx(); }
+   bool first() const { return ndxN == firstndx(); }
    // Return true if N is the last step of the NRG iteration
-   bool last(int N) {
+   bool last(int N) const {
      return N == lastndx() || (P.ZBW && N == firstndx()); // special case!
    }
-   bool last() { return last(ndxN); }
-   bool end() { return ndxN >= P.Nmax; } // ndxN is outside the allowed range
+   bool last() const { return last(ndxN); }
+   bool end() const { return ndxN >= P.Nmax; } // ndxN is outside the allowed range
    // NOTE: for ZBWcalculations, Ninit=0 and Nmax=0, so that first() == true and last() == true for ndxN=0.
-   bool nrg()    { return runtype == RUNTYPE::NRG; }
-   bool dmnrg() { return runtype == RUNTYPE::DMNRG; }
+   bool nrg() const { return runtype == RUNTYPE::NRG; }
+   bool dmnrg() const { return runtype == RUNTYPE::DMNRG; }
 };
 
 Step step{P};
@@ -671,7 +671,7 @@ CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n
   return tr;
 }
 
-CONSTFNC t_expv calc_trace_fdm_kept(const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm) {
+CONSTFNC t_expv calc_trace_fdm_kept(const Step &step, const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm) {
   matel_bucket tr;
   for (const auto &[i, eig] : diag) {
     const auto & nI = n.at(Twoinvar{i,i});
@@ -988,7 +988,7 @@ inline size_t size_subspace(const DiagInfo &diag, const Invar &I) {
 // TODO: generalize to all symmetry types! (i.e. add additional
 // coefficients of interest). This should ideally be a call to a
 // method in class Symmetry.
-void show_coefficients() {
+void show_coefficients(const Step &step) {
   cout << setprecision(std::numeric_limits<double>::max_digits10);
   if (!P.substeps) {
     for (size_t i = 0; i < P.coefchannels; i++) {
@@ -1033,7 +1033,7 @@ void find_groundstate(const DiagInfo &diag) {
 }
 
 // Dump all energies in diag to a file
-void dumptofile(const DiagInfo &diag, ostream &file) {
+void dumptofile(const Step &step, const DiagInfo &diag, ostream &file) {
   file << endl << "===== Iteration number: " << step.N() << endl;
   for (const auto &[i, eig]: diag) {
     file << "Subspace: " << i << endl;
@@ -1044,7 +1044,7 @@ void dumptofile(const DiagInfo &diag, ostream &file) {
 }
 
 /*** Subtract ground state energy ***/
-void subtract_groundstate_energy(DiagInfo &diag) {
+void subtract_groundstate_energy(const Step &step, DiagInfo &diag) {
   if (step.nrg()) // should be done only once!
     for (auto &[i, eig] : diag) {
       for (auto &x : eig.value) x -= stats.Egs;
@@ -1107,7 +1107,7 @@ class ExpvOutput {
   }
   public:
   // Output the current values for the label and for all the fields
-  void field_values(double labelvalue = step.Teff()) {
+  void field_values(double labelvalue) {
     F << ' ';
     formatted_output(F, labelvalue);
     for (const auto &op : fields) formatted_output(F, m[op]);
@@ -1146,7 +1146,7 @@ void open_files(speclist &sl, BaseSpectrum &spec, SPECTYPE spectype, axis a) {
 
 // open_files_spec() opens the output files and establishes the data structures
 // for storing spectral information.
-void open_files_spec(speclist &sl, BaseSpectrum &spec) {
+void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec) {
   if (spec.prefix == "gt") {
     if (step.nrg()) open_files(sl, spec, make_shared<SPEC_GT>(), axis::Temp);
     return;
@@ -1167,21 +1167,25 @@ void open_files_spec(speclist &sl, BaseSpectrum &spec) {
   // are computing is the spectral function. There are several
   // possibilities in this case, all of which may be enabled at the
   // same time.
-  if (step.nrg() && P.finite) open_files(sl, spec, make_shared<SPEC_FT>(), axis::RealFreq);
-  if (step.nrg() && P.finitemats) open_files(sl, spec, make_shared<SPEC_FTmats>(), axis::Matsubara);
-  if (step.dmnrg() && P.dmnrg) open_files(sl, spec, make_shared<SPEC_DMNRG>(), axis::RealFreq);
-  if (step.dmnrg() && P.dmnrgmats) open_files(sl, spec, make_shared<SPEC_DMNRGmats>(), axis::Matsubara);
-  if (step.dmnrg() && P.cfs) open_files(sl, spec, make_shared<SPEC_CFS>(), axis::RealFreq);
-  if (step.dmnrg() && P.cfsgt) open_files(sl, spec, make_shared<SPEC_CFSgt>(), axis::RealFreq);
-  if (step.dmnrg() && P.cfsls) open_files(sl, spec, make_shared<SPEC_CFSls>(), axis::RealFreq);
-  if (step.dmnrg() && P.fdm) open_files(sl, spec, make_shared<SPEC_FDM>(), axis::RealFreq);
-  if (step.dmnrg() && P.fdmgt) open_files(sl, spec, make_shared<SPEC_FDMgt>(), axis::RealFreq);
-  if (step.dmnrg() && P.fdmls) open_files(sl, spec, make_shared<SPEC_FDMls>(), axis::RealFreq);
-  if (step.dmnrg() && P.fdmmats) open_files(sl, spec, make_shared<SPEC_FDMmats>(), axis::Matsubara);
+  if (runtype == RUNTYPE::NRG) {
+    if (P.finite) open_files(sl, spec, make_shared<SPEC_FT>(), axis::RealFreq);
+    if (P.finitemats) open_files(sl, spec, make_shared<SPEC_FTmats>(), axis::Matsubara);
+  }
+  if (runtype == RUNTYPE::DMNRG) {
+    if (P.dmnrg) open_files(sl, spec, make_shared<SPEC_DMNRG>(), axis::RealFreq);
+    if (P.dmnrgmats) open_files(sl, spec, make_shared<SPEC_DMNRGmats>(), axis::Matsubara);
+    if (P.cfs) open_files(sl, spec, make_shared<SPEC_CFS>(), axis::RealFreq);
+    if (P.cfsgt) open_files(sl, spec, make_shared<SPEC_CFSgt>(), axis::RealFreq);
+    if (P.cfsls) open_files(sl, spec, make_shared<SPEC_CFSls>(), axis::RealFreq);
+    if (P.fdm) open_files(sl, spec, make_shared<SPEC_FDM>(), axis::RealFreq);
+    if (P.fdmgt) open_files(sl, spec, make_shared<SPEC_FDMgt>(), axis::RealFreq);
+    if (P.fdmls) open_files(sl, spec, make_shared<SPEC_FDMls>(), axis::RealFreq);
+    if (P.fdmmats) open_files(sl, spec, make_shared<SPEC_FDMmats>(), axis::Matsubara);
+  }
 }
 
-void open_files_spec3(speclist &sl, BaseSpectrum &spec) {
-  if (step.dmnrg() && P.fdm && P.v3mm) // both options, fdm and v3mm
+void open_files_spec3(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec) {
+  if (runtype == RUNTYPE::DMNRG && P.fdm && P.v3mm) // both options, fdm and v3mm
     open_files(sl, spec, make_shared<SPEC_FDM_v3mm>(), axis::Matsubara2);
 }
 
@@ -1249,7 +1253,8 @@ namespace oprecalc {
      return a + "-" + b + (spin == 0 ? "" : (spin == 1 ? "-u" : "-d"));
    }
 
-   void loopover(const CustomOp &set1, const CustomOp &set2,
+   void loopover(const RUNTYPE &runtype, 
+                 const CustomOp &set1, const CustomOp &set2,
                  const string_token &stringtoken, speclist &spectra, const string &prefix,
                  set<string> &rec1, set<string> &rec2, matstype mt, int spin = 0) {
     for (const auto &[name1, op1] : set1) {
@@ -1260,7 +1265,7 @@ namespace oprecalc {
           spec.prefix = prefix;
           spec.mt     = mt;
           spec.spin   = spin;
-          open_files_spec(spectra, spec);
+          open_files_spec(runtype, spectra, spec);
           rec1.insert(name1);
           rec2.insert(name2);
         }
@@ -1268,7 +1273,8 @@ namespace oprecalc {
     }
   }
    
-  void loopover3(const CustomOp &set1, const CustomOp &set2, const CustomOp &set3,
+  void loopover3(const RUNTYPE &runtype, 
+                 const CustomOp &set1, const CustomOp &set2, const CustomOp &set3,
                  const string_token &stringtoken, speclist &spectra, const string &prefix, 
                  set<string> &rec1, set<string> &rec2, set<string> &rec3, matstype mt) {
     for (const auto &[name1, op1] : set1) {
@@ -1279,7 +1285,7 @@ namespace oprecalc {
             spec.name   = spname;
             spec.prefix = prefix;
             spec.mt     = mt;
-            open_files_spec3(spectra, spec);
+            open_files_spec3(runtype, spectra, spec);
             rec1.insert(name1);
             rec2.insert(name2);
             rec3.insert(name3);
@@ -1289,48 +1295,48 @@ namespace oprecalc {
     }
   }
 
-  // Reset lists of operators which need to be iterated.
-  void reset_operator_lists_and_open_spectrum_files(const IterInfo &a) {
+  // Reset lists of operators which need to be iterated
+  void reset_operator_lists_and_open_spectrum_files(const RUNTYPE &runtype, const IterInfo &a) {
     oprecalc::clear();
-    // Correlators (singlet operators of all kinds).
+    // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
-    loopover(a.ops,  a.ops,  sts, spectraS, "corr", s, s, matstype::bosonic);
-    loopover(a.opsp, a.opsp, sts, spectraS, "corr", p, p, matstype::bosonic);
-    loopover(a.opsg, a.opsg, sts, spectraS, "corr", g, g, matstype::bosonic);
-    loopover(a.ops,  a.opsg, sts, spectraS, "corr", s, g, matstype::bosonic);
-    loopover(a.opsg, a.ops,  sts, spectraS, "corr", g, s, matstype::bosonic);
-    // Global susceptibilities (global singlet operators).
+    loopover(runtype, a.ops,  a.ops,  sts, spectraS, "corr", s, s, matstype::bosonic);
+    loopover(runtype, a.opsp, a.opsp, sts, spectraS, "corr", p, p, matstype::bosonic);
+    loopover(runtype, a.opsg, a.opsg, sts, spectraS, "corr", g, g, matstype::bosonic);
+    loopover(runtype, a.ops,  a.opsg, sts, spectraS, "corr", s, g, matstype::bosonic);
+    loopover(runtype, a.opsg, a.ops,  sts, spectraS, "corr", g, s, matstype::bosonic);
+    // Global susceptibilities (global singlet operators)
     string_token stchit(P.specchit);
-    loopover(a.ops,  a.ops,  stchit, spectraCHIT, "chit", s, s, matstype::bosonic);
-    loopover(a.ops,  a.opsg, stchit, spectraCHIT, "chit", s, g, matstype::bosonic);
-    loopover(a.opsg, a.ops,  stchit, spectraCHIT, "chit", g, s, matstype::bosonic);
-    loopover(a.opsg, a.opsg, stchit, spectraCHIT, "chit", g, g, matstype::bosonic);
-    // Dynamic spin susceptibilities (triplet operators).
+    loopover(runtype, a.ops,  a.ops,  stchit, spectraCHIT, "chit", s, s, matstype::bosonic);
+    loopover(runtype, a.ops,  a.opsg, stchit, spectraCHIT, "chit", s, g, matstype::bosonic);
+    loopover(runtype, a.opsg, a.ops,  stchit, spectraCHIT, "chit", g, s, matstype::bosonic);
+    loopover(runtype, a.opsg, a.opsg, stchit, spectraCHIT, "chit", g, g, matstype::bosonic);
+    // Dynamic spin susceptibilities (triplet operators)
     string_token stt(P.spect);
-    loopover(a.opt, a.opt, stt, spectraT, "spin", t, t, matstype::bosonic);
+    loopover(runtype, a.opt, a.opt, stt, spectraT, "spin", t, t, matstype::bosonic);
     string_token stot(P.specot);
-    loopover(a.opot, a.opot, stot, spectraOT, "orbspin", ot, ot, matstype::bosonic);
+    loopover(runtype, a.opot, a.opot, stot, spectraOT, "orbspin", ot, ot, matstype::bosonic);
     const int varmin = (Sym->isfield() ? -1 : 0);
     const int varmax = (Sym->isfield() ? +1 : 0);
-    // Spectral functions (doublet operators).
+    // Spectral functions (doublet operators)
     string_token std(P.specd);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(a.opd, a.opd, std, spectraD, "spec", d, d, matstype::fermionic, SPIN);
+      loopover(runtype, a.opd, a.opd, std, spectraD, "spec", d, d, matstype::fermionic, SPIN);
     string_token stgt(P.specgt);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(a.opd, a.opd, stgt, spectraGT, "gt", d, d, matstype::fermionic, SPIN);
+      loopover(runtype, a.opd, a.opd, stgt, spectraGT, "gt", d, d, matstype::fermionic, SPIN);
     string_token sti1t(P.speci1t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(a.opd, a.opd, sti1t, spectraI1T, "i1t", d, d, matstype::fermionic, SPIN);
+      loopover(runtype, a.opd, a.opd, sti1t, spectraI1T, "i1t", d, d, matstype::fermionic, SPIN);
     string_token sti2t(P.speci2t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(a.opd, a.opd, sti2t, spectraI2T, "i2t", d, d, matstype::fermionic, SPIN);
-    // Spectral functions (quadruplet operators).
+      loopover(runtype, a.opd, a.opd, sti2t, spectraI2T, "i2t", d, d, matstype::fermionic, SPIN);
+    // Spectral functions (quadruplet operators)
     string_token stq(P.specq);
-    loopover(a.opq, a.opq, stq, spectraQ, "specq", q, q, matstype::fermionic);
+    loopover(runtype, a.opq, a.opq, stq, spectraQ, "specq", q, q, matstype::fermionic);
     // Vertex functions
     string_token stv3(P.specv3);
-    loopover3(a.opd, a.opd, a.ops, stv3, spectraV3, "specv3", d, d, s, matstype::fb);
+    loopover3(runtype, a.opd, a.opd, a.ops, stv3, spectraV3, "specv3", d, d, s, matstype::fb);
     oprecalc::report();
     cout << endl << "Computing the following spectra:" << endl;
     for (const auto &i : allspectra) i->about();
@@ -1340,7 +1346,7 @@ namespace oprecalc {
 unique_ptr<ExpvOutput> custom, customfdm;
 
 // Open output files and write headers
-void open_output_files(const IterInfo &iterinfo, const Params &P) {
+void open_output_files(const RUNTYPE &runtype, const IterInfo &iterinfo, const Params &P) {
   nrglog('@', "@ open_output_files()");
   // We dump all energies to separate files for NRG and DM-NRG runs.
   // This is a very convenient way to check if both runs produce the
@@ -1357,7 +1363,7 @@ void open_output_files(const IterInfo &iterinfo, const Params &P) {
     custom = make_unique<ExpvOutput>(FN_CUSTOM, stats.expv, ops);
   else if (step.dmnrg() && P.fdmexpv) 
     customfdm = make_unique<ExpvOutput>(FN_CUSTOMFDM, stats.fdmexpv, ops);
-  oprecalc::reset_operator_lists_and_open_spectrum_files(iterinfo);
+  oprecalc::reset_operator_lists_and_open_spectrum_files(runtype, iterinfo);
 }
 
 // Close files. This has to be called explicitly, because there can be two
@@ -1750,26 +1756,26 @@ void measure_singlet1(const DiagInfo &dg, std::string name, const MatrixElements
 }
 
 // Expectation values using FDM algorithm
-void measure_singlet1_fdm(const DiagInfo &dg, std::string name, const MatrixElements &m, const DensMatElements &rhoFDM, const AllSteps &dm) {
-  const t_expv expv   = calc_trace_fdm_kept(dg, m, rhoFDM, dm);
+void measure_singlet1_fdm(const Step &step, const DiagInfo &dg, std::string name, const MatrixElements &m, const DensMatElements &rhoFDM, const AllSteps &dm) {
+  const t_expv expv   = calc_trace_fdm_kept(step, dg, m, rhoFDM, dm);
   stats.fdmexpv[name] = expv;
   cout << "<" << name << ">_fdm=" << output_val(expv) << endl;
 }
 
 // Measure thermodynamic expectation values of singlet operators
-void measure_singlet(const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &custom) {
+void measure_singlet(const Step &step, const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &custom) {
   nrglog('@', "@ measure_singlet()");
   const double Z_S = calc_Z(dg);
   for (const auto &[name, m] : a.ops)  measure_singlet1(dg, name, m, Z_S);
   for (const auto &[name, m] : a.opsg) measure_singlet1(dg, name, m, Z_S);
-  custom->field_values();
+  custom->field_values(step.Teff());
 }
 
-void measure_singlet_fdm(const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &customfdm, const DensMatElements &rhoFDM, const AllSteps &dm) {
+void measure_singlet_fdm(const Step &step, const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &customfdm, const DensMatElements &rhoFDM, const AllSteps &dm) {
   if (step.N() != P.fdmexpvn) return;
   nrglog('@', "@ measure_singlet_fdm()");
-  for (const auto &[name, m] : a.ops)  measure_singlet1_fdm(dg, name, m, rhoFDM, dm);
-  for (const auto &[name, m] : a.opsg) measure_singlet1_fdm(dg, name, m, rhoFDM, dm);
+  for (const auto &[name, m] : a.ops)  measure_singlet1_fdm(step, dg, name, m, rhoFDM, dm);
+  for (const auto &[name, m] : a.opsg) measure_singlet1_fdm(step, dg, name, m, rhoFDM, dm);
   customfdm->field_values(P.T);
 }
 
@@ -1856,7 +1862,7 @@ void calculate_TD(const DiagInfo &diag, double additional_factor = 1.0) {
 inline bool need_rho() { return P.cfs || P.dmnrg; }
 inline bool need_rhoFDM() { return P.fdm; }
 
-void calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iterinfo, const AllSteps &dm, const Params &P) {
+void calculate_spectral_and_expv(const Step &step, const DiagInfo &diag, const IterInfo &iterinfo, const AllSteps &dm, const Params &P) {
   nrglog('@', "@ calculate_spectral_and_expv()");
   // Zft is used in the spectral function calculations using the
   // conventional approach. We calculate it here, in order to avoid
@@ -1877,8 +1883,8 @@ void calculate_spectral_and_expv(const DiagInfo &diag, const IterInfo &iterinfo,
         rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);
   }
   spectral_densities(diag, rho, rhoFDM);
-  if (step.nrg()) measure_singlet(diag, iterinfo, custom);
-  if (step.dmnrg() && P.fdmexpv) measure_singlet_fdm(diag, iterinfo, customfdm, rhoFDM, dm);
+  if (step.nrg()) measure_singlet(step, diag, iterinfo, custom);
+  if (step.dmnrg() && P.fdmexpv) measure_singlet_fdm(step, diag, iterinfo, customfdm, rhoFDM, dm);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG
@@ -2280,10 +2286,10 @@ void calc_boltzmann_factors(DiagInfo &diag) {
 
 // NRG diagonalisation driver: calls diagionalisations() or load_transformations(), as necessary, and performs
 // the truncation. All other calculations are done in after_diag(). Called from iterate().
-DiagInfo do_diag(IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
+DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
   nrglog('@', "@ do_diag()");
   step.infostring();
-  show_coefficients();
+  show_coefficients(step);
   auto tasks = task_list(qsrmax);
   double diagratio = P.diagratio;
   DiagInfo diag;
@@ -2305,7 +2311,7 @@ DiagInfo do_diag(IterInfo &iterinfo, const DiagInfo &diagprev, QSrmax &qsrmax, c
       if (P.removefiles) remove_transformation_files(step.ndx(), P);
     }
     find_groundstate(diag);
-    subtract_groundstate_energy(diag);
+    subtract_groundstate_energy(step, diag);
     auto cluster_mapping = find_clusters(sort_energies(diag), P.fixeps);
     fix_splittings(diag, cluster_mapping);
     notenough = truncate_prepare(diag);
@@ -2364,7 +2370,7 @@ void store_to_dm(const DiagInfo &diag, const QSrmax &qsrmax, AllSteps &dm)
 // - diag contains all information about the eigenstates.
 // - stats.Egs had been computed
 // Also called from doZBW() as a final step.
-void after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax, AllSteps &dm) {
+void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax, AllSteps &dm) {
   nrglog('@', "@ after_diag()");
   // Contribution to the total energy.
   stats.total_energy += stats.Egs * step.scale();
@@ -2378,14 +2384,14 @@ void after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax, AllSteps &dm
     save_transformations(step.ndx(), diag, P);
   // Logging of ALL states (not only those that remain after truncation)
   if (P.dumpenergies) 
-    dumptofile(diag, Fenergies);
+    dumptofile(step, diag, Fenergies);
   // Measurements are performed before the truncation!
   perform_measurements(diag);
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
   if (do_recalc_all()) { // Either ...
     recalculate_operators(diag, qsrmax, iterinfo);
-    calculate_spectral_and_expv(diag, iterinfo, dm, P);
+    calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
   diag_before_truncation = diag;
   if (!P.ZBW) 
@@ -2398,19 +2404,19 @@ void after_diag(IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax, AllSteps &dm
   }
   if (do_recalc_kept()) { // ... or ...
     recalculate_operators(diag, qsrmax, iterinfo);
-    calculate_spectral_and_expv(diag, iterinfo, dm, P);
+    calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
   if (do_no_recalc()) { // ... or this
-    calculate_spectral_and_expv(diag, iterinfo, dm, P);
+    calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
   if (P.checksumrules) operator_sumrules(diag, iterinfo);
 }
 
 // Perform one iteration step
-DiagInfo iterate(IterInfo &iterinfo, const DiagInfo &diagprev, AllSteps &dm, const Params &P) {
+DiagInfo iterate(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev, AllSteps &dm, const Params &P) {
   QSrmax qsrmax = get_qsrmax(diagprev);
-  auto diag = do_diag(iterinfo, diagprev, qsrmax, P);
-  after_diag(iterinfo, diag, qsrmax, dm);
+  auto diag = do_diag(step, iterinfo, diagprev, qsrmax, P);
+  after_diag(step, iterinfo, diag, qsrmax, dm);
   trim_matrices(diag, iterinfo);
   clear_eigenvectors(diag);
   diag_after_truncation = diag; // ZZZ, replace with the trimmed version set in after_diag()
@@ -2418,7 +2424,7 @@ DiagInfo iterate(IterInfo &iterinfo, const DiagInfo &diagprev, AllSteps &dm, con
   return diag;
 }
 
-void docalc0ht(const DiagInfo &diag0, unsigned int extra_steps, const Params &P) {
+void docalc0ht(Step &step, const DiagInfo &diag0, unsigned int extra_steps, const Params &P) {
   for (int i = -int(extra_steps); i <= -1; i++) {
     step.set(P.Ninit - 1 + i);
     double E_rescale_factor = pow(P.Lambda, i / 2.0); // NOLINT
@@ -2427,22 +2433,22 @@ void docalc0ht(const DiagInfo &diag0, unsigned int extra_steps, const Params &P)
 }
 
 // Perform calculations with quantities from 'data' file
-void docalc0(const IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
+void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, const Params &P) {
   nrglog('@', "@ docalc0()");
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   cout << endl << "Before NRG iteration";
   cout << " (N=" << step.N() << ")" << endl;
   perform_measurements(diag0);
   AllSteps empty_dm{};
-  calculate_spectral_and_expv(diag0, iterinfo, empty_dm, P);
+  calculate_spectral_and_expv(step, diag0, iterinfo, empty_dm, P);
   // Logging of ALL states (prior to truncation!)
-  if (P.dumpenergies) dumptofile(diag0, Fenergies);
+  if (P.dumpenergies) dumptofile(step, diag0, Fenergies);
   if (P.checksumrules) operator_sumrules(diag0, iterinfo);
 }
 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
-void nrg_ZBW(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
+void nrg_ZBW(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   cout << endl << "Zero bandwidth calculation" << endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
@@ -2456,21 +2462,21 @@ void nrg_ZBW(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Para
     if (P.removefiles) remove_transformation_files(step.ndx(), P);
   }
   find_groundstate(diag);
-  subtract_groundstate_energy(diag);
+  subtract_groundstate_energy(step, diag);
   truncate_prepare(diag); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax empty_qsrmax{};
-  after_diag(iterinfo, diag, empty_qsrmax, dm);
+  after_diag(step, iterinfo, diag, empty_qsrmax, dm);
 }
 
 // ****************************  Main NRG loop ****************************
 
-void nrg_loop(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
+void nrg_loop(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   nrglog('@', "@ nrg_loop()");
   DiagInfo diag = diag0;
   for (step.init(); !step.end(); step++)
-    diag = iterate(iterinfo, diag, dm, P);
-  step.set(step.lastndx());
+    diag = iterate(step, iterinfo, diag, dm, P);
+  step.set(step.lastndx()); // TO DO: remove this, after step is no longer global...
 }
 
 // Total number of states (symmetry taken into account)
@@ -2499,20 +2505,20 @@ void states_report(const DiagInfo &dg, ostream &fout = cout) {
   fout << "Number of states (multiplicity taken into account): " << count_states(dg) << endl << endl;
 }
 
-void run_nrg(IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
+void run_nrg(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   nrglog('@', "@ run_nrg()");
   states_report(diag0);
-  open_output_files(iterinfo, P); // XXX
+  open_output_files(step.runtype, iterinfo, P); // XXX
   // If setting calc0 is set to true, a calculation of TD quantities
   // is performed before starting the NRG iteration.
   if (step.nrg() && P.calc0 && !P.ZBW) {
-    docalc0ht(diag0, P.tdht, P);
-    docalc0(iterinfo, diag0, P);
+    docalc0ht(step, diag0, P.tdht, P);
+    docalc0(step, iterinfo, diag0, P);
   }
   if (P.ZBW)
-    nrg_ZBW(iterinfo, diag0, dm, P);
+    nrg_ZBW(step, iterinfo, diag0, dm, P);
   else 
-    nrg_loop(iterinfo, diag0, dm, P);
+    nrg_loop(step, iterinfo, diag0, dm, P);
   close_output_files(); // XXX
   cout << endl << "** Iteration completed." << endl << endl;
 }
@@ -2594,24 +2600,24 @@ void calculation(const Params &p) {
   // Initialize all containers for storing information
   AllSteps dm(P.Nlen);
   stats.init_vectors(P.Nlen);
-  run_nrg(iterinfo, diag0, dm, P);
+  run_nrg(step, iterinfo, diag0, dm, P);
   finalize_nrg(dm, P);
   if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (!P.dm) return; // if density-matrix algorithms are not enabled, we are done!
   if (need_rho()) {
     auto rho = init_rho(P);
-    saveRho(step.ndx(), FN_RHO, rho, P);
+    saveRho(step.lastndx(), FN_RHO, rho, P);
     if (!P.ZBW) calc_densitymatrix(rho, dm, P);
   }
   if (need_rhoFDM()) {
-    auto rhoFDM = init_rho_FDM(step.ndx(), dm, P);
-    saveRho(step.ndx(), FN_RHOFDM, rhoFDM, P);
+    auto rhoFDM = init_rho_FDM(step.lastndx(), dm, P);
+    saveRho(step.lastndx(), FN_RHOFDM, rhoFDM, P);
     if (!P.ZBW) calc_fulldensitymatrix(rhoFDM, dm, P);
   }
   if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
   step.runtype = RUNTYPE::DMNRG;
   auto [diag0_dm, iterinfo_dm] = read_data(P);
-  run_nrg(iterinfo_dm, diag0, dm, P);
+  run_nrg(step, iterinfo_dm, diag0, dm, P);
   finalize_dmnrg();
 }
 
