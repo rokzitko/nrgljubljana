@@ -123,10 +123,10 @@ void SymmetryQJ::offdiag_function_QJ(unsigned int i, unsigned int j,
 // *** Helper macros for makematrix() members in matrix.cc
 // Jndx = 0 for doublet, Jndx = 1 for quadruplet
 #undef OFFDIAG
-#define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(i, j, Jndx, 0, t_matel(factor0) * xi(stats.N, 0), h, qq, In, opch)
+#define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(i, j, Jndx, 0, t_matel(factor0) * xi(step.N(), 0), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(i, 0, number, zeta(stats.N + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(i, 0, number, zeta(step.N() + 1, 0), h, qq)
 
 inline double J(int JJ) {
   return (JJ - 1.0) / 2.0; // JJ=2J+1

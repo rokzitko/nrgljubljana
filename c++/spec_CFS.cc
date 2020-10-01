@@ -64,8 +64,8 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
         const t_eigen Ep = diagIp.value(rp);
         DELTA d;
         d.energy = E1 - Ep;
-        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * stats.scT) * (-sign); // (***)
-        cs->add(stats.scale * d.energy, d.weight);
+        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign); // (***)
+        cs->add(step.scale() * d.energy, d.weight);
       }
     }
   } else {
@@ -81,7 +81,7 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
         weight_bucket sum;
         for (size_t rkp = 0; rkp < dimp; rkp++) sum += op2II(rl, rkp) * rhoNIp(rkp, rk); // no sign here!
         d.weight = spinfactor * CONJ_ME(op1II(rl, rk)) * t_weight(sum) * (-sign);        // (***)
-        cs->add(stats.scale * d.energy, d.weight);
+        cs->add(step.scale() * d.energy, d.weight);
       }
     }
   } // if (last)
@@ -109,8 +109,8 @@ void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
         const t_eigen Ep = diagIp.value(rp);
         DELTA d;
         d.energy = E1 - Ep;
-        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * stats.scT); // (***) removed (-sign)
-        cs->add(stats.scale * d.energy, d.weight);
+        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * step.scT()); // (***) removed (-sign)
+        cs->add(step.scale() * d.energy, d.weight);
       }
     }
   } else {
@@ -126,7 +126,7 @@ void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
         weight_bucket sum;
         for (size_t rkp = 0; rkp < dim1; rkp++) sum += CONJ_ME(op1II(rkp, rl)) * rhoNI1(rkp, rk);
         d.weight = spinfactor * t_weight(sum) * op2II(rk, rl); // (***) removed (-sign)
-        cs->add(stats.scale * d.energy, d.weight);
+        cs->add(step.scale() * d.energy, d.weight);
       }
     }
   } // if (last)
@@ -156,8 +156,8 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
       for (size_t rp = 0; rp < dimp; rp++) {
         const double Ep = diagIp.value(rp);
         double d_energy = E1 - Ep;
-        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-E1 * stats.scT) * (-sign); // (***)
-        cs->add(stats.scale * d_energy, d_weight);
+        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign); // (***)
+        cs->add(step.scale() * d_energy, d_weight);
       }
     }
   } else {
@@ -177,7 +177,7 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
           const double d_energy = El - Ek;
           const double sum      = op2II_m_rho(rl, rk);
           const double d_weight = spinfactor * op1II(rl, rk) * sum * (-sign); // (***)
-          cs->add(stats.scale * d_energy, d_weight);
+          cs->add(step.scale() * d_energy, d_weight);
         }
       }
     }
@@ -204,8 +204,8 @@ void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
       for (size_t rp = 0; rp < dimp; rp++) {
         const double Ep = diagIp.value(rp);
         double d_energy = E1 - Ep;
-        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-Ep * stats.scT); // (***) removed (-sign)
-        cs->add(stats.scale * d_energy, d_weight);
+        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-Ep * step.scT()); // (***) removed (-sign)
+        cs->add(step.scale() * d_energy, d_weight);
       }
     }
   } else {
@@ -224,7 +224,7 @@ void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
           const double sum      = op1II_m_rho(rk, rl);
           double d_weight       = spinfactor * sum; // (***) removed (-sign)
           d_weight *= op2II(rk, rl);
-          cs->add(stats.scale * d_energy, d_weight);
+          cs->add(step.scale() * d_energy, d_weight);
         }
       }
     }

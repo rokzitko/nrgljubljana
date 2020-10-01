@@ -43,7 +43,7 @@ class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
 // *********** Greater correlation function ***********
 void SPEC_FDMgt::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ii, const Invar &Ij, DensMatElements &rhoFDM) {
-  const double wnf   = stats.wnfactor[stats.N];
+  const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
   const size_t reti  = (LAST_ITERATION() ? 0 : rhoi.size1());
@@ -86,7 +86,7 @@ if (allj > 0 && reti > 0) {
 void SPEC_FDMls::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ii, const Invar &Ij, DensMatElements &rhoFDM) {
   double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
-  const double wnf   = stats.wnfactor[stats.N];
+  const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
   const size_t reti  = (LAST_ITERATION() ? 0 : rhoi.size1());
@@ -142,7 +142,7 @@ void SPEC_FDMmats::calc(const Eigen &diagIi, const Eigen &diagIj, const Matrix &
   // (-sign)=1 for fermionic case, (-sign)=-1 for bosonic case
   double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   auto csm           = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
-  const double wnf   = stats.wnfactor[stats.N];
+  const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
   const size_t reti  = (LAST_ITERATION() ? 0 : rhoi.size1());
@@ -266,7 +266,7 @@ void SPEC_FDM_v3mm::calc_A(const Eigen &diagi, const Eigen &diagj, const Eigen &
     res[j].clear();
   }
   auto csm           = dynamic_pointer_cast<ChainSpectrumMatsubara2>(cs);
-  const double wnf   = stats.wnfactor[stats.N];
+  const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
   const Matrix &rhol = rhoFDM[Il];
@@ -520,7 +520,7 @@ void SPEC_FDM_v3mm::calc_B(const Eigen &diagi, const Eigen &diagj, const Eigen &
     res[j].clear();
   }
   auto csm           = dynamic_pointer_cast<ChainSpectrumMatsubara2>(cs);
-  const double wnf   = stats.wnfactor[stats.N];
+  const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM[Ii];
   const Matrix &rhoj = rhoFDM[Ij];
   const Matrix &rhol = rhoFDM[Il];

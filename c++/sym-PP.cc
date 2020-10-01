@@ -43,16 +43,16 @@ Symmetry *SymPP = new SymmetryPP;
 #undef OFFDIAG_AN_DO
 #undef OFFDIAG_AN_UP
 
-#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(stats.N, ch), h, qq, In, opch)
-#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(stats.N, ch), h, qq, In, opch)
-#define OFFDIAG_AN_DO(i, j, ch, factor) offdiag_function(i, j, ch, 2, t_matel(factor) * xi(stats.N, ch), h, qq, In, opch)
-#define OFFDIAG_AN_UP(i, j, ch, factor) offdiag_function(i, j, ch, 3, t_matel(factor) * xi(stats.N, ch), h, qq, In, opch)
+#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_AN_DO(i, j, ch, factor) offdiag_function(i, j, ch, 2, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_AN_UP(i, j, ch, factor) offdiag_function(i, j, ch, 3, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(stats.N + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(step.N() + 1, ch), h, qq)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
 void Symmetry.P.makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
@@ -75,19 +75,19 @@ void Symmetry.P.makematrix_nonpolarized(Matrix &h, const Rmaxvals &qq, const Inv
 #undef OFFDIAG_AN_DO
 #undef OFFDIAG_AN_UP
 
-#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiDOWN(stats.N, ch), h, qq, In, opch)
-#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xiUP(stats.N, ch), h, qq, In, opch)
-#define OFFDIAG_AN_DO(i, j, ch, factor) offdiag_function(i, j, ch, 2, t_matel(factor) * xiDOWN(stats.N, ch), h, qq, In, opch)
-#define OFFDIAG_AN_UP(i, j, ch, factor) offdiag_function(i, j, ch, 3, t_matel(factor) * xiUP(stats.N, ch), h, qq, In, opch)
+#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiDOWN(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xiUP(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_AN_DO(i, j, ch, factor) offdiag_function(i, j, ch, 2, t_matel(factor) * xiDOWN(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_AN_UP(i, j, ch, factor) offdiag_function(i, j, ch, 3, t_matel(factor) * xiUP(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(stats.N + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(i, j, ch, t_matel(factor) * 2.0 * delta(step.N() + 1, ch), h, qq)
 
 #undef DIAG_UP
-#define DIAG_UP(i, j, ch, number) diag_function(i, ch, number, zetaUP(stats.N + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) diag_function(i, ch, number, zetaUP(step.N() + 1, ch), h, qq)
 
 #undef DIAG_DOWN
-#define DIAG_DOWN(i, j, ch, number) diag_function(i, ch, number, zetaDOWN(stats.N + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) diag_function(i, ch, number, zetaDOWN(step.N() + 1, ch), h, qq)
 
 void Symmetry.P.makematrix_polarized(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {

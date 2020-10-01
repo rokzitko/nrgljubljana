@@ -108,19 +108,19 @@ Symmetry *SymQS = new SymmetryQS;
 
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
 
 /* i - subspace index
    ch - channel (0 or 1)
    number - number of electrons added in channel 'ch' in subspace 'i' */
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(stats.N + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
 #undef OFFDIAG_MIX
-#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(stats.N, ch), h, qq, In, opch)
+#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(step.N(), ch), h, qq, In, opch)
 
 #undef RUNGHOP
-#define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(stats.N + 1, 0), h, qq)
+#define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(step.N() + 1, 0), h, qq)
 
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
@@ -156,17 +156,16 @@ void SymmetryQS::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const
     }
   } else {
     my_assert(P.coeffactor == 1);
-    int Ntrue, M;
-    tie(Ntrue, M) = get_Ntrue_M(stats.N);
+    const auto [N, M] = step.NM();
 
 // Here we need scale_fix, because SCALE() function is different from
 // the convention for rescaling in regular two-channel cases.
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / scale_fix(stats.N), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(N, M) / scale_fix(step.N()), h, qq, In, opch)
 
 // No scale_fix here, because SCALE() is defined as it should be.
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, M, number, zeta(Ntrue + 1, M), h, qq)
+#define DIAG(i, ch, number) diag_function(i, M, number, zeta(N + 1, M), h, qq)
 
 #include "qs/qs-1ch-offdiag.dat"
 #include "qs/qs-1ch-diag.dat"
@@ -179,7 +178,7 @@ void SymmetryQS::show_coefficients() {
   if (P.rungs)
     for (unsigned int i = 0; i < P.channels; i++)
       cout << "[" << i + 1 << "]"
-           << " xi_rung(" << stats.N << ")=" << xiR(stats.N, i) << " zeta_rung(" << stats.N + 1 << ")=" << zetaR(stats.N + 1, i) << endl;
+           << " xi_rung(" << step.N() << ")=" << xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << zetaR(step.N() + 1, i) << endl;
 }
 
 #include "nrg-recalc-QS.cc"

@@ -39,7 +39,7 @@ void SPEC_DMNRG::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
       for (size_t ri = 0; ri < dim1; ri++) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
       t_weight weightB = t_weight(sumB) * op2II(rj, rm);
       d.weight         = spinfactor * (weightA + (-sign) * weightB);
-      cs->add(stats.scale * d.energy, d.weight);
+      cs->add(step.scale() * d.energy, d.weight);
     }
   }
 }
@@ -74,9 +74,9 @@ void SPEC_DMNRGmats::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix
       for (size_t ri = 0; ri < dim1; ri++) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
       t_weight weightB = t_weight(sumB) * op2II(rj, rm);
       d.weight         = spinfactor * (weightA + (-sign) * weightB);
-      for (size_t n = 1; n < P.mats; n++) csm->add(n, d.weight / (cmpl(0, ww(n, bs.mt)) - stats.scale * d.energy));
+      for (size_t n = 1; n < P.mats; n++) csm->add(n, d.weight / (cmpl(0, ww(n, bs.mt)) - step.scale() * d.energy));
       if (abs(d.energy) > WEIGHT_TOL || bs.mt == matstype::fermionic)
-        csm->add(size_t(0), d.weight / (cmpl(0, ww(0, bs.mt)) - stats.scale * d.energy));
+        csm->add(size_t(0), d.weight / (cmpl(0, ww(0, bs.mt)) - step.scale() * d.energy));
       else // bosonic w=0 && E1=Ep case
         csm->add(size_t(0), spinfactor * (-weightA / t_weight(P.T)));
     }

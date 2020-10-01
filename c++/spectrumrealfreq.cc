@@ -102,9 +102,9 @@ inline double windowfunction(double E, double Emin, double Ex, double Emax) {
 // Note that we use a windowfunction (see above) to accomplish the
 // smooth combining of data.
 void mergeNN2half(Bins &fullspec, const Bins &cs) {
-  double Emin = stats.scale * getEmin(); // p
-  double Ex   = stats.scale * getEx();   // p Lambda
-  double Emax = stats.scale * getEmax(); // p Lambda^2
+  double Emin = step.scale() * getEmin(); // p
+  double Ex   = step.scale() * getEx();   // p Lambda
+  double Emax = step.scale() * getEmax(); // p Lambda^2
   if (P.ZBW) {                          // override for zero bandwidth calculation
     Emin = 0;
     Emax = std::numeric_limits<double>::max(); // infinity
@@ -121,15 +121,6 @@ void mergeNN2half(Bins &fullspec, const Bins &cs) {
   }
 }
 
-// Return true if the spectral-function merging is to be performed at the
-// current NRG iteration.
-bool N_for_merging(int N) {
-  if (P.NN1) return true;
-  if (P.NN2avg) return true;
-  const bool even = IS_EVEN(N);
-  return (P.NN2even ? even : !even);
-}
-
 // Spectrum merging using the N/N+n patching. One has to be careful about
 // the specifics, in particular the values of Emin, Ex and Emax. The
 // current choice seems to be working quite all right.
@@ -137,8 +128,9 @@ bool N_for_merging(int N) {
 
 void SpectrumRealFreq::mergeNN2(spCS_t cs) {
   auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
+
   nrglog('*', "weight=" << csb->total_weight());
-  if (!N_for_merging(stats.N)) return;
+  if (!step.N_for_merging()) return;
   mergeNN2half(fspos, csb->spos);
   mergeNN2half(fsneg, csb->sneg);
 }

@@ -119,14 +119,11 @@ struct Params {
   //! param<int> Nz {"Nz", "Number of discretization meshes", "1", all}; // S
   //! param<double> xmax {"xmax", "Largest x in discretization ODE solver", "20", all}; // S
 
-  // Support of the hybridisation function,
-  // [-bandrescale:bandrescale]. The automatic rescaling is
-  // implemented as follows: 1. The spectral function is rescaled on
-  // the x-axis by 1/bandrescale and on the y-axis by bandrescale. 2.
-  // The Wilson chain coefficients are scaled by bandrescale. 3. In
-  // the data file, all eigenvalues are reduced by the factor of
-  // bandrescale. 4. In the NRG code, the current scale is multiplied
-  // by bandrescale in function SCALE(N).
+  // Support of the hybridisation function, [-bandrescale:bandrescale]. The automatic rescaling is implemented as
+  // follows: 1. The spectral function is rescaled on the x-axis by 1/bandrescale and on the y-axis by bandrescale.
+  // 2. The Wilson chain coefficients are scaled by bandrescale. 3. In the data file, all eigenvalues are reduced by
+  // the factor of bandrescale. 4. In the NRG code, the current scale is multiplied by bandrescale in function
+  // SCALE(N).
   param<double> bandrescale{"bandrescale", "Band rescaling factor", "1.0", all}; // C
 
   // If polarized=true, the Wilson chain depends on the spin.
@@ -141,14 +138,11 @@ struct Params {
   // (implemented for QS and QSZ symmetry types)
   param<bool> rungs{"rungs", "Channel-mixing terms in Wilson chain", "false", all}; // N
 
-  // Length of the Wilson chain. The number of iterations ise
-  // determined either by Nmax or, if Tmin>0, by the lowest
-  // temperature(=energy) scale still considered, Tmin. In other
-  // words, if Tmin>0, the parameter Nmax is recomputed so that T at
-  // the Nmax-th iteration is equal or higher than the minimal
-  // temperature Tmin. NOTE: stats.N runs from 0 to Nmax-1
-  // (including), the coefficient indexes run from 0 to Nmax (due to
-  // the inclusion of the zero-th site of the Wilson chain)!
+  // Length of the Wilson chain. The number of iterations ise determined either by Nmax or, if Tmin>0, by the lowest
+  // temperature(=energy) scale still considered, Tmin. In other words, if Tmin>0, the parameter Nmax is recomputed
+  // so that T at the Nmax-th iteration is equal or higher than the minimal temperature Tmin. NOTE: step.ndxN runs
+  // from 0 to Nmax-1 (including), while the Wilson chain coefficient indexes run from 0 to Nmax (due to the
+  // inclusion of the zero-th site of the Wilson chain).
   size_t Nmax = 0; // 0 means non-initialized.
 
   //! param<double> Tmin {"Tmin", "Lowest scale on the Wilson chain", "1e-4", all}; // S
@@ -643,10 +637,8 @@ struct Params {
   }
   
   // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the
-  // energies on the original scale. Also named the "reduced bandwidth". Note that stats.scale = SCALE(stats.N+1)
-  // [see function set_N], thus for Ninit=0 and calc0, setting N=-1 results in a call SCALE(0). In the actual NRG
-  // run, the scale is at least SCALE(1). This is important for correct handling of rescaling for substeps==true.
-  double SCALE(int N) {
+  // energies on the original scale. Also named the "reduced bandwidth". 
+  double SCALE(int N) const {
     double scale = 0.0;
     if (discretization == "Y"s)
       // Yoshida,Whitaker,Oliveira PRB 41 9403 Eq. (39)

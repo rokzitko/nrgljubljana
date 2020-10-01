@@ -78,9 +78,9 @@ Symmetry *SymSU2 = new SymmetrySU2;
 // in each channel.
 
 #undef OFFDIAG_1
-#define OFFDIAG_1(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(stats.N, ch), h, qq, In, opch)
+#define OFFDIAG_1(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
 #undef OFFDIAG_2
-#define OFFDIAG_2(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(stats.N, ch), h, qq, In, opch)
+#define OFFDIAG_2(i, j, ch, factor) offdiag_function(i, j, ch, 1, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
 
 void SymmetrySU2::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Ispin ii = I.get("II");

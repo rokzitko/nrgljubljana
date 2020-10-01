@@ -63,13 +63,13 @@ class SymmetrySPSU2C3 : public SymC3 {
 Symmetry *SymSPSU2C3 = new SymmetrySPSU2C3;
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * 2.0 * delta(stats.N + 1, 0), h, qq)
+#define ISOSPINX(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * 2.0 * delta(step.N() + 1, 0), h, qq)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(stats.N, ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(i, 0, number, zeta(stats.N + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(i, 0, number, zeta(step.N() + 1, 0), h, qq)
 
 void SymmetrySPSU2C3::makematrix(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
 #ifdef NRG_REAL
