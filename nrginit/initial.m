@@ -29,7 +29,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2020.03";
+VERSION = "2020.10";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -45,7 +45,7 @@ SetOptions[$Messages, PageWidth -> 240];
 format directives to remove the quotation marks. *) 
 Print2[l__] := Print @@ ({l} /. x_String -> StandardForm[x]);
 
-Print2["NRG Ljubljana ", VERSION, " (c) Rok Zitko, rok.zitko@ijs.si, 2005-2019"];
+Print2["NRG Ljubljana ", VERSION, " (c) Rok Zitko, rok.zitko@ijs.si, 2005-2020"];
 
 (* Print a warning/error message at specified verbosity level *)
 DEBUG = 1;
@@ -74,19 +74,6 @@ digits *)
 cstr10[x_] := ToString[N[x, 10], CForm];
 
 c10[x_] := CForm[N[x,10]]; (* used in dmft.m *)
-
-(* Check version of sneg *)
-majorversion[x_] := ToExpression @ First @ StringSplit[x, "."];
-minorversion[x_] := ToExpression @ Last @ StringSplit[x, "."];
-
-VERrequired = "1.188";
-VERsneg = $SnegVersion;
-If[!( (majorversion[VERsneg] > majorversion[VERrequired]) ||
-     ((majorversion[VERsneg] == majorversion[VERrequired]) &&
-      (minorversion[VERsneg] >= minorversion[VERrequired])) ),
-   MyError["Lanski sneg: ", VERsneg,
-           " Required version of SNEG is ", VERrequired];
-];
 
 MyPrint["Mathematica version: ", $Version];
 MyPrint["sneg version: ", $SnegVersion];

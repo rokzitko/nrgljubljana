@@ -101,3 +101,4 @@ test1_qs_Nmax=100
 test1_qs_Nmax=5
 test24_NN1_Nmax=10
 test24_NN1_Nmax=11
+test205_flat_with_bulk_field

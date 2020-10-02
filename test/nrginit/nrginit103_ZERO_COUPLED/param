@@ -1,0 +1,17 @@
+[extra]
+t=1e-3
+
+[param]
+symtype=QS
+model=ZERO
+variant=COUPLED
+
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Nmax=4
+keep=100
+
+ops=n_f

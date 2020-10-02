@@ -1,1 +1,11 @@
 test80_SPU1
+test500_ISO
+test501_ISOSZ
+test502_SPSU2
+test502_SPU1
+test503_QS_ref
+test504_QSZ_ref
+test510_ISOSZ_field
+test511_SPSU2_gap
+test512_SPU1_field_gap
+test511_SPSU2_gap_minimal

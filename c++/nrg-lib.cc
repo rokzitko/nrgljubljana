@@ -925,14 +925,6 @@ speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI
 
 /**** CALCULATION OF SPECTRAL FUNCTIONS ****/
 
-auto CorrelatorFactorFnc = [](const Invar &Ip, const Invar &I1) { return mult(I1); };
-auto SpecdensFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdens_factor(Ip, I1); };
-auto SpecdensquadFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdensquad_factor(Ip, I1); };
-auto SpinSuscFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->dynamicsusceptibility_factor(Ip, I1); };
-auto OrbSuscFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->dynamic_orb_susceptibility_factor(Ip, I1); };
-auto TrivialCheckSpinFnc = [](const Invar &, const Invar &, int) { return true; };
-auto SpecdensCheckSpinFnc = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
-
 using IIfnc = std::function<t_factor(const Invar &, const Invar &)>;
 
 // Operator sumrules.
@@ -1757,16 +1749,13 @@ void measure_singlet_fdm(const Step &step, const DiagInfo &dg, const IterInfo &a
   customfdm->field_values(P.T);
 }
 
-void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
-  nrglog('@', "@ check_operator_sumrules()");
-  // We check sum rules wrt some given spin (+1/2, by convention).
-  // For non-spin-polarized calculations, this is irrelevant (0).
-  const int SPIN = (Sym->isfield() ? 1 : 0);
-  for (const auto &[name, m] : a.opd)
-    cout << "norm[" << name << "]=" << norm(m, diag, SpecdensFactorFnc, SPIN) << std::endl;
-  for (const auto &[name, m] : a.opq)
-    cout << "norm[" << name << "]=" << norm(m, diag, SpecdensquadFactorFnc, 0) << std::endl;
-}
+auto CorrelatorFactorFnc   = [](const Invar &Ip, const Invar &I1) { return mult(I1); };
+auto SpecdensFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->specdens_factor(Ip, I1); };
+auto SpecdensquadFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdensquad_factor(Ip, I1); };
+auto SpinSuscFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->dynamicsusceptibility_factor(Ip, I1); };
+auto OrbSuscFactorFnc      = [](const Invar &Ip, const Invar &I1) { return Sym->dynamic_orb_susceptibility_factor(Ip, I1); };
+auto TrivialCheckSpinFnc   = [](const Invar &Ip, const Invar &I1, int SPIN) { return true; };
+auto SpecdensCheckSpinFnc  = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
 
 // Calculate spectral densities
 void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM) {
@@ -1783,6 +1772,17 @@ void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements 
   for (auto &i : spectraI2T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
   // no CheckSpinFnc!! One must use A_u_d, etc. objects for sym=QSZ.
   for (auto &i : spectraV3)   calc_generic3(i, step, diag, SpecdensFactorFnc, rho, rhoFDM);
+}
+
+void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
+  nrglog('@', "@ check_operator_sumrules()");
+  // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
+  // irrelevant (0).
+  const int SPIN = (Sym->isfield() ? 1 : 0);
+  for (const auto &[name, m] : a.opd)
+    cout << "norm[" << name << "]=" << norm(m, diag, SpecdensFactorFnc, SPIN) << std::endl;
+  for (const auto &[name, m] : a.opq)
+    cout << "norm[" << name << "]=" << norm(m, diag, SpecdensquadFactorFnc, 0) << std::endl;
 }
 
 /* We calculate thermodynamic quantities before truncation to make better

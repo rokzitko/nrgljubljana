@@ -1,0 +1,20 @@
+[param]
+symtype=QSZ
+model=SIAM
+
+band=flat_with_bulk_field
+polarized=True
+bulkh=0.1
+
+U=1.0
+Gamma=0.1
+delta=0.1
+
+discretization=Z
+Lambda=2.0
+
+Nmax=4
+keep=100
+
+ops=n_d SZd
+

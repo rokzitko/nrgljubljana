@@ -1,0 +1,13 @@
+[param]
+symtype=QS
+model=ZERO
+
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Nmax=4
+keep=100
+
+ops=n_f
