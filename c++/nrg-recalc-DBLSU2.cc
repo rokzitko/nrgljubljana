@@ -26,7 +26,8 @@ namespace DBLSU2 {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii11 = I1.get("II1");
     Ispin ii21 = I1.get("II2");
@@ -80,6 +81,7 @@ void SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, 
   }
 };
   }
+  return cnew;
 }
 
 // Override the recalc_f definition: we need to track the type (1 or 2) of
@@ -88,8 +90,8 @@ void SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, 
 
 
 // Driver routine for recalc_f()
-void SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -106,7 +108,6 @@ void SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
     // type 2: [f^dag_DO, f_UP]
 
     I1 = Invar(ii1p + 1, ii2p);
-    nrglog('f', "isoup-a I1=" << I1);
     {
   if (diag.count(I1)) {
     struct Recalc_f recalc_table[] = {
@@ -127,7 +128,6 @@ void SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 };
 
     I1 = Invar(ii1p, ii2p + 1);
-    nrglog('f', "isoup-b I1=" << I1);
     {
   if (diag.count(I1)) {
     struct Recalc_f recalc_table[] = {
@@ -148,7 +148,6 @@ void SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 };
 
     I1 = Invar(ii1p - 1, ii2p);
-    nrglog('f', "isodown-a I1=" << I1);
     {
   if (diag.count(I1)) {
     struct Recalc_f recalc_table[] = {
@@ -169,7 +168,6 @@ void SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 };
 
     I1 = Invar(ii1p, ii2p - 1);
-    nrglog('f', "isodown-b I1=" << I1);
     {
   if (diag.count(I1)) {
     struct Recalc_f recalc_table[] = {
@@ -189,6 +187,7 @@ void SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
   }
 };
   }
+  return opch;
 }
 
 #undef SPINX
@@ -203,7 +202,7 @@ void SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
-void SymmetryDBLSU2::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryDBLSU2::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
@@ -242,6 +241,6 @@ void SymmetryDBLSU2::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, s
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
   }
 }

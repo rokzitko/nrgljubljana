@@ -26,9 +26,8 @@ namespace QJ {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  nrglog('f', "QJ::recalc_doublet() called");
-
+MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
@@ -58,17 +57,15 @@ void SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, cons
   }
 };
   }
-
-  nrglog('f', "QJ::recalc_doublet() end");
+  return cnew;
 }
 
 #undef If
 #define If(cond, a, b) (cond ? a : b)
 
 // Recalculate matrix elements of a quadruplet tensor operator
-void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  nrglog('f', "QJ::recalc_quadruplet() called");
-
+MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
@@ -123,12 +120,11 @@ void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, c
   }
 };
   }
-
-  nrglog('f', "QJ::recalc_quadruplet() end");
+  return cnew;
 }
 
-void SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  nrglog('f', "SymmetryQJ::recalc_irreduc(const Step &step, ) start");
+Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin jjp = Ip.get("JJ");
@@ -203,6 +199,5 @@ void SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   }
 };
   }
-
-  nrglog('f', "SymmetryQJ::recalc_irreduc(const Step &step, ) end");
+  return opch;
 }

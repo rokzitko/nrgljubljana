@@ -13,7 +13,8 @@ namespace U1 {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
@@ -21,6 +22,7 @@ void SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, cons
     	  `RECALC_TAB("u1/u1-2ch-doublet.dat", U1::LENGTH_D_2CH, Invar(1))',
 	  `RECALC_TAB("u1/u1-3ch-doublet.dat", U1::LENGTH_D_3CH, Invar(1))');
   }
+  return cnew;
 }
 
 // Override the recalc_f definition: we need to track the spin index of
@@ -37,7 +39,8 @@ define(`RECALC_F_TAB_U1', {
 })
 
 // Driver routine for recalc_f()
-void SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
@@ -56,6 +59,7 @@ void SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 	   RECALC_F_TAB_U1("u1/u1-3ch-b-UP.dat", 1, 0, U1::LENGTH_I_3CH);
 	   RECALC_F_TAB_U1("u1/u1-3ch-c-UP.dat", 2, 0, U1::LENGTH_I_3CH)');
   }
+  return opch;
 }
 
 #undef SPINX
@@ -70,7 +74,7 @@ void SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
-void SymmetryU1::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryU1::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

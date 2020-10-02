@@ -53,7 +53,7 @@ class SymmetryU1 : public Symmetry {
     Q2 = trQ2 / stats.Z;
   }
 
-  void makematrix_pol2x2(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void makematrix_pol2x2(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
   void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
   void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
@@ -133,7 +133,7 @@ void SymmetryU1::makematrix_polarized(Matrix &h, const Step &step, const Rmaxval
 }
 
 // Full 2x2 spin matrix structure. Added 10.9.2012
-void SymmetryU1::makematrix_pol2x2(Matrix &h, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryU1::makematrix_pol2x2(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   switch (channels) {
     case 1:
 #include "u1/u1-1ch-offdiag-UP.dat"

@@ -28,7 +28,8 @@ namespace ISO2 {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -58,7 +59,7 @@ void SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
 } } break;
   default: my_assert_not_reached();
   };
-      
+
     Ip = Invar(ii1-1, ss1-1);
     switch (channels) {
   case 1: { {
@@ -134,13 +135,14 @@ void SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
   default: my_assert_not_reached();
   };
   }
+  return cnew;
 }
 
 // (ISO): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -187,7 +189,7 @@ void SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 } } break;
   default: my_assert_not_reached();
   };
-    
+
     I1 = Invar(iip+1, ssp-1);
     switch (channels) {
   case 1: { {
@@ -293,10 +295,12 @@ void SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   default: my_assert_not_reached();
   };
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -377,4 +381,5 @@ void SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, co
   default: my_assert_not_reached();
   };
   }
+  return cnew;
 }

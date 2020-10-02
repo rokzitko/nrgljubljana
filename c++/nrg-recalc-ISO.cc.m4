@@ -13,7 +13,8 @@ namespace ISO1 {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryISO::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISO::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -35,13 +36,14 @@ void SymmetryISO::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, con
     ONETWO(`RECALC_TAB("iso/iso-1ch-doubletpm.dat", ISO1::LENGTH_D_1CH, Invar(2, 2))',
    	   `RECALC_TAB("iso/iso-2ch-doubletpm.dat", ISO1::LENGTH_D_2CH, Invar(2, 2))');
   }
+  return cnew;
 }
 
 // (ISO): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISO::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetryISO::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -94,10 +96,12 @@ void SymmetryISO::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 	   RECALC_F_TAB("iso/iso-3ch-spindown-isodownb.dat", 1, ISO1::LENGTH_I_3CH_1);
 	   RECALC_F_TAB("iso/iso-3ch-spindown-isodownc.dat", 2, ISO1::LENGTH_I_3CH_2)');
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISO::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISO::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -115,4 +119,5 @@ void SymmetryISO::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, con
     ONETWO(`RECALC_TAB("iso/iso-1ch-tripletm.dat", ISO1::LENGTH_Tpm_1CH, Invar(1, 3))',
            `RECALC_TAB("iso/iso-2ch-tripletm.dat", ISO1::LENGTH_Tpm_2CH, Invar(1, 3))');
   }
+  return cnew;
 }

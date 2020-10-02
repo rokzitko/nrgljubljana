@@ -26,7 +26,8 @@ namespace SPSU2LR {
 
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPSU2LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Sspin ss1 = I1.get("SS");
     int p1    = I1.get("P");
@@ -56,10 +57,12 @@ void SymmetrySPSU2LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax,
   }
 };
   }
+  return cnew;
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetrySPSU2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     int pp    = Ip.get("P");
@@ -157,10 +160,12 @@ void SymmetrySPSU2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, con
   }
 };
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPSU2LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Sspin ss1 = I1.get("SS");
     int p1    = I1.get("P");
@@ -202,4 +207,5 @@ void SymmetrySPSU2LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax,
   }
 };
   }
+  return cnew;
 }

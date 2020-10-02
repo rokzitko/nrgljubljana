@@ -12,7 +12,8 @@ include(recalc-macros.m4)
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Invar Ip;
@@ -20,11 +21,12 @@ void SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, con
     Ip = Invar(ii1 - 1);
     ONETWO(`RECALC_TAB("su2/su2-1ch-doubletm.dat", SU2::LENGTH_D_1CH, Invar(2))',
            `RECALC_TAB("su2/su2-2ch-doubletm.dat", SU2::LENGTH_D_2CH, Invar(2))');
-      
+
     Ip = Invar(ii1+1);
     ONETWO(`RECALC_TAB("su2/su2-1ch-doubletp.dat", SU2::LENGTH_D_1CH, Invar(2))',
     	   `RECALC_TAB("su2/su2-2ch-doubletp.dat", SU2::LENGTH_D_2CH, Invar(2))');
   }
+  return cnew;
 }
 
 // Override the recalc_f definition: we need to track the type (1 or 2) of
@@ -41,8 +43,8 @@ define(`RECALC_F_TAB_SU2', {
 })
 
 // Driver routine for recalc_f()
-void SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -64,7 +66,7 @@ void SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 	    RECALC_F_TAB_SU2("su2/su2-2ch-type1-isoup-b.dat", 1, 0, SU2::LENGTH_I_2CH);
             RECALC_F_TAB_SU2("su2/su2-2ch-type2-isoup-a.dat", 0, 1, SU2::LENGTH_I_2CH);
 	    RECALC_F_TAB_SU2("su2/su2-2ch-type2-isoup-b.dat", 1, 1, SU2::LENGTH_I_2CH)');
-    
+
     I1 = Invar(iip-1);
     ONETWO(`RECALC_F_TAB_SU2("su2/su2-1ch-type1-isodown-a.dat", 0, 0, SU2::LENGTH_I_1CH);
             RECALC_F_TAB_SU2("su2/su2-1ch-type2-isodown-a.dat", 0, 1, SU2::LENGTH_I_1CH)',
@@ -74,6 +76,7 @@ void SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
             RECALC_F_TAB_SU2("su2/su2-2ch-type2-isodown-a.dat", 0, 1, SU2::LENGTH_I_2CH);
 	    RECALC_F_TAB_SU2("su2/su2-2ch-type2-isodown-b.dat", 1, 1, SU2::LENGTH_I_2CH)');
   }
+  return opch;
 }
 
 #undef SPINX
@@ -88,7 +91,7 @@ void SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
-void SymmetrySU2::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
@@ -136,6 +139,6 @@ void SymmetrySU2::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, stri
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
   }
 }

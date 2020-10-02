@@ -11,7 +11,8 @@ namespace SPSU2LR {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPSU2LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Sspin ss1 = I1.get("SS");
     int p1    = I1.get("P");
@@ -23,10 +24,12 @@ void SymmetrySPSU2LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax,
     Ip = Invar(ss1 - 1, p1);
     RECALC_TAB("spsu2lr/spsu2lr-2ch-doubletm.dat", SPSU2LR::LENGTH_D_2CH, Invar(+1, 1));
   }
+  return cnew;
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetrySPSU2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     int pp    = Ip.get("P");
@@ -52,10 +55,12 @@ void SymmetrySPSU2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, con
     RECALC_F_TAB("spsu2lr/spsu2lr-2ch-spindowndiffa.dat", 0, SPSU2LR::LENGTH_I_2CH);
     RECALC_F_TAB("spsu2lr/spsu2lr-2ch-spindowndiffb.dat", 1, SPSU2LR::LENGTH_I_2CH);
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPSU2LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Sspin ss1 = I1.get("SS");
     int p1    = I1.get("P");
@@ -70,4 +75,5 @@ void SymmetrySPSU2LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax,
     Ip = Invar(ss1 - 2, p1);
     RECALC_TAB("spsu2lr/spsu2lr-2ch-tripletm.dat", SPSU2LR::LENGTH_Tpm_2CH, Invar(+2, 1));
   }
+  return cnew;
 }

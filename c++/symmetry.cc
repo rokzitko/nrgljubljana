@@ -170,7 +170,7 @@ class Symmetry {
   virtual MatrixElements recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
   virtual MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
   virtual MatrixElements  recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
-  virtual void recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual void recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) { my_error("Not implemented."); }
 
   virtual void show_coefficients(const Step &step, const Params &P) {
     cout << setprecision(std::numeric_limits<double>::max_digits10);
@@ -209,7 +209,7 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
 #define HAS_TRIPLET MatrixElements recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
 #define HAS_ORB_TRIPLET MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
 #define HAS_QUADRUPLET MatrixElements recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
-#define HAS_GLOBAL void recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) override
+#define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) override
 
 class SymField : public Symmetry {
   public:

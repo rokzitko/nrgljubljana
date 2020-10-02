@@ -13,7 +13,8 @@ namespace ISO2 {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -22,7 +23,7 @@ void SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
     Ip = Invar(ii1 - 1, ss1 + 1);
     ONETWO(`RECALC_TAB("iso2/iso2-1ch-doubletmp.dat", ISO2::LENGTH_D_1CH, Invar(2, 2))',
            `RECALC_TAB("iso2/iso2-2ch-doubletmp.dat", ISO2::LENGTH_D_2CH, Invar(2, 2))');
-      
+
     Ip = Invar(ii1-1, ss1-1);
     ONETWO(`RECALC_TAB("iso2/iso2-1ch-doubletmm.dat", ISO2::LENGTH_D_1CH, Invar(2, 2))',
     	   `RECALC_TAB("iso2/iso2-2ch-doubletmm.dat", ISO2::LENGTH_D_2CH, Invar(2, 2))');
@@ -35,13 +36,14 @@ void SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
     ONETWO(`RECALC_TAB("iso2/iso2-1ch-doubletpm.dat", ISO2::LENGTH_D_1CH, Invar(2, 2))',
    	   `RECALC_TAB("iso2/iso2-2ch-doubletpm.dat", ISO2::LENGTH_D_2CH, Invar(2, 2))');
   }
+  return cnew;
 }
 
 // (ISO): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -59,7 +61,7 @@ void SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 
            `RECALC_F_TAB("iso2/iso2-2ch-spinup-isoupa.dat", 0, ISO2::LENGTH_I_2CH);
      	    RECALC_F_TAB("iso2/iso2-2ch-spinup-isoupb.dat", 1, ISO2::LENGTH_I_2CH)');
-    
+
     I1 = Invar(iip+1, ssp-1);
     ONETWO(`RECALC_F_TAB("iso2/iso2-1ch-spindown-isoupa.dat", 0, ISO2::LENGTH_I_1CH)',
 
@@ -74,14 +76,16 @@ void SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 
     I1 = Invar(iip-1, ssp-1);
     ONETWO(`RECALC_F_TAB("iso2/iso2-1ch-spindown-isodowna.dat", 0, ISO2::LENGTH_I_1CH)',
-    
+
     	   `RECALC_F_TAB("iso2/iso2-2ch-spindown-isodowna.dat", 0, ISO2::LENGTH_I_2CH);
 	    RECALC_F_TAB("iso2/iso2-2ch-spindown-isodownb.dat", 1, ISO2::LENGTH_I_2CH)');
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -99,4 +103,5 @@ void SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, co
     ONETWO(`RECALC_TAB("iso2/iso2-1ch-tripletm.dat", ISO2::LENGTH_Tpm_1CH, Invar(1, 3))',
            `RECALC_TAB("iso2/iso2-2ch-tripletm.dat", ISO2::LENGTH_Tpm_2CH, Invar(1, 3))');
   }
+  return cnew;
 }

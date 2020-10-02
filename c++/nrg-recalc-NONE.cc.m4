@@ -22,7 +22,8 @@ define(`RECALC_F_TAB_NONE', {
    })
 
 // Driver routine for recalc_f()
-void SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1 = Invar();
 
@@ -33,16 +34,19 @@ void SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
             RECALC_F_TAB_NONE("none/none-2ch-a-CR-UP.dat", 0, 1, NONE::LENGTH_I_2CH);
             RECALC_F_TAB_NONE("none/none-2ch-b-CR-UP.dat", 1, 1, NONE::LENGTH_I_2CH)');
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Invar Ip = Invar();
 
     ONETWO(`RECALC_TAB("none/none-1ch-doublet.dat", NONE::LENGTH_D_1CH, Invar())',
            `RECALC_TAB("none/none-2ch-doublet.dat", NONE::LENGTH_D_2CH, Invar())');
   }
+  return cnew;
 }
 
 #undef SPINX
@@ -86,7 +90,7 @@ void SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
-void SymmetryNONE::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

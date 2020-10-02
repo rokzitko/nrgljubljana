@@ -11,7 +11,8 @@ namespace SPSU2T {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Sspin ss1  = I1.get("SS");
     Tangmom t1 = I1.get("T");
@@ -38,6 +39,7 @@ void SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, 
     Ip = Invar(ss1 - 1, t1 + 1);
     RECALC_TAB("spsu2t/spsu2t-doubletm+1.dat", SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
   }
+  return cnew;
 }
 
 // ch=1 <-> Tz=+1
@@ -45,8 +47,8 @@ void SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, 
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2T::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  my_assert(!substeps);
+Opch SymmetrySPSU2T::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp  = Ip.get("SS");
     Tangmom tp = Ip.get("T");
@@ -58,35 +60,30 @@ void SymmetrySPSU2T::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
     // Check: there should not be any lines with equal subspaces
     // indexes in different files!! That's indeed the case for the
     // generated files for symtype=SPSU2T.
-    nrglog('f', "ssp=" << ssp << " tp=" << tp);
-    nrglog('f', "spinup+1");
     I1 = Invar(ssp + 1, tp + 1);
     RECALC_F_TAB("spsu2t/spsu2t-spinup+1.dat", 0, SPSU2T::LENGTH_I_3CH_0);
 
-    nrglog('f', "spinup0");
     I1 = Invar(ssp + 1, tp);
     RECALC_F_TAB("spsu2t/spsu2t-spinup0.dat", 0, SPSU2T::LENGTH_I_3CH_1);
 
-    nrglog('f', "spinup-1");
     I1 = Invar(ssp + 1, tp - 1);
     RECALC_F_TAB("spsu2t/spsu2t-spinup-1.dat", 0, SPSU2T::LENGTH_I_3CH_2);
 
-    nrglog('f', "spindo+1");
     I1 = Invar(ssp - 1, tp + 1);
     RECALC_F_TAB("spsu2t/spsu2t-spindo+1.dat", 0, SPSU2T::LENGTH_I_3CH_0);
 
-    nrglog('f', "spindo0");
     I1 = Invar(ssp - 1, tp);
     RECALC_F_TAB("spsu2t/spsu2t-spindo0.dat", 0, SPSU2T::LENGTH_I_3CH_1);
 
-    nrglog('f', "spindo-1");
     I1 = Invar(ssp - 1, tp - 1);
     RECALC_F_TAB("spsu2t/spsu2t-spindo-1.dat", 0, SPSU2T::LENGTH_I_3CH_2);
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Sspin ss1  = I1.get("SS");
     Tangmom t1 = I1.get("T");
@@ -102,4 +99,5 @@ void SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, 
     Ip = Invar(ss1 - 2, t1);
     RECALC_TAB("spsu2t/spsu2t-tripletm.dat", SPSU2T::LENGTH_Tpm_3CH, Invar(3, 0));
   }
+  return cnew;
 }

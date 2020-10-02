@@ -1198,10 +1198,10 @@ class Oprecalc {
 
    // Wrapper routine for recalculations. Called from recalculate_operators().
    template <typename RecalcFnc>
-     void recalc_common(RecalcFnc recalc_fnc, const DiagInfo &dg, const QSrmax &qsrmax, MatrixElements &m, std::string name, const string &tip) {
+     void recalc_common(RecalcFnc recalc_fnc, const Step &step, const DiagInfo &dg, const QSrmax &qsrmax, MatrixElements &m, std::string name, const string &tip) {
        nrglog('0', "Recalculate " << tip << " " << name);
        m = recalc_fnc(dg, qsrmax, m);
-       if (tip == "g") Sym->recalc_global(dg, qsrmax, name, m);
+       if (tip == "g") Sym->recalc_global(step, dg, qsrmax, name, m);
      }
 
    // Recalculate operator matrix representations
@@ -1209,19 +1209,19 @@ class Oprecalc {
      void recalculate_operators(const Step &step, const DiagInfo &dg, QSrmax &qsrmax, IterInfo &a, const Params &P) {
        nrglog('@', "@ recalculate_operators()");
        for (auto &[name, m] : a.ops)
-         if (do_s(name, P, step)) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., 1);  }, dg, qsrmax, m, name, "s");
+         if (do_s(name, P, step)) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., 1);  }, step, dg, qsrmax, m, name, "s");
        for (auto &[name, m] : a.opsp) 
-         if (p.count(name)) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., -1);       }, dg, qsrmax, m, name, "p");
+         if (p.count(name)) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., -1);       }, step, dg, qsrmax, m, name, "p");
        for (auto &[name, m] : a.opsg) 
-         if (do_g(name, P, step )) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., 1); }, dg, qsrmax, m, name, "g");
+         if (do_g(name, P, step )) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., 1); }, step, dg, qsrmax, m, name, "g");
        for (auto &[name, m] : a.opd) 
-         if (d.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_doublet(pr...);      }, dg, qsrmax, m, name, "d");
+         if (d.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_doublet(pr...);      }, step, dg, qsrmax, m, name, "d");
        for (auto &[name, m] : a.opt)
-         if (t.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_triplet(pr...);      }, dg, qsrmax, m, name, "t");
+         if (t.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_triplet(pr...);      }, step, dg, qsrmax, m, name, "t");
        for (auto &[name, m] : a.opot)
-         if (ot.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, dg, qsrmax, m, name, "ot");
+         if (ot.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, dg, qsrmax, m, name, "ot");
        for (auto &[name, m] : a.opq)
-         if (q.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_quadruplet(pr...);   }, dg, qsrmax, m, name, "q");
+         if (q.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_quadruplet(pr...);   }, step, dg, qsrmax, m, name, "q");
      }
 
    // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.

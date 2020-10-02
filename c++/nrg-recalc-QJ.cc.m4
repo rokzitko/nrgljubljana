@@ -11,9 +11,8 @@ namespace QJ {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  nrglog('f', "QJ::recalc_doublet() called");
-
+MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
@@ -25,17 +24,15 @@ void SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, cons
     Ip = Invar(q1 - 1, jj1 - 1);
     RECALC_TAB("qj/qj-doubletm.dat", QJ::LENGTH_D_3CH, Invar(1, 2));
   }
-
-  nrglog('f', "QJ::recalc_doublet() end");
+  return cnew;
 }
 
 #undef If
 #define If(cond, a, b) (cond ? a : b)
 
 // Recalculate matrix elements of a quadruplet tensor operator
-void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  nrglog('f', "QJ::recalc_quadruplet() called");
-
+MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
@@ -54,12 +51,11 @@ void SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, c
     Ip = Invar(q1 - 1, jj1 - 3);
     RECALC_TAB("qj/qj-quad4.dat", QJ::LENGTH_Q1_3CH, Invar(1, 4));
   }
-
-  nrglog('f', "QJ::recalc_quadruplet() end");
+  return cnew;
 }
 
-void SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  nrglog('f', "SymmetryQJ::recalc_irreduc(const Step &step, ) start");
+Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin jjp = Ip.get("JJ");
@@ -80,6 +76,5 @@ void SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
     I1 = Invar(qp + 1, jjp - 3);
     RECALC_F_TAB("qj/qj-spin_j3_2-jz-3_2.dat", 1, QJ::LENGTH_I_3CH_j3_2_jzM3_2);
   }
-
-  nrglog('f', "SymmetryQJ::recalc_irreduc(const Step &step, ) end");
+  return opch;
 }

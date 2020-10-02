@@ -28,7 +28,8 @@ namespace U1 {
 
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
@@ -66,6 +67,7 @@ void SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, cons
   default: my_assert_not_reached();
   };
   }
+  return cnew;
 }
 
 // Override the recalc_f definition: we need to track the spin index of
@@ -74,7 +76,8 @@ void SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, cons
 
 
 // Driver routine for recalc_f()
-void SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
@@ -190,6 +193,7 @@ void SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   default: my_assert_not_reached();
   };
   }
+  return opch;
 }
 
 #undef SPINX
@@ -204,7 +208,7 @@ void SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
-void SymmetryU1::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryU1::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

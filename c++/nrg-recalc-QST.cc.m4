@@ -11,8 +11,8 @@ include(recalc-macros.m4)
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  nrglog('f', "QST::recalc_doublet() called");
+MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1  = I1.get("Q");
     Sspin ss1  = I1.get("SS");
@@ -20,8 +20,6 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, con
     double T   = t1; // trick!
     double S   = (ss1 - 1.) / 2.;
     Invar Ip;
-
-    nrglog('f', "I1=" << I1);
 
     // Two different lengths: D_3CH_a and D_3CH_b
 
@@ -46,6 +44,7 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, con
     Ip = Invar(q1 - 1, ss1 - 1, t1 + 1);
     RECALC_TAB("qst/qst-doubletm+1.dat", QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
   }
+  return cnew;
 }
 
 // ch=1 <-> Tz=+1
@@ -53,10 +52,8 @@ void SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, con
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  nrglog('f', "QST::recalc_irreduc(const Step &step, ) called");
-  my_assert(!substeps);
-
+Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp  = Ip.get("Q");
     Sspin ssp  = Ip.get("SS");
@@ -69,35 +66,30 @@ void SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
     // Check: there should not be any lines with equal subspaces
     // indexes in different files!! That's indeed the case for the
     // generated files for symtype=QST.
-    nrglog('f', "qp=" << qp << " ssp=" << ssp << " tp=" << tp);
-    nrglog('f', "spinup+1");
     I1 = Invar(qp + 1, ssp + 1, tp + 1);
     RECALC_F_TAB("qst/qst-spinup+1.dat", 0, QST::LENGTH_I_3CH_0);
 
-    nrglog('f', "spinup0");
     I1 = Invar(qp + 1, ssp + 1, tp);
     RECALC_F_TAB("qst/qst-spinup0.dat", 0, QST::LENGTH_I_3CH_1);
 
-    nrglog('f', "spinup-1");
     I1 = Invar(qp + 1, ssp + 1, tp - 1);
     RECALC_F_TAB("qst/qst-spinup-1.dat", 0, QST::LENGTH_I_3CH_2);
 
-    nrglog('f', "spindo+1");
     I1 = Invar(qp + 1, ssp - 1, tp + 1);
     RECALC_F_TAB("qst/qst-spindo+1.dat", 0, QST::LENGTH_I_3CH_0);
 
-    nrglog('f', "spindo0");
     I1 = Invar(qp + 1, ssp - 1, tp);
     RECALC_F_TAB("qst/qst-spindo0.dat", 0, QST::LENGTH_I_3CH_1);
 
-    nrglog('f', "spindo-1");
     I1 = Invar(qp + 1, ssp - 1, tp - 1);
     RECALC_F_TAB("qst/qst-spindo-1.dat", 0, QST::LENGTH_I_3CH_2);
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1  = I1.get("Q");
     Sspin ss1  = I1.get("SS");
@@ -115,12 +107,12 @@ void SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, con
     Ip = Invar(q1, ss1 - 2, t1);
     RECALC_TAB("qst/qst-tripletm.dat", QST::LENGTH_Tpm_3CH, Invar(0, 3, 0));
   }
+  return cnew;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  nrglog('r', "recalc_orb_triplet");
-
+MatrixElements SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1  = I1.get("Q");
     Sspin ss1  = I1.get("SS");
@@ -145,4 +137,5 @@ void SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax,
     Ip = Invar(q1, ss1, t1 - 1);
     RECALC_TAB("qst/qst-orb-tripletm.dat", QST::LENGTH_OTpm_3CH, Invar(0, 1, 1));
   }
+  return cnew;
 }

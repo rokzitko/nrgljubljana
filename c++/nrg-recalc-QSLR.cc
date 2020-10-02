@@ -26,8 +26,8 @@ namespace QSLR {
 }
 
 // Driver routine for recalc_f()
-void SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // CONVENTION: primed indeces are on the right side (ket)
+Opch SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin ssp = Ip.get("SS");
@@ -138,10 +138,12 @@ void SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   }
 };
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-void SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin ss1 = I1.get("SS");
@@ -172,10 +174,12 @@ void SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
   }
 };
   }
+  return cnew;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator [EVEN PARITY]
-void SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin ss1 = I1.get("SS");
@@ -218,4 +222,5 @@ void SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, co
   }
 };
   }
+  return cnew;
 }

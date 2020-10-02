@@ -11,8 +11,8 @@ namespace QSTZ {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  nrglog('f', "QSTZ::recalc_doublet() called");
+MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1   = I1.get("Q");
     Sspin ss1   = I1.get("SS");
@@ -44,6 +44,7 @@ void SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
     Ip = Invar(q1 - 1, ss1 - 1, tz1 + 1);
     RECALC_TAB("qstz/qstz-doubletm+1.dat", QSTZ::LENGTH_D_3CH, Invar(1, 2, -1));
   }
+  return cnew;
 }
 
 // ch=1 <-> Tz=+1
@@ -51,10 +52,8 @@ void SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQSTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  nrglog('f', "QSTZ::recalc_irreduc(const Step &step, ) called");
-  my_assert(!substeps);
-
+Opch SymmetryQSTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     Sspin ssp   = Ip.get("SS");
@@ -66,35 +65,30 @@ void SymmetryQSTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
     // Check: there should not be any lines with equal subspaces
     // indexes in different files!! That's indeed the case for the
     // generated files for symtype=QST.
-    nrglog('f', "qp=" << qp << " ssp=" << ssp << " tzp=" << tzp);
-    nrglog('f', "spinup+1");
     I1 = Invar(qp + 1, ssp + 1, tzp + 1);
     RECALC_F_TAB("qstz/qstz-spinup+1.dat", 0, QSTZ::LENGTH_I_3CH);
 
-    nrglog('f', "spinup0");
     I1 = Invar(qp + 1, ssp + 1, tzp);
     RECALC_F_TAB("qstz/qstz-spinup0.dat", 0, QSTZ::LENGTH_I_3CH);
 
-    nrglog('f', "spinup-1");
     I1 = Invar(qp + 1, ssp + 1, tzp - 1);
     RECALC_F_TAB("qstz/qstz-spinup-1.dat", 0, QSTZ::LENGTH_I_3CH);
 
-    nrglog('f', "spindo+1");
     I1 = Invar(qp + 1, ssp - 1, tzp + 1);
     RECALC_F_TAB("qstz/qstz-spindo+1.dat", 0, QSTZ::LENGTH_I_3CH);
 
-    nrglog('f', "spindo0");
     I1 = Invar(qp + 1, ssp - 1, tzp);
     RECALC_F_TAB("qstz/qstz-spindo0.dat", 0, QSTZ::LENGTH_I_3CH);
 
-    nrglog('f', "spindo-1");
     I1 = Invar(qp + 1, ssp - 1, tzp - 1);
     RECALC_F_TAB("qstz/qstz-spindo-1.dat", 0, QSTZ::LENGTH_I_3CH);
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1   = I1.get("Q");
     Sspin ss1   = I1.get("SS");
@@ -110,4 +104,5 @@ void SymmetryQSTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, co
     Ip = Invar(q1, ss1 - 2, tz1);
     RECALC_TAB("qstz/qstz-tripletm.dat", QSTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
   }
+  return cnew;
 }

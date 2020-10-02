@@ -22,7 +22,8 @@ define(`RECALC_F_TAB_P', {
    })
 
 // Driver routine for recalc_f()
-void SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     int p    = Ip.get("P");
 
@@ -41,10 +42,12 @@ void SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
             RECALC_F_TAB_P("p/p-2ch-a-AN-UP.dat", 0, 3, symP::LENGTH_I_2CH);
             RECALC_F_TAB_P("p/p-2ch-b-AN-UP.dat", 1, 3, symP::LENGTH_I_2CH)');
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     int p1   = I1.get("P");
     Invar Ip = Invar(-p1); // always the opposite fermion parity!
@@ -52,6 +55,7 @@ void SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const
     ONETWO(`RECALC_TAB("p/p-1ch-doublet.dat", symP::LENGTH_D_1CH, Invar(-1))',
            `RECALC_TAB("p/p-2ch-doublet.dat", symP::LENGTH_D_2CH, Invar(-1))');
   }
+  return cnew;
 }
 
 #undef SPINX
@@ -95,7 +99,7 @@ void SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
-void SymmetryP::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};

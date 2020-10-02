@@ -13,7 +13,8 @@ include(recalc-macros.m4)
 #define xRECALC_F_TAB(a, b, c) 0;
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2C3::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetrySPSU2C3::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
 #ifdef NRG_COMPLEX
   // CONVENTION: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
@@ -62,4 +63,5 @@ void SymmetrySPSU2C3::recalc_irreduc(const Step &step, const DiagInfo &diag, con
 #undef Power
   }
 #endif
+  return opch;
 }

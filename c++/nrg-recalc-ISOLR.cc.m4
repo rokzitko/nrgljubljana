@@ -13,8 +13,8 @@ include(recalc-macros.m4)
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
 // Driver routine for recalc_f()
-void SymmetryISOLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetryISOLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -74,10 +74,12 @@ void SymmetryISOLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     RECALC_F_TAB("isolr/isolr-2ch-spindown-isodowndiffa.dat", 0, ISOLR::LENGTH_I_2CH);
     RECALC_F_TAB("isolr/isolr-2ch-spindown-isodowndiffb.dat", 1, ISOLR::LENGTH_I_2CH);
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-void SymmetryISOLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISOLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -96,10 +98,12 @@ void SymmetryISOLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, c
     Ip = Invar(ii1 + 1, ss1 - 1, p1);
     RECALC_TAB("isolr/isolr-2ch-doubletpm.dat", ISOLR::LENGTH_D_2CH, Invar(2, 2, +1));
   }
+  return cnew;
 }
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
-void SymmetryISOLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISOLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -115,4 +119,5 @@ void SymmetryISOLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, c
     Ip = Invar(ii1, ss1 - 2, p1);
     RECALC_TAB("isolr/isolr-2ch-tripletm.dat", ISOLR::LENGTH_Tpm_2CH, Invar(1, 3, +1));
   }
+  return cnew;
 }

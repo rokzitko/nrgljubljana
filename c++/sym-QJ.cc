@@ -93,7 +93,7 @@ class SymmetryQJ : public Symmetry {
     return 0;
   }
 
-  void offdiag_function_QJ(unsigned int i, unsigned int j, unsigned int ch, unsigned int fnr, t_matel factor, Matrix &h, const Rmaxvals &qq,
+  void offdiag_function_QJ(const Step &step, unsigned int i, unsigned int j, unsigned int ch, unsigned int fnr, t_matel factor, Matrix &h, const Rmaxvals &qq,
                            const InvarVec &In, const Opch &opch);
 
   HAS_DOUBLET;
@@ -107,7 +107,7 @@ Symmetry *SymQJ = new SymmetryQJ;
 
 double Factorial(double x) { return boost::math::factorial<double>(round(x)); }
 
-void SymmetryQJ::offdiag_function_QJ(unsigned int i, unsigned int j,
+void SymmetryQJ::offdiag_function_QJ(const Step &step, unsigned int i, unsigned int j,
                                      unsigned int ch,  // channel number
                                      unsigned int fnr, // extra index for <||f||>, usually 0
                                      t_matel factor,   // may be complex (in principle)
@@ -123,7 +123,7 @@ void SymmetryQJ::offdiag_function_QJ(unsigned int i, unsigned int j,
 // *** Helper macros for makematrix() members in matrix.cc
 // Jndx = 0 for doublet, Jndx = 1 for quadruplet
 #undef OFFDIAG
-#define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(i, j, Jndx, 0, t_matel(factor0) * xi(step.N(), 0), h, qq, In, opch)
+#define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(step, i, j, Jndx, 0, t_matel(factor0) * xi(step.N(), 0), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, number) diag_function(step, i, 0, number, zeta(step.N() + 1, 0), h, qq)

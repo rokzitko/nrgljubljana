@@ -22,7 +22,8 @@ define(`RECALC_F_TAB_P', {
    })
 
 // Driver routine for recalc_f()
-void SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     int pa   = Ip.get("Pa");
     int pb   = Ip.get("Pb");
@@ -43,6 +44,7 @@ void SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
       RECALC_F_TAB_P("pp/pp-2ch-b-AN-UP.dat", 1, 3, PP::LENGTH_I_2CH);
     }
   }
+  return opch;
 }
 
 #undef SPINX
@@ -86,7 +88,7 @@ void SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
-void SymmetryPP::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

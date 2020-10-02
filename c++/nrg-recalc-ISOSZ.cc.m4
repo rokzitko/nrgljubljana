@@ -12,7 +12,8 @@ namespace ISOSZ {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -34,13 +35,14 @@ void SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, c
     ONETWO(`RECALC_TAB("isosz/isosz-1ch-doubletpm.dat", ISOSZ::LENGTH_D_1CH, Invar(2, +1))',
    	   `RECALC_TAB("isosz/isosz-2ch-doubletpm.dat", ISOSZ::LENGTH_D_2CH, Invar(2, +1))');
   }
+  return cnew;
 }
 
 // (ISOSZ): Four calls of recalc_f() are necessary for each channel.
 
 // Driver routine for recalc_f()
-void SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -77,10 +79,12 @@ void SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     	   `RECALC_F_TAB("isosz/isosz-2ch-spindown-isodowna.dat", 0, ISOSZ::LENGTH_I_2CH);
 	    RECALC_F_TAB("isosz/isosz-2ch-spindown-isodownb.dat", 1, ISOSZ::LENGTH_I_2CH)');
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -98,12 +102,13 @@ void SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, c
     ONETWO(`RECALC_TAB("isosz/isosz-1ch-tripletm.dat", ISOSZ::LENGTH_Tpm_1CH, Invar(1, +2))',
            `RECALC_TAB("isosz/isosz-2ch-tripletm.dat", ISOSZ::LENGTH_Tpm_2CH, Invar(1, +2))');
   }
+  return cnew;
 }
 
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetryISOSZ::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryISOSZ::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
@@ -117,6 +122,6 @@ void SymmetryISOSZ::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, st
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
   }
 }

@@ -11,8 +11,8 @@ namespace QSZTZ {
 }
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
-  nrglog('f', "QSZTZ::recalc_doublet() called");
+MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1   = I1.get("Q");
     Sspin ssz1  = I1.get("SZ");
@@ -42,6 +42,7 @@ void SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, c
     Ip = Invar(q1 - 1, ssz1 - 1, tz1 + 1);
     RECALC_TAB("qsztz/qsztz-doubletm+1.dat", QSZTZ::LENGTH_D_3CH, Invar(1, +1, -1));
   }
+  return cnew;
 }
 
 // ch=1 <-> Tz=+1
@@ -49,9 +50,8 @@ void SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, c
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-void SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  nrglog('f', "QSZTZ::recalc_irreduc(const Step &step, ) called");
-  my_assert(!substeps);
+Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     Sspin sszp  = Ip.get("SZ");
@@ -84,10 +84,12 @@ void SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     I1 = Invar(qp + 1, sszp - 1, tzp - 1);
     RECALC_F_TAB("qsztz/qsztz-spindo-1.dat", 0, QSZTZ::LENGTH_I_3CH);
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1   = I1.get("Q");
     Sspin ssz1  = I1.get("SZ");
@@ -103,4 +105,5 @@ void SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, c
     Ip = Invar(q1, ssz1 - 2, tz1);
     RECALC_TAB("qsztz/qsztz-tripletm.dat", QSZTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
   }
+  return cnew;
 }

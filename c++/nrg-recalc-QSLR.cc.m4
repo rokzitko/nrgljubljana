@@ -11,8 +11,8 @@ namespace QSLR {
 }
 
 // Driver routine for recalc_f()
-void SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // CONVENTION: primed indeces are on the right side (ket)
+Opch SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin ssp = Ip.get("SS");
@@ -51,10 +51,12 @@ void SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
     RECALC_F_TAB("qslr/qslr-2ch-spindowndiffa.dat", 0, QSLR::LENGTH_I_2CH);
     RECALC_F_TAB("qslr/qslr-2ch-spindowndiffb.dat", 1, QSLR::LENGTH_I_2CH);
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-void SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin ss1 = I1.get("SS");
@@ -67,10 +69,12 @@ void SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, co
     Ip = Invar(q1 - 1, ss1 - 1, p1);
     RECALC_TAB("qslr/qslr-2ch-doubletm.dat", QSLR::LENGTH_D_2CH, Invar(1, 2, +1));
   }
+  return cnew;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator [EVEN PARITY]
-void SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin ss1 = I1.get("SS");
@@ -86,4 +90,5 @@ void SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, co
     Ip = Invar(q1, ss1 - 2, p1);
     RECALC_TAB("qslr/qslr-2ch-tripletm.dat", QSLR::LENGTH_Tpm_2CH, Invar(0, 3, +1));
   }
+  return cnew;
 }

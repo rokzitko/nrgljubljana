@@ -11,8 +11,8 @@ namespace ISOSZLR {
 }
 
 // Driver routine for recalc_f()
-void SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -60,10 +60,12 @@ void SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, con
     RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodowndiffa.dat", 0, ISOSZLR::LENGTH_I_2CH);
     RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodowndiffb.dat", 1, ISOSZLR::LENGTH_I_2CH);
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-void SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -82,10 +84,12 @@ void SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax,
     Ip = Invar(ii1 + 1, ssz1 - 1, p1);
     RECALC_TAB("isoszlr/isoszlr-2ch-doubletpm.dat", ISOSZLR::LENGTH_D_2CH, Invar(2, +1, +1));
   }
+  return cnew;
 }
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
-void SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -101,4 +105,5 @@ void SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax,
     Ip = Invar(ii1, ssz1 - 2, p1);
     RECALC_TAB("isoszlr/isoszlr-2ch-tripletm.dat", ISOSZLR::LENGTH_Tpm_2CH, Invar(1, +2, +1));
   }
+  return cnew;
 }

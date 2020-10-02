@@ -12,7 +12,8 @@ namespace SPU1LR {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -26,10 +27,12 @@ void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, 
     ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-doubletm.dat", SPU1LR::LENGTH_D_1CH, Invar(+1, 1))',
            `RECALC_TAB("spu1lr/spu1lr-2ch-doubletm.dat", SPU1LR::LENGTH_D_2CH, Invar(+1, 1))');
   }
+  return cnew;
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
     int pp      = Ip.get("P");
@@ -61,10 +64,12 @@ void SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
       RECALC_F_TAB("spu1lr/spu1lr-2ch-spindowndiffb.dat", 1, SPU1LR::LENGTH_I_2CH);
     }
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -73,15 +78,16 @@ void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, 
     Ip = Invar(ssz1);
     ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-triplets.dat", SPU1LR::LENGTH_T0_1CH, Invar(0, 1))',
            `RECALC_TAB("spu1lr/spu1lr-2ch-triplets.dat", SPU1LR::LENGTH_T0_2CH, Invar(0, 1))');
-      
+
     Ip = Invar(ssz1+2);
     ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-tripletp.dat", SPU1LR::LENGTH_Tpm_1CH, Invar(-2, 1))',
            `RECALC_TAB("spu1lr/spu1lr-2ch-tripletp.dat", SPU1LR::LENGTH_Tpm_2CH, Invar(-2, 1))');
-      
+
     Ip = Invar(ssz1-2);
     ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-tripletm.dat", SPU1LR::LENGTH_Tpm_1CH, Invar(+2, 1))',
            `RECALC_TAB("spu1lr/spu1lr-2ch-tripletm.dat", SPU1LR::LENGTH_Tpm_2CH, Invar(+2, 1))');
   }
+  return cnew;
 }
 
 #undef CHARGE
@@ -103,7 +109,7 @@ void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, 
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
-void SymmetrySPU1LR::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

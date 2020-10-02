@@ -28,7 +28,8 @@ namespace SPSU2 {
 
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
@@ -134,11 +135,13 @@ void SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, c
 };
     }
   }
+  return cnew;
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   my_assert(!substeps);
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     Invar I1;
@@ -207,7 +210,7 @@ void SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const
 } } break;
   default: my_assert_not_reached();
   };
-    
+
     I1 = Invar(ssp-1);
     switch (channels) {
   case 1: { {
@@ -277,11 +280,13 @@ void SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     // The same thing occurs for all SU(2)_spin cases, for instance for symtype=QS.
     // RZ, oct 2015
   }
+  return opch;
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
+OpchChannel SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) {
   my_assert(substeps);
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     Invar I1;
@@ -310,10 +315,12 @@ void SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagInfo &di
   }
 };
   }
+  return opch[M];
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
@@ -414,9 +421,8 @@ void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, c
   default: my_assert_not_reached();
   };
     }
-  } else {
-    my_error("Not implemented.");
-  }
+  } else my_error("Not implemented.");
+  return cnew;
 }
 
 #undef CHARGE
@@ -447,7 +453,7 @@ void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, c
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
-void SymmetrySPSU2::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   // NOTE: none of these are implemented for substeps==true.
 
   if (name == "Qtot") {

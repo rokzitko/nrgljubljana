@@ -13,7 +13,8 @@ namespace SPSU2 {
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
@@ -41,11 +42,13 @@ void SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, c
       RECALC_TAB("spsu2/spsu2-1ch-doubletm.dat", SPSU2::LENGTH_D_1CH, Invar(2));
     }
   }
+  return cnew;
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   my_assert(!substeps);
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     Invar I1;
@@ -57,7 +60,7 @@ void SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const
           `RECALC_F_TAB("spsu2/spsu2-3ch-spinupa.dat", 0, SPSU2::LENGTH_I_3CH_0);
 	   RECALC_F_TAB("spsu2/spsu2-3ch-spinupb.dat", 1, SPSU2::LENGTH_I_3CH_1);
 	   RECALC_F_TAB("spsu2/spsu2-3ch-spinupc.dat", 2, SPSU2::LENGTH_I_3CH_2)');
-    
+
     I1 = Invar(ssp-1);
     ONE23(`RECALC_F_TAB("spsu2/spsu2-1ch-spindowna.dat", 0, SPSU2::LENGTH_I_1CH)',
           `RECALC_F_TAB("spsu2/spsu2-2ch-spindowna.dat", 0, SPSU2::LENGTH_I_2CH);
@@ -70,11 +73,13 @@ void SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     // The same thing occurs for all SU(2)_spin cases, for instance for symtype=QS.
     // RZ, oct 2015
   }
+  return opch;
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
+OpchChannel SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) {
   my_assert(substeps);
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     Invar I1;
@@ -85,10 +90,12 @@ void SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagInfo &di
     I1 = Invar(ssp - 1);
     RECALC_F_TAB("spsu2/spsu2-1ch-spindowna.dat", M, SPSU2::LENGTH_I_1CH);
   }
+  return opch[M];
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
@@ -109,9 +116,8 @@ void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, c
            `RECALC_TAB("spsu2/spsu2-2ch-tripletm.dat", SPSU2::LENGTH_Tpm_2CH, Invar(3))',
            `RECALC_TAB("spsu2/spsu2-3ch-tripletm.dat", SPSU2::LENGTH_Tpm_3CH, Invar(3))');
     }
-  } else {
-    my_error("Not implemented.");
-  }
+  } else my_error("Not implemented.");
+  return cnew;
 }
 
 #undef CHARGE
@@ -142,7 +148,7 @@ void SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, c
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
-void SymmetrySPSU2::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   // NOTE: none of these are implemented for substeps==true.
 
   if (name == "Qtot") {

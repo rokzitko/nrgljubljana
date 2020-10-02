@@ -52,7 +52,7 @@ MatrixElements SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &q
       Ip = Invar(q1 - 1, ssz1 - 1);
       RECALC_TAB("qsz/qsz-1ch-doubletm.dat", QSZ::LENGTH_D_1CH, Invar(1, +1));
     } // loop
-  } 
+  }
   return cnew;
 }
 
@@ -143,7 +143,7 @@ MatrixElements SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &q
 #undef Q1D
 #define Q1D(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetryQSZ::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryQSZ::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

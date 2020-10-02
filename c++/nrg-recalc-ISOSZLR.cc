@@ -26,8 +26,8 @@ namespace ISOSZLR {
 }
 
 // Driver routine for recalc_f()
-void SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -219,10 +219,12 @@ void SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, con
   }
 };
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-void SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -277,10 +279,12 @@ void SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax,
   }
 };
   }
+  return cnew;
 }
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
-void SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -323,4 +327,5 @@ void SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax,
   }
 };
   }
+  return cnew;
 }

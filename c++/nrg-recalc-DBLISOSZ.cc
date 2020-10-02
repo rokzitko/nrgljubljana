@@ -26,7 +26,8 @@ namespace DBLISOSZ {
 }
 
 // Recalculate matrix elements of a doublet tenzor operator
-void SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii11 = I1.get("II1");
     Ispin ii21 = I1.get("II2");
@@ -129,11 +130,12 @@ void SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax
   }
 };
   }
+  return cnew;
 }
 
 // Driver routine for recalc_f()
-void SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  // Convention: primed indeces are on the right side (ket)
+Opch SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -243,12 +245,13 @@ void SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, co
   }
 };
   }
+  return opch;
 }
 
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetryDBLISOSZ::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetryDBLISOSZ::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
@@ -259,6 +262,6 @@ void SymmetryDBLISOSZ::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax,
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
   }
 }

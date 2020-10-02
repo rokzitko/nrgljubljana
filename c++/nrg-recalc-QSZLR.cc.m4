@@ -11,7 +11,8 @@ namespace QSZLR {
 include(recalc-macros.m4)
 
 // Driver routine for recalc_f()
-void SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     SZspin sszp = Ip.get("SSZ");
@@ -41,4 +42,5 @@ void SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     RECALC_F_TAB("qszlr/qszlr-2ch-spindowndiffa.dat", 0, QSZLR::LENGTH_I_2CH);
     RECALC_F_TAB("qszlr/qszlr-2ch-spindowndiffb.dat", 1, QSZLR::LENGTH_I_2CH);
   }
+  return opch;
 }

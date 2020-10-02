@@ -27,7 +27,8 @@ namespace SPU1LR {
 
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -83,10 +84,12 @@ void SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, 
   default: my_assert_not_reached();
   };
   }
+  return cnew;
 }
 
 // Driver routine for recalc_f()
-void SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
     int pp      = Ip.get("P");
@@ -212,10 +215,12 @@ void SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 };
     }
   }
+  return opch;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -245,7 +250,7 @@ void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, 
 } } break;
   default: my_assert_not_reached();
   };
-      
+
     Ip = Invar(ssz1+2);
     switch (channels) {
   case 1: { {
@@ -270,7 +275,7 @@ void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, 
 } } break;
   default: my_assert_not_reached();
   };
-      
+
     Ip = Invar(ssz1-2);
     switch (channels) {
   case 1: { {
@@ -296,6 +301,7 @@ void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, 
   default: my_assert_not_reached();
   };
   }
+  return cnew;
 }
 
 #undef CHARGE
@@ -317,7 +323,7 @@ void SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, 
 #undef ISOSPINM
 #define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
-void SymmetrySPU1LR::recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
