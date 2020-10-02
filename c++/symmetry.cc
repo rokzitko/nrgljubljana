@@ -61,16 +61,17 @@ void opch1clear(Opch &opch, int i, const Params &P)
 {
   opch[i].resize(P.perchannel);
   for (size_t j = 0; j < P.perchannel; j++) 
-    opch[i][j].clear();
+    opch[i][j].clear(); // set all ublas matrix elements to zero
 }
 
-void opchclear(Opch &opch, const Params &P)
+Opch newopch(const Params &)
 {
-  opch.resize(P.channels);
+  Opch opch(P.channels);
   for (size_t i = 0; i < P.channels; i++)
     opch1clear(opch, i, P);
+  return opch;
 }
-
+  
 class Symmetry;
 
 // List of all symmetries that are compiled-in, indexed by the
