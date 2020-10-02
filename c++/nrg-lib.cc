@@ -1158,32 +1158,20 @@ void open_files_spec3(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec) 
     open_files(sl, spec, make_shared<SPEC_FDM_v3mm>(), axis::Matsubara2);
 }
 
-namespace oprecalc {
-  /* The following lists hold the names of operators which need to be
-   recomputed. The default behavior is to recompute all the operators
-   that are required to calculate the requested spectral densities, see
-   function open_files(). In addition, singlet operators are always
-   recomputed in the first NRG run, so that we can calculate the
-   expectation values. In addition, if fdmexpv=true, the singlet operators
-   are also recomputed in the second run if fdmexpvn=-1. */
-  set<string> s, p, g, d, v, t, q, ot;
+class Oprecalc {
+ public:
+   // The following lists hold the names of operators which need to be recomputed. The default behavior is to
+   // recompute all the operators that are required to calculate the requested spectral densities, see function
+   // open_files(). In addition, singlet operators are always recomputed in the first NRG run, so that we can
+   // calculate the expectation values. In addition, if fdmexpv=true, the singlet operators are also recomputed in
+   // the second run if fdmexpvn=-1.
+   set<string> s, p, g, d, v, t, q, ot;
 
-  void clear() { // XXX: remove this
-    s.clear();
-    p.clear();
-    g.clear();
-    d.clear();
-    v.clear();
-    t.clear();
-    q.clear();
-    ot.clear();
-  }
-
-  void report(ostream &F, const string &name, const set<string> &x) {
-    F << name << "=[";
-    for (const auto &i : x) F << i << ' ';
-    F << "]" << endl;
-  }
+   void report(ostream &F, const string &name, const set<string> &x) {
+     F << name << "=[";
+     for (const auto &i : x) F << i << ' ';
+     F << "]" << endl;
+   }
 
   void report(ostream &F = cout) {
     F << "Computing the following operators:" << endl;
@@ -1287,7 +1275,6 @@ namespace oprecalc {
 
   // Reset lists of operators which need to be iterated
   void reset_operator_lists_and_open_spectrum_files(const RUNTYPE &runtype, const IterInfo &a) {
-    oprecalc::clear();
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
     loopover(runtype, a.ops,  a.ops,  sts, spectraS, "corr", s, s, matstype::bosonic);
@@ -1327,20 +1314,25 @@ namespace oprecalc {
     // Vertex functions
     string_token stv3(P.specv3);
     loopover3(runtype, a.opd, a.opd, a.ops, stv3, spectraV3, "specv3", d, d, s, matstype::fb);
-    oprecalc::report();
+    report();
     cout << endl << "Computing the following spectra:" << endl;
     for (const auto &i : allspectra) i->about();
   }
-} // namespace oprecalc
+   
+   ~Oprecalc() {
+     TIME("broaden");
+     for (auto &i : allspectra) i->clear();
+   }
+   
+};
 
 unique_ptr<ExpvOutput> custom, customfdm;
 
 // Open output files and write headers
-void open_output_files(const RUNTYPE &runtype, const IterInfo &iterinfo, const Params &P) {
+Oprecalc open_output_files(const RUNTYPE &runtype, const IterInfo &iterinfo, const Params &P) {
   nrglog('@', "@ open_output_files()");
-  // We dump all energies to separate files for NRG and DM-NRG runs.
-  // This is a very convenient way to check if both runs produce the
-  // same results.
+  // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
+  // runs produce the same results.
   if (P.dumpenergies) Fenergies.open(runtype == RUNTYPE::NRG ? FN_ENERGIES_NRG : FN_ENERGIES_DMNRG);
   if (runtype == RUNTYPE::NRG) {
     open_Ftd(Ftd);
@@ -1353,7 +1345,9 @@ void open_output_files(const RUNTYPE &runtype, const IterInfo &iterinfo, const P
     custom = make_unique<ExpvOutput>(FN_CUSTOM, stats.expv, ops);
   else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
     customfdm = make_unique<ExpvOutput>(FN_CUSTOMFDM, stats.fdmexpv, ops);
-  oprecalc::reset_operator_lists_and_open_spectrum_files(runtype, iterinfo);
+  Oprecalc oprecalc;
+  oprecalc.reset_operator_lists_and_open_spectrum_files(runtype, iterinfo);
+  return oprecalc;
 }
 
 // Close files. This has to be called explicitly, because there can be two
@@ -1366,7 +1360,9 @@ void close_output_files(const RUNTYPE &runtype) {
     Fannotated.close();
     custom.reset(); // reseting unique_ptr closes the file
   }
-  if (runtype == RUNTYPE::DMNRG && P.fdmexpv) customfdm.reset();
+  if (runtype == RUNTYPE::DMNRG && P.fdmexpv) {
+    customfdm.reset();
+  }
 }
 
 // DM-NRG: initialization of the density matrix -----------------------------
@@ -2329,7 +2325,7 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
 // - diag contains all information about the eigenstates.
 // - stats.Egs had been computed
 // Also called from doZBW() as a final step.
-void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax, AllSteps &dm) {
+void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc) {
   nrglog('@', "@ after_diag()");
   // Contribution to the total energy.
   stats.total_energy += stats.Egs * step.scale();
@@ -2349,7 +2345,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
   if (do_recalc_all(step, P)) { // Either ...
-    oprecalc::recalculate_operators(step, diag, qsrmax, iterinfo, P);
+    oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
     calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
   diag_before_truncation = diag;
@@ -2362,7 +2358,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
     if (P.dump_f) dump_f(iterinfo.opch);
   }
   if (do_recalc_kept(step, P)) { // ... or ...
-    oprecalc::recalculate_operators(step, diag, qsrmax, iterinfo, P);
+    oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
     calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
   if (do_no_recalc(step, P)) { // ... or this
@@ -2372,10 +2368,10 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
 }
 
 // Perform one iteration step
-DiagInfo iterate(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev, AllSteps &dm, const Params &P) {
+DiagInfo iterate(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   QSrmax qsrmax = get_qsrmax(diagprev);
   auto diag = do_diag(step, iterinfo, diagprev, qsrmax, P);
-  after_diag(step, iterinfo, diag, qsrmax, dm);
+  after_diag(step, iterinfo, diag, qsrmax, dm, oprecalc);
   trim_matrices(diag, iterinfo);
   clear_eigenvectors(diag);
   diag_after_truncation = diag; // ZZZ, replace with the trimmed version set in after_diag()
@@ -2407,7 +2403,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, const 
 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
-void nrg_ZBW(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
+void nrg_ZBW(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   cout << endl << "Zero bandwidth calculation" << endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
@@ -2425,16 +2421,16 @@ void nrg_ZBW(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm
   truncate_prepare(step, diag); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax empty_qsrmax{};
-  after_diag(step, iterinfo, diag, empty_qsrmax, dm);
+  after_diag(step, iterinfo, diag, empty_qsrmax, dm, oprecalc);
 }
 
 // ****************************  Main NRG loop ****************************
 
-void nrg_loop(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
+void nrg_loop(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   nrglog('@', "@ nrg_loop()");
   DiagInfo diag = diag0;
   for (step.init(); !step.end(); step++)
-    diag = iterate(step, iterinfo, diag, dm, P);
+    diag = iterate(step, iterinfo, diag, dm, oprecalc, P);
   step.set(step.lastndx()); // TO DO: remove this, after step is no longer global...
 }
 
@@ -2467,27 +2463,26 @@ void states_report(const DiagInfo &dg, ostream &fout = cout) {
 void run_nrg(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   nrglog('@', "@ run_nrg()");
   states_report(diag0);
-  open_output_files(step.runtype, iterinfo, P); // XXX
-  // If setting calc0 is set to true, a calculation of TD quantities
-  // is performed before starting the NRG iteration.
+  auto oprecalc = open_output_files(step.runtype, iterinfo, P); // XXX
+  // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
   if (step.nrg() && P.calc0 && !P.ZBW) {
     docalc0ht(step, diag0, P.tdht, P);
     docalc0(step, iterinfo, diag0, P);
   }
   if (P.ZBW)
-    nrg_ZBW(step, iterinfo, diag0, dm, P);
+    nrg_ZBW(step, iterinfo, diag0, dm, oprecalc, P);
   else 
-    nrg_loop(step, iterinfo, diag0, dm, P);
+    nrg_loop(step, iterinfo, diag0, dm, oprecalc, P);
   close_output_files(step.runtype); // XXX
   cout << endl << "** Iteration completed." << endl << endl;
 }
 
 // Processing performed both after NRG and after DM runs.
-void finalize_common() {
-  nrglog('@', "@ finalize_common()");
-  TIME("broaden");
-  for (auto &i : allspectra) i->clear(); // processing happens in the destructor // XXX: achieve the same by going out of scope?
-}
+//void finalize_common() {
+//  nrglog('@', "@ finalize_common()");
+//  TIME("broaden");
+//  for (auto &i : allspectra) i->clear(); // processing happens in the destructor // XXX: achieve the same by going out of scope?
+//}
 
 // Save a dump of all subspaces, with dimension info, etc.
 void dump_subspace_information(const AllSteps &dm, const Params &P) {
@@ -2504,7 +2499,7 @@ void dump_subspace_information(const AllSteps &dm, const Params &P) {
 // Called after the first NRG run.
 void finalize_nrg(AllSteps &dm, const Params &P) {
   nrglog('@', "@ finalize_nrg()");
-  finalize_common();
+//  finalize_common();
   cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
   // True ground state energy is just the value of total_energy at the end of the iteration. This is the energy of
   // the lowest energy state in the last iteration. All other states (incl. from previous shells) obviously have
@@ -2519,14 +2514,13 @@ void finalize_nrg(AllSteps &dm, const Params &P) {
 }
 
 // Called after the second NRG run.
-void finalize_dmnrg() {
-  nrglog('@', "@ finalize_dmnrg()");
-  finalize_common();
+//void finalize_dmnrg() {
+//  nrglog('@', "@ finalize_dmnrg()");
+//  finalize_common();
   // These two should match if value_raw and value vectors are
   // handled correctly. GS_energy was computed in the first NRG run,
   // while total_energy is recomputed in the second DMNRG run.
-  my_assert(num_equal(stats.GS_energy, stats.total_energy));
-}
+//}
 
 /************************ MAIN ****************************************/
 
@@ -2579,7 +2573,7 @@ void calculation(const Params &p) {
   step.runtype = RUNTYPE::DMNRG;
   auto [diag0_dm, iterinfo_dm] = read_data(P);
   run_nrg(step, iterinfo_dm, diag0, dm, P);
-  finalize_dmnrg();
+  my_assert(num_equal(stats.GS_energy, stats.total_energy));
 }
 
 #ifdef NRG_MPI
