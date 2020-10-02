@@ -1392,16 +1392,9 @@ Matrix diagonal_exp(const Eigen &eig, double factor = 1.0)
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
 DensMatElements init_rho_impl(const Step &step, const DiagInfo &diag) {
-  nrglog('@', "@ init_rho_impl()");
-  const double ZN = calc_grand_canonical_Z(step, diag);
   DensMatElements rho;
-  for (const auto &[I, eig]: diag) {
-    const auto dim = eig.getnr();
-    rho[I]         = Matrix(dim, dim);
-    rho[I].clear();
-    for (size_t i = 0; i < dim; i++) 
-      rho[I](i, i) = exp(-eig.value(i) * step.scT()) / ZN;
-  }
+  for (const auto &[I, eig]: diag)
+    rho[I] = diagonal_exp(eig, step.scT()) / calc_grand_canonical_Z(step, diag);
   my_assert(num_equal(trace(rho), 1.0, 1e-8)); // NOLINT
   return rho;
 }
@@ -1410,6 +1403,7 @@ DiagInfo diag_before_truncation, diag_after_truncation; // ZZZ
 
 DensMatElements init_rho(const Step &step, const Params &P)
 {
+  nrglog('@', "@ init_rho()");
   return P.lastall ? init_rho_impl(step, diag_before_truncation) : init_rho_impl(step, diag_after_truncation);
 }
 
