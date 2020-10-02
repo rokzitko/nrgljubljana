@@ -362,19 +362,20 @@ class Step {
    const Params &P; // reference to parameters (beta, T)
    
  public:
+   RUNTYPE runtype; // NRG vs. DM-NRG run
    void set(int newN) {
      trueN = newN;
      ndxN = std::max(newN, 0);
    }
    void init() { set(P.Ninit); }
    Step(const Params &P_) : P(P_) { init(); }
+   Step(const Params &P_, RUNTYPE runtype_) : P(P_), runtype(runtype_) { init(); }
    void operator++(int) { trueN++; ndxN++; }
    size_t N() const { return ndxN; }
    size_t ndx() const { return ndxN; }
    double scale() const { return P.SCALE(trueN+1); } // scale factor: current energy scale in units of bandwidth D
    double Teff() const { return scale()/P.betabar; }  // effective temperature for thermodynamic calculations
    double scT() const { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
-   RUNTYPE runtype; // NRG vs. DM-NRG run
    pair<size_t, size_t> NM() const {
      size_t N = ndxN / P.channels;
      size_t M = ndxN - N*P.channels; // M ranges 0..channels-1
@@ -427,8 +428,6 @@ class Step {
    // is the value that we use in building the matrix, cf. nrg-makematrix-ISO.cc
    int getnn() const { return ndxN; }
 };
-
-Step step{P};
 
 ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
   for (const auto &x : rmax.values) os << x << ' ';
@@ -1185,7 +1184,7 @@ class Oprecalc {
     report(F, "ot", ot);
   }
 
-  bool do_s(const string &name, const Params &p, const Step &step) {
+  bool do_s(const string &name, const Params &P, const Step &step) {
     if (step.nrg()) return true;                             // for expectation values
     if (P.fdmexpv && step.N() <= P.fdmexpvn) return true; // Calculate <O> using FDM algorithm
     return s.count(name);
@@ -2516,22 +2515,21 @@ void set_symmetry(const string &sym_string) {
   Sym->report();
 }
 
-void calculation(const Params &p) {
+void calculation(Params &P) {
   nrglog('@', "@ calculation()");
-  
-//  Step step{p};
-  step.runtype = RUNTYPE::NRG;
   auto [diag0, iterinfo] = read_data(P);
+  Step step{P, RUNTYPE::NRG};
   // Initialize all containers for storing information
   AllSteps dm(P.Nlen);
   stats.init_vectors(P.Nlen);
-  run_nrg(step, iterinfo, diag0, dm, P);
-  if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
-  
+  {
+    run_nrg(step, iterinfo, diag0, dm, P);
+    if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
+  }
   if (P.dm) {
     if (need_rho()) {
       auto rho = init_rho(step, P); // XXX raw step here
-      saveRho(step.lastndx(), FN_RHO, rho, P);
+      saveRho(step.lastndx(), FN_RHO, rho, P); // XXX: can avoid step here?
       if (!P.ZBW) calc_densitymatrix(rho, dm, P);
     }
     if (need_rhoFDM()) {
@@ -2543,9 +2541,8 @@ void calculation(const Params &p) {
       if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, P);
     }
     if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-//    Step step{p};
-    step.runtype = RUNTYPE::DMNRG;
     auto [diag0_dm, iterinfo_dm] = read_data(P);
+    Step step {P, RUNTYPE::DMNRG};
     run_nrg(step, iterinfo_dm, diag0, dm, P);
     my_assert(num_equal(stats.GS_energy, stats.total_energy));
   }
