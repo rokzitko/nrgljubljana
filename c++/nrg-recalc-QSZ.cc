@@ -31,7 +31,8 @@ namespace QSZ {
 // in between. Thus Q[p] + Q[op] = Q[1].
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
@@ -144,12 +145,14 @@ void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, con
   }
 };
     } // loop
-  }   // if
+  } 
+  return cnew;
 }
 
 // Driver routine for recalc_f()
-void SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  my_assert(!substeps);
+Opch SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch;
+  opchclear(opch, P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     SZspin sszp = Ip.get("SSZ");
@@ -288,10 +291,12 @@ void SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   default: my_assert_not_reached();
   };
   } // loop
+  return opch;
 }
 
-void SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
-  my_assert(substeps);
+OpchChannel SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P,int M) {
+  Opch opch;
+  opchclear(opch, P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     SZspin sszp = Ip.get("SSZ");
@@ -321,10 +326,12 @@ void SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag
   }
 };
   } // loop
+  return opch[M];
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
@@ -419,6 +426,7 @@ void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, con
   } else { // substeps
     my_error("Not implemented.");
   }
+  return cnew;
 }
 
 #undef SPINZ

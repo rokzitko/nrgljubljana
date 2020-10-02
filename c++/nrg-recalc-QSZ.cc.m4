@@ -16,7 +16,8 @@ namespace QSZ {
 // in between. Thus Q[p] + Q[op] = Q[1].
 
 // Recalculate matrix elements of a doublet tensor operator
-void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
@@ -51,12 +52,14 @@ void SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, con
       Ip = Invar(q1 - 1, ssz1 - 1);
       RECALC_TAB("qsz/qsz-1ch-doubletm.dat", QSZ::LENGTH_D_1CH, Invar(1, +1));
     } // loop
-  }   // if
+  } 
+  return cnew;
 }
 
 // Driver routine for recalc_f()
-void SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  my_assert(!substeps);
+Opch SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch;
+  opchclear(opch, P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     SZspin sszp = Ip.get("SSZ");
@@ -85,10 +88,12 @@ void SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
            RECALC_F_TAB("qsz/qsz-3ch-spindownb.dat", 1, QSZ::LENGTH_I_3CH);
       	   RECALC_F_TAB("qsz/qsz-3ch-spindownc.dat", 2, QSZ::LENGTH_I_3CH)');
   } // loop
+  return opch;
 }
 
-void SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
-  my_assert(substeps);
+OpchChannel SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P,int M) {
+  Opch opch;
+  opchclear(opch, P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     SZspin sszp = Ip.get("SSZ");
@@ -100,10 +105,12 @@ void SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag
     I1 = Invar(qp + 1, sszp - 1);
     RECALC_F_TAB("qsz/qsz-1ch-spindowna.dat", M, QSZ::LENGTH_I_1CH);
   } // loop
+  return opch[M];
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
@@ -128,6 +135,7 @@ void SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, con
   } else { // substeps
     my_error("Not implemented.");
   }
+  return cnew;
 }
 
 #undef SPINZ

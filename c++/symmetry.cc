@@ -57,6 +57,20 @@ bool z2_equality(int p1, int p2, int p3) { return p1 == p2 * p3; }
 // C_3 quantum number: Equality modulo 3
 bool c3_equality(int p1, int p2, int p3) { return p1 == (p2 + p3) % 3; }
 
+void opch1clear(Opch &opch, int i, const Params &P)
+{
+  opch[i].resize(P.perchannel);
+  for (size_t j = 0; j < P.perchannel; j++) 
+    opch[i][j].clear();
+}
+
+void opchclear(Opch &opch, const Params &P)
+{
+  opch.resize(P.channels);
+  for (size_t i = 0; i < P.channels; i++)
+    opch1clear(opch, i, P);
+}
+
 class Symmetry;
 
 // List of all symmetries that are compiled-in, indexed by the
@@ -149,12 +163,12 @@ class Symmetry {
 
   virtual void calculate_TD(const Step &step, const DiagInfo &diag, double factor) = 0;
 
-  virtual void recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) { my_error("Not implemented."); }
-  virtual void recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) { my_error("Not implemented."); }
-  virtual void recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-  virtual void recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-  virtual void recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
-  virtual void recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) { my_error("Not implemented."); }
+  virtual OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) { my_error("Not implemented."); }
+  virtual MatrixElements recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
+  virtual MatrixElements recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
+  virtual MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
+  virtual MatrixElements  recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
   virtual void recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) { my_error("Not implemented."); }
 
   virtual void show_coefficients(const Step &step, const Params &P) {
@@ -185,16 +199,16 @@ inline size_t mult(const Invar &I) { return Sym->mult(I); }
 
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
-  void makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) override;                                     \
-  void recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) override
+  void makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) override;                   \
+  Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) override
 
 // Optional declaration
-#define HAS_DOUBLET void recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_TRIPLET void recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_ORB_TRIPLET void recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) override
-#define HAS_QUADRUPLET void recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) override
+#define HAS_SUBSTEPS OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) override
+#define HAS_DOUBLET MatrixElements recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
+#define HAS_TRIPLET MatrixElements recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
+#define HAS_ORB_TRIPLET MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
+#define HAS_QUADRUPLET MatrixElements recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
 #define HAS_GLOBAL void recalc_global(const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) override
-#define HAS_SUBSTEPS void recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) override
 
 class SymField : public Symmetry {
   public:

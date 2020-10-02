@@ -30,7 +30,8 @@ namespace QS {
 
 // Recalculate matrix elements of a doublet tensor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
@@ -158,6 +159,7 @@ void SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, cons
 };
     }
   }
+  return cnew;
 }
 
 // (QS): Two calls of recalc_f() are necessary (for S+1/2 and S-1/2)
@@ -166,8 +168,9 @@ void SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, cons
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  my_assert(!substeps);
+Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+  Opch opch;
+  opchclear(opch, P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin ssp = Ip.get("SS");
@@ -386,12 +389,14 @@ void SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   default: my_assert_not_reached();
 };
   }
+  return opch;
 }
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, int M) {
-  my_assert(substeps);
+OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) {
+  Opch opch;
+  opchclear(opch, P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin ssp = Ip.get("SS");
@@ -421,11 +426,13 @@ void SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag,
   }
 };
   }
+  return opch[M];
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold, MatrixElements &cnew) {
+MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
+  MatrixElements cnew;
   if (!substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
@@ -570,6 +577,7 @@ void SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, cons
   } else {
     my_error("Not implemented.");
   }
+  return cnew;
 }
 
 #undef QDIFF

@@ -434,8 +434,8 @@ class Step {
      trueN = P.Ninit - 1; // if Ninit=0, trueN will be -1 (this is the only exceptional case)
      ndxN = P.Ninit;
    }
-   double GTtemperature() const { return P.gtp * scale(); }
-   double CHITtemperature() const { return P.chitp * scale(); }
+//   double GTtemperature() const { return P.gtp * scale(); }
+//   double CHITtemperature() const { return P.chitp * scale(); }
    // Return true if the spectral-function merging is to be performed at the current step
    bool N_for_merging() const {
      if (P.NN1) return true;
@@ -1173,7 +1173,7 @@ namespace oprecalc {
    are also recomputed in the second run if fdmexpvn=-1. */
   set<string> s, p, g, d, v, t, q, ot;
 
-  void clear() {
+  void clear() { // XXX: remove this
     s.clear();
     p.clear();
     g.clear();
@@ -1365,13 +1365,23 @@ void close_output_files(const RUNTYPE &runtype) {
 // stats.Zft, that is used to compute the spectral function with the
 // conventional approach, as well as stats.Zgt for G(T) calculations,
 // stats.Zchit for chi(T) calculations.
-double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, double T) {
+double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, double factor = 1.0) {
   bucket ZN;
   for (const auto &[i, eig]: diag) 
     for (const auto &x : eig.value) 
-      ZN += mult(i) * exp(-x * step.scale() / T);
+      ZN += mult(i) * exp(-x * step.scT() * factor);
   my_assert(ZN >= 1.0);
   return ZN;
+}
+
+Matrix diagonal_exp(const Eigen &eig, double factor = 1.0)
+{
+  const auto dim = eig.getnr();
+  Matrix m(dim, dim);
+  m.clear();
+  for (auto i = 0; i < dim; i++) 
+      m(i, i) = exp(-eig.value(i) * factor);
+  return m;
 }
 
 // Calculate rho_N, the density matrix at the last NRG iteration. It is
@@ -1381,16 +1391,16 @@ double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, double T) 
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-DensMatElements init_rho_impl(const Step &step, const DiagInfo &diag, double T) {
+DensMatElements init_rho_impl(const Step &step, const DiagInfo &diag) {
   nrglog('@', "@ init_rho_impl()");
-  const double ZN = calc_grand_canonical_Z(step, diag, T);
+  const double ZN = calc_grand_canonical_Z(step, diag);
   DensMatElements rho;
   for (const auto &[I, eig]: diag) {
     const auto dim = eig.getnr();
     rho[I]         = Matrix(dim, dim);
     rho[I].clear();
     for (size_t i = 0; i < dim; i++) 
-      rho[I](i, i) = exp(-eig.value(i) * step.scale() / T) / ZN;
+      rho[I](i, i) = exp(-eig.value(i) * step.scT()) / ZN;
   }
   my_assert(num_equal(trace(rho), 1.0, 1e-8)); // NOLINT
   return rho;
@@ -1400,7 +1410,7 @@ DiagInfo diag_before_truncation, diag_after_truncation; // ZZZ
 
 DensMatElements init_rho(const Step &step, const Params &P)
 {
-  return P.lastall ? init_rho_impl(step, diag_before_truncation, P.T) : init_rho_impl(step, diag_after_truncation, P.T);
+  return P.lastall ? init_rho_impl(step, diag_before_truncation) : init_rho_impl(step, diag_after_truncation);
 }
 
 /*** Truncation ***/
@@ -1643,7 +1653,8 @@ void dump_annotated(const Step &step, const DiagInfo &diag, bool scaled = true, 
 /* recalc_singlet() recalculates irreducible matrix elements of a
  singlet operator (nold) and stores them in a new matrix (nnew).
  This implementation is generic for all the symmetry types! */
-void recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, MatrixElements &nnew, int parity) {
+MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
+  MatrixElements nnew;
   std::vector<Recalc> recalc_table(P.combs);
   const InvarVec input = input_subspaces();
   if (Sym->islr())
@@ -1664,17 +1675,15 @@ void recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElem
     }
     recalc_general(diag, qsrmax, nold, nnew, Ip, I1, &recalc_table[0], P.combs, Sym->InvarSinglet);
   } // loop over is
+  return nnew;
 }
 
 // Wrapper routine for recalculations. Called from recalculate_operators().
-template <class RecalcFnc>
-  void recalc_common(RecalcFnc recalc_fnc, const DiagInfo &dg, QSrmax &qsrmax, std::string name, MatrixElements &m, const string &tip, bool (*testfn)(const string &)) {
-  if (testfn(name)) {
+template <typename RecalcFnc>
+  void recalc_common(RecalcFnc recalc_fnc, const DiagInfo &dg, const QSrmax &qsrmax, std::string name, MatrixElements &m, const string &tip, bool (*testfn)(const string &)) { // XXX: order
+  if (testfn(name)) { // XXX: test outside ??
     nrglog('0', "Recalculate " << tip << " " << name);
-    MatrixElements mstore;
-    mstore.swap(m);
-    m.clear();
-    recalc_fnc(dg, qsrmax, mstore, m);
+    m = recalc_fnc(dg, qsrmax, m);
     if (tip == "g") Sym->recalc_global(dg, qsrmax, name, m);
   } else
     m.clear(); // save memory!
@@ -1771,13 +1780,13 @@ void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void recalculate_operators(const DiagInfo &dg, QSrmax &qsrmax, IterInfo &a) {
   nrglog('@', "@ recalculate_operators()");
-  for (auto &[name, m] : a.ops)  recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { recalc_singlet(a, b, c, d, 1);       }, dg, qsrmax, name, m, "s",  oprecalc::do_s);
-  for (auto &[name, m] : a.opsp) recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { recalc_singlet(a, b, c, d, -1);      }, dg, qsrmax, name, m, "p",  oprecalc::do_p);
-  for (auto &[name, m] : a.opsg) recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { recalc_singlet(a, b, c, d, 1);       }, dg, qsrmax, name, m, "g",  oprecalc::do_g);
-  for (auto &[name, m] : a.opd)  recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { Sym->recalc_doublet(a, b, c, d);     }, dg, qsrmax, name, m, "d",  oprecalc::do_d);
-  for (auto &[name, m] : a.opt)  recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { Sym->recalc_triplet(a, b, c, d);     }, dg, qsrmax, name, m, "t",  oprecalc::do_t);
-  for (auto &[name, m] : a.opot) recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { Sym->recalc_orb_triplet(a, b, c, d); }, dg, qsrmax, name, m, "ot", oprecalc::do_ot);
-  for (auto &[name, m] : a.opq)  recalc_common([](const auto &a, auto &b, const auto &c, auto &d) { Sym->recalc_quadruplet(a, b, c, d);  }, dg, qsrmax, name, m, "q",  oprecalc::do_q);
+  for (auto &[name, m] : a.ops)  recalc_common([](const auto &... p) { return recalc_singlet(p..., 1);       }, dg, qsrmax, name, m, "s",  oprecalc::do_s);
+  for (auto &[name, m] : a.opsp) recalc_common([](const auto &... p) { return recalc_singlet(p..., -1);      }, dg, qsrmax, name, m, "p",  oprecalc::do_p);
+  for (auto &[name, m] : a.opsg) recalc_common([](const auto &... p) { return recalc_singlet(p..., 1);       }, dg, qsrmax, name, m, "g",  oprecalc::do_g);
+  for (auto &[name, m] : a.opd)  recalc_common([](const auto &... p) { return Sym->recalc_doublet(p...);     }, dg, qsrmax, name, m, "d",  oprecalc::do_d);
+  for (auto &[name, m] : a.opt)  recalc_common([](const auto &... p) { return Sym->recalc_triplet(p...);     }, dg, qsrmax, name, m, "t",  oprecalc::do_t);
+  for (auto &[name, m] : a.opot) recalc_common([](const auto &... p) { return Sym->recalc_orb_triplet(p...); }, dg, qsrmax, name, m, "ot", oprecalc::do_ot);
+  for (auto &[name, m] : a.opq)  recalc_common([](const auto &... p) { return Sym->recalc_quadruplet(p...);  }, dg, qsrmax, name, m, "q",  oprecalc::do_q);
 }
 
 // Calculate spectral densities
@@ -1844,11 +1853,11 @@ void calculate_spectral_and_expv(const Step &step, const DiagInfo &diag, const I
   // Zft is used in the spectral function calculations using the
   // conventional approach. We calculate it here, in order to avoid
   // recalculations later on.
-  stats.Zft = calc_grand_canonical_Z(step, diag, P.T);
+  stats.Zft = calc_grand_canonical_Z(step, diag);
   if (string(P.specgt) != "" || string(P.speci1t) != "" || string(P.speci2t) != "")
-    stats.Zgt = calc_grand_canonical_Z(step, diag, step.GTtemperature());
+    stats.Zgt = calc_grand_canonical_Z(step, diag, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
   if (string(P.specchit) != "") 
-    stats.Zchit = calc_grand_canonical_Z(step, diag, step.CHITtemperature());
+    stats.Zchit = calc_grand_canonical_Z(step, diag, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
   DensMatElements rho, rhoFDM;
   if (step.dmnrg()) {
       if (need_rho()) {
@@ -2150,8 +2159,6 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const DiagInfo
 DiagInfo diagonalisations(const Step &step, const Opch &opch, const DiagInfo &diagprev, 
                           const std::vector<Invar> &tasks, double diagratio) {
   nrglog('@', "@ diagonalisations()");
-  // This needs to be called here, because class Timing is not
-  // thread-safe.
   TIME("diag");
   sP.init(P, diagratio);
 #ifdef NRG_MPI
@@ -2192,29 +2199,20 @@ std::vector<Invar> task_list(const QSrmax &qsrmax) {
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
-void recalc_f(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
-  nrglog('@', "@ recalc_f()");
+void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+  nrglog('@', "@ recalc_irreducible()");
   TIME("recalc f");
   if (!P.substeps) {
-    for (size_t i = 0; i < P.channels; i++)
-      for (size_t j = 0; j < P.perchannel; j++) opch[i][j].clear(); // Clear all channels
-    Sym->recalc_irreduc(step, diag, qsrmax, opch);
+    opch = Sym->recalc_irreduc(step, diag, qsrmax, P);
   } else {
     const auto [N, M] = step.NM();
-    for (size_t i = 0; i < P.channels; i++) {
+    for (size_t i = 0; i < P.channels; i++)
       if (i == M) {
-        for (size_t j = 0; j < P.perchannel; j++) opch[M][j].clear(); // Clear channel M
-        Sym->recalc_irreduc_substeps(step, diag, qsrmax, opch, M);
+        opch[i] = Sym->recalc_irreduc_substeps(step, diag, qsrmax, P, i);
       } else {
-        for (size_t j = 0; j < P.perchannel; j++) {
-          MatrixElements &f = opch[i][j];
-          MatrixElements opstore;
-          opstore.swap(f);
-          f.clear();
-          Sym->recalc_doublet(diag, qsrmax, opstore, f);
-        }
+        for (size_t j = 0; j < P.perchannel; j++) 
+          opch[i][j] = Sym->recalc_doublet(diag, qsrmax, opch[i][j]);
       }
-    }
   }
 }
 
@@ -2376,7 +2374,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
   diag_after_truncation = diag; // ZZZ
   store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
-    recalc_f(step, diag, qsrmax, iterinfo.opch);
+    recalc_irreducible(step, diag, qsrmax, iterinfo.opch);
     if (P.dump_f) dump_f(iterinfo.opch);
   }
   if (do_recalc_kept(step, P)) { // ... or ...
