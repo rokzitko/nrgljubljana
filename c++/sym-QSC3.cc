@@ -80,10 +80,10 @@ class SymmetryQSC3 : public SymC3 {
 Symmetry *SymQSC3 = new SymmetryQSC3;
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(i, 0, number, zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(step, i, 0, number, zeta(step.N() + 1, 0), h, qq)
 
 void SymmetryQSC3::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
 #ifdef NRG_REAL

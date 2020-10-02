@@ -151,7 +151,7 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
       } else {                                                                                                                                       \
         factor = factor0;                                                                                                                            \
       }                                                                                                                                              \
-      offdiag_function(i, j, ch, fnr, factor, h, qq, In, opch);                                                                                      \
+      offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                                      \
     }                                                                                                                                                \
   };
 
@@ -162,7 +162,7 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
 #define OFFDIAG(i, j, factor0) offdiag_qst(i, j, 0, 0, t_matel(factor0) * xi(step.N(), 0), h, qq, In, I, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(i, 0, number, zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(step, i, 0, number, zeta(step.N() + 1, 0), h, qq)
 
 void SymmetryQST::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss  = I.get("SS");

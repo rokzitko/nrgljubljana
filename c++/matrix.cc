@@ -45,7 +45,7 @@ bool offdiag_contributes(size_t i, size_t j, size_t ch, const Rmaxvals &qq) {
 // qq - matrix dimensions data (to determine the position in the matrix)
 // In - In[i] and In[j] are the invariant subspaces of required <||f||>
 //      matrix elements
-void offdiag_function(size_t i, size_t j,
+void offdiag_function(const Step &step, size_t i, size_t j,
                       size_t ch,      // channel number
                       size_t fnr,     // extra index for <||f||>, usually 0
                       t_matel factor, // may be complex (in principle)
@@ -100,7 +100,7 @@ void offdiag_function(size_t i, size_t j,
  correspond to a fixed number of added electrons, a generalized
  routine should be used. 
 */
-void diag_function(size_t i, size_t ch, double number, t_coef sc_zeta, Matrix &h, const Rmaxvals &qq) {
+void diag_function(const Step &step, size_t i, size_t ch, double number, t_coef sc_zeta, Matrix &h, const Rmaxvals &qq) {
   P.allowed_block_index(i);
   my_assert(number >= 0.0 && number <= 14.0);
   const size_t begin1 = qq.offset(i);
@@ -118,7 +118,7 @@ void diag_function(size_t i, size_t ch, double number, t_coef sc_zeta, Matrix &h
 }
 
 // Compare with diag_function()
-void diag_function_half(size_t i, size_t ch, double number, t_matel sc_zeta, Matrix &h, const Rmaxvals &qq) {
+void diag_function_half(const Step &step, size_t i, size_t ch, double number, t_matel sc_zeta, Matrix &h, const Rmaxvals &qq) {
   P.allowed_block_index(i);
   my_assert(0.0 <= number && number <= P.spin);
   const size_t begin1 = qq.offset(i);
@@ -133,20 +133,18 @@ void diag_function_half(size_t i, size_t ch, double number, t_matel sc_zeta, Mat
 }
 
 // Compare with diag_function() above.
-void spinz_function(size_t i, size_t j, size_t ch, t_matel spinz, Matrix &h, const Rmaxvals &qq) {
+void spinz_function(const Step &step, size_t i, size_t j, size_t ch, t_matel spinz, Matrix &h, const Rmaxvals &qq) {
   P.allowed_ijch(i, j, ch);
   my_assert(i == j);
-
   // compare with the ISOSPINX macro
   const t_matel shift = spinz * double(P.globalB) / step.scale();
-
   const size_t begin1 = qq.offset(i);
   const size_t size1  = qq.rmax(i);
   nrglog('i', "spinz i=" << i << " shift=" << shift);
   for (size_t k = begin1; k < begin1 + size1; k++) h(k, k) += shift;
 }
 
-void spinx_function(size_t i, size_t j, size_t ch, t_matel spinx, Matrix &h, const Rmaxvals &qq) {
+void spinx_function(const Step &step, size_t i, size_t j, size_t ch, t_matel spinx, Matrix &h, const Rmaxvals &qq) {
   P.allowed_ijch(i, j, ch);
   const t_matel shift = spinx * double(P.globalBx) / step.scale();
   if (i > j) return; // only upper triangular part
@@ -163,7 +161,7 @@ void spinx_function(size_t i, size_t j, size_t ch, t_matel spinx, Matrix &h, con
 
 // +++ Shift the offdiagonal matrix elements by factor. +++
 
-void diag_offdiag_function(size_t i, size_t j, size_t chin, t_matel factor, Matrix &h, const Rmaxvals &qq) {
+void diag_offdiag_function(const Step &step, size_t i, size_t j, size_t chin, t_matel factor, Matrix &h, const Rmaxvals &qq) {
   P.allowed_ijch(i, j, chin);
   if (i > j) return; // only upper triangular part
   size_t begin1    = qq.offset(i);

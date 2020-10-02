@@ -2460,6 +2460,18 @@ void states_report(const DiagInfo &dg, ostream &fout = cout) {
   fout << "Number of states (multiplicity taken into account): " << count_states(dg) << endl << endl;
 }
 
+// Save a dump of all subspaces, with dimension info, etc.
+void dump_subspaces(const AllSteps &dm, const Params &P) {
+  ofstream O(FN_SUBSPACES);
+  for (size_t N = P.Ninit; N < P.Nmax; N++) {
+    O << "Iteration " << N << endl;
+    O << "len_dm=" << dm[N].size() << endl;
+    for (const auto &[I, DS] : dm[N])
+      O << "I=" << I << " len=" << DS.eigenvalue.size() << " kept=" << DS.kept << " total=" << DS.total << endl;
+    O << endl;
+  }
+}
+
 void run_nrg(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   nrglog('@', "@ run_nrg()");
   states_report(diag0);
@@ -2474,53 +2486,11 @@ void run_nrg(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm
   else 
     nrg_loop(step, iterinfo, diag0, dm, oprecalc, P);
   close_output_files(step.runtype); // XXX
+  cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
+  stats.GS_energy = stats.total_energy;
+  if (P.dumpsubspaces) dump_subspaces(dm, P);
   cout << endl << "** Iteration completed." << endl << endl;
 }
-
-// Processing performed both after NRG and after DM runs.
-//void finalize_common() {
-//  nrglog('@', "@ finalize_common()");
-//  TIME("broaden");
-//  for (auto &i : allspectra) i->clear(); // processing happens in the destructor // XXX: achieve the same by going out of scope?
-//}
-
-// Save a dump of all subspaces, with dimension info, etc.
-void dump_subspace_information(const AllSteps &dm, const Params &P) {
-  ofstream O(FN_SUBSPACES);
-  for (size_t N = P.Ninit; N < P.Nmax; N++) {
-    O << "Iteration " << N << endl;
-    O << "len_dm=" << dm[N].size() << endl;
-    for (const auto &[I, DS] : dm[N])
-      O << "I=" << I << " len=" << DS.eigenvalue.size() << " kept=" << DS.kept << " total=" << DS.total << endl;
-    O << endl;
-  }
-}
-
-// Called after the first NRG run.
-void finalize_nrg(AllSteps &dm, const Params &P) {
-  nrglog('@', "@ finalize_nrg()");
-//  finalize_common();
-  cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
-  // True ground state energy is just the value of total_energy at the end of the iteration. This is the energy of
-  // the lowest energy state in the last iteration. All other states (incl. from previous shells) obviously have
-  // higher energies.
-  stats.GS_energy = stats.total_energy;
-  if (P.fdm) {
-    shift_abs_energies(dm);
-    calc_ZnD(dm);
-    fdm_thermodynamics(dm);
-  }
-  if (P.dumpsubspaces) dump_subspace_information(dm, P);
-}
-
-// Called after the second NRG run.
-//void finalize_dmnrg() {
-//  nrglog('@', "@ finalize_dmnrg()");
-//  finalize_common();
-  // These two should match if value_raw and value vectors are
-  // handled correctly. GS_energy was computed in the first NRG run,
-  // while total_energy is recomputed in the second DMNRG run.
-//}
 
 /************************ MAIN ****************************************/
 
@@ -2548,32 +2518,37 @@ void set_symmetry(const string &sym_string) {
 
 void calculation(const Params &p) {
   nrglog('@', "@ calculation()");
-  // XXX: Step step{p};
+  
+//  Step step{p};
   step.runtype = RUNTYPE::NRG;
   auto [diag0, iterinfo] = read_data(P);
   // Initialize all containers for storing information
   AllSteps dm(P.Nlen);
   stats.init_vectors(P.Nlen);
   run_nrg(step, iterinfo, diag0, dm, P);
-  finalize_nrg(dm, P);
   if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
-  if (!P.dm) return; // if density-matrix algorithms are not enabled, we are done!
-  if (need_rho()) {
-    auto rho = init_rho(step, P); // XXX raw step here
-    saveRho(step.lastndx(), FN_RHO, rho, P);
-    if (!P.ZBW) calc_densitymatrix(rho, dm, P);
+  
+  if (P.dm) {
+    if (need_rho()) {
+      auto rho = init_rho(step, P); // XXX raw step here
+      saveRho(step.lastndx(), FN_RHO, rho, P);
+      if (!P.ZBW) calc_densitymatrix(rho, dm, P);
+    }
+    if (need_rhoFDM()) {
+      shift_abs_energies(dm);
+      calc_ZnD(dm);
+      fdm_thermodynamics(dm);
+      auto rhoFDM = init_rho_FDM(step.lastndx(), dm, P);
+      saveRho(step.lastndx(), FN_RHOFDM, rhoFDM, P);
+      if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, P);
+    }
+    if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
+//    Step step{p};
+    step.runtype = RUNTYPE::DMNRG;
+    auto [diag0_dm, iterinfo_dm] = read_data(P);
+    run_nrg(step, iterinfo_dm, diag0, dm, P);
+    my_assert(num_equal(stats.GS_energy, stats.total_energy));
   }
-  if (need_rhoFDM()) {
-    auto rhoFDM = init_rho_FDM(step.lastndx(), dm, P);
-    saveRho(step.lastndx(), FN_RHOFDM, rhoFDM, P);
-    if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, P);
-  }
-  if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-  // XXX: decouple ?
-  step.runtype = RUNTYPE::DMNRG;
-  auto [diag0_dm, iterinfo_dm] = read_data(P);
-  run_nrg(step, iterinfo_dm, diag0, dm, P);
-  my_assert(num_equal(stats.GS_energy, stats.total_energy));
 }
 
 #ifdef NRG_MPI

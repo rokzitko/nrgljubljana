@@ -94,26 +94,26 @@ Symmetry *SymQSZ = new SymmetryQSZ;
 
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
 
 /* i - subspace index
    ch - channel (0 or 1)
    number - number of electrons added in channel 'ch' in subspace 'i' */
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, ch, number, zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
 #undef SPINZ
-#define SPINZ(i, j, ch, factor) spinz_function(i, j, ch, t_matel(factor), h, qq)
+#define SPINZ(i, j, ch, factor) spinz_function(step, i, j, ch, t_matel(factor), h, qq)
 
 // Note ch indexes the <||f||> matrix which is used to construct the Hamiltonian
 // matrix in the new step, i.e., the f_{N} from the f^\dag_{N_1} f_{N} hopping
 // term.
 #undef OFFDIAG_MIX
-#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(i, j, ch, 0, t_matel(factor) * xiR(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * xiR(step.N(), ch), h, qq, In, opch)
 
 #undef RUNGHOP
-#define RUNGHOP(i, j, factor) diag_offdiag_function(i, j, 0, t_matel(factor) * zetaR(step.N() + 1, 0), h, qq)
+#define RUNGHOP(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * zetaR(step.N() + 1, 0), h, qq)
 
 // "non-polarized" here means that the coefficients xi do not depend on
 // spin. Note, however, that there is support for a global magnetic field,
@@ -151,13 +151,13 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
 
     // Overrides. See sym-QS.cc for explanations!
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(i, j, M, 0, t_matel(factor0) * xi(N, M) / step.scale_fix(), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(N, M) / step.scale_fix(), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(i, M, number, zeta(N + 1, M), h, qq)
+#define DIAG(i, ch, number) diag_function(step, i, M, number, zeta(N + 1, M), h, qq)
 
 #undef SPINZ
-#define SPINZ(i, j, ch, factor) spinz_function(i, j, M, t_matel(factor), h, qq)
+#define SPINZ(i, j, ch, factor) spinz_function(step, i, j, M, t_matel(factor), h, qq)
 
 #include "qsz/qsz-1ch-offdiag.dat"
 #include "qsz/qsz-1ch-diag.dat"
@@ -167,16 +167,16 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
   }
 }
 
-#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiUP(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xiUP(step.N(), ch), h, qq, In, opch)
 
-#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(i, j, ch, 0, t_matel(factor0) * xiDOWN(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xiDOWN(step.N(), ch), h, qq, In, opch)
 
-#define DIAG_UP(i, j, ch, number) diag_function_half(i, ch, number, zetaUP(step.N() + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) diag_function_half(step, i, ch, number, zetaUP(step.N() + 1, ch), h, qq)
 
-#define DIAG_DOWN(i, j, ch, number) diag_function_half(i, ch, number, zetaDOWN(step.N() + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) diag_function_half(step, i, ch, number, zetaDOWN(step.N() + 1, ch), h, qq)
 
 #undef SPINZ
-#define SPINZ(i, j, ch, factor) spinz_function(i, j, ch, t_matel(factor), h, qq)
+#define SPINZ(i, j, ch, factor) spinz_function(step, i, j, ch, t_matel(factor), h, qq)
 
 void SymmetryQSZ::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   my_assert(!substeps); // not implemented!
