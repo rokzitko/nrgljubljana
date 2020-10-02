@@ -352,36 +352,6 @@ template <typename T> ostream &operator<<(ostream &os, const ublas::vector<T> &v
 
 using QSrmax = map<Invar, Rmaxvals>;
 
-class ChainSpectrum;
-class BaseSpectrum;
-
-using spCS_t = shared_ptr<ChainSpectrum>;
-
-class SPEC {
-  public:
-  SPEC() = default;
-  SPEC(const SPEC &) = default;
-  SPEC(SPEC &&) = default;
-  SPEC &operator=(const SPEC &) = default;
-  SPEC &operator=(SPEC &&) = default;
-  virtual ~SPEC() = default;
-  virtual spCS_t make_cs(const BaseSpectrum &) = 0;
-  virtual void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-                    const Invar &, DensMatElements &){};
-  virtual void calc_A(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &){};
-  virtual void calc_B(const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &){};
-  virtual string name() = 0;
-  virtual string merge() { return ""; } // what merging rule to use
-  virtual string rho_type() { return ""; } // what rho type is required
-};
-
-using SPECTYPE = shared_ptr<SPEC>;
-
-// Includes which require P. parameters.
-#include "spectral.h"
-
 enum class RUNTYPE { NRG, DMNRG };
 
 class Step {
@@ -434,8 +404,6 @@ class Step {
      trueN = P.Ninit - 1; // if Ninit=0, trueN will be -1 (this is the only exceptional case)
      ndxN = P.Ninit;
    }
-//   double GTtemperature() const { return P.gtp * scale(); }
-//   double CHITtemperature() const { return P.chitp * scale(); }
    // Return true if the spectral-function merging is to be performed at the current step
    bool N_for_merging() const {
      if (P.NN1) return true;
@@ -461,7 +429,6 @@ class Step {
 };
 
 Step step{P};
-
 
 ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
   for (const auto &x : rmax.values) os << x << ' ';
@@ -530,6 +497,34 @@ class Stats {
 };
 
 Stats stats;
+
+class ChainSpectrum;
+using spCS_t = shared_ptr<ChainSpectrum>;
+class BaseSpectrum;
+
+class SPEC {
+  public:
+  SPEC() = default;
+  SPEC(const SPEC &) = default;
+  SPEC(SPEC &&) = default;
+  SPEC &operator=(const SPEC &) = default;
+  SPEC &operator=(SPEC &&) = default;
+  virtual ~SPEC() = default;
+  virtual spCS_t make_cs(const BaseSpectrum &) = 0;
+  virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+                    const Invar &, DensMatElements &){};
+  virtual void calc_A(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
+                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &){};
+  virtual void calc_B(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
+                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &){};
+  virtual string name() = 0;
+  virtual string merge() { return ""; } // what merging rule to use
+  virtual string rho_type() { return ""; } // what rho type is required
+};
+
+using SPECTYPE = shared_ptr<SPEC>;
+
+#include "spectral.h"
 
 // Returns true if option 'c' is selected for logging // XXX move to P?
 bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::npos); }
@@ -763,7 +758,7 @@ class Spectrum {
   Spectrum &operator=(const Spectrum &) = default;
   Spectrum &operator=(Spectrum &&) = default;
   virtual ~Spectrum()= default; // required (the destructor saves the results to a file)
-  virtual void merge(spCS_t) = 0; // called from spec.cc as the very last step
+  virtual void merge(spCS_t, const Step &) = 0; // called from spec.cc as the very last step
   string name() { return opname; }
 };
 
@@ -775,7 +770,7 @@ class SpectrumTemp : public Spectrum {
   std::vector<pair<double, t_weight>> results;
   public:
   SpectrumTemp(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
-  void merge(spCS_t) override;
+  void merge(spCS_t, const Step &) override;
   SpectrumTemp(const SpectrumTemp &) = default;
   SpectrumTemp(SpectrumTemp &&) = default;
   SpectrumTemp &operator=(const SpectrumTemp &) = default;
@@ -783,7 +778,7 @@ class SpectrumTemp : public Spectrum {
   ~SpectrumTemp() override;
 };
 
-void SpectrumTemp::merge(spCS_t cs) {
+void SpectrumTemp::merge(spCS_t cs, const Step & step) {
   auto t = dynamic_pointer_cast<ChainSpectrumTemp>(cs);
   copy(begin(t->v), end(t->v), back_inserter(results));
 }
@@ -805,7 +800,7 @@ class SpectrumMatsubara : public Spectrum {
   public:
   SpectrumMatsubara(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P.mats, _mt) {}
-  void merge(spCS_t) override;
+  void merge(spCS_t, const Step &) override;
   SpectrumMatsubara(const SpectrumMatsubara &) = default;
   SpectrumMatsubara(SpectrumMatsubara &&) = default;
   SpectrumMatsubara &operator=(const SpectrumMatsubara &) = default;
@@ -813,7 +808,7 @@ class SpectrumMatsubara : public Spectrum {
   ~SpectrumMatsubara() override;
 };
 
-void SpectrumMatsubara::merge(spCS_t cs) {
+void SpectrumMatsubara::merge(spCS_t cs, const Step &) {
   auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   nrglog('*', "weight=" << t->total_weight()); // useful for debugging
   for (size_t n = 0; n < P.mats; n++) results.v[n].second += t->m.v[n].second;
@@ -831,7 +826,7 @@ class SpectrumMatsubara2 : public Spectrum {
   public:
   SpectrumMatsubara2(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P.mats, _mt) {}
-  void merge(spCS_t) override;
+  void merge(spCS_t, const Step &) override;
   SpectrumMatsubara2(const SpectrumMatsubara2 &) = default;
   SpectrumMatsubara2(SpectrumMatsubara2 &&) = default;
   SpectrumMatsubara2 &operator=(const SpectrumMatsubara2 &) = default;
@@ -839,7 +834,7 @@ class SpectrumMatsubara2 : public Spectrum {
   ~SpectrumMatsubara2() override;
 };
 
-void SpectrumMatsubara2::merge(spCS_t cs) {
+void SpectrumMatsubara2::merge(spCS_t cs, const Step &) {
   auto t = dynamic_pointer_cast<ChainSpectrumMatsubara2>(cs);
   nrglog('*', "weight=" << t->total_weight());
   for (size_t m = 0; m < P.mats; m++)
@@ -1202,26 +1197,45 @@ namespace oprecalc {
     report(F, "ot", ot);
   }
 
-//  bool do_s(const Step &step, const string &name, const Params &P) {
-  bool do_s(const string &name) {
+  bool do_s(const string &name, const Params &p, const Step &step) {
     if (step.nrg()) return true;                             // for expectation values
     if (P.fdmexpv && step.N() <= P.fdmexpvn) return true; // Calculate <O> using FDM algorithm
     return s.count(name);
   }
 
-//  bool do_g(const Step &step, const string &name, const Params &P) {
-  bool do_g(const string &name) {
+  bool do_g(const string &name, const Params &P, const Step &step) {
     if (step.nrg()) return true;                             // for expectation values
     if (P.fdmexpv && step.N() <= P.fdmexpvn) return true; // Calculate <O> using FDM algorithm
     return g.count(name);
   }
 
-  bool do_p(const string &name) { return p.count(name); }
-  bool do_d(const string &name) { return d.count(name); }
-  bool do_v(const string &name) { return v.count(name); }
-  bool do_t(const string &name) { return t.count(name); }
-  bool do_q(const string &name) { return q.count(name); }
-  bool do_ot(const string &name) { return ot.count(name); }
+   // Wrapper routine for recalculations. Called from recalculate_operators().
+   template <typename RecalcFnc>
+     void recalc_common(RecalcFnc recalc_fnc, const DiagInfo &dg, const QSrmax &qsrmax, MatrixElements &m, std::string name, const string &tip) {
+       nrglog('0', "Recalculate " << tip << " " << name);
+       m = recalc_fnc(dg, qsrmax, m);
+       if (tip == "g") Sym->recalc_global(dg, qsrmax, name, m);
+     }
+
+   // Recalculate operator matrix representations
+   ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
+     void recalculate_operators(const Step &step, const DiagInfo &dg, QSrmax &qsrmax, IterInfo &a, const Params &P) {
+       nrglog('@', "@ recalculate_operators()");
+       for (auto &[name, m] : a.ops)
+         if (do_s(name, P, step)) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., 1);  }, dg, qsrmax, m, name, "s");
+       for (auto &[name, m] : a.opsp) 
+         if (p.count(name)) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., -1);       }, dg, qsrmax, m, name, "p");
+       for (auto &[name, m] : a.opsg) 
+         if (do_g(name, P, step )) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., 1); }, dg, qsrmax, m, name, "g");
+       for (auto &[name, m] : a.opd) 
+         if (d.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_doublet(pr...);      }, dg, qsrmax, m, name, "d");
+       for (auto &[name, m] : a.opt)
+         if (t.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_triplet(pr...);      }, dg, qsrmax, m, name, "t");
+       for (auto &[name, m] : a.opot)
+         if (ot.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, dg, qsrmax, m, name, "ot");
+       for (auto &[name, m] : a.opq)
+         if (q.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_quadruplet(pr...);   }, dg, qsrmax, m, name, "q");
+     }
 
    // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
    // If SPIN == 1 or SPIN == -1, '-u' or '-d' is appended to the string.
@@ -1672,17 +1686,6 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
   return nnew;
 }
 
-// Wrapper routine for recalculations. Called from recalculate_operators().
-template <typename RecalcFnc>
-  void recalc_common(RecalcFnc recalc_fnc, const DiagInfo &dg, const QSrmax &qsrmax, std::string name, MatrixElements &m, const string &tip, bool (*testfn)(const string &)) { // XXX: order
-  if (testfn(name)) { // XXX: test outside ??
-    nrglog('0', "Recalculate " << tip << " " << name);
-    m = recalc_fnc(dg, qsrmax, m);
-    if (tip == "g") Sym->recalc_global(dg, qsrmax, name, m);
-  } else
-    m.clear(); // save memory!
-}
-
 /* We trim the matrices containing the irreducible matrix elements of the
  operators to the sizes that are actually required in the next iterations.
  This saves memory and leads to better cache usage in recalc_general()
@@ -1768,19 +1771,6 @@ void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
     cout << "norm[" << name << "]=" << norm(m, diag, SpecdensFactorFnc, SPIN) << std::endl;
   for (const auto &[name, m] : a.opq)
     cout << "norm[" << name << "]=" << norm(m, diag, SpecdensquadFactorFnc, 0) << std::endl;
-}
-
-// Recalculate operator matrix representations
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void recalculate_operators(const DiagInfo &dg, QSrmax &qsrmax, IterInfo &a) {
-  nrglog('@', "@ recalculate_operators()");
-  for (auto &[name, m] : a.ops)  recalc_common([](const auto &... p) { return recalc_singlet(p..., 1);       }, dg, qsrmax, name, m, "s",  oprecalc::do_s);
-  for (auto &[name, m] : a.opsp) recalc_common([](const auto &... p) { return recalc_singlet(p..., -1);      }, dg, qsrmax, name, m, "p",  oprecalc::do_p);
-  for (auto &[name, m] : a.opsg) recalc_common([](const auto &... p) { return recalc_singlet(p..., 1);       }, dg, qsrmax, name, m, "g",  oprecalc::do_g);
-  for (auto &[name, m] : a.opd)  recalc_common([](const auto &... p) { return Sym->recalc_doublet(p...);     }, dg, qsrmax, name, m, "d",  oprecalc::do_d);
-  for (auto &[name, m] : a.opt)  recalc_common([](const auto &... p) { return Sym->recalc_triplet(p...);     }, dg, qsrmax, name, m, "t",  oprecalc::do_t);
-  for (auto &[name, m] : a.opot) recalc_common([](const auto &... p) { return Sym->recalc_orb_triplet(p...); }, dg, qsrmax, name, m, "ot", oprecalc::do_ot);
-  for (auto &[name, m] : a.opq)  recalc_common([](const auto &... p) { return Sym->recalc_quadruplet(p...);  }, dg, qsrmax, name, m, "q",  oprecalc::do_q);
 }
 
 // Calculate spectral densities
@@ -2359,7 +2349,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
   if (do_recalc_all(step, P)) { // Either ...
-    recalculate_operators(diag, qsrmax, iterinfo);
+    oprecalc::recalculate_operators(step, diag, qsrmax, iterinfo, P);
     calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
   diag_before_truncation = diag;
@@ -2372,7 +2362,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
     if (P.dump_f) dump_f(iterinfo.opch);
   }
   if (do_recalc_kept(step, P)) { // ... or ...
-    recalculate_operators(diag, qsrmax, iterinfo);
+    oprecalc::recalculate_operators(step, diag, qsrmax, iterinfo, P);
     calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
   if (do_no_recalc(step, P)) { // ... or this
@@ -2564,6 +2554,7 @@ void set_symmetry(const string &sym_string) {
 
 void calculation(const Params &p) {
   nrglog('@', "@ calculation()");
+  // XXX: Step step{p};
   step.runtype = RUNTYPE::NRG;
   auto [diag0, iterinfo] = read_data(P);
   // Initialize all containers for storing information
@@ -2581,9 +2572,10 @@ void calculation(const Params &p) {
   if (need_rhoFDM()) {
     auto rhoFDM = init_rho_FDM(step.lastndx(), dm, P);
     saveRho(step.lastndx(), FN_RHOFDM, rhoFDM, P);
-    if (!P.ZBW) calc_fulldensitymatrix(rhoFDM, dm, P);
+    if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, P);
   }
   if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
+  // XXX: decouple ?
   step.runtype = RUNTYPE::DMNRG;
   auto [diag0_dm, iterinfo_dm] = read_data(P);
   run_nrg(step, iterinfo_dm, diag0, dm, P);

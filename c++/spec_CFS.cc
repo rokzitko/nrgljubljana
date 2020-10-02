@@ -5,7 +5,7 @@
 class SPEC_CFSls : virtual public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
-  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+  void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
             const Invar &, DensMatElements &) override;
   string name() override { return "CFSls"; }
   string merge() override { return "CFS"; }
@@ -15,7 +15,7 @@ class SPEC_CFSls : virtual public SPEC {
 class SPEC_CFSgt : virtual public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
-  void calc(const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+  void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
             const Invar &, DensMatElements &) override;
   string name() override { return "CFSgt"; }
   string merge() override { return "CFS"; }
@@ -25,10 +25,10 @@ class SPEC_CFSgt : virtual public SPEC {
 class SPEC_CFS : public SPEC_CFSls, public SPEC_CFSgt {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
-  void calc(const Eigen &a1, const Eigen &a2, const Matrix &a3, const Matrix &a4, const BaseSpectrum &a5, t_factor a6, spCS_t a7,
+  void calc(const Step &step, const Eigen &a1, const Eigen &a2, const Matrix &a3, const Matrix &a4, const BaseSpectrum &a5, t_factor a6, spCS_t a7,
             const Invar &a8, const Invar &a9, DensMatElements &rho) override {
-    SPEC_CFSgt::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9, rho);
-    SPEC_CFSls::calc(a1, a2, a3, a4, a5, a6, a7, a8, a9, rho);
+    SPEC_CFSgt::calc(step, a1, a2, a3, a4, a5, a6, a7, a8, a9, rho);
+    SPEC_CFSls::calc(step, a1, a2, a3, a4, a5, a6, a7, a8, a9, rho);
   }
   string name() override { return "CFS"; }
   string merge() override { return "CFS"; }
@@ -41,7 +41,7 @@ class SPEC_CFS : public SPEC_CFSls, public SPEC_CFSgt {
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 
 #if defined(NRG_COMPLEX) || defined(SPEC_CFS_OLD)
-void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &rho) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const Matrix &rhoNIp = rho[Ip];
@@ -87,7 +87,7 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
   } // if (last)
 }
 
-void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &rho) {
   const Matrix &rhoNIp = rho[Ip];
   const Matrix &rhoNI1 = rho[I1];
@@ -135,7 +135,7 @@ void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
 
 // Based on the implementation by Markus Greger.
 #if defined(NRG_REAL) && defined(SPEC_CFS_OPTIMIZED)
-void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
+void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &rho) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const Matrix &rhoNIp = rho[Ip];
@@ -184,7 +184,7 @@ void SPEC_CFSls::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op
   } // if (last)
 }
 
-void SPEC_CFSgt::calc(const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
+void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &rho) {
   const Matrix &rhoNIp = rho[Ip];
   const Matrix &rhoNI1 = rho[I1];

@@ -2,7 +2,7 @@
 class SpectrumRealFreq : public Spectrum {
   private:
   Bins fspos, fsneg; // Full spectral information
-  void mergeNN2(spCS_t);
+  void mergeNN2(spCS_t, const Step &);
   void mergeCFS(spCS_t);
   void weight_report();
   void trim();
@@ -10,7 +10,7 @@ class SpectrumRealFreq : public Spectrum {
   void continuous();
   public:
   SpectrumRealFreq(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype){};
-  void merge(spCS_t) override;
+  void merge(spCS_t, const Step &step) override;
   ~SpectrumRealFreq() override;
 };
 
@@ -26,8 +26,8 @@ SpectrumRealFreq::~SpectrumRealFreq() {
 /* Merge the spectrum for a finite Wilson chain into the "true" NRG
  spectrum. For complete Fock space NRG calculation, the merging tricks are
  not necessary: we just collect all the delta peaks from all iterations. */
-void SpectrumRealFreq::merge(spCS_t cs) {
-  if (spectype->merge() == "NN2") return mergeNN2(cs);
+void SpectrumRealFreq::merge(spCS_t cs, const Step &step) {
+  if (spectype->merge() == "NN2") return mergeNN2(cs, step);
   if (spectype->merge() == "CFS") return mergeCFS(cs);
   my_error("should not be reached");
 }
@@ -85,7 +85,7 @@ inline double fnc(double x) {
     return fnc_linear(x);
 }
 
-inline double windowfunction(double E, double Emin, double Ex, double Emax) {
+inline double windowfunction(double E, double Emin, double Ex, double Emax, const Step &step) {
   // Exception 1
   if (E <= Ex && step.last()) return 1.0;
   // Exception 2
@@ -101,7 +101,7 @@ inline double windowfunction(double E, double Emin, double Ex, double Emax) {
 // Here we perform the actual merging of data using the N/N+2 scheme.
 // Note that we use a windowfunction (see above) to accomplish the
 // smooth combining of data.
-void mergeNN2half(Bins &fullspec, const Bins &cs) {
+void mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step) {
   double Emin = step.scale() * getEmin(); // p
   double Ex   = step.scale() * getEx();   // p Lambda
   double Emax = step.scale() * getEmax(); // p Lambda^2
@@ -116,7 +116,7 @@ void mergeNN2half(Bins &fullspec, const Bins &cs) {
     const t_weight weight = cs.bins[i].second;
     if (Emin < energy && energy < Emax && weight != 0.0) {
       const double factor = (P.NN2avg ? 0.5 : 1.0);
-      fullspec.bins[i].second += factor * weight * windowfunction(energy, Emin, Ex, Emax);
+      fullspec.bins[i].second += factor * weight * windowfunction(energy, Emin, Ex, Emax, step);
     }
   }
 }
@@ -126,13 +126,13 @@ void mergeNN2half(Bins &fullspec, const Bins &cs) {
 // current choice seems to be working quite all right.
 // See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001).
 
-void SpectrumRealFreq::mergeNN2(spCS_t cs) {
+void SpectrumRealFreq::mergeNN2(spCS_t cs, const Step &step) {
   auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
 
   nrglog('*', "weight=" << csb->total_weight());
   if (!step.N_for_merging()) return;
-  mergeNN2half(fspos, csb->spos);
-  mergeNN2half(fsneg, csb->sneg);
+  mergeNN2half(fspos, csb->spos, step);
+  mergeNN2half(fsneg, csb->sneg, step);
 }
 
 const double IMAG_TOLERANCE = 1e-10;

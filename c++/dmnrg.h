@@ -350,7 +350,8 @@ DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Params &P) { //
   return rhoFDM;
 }
 
-void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
+void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::last()
+                                  const DiagInfo &diag,
                                   const DensMatElements &rhoFDM, // input
                                   DensMatElements &rhoFDMPrev,   // output
                                   size_t N, const AllSteps &dm, const Params &P) {
@@ -386,13 +387,13 @@ void calc_fulldensitymatrix_iterN(const DiagInfo &diag,
 }
 
 // Sum of statistical weights from site N to the end of the Wilson chain.
-double sum_wn(size_t N) {
+double sum_wn(size_t N, const Params &P) {
   double sum = 0.0;
   for (size_t n = P.Nmax - 1; n >= N; n--) sum += stats.wn[n];
   return sum;
 }
 
-void calc_fulldensitymatrix(DensMatElements &rhoFDM, const AllSteps &dm, const Params &P) {
+void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const AllSteps &dm, const Params &P) {
   nrglog('@', "@ calc_densitymatrix");
   if (P.resume && already_computed(FN_RHOFDM)) {
     cout << "Not necessary: already computed!" << endl;
@@ -404,9 +405,9 @@ void calc_fulldensitymatrix(DensMatElements &rhoFDM, const AllSteps &dm, const P
     cout << "[FDM] " << N << endl;
     DiagInfo diag_loaded = load_transformations(N, P);
     DensMatElements rhoFDMPrev;
-    calc_fulldensitymatrix_iterN(diag_loaded, rhoFDM, rhoFDMPrev, N, dm, P);
+    calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, rhoFDMPrev, N, dm, P);
     double tr       = trace(rhoFDMPrev);
-    double expected = sum_wn(N);
+    double expected = sum_wn(N, P);
     double diff     = (tr - expected) / expected;
     nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
     my_assert(num_equal(diff, 0.0));
