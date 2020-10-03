@@ -1188,32 +1188,38 @@ class Oprecalc {
     return g.count(name);
   }
 
-   // Wrapper routine for recalculations. Called from recalculate_operators().
+   // Wrapper routine for recalculations
    template <typename RecalcFnc>
-     void recalc_common(RecalcFnc recalc_fnc, const Step &step, const DiagInfo &dg, const QSrmax &qsrmax, MatrixElements &m, std::string name, const string &tip) {
+     MatrixElements recalc_common(const MatrixElements &mold, RecalcFnc recalc_fnc, const Step &step, const DiagInfo &dg, const QSrmax &qsrmax, const std::string name, const string &tip) {
        nrglog('0', "Recalculate " << tip << " " << name);
-       m = recalc_fnc(dg, qsrmax, m);
-       if (tip == "g") Sym->recalc_global(step, dg, qsrmax, name, m);
+       auto mnew = recalc_fnc(dg, qsrmax, mold);
+       if (tip == "g") Sym->recalc_global(step, dg, qsrmax, name, mnew);
+       return mnew;
+     }
+   
+   template <typename ... Args>
+     MatrixElements recalc_or_clear(bool recalc, Args&& ... args) {
+       return recalc ? recalc_common(std::forward<Args>(args)...) : MatrixElements();
      }
 
    // Recalculate operator matrix representations
    ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-     void recalculate_operators(const Step &step, const DiagInfo &dg, QSrmax &qsrmax, IterInfo &a, const Params &P) {
+     void recalculate_operators(const Step &step, const DiagInfo &dg, const QSrmax &qsrmax, IterInfo &a, const Params &P) {
        nrglog('@', "@ recalculate_operators()");
        for (auto &[name, m] : a.ops)
-         if (do_s(name, P, step)) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., 1);  }, step, dg, qsrmax, m, name, "s");
-       for (auto &[name, m] : a.opsp) 
-         if (p.count(name)) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., -1);       }, step, dg, qsrmax, m, name, "p");
+         m = recalc_or_clear(do_s(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, dg, qsrmax, name, "s");
+       for (auto &[name, m] : a.opsp)
+         m = recalc_or_clear(p.count(name),       m, [](const auto &... pr) { return recalc_singlet(pr..., -1);      }, step, dg, qsrmax, name, "p");
        for (auto &[name, m] : a.opsg) 
-         if (do_g(name, P, step )) recalc_common([](const auto &... pr) { return recalc_singlet(pr..., 1); }, step, dg, qsrmax, m, name, "g");
-       for (auto &[name, m] : a.opd) 
-         if (d.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_doublet(pr...);      }, step, dg, qsrmax, m, name, "d");
+         m = recalc_or_clear(do_g(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, dg, qsrmax, name, "g");
+       for (auto &[name, m] : a.opd)
+         m = recalc_or_clear(d.count(name),       m, [](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, step, dg, qsrmax, name, "d");
        for (auto &[name, m] : a.opt)
-         if (t.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_triplet(pr...);      }, step, dg, qsrmax, m, name, "t");
+         m = recalc_or_clear(t.count(name),       m, [](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, step, dg, qsrmax, name, "t");
        for (auto &[name, m] : a.opot)
-         if (ot.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, dg, qsrmax, m, name, "ot");
+         m = recalc_or_clear(ot.count(name),      m, [](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, dg, qsrmax, name, "ot");
        for (auto &[name, m] : a.opq)
-         if (q.count(name)) recalc_common([](const auto &... pr) { return Sym->recalc_quadruplet(pr...);   }, step, dg, qsrmax, m, name, "q");
+         m = recalc_or_clear(q.count(name),       m, [](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, step, dg, qsrmax, name, "q");
      }
 
    // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
@@ -1659,17 +1665,17 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
   for (const auto &[I, eig] : diag) { // XXX: eig not used. simplify!
     const Invar I1 = I;
     Invar Ip = I;
-    if (parity == -1) Ip.InvertParity();
+    if (parity == -1) Ip.InvertParity(); // XXX oneline
     for (size_t i = 1; i <= P.combs; i++) {
       Recalc r;
       r.i1 = r.ip = i;
       r.factor    = 1.0;
       r.IN1 = r.INp = ancestor(I, i);
-      if (parity == -1) r.INp.InvertParity();
+      if (parity == -1) r.INp.InvertParity(); // XXX oneline
       recalc_table[i - 1] = r; // mind the -1 shift!
     }
     recalc_general(diag, qsrmax, nold, nnew, Ip, I1, &recalc_table[0], P.combs, Sym->InvarSinglet);
-  } // loop over is
+  }
   return nnew;
 }
 
@@ -1688,7 +1694,13 @@ void trim_matel(DiagInfo &dg, MatrixElements &op) {
     // Target matrix dimensions
     const auto nr1 = dg[I1].getnr();
     const auto nr2 = dg[I2].getnr();
-    my_assert(nr1 <= size1 && nr2 <= size2);
+//    my_assert(nr1 <= size1 && nr2 <= size2);
+    if (!(nr1 <= size1 && nr2 <= size2)) {
+      cout << "ERROR: " << nr1 << " " << size1 << " " << nr2 << " " << size2 << endl;
+      cout << II << endl;
+      exit(1);
+    }
+
     if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
       continue;
     matrix_range<Matrix> m2(mat, range(0, nr1), range(0, nr2));
@@ -1698,8 +1710,10 @@ void trim_matel(DiagInfo &dg, MatrixElements &op) {
 }
 
 void trim_op(DiagInfo &dg, CustomOp &allops) {
-  for (auto &[name, op] : allops) 
+  for (auto &[name, op] : allops) {
+    cout << "X: " << name << endl;
     trim_matel(dg, op);
+  }
 }
 
 void trim_matrices(DiagInfo &dg, IterInfo &a) {

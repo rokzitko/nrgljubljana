@@ -133,7 +133,7 @@ void recalc_general(const DiagInfo &dg,
   const size_t dim1 = dgI1.getnr();
   const size_t dimp = dgIp.getnr();
   const Twoinvar II = make_pair(I1, Ip);
-  Matrix &cn = cnew[II] = Matrix(dim1, dimp);
+  Matrix &cn = cnew[II] = Matrix(dim1, dimp); // XXX: return this one!
   cn.clear();
   if (dim1 == 0 || dimp == 0) return;
   for (size_t j = 0; j < jmax; j++) { // loop over combinations of i/ip
@@ -202,7 +202,7 @@ void recalc_general(const DiagInfo &dg,
 void recalc1_global(const DiagInfo &dg,
                     const QSrmax &qsrmax,
                     const Invar &I, 
-                    Matrix &m, 
+                    Matrix &m, // XXX: return this one
                     size_t i1, size_t ip, 
                     t_factor value) {
   nrglog('r', "recalc1_global: " << I);
