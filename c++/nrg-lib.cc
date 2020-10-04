@@ -295,7 +295,8 @@ class Eigen {
   size_t getrmax() const { return rmax; }
   size_t getdim() const { return rmax; }
   // Returns the number of eigenpairs after truncation.
-  size_t getnrpost() const { return nrpost; }
+  size_t getnrpost() const { return nrpost; } // XXX: drop this one
+  size_t getnrkept() const { return nrpost; }
   // Truncate to nrpost states.
   void truncate_prepare_subspace(size_t _nrpost) {
     nrpost = _nrpost;
@@ -1440,31 +1441,21 @@ t_eigen highest_retained_energy(const DiagInfo &diag) {
   return energies[nrkeep - 1];
 }
 
-// truncate_prepare() computes the number of states to keep for each invariant subspace, while the actual
-// runcation is performed by trucate_perform(). Returns true if an insufficient number of states has been
+// Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
 bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
-  bool notenough = false;
-  t_eigen Emax      = highest_retained_energy(diag);
-  size_t nrkept     = 0; // counter of states actually retained
-  size_t nrkeptmult = 0; // counter of states actually retained, taking into account the multiplicity
-  for (auto &[I, eig] : diag) {
-    const auto nrc = eig.getnr(); // number of computed states in the subspace
-    // number of elements to keep
-    auto count = count_if(begin(eig.value), end(eig.value), [=](double e) { return e <= Emax; });
-    if (step.last() && P.keep_all_states_in_last_step())
-      count = nrc;
-    if (count == nrc && eig.value(nrc-1) != Emax && nrc < eig.getrmax())
-      notenough = true;
-      // We determined that all calculated states in this invariant subspace will be retained (and that perhaps
-      // additional should have been computed). getrmax() returns the dimensionality of the invariant subspace (i.e.
-      // the maximal number of eigenpairs), while the variable nrc is the number of actually calculated states, which
-      // is only equal to the dimensionality if in the computational scheme used all the states are retained.
-    diag[I].truncate_prepare_subspace(count);
-    nrkept += count;
-    nrkeptmult += count * mult(I);
-  }
+  const auto Emax = highest_retained_energy(diag);
+  for (auto &[I, eig] : diag)
+    diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
+                                      std::count_if(begin(eig.value), end(eig.value), [Emax](double e) { return e <= Emax; }));             
+  const auto nrkept = std::accumulate(begin(diag), end(diag), 0, 
+                                      [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
+  const auto nrkeptmult = std::accumulate(begin(diag), end(diag), 0, 
+                                          [](int n, const auto &d) { const auto &[I, eig] = d; return n+mult(I)*eig.getnrkept(); });
   nrgdump3(Emax, nrkept, nrkeptmult) << endl;
+  const auto notenough = std::any_of(begin(diag), end(diag), 
+                                     [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value(eig.getnr()-1) != Emax &&
+                                         eig.getnr() < eig.getrmax(); });
   return notenough;
 }
 
