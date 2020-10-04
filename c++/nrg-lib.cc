@@ -972,7 +972,7 @@ void logancestors(const Invar &I, const InvarVec &In, const Rmaxvals &rmx) {
   if (logletter('s')) {
     cout << "Ancestors of (" << I << "): ";
     for (size_t i = 1; i <= P.combs; i++)
-      if (rmx[i] > 0) cout << "(" << In[i] << ", dim=" << rmx[i] << ") ";
+      if (rmx[i] > 0) cout << "(" << Sym->In[i] << ", dim=" << rmx[i] << ") ";
     cout << endl;
   }
 }
@@ -1023,16 +1023,13 @@ double calc_Z(const DiagInfo &diag) {
   return Z;
 }
 
-// Function newcombination_allowed() checks if states |q,ss,i>_{N+1} can be
-// formed for a given spin. Some combinations might be forbidden even when
-// the corresponding |q',ss'> subspaces exist at iteration step N (Invar In).
-bool newcombination_allowed(size_t i, const Invar &I, const Invar &In) { return Sym->triangle_inequality(I, In, QN[i]); }
-
 // Determine the ranges of index r
-Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev) {
-  values.resize(P.combs);
-  for (size_t i = 0; i < P.combs; i++)
-      values[i] = newcombination_allowed(i + 1, I, In[i + 1]) ? size_subspace(diagprev, In[i + 1]) : 0;
+Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagprev) {
+  values.resize(Sym->get_combs());
+  for (size_t i = 0; i < Sym->get_combs(); i++) {
+    const bool combination_allowed = Sym->triangle_inequality(I, InVec[i+1], Sym->QN[i+1]);
+    values[i] = combination_allowed ? size_subspace(diagprev, InVec[i+1]) : 0;
+  }
 }
 
 // *********************************** NRG RUN **********************************
@@ -1633,7 +1630,6 @@ void dump_annotated(const Step &step, const DiagInfo &diag, bool scaled = true, 
 MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
   MatrixElements nnew;
   std::vector<Recalc> recalc_table(Sym->get_combs());
-  const InvarVec input = input_subspaces();
   my_assert(Sym->islr() ? parity == 1 || parity == -1 : parity == 1);
   for (const auto I : diag | boost::adaptors::map_keys) {
     const Invar I1 = I;
@@ -1642,7 +1638,7 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
       Recalc r;
       r.i1 = r.ip = i;
       r.factor    = 1.0;
-      const auto anc = ancestor(I, i);
+      const auto anc = Sym->ancestor(I, i);
       r.IN1 = anc;
       r.INp = (parity == -1 ? anc.InvertParity() : anc);
       recalc_table[i - 1] = r; // mind the -1 shift!
@@ -1848,7 +1844,7 @@ auto make_subspaces_list(const DiagInfo &diagprev) {
   list<Invar> subspaces;
   for (const auto &[I, eig] : diagprev)
     if (eig.getnr()) {
-      auto input = input_subspaces(); // make a new copy of subspaces list
+      auto input = Sym->input_subspaces(); // make a new copy of subspaces list
       for (size_t i = 1; i <= P.combs; i++) {
         input[i].inverse(); // IMPORTANT!
         input[i].combine(I);
@@ -1876,7 +1872,7 @@ inline t_eigen Eigenvalue(const DiagInfo &diag, const Invar &I, const size_t r) 
 }
 
 Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const DiagInfo &diagprev) {
-  const auto anc = ancestors(I);
+  const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev};
   const size_t dim = rm.total();
   nrglog('i', endl << "Subspace (" << I << ") dim=" << dim); // skip a line
@@ -2127,7 +2123,7 @@ DiagInfo diagonalisations(const Step &step, const Opch &opch, const DiagInfo &di
 QSrmax get_qsrmax(const DiagInfo &diagprev) {
   QSrmax qsrmax;
   for (const auto &I : make_subspaces_list(diagprev))
-    qsrmax[I] = Rmaxvals{I, ancestors(I), diagprev};
+    qsrmax[I] = Rmaxvals{I, Sym->ancestors(I), diagprev};
   return qsrmax;
 }
 

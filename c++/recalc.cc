@@ -143,8 +143,8 @@ void recalc_general(const DiagInfo &dg,
     const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
     // Proceed if this combination of i1/ip contributes.
     if (rmax1 == 0 || rmaxp == 0) continue;
-    const auto IN1 = ancestor(I1, table[j].i1);
-    const auto INp = ancestor(Ip, table[j].ip);
+    const auto IN1 = Sym->ancestor(I1, table[j].i1);
+    const auto INp = Sym->ancestor(Ip, table[j].ip);
     my_assert(IN1 == table[j].IN1 && INp == table[j].INp);
     const Twoinvar ININ = make_pair(table[j].IN1, table[j].INp);
     const size_t cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.

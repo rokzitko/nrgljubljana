@@ -7,38 +7,6 @@
 // some forward declarations
 CONSTFNC double calculate_Z(const Invar, const Eigen &, double);
 
-// In and QN are global variables. They contain information about
-// how the invariant subspaces at consecutive iteration steps are
-// combined.
-
-/* In is the array of quantum number DIFFERENCES used in the construction
-   of the basis. QN is the array of the conserved quantum numbers
-   corresponding to the states being added. For example, in case of SU(2)
-   symmetry, In will include S_z, while QN will include S. In other words,
-   QN involves those quantum numbers that we need to retain in the
-   calculation, while In involves those quantum numbers that "drop out" of
-   the problem due to the symmetry. */
-
-std::vector<Invar> In, QN;
-
-InvarVec input_subspaces() { return In; } // XXX remove?
-
-Invar ancestor(Invar I, int i)
-{
-  const auto input = input_subspaces();
-  Invar anc = I;
-  anc.combine(input[i]);
-  return anc; // I.combine(input[i]) == input[i].combine(I)
-}
-
-InvarVec ancestors(Invar I)
-{
-  auto input = input_subspaces();
-  for (size_t i = 1; i <= P.combs; i++)
-    input[i].combine(I); // In is the list of differences wrt I
-  return input;
-}
-
 // Check if the triangle inequality is satisfied (i.e. if
 // Clebsch-Gordan coefficient can be different from zero). This is
 // important, for example, for triplet operators, which are zero when
@@ -80,12 +48,45 @@ typedef map<string, Symmetry *> sym_map;
 sym_map all_syms;
 
 class Symmetry {
-  protected:
+ protected:
   size_t combs{};
   size_t channels{};
   bool substeps{};
 
-  public:
+ public:
+  // In and QN contain information about how the invariant subspaces at consecutive iteration steps are combined. In
+  // is the array of quantum number DIFFERENCES used in the construction of the basis. QN is the array of the
+  // conserved quantum numbers corresponding to the states being added. For example, in case of SU(2) symmetry, In
+  // will include S_z, while QN will include S. In other words, QN involves those quantum numbers that we need to
+  // retain in the calculation, while In involves those quantum numbers that "drop out" of the problem due to the
+  // symmetry.
+  std::vector<Invar> In, QN;
+
+  InvarVec input_subspaces() const { return In; }
+
+  Invar ancestor(Invar I, int i) const {
+    const auto input = input_subspaces();
+    Invar anc = I;
+    anc.combine(input[i]);
+    return anc; // I.combine(input[i]) == input[i].combine(I)
+  }
+
+  InvarVec ancestors(const Invar &I) const {
+    auto input = input_subspaces();
+    for (size_t i = 1; i <= combs; i++)
+      input[i].combine(I); // In is the list of differences wrt I
+    return input;
+  }
+   
+  InvarVec dmnrg_subspaces(const Invar &I) const {
+    auto input = input_subspaces();
+    for (size_t i = 1; i <= P.combs; i++) {
+      input[i].inverse();
+      input[i].combine(I);
+    }
+    return input;
+  }
+
   Symmetry() = default;
   virtual ~Symmetry()= default;
 
@@ -134,7 +135,7 @@ class Symmetry {
   // important, for example, for triplet operators which are zero
   // when evaluated between two singlet states.
   virtual bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) { return true; }
-
+   
   // Setup the combinations of quantum numbers that are used in the
   // construction of the Hamiltonian matrix.
   virtual void load() = 0;

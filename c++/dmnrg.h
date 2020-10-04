@@ -234,15 +234,6 @@ void cdmI(size_t i,            // Subspace index (alpha=1,...,P.combs)
   atlas::gemm(CblasNoTrans, CblasNoTrans, t_factor(factor), T, U, t_factor(1.0), rhoNEW);
 }
 
-InvarVec dmnrg_subspaces(const Invar &I) {
-  InvarVec input = input_subspaces();
-  for (size_t i = 1; i <= P.combs; i++) {
-    input[i].inverse();
-    input[i].combine(I);
-  }
-  return input;
-}
-
 // Calculation of the shell-N REDUCED DENSITY MATRICES:
 // Calculate rho at previous iteration (N-1, rhoPrev) from rho at
 // the current iteration (N, rho)
@@ -253,7 +244,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
                               size_t N, const AllSteps &dm, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
-    const InvarVec subs = dmnrg_subspaces(I);
+    const InvarVec subs = Sym->dmnrg_subspaces(I);
     size_t dim          = dimsub.kept;
     rhoPrev[I]          = Matrix(dim, dim);
     if (!dim) continue;
@@ -360,7 +351,7 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   if (!step.last(N))
     rhoDD = init_rho_FDM(N, dm, P);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
-    const InvarVec subs = dmnrg_subspaces(I);
+    const InvarVec subs = Sym->dmnrg_subspaces(I);
     size_t dim          = dimsub.kept;
     rhoFDMPrev[I]       = Matrix(dim, dim);
     if (!dim) continue;
