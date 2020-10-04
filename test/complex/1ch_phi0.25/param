@@ -18,7 +18,7 @@ Lambda=4
 Tmin=1e-12
 keepmin=10
 keepenergy=9.0
-keep=100
+keep=200
 
 discretization=Z
 
@@ -29,6 +29,7 @@ dumpannotated=10
 dumpscaled=0
 grouptol=1e-8
 fixeps=1e-10
+safeguard=1e-4
 
 cfs=true
 
