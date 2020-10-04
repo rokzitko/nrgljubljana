@@ -64,7 +64,7 @@ class Symmetry {
 
   InvarVec input_subspaces() const { return In; }
 
-  Invar ancestor(Invar I, int i) const {
+  Invar ancestor(Invar I, size_t i) const {
     const auto input = input_subspaces();
     Invar anc = I;
     anc.combine(input[i]);
@@ -119,7 +119,7 @@ class Symmetry {
   virtual bool isfield() { return false; }
 
   // Multiplicity of the states in the invariant subspace
-  virtual int mult(const Invar &) { // XXX: should be unsigned, probably size_t
+  virtual size_t mult(const Invar &) {
     return 1;
   };
 

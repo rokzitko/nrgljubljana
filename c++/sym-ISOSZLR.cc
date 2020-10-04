@@ -19,7 +19,7 @@ class SymmetryISOSZLR : public SymFieldLR {
   }
 
   // Multiplicity of the I=(II,SSZ) subspace = (2I+1) = II.
-  int mult(const Invar &I) override { return I.get("II"); }
+  size_t mult(const Invar &I) override { return I.get("II"); }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
     // The spin projection of the operator is defined by the difference

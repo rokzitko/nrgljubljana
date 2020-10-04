@@ -34,7 +34,7 @@ class SymmetryDBLISOSZ : public SymField {
   }
 
   // Multiplicity of the I=(II1,II2) subspace = (2I1+1)(2I2+1) = II1 II2.
-  int mult(const Invar &I) override { return I.get("II1") * I.get("II2"); }
+  size_t mult(const Invar &I) override { return I.get("II1") * I.get("II2"); }
 
   // We always must have I1 >= 0 and I2 >= 0.
   bool Invar_allowed(const Invar &I) override { return (I.get("II1") > 0) && (I.get("II2") > 0); }

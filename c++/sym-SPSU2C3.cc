@@ -15,7 +15,7 @@ class SymmetrySPSU2C3 : public SymC3 {
     InvarSinglet = Invar(1, 0); // spin-singlet, C_3 P=0
   }
 
-  int mult(const Invar &I) override { return I.get("SS"); }
+  size_t mult(const Invar &I) override { return I.get("SS"); }
 
   bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
 

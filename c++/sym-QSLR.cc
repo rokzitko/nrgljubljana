@@ -19,7 +19,7 @@ class SymmetryQSLR : public SymLR {
   }
 
   // Multiplicity of the I=(Q,SS,P) subspace = 2S+1 = SS.
-  int mult(const Invar &I) override {
+  size_t mult(const Invar &I) override {
     return I.get("SS"); // spin multiplicity
   }
 

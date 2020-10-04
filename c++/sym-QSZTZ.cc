@@ -22,7 +22,7 @@ class SymmetryQSZTZ : public Symmetry {
     Invar_f      = Invar(1, 2, 1);
   }
 
-  int mult(const Invar &I) override { return 1; }
+  size_t mult(const Invar &I) override { return 1; }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SZ"), I2.get("SZ"), I3.get("SZ"))

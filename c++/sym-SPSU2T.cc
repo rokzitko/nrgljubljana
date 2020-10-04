@@ -18,7 +18,7 @@ class SymmetrySPSU2T : public Symmetry {
   }
 
   // Multiplicity of the (SS,T) subspace is (2S+1 = SS) times (2T+1).
-  int mult(const Invar &I) override { return I.get("SS") * (2 * I.get("T") + 1); }
+  size_t mult(const Invar &I) override { return I.get("SS") * (2 * I.get("T") + 1); }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))

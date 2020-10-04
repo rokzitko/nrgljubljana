@@ -18,7 +18,7 @@ class SymmetryISOSZ : public SymField {
   }
 
   // Multiplicity of the I=(II,SSZ) subspace = (2I+1) = II.
-  int mult(const Invar &I) override {
+  size_t mult(const Invar &I) override {
     return I.get("II"); // isospin multiplicity
   }
 
