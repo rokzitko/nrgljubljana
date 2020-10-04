@@ -15,7 +15,7 @@ z=0.5
 Lambda=2.0
 
 Nmax=2
-keep=10000
+keep=100
 
 ops=SZ
 

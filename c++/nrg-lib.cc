@@ -297,7 +297,7 @@ class Eigen {
   // Returns the number of eigenpairs after truncation.
   size_t getnrpost() const { return nrpost; }
   // Truncate to nrpost states.
-  void truncate_prepare(size_t _nrpost) {
+  void truncate_prepare_subspace(size_t _nrpost) {
     nrpost = _nrpost;
     my_assert(nrpost <= nr);
   }
@@ -1411,7 +1411,8 @@ DiagInfo diag_before_truncation, diag_after_truncation; // ZZZ
 DensMatElements init_rho(const Step &step, const Params &P)
 {
   nrglog('@', "@ init_rho()");
-  return P.lastall ? init_rho_impl(step, diag_before_truncation) : init_rho_impl(step, diag_after_truncation);
+//  return P.lastall ? init_rho_impl(step, diag_before_truncation) : init_rho_impl(step, diag_after_truncation);
+  return P.keep_all_states_in_last_step() ? init_rho_impl(step, diag_before_truncation) : init_rho_impl(step, diag_after_truncation);
 }
 
 /*** Truncation ***/
@@ -1449,32 +1450,25 @@ t_eigen highest_retained_energy(const DiagInfo &diag) {
 // truncate_prepare() computes the number of states to keep for each invariant subspace, while the actual
 // runcation is performed by trucate_perform(). Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
-bool truncate_prepare(const Step &step, DiagInfo &diag) {
+bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
   nrglog('@', "@ truncate_prepare()");
   bool notenough = false;
   t_eigen Emax      = highest_retained_energy(diag);
   size_t nrkept     = 0; // counter of states actually retained
-  size_t nrkeptmult = 0; // counter of states actually retained,
-                         // taking into account the multiplicity
+  size_t nrkeptmult = 0; // counter of states actually retained, taking into account the multiplicity
   for (auto &[I, eig] : diag) {
-    const size_t nrc = eig.getnr(); // number of (calculated) states in the subspace
-    my_assert(nrc > 0);
-    // Count the number of elements to keep
-    size_t count = count_if(begin(eig.value), end(eig.value), [=](double e) { return e <= Emax; });
-    my_assert(count <= nrc);
-    if (step.last()) {  // Overrides
-      // Full Fock space algorithms: keep all states in the last iteration
-      if (P.cfs_flags() && !P.lastalloverride) count = nrc;
-      // lastall -> Unconditionally keep all states in the last iteration
-      if (P.lastall) count = nrc;
-    }
-    if (count == nrc && eig.value(nrc - 1) != Emax && nrc < eig.getrmax())
+    const auto nrc = eig.getnr(); // number of computed states in the subspace
+    // number of elements to keep
+    auto count = count_if(begin(eig.value), end(eig.value), [=](double e) { return e <= Emax; });
+    if (step.last() && P.keep_all_states_in_last_step())
+      count = nrc;
+    if (count == nrc && eig.value(nrc-1) != Emax && nrc < eig.getrmax())
       notenough = true;
-    // We determined that all calculated states in this invariant subspace will be retained (and that perhaps
-    // additional should have been computed). getrmax() returns the dimensionality of the invariant subspace (i.e.
-    // the maximal number of eigenpairs), while the variable nrc is the number of actually calculated states, which
-    // is only equal to the dimensionality if in the computational scheme used all the states are retained.
-    diag[I].truncate_prepare(count);
+      // We determined that all calculated states in this invariant subspace will be retained (and that perhaps
+      // additional should have been computed). getrmax() returns the dimensionality of the invariant subspace (i.e.
+      // the maximal number of eigenpairs), while the variable nrc is the number of actually calculated states, which
+      // is only equal to the dimensionality if in the computational scheme used all the states are retained.
+    diag[I].truncate_prepare_subspace(count);
     nrkept += count;
     nrkeptmult += count * mult(I);
   }
@@ -1662,7 +1656,7 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
     my_assert(parity == 1 || parity == -1);
   else
     my_assert(parity == 1);
-  for (const auto &[I, eig] : diag) { // XXX: eig not used. simplify!
+  for (const auto I : diag | boost::adaptors::map_keys) {
     const Invar I1 = I;
     Invar Ip = I;
     if (parity == -1) Ip.InvertParity(); // XXX oneline
@@ -2282,7 +2276,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev,
     subtract_groundstate_energy(step, diag);
     auto cluster_mapping = find_clusters(sort_energies(diag), P.fixeps);
     fix_splittings(diag, cluster_mapping);
-    notenough = truncate_prepare(step, diag);
+    notenough = truncate_prepare(step, diag, P);
     if (notenough) {
       cout << "Insufficient number of states computed." << endl;
       if (P.restart) {
@@ -2431,7 +2425,7 @@ void nrg_ZBW(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm
   }
   find_groundstate(diag);
   subtract_groundstate_energy(step, diag);
-  truncate_prepare(step, diag); // determine # of kept and discarded states
+  truncate_prepare(step, diag, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax empty_qsrmax{};
   after_diag(step, iterinfo, diag, empty_qsrmax, dm, oprecalc);

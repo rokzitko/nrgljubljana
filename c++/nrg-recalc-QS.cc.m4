@@ -176,7 +176,8 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Q1") {
@@ -189,7 +190,8 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Q2") {
@@ -202,7 +204,8 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Qtot") {
@@ -215,8 +218,11 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
+
+  my_assert_not_reached();
 }
 
 #undef Q2

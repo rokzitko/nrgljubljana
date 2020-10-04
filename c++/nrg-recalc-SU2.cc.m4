@@ -105,7 +105,8 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
 #ifdef NRG_COMPLEX
@@ -122,7 +123,8 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 #endif // NRG_COMPLEX
 
@@ -140,5 +142,8 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
         default: my_assert_not_reached();
       }
     }
+    return;
   }
+
+  my_assert_not_reached();
 }

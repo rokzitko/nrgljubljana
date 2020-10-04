@@ -1,8 +1,0 @@
-[param]
-symtype=U1
-model=SIAM
-
-Nmax=2
-keep=20
-
-pol2x2=true

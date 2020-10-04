@@ -2,3 +2,12 @@ test74_QSZ
 test75_QSZ_polarized
 test76_QSZ_polarized2
 test77_QSZ_polarized3
+legacy_qs_nrg1
+legacy_qs_nrg1-tricpp
+legacy_qsz1
+legacy_qsz1polarized
+legacy_qsz2
+legacy_qsz3
+legacy_qsz3-restart
+legacy_qsz_anderson
+legacy_qsz_kondo

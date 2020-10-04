@@ -104,5 +104,8 @@ void SymmetryDBLISOSZ::recalc_global(const Step &step, const DiagInfo &diag, con
         default: my_assert_not_reached();
       }
     }
+    return;
   }
+
+  my_assert_not_reached();
 }

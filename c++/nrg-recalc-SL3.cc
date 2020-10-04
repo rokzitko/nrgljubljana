@@ -114,7 +114,8 @@ void SymmetrySL3::recalc_global(const Step &step, const DiagInfo &diag, const QS
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-qtot.dat"
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "N1") {
@@ -122,7 +123,8 @@ void SymmetrySL3::recalc_global(const Step &step, const DiagInfo &diag, const QS
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-N1.dat"
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "N2") {
@@ -130,7 +132,8 @@ void SymmetrySL3::recalc_global(const Step &step, const DiagInfo &diag, const QS
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-N2.dat"
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "N3") {
@@ -138,6 +141,9 @@ void SymmetrySL3::recalc_global(const Step &step, const DiagInfo &diag, const QS
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-N3.dat"
-    } // LOOP
+    }
+    return;
   }
+
+  my_assert_not_reached();
 }

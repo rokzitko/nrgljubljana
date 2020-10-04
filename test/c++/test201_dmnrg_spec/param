@@ -28,3 +28,5 @@ bins=500
 
 goodE=2.0
 NN1=true
+
+fixeps=1e-10

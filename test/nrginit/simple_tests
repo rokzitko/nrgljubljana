@@ -39,7 +39,6 @@ nrginit9_calcopq_d1
 nrginit38_data_has
 nrginit39_cosine
 nrginit40_polarized
-nrginit41_pol2x2
 nrginit42_discY
 nrginit43_discC
 nrginit44_bandrescale
@@ -54,3 +53,11 @@ nrginit103_ZERO_COUPLED
 nrginit104_bcsgap
 nrginit105_bcsgap12
 nrginit106_flat_with_bulk_field
+legacy_model_kondo_qs
+legacy_model_kondo_qsz
+legacy_model_kondo_spsu2
+legacy_model_kondo_spu1
+legacy_model_twokondo1
+legacy_parser
+legacy_siam_z=0.5
+legacy_siam_z=1

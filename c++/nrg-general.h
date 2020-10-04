@@ -39,6 +39,8 @@ using namespace std;
 #include <unistd.h>
 #include <cstdlib> // mkdtemp
 
+#include <boost/range/adaptor/map.hpp>
+
 // ublas matrix & vector containers
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>

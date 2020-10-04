@@ -176,7 +176,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Iztot") {
@@ -192,7 +193,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Ixtot") {
@@ -208,7 +210,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Iptot") {
@@ -224,7 +227,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Imtot") {
@@ -240,7 +244,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Qdiff") {
@@ -253,7 +258,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Q1") {
@@ -266,7 +272,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Q2") {
@@ -279,7 +286,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Q1UP") {
@@ -292,7 +300,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Q2UP") {
@@ -305,7 +314,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Q1DO") {
@@ -318,7 +328,8 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Q2DO") {
@@ -331,8 +342,11 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
+
+  my_assert_not_reached();
 }
 
 #undef Q2

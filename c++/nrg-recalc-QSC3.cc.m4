@@ -84,6 +84,8 @@ MatrixElements SymmetryQSC3::recalc_doublet(const DiagInfo &diag, const QSrmax &
     Ip = Invar(q1 - 1, ss1 - 1, p1);
     //    xRECALC_TAB("qsc3/qsc3-doubletm.dat", QSC3::LENGTH_D_3CH,
     //    					     Invar(1, 2, 0));
+
+    my_error("not implemented");
   }
 #endif
   return cnew;
@@ -110,6 +112,8 @@ MatrixElements SymmetryQSC3::recalc_triplet(const DiagInfo &diag, const QSrmax &
     Ip = Invar(q1, ss1 - 2, p1);
     //    xRECALC_TAB("qsc3/qsc3-tripletm.dat", QSC3::LENGTH_Tpm_3CH,
     //    					     Invar(0, 3, 0));
+
+    my_error("not implemented");
   }
 #endif
   return cnew;

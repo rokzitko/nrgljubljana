@@ -99,7 +99,8 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
 #ifdef NRG_COMPLEX
@@ -113,7 +114,8 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 #endif
 
@@ -127,7 +129,8 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Qtot") {
@@ -140,7 +143,8 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Iztot") {
@@ -153,7 +157,8 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Ixtot") {
@@ -166,7 +171,8 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
 #ifdef NRG_COMPLEX
@@ -180,7 +186,8 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 #endif
 
@@ -194,7 +201,8 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Imtot") {
@@ -207,6 +215,9 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
+  
+  my_assert_not_reached();
 }

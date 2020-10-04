@@ -160,8 +160,10 @@ void SymmetryQSZ::recalc_global(const Step &step, const DiagInfo &diag, const QS
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
+
   if (name == "Q1u") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
@@ -172,8 +174,10 @@ void SymmetryQSZ::recalc_global(const Step &step, const DiagInfo &diag, const QS
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
+
   if (name == "Q1d") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
@@ -184,6 +188,9 @@ void SymmetryQSZ::recalc_global(const Step &step, const DiagInfo &diag, const QS
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
+
+  my_assert_not_reached();
 }

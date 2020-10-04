@@ -123,7 +123,8 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Iztot") {
@@ -139,7 +140,8 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Ixtot") {
@@ -155,7 +157,8 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Iptot") {
@@ -171,7 +174,8 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Imtot") {
@@ -187,6 +191,9 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
+
+  my_assert_not_reached();
 }

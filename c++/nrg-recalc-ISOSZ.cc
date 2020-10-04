@@ -401,5 +401,8 @@ void SymmetryISOSZ::recalc_global(const Step &step, const DiagInfo &diag, const 
         default: my_assert_not_reached();
       }
     }
+    return;
   }
+  
+  my_assert_not_reached();
 }

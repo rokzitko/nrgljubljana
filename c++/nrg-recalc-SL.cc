@@ -167,7 +167,8 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "Qtot") {
@@ -180,7 +181,8 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "N1") {
@@ -193,7 +195,8 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "N2") {
@@ -206,7 +209,8 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
 
   if (name == "N3") {
@@ -219,6 +223,9 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
           break;
         default: my_assert_not_reached();
       }
-    } // LOOP
+    }
+    return;
   }
+
+  my_assert_not_reached();
 }

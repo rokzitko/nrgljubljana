@@ -465,19 +465,15 @@ struct Params {
   param<bool> done{"done", "Create DONE file?", "true", all};                         // N
   param<bool> calc0{"calc0", "Perform calculations at 0-th iteration?", "true", all}; // N
    
-  // Evaluate rho with full or truncated spectrum of states. This is different from the
-  // number of states used in the evaluation of spectra (cf. lastall). Relevant for calculations 
-  // where only the DMNRG algorithm is enabled.
-  param<bool> calc_rho_after_truncation{"calc_rho_after_truncation", "Calculation mode for DMNRG", "false", all};
-
-  // If dmnrg=true, cfs=false, fdm=false, setting lastall=true will enforce "keeping" all states in the last step of
-  // the NRG iteration.
+  // If only dmnrg is enabled, setting lastall=true will force "keeping" all states in the last step and the density
+  // matrix will be initialized with all the states. Note that by default this feature is disabled, which is
+  // especially appropriate for T->0 calculations.
   param<bool> lastall{"lastall", "Keep all states in the last iteratio for DMNRG", "false", all}; // N
 
-  // If lastalloverride=true, then "lastall" is not set to true
-  // automatically for CFS and FDM approaches.
+  // If lastalloverride=true, then "lastall" is not set to true automatically for full-Fock-space (CFS and FDM)
+  // approaches.
   param<bool> lastalloverride{"lastalloverride", "Override automatic lastall setting", "false", all}; // N
-
+  
   // ***********************************
   // Deprecated (candidates for removal)
 
@@ -551,9 +547,10 @@ struct Params {
   // of 2 is valid for all other symmetry types.
   size_t spin = 2;
 
-  // Returns true if any of the CFS or related spectral function
-  // calculations are requested.
+  // Returns true if any of the CFS or related spectral function calculations are requested.
   bool cfs_flags() const { return cfs || fdm; }
+
+  bool keep_all_states_in_last_step() const { return lastall || (cfs_flags() && !lastalloverride); }
 
   // What is the last iteration completed in the previous NRG runs?
   void init_laststored(const Workdir &workdir) {
