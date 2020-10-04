@@ -142,9 +142,8 @@ class Invar {
     }
     return f;
   }
-  void InvertParity() {
-    // By convention (for QSLR, QSZLR, ISOLR, ISOSZLR), parity is the
-    // quantum number named "P"
+  void InvertMyParity() {
+    // By convention (for QSLR, QSZLR, ISOLR, ISOSZLR), parity is the quantum number named "P"
     const auto i = name.find("P");
     if (i == end(name)) my_error("Critical error: no P quantum number");
     const auto index = i->second;
@@ -152,7 +151,7 @@ class Invar {
   }
   Invar InvertParity() const {
     Invar I(data);
-    I.InvertParity();
+    I.InvertMyParity();
     return I;
   }
 };

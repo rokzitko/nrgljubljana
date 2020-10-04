@@ -81,9 +81,9 @@ sym_map all_syms;
 
 class Symmetry {
   protected:
+  size_t combs{};
   size_t channels{};
   bool substeps{};
-  int combs{};
 
   public:
   Symmetry() = default;
@@ -95,13 +95,14 @@ class Symmetry {
   Invar Invar_f;      // QNs for f operator
 
   // XXX: set in init() ?
-  void set_channels(size_t ch) { channels = ch; }
-  void set_substeps(bool sb) { substeps = sb; }
-  void set_combs(int _combs) {
+  void set(size_t _combs, size_t _channels, bool _substeps) {
     combs = _combs;
     In.resize(combs + 1); // XXX: global
     QN.resize(combs + 1); // XXX
+    channels = _channels;
+    substeps = _substeps;
   }
+  size_t get_combs() const { return combs; }
 
   // For some symmetry types with two-channels we distinguish between
   // even and odd parity with respect to the channel-interchange
@@ -137,12 +138,6 @@ class Symmetry {
   // Setup the combinations of quantum numbers that are used in the
   // construction of the Hamiltonian matrix.
   virtual void load() = 0;
-
-  void report() {
-    if (!logletter('Q')) return;
-    for (size_t i = 1; i <= P.combs; i++) cout << "In[" << i << "]=(" << In[i] << ")" << endl;
-    for (size_t i = 1; i <= P.combs; i++) cout << "QN[" << i << "]=(" << QN[i] << ")" << endl;
-  }
 
   // Is an invariant subspace with given quantum numbers allowed?
   virtual bool Invar_allowed(const Invar &I) { return true; }

@@ -1632,7 +1632,7 @@ void dump_annotated(const Step &step, const DiagInfo &diag, bool scaled = true, 
 // parity -1). Generic implementation, valid for all symmetry types.
 MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
   MatrixElements nnew;
-  std::vector<Recalc> recalc_table(P.combs);
+  std::vector<Recalc> recalc_table(Sym->get_combs());
   const InvarVec input = input_subspaces();
   my_assert(Sym->islr() ? parity == 1 || parity == -1 : parity == 1);
   for (const auto I : diag | boost::adaptors::map_keys) {
@@ -1647,7 +1647,7 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
       r.INp = (parity == -1 ? anc.InvertParity() : anc);
       recalc_table[i - 1] = r; // mind the -1 shift!
     }
-    const auto Iop = parity == -1 ? (Sym->InvarSinglet).InvertParity() : Sym->InvarSinglet;
+    const auto Iop = (parity == -1 ? (Sym->InvarSinglet).InvertParity() : Sym->InvarSinglet);
     recalc_general(diag, qsrmax, nold, nnew, I1, Ip, &recalc_table[0], P.combs, Iop);
   }
   return nnew;
@@ -2477,11 +2477,8 @@ void set_symmetry(const string &sym_string) {
   TD::init();
   my_assert(P.channels > 0); // must be set at this point
   Sym->init();
-  Sym->set_combs(P.combs);
-  Sym->set_channels(P.channels);
-  Sym->set_substeps(P.substeps);
+  Sym->set(P.combs, P.channels, P.substeps);
   Sym->load(); // This call actually initializes the data structures.
-  Sym->report();
 }
 
 void calculation(Params &P) {

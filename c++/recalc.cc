@@ -127,7 +127,7 @@ void recalc_general(const DiagInfo &dg,
   // combination of subspaces is not created in the matrix "cnew". If
   // triangle_inequality() malfunctions, this will trigger errors in
   // calc_trace_singlet().
-  if (!Sym->triangle_inequality(I1, Ip, Iop)) return;
+// XXX  if (!Sym->triangle_inequality(I1, Ip, Iop)) return;
   const Eigen &dgI1 = dg.at(I1);
   const Eigen &dgIp = dg.at(Ip);
   const size_t dim1 = dgI1.getnr();
