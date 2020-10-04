@@ -1,0 +1,124 @@
+NRG Ljubljana 2020.03 (c) Rok Zitko, rok.zitko@ijs.si, 2005-2019
+Mathematica version: 12.1.0 for Linux x86 (64-bit) (March 14, 2020)
+sneg version: 1.251
+Loading module initialparse.m
+Options: {}
+Loading module models.m
+models started
+Loading module custommodels.m
+custommodels Rok Zitko
+def1ch, NRDOTS=1
+H0=coefzeta[1, 0]*(-1 + nc[f[0, 0, 0], f[1, 0, 0]] + nc[f[0, 0, 1], f[1, 0, 1]])
+NRDOTS:1 CHANNELS:1 COEFCHANNELS:1
+basis:{d[], f[0]}
+Hamiltonian generated. U/2 - coefzeta[1, 0] - (Bz*nc[d[0, 0], d[1, 0]])/2 + delta*nc[d[0, 0], d[1, 0]] - (U*nc[d[0, 0], d[1, 0]])/2 + (Bx*nc[d[0, 0], d[1, 1]])/2 + I/2*By*nc[d[0, 0], d[1, 1]] + gammaPolCh[1]*nc[d[0, 0], f[1, 0, 0]] + 
+   (Bx*nc[d[0, 1], d[1, 0]])/2 - I/2*By*nc[d[0, 1], d[1, 0]] + (Bz*nc[d[0, 1], d[1, 1]])/2 + delta*nc[d[0, 1], d[1, 1]] - (U*nc[d[0, 1], d[1, 1]])/2 + gammaPolCh[1]*nc[d[0, 1], f[1, 0, 1]] + gammaPolCh[1]*nc[f[0, 0, 0], d[1, 0]] + 
+   coefzeta[1, 0]*nc[f[0, 0, 0], f[1, 0, 0]] + gammaPolCh[1]*nc[f[0, 0, 1], d[1, 1]] + coefzeta[1, 0]*nc[f[0, 0, 1], f[1, 0, 1]] - U*nc[d[0, 0], d[0, 1], d[1, 0], d[1, 1]]
+H-conj[H]=0
+SCALE[0]=1.1392385458963108
+faktor=2.150111363073666
+Generating basis
+Wilson chain
+Tmin=0.00001
+Tmin=0.00001 ==> Nmax=12
+DISCNMAX=12
+Discretization checksum [-1] (channel 1): 9.32714479721899225572767445817366`10.*^-64
+BAND="flat" thetaCh={"2."}
+Discretization (channel 1)
+"xitable" (channel 1)
+0.4255553632
+0.1850395386
+0.07716159686
+0.03162115538
+0.0129175667
+0.005274139489
+0.002153196886
+0.0008790415645
+0.000358867394
+0.0001465070122
+0.00005981123811
+0.00002441783576
+9.968539711e-6
+"zetatable" (channel 1)
+0.e-999
+0.e-999
+0.e-998
+0.e-997
+0.e-996
+0.e-995
+0.e-994
+0.e-993
+0.e-992
+0.e-991
+0.e-990
+0.e-989
+0.e-988
+Precision last xi:983.1370728129046
+Precision last zeta: 0.
+Discretization done.
+thetaCh={"2."}
+theta0Ch={"0.12"}
+gammaPolCh={"0.19544100476116796"}
+checkdefinitions[] -> -0.718235980955328 + 0.*I
+calcgsenergy[]
+diagvc[{-2}]
+Generating matrix: ham_-2
+hamil={{(U - 2*coefzeta[1, 0])/2}}
+dim={1, 1}
+det[vec]=1. 1-abs=0.
+orthogonality check=0.
+diagvc[{-1}]
+Generating matrix: ham_-1
+hamil={{U/2, 0, gammaPolCh[1], 0}, {0, U/2, 0, gammaPolCh[1]}, {gammaPolCh[1], 0, -Bz/2 + delta - coefzeta[1, 0], (Bx + I*By)/2}, {0, gammaPolCh[1], (Bx - I*By)/2, Bz/2 + delta - coefzeta[1, 0]}}
+dim={4, 4}
+det[vec]=1.0000000000000002 + 0.*I 1-abs=-2.220446049250313*^-16
+orthogonality check=1.6237011735142914*^-15
+diagvc[{0}]
+Generating matrix: ham_0
+hamil={{U/2 + coefzeta[1, 0], 0, -gammaPolCh[1], gammaPolCh[1], 0, 0}, {0, -Bz/2 + delta, 0, (Bx + I*By)/2, 0, 0}, {-gammaPolCh[1], 0, -Bz/2 + delta, 0, (Bx + I*By)/2, -gammaPolCh[1]}, 
+   {gammaPolCh[1], (Bx - I*By)/2, 0, Bz/2 + delta, 0, gammaPolCh[1]}, {0, 0, (Bx - I*By)/2, 0, Bz/2 + delta, 0}, {0, 0, -gammaPolCh[1], gammaPolCh[1], 0, (4*delta + U - 2*coefzeta[1, 0])/2}}
+dim={6, 6}
+det[vec]=-0.9999911783324134 + 0.004200387762030945*I 1-abs=0.
+orthogonality check=1.0762866189839902*^-14
+diagvc[{1}]
+Generating matrix: ham_1
+hamil={{-Bz/2 + delta + coefzeta[1, 0], (Bx + I*By)/2, -gammaPolCh[1], 0}, {(Bx - I*By)/2, Bz/2 + delta + coefzeta[1, 0], 0, -gammaPolCh[1]}, {-gammaPolCh[1], 0, (4*delta + U)/2, 0}, {0, -gammaPolCh[1], 0, (4*delta + U)/2}}
+dim={4, 4}
+det[vec]=2.5469617493883073*^-12 - 0.9999999999999997*I 1-abs=3.3306690738754696*^-16
+orthogonality check=3.093556879978362*^-15
+diagvc[{2}]
+Generating matrix: ham_2
+hamil={{2*delta + U/2 + coefzeta[1, 0]}}
+dim={1, 1}
+det[vec]=1. 1-abs=0.
+orthogonality check=0.
+Lowest energies (absolute):{-0.21408203391278685, -0.07180148189768064, -0.07180148189768064, -0.06286238891480844, -0.06286238891480843, -0.005000000000000004, 0.0000817770467838512, 0.0050000000000000044, 0.5, 0.5, 0.500000000000001, 
+   0.5668014818976808, 0.5668014818976812, 0.5678623889148083, 0.5678623889148084, 0.7140002568660031}
+Lowest energies (GS shifted):{0., 0.1422805520151062, 0.1422805520151062, 0.1512196449979784, 0.1512196449979784, 0.20908203391278685, 0.2141638109595707, 0.21908203391278686, 0.7140820339127869, 0.7140820339127869, 0.7140820339127878, 
+   0.7808835158104677, 0.7808835158104681, 0.7819444228275951, 0.7819444228275954, 0.92808229077879}
+Scale factor SCALE(Ninit):1.1392385458963108
+Lowest energies (shifted and scaled):{0., 0.1248909216841545, 0.1248909216841545, 0.13273747236054445, 0.13273747236054445, 0.18352787892046685, 0.18798855755979932, 0.19230567180328437, 0.6268064195027508, 0.6268064195027508, 
+   0.6268064195027516, 0.6854433767390633, 0.6854433767390637, 0.6863746189454906, 0.6863746189454908, 0.8146514126667028}
+makeireducf U1
+Loading module operators.m
+operators.m started
+s: q_d^2 1 - nc[d[0, 0], d[1, 0]] - nc[d[0, 1], d[1, 1]] - 2*nc[d[0, 0], d[0, 1], d[1, 0], d[1, 1]]
+d: A_d_u d[#1, #2] & 
+d: A_d_d d[#1, #2] & 
+s: SXd nc[d[0, 0], d[1, 1]]/2 + nc[d[0, 1], d[1, 0]]/2
+s: SYd I/2*nc[d[0, 0], d[1, 1]] - I/2*nc[d[0, 1], d[1, 0]]
+s: SZd -nc[d[0, 0], d[1, 0]]/2 + nc[d[0, 1], d[1, 1]]/2
+operators.m done
+Loading module customoperators.m
+"customoperators Rok Zitko"
+Customoperators done.
+Loading module modeloperators.m
+Can't load modeloperators.m. Continuing.
+Timing report
+{basis, 0.005511`4.192775404521446}
+{ham, 0.188931`5.028878212430419}
+{maketable, 0.754636`6.329282512924978}
+{xi, 0.134364`5.579827917752155}
+{_, 0}
+data
+"Success!"

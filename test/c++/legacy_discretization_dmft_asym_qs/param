@@ -1,0 +1,30 @@
+[dmft]
+gamma=1+0.7 eps
+
+[param]
+tri=cpp
+preccpp=1200
+prec=50
+
+symtype=QS
+
+U=0.5
+Gamma=0.2
+
+discretization=Yoshida
+Lambda=3.0
+z=1
+
+band=dmft
+
+Tmin=1e-8
+keep=200
+
+ops=n_d n_d^2 A_d
+specd=A_d-A_d
+
+safeguard=0.001
+
+cfs=true
+
+dumpannotated=100

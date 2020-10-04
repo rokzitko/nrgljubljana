@@ -1,0 +1,42 @@
+# see also gwdg/BCS/discretization_compare
+
+[param]
+symtype=SPSU2
+model=SIAM
+
+U=1.0
+Gamma=0.06
+delta=0.1
+
+discretization=Z
+Lambda=4.0
+z=1
+
+# T_K=1e-4
+
+# one combination...
+bcsgap=1e-3
+
+Tmin=1e-7
+keep=1000
+keepmin=200
+keepenergy=10.0
+
+ops=n_d n_d^2 A_d Ac_d pair_d
+
+specd=A_d-A_d Ac_d-Ac_d Ac_d-A_d
+specs=n_d-n_d
+
+safeguard=0.001
+
+dumpannotated=100
+dumpscaled=false
+
+cfs=true
+
+smooth=new
+bins=200
+alpha=0.8
+
+broaden_ratio=1.03
+

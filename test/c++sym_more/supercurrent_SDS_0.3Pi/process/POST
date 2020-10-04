@@ -1,0 +1,17 @@
+#!/usr/bin/env perl
+system("report custom c jc2");
+
+$_ = `tail -n 1 c-jc2.dat`;
+chomp;
+my ($t, $j0) = split;
+
+$Delta = `getparam bcsgap ../param`;
+
+$j = $j0/$Delta;
+
+print "$j\n";
+
+$goal = 0.416096;
+$error = ($j-$goal)/$j;
+
+print "Should be: $goal\nrel error=$error\n";

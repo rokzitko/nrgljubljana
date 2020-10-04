@@ -1,0 +1,21 @@
+[param]
+symtype=QS
+
+U=1.0
+Gamma=0.06
+
+discretization=Yoshida
+Lambda=3.0
+z=1
+
+band=cosine
+
+Nmax=2
+keep=500
+
+ops=n_d n_d^2
+
+strategy=kept
+safeguard=0.001
+
+dumpannotated=100

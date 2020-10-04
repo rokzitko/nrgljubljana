@@ -1,0 +1,30 @@
+[extra]
+Jkondo=0.2
+Bx=1e-3
+By=0
+Bz=0
+spin=1/2
+
+[param]
+symtype=SU2
+model=KONDO
+variant=FIELDXYZ
+
+fixeps=1e-10
+
+discretization=Z
+Lambda=4.0
+z=1
+
+Tmin=1e-10
+keep=1000
+keepenergy=10.0
+keepmin=10
+
+ops=SX SX2 SY SY2 SZ SZ2 SXtot SYtot SZtot
+specchit=SXtot-SXtot SYtot-SYtot SZtot-SZtot
+
+strategy=kept
+safeguard=1e-5
+
+dumpannotated=100

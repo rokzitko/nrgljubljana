@@ -1,0 +1,43 @@
+# Rok Zitko, rok.zitko@ijs.si, apr 2008
+
+[extra]
+spin=1
+Jkondo=0.2
+Bx=0
+Bz=0
+anD=0
+anE=0
+
+[param]
+
+fixeps=1e-14
+
+symtype=QSZ
+model=aniso.m
+
+Lambda=2.
+Tmin=1e-4
+betabar=0.75
+keepmin=500
+keepenergy=6.0
+keep=1000
+safeguard=0.01
+
+discretization=Campo
+z=1
+
+ops=SZ SZf0 A_f O_f
+
+specd=A_f-A_f-u A_f-A_f-d O_f-O_f-u O_f-O_f-d O_f-A_f-u O_f-A_f-d
+
+cfs=true
+
+prec_xy=12
+broaden_max=2
+broaden_raio=1.03
+broaden_min=1e-14
+
+smooth=new
+alpha=0.8
+omega0=1e-99
+goodE=1.75

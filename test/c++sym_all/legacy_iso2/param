@@ -1,0 +1,30 @@
+# Regression test for ISO2 symmetry
+
+[extra]
+tpp=0.01
+
+[param]
+symtype=ISO2
+model=dqd.m
+
+U=0.2
+delta=0.0
+Gamma=0.01
+
+betabar=0.75
+
+Lambda=10.0
+Nmax=2
+keepmin=500
+keepenergy=12.0
+keep=8000
+safeguard=0.01
+discretization=Campo
+z=1.0
+
+strategy=kept
+ops=q_d^2 q_aq_d SaSd
+
+dumpannotated=100
+dumpprecision=18
+

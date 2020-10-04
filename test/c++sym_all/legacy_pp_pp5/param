@@ -1,0 +1,25 @@
+[extra]
+spin=1
+Jkondo1=0.1
+Jkondo2=0.2
+B=0.01
+
+[param]
+symtype=PP
+model=KONDO2CH
+
+bcsgap=0.05
+
+discretization=Yoshida
+Lambda=4.0
+z=1.0
+
+Nmax=2
+keep=300
+
+ops=q_f q_f^2 pair_f
+
+strategy=kept
+safeguard=0.001
+
+dumpannotated=100

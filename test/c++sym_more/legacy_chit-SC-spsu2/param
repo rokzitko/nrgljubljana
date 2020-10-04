@@ -1,0 +1,26 @@
+[param]
+symtype=SPSU2
+model=SIAM
+
+U=0.01
+Gamma=0.0005
+delta=0
+
+bcsgap=0
+
+discretization=Z
+Lambda=2.5
+z=1
+
+Tmin=1e-8
+keep=1000
+keepenergy=6.0
+keepmin=10
+
+ops=Qtot Ixtot Iztot q_d q_d^2 Ix_d Iz_d Ix_d^2 Iz_d^2
+specchit=Qtot-Qtot Ixtot-Ixtot Iztot-Iztot
+
+strategy=kept
+safeguard=1e-5
+
+dumpannotated=100

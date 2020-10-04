@@ -1,0 +1,24 @@
+[param]
+symtype=QS
+model=SIAM
+
+U=1.0
+Gamma=0.06
+delta=0.1
+
+discretization=Z
+Lambda=3.0
+
+Nmax=30
+keep=500
+
+ops=n_d I
+
+fdm=true
+fdmexpv=true
+fdmexpvn=0
+
+T=0.606826
+
+width_custom=30
+prec_custom=20

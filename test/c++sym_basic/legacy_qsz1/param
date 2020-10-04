@@ -1,0 +1,33 @@
+[extra]
+B=1e-2
+
+[param]
+symtype=QSZ
+model=SIAM
+variant=MAGFIELD
+
+U=1.0
+Gamma=0.06
+
+discretization=Yoshida
+Lambda=8.0
+z=0.5
+
+Nmax=10
+keep=300
+
+ops=n_d n_d^2 n_f n_f^2 q_d q_d^2 q_f q_f^2 n_d_up n_d_down n_d_ud n_d_up^2 n_d_down^2 hop0 A_d A_f P0 Pu Pd P2 SZd SZ2d SdSd SdSf n_dn_f q_dq_f ntot ntot^2 s^2
+
+specd=A_d-A_d-d A_f-A_f-d A_d-A_f-d A_d-A_d-u A_f-A_f-u A_d-A_f-u
+
+strategy=kept
+safeguard=0.001
+
+dmnrg=true
+cfs=true
+finite=true
+
+dumpannotated=100
+statereport=true
+
+broaden_max=2.

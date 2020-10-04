@@ -1,0 +1,36 @@
+[extra]
+spin=1
+Jkondo=0.1
+g=2
+
+Bx=0
+By=0
+Bz=0
+
+anD=0
+anE=0
+
+kxz=1e-3
+kyz=0
+
+[param]
+symtype=SU2
+model=aniso.m
+
+fixeps=1e-12
+
+Lambda=3
+Tmin=1e-16
+keepmin=100
+keepenergy=10.0
+keep=6000
+safeguard=1e-5
+
+discretization=Z
+
+strategy=kept
+ops=SZ SY SX SX2 SY2 SZ2 O_f_u O_f_d SXtot SYtot SZtot
+
+specchit=SXtot-SXtot SYtot-SYtot SZtot-SZtot SXtot-SYtot SYtot-SXtot SXtot-SZtot SZtot-SXtot SYtot-SZtot SZtot-SYtot
+
+dumpannotated=100

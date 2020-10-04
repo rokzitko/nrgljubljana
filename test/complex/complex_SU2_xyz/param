@@ -1,0 +1,32 @@
+[extra]
+# |B|=0.01
+Bx=0.0057735026918962576451
+By=0.0057735026918962576451
+Bz=0.0057735026918962576451
+
+[param]
+symtype=SU2
+model=SIAM
+variant=MAGFIELDXYZ
+
+U=1.0
+Gamma=0.06
+
+discretization=Z
+Lambda=6
+z=1
+
+Tmin=1e-5
+keep=300
+
+ops=SZd SYd SXd SXYZd q_d^2 A_d_u A_d_d
+specd=A_d_u-A_d_u A_d_d-A_d_d
+
+strategy=kept
+safeguard=1e-5
+
+fdm=true
+
+dumpannotated=100
+
+broaden_max=2.

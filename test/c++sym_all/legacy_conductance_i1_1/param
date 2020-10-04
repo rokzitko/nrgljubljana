@@ -1,0 +1,33 @@
+[param]
+symtype=QS
+model=SIAM
+
+# cf. Yoshida et al. arxiv:0906.4063
+U=3.0
+Gamma=0.1
+delta=1.0
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Tmin=1e-10
+keepmin=500
+keepenergy=10
+keep=5000
+
+ops=n_d^2 A_d A_f
+
+specgt=A_d-A_d A_f-A_f
+
+speci1t=A_d-A_d
+speci2t=A_d-A_d
+
+strategy=kept
+safeguard=1e-4
+
+calc0=true
+
+dumpannotated=100
+
+gtp=0.7

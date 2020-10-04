@@ -1,0 +1,27 @@
+[extra]
+B=0.1
+
+[param]
+symtype=U1
+model=SIAM
+variant=MAGFIELD
+
+U=1.0
+Gamma=0.06
+
+discretization=Yoshida
+Lambda=3.0
+z=1
+
+Nmax=8
+keep=300
+
+ops=SZd SZ2d SPd SMd SXd
+specs=SZd-SZd SPd-SPd SPd-SMd SXd-SXd
+
+strategy=kept
+safeguard=0.001
+
+finite=true
+
+dumpannotated=300

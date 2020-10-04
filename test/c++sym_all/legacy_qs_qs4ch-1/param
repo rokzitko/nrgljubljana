@@ -1,0 +1,17 @@
+[param]
+symtype=QS
+model=nul.m
+
+Lambda=10
+Nmax=1
+keep=20000
+keepenergy=10.0
+keepmin=200
+
+safeguard=1e-6
+
+fixeps=1e-10
+
+dumpannotated=10000
+
+log=seAt

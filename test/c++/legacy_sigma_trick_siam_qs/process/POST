@@ -1,0 +1,7 @@
+#!/usr/bin/env perl
+
+system("cp spec_DMNRG_dens_B_d-A_d.dat Bd.dat");
+system("cp spec_DMNRG_dens_A_d-A_d.dat Ad.dat");
+
+system("./sigmatrick.py");
+

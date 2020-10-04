@@ -1,0 +1,41 @@
+# Jan 2009
+
+[extra]
+Jkondo=0.2
+B=1e-4
+spin=1/2
+anD=0
+anE=0
+
+[param]
+symtype=ISOSZ
+model=KONDO
+variant=ANISONEW
+
+discretization=Z
+Lambda=2.0
+
+Tmin=1e-8
+keep=5000
+keepenergy=10.0
+keepmin=100
+
+ops=SZ SZ2 O_f
+specd=O_f-O_f-u O_f-O_f-d
+
+T=1e-99
+dmnrg=true
+broaden_max=2
+broaden_min=1e-6
+broaden_ratio=1.01
+smooth=new
+alpha=0.6
+omega0=1e-99
+bins=1000
+goodE=2.1
+NN2avg=true
+
+strategy=kept
+safeguard=0.001
+
+dumpannotated=100

@@ -1,0 +1,34 @@
+[param]
+symtype=SPU1
+model=SIAM
+
+U=1.0
+Gamma=0.06
+delta=0.1
+
+discretization=Z
+Lambda=3.0
+
+bcsgap=0.01
+
+Nmax=5
+keep=300
+
+ops=n_d n_d^2 n_f n_f^2 hop0 A_d SdSf
+
+specd=A_d-A_d-u A_d-A_d-d
+specs=n_d-n_d
+
+dumpannotated=100
+
+cfs=true
+fdm=true
+
+fdmexpv=true
+
+smooth=new
+bins=200
+alpha=0.3
+
+broaden_ratio=1.03
+broaden_max=3.0

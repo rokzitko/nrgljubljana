@@ -1,0 +1,18 @@
+[param]
+model=SIAM
+symtype=QS
+
+discretization=Y
+
+U=2
+Gamma=0.1
+delta=0
+
+ops=n_d Himp Hhyb n_d^2 I hop0
+
+Lambda=2
+
+Tmin=1e-6
+keepmin=100
+keep=1000
+keepenergy=8.0

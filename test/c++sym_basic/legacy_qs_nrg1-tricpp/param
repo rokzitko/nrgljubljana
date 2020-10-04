@@ -1,0 +1,41 @@
+[param]
+tri=cpp
+
+symtype=QS
+model=SIAM
+
+U=1.0
+Gamma=0.06
+delta=0.1
+
+discretization=Yoshida
+Lambda=3.0
+z=0.5
+
+Nmax=10
+keep=500
+
+ops=n_d n_d^2 n_f n_f^2 q_d q_d^2 q_f q_f^2 n_d_ud hop0 A_d A_f SdSf n_dn_f q_dq_f ntot ntot^2 s^2 sigma_d
+
+specd=A_d-A_d A_f-A_d A_d-A_f A_f-A_f
+spect=sigma_d-sigma_d
+specs=n_d-n_d q_d-q_d n_d-n_f
+
+strategy=kept
+safeguard=0.001
+
+dumpannotated=100
+
+goodE=1.2
+
+finite=true
+dmnrg=true
+cfs=true
+
+smooth=new
+bins=200
+alpha=0.3
+
+broaden_ratio=1.03
+broaden_max=10.0
+

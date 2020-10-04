@@ -1,0 +1,42 @@
+[extra]
+B=0.001
+Borb=0.002
+phi=1
+
+[param]
+symtype=QSZ
+model=SU4
+
+U=1
+Gamma=0.06
+delta=0.
+
+discretization=Campo
+Lambda=8.
+z=1
+
+Nmax=6
+
+keep=300
+
+# all or kept
+strategy=kept
+safeguard=0.001
+
+# operators to be iterated
+ops=SaSd Ppar Pperp Sz Sxy n_d n_a A_d A_a
+
+specd=A_d-A_d-d A_a-A_a-d A_d-A_d-u A_a-A_a-u
+specs=n_d-n_d
+
+dumpannotated=200
+
+# continuous fock space
+cfs=true
+dmnrg=true
+
+smooth=new
+bins=200
+alpha=0.8
+
+broaden_max=1.0

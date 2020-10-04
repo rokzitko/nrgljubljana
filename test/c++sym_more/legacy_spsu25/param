@@ -1,0 +1,41 @@
+[param]
+symtype=SPSU2
+model=SIAM
+
+options=EPSCLIP
+
+U=0.02
+Gamma=0.06
+delta=0
+
+discretization=Z
+Lambda=2.0
+z=1
+
+# T_K=1e-4
+bcsgap=3e-2
+
+Tmin=1e-4
+keep=1500
+keepmin=200
+keepenergy=9.0
+
+ops=n_d n_d^2 A_d Ac_d pair_d
+
+specd=A_d-A_d Ac_d-Ac_d Ac_d-A_d A_d-Ac_d
+specs=n_d-n_d
+
+strategy=kept
+safeguard=0.001
+
+dumpannotated=200
+dumpscaled=false
+
+goodE=2.1
+dmnrg=true
+
+smooth=new
+bins=200
+alpha=0.7
+
+broaden_ratio=1.01

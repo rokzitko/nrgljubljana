@@ -1,0 +1,29 @@
+[extra]
+Bx=0
+By=1e-2
+Bz=0
+
+[param]
+symtype=U1
+model=SIAM
+variant=MAGFIELDXYZ
+
+U=1.0
+Gamma=0.06
+
+discretization=Z
+Lambda=6
+z=1
+
+Tmin=1e-5
+keep=300
+
+ops=SZd SYd SXd q_d^2 A_d_u A_d_d
+specd=A_d_u-A_d_u A_d_d-A_d_d
+
+strategy=kept
+safeguard=1e-5
+
+fdm=true
+
+dumpannotated=100

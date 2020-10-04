@@ -1,0 +1,32 @@
+[param]
+symtype=QS
+model=SIAM
+
+U=1.0
+Gamma=0.06
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Tmin=1e-8
+keepmin=300
+keepenergy=8.0
+keep=5000
+
+ops=n_d A_d B_d
+specd=A_d-A_d B_d-B_d A_d-B_d B_d-A_d
+
+strategy=kept
+safeguard=0.001
+
+dumpannotated=100
+
+cfs=true
+
+smooth=new
+bins=200
+alpha=0.8
+
+broaden_ratio=1.02
+broaden_max=10.0

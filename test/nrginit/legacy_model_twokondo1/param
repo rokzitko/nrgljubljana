@@ -1,0 +1,23 @@
+[extra]
+Jkondo1=0.2
+Jkondo2=0
+
+B=0.0001
+
+spin1=1/2
+spin2=1/2
+
+[param]
+symtype=QSZ
+model=TWOKONDO
+
+discretization=Campo
+Lambda=2.0
+z=1
+
+Nmax=2
+keep=500
+keepenergy=8.0
+keepmin=10
+
+ops=S1Z S1Z2 S2Z S2Z2

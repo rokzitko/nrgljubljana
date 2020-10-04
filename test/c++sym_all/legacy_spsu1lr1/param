@@ -1,0 +1,19 @@
+[param]
+symtype=SPU1LR
+model=SIAM
+
+U=1.0
+Gamma=0.06
+delta=0.1
+
+discretization=Yoshida
+Lambda=3.0
+z=0.99
+
+# NO GAP! We compare with symtype=QS results!
+bcsgap=0
+
+Nmax=2
+keep=800
+
+dumpannotated=100

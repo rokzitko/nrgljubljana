@@ -1,0 +1,26 @@
+[extra]
+B=1e-2
+
+[param]
+symtype=NONE
+model=SIAM
+variant=MAGFIELD
+
+bcsgap=0
+
+U=1.0
+Gamma=0.06
+
+discretization=Yoshida
+Lambda=4.0
+z=1.0
+
+Nmax=4
+keep=300
+
+ops=q_d q_d^2 q_f q_f^2 n_d_up n_d_down n_d_ud n_d_up^2 n_d_down^2 P0 Pu Pd P2 SZd SZ2d SdSd
+
+strategy=kept
+safeguard=0.001
+
+dumpannotated=100

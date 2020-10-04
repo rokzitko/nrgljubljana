@@ -1,0 +1,37 @@
+[param]
+symtype=SU2
+model=SIAM
+
+U=1.0
+Gamma=0.06
+
+discretization=Yoshida
+Lambda=3.0
+z=0.5
+
+Nmax=2
+keep=300
+
+ops=q_d q_f q_d^2 q_f^2 hop0 A_d_u A_d_d A_f_u A_f_d SdSf q_dq_f s^2
+
+specd=A_d_d-A_d_d A_d_u-A_d_u A_f_d-A_f_d A_f_u-A_f_u
+specs=q_d-q_d q_f-q_f
+
+strategy=kept
+safeguard=0.001
+
+dumpannotated=100
+
+goodE=1.2
+
+finite=true
+dmnrg=true
+cfs=true
+
+smooth=new
+bins=200
+
+alpha=0.3
+
+broaden_ratio=1.03
+broaden_max=10.0

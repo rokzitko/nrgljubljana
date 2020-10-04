@@ -1,0 +1,24 @@
+[extra]
+Jkondo=0.2
+B=0
+spin=1/2
+
+[param]
+symtype=QSZ
+model=KONDO
+
+discretization=Z
+Lambda=2.0
+z=1
+
+Tmin=1e-2
+keep=5000
+keepenergy=10.0
+keepmin=10
+
+ops=SZ SZ2 SZtot
+
+strategy=kept
+safeguard=1e-5
+
+dumpannotated=100
