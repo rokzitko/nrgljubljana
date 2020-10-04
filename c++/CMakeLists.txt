@@ -1,3 +1,8 @@
+# https://cmake.cmake.narkive.com/huyio5CB/using-m4-as-a-additional-preprocessor-for-c-c
+# find_program(M4_EXECUTABLE m4 DOC "The M4 macro processor")
+# file(GLOB m4_files "nrg-recalc-*.m4")
+# add_custom_command(OUTPUT .. COMMAND m4 ARGS )
+
 set(sources nrg-lib.cc)
 add_library(nrgljubljana_c     SHARED ${sources})
 

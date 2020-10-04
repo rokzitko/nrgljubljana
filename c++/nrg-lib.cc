@@ -107,7 +107,8 @@ inline cmpl CONJ_ME(cmpl z) { return conj(z); }
 
 using t_weight = cmpl; // spectral weight accumulators (complex in general)
 
-using EVEC = ublas::vector<t_eigen>; // Type for arrays of eigenvalues
+using EVEC = ublas::vector<t_eigen>;
+//using EVEC = std::vector<t_eigen>; // Type for arrays of eigenvalues
 
 /* NOTE: Row major is the C array format: A[0][0], A[0][1], A[0][2],
 A[1][0], A[1][1], etc. The default in UBLAS is row major, while LAPACK
@@ -292,10 +293,9 @@ class Eigen {
   size_t getnr() const { return nr; }
   // Returns the dimensionality of a subspace, i.e. the number of
   // components of each eigenvector.
-  size_t getrmax() const { return rmax; }
+  size_t getrmax() const { return rmax; } // XXX drop this one
   size_t getdim() const { return rmax; }
   // Returns the number of eigenpairs after truncation.
-  size_t getnrpost() const { return nrpost; } // XXX: drop this one
   size_t getnrkept() const { return nrpost; }
   // Truncate to nrpost states.
   void truncate_prepare_subspace(size_t _nrpost) {
@@ -1628,27 +1628,23 @@ void dump_annotated(const Step &step, const DiagInfo &diag, bool scaled = true, 
   Fannotated << endl;
 }
 
-/* recalc_singlet() recalculates irreducible matrix elements of a
- singlet operator (nold) and stores them in a new matrix (nnew).
- This implementation is generic for all the symmetry types! */
+// Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
+// parity -1). Generic implementation, valid for all symmetry types.
 MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
   MatrixElements nnew;
   std::vector<Recalc> recalc_table(P.combs);
   const InvarVec input = input_subspaces();
-  if (Sym->islr())
-    my_assert(parity == 1 || parity == -1);
-  else
-    my_assert(parity == 1);
+  my_assert(Sym->islr() ? parity == 1 || parity == -1 : parity == 1);
   for (const auto I : diag | boost::adaptors::map_keys) {
     const Invar I1 = I;
-    Invar Ip = I;
-    if (parity == -1) Ip.InvertParity(); // XXX oneline
+    const Invar Ip = (parity == -1 ? I.InvertParity() : I);
     for (size_t i = 1; i <= P.combs; i++) {
       Recalc r;
       r.i1 = r.ip = i;
       r.factor    = 1.0;
-      r.IN1 = r.INp = ancestor(I, i);
-      if (parity == -1) r.INp.InvertParity(); // XXX oneline
+      const auto anc = ancestor(I, i);
+      r.IN1 = anc;
+      r.INp = (parity == -1 ? anc.InvertParity() : anc);
       recalc_table[i - 1] = r; // mind the -1 shift!
     }
     recalc_general(diag, qsrmax, nold, nnew, Ip, I1, &recalc_table[0], P.combs, Sym->InvarSinglet);

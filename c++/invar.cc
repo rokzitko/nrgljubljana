@@ -150,6 +150,11 @@ class Invar {
     const auto index = i->second;
     data[index]      = -data[index];
   }
+  Invar InvertParity() const {
+    Invar I(data);
+    I.InvertParity();
+    return I;
+  }
 };
 
 struct InvarStructure {
