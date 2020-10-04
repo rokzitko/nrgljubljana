@@ -192,8 +192,6 @@ class Symmetry {
 
 Symmetry *Sym = nullptr;
 
-inline size_t mult(const Invar &I) { return Sym->mult(I); }
-
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
   void makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) override;                   \

@@ -580,7 +580,7 @@ bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::np
 CONSTFNC double calculate_Z(const Invar I, const Eigen &eig, double rescale_factor) {
   double sumZ = 0;
   for (const auto &x : eig.value) sumZ += exp(-rescale_factor * x);
-  return mult(I) * sumZ;
+  return Sym->mult(I) * sumZ;
 }
 
 // Formated output for the expectation values
@@ -658,7 +658,7 @@ CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n
       F << i << ": ";
       dump_diagonal(nI, P.dumpdiagonal, F);
     }
-    tr += mult(i) * t_matel(sum);
+    tr += Sym->mult(i) * t_matel(sum);
   }
   return tr;
 }
@@ -673,7 +673,7 @@ CONSTFNC t_expv calc_trace_fdm_kept(const Step &step, const DiagInfo &diag, cons
     for (auto k = 0; k < ret; k++) // over kept states ONLY
       for (auto j = 0; j < ret; j++) 
         sum += mat(k, j) * nI(j, k);
-    tr += mult(i) * t_matel(sum);
+    tr += Sym->mult(i) * t_matel(sum);
   }
   return tr;
 }
@@ -848,7 +848,7 @@ SpectrumMatsubara2::~SpectrumMatsubara2() {
 // This is mathematical trace, i.e. the sum of the diagonal elements.
 CONSTFNC double trace(const DensMatElements &m) {
   double tr = 0.0;
-  for (const auto &[I, mat] : m) tr += mult(I) * trace_real_nochecks(mat);
+  for (const auto &[I, mat] : m) tr += Sym->mult(I) * trace_real_nochecks(mat);
   return tr;
 }
 
@@ -1010,17 +1010,6 @@ void subtract_groundstate_energy(const Step &step, DiagInfo &diag) {
       eig.shift = stats.Egs;
       my_assert(eig.value[0] >= 0.0);
     }
-}
-
-// Calculate the (on-shell) statistical sum using the excitation
-// energies relative to the current step energy scale.
-// Used in nrg_measure_singlet().
-double calc_Z(const DiagInfo &diag) {
-  bucket Z;
-  for (const auto &[i, eig] : diag) 
-    for (const auto &x : eig.value) 
-      Z += mult(i) * exp(-P.betabar * x);
-  return Z;
 }
 
 // Determine the ranges of index r
@@ -1369,7 +1358,7 @@ double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, double fac
   bucket ZN;
   for (const auto &[i, eig]: diag) 
     for (const auto &x : eig.value) 
-      ZN += mult(i) * exp(-x * step.scT() * factor);
+      ZN += Sym->mult(i) * exp(-x * step.scT() * factor);
   my_assert(ZN >= 1.0);
   return ZN;
 }
@@ -1448,7 +1437,7 @@ bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
   const auto nrkept = std::accumulate(begin(diag), end(diag), 0, 
                                       [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
   const auto nrkeptmult = std::accumulate(begin(diag), end(diag), 0, 
-                                          [](int n, const auto &d) { const auto &[I, eig] = d; return n+mult(I)*eig.getnrkept(); });
+                                          [](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getnrkept(); });
   nrgdump3(Emax, nrkept, nrkeptmult) << endl;
   const auto notenough = std::any_of(begin(diag), end(diag), 
                                      [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value(eig.getnr()-1) != Emax &&
@@ -1468,8 +1457,8 @@ void calc_ZnD(const AllSteps &dm) {
     for (const auto &[I, ds] : dm[N])
       for (size_t i = ds.min(); i < ds.max(); i++) {
         my_mpf g, n;
-        mpf_set_d(g, mult(I) * exp(-ds.absenergyG[i]/P.T)); // absenergyG >= 0.0
-        mpf_set_d(n, mult(I) * exp(-ds.absenergyN[i]/P.T)); // absenergyN >= 0.0
+        mpf_set_d(g, Sym->mult(I) * exp(-ds.absenergyG[i]/P.T)); // absenergyG >= 0.0
+        mpf_set_d(n, Sym->mult(I) * exp(-ds.absenergyN[i]/P.T)); // absenergyN >= 0.0
         mpf_add(ZnDG, ZnDG, g);
         mpf_add(ZnDN, ZnDN, n);
       }
@@ -1537,7 +1526,7 @@ void fdm_thermodynamics(const AllSteps &dm)
       for (const auto &[I, ds] : dm[N]) 
         for (size_t i = ds.min(); i < ds.max(); i++) {
           my_mpf weight;
-          mpf_set_d(weight, stats.wn[N] * mult(I) * exp(-ds.absenergyN[i]/P.T));
+          mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.absenergyN[i]/P.T));
           mpf_div(weight, weight, stats.ZnDN[N]);
           my_mpf e;
           mpf_set_d(e, ds.absenergy[i]);
@@ -1609,7 +1598,7 @@ void dump_annotated(const Step &step, const DiagInfo &diag, bool scaled = true, 
       const size_t i0         = i;
       while (i < len && my_fcmp(seznam[i].first, seznam[i0].first, P.grouptol) == 0) {
         QNstrings.push_back(to_string(seznam[i].second));
-        total_degeneracy += mult(seznam[i].second);
+        total_degeneracy += Sym->mult(seznam[i].second);
         i++;
       }
       sort(begin(QNstrings), end(QNstrings));
@@ -1702,11 +1691,28 @@ void clear_eigenvectors(DiagInfo &diag) {
       j = Matrix(0, 0);
 }
 
+// Calculate the (on-shell) statistical sum using the excitation energies relative to the current step energy scale.
+double calc_Z(const DiagInfo &diag, const Params &P) {
+  bucket Z;
+  for (const auto &[I, eig] : diag) 
+    for (const auto &x : eig.value) 
+      Z += Sym->mult(I) * exp(-P.betabar * x);
+  return Z;
+}
+
 // Z_S is the appropriate statistical sum
-void measure_singlet1(const DiagInfo &dg, std::string name, const MatrixElements &m, double Z_S) {
+void measure_singlet1(const DiagInfo &dg, const std::string name, const MatrixElements &m, const double Z_S) {
   const t_expv expv = calc_trace_singlet(dg, m) / Z_S;
   stats.expv[name] = expv;
   cout << "<" << name << ">=" << output_val(expv) << endl;
+}
+
+// Measure thermodynamic expectation values of singlet operators
+void measure_singlet(const Step &step, const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &custom, const Params &P) {
+  const double Z_S = calc_Z(dg, P);
+  for (const auto &[name, m] : a.ops)  measure_singlet1(dg, name, m, Z_S);
+  for (const auto &[name, m] : a.opsg) measure_singlet1(dg, name, m, Z_S);
+  custom->field_values(step.Teff());
 }
 
 // Expectation values using FDM algorithm
@@ -1716,14 +1722,6 @@ void measure_singlet1_fdm(const Step &step, const DiagInfo &dg, std::string name
   cout << "<" << name << ">_fdm=" << output_val(expv) << endl;
 }
 
-// Measure thermodynamic expectation values of singlet operators
-void measure_singlet(const Step &step, const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &custom) {
-  const double Z_S = calc_Z(dg);
-  for (const auto &[name, m] : a.ops)  measure_singlet1(dg, name, m, Z_S);
-  for (const auto &[name, m] : a.opsg) measure_singlet1(dg, name, m, Z_S);
-  custom->field_values(step.Teff());
-}
-
 void measure_singlet_fdm(const Step &step, const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &customfdm, const DensMatElements &rhoFDM, const AllSteps &dm) {
   if (step.N() != P.fdmexpvn) return;
   for (const auto &[name, m] : a.ops)  measure_singlet1_fdm(step, dg, name, m, rhoFDM, dm);
@@ -1731,7 +1729,7 @@ void measure_singlet_fdm(const Step &step, const DiagInfo &dg, const IterInfo &a
   customfdm->field_values(P.T);
 }
 
-auto CorrelatorFactorFnc   = [](const Invar &Ip, const Invar &I1) { return mult(I1); };
+auto CorrelatorFactorFnc   = [](const Invar &Ip, const Invar &I1) { return Sym->mult(I1); };
 auto SpecdensFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->specdens_factor(Ip, I1); };
 auto SpecdensquadFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdensquad_factor(Ip, I1); };
 auto SpinSuscFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->dynamicsusceptibility_factor(Ip, I1); };
@@ -1786,7 +1784,7 @@ void calculate_TD(const Step &step, const DiagInfo &diag, double additional_fact
       sumE2 += sqr(betaE) * expo;
       sumZ += expo;
     }
-    const int multip = mult(i);     // take into account the multiplicity
+    const int multip = Sym->mult(i);     // take into account the multiplicity
     Z += multip * sumZ;
     E += multip * sumE;
     E2 += multip * sumE2;
@@ -1826,7 +1824,7 @@ void calculate_spectral_and_expv(const Step &step, const DiagInfo &diag, const I
         rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);
   }
   spectral_densities(step, diag, rho, rhoFDM);
-  if (step.nrg()) measure_singlet(step, diag, iterinfo, custom);
+  if (step.nrg()) measure_singlet(step, diag, iterinfo, custom, P);
   if (step.dmnrg() && P.fdmexpv) measure_singlet_fdm(step, diag, iterinfo, customfdm, rhoFDM, dm);
 }
 

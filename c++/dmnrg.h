@@ -254,7 +254,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
       const auto x = rho.find(sub);
       const auto y = diag.find(sub);
       if (x != rho.end() && y != diag.end()) {
-        const t_factor coef = double(mult(sub)) / double(mult(I));
+        const t_factor coef = double(Sym->mult(sub)) / double(Sym->mult(I));
         cdmI(i, sub, x->second, y->second, rhoPrev[I], N, coef, dm);
       }
     }
@@ -328,7 +328,7 @@ DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Params &P) { //
       double val2        = exp(-betaE) * ratio;
       val2               = std::isfinite(val2) ? val2 : 0.0;
       rhoI(i, i)         = val2;
-      tr += mult(I) * val2;
+      tr += Sym->mult(I) * val2;
     }
   }
   // Trace should be equal to the total weight of the shell-N contribution to the FDM.
@@ -360,7 +360,7 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
       const auto sub = subs[i];
       // DM construction for non-Abelian symmetries: must include
       // the ratio of multiplicities as a coefficient.
-      const t_factor coef = double(mult(sub)) / double(mult(I));
+      const t_factor coef = double(Sym->mult(sub)) / double(Sym->mult(I));
       // Contribution from the KK sector.
       const auto x1 = rhoFDM.find(sub);
       const auto y = diag.find(sub);
