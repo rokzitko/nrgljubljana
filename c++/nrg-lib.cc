@@ -1647,7 +1647,8 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
       r.INp = (parity == -1 ? anc.InvertParity() : anc);
       recalc_table[i - 1] = r; // mind the -1 shift!
     }
-    recalc_general(diag, qsrmax, nold, nnew, Ip, I1, &recalc_table[0], P.combs, Sym->InvarSinglet);
+    const auto Iop = parity == -1 ? (Sym->InvarSinglet).InvertParity() : Sym->InvarSinglet;
+    recalc_general(diag, qsrmax, nold, nnew, I1, Ip, &recalc_table[0], P.combs, Iop);
   }
   return nnew;
 }
