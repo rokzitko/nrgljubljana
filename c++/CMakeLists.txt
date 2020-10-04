@@ -1,29 +1,15 @@
 set(sources nrg-lib.cc)
 add_library(nrgljubljana_c     SHARED ${sources})
-add_library(nrgljubljanacmpl_c SHARED ${sources})
 
 # Enable warnings
 target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
-target_link_libraries(nrgljubljanacmpl_c PRIVATE project_warnings)
 
 # Configure compilation
 target_compile_options(nrgljubljana_c     PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
-target_compile_options(nrgljubljanacmpl_c PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
 target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
-target_include_directories(nrgljubljanacmpl_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew>)
-target_include_directories(nrgljubljanacmpl_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew>)
 target_compile_definitions(nrgljubljana_c PUBLIC
 				NRG_REAL
-				$<$<BOOL:${NRG_MPI}>:NRG_MPI>
-				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
-				NRG_SYM_BASIC
-				$<$<BOOL:${SYM_MORE}>:NRG_SYM_MORE>
-				$<$<BOOL:${SYM_ALL}>:NRG_SYM_ALL>
-				$<$<BOOL:${CBLAS_WORKAROUND}>:CBLAS_WORKAROUND>
-)
-target_compile_definitions(nrgljubljanacmpl_c PUBLIC
-				NRG_COMPLEX
 				$<$<BOOL:${NRG_MPI}>:NRG_MPI>
 				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
 				NRG_SYM_BASIC
@@ -34,11 +20,6 @@ target_compile_definitions(nrgljubljanacmpl_c PUBLIC
 
 # Link dependencies
 target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl
-  $<$<BOOL:${ASAN}>:asan>
-  $<$<BOOL:${UBSAN}>:ubsan>
-  $<$<BOOL:${NRG_MPI}>:mpi>
-)
-target_link_libraries(nrgljubljanacmpl_c PUBLIC openmp boost blas_lapack gmp dl
   $<$<BOOL:${ASAN}>:asan>
   $<$<BOOL:${UBSAN}>:ubsan>
   $<$<BOOL:${NRG_MPI}>:mpi>
@@ -54,18 +35,45 @@ target_compile_definitions(nrg PUBLIC
   NRG_REAL
 )
 
-add_executable(nrgcmpl nrg.cc)
-target_link_libraries(nrgcmpl PRIVATE nrgljubljanacmpl_c    # cmpl !!
-  $<$<BOOL:${NRG_MPI}>:mpi>
-)
-target_compile_definitions(nrgcmpl PUBLIC
-  $<$<BOOL:${NRG_MPI}>:NRG_MPI>
-  NRG_COMPLEX
-)
-
 # Install library and headers
-install(TARGETS nrgljubljana_c nrgljubljanacmpl_c EXPORT nrgljubljana-targets DESTINATION lib)
-install(TARGETS nrg nrgcmpl DESTINATION bin)
+install(TARGETS nrgljubljana_c EXPORT nrgljubljana-targets DESTINATION lib)
+install(TARGETS nrg DESTINATION bin)
+
+# Complex-number version
+
+if(BUILD_COMPLEX)
+  add_library(nrgljubljanacmpl_c SHARED ${sources})
+  target_link_libraries(nrgljubljanacmpl_c PRIVATE project_warnings)
+  target_compile_options(nrgljubljanacmpl_c PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
+  target_include_directories(nrgljubljanacmpl_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
+  target_include_directories(nrgljubljanacmpl_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew>)
+  target_compile_definitions(nrgljubljanacmpl_c PUBLIC
+				NRG_COMPLEX
+				$<$<BOOL:${NRG_MPI}>:NRG_MPI>
+				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
+				NRG_SYM_BASIC
+				$<$<BOOL:${SYM_MORE}>:NRG_SYM_MORE>
+				$<$<BOOL:${SYM_ALL}>:NRG_SYM_ALL>
+				$<$<BOOL:${CBLAS_WORKAROUND}>:CBLAS_WORKAROUND>
+  )
+
+  target_link_libraries(nrgljubljanacmpl_c PUBLIC openmp boost blas_lapack gmp dl
+    $<$<BOOL:${ASAN}>:asan>
+    $<$<BOOL:${UBSAN}>:ubsan>
+    $<$<BOOL:${NRG_MPI}>:mpi>
+  )
+
+  add_executable(nrgcmpl nrg.cc)
+  target_link_libraries(nrgcmpl PRIVATE nrgljubljanacmpl_c    # cmpl !!
+    $<$<BOOL:${NRG_MPI}>:mpi>
+  )
+  target_compile_definitions(nrgcmpl PUBLIC
+    $<$<BOOL:${NRG_MPI}>:NRG_MPI>
+    NRG_COMPLEX
+  )
+  install(TARGETS nrgljubljanacmpl_c EXPORT nrgljubljana-targets DESTINATION lib)
+  install(TARGETS nrgcmpl DESTINATION bin)
+endif()
 
 # ========= Static Analyzer Checks ==========
 

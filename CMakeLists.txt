@@ -217,14 +217,21 @@ else()
 endif()
 
 # Symmetry types to compile in
-option(SYM_MORE "Compile an extended set of symmetry types" ON)
-option(SYM_ALL  "Compile the full set of symmetry types (long compilation time)" ON)
+option(SYM_MORE "Compile in an extended set of symmetry types" ON)
+option(SYM_ALL  "Compile in the full set of symmetry types (long compilation time)" ON)
 
 if(SYM_MORE)
   message(STATUS "Building an extended set of symmetry types")
 endif()
 if(SYM_ALL)
   message(STATUS "Building the full set of symmetry types")
+endif()
+
+# Complex-number version of the code
+option(BUILD_COMPLEX "Build the complex-number version of the code" ON)
+
+if(BUILD_COMPLEX)
+  message(STATUS "Building the complex-number version of the code")
 endif()
 
 # Dynamic Analyzer Checks
