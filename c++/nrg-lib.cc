@@ -1896,11 +1896,8 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   Eigen eigmock; // empty Eigen
   mpiw->send(dest, TAG_EIGEN, eigmock);
   nrglog('M', "Sending eigen from " << mpiw->rank() << " to " << dest);
-//  mpiw->send(dest, TAG_EIGEN_INT, eig.nr);
-//  mpiw->send(dest, TAG_EIGEN_INT, eig.dim);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value);
   mpi_send_matrix_linebyline(dest, eig.matrix);
-//  mpiw->send(dest, TAG_EIGEN_INT, eig.nrpost);
 }
 
 auto mpi_receive_eigen_linebyline(int source) {
@@ -1908,11 +1905,8 @@ auto mpi_receive_eigen_linebyline(int source) {
   Eigen eigmock;
   check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
   Eigen eig;
-//  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nr));
-//  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.dim));
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value));
   eig.matrix = mpi_receive_matrix_linebyline(source);
-//  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nrpost));
   return eig;
 }
 
