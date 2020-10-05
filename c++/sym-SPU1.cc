@@ -149,31 +149,28 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Step &step, const Rm
 #define DIAG_DOWN(i, j, ch, number) diag_function_half(step, i, ch, number, zetaDOWN(step.N() + 1, ch), h, qq)
 
 void SymmetrySPU1::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (!P.substeps) {
-    switch (channels) {
-      case 1:
+  my_assert(!P.substeps);
+  switch (channels) {
+  case 1:
 #include "spu1/spu1-1ch-offdiag-UP.dat"
 #include "spu1/spu1-1ch-offdiag-DOWN.dat"
 #include "spu1/spu1-1ch-anomalous.dat"
 #include "spu1/spu1-1ch-diag-UP.dat"
 #include "spu1/spu1-1ch-diag-DOWN.dat"
 #include "spu1/spu1-1ch-isospinx.dat"
-        break;
+    break;
 
-      case 2:
+  case 2:
 #include "spu1/spu1-2ch-diag-UP.dat"
 #include "spu1/spu1-2ch-diag-DOWN.dat"
 #include "spu1/spu1-2ch-offdiag-UP.dat"
 #include "spu1/spu1-2ch-offdiag-DOWN.dat"
 #include "spu1/spu1-2ch-anomalous.dat"
 #include "spu1/spu1-2ch-isospinx.dat"
-        break;
+    break;
 
-      default: my_assert_not_reached();
-    } // switch
-  } else {
-    my_error("Not implemented.");
-  }
+  default: my_assert_not_reached();
+  } // switch
 }
 
 void SymmetrySPU1::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {

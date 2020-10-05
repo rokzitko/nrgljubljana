@@ -45,7 +45,7 @@ inline  T finite_test_fnc(T x, const char *file, int line) {
     if (!(x)) {                                                                                                                                      \
       cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;                                                                                       \
       cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                           \
-      cout << #x << endl;                                                                                                                       \
+      cout << #x << endl;                                                                                                                            \
       print_trace();                                                                                                                                 \
       exit(1);                                                                                                                                       \
     }                                                                                                                                                \
@@ -57,23 +57,12 @@ inline  T finite_test_fnc(T x, const char *file, int line) {
     if (!(a == b)) {                                                                                                                                 \
       cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;                                                                                       \
       cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                           \
-      cout << #a << "=" << a << endl;                                                                                                         \
-      cout << #b << "=" << b << endl;                                                                                                         \
+      cout << #a << "=" << a << endl;                                                                                                                \
+      cout << #b << "=" << b << endl;                                                                                                                \
       cout << "Exiting." << endl;                                                                                                                    \
       print_trace();                                                                                                                                 \
       exit(1);                                                                                                                                       \
     }                                                                                                                                                \
-  } while (0)
-
-#define my_error(...)                                                                                                                                \
-  do {                                                                                                                                               \
-    cout << "#### EXITING DUE TO ERROR." << endl;                                                                                                    \
-    cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                             \
-    char buf[256];                                                                                                                                   \
-    snprintf(buf, 256, __VA_ARGS__);                                                                                                                       \
-    cout << buf << endl;                                                                                                                             \
-    print_trace();                                                                                                                                   \
-    exit(1);                                                                                                                                         \
   } while (0)
 
 #define my_assert_not_reached()                                                                                                                      \
@@ -156,7 +145,7 @@ inline ofstream safe_open(string filename, bool binary = false) {
   ios::openmode flag = ios::out;
   if (binary) flag |= ios::binary;
   ofstream F(filename, flag);
-  if (!F) my_error("Can't open %s for writing", filename.c_str());
+  if (!F) throw std::runtime_error(fmt::format("Can't open {} for writing", filename));
   return F;
 }
 
@@ -165,7 +154,7 @@ inline ifstream safe_open_for_reading(string filename, bool binary = false) {
   ios::openmode flag = ios::in;
   if (binary) flag |= ios::binary;
   ifstream F(filename, flag);
-  if (!F) my_error("Can't open %s for reading", filename.c_str());
+  if (!F) throw std::runtime_error(fmt::format("Can't open {} for reading", filename));
   return F;
 }
 

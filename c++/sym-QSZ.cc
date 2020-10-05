@@ -163,7 +163,7 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
 #include "qsz/qsz-1ch-diag.dat"
 #include "qsz/qsz-1ch-spinz.dat" // for P.globalB
 
-    if (P.rungs) my_error("Not implemented.");
+    if (P.rungs) my_assert_not_reached();
   }
 }
 

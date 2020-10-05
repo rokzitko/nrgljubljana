@@ -572,9 +572,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
   default: my_assert_not_reached();
 };
     }
-  } else {
-    my_error("Not implemented.");
-  }
+  } else my_assert_not_reached();
   return cnew;
 }
 

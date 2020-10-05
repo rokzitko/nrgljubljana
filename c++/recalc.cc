@@ -160,10 +160,7 @@ void recalc_general(const DiagInfo &dg,
     // All exceptions should be handled by now. If cnt != 1, this is
     // a bug, probably related to symmetry properties and the
     // coefficient tables for NRG transformations of matrices.
-    if (cnt != 1) { // bug trap
-      RECALC_GENERAL_DUMP;
-      my_error("cold.count(ININ) != 1");
-    }
+    my_assert(cnt == 1);
     // This assertion should be performed after the triangle
     // inequality test above!
     my_assert(my_isfinite(table[j].factor));

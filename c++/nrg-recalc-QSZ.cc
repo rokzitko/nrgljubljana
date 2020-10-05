@@ -422,7 +422,7 @@ MatrixElements SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &q
   };
     }      // loop
   } else { // substeps
-    my_error("Not implemented.");
+    my_assert_not_reached();
   }
   return cnew;
 }

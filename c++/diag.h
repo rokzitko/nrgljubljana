@@ -69,7 +69,7 @@ Eigen diagonalise_dsyev(ublas::matrix<double> &m, char jobz = 'V') {
   auto WORK = std::make_unique<double[]>(LWORK);
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, &INFO);
-  if (INFO != 0) my_error("dsyev failed. INFO=%i", INFO);
+  if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   return copy_results(eigenvalues, ham, jobz, dim, dim);
 }
 #endif
@@ -100,8 +100,10 @@ Eigen diagonalise_dsyevd(ublas::matrix<double> &m, char jobz = 'V')
   if (INFO != 0) {
     // dsyevd sometimes fails to converge (INFO>0). In such cases we do not trigger
     // an error but return 0, to permit error recovery.
-    if (INFO > 0) return Eigen();
-    my_error("dsyevd failed. INFO=%i", INFO);
+    if (INFO > 0)
+      return Eigen();
+    else
+      throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   }
   return copy_results(eigenvalues, ham, jobz, dim, dim);
 }
@@ -156,7 +158,7 @@ Eigen diagonalise_dsyevr(ublas::matrix<double> &m, double ratio = 1.0,  char job
   // Step 2: perform the diagonalisation
   LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK.get(), &LWORK,
                 IWORK.get(), &LIWORK, &INFO);
-  if (INFO != 0) my_error("dsyevr failed. INFO=%i", INFO);
+  if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   if (MM != int(M)) {
     cout << "dsyevr computed " << MM << "/" << M << endl;
     M = MM;
@@ -186,7 +188,7 @@ Eigen diagonalise_zheev(ublas::matrix<cmpl> &m, char jobz = 'V') {
   auto WORK = std::make_unique<lapack_complex_double[]>(LWORK);
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, RWORK, &INFO);
-  if (INFO != 0) my_error("zheev failed. INFO=%i", INFO);
+  if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   return copy_results(eigenvalues, ham, jobz, dim, dim);
 }
 #endif
@@ -243,7 +245,7 @@ Eigen diagonalise_zheevr(ublas::matrix<cmpl> &m, double ratio = 1.0, char jobz =
   // Step 2: perform the diagonalisation
   LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK.get(), &LWORK,
                 RWORK.get(), &LRWORK, IWORK.get(), &LIWORK, &INFO);
-  if (INFO != 0) my_error("zheevr failed. INFO=%i", INFO);
+  if (INFO != 0) throw std::runtime_error(fmt::format("zheevr failed. INFO={}", INFO));
   if (MM != int(M)) {
     cout << "zheevr computed " << MM << "/" << M << endl;
     M = MM;

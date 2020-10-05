@@ -12,6 +12,7 @@
 #include <string>
 using namespace std::string_literals;
 
+#include <stdexcept>
 #include <complex>
 #include <unordered_map>
 #include <map>
@@ -77,6 +78,9 @@ namespace atlas = boost::numeric::bindings::atlas;
 #include <boost/mpi/collectives.hpp>
 namespace mpi = boost::mpi;
 #endif // NRG_MPI
+
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 
 // Support for compiler dependant optimizations
 

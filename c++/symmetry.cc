@@ -87,7 +87,7 @@ class Symmetry {
   Symmetry() = default;
   virtual ~Symmetry()= default;
 
-  virtual void init() { my_error("Bug: Initializer must be defined!"); };
+  virtual void init() { my_assert_not_reached(); };
 
   Invar InvarSinglet; // QNs for singlet operator
   Invar Invar_f;      // QNs for f operator
@@ -163,13 +163,13 @@ class Symmetry {
 
   virtual void calculate_TD(const Step &step, const DiagInfo &diag, double factor) = 0;
 
-  virtual Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) { my_error("Not implemented."); }
-  virtual OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) { my_error("Not implemented."); }
-  virtual MatrixElements recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
-  virtual MatrixElements recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
-  virtual MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
-  virtual MatrixElements  recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_error("Not implemented."); }
-  virtual void recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) { my_error("Not implemented."); }
+  virtual Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) { my_assert_not_reached(); }
+  virtual OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) { my_assert_not_reached(); }
+  virtual MatrixElements recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
+  virtual MatrixElements recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
+  virtual MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
+  virtual MatrixElements  recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
+  virtual void recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) { my_assert_not_reached(); }
 
   virtual void show_coefficients(const Step &step, const Params &P) {
     cout << setprecision(std::numeric_limits<double>::max_digits10);

@@ -29,7 +29,7 @@ SpectrumRealFreq::~SpectrumRealFreq() {
 void SpectrumRealFreq::merge(spCS_t cs, const Step &step) {
   if (spectype->merge() == "NN2") return mergeNN2(cs, step);
   if (spectype->merge() == "CFS") return mergeCFS(cs);
-  my_error("should not be reached");
+  my_assert_not_reached();
 }
 
 // Spectrum merging for complete Fock space calculation.

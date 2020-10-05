@@ -117,7 +117,7 @@ MatrixElements read_matrix_elements(ifstream &fdata, const DiagInfo &diag) {
     if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
       read_matrix(fdata, m[{I1, I2}], it1->second.getnr(), it2->second.getnr());
     else
-      my_error("Corrupted input file. Stopped in read_matrix_elements()");
+      throw std::runtime_error("Corrupted input file. Stopped in read_matrix_elements()");
   }
   my_assert(m.size() == nf);
   return m;
@@ -160,7 +160,7 @@ inline void skipline(ostream &F = std::cout) { F << std::endl; }
 std::tuple<DiagInfo, IterInfo> read_data(Params &P) {
   skipline();
   ifstream fdata("data");
-  if (!fdata) my_error("Can't load initial data.");
+  if (!fdata) throw std::runtime_error("Can't load initial data.");
   auto sym_string = parse_datafile_header(fdata);
   read_nr_channels(fdata, sym_string, P);
   set_symmetry(sym_string);
@@ -210,7 +210,7 @@ std::tuple<DiagInfo, IterInfo> read_data(Params &P) {
         u0p.read(fdata);
         u0m.read(fdata);
         break;
-      default: my_error("Unknown block %c in data file.", ch);
+    default: throw std::invalid_argument(fmt::format("Unknown block {} in data file.", ch));
     }
   }
   if (string(P.tri) == "cpp") tridiag(); // before determine_Nmax()

@@ -170,7 +170,7 @@ void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, con
 #include "qs/qs-1ch-offdiag.dat"
 #include "qs/qs-1ch-diag.dat"
 
-    if (P.rungs) my_error("Not implemented.");
+    if (P.rungs) my_assert_not_reached();
   }
 }
 

@@ -146,9 +146,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
            `RECALC_TAB("qs/qs-3ch-tripletm.dat", QS::LENGTH_Tpm_3CH, Invar(0, 3))',
            `RECALC_TAB("qs/qs-4ch-tripletm.dat", QS::LENGTH_Tpm_4CH, Invar(0, 3))');
     }
-  } else {
-    my_error("Not implemented.");
-  }
+  } else my_assert_not_reached();
   return cnew;
 }
 

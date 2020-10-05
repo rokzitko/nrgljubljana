@@ -167,7 +167,7 @@ template <typename T>
     ublas::vector<T> vec(len);
     for (int j = 0; j < len; j++)
       F >> vec[j];
-    if (F.fail()) my_error("read_vector() error. Input file is corrupted.");
+    if (F.fail()) throw std::runtime_error("read_vector() error. Input file is corrupted.");
     return vec;
   }
 
@@ -181,7 +181,7 @@ template <typename T> void read_matrix(istream &F, ublas::matrix<T> &m, size_t s
       F >> x;
       m(j1, j2) = assert_isfinite(x);
     }
-  if (F.fail()) my_error("read_matrix() error. 'data' file is corrupted.");
+  if (F.fail()) std::runtime_error("read_matrix() error. 'data' file is corrupted.");
 }
 
 // Check if the value x is real [for complex number calculations].

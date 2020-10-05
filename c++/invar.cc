@@ -72,7 +72,7 @@ class Invar {
       if (is >> qn)
         i = qn;
       else
-        my_error("Failed reading quantum numbers.");
+        throw std::runtime_error("Failed reading quantum numbers.");
     }
     return is;
   }
@@ -130,7 +130,7 @@ class Invar {
   }
   int get(const string &which) const {
     const auto i = name.find(which);
-    if (i == end(name)) my_error("%s is an unknown quantum number.", which.c_str());
+    if (i == end(name)) throw std::invalid_argument(fmt::format("{} is an unknown quantum number.", which));
     const size_t index = i->second;
     my_assert(index < invdim);
     const int type = qntype[index];
@@ -145,7 +145,7 @@ class Invar {
   void InvertMyParity() {
     // By convention (for QSLR, QSZLR, ISOLR, ISOSZLR), parity is the quantum number named "P"
     const auto i = name.find("P");
-    if (i == end(name)) my_error("Critical error: no P quantum number");
+    if (i == end(name)) throw std::invalid_argument("Critical error: no P quantum number");
     const auto index = i->second;
     data[index]      = -data[index];
   }

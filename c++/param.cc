@@ -83,7 +83,7 @@ template <typename T>
       parambase(keyword, desc, defaultv) {
     data = fromstring<T>(_value);
     for (auto &i : allparams)
-      if (i->getkeyword() == keyword) my_error("param class internal error: keyword conflict.");
+          if (i->getkeyword() == keyword) throw std::runtime_error("param class internal error: keyword conflict.");
     allparams.push_back((parambase *)this);
   }
   void dump() override { cout << _keyword << "=" << data << (!defaultval ? " *" : "") << endl; }
@@ -581,7 +581,7 @@ struct Params {
 #endif
     if (diag == "dsyevr"s || diag =="zheevr"s) {
       my_assert(0.0 < diagratio && diagratio <= 1.0);
-      if (cfs_flags() && diagratio != 1.0) my_error("CFS/FDM is not compatible with partial diagonalisation.");
+      if (cfs_flags() && diagratio != 1.0) std::invalid_argument("CFS/FDM is not compatible with partial diagonalisation.");
     }
     my_assert(!(dumpabs && dumpscaled)); // dumpabs=true and dumpscaled=true is a meaningless combination
     // Take the first character (for backward compatibility)

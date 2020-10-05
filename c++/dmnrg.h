@@ -59,7 +59,7 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho, const P
   my_assert(P.Ninit <= N && N <= P.Nmax - 1);
   const string fn = workdir.rhofn(prefix, N);
   std::ofstream MATRIXF(fn, ios::binary | ios::out);
-  if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
+  if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
   boost::archive::binary_oarchive oa(MATRIXF);
   size_t nr = rho.size();
   oa << nr;
@@ -68,7 +68,7 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho, const P
   for (const auto &[I, mat] : rho) {
     oa << I;
     saveMatrix(oa, mat);
-    if (MATRIXF.bad()) my_error("Error writing %s", fn.c_str());  // Check each time
+    if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));  // Check each time
     cnt++;
     total += mat.size1();
   }
@@ -83,7 +83,7 @@ DensMatElements loadRho(size_t N, const string &prefix, const Params &P) {
   DensMatElements rho;
   const string fn = workdir.rhofn(prefix, N);
   std::ifstream MATRIXF(fn, ios::binary | ios::in);
-  if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
+  if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
   boost::archive::binary_iarchive ia(MATRIXF);
   size_t nr;
   ia >> nr;
@@ -92,13 +92,13 @@ DensMatElements loadRho(size_t N, const string &prefix, const Params &P) {
     Invar inv;
     ia >> inv;
     loadMatrix(ia, rho[inv]);
-    if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());  // Check each time
+    if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));  // Check each time
     total += rho[inv].size1();
   }
   nrglog('H', "[total=" << total << " subspaces=" << nr << "]");
   MATRIXF.close();
   if (P.removefiles)
-    if (remove(fn)) my_error("Error removing %s", fn.c_str());
+    if (remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
   return rho;
 }
 
@@ -123,7 +123,7 @@ void save_transformations(size_t N, const DiagInfo &diag, const Params &P) {
   nrglog('H', "Storing transformation matrices (N=" << N << ")...");
   const string fn = workdir.unitaryfn(N);
   ofstream MATRIXF(fn, ios::binary | ios::out);
-  if (!MATRIXF) my_error("Can't open file %s for writing.", fn.c_str());
+  if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
   boost::archive::binary_oarchive oa(MATRIXF);
   size_t nr = diag.size();
   oa << nr;
@@ -132,7 +132,7 @@ void save_transformations(size_t N, const DiagInfo &diag, const Params &P) {
   for(const auto &[I, eig]: diag) {
     oa << I;
     saveEigen(oa, eig);
-    if (MATRIXF.bad()) my_error("Error writing %s", fn.c_str()); // Check after each write.
+    if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn)); // Check after each write.
     cnt++;
     total += eig.value.size();
   }
@@ -150,7 +150,7 @@ DiagInfo load_transformations(size_t N, const Params &P) {
   nrglog('H', "Loading transformation matrices (N=" << N << ")...");
   const string fn = workdir.unitaryfn(N);
   std::ifstream MATRIXF(fn, ios::binary | ios::in);
-  if (!MATRIXF) my_error("Can't open file %s for reading", fn.c_str());
+  if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
   boost::archive::binary_iarchive ia(MATRIXF);
   size_t nr; // Number of subspaces
   ia >> nr;
@@ -160,7 +160,7 @@ DiagInfo load_transformations(size_t N, const Params &P) {
     ia >> inv;
     loadEigen(ia, diag[inv]);
     diag[inv].perform_checks(); // basic checks, added 9.11.2015
-    if (MATRIXF.bad()) my_error("Error reading %s", fn.c_str());
+    if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
     total += diag[inv].value.size();
   }
   nrglog('H', "[total=" << total << " subspaces=" << nr << "]");
@@ -171,7 +171,7 @@ DiagInfo load_transformations(size_t N, const Params &P) {
 void remove_transformation_files(size_t N, const Params &P) {
   if (!P.removefiles) return;
   const string fn = workdir.unitaryfn(N);
-  if (remove(fn)) my_error("Error removing %s", fn.c_str());
+  if (remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
 }
 
 // Calculation of the contribution from subspace I1 of rhoN (density
@@ -211,20 +211,13 @@ void cdmI(size_t i,            // Subspace index (alpha=1,...,P.combs)
   // We do this test at this point, to ensure rmax!=0 and dim!=0
   // and nromega!=0, otherwise there is no contribution anyway.
   const size_t I1nr = diagI1.getnr();
-  if (!(nromega <= I1nr)) {
-    cout << "nromega=" << nromega << " I1nr=" << I1nr << " dim=" << dim << endl;
-    my_error("Range mismatch in cdmI().");
-  }
+  my_assert(nromega <= I1nr);
   // offset gives the offset that is added to r1,rp to find the
   // elements ri in U^N_I1(omega|ri)
   const size_t offset = dm[N].at(I1).rmax.offset(i);
   const size_t d1     = diagI1.matrix.size1();
   const size_t d2     = diagI1.matrix.size2();
-  if (!(nromega <= d1 && offset + dim <= d2)) {
-    cout << "nromega=" << nromega << " d1=" << d1 << endl;
-    cout << "offset=" << offset << " dim=" << dim << " offset+dim=" << offset + dim << " d2=" << d2 << endl;
-    my_error("Matrix dimensions errorin cdmI().");
-  }
+  my_assert(nromega <= d1 && offset + dim <= d2);
   const ublas::matrix_range<const Matrix> U(diagI1.matrix, ublas::range(0, nromega), ublas::range(offset, offset + dim));
   Matrix T(dim, nromega);
   // T <- U^dag rhoN

@@ -9,7 +9,7 @@ template <class T> T fromstring(const string &str) {
   T result;
   try {
     result = boost::lexical_cast<T>(str);
-  } catch (boost::bad_lexical_cast &) { my_error("Lexical cast [%s] failed.", str.c_str()); }
+  } catch (boost::bad_lexical_cast &) { throw std::runtime_error(fmt::format("Lexical cast [{}] failed.", str)); }
   return result;
 }
 template <> bool fromstring(const string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }

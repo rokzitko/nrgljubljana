@@ -11,8 +11,8 @@ target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
 
 # Configure compilation
 target_compile_options(nrgljubljana_c     PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
-target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
-target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew>)
+target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++> 
+ $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew> $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>)
 target_compile_definitions(nrgljubljana_c PUBLIC
 				NRG_REAL
 				$<$<BOOL:${NRG_MPI}>:NRG_MPI>
@@ -50,8 +50,8 @@ if(BUILD_COMPLEX)
   add_library(nrgljubljanacmpl_c SHARED ${sources})
   target_link_libraries(nrgljubljanacmpl_c PRIVATE project_warnings)
   target_compile_options(nrgljubljanacmpl_c PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
-  target_include_directories(nrgljubljanacmpl_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
-  target_include_directories(nrgljubljanacmpl_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew>)
+  target_include_directories(nrgljubljanacmpl_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
+   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew> $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>)
   target_compile_definitions(nrgljubljanacmpl_c PUBLIC
 				NRG_COMPLEX
 				$<$<BOOL:${NRG_MPI}>:NRG_MPI>

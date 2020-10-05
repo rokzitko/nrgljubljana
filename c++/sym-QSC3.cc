@@ -73,8 +73,6 @@ class SymmetryQSC3 : public SymC3 {
   }
 
   DECL;
-  HAS_DOUBLET;
-  HAS_TRIPLET;
 };
 
 Symmetry *SymQSC3 = new SymmetryQSC3;

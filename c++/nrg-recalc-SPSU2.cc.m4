@@ -116,7 +116,7 @@ MatrixElements SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax 
            `RECALC_TAB("spsu2/spsu2-2ch-tripletm.dat", SPSU2::LENGTH_Tpm_2CH, Invar(3))',
            `RECALC_TAB("spsu2/spsu2-3ch-tripletm.dat", SPSU2::LENGTH_Tpm_3CH, Invar(3))');
     }
-  } else my_error("Not implemented.");
+  } else my_assert_not_reached();
   return cnew;
 }
 
