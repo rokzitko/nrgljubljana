@@ -4,9 +4,6 @@
 #ifndef _symmetry_cc_
 #define _symmetry_cc_
 
-// some forward declarations
-CONSTFNC double calculate_Z(const Invar, const Eigen &, double);
-
 // Check if the triangle inequality is satisfied (i.e. if
 // Clebsch-Gordan coefficient can be different from zero). This is
 // important, for example, for triplet operators, which are zero when
@@ -119,10 +116,16 @@ class Symmetry {
   virtual bool isfield() { return false; }
 
   // Multiplicity of the states in the invariant subspace
-  virtual size_t mult(const Invar &) {
+  virtual size_t mult(const Invar &) const {
     return 1;
   };
 
+  double calculate_Z(const Invar I, const Eigen &eig, double rescale_factor) const {
+    double sumZ = 0;
+    for (const auto &x : eig.value) sumZ += exp(-rescale_factor * x); // XXX std::accumulate
+    return mult(I) * sumZ;
+  }
+     
   // Does the combination of invariant subspaces I1 and I2 contribute
   // to the spectral function corresponding to spin SPIN?
   virtual bool check_SPIN(const Invar &I1, const Invar &I2, const int &SPIN) {

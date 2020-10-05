@@ -574,15 +574,6 @@ bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::np
 
 #include "read-input.cc"
 
-/**** Calculation of traces ****/
-
-// Used in calculate_TD().
-CONSTFNC double calculate_Z(const Invar I, const Eigen &eig, double rescale_factor) {
-  double sumZ = 0;
-  for (const auto &x : eig.value) sumZ += exp(-rescale_factor * x);
-  return Sym->mult(I) * sumZ;
-}
-
 // Formated output for the expectation values
 template <typename T> string output_val(const T &x, size_t prec = std::numeric_limits<double>::max_digits10) {
   ostringstream F;

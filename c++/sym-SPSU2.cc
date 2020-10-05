@@ -15,7 +15,7 @@ class SymmetrySPSU2 : public Symmetry {
   }
 
   // Multiplicity of the I=(SS) subspace = 2S+1 = SS.
-  size_t mult(const Invar &I) override { return I.get("SS"); }
+  size_t mult(const Invar &I) const override { return I.get("SS"); }
 
   bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
 

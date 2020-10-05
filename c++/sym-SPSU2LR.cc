@@ -15,7 +15,7 @@ class SymmetrySPSU2LR : public SymLR {
     InvarSinglet = Invar(0, 1);
   }
 
-  size_t mult(const Invar &I) override { return I.get("SS"); }
+  size_t mult(const Invar &I) const override { return I.get("SS"); }
 
   bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
 

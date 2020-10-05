@@ -19,7 +19,7 @@ class SymmetryQJ : public Symmetry {
   }
 
   // Multiplicity of the (Q,JJ) subspace is 2J+1 = JJ.
-  size_t mult(const Invar &I) override { return I.get("JJ"); }
+  size_t mult(const Invar &I) const override { return I.get("JJ"); }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("JJ"), I2.get("JJ"), I3.get("JJ"));

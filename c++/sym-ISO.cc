@@ -18,7 +18,7 @@ class SymmetryISOcommon : public Symmetry {
   }
 
   // Multiplicity of the I=(II,SS) subspace = (2I+1)(2S+1) = II SS.
-  size_t mult(const Invar &I) override {
+  size_t mult(const Invar &I) const override {
     int mi = I.get("II"); // isospin multiplicity
     int ms = I.get("SS"); // spin multiplicity
     return mi * ms;
