@@ -85,7 +85,7 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
   e.blocks.resize(P.combs);
   const size_t nr = e.getnr(); // nr. of eigenpairs
   my_assert(nr > 0);
-  my_assert(nr <= e.getrmax()); // rmax = length of eigenvectors
+  my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
   for (size_t block = 0; block < P.combs; block++) {
     const size_t rmax   = qsrmax.at(I).rmax(block + 1); // offset 1
     const size_t offset = qsrmax.at(I).offset(block + 1);

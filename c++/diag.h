@@ -260,7 +260,7 @@ void checkdiag(const Eigen &d,
                const double ORTHOGONALITY_EPSILON = 1e-12)
 {
   const auto M = d.value.size(); // number of eigenpairs
-  const auto dim = d.getrmax(); // dimension of the eigenvector
+  const auto dim = d.getdim();   // dimension of the eigenvector
   my_assert(d.matrix.size2() == dim);
   // Check normalization
   for (auto r = 0; r < M; r++) {

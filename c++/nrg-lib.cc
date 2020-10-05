@@ -240,47 +240,46 @@ using AllSteps = std::vector<Subs>;
 // about scaling, not about possible linear shifts/offsets.
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
-struct Eigen {
+struct RawEigen {
   using EVEC = ublas::vector<t_eigen>;
-  size_t nr     = 0;   // number of eigenpairs (currently stored)
-  size_t rmax   = 0;   // dimensionality of the matrix space
+  size_t nr  = 0;  // number of eigenpairs (currently stored)
+  size_t dim = 0;  // dimensionality of the matrix space
+  EVEC value;      // eigenvalues
+  Matrix matrix;   // eigenvectors
+  // Various assertion checks; to be called after the diagonalisation routine or after reading Eigen objects through
+  // MPI or from disk.
+  RawEigen() {}
+  RawEigen(size_t nr, size_t dim) : nr(nr), dim(dimn) {
+    my_assert(nr <= dim);
+    value.resize(nr);
+    matrix.resize(nr, dim);
+    perform_checks();
+  }
+  void perform_checks() const {
+    my_assert(value.size() == matrix.size1());
+    my_assert(matrix.size1() <= matrix.size2());
+    my_assert(nr == value.size());
+    my_assert(nr == matrix.size1());
+    my_assert(dim == matrix.size2());
+  }
+  size_t getnr() const { return nr; }   // Number of eigenpairs CURRENTLY STORED
+  size_t getdim() const { return dim; }
+};
+  
+struct Eigen : public RawEigen {
   size_t nrpost = 0;   // number of eigenpairs after truncation
   double shift  = 0.0; // shift of eigenvalues (0 or Egs)
-  EVEC value;          // eigenvalues
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
   EVEC absenergyN;     // absolute energies (referenced to the lowest energy in the N-th step)
   EVEC boltzmann;      // Boltzmann factors
-  Matrix matrix;       // eigenvectors in matrix form
   // 'blocks' contains eigenvectors separated according to the invariant
   // subspace from which they originate. This separation is required for
   // using the efficient BLAS routines when performing recalculations of
   // the matrix elements.
   std::vector<Matrix> blocks;
-  Eigen() {
-    nr = rmax = nrpost = 0;
-  }
-  // nr - number of eigenpairs, rmax - dimensionality of the matrix space
-  Eigen(size_t _nr, size_t _rmax) : nr(_nr), rmax(_rmax) {
-    my_assert(rmax >= nr);
-    value.resize(nr);
-    matrix.resize(nr, rmax);
-    perform_checks();
-  }
-  // Various assertion checks; to be called after the diagonalisation routine or reading Eigen objects through MPI or from disk.
-  void perform_checks() const {
-    my_assert(value.size() == matrix.size1());
-    my_assert(matrix.size1() <= matrix.size2());
-    my_assert(nr == value.size()); // new, 19.7.2019
-    my_assert(nr == matrix.size1());
-    my_assert(rmax == matrix.size2());
-  }
-  // Returns the number of eigenpairs CURRENTLY STORED.
-  size_t getnr() const { return nr; }
-  // Returns the dimensionality of a subspace, i.e. the number of
-  // components of each eigenvector.
-  size_t getrmax() const { return rmax; } // XXX drop this one
-  size_t getdim() const { return rmax; }
+  Eigen() : RawEigen() {}
+  Eigen(size_t nr, size_t rmax) : RawEigen(nr, rmax) {}
   // Returns the number of eigenpairs after truncation.
   size_t getnrkept() const { return nrpost; }
   // Truncate to nrpost states.
@@ -1463,7 +1462,7 @@ bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
   nrgdump3(Emax, nrkept, nrkeptmult) << endl;
   const auto notenough = std::any_of(begin(diag), end(diag), 
                                      [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value(eig.getnr()-1) != Emax &&
-                                         eig.getnr() < eig.getrmax(); });
+                                         eig.getnr() < eig.getdim(); });
   return notenough;
 }
 
@@ -1939,10 +1938,10 @@ std::pair<Invar, Eigen> read_from(int source) {
   auto eig = mpi_receive_eigen(source);
   Invar Irecv;
   check_status(mpiw->recv(source, TAG_INVAR, Irecv));
-  nrglog('M', "Received results for subspace " << Irecv << " [nr=" << eig.getnr() << ", dim=" << eig.getrmax() << "]");
+  nrglog('M', "Received results for subspace " << Irecv << " [nr=" << eig.getnr() << ", dim=" << eig.getdim() << "]");
   // Some consistency checks
   my_assert(eig.matrix.size1() == eig.getnr());
-  my_assert(eig.matrix.size2() == eig.getrmax());
+  my_assert(eig.matrix.size2() == eig.getdim());
   my_assert(eig.matrix.size1() <= eig.matrix.size2());
   return {Irecv, eig};
 }
@@ -2163,10 +2162,10 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
   size_t nrkept = 0;
   for (const auto &[I, eig]: diag) { // XXX - there should be only 1 copy
     const auto f = qsrmax.find(I);
-    dm[step.ndx()][I] = { eig.getnr(), eig.getrmax(),
+    dm[step.ndx()][I] = { eig.getnr(), eig.getdim(),
                           f != qsrmax.cend() ? f->second : Rmaxvals{},
                           eig.value, eig.absenergy, eig.absenergyG, eig.absenergyN, step.last() };
-    nrall += eig.getrmax();
+    nrall += eig.getdim();
     nrkept += eig.getnr();
   }
   double ratio = double(nrkept) / nrall;
