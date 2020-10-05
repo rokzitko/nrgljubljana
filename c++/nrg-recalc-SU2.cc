@@ -34,7 +34,7 @@ MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &q
     Invar Ip;
 
     Ip = Invar(ii1 - 1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "su2/su2-1ch-doubletm.dat" << ", len=" << SU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
   if (diag.count(Ip)) {
@@ -59,7 +59,7 @@ MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &q
   };
 
     Ip = Invar(ii1+1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "su2/su2-1ch-doubletp.dat" << ", len=" << SU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
   if (diag.count(Ip)) {
@@ -108,7 +108,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
     // type 2: [f^dag_DO, f_UP]
 
     I1 = Invar(iip + 1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   if (diag.count(I1)) {
     struct Recalc_f recalc_table[] = {
@@ -167,7 +167,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   };
 
     I1 = Invar(iip-1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   if (diag.count(I1)) {
     struct Recalc_f recalc_table[] = {

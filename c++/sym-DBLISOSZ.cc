@@ -3,7 +3,8 @@ class SymmetryDBLISOSZ : public SymField {
   outfield Sz2, Sz, Q12, Q22;
 
   public:
-  SymmetryDBLISOSZ() : SymField() { all_syms["DBLISOSZ"] = this; }
+  SymmetryDBLISOSZ() : SymField(), Sz2
+   { all_syms["DBLISOSZ"] = this; }
 
   void init() override {
     Sz2.set("<Sz^2>", 1);
@@ -81,7 +82,7 @@ class SymmetryDBLISOSZ : public SymField {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
     bucket trIZ12;      // Tr[I1_z^2]
     bucket trIZ22;      // Tr[I2_z^2]

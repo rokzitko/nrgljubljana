@@ -109,6 +109,8 @@ template <typename T>
 struct Params {
   list<parambase *> all; // Container for all parameters
 
+  param<string> symtype{"symtype", "Symmetry type", "", all}; // S
+  
   // *************************************************************
   // Parameters controlling discretization scheme and Wilson chain
 

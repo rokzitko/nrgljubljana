@@ -1,97 +1,81 @@
 // outfield.cc - Code for flexible formatted output
-// Copyright (C) 2009-2019 Rok Zitko
+// Copyright (C) 2009-2020 Rok Zitko
 
 #ifndef _outfield_cc_
 #define _outfield_cc_
 
-// Storage of various statistical quantities calculated during the iteration.
 class outfield;
+using Allfields = std::vector<outfield*>;
 
-using outfieldPtr = outfield *; // TODO: shared ptr
-using vecoutptr = std::vector<outfieldPtr>;
-vecoutptr allfields; // Container for all fields
-
-// Base class for output field containers.
 class outfield {
-  protected:
-  string _desc;     // description of the field
-  string _value;    // value of the field
-  double _rawvalue{}; // unformatted value stored in the field
-  public:
-  static int width; // width of the output field
-  static int prec;  // numerical precision of the output field
-  outfield() : _desc{""} {};
-  // Using "pos", we can define at which position the element is inserted
-  // to the list of fields. The default is at the end of the list.
-  void set(const string &desc, int pos = -1) {
-    _desc           = desc;
-    outfieldPtr ptr = this;
-    if (pos == -1)
-      allfields.push_back(ptr);
-    else {
-      my_assert(pos < allfields.size());
-      allfields.insert(begin(allfields) + pos, ptr);
-    }
-  };
-  explicit outfield(const string &desc, int pos = -1) { set(desc, pos); }
-  // We store a double precision number which is converted to an
-  // appropriately formatted string.
-  void setvalue(double newvalue) {
-    my_assert(width != 0 && prec != 0);
-    ostringstream tmp;
-    tmp << setw(width) << setprecision(prec) << newvalue;
-    _value    = tmp.str();
-    _rawvalue = newvalue;
-  }
-  void operator=(double newvalue) { setvalue(newvalue); }
-  string name() const { return _desc; }
-  double rawvalue() const { return _rawvalue; }
-  // output the header
-  // Warning: *_width must be set to the correct value before
-  // this member function is called!
-  void putheader(ostream &F) const {
-    my_assert(width != 0);
-    F << setw(width) << _desc << " ";
-  }
-  // Output the value of the field.
-  void put(ostream &F) const {
-    my_assert(width != 0);
-    F << setw(width) << _value << " ";
-  }
+ private:
+   const Params &P;
+   string desc;
+   string value{};
+ public:
+   explicit outfield(const Params &P_, Allfields &allfields, const string &desc_, int position = -1)
+     : P(P_), desc(desc_) {
+       if (position == -1)
+         allfields.push_back(this);
+       else {
+         my_assert(position < allfields.size());
+         allfields.insert(begin(allfields) + position, this);
+       }
+     }
+   template<typename T> void setvalue(T x) {
+     ostringstream tmp;
+     tmp << setw(P.width_td) << setprecision(P.prec_td) << x; // XXX fmt
+     value    = tmp.str();
+   }
+   template<typename T> void operator=(T x) { setvalue(x); }
+   void putheader(ostream &F) const { F << setw(P.width_td) << desc << " "; }
+   void putvalue(ostream &F) const  { F << setw(P.width_td) << value << " "; }
 };
-
-int outfield::prec  = 0;
-int outfield::width = 0;
-
-// Return true if a field named 'query' exists.
-bool outfield_exists(const string &query) {
-  return any_of(begin(allfields), end(allfields), [query](const auto &i){ return i->name() == query; });
-}
 
 // Setup output fields that will appear in the file "td".
 // Additional elements are defined in symmetry.cc.
-namespace TD {
+struct TD {
+  Allfields allfields;
+  const Params &P;
+  ofstream O;
   outfield T, E, E2, C, F, S;
-  void init() {
-    allfields.clear();
-    T.set("T");
-    // insert others here (starting with pos=1, i.e. after the 1st element)
-    E.set("<E>");
-    E2.set("<E^2>");
-    C.set("C");
-    F.set("F");
-    S.set("S");
+  void save_values() {
+    O << ' ';
+    for (const auto &i : allfields) i->putvalue(O);
+    O << std::endl;
   }
-  void save_TD_quantities(ostream &F) {
-    F << ' ';
-    for (const auto &i : allfields) i->put(F);
-    F << endl;
+  void save_header() {
+    O << '#';
+    for (const auto &i : allfields) i->putheader(O);
+    O << std::endl;
   }
-  void save_header(ostream &F) {
-    F << '#';
-    for (const auto &i : allfields) i->putheader(F);
-    F << endl;
+  TD(const Params &P_, std::string filename) : P(P_), O(filename), 
+    T(P, allfields, "T"), E(P, allfields, "<E>"), E2(P, allfields, "<E^2>"),
+    C(P, allfields, "C"), F(P, allfields, "F"), S(P, allfields, "S") { 
+      save_header(); 
+    }
+};
+
+struct TD_FDM {
+  Allfields allfields;
+  const Params &P;
+  ofstream O;
+  outfield T, E, C, F, S;
+  void save_values() {
+    O << ' ';
+    for (const auto &i : allfields) i->putvalue(O);
+    O << std::endl;
   }
-} // namespace TD
+  void save_header() {
+    O << '#';
+    for (const auto &i : allfields) i->putheader(O);
+    O << std::endl;
+  }
+  TD_FDM(const Params &P_, std::string filename) : P(P_), O(filename), 
+    T(P, allfields, "T"), E(P, allfields, "E_fdm"),
+    C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") { 
+      save_header(); 
+    }
+};
 
 #endif // _outfield_cc_

@@ -35,7 +35,7 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
     Invar Ip;
 
     Ip = Invar(ssz1 + 1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-doubletp.dat" << ", len=" << SPU1LR::LENGTH_D_1CH << ", Iop=" << Invar(-1, 1) << ")");
   if (diag.count(Ip)) {
@@ -60,7 +60,7 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
   };
 
     Ip = Invar(ssz1-1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-doubletm.dat" << ", len=" << SPU1LR::LENGTH_D_1CH << ", Iop=" << Invar(+1, 1) << ")");
   if (diag.count(Ip)) {
@@ -98,7 +98,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
     // CASE I: SAME PARITY
 
     I1 = Invar(sszp + 1, pp);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-1ch-spinupa.dat" << ", ch=" << 0 << ", len=" << SPU1LR::LENGTH_I_1CH << ")");
   if (diag.count(I1)) {
@@ -133,7 +133,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
   };
 
     I1 = Invar(sszp-1, pp);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-1ch-spindowna.dat" << ", ch=" << 0 << ", len=" << SPU1LR::LENGTH_I_1CH << ")");
   if (diag.count(I1)) {
@@ -227,7 +227,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
     Invar Ip;
 
     Ip = Invar(ssz1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-triplets.dat" << ", len=" << SPU1LR::LENGTH_T0_1CH << ", Iop=" << Invar(0, 1) << ")");
   if (diag.count(Ip)) {
@@ -252,7 +252,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
   };
 
     Ip = Invar(ssz1+2);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-tripletp.dat" << ", len=" << SPU1LR::LENGTH_Tpm_1CH << ", Iop=" << Invar(-2, 1) << ")");
   if (diag.count(Ip)) {
@@ -277,7 +277,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
   };
 
     Ip = Invar(ssz1-2);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-tripletm.dat" << ", len=" << SPU1LR::LENGTH_Tpm_1CH << ", Iop=" << Invar(+2, 1) << ")");
   if (diag.count(Ip)) {

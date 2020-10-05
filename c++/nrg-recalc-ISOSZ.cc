@@ -35,7 +35,7 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
     Invar Ip;
 
     Ip = Invar(ii1 - 1, ssz1 + 1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletmp.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, -1) << ")");
   if (diag.count(Ip)) {
@@ -60,7 +60,7 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
   };
 
     Ip = Invar(ii1-1, ssz1-1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletmm.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, +1) << ")");
   if (diag.count(Ip)) {
@@ -85,7 +85,7 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
   };
 
     Ip = Invar(ii1+1, ssz1+1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletpp.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, -1) << ")");
   if (diag.count(Ip)) {
@@ -110,7 +110,7 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
   };
 
     Ip = Invar(ii1+1, ssz1-1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletpm.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, +1) << ")");
   if (diag.count(Ip)) {
@@ -155,7 +155,7 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     int NN = step.getnn();
 
     I1 = Invar(iip + 1, sszp + 1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spinup-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
   if (diag.count(I1)) {
@@ -190,7 +190,7 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   };
 
     I1 = Invar(iip+1, sszp-1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spindown-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
   if (diag.count(I1)) {
@@ -225,7 +225,7 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   };
 
     I1 = Invar(iip-1, sszp+1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spinup-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
   if (diag.count(I1)) {
@@ -260,7 +260,7 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   };
 
     I1 = Invar(iip-1, sszp-1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spindown-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
   if (diag.count(I1)) {
@@ -306,7 +306,7 @@ MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
     Invar Ip;
 
     Ip = Invar(ii1, ssz1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-triplets.dat" << ", len=" << ISOSZ::LENGTH_T0_1CH << ", Iop=" << Invar(1, 0) << ")");
   if (diag.count(Ip)) {
@@ -331,7 +331,7 @@ MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
   };
 
     Ip = Invar(ii1, ssz1+2);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-tripletp.dat" << ", len=" << ISOSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, -2) << ")");
   if (diag.count(Ip)) {
@@ -356,7 +356,7 @@ MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
   };
 
     Ip = Invar(ii1, ssz1-2);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-tripletm.dat" << ", len=" << ISOSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, +2) << ")");
   if (diag.count(Ip)) {

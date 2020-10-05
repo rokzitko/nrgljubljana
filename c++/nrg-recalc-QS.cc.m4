@@ -17,7 +17,7 @@ namespace QS {
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
-  if (!substeps) {
+  if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
@@ -57,7 +57,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
@@ -102,7 +102,7 @@ Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) {
+OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, int M) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
@@ -122,7 +122,7 @@ OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
-  if (!substeps) {
+  if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
       Sspin ss1 = I1.get("SS");
@@ -168,7 +168,7 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "qs/qs-2ch-qdiff.dat"
           break;
@@ -182,7 +182,7 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "qs/qs-2ch-q1.dat"
           break;
@@ -196,7 +196,7 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "qs/qs-2ch-q2.dat"
           break;
@@ -210,7 +210,7 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "qs/qs-2ch-qtot.dat"
           break;

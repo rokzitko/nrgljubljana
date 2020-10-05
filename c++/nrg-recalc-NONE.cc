@@ -34,7 +34,7 @@ Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   for(const auto &[Ip, eig]: diag) {
     Invar I1 = Invar();
 
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
      if (diag.count(I1)) {
        struct Recalc_f recalc_table[] = {
@@ -101,7 +101,7 @@ MatrixElements SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &
   for(const auto &[I1, eig]: diag) {
     Invar Ip = Invar();
 
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "none/none-1ch-doublet.dat" << ", len=" << NONE::LENGTH_D_1CH << ", Iop=" << Invar() << ")");
   if (diag.count(Ip)) {

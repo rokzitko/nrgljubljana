@@ -36,7 +36,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 
     Invar I1 = Invar(-p); // always the opposite fermion parity!
 
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
      if (diag.count(I1)) {
        struct Recalc_f recalc_table[] = {
@@ -158,7 +158,7 @@ MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsr
     int p1   = I1.get("P");
     Invar Ip = Invar(-p1); // always the opposite fermion parity!
 
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "p/p-1ch-doublet.dat" << ", len=" << symP::LENGTH_D_1CH << ", Iop=" << Invar(-1) << ")");
   if (diag.count(Ip)) {

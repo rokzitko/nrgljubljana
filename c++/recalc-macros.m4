@@ -25,14 +25,14 @@ define(`RECALC_F_TAB', {
 })
 
 define(`ONETWO', 
-  switch (channels) {
+  switch (P.channels) {
   case 1: { $1 } break;
   case 2: { $2 } break;
   default: my_assert_not_reached();
   })
 
 define(`ONE23', 
-  switch (channels) {
+  switch (P.channels) {
   case 1: { $1 } break;
   case 2: { $2 } break;
   case 3: { $3 } break;
@@ -40,7 +40,7 @@ define(`ONE23',
   })
   
 define(`ONE234', 
-  switch (channels) {
+  switch (P.channels) {
   case 1: { $1 } break;
   case 2: { $2 } break;
   case 3: { $3 } break;
@@ -49,7 +49,7 @@ define(`ONE234',
 })
 
 define(`ONE2345', 
-  switch (channels) {
+  switch (P.channels) {
   case 1: { $1 } break;
   case 2: { $2 } break;
   case 3: { $3 } break;

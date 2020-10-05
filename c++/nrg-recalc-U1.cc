@@ -33,7 +33,7 @@ MatrixElements SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "u1/u1-1ch-doublet.dat" << ", len=" << U1::LENGTH_D_1CH << ", Iop=" << Invar(1) << ")");
   if (diag.count(Ip)) {
@@ -81,7 +81,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   if (diag.count(I1)) {
     struct Recalc_f recalc_table[] = {

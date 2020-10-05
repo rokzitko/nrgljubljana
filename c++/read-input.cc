@@ -1,7 +1,7 @@
 #ifndef _read_input_cc_
 #define _read_input_cc_
 
-void set_symmetry(const string &sym_string);
+void set_symmetry(const Params &P);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
 std::string parse_datafile_header(istream &fdata, const int expected_version = 9)
@@ -30,8 +30,8 @@ std::string parse_datafile_header(istream &fdata, const int expected_version = 9
   return sym_string;
 }
 
-// Read the number of channels from data file. Also sets P.combs
-// accordingly, depending on the spin of the conduction band electrons.
+// Read the number of channels from data file. Also sets P.combs accordingly, depending on the spin of the conduction
+// band electrons.
 void read_nr_channels(ifstream &fdata, std::string sym_string, Params &P) {
   size_t channels;
   fdata >> channels;
@@ -162,8 +162,9 @@ std::tuple<DiagInfo, IterInfo> read_data(Params &P) {
   ifstream fdata("data");
   if (!fdata) throw std::runtime_error("Can't load initial data.");
   auto sym_string = parse_datafile_header(fdata);
+  my_assert(sym_string == P.symtype.value());
   read_nr_channels(fdata, sym_string, P);
-  set_symmetry(sym_string);
+  set_symmetry(P);
   read_Nmax(fdata, P);
   size_t nsubs = read_nsubs(fdata);
   skip_comments(fdata);

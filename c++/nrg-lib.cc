@@ -449,60 +449,66 @@ class Stats {
      }
    }
 
+   // ** Thermodynamic quantities
+   double Z;
+   double Zft;   // grand-canonical partition function (at shell n)
+   double Zgt;   // grand-canonical partition function for computing G(T)
+   double Zchit; // grand-canonical partition function for computing chi(T)
 
-  // ** Thermodynamic quantities
-  double Z;
-  double Zft;   // grand-canonical partition function (at shell n)
-  double Zgt;   // grand-canonical partition function for computing G(T)
-  double Zchit; // grand-canonical partition function for computing chi(T)
-  double E;     // energy times beta
-  double E2;    // (energy times beta) squared
-  double C;     // heat capcity (in units of 1/k_B)
-  double F;     // free energy times beta
-  double S;     // entropy: (beta E)-(beta F)
-  // Expectation values
-  using t_mapexpv = map<string, t_expv>;
-  t_mapexpv expv;    // expectation values of custom operators
-  t_mapexpv fdmexpv; // Expectation values computed using the FDM algorithm
+   double E;     // energy times beta
+   double E2;    // (energy times beta) squared
+   double C;     // heat capcity (in units of 1/k_B)
+   double F;     // free energy times beta
+   double S;     // entropy: (beta E)-(beta F)
+   
+   TD td;
+   
+   //  ** Expectation values
+   map<string, t_expv> expv;    // expectation values of custom operators
+   map<string, t_expv> fdmexpv; // Expectation values computed using the FDM algorithm
+   
+   // ** Energies
+   // total_energy is the total energy of the ground state at the current iteration. This is the sum of all the 
+   // zero state energies for all the iteration steps so far.
+   t_eigen total_energy;
+   // GS_energy is the value of the variable "total_energy" at the end of the
+   // iteration. This is different from 'Egs'.
+   t_eigen GS_energy;
+   std::vector<double> rel_Egs; // Values of 'Egs' for all NRG steps.
+   std::vector<double> abs_Egs; // Values of 'Egs' (multiplied by scale, i.e. in absolute scale) for all NRG steps.
+   std::vector<double> energy_offsets; // Values of "total_energy" for all NRG steps.
+   
+   // Containers related to the FDM-NRG approach
+   // ==========================================
+   // Consult A. Weichselbaum, J. von Delft, PRL 99, 076402 (2007).
+   vmpf ZnDG;                    // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n
+   vmpf ZnDN;                    // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
+   std::vector<double> wn;       // Weights w_n. They sum to 1.
+   std::vector<double> wnfactor; // wn/ZnDG
+   double ZZG;                   // grand-canonical partition function with energies referred to the ground state energy
+   double Z_fdm;                 // grand-canonical partition function (full-shell) at temperature T
+   
+   double F_fdm;                 // free-energy at temperature T
+   double E_fdm;                 // energy at temperature T
+   double C_fdm;                 // heat capacity at temperature T
+   double S_fdm;                 // entropy at temperature T
+   
+   TD_FDM td_fdm;
 
-  // Energies
-  // ========
-  // total_energy is the total energy of the ground state at the current iteration. This is the sum of all the 
-  // zero state energies for all the iteration steps so far.
-  t_eigen total_energy;
-  // GS_energy is the value of the variable "total_energy" at the end of the
-  // iteration. This is different from 'Egs'.
-  t_eigen GS_energy;
-  std::vector<double> rel_Egs; // Values of 'Egs' for all NRG steps.
-  std::vector<double> abs_Egs; // Values of 'Egs' (multiplied by scale, i.e. in absolute scale) for all NRG steps.
-  std::vector<double> energy_offsets; // Values of "total_energy" for all NRG steps.
-
-  // Containers related to the FDM-NRG approach
-  // ==========================================
-  // Consult A. Weichselbaum, J. von Delft, PRL 99, 076402 (2007).
-  vmpf ZnDG;                    // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n
-  vmpf ZnDN;                    // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
-  std::vector<double> wn;       // Weights w_n. They sum to 1.
-  std::vector<double> wnfactor; // wn/ZnDG
-  double ZZG;                   // grand-canonical partition function with energies referred to the ground state energy
-  double Z_fdm;                 // grand-canonical partition function (full-shell) at temperature T
-  double F_fdm;                 // free-energy at temperature T
-  double E_fdm;                 // energy at temperature T
-  double C_fdm;                 // heat capacity at temperature T
-  double S_fdm;                 // entropy at temperature T
-
-  void init_vectors(size_t Nlen) {
-    rel_Egs = std::vector<double>(Nlen);
-    abs_Egs = std::vector<double>(Nlen);
-    energy_offsets = std::vector<double>(Nlen);
-    ZnDG = vmpf(Nlen);
-    ZnDN = vmpf(Nlen);
-    wn = std::vector<double>(Nlen, 0.0);
-    wnfactor = std::vector<double>(Nlen, 0.0);
-  }
+   void init_vectors(size_t Nlen) {
+     rel_Egs = std::vector<double>(Nlen);
+     abs_Egs = std::vector<double>(Nlen);
+     energy_offsets = std::vector<double>(Nlen);
+     ZnDG = vmpf(Nlen);
+     ZnDN = vmpf(Nlen);
+     wn = std::vector<double>(Nlen, 0.0);
+     wnfactor = std::vector<double>(Nlen, 0.0);
+   }
+   
+   Stats(const Params &P) : td(P, FN_TD), td_fdm(P, FN_TDFDM) {}
 };
 
-Stats stats;
+Stats stats(P);
 
 void subtract_groundstate_energy(const Stats &stats, DiagInfo &diag) {
   for (auto &[i, eig] : diag) eig.subtract_Egs(stats.Egs);
@@ -1294,24 +1300,13 @@ struct Output {
   const Params &P;
   Annotated annotated;
   ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
-  ofstream Ftd;        // magnetic and charge susceptibility
   unique_ptr<ExpvOutput> custom;
   unique_ptr<ExpvOutput> customfdm;
   
-  // Prepare "td" for output: write header with parameters and a line with field names.
-  void open_Ftd(ofstream &Ftd) {
-    Ftd.open(FN_TD);
-    outfield::width = P.width_td;
-    outfield::prec  = P.prec_td;
-    TD::save_header(Ftd);
-  }
-
   Output(const RUNTYPE &runtype_, const IterInfo &iterinfo, Stats &stats, const Params &P_) : runtype(runtype_), P(P_), annotated(P) {
     // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
     // runs produce the same results.
     if (P.dumpenergies) Fenergies.open(runtype == RUNTYPE::NRG ? FN_ENERGIES_NRG : FN_ENERGIES_DMNRG);
-    if (runtype == RUNTYPE::NRG)
-      open_Ftd(Ftd);
     list<string> ops;
     for (const auto &[name, m] : iterinfo.ops)  ops.push_back(name);
     for (const auto &[name, m] : iterinfo.opsg) ops.push_back(name);
@@ -1557,15 +1552,9 @@ void calc_ZnD(const AllSteps &dm, Stats &stats) {
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
 void fdm_thermodynamics(const AllSteps &dm, Stats &stats)
 {
-  allfields.clear(); // reuse!
-  TD::T.set("T");
-  TD::E.set("E_fdm");
-  TD::C.set("C_fdm");
-  TD::F.set("F_fdm");
-  TD::S.set("S_fdm");
-  TD::T = P.T;
+  stats.td_fdm.T = P.T;
   stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/P.T); // this is the true partition function
-  TD::F = stats.F_fdm = -log(stats.ZZG)*P.T+stats.GS_energy; // F = -k_B*T*log(Z)
+  stats.td_fdm.F = stats.F_fdm = -log(stats.ZZG)*P.T+stats.GS_energy; // F = -k_B*T*log(Z)
   // We use multiple precision arithmetics to ensure sufficient accuracy in the calculation of
   // the variance of energy and thus the heat capacity.
   my_mpf E, E2;
@@ -1587,13 +1576,13 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats)
           mpf_add(E, E, e);
           mpf_add(E2, E2, e2);
         }
-  TD::E = stats.E_fdm = mpf_get_d(E);
+  stats.td_fdm.E = stats.E_fdm = mpf_get_d(E);
   my_mpf sqrE;
   mpf_mul(sqrE, E, E);
   my_mpf varE;
   mpf_sub(varE, E2, sqrE);
-  TD::C = stats.C_fdm = mpf_get_d(varE)/pow(double(P.T),2);
-  TD::S = stats.S_fdm = (stats.E_fdm-stats.F_fdm)/P.T;
+  stats.td_fdm.C = stats.C_fdm = mpf_get_d(varE)/pow(double(P.T),2);
+  stats.td_fdm.S = stats.S_fdm = (stats.E_fdm-stats.F_fdm)/P.T;
   cout << endl;
   cout << "Z_fdm=" << HIGHPREC(stats.Z_fdm) << endl;
   cout << "F_fdm=" << HIGHPREC(stats.F_fdm) << endl;
@@ -1601,9 +1590,7 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats)
   cout << "C_fdm=" << HIGHPREC(stats.C_fdm) << endl;
   cout << "S_fdm=" << HIGHPREC(stats.S_fdm) << endl;
   cout << endl;
-  ofstream Ftdfdm(FN_TDFDM); // XXX
-  TD::save_header(Ftdfdm);
-  TD::save_TD_quantities(Ftdfdm);
+  stats.td_fdm.save_values();
 }
 
 // Actually truncate matrices. Drop subspaces with no states kept.
@@ -1727,7 +1714,6 @@ void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
  for all symmetry types. Other calculations are performed by calculate_TD
  member functions defined in symmetry.cc. */
 void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &output, double additional_factor = 1.0) {
-  TD::T = step.Teff();
   // Rescale factor for energies. The energies are expressed in
   // units of omega_N, thus we need to appropriately rescale them to
   // calculate the Boltzmann weights at the temperature scale Teff
@@ -1750,14 +1736,15 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
   }
   stats.Z = Z;
   // Energy, energy squared, heat capacity, free energy, entropy
-  TD::E = stats.E = E / Z;                   // beta <H>
-  TD::E2 = stats.E2 = E2 / Z;                // beta^2 <H^2>
-  TD::C = stats.C = stats.E2 - sqr(stats.E); // C/k_B=beta^2(<H^2>-<H>^2)
-  TD::F = stats.F = -log(Z);                 // F/(k_B T)=-ln(Z)
-  TD::S = stats.S = stats.E - stats.F;       // S/k_B=beta<H>+ln(Z)
+  stats.td.T  = step.Teff();
+  stats.td.E  = stats.E = E / Z;                   // beta <H>
+  stats.td.E2 = stats.E2 = E2 / Z;                // beta^2 <H^2>
+  stats.td.C  = stats.C = stats.E2 - sqr(stats.E); // C/k_B=beta^2(<H^2>-<H>^2)
+  stats.td.F  =  stats.F = -log(Z);                 // F/(k_B T)=-ln(Z)
+  stats.td.S  = stats.S = stats.E - stats.F;       // S/k_B=beta<H>+ln(Z)
   // Call quantum number specific calculation routine
-  Sym->calculate_TD(step, diag, rescale_factor);
-  if (step.nrg()) TD::save_TD_quantities(output.Ftd);
+  Sym->calculate_TD(step, diag, stats, rescale_factor);
+  if (step.nrg()) stats.td.save_values();
 }
 
 inline bool need_rho() { return P.cfs || P.dmnrg; }
@@ -1788,8 +1775,8 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm);
 }
 
-// Perform calculations of physical quantities. Called prior to NRG
-// iteration (if calc0=true) and after each NRG step.
+// Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
+// step.
 void perform_measurements(const Step &step, const DiagInfo &diag, Stats &stats, Output &output) {
   calculate_TD(step, diag, stats, output);
   output.annotated.dump(step, diag);
@@ -2109,12 +2096,12 @@ std::vector<Invar> task_list(const QSrmax &qsrmax) {
 void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
   TIME("recalc f");
   if (!P.substeps) {
-    opch = Sym->recalc_irreduc(step, diag, qsrmax, P);
+    opch = Sym->recalc_irreduc(step, diag, qsrmax);
   } else {
     const auto [N, M] = step.NM();
     for (size_t i = 0; i < P.channels; i++)
       if (i == M) {
-        opch[i] = Sym->recalc_irreduc_substeps(step, diag, qsrmax, P, i);
+        opch[i] = Sym->recalc_irreduc_substeps(step, diag, qsrmax, i);
       } else {
         for (size_t j = 0; j < P.perchannel; j++) 
           opch[i][j] = Sym->recalc_doublet(diag, qsrmax, opch[i][j]);
@@ -2146,7 +2133,7 @@ void calc_boltzmann_factors(DiagInfo &diag) {
 // the truncation. All other calculations are done in after_diag(). Called from iterate().
 DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
   step.infostring();
-  Sym->show_coefficients(step, P);
+  Sym->show_coefficients(step);
   auto tasks = task_list(qsrmax);
   double diagratio = P.diagratio;
   DiagInfo diag;
@@ -2393,17 +2380,22 @@ void print_about_message(ostream &s) {
   s << "Compiled on " << __DATE__ << " at " << __TIME__ << endl << endl;
 }
 
-// Called immediately after the symmetry type is determined from the data file. This ensures that Invar can be parsed correctly.
-void set_symmetry(const string &sym_string) {
-  if (all_syms.count(sym_string) != 1) 
-    throw std::runtime_error("Unknown symmetry " + sym_string);
-  cout << "SYMMETRY TYPE: " << sym_string << endl;
-  Sym = all_syms[sym_string];
-  TD::init();
-  my_assert(P.channels > 0); // must be set at this point
-  Sym->init();
-  Sym->set(P.combs, P.channels, P.substeps);
-  Sym->load(); // This call actually initializes the data structures.
+std::unique_ptr<Symmetry> get(std::string sym_string, const Params &P, Allfields &allfields)
+{
+  if (sym_string == "QS")
+    return std::make_unique<SymmetryQS>(P, allfields);
+  if (sym_string == "QSZ")
+    return std::make_unique<SymmetryQSZ>(P, allfields);  
+  throw std::runtime_error("Unknown symmetry " + sym_string);
+}
+
+// Called immediately after parsing the information about the number of channels from the data file. This ensures
+// that Invar can be parsed correctly.
+void set_symmetry(const Params &P) {
+  my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
+  cout << "SYMMETRY TYPE: " << P.symtype.value() << endl;
+  Sym = get(P.symtype.value(), P, stats.td.allfields);
+  Sym->load();
 }
 
 void calculation(Params &P) {

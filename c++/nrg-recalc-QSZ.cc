@@ -33,7 +33,7 @@ namespace QSZ {
 // Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
-  if (!substeps) {
+  if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
       SZspin ssz1 = I1.get("SSZ");
@@ -46,7 +46,7 @@ MatrixElements SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &q
       // density) can be defined.
 
       Ip = Invar(q1 - 1, ssz1 + 1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qsz/qsz-1ch-doubletp.dat" << ", len=" << QSZ::LENGTH_D_1CH << ", Iop=" << Invar(1, -1) << ")");
   if (diag.count(Ip)) {
@@ -81,7 +81,7 @@ MatrixElements SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &q
   };
 
     Ip = Invar(q1-1, ssz1-1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qsz/qsz-1ch-doubletm.dat" << ", len=" << QSZ::LENGTH_D_1CH << ", Iop=" << Invar(1, +1) << ")");
   if (diag.count(Ip)) {
@@ -150,7 +150,7 @@ MatrixElements SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 }
 
 // Driver routine for recalc_f()
-Opch SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
@@ -161,7 +161,7 @@ Opch SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
     // several channels.
 
     I1 = Invar(qp + 1, sszp + 1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "qsz/qsz-1ch-spinupa.dat" << ", ch=" << 0 << ", len=" << QSZ::LENGTH_I_1CH << ")");
   if (diag.count(I1)) {
@@ -226,7 +226,7 @@ Opch SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   };
 
     I1 = Invar(qp+1, sszp-1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "qsz/qsz-1ch-spindowna.dat" << ", ch=" << 0 << ", len=" << QSZ::LENGTH_I_1CH << ")");
   if (diag.count(I1)) {
@@ -293,7 +293,7 @@ Opch SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   return opch;
 }
 
-OpchChannel SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P,int M) {
+OpchChannel SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, int M) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
@@ -330,14 +330,14 @@ OpchChannel SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInf
 // Recalculate matrix elements of a triplet tenzor operator
 MatrixElements SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
-  if (!substeps) {
+  if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1   = I1.get("Q");
       SZspin ssz1 = I1.get("SSZ");
       Invar Ip;
 
       Ip = Invar(q1, ssz1);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qsz/qsz-1ch-triplets.dat" << ", len=" << QSZ::LENGTH_T0_1CH << ", Iop=" << Invar(0, 0) << ")");
   if (diag.count(Ip)) {
@@ -372,7 +372,7 @@ MatrixElements SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &q
   };
 
     Ip = Invar(q1, ssz1+2);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qsz/qsz-1ch-tripletp.dat" << ", len=" << QSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(0, -2) << ")");
   if (diag.count(Ip)) {
@@ -397,7 +397,7 @@ MatrixElements SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &q
   };
 
     Ip = Invar(q1, ssz1-2);
-    switch (channels) {
+    switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qsz/qsz-1ch-tripletm.dat" << ", len=" << QSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(0, +2) << ")");
   if (diag.count(Ip)) {
@@ -439,7 +439,7 @@ void SymmetryQSZ::recalc_global(const Step &step, const DiagInfo &diag, const QS
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "qsz/qsz-1ch-spinz.dat"
           break;
@@ -459,7 +459,7 @@ void SymmetryQSZ::recalc_global(const Step &step, const DiagInfo &diag, const QS
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "qsz/qsz-1ch-q1u.dat"
           break;
@@ -473,7 +473,7 @@ void SymmetryQSZ::recalc_global(const Step &step, const DiagInfo &diag, const QS
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "qsz/qsz-1ch-q1d.dat"
           break;

@@ -3,36 +3,32 @@ class SymmetryQS : public Symmetry {
   outfield Sz2, Q, Q2;
 
   public:
-  SymmetryQS() : Symmetry() { all_syms["QS"] = this; }
+   template<typename ... Args> SymmetryQS(Args&& ... args) : Symmetry(std::forward<Args>(args)...), 
+     Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
+       InvarStructure InvStruc[] = {
+         {"Q", additive}, // charge
+         {"SS", additive} // spin
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0, 1);
+       Invar_f      = Invar(1, 2);
+     }
 
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Q.set("<Q>", 2);
-    Q2.set("<Q^2>", 3);
-    InvarStructure InvStruc[] = {
-       {"Q", additive}, // charge
-       {"SS", additive} // spin
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0, 1);
-    Invar_f      = Invar(1, 2);
-  }
+   // Multiplicity of the (Q,SS) subspace is 2S+1 = SS.
+   size_t mult(const Invar &I) const override { return I.get("SS"); }
 
-  // Multiplicity of the (Q,SS) subspace is 2S+1 = SS.
-  size_t mult(const Invar &I) const override { return I.get("SS"); }
+   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"));
+   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
-    return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"));
-  }
+   bool Invar_allowed(const Invar &I) override {
+     const bool spin_ok = I.get("SS") > 0;
+     return spin_ok;
+   }
 
-  bool Invar_allowed(const Invar &I) override {
-    const bool spin_ok = I.get("SS") > 0;
-    return spin_ok;
-  }
-
-  void load() override {
-    if (!substeps) {
-      switch (channels) {
+   void load() override {
+    if (!P.substeps) {
+      switch (P.channels) {
         case 1:
 #include "qs/qs-1ch-In2.dat"
 #include "qs/qs-1ch-QN.dat"
@@ -59,52 +55,46 @@ class SymmetryQS : public Symmetry {
 #include "qs/qs-1ch-In2.dat"
 #include "qs/qs-1ch-QN.dat"
     } // if
-  }   // load
+   }
 
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
-    check_diff(Ip, I1, "Q", 0);
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
-    my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
+   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
+     check_diff(Ip, I1, "Q", 0);
+     const Sspin ssp = Ip.get("SS");
+     const Sspin ss1 = I1.get("SS");
+     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
-  }
+   }
+   
+   double specdens_factor(const Invar &Ip, const Invar &I1) override {
+     check_diff(Ip, I1, "Q", 1);
+     const Sspin ssp = Ip.get("SS");
+     const Sspin ss1 = I1.get("SS");
+     my_assert(abs(ss1 - ssp) == 1);
+     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
+   }
+   
+   void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, double factor) override {
+     bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
+     for (const auto &[I, eig]: diag) {
+       const Sspin ss    = I.get("SS");
+       const Number q    = I.get("Q");
+       const double sumZ = calculate_Z(I, eig, factor);
+       trQ += sumZ * q;
+       trQ2 += sumZ * q * q;
+       trSZ += sumZ * (ss * ss - 1) / 12.;
+     }
+     Sz2 = trSZ / stats.Z;
+     Q   = trQ / stats.Z;
+     Q2  = trQ2 / stats.Z;
+   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
-    check_diff(Ip, I1, "Q", 1);
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
-    my_assert(abs(ss1 - ssp) == 1);
-    return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
-  }
-
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
-    bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
-
-    for (const auto &[I, eig]: diag) {
-      const Sspin ss    = I.get("SS");
-      const Number q    = I.get("Q");
-      const double sumZ = calculate_Z(I, eig, factor);
-
-      trQ += sumZ * q;
-      trQ2 += sumZ * q * q;
-      trSZ += sumZ * (ss * ss - 1) / 12.;
-    }
-
-    Sz2 = trSZ / stats.Z;
-    Q   = trQ / stats.Z;
-    Q2  = trQ2 / stats.Z;
-  }
-
-  DECL;
-  HAS_DOUBLET;
-  HAS_TRIPLET;
-  HAS_GLOBAL;
-  HAS_SUBSTEPS;
-
-  void show_coefficients(const Step &, const Params &P) override;
+   DECL;
+   HAS_DOUBLET;
+   HAS_TRIPLET;
+   HAS_GLOBAL;
+   HAS_SUBSTEPS;
+   void show_coefficients(const Step &) override;
 };
-
-Symmetry *SymQS = new SymmetryQS;
 
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFDIAG
@@ -126,8 +116,8 @@ ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
 
-  if (!substeps) {
-    switch (channels) {
+  if (!P.substeps) {
+    switch (P.channels) {
       case 1:
 #include "qs/qs-1ch-offdiag.dat"
 #include "qs/qs-1ch-diag.dat"
@@ -174,8 +164,8 @@ void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, con
   }
 }
 
-void SymmetryQS::show_coefficients(const Step &step, const Params &P) {
-  Symmetry::show_coefficients(step, P);
+void SymmetryQS::show_coefficients(const Step &step) {
+  Symmetry::show_coefficients(step);
   if (P.rungs)
     for (unsigned int i = 0; i < P.channels; i++)
       cout << "[" << i + 1 << "]"

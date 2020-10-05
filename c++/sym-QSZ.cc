@@ -1,96 +1,84 @@
 class SymmetryQSZ : public SymField {
-  private:
-  outfield Sz2, Sz, Q, Q2;
+ private:
+   outfield Sz2, Sz, Q, Q2;
 
-  public:
-  SymmetryQSZ() : SymField() { all_syms["QSZ"] = this; }
+ public:
+   template<typename ... Args> SymmetryQSZ(Args&& ... args) : SymField(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
+       InvarStructure InvStruc[] = {
+         {"Q", additive},  // charge
+         {"SSZ", additive} // spin projection
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0, 0);
+       Invar_f      = Invar(1, 2);
+     }
 
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Sz.set("<Sz>", 2);
-    Q.set("<Q>", 3);
-    Q2.set("<Q^2>", 4);
-    InvarStructure InvStruc[] = {
-       {"Q", additive},  // charge
-       {"SSZ", additive} // spin projection
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0, 0);
-    Invar_f      = Invar(1, 2);
-  }
+   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
+     // The spin projection of the operator is defined by the difference in Sz of both the invariant subspaces.
+     SZspin ssz1  = I1.get("SSZ");
+     SZspin sszp  = Ip.get("SSZ");
+     SZspin sszop = ssz1 - sszp;
+     return sszop == SPIN;
+   }
 
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
-    // The spin projection of the operator is defined by the difference
-    // in Sz of both the invariant subspaces.
-    SZspin ssz1  = I1.get("SSZ");
-    SZspin sszp  = Ip.get("SSZ");
-    SZspin sszop = ssz1 - sszp;
-    return sszop == SPIN;
-  }
+   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ"));
+   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
-    return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ"));
-  }
-
-  void load() override {
-    if (!substeps) {
-      switch (channels) {
-        case 1:
+   void load() override {
+     if (!P.substeps) {
+       switch (P.channels) {
+       case 1:
 #include "qsz/qsz-1ch-In2.dat"
 #include "qsz/qsz-1ch-QN.dat"
-          break;
+         break;
 
-        case 2:
+       case 2:
 #include "qsz/qsz-2ch-In2.dat"
 #include "qsz/qsz-2ch-QN.dat"
-          break;
+         break;
 
-        case 3:
+       case 3:
 #include "qsz/qsz-3ch-In2.dat"
 #include "qsz/qsz-3ch-QN.dat"
-          break;
+         break;
 
-        default: my_assert_not_reached();
-      } // switch
-    } else {
+       default: my_assert_not_reached();
+       } // switch
+     } else {
 #include "qsz/qsz-1ch-In2.dat"
 #include "qsz/qsz-1ch-QN.dat"
-    } // if
-  }
+     } // if
+   }
 
-  void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
-  void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+   void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+   void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
-    bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
-
-    for (const auto &[I, eig]: diag) {
-      const SZspin ssz  = I.get("SSZ");
-      const Number q    = I.get("Q");
-      const double sumZ = calculate_Z(I, eig, factor);
-
-      trSZ += sumZ * SZ(ssz);
-      trSZ2 += sumZ * sqr(SZ(ssz));
-      trQ += sumZ * q;
-      trQ2 += sumZ * sqr(q);
-    }
-
-    Sz2 = trSZ2 / stats.Z;
-    Sz  = trSZ / stats.Z;
-    Q   = trQ / stats.Z;
-    Q2  = trQ2 / stats.Z;
-  }
-
-  DECL;
-  HAS_DOUBLET;
-  HAS_TRIPLET;
-  HAS_GLOBAL;
-  HAS_SUBSTEPS;
-
-  void show_coefficients(const Step &, const Params &) override;
+   void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, double factor) override {
+     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
+     for (const auto &[I, eig]: diag) {
+       const SZspin ssz  = I.get("SSZ");
+       const Number q    = I.get("Q");
+       const double sumZ = calculate_Z(I, eig, factor);
+       trSZ += sumZ * SZ(ssz);
+       trSZ2 += sumZ * sqr(SZ(ssz));
+       trQ += sumZ * q;
+       trQ2 += sumZ * sqr(q);
+     }
+     Sz2 = trSZ2 / stats.Z;
+     Sz  = trSZ / stats.Z;
+     Q   = trQ / stats.Z;
+     Q2  = trQ2 / stats.Z;
+   }
+   DECL;
+   HAS_DOUBLET;
+   HAS_TRIPLET;
+   HAS_GLOBAL;
+   HAS_SUBSTEPS;
+   
+   void show_coefficients(const Step &) override;
 };
-
-Symmetry *SymQSZ = new SymmetryQSZ;
 
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFDIAG
@@ -119,8 +107,8 @@ Symmetry *SymQSZ = new SymmetryQSZ;
 // spin. Note, however, that there is support for a global magnetic field,
 // cf. P.globalB.
 void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  if (!substeps) {
-    switch (channels) {
+  if (!P.substeps) {
+    switch (P.channels) {
       case 1:
 #include "qsz/qsz-1ch-offdiag.dat"
 #include "qsz/qsz-1ch-diag.dat"
@@ -145,7 +133,7 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
 
       default: my_assert_not_reached();
     }
-  } else { // substeps
+  } else {
     my_assert(P.coeffactor == 1);
     const auto [N, M] = step.NM();
 
@@ -179,9 +167,9 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
 #define SPINZ(i, j, ch, factor) spinz_function(step, i, j, ch, t_matel(factor), h, qq)
 
 void SymmetryQSZ::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  my_assert(!substeps); // not implemented!
+  my_assert(!P.substeps); // not implemented!
 
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "qsz/qsz-1ch-offdiag-UP.dat"
 #include "qsz/qsz-1ch-offdiag-DOWN.dat"
@@ -224,12 +212,13 @@ void SymmetryQSZ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, co
     makematrix_nonpolarized(h, step, qq, I, In, opch);
 }
 
-void SymmetryQSZ::show_coefficients(const Step &step, const Params &P) {
-  Symmetry::show_coefficients(step, P);
+void SymmetryQSZ::show_coefficients(const Step &step) {
+  Symmetry::show_coefficients(step);
   if (P.rungs) 
-    for (unsigned int i = 0; i < P.channels; i++) 
+    for (unsigned int i = 0; i < P.channels; i++) {
       cout << "[" << i + 1 << "]"
-           << " xi_rung(" << step.N() << ")=" << xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << zetaR(step.N() + 1, i) << endl;
+        << " xi_rung(" << step.N() << ")=" << xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << zetaR(step.N() + 1, i) << endl;
+    }
 }
 
 #include "nrg-recalc-QSZ.cc"
