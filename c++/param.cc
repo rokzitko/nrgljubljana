@@ -9,16 +9,16 @@ const std::string default_workdir{"."s};
 class Workdir {
  private:
    std::string workdir {};
-   
+
  public:
    bool remove_at_exit {true}; // XXX: tie to P.removefiles?
-   void remove() { 
-     if (workdir != "") 
-       ::remove(workdir); 
+   void remove() {
+     if (workdir != "")
+       ::remove(workdir);
    }
-   ~Workdir() { 
-     if (remove_at_exit) 
-       remove(); 
+   ~Workdir() {
+     if (remove_at_exit)
+       remove();
    }
    void create(const string &dir) {
      const std::string workdir_template = dir + "/XXXXXX";
@@ -60,7 +60,7 @@ class parambase {
   string _value;
 
   public:
-  parambase(string keyword, string desc, string defaultv) : 
+  parambase(string keyword, string desc, string defaultv) :
      _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
   virtual ~parambase() = default;
   virtual void setvalue_str(string newvalue) = 0;
@@ -79,7 +79,7 @@ template <typename T>
   public:
   // Constructor: keyword is a CASE SENSITIVE name of the parameter, desc is at this time used as in-line
   // documentation and defaultv is a string containing a default value which is immediately parsed.
-  param(const string &keyword, const string &desc, const string &defaultv, list<parambase*> &allparams) : 
+  param(const string &keyword, const string &desc, const string &defaultv, list<parambase*> &allparams) :
       parambase(keyword, desc, defaultv) {
     data = fromstring<T>(_value);
     for (auto &i : allparams)
@@ -466,7 +466,7 @@ struct Params {
 
   param<bool> done{"done", "Create DONE file?", "true", all};                         // N
   param<bool> calc0{"calc0", "Perform calculations at 0-th iteration?", "true", all}; // N
-   
+
   // If only dmnrg is enabled, setting lastall=true will force "keeping" all states in the last step and the density
   // matrix will be initialized with all the states. Note that by default this feature is disabled, which is
   // especially appropriate for T->0 calculations.
@@ -475,7 +475,7 @@ struct Params {
   // If lastalloverride=true, then "lastall" is not set to true automatically for full-Fock-space (CFS and FDM)
   // approaches.
   param<bool> lastalloverride{"lastalloverride", "Override automatic lastall setting", "false", all}; // N
-  
+
   // ***********************************
   // Deprecated (candidates for removal)
 
@@ -532,7 +532,7 @@ struct Params {
   // **********************************
   // Backwards compatibility parameters
   param<bool> data_has_rescaled_energies{"data_has_rescaled_energies", "Rescaled eigenvalues?", "true", all};
-   
+
   // *******************************************
   // Internal parameters, not under user control
 
@@ -609,7 +609,7 @@ struct Params {
     }
     if (parsed_params.size()) {
       cout << "Unused settings: " << endl;
-      for (const auto &[key, value] : parsed_params) 
+      for (const auto &[key, value] : parsed_params)
         cout << " " << key << "=" << value << endl;
       cout << endl;
     }
@@ -623,23 +623,23 @@ struct Params {
 
   // Is ch an allowed channel index (0..P.channels-1)?
   void allowed_channel(size_t ch) { my_assert(ch < channels); }
-  
+
   // Is ch an allowed index for coefficient table? There can be more coefficient tables than actual channels (for
   // example in the case of spin-polarized conduction bands).
   void allowed_coefchannel(size_t ch) {
     my_assert(coefchannels >= channels);
     my_assert(ch < coefchannels);
   }
-  
+
   // Check i,j,ch parameters of *diag_function() in matrix construction
   void allowed_ijch(size_t i, size_t j, size_t ch) {
     allowed_block_index(i);
     allowed_block_index(j);
     allowed_channel(ch);
   }
-  
+
   // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the
-  // energies on the original scale. Also named the "reduced bandwidth". 
+  // energies on the original scale. Also named the "reduced bandwidth".
   double SCALE(int N) const {
     double scale = 0.0;
     if (discretization == "Y"s)
@@ -656,7 +656,7 @@ struct Params {
     scale = scale * bandrescale; // RESCALE
     return scale;
   }
-  
+
   // Energy scale at the last NRG iteration
   double last_step_scale() { return SCALE(Nmax); }
 };
@@ -671,7 +671,7 @@ class sharedParam {
    double diagratio{};
    bool logall{};
    string log;
-   
+
    void init(Params &P, double _diagratio = -1) {
      // init() has to be called at the beginning of the program (after parsing the parameters in P), but also before
      // each series of diagonalizations, because diagratio might have changed!
@@ -680,7 +680,7 @@ class sharedParam {
      logall    = P.logall;
      log       = P.log;
    }
-   
+
  private:
    friend class boost::serialization::access;
    template <class Archive> void serialize(Archive &ar, const unsigned int version) {

@@ -39,20 +39,24 @@ struct TD {
   const Params &P;
   ofstream O;
   outfield T, E, E2, C, F, S;
-  void save_values() {
-    O << ' ';
-    for (const auto &i : allfields) i->putvalue(O);
-    O << std::endl;
-  }
+  bool header_saved = false;
   void save_header() {
     O << '#';
     for (const auto &i : allfields) i->putheader(O);
     O << std::endl;
   }
+  void save_values() {
+    if (!header_saved) {
+      save_header();
+      header_saved = true;
+    }
+    O << ' ';
+    for (const auto &i : allfields) i->putvalue(O);
+    O << std::endl;
+  }
   TD(const Params &P_, std::string filename) : P(P_), O(filename), 
     T(P, allfields, "T"), E(P, allfields, "<E>"), E2(P, allfields, "<E^2>"),
-    C(P, allfields, "C"), F(P, allfields, "F"), S(P, allfields, "S") { 
-    }
+    C(P, allfields, "C"), F(P, allfields, "F"), S(P, allfields, "S") {}
 };
 
 struct TD_FDM {
@@ -60,20 +64,24 @@ struct TD_FDM {
   const Params &P;
   ofstream O;
   outfield T, E, C, F, S;
-  void save_values() {
-    O << ' ';
-    for (const auto &i : allfields) i->putvalue(O);
-    O << std::endl;
-  }
+  bool header_saved = false;
   void save_header() {
     O << '#';
     for (const auto &i : allfields) i->putheader(O);
     O << std::endl;
   }
+  void save_values() {
+    if (!header_saved) {
+      save_header();
+      header_saved = true;
+    }
+    O << ' ';
+    for (const auto &i : allfields) i->putvalue(O);
+    O << std::endl;
+  }
   TD_FDM(const Params &P_, std::string filename) : P(P_), O(filename), 
     T(P, allfields, "T"), E(P, allfields, "E_fdm"),
-    C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") {
-    }
+    C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") {}
 };
 
 #endif // _outfield_cc_
