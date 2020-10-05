@@ -1794,7 +1794,7 @@ bool do_recalc_kept(const Step &step, const Params &P) { return string(P.strateg
 bool do_recalc_all(const Step &step, const Params &P) { return !do_recalc_kept(step, P) && !P.ZBW; }
 bool do_no_recalc(const Step &step, const Params &P) { return P.ZBW; }
 
-Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const DiagInfo &diagprev) {
+Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const DiagInfo &diagprev, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev};
   const size_t dim = rm.total();
@@ -1813,7 +1813,7 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   return h;
 }
 
-DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
+DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks, const Params &P) {
   DiagInfo diagnew;
   size_t nr = tasks.size();
   size_t itask = 0;
@@ -1822,7 +1822,7 @@ DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const DiagI
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {
     const Invar I  = tasks[itask];
-    auto h = prepare_task_for_diag(step, I, opch, diagprev);
+    auto h = prepare_task_for_diag(step, I, opch, diagprev, P);
     int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
@@ -1961,7 +1961,7 @@ std::pair<Invar, Eigen> read_from(int source) {
   return {Irecv, eig};
 }
 
-DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks) {
+DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks, const Params &P) {
   DiagInfo diagnew;
   mpi_sync_params(); // Synchronise parameters
   list<Invar> todo; // List of all the tasks to handle
@@ -1995,7 +1995,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const DiagInfo
       I = todo.front();
       todo.pop_front();
     }
-    auto h = prepare_task_for_diag(step, I, opch, diagprev);
+    auto h = prepare_task_for_diag(step, I, opch, diagprev, P);
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
@@ -2030,13 +2030,13 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const DiagInfo
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
 DiagInfo diagonalisations(const Step &step, const Opch &opch, const DiagInfo &diagprev, 
-                          const std::vector<Invar> &tasks, double diagratio) {
+                          const std::vector<Invar> &tasks, double diagratio, const Params &P) {
   TIME("diag");
   sP.init(P, diagratio);
 #ifdef NRG_MPI
-  return diagonalisations_MPI(step, opch, diagprev, tasks);
+  return diagonalisations_MPI(step, opch, diagprev, tasks, P);
 #else
-  return diagonalisations_OpenMP(step, opch, diagprev, tasks);
+  return diagonalisations_OpenMP(step, opch, diagprev, tasks, P);
 #endif
 }
 
@@ -2119,7 +2119,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
   do {
     if (step.nrg()) {
       if (!(P.resume && int(step.ndx()) <= P.laststored))
-        diag = diagonalisations(step, iterinfo.opch, diagprev, tasks, diagratio); // compute in first run
+        diag = diagonalisations(step, iterinfo.opch, diagprev, tasks, diagratio, P); // compute in first run
       else
         diag = load_transformations(step.ndx(), P); // or read from disk
     }
