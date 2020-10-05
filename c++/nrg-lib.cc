@@ -494,8 +494,6 @@ class Stats {
    Stats(const Params &P) : td(P, FN_TD), td_fdm(P, FN_TDFDM) {}
 };
 
-//Stats stats(P); // ZZZ
-
 void subtract_groundstate_energy(const Stats &stats, DiagInfo &diag) {
   for (auto &[i, eig] : diag) eig.subtract_Egs(stats.Egs);
 }
@@ -535,11 +533,11 @@ class SPEC {
   virtual ~SPEC() = default;
   virtual spCS_t make_cs(const BaseSpectrum &) = 0;
   virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-                    const Invar &, DensMatElements &, const Stats &stats){};
+                    const Invar &, const DensMatElements &, const Stats &stats){};
   virtual void calc_A(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &, const Stats &stats){};
+                      spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &, const Stats &stats){};
   virtual void calc_B(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &, const Stats &stats){};
+                      spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &, const Stats &stats){};
   virtual string name() = 0;
   virtual string merge() { return ""; } // what merging rule to use
   virtual string rho_type() { return ""; } // what rho type is required
@@ -2380,10 +2378,9 @@ void set_symmetry(const Params &P, Stats &stats) {
 }
 
 void calculation(Params &P) {
-  Stats stats(P); // ZZZ
+  Stats stats(P);
   auto [diag0, iterinfo] = read_data(P, stats);
   Step step{P, RUNTYPE::NRG};
-  // Initialize all containers for storing information
   AllSteps dm(P.Nlen);
   stats.init_vectors(P.Nlen);
   auto diag = run_nrg(step, iterinfo, stats, diag0, dm, P);
@@ -2404,8 +2401,8 @@ void calculation(Params &P) {
     }
     if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
     auto [diag0_dm, iterinfo_dm] = read_data(P, stats);
-    Step step {P, RUNTYPE::DMNRG};
-    run_nrg(step, iterinfo_dm, stats, diag0, dm, P);
+    Step step{P, RUNTYPE::DMNRG};
+    run_nrg(step, iterinfo_dm, stats, diag0_dm, dm, P);
     my_assert(num_equal(stats.GS_energy, stats.total_energy));
   }
 }

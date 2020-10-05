@@ -4,14 +4,14 @@ class SPEC_DMNRG : public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &, DensMatElements &, const Stats &stats) override;
+            const Invar &, const DensMatElements &, const Stats &stats) override;
   string name() override { return "DMNRG"; }
   string merge() override { return "NN2"; }
   string rho_type() override { return "rho"; }
 };
 
 void SPEC_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                      spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &rho, const Stats &stats) {
+                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   double Emin = getEmin(); // used in optimization
   double Emax = getEmax();
@@ -19,8 +19,8 @@ void SPEC_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     Emin = 0;
     Emax = std::numeric_limits<double>::max(); // infinity
   }
-  const Matrix &rhoNIp = rho[Ip];
-  const Matrix &rhoNI1 = rho[I1];
+  const Matrix &rhoNIp = rho.at(Ip);
+  const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
   auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
   for (size_t rm = 0; rm < dimp; rm++) {
@@ -48,17 +48,17 @@ class SPEC_DMNRGmats : public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(bs.mt); }
   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &, DensMatElements &, const Stats &stats) override;
+            const Invar &, const DensMatElements &, const Stats &stats) override;
   string name() override { return "DMNRGmats"; }
   string rho_type() override { return "rho"; }
 };
 
 void SPEC_DMNRGmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
-                          t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, DensMatElements &rho, const Stats &stats) {
+                          t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   auto csm   = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
-  const Matrix &rhoNIp = rho[Ip];
-  const Matrix &rhoNI1 = rho[I1];
+  const Matrix &rhoNIp = rho.at(Ip);
+  const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
   auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
   for (size_t rm = 0; rm < dimp; rm++) {

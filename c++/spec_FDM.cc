@@ -4,7 +4,7 @@ class SPEC_FDMls : virtual public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &, DensMatElements &, const Stats &stats) override;
+            const Invar &, const DensMatElements &, const Stats &stats) override;
   string name() override { return "FDMls"; }
   string merge() override { return "CFS"; }
   string rho_type() override { return "rhoFDM"; }
@@ -14,7 +14,7 @@ class SPEC_FDMgt : virtual public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &, DensMatElements &, const Stats &stats) override;
+            const Invar &, const DensMatElements &, const Stats &stats) override;
   string name() override { return "FDMgt"; }
   string merge() override { return "CFS"; }
   string rho_type() override { return "rhoFDM"; }
@@ -28,7 +28,7 @@ class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
 //    SPEC_FDMls::calc(std::forward<Args>(args)...);
 //  }
   void calc(const Step &step, const Eigen &a1, const Eigen &a2, const Matrix &a3, const Matrix &a4, const BaseSpectrum &a5, t_factor a6, spCS_t a7,
-            const Invar &a8, const Invar &a9, DensMatElements &rhoFDM, const Stats &stats) override {
+            const Invar &a8, const Invar &a9, const DensMatElements &rhoFDM, const Stats &stats) override {
     SPEC_FDMgt::calc(step, a1, a2, a3, a4, a5, a6, a7, a8, a9, rhoFDM, stats);
     SPEC_FDMls::calc(step, a1, a2, a3, a4, a5, a6, a7, a8, a9, rhoFDM, stats);
   }
@@ -46,10 +46,10 @@ class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
 
 // *********** Greater correlation function ***********
 void SPEC_FDMgt::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                      spCS_t cs, const Invar &Ii, const Invar &Ij, DensMatElements &rhoFDM, const Stats &stats) {
+                      spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) {
   const double wnf   = stats.wnfactor[step.ndx()];
-  const Matrix &rhoi = rhoFDM[Ii];
-  const Matrix &rhoj = rhoFDM[Ij];
+  const Matrix &rhoi = rhoFDM.at(Ii);
+  const Matrix &rhoj = rhoFDM.at(Ij);
   const size_t reti  = (step.last() ? 0 : rhoi.size1());
   const size_t retj  = (step.last() ? 0 : rhoj.size1());
   const size_t alli  = diagIi.getnr();
@@ -88,11 +88,11 @@ if (allj > 0 && reti > 0) {
 
 // ************ Lesser correlation functions ***************
 void SPEC_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                      spCS_t cs, const Invar &Ii, const Invar &Ij, DensMatElements &rhoFDM, const Stats &stats) {
+                      spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) {
   double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const double wnf   = stats.wnfactor[step.ndx()];
-  const Matrix &rhoi = rhoFDM[Ii];
-  const Matrix &rhoj = rhoFDM[Ij];
+  const Matrix &rhoi = rhoFDM.at(Ii);
+  const Matrix &rhoj = rhoFDM.at(Ij);
   const size_t reti  = (step.last() ? 0 : rhoi.size1());
   const size_t retj  = (step.last() ? 0 : rhoj.size1());
   const size_t alli  = diagIi.getnr();
@@ -133,7 +133,7 @@ class SPEC_FDMmats : public SPEC {
   public:
   spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(bs.mt); }
   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &, DensMatElements &, const Stats &stats) override;
+            const Invar &, const DensMatElements &, const Stats &stats) override;
   string name() override { return "FDMmats"; }
   string rho_type() override { return "rhoFDM"; }
 };
@@ -141,14 +141,14 @@ class SPEC_FDMmats : public SPEC {
 // *********** Matsubara axis version  ***********
 
 void SPEC_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
-                        t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, DensMatElements &rhoFDM, const Stats &stats) {
+                        t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) {
   const size_t cutoff = P.mats;
   // (-sign)=1 for fermionic case, (-sign)=-1 for bosonic case
   double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   auto csm           = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   const double wnf   = stats.wnfactor[step.ndx()];
-  const Matrix &rhoi = rhoFDM[Ii];
-  const Matrix &rhoj = rhoFDM[Ij];
+  const Matrix &rhoi = rhoFDM.at(Ii);
+  const Matrix &rhoj = rhoFDM.at(Ij);
   const size_t reti  = (step.last() ? 0 : rhoi.size1());
   const size_t retj  = (step.last() ? 0 : rhoj.size1());
   const size_t alli  = diagIi.getnr();
@@ -208,9 +208,9 @@ class SPEC_FDM_v3mm : public SPEC {
   spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara2>(matstype::fb); }
   string name() override { return "FDM_v3mm"; }
   void calc_A(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-              spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &, const Stats &stats) override;
+              spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &, const Stats &stats) override;
   void calc_B(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-              spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &, const Stats &stats) override;
+              spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &, const Stats &stats) override;
   string rho_type() override { return "rhoFDM"; }
 };
 
@@ -258,7 +258,7 @@ using res_t = std::vector<ublas::matrix<t_weight> >;
   }
 
 void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &diagj, const Eigen &diagl, const Matrix &op1, const Matrix &op2, const Matrix &op3,
-                           const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, DensMatElements &rhoFDM,
+                           const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, const DensMatElements &rhoFDM,
                            const Stats &stats) {
   using namespace boost::numeric::ublas;
   const double v3mmcutoff = P.v3mmcutoff * sqr(P.T); // order of contributions is prop to 1/T^2
@@ -272,9 +272,9 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
   }
   auto csm           = dynamic_pointer_cast<ChainSpectrumMatsubara2>(cs);
   const double wnf   = stats.wnfactor[step.ndx()];
-  const Matrix &rhoi = rhoFDM[Ii];
-  const Matrix &rhoj = rhoFDM[Ij];
-  const Matrix &rhol = rhoFDM[Il];
+  const Matrix &rhoi = rhoFDM.at(Ii);
+  const Matrix &rhoj = rhoFDM.at(Ij);
+  const Matrix &rhol = rhoFDM.at(Il);
   const size_t reti  = (step.last() ? 0 : rhoi.size1()); // retained states
   const size_t retj  = (step.last() ? 0 : rhoj.size1());
   const size_t retl  = (step.last() ? 0 : rhol.size1());
@@ -512,7 +512,7 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
 }
 
 void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &diagj, const Eigen &diagl, const Matrix &op1, const Matrix &op2, const Matrix &op3,
-                           const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, DensMatElements &rhoFDM,
+                           const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, const DensMatElements &rhoFDM,
                            const Stats &stats) {
   using namespace boost::numeric::ublas; 
   //   cout << "B" << endl;
@@ -527,9 +527,9 @@ void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &di
   }
   auto csm           = dynamic_pointer_cast<ChainSpectrumMatsubara2>(cs);
   const double wnf   = stats.wnfactor[step.ndx()];
-  const Matrix &rhoi = rhoFDM[Ii];
-  const Matrix &rhoj = rhoFDM[Ij];
-  const Matrix &rhol = rhoFDM[Il];
+  const Matrix &rhoi = rhoFDM.at(Ii);
+  const Matrix &rhoj = rhoFDM.at(Ij);
+  const Matrix &rhol = rhoFDM.at(Il);
   const size_t reti  = (step.last() ? 0 : rhoi.size1()); // retained states
   const size_t retj  = (step.last() ? 0 : rhoj.size1());
   const size_t retl  = (step.last() ? 0 : rhol.size1());
