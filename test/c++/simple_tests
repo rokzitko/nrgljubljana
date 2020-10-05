@@ -123,3 +123,7 @@ legacy_simple
 legacy_spectral_gtls-qsz-T1e-10
 legacy_tdht
 legacy_total_energy_SIAM
+test_cfs_only
+test_dmnrg_only
+test_fdm_only
+test_nrg_only
