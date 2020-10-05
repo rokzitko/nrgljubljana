@@ -254,6 +254,7 @@ struct RawEigen {
   size_t getdim() const { return matrix.size2(); } // valid also after the split_in_blocks_Eigen() call
 };
   
+// Augments RawEigen with the information about truncation and block structure of the eigenvectors.
 struct Eigen : public RawEigen {
   size_t nrpost = 0;   // number of eigenpairs after truncation
   double shift  = 0.0; // shift of eigenvalues (0 or Egs)
@@ -437,14 +438,14 @@ class Stats {
    map<string, t_expv> fdmexpv; // Expectation values computed using the FDM algorithm
    
    // ** Energies
-   // total_energy is the total energy of the ground state at the current iteration. This is the sum of all the 
-   // zero state energies for all the iteration steps so far.
+   // "total_energy" is the total energy of the ground state at the current iteration. This is the sum of all the 
+   // zero state energies (eigenvalue shifts converted to absolute energies) for all the iteration steps so far.
    t_eigen total_energy;
-   // GS_energy is the value of the variable "total_energy" at the end of the
-   // iteration. This is different from 'Egs'.
+   // GS_energy is the energy of the ground states in absolute units. It is equal to the value of the variable
+   // "total_energy" at the end of the iteration.
    t_eigen GS_energy;
    std::vector<double> rel_Egs;        // Values of 'Egs' for all NRG steps.
-   std::vector<double> abs_Egs;        // Values of 'Egs' (multiplied by scale, i.e. in absolute scale) for all NRG steps.
+   std::vector<double> abs_Egs;        // Values of 'Egs' (multiplied by the scale, i.e. in absolute scale) for all NRG steps.
    std::vector<double> energy_offsets; // Values of "total_energy" for all NRG steps.
    
    // Containers related to the FDM-NRG approach
@@ -2157,7 +2158,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
   stats.energy_offsets[step.ndx()] = stats.total_energy;
   if (step.nrg()) 
-    calc_abs_energies(step, diag, stats);
+    calc_abs_energies(step, diag, stats); // XXX: after Egs subtraction
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
   output.dump_all_energies(diag, step.ndx());

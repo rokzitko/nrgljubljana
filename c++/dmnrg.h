@@ -102,15 +102,13 @@ DensMatElements loadRho(size_t N, const string &prefix, const Params &P) {
   return rho;
 }
 
-/* save_transformations() stores all required information (energies,
- transformation matrices, subspace labels, dimensions of 'alpha' subspaces)
- that is needed to calculate reduced density matrix in the DM-NRG
- technique. Matrices are stored on disk as binary files.
+// save_transformations() stores all required information (energies, transformation matrices, subspace labels,
+// dimensions of 'alpha' subspaces) that is needed to calculate reduced density matrix in the DM-NRG technique.
+// Matrices are stored on disk as binary files.
 
- This function is called after the diagonalisation but prior to truncation
- (at iteration N) with DiagInfo diag, i.e. with *all calculated*
- (eigenvalue, eigenvector) pairs. NOTE: if diag=dsyevr, we effectively
- perform a truncation at the moment of the partial diagonalization!! */
+// This function is called after the diagonalisation but prior to truncation (at iteration N) with DiagInfo diag,
+// i.e. with *all calculated* (eigenvalue, eigenvector) pairs. NOTE: if diag=dsyevr, we effectively perform a
+// truncation at the moment of the partial diagonalization!!
 
 void save_transformations(size_t N, const DiagInfo &diag, const Params &P) {
   // P.Ninit-1 corresponds to the zero-th step, when diag contains the
