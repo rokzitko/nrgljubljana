@@ -1791,14 +1791,8 @@ auto make_subspaces_list(const DiagInfo &diagprev) {
  kept: Recalculate using vectors kept after truncation
  VERY IMPORTANT: Override in the case of CFS (in the second run) */
 bool do_recalc_kept(const Step &step, const Params &P) { return string(P.strategy) == "kept" && !(P.cfs_flags() && step.dmnrg()) && !P.ZBW; }
-
 bool do_recalc_all(const Step &step, const Params &P) { return !do_recalc_kept(step, P) && !P.ZBW; }
-
 bool do_no_recalc(const Step &step, const Params &P) { return P.ZBW; }
-
-inline t_eigen Eigenvalue(const DiagInfo &diag, const Invar &I, const size_t r) {
-  return diag.at(I).value(r);
-}
 
 Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const DiagInfo &diagprev) {
   const auto anc = Sym->ancestors(I);
@@ -1806,12 +1800,12 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const size_t dim = rm.total();
   Matrix h(dim, dim);
   h.clear();
-  double scalefactor = (!P.substeps ? sqrt(P.Lambda) : pow(P.Lambda, 1. / (2. * P.channels))); // NOLINT
+  const double scalefactor = (!P.substeps ? sqrt(P.Lambda) : pow(P.Lambda, 1. / (2. * P.channels))); // NOLINT
   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (size_t i = 1; i <= P.combs; i++) {
     const size_t offset = rm.offset(i);
     for (size_t r = 0; r < rm.rmax(i); r++) 
-      h(offset + r, offset + r) = scalefactor * Eigenvalue(diagprev, anc[i], r);
+      h(offset + r, offset + r) = scalefactor * diagprev.at(anc[i]).value(r);
   }
   // Symmetry-type-specific matrix initialization steps.
   Sym->makematrix(h, step, rm, I, anc, opch);
