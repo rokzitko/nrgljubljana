@@ -146,12 +146,13 @@ void determine_Nmax(Params &P) {
   cout << endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << endl << endl;
   my_assert(length_coef_table == P.Nmax);
   if (P.substeps) P.Nmax = P.channels * P.Nmax;
-  P.Nlen = P.Nmax;
+  P.Nlen = P.Nmax;       // this is the usual situation
   if (P.Nmax == P.Ninit) {
     cout << endl << "ZBW=true -> zero-bandwidth calculation" << endl;
     P.ZBW  = true;
-    P.Nlen = P.Nmax + 1; // an additional element in the tables!
+    P.Nlen = P.Nmax + 1; // an additional element in the tables for ZBW=true
   }
+  my_assert(P.Nlen < MAX_NDX);
   cout << endl << "length_coef_table=" << length_coef_table << " Nmax=" << P.Nmax << endl << endl;
 }
 

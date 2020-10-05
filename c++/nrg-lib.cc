@@ -52,6 +52,8 @@
  #include "cblas_xerbla.c"
 #endif
 
+inline const size_t MAX_NDX = 1000; // max index number
+
 // Timing of various parts of the code and memory statistics
 namespace time_mem {
  Timing tm;
@@ -458,8 +460,8 @@ class Stats {
    // GS_energy is the value of the variable "total_energy" at the end of the
    // iteration. This is different from 'Egs'.
    t_eigen GS_energy;
-   std::vector<double> rel_Egs; // Values of 'Egs' for all NRG steps.
-   std::vector<double> abs_Egs; // Values of 'Egs' (multiplied by scale, i.e. in absolute scale) for all NRG steps.
+   std::vector<double> rel_Egs;        // Values of 'Egs' for all NRG steps.
+   std::vector<double> abs_Egs;        // Values of 'Egs' (multiplied by scale, i.e. in absolute scale) for all NRG steps.
    std::vector<double> energy_offsets; // Values of "total_energy" for all NRG steps.
    
    // Containers related to the FDM-NRG approach
@@ -467,12 +469,13 @@ class Stats {
    // Consult A. Weichselbaum, J. von Delft, PRL 99, 076402 (2007).
    vmpf ZnDG;                    // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n
    vmpf ZnDN;                    // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
-   std::vector<double> ZnDNd;
+   std::vector<double> ZnDNd;    // 
    std::vector<double> wn;       // Weights w_n. They sum to 1.
    std::vector<double> wnfactor; // wn/ZnDG
+
    double ZZG;                   // grand-canonical partition function with energies referred to the ground state energy
+
    double Z_fdm;                 // grand-canonical partition function (full-shell) at temperature T
-   
    double F_fdm;                 // free-energy at temperature T
    double E_fdm;                 // energy at temperature T
    double C_fdm;                 // heat capacity at temperature T
@@ -480,18 +483,8 @@ class Stats {
    
    TD_FDM td_fdm;
 
-   void init_vectors(size_t Nlen) {
-     rel_Egs = std::vector<double>(Nlen);
-     abs_Egs = std::vector<double>(Nlen);
-     energy_offsets = std::vector<double>(Nlen);
-     ZnDG = vmpf(Nlen);
-     ZnDN = vmpf(Nlen);
-     ZnDNd = std::vector<double>(Nlen);
-     wn = std::vector<double>(Nlen, 0.0);
-     wnfactor = std::vector<double>(Nlen, 0.0);
-   }
-   
-   Stats(const Params &P) : td(P, FN_TD), td_fdm(P, FN_TDFDM) {}
+   Stats(const Params &P) : td(P, FN_TD), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX),
+     ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, FN_TDFDM) {}
 };
 
 void subtract_groundstate_energy(const Stats &stats, DiagInfo &diag) {
@@ -539,7 +532,7 @@ class SPEC {
   virtual void calc_B(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
                       spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &, const Stats &stats){};
   virtual string name() = 0;
-  virtual string merge() { return ""; } // what merging rule to use
+  virtual string merge() { return ""; }    // what merging rule to use
   virtual string rho_type() { return ""; } // what rho type is required
 };
 
@@ -1622,13 +1615,7 @@ void trim_matel(DiagInfo &diag, MatrixElements &op) {
     // Target matrix dimensions
     const auto nr1 = diag[I1].getnr();
     const auto nr2 = diag[I2].getnr();
-//    my_assert(nr1 <= size1 && nr2 <= size2);
-    if (!(nr1 <= size1 && nr2 <= size2)) {
-      cout << "ERROR: " << nr1 << " " << size1 << " " << nr2 << " " << size2 << endl;
-      cout << II << endl;
-      exit(1);
-    }
-
+    my_assert(nr1 <= size1 && nr2 <= size2);
     if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
       continue;
     ublas::matrix_range<Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
@@ -1638,10 +1625,8 @@ void trim_matel(DiagInfo &diag, MatrixElements &op) {
 }
 
 void trim_op(DiagInfo &diag, CustomOp &allops) {
-  for (auto &[name, op] : allops) {
-    cout << "X: " << name << endl;
+  for (auto &[name, op] : allops) 
     trim_matel(diag, op);
-  }
 }
 
 void trim_matrices(DiagInfo &diag, IterInfo &a) {
@@ -2188,14 +2173,10 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
   cout << "Kept: " << nrkept << " out of " << nrall << ", ratio=" << setprecision(3) << ratio << endl;
 }
 
-// Perform processing after a successful NRG step.
-// At function call:
-// - diag contains all information about the eigenstates.
-// - stats.Egs had been computed
-// Also called from doZBW() as a final step.
+// Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, Output &output, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc) {
-  // Contribution to the total energy.
-  stats.total_energy += stats.Egs * step.scale();
+  // XXX: move find_groundstate & subtraction here!
+  stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
   stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
@@ -2205,8 +2186,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
   output.dump_all_energies(diag, step.ndx());
-  // Measurements are performed before the truncation!
-  perform_measurements(step, diag, stats,output);
+  perform_measurements(step, diag, stats,output); // Measurements are performed before the truncation!
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
   if (do_recalc_all(step, P)) { // Either ...
@@ -2214,7 +2194,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
     calculate_spectral_and_expv(step, stats, output, diag, iterinfo, dm, P);
   }
   if (!P.ZBW) 
-    truncate_perform(diag); // Actual truncation occurs at this point
+    truncate_perform(diag);            // Actual truncation occurs at this point
   store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_irreducible(step, diag, qsrmax, iterinfo.opch);
@@ -2382,7 +2362,6 @@ void calculation(Params &P) {
   auto [diag0, iterinfo] = read_data(P, stats);
   Step step{P, RUNTYPE::NRG};
   AllSteps dm(P.Nlen);
-  stats.init_vectors(P.Nlen);
   auto diag = run_nrg(step, iterinfo, stats, diag0, dm, P);
   if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (P.dm) {
