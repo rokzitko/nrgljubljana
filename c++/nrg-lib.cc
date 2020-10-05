@@ -1342,19 +1342,12 @@ Matrix diagonal_exp(const Eigen &eig, double factor = 1.0)
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-DensMatElements init_rho_impl(const Step &step, const DiagInfo &diag) {
+DensMatElements init_rho(const Step &step, const DiagInfo &diag) {
   DensMatElements rho;
   for (const auto &[I, eig]: diag)
     rho[I] = diagonal_exp(eig, step.scT()) / calc_grand_canonical_Z(step, diag);
   my_assert(num_equal(trace(rho), 1.0, 1e-8)); // NOLINT
   return rho;
-}
-
-DiagInfo diag_before_truncation, diag_after_truncation; // ZZZ
-
-DensMatElements init_rho(const Step &step, const Params &P)
-{
-  return P.keep_all_states_in_last_step() ? init_rho_impl(step, diag_before_truncation) : init_rho_impl(step, diag_after_truncation);
 }
 
 /*** Truncation ***/
@@ -2273,10 +2266,10 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, QSrmax &qs
     oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
     calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
   }
-  diag_before_truncation = diag;
+//  diag_before_truncation = diag;
   if (!P.ZBW) 
     truncate_perform(diag); // Actual truncation occurs at this point
-  diag_after_truncation = diag; // ZZZ
+//  diag_after_truncation = diag; // ZZZ
   store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_irreducible(step, diag, qsrmax, iterinfo.opch);
@@ -2299,7 +2292,7 @@ DiagInfo iterate(const Step &step, IterInfo &iterinfo, const DiagInfo &diagprev,
   after_diag(step, iterinfo, diag, qsrmax, dm, oprecalc);
   trim_matrices(diag, iterinfo);
   clear_eigenvectors(diag);
-  diag_after_truncation = diag; // ZZZ, replace with the trimmed version set in after_diag()
+//  diag_after_truncation = diag; // ZZZ, replace with the trimmed version set in after_diag()
   time_mem::memory_time_brief_report();
   return diag;
 }
@@ -2327,7 +2320,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, const 
 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
-void nrg_ZBW(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
+DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   cout << endl << "Zero bandwidth calculation" << endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
@@ -2346,15 +2339,17 @@ void nrg_ZBW(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm
   // --- end do_diag() equivalent
   QSrmax empty_qsrmax{};
   after_diag(step, iterinfo, diag, empty_qsrmax, dm, oprecalc);
+  return diag;
 }
 
 // ****************************  Main NRG loop ****************************
 
-void nrg_loop(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
+DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   DiagInfo diag = diag0;
   for (step.init(); !step.end(); step++)
     diag = iterate(step, iterinfo, diag, dm, oprecalc, P);
   step.set(step.lastndx()); // TO DO: remove this, after step is no longer global...
+  return diag;
 }
 
 // Total number of states (symmetry taken into account)
@@ -2395,7 +2390,7 @@ void dump_subspaces(const AllSteps &dm, const Params &P) {
   }
 }
 
-void run_nrg(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
+DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   states_report(diag0);
   auto oprecalc = open_output_files(step.runtype, iterinfo, P); // XXX
   // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
@@ -2403,15 +2398,13 @@ void run_nrg(Step &step, IterInfo &iterinfo, const DiagInfo &diag0, AllSteps &dm
     docalc0ht(step, diag0, P.tdht, P);
     docalc0(step, iterinfo, diag0, P);
   }
-  if (P.ZBW)
-    nrg_ZBW(step, iterinfo, diag0, dm, oprecalc, P);
-  else 
-    nrg_loop(step, iterinfo, diag0, dm, oprecalc, P);
+  DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, diag0, dm, oprecalc, P) : nrg_loop(step, iterinfo, diag0, dm, oprecalc, P);
   close_output_files(step.runtype); // XXX
   cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
   stats.GS_energy = stats.total_energy;
   if (P.dumpsubspaces) dump_subspaces(dm, P);
   cout << endl << "** Iteration completed." << endl << endl;
+  return diag;
 }
 
 /************************ MAIN ****************************************/
@@ -2441,14 +2434,12 @@ void calculation(Params &P) {
   // Initialize all containers for storing information
   AllSteps dm(P.Nlen);
   stats.init_vectors(P.Nlen);
-  {
-    run_nrg(step, iterinfo, diag0, dm, P);
-    if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
-  }
+  auto diag = run_nrg(step, iterinfo, diag0, dm, P);
+  if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   if (P.dm) {
     if (need_rho()) {
-      auto rho = init_rho(step, P); // XXX raw step here
-      saveRho(step.lastndx(), FN_RHO, rho, P); // XXX: can avoid step here?
+      auto rho = init_rho(step, diag);
+      saveRho(step.lastndx(), FN_RHO, rho, P);
       if (!P.ZBW) calc_densitymatrix(rho, dm, P);
     }
     if (need_rhoFDM()) {
