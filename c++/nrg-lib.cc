@@ -195,17 +195,10 @@ class Rmaxvals {
    ublas::vector<size_t> values;
  public:
    Rmaxvals() = default;
-   Rmaxvals(const Rmaxvals &) = default;
-   Rmaxvals(Rmaxvals &&) = default;
-   Rmaxvals &operator=(const Rmaxvals &) = default;
-   Rmaxvals &operator=(Rmaxvals &&) = default;
-   ~Rmaxvals() = default;
-   size_t rmax(size_t i) const { return values[i-1]; } // FOR COMPATIBILITY OFFSET 1!
-   size_t offset(size_t i) const {
-     return std::accumulate(begin(values), begin(values) + (i-1), 0);
-   }
-   size_t operator[](size_t i) const { return rmax(i); }
    Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev);
+   size_t rmax(size_t i) const { return values[i-1]; } // FOR COMPATIBILITY OFFSET 1!
+   size_t offset(size_t i) const { return std::accumulate(begin(values), begin(values) + (i-1), 0); }
+   size_t operator[](size_t i) const { return rmax(i); }
    size_t total() const { return std::accumulate(begin(values), end(values), 0); } // total number of states
  private:
    friend ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
@@ -217,8 +210,6 @@ class Rmaxvals {
 };
 
 using QSrmax = map<Invar, Rmaxvals>;
-
-using EVEC = ublas::vector<t_eigen>;
 
 // Information about the number of states, kept and discarded, rmax,
 // and eigenenergies. Required for the density-matrix construction.
