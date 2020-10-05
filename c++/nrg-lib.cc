@@ -249,7 +249,7 @@ struct RawEigen {
   // Various assertion checks; to be called after the diagonalisation routine or after reading Eigen objects through
   // MPI or from disk.
   RawEigen() {}
-  RawEigen(size_t nr, size_t dim) : nr(nr), dim(dimn) {
+  RawEigen(size_t nr, size_t dim) : nr(nr), dim(dim) {
     my_assert(nr <= dim);
     value.resize(nr);
     matrix.resize(nr, dim);
@@ -298,9 +298,9 @@ struct Eigen : public RawEigen {
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
   void diagonal(const EVEC &v) {
-    nr = rmax = v.size();
-    value     = v;
-    shift     = 0.0;
+    nr = dim = v.size();
+    value    = v;
+    shift    = 0.0;
     matrix   = ublas::identity_matrix<t_eigen>(nr);
   }
   void subtract_Egs(double Egs) {
@@ -317,7 +317,7 @@ private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
      ar &nr;
-     ar &rmax;
+     ar &dim;
      ar &value;
      ar &shift;
      ar &absenergyG;
@@ -1913,10 +1913,10 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   mpiw->send(dest, TAG_EIGEN, eigmock);
   nrglog('M', "Sending eigen from " << mpiw->rank() << " to " << dest);
   mpiw->send(dest, TAG_EIGEN_INT, eig.nr);
-  mpiw->send(dest, TAG_EIGEN_INT, eig.rmax);
-  mpiw->send(dest, TAG_EIGEN_INT, eig.nrpost);
+  mpiw->send(dest, TAG_EIGEN_INT, eig.dim);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value);
   mpi_send_matrix_linebyline(dest, eig.matrix);
+  mpiw->send(dest, TAG_EIGEN_INT, eig.nrpost);
 }
 
 auto mpi_receive_eigen_linebyline(int source) {
@@ -1925,10 +1925,10 @@ auto mpi_receive_eigen_linebyline(int source) {
   check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
   Eigen eig;
   check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nr));
-  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.rmax));
-  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nrpost));
+  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.dim));
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value));
   eig.matrix = mpi_receive_matrix_linebyline(source);
+  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nrpost));
   return eig;
 }
 

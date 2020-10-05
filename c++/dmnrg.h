@@ -42,13 +42,13 @@ void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m) {
 }
 
 void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
-  oa << m.nr << m.rmax << m.nrpost;
+  oa << m.nr << m.dim << m.nrpost;
   oa << m.value << m.shift << m.absenergyG; // only G !!
   saveMatrix(oa, m.matrix);
 }
 
 void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
-  ia >> m.nr >> m.rmax >> m.nrpost;
+  ia >> m.nr >> m.dim >> m.nrpost;
   ia >> m.value >> m.shift >> m.absenergyG;
   loadMatrix(ia, m.matrix);
 }
