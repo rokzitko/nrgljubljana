@@ -242,28 +242,16 @@ using AllSteps = std::vector<Subs>;
 // Result of a diagonalisation: eigenvalues and eigenvectors
 struct RawEigen {
   using EVEC = ublas::vector<t_eigen>;
-  size_t nr  = 0;  // number of eigenpairs (currently stored)
-  size_t dim = 0;  // dimensionality of the matrix space
-  EVEC value;      // eigenvalues
-  Matrix matrix;   // eigenvectors
-  // Various assertion checks; to be called after the diagonalisation routine or after reading Eigen objects through
-  // MPI or from disk.
+  EVEC value;    // eigenvalues
+  Matrix matrix; // eigenvectors
   RawEigen() {}
-  RawEigen(size_t nr, size_t dim) : nr(nr), dim(dim) {
+  RawEigen(size_t nr, size_t dim) {
     my_assert(nr <= dim);
     value.resize(nr);
     matrix.resize(nr, dim);
-    perform_checks();
   }
-  void perform_checks() const {
-    my_assert(value.size() == matrix.size1());
-    my_assert(matrix.size1() <= matrix.size2());
-    my_assert(nr == value.size());
-    my_assert(nr == matrix.size1());
-    my_assert(dim == matrix.size2());
-  }
-  size_t getnr() const { return nr; }   // Number of eigenpairs CURRENTLY STORED
-  size_t getdim() const { return dim; }
+  size_t getnr() const  { return value.size(); }
+  size_t getdim() const { return matrix.size2(); } // valid also after the split_in_blocks_Eigen() call
 };
   
 struct Eigen : public RawEigen {
@@ -285,23 +273,21 @@ struct Eigen : public RawEigen {
   // Truncate to nrpost states.
   void truncate_prepare_subspace(size_t _nrpost) {
     nrpost = _nrpost;
-    my_assert(nrpost <= nr);
+    my_assert(nrpost <= getnr());
   }
   void truncate_perform() {
     for (auto &i : blocks) {
       my_assert(nrpost <= i.size1());
       i.resize(nrpost, i.size2());
     }
-    value.resize(nrpost); // new, 19.7.2019
-    nr = nrpost;
+    value.resize(nrpost);
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
   void diagonal(const EVEC &v) {
-    nr = dim = v.size();
     value    = v;
+    matrix   = ublas::identity_matrix<t_eigen>(v.size());
     shift    = 0.0;
-    matrix   = ublas::identity_matrix<t_eigen>(nr);
   }
   void subtract_Egs(double Egs) {
     my_assert(shift == 0.0);
@@ -316,13 +302,11 @@ struct Eigen : public RawEigen {
 private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
-     ar &nr;
-     ar &dim;
      ar &value;
+     ar &matrix;
      ar &shift;
      ar &absenergyG;
      ar &absenergyN;
-     ar &matrix;
   }
 };
 
@@ -1912,11 +1896,11 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   Eigen eigmock; // empty Eigen
   mpiw->send(dest, TAG_EIGEN, eigmock);
   nrglog('M', "Sending eigen from " << mpiw->rank() << " to " << dest);
-  mpiw->send(dest, TAG_EIGEN_INT, eig.nr);
-  mpiw->send(dest, TAG_EIGEN_INT, eig.dim);
+//  mpiw->send(dest, TAG_EIGEN_INT, eig.nr);
+//  mpiw->send(dest, TAG_EIGEN_INT, eig.dim);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value);
   mpi_send_matrix_linebyline(dest, eig.matrix);
-  mpiw->send(dest, TAG_EIGEN_INT, eig.nrpost);
+//  mpiw->send(dest, TAG_EIGEN_INT, eig.nrpost);
 }
 
 auto mpi_receive_eigen_linebyline(int source) {
@@ -1924,11 +1908,11 @@ auto mpi_receive_eigen_linebyline(int source) {
   Eigen eigmock;
   check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
   Eigen eig;
-  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nr));
-  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.dim));
+//  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nr));
+//  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.dim));
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value));
   eig.matrix = mpi_receive_matrix_linebyline(source);
-  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nrpost));
+//  check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nrpost));
   return eig;
 }
 
@@ -1939,9 +1923,7 @@ std::pair<Invar, Eigen> read_from(int source) {
   Invar Irecv;
   check_status(mpiw->recv(source, TAG_INVAR, Irecv));
   nrglog('M', "Received results for subspace " << Irecv << " [nr=" << eig.getnr() << ", dim=" << eig.getdim() << "]");
-  // Some consistency checks
-  my_assert(eig.matrix.size1() == eig.getnr());
-  my_assert(eig.matrix.size2() == eig.getdim());
+  my_assert(eig.value.size() == eig.matrix.size1());
   my_assert(eig.matrix.size1() <= eig.matrix.size2());
   return {Irecv, eig};
 }

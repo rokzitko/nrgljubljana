@@ -96,7 +96,7 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
     my_assert(e.blocks[block].size1() == nr);
     my_assert(e.blocks[block].size2() == rmax);
   }
-  e.matrix = Matrix(0, 0); // We don't need matrix anymore.
+  e.matrix = Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!
 }
 
 void split_in_blocks(DiagInfo &diag, const QSrmax &qsrmax) {

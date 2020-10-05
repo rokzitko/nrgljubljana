@@ -38,10 +38,8 @@ template<typename T, typename U> Eigen copy_results(T* eigenvalues, U* eigenvect
 {
   Eigen d(M, dim);
   copy(eigenvalues, d.value, M);
-  if (jobz == 'V') {
+  if (jobz == 'V')
     copy(eigenvectors, d.matrix, dim, M);
-    d.perform_checks();
-  }
   my_assert(d.value.size() == d.matrix.size1());
   return d;
 }
