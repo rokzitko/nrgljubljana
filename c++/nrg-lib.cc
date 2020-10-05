@@ -256,6 +256,8 @@ struct RawEigen {
   
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
 struct Eigen : public RawEigen {
+  EVEC value_orig;     // as computed
+  EVEC value_zero;     // Egs subtracted
   size_t nrpost = 0;   // number of eigenpairs after truncation
   double shift  = 0.0; // shift of eigenvalues (0 or Egs)
   EVEC absenergy;      // absolute energies
@@ -292,9 +294,12 @@ struct Eigen : public RawEigen {
   }
   void subtract_Egs(double Egs) {
     my_assert(shift == 0.0);
-    for (auto &x : value) x -= Egs;
+    value_orig = value;
+    value_zero = value;
+    for (auto &x : value_zero) x -= Egs;
     shift = Egs;
-    my_assert(value[0] >= 0.0);
+    my_assert(value_zero[0] >= 0.0);
+    value = value_zero;
   }
   void shift_absenergyG(double GS_energy) {
     for (auto &x : absenergyG) x -= GS_energy;
