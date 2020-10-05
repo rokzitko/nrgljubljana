@@ -75,15 +75,14 @@ void offdiag_function(const Step &step, size_t i, size_t j,
   }
   const auto &mat = f->second;
   my_assert(size1 == mat.size1() && size2 == mat.size2());
-  nrglog('i', "offdiag i=" << i << " j=" << j << " factor_scaled=" << factor_scaled << " II=" << II);
   // We are building the upper triangular part of the Hermitian Hamiltonian.
   // Thus usually i < j. If not, we must conjugate transpose the contribution!
   const bool conj_transpose = i > j;
   if (conj_transpose) {
-    matrix_range<Matrix> hsub(h, range(begin2, begin2 + size2), range(begin1, begin1 + size1));
+    ublas::matrix_range<Matrix> hsub(h, ublas::range(begin2, begin2 + size2), ublas::range(begin1, begin1 + size1));
     noalias(hsub) += CONJ_ME(factor_scaled) * herm(mat);
   } else {
-    matrix_range<Matrix> hsub(h, range(begin1, begin1 + size1), range(begin2, begin2 + size2));
+    ublas::matrix_range<Matrix> hsub(h, ublas::range(begin1, begin1 + size1), ublas::range(begin2, begin2 + size2));
     noalias(hsub) += factor_scaled * mat;
   }
 }
@@ -113,7 +112,6 @@ void diag_function(const Step &step, size_t i, size_t ch, double number, t_coef 
    appropriate zeta is not zeta(0), but zeta(1). zeta(0) is the shift
    applied to the f[0] orbital in initial.m !!! */
   const t_coef shift = sc_zeta * (number - avgoccup) / step.scale();
-  nrglog('i', "diag i=" << i << " shift=" << shift);
   for (size_t j = begin1; j < begin1 + size1; j++) h(j, j) += shift;
 }
 
@@ -128,7 +126,6 @@ void diag_function_half(const Step &step, size_t i, size_t ch, double number, t_
   // avgoccup is divided by a further factor of 2 compared
   // to diag_function() above!
   const t_matel shift = sc_zeta * (number - avgoccup / 2) / step.scale();
-  nrglog('i', "diag_half i=" << i << " shift=" << shift);
   for (size_t j = begin1; j < begin1 + size1; j++) h(j, j) += shift;
 }
 
@@ -140,7 +137,6 @@ void spinz_function(const Step &step, size_t i, size_t j, size_t ch, t_matel spi
   const t_matel shift = spinz * double(P.globalB) / step.scale();
   const size_t begin1 = qq.offset(i);
   const size_t size1  = qq.rmax(i);
-  nrglog('i', "spinz i=" << i << " shift=" << shift);
   for (size_t k = begin1; k < begin1 + size1; k++) h(k, k) += shift;
 }
 
@@ -155,7 +151,6 @@ void spinx_function(const Step &step, size_t i, size_t j, size_t ch, t_matel spi
   bool contributes = (size1 > 0) && (size2 > 0);
   if (!contributes) return;
   my_assert(size1 == size2);
-  nrglog('i', "spinx i=" << i << " shift=" << shift);
   for (size_t l = 0; l < size1; l++) h(begin1 + l, begin2 + l) += shift;
 }
 
@@ -172,7 +167,6 @@ void diag_offdiag_function(const Step &step, size_t i, size_t j, size_t chin, t_
   if (!contributes) return;
   my_assert(size1 == size2);
   const t_matel factor_scaled = factor / step.scale();
-  nrglog('i', "diag_offdiag i=" << i << " j=" << j << " factor_scaled=" << factor_scaled);
   for (size_t l = 0; l < size1; l++) h(begin1 + l, begin2 + l) += factor_scaled;
 }
 

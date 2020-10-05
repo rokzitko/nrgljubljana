@@ -275,7 +275,6 @@ MatrixElements SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrma
     // 1 = spin singlet (deg=2S+1=1)
     // 1 = spin triplet (T=1)
 
-    nrglog('r', "orb-triplets");
     Ip = Invar(q1, ss1, t1);
     {
   nrglog('f', "RECALC(fn=" << "qst/qst-orb-triplets.dat" << ", len=" << QST::LENGTH_OT0_3CH << ", Iop=" << Invar(0, 1, 1) << ")");
@@ -288,7 +287,6 @@ MatrixElements SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrma
   }
 };
 
-    nrglog('r', "orb-tripletp");
     Ip = Invar(q1, ss1, t1 + 1);
     {
   nrglog('f', "RECALC(fn=" << "qst/qst-orb-tripletp.dat" << ", len=" << QST::LENGTH_OTpm_3CH << ", Iop=" << Invar(0, 1, 1) << ")");
@@ -301,7 +299,6 @@ MatrixElements SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrma
   }
 };
 
-    nrglog('r', "orb-tripletm");
     Ip = Invar(q1, ss1, t1 - 1);
     {
   nrglog('f', "RECALC(fn=" << "qst/qst-orb-tripletm.dat" << ", len=" << QST::LENGTH_OTpm_3CH << ", Iop=" << Invar(0, 1, 1) << ")");

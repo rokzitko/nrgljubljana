@@ -39,9 +39,10 @@ template<typename T, typename U> Eigen copy_results(T* eigenvalues, U* eigenvect
   Eigen d(M, dim);
   copy(eigenvalues, d.value, M);
   if (jobz == 'V') {
-    copy(eigenvectors, d.matrix0, dim, M);
+    copy(eigenvectors, d.matrix, dim, M);
     d.perform_checks();
   }
+  my_assert(d.value.size() == d.matrix.size1());
   return d;
 }
 
@@ -51,7 +52,7 @@ template<typename T, typename U> Eigen copy_results(T* eigenvalues, U* eigenvect
 // jobz: 'N' for values only, 'V' for values and vectors
 
 #ifdef NRG_REAL
-Eigen diagonalise_dsyev(matrix<double> &m, char jobz = 'V') {
+Eigen diagonalise_dsyev(ublas::matrix<double> &m, char jobz = 'V') {
   const size_t dim = m.size1();
   t_matel *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
@@ -74,7 +75,7 @@ Eigen diagonalise_dsyev(matrix<double> &m, char jobz = 'V') {
 #endif
 
 #ifdef NRG_REAL
-Eigen diagonalise_dsyevd(matrix<double> &m, char jobz = 'V')
+Eigen diagonalise_dsyevd(ublas::matrix<double> &m, char jobz = 'V')
 {
   const size_t dim = m.size1();
   t_matel *ham = bindings::traits::matrix_storage(m);
@@ -99,7 +100,7 @@ Eigen diagonalise_dsyevd(matrix<double> &m, char jobz = 'V')
   if (INFO != 0) {
     // dsyevd sometimes fails to converge (INFO>0). In such cases we do not trigger
     // an error but return 0, to permit error recovery.
-    if (INFO > 0) return Eigen{};
+    if (INFO > 0) return Eigen();
     my_error("dsyevd failed. INFO=%i", INFO);
   }
   return copy_results(eigenvalues, ham, jobz, dim, dim);
@@ -107,7 +108,7 @@ Eigen diagonalise_dsyevd(matrix<double> &m, char jobz = 'V')
 #endif  
 
 #ifdef NRG_REAL
-Eigen diagonalise_dsyevr(matrix<double> &m, double ratio = 1.0,  char jobz = 'V')
+Eigen diagonalise_dsyevr(ublas::matrix<double> &m, double ratio = 1.0,  char jobz = 'V')
 {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
@@ -166,7 +167,7 @@ Eigen diagonalise_dsyevr(matrix<double> &m, double ratio = 1.0,  char jobz = 'V'
 #endif
 
 #ifdef NRG_COMPLEX
-Eigen diagonalise_zheev(matrix<cmpl> &m, char jobz = 'V') {
+Eigen diagonalise_zheev(ublas::matrix<cmpl> &m, char jobz = 'V') {
   const size_t dim = m.size1();
   lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
@@ -191,7 +192,7 @@ Eigen diagonalise_zheev(matrix<cmpl> &m, char jobz = 'V') {
 #endif
   
 #ifdef NRG_COMPLEX
-Eigen diagonalise_zheevr(matrix<cmpl> &m, double ratio = 1.0, char jobz = 'V') {
+Eigen diagonalise_zheevr(ublas::matrix<cmpl> &m, double ratio = 1.0, char jobz = 'V') {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
@@ -258,14 +259,14 @@ void checkdiag(const Eigen &d,
 {
   const auto M = d.value.size(); // number of eigenpairs
   const auto dim = d.getrmax(); // dimension of the eigenvector
-  my_assert(d.matrix0.size2() == dim);
+  my_assert(d.matrix.size2() == dim);
   // Check normalization
   for (auto r = 0; r < M; r++) {
     assert_isfinite(d.value(r));
     double sumabs = 0.0;
     for (size_t j = 0; j < dim; j++) {
-      assert_isfinite(d.vektor(r, j));
-      sumabs += sqr(abs(d.vektor(r, j)));
+      assert_isfinite(d.matrix(r, j));
+      sumabs += sqr(abs(d.matrix(r, j)));
     }
     my_assert(num_equal(sumabs, 1.0, NORMALIZATION_EPSILON));
   }
@@ -273,7 +274,7 @@ void checkdiag(const Eigen &d,
   for (size_t r1 = 0; r1 < M; r1++)
     for (size_t r2 = r1 + 1; r2 < M; r2++) {
       t_matel skpdt = 0.0;
-      for (size_t j = 0; j < dim; j++) skpdt += CONJ_ME(d.vektor(r1, j)) * d.vektor(r2, j);
+      for (size_t j = 0; j < dim; j++) skpdt += CONJ_ME(d.matrix(r1, j)) * d.matrix(r2, j);
       my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
     }
 }
@@ -288,7 +289,7 @@ void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t
 
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
-template<typename M> Eigen diagonalise(matrix<M> &m) {
+template<typename M> Eigen diagonalise(ublas::matrix<M> &m) {
   time_mem::Timing t;
   check_is_matrix_upper(m);
   Eigen d;
@@ -312,9 +313,7 @@ template<typename M> Eigen diagonalise(matrix<M> &m) {
     d = diagonalise_zheevr(m, sP.diagratio);
 #endif
   my_assert(d.value.size() > 0);
-  my_assert(d.value.size() == d.matrix0.size1());
-  my_assert(d.matrix0.size1() <= m.size1());
-  my_assert(d.matrix0.size2() == m.size2());
+  my_assert(d.matrix.size1() <= m.size1() && d.matrix.size2() == m.size2());
   if (logletter('e'))
     dump_eigenvalues(d);
   if (P.checkdiag)

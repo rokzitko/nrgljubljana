@@ -50,7 +50,7 @@ using namespace std;
 #include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/numeric/ublas/operation.hpp>
 using namespace boost::numeric;
-using namespace boost::numeric::ublas;
+// XXX using namespace boost::numeric::ublas;
 
 // Numeric bindings to BLAS/LAPACK
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>

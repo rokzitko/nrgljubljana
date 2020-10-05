@@ -25,7 +25,7 @@ void saveMatrix(boost::archive::binary_oarchive &oa, const Matrix &m) {
   const size_t size2 = m.size2();
   oa << size1 << size2;
   for (size_t i = 0; i < size1; i++) {
-    ublas::vector<t_matel> vec = matrix_row<const Matrix>(m, i);
+    ublas::vector<t_matel> vec = ublas::matrix_row<const Matrix>(m, i);
     oa << vec;
   }
 }
@@ -37,20 +37,20 @@ void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m) {
   for (size_t i = 0; i < size1; i++) {
     ublas::vector<t_matel> vec;
     ia >> vec;
-    matrix_row<Matrix>(m, i) = vec;
+    ublas::matrix_row<Matrix>(m, i) = vec;
   }
 }
 
 void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
   oa << m.nr << m.rmax << m.nrpost;
   oa << m.value << m.shift << m.absenergyG; // only G !!
-  saveMatrix(oa, m.matrix0);
+  saveMatrix(oa, m.matrix);
 }
 
 void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
   ia >> m.nr >> m.rmax >> m.nrpost;
   ia >> m.value >> m.shift >> m.absenergyG;
-  loadMatrix(ia, m.matrix0);
+  loadMatrix(ia, m.matrix);
 }
 #endif
 
@@ -218,14 +218,14 @@ void cdmI(size_t i,            // Subspace index (alpha=1,...,P.combs)
   // offset gives the offset that is added to r1,rp to find the
   // elements ri in U^N_I1(omega|ri)
   const size_t offset = dm[N].at(I1).rmax.offset(i);
-  const size_t d1     = diagI1.matrix0.size1();
-  const size_t d2     = diagI1.matrix0.size2();
+  const size_t d1     = diagI1.matrix.size1();
+  const size_t d2     = diagI1.matrix.size2();
   if (!(nromega <= d1 && offset + dim <= d2)) {
     cout << "nromega=" << nromega << " d1=" << d1 << endl;
     cout << "offset=" << offset << " dim=" << dim << " offset+dim=" << offset + dim << " d2=" << d2 << endl;
     my_error("Matrix dimensions errorin cdmI().");
   }
-  const matrix_range<const Matrix> U(diagI1.matrix0, range(0, nromega), range(offset, offset + dim));
+  const ublas::matrix_range<const Matrix> U(diagI1.matrix, ublas::range(0, nromega), ublas::range(offset, offset + dim));
   Matrix T(dim, nromega);
   // T <- U^dag rhoN
   atlas::gemm(CblasConjTrans, CblasNoTrans, t_factor(1.0), U, rhoN, t_factor(0.0), T);
@@ -285,7 +285,6 @@ bool already_computed(const string &prefix) {
  iteration steps. */
 
 void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &P) {
-  nrglog('@', "@ calc_densitymatrix");
   if (P.resume && already_computed(FN_RHO)) {
     cout << "Not necessary: already computed!" << endl;
     return;
@@ -315,7 +314,6 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
 DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Params &P) { // XXX: dm
-  nrglog('@', "@ init_rho_FDM(" << N << ")");
   DensMatElements rhoFDM;
   double tr = 0.0;
   for (const auto &[I, dimsub] : dm[N]) {
@@ -385,7 +383,6 @@ double sum_wn(size_t N, const Params &P) {
 }
 
 void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const AllSteps &dm, const Params &P) {
-  nrglog('@', "@ calc_densitymatrix");
   if (P.resume && already_computed(FN_RHOFDM)) {
     cout << "Not necessary: already computed!" << endl;
     return;

@@ -34,8 +34,6 @@ MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &
     Tangmom tz1 = I1.get("TZ");
     Invar Ip;
 
-    nrglog('f', "I1=" << I1);
-
     // Two different lengths: D_3CH_a and D_3CH_b
 
     // Invar(1,2,+-1,0) is correct. 1 = add charge, 2 = doublet,

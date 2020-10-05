@@ -35,7 +35,6 @@ void SpectrumRealFreq::merge(spCS_t cs, const Step &step) {
 // Spectrum merging for complete Fock space calculation.
 void SpectrumRealFreq::mergeCFS(spCS_t cs) {
   auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
-  nrglog('*', "weight=" << csb->total_weight());
   fspos.merge(csb->spos);
   fsneg.merge(csb->sneg);
 }
@@ -129,7 +128,6 @@ void mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step) {
 void SpectrumRealFreq::mergeNN2(spCS_t cs, const Step &step) {
   auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
 
-  nrglog('*', "weight=" << csb->total_weight());
   if (!step.N_for_merging()) return;
   mergeNN2half(fspos, csb->spos, step);
   mergeNN2half(fsneg, csb->sneg, step);

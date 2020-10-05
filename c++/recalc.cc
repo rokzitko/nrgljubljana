@@ -79,7 +79,7 @@ struct Recalc {
 
 // We split the matrices of eigenvectors in blocks according to the partition into "ancestor subspaces". At the price
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
-// in the recalculation of matrix elements. Note that the original (matrix0) data is discarded after the splitting
+// in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting
 // had completed!
 void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
   e.blocks.resize(P.combs);
@@ -89,14 +89,14 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
   for (size_t block = 0; block < P.combs; block++) {
     const size_t rmax   = qsrmax.at(I).rmax(block + 1); // offset 1
     const size_t offset = qsrmax.at(I).offset(block + 1);
-    my_assert(e.matrix0.size1() >= nr);
-    my_assert(e.matrix0.size2() >= offset + rmax);
-    matrix_range<Matrix> Up(e.matrix0, range(0, nr), range(offset, offset + rmax));
+    my_assert(e.matrix.size1() >= nr);
+    my_assert(e.matrix.size2() >= offset + rmax);
+    ublas::matrix_range<Matrix> Up(e.matrix, ublas::range(0, nr), ublas::range(offset, offset + rmax));
     e.blocks[block] = Matrix(Up);
     my_assert(e.blocks[block].size1() == nr);
     my_assert(e.blocks[block].size2() == rmax);
   }
-  e.matrix0 = Matrix(0, 0); // We don't need matrix0 anymore.
+  e.matrix = Matrix(0, 0); // We don't need matrix anymore.
 }
 
 void split_in_blocks(DiagInfo &diag, const QSrmax &qsrmax) {
@@ -205,7 +205,6 @@ void recalc1_global(const DiagInfo &dg,
                     Matrix &m, // XXX: return this one
                     size_t i1, size_t ip, 
                     t_factor value) {
-  nrglog('r', "recalc1_global: " << I);
   const Eigen &dgI = dg.at(I);
   const size_t dim = dgI.getnr();
   if (dim == 0) return;

@@ -34,8 +34,6 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
     Tangmom tz1 = I1.get("TZ");
     Invar Ip;
 
-    nrglog('f', "I1=" << I1);
-
     // Invar(1,2,+-1,0) is correct. 1 = add charge, 2 = doublet,
     // 1 = triplet (because working with abs orbital momentum QNs)
 
@@ -127,9 +125,6 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     Tangmom tzp = Ip.get("TZ");
     Invar I1;
 
-    nrglog('f', "qp=" << qp << " sszp=" << sszp << " tzp=" << tzp);
-
-    nrglog('f', "spinup+1");
     I1 = Invar(qp + 1, sszp + 1, tzp + 1);
     {
   nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spinup+1.dat" << ", ch=" << 0 << ", len=" << QSZTZ::LENGTH_I_3CH << ")");
@@ -142,7 +137,6 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   }
 };
 
-    nrglog('f', "spinup0");
     I1 = Invar(qp + 1, sszp + 1, tzp);
     {
   nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spinup0.dat" << ", ch=" << 0 << ", len=" << QSZTZ::LENGTH_I_3CH << ")");
@@ -155,7 +149,6 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   }
 };
 
-    nrglog('f', "spinup-1");
     I1 = Invar(qp + 1, sszp + 1, tzp - 1);
     {
   nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spinup-1.dat" << ", ch=" << 0 << ", len=" << QSZTZ::LENGTH_I_3CH << ")");
@@ -168,7 +161,6 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   }
 };
 
-    nrglog('f', "spindo+1");
     I1 = Invar(qp + 1, sszp - 1, tzp + 1);
     {
   nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spindo+1.dat" << ", ch=" << 0 << ", len=" << QSZTZ::LENGTH_I_3CH << ")");
@@ -181,7 +173,6 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   }
 };
 
-    nrglog('f', "spindo0");
     I1 = Invar(qp + 1, sszp - 1, tzp);
     {
   nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spindo0.dat" << ", ch=" << 0 << ", len=" << QSZTZ::LENGTH_I_3CH << ")");
@@ -194,7 +185,6 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   }
 };
 
-    nrglog('f', "spindo-1");
     I1 = Invar(qp + 1, sszp - 1, tzp - 1);
     {
   nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spindo-1.dat" << ", ch=" << 0 << ", len=" << QSZTZ::LENGTH_I_3CH << ")");

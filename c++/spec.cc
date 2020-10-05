@@ -46,7 +46,6 @@ void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag
       }
     }
   }
-  nrglog('*', "Merging " << bs.fullname());
   bs.spec->merge(cs, step);
 }
 
@@ -84,7 +83,6 @@ template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const S
       }
     }
   }
-  nrglog('*', "Merging " << bs.fullname());
   bs.spec->merge(cs, step);
 }
 

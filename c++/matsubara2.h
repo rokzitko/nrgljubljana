@@ -3,7 +3,7 @@
 
 class Matsubara2 {
   private:
-  using matsgf2 = matrix<t_weight>;
+  using matsgf2 = ublas::matrix<t_weight>;
   matsgf2 v;
   matstype mt;
 
@@ -15,8 +15,6 @@ class Matsubara2 {
     v.clear();
   }
   void add(size_t m, size_t n, t_weight w) {
-    // my_assert(m < v.size1()); // uncomment in production code, significant performance penalty
-    // my_assert(n < v.size2()); // idem
     v(m, n) += w;
   }
   void save(ostream &F) const {

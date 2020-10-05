@@ -124,7 +124,7 @@ Thus, as always:
  "right index the same as inner loop variable".
 */
 
-using Matrix = matrix<t_matel>;
+using Matrix = ublas::matrix<t_matel>;
 
 #include "numerics.h"
 
@@ -245,8 +245,7 @@ using AllSteps = std::vector<Subs>;
 // about scaling, not about possible linear shifts/offsets.
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
-class Eigen {
-  public:
+struct Eigen {
   using EVEC = ublas::vector<t_eigen>;
   size_t nr     = 0;   // number of eigenpairs (currently stored)
   size_t rmax   = 0;   // dimensionality of the matrix space
@@ -257,30 +256,30 @@ class Eigen {
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
   EVEC absenergyN;     // absolute energies (referenced to the lowest energy in the N-th step)
   EVEC boltzmann;      // Boltzmann factors
-  Matrix matrix0;      // eigenvectors in matrix form
+  Matrix matrix;       // eigenvectors in matrix form
   // 'blocks' contains eigenvectors separated according to the invariant
   // subspace from which they originate. This separation is required for
   // using the efficient BLAS routines when performing recalculations of
   // the matrix elements.
   std::vector<Matrix> blocks;
-  Eigen() = default;
-  Eigen(const Eigen &t) = default;
-  Eigen(Eigen &&t) = default;
+  Eigen() {
+    nr = rmax = nrpost = 0;
+  }
   // nr - number of eigenpairs, rmax - dimensionality of the matrix space
   Eigen(size_t _nr, size_t _rmax) : nr(_nr), rmax(_rmax) {
     my_assert(rmax >= nr);
     value.resize(nr);
-    matrix0.resize(nr, rmax);
+    matrix.resize(nr, rmax);
     perform_checks();
   }
-  Eigen &operator=(const Eigen &) = default;
-  Eigen &operator=(Eigen &&) = default;
-  ~Eigen() = default;
   // Various assertion checks; to be called after the diagonalisation routine or reading Eigen objects through MPI or from disk.
-  void perform_checks() const;
-  // Accessor routine for j-th element of i-th eigenvector.
-  inline t_matel &vektor(size_t i, size_t j) { return matrix0(i, j); }
-  inline const t_matel &vektor(size_t i, size_t j) const { return matrix0(i, j); }
+  void perform_checks() const {
+    my_assert(value.size() == matrix.size1());
+    my_assert(matrix.size1() <= matrix.size2());
+    my_assert(nr == value.size()); // new, 19.7.2019
+    my_assert(nr == matrix.size1());
+    my_assert(rmax == matrix.size2());
+  }
   // Returns the number of eigenpairs CURRENTLY STORED.
   size_t getnr() const { return nr; }
   // Returns the dimensionality of a subspace, i.e. the number of
@@ -294,14 +293,21 @@ class Eigen {
     nrpost = _nrpost;
     my_assert(nrpost <= nr);
   }
-  void truncate_perform();
+  void truncate_perform() {
+    for (auto &i : blocks) {
+      my_assert(nrpost <= i.size1());
+      i.resize(nrpost, i.size2());
+    }
+    value.resize(nrpost); // new, 19.7.2019
+    nr = nrpost;
+  }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
   void diagonal(const EVEC &v) {
     nr = rmax = v.size();
     value     = v;
     shift     = 0.0;
-    matrix0   = identity_matrix<t_eigen>(nr);
+    matrix   = ublas::identity_matrix<t_eigen>(nr);
   }
   private:
   friend class boost::serialization::access;
@@ -312,29 +318,12 @@ class Eigen {
     ar &shift;
     ar &absenergyG;
     ar &absenergyN;
-    ar &matrix0;
+    ar &matrix;
   }
 };
 
 // TO DO: derived class from Eigen, which contains results in addition to raw eigenvalues/eigenvectors
 // e.g. absenergy, etc. belong here
-
-void Eigen::truncate_perform() {
-  for (auto &i : blocks) {
-    my_assert(nrpost <= i.size1());
-    i.resize(nrpost, i.size2());
-  }
-  value.resize(nrpost); // new, 19.7.2019
-  nr = nrpost;
-}
-
-void Eigen::perform_checks() const {
-  my_assert(value.size() == matrix0.size1());
-  my_assert(matrix0.size1() <= matrix0.size2());
-  my_assert(nr == value.size()); // new, 19.7.2019
-  my_assert(nr == matrix0.size1());
-  my_assert(rmax == matrix0.size2());
-}
 
 ostream &operator<<(ostream &os, const Twoinvar &p) { return os << "(" << p.first << ") (" << p.second << ")"; }
 
@@ -1635,7 +1624,7 @@ void trim_matel(DiagInfo &dg, MatrixElements &op) {
 
     if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
       continue;
-    matrix_range<Matrix> m2(mat, range(0, nr1), range(0, nr2));
+    ublas::matrix_range<Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
     Matrix m2new = m2;
     mat.swap(m2new);
   }
@@ -1846,7 +1835,6 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev};
   const size_t dim = rm.total();
-  nrglog('i', endl << "Subspace (" << I << ") dim=" << dim); // skip a line
   Matrix h(dim, dim);
   h.clear();
   double scalefactor = (!P.substeps ? sqrt(P.Lambda) : pow(P.Lambda, 1. / (2. * P.channels))); // NOLINT
@@ -1941,7 +1929,7 @@ void mpi_send_matrix_linebyline(int dest, const Matrix &m) {
   mpiw->send(dest, TAG_MATRIX_SIZE, size2);
   nrglog('M', "Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
   for (size_t i = 0; i < size1; i++) {
-    ublas::vector<t_matel> vec = matrix_row<const Matrix>(m, i);
+    ublas::vector<t_matel> vec = ublas::matrix_row<const Matrix>(m, i);
     mpiw->send(dest, TAG_MATRIX_LINE, vec);
   }
 }
@@ -1957,7 +1945,7 @@ auto mpi_receive_matrix_linebyline(int source) {
     ublas::vector<t_matel> vec;
     check_status(mpiw->recv(source, TAG_MATRIX_LINE, vec));
     my_assert(vec.size() == size2);
-    matrix_row<Matrix>(m, i) = vec;
+    ublas::matrix_row<Matrix>(m, i) = vec;
   }
   return m;
 }
@@ -1980,7 +1968,7 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   mpiw->send(dest, TAG_EIGEN_INT, eig.rmax);
   mpiw->send(dest, TAG_EIGEN_INT, eig.nrpost);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value);
-  mpi_send_matrix_linebyline(dest, eig.matrix0);
+  mpi_send_matrix_linebyline(dest, eig.matrix);
 }
 
 auto mpi_receive_eigen_linebyline(int source) {
@@ -1992,7 +1980,7 @@ auto mpi_receive_eigen_linebyline(int source) {
   check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.rmax));
   check_status(mpiw->recv(source, TAG_EIGEN_INT, eig.nrpost));
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value));
-  eig.matrix0 = mpi_receive_matrix_linebyline(source);
+  eig.matrix = mpi_receive_matrix_linebyline(source);
   return eig;
 }
 
@@ -2004,9 +1992,9 @@ std::pair<Invar, Eigen> read_from(int source) {
   check_status(mpiw->recv(source, TAG_INVAR, Irecv));
   nrglog('M', "Received results for subspace " << Irecv << " [nr=" << eig.getnr() << ", dim=" << eig.getrmax() << "]");
   // Some consistency checks
-  my_assert(eig.matrix0.size1() == eig.getnr());
-  my_assert(eig.matrix0.size2() == eig.getrmax());
-  my_assert(eig.matrix0.size1() <= eig.matrix0.size2());
+  my_assert(eig.matrix.size1() == eig.getnr());
+  my_assert(eig.matrix.size2() == eig.getrmax());
+  my_assert(eig.matrix.size1() <= eig.matrix.size2());
   return {Irecv, eig};
 }
 

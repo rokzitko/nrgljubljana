@@ -68,7 +68,7 @@ cs->add(d.energy, d.weight);
 }
 if (allj > 0 && reti > 0) {
   // B [D=allj,K=reti] x rho [reti,reti]
-  const matrix_range<const Matrix> op2cut(op2II, range(0, allj), range(0, reti));
+  const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, allj), ublas::range(0, reti));
   Matrix op2_rho(allj, reti);
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2cut, rhoi, 0.0, op2_rho);
   LOOP_K(i)
@@ -103,7 +103,7 @@ void SPEC_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
 }
 if (retj > 0 && alli > 0) {
   // rho [retj, retj] x B [K=retj, D=alli]
-  const matrix_range<const Matrix> op2cut(op2II, range(0, retj), range(0, alli));
+  const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, retj), ublas::range(0, alli));
   Matrix rho_op2(retj, alli);
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
   LOOP_D(i)
@@ -165,7 +165,7 @@ void SPEC_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diag
 }
 if (retj > 0 && alli > 0) {
   // rho [retj, retj] x B [retj, alli]
-  const matrix_range<const Matrix> op2cut(op2II, range(0, retj), range(0, alli));
+  const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, retj), ublas::range(0, alli));
   Matrix rho_op2(retj, alli);
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
   LOOP_D(i) LOOP_K(j) DELTA dA; // A2
@@ -181,7 +181,7 @@ if (retj > 0 && alli > 0) {
 }
 if (allj > 0 && reti > 0) {
   // B [allj,reti] x rho [reti,reti]
-  const matrix_range<const Matrix> op2cut(op2II, range(0, allj), range(0, reti));
+  const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, allj), ublas::range(0, reti));
   Matrix op2_rho(allj, reti);
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2cut, rhoi, 0.0, op2_rho);
   LOOP_K(i) LOOP_D(j) DELTA dA; // A1
@@ -226,7 +226,7 @@ template <typename T> inline std::complex<T> boltz_fnc_noscale(T E1, T E2, T bzE
 // 6. numerical prefactors
 // 7. differences A vs. B: conjugation, index reversal
 
-using res_t = std::vector<matrix<t_weight> >;
+using res_t = std::vector<ublas::matrix<t_weight> >;
 
 #undef LOOP_D
 #undef LOOP_K
@@ -255,9 +255,9 @@ using res_t = std::vector<matrix<t_weight> >;
 
 void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &diagj, const Eigen &diagl, const Matrix &op1, const Matrix &op2, const Matrix &op3,
                            const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, DensMatElements &rhoFDM) {
+  using namespace boost::numeric::ublas;
   const double v3mmcutoff = P.v3mmcutoff * sqr(P.T); // order of contributions is prop to 1/T^2
   size_t nr               = omp_get_max_threads();
-  nrglog('G', "nr=" << nr);
   const short maxn = P.mats;
   const short maxm = P.mats;
   res_t res(nr);
@@ -318,7 +318,7 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
   if (retj > 0 && alll > 0) { // A1+A3, 3
                               //      cout << "A13, 3" << endl;
     // rho [retj,retj] x B [K=retj,D=alll]
-    const matrix_range<const Matrix> op2cut(op2, range(0, retj), range(0, alll));
+    const ublas::matrix_range<const Matrix> op2cut(op2, range(0, retj), range(0, alll));
     Matrix rho_op2(retj, alll);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -335,7 +335,7 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
   if (retj > 0 && retl > 0) { // A1+A3, 4
                               //      cout << "A13, 4" << endl;
     // rho [retj,retj] x B [K=retj,K=retl]
-    const matrix_range<const Matrix> op2cut(op2, range(0, retj), range(0, retl));
+    const ublas::matrix_range<const Matrix> op2cut(op2, range(0, retj), range(0, retl));
     Matrix rho_op2(retj, retl);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -352,7 +352,7 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
   if (alll > 0 && reti > 0) { // A1+A3, 5
                               //      cout << "A13, 5" << endl;
     // C [D=alll, K=reti] x rho [reti,reti]
-    const matrix_range<const Matrix> op3cut(op3, range(0, alll), range(0, reti));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, alll), range(0, reti));
     Matrix op3_rho(alll, reti);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op3cut, rhoi, 0.0, op3_rho);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -369,7 +369,7 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
   if (retl > 0 && reti > 0) { // A1+A3, 6
                               //      cout << "A13, 6" << endl;
     // C [K=retl, K=reti] x rho [reti,reti]
-    const matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
     Matrix op3_rho(retl, reti);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op3cut, rhoi, 0.0, op3_rho);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -435,7 +435,7 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
   if (retl > 0 && alli > 0) { // A2+A4, 3
                               //      cout << "A24, 3" << endl;
     // rho [retl,retl] x C [K=retl,D=alli]
-    const matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, alli));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, alli));
     Matrix rho_op3(retl, alli);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhol, op3cut, 0.0, rho_op3);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -452,7 +452,7 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
   if (retl > 0 && reti > 0) { // A2+A4, 4
                               //      cout << "A24, 4" << endl;
     // rho [retl,retl] x C [K=retl,K=reti]
-    const matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
     Matrix rho_op3(retl, reti);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhol, op3cut, 0.0, rho_op3);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -469,7 +469,7 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
   if (alll > 0 && reti > 0) { // A2+A4, 5
                               //      cout << "A24, 5" << endl;
     // C [D=alll, K=reti] x rho [reti,reti]
-    const matrix_range<const Matrix> op3cut(op3, range(0, alll), range(0, reti));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, alll), range(0, reti));
     Matrix op3_rho(alll, reti);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op3cut, rhoi, 0.0, op3_rho);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -486,7 +486,7 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
   if (retl > 0 && reti > 0) { // A2+A4, 6
                               //      cout << "A24, 6" << endl;
     // C [K=retl, K=reti] x rho [reti,reti]
-    const matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
     Matrix op3_rho(retl, reti);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op3cut, rhoi, 0.0, op3_rho);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -508,10 +508,10 @@ void SPEC_FDM_v3mm::calc_A(const Step &step, const Eigen &diagi, const Eigen &di
 
 void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &diagj, const Eigen &diagl, const Matrix &op1, const Matrix &op2, const Matrix &op3,
                            const BaseSpectrum &bs, t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const Invar &Il, DensMatElements &rhoFDM) {
+  using namespace boost::numeric::ublas; 
   //   cout << "B" << endl;
   const double v3mmcutoff = P.v3mmcutoff * sqr(P.T); // order of contributions is prop to 1/T^2
   size_t nr               = omp_get_max_threads();
-  nrglog('G', "nr=" << nr);
   const short maxn = P.mats;
   const short maxm = P.mats;
   res_t res(nr);
@@ -572,7 +572,7 @@ void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &di
   if (retj > 0 && alll > 0) { // B1+B2, 3
                               //      cout << "B12, 3" << endl;
     // rho [retj,retj] x A [K=retj,D=alll] (ConjTrans)
-    const matrix_range<const Matrix> op1cut(op1, range(0, alll), range(0, retj)); // order
+    const ublas::matrix_range<const Matrix> op1cut(op1, range(0, alll), range(0, retj)); // order
     Matrix rho_op1(retj, alll);
     atlas::gemm(CblasNoTrans, CblasConjTrans, 1.0, rhoj, op1cut, 0.0, rho_op1); // ConjTrans
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -589,7 +589,7 @@ void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &di
   if (retj > 0 && retl > 0) { // B1+B2, 4
                               //      cout << "B12, 4" << endl;
     // rho [retj,retj] x A [K=retj,K=retl] (ConjTrans)
-    const matrix_range<const Matrix> op1cut(op1, range(0, retl), range(0, retj)); // order
+    const ublas::matrix_range<const Matrix> op1cut(op1, range(0, retl), range(0, retj)); // order
     Matrix rho_op1(retj, retl);
     atlas::gemm(CblasNoTrans, CblasConjTrans, 1.0, rhoj, op1cut, 0.0, rho_op1); // ConjTrans
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -606,7 +606,7 @@ void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &di
   if (retl > 0 && alli > 0) { // B1+B2, 5
                               //      cout << "B12, 5" << endl;
     // rho [retl,retl] x C [K=retl,D=alli]
-    const matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, alli));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, alli));
     Matrix op3_rho(retl, alli);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhol, op3cut, 0.0, op3_rho);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -623,7 +623,7 @@ void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &di
   if (retl > 0 && reti > 0) { // B1+B2, 6
                               //      cout << "B12, 6" << endl;
     // rho [retl,retl] x C [K=retl,K=reti]
-    const matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
     Matrix op3_rho(retl, reti);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhol, op3cut, 0.0, op3_rho);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -689,7 +689,7 @@ void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &di
   if (retl > 0 && alli > 0) { // B3+B4, 3
                               //      cout << "B34, 3" << endl;
     // rho [retl,retl] x C [K=retl,D=alli]
-    const matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, alli));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, alli));
     Matrix rho_op3(retl, alli);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhol, op3cut, 0.0, rho_op3);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -706,7 +706,7 @@ void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &di
   if (retl > 0 && reti > 0) { // B3+B4, 4
                               //      cout << "B34, 4" << endl;
     // rho [retl,retl] x C [K=retl,K=reti]
-    const matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
     Matrix rho_op3(retl, reti);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhol, op3cut, 0.0, rho_op3);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -723,7 +723,7 @@ void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &di
   if (alll > 0 && reti > 0) { // B3+B4, 5
                               //      cout << "B34, 5" << endl;
     // C [D=alll, K=reti] x rho [reti,reti]
-    const matrix_range<const Matrix> op3cut(op3, range(0, alll), range(0, reti));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, alll), range(0, reti));
     Matrix op3_rho(alll, reti);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op3cut, rhoi, 0.0, op3_rho);
 #pragma omp parallel for schedule(dynamic) collapse(3)
@@ -740,7 +740,7 @@ void SPEC_FDM_v3mm::calc_B(const Step &step, const Eigen &diagi, const Eigen &di
   if (retl > 0 && reti > 0) { // B3+B4, 6
                               //      cout << "B34, 6" << endl;
     // C [K=retl, K=reti] x rho [reti,reti]
-    const matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
+    const ublas::matrix_range<const Matrix> op3cut(op3, range(0, retl), range(0, reti));
     Matrix op3_rho(retl, reti);
     atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op3cut, rhoi, 0.0, op3_rho);
 #pragma omp parallel for schedule(dynamic) collapse(3)
