@@ -2396,6 +2396,8 @@ void set_symmetry(const Params &P) {
   cout << "SYMMETRY TYPE: " << P.symtype.value() << endl;
   Sym = get(P.symtype.value(), P, stats.td.allfields);
   Sym->load();
+  stats.td.save_header(); // all fields are know at this point
+  stats.td_fdm.save_header();
 }
 
 void calculation(Params &P) {

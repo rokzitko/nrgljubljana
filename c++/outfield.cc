@@ -52,7 +52,6 @@ struct TD {
   TD(const Params &P_, std::string filename) : P(P_), O(filename), 
     T(P, allfields, "T"), E(P, allfields, "<E>"), E2(P, allfields, "<E^2>"),
     C(P, allfields, "C"), F(P, allfields, "F"), S(P, allfields, "S") { 
-      save_header(); 
     }
 };
 
@@ -73,8 +72,7 @@ struct TD_FDM {
   }
   TD_FDM(const Params &P_, std::string filename) : P(P_), O(filename), 
     T(P, allfields, "T"), E(P, allfields, "E_fdm"),
-    C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") { 
-      save_header(); 
+    C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") {
     }
 };
 
