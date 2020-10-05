@@ -9,16 +9,9 @@
 
 bool logletter(char);
 
-// Used by diagonalise_dsyev and diagonalise_dsyevr.
-void copy_values(t_eigen *eigenvalues, EVEC &diagvalue, int M) {
-  // make sure eigenvalues are in ascending order!!
-  t_eigen *ptr = adjacent_find(eigenvalues, eigenvalues + M, [](t_eigen x, t_eigen y) { return x > y; });
-  if (ptr != eigenvalues + M) {
-    ptrdiff_t index = ptr - eigenvalues;
-    cout << "WARNING: Values are not in ascending order "
-         << "[index=" << index << ", M=" << M << "]: " << *ptr << " " << *(ptr + 1) << endl;
-    cout << "This likely indicates a bug in LAPACK dsyev* routines." << endl;
-  }
+template<typename T, typename V> void copy_values(T* eigenvalues, V& diagvalue, int M) {
+  if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)
+    cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << endl;
   diagvalue.resize(M);
   copy(eigenvalues, eigenvalues + M, begin(diagvalue));
 }
@@ -29,7 +22,7 @@ void copy_values(t_eigen *eigenvalues, EVEC &diagvalue, int M) {
 // jobz: 'N' for values only, 'V' for values and vectors
 
 #ifdef NRG_REAL
-Eigen diagonalise_dsyev(Matrix &m, char jobz = 'V') {
+Eigen diagonalise_dsyev(matrix<double> &m, char jobz = 'V') {
   const size_t dim = m.size1();
   t_matel *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
@@ -59,7 +52,7 @@ Eigen diagonalise_dsyev(Matrix &m, char jobz = 'V') {
 #endif
 
 #ifdef NRG_REAL
-Eigen diagonalise_dsyevd(Matrix &m, char jobz = 'V')
+Eigen diagonalise_dsyevd(matrix<double> &m, char jobz = 'V')
 {
   const size_t dim = m.size1();
   t_matel *ham = bindings::traits::matrix_storage(m);
@@ -99,7 +92,7 @@ Eigen diagonalise_dsyevd(Matrix &m, char jobz = 'V')
 #endif  
 
 #ifdef NRG_REAL
-Eigen diagonalise_dsyevr(Matrix &m, double ratio = 1.0,  char jobz = 'V')
+Eigen diagonalise_dsyevr(matrix<double> &m, double ratio = 1.0,  char jobz = 'V')
 {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
@@ -165,7 +158,7 @@ Eigen diagonalise_dsyevr(Matrix &m, double ratio = 1.0,  char jobz = 'V')
 #endif
 
 #ifdef NRG_COMPLEX
-Eigen diagonalise_zheev(Matrix &m, char jobz = 'V') {
+Eigen diagonalise_zheev(matrix<cmpl> &m, char jobz = 'V') {
   const size_t dim = m.size1();
   lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
@@ -200,7 +193,7 @@ Eigen diagonalise_zheev(Matrix &m, char jobz = 'V') {
 #endif
   
 #ifdef NRG_COMPLEX
-Eigen diagonalise_zheevr(Matrix &m, double ratio = 1.0, char jobz = 'V') {
+Eigen diagonalise_zheevr(matrix<cmpl> &m, double ratio = 1.0, char jobz = 'V') {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
@@ -307,7 +300,7 @@ void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t
 
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
-Eigen diagonalise(Matrix &m) {
+template<typename M> Eigen diagonalise(matrix<M> &m) {
   time_mem::Timing t;
   check_is_matrix_upper(m);
   Eigen d;

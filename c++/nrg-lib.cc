@@ -107,9 +107,6 @@ inline cmpl CONJ_ME(cmpl z) { return conj(z); }
 
 using t_weight = cmpl; // spectral weight accumulators (complex in general)
 
-using EVEC = ublas::vector<t_eigen>;
-//using EVEC = std::vector<t_eigen>; // Type for arrays of eigenvalues
-
 /* NOTE: Row major is the C array format: A[0][0], A[0][1], A[0][2],
 A[1][0], A[1][1], etc. The default in UBLAS is row major, while LAPACK
 routines expect column major matrices. Of course, this is of no concern for
@@ -127,7 +124,7 @@ Thus, as always:
  "right index the same as inner loop variable".
 */
 
-using Matrix = matrix<t_matel, ublas::row_major>;
+using Matrix = matrix<t_matel>;
 
 #include "numerics.h"
 
@@ -219,11 +216,13 @@ class Rmaxvals {
 
 // TO DO: there is duplication between DimSub and Eigen. Simplify!
 
+using EVEC = ublas::vector<t_eigen>;
+
 // Information about the number of states, kept and discarded, rmax,
 // and eigenenergies. Required for the density-matrix construction.
-class DimSub {
-  public:
-  size_t kept  = 0; 
+template<typename M> struct DimSubGen {
+  using EVEC = ublas::vector<M>;
+  size_t kept  = 0;
   size_t total = 0;
   Rmaxvals rmax;   // substructure of vectors omega
   EVEC eigenvalue; // all eigenvalues
@@ -231,19 +230,11 @@ class DimSub {
   EVEC absenergyG; // absolute energies referred to the overall ground-state energy
   EVEC absenergyN; // absolute energies referred to the step-N ground-state energy
   bool is_last = false;
-  DimSub() = default;
-  DimSub(size_t _kept, size_t _total, const Rmaxvals &_rmax, const EVEC &_eigenvalue, 
-         const EVEC &_absenergy, const EVEC &_absenergyG, const EVEC &_absenergyN, bool _is_last) : // NOLINT
-     kept(_kept), total(_total), rmax(_rmax), eigenvalue(_eigenvalue), 
-     absenergy(_absenergy), absenergyG(_absenergyG), absenergyN(_absenergyN), is_last(_is_last) {}
-  DimSub(const DimSub &) = default;
-  DimSub(DimSub &&) = default;
-  DimSub &operator=(const DimSub &) = default;
-  DimSub &operator=(DimSub &&) = default;
-  ~DimSub() = default;
   size_t min() const { return (is_last ? 0 : kept); } // min(), max() return the range of D states to be summed over in FDM
   size_t max() const { return total; }
 };
+
+using DimSub = DimSubGen<t_eigen>;
 
 // Full information about the number of states and matrix dimensions
 // Example: dm[N].rmax[I] etc.
@@ -256,6 +247,7 @@ using AllSteps = std::vector<Subs>;
 // Result of a diagonalisation: eigenvalues and eigenvectors
 class Eigen {
   public:
+  using EVEC = ublas::vector<t_eigen>;
   size_t nr     = 0;   // number of eigenpairs (currently stored)
   size_t rmax   = 0;   // dimensionality of the matrix space
   size_t nrpost = 0;   // number of eigenpairs after truncation
@@ -2256,9 +2248,9 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
   size_t nrkept = 0;
   for (const auto &[I, eig]: diag) { // XXX - there should be only 1 copy
     const auto f = qsrmax.find(I);
-    dm[step.ndx()][I] = DimSub(eig.getnr(), eig.getrmax(),
-                               f != qsrmax.cend() ? f->second : Rmaxvals{},
-                               eig.value, eig.absenergy, eig.absenergyG, eig.absenergyN, step.last());
+    dm[step.ndx()][I] = { eig.getnr(), eig.getrmax(),
+                          f != qsrmax.cend() ? f->second : Rmaxvals{},
+                          eig.value, eig.absenergy, eig.absenergyG, eig.absenergyN, step.last() };
     nrall += eig.getrmax();
     nrkept += eig.getnr();
   }
