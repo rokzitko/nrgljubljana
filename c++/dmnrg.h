@@ -306,7 +306,7 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &
 // A. Weichselbaum, J. von Delft, Phys. Rev. Lett. 99, 076402 (2007)
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
-DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Params &P) { // XXX: dm
+DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Stats &stats, const Params &P) { // XXX: dm
   DensMatElements rhoFDM;
   double tr = 0.0;
   for (const auto &[I, dimsub] : dm[N]) {
@@ -315,7 +315,7 @@ DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Params &P) { //
     Matrix &rhoI = rhoFDM[I];
     for (size_t i = dimsub.min(); i < dimsub.max(); i++) {
       const double betaE = dimsub.absenergyN[i] / P.T;
-      const double ratio = stats.wn[N] / mpf_get_d(stats.ZnDN[N]);
+      const double ratio = stats.wn[N] / stats.ZnDNd[N];
       double val2        = exp(-betaE) * ratio;
       val2               = std::isfinite(val2) ? val2 : 0.0;
       rhoI(i, i)         = val2;
@@ -334,11 +334,12 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
                                   const DiagInfo &diag,
                                   const DensMatElements &rhoFDM, // input
                                   DensMatElements &rhoFDMPrev,   // output
-                                  size_t N, const AllSteps &dm, const Params &P) {
+                                  size_t N, const AllSteps &dm, const Stats &stats,
+                                  const Params &P) {
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
   if (!step.last(N))
-    rhoDD = init_rho_FDM(N, dm, P);
+    rhoDD = init_rho_FDM(N, dm, stats, P);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = Sym->dmnrg_subspaces(I);
     size_t dim          = dimsub.kept;
@@ -367,13 +368,13 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
 }
 
 // Sum of statistical weights from site N to the end of the Wilson chain.
-double sum_wn(size_t N, const Params &P) {
+double sum_wn(size_t N, const Stats &stats, const Params &P) {
   double sum = 0.0;
   for (size_t n = P.Nmax - 1; n >= N; n--) sum += stats.wn[n];
   return sum;
 }
 
-void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const AllSteps &dm, const Params &P) {
+void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const AllSteps &dm, const Stats &stats, const Params &P) {
   if (P.resume && already_computed(FN_RHOFDM)) {
     cout << "Not necessary: already computed!" << endl;
     return;
@@ -384,9 +385,9 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const All
     cout << "[FDM] " << N << endl;
     DiagInfo diag_loaded = load_transformations(N, P);
     DensMatElements rhoFDMPrev;
-    calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, rhoFDMPrev, N, dm, P);
+    calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, rhoFDMPrev, N, dm, stats, P);
     double tr       = trace(rhoFDMPrev);
-    double expected = sum_wn(N, P);
+    double expected = sum_wn(N, stats, P);
     double diff     = (tr - expected) / expected;
     nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
     my_assert(num_equal(diff, 0.0));

@@ -1,7 +1,9 @@
 #ifndef _read_input_cc_
 #define _read_input_cc_
 
-void set_symmetry(const Params &P);
+class Stats;
+
+void set_symmetry(const Params &P, Stats &stats);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
 std::string parse_datafile_header(istream &fdata, const int expected_version = 9)
@@ -163,7 +165,7 @@ std::tuple<DiagInfo, IterInfo> read_data(Params &P, Stats &stats) {
   auto sym_string = parse_datafile_header(fdata);
   my_assert(sym_string == P.symtype.value());
   read_nr_channels(fdata, sym_string, P);
-  set_symmetry(P);
+  set_symmetry(P, stats);
   read_Nmax(fdata, P);
   size_t nsubs = read_nsubs(fdata);
   skip_comments(fdata);

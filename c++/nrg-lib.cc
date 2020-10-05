@@ -467,6 +467,7 @@ class Stats {
    // Consult A. Weichselbaum, J. von Delft, PRL 99, 076402 (2007).
    vmpf ZnDG;                    // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n
    vmpf ZnDN;                    // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
+   std::vector<double> ZnDNd;
    std::vector<double> wn;       // Weights w_n. They sum to 1.
    std::vector<double> wnfactor; // wn/ZnDG
    double ZZG;                   // grand-canonical partition function with energies referred to the ground state energy
@@ -485,6 +486,7 @@ class Stats {
      energy_offsets = std::vector<double>(Nlen);
      ZnDG = vmpf(Nlen);
      ZnDN = vmpf(Nlen);
+     ZnDNd = std::vector<double>(Nlen);
      wn = std::vector<double>(Nlen, 0.0);
      wnfactor = std::vector<double>(Nlen, 0.0);
    }
@@ -492,7 +494,7 @@ class Stats {
    Stats(const Params &P) : td(P, FN_TD), td_fdm(P, FN_TDFDM) {}
 };
 
-Stats stats(P); // ZZZ
+//Stats stats(P); // ZZZ
 
 void subtract_groundstate_energy(const Stats &stats, DiagInfo &diag) {
   for (auto &[i, eig] : diag) eig.subtract_Egs(stats.Egs);
@@ -1220,7 +1222,7 @@ class Annotated {
    std::ofstream F;
    
    // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor)
-   inline t_eigen scaled_energy(t_eigen e, const Step &step, bool scaled = true, bool absolute = false) {
+   inline t_eigen scaled_energy(t_eigen e, const Step &step, const Stats &stats, bool scaled = true, bool absolute = false) {
      return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0); // XXX stats.
    }
    
@@ -1234,7 +1236,7 @@ class Annotated {
      }
    }
    
-   void dump(const Step &step, const DiagInfo &diag) {
+   void dump(const Step &step, const DiagInfo &diag, const Stats &stats) {
      if (!F || !step.nrg()) return;
      std::vector<pair<t_eigen, Invar>> seznam;
      for (const auto &[I, eig] : diag)
@@ -1251,7 +1253,7 @@ class Annotated {
          break;
      }
      my_assert(len <= seznam.size());
-     auto scale = [&step, this](auto x) { return scaled_energy(x, step, P.dumpscaled, P.dumpabs); };
+     auto scale = [&step, &stats, this](auto x) { return scaled_energy(x, step, stats, P.dumpscaled, P.dumpabs); };
      if (P.dumpgroups) {
        // Group by degeneracies
        for (size_t i = 0; i < len;) { // i increased in the while loop below
@@ -1493,6 +1495,7 @@ void calc_ZnD(const AllSteps &dm, Stats &stats) {
       }
     mpf_set(stats.ZnDG[N], ZnDG);
     mpf_set(stats.ZnDN[N], ZnDN);
+    stats.ZnDNd[N] = mpf_get_d(stats.ZnDN[N]);
   }
   // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
   my_mpf ZZG;
@@ -1668,7 +1671,7 @@ auto TrivialCheckSpinFnc   = [](const Invar &Ip, const Invar &I1, int SPIN) { re
 auto SpecdensCheckSpinFnc  = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
 
 // Calculate spectral densities
-void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM) {
+void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM, const Stats &stats) {
   TIME("spec");
   for (auto &i : spectraS)    calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
   for (auto &i : spectraCHIT) calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
@@ -1753,7 +1756,7 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
       if (need_rhoFDM()) 
         rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);
   }
-  spectral_densities(step, diag, rho, rhoFDM);
+  spectral_densities(step, diag, rho, rhoFDM, stats);
   if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, P);
   if (step.nrg() && P.dumpdiagonal) dump_diagonal(diag, iterinfo);
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm);
@@ -1763,7 +1766,7 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
 // step.
 void perform_measurements(const Step &step, const DiagInfo &diag, Stats &stats, Output &output) {
   calculate_TD(step, diag, stats, output);
-  output.annotated.dump(step, diag);
+  output.annotated.dump(step, diag, stats);
 }
 
 // Make a list of subspaces for the new iteration. Generic implementation: use the quantum number differences in
@@ -2157,7 +2160,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
 // store_transformations(). These energies are initially not
 // referrenced to absolute 0. This is done in the second NRG run in
 // shift_abs_energies(diag).
-void calc_abs_energies(const Step &step, DiagInfo &diag) {
+void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
   for (auto &[i, eig] : diag) {
     eig.absenergy = eig.value;
     for (auto &x : eig.absenergy) 
@@ -2200,7 +2203,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
   stats.energy_offsets[step.ndx()] = stats.total_energy;
   if (step.nrg()) 
-    calc_abs_energies(step, diag);
+    calc_abs_energies(step, diag, stats);
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
   output.dump_all_energies(diag, step.ndx());
@@ -2369,7 +2372,7 @@ std::unique_ptr<Symmetry> get(std::string sym_string, const Params &P, Allfields
 
 // Called immediately after parsing the information about the number of channels from the data file. This ensures
 // that Invar can be parsed correctly.
-void set_symmetry(const Params &P) {
+void set_symmetry(const Params &P, Stats &stats) {
   my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
   cout << "SYMMETRY TYPE: " << P.symtype.value() << endl;
   Sym = get(P.symtype.value(), P, stats.td.allfields);
@@ -2377,7 +2380,7 @@ void set_symmetry(const Params &P) {
 }
 
 void calculation(Params &P) {
-//  Stats stats; // ZZZ
+  Stats stats(P); // ZZZ
   auto [diag0, iterinfo] = read_data(P, stats);
   Step step{P, RUNTYPE::NRG};
   // Initialize all containers for storing information
@@ -2395,9 +2398,9 @@ void calculation(Params &P) {
       shift_abs_energies_dm(stats, dm);
       calc_ZnD(dm, stats);
       fdm_thermodynamics(dm, stats);
-      auto rhoFDM = init_rho_FDM(step.lastndx(), dm, P);
+      auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, P);
       saveRho(step.lastndx(), FN_RHOFDM, rhoFDM, P);
-      if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, P);
+      if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, P);
     }
     if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
     auto [diag0_dm, iterinfo_dm] = read_data(P, stats);
