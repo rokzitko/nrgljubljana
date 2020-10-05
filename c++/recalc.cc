@@ -9,7 +9,7 @@ struct Recalc_f {
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called
 // from recalc_irreduc() in nrg-recalc-* files.
-void recalc_f(const DiagInfo &dg, 
+void recalc_f(const DiagInfo &diag, 
               const QSrmax &qsrmax, 
               MatrixElements &ff, 
               const Invar &Ip, const Invar &I1, 
@@ -21,12 +21,12 @@ void recalc_f(const DiagInfo &dg,
     nrglog('f', "Does not fulfill the triangle inequalities.");
     return;
   }
-  const Eigen &dgI1 = dg.at(I1);
-  const Eigen &dgIp = dg.at(Ip);
+  const Eigen &diagI1 = diag.at(I1);
+  const Eigen &diagIp = diag.at(Ip);
   // Number of states in Ip and in I1, i.e. the dimension of the
   // <||f||> matrix of irreducible matrix elements.
-  const size_t dim1 = dgI1.getnr();
-  const size_t dimp = dgIp.getnr();
+  const size_t dim1 = diagI1.getnr();
+  const size_t dimp = diagIp.getnr();
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   if (dim1 == 0 || dimp == 0) return; // truncated away! ff[II] is not created.
   const Twoinvar II = make_pair(I1, Ip);
@@ -44,8 +44,8 @@ void recalc_f(const DiagInfo &dg,
       nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
     my_assert(my_isfinite(table[j].factor));
     my_assert(rmax1 == rmaxp);
-    const Matrix &U1 = dgI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
-    const Matrix &Up = dgIp.blocks[table[j].ip - 1];
+    const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
+    const Matrix &Up = diagIp.blocks[table[j].ip - 1];
     my_assert(U1.size1() == dim1 && Up.size1() == dimp);
     my_assert(U1.size2() == Up.size2());          // rmax1 == rmaxp
     if (U1.size2() == 0) my_assert_not_reached(); // ??
@@ -109,7 +109,7 @@ void split_in_blocks(DiagInfo &diag, const QSrmax &qsrmax) {
 // recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
 // one should try to hand optimize.
 
-void recalc_general(const DiagInfo &dg, 
+void recalc_general(const DiagInfo &diag, 
                     const QSrmax &qsrmax, // information about the matrix structure
                     const MatrixElements &cold,
                     MatrixElements &cnew,
@@ -128,10 +128,10 @@ void recalc_general(const DiagInfo &dg,
   // triangle_inequality() malfunctions, this will trigger errors in
   // calc_trace_singlet().
 // XXX  if (!Sym->triangle_inequality(I1, Ip, Iop)) return;
-  const Eigen &dgI1 = dg.at(I1);
-  const Eigen &dgIp = dg.at(Ip);
-  const size_t dim1 = dgI1.getnr();
-  const size_t dimp = dgIp.getnr();
+  const Eigen &diagI1 = diag.at(I1);
+  const Eigen &diagIp = diag.at(Ip);
+  const size_t dim1 = diagI1.getnr();
+  const size_t dimp = diagIp.getnr();
   const Twoinvar II = make_pair(I1, Ip);
   Matrix &cn = cnew[II] = Matrix(dim1, dimp); // XXX: return this one!
   cn.clear();
@@ -176,8 +176,8 @@ void recalc_general(const DiagInfo &dg,
     const Matrix &m = cold.at(ININ);
     my_assert_equal(rmax1, m.size1());
     my_assert_equal(rmaxp, m.size2());
-    const Matrix &U1 = dgI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
-    const Matrix &Up = dgIp.blocks[table[j].ip - 1];
+    const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
+    const Matrix &Up = diagIp.blocks[table[j].ip - 1];
     my_assert(U1.size1() == dim1 && U1.size2() == rmax1);
     my_assert(Up.size1() == dimp && Up.size2() == rmaxp);
     // Performace hot-spot. Ensure that you're using highly optimised BLAS
@@ -196,21 +196,21 @@ void recalc_general(const DiagInfo &dg,
 
 // This routine is used for recalculation of global operators in
 // nrg-recalc-*.cc
-void recalc1_global(const DiagInfo &dg,
+void recalc1_global(const DiagInfo &diag,
                     const QSrmax &qsrmax,
                     const Invar &I, 
                     Matrix &m, // XXX: return this one
                     size_t i1, size_t ip, 
                     t_factor value) {
-  const Eigen &dgI = dg.at(I);
-  const size_t dim = dgI.getnr();
+  const Eigen &diagI = diag.at(I);
+  const size_t dim = diagI.getnr();
   if (dim == 0) return;
   const size_t rmax1 = qsrmax.at(I).rmax(i1);
   const size_t rmaxp = qsrmax.at(I).rmax(ip);
   my_assert(rmax1 == rmaxp);
   if (rmax1 == 0 || rmaxp == 0) return;
-  const Matrix &U1 = dgI.blocks[i1 - 1];
-  const Matrix &Up = dgI.blocks[ip - 1];
+  const Matrix &U1 = diagI.blocks[i1 - 1];
+  const Matrix &Up = diagI.blocks[ip - 1];
   my_assert(U1.size1() == dim && U1.size2() == rmax1);
   my_assert(Up.size1() == dim && Up.size2() == rmaxp);
   // m = m + value * U1 * Up^trans

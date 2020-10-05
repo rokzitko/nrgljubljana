@@ -633,12 +633,12 @@ string output_val(const cmpl &val) {
   return F.str();
 }
 
-template <typename T> void formatted_output(ostream &F, T x) {
+template <typename T> void formatted_output(ostream &F, T x, const Params &P) {
   // Important: setw first, setprecision second
   F << setw(P.width_custom) << setprecision(P.prec_custom) << x << ' ';
 }
 
-void formatted_output(ostream &F, cmpl val) {
+void formatted_output(ostream &F, cmpl val, const Params &P) {
   ostringstream str;
   // This sets precision for both real and imaginary parts.
   str << setprecision(P.prec_custom);
@@ -653,51 +653,6 @@ void formatted_output(ostream &F, cmpl val) {
   }
   // The width for the whole X+IY string.
   F << setw(P.width_custom) << str.str() << ' ';
-}
-
-void dump_diagonal(const Matrix &m, size_t max_nr, ostream &F = std::cout)
-{
-  my_assert(m.size1() == m.size2());
-  for (auto r = 0; r < std::min<size_t>(m.size1(), max_nr); r++)
-    F << m(r,r) << ' ';
-  F << std::endl;
-}
-
-/* "Trace" of a singlet operator: actually this is the statistical average
- with respect to exp(-beta H), but without the 1/Z factor. I.e.
- \sum_n <n|exp(-beta H) O|n>, for a given singlet operator 'O'.  As a
- side effect, dump the matrix elements to stream F if so requested
- (parameter "dumpdiagonal").  */
-CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n, ostream &F = std::cout) {
-  matel_bucket tr; // note: t_matel = t_expv
-  for (const auto &[i, eig] : diag) {
-    const auto & nI = n.at(Twoinvar{i,i});
-    const size_t dim = eig.getnr();
-    my_assert(dim == nI.size2());
-    matel_bucket sum;
-    for (size_t r = 0; r < dim; r++) sum += exp(-P.betabar * eig.value(r)) * nI(r, r);
-    if (P.dumpdiagonal != 0) {
-      F << i << ": ";
-      dump_diagonal(nI, P.dumpdiagonal, F);
-    }
-    tr += Sym->mult(i) * t_matel(sum);
-  }
-  return tr;
-}
-
-CONSTFNC t_expv calc_trace_fdm_kept(const Step &step, const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm) {
-  matel_bucket tr;
-  for (const auto &[i, eig] : diag) {
-    const auto & nI = n.at(Twoinvar{i,i});
-    const auto ret  = dm[step.N()].at(i).kept;
-    const auto & mat = rhoFDM.at(i);
-    matel_bucket sum;
-    for (auto k = 0; k < ret; k++) // over kept states ONLY
-      for (auto j = 0; j < ret; j++) 
-        sum += mat(k, j) * nI(j, k);
-    tr += Sym->mult(i) * t_matel(sum);
-  }
-  return tr;
 }
 
 #include "bins.h"
@@ -1003,34 +958,35 @@ Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagpr
 // Formatted output of the computed expectation values
 class ExpvOutput {
  private:
-   ofstream F;             // output stream
-   map<string, t_expv> &m; // reference to the name->value mapping
-   list<string> fields;    // list of fields to be output (may be a subset of the fields actually present in m)
-   void field_numbers() {    // Consecutive numbers for the columns
+   ofstream F;                // output stream
+   map<string, t_expv> &m;    // reference to the name->value mapping
+   const list<string> fields; // list of fields to be output (may be a subset of the fields actually present in m)
+   const Params &P;
+   void field_numbers() {     // Consecutive numbers for the columns
      F << "#";
-     formatted_output(F, 1);
-     for (size_t ctr = 1; ctr <= fields.size(); ctr++) formatted_output(F, 1 + ctr);
+     formatted_output(F, 1, P);
+     for (size_t ctr = 1; ctr <= fields.size(); ctr++) formatted_output(F, 1 + ctr, P);
      F << endl;
    }
    // Label and field names. Label is the first column (typically the temperature).
    void field_names(string labelname = "T") {
      F << "#";
-     formatted_output(F, labelname);
-     for (const auto &op : fields) formatted_output(F, op);
+     formatted_output(F, labelname, P);
+     for (const auto &op : fields) formatted_output(F, op, P);
      F << endl;
    }
  public:
    // Output the current values for the label and for all the fields
    void field_values(double labelvalue, bool cout_dump = true) {
      F << ' ';
-     formatted_output(F, labelvalue);
-     for (const auto &op : fields) formatted_output(F, m[op]);
+     formatted_output(F, labelvalue, P);
+     for (const auto &op : fields) formatted_output(F, m[op], P);
      F << endl;
-     if (cout_dump) 
+     if (cout_dump)
        for (const auto &op: fields)
-         std::cout << "<" << name >> ">=" << m[op] << std::endl;
+         std::cout << "<" << op << ">=" << m[op] << std::endl;
    }
-   ExpvOutput(const string &fn, map<string, t_expv> &_m, list<string> _fields) : m(_m), fields(std::move(_fields)) {
+   ExpvOutput(const string &fn, map<string, t_expv> &m_, const list<string> fields_, const Params &P_) : m(m_), fields(std::move(fields_)), P(P_) {
      F.open(fn);
      field_numbers();
      field_names();
@@ -1101,8 +1057,7 @@ class Oprecalc {
    // The following lists hold the names of operators which need to be recomputed. The default behavior is to
    // recompute all the operators that are required to calculate the requested spectral densities, see function
    // open_files(). In addition, singlet operators are always recomputed in the first NRG run, so that we can
-   // calculate the expectation values. In addition, if fdmexpv=true, the singlet operators are also recomputed in
-   // the second run if fdmexpvn=-1.
+   // calculate the expectation values.
    set<string> s, p, g, d, v, t, q, ot;
 
    void report(ostream &F, const string &name, const set<string> &x) {
@@ -1111,36 +1066,36 @@ class Oprecalc {
      F << "]" << endl;
    }
 
-  void report(ostream &F = cout) {
-    F << "Computing the following operators:" << endl;
-    report(F, "s", s);
-    report(F, "p", p);
-    report(F, "g", g);
-    report(F, "d", d);
-    report(F, "v", v);
-    report(F, "t", t);
-    report(F, "q", q);
-    report(F, "ot", ot);
-  }
-
-  bool do_s(const string &name, const Params &P, const Step &step) {
-    if (step.nrg()) return true;                             // for expectation values
-    if (P.fdmexpv && step.N() <= P.fdmexpvn) return true; // Calculate <O> using FDM algorithm
-    return s.count(name);
-  }
-
-  bool do_g(const string &name, const Params &P, const Step &step) {
-    if (step.nrg()) return true;                             // for expectation values
-    if (P.fdmexpv && step.N() <= P.fdmexpvn) return true; // Calculate <O> using FDM algorithm
-    return g.count(name);
-  }
-
+   void report(ostream &F = cout) {
+     F << "Computing the following operators:" << endl;
+     report(F, "s", s);
+     report(F, "p", p);
+     report(F, "g", g);
+     report(F, "d", d);
+     report(F, "v", v);
+     report(F, "t", t);
+     report(F, "q", q);
+     report(F, "ot", ot);
+   }
+   
+   bool do_s(const string &name, const Params &P, const Step &step) {
+     if (step.nrg()) return true;                                          // for computing <O> 
+     if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
+     return s.count(name);
+   }
+   
+   bool do_g(const string &name, const Params &P, const Step &step) {
+     if (step.nrg()) return true;                                          // for computing <O>
+     if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
+     return g.count(name);
+   }
+   
    // Wrapper routine for recalculations
    template <typename RecalcFnc>
-     MatrixElements recalc_common(const MatrixElements &mold, RecalcFnc recalc_fnc, const Step &step, const DiagInfo &dg, const QSrmax &qsrmax, const std::string name, const string &tip) {
+     MatrixElements recalc_common(const MatrixElements &mold, RecalcFnc recalc_fnc, const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const std::string name, const string &tip) {
        nrglog('0', "Recalculate " << tip << " " << name);
-       auto mnew = recalc_fnc(dg, qsrmax, mold);
-       if (tip == "g") Sym->recalc_global(step, dg, qsrmax, name, mnew);
+       auto mnew = recalc_fnc(diag, qsrmax, mold);
+       if (tip == "g") Sym->recalc_global(step, diag, qsrmax, name, mnew);
        return mnew;
      }
    
@@ -1151,21 +1106,21 @@ class Oprecalc {
 
    // Recalculate operator matrix representations
    ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-     void recalculate_operators(const Step &step, const DiagInfo &dg, const QSrmax &qsrmax, IterInfo &a, const Params &P) {
+     void recalculate_operators(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, IterInfo &a, const Params &P) {
        for (auto &[name, m] : a.ops)
-         m = recalc_or_clear(do_s(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, dg, qsrmax, name, "s");
+         m = recalc_or_clear(do_s(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, diag, qsrmax, name, "s");
        for (auto &[name, m] : a.opsp)
-         m = recalc_or_clear(p.count(name),       m, [](const auto &... pr) { return recalc_singlet(pr..., -1);      }, step, dg, qsrmax, name, "p");
+         m = recalc_or_clear(p.count(name),       m, [](const auto &... pr) { return recalc_singlet(pr..., -1);      }, step, diag, qsrmax, name, "p");
        for (auto &[name, m] : a.opsg) 
-         m = recalc_or_clear(do_g(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, dg, qsrmax, name, "g");
+         m = recalc_or_clear(do_g(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, diag, qsrmax, name, "g");
        for (auto &[name, m] : a.opd)
-         m = recalc_or_clear(d.count(name),       m, [](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, step, dg, qsrmax, name, "d");
+         m = recalc_or_clear(d.count(name),       m, [](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, step, diag, qsrmax, name, "d");
        for (auto &[name, m] : a.opt)
-         m = recalc_or_clear(t.count(name),       m, [](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, step, dg, qsrmax, name, "t");
+         m = recalc_or_clear(t.count(name),       m, [](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, step, diag, qsrmax, name, "t");
        for (auto &[name, m] : a.opot)
-         m = recalc_or_clear(ot.count(name),      m, [](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, dg, qsrmax, name, "ot");
+         m = recalc_or_clear(ot.count(name),      m, [](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, diag, qsrmax, name, "ot");
        for (auto &[name, m] : a.opq)
-         m = recalc_or_clear(q.count(name),       m, [](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, step, dg, qsrmax, name, "q");
+         m = recalc_or_clear(q.count(name),       m, [](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, step, diag, qsrmax, name, "q");
      }
 
    // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
@@ -1361,9 +1316,9 @@ struct Output {
     for (const auto &[name, m] : iterinfo.ops)  ops.push_back(name);
     for (const auto &[name, m] : iterinfo.opsg) ops.push_back(name);
     if (runtype == RUNTYPE::NRG)
-      custom = make_unique<ExpvOutput>(FN_CUSTOM, stats.expv, ops);
+      custom = make_unique<ExpvOutput>(FN_CUSTOM, stats.expv, ops, P);
     else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
-      customfdm = make_unique<ExpvOutput>(FN_CUSTOMFDM, stats.fdmexpv, ops);
+      customfdm = make_unique<ExpvOutput>(FN_CUSTOMFDM, stats.fdmexpv, ops, P);
   }
 
   // Dump all energies in diag to a file
@@ -1379,43 +1334,71 @@ struct Output {
   }
 };
 
-// Calculate the (on-shell) statistical sum using the excitation energies relative to the current step energy scale.
-double calc_Z(const DiagInfo &diag, const Params &P) {
-  bucket Z;
-  for (const auto &[I, eig] : diag) 
-    for (const auto &x : eig.value) 
-      Z += Sym->mult(I) * exp(-P.betabar * x);
-  return Z;
+CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n) {
+  matel_bucket tr; // note: t_matel = t_expv
+  for (const auto &[i, eig] : diag) {
+    const auto & nI = n.at(Twoinvar{i,i});
+    const size_t dim = eig.getnr();
+    my_assert(dim == nI.size2());
+    matel_bucket sum;
+    for (size_t r = 0; r < dim; r++) sum += exp(-P.betabar * eig.value(r)) * nI(r, r);
+    tr += Sym->mult(i) * t_matel(sum);
+  }
+  return tr;
 }
 
 // Measure thermodynamic expectation values of singlet operators
-void measure_singlet(const Step &step, Stats &stats, const DiagInfo &dg, const IterInfo &a, Output &output, const Params &P) {
-  const double Z_S = calc_Z(dg, P);
-  auto measure = [&dg, &Z_S](const auto &name, const auto m) {
-    const auto expv = calc_trace_singlet(dg, m) / Z_S; // Z_S is the appropriate statistical sum
-    cout << "<" << name << ">=" << output_val(expv) << endl;
-    return expv;
-  };
-  for (const auto &[name, m] : a.ops)  
-    stats.expv[name] = measure(name, m);
-  for (const auto &[name, m] : a.opsg) 
-    stats.expv[name] = measure(name, m);
+void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, const Params &P) {
+  bucket Z;
+  for (const auto &[I, eig] : diag)
+    for (const auto &x : eig.value) 
+      Z += Sym->mult(I) * exp(-P.betabar * x);
+  for (const auto &[name, m] : a.ops)   stats.expv[name] = calc_trace_singlet(diag, m) / Z;
+  for (const auto &[name, m] : a.opsg)  stats.expv[name] = calc_trace_singlet(diag, m) / Z;
   output.custom->field_values(step.Teff());
 }
 
-// Expectation values using FDM algorithm
-void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &dg, const IterInfo &a, Output &output, const DensMatElements &rhoFDM, const AllSteps &dm) {
-  if (step.N() != P.fdmexpvn) return;
-  auto measure = [&step, &dg, &rhoFDM, &dm](const auto &name, const auto &m) {
-    const auto expv = calc_trace_fdm_kept(step, dg, m, rhoFDM, dm);
-    cout << "<" << name << ">_fdm=" << output_val(expv) << endl;
-    return expv;
-  };
-  for (const auto &[name, m] : a.ops)
-    stats.fdmexpv[name] = measure(name, m);
-  for (const auto &[name, m] : a.opsg)
-    stats.fdmexpv[name] = measure(name, m);
+CONSTFNC t_expv calc_trace_fdm_kept(const Step &step, const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm) {
+  matel_bucket tr;
+  for (const auto &[i, eig] : diag) {
+    const auto & nI = n.at(Twoinvar{i,i});
+    const auto ret  = dm[step.N()].at(i).kept;
+    const auto & mat = rhoFDM.at(i);
+    matel_bucket sum;
+    for (auto k = 0; k < ret; k++) // over kept states ONLY
+      for (auto j = 0; j < ret; j++) 
+        sum += mat(k, j) * nI(j, k);
+    tr += Sym->mult(i) * t_matel(sum);
+  }
+  return tr;
+}
+
+// Expectation values using the FDM algorithm
+void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, const DensMatElements &rhoFDM, const AllSteps &dm) {
+  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step, diag, m, rhoFDM, dm);
+  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step, diag, m, rhoFDM, dm);
   output.customfdm->field_values(P.T);
+}
+
+void dump_diagonal_matrix(const Matrix &m, size_t max_nr, ostream &F)
+{
+  for (auto r = 0; r < std::min<size_t>(m.size1(), max_nr); r++)
+    F << m(r,r) << ' ';
+  F << std::endl;
+}
+
+void dump_diagonal_op(const DiagInfo &diag, const std::string name, const MatrixElements &n, ostream &F) {
+  F << "Diagonal matrix elements of operator " << name << std::endl;
+  for (const auto &[I, eig] : diag) {
+    F << I << ": ";
+    dump_diagonal_matrix(n.at(Twoinvar{I,I}), P.dumpdiagonal, F);
+  }
+}
+
+void dump_diagonal(const DiagInfo &diag, const IterInfo &a, ostream &F = std::cout)
+{
+  for (const auto &[name, m] : a.ops)  dump_diagonal_op(diag, name, m, F);
+  for (const auto &[name, m] : a.opsg) dump_diagonal_op(diag, name, m, F);
 }
 
 // DM-NRG: initialization of the density matrix -----------------------------
@@ -1657,7 +1640,7 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
  This saves memory and leads to better cache usage in recalc_general()
  recalculations. Note: this is only needed for strategy=all; copying is
  avoided for strategy=kept. */
-void trim_matel(DiagInfo &dg, MatrixElements &op) {
+void trim_matel(DiagInfo &diag, MatrixElements &op) {
   for (auto &[II, mat] : op) {
     const auto &[I1, I2] = II;
     // Current matrix dimensions
@@ -1665,8 +1648,8 @@ void trim_matel(DiagInfo &dg, MatrixElements &op) {
     const auto size2 = mat.size2();
     if (size1 == 0 || size2 == 0) continue;
     // Target matrix dimensions
-    const auto nr1 = dg[I1].getnr();
-    const auto nr2 = dg[I2].getnr();
+    const auto nr1 = diag[I1].getnr();
+    const auto nr2 = diag[I2].getnr();
 //    my_assert(nr1 <= size1 && nr2 <= size2);
     if (!(nr1 <= size1 && nr2 <= size2)) {
       cout << "ERROR: " << nr1 << " " << size1 << " " << nr2 << " " << size2 << endl;
@@ -1682,21 +1665,21 @@ void trim_matel(DiagInfo &dg, MatrixElements &op) {
   }
 }
 
-void trim_op(DiagInfo &dg, CustomOp &allops) {
+void trim_op(DiagInfo &diag, CustomOp &allops) {
   for (auto &[name, op] : allops) {
     cout << "X: " << name << endl;
-    trim_matel(dg, op);
+    trim_matel(diag, op);
   }
 }
 
-void trim_matrices(DiagInfo &dg, IterInfo &a) {
-  trim_op(dg, a.ops);
-  trim_op(dg, a.opsp);
-  trim_op(dg, a.opsg);
-  trim_op(dg, a.opd);
-  trim_op(dg, a.opt);
-  trim_op(dg, a.opot);
-  trim_op(dg, a.opq);
+void trim_matrices(DiagInfo &diag, IterInfo &a) {
+  trim_op(diag, a.ops);
+  trim_op(diag, a.opsp);
+  trim_op(diag, a.opsg);
+  trim_op(diag, a.opd);
+  trim_op(diag, a.opt);
+  trim_op(diag, a.opot);
+  trim_op(diag, a.opq);
 }
 
 void clear_eigenvectors(DiagInfo &diag) {
@@ -1801,7 +1784,8 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
   }
   spectral_densities(step, diag, rho, rhoFDM);
   if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, P);
-  if (step.dmnrg() && P.fdmexpv) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm);
+  if (step.nrg() && P.dumpdiagonal) dump_diagonal(diag, iterinfo);
+  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG
@@ -2347,29 +2331,29 @@ DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &
 }
 
 // Total number of states (symmetry taken into account)
-size_t count_states(const DiagInfo &dg) {
+size_t count_states(const DiagInfo &diag) {
   size_t states = 0;
-  for (const auto &[i, eig]: dg) 
+  for (const auto &[i, eig]: diag) 
     states += Sym->mult(i) * eig.getnr();
   return states;
 }
 
 // Count non-empty subspaces
-size_t count_subspaces(const DiagInfo &dg) {
+size_t count_subspaces(const DiagInfo &diag) {
   size_t subspaces = 0;
-  for (const auto &[i, eig]: dg) 
+  for (const auto &[i, eig]: diag) 
     if (eig.getnr()) 
       subspaces++;
   return subspaces;
 }
 
 // Dump information about states (e.g. before the start of the iteration).
-void states_report(const DiagInfo &dg, ostream &fout = cout) {
-  fout << "Number of invariant subspaces: " << count_subspaces(dg) << endl;
-  for (const auto &[i, eig]: dg) 
+void states_report(const DiagInfo &diag, ostream &fout = cout) {
+  fout << "Number of invariant subspaces: " << count_subspaces(diag) << endl;
+  for (const auto &[i, eig]: diag) 
     if (eig.getnr()) 
       fout << "(" << i << ") " << eig.getnr() << " states: " << eig.value << endl;
-  fout << "Number of states (multiplicity taken into account): " << count_states(dg) << endl << endl;
+  fout << "Number of states (multiplicity taken into account): " << count_states(diag) << endl << endl;
 }
 
 // Save a dump of all subspaces, with dimension info, etc.
