@@ -1305,7 +1305,7 @@ Oprecalc open_output_files(const RUNTYPE &runtype, const IterInfo &iterinfo, con
     custom = make_unique<ExpvOutput>(FN_CUSTOM, stats.expv, ops);
   else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
     customfdm = make_unique<ExpvOutput>(FN_CUSTOMFDM, stats.fdmexpv, ops);
-  Oprecalc oprecalc;
+  Oprecalc oprecalc; // XXX: make this a constructor ??
   oprecalc.reset_operator_lists_and_open_spectrum_files(runtype, iterinfo);
   return oprecalc;
 }
@@ -1392,7 +1392,7 @@ t_eigen highest_retained_energy(const DiagInfo &diag) {
     // We add 1 for historical reasons. We thus keep states with E<=Emax,
     // and one additional state which has E>Emax.
     nrkeep = 1 + count_if(begin(energies), end(energies), [=](double e) { return e <= keepenergy; });
-    nrkeep = CLIP(nrkeep, size_t(P.keepmin), size_t(P.keep));
+    nrkeep = std::clamp<size_t>(nrkeep, P.keepmin, P.keep);
   }
   // Check for near degeneracy and ensure that the truncation occurs in a
   // "gap" between nearly-degenerate clusters of eigenvalues.
@@ -1404,7 +1404,7 @@ t_eigen highest_retained_energy(const DiagInfo &diag) {
     }
     if (cnt_extra) debug("Safeguard: keep additional " << cnt_extra << " states");
   }
-  nrkeep = CLIP(nrkeep, size_t(1), totalnumber);
+  nrkeep = std::clamp<size_t>(nrkeep, 1, totalnumber);
   return energies[nrkeep - 1];
 }
 

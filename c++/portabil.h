@@ -104,11 +104,6 @@ inline  T finite_test_fnc(T x, const char *file, int line) {
 #define ARRAYLENGTH(x) (sizeof(x) / sizeof(*(x)))
 #endif
 
-// TO DO: std::clamp in C++17
-#ifndef CLIP
-#define CLIP(x, xmin, xmax) min(max(x, xmin), xmax)
-#endif
-
 // *** Memory usage
 
 #if defined(__APPLE__) && defined(__MACH__)

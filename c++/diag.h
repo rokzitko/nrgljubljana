@@ -108,7 +108,7 @@ Eigen diagonalise_dsyevr(Matrix &m, double ratio = 1.0,  char jobz = 'V')
   char RANGE; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
     M     = static_cast<size_t>(ceil(ratio * M)); // round up
-    M     = CLIP(M, 1ul, dim);                    // at least 1, at most dim
+    M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   } else
     RANGE = 'A';
@@ -208,7 +208,7 @@ Eigen diagonalise_zheevr(Matrix &m, double ratio = 1.0, char jobz = 'V') {
   char RANGE; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
     M     = static_cast<size_t>(ceil(ratio * M)); // round up
-    M     = CLIP(M, 1ul, dim);                    // at least 1, at most dim
+    M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   } else
     RANGE = 'A';

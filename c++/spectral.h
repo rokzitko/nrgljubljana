@@ -18,19 +18,17 @@ using Spikes = std::vector<t_delta_peak>;
 inline double ENERGY(const Spikes::value_type &i) { return i.first; }
 inline t_weight WEIGHT(const Spikes::value_type &i) { return i.second; }
 
-const double CLIP_TOL_IMAG = 1e-10; // just noise
-
 // used in matsubata.h and in save_densfunc()
-void output(ostream &F, double x, t_weight y, bool imagpart) {
+void output(ostream &F, double x, t_weight y, bool imagpart, const double clip_tol_imag = 1e-10) {
   F << x << " " << y.real();
-  if (imagpart) F << " " << (abs(y.imag()) > abs(y.real()) * CLIP_TOL_IMAG ? y.imag() : 0.0);
+  if (imagpart) F << " " << (abs(y.imag()) > abs(y.real()) * clip_tol_imag ? y.imag() : 0.0);
   F << endl;
 }
 
 // used in matsubara2.h
-void output(ostream &F, double x1, double x2, t_weight y, bool imagpart) {
+void output(ostream &F, double x1, double x2, t_weight y, bool imagpart, const double clip_tol_imag = 1e-10) {
   F << x1 << " " << x2 << " " << y.real();
-  if (imagpart) F << " " << (abs(y.imag()) > abs(y.real()) * CLIP_TOL_IMAG ? y.imag() : 0.0);
+  if (imagpart) F << " " << (abs(y.imag()) > abs(y.real()) * clip_tol_imag ? y.imag() : 0.0);
   F << endl;
 }
 
