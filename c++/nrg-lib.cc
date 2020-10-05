@@ -958,16 +958,6 @@ inline size_t size_subspace(const DiagInfo &diag, const Invar &I) {
     return 0;
 }
 
-// Information about ancestor subspaces
-void logancestors(const Invar &I, const InvarVec &In, const Rmaxvals &rmx) {
-  if (logletter('s')) {
-    cout << "Ancestors of (" << I << "): ";
-    for (size_t i = 1; i <= P.combs; i++)
-      if (rmx[i] > 0) cout << "(" << Sym->In[i] << ", dim=" << rmx[i] << ") ";
-    cout << endl;
-  }
-}
-
 // Find the ground state in the current NRG shell.
 void find_groundstate(const DiagInfo &diag) {
   stats.Egs = DBL_MAX;
@@ -1865,7 +1855,6 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const Rmaxvals rm{I, anc, diagprev};
   const size_t dim = rm.total();
   nrglog('i', endl << "Subspace (" << I << ") dim=" << dim); // skip a line
-  logancestors(I, anc, rm);
   Matrix h(dim, dim);
   h.clear();
   double scalefactor = (!P.substeps ? sqrt(P.Lambda) : pow(P.Lambda, 1. / (2. * P.channels))); // NOLINT
