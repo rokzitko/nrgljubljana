@@ -9,11 +9,40 @@
 
 bool logletter(char);
 
-template<typename T, typename V> void copy_values(T* eigenvalues, V& diagvalue, int M) {
+template<typename T, typename V> void copy(T* eigenvalues, ublas::vector<V>& diagvalues, size_t M) {
   if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)
     cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << endl;
-  diagvalue.resize(M);
-  copy(eigenvalues, eigenvalues + M, begin(diagvalue));
+  diagvalues.resize(M);
+  copy(eigenvalues, eigenvalues + M, begin(diagvalues));
+}
+
+template<typename T, typename V> void copy(T* eigenvectors, ublas::matrix<V>& diagvectors, size_t dim, size_t M)
+{
+  diagvectors.resize(M, dim);
+  for (size_t r = 0; r < M; r++)
+    for (size_t j = 0; j < dim; j++) 
+      diagvectors(r, j) = eigenvectors[dim * r + j];
+}
+
+template<> void copy<lapack_complex_double, cmpl>(lapack_complex_double * eigenvectors, ublas::matrix<cmpl>& diagvectors, size_t dim, size_t M)
+{
+  diagvectors.resize(M, dim);
+  for (size_t r = 0; r < dim; r++)
+    for (size_t j = 0; j < dim; j++) {
+      lapack_complex_double v = eigenvectors[dim * r + j];
+      diagvectors(r, j) = cmpl(v.real, v.imag);
+    }
+}
+
+template<typename T, typename U> Eigen copy_results(T* eigenvalues, U* eigenvectors, char jobz, size_t dim, size_t M)
+{
+  Eigen d(M, dim);
+  copy(eigenvalues, d.value, M);
+  if (jobz == 'V') {
+    copy(eigenvectors, d.matrix0, dim, M);
+    d.perform_checks();
+  }
+  return d;
 }
 
 // Perform diagonalisation: wrappers for LAPACK
@@ -40,14 +69,7 @@ Eigen diagonalise_dsyev(matrix<double> &m, char jobz = 'V') {
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, &INFO);
   if (INFO != 0) my_error("dsyev failed. INFO=%i", INFO);
-  Eigen d(dim, dim);
-  copy_values(eigenvalues, d.value, dim);
-  if (jobz == 'V') {
-    for (size_t r = 0; r < dim; r++)
-      for (size_t j = 0; j < dim; j++) d.vektor(r, j) = ham[dim * r + j];
-    d.perform_checks();
-  }
-  return d;
+  return copy_results(eigenvalues, ham, jobz, dim, dim);
 }
 #endif
 
@@ -80,14 +102,7 @@ Eigen diagonalise_dsyevd(matrix<double> &m, char jobz = 'V')
     if (INFO > 0) return Eigen{};
     my_error("dsyevd failed. INFO=%i", INFO);
   }
-  Eigen d(dim, dim);
-  copy_values(eigenvalues, d.value, dim);
-  if (jobz == 'V') {
-    for (size_t r = 0; r < dim; r++)
-      for (size_t j = 0; j < dim; j++) d.vektor(r, j) = ham[dim * r + j];
-    d.perform_checks();
-  }
-  return d;
+  return copy_results(eigenvalues, ham, jobz, dim, dim);
 }
 #endif  
 
@@ -124,13 +139,13 @@ Eigen diagonalise_dsyevr(matrix<double> &m, double ratio = 1.0,  char jobz = 'V'
   //  The support of the eigenvectors in Z, i.e., the indices
   //  indicating the nonzero elements in Z.  The i-th eigenvector is
   //  nonzero only in elements ISUPPZ( 2*i-1 ) through ISUPPZ(2*i).
-  std::vector<t_matel> Z(LDZ * M); // eigenvectors
+  auto Z = std::make_unique<t_matel[]>(LDZ * M); // eigenvectors
   int LWORK0  = -1;
   int LIWORK0 = -1;
   double WORK0[1];
   int IWORK0[1];
   // Step 1: determine optimal LWORK and LIWORK
-  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK0, &LWORK0,
+  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK0, &LWORK0,
                 IWORK0, &LIWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK    = int(WORK0[0]);
@@ -138,7 +153,7 @@ Eigen diagonalise_dsyevr(matrix<double> &m, double ratio = 1.0,  char jobz = 'V'
   auto WORK = std::make_unique<double[]>(LWORK);
   auto IWORK  = std::make_unique<int[]>(LIWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK.get(), &LWORK,
+  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK.get(), &LWORK,
                 IWORK.get(), &LIWORK, &INFO);
   if (INFO != 0) my_error("dsyevr failed. INFO=%i", INFO);
   if (MM != int(M)) {
@@ -146,14 +161,7 @@ Eigen diagonalise_dsyevr(matrix<double> &m, double ratio = 1.0,  char jobz = 'V'
     M = MM;
     my_assert(M > 0); // at least one
   }
-  Eigen d(M, dim);
-  copy_values(eigenvalues, d.value, M);
-  if (jobz == 'V') {
-    for (size_t r = 0; r < M; r++)
-      for (size_t j = 0; j < dim; j++) d.vektor(r, j) = Z[dim * r + j];
-    d.perform_checks();
-  }
-  return d;
+  return copy_results(eigenvalues, Z.get(), jobz, dim, M);
 }
 #endif
 
@@ -178,17 +186,7 @@ Eigen diagonalise_zheev(matrix<cmpl> &m, char jobz = 'V') {
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, RWORK, &INFO);
   if (INFO != 0) my_error("zheev failed. INFO=%i", INFO);
-  Eigen d(dim, dim);
-  copy_values(eigenvalues, d.value, dim);
-  if (jobz == 'V') {
-    for (size_t r = 0; r < dim; r++)
-      for (size_t j = 0; j < dim; j++) {
-        lapack_complex_double v = ham[dim * r + j];
-        d.vektor(r, j) = cmpl(v.real, v.imag);
-      }
-    d.perform_checks();
-  }
-  return d;
+  return copy_results(eigenvalues, ham, jobz, dim, dim);
 }
 #endif
   
@@ -224,7 +222,7 @@ Eigen diagonalise_zheevr(matrix<cmpl> &m, double ratio = 1.0, char jobz = 'V') {
   //  The support of the eigenvectors in Z, i.e., the indices
   //  indicating the nonzero elements in Z.  The i-th eigenvector is
   //  nonzero only in elements ISUPPZ( 2*i-1 ) through ISUPPZ(2*i).
-  std::vector<lapack_complex_double> Z(LDZ * M); // eigenvectors
+  auto Z = std::make_unique<lapack_complex_double[]>(LDZ * M); // eigenvectors
   int LWORK0 = -1;                 // length of the WORK array (-1 == query!)
   lapack_complex_double WORK0[1];
   int LRWORK0 = -1; // query
@@ -232,7 +230,7 @@ Eigen diagonalise_zheevr(matrix<cmpl> &m, double ratio = 1.0, char jobz = 'V') {
   int LIWORK0 = -1; // query
   int IWORK0[1];
   // Step 1: determine optimal LWORK, LRWORK, and LIWORK
-  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK0, &LWORK0,
+  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK0, &LWORK0,
                 RWORK0, &LRWORK0, IWORK0, &LIWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK   = int(WORK0[0].real);
@@ -242,7 +240,7 @@ Eigen diagonalise_zheevr(matrix<cmpl> &m, double ratio = 1.0, char jobz = 'V') {
   int LIWORK  = IWORK0[0];
   auto IWORK  = std::make_unique<int[]>(LIWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, &Z[0], &LDZ, ISUPPZ, WORK.get(), &LWORK,
+  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK.get(), &LWORK,
                 RWORK.get(), &LRWORK, IWORK.get(), &LIWORK, &INFO);
   if (INFO != 0) my_error("zheevr failed. INFO=%i", INFO);
   if (MM != int(M)) {
@@ -250,17 +248,7 @@ Eigen diagonalise_zheevr(matrix<cmpl> &m, double ratio = 1.0, char jobz = 'V') {
     M = MM;
     my_assert(M > 0); // at least one
   }
-  Eigen d(M, dim);
-  copy_values(eigenvalues, d.value, M);
-  if (jobz == 'V') {
-    for (size_t r = 0; r < M; r++)
-      for (size_t j = 0; j < dim; j++) {
-        lapack_complex_double v = Z[dim * r + j];
-        d.vektor(r, j) = cmpl(v.real, v.imag);
-      }
-    d.perform_checks();
-  }
-  return d;
+  return copy_results(eigenvalues, Z.get(), jobz, dim, M);
 }
 #endif
 
