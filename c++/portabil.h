@@ -65,16 +65,6 @@ inline  T finite_test_fnc(T x, const char *file, int line) {
     }                                                                                                                                                \
   } while (0)
 
-#define my_warning(...)                                                                                                                              \
-  do {                                                                                                                                               \
-    cout << "Warning." << endl;                                                                                                                      \
-    cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                             \
-    char buf[256];                                                                                                                                   \
-    snprintf(buf, 256, __VA_ARGS__);                                                                                                                       \
-    cout << buf << endl;                                                                                                                             \
-    cout << "Continuing." << endl;                                                                                                                   \
-  } while (0)
-
 #define my_error(...)                                                                                                                                \
   do {                                                                                                                                               \
     cout << "#### EXITING DUE TO ERROR." << endl;                                                                                                    \

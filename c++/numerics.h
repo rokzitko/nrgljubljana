@@ -1,8 +1,20 @@
 // numerics.h - Miscelaneous numerical routines
-// Copyright (C) 2005-2019 Rok Zitko
+// Copyright (C) 2005-2020 Rok Zitko
 
 #ifndef _numerics_h_
 #define _numerics_h_
+
+// Template argument deduction does not consider implicit conversions, thus we need to define mixed integer/complex
+// arithmetic.
+//template<typename T> std::complex<T> operator+(const int& lhs, const std::complex<T> &rhs) { return T(lhs)+rhs; }
+//template<typename T> std::complex<T> operator-(const int& lhs, const std::complex<T> &rhs) { return T(lhs)-rhs; }
+//template<typename T> std::complex<T> operator*(const int& lhs, const std::complex<T> &rhs) { return T(lhs)*rhs; }
+//template<typename T> std::complex<T> operator/(const int& lhs, const std::complex<T> &rhs) { return T(lhs)/rhs; }
+
+//template<typename T> std::complex<T> operator+(std::complex<T> &lhs, const int& rhs) { return lhs+T(rhs); }
+//template<typename T> std::complex<T> operator-(std::complex<T> &lhs, const int& rhs) { return lhs-T(rhs); }
+//template<typename T> std::complex<T> operator*(std::complex<T> &lhs, const int& rhs) { return lhs*T(rhs); }
+//template<typename T> std::complex<T> operator/(std::complex<T> &lhs, const int& rhs) { return lhs/T(rhs); }
 
 // Accumulator abstraction: automatically initialized to 0, result
 // checked for finiteness. Can be constructured from a STL vector of

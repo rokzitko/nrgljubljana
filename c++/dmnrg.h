@@ -332,10 +332,8 @@ DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Params &P) { //
   // Trace should be equal to the total weight of the shell-N contribution to the FDM.
   const double diff = (tr - stats.wn[N]) / stats.wn[N]; // relative error
   nrglog('w', "tr=" << tr << " diff=" << diff);
-  if (std::isfinite(diff) && !num_equal(diff, 0.0, 1e-8)) {
-    my_warning("diff=%24.16lf", diff); 
+  if (std::isfinite(diff) && !num_equal(diff, 0.0, 1e-8))
     my_assert(stats.wn[N] < 1e-12);    // ..OK if small enough overall.
-  }
   return rhoFDM;
 }
 
