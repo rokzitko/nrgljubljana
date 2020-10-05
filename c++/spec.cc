@@ -26,7 +26,9 @@ const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 // the two.
 
 template <typename FactorFnc, typename CheckSpinFnc>
-void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, FactorFnc &factorfnc, CheckSpinFnc &checkspinfnc, DensMatElements &rho, DensMatElements &rhoFDM) {
+void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, 
+                  FactorFnc &factorfnc, CheckSpinFnc &checkspinfnc, 
+                  DensMatElements &rho, DensMatElements &rhoFDM, const Stats &stats) {
   nrglog('g', "calc_generic() " << bs.fullname());
   auto cs = bs.spectype->make_cs(bs);
   auto & rho_here = bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : rho;
@@ -42,14 +44,16 @@ void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag
         const Matrix &op1II = bs.op1.at(II);
         const Matrix &op2II = bs.op2.at(II);
         if (logletter('G')) nrgdump2(Ij, Ii) << endl;
-        bs.spectype->calc(step, diagi, diagj, op1II, op2II, bs, spinfactor, cs, Ii, Ij, rho_here);
+        bs.spectype->calc(step, diagi, diagj, op1II, op2II, bs, spinfactor, cs, Ii, Ij, rho_here, stats);
       }
     }
   }
   bs.spec->merge(cs, step);
 }
 
-template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, FactorFnc &factorfnc, DensMatElements &rho, DensMatElements &rhoFDM) {
+template <typename FactorFnc> 
+void calc_generic3(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, 
+                   FactorFnc &factorfnc, DensMatElements &rho, DensMatElements &rhoFDM, const Stats &stats) {
   nrglog('g', "calc_generic3() " << bs.fullname());
   auto cs = bs.spectype->make_cs(bs);
   auto & rho_here = bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : rho;
@@ -67,7 +71,7 @@ template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const S
           const Matrix &op1 = bs.op1.at(cji); // conj : A_ij=(a)_ij=(a+)_ji*
           const Matrix &op2 = bs.op2.at(jl);  // B_jl=(b+)_jl
           const Matrix &op3 = bs.op3.at(li);  // C_li=n_li
-          bs.spectype->calc_A(step, diagi, diagj, diagl, op1, op2, op3, bs, spinfactor, cs, Ii, Ij, Il, rho_here);
+          bs.spectype->calc_A(step, diagi, diagj, diagl, op1, op2, op3, bs, spinfactor, cs, Ii, Ij, Il, rho_here, stats);
         }
         const auto ij  = make_pair(Ii, Ij);
         const auto clj = make_pair(Il, Ij); // conj
@@ -78,7 +82,7 @@ template <typename FactorFnc> void calc_generic3(const BaseSpectrum &bs, const S
           const Matrix &op1 = bs.op1.at(clj);  // conj : A_jl=(a)_jl=(a+)_lj*
           const Matrix &op2 = bs.op2.at(ij);   // B_ij=(b+)_ij
           const Matrix &op3 = bs.op3.at(li);   // C_li=n_li
-          bs.spectype->calc_B(step, diagi, diagj, diagl, op1, op2, op3, bs, spinfactor, cs, Ii, Ij, Il, rho_here);
+          bs.spectype->calc_B(step, diagi, diagj, diagl, op1, op2, op3, bs, spinfactor, cs, Ii, Ij, Il, rho_here, stats);
         }
       }
     }

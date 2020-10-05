@@ -672,7 +672,7 @@ class sharedParam {
    bool logall{};
    string log;
 
-   void init(Params &P, double _diagratio = -1) {
+   void init(const Params &P, double _diagratio = -1) {
      // init() has to be called at the beginning of the program (after parsing the parameters in P), but also before
      // each series of diagonalizations, because diagratio might have changed!
      diag      = P.diag;

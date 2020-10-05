@@ -492,7 +492,7 @@ class Stats {
    Stats(const Params &P) : td(P, FN_TD), td_fdm(P, FN_TDFDM) {}
 };
 
-Stats stats(P);
+Stats stats(P); // ZZZ
 
 void subtract_groundstate_energy(const Stats &stats, DiagInfo &diag) {
   for (auto &[i, eig] : diag) eig.subtract_Egs(stats.Egs);
@@ -533,11 +533,11 @@ class SPEC {
   virtual ~SPEC() = default;
   virtual spCS_t make_cs(const BaseSpectrum &) = 0;
   virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-                    const Invar &, DensMatElements &){};
+                    const Invar &, DensMatElements &, const Stats &stats){};
   virtual void calc_A(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &){};
+                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &, const Stats &stats){};
   virtual void calc_B(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &){};
+                      spCS_t, const Invar &, const Invar &, const Invar &, DensMatElements &, const Stats &stats){};
   virtual string name() = 0;
   virtual string merge() { return ""; } // what merging rule to use
   virtual string rho_type() { return ""; } // what rho type is required
@@ -1670,17 +1670,17 @@ auto SpecdensCheckSpinFnc  = [](const Invar &I1, const Invar &Ip, int SPIN) { re
 // Calculate spectral densities
 void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM) {
   TIME("spec");
-  for (auto &i : spectraS)    calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraCHIT) calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraD)    calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
-  for (auto &i : spectraT)    calc_generic(i, step, diag, SpinSuscFactorFnc,     TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraOT)   calc_generic(i, step, diag, OrbSuscFactorFnc,      TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraQ)    calc_generic(i, step, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc,  rho, rhoFDM);
-  for (auto &i : spectraGT)   calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
-  for (auto &i : spectraI1T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
-  for (auto &i : spectraI2T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM);
+  for (auto &i : spectraS)    calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+  for (auto &i : spectraCHIT) calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+  for (auto &i : spectraD)    calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
+  for (auto &i : spectraT)    calc_generic(i, step, diag, SpinSuscFactorFnc,     TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+  for (auto &i : spectraOT)   calc_generic(i, step, diag, OrbSuscFactorFnc,      TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+  for (auto &i : spectraQ)    calc_generic(i, step, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+  for (auto &i : spectraGT)   calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
+  for (auto &i : spectraI1T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
+  for (auto &i : spectraI2T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
   // no CheckSpinFnc!! One must use A_u_d, etc. objects for sym=QSZ.
-  for (auto &i : spectraV3)   calc_generic3(i, step, diag, SpecdensFactorFnc, rho, rhoFDM);
+  for (auto &i : spectraV3)   calc_generic3(i, step, diag, SpecdensFactorFnc,                          rho, rhoFDM, stats);
 }
 
 void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
@@ -2377,7 +2377,8 @@ void set_symmetry(const Params &P) {
 }
 
 void calculation(Params &P) {
-  auto [diag0, iterinfo] = read_data(P);
+//  Stats stats; // ZZZ
+  auto [diag0, iterinfo] = read_data(P, stats);
   Step step{P, RUNTYPE::NRG};
   // Initialize all containers for storing information
   AllSteps dm(P.Nlen);
@@ -2399,7 +2400,7 @@ void calculation(Params &P) {
       if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, P);
     }
     if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-    auto [diag0_dm, iterinfo_dm] = read_data(P);
+    auto [diag0_dm, iterinfo_dm] = read_data(P, stats);
     Step step {P, RUNTYPE::DMNRG};
     run_nrg(step, iterinfo_dm, stats, diag0, dm, P);
     my_assert(num_equal(stats.GS_energy, stats.total_energy));

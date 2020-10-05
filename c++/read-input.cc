@@ -86,9 +86,8 @@ size_t read_nsubs(ifstream &fdata)
 }
 
 // Read the ground state energy from data file ('e' flag)
-void read_gs_energy(ifstream &fdata) {
+void read_gs_energy(ifstream &fdata, Stats &stats) {
   fdata >> stats.total_energy;
-  assert_isfinite(stats.total_energy);
 }
 
 // Read energies of initial states. nsubs is the number of subspaces.
@@ -157,7 +156,7 @@ void determine_Nmax(Params &P) {
 inline void skipline(ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
-std::tuple<DiagInfo, IterInfo> read_data(Params &P) {
+std::tuple<DiagInfo, IterInfo> read_data(Params &P, Stats &stats) {
   skipline();
   ifstream fdata("data");
   if (!fdata) throw std::runtime_error("Can't load initial data.");
@@ -185,7 +184,7 @@ std::tuple<DiagInfo, IterInfo> read_data(Params &P) {
       case '#':
         // ignore embedded comment lines
         break;
-      case 'e': read_gs_energy(fdata); break;
+      case 'e': read_gs_energy(fdata, stats); break;
       case 's': iterinfo0.ops[opname]  = read_matrix_elements(fdata, diag0); break;
       case 'p': iterinfo0.opsp[opname] = read_matrix_elements(fdata, diag0); break;
       case 'g': iterinfo0.opsg[opname] = read_matrix_elements(fdata, diag0); break;
