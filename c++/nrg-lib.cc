@@ -999,42 +999,42 @@ Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagpr
 }
 
 // *********************************** NRG RUN **********************************
-
+// 
 // Formatted output of the computed expectation values
 class ExpvOutput {
-  private:
-  ofstream F;             // output stream
-  map<string, t_expv> &m; // reference to the name->value mapping
-  list<string> fields;    // list of fields to be output (may be a subset
-                          // of the fields actually present in m)
-  // Consecutive numbers for the columns
-  void field_numbers() {
-    F << "#";
-    formatted_output(F, 1);
-    for (size_t ctr = 1; ctr <= fields.size(); ctr++) formatted_output(F, 1 + ctr);
-    F << endl;
-  }
-  // Label and field names. Label is the first column (typically the
-  // temperature).
-  void field_names(string labelname = "T") {
-    F << "#";
-    formatted_output(F, labelname);
-    for (const auto &op : fields) formatted_output(F, op);
-    F << endl;
-  }
-  public:
-  // Output the current values for the label and for all the fields
-  void field_values(double labelvalue) {
-    F << ' ';
-    formatted_output(F, labelvalue);
-    for (const auto &op : fields) formatted_output(F, m[op]);
-    F << endl;
-  }
+ private:
+   ofstream F;             // output stream
+   map<string, t_expv> &m; // reference to the name->value mapping
+   list<string> fields;    // list of fields to be output (may be a subset of the fields actually present in m)
+   void field_numbers() {    // Consecutive numbers for the columns
+     F << "#";
+     formatted_output(F, 1);
+     for (size_t ctr = 1; ctr <= fields.size(); ctr++) formatted_output(F, 1 + ctr);
+     F << endl;
+   }
+   // Label and field names. Label is the first column (typically the temperature).
+   void field_names(string labelname = "T") {
+     F << "#";
+     formatted_output(F, labelname);
+     for (const auto &op : fields) formatted_output(F, op);
+     F << endl;
+   }
+ public:
+   // Output the current values for the label and for all the fields
+   void field_values(double labelvalue, bool cout_dump = true) {
+     F << ' ';
+     formatted_output(F, labelvalue);
+     for (const auto &op : fields) formatted_output(F, m[op]);
+     F << endl;
+     if (cout_dump) 
+       for (const auto &op: fields)
+         std::cout << "<" << name >> ">=" << m[op] << std::endl;
+   }
    ExpvOutput(const string &fn, map<string, t_expv> &_m, list<string> _fields) : m(_m), fields(std::move(_fields)) {
-    F.open(fn);
-    field_numbers();
-    field_names();
-  }
+     F.open(fn);
+     field_numbers();
+     field_names();
+   }
 };
 
 void open_files(speclist &sl, BaseSpectrum &spec, SPECTYPE spectype, axis a) {
@@ -1367,9 +1367,9 @@ struct Output {
   }
 
   // Dump all energies in diag to a file
-  void dump_all_energies(const Step &step, const DiagInfo &diag) {
+  void dump_all_energies(const DiagInfo &diag, int N) {
     if (!Fenergies) return;
-    Fenergies << endl << "===== Iteration number: " << step.N() << endl;
+    Fenergies << endl << "===== Iteration number: " << N << endl;
     for (const auto &[i, eig]: diag) {
       Fenergies << "Subspace: " << i << std::endl;
       for (const auto &x : eig.value) 
@@ -1377,14 +1377,46 @@ struct Output {
       Fenergies << std::endl;
     }
   }
-  
-  ~Output() {
-    if (runtype == RUNTYPE::NRG)
-      custom.reset(); // reseting unique_ptr closes the file
-    if (runtype == RUNTYPE::DMNRG && P.fdmexpv)
-      customfdm.reset();
-  }
 };
+
+// Calculate the (on-shell) statistical sum using the excitation energies relative to the current step energy scale.
+double calc_Z(const DiagInfo &diag, const Params &P) {
+  bucket Z;
+  for (const auto &[I, eig] : diag) 
+    for (const auto &x : eig.value) 
+      Z += Sym->mult(I) * exp(-P.betabar * x);
+  return Z;
+}
+
+// Measure thermodynamic expectation values of singlet operators
+void measure_singlet(const Step &step, Stats &stats, const DiagInfo &dg, const IterInfo &a, Output &output, const Params &P) {
+  const double Z_S = calc_Z(dg, P);
+  auto measure = [&dg, &Z_S](const auto &name, const auto m) {
+    const auto expv = calc_trace_singlet(dg, m) / Z_S; // Z_S is the appropriate statistical sum
+    cout << "<" << name << ">=" << output_val(expv) << endl;
+    return expv;
+  };
+  for (const auto &[name, m] : a.ops)  
+    stats.expv[name] = measure(name, m);
+  for (const auto &[name, m] : a.opsg) 
+    stats.expv[name] = measure(name, m);
+  output.custom->field_values(step.Teff());
+}
+
+// Expectation values using FDM algorithm
+void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &dg, const IterInfo &a, Output &output, const DensMatElements &rhoFDM, const AllSteps &dm) {
+  if (step.N() != P.fdmexpvn) return;
+  auto measure = [&step, &dg, &rhoFDM, &dm](const auto &name, const auto &m) {
+    const auto expv = calc_trace_fdm_kept(step, dg, m, rhoFDM, dm);
+    cout << "<" << name << ">_fdm=" << output_val(expv) << endl;
+    return expv;
+  };
+  for (const auto &[name, m] : a.ops)
+    stats.fdmexpv[name] = measure(name, m);
+  for (const auto &[name, m] : a.opsg)
+    stats.fdmexpv[name] = measure(name, m);
+  output.customfdm->field_values(P.T);
+}
 
 // DM-NRG: initialization of the density matrix -----------------------------
 
@@ -1673,44 +1705,6 @@ void clear_eigenvectors(DiagInfo &diag) {
       j = Matrix(0, 0);
 }
 
-// Calculate the (on-shell) statistical sum using the excitation energies relative to the current step energy scale.
-double calc_Z(const DiagInfo &diag, const Params &P) {
-  bucket Z;
-  for (const auto &[I, eig] : diag) 
-    for (const auto &x : eig.value) 
-      Z += Sym->mult(I) * exp(-P.betabar * x);
-  return Z;
-}
-
-// Z_S is the appropriate statistical sum
-void measure_singlet1(const DiagInfo &dg, const std::string name, const MatrixElements &m, const double Z_S) {
-  const t_expv expv = calc_trace_singlet(dg, m) / Z_S;
-  stats.expv[name] = expv; // XXX
-  cout << "<" << name << ">=" << output_val(expv) << endl;
-}
-
-// Measure thermodynamic expectation values of singlet operators
-void measure_singlet(const Step &step, const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &custom, const Params &P) {
-  const double Z_S = calc_Z(dg, P);
-  for (const auto &[name, m] : a.ops)  measure_singlet1(dg, name, m, Z_S);
-  for (const auto &[name, m] : a.opsg) measure_singlet1(dg, name, m, Z_S);
-  custom->field_values(step.Teff());
-}
-
-// Expectation values using FDM algorithm
-void measure_singlet1_fdm(const Step &step, const DiagInfo &dg, std::string name, const MatrixElements &m, const DensMatElements &rhoFDM, const AllSteps &dm) {
-  const t_expv expv   = calc_trace_fdm_kept(step, dg, m, rhoFDM, dm);
-  stats.fdmexpv[name] = expv; // XXX
-  cout << "<" << name << ">_fdm=" << output_val(expv) << endl;
-}
-
-void measure_singlet_fdm(const Step &step, const DiagInfo &dg, const IterInfo &a, unique_ptr<ExpvOutput> &customfdm, const DensMatElements &rhoFDM, const AllSteps &dm) {
-  if (step.N() != P.fdmexpvn) return;
-  for (const auto &[name, m] : a.ops)  measure_singlet1_fdm(step, dg, name, m, rhoFDM, dm);
-  for (const auto &[name, m] : a.opsg) measure_singlet1_fdm(step, dg, name, m, rhoFDM, dm);
-  customfdm->field_values(P.T);
-}
-
 auto CorrelatorFactorFnc   = [](const Invar &Ip, const Invar &I1) { return Sym->mult(I1); };
 auto SpecdensFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->specdens_factor(Ip, I1); };
 auto SpecdensquadFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdensquad_factor(Ip, I1); };
@@ -1786,7 +1780,7 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
 inline bool need_rho() { return P.cfs || P.dmnrg; }
 inline bool need_rhoFDM() { return P.fdm; }
 
-void calculate_spectral_and_expv(const Step &step, const DiagInfo &diag, const IterInfo &iterinfo, const AllSteps &dm, const Params &P) {
+void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output, const DiagInfo &diag, const IterInfo &iterinfo, const AllSteps &dm, const Params &P) {
   // Zft is used in the spectral function calculations using the
   // conventional approach. We calculate it here, in order to avoid
   // recalculations later on.
@@ -1806,8 +1800,8 @@ void calculate_spectral_and_expv(const Step &step, const DiagInfo &diag, const I
         rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);
   }
   spectral_densities(step, diag, rho, rhoFDM);
-  if (step.nrg()) measure_singlet(step, diag, iterinfo, custom, P);
-  if (step.dmnrg() && P.fdmexpv) measure_singlet_fdm(step, diag, iterinfo, customfdm, rhoFDM, dm);
+  if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, P);
+  if (step.dmnrg() && P.fdmexpv) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG
@@ -2249,7 +2243,7 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
 // - diag contains all information about the eigenstates.
 // - stats.Egs had been computed
 // Also called from doZBW() as a final step.
-void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, Output &output, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc) {
+void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, Output &output, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc) {
   // Contribution to the total energy.
   stats.total_energy += stats.Egs * step.scale();
   cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << endl;
@@ -2260,19 +2254,17 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, Output &ou
     calc_abs_energies(step, diag);
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
-  output.dump_all_energies(step, diag); // Logging of ALL states (not only those that remain after truncation)
+  output.dump_all_energies(diag, step.ndx());
   // Measurements are performed before the truncation!
   perform_measurements(step, diag, stats,output);
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
   if (do_recalc_all(step, P)) { // Either ...
     oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
-    calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
+    calculate_spectral_and_expv(step, stats, output, diag, iterinfo, dm, P);
   }
-//  diag_before_truncation = diag;
   if (!P.ZBW) 
     truncate_perform(diag); // Actual truncation occurs at this point
-//  diag_after_truncation = diag; // ZZZ
   store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_irreducible(step, diag, qsrmax, iterinfo.opch);
@@ -2280,10 +2272,10 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, Output &ou
   }
   if (do_recalc_kept(step, P)) { // ... or ...
     oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
-    calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
+    calculate_spectral_and_expv(step, stats, output, diag, iterinfo, dm, P);
   }
   if (do_no_recalc(step, P)) { // ... or this
-    calculate_spectral_and_expv(step, diag, iterinfo, dm, P);
+    calculate_spectral_and_expv(step, stats, output, diag, iterinfo, dm, P);
   }
   if (P.checksumrules) operator_sumrules(diag, iterinfo);
 }
@@ -2292,10 +2284,9 @@ void after_diag(const Step &step, IterInfo &iterinfo, DiagInfo &diag, Output &ou
 DiagInfo iterate(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diagprev, Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   QSrmax qsrmax = get_qsrmax(diagprev);
   auto diag = do_diag(step, iterinfo, stats, diagprev, qsrmax, P);
-  after_diag(step, iterinfo, diag, output, qsrmax, dm, oprecalc);
+  after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc);
   trim_matrices(diag, iterinfo);
   clear_eigenvectors(diag);
-//  diag_after_truncation = diag; // ZZZ, replace with the trimmed version set in after_diag()
   time_mem::memory_time_brief_report();
   return diag;
 }
@@ -2315,8 +2306,8 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
   cout << " (N=" << step.N() << ")" << endl;
   perform_measurements(step, diag0, stats, output);
   AllSteps empty_dm{};
-  calculate_spectral_and_expv(step, diag0, iterinfo, empty_dm, P);
-  output.dump_all_energies(step, diag0);
+  calculate_spectral_and_expv(step, stats, output, diag0, iterinfo, empty_dm, P);
+  output.dump_all_energies(diag0, step.ndx());
   if (P.checksumrules) operator_sumrules(diag0, iterinfo);
 }
 
@@ -2341,7 +2332,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
   truncate_prepare(step, diag, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax empty_qsrmax{};
-  after_diag(step, iterinfo, diag, output, empty_qsrmax, dm, oprecalc);
+  after_diag(step, iterinfo, stats, diag, output, empty_qsrmax, dm, oprecalc);
   return diag;
 }
 
