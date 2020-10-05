@@ -38,7 +38,7 @@
 #include "openmp.h"
 #include "mp.h"
 
-#include "param.cc"
+#include "params.cc"
 #include "outfield.cc"
 
 // This is included in the library only. Should not be used if cblas library is available.
@@ -191,32 +191,32 @@ using DiagInfo = map<Invar, Eigen>; // Full information after diagonalizations
 // the index "r" which ranges from 1 through rmax.
 
 class Rmaxvals {
-  private:
-  ublas::vector<size_t> values;
-  friend ostream &operator<<(ostream &os, const Rmaxvals &rmax);
-  friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
-  public:
-  Rmaxvals() = default;
-  Rmaxvals(const Rmaxvals &) = default;
-  Rmaxvals(Rmaxvals &&) = default;
-  Rmaxvals &operator=(const Rmaxvals &) = default;
-  Rmaxvals &operator=(Rmaxvals &&) = default;
-  ~Rmaxvals() = default;
-  size_t rmax(size_t i) const {
-    P.allowed_block_index(i);
-    return values[i - 1]; // FOR COMPATIBILITY OFFSET 1!
-  } 
-  size_t offset(size_t i) const {
-    P.allowed_block_index(i);
-    return accumulate(begin(values), begin(values) + (i - 1), 0);
-  }
-  size_t operator[](size_t i) const { return rmax(i); }
-  Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev);
-  size_t total() const { return accumulate(begin(values), end(values), 0); } // total number of states
+ private:
+   ublas::vector<size_t> values;
+ public:
+   Rmaxvals() = default;
+   Rmaxvals(const Rmaxvals &) = default;
+   Rmaxvals(Rmaxvals &&) = default;
+   Rmaxvals &operator=(const Rmaxvals &) = default;
+   Rmaxvals &operator=(Rmaxvals &&) = default;
+   ~Rmaxvals() = default;
+   size_t rmax(size_t i) const { return values[i-1]; } // FOR COMPATIBILITY OFFSET 1!
+   size_t offset(size_t i) const {
+     return std::accumulate(begin(values), begin(values) + (i-1), 0);
+   }
+   size_t operator[](size_t i) const { return rmax(i); }
+   Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev);
+   size_t total() const { return std::accumulate(begin(values), end(values), 0); } // total number of states
+ private:
+   friend ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
+     for (const auto &x : rmax.values) os << x << ' ';
+     return os;
+   }
+   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
+   friend class boost::serialization::access;
 };
 
-// TO DO: there is duplication between DimSub and Eigen. Simplify!
+using QSrmax = map<Invar, Rmaxvals>;
 
 using EVEC = ublas::vector<t_eigen>;
 
@@ -344,8 +344,6 @@ template <typename T> ostream &operator<<(ostream &os, const ublas::vector<T> &v
   return os;
 }
 
-using QSrmax = map<Invar, Rmaxvals>;
-
 enum class RUNTYPE { NRG, DMNRG };
 
 class Step {
@@ -422,11 +420,6 @@ class Step {
    // is the value that we use in building the matrix, cf. nrg-makematrix-ISO.cc
    int getnn() const { return ndxN; }
 };
-
-ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
-  for (const auto &x : rmax.values) os << x << ' ';
-  return os;
-}
 
 // Namespace for storing various statistical quantities calculated during iteration.
 class Stats {
@@ -2396,8 +2389,6 @@ void set_symmetry(const Params &P) {
   cout << "SYMMETRY TYPE: " << P.symtype.value() << endl;
   Sym = get(P.symtype.value(), P, stats.td.allfields);
   Sym->load();
-  stats.td.save_header(); // all fields are know at this point
-  stats.td_fdm.save_header();
 }
 
 void calculation(Params &P) {
