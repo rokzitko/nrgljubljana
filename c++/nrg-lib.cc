@@ -254,7 +254,6 @@ struct Eigen : public RawEigen {
   EVEC value_zero;     // Egs subtracted
   size_t getnr() const  { return value_zero.size(); }
   size_t nrpost = 0;   // number of eigenpairs after truncation
-  double shift  = 0.0; // shift of eigenvalues (0 or Egs)
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
   EVEC absenergyN;     // absolute energies (referenced to the lowest energy in the N-th step)
@@ -284,13 +283,10 @@ struct Eigen : public RawEigen {
   void diagonal(const EVEC &v) {
     value_orig = value_zero = v;
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
-    shift    = 0.0;
   }
   void subtract_Egs(double Egs) {
-    my_assert(shift == 0.0);
     value_zero = value_orig;
     for (auto &x : value_zero) x -= Egs;
-    shift = Egs;
     my_assert(value_zero[0] >= 0.0);
   }
   void shift_absenergyG(double GS_energy) {
@@ -304,7 +300,6 @@ private:
      ar &matrix;
      ar &value_zero;
      ar &nrpost;
-     ar &shift;
      ar &absenergy;
      ar &absenergyG;
      ar &absenergyN;
