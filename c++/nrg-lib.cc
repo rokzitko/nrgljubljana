@@ -1953,15 +1953,15 @@ std::vector<Invar> task_list(const QSrmax &qsrmax) {
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
-void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch) {
+void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, const Params &P) {
   TIME("recalc f");
   if (!P.substeps) {
-    opch = Sym->recalc_irreduc(step, diag, qsrmax);
+    opch = Sym->recalc_irreduc(step, diag, qsrmax, P);
   } else {
     const auto [N, M] = step.NM();
     for (size_t i = 0; i < P.channels; i++)
       if (i == M) {
-        opch[i] = Sym->recalc_irreduc_substeps(step, diag, qsrmax, i);
+        opch[i] = Sym->recalc_irreduc_substeps(step, diag, qsrmax, P, i);
       } else {
         for (size_t j = 0; j < P.perchannel; j++) 
           opch[i][j] = Sym->recalc_doublet(diag, qsrmax, opch[i][j]);
@@ -2068,7 +2068,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
     truncate_perform(diag);            // Actual truncation occurs at this point
   store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
-    recalc_irreducible(step, diag, qsrmax, iterinfo.opch);
+    recalc_irreducible(step, diag, qsrmax, iterinfo.opch, P);
     if (P.dump_f) dump_f(iterinfo.opch);
   }
   if (do_recalc_kept(step, P)) { // ... or ...

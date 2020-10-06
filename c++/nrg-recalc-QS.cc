@@ -168,7 +168,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
+Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
@@ -393,7 +393,7 @@ Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 
 // Driver routine for recalc_f()
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, int M) {
+OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");

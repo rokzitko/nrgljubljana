@@ -144,8 +144,8 @@ class Symmetry {
    
    virtual void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, double factor) = 0;
 
-   virtual Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) { my_assert_not_reached(); }
-   virtual OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, int M) { my_assert_not_reached(); }
+   virtual Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) { my_assert_not_reached(); }
+   virtual OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) { my_assert_not_reached(); }
    virtual MatrixElements recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
    virtual MatrixElements recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
    virtual MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
@@ -181,10 +181,10 @@ std::unique_ptr<Symmetry> Sym;
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
   void makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) override;                   \
-  Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) override
+  Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) override
 
 // Optional declaration
-#define HAS_SUBSTEPS OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, int M) override
+#define HAS_SUBSTEPS OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) override
 #define HAS_DOUBLET MatrixElements recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
 #define HAS_TRIPLET MatrixElements recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
 #define HAS_ORB_TRIPLET MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) override
