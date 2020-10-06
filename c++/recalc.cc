@@ -122,6 +122,7 @@ Matrix recalc_general(const DiagInfo &diag,
   const Twoinvar II = make_pair(I1, Ip);
   Matrix cn = Matrix(dim1, dimp);
   cn.clear();
+  if (dim1 == 0 || dimp == 0) return cn; // empty matrix
   for (size_t j = 0; j < jmax; j++) { // loop over combinations of i/ip
     if (logletter('r')) RECALC_GENERAL_DUMP;
     if (!Sym->Invar_allowed(table[j].IN1) || !Sym->Invar_allowed(table[j].INp)) continue;
