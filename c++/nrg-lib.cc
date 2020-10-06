@@ -294,10 +294,7 @@ template<typename M> struct DimSubGen {
   size_t kept  = 0;
   size_t total = 0;
   Rmaxvals rmax;   // substructure of vectors omega
-  EVEC eigenvalue; // all eigenvalues
-  EVEC absenergy;  // absolute energies
-  EVEC absenergyG; // absolute energies referred to the overall ground-state energy
-  EVEC absenergyN; // absolute energies referred to the step-N ground-state energy
+  Eigen eig;
   bool is_last = false;
   size_t min() const { return (is_last ? 0 : kept); } // min(), max() return the range of D states to be summed over in FDM
   size_t max() const { return total; }
@@ -463,25 +460,23 @@ class Stats {
 };
 
 void subtract_groundstate_energy(const Stats &stats, DiagInfo &diag) {
-  for (auto &[i, eig] : diag) eig.subtract_Egs(stats.Egs);
+  for (auto &[I, eig] : diag) eig.subtract_Egs(stats.Egs);
 }
 
 // The absenergyG[] values are shifted so that the ground state corresponds to zero. This is required in the FDM
 // approach for calculating the spectral functions. This is different from subtract_groundstate_energy(). Called from
 // do_diag() when diag is loaded from a stored file during the second pass of the NRG iteration.
 void shift_abs_energies(const Stats &stats, DiagInfo &diag) {
-  for (auto &[i, eig] : diag) eig.shift_absenergyG(stats.GS_energy);
+  for (auto &[I, eig] : diag) 
+    eig.shift_absenergyG(stats.GS_energy);
 }
 
 // called before calc_ZnD()
 void shift_abs_energies_dm(const Stats &stats, AllSteps &dm)
 {
   for (size_t N = P.Ninit; N < P.Nlen; N++)
-    for (auto &[I, ds] : dm[N])
-      for (size_t i = 0; i < ds.total; i++) {
-        ds.absenergyG[i] -= stats.GS_energy;
-        my_assert(ds.absenergyG[i] >= 0.0);
-      }
+    for (auto &[I, ds] : dm[N]) 
+      ds.eig.shift_absenergyG(stats.GS_energy);
 }
 
 class ChainSpectrum;
@@ -1348,18 +1343,33 @@ t_eigen highest_retained_energy(const DiagInfo &diag) {
   return energies[nrkeep - 1];
 }
 
+struct truncate_stats {
+  size_t nrall, nrallmult, nrkept, nrkeptmult;
+  truncate_stats(const DiagInfo &diag) {
+    nrall = std::accumulate(begin(diag), end(diag), 0,
+                            [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getdim(); });
+    nrallmult = std::accumulate(begin(diag), end(diag), 0,
+                                [](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getdim(); });
+    nrkept = std::accumulate(begin(diag), end(diag), 0, 
+                             [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
+    nrkeptmult = std::accumulate(begin(diag), end(diag), 0,
+                                 [](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getnrkept(); });
+  }
+  void report() {
+    nrgdump4(nrkept, nrkeptmult, nrall, nrallmult) << std::endl;
+  }
+};
+
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
 bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
   const auto Emax = highest_retained_energy(diag);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
-                                      std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));             
-  const auto nrkept = std::accumulate(begin(diag), end(diag), 0, 
-                                      [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
-  const auto nrkeptmult = std::accumulate(begin(diag), end(diag), 0, 
-                                          [](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getnrkept(); });
-  nrgdump3(Emax, nrkept, nrkeptmult) << endl;
+                                      std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));
+  nrgdump(Emax);
+  truncate_stats ts(diag);
+  ts.report();
   const auto notenough = std::any_of(begin(diag), end(diag), 
                                      [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax &&
                                          eig.getnr() < eig.getdim(); });
@@ -1378,8 +1388,8 @@ void calc_ZnD(const AllSteps &dm, Stats &stats) {
     for (const auto &[I, ds] : dm[N])
       for (size_t i = ds.min(); i < ds.max(); i++) {
         my_mpf g, n;
-        mpf_set_d(g, Sym->mult(I) * exp(-ds.absenergyG[i]/P.T)); // absenergyG >= 0.0
-        mpf_set_d(n, Sym->mult(I) * exp(-ds.absenergyN[i]/P.T)); // absenergyN >= 0.0
+        mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.absenergyG[i]/P.T)); // absenergyG >= 0.0
+        mpf_set_d(n, Sym->mult(I) * exp(-ds.eig.absenergyN[i]/P.T)); // absenergyN >= 0.0
         mpf_add(ZnDG, ZnDG, g);
         mpf_add(ZnDN, ZnDN, n);
       }
@@ -1442,10 +1452,10 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats)
       for (const auto &[I, ds] : dm[N]) 
         for (size_t i = ds.min(); i < ds.max(); i++) {
           my_mpf weight;
-          mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.absenergyN[i]/P.T));
+          mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.absenergyN[i]/P.T));
           mpf_div(weight, weight, stats.ZnDN[N]);
           my_mpf e;
-          mpf_set_d(e, ds.absenergy[i]);
+          mpf_set_d(e, ds.eig.absenergy[i]);
           my_mpf e2;
           mpf_mul(e2, e, e);
           mpf_mul(e, e, weight);
@@ -1988,8 +1998,6 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
     if (step.dmnrg()) {
       diag = load_transformations(step.ndx(), P); // read from disk in second run
       if (P.removefiles) remove_transformation_files(step.ndx(), P);
-      // IMPORTANT: subtract the absolute (!) GS energy in the abs_energy vector. The overall (all shells, all
-      // invariant subspaces) lowest abs_energy will thus be equal to zero.
       shift_abs_energies(stats, diag);
     }
     stats.find_groundstate(diag);
@@ -2026,18 +2034,15 @@ void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
 
 void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, AllSteps &dm)
 {
-  size_t nrall  = 0;
-  size_t nrkept = 0;
   for (const auto &[I, eig]: diag) { // XXX - there should be only 1 copy
     const auto f = qsrmax.find(I);
     dm[step.ndx()][I] = { eig.getnr(), eig.getdim(),
                           f != qsrmax.cend() ? f->second : Rmaxvals{},
-                          eig.value_zero, eig.absenergy, eig.absenergyG, eig.absenergyN, step.last() };
-    nrall += eig.getdim();
-    nrkept += eig.getnr();
+                          eig, step.last() };
   }
-  double ratio = double(nrkept) / nrall;
-  cout << "Kept: " << nrkept << " out of " << nrall << ", ratio=" << setprecision(3) << ratio << endl;
+  truncate_stats ts(diag);
+  double ratio = double(ts.nrkept) / ts.nrall;
+  cout << "Kept: " << ts.nrkept << " out of " << ts.nrall << ", ratio=" << setprecision(3) << ratio << endl;
 }
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
@@ -2048,7 +2053,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   stats.rel_Egs[step.ndx()] = stats.Egs;
   stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
   stats.energy_offsets[step.ndx()] = stats.total_energy;
-  if (step.nrg()) 
+  if (step.nrg()) // only in the first run, in the second one the data is loaded from file!
     calc_abs_energies(step, diag, stats);
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
@@ -2173,7 +2178,7 @@ void dump_subspaces(const AllSteps &dm, const Params &P) {
     O << "Iteration " << N << endl;
     O << "len_dm=" << dm[N].size() << endl;
     for (const auto &[I, DS] : dm[N])
-      O << "I=" << I << " len=" << DS.eigenvalue.size() << " kept=" << DS.kept << " total=" << DS.total << endl;
+      O << "I=" << I << " kept=" << DS.kept << " total=" << DS.total << endl;
     O << endl;
   }
 }

@@ -312,12 +312,12 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &
 DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Stats &stats, const Params &P) { // XXX: dm
   DensMatElements rhoFDM;
   double tr = 0.0;
-  for (const auto &[I, dimsub] : dm[N]) {
-    rhoFDM[I]     = Matrix(dimsub.max(), dimsub.max());
+  for (const auto &[I, ds] : dm[N]) {
+    rhoFDM[I]     = Matrix(ds.max(), ds.max());
     rhoFDM[I].clear();
     Matrix &rhoI = rhoFDM[I];
-    for (size_t i = dimsub.min(); i < dimsub.max(); i++) {
-      const double betaE = dimsub.absenergyN[i] / P.T;
+    for (size_t i = ds.min(); i < ds.max(); i++) {
+      const double betaE = ds.eig.absenergyN[i] / P.T;
       const double ratio = stats.wn[N] / stats.ZnDNd[N];
       double val2        = exp(-betaE) * ratio;
       val2               = std::isfinite(val2) ? val2 : 0.0;
@@ -343,9 +343,9 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   DensMatElements rhoDD;
   if (!step.last(N))
     rhoDD = init_rho_FDM(N, dm, stats, P);
-  for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
+  for (const auto &[I, ds] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = Sym->dmnrg_subspaces(I);
-    size_t dim          = dimsub.kept;
+    size_t dim          = ds.kept;
     rhoFDMPrev[I]       = Matrix(dim, dim);
     if (!dim) continue;
     rhoFDMPrev[I].clear();
