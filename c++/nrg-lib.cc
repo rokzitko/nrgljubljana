@@ -133,8 +133,6 @@ using Matrix = ublas::matrix<t_matel>;
 using MatrixElements = map<Twoinvar, Matrix>;
 using DensMatElements = map<Invar, Matrix>;
 
-using ThreeInvar = tuple<Invar, Invar, Invar>; // For 3-leg vertex functions
-
 // Dump matrix elements: one matrix
 void dump_matrix_elements(const Matrix &m, ostream &fout = cout,
                           const double chopsmall = 1e-8, const size_t maxdump = 10) {
@@ -260,7 +258,6 @@ struct Eigen : public RawEigen {
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
   EVEC absenergyN;     // absolute energies (referenced to the lowest energy in the N-th step)
-  EVEC boltzmann;      // Boltzmann factors
   // 'blocks' contains eigenvectors separated according to the invariant
   // subspace from which they originate. This separation is required for
   // using the efficient BLAS routines when performing recalculations of
@@ -311,7 +308,6 @@ private:
      ar &absenergy;
      ar &absenergyG;
      ar &absenergyN;
-     ar &boltzmann;
   }
 };
 
@@ -473,12 +469,9 @@ void subtract_groundstate_energy(const Stats &stats, DiagInfo &diag) {
   for (auto &[i, eig] : diag) eig.subtract_Egs(stats.Egs);
 }
 
-// The absenergyG[] values are shifted so that the ground state corresponds
-// to zero. This is required in the FDM approach for calculating the
-// spectral functions. This is different from subtract_groundstate_energy().
-// Called from do_diag() when diag is loaded from a stored file during
-// the second pass of the NRG iteration.
-// XXX: remove this. Use absenergyG in dm.
+// The absenergyG[] values are shifted so that the ground state corresponds to zero. This is required in the FDM
+// approach for calculating the spectral functions. This is different from subtract_groundstate_energy(). Called from
+// do_diag() when diag is loaded from a stored file during the second pass of the NRG iteration.
 void shift_abs_energies(const Stats &stats, DiagInfo &diag) {
   for (auto &[i, eig] : diag) eig.shift_absenergyG(stats.GS_energy);
 }
@@ -662,7 +655,6 @@ class ChainSpectrumTemp : public ChainSpectrum {
 };
 
 #include "matsubara.h"
-#include "matsubara2.h"
 
 class ChainSpectrumMatsubara : public ChainSpectrum {
   private:
@@ -674,18 +666,6 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
   void add(double energy, t_weight w) override { my_assert_not_reached(); }
   t_weight total_weight() const { return m.total_weight(); }
   friend class SpectrumMatsubara;
-};
-
-class ChainSpectrumMatsubara2 : public ChainSpectrum {
-  private:
-  Matsubara2 m;
-  public:
-  ChainSpectrumMatsubara2() = delete;
-  explicit ChainSpectrumMatsubara2(matstype _mt) : m(P.mats, _mt){};
-  void add(size_t i, size_t j, t_weight w) { m.add(i, j, w); }
-  void add(double energy, t_weight w) override { my_assert_not_reached(); }
-  t_weight total_weight() const { return m.total_weight(); }
-  friend class SpectrumMatsubara2;
 };
 
 // Object of class spectrum will contain everything that we know about a
@@ -761,32 +741,6 @@ SpectrumMatsubara::~SpectrumMatsubara() {
   results.save(Fd);
 }
 
-class SpectrumMatsubara2 : public Spectrum {
-  private:
-  Matsubara2 results;
-  public:
-  SpectrumMatsubara2(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
-     : Spectrum(_opname, _filename, _spectype), results(P.mats, _mt) {}
-  void merge(spCS_t, const Step &) override;
-  SpectrumMatsubara2(const SpectrumMatsubara2 &) = default;
-  SpectrumMatsubara2(SpectrumMatsubara2 &&) = default;
-  SpectrumMatsubara2 &operator=(const SpectrumMatsubara2 &) = default;
-  SpectrumMatsubara2 &operator=(SpectrumMatsubara2 &&) = default;
-  ~SpectrumMatsubara2() override;
-};
-
-void SpectrumMatsubara2::merge(spCS_t cs, const Step &) {
-  auto t = dynamic_pointer_cast<ChainSpectrumMatsubara2>(cs);
-  for (size_t m = 0; m < P.mats; m++)
-    for (size_t n = 0; n < P.mats; n++) results.v(m, n) += t->m.v(m, n);
-}
-
-SpectrumMatsubara2::~SpectrumMatsubara2() {
-  cout << "Spectrum: " << opname << " " << spectype->name() << endl;
-  ofstream Fd = safe_open(filename + ".dat");
-  results.save(Fd);
-}
-
 // This is mathematical trace, i.e. the sum of the diagonal elements.
 CONSTFNC double trace(const DensMatElements &m) {
   double tr = 0.0;
@@ -801,14 +755,13 @@ void check_trace_rho(const DensMatElements &m, double ref_value = 1.0) {
     throw std::runtime_error("check_trace_rho() failed");
 }
 
-enum class axis { RealFreq, Temp, Matsubara, Matsubara2 };
+enum class axis { RealFreq, Temp, Matsubara };
 
 string axisstring(axis a) {
   switch (a) {
     case axis::RealFreq: return "RealFreq";
     case axis::Temp: return "Temp";
     case axis::Matsubara: return "Matsubara";
-    case axis::Matsubara2: return "Matsubara,Matsubara";
     default: my_assert_not_reached();
   }
 }
@@ -862,7 +815,7 @@ class speclist {
   }
 };
 
-speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT, spectraV3;
+speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
 
 /**** CALCULATION OF SPECTRAL FUNCTIONS ****/
 
@@ -964,7 +917,6 @@ void open_files(speclist &sl, BaseSpectrum &spec, SPECTYPE spectype, axis a) {
     case axis::RealFreq: spec.spec = make_shared<SpectrumRealFreq>(spec.name, fn, spectype); break;
     case axis::Temp: spec.spec = make_shared<SpectrumTemp>(spec.name, fn, spectype); break;
     case axis::Matsubara: spec.spec = make_shared<SpectrumMatsubara>(spec.name, fn, spectype, spec.mt); break;
-    case axis::Matsubara2: spec.spec = make_shared<SpectrumMatsubara2>(spec.name, fn, spectype, spec.mt); break;
     default: my_assert_not_reached();
   }
   spec.spectype = spectype;
@@ -1010,11 +962,6 @@ void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec) {
     if (P.fdmls) open_files(sl, spec, make_shared<SPEC_FDMls>(), axis::RealFreq);
     if (P.fdmmats) open_files(sl, spec, make_shared<SPEC_FDMmats>(), axis::Matsubara);
   }
-}
-
-void open_files_spec3(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec) {
-  if (runtype == RUNTYPE::DMNRG && P.fdm && P.v3mm) // both options, fdm and v3mm
-    open_files(sl, spec, make_shared<SPEC_FDM_v3mm>(), axis::Matsubara2);
 }
 
 class Oprecalc {
@@ -1113,28 +1060,6 @@ class Oprecalc {
       }
     }
   }
-   
-  void loopover3(const RUNTYPE &runtype, 
-                 const CustomOp &set1, const CustomOp &set2, const CustomOp &set3,
-                 const string_token &stringtoken, speclist &spectra, const string &prefix, 
-                 set<string> &rec1, set<string> &rec2, set<string> &rec3, matstype mt) {
-    for (const auto &[name1, op1] : set1) {
-      for (const auto &[name2, op2] : set2) {
-        for (const auto &[name3, op3] : set3) {
-          if (const auto spname = name1 + "-" + name2 + "-" + name3; stringtoken.find(spname)) {
-            BaseSpectrum spec(op1, op2, op3);
-            spec.name   = spname;
-            spec.prefix = prefix;
-            spec.mt     = mt;
-            open_files_spec3(runtype, spectra, spec);
-            rec1.insert(name1);
-            rec2.insert(name2);
-            rec3.insert(name3);
-          }
-        }
-      }
-    }
-  }
 
   // Reset lists of operators which need to be iterated
   Oprecalc(const RUNTYPE &runtype, const IterInfo &a, const Params &P) {
@@ -1174,9 +1099,6 @@ class Oprecalc {
     // Spectral functions (quadruplet operators)
     string_token stq(P.specq);
     loopover(runtype, a.opq, a.opq, stq, spectraQ, "specq", q, q, matstype::fermionic);
-    // Vertex functions
-    string_token stv3(P.specv3);
-    loopover3(runtype, a.opd, a.opd, a.ops, stv3, spectraV3, "specv3", d, d, s, matstype::fb);
     report();
     cout << endl << "Computing the following spectra:" << endl;
     for (const auto &i : allspectra) i->about();
@@ -1196,7 +1118,7 @@ class Annotated {
    
    // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor)
    inline t_eigen scaled_energy(t_eigen e, const Step &step, const Stats &stats, bool scaled = true, bool absolute = false) {
-     return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0); // XXX stats.
+     return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0);
    }
    
    const Params &P;
@@ -1645,8 +1567,6 @@ void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements 
   for (auto &i : spectraGT)   calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
   for (auto &i : spectraI1T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
   for (auto &i : spectraI2T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
-  // no CheckSpinFnc!! One must use A_u_d, etc. objects for sym=QSZ.
-  for (auto &i : spectraV3)   calc_generic3(i, step, diag, SpecdensFactorFnc,                          rho, rhoFDM, stats);
 }
 
 void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
@@ -1698,9 +1618,8 @@ inline bool need_rho() { return P.cfs || P.dmnrg; }
 inline bool need_rhoFDM() { return P.fdm; }
 
 void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output, const DiagInfo &diag, const IterInfo &iterinfo, const AllSteps &dm, const Params &P) {
-  // Zft is used in the spectral function calculations using the
-  // conventional approach. We calculate it here, in order to avoid
-  // recalculations later on.
+  // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
+  // order to avoid recalculations later on.
   stats.Zft = calc_grand_canonical_Z(step, diag);
   if (string(P.specgt) != "" || string(P.speci1t) != "" || string(P.speci2t) != "")
     stats.Zgt = calc_grand_canonical_Z(step, diag, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
@@ -1708,13 +1627,13 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
     stats.Zchit = calc_grand_canonical_Z(step, diag, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
   DensMatElements rho, rhoFDM;
   if (step.dmnrg()) {
-      if (need_rho()) {
-        rho = loadRho(step.ndx(), FN_RHO, P);
-        if (P.checkrho)
-          check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
-      }
-      if (need_rhoFDM()) 
-        rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);
+    if (need_rho()) {
+      rho = loadRho(step.ndx(), FN_RHO, P);
+      if (P.checkrho)
+        check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
+    }
+    if (need_rhoFDM()) 
+      rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);
   }
   spectral_densities(step, diag, rho, rhoFDM, stats);
   if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, P);
@@ -2053,16 +1972,6 @@ void dump_f(const Opch &opch) {
   cout << endl;
 }
 
-// Used in evaluation of vertex functions to speed up the computation.
-void calc_boltzmann_factors(DiagInfo &diag) {
-  for (auto &[i, eig] : diag) {
-    const auto len = eig.absenergyG.size();
-    eig.boltzmann.resize(len);
-    for (size_t j = 0; j < len; j++) 
-      eig.boltzmann[j] = exp(-eig.absenergyG[j] / P.T);
-  }
-}
-
 // NRG diagonalisation driver: calls diagionalisations() or load_transformations(), as necessary, and performs
 // the truncation. All other calculations are done in after_diag(). Called from iterate().
 DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
@@ -2081,12 +1990,10 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
     }
     if (step.dmnrg()) {
       diag = load_transformations(step.ndx(), P); // read from disk in second run
-      // IMPORTANT: subtract the absolute (!) GS energy in the
-      // abs_energy vector. The overall (all shells, all invariant
-      // subspaces) lowest abs_energy will thus be equal to zero.
-      shift_abs_energies(stats, diag);
-      calc_boltzmann_factors(diag);
       if (P.removefiles) remove_transformation_files(step.ndx(), P);
+      // IMPORTANT: subtract the absolute (!) GS energy in the abs_energy vector. The overall (all shells, all
+      // invariant subspaces) lowest abs_energy will thus be equal to zero.
+      shift_abs_energies(stats, diag);
     }
     stats.find_groundstate(diag);
     if (step.nrg()) // should be done only once!
@@ -2220,9 +2127,8 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
     diag = diag0;
   if (step.dmnrg()) {
     diag = load_transformations(step.ndx(), P);
-    shift_abs_energies(stats, diag);
-    calc_boltzmann_factors(diag); // !!
     if (P.removefiles) remove_transformation_files(step.ndx(), P);
+    shift_abs_energies(stats, diag);
   }
   stats.find_groundstate(diag);
   if (step.nrg())      

@@ -238,10 +238,6 @@ struct Params {
   // If chitp_ratio>0, chitp=chitp_ratio/betabar.
   param<double> chitp_ratio{"chitp_ratio", "Determine p from betabar", "-999", all}; // *
 
-  // 3-point vertex functions
-  param<string> specv3{"specv3", "3-leg vertex functions to compute?", "", all};               // S
-  param<bool> v3mm{"v3mm", "Compute 3-leg vertex on matsubara/matsubara axis?", "false", all}; // S
-
   // **************
   // NRG algorithms
 
@@ -502,15 +498,10 @@ struct Params {
   param<bool> dump_f{"dump_f", "Dump <f> matrix elements", "false", all}; // N
 
   param<bool> dumpenergies{"dumpenergies", "Dump (all) energies to file?", "false", all};  // N
-  // OBSOLETE: param<size_t> logenumber{"logenumber", "# of eigenvalues to show for log=e", "10", all}; // N
 
   // stopafter=nrg, stops calculation after the first sweep
   // stopafter=rho, stops calculation after computing the density matrix
   param<string> stopafter{"stopafter", "Stop calculation at some point?", "", all}; // N
-
-  // For testing or for partial NRG calculations. If set to non-zero
-  // value, the calculation is stopped at chosen step.
-  // OBSOLETE: param<int> forcestop{"forcestop", "Stop iteration?", "-1", all}; // N
 
   // If set to false, the unitary transformation matrix and density
   // matrix files are kept after the calculation.

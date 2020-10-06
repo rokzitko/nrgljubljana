@@ -47,7 +47,7 @@ void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
   saveMatrix(oa, m.matrix);
   // Eigen
   oa << m.value_zero << m.nrpost << m.shift;
-  oa << m.absenergy << m.absenergyG << m.absenergyN << m.boltzmann;
+  oa << m.absenergy << m.absenergyG << m.absenergyN;
 }
 
 void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
@@ -56,7 +56,7 @@ void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
   loadMatrix(ia, m.matrix);
   // Eigen
   ia >> m.value_zero >> m.nrpost >> m.shift;
-  ia >> m.absenergy >> m.absenergyG >> m.absenergyN >> m.boltzmann;
+  ia >> m.absenergy >> m.absenergyG >> m.absenergyN;
 }
 #endif
 

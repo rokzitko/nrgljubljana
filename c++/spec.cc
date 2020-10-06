@@ -20,10 +20,8 @@ const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 #include "spec_FDM.cc"
 #include "spec_CFS.cc"
 
-// Calculate (finite temperature) spectral function 1/Pi Im << op1^\dag(t)
-// op2(0) >>. Required spin direction is determined by 'SPIN'. For SPIN=0
-// both spin direction are equivalent. For QSZ, we need to differentiate
-// the two.
+// Calculate (finite temperature) spectral function 1/Pi Im << op1^\dag(t) op2(0) >>. Required spin direction is
+// determined by 'SPIN'. For SPIN=0 both spin direction are equivalent. For QSZ, we need to differentiate the two.
 
 template <typename FactorFnc, typename CheckSpinFnc>
 void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, 
@@ -45,45 +43,6 @@ void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag
         const Matrix &op2II = bs.op2.at(II);
         if (logletter('G')) nrgdump2(Ij, Ii) << endl;
         bs.spectype->calc(step, diagi, diagj, op1II, op2II, bs, spinfactor, cs, Ii, Ij, rho_here, stats);
-      }
-    }
-  }
-  bs.spec->merge(cs, step);
-}
-
-template <typename FactorFnc> 
-void calc_generic3(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, 
-                   FactorFnc &factorfnc, const DensMatElements &rho, const DensMatElements &rhoFDM, const Stats &stats) {
-  nrglog('g', "calc_generic3() " << bs.fullname());
-  auto cs = bs.spectype->make_cs(bs);
-  const auto & rho_here = bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : rho;
-  for(const auto &[Ii, diagi]: diag) {
-    for(const auto &[Ij, diagj]: diag) {
-      for(const auto &[Il, diagl]: diag) {
-        const auto cji     = make_pair(Ij, Ii); // conj
-        const auto jl      = make_pair(Ij, Il);
-        const auto li      = make_pair(Il, Ii);
-        // A_ij x B_jl x C_li, A=op1, B=op2, C=op3
-        if (bs.op1.count(cji) && bs.op2.count(jl) && bs.op3.count(li)) {
-          if (logletter('G')) nrgdump3(Ii, Ij, Il) << endl;
-          const t_factor spinfactor = factorfnc(Ii, Ij);
-          my_assert(!num_equal(spinfactor, 0.0));       // bug trap
-          const Matrix &op1 = bs.op1.at(cji); // conj : A_ij=(a)_ij=(a+)_ji*
-          const Matrix &op2 = bs.op2.at(jl);  // B_jl=(b+)_jl
-          const Matrix &op3 = bs.op3.at(li);  // C_li=n_li
-          bs.spectype->calc_A(step, diagi, diagj, diagl, op1, op2, op3, bs, spinfactor, cs, Ii, Ij, Il, rho_here, stats);
-        }
-        const auto ij  = make_pair(Ii, Ij);
-        const auto clj = make_pair(Il, Ij); // conj
-        if (bs.op1.count(clj) && bs.op2.count(ij) && bs.op3.count(li)) {
-          if (logletter('G')) nrgdump3(Ii, Ij, Il) << endl;
-          const t_factor spinfactor = factorfnc(Ii, Ij);
-          my_assert(!num_equal(spinfactor, 0.0));        // bug trap
-          const Matrix &op1 = bs.op1.at(clj);  // conj : A_jl=(a)_jl=(a+)_lj*
-          const Matrix &op2 = bs.op2.at(ij);   // B_ij=(b+)_ij
-          const Matrix &op3 = bs.op3.at(li);   // C_li=n_li
-          bs.spectype->calc_B(step, diagi, diagj, diagl, op1, op2, op3, bs, spinfactor, cs, Ii, Ij, Il, rho_here, stats);
-        }
       }
     }
   }
