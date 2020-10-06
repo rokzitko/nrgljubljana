@@ -103,7 +103,7 @@ class Symmetry {
    
    double calculate_Z(const Invar I, const Eigen &eig, double rescale_factor) const {
      double sumZ = 0;
-     for (const auto &x : eig.value) sumZ += exp(-rescale_factor * x); // XXX std::accumulate
+     for (const auto &x : eig.value_zero) sumZ += exp(-rescale_factor * x); // XXX std::accumulate
      return mult(I) * sumZ;
    }
    

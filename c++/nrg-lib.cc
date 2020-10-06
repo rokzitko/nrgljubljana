@@ -1211,7 +1211,7 @@ class Annotated {
      }
      std::vector<pair<t_eigen, Invar>> seznam;
      for (const auto &[I, eig] : diag)
-       for (const auto e : eig.value) 
+       for (const auto e : eig.value_zero)
          seznam.emplace_back(e, I);
      sort(begin(seznam), end(seznam));
      size_t len = std::min<size_t>(seznam.size(), P.dumpannotated);
@@ -1279,7 +1279,7 @@ struct Output {
     Fenergies << endl << "===== Iteration number: " << N << endl;
     for (const auto &[i, eig]: diag) {
       Fenergies << "Subspace: " << i << std::endl;
-      for (const auto &x : eig.value) 
+      for (const auto &x : eig.value_zero)
         Fenergies << x << ' ';
       Fenergies << std::endl;
     }
@@ -1671,7 +1671,7 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
   bucket Z, E, E2; // Statistical sum, Tr[beta H], Tr[(beta H)^2]
   for (const auto &[i, eig] : diag) {
     bucket sumZ, sumE, sumE2;
-    for (const auto &x : eig.value) {
+    for (const auto &x : eig.value_zero) {
       const double betaE = rescale_factor * x;
       const double expo  = exp(-betaE);
       sumE += betaE * expo;
@@ -1691,7 +1691,7 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
   stats.td.F  =  stats.F = -log(Z);                // F/(k_B T)=-ln(Z)
   stats.td.S  = stats.S = stats.E - stats.F;       // S/k_B=beta<H>+ln(Z)
   Sym->calculate_TD(step, diag, stats, rescale_factor);  // symmetry-specific calculation routine
-  if (step.nrg()) stats.td.save_values();
+  if (step.nrg()) stats.td.save_values(); // XXX: move if to perform_measurements()
 }
 
 inline bool need_rho() { return P.cfs || P.dmnrg; }
@@ -1725,6 +1725,7 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
 void perform_measurements(const Step &step, const DiagInfo &diag, Stats &stats, Output &output) {
+  output.dump_all_energies(diag, step.ndx());
   calculate_TD(step, diag, stats, output);
   output.annotated.dump(step, diag, stats);
 }
@@ -2156,7 +2157,6 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
     calc_abs_energies(step, diag, stats); // XXX: after Egs subtraction
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
-  output.dump_all_energies(diag, step.ndx());
   perform_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
@@ -2208,7 +2208,6 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
   perform_measurements(step, diag0, stats, output);
   AllSteps empty_dm{};
   calculate_spectral_and_expv(step, stats, output, diag0, iterinfo, empty_dm, P);
-  output.dump_all_energies(diag0, step.ndx());
   if (P.checksumrules) operator_sumrules(diag0, iterinfo);
 }
 
