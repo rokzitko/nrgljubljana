@@ -7,20 +7,18 @@ struct Recalc_f {
   t_factor factor;
 };
 
-// Recalculates irreducible matrix elements <I1|| f || Ip>. Called
-// from recalc_irreduc() in nrg-recalc-* files.
-void recalc_f(const DiagInfo &diag, 
-              const QSrmax &qsrmax, 
-              MatrixElements &ff, 
-              const Invar &I1,
-              const Invar &Ip, 
-              const struct Recalc_f table[], 
-              const size_t jmax, 
-              const Invar If = Sym->Invar_f) {
+// Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
+Matrix recalc_f(const DiagInfo &diag, 
+                const QSrmax &qsrmax, 
+                const Invar &I1,
+                const Invar &Ip, 
+                const struct Recalc_f table[], 
+                const size_t jmax, 
+                const Invar If = Sym->Invar_f) {
   nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ") If=(" << If << ")");
   if (!Sym->recalc_f_coupled(I1, Ip, If)) {
     nrglog('f', "Does not fulfill the triangle inequalities.");
-    return;
+    return Matrix(0,0);
   }
   const Eigen &diagI1 = diag.at(I1);
   const Eigen &diagIp = diag.at(Ip);
@@ -28,27 +26,28 @@ void recalc_f(const DiagInfo &diag,
   const size_t dim1 = diagI1.getnr();
   const size_t dimp = diagIp.getnr();
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
-  if (dim1 == 0 || dimp == 0) return; // truncated away! ff[II] is not created!
   const Twoinvar II = make_pair(I1, Ip);
-  ff[II]            = Matrix(dim1, dimp); // new matrix of irreducible matrix elements
-  Matrix &f         = ff[II];
+  Matrix f = Matrix(dim1, dimp);
   f.clear(); // Set it to all zeros.
-  // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
-  for (size_t j = 0; j < jmax; j++) {
-    // rmax1, rmaxp are the dimensions of the invariant subspaces
-    const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
-    const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
-    if (!(rmax1 > 0 && rmaxp > 0)) continue;
-    if (logletter('f'))
-      nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
-    my_assert(my_isfinite(table[j].factor) && rmax1 == rmaxp);
-    const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
-    const Matrix &Up = diagIp.blocks[table[j].ip - 1];
-    my_assert(U1.size1() == dim1 && Up.size1() == dimp && U1.size2() == Up.size2());
-    my_assert(rmax1 == U1.size2() && rmaxp == Up.size2());
-    atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(table[j].factor), U1, Up, t_factor(1.0), f);
-  } // loop over j
+  if (dim1 && dimp) {
+    // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
+    for (size_t j = 0; j < jmax; j++) {
+      // rmax1, rmaxp are the dimensions of the invariant subspaces
+      const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
+      const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
+      if (!(rmax1 > 0 && rmaxp > 0)) continue;
+      if (logletter('f'))
+        nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
+      my_assert(my_isfinite(table[j].factor) && rmax1 == rmaxp);
+      const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
+      const Matrix &Up = diagIp.blocks[table[j].ip - 1];
+      my_assert(U1.size1() == dim1 && Up.size1() == dimp && U1.size2() == Up.size2());
+      my_assert(rmax1 == U1.size2() && rmaxp == Up.size2());
+      atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(table[j].factor), U1, Up, t_factor(1.0), f);
+    } // loop over j
+  }
   if (logletter('F')) dump_matrix(f);
+  return f;
 }
 
 // Structure which holds subspace information and factor for each

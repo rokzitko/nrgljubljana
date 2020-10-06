@@ -139,7 +139,7 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "qj/qj-spin_j3_2-jz3_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jz3_2);
-    recalc_f(diag, qsrmax, opch[1][0], I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz3_2);
+    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz3_2);
   }
 };
 
@@ -151,7 +151,7 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "qj/qj-spin_j1_2-jz1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j1_2_jz1_2);
-    recalc_f(diag, qsrmax, opch[0][0], I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j1_2_jz1_2);
+    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j1_2_jz1_2);
   }
 };
     {
@@ -161,7 +161,7 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "qj/qj-spin_j3_2-jz1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jz1_2);
-    recalc_f(diag, qsrmax, opch[1][0], I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz1_2);
+    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j3_2_jz1_2);
   }
 };
 
@@ -173,7 +173,7 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "qj/qj-spin_j1_2-jz-1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j1_2_jzM1_2);
-    recalc_f(diag, qsrmax, opch[0][0], I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j1_2_jzM1_2);
+    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j1_2_jzM1_2);
   }
 };
     {
@@ -183,7 +183,7 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "qj/qj-spin_j3_2-jz-1_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jzM1_2);
-    recalc_f(diag, qsrmax, opch[1][0], I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM1_2);
+    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM1_2);
   }
 };
 
@@ -195,7 +195,7 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "qj/qj-spin_j3_2-jz-3_2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_I_3CH_j3_2_jzM3_2);
-    recalc_f(diag, qsrmax, opch[1][0], I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM3_2);
+    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QJ::LENGTH_I_3CH_j3_2_jzM3_2);
   }
 };
   }
