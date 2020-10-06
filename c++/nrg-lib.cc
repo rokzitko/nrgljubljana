@@ -607,11 +607,9 @@ void formatted_output(ostream &F, cmpl val, const Params &P) {
 
 #include "bins.h"
 
-/* Object of class 'ChainSpectrum' will contain information about the
- spectral density calculated at a given stage of the NRG run, i.e. for a
- finite Wilson chain.  We then merge it in an object of class 'Spectrum'
- which holds the spectral information for the entire run (i.e. the physical
- spectral density). */
+// Object of class 'ChainSpectrum' will contain information about the spectral density calculated at a given stage of
+// the NRG run, i.e. for a finite Wilson chain.  We then merge it in an object of class 'Spectrum' which holds the
+// spectral information for the entire run (i.e. the physical spectral density).
 
 class ChainSpectrum {
   public:
@@ -808,8 +806,6 @@ class speclist {
 };
 
 speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
-
-/**** CALCULATION OF SPECTRAL FUNCTIONS ****/
 
 using IIfnc = std::function<t_factor(const Invar &, const Invar &)>;
 
@@ -1311,8 +1307,6 @@ DensMatElements init_rho(const Step &step, const DiagInfo &diag) {
   return rho;
 }
 
-/*** Truncation ***/
-
 // Determine the number of states to be retained.
 // Returns Emax - the highest energy to still be retained.
 t_eigen highest_retained_energy(const DiagInfo &diag) {
@@ -1509,11 +1503,9 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
   return nnew;
 }
 
-/* We trim the matrices containing the irreducible matrix elements of the
- operators to the sizes that are actually required in the next iterations.
- This saves memory and leads to better cache usage in recalc_general()
- recalculations. Note: this is only needed for strategy=all; copying is
- avoided for strategy=kept. */
+// We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
+// required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
+// recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.
 void trim_matel(DiagInfo &diag, MatrixElements &op) {
   for (auto &[II, mat] : op) {
     const auto &[I1, I2] = II;
@@ -1650,8 +1642,8 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
 
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
-void perform_measurements(const Step &step, const DiagInfo &diag, Stats &stats, Output &output) {
-  output.dump_all_energies(diag, step.ndx());
+void perform_basic_measurements(const Step &step, const DiagInfo &diag, Stats &stats, Output &output) {
+  output.dump_all_energies(diag, step.ndx()); // XXX
   if (step.nrg()) calculate_TD(step, diag, stats, output);
   if (step.nrg()) output.annotated.dump(step, diag, stats);
 }
@@ -1676,10 +1668,9 @@ auto make_subspaces_list(const DiagInfo &diagprev) {
   return subspaces;
 }
 
-/* Define recalculation strategy
- all: Recalculate using all vectors
- kept: Recalculate using vectors kept after truncation
- VERY IMPORTANT: Override in the case of CFS (in the second run) */
+// Define recalculation strategy
+// all: Recalculate using all vectors
+// kept: Recalculate using vectors kept after truncation
 bool do_recalc_kept(const Step &step, const Params &P) { return string(P.strategy) == "kept" && !(P.cfs_flags() && step.dmnrg()) && !P.ZBW; }
 bool do_recalc_all(const Step &step, const Params &P) { return !do_recalc_kept(step, P) && !P.ZBW; }
 bool do_no_recalc(const Step &step, const Params &P) { return P.ZBW; }
@@ -1745,8 +1736,7 @@ void check_status(mpi::status status) {
   }
 }
 
-// NOTE: MPI is limited to message size of 2GB (or 4GB). For big
-// problems we thus need to send objects line by line.
+// NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
 
 //#define MPI_WHOLEMATRIX
 #define MPI_LINEBYLINE
@@ -2034,11 +2024,9 @@ void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
 
 void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, AllSteps &dm)
 {
-  for (const auto &[I, eig]: diag) { // XXX - there should be only 1 copy
+  for (const auto &[I, eig]: diag) {
     const auto f = qsrmax.find(I);
-    dm[step.ndx()][I] = { eig.getnr(), eig.getdim(),
-                          f != qsrmax.cend() ? f->second : Rmaxvals{},
-                          eig, step.last() };
+    dm[step.ndx()][I] = { eig.getnr(), eig.getdim(), f != qsrmax.cend() ? f->second : Rmaxvals{}, eig, step.last() };
   }
   truncate_stats ts(diag);
   double ratio = double(ts.nrkept) / ts.nrall;
@@ -2057,7 +2045,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
     calc_abs_energies(step, diag, stats);
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
-  perform_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
+  perform_basic_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
   if (do_recalc_all(step, P)) { // Either ...
@@ -2105,7 +2093,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   cout << endl << "Before NRG iteration";
   cout << " (N=" << step.N() << ")" << endl;
-  perform_measurements(step, diag0, stats, output);
+  perform_basic_measurements(step, diag0, stats, output); // XXX
   AllSteps empty_dm{};
   calculate_spectral_and_expv(step, stats, output, diag0, iterinfo, empty_dm, P);
   if (P.checksumrules) operator_sumrules(diag0, iterinfo);
@@ -2141,7 +2129,7 @@ DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &
   DiagInfo diag = diag0;
   for (step.init(); !step.end(); step++)
     diag = iterate(step, iterinfo, stats, diag, output, dm, oprecalc, P);
-  step.set(step.lastndx()); // TO DO: remove this, after step is no longer global...
+  step.set(step.lastndx()); // XXX: remove this, after step is no longer global...
   return diag;
 }
 
@@ -2195,12 +2183,10 @@ DiagInfo run_nrg(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
   DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, P) : nrg_loop(step, iterinfo, stats, diag0, output, dm, oprecalc, P);
   cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
   stats.GS_energy = stats.total_energy;
-  if (P.dumpsubspaces) dump_subspaces(dm, P);
+  if (P.dumpsubspaces) dump_subspaces(dm, P); // XXX: only once
   cout << endl << "** Iteration completed." << endl << endl;
   return diag;
 }
-
-/************************ MAIN ****************************************/
 
 void print_about_message(ostream &s) {
   s << "NRG Ljubljana - (c) rok.zitko@ijs.si" << endl;
@@ -2213,12 +2199,36 @@ std::unique_ptr<Symmetry> get(std::string sym_string, const Params &P, Allfields
   if (sym_string == "QS")     return std::make_unique<SymmetryQS>(P, allfields);
   if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ>(P, allfields);  
 #ifdef NRG_SYM_MORE
-  if (sym_string == "SPSU2")  return std::make_unique<SymmetrySPSU2>(P, allfields);
-  if (sym_string == "SPU1")   return std::make_unique<SymmetrySPU1>(P, allfields);
   if (sym_string == "ISO")    return std::make_unique<SymmetryISO>(P, allfields);
   if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2>(P, allfields);
   if (sym_string == "ISOSZ")  return std::make_unique<SymmetryISOSZ>(P, allfields);
+  if (sym_string == "SPSU2")  return std::make_unique<SymmetrySPSU2>(P, allfields);
+  if (sym_string == "SPU1")   return std::make_unique<SymmetrySPU1>(P, allfields);
 #endif
+#ifdef NRG_SYM_ALL
+  if (sym_string == "DBLISOSZ")  return std::make_unique<SymmetryDBLISOSZ>(P, allfields);
+  if (sym_string == "DBLSU2")    return std::make_unique<SymmetryDBLSU2>(P, allfields);
+  if (sym_string == "ISOLR")     return std::make_unique<SymmetryISOLR>(P, allfields);
+  if (sym_string == "ISO2LR")    return std::make_unique<SymmetryISO2LR>(P, allfields);
+  if (sym_string == "ISOSZLR")   return std::make_unique<SymmetryISOSZLR>(P, allfields);
+  if (sym_string == "NONE")      return std::make_unique<SymmetryNONE>(P, allfields);
+  if (sym_string == "P")         return std::make_unique<SymmetryP>(P, allfields);
+  if (sym_string == "PP")        return std::make_unique<SymmetryPP>(P, allfields);
+  if (sym_string == "QJ")        return std::make_unique<SymmetryQJ>(P, allfields);
+  if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3>(P, allfields);
+  if (sym_string == "QSLR")      return std::make_unique<SymmetryQSLR>(P, allfields); 
+  if (sym_string == "QST")       return std::make_unique<SymmetryQST>(P, allfields);
+  if (sym_string == "QSTZ")      return std::make_unique<SymmetryQSTZ>(P, allfields);
+  if (sym_string == "QSZTZ")     return std::make_unique<SymmetryQSZTZ>(P, allfields);
+  if (sym_string == "SL")        return std::make_unique<SymmetrySL>(P, allfields);
+  if (sym_string == "SL3")       return std::make_unique<SymmetrySL3>(P, allfields);
+  if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3>(P, allfields);
+  if (sym_string == "SPSU2LR")   return std::make_unique<SymmetrySPSU2LR>(P, allfields);
+  if (sym_string == "SPSU2T")    return std::make_unique<SymmetrySPSU2T>(P, allfields);
+  if (sym_string == "SPU1LR")    return std::make_unique<SymmetrySPU1LR>(P, allfields);
+  if (sym_string == "SU2")       return std::make_unique<SymmetrySU2>(P, allfields);
+  if (sym_string == "U1")        return std::make_unique<SymmetryU1>(P, allfields);
+#endif 
   throw std::runtime_error("Unknown symmetry " + sym_string);
 }
 
