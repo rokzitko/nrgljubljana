@@ -5,3 +5,5 @@ build.*
 build_*
 run_tests*
 *.pyc
+nrg
+TODO*
