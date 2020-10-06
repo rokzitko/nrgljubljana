@@ -286,6 +286,7 @@ struct Eigen : public RawEigen {
   // represent the spectral decomposition in the eigenbasis itself.
   void diagonal(const EVEC &v) {
     value    = v;
+    value_orig = v; // XXXX
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
     shift    = 0.0;
   }
