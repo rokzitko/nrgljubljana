@@ -2116,13 +2116,13 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
 // shift_abs_energies(diag).
 void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
   for (auto &[i, eig] : diag) {
-    eig.absenergy = eig.value;
+    eig.absenergy = eig.value_zero;
     for (auto &x : eig.absenergy) 
       x = x * step.scale() + stats.total_energy;
-    eig.absenergyG = eig.value;
+    eig.absenergyG = eig.value_zero;
     for (auto &x : eig.absenergyG) 
       x = x * step.scale() + stats.total_energy;
-    eig.absenergyN = eig.value; // unscaled energies, referenced to the lowest energy in current NRG step (not modified later on)
+    eig.absenergyN = eig.value_zero; // unscaled energies, referenced to the lowest energy in current NRG step (not modified later on)
     for (auto &x : eig.absenergyN) 
       x *= step.scale();
   }
