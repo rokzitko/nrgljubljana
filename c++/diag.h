@@ -41,7 +41,6 @@ template<typename T, typename U> Eigen copy_results(T* eigenvalues, U* eigenvect
   if (jobz == 'V')
     copy(eigenvectors, d.matrix, dim, M);
   my_assert(d.value_orig.size() == d.matrix.size1());
-//  d.value = d.value_orig; // XXX
   return d;
 }
 

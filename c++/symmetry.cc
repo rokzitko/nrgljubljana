@@ -81,7 +81,7 @@ class Symmetry {
    Invar InvarSinglet; // QNs for singlet operator
    Invar Invar_f;      // QNs for f operator
    
-   size_t get_combs() const { return P.combs; } // XXX -> combs()
+   size_t get_combs() const { return P.combs; } // XXX -> combs
    
    // For some symmetry types with two-channels we distinguish between
    // even and odd parity with respect to the channel-interchange

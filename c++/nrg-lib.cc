@@ -233,14 +233,13 @@ using DimSub = DimSubGen<t_eigen>;
 using Subs = map<Invar, DimSub>;
 using AllSteps = std::vector<Subs>;
 
-// NOTE: "absolute" energy means that it is expressed in the absolute energy scale, not relative to SCALE(N). It is a statement
-// about scaling, not about possible linear shifts/offsets.
+// NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N). It is a
+// statement about scaling, not about possible linear shifts/offsets.
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
 struct RawEigen {
   using EVEC = ublas::vector<t_eigen>;
-//  EVEC value;    // eigenvalues
-  EVEC value_orig;     // as computed XXX
+  EVEC value_orig;     // eigenvalues as computed
   Matrix matrix; // eigenvectors
   RawEigen() {}
   RawEigen(size_t nr, size_t dim) {
@@ -255,7 +254,7 @@ struct RawEigen {
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
 struct Eigen : public RawEigen {
   EVEC value_zero;     // Egs subtracted
-  size_t getnr() const  { return value_zero.size(); } // XXX: value_zero ??
+  size_t getnr() const  { return value_zero.size(); }
   size_t nrpost = 0;   // number of eigenpairs after truncation
   double shift  = 0.0; // shift of eigenvalues (0 or Egs)
   EVEC absenergy;      // absolute energies
@@ -281,15 +280,12 @@ struct Eigen : public RawEigen {
       my_assert(nrpost <= i.size1());
       i.resize(nrpost, i.size2());
     }
-//    value.resize(nrpost); // XXX
     value_zero.resize(nrpost);
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
   void diagonal(const EVEC &v) {
-//    value    = v;
-    value_orig = v; // XXXX
-    value_zero = v; // XXXX
+    value_orig = value_zero = v;
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
     shift    = 0.0;
   }
@@ -299,7 +295,6 @@ struct Eigen : public RawEigen {
     for (auto &x : value_zero) x -= Egs;
     shift = Egs;
     my_assert(value_zero[0] >= 0.0);
-//    value = value_zero; // XXX
   }
   void shift_absenergyG(double GS_energy) {
     for (auto &x : absenergyG) x -= GS_energy;
@@ -415,7 +410,6 @@ class Stats {
      for (const auto &[i, eig]: diag) {
        my_assert(eig.value_orig.size() > 0);
        t_eigen Emin = eig.value_orig(0); // Eigenvalues are sorted
-// XXX       Emin += eig.shift;           // if something was subtracted, we add it back
        if (Emin < Egs) {
          Egs    = Emin;
          ground = i;
@@ -1211,7 +1205,6 @@ class Annotated {
    Annotated(const Params &P_) : P(P_) {}
    
    void dump(const Step &step, const DiagInfo &diag, const Stats &stats) {
-     if (!step.nrg()) return;               // only in the first NRG sweep
      if (P.dumpannotated && !F.is_open()) { // open output file
        F.open(FN_ANNOTATED);
        F << setprecision(P.dumpprecision);
@@ -1698,7 +1691,7 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
   stats.td.F  =  stats.F = -log(Z);                // F/(k_B T)=-ln(Z)
   stats.td.S  = stats.S = stats.E - stats.F;       // S/k_B=beta<H>+ln(Z)
   Sym->calculate_TD(step, diag, stats, rescale_factor);  // symmetry-specific calculation routine
-  if (step.nrg()) stats.td.save_values(); // XXX: move if to perform_measurements()
+  stats.td.save_values();
 }
 
 inline bool need_rho() { return P.cfs || P.dmnrg; }
@@ -1733,8 +1726,8 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
 // step.
 void perform_measurements(const Step &step, const DiagInfo &diag, Stats &stats, Output &output) {
   output.dump_all_energies(diag, step.ndx());
-  calculate_TD(step, diag, stats, output);
-  output.annotated.dump(step, diag, stats);
+  if (step.nrg()) calculate_TD(step, diag, stats, output);
+  if (step.nrg()) output.annotated.dump(step, diag, stats);
 }
 
 // Make a list of subspaces for the new iteration. Generic implementation: use the quantum number differences in
@@ -1898,8 +1891,7 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   Eigen eigmock; // empty Eigen
   mpiw->send(dest, TAG_EIGEN, eigmock);
   nrglog('M', "Sending eigen from " << mpiw->rank() << " to " << dest);
-//  mpiw->send(dest, TAG_EIGEN_VEC, eig.value);
-  mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig); // XXX
+  mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig);
   mpi_send_matrix_linebyline(dest, eig.matrix);
 }
 
@@ -1908,8 +1900,7 @@ auto mpi_receive_eigen_linebyline(int source) {
   Eigen eigmock;
   check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
   Eigen eig;
-//  check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value));
-  check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value_orig)); // XXX
+  check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value_orig));
   eig.matrix = mpi_receive_matrix_linebyline(source);
   return eig;
 }
@@ -2161,7 +2152,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
   stats.energy_offsets[step.ndx()] = stats.total_energy;
   if (step.nrg()) 
-    calc_abs_energies(step, diag, stats); // XXX: after Egs subtraction
+    calc_abs_energies(step, diag, stats);
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
   perform_measurements(step, diag, stats, output); // Measurements are performed before the truncation!

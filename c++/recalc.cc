@@ -100,7 +100,7 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
 }
 
 void split_in_blocks(DiagInfo &diag, const QSrmax &qsrmax) {
-  for(auto &[I, eig]: diag) // XXX: ranges::for_each in C++20
+  for(auto &[I, eig]: diag)
     split_in_blocks_Eigen(I, eig, qsrmax);
 }
 
@@ -123,11 +123,6 @@ void recalc_general(const DiagInfo &diag,
     cout << "recalc_general: ";
     nrgdump3(I1, Ip, Iop) << endl;
   }
-  // SYMMETRY CHECK. Important: If we return at this point, (I1, Ip)
-  // combination of subspaces is not created in the matrix "cnew". If
-  // triangle_inequality() malfunctions, this will trigger errors in
-  // calc_trace_singlet().
-// XXX  if (!Sym->triangle_inequality(I1, Ip, Iop)) return;
   const Eigen &diagI1 = diag.at(I1);
   const Eigen &diagIp = diag.at(Ip);
   const size_t dim1 = diagI1.getnr();

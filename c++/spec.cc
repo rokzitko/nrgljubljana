@@ -77,7 +77,7 @@ void calc_generic3(const BaseSpectrum &bs, const Step &step, const DiagInfo &dia
         const auto clj = make_pair(Il, Ij); // conj
         if (bs.op1.count(clj) && bs.op2.count(ij) && bs.op3.count(li)) {
           if (logletter('G')) nrgdump3(Ii, Ij, Il) << endl;
-          const t_factor spinfactor = factorfnc(Ii, Ij); // XXX
+          const t_factor spinfactor = factorfnc(Ii, Ij);
           my_assert(!num_equal(spinfactor, 0.0));        // bug trap
           const Matrix &op1 = bs.op1.at(clj);  // conj : A_jl=(a)_jl=(a+)_lj*
           const Matrix &op2 = bs.op2.at(ij);   // B_ij=(b+)_ij

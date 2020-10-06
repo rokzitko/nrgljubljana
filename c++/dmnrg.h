@@ -43,7 +43,6 @@ void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m) {
 
 void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
   // RawEigen
-//  oa << m.value << m.value_orig; // XXX
   oa << m.value_orig;
   saveMatrix(oa, m.matrix);
   // Eigen
@@ -53,7 +52,6 @@ void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
 
 void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
   // RawEigen
-//  ia >> m.value >> m.value_orig; // XXX
   ia >> m.value_orig;
   loadMatrix(ia, m.matrix);
   // Eigen
