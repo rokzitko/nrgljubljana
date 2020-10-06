@@ -174,4 +174,9 @@ void initInvar(const InvarStructure *structure, size_t len) {
   }
 }
 
+using InvarVec = std::vector<Invar>; // holds information about ancestor subspaces
+using Twoinvar = pair<Invar, Invar>; // labels subspace bra and subspace ket for matrix elements
+
+ostream &operator<<(ostream &os, const Twoinvar &p) { return os << "(" << p.first << ") (" << p.second << ")"; }
+
 #endif // _nrg_invar_

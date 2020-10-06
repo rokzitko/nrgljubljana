@@ -130,9 +130,6 @@ using Matrix = ublas::matrix<t_matel>;
 
 #include "numerics.h"
 
-using InvarVec = std::vector<Invar>; // vector of Invars
-
-using Twoinvar = pair<Invar, Invar>;
 using MatrixElements = map<Twoinvar, Matrix>;
 using DensMatElements = map<Invar, Matrix>;
 
@@ -243,6 +240,7 @@ using AllSteps = std::vector<Subs>;
 struct RawEigen {
   using EVEC = ublas::vector<t_eigen>;
   EVEC value;    // eigenvalues
+  EVEC value_orig;     // as computed XXX
   Matrix matrix; // eigenvectors
   RawEigen() {}
   RawEigen(size_t nr, size_t dim) {
@@ -256,7 +254,6 @@ struct RawEigen {
   
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
 struct Eigen : public RawEigen {
-  EVEC value_orig;     // as computed
   EVEC value_zero;     // Egs subtracted
   size_t nrpost = 0;   // number of eigenpairs after truncation
   double shift  = 0.0; // shift of eigenvalues (0 or Egs)
@@ -294,8 +291,7 @@ struct Eigen : public RawEigen {
   }
   void subtract_Egs(double Egs) {
     my_assert(shift == 0.0);
-    value_orig = value;
-    value_zero = value;
+    value_zero = value_orig;
     for (auto &x : value_zero) x -= Egs;
     shift = Egs;
     my_assert(value_zero[0] >= 0.0);
@@ -315,11 +311,6 @@ private:
      ar &absenergyN;
   }
 };
-
-// TO DO: derived class from Eigen, which contains results in addition to raw eigenvalues/eigenvectors
-// e.g. absenergy, etc. belong here
-
-ostream &operator<<(ostream &os, const Twoinvar &p) { return os << "(" << p.first << ") (" << p.second << ")"; }
 
 template <typename T> ostream &operator<<(ostream &os, const ublas::vector<T> &v) {
   for (const auto &x : v) os << x << ' ';
@@ -1899,6 +1890,7 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   mpiw->send(dest, TAG_EIGEN, eigmock);
   nrglog('M', "Sending eigen from " << mpiw->rank() << " to " << dest);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value);
+  mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig); // XXX
   mpi_send_matrix_linebyline(dest, eig.matrix);
 }
 
@@ -1908,6 +1900,7 @@ auto mpi_receive_eigen_linebyline(int source) {
   check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
   Eigen eig;
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value));
+  check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value_orig)); // XXX
   eig.matrix = mpi_receive_matrix_linebyline(source);
   return eig;
 }
