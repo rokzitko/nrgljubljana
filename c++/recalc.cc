@@ -12,7 +12,8 @@ struct Recalc_f {
 void recalc_f(const DiagInfo &diag, 
               const QSrmax &qsrmax, 
               MatrixElements &ff, 
-              const Invar &Ip, const Invar &I1, 
+              const Invar &I1,
+              const Invar &Ip, 
               const struct Recalc_f table[], 
               const size_t jmax, 
               const Invar If = Sym->Invar_f) {

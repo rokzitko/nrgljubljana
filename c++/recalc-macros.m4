@@ -20,7 +20,7 @@ define(`RECALC_F_TAB', {
 #include $1
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $3);
-    recalc_f(diag, qsrmax, opch[$2][0], Ip, I1, recalc_table, $3);
+    recalc_f(diag, qsrmax, opch[$2][0], I1, Ip, recalc_table, $3);
   }
 })
 

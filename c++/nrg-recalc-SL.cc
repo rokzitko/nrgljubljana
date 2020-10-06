@@ -84,7 +84,7 @@ Opch SymmetrySL::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "sl/sl-1ch-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_1CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_1CH);
+    recalc_f(diag, qsrmax, opch[0][0], I1, Ip, recalc_table, SL::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -94,7 +94,7 @@ Opch SymmetrySL::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "sl/sl-2ch-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[0][0], I1, Ip, recalc_table, SL::LENGTH_I_2CH);
   }
 }; {
   nrglog('f', "RECALC_F(fn=" << "sl/sl-2ch-b.dat" << ", ch=" << 1 << ", len=" << SL::LENGTH_I_2CH << ")");
@@ -103,7 +103,7 @@ Opch SymmetrySL::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "sl/sl-2ch-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_2CH);
+    recalc_f(diag, qsrmax, opch[1][0], I1, Ip, recalc_table, SL::LENGTH_I_2CH);
   }
 } } break;
   case 3: { {
@@ -113,7 +113,7 @@ Opch SymmetrySL::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "sl/sl-3ch-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
+    recalc_f(diag, qsrmax, opch[0][0], I1, Ip, recalc_table, SL::LENGTH_I_3CH);
   }
 }; {
   nrglog('f', "RECALC_F(fn=" << "sl/sl-3ch-b.dat" << ", ch=" << 1 << ", len=" << SL::LENGTH_I_3CH << ")");
@@ -122,7 +122,7 @@ Opch SymmetrySL::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "sl/sl-3ch-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
-    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
+    recalc_f(diag, qsrmax, opch[1][0], I1, Ip, recalc_table, SL::LENGTH_I_3CH);
   }
 };
           {
@@ -132,7 +132,7 @@ Opch SymmetrySL::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "sl/sl-3ch-c.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_I_3CH);
-    recalc_f(diag, qsrmax, opch[2][0], Ip, I1, recalc_table, SL::LENGTH_I_3CH);
+    recalc_f(diag, qsrmax, opch[2][0], I1, Ip, recalc_table, SL::LENGTH_I_3CH);
   }
 }  } break;
   default: my_assert_not_reached();
