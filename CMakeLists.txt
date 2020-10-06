@@ -234,6 +234,9 @@ if(BUILD_COMPLEX)
   message(STATUS "Building the complex-number version of the code")
 endif()
 
+# Test suites
+option(TEST_LONG "Enable tests with long runtime" OFF)
+
 # Dynamic Analyzer Checks
 
 option(ASAN  "Compile library and executables with LLVM Address Sanitizer" OFF)

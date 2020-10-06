@@ -15,6 +15,10 @@ if(Mathematica_FOUND)
   add_subdirectory(nrginit)
 endif()
 
-if(BUILD_COMPLEX AND SYM_MORE)
+if(BUILD_COMPLEX AND SYM_ALL)
   add_subdirectory(complex)
+endif()
+
+if(TEST_LONG AND BUILD_COMPLEX AND SYM_ALL)
+  add_subdirectory(long)
 endif()
