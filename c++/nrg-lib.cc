@@ -405,9 +405,9 @@ class Stats {
    void find_groundstate(const DiagInfo &diag) {
      Egs = DBL_MAX;
      for (const auto &[i, eig]: diag) {
-       my_assert(eig.value.size() > 0);
-       t_eigen Emin = eig.value(0); // Eigenvalues are sorted
-       Emin += eig.shift;           // if something was subtracted, we add it back
+       my_assert(eig.value_orig.size() > 0);
+       t_eigen Emin = eig.value_orig(0); // Eigenvalues are sorted
+// XXX       Emin += eig.shift;           // if something was subtracted, we add it back
        if (Emin < Egs) {
          Egs    = Emin;
          ground = i;
@@ -893,7 +893,7 @@ double norm(const MatrixElements &m, const DiagInfo &diag, IIfnc factor_fnc, int
 std::vector<t_eigen> sort_energies(const DiagInfo &diag) {
   std::vector<t_eigen> energies;
   for (const auto &[i, eig]: diag)
-    energies.insert(end(energies), begin(eig.value), end(eig.value));
+    energies.insert(end(energies), begin(eig.value_zero), end(eig.value_zero));
   sort(begin(energies), end(energies));
   return energies;
 }
