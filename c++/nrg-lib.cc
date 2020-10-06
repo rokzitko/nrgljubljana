@@ -102,8 +102,7 @@ using t_matel = cmpl;
 using t_eigen = double;
 using t_coef = cmpl;
 using t_factor = cmpl;
-using t_expv = cmpl; // we allow the calculation of expectation values of
-                     // non-Hermitian operators!
+using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
 inline cmpl CONJ_ME(cmpl z) { return conj(z); }
 #endif
 
@@ -153,9 +152,7 @@ void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
 }
 
 template <typename T> 
-  inline pair<T, T> reverse_pair(const pair<T, T> &i) { 
-    return make_pair(i.second, i.first); 
-  }
+  inline pair<T, T> reverse_pair(const pair<T, T> &i) { return make_pair(i.second, i.first); }
 
 // Map of operators matrices
 using CustomOp = map<string, MatrixElements>;
@@ -272,13 +269,8 @@ struct Eigen : public RawEigen {
 private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
-     ar &value_orig;
-     ar &matrix;
-     ar &value_zero;
-     ar &nrpost;
-     ar &absenergy;
-     ar &absenergyG;
-     ar &absenergyN;
+     ar &value_orig; ar &matrix; ar &value_zero; ar &nrpost;
+     ar &absenergy; ar &absenergyG; ar &absenergyN;
   }
 };
 
@@ -494,10 +486,6 @@ class SPEC {
   virtual spCS_t make_cs(const BaseSpectrum &) = 0;
   virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
                     const Invar &, const DensMatElements &, const Stats &stats){};
-  virtual void calc_A(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &, const Stats &stats){};
-  virtual void calc_B(const Step &step, const Eigen &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor,
-                      spCS_t, const Invar &, const Invar &, const Invar &, const DensMatElements &, const Stats &stats){};
   virtual string name() = 0;
   virtual string merge() { return ""; }    // what merging rule to use
   virtual string rho_type() { return ""; } // what rho type is required
@@ -590,17 +578,13 @@ template <typename T> void formatted_output(ostream &F, T x, const Params &P) {
 
 void formatted_output(ostream &F, cmpl val, const Params &P) {
   ostringstream str;
-  // This sets precision for both real and imaginary parts.
-  str << setprecision(P.prec_custom);
-  if (P.noimag || abs(val.imag()) < abs(val.real()) * OUTPUT_IMAG_EPS) {
-    str << val.real();
-  } else {
-    str << val.real();
-    if (val.imag() > 0.0)
-      str << "+I" << val.imag();
-    else
-      str << "-I" << -val.imag();
-  }
+  str << setprecision(P.prec_custom);   // This sets precision for both real and imaginary parts.
+  const auto r = val.real(); 
+  const auto i = val.imag();
+  if (P.noimag || abs(i) < abs(r) * OUTPUT_IMAG_EPS) 
+    str << r;
+  else
+    str << r << (i > 0 ? "+I" : "-I") << (i > 0 ? i : -i);
   // The width for the whole X+IY string.
   F << setw(P.width_custom) << str.str() << ' ';
 }
@@ -637,57 +621,57 @@ class ChainSpectrumBinning : public ChainSpectrum {
 };
 
 class ChainSpectrumTemp : public ChainSpectrum {
-  private:
-  Temp v;
-  public:
-  void add(double T, t_weight value) override { v.add_value(T, value); }
-  friend class SpectrumTemp;
+ private:
+   Temp v;
+ public:
+   void add(double T, t_weight value) override { v.add_value(T, value); }
+   friend class SpectrumTemp;
 };
 
 #include "matsubara.h"
 
 class ChainSpectrumMatsubara : public ChainSpectrum {
-  private:
-  Matsubara m;
-  public:
-  ChainSpectrumMatsubara() = delete;
-  explicit ChainSpectrumMatsubara(matstype _mt) : m(P.mats, _mt){};
-  void add(size_t n, t_weight w) { m.add(n, w); }
-  void add(double energy, t_weight w) override { my_assert_not_reached(); }
-  t_weight total_weight() const { return m.total_weight(); }
-  friend class SpectrumMatsubara;
+ private:
+   Matsubara m;
+ public:
+   ChainSpectrumMatsubara() = delete;
+   explicit ChainSpectrumMatsubara(matstype _mt) : m(P.mats, _mt){};
+   void add(size_t n, t_weight w) { m.add(n, w); }
+   void add(double energy, t_weight w) override { my_assert_not_reached(); }
+   t_weight total_weight() const { return m.total_weight(); }
+   friend class SpectrumMatsubara;
 };
 
 // Object of class spectrum will contain everything that we know about a
 // spectral density.
 class Spectrum {
-  public:
-  string opname, filename;
-  SPECTYPE spectype;
-  Spectrum(const string &_opname, const string &_filename, SPECTYPE _spectype) : opname(_opname), filename(_filename), spectype(_spectype){}; // NOLINT
-  Spectrum(const Spectrum &) = default;
-  Spectrum(Spectrum &&) = default;
-  Spectrum &operator=(const Spectrum &) = default;
-  Spectrum &operator=(Spectrum &&) = default;
-  virtual ~Spectrum()= default; // required (the destructor saves the results to a file)
-  virtual void merge(spCS_t, const Step &) = 0; // called from spec.cc as the very last step
-  string name() { return opname; }
+ public:
+   string opname, filename;
+   SPECTYPE spectype;
+   Spectrum(const string &_opname, const string &_filename, SPECTYPE _spectype) : opname(_opname), filename(_filename), spectype(_spectype){}; // NOLINT
+   Spectrum(const Spectrum &) = default;
+   Spectrum(Spectrum &&) = default;
+   Spectrum &operator=(const Spectrum &) = default;
+   Spectrum &operator=(Spectrum &&) = default;
+   virtual ~Spectrum()= default; // required (the destructor saves the results to a file)
+   virtual void merge(spCS_t, const Step &) = 0; // called from spec.cc as the very last step
+   string name() { return opname; }
 };
 
 #include "spectrumrealfreq.cc"
 
 // G(T) type of results, i.e. not a real spectrum
 class SpectrumTemp : public Spectrum {
-  private:
-  std::vector<pair<double, t_weight>> results;
-  public:
-  SpectrumTemp(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
-  void merge(spCS_t, const Step &) override;
-  SpectrumTemp(const SpectrumTemp &) = default;
-  SpectrumTemp(SpectrumTemp &&) = default;
-  SpectrumTemp &operator=(const SpectrumTemp &) = default;
-  SpectrumTemp &operator=(SpectrumTemp &&) = default;
-  ~SpectrumTemp() override;
+ private:
+   std::vector<pair<double, t_weight>> results;
+ public:
+   SpectrumTemp(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
+   void merge(spCS_t, const Step &) override;
+   SpectrumTemp(const SpectrumTemp &) = default;
+   SpectrumTemp(SpectrumTemp &&) = default;
+   SpectrumTemp &operator=(const SpectrumTemp &) = default;
+   SpectrumTemp &operator=(SpectrumTemp &&) = default;
+   ~SpectrumTemp() override;
 };
 
 void SpectrumTemp::merge(spCS_t cs, const Step & step) {
@@ -707,17 +691,17 @@ SpectrumTemp::~SpectrumTemp() {
 // This container actually holds the GF on the Matsubara axis, not a
 // spectral function.
 class SpectrumMatsubara : public Spectrum {
-  private:
-  Matsubara results;
-  public:
-  SpectrumMatsubara(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
+ private:
+   Matsubara results;
+ public:
+   SpectrumMatsubara(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P.mats, _mt) {}
-  void merge(spCS_t, const Step &) override;
-  SpectrumMatsubara(const SpectrumMatsubara &) = default;
-  SpectrumMatsubara(SpectrumMatsubara &&) = default;
-  SpectrumMatsubara &operator=(const SpectrumMatsubara &) = default;
-  SpectrumMatsubara &operator=(SpectrumMatsubara &&) = default;
-  ~SpectrumMatsubara() override;
+   void merge(spCS_t, const Step &) override;
+   SpectrumMatsubara(const SpectrumMatsubara &) = default;
+   SpectrumMatsubara(SpectrumMatsubara &&) = default;
+   SpectrumMatsubara &operator=(const SpectrumMatsubara &) = default;
+   SpectrumMatsubara &operator=(SpectrumMatsubara &&) = default;
+   ~SpectrumMatsubara() override;
 };
 
 void SpectrumMatsubara::merge(spCS_t cs, const Step &) {
@@ -762,26 +746,23 @@ ostream &operator<<(ostream &os, const axis a) { return os << axisstring(a); }
 // miscelaneous data, such as the spectrum type. Functions calc_specdens() et al. receive an object of this type as
 // input.
 class BaseSpectrum {
-  public:
-  string name;
-  string prefix; // "dens", "corr", etc.
-  size_t nr;     // number of operators
-  const MatrixElements &op1, &op2, &op3;
-  shared_ptr<Spectrum> spec;
-  SPECTYPE spectype{}; // SPEC_FT, ...
-  axis a;            // axis::RealFreq, axis::Temp, axis::Matsubara, etc.
-  matstype mt;       // matstype::bosonic, matstype::fermionic, etc.
-  int spin{};          // -1 or +1, or 0 where irrelevant
-  string fullname() const {
-    string s = name + " " + prefix + " " + spectype->name() + " " + axisstring(a);
-    if (a != axis::RealFreq && a != axis::Temp) s += " " + matstypestring(mt);
-    return s;
-  }
-  void about() { cout << "Spectrum: " << fullname() << endl; }
-  BaseSpectrum(const MatrixElements &_op1, const MatrixElements &_op2) : 
-     op1(_op1), op2(_op2), op3(_op2), a(axis::RealFreq), mt(matstype::fermionic) { nr = 2; } // op3 initialization is a hack
-  BaseSpectrum(const MatrixElements &_op1, const MatrixElements &_op2, const MatrixElements &_op3) : 
-     op1(_op1), op2(_op2), op3(_op3), a(axis::RealFreq), mt(matstype::fermionic) { nr = 3; }
+ public:
+   string name;
+   string prefix; // "dens", "corr", etc.
+   const MatrixElements &op1, &op2;
+   shared_ptr<Spectrum> spec;
+   SPECTYPE spectype{}; // SPEC_FT, ...
+   axis a;              // axis::RealFreq, axis::Temp, axis::Matsubara, etc.
+   matstype mt;         // matstype::bosonic, matstype::fermionic, etc.
+   int spin{};          // -1 or +1, or 0 where irrelevant
+   string fullname() const {
+     string s = name + " " + prefix + " " + spectype->name() + " " + axisstring(a);
+     if (a != axis::RealFreq && a != axis::Temp) s += " " + matstypestring(mt);
+     return s;
+   }
+   void about() { cout << "Spectrum: " << fullname() << endl; }
+   BaseSpectrum(const MatrixElements &op1, const MatrixElements &op2, const string name, const string prefix, const matstype mt, const int spin) :
+     name(name), prefix(prefix), op1(op1), op2(op2), a(axis::RealFreq), mt(mt), spin(spin) {}
 };
 
 // XXX: remove this, if possible
@@ -790,19 +771,18 @@ using lsl = list<speclist *>;
 lsl allspectra; // list of list of spectra
 
 class speclist {
-  private:
-  list<BaseSpectrum> spectra;
-
-  public:
-  speclist() { allspectra.push_back(this); }
-  auto begin() { return spectra.begin(); }
-  auto end() { return spectra.end(); }
-  void push_back(BaseSpectrum &bs) { spectra.push_back(bs); }
-  // Broaden spectra, close spectral files and deallocate all data storage (in destructor!)
-  void clear() { spectra.clear(); }
-  void about() {
-    for (auto &i : spectra) i.about();
-  }
+ private:
+   list<BaseSpectrum> spectra;
+ public:
+   speclist() { allspectra.push_back(this); }
+   auto begin() { return spectra.begin(); }
+   auto end() { return spectra.end(); }
+   void push_back(BaseSpectrum &bs) { spectra.push_back(bs); }
+   // Broaden spectra, close spectral files and deallocate all data storage (in destructor!)
+   void clear() { spectra.clear(); }
+   void about() {
+     for (auto &i : spectra) i.about();
+   }
 };
 
 speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
@@ -902,8 +882,8 @@ class ExpvOutput {
 void open_files(speclist &sl, BaseSpectrum &spec, SPECTYPE spectype, axis a) {
   const string fn = spec.prefix + "_" + spectype->name() + "_dens_" + spec.name; // no suffix (.dat vs. .bin)
   switch (a) {
-    case axis::RealFreq: spec.spec = make_shared<SpectrumRealFreq>(spec.name, fn, spectype); break;
-    case axis::Temp: spec.spec = make_shared<SpectrumTemp>(spec.name, fn, spectype); break;
+    case axis::RealFreq:  spec.spec = make_shared<SpectrumRealFreq>(spec.name, fn, spectype); break;
+    case axis::Temp:      spec.spec = make_shared<SpectrumTemp>(spec.name, fn, spectype); break;
     case axis::Matsubara: spec.spec = make_shared<SpectrumMatsubara>(spec.name, fn, spectype, spec.mt); break;
     default: my_assert_not_reached();
   }
@@ -1035,12 +1015,8 @@ class Oprecalc {
                  set<string> &rec1, set<string> &rec2, matstype mt, int spin = 0) {
     for (const auto &[name1, op1] : set1) {
       for (const auto &[name2, op2] : set2) {
-        if (const auto spname = sdname(name1, name2, spin); stringtoken.find(spname)) {
-          BaseSpectrum spec(op1, op2);
-          spec.name   = spname;
-          spec.prefix = prefix;
-          spec.mt     = mt;
-          spec.spin   = spin;
+        if (const auto name = sdname(name1, name2, spin); stringtoken.find(name)) {
+          BaseSpectrum spec(op1, op2, name, prefix, mt, spin);
           open_files_spec(runtype, spectra, spec);
           rec1.insert(name1);
           rec2.insert(name2);

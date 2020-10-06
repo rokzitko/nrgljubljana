@@ -61,15 +61,6 @@ struct Recalc {
   t_factor factor{}; // additional multiplicative factor
 };
 
-// Used in recalc_general() for debugging purposes.
-#define RECALC_GENERAL_DUMP                                                                                                                          \
-  {                                                                                                                                                  \
-    nrgdump3(j, I1, Ip);                                                                                                                             \
-    nrgdump2(table[j].i1, table[j].ip);                                                                                                              \
-    nrgdump2(table[j].IN1, table[j].INp);                                                                                                            \
-    nrgdump(table[j].factor) << endl;                                                                                                                \
-  }
-
 // We split the matrices of eigenvectors in blocks according to the partition into "ancestor subspaces". At the price
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
@@ -124,7 +115,12 @@ Matrix recalc_general(const DiagInfo &diag,
   cn.clear();
   if (dim1 == 0 || dimp == 0) return cn; // empty matrix
   for (size_t j = 0; j < jmax; j++) { // loop over combinations of i/ip
-    if (logletter('r')) RECALC_GENERAL_DUMP;
+    if (logletter('r')) {
+      nrgdump3(j, I1, Ip);
+      nrgdump2(table[j].i1, table[j].ip);
+      nrgdump2(table[j].IN1, table[j].INp);
+      nrgdump(table[j].factor) << endl;
+    }
     if (!Sym->Invar_allowed(table[j].IN1) || !Sym->Invar_allowed(table[j].INp)) continue;
     const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
     const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
