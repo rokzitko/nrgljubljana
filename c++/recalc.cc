@@ -79,8 +79,8 @@ struct Recalc {
 
 // We split the matrices of eigenvectors in blocks according to the partition into "ancestor subspaces". At the price
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
-// in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting
-// had completed!
+// in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
+// completed!
 void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
   e.blocks.resize(P.combs);
   const size_t nr = e.getnr(); // nr. of eigenpairs

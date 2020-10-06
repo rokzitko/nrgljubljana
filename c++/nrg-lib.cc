@@ -287,6 +287,7 @@ struct Eigen : public RawEigen {
   void diagonal(const EVEC &v) {
     value    = v;
     value_orig = v; // XXXX
+    value_zero = v; // XXXX
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
     shift    = 0.0;
   }
