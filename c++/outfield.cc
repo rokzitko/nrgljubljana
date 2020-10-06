@@ -37,6 +37,7 @@ class outfield {
 struct TD {
   Allfields allfields;
   const Params &P;
+  std::string filename;
   ofstream O;
   outfield T, E, E2, C, F, S;
   bool header_saved = false;
@@ -46,6 +47,8 @@ struct TD {
     O << std::endl;
   }
   void save_values() {
+    if (!O.is_open())
+      O.open(filename);
     if (!header_saved) {
       save_header();
       header_saved = true;
@@ -54,7 +57,7 @@ struct TD {
     for (const auto &i : allfields) i->putvalue(O);
     O << std::endl;
   }
-  TD(const Params &P_, std::string filename) : P(P_), O(filename), 
+  TD(const Params &P_, std::string filename) : P(P_), filename(filename),
     T(P, allfields, "T"), E(P, allfields, "<E>"), E2(P, allfields, "<E^2>"),
     C(P, allfields, "C"), F(P, allfields, "F"), S(P, allfields, "S") {}
 };
@@ -62,6 +65,7 @@ struct TD {
 struct TD_FDM {
   Allfields allfields;
   const Params &P;
+  std::string filename;
   ofstream O;
   outfield T, E, C, F, S;
   bool header_saved = false;
@@ -71,6 +75,8 @@ struct TD_FDM {
     O << std::endl;
   }
   void save_values() {
+    if (!O.is_open())
+      O.open(filename);
     if (!header_saved) {
       save_header();
       header_saved = true;
@@ -79,7 +85,7 @@ struct TD_FDM {
     for (const auto &i : allfields) i->putvalue(O);
     O << std::endl;
   }
-  TD_FDM(const Params &P_, std::string filename) : P(P_), O(filename), 
+  TD_FDM(const Params &P_, std::string filename) : P(P_), filename(filename),
     T(P, allfields, "T"), E(P, allfields, "E_fdm"),
     C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") {}
 };

@@ -1209,15 +1209,14 @@ class Annotated {
    const Params &P;
 
  public:
-   Annotated(const Params &P_) : P(P_) {
-     if (P.dumpannotated) {
+   Annotated(const Params &P_) : P(P_) {}
+   
+   void dump(const Step &step, const DiagInfo &diag, const Stats &stats) {
+     if (!step.nrg()) return;               // only in the first NRG sweep
+     if (P.dumpannotated && !F.is_open()) { // open output file
        F.open(FN_ANNOTATED);
        F << setprecision(P.dumpprecision);
      }
-   }
-   
-   void dump(const Step &step, const DiagInfo &diag, const Stats &stats) {
-     if (!F || !step.nrg()) return;
      std::vector<pair<t_eigen, Invar>> seznam;
      for (const auto &[I, eig] : diag)
        for (const auto e : eig.value) 
@@ -1668,10 +1667,9 @@ void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
     cout << "norm[" << name << "]=" << norm(m, diag, SpecdensquadFactorFnc, 0) << std::endl;
 }
 
-/* We calculate thermodynamic quantities before truncation to make better
- use of the available states. Here we compute quantities which are defined
- for all symmetry types. Other calculations are performed by calculate_TD
- member functions defined in symmetry.cc. */
+// We calculate thermodynamic quantities before truncation to make better use of the available states. Here we
+// compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
+// member functions defined in symmetry.cc.
 void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &output, double additional_factor = 1.0) {
   // Rescale factor for energies. The energies are expressed in
   // units of omega_N, thus we need to appropriately rescale them to
@@ -1694,15 +1692,13 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
     E2 += multip * sumE2;
   }
   stats.Z = Z;
-  // Energy, energy squared, heat capacity, free energy, entropy
   stats.td.T  = step.Teff();
   stats.td.E  = stats.E = E / Z;                   // beta <H>
-  stats.td.E2 = stats.E2 = E2 / Z;                // beta^2 <H^2>
+  stats.td.E2 = stats.E2 = E2 / Z;                 // beta^2 <H^2>
   stats.td.C  = stats.C = stats.E2 - sqr(stats.E); // C/k_B=beta^2(<H^2>-<H>^2)
-  stats.td.F  =  stats.F = -log(Z);                 // F/(k_B T)=-ln(Z)
+  stats.td.F  =  stats.F = -log(Z);                // F/(k_B T)=-ln(Z)
   stats.td.S  = stats.S = stats.E - stats.F;       // S/k_B=beta<H>+ln(Z)
-  // Call quantum number specific calculation routine
-  Sym->calculate_TD(step, diag, stats, rescale_factor);
+  Sym->calculate_TD(step, diag, stats, rescale_factor);  // symmetry-specific calculation routine
   if (step.nrg()) stats.td.save_values();
 }
 
@@ -2167,7 +2163,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
     save_transformations(step.ndx(), diag, P);
   output.dump_all_energies(diag, step.ndx());
-  perform_measurements(step, diag, stats,output); // Measurements are performed before the truncation!
+  perform_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
   if (do_recalc_all(step, P)) { // Either ...

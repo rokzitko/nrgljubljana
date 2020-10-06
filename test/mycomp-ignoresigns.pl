@@ -30,6 +30,9 @@ my $verbose = 2;
 my $fn1 = shift;
 my $fn2 = shift;
 
+-s $fn1 or die "$fn1 has zero size.\n";
+-s $fn2 or die "$fn2 has zero size.\n";
+
 open(my $F1, "<$fn1") or die "Can't open $fn1 for reading.\n";
 open(my $F2, "<$fn2") or die "Can't open $fn2 for reading.\n";
 
