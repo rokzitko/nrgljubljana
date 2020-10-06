@@ -37,11 +37,11 @@ template<> void copy<lapack_complex_double, cmpl>(lapack_complex_double * eigenv
 template<typename T, typename U> Eigen copy_results(T* eigenvalues, U* eigenvectors, char jobz, size_t dim, size_t M)
 {
   Eigen d(M, dim);
-  copy(eigenvalues, d.value, M);
+  copy(eigenvalues, d.value_orig, M);
   if (jobz == 'V')
     copy(eigenvectors, d.matrix, dim, M);
-  my_assert(d.value.size() == d.matrix.size1());
-  d.value_orig = d.value; // XXX
+  my_assert(d.value_orig.size() == d.matrix.size1());
+//  d.value = d.value_orig; // XXX
   return d;
 }
 
@@ -258,12 +258,12 @@ void checkdiag(const Eigen &d,
                const double NORMALIZATION_EPSILON = 1e-12,
                const double ORTHOGONALITY_EPSILON = 1e-12)
 {
-  const auto M = d.value.size(); // number of eigenpairs
+  const auto M = d.getnrc(); // number of eigenpairs
   const auto dim = d.getdim();   // dimension of the eigenvector
   my_assert(d.matrix.size2() == dim);
   // Check normalization
   for (auto r = 0; r < M; r++) {
-    assert_isfinite(d.value(r));
+    assert_isfinite(d.value_orig(r));
     double sumabs = 0.0;
     for (size_t j = 0; j < dim; j++) {
       assert_isfinite(d.matrix(r, j));
@@ -283,7 +283,7 @@ void checkdiag(const Eigen &d,
 void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t>::max())
 {
   cout << "eig= ";
-  for_each_n(cbegin(d.value), min(d.value.size(), max_nr), 
+  for_each_n(cbegin(d.value_orig), min(d.getnrc(), max_nr), 
            [](const t_eigen x) { cout << x << ' '; });
   cout << endl;
 }
@@ -299,7 +299,7 @@ template<typename M> Eigen diagonalise(ublas::matrix<M> &m) {
     d = diagonalise_dsyev(m);
   if (sP.diag == "dsyevd"s) {
     d = diagonalise_dsyevd(m);
-    if (d.value.size() == 0) {
+    if (d.getnrc() == 0) {
       std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
       d = diagonalise_dsyev(m);
     }
@@ -313,13 +313,13 @@ template<typename M> Eigen diagonalise(ublas::matrix<M> &m) {
   if (sP.diag == "zheevr"s) 
     d = diagonalise_zheevr(m, sP.diagratio);
 #endif
-  my_assert(d.value.size() > 0);
+  my_assert(d.getnrc() > 0);
   my_assert(d.matrix.size1() <= m.size1() && d.matrix.size2() == m.size2());
   if (logletter('e'))
     dump_eigenvalues(d);
   if (P.checkdiag)
     checkdiag(d);
-  nrglog('A', "LAPACK, dim=" << m.size1() << " M=" << d.value.size() << " [" << myrank() << "]");
+  nrglog('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrc() << " [" << myrank() << "]");
   nrglog('t', "Elapsed: " << setprecision(3) << t.total_in_seconds() << " [" << myrank() << "]");
   return d;
 }

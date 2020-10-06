@@ -9,7 +9,7 @@ void fix_splittings(DiagInfo &diag, const mapdd &cluster_mapping) {
     for (auto &r : eig.value_zero) 
       if (auto m = cluster_mapping.find(r); m != end(cluster_mapping))
         r = m->second;
-    eig.value = eig.value_zero; // XXX remove this
+//    eig.value = eig.value_zero; // XXX remove this
   }
 }
 

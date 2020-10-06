@@ -239,23 +239,23 @@ using AllSteps = std::vector<Subs>;
 // Result of a diagonalisation: eigenvalues and eigenvectors
 struct RawEigen {
   using EVEC = ublas::vector<t_eigen>;
-  EVEC value;    // eigenvalues
+//  EVEC value;    // eigenvalues
   EVEC value_orig;     // as computed XXX
   Matrix matrix; // eigenvectors
   RawEigen() {}
   RawEigen(size_t nr, size_t dim) {
     my_assert(nr <= dim);
-    value.resize(nr);
+    value_orig.resize(nr);
     matrix.resize(nr, dim);
   }
   size_t getnrc() const { return value_orig.size(); } // number of computed eigenpairs
-  size_t getnr() const  { return value.size(); } // XXX: value_zero ??
   size_t getdim() const { return matrix.size2(); } // valid also after the split_in_blocks_Eigen() call
 };
   
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
 struct Eigen : public RawEigen {
   EVEC value_zero;     // Egs subtracted
+  size_t getnr() const  { return value_zero.size(); } // XXX: value_zero ??
   size_t nrpost = 0;   // number of eigenpairs after truncation
   double shift  = 0.0; // shift of eigenvalues (0 or Egs)
   EVEC absenergy;      // absolute energies
@@ -281,13 +281,13 @@ struct Eigen : public RawEigen {
       my_assert(nrpost <= i.size1());
       i.resize(nrpost, i.size2());
     }
-    value.resize(nrpost); // XXX
+//    value.resize(nrpost); // XXX
     value_zero.resize(nrpost);
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
   void diagonal(const EVEC &v) {
-    value    = v;
+//    value    = v;
     value_orig = v; // XXXX
     value_zero = v; // XXXX
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
@@ -299,7 +299,7 @@ struct Eigen : public RawEigen {
     for (auto &x : value_zero) x -= Egs;
     shift = Egs;
     my_assert(value_zero[0] >= 0.0);
-    value = value_zero;
+//    value = value_zero; // XXX
   }
   void shift_absenergyG(double GS_energy) {
     for (auto &x : absenergyG) x -= GS_energy;
@@ -308,11 +308,15 @@ struct Eigen : public RawEigen {
 private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
-     ar &value;
+     ar &value_orig;
      ar &matrix;
+     ar &value_zero;
+     ar &nrpost;
      ar &shift;
+     ar &absenergy;
      ar &absenergyG;
      ar &absenergyN;
+     ar &boltzmann;
   }
 };
 
@@ -904,7 +908,7 @@ std::vector<t_eigen> sort_energies(const DiagInfo &diag) {
 
 #include "splitting.cc"
 
-inline size_t size_subspace(const DiagInfo &diag, const Invar &I) {
+inline size_t size_subspace(const DiagInfo &diag, const Invar &I) { // XXX : necessary??
   if (const auto f = diag.find(I); f != diag.cend())
     return f->second.getnr();
   else
@@ -1438,14 +1442,14 @@ bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
   const auto Emax = highest_retained_energy(diag);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
-                                      std::count_if(begin(eig.value), end(eig.value), [Emax](double e) { return e <= Emax; }));             
+                                      std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));             
   const auto nrkept = std::accumulate(begin(diag), end(diag), 0, 
                                       [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
   const auto nrkeptmult = std::accumulate(begin(diag), end(diag), 0, 
                                           [](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getnrkept(); });
   nrgdump3(Emax, nrkept, nrkeptmult) << endl;
   const auto notenough = std::any_of(begin(diag), end(diag), 
-                                     [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value(eig.getnr()-1) != Emax &&
+                                     [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax &&
                                          eig.getnr() < eig.getdim(); });
   return notenough;
 }
@@ -1772,7 +1776,7 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   for (size_t i = 1; i <= P.combs; i++) {
     const size_t offset = rm.offset(i);
     for (size_t r = 0; r < rm.rmax(i); r++) 
-      h(offset + r, offset + r) = scalefactor * diagprev.at(anc[i]).value(r);
+      h(offset + r, offset + r) = scalefactor * diagprev.at(anc[i]).value_zero(r);
   }
   // Symmetry-type-specific matrix initialization steps.
   Sym->makematrix(h, step, rm, I, anc, opch);
@@ -1894,7 +1898,7 @@ void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   Eigen eigmock; // empty Eigen
   mpiw->send(dest, TAG_EIGEN, eigmock);
   nrglog('M', "Sending eigen from " << mpiw->rank() << " to " << dest);
-  mpiw->send(dest, TAG_EIGEN_VEC, eig.value);
+//  mpiw->send(dest, TAG_EIGEN_VEC, eig.value);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig); // XXX
   mpi_send_matrix_linebyline(dest, eig.matrix);
 }
@@ -1904,7 +1908,7 @@ auto mpi_receive_eigen_linebyline(int source) {
   Eigen eigmock;
   check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
   Eigen eig;
-  check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value));
+//  check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value));
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value_orig)); // XXX
   eig.matrix = mpi_receive_matrix_linebyline(source);
   return eig;
@@ -1917,7 +1921,7 @@ std::pair<Invar, Eigen> read_from(int source) {
   Invar Irecv;
   check_status(mpiw->recv(source, TAG_INVAR, Irecv));
   nrglog('M', "Received results for subspace " << Irecv << " [nr=" << eig.getnr() << ", dim=" << eig.getdim() << "]");
-  my_assert(eig.value.size() == eig.matrix.size1());
+  my_assert(eig.value_orig.size() == eig.matrix.size1());
   my_assert(eig.matrix.size1() <= eig.matrix.size2());
   return {Irecv, eig};
 }
@@ -2140,7 +2144,7 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
     const auto f = qsrmax.find(I);
     dm[step.ndx()][I] = { eig.getnr(), eig.getdim(),
                           f != qsrmax.cend() ? f->second : Rmaxvals{},
-                          eig.value, eig.absenergy, eig.absenergyG, eig.absenergyN, step.last() };
+                          eig.value_zero, eig.absenergy, eig.absenergyG, eig.absenergyN, step.last() };
     nrall += eig.getdim();
     nrkept += eig.getnr();
   }
@@ -2271,7 +2275,7 @@ void states_report(const DiagInfo &diag, ostream &fout = cout) {
   fout << "Number of invariant subspaces: " << count_subspaces(diag) << endl;
   for (const auto &[i, eig]: diag) 
     if (eig.getnr()) 
-      fout << "(" << i << ") " << eig.getnr() << " states: " << eig.value << endl;
+      fout << "(" << i << ") " << eig.getnr() << " states: " << eig.value_orig << endl;
   fout << "Number of states (multiplicity taken into account): " << count_states(diag) << endl << endl;
 }
 
