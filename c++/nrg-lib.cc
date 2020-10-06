@@ -208,30 +208,6 @@ class Rmaxvals {
 
 using QSrmax = map<Invar, Rmaxvals>;
 
-// Information about the number of states, kept and discarded, rmax,
-// and eigenenergies. Required for the density-matrix construction.
-template<typename M> struct DimSubGen {
-  using EVEC = ublas::vector<M>;
-  size_t kept  = 0;
-  size_t total = 0;
-  Rmaxvals rmax;   // substructure of vectors omega
-  EVEC eigenvalue; // all eigenvalues
-  EVEC absenergy;  // absolute energies
-  EVEC absenergyG; // absolute energies referred to the overall ground-state energy
-  EVEC absenergyN; // absolute energies referred to the step-N ground-state energy
-  bool is_last = false;
-  size_t min() const { return (is_last ? 0 : kept); } // min(), max() return the range of D states to be summed over in FDM
-  size_t max() const { return total; }
-};
-
-using DimSub = DimSubGen<t_eigen>;
-
-// Full information about the number of states and matrix dimensions
-// Example: dm[N].rmax[I] etc.
-using Subs = map<Invar, DimSub>;
-using AllSteps = std::vector<Subs>;
-
-// NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N). It is a
 // statement about scaling, not about possible linear shifts/offsets.
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
@@ -310,6 +286,32 @@ template <typename T> ostream &operator<<(ostream &os, const ublas::vector<T> &v
   for (const auto &x : v) os << x << ' ';
   return os;
 }
+
+// Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
+// density-matrix construction.
+template<typename M> struct DimSubGen {
+  using EVEC = ublas::vector<M>;
+  size_t kept  = 0;
+  size_t total = 0;
+  Rmaxvals rmax;   // substructure of vectors omega
+  EVEC eigenvalue; // all eigenvalues
+  EVEC absenergy;  // absolute energies
+  EVEC absenergyG; // absolute energies referred to the overall ground-state energy
+  EVEC absenergyN; // absolute energies referred to the step-N ground-state energy
+  bool is_last = false;
+  size_t min() const { return (is_last ? 0 : kept); } // min(), max() return the range of D states to be summed over in FDM
+  size_t max() const { return total; }
+};
+
+using DimSub = DimSubGen<t_eigen>;
+
+// Full information about the number of states and matrix dimensions
+// Example: dm[N].rmax[I] etc.
+using Subs = map<Invar, DimSub>;
+using AllSteps = std::vector<Subs>;
+
+// NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N). It is a
+
 
 enum class RUNTYPE { NRG, DMNRG };
 
@@ -2010,22 +2012,15 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
   return diag;
 }
 
-// Absolute energies. Must be called in the first NRG run after
-// stats.total_energy has been updated, but before
-// store_transformations(). These energies are initially not
-// referrenced to absolute 0. This is done in the second NRG run in
-// shift_abs_energies(diag).
+// Absolute energies. Must be called in the first NRG run after stats.total_energy has been updated, but before
+// store_transformations(). absenergyG is updated to its correct values (referrenced to absolute 0) in
+// shift_abs_energies().
 void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
   for (auto &[i, eig] : diag) {
-    eig.absenergy = eig.value_zero;
-    for (auto &x : eig.absenergy) 
-      x = x * step.scale() + stats.total_energy;
-    eig.absenergyG = eig.value_zero;
-    for (auto &x : eig.absenergyG) 
-      x = x * step.scale() + stats.total_energy;
-    eig.absenergyN = eig.value_zero; // unscaled energies, referenced to the lowest energy in current NRG step (not modified later on)
-    for (auto &x : eig.absenergyN) 
-      x *= step.scale();
+    eig.absenergyN = eig.value_zero * step.scale();        // referenced to the lowest energy in current NRG step (not modified later on)
+    eig.absenergy = eig.absenergyN;
+    for (auto &x : eig.absenergy) x += stats.total_energy; // absolute energies (not modified later on)
+    eig.absenergyG = eig.absenergy;                        // referenced to the absolute 0 (updated by shft_abs_energies())
   }
 }
 
