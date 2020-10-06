@@ -11,8 +11,8 @@
 #ifdef WHOLEMATRIX
 void saveMatrix(boost::archive::binary_oarchive &oa, const Matrix &m) { oa << m; }
 void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m) { ia >> m; }
-void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) { oa << m; }
-void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) { ia >> m; }
+void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) { oa << m; } // everything!
+void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) { ia >> m; } // everything!
 #endif
 
 // This approach is required for large problem sizes where an
@@ -42,15 +42,21 @@ void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m) {
 }
 
 void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
-  oa << m.value << m.shift << m.absenergyG; // only G !!
+  // RawEigen
+  oa << m.value << m.value_orig;
   saveMatrix(oa, m.matrix);
-  oa << m.nrpost;
+  // Eigen
+  oa << m.value_zero << m.nrpost << m.shift;
+  oa << m.absenergy << m.absenergyG << m.absenergyN << m.boltzmann;
 }
 
 void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
-  ia >> m.value >> m.shift >> m.absenergyG;
+  // RawEigen
+  ia >> m.value >> m.value_orig;
   loadMatrix(ia, m.matrix);
-  ia >> m.nrpost;
+  // Eigen
+  ia >> m.value_zero >> m.nrpost >> m.shift;
+  ia >> m.absenergy >> m.absenergyG >> m.absenergyN >> m.boltzmann;
 }
 #endif
 
