@@ -106,7 +106,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-1ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_1CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -116,7 +116,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-2ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
 	    {
@@ -126,7 +126,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-2ch-spinupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -141,7 +141,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-1ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_1CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -151,7 +151,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-2ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
             {
@@ -161,7 +161,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-2ch-spindownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -169,7 +169,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 
    // CASE II: OPPOSITE PARITY
 
-    if (channels == 2) {
+    if (P.channels == 2) {
       I1 = Invar(sszp + 1, -pp);
       {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spinupdiffa.dat" << ", ch=" << 0 << ", len=" << SPU1LR::LENGTH_I_2CH << ")");
@@ -178,7 +178,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-2ch-spinupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
       {
@@ -188,7 +188,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-2ch-spinupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
 
@@ -200,7 +200,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-2ch-spindowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
       {
@@ -210,7 +210,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "spu1lr/spu1lr-2ch-spindowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
   }
 };
     }
@@ -328,7 +328,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Qtot.dat"
           break;
@@ -345,7 +345,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Iztot.dat"
           break;
@@ -362,7 +362,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Ixtot.dat"
           break;
@@ -379,7 +379,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Iptot.dat"
           break;
@@ -396,7 +396,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Imtot.dat"
           break;

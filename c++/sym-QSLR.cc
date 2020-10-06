@@ -1,22 +1,18 @@
 class SymmetryQSLR : public SymLR {
-  private:
-  outfield Sz2, Q, Q2;
+ private:
+   outfield Sz2, Q, Q2;
 
-  public:
-  SymmetryQSLR() : SymLR() { all_syms["QSLR"] = this; }
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Q.set("<Q>", 2);
-    Q2.set("<Q^2>", 3);
-    InvarStructure InvStruc[] = {
-       {"Q", additive},      // charge
-       {"SS", additive},     // spin
-       {"P", multiplicative} // parity
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0, 1, 1);
-  }
+ public:
+   template<typename ... Args> SymmetryQSLR(Args&& ... args) : SymLR(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
+       InvarStructure InvStruc[] = {
+         {"Q", additive},      // charge
+         {"SS", additive},     // spin
+         {"P", multiplicative} // parity
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0, 1, 1);
+     }
 
   // Multiplicity of the I=(Q,SS,P) subspace = 2S+1 = SS.
   size_t mult(const Invar &I) const override {
@@ -31,7 +27,7 @@ class SymmetryQSLR : public SymLR {
   }
 
   void load() override {
-    my_assert(channels == 2);
+    my_assert(P.channels == 2);
 #include "qslr/qslr-2ch-In2.dat"
 #include "qslr/qslr-2ch-QN.dat"
   }
@@ -41,7 +37,6 @@ class SymmetryQSLR : public SymLR {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
-
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
@@ -52,19 +47,16 @@ class SymmetryQSLR : public SymLR {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
-
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
       const Number q    = I.get("Q");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
       trSZ += sumZ * (ss * ss - 1) / 12.;
     }
-
     Sz2 = trSZ / stats.Z;
     Q   = trQ / stats.Z;
     Q2  = trQ2 / stats.Z;
@@ -74,8 +66,6 @@ class SymmetryQSLR : public SymLR {
   HAS_DOUBLET;
   HAS_TRIPLET;
 };
-
-Symmetry *SymQSLR = new SymmetryQSLR;
 
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)

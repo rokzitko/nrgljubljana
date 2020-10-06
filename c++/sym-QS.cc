@@ -33,22 +33,18 @@ class SymmetryQS : public Symmetry {
 #include "qs/qs-1ch-In2.dat"
 #include "qs/qs-1ch-QN.dat"
           break;
-
         case 2:
 #include "qs/qs-2ch-In2.dat"
 #include "qs/qs-2ch-QN.dat"
           break;
-
         case 3:
 #include "qs/qs-3ch-In2.dat"
 #include "qs/qs-3ch-QN.dat"
           break;
-
         case 4:
 #include "qs/qs-4ch-In2.dat"
 #include "qs/qs-4ch-QN.dat"
           break;
-
         default: my_assert_not_reached();
       } // switch
     } else {
@@ -122,7 +118,6 @@ void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, con
 #include "qs/qs-1ch-offdiag.dat"
 #include "qs/qs-1ch-diag.dat"
         break;
-
       case 2:
 #include "qs/qs-2ch-diag.dat"
 #include "qs/qs-2ch-offdiag.dat"
@@ -131,17 +126,14 @@ void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, con
 #include "qs/qs-2ch-runghop.dat"
         }
         break;
-
       case 3:
 #include "qs/qs-3ch-diag.dat"
 #include "qs/qs-3ch-offdiag.dat"
         break;
-
       case 4:
 #include "qs/qs-4ch-diag.dat"
 #include "qs/qs-4ch-offdiag.dat"
         break;
-
       default: my_assert_not_reached();
     }
   } else {

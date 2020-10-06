@@ -21,7 +21,7 @@
 
 
 
-   namespace SU2 {
+namespace SU2 {
 #include "su2/su2-1ch-def.dat"
 #include "su2/su2-2ch-def.dat"
 }
@@ -115,7 +115,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-1ch-type1-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_1CH);
   }
 };
             {
@@ -124,7 +124,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-1ch-type2-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -133,7 +133,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-2ch-type1-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
 	    {
@@ -142,7 +142,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-2ch-type1-isoup-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
             {
@@ -151,7 +151,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-2ch-type2-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
 	    {
@@ -160,7 +160,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-2ch-type2-isoup-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -174,7 +174,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-1ch-type1-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_1CH);
   }
 };
             {
@@ -183,7 +183,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-1ch-type2-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_1CH);
-    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_1CH);
+    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -192,7 +192,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-2ch-type1-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
 	    {
@@ -201,7 +201,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-2ch-type1-isodown-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
             {
@@ -210,7 +210,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-2ch-type2-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_2CH);
   }
 };
 	    {
@@ -219,7 +219,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "su2/su2-2ch-type2-isodown-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, SU2::LENGTH_I_2CH);
+    opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SU2::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -245,7 +245,7 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "su2/su2-1ch-spinz.dat"
           break;
@@ -263,7 +263,7 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "su2/su2-1ch-spiny.dat"
           break;
@@ -281,7 +281,7 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "su2/su2-1ch-spinx.dat"
           break;

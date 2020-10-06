@@ -70,7 +70,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spinup-isoupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -80,7 +80,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spinup-isoupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -92,7 +92,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spindown-isoupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -102,7 +102,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spindown-isoupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -114,7 +114,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spinup-isodowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -124,7 +124,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spinup-isodownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -136,7 +136,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spindown-isodowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -146,7 +146,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spindown-isodownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -160,7 +160,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spinup-isoupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -170,7 +170,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spinup-isoupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -182,7 +182,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spindown-isoupdiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -192,7 +192,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spindown-isoupdiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -204,7 +204,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spinup-isodowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -214,7 +214,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spinup-isodowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
 
@@ -226,7 +226,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spindown-isodowndiffa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
     {
@@ -236,7 +236,7 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "iso2lr/iso2lr-2ch-spindown-isodowndiffb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2LR::LENGTH_I_2CH);
   }
 };
   }

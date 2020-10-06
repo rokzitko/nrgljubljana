@@ -59,7 +59,7 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "sl/sl-2ch-qdiff.dat"
           break;
@@ -73,7 +73,7 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "sl/sl-2ch-qtot.dat"
           break;
@@ -87,7 +87,7 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 3:
 #include "sl/sl-3ch-N1.dat"
           break;
@@ -101,7 +101,7 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 3:
 #include "sl/sl-3ch-N2.dat"
           break;
@@ -115,7 +115,7 @@ void SymmetrySL::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 3:
 #include "sl/sl-3ch-N3.dat"
           break;

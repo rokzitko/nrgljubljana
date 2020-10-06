@@ -349,4 +349,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
   my_assert_not_reached();
 }
 
+// XXX: use m4 macros rather than C++ macros
+#undef Q1
 #undef Q2
+#undef Q3

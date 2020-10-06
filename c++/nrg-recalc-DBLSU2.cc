@@ -114,7 +114,7 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "dblsu2/dblsu2-2ch-type1-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, DBLSU2::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
   }
 };
     {
@@ -123,7 +123,7 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "dblsu2/dblsu2-2ch-type2-isoup-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, DBLSU2::LENGTH_I_2CH);
+    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
   }
 };
 
@@ -134,7 +134,7 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "dblsu2/dblsu2-2ch-type1-isoup-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, DBLSU2::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
   }
 };
     {
@@ -143,7 +143,7 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "dblsu2/dblsu2-2ch-type2-isoup-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, DBLSU2::LENGTH_I_2CH);
+    opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
   }
 };
 
@@ -154,7 +154,7 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "dblsu2/dblsu2-2ch-type1-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, DBLSU2::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
   }
 };
     {
@@ -163,7 +163,7 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "dblsu2/dblsu2-2ch-type2-isodown-a.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, DBLSU2::LENGTH_I_2CH);
+    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
   }
 };
 
@@ -174,7 +174,7 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "dblsu2/dblsu2-2ch-type1-isodown-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, DBLSU2::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
   }
 };
     {
@@ -183,7 +183,7 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 #include "dblsu2/dblsu2-2ch-type2-isodown-b.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, DBLSU2::LENGTH_I_2CH);
+    opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
   }
 };
   }
@@ -207,7 +207,7 @@ void SymmetryDBLSU2::recalc_global(const Step &step, const DiagInfo &diag, const
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "dblsu2/dblsu2-2ch-spinz.dat"
           break;
@@ -222,7 +222,7 @@ void SymmetryDBLSU2::recalc_global(const Step &step, const DiagInfo &diag, const
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "dblsu2/dblsu2-2ch-spiny.dat"
           break;
@@ -237,7 +237,7 @@ void SymmetryDBLSU2::recalc_global(const Step &step, const DiagInfo &diag, const
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "dblsu2/dblsu2-2ch-spinx.dat"
           break;

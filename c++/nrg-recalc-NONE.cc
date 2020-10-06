@@ -41,7 +41,7 @@ Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "none/none-1ch-a-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
+       opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, NONE::LENGTH_I_1CH);
      }
    };
             {
@@ -50,7 +50,7 @@ Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "none/none-1ch-a-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_1CH);
+       opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, NONE::LENGTH_I_1CH);
      }
    }; } break;
   case 2: { {
@@ -59,7 +59,7 @@ Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "none/none-2ch-a-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+       opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, NONE::LENGTH_I_2CH);
      }
    };
 	    {
@@ -68,7 +68,7 @@ Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "none/none-2ch-b-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+       opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, NONE::LENGTH_I_2CH);
      }
    };
             {
@@ -77,7 +77,7 @@ Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "none/none-2ch-a-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+       opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, NONE::LENGTH_I_2CH);
      }
    };
             {
@@ -86,7 +86,7 @@ Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "none/none-2ch-b-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, NONE::LENGTH_I_2CH);
+       opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, NONE::LENGTH_I_2CH);
      }
    } } break;
   default: my_assert_not_reached();
@@ -174,7 +174,7 @@ void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "none/none-1ch-spinz.dat"
           break;
@@ -192,7 +192,7 @@ void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "none/none-1ch-spiny.dat"
           break;
@@ -210,7 +210,7 @@ void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "none/none-1ch-spinx.dat"
           break;
@@ -227,7 +227,7 @@ void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "none/none-1ch-Qtot.dat"
           break;
@@ -244,7 +244,7 @@ void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "none/none-1ch-Iztot.dat"
           break;
@@ -261,7 +261,7 @@ void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "none/none-1ch-Ixtot.dat"
           break;
@@ -279,7 +279,7 @@ void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "none/none-1ch-Iytot.dat"
           break;
@@ -297,7 +297,7 @@ void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "none/none-1ch-Iptot.dat"
           break;
@@ -314,7 +314,7 @@ void SymmetryNONE::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "none/none-1ch-Imtot.dat"
           break;

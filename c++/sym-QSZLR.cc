@@ -1,23 +1,18 @@
 class SymmetryQSZLR : public SymFieldLR {
-  private:
-  outfield Sz2, Sz, Q, Q2;
-
-  public:
-  SymmetryQSZLR() : SymFieldLR() { all_syms["QSZLR"] = this; }
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Sz.set("<Sz>", 2);
-    Q.set("<Q>", 3);
-    Q2.set("<Q^2>", 4);
-    InvarStructure InvStruc[] = {
-       {"Q", additive},      // charge
-       {"SSZ", additive},    // spin projection
-       {"P", multiplicative} // parity
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0, 0, 1);
-  }
+ private:
+   outfield Sz2, Sz, Q, Q2;
+   
+ public:
+   template<typename ... Args> SymmetryQSZLR(Args&& ... args) : SymFieldLR(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
+       InvarStructure InvStruc[] = {
+         {"Q", additive},      // charge
+         {"SSZ", additive},    // spin projection
+         {"P", multiplicative} // parity
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0, 0, 1);
+     }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
     // The spin projection of the operator is defined by the difference
@@ -34,25 +29,22 @@ class SymmetryQSZLR : public SymFieldLR {
   }
 
   void load() override {
-    my_assert(channels == 2);
+    my_assert(P.channels == 2);
 #include "qszlr/qszlr-2ch-In2.dat"
 #include "qszlr/qszlr-2ch-QN.dat"
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
-
     for (const auto &[I, eig]: diag) {
       const SZspin ssz  = I.get("SSZ");
       const Number q    = I.get("Q");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * sqr(SZ(ssz));
       trQ += sumZ * q;
       trQ2 += sumZ * sqr(q);
     }
-
     Sz2 = trSZ2 / stats.Z;
     Sz  = trSZ / stats.Z;
     Q   = trQ / stats.Z;
@@ -61,8 +53,6 @@ class SymmetryQSZLR : public SymFieldLR {
 
   DECL;
 };
-
-Symmetry *SymQSZLR = new SymmetryQSZLR;
 
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)

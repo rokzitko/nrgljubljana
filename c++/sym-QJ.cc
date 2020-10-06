@@ -1,22 +1,18 @@
 class SymmetryQJ : public Symmetry {
-  private:
-  outfield Jz2, Q, Q2;
+ private:
+   outfield Jz2, Q, Q2;
 
-  public:
-  SymmetryQJ() : Symmetry() { all_syms["QJ"] = this; }
-
-  void init() override {
-    Jz2.set("<Jz^2>", 1);
-    Q.set("<Q>", 2);
-    Q2.set("<Q^2>", 3);
-    InvarStructure InvStruc[] = {
-       {"Q", additive}, // charge
-       {"JJ", additive} // total angular momentum
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0, 1);
-    Invar_f      = Invar(1, 4);
-  }
+ public:
+   template<typename ... Args> SymmetryQJ(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+     Jz2(P, allfields, "<Jz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
+       InvarStructure InvStruc[] = {
+         {"Q", additive}, // charge
+         {"JJ", additive} // total angular momentum
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0, 1);
+       Invar_f      = Invar(1, 4);
+     }
 
   // Multiplicity of the (Q,JJ) subspace is 2J+1 = JJ.
   size_t mult(const Invar &I) const override { return I.get("JJ"); }
@@ -35,19 +31,16 @@ class SymmetryQJ : public Symmetry {
 #include "qj/qj-QN.dat"
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trJZ2, trQ, trQ2; // Tr[J_z^2], Tr[Q], Tr[Q^2]
-
     for (const auto &[I, eig]: diag) {
       const Sspin jj    = I.get("JJ");
       const Number q    = I.get("Q");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
       trJZ2 += sumZ * (jj * jj - 1) / 12.;
     }
-
     Jz2 = trJZ2 / stats.Z;
     Q   = trQ / stats.Z;
     Q2  = trQ2 / stats.Z;
@@ -56,39 +49,31 @@ class SymmetryQJ : public Symmetry {
   // ClebschGordan[ket (p), op, bra (1)]
   double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 1);
-
     const Sspin jjp = Ip.get("JJ");
     const Sspin jj1 = I1.get("JJ");
     my_assert(abs(jj1 - jjp) == 1);
-
     return (jj1 == jjp + 1 ? S(jjp) + 1.0 : S(jjp));
   }
 
   // See cg_factors_doublet_triplet_quadruplet.nb
   double specdensquad_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 1);
-
     const Sspin jjp = Ip.get("JJ");
     const Sspin jj1 = I1.get("JJ");
     my_assert(abs(jj1 - jjp) == 1 || abs(jj1 - jjp) == 3);
-
     if (jj1 == jjp + 3) return S(jjp) / 2.0 + 1.0;
-
     if (jj1 == jjp + 1) {
       my_assert(jjp >= 2); // singlet in kvadruplet se ne moreta sklopiti v dublet
       return S(jjp) / 2.0 + 0.5;
     }
-
     if (jj1 == jjp - 1) {
       my_assert(jjp >= 2); // trikotniska
       return S(jjp) / 2.0;
     }
-
     if (jj1 == jjp - 3) {
       my_assert(jjp >= 4); // trikotniska
       return S(jjp) / 2.0 - 0.5;
     }
-
     my_assert_not_reached();
     return 0;
   }
@@ -100,8 +85,6 @@ class SymmetryQJ : public Symmetry {
   HAS_QUADRUPLET;
   DECL;
 };
-
-Symmetry *SymQJ = new SymmetryQJ;
 
 #include <boost/math/special_functions/factorials.hpp>
 
@@ -116,7 +99,6 @@ void SymmetryQJ::offdiag_function_QJ(const Step &step, unsigned int i, unsigned 
   const Invar I1      = In[i];
   const Invar I2      = In[j];
   const bool triangle = triangle_inequality(I1, I2, Iop); // I1 = I2+Iop
-
   if (triangle) { offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch); }
 }
 
@@ -134,7 +116,6 @@ inline double J(int JJ) {
 
 void SymmetryQJ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin jj = I.get("JJ");
-
 #include "qj/qj-offdiag.dat"
 #include "qj/qj-diag.dat"
 }

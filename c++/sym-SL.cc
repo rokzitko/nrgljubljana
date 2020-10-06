@@ -1,23 +1,19 @@
 class SymmetrySL : public Symmetry {
-  private:
-  outfield Q, Q2, sQ2;
-
-  public:
-  SymmetrySL() : Symmetry() { all_syms["SL"] = this; }
-
-  void init() override {
-    Q.set("<Q>", 1);
-    Q2.set("<Q^2>", 2);
-    sQ2.set("<sQ^2>", 3);
-    InvarStructure InvStruc[] = {
-       {"Q", additive} // charge
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0);
-  }
+ private:
+   outfield Q, Q2, sQ2;
+   
+ public:
+   template<typename ... Args> SymmetrySL(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+     Q(P, allfields, "<Q>", 1), Q2(P, allfields, "<Q^2>", 2), sQ2(P, allfields, "<sQ^2>", 3) {
+       InvarStructure InvStruc[] = {
+         {"Q", additive} // charge
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0);
+     }
 
   void load() override {
-    switch (channels) {
+    switch (P.channels) {
       case 1:
 #include "sl/sl-1ch-In2.dat"
 #include "sl/sl-1ch-QN.dat"
@@ -37,17 +33,14 @@ class SymmetrySL : public Symmetry {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trQ, trQ2; // Tr[Q], Tr[Q^2]
-
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
     }
-
     Q  = trQ / stats.Z;
     Q2 = trQ2 / stats.Z;
     // charge fluctuations -> susceptibility
@@ -59,8 +52,6 @@ class SymmetrySL : public Symmetry {
   HAS_GLOBAL;
 };
 
-Symmetry *SymSL = new SymmetrySL;
-
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
 
@@ -68,22 +59,19 @@ Symmetry *SymSL = new SymmetrySL;
 #define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
 void SymmetrySL::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "sl/sl-1ch-offdiag.dat"
 #include "sl/sl-1ch-diag.dat"
       break;
-
     case 2:
 #include "sl/sl-2ch-offdiag.dat"
 #include "sl/sl-2ch-diag.dat"
       break;
-
     case 3:
 #include "sl/sl-3ch-offdiag.dat"
 #include "sl/sl-3ch-diag.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }

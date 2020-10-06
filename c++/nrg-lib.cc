@@ -2219,6 +2219,7 @@ std::unique_ptr<Symmetry> get(std::string sym_string, const Params &P, Allfields
   if (sym_string == "QSLR")      return std::make_unique<SymmetryQSLR>(P, allfields); 
   if (sym_string == "QST")       return std::make_unique<SymmetryQST>(P, allfields);
   if (sym_string == "QSTZ")      return std::make_unique<SymmetryQSTZ>(P, allfields);
+  if (sym_string == "QSZLR")     return std::make_unique<SymmetryQSZLR>(P, allfields);
   if (sym_string == "QSZTZ")     return std::make_unique<SymmetryQSZTZ>(P, allfields);
   if (sym_string == "SL")        return std::make_unique<SymmetrySL>(P, allfields);
   if (sym_string == "SL3")       return std::make_unique<SymmetrySL3>(P, allfields);

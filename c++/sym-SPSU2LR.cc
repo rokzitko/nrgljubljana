@@ -1,19 +1,17 @@
 class SymmetrySPSU2LR : public SymLR {
-  private:
-  outfield Sz2;
+ private:
+   outfield Sz2;
 
-  public:
-  SymmetrySPSU2LR() : SymLR() { all_syms["SPSU2LR"] = this; }
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    InvarStructure InvStruc[] = {
-       {"SS", additive},     // spin
-       {"P", multiplicative} // parity
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0, 1);
-  }
+ public:
+   template<typename ... Args> SymmetrySPSU2LR(Args&& ... args) : SymLR(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1) {
+       InvarStructure InvStruc[] = {
+         {"SS", additive},     // spin
+         {"P", multiplicative} // parity
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0, 1);
+     }
 
   size_t mult(const Invar &I) const override { return I.get("SS"); }
 
@@ -24,7 +22,7 @@ class SymmetrySPSU2LR : public SymLR {
   }
 
   void load() override {
-    my_assert(channels == 2);
+    my_assert(P.channels == 2);
 #include "spsu2lr/spsu2lr-2ch-In2.dat"
 #include "spsu2lr/spsu2lr-2ch-QN.dat"
   }
@@ -34,7 +32,6 @@ class SymmetrySPSU2LR : public SymLR {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
-
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
@@ -45,16 +42,13 @@ class SymmetrySPSU2LR : public SymLR {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ2; // Tr[S_z^2]
-
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trSZ2 += sumZ * (ss * ss - 1) / 12.;
     }
-
     Sz2 = trSZ2 / stats.Z;
   }
 
@@ -62,8 +56,6 @@ class SymmetrySPSU2LR : public SymLR {
   HAS_DOUBLET;
   HAS_TRIPLET;
 };
-
-Symmetry *SymSPSU2LR = new SymmetrySPSU2LR;
 
 #undef ISOSPINX
 #define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * delta(step.N() + 1, ch), h, qq)
@@ -78,7 +70,7 @@ Symmetry *SymSPSU2LR = new SymmetrySPSU2LR;
 #define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
 void SymmetrySPSU2LR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  my_assert(channels == 2);
+  my_assert(P.channels == 2);
   Sspin ss = I.get("SS");
 #include "spsu2lr/spsu2lr-2ch-diag.dat"
 #include "spsu2lr/spsu2lr-2ch-offdiag.dat"

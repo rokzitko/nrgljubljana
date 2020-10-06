@@ -54,7 +54,7 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 
    // CASE II: OPPOSITE PARITY
 
-    if (channels == 2) {
+    if (P.channels == 2) {
       I1 = Invar(sszp + 1, -pp);
       RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupdiffa.dat", 0, SPU1LR::LENGTH_I_2CH);
       RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupdiffb.dat", 1, SPU1LR::LENGTH_I_2CH);
@@ -114,7 +114,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Qtot.dat"
           break;
@@ -131,7 +131,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Iztot.dat"
           break;
@@ -148,7 +148,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Ixtot.dat"
           break;
@@ -165,7 +165,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Iptot.dat"
           break;
@@ -182,7 +182,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Imtot.dat"
           break;

@@ -17,7 +17,7 @@ define(`RECALC_F_TAB_P', {
 #include $1
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-       recalc_f(diag, qsrmax, opch[$2][$3], Ip, I1, recalc_table, $4);
+       opch[$2][$3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, $4);
      }
    })
 
@@ -93,7 +93,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-spinz.dat"
           break;
@@ -108,7 +108,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-spiny.dat"
           break;
@@ -123,7 +123,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-spinx.dat"
           break;
@@ -137,7 +137,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Qtot.dat"
           break;
@@ -151,7 +151,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Iztot.dat"
           break;
@@ -165,7 +165,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Ixtot.dat"
           break;
@@ -180,7 +180,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Iytot.dat"
           break;
@@ -195,7 +195,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Iptot.dat"
           break;
@@ -209,7 +209,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Imtot.dat"
           break;

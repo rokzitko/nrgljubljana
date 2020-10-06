@@ -1,20 +1,17 @@
 class SymmetrySPU1LR : public SymFieldLR {
-  private:
-  outfield Sz2, Sz;
+ private:
+   outfield Sz2, Sz;
 
-  public:
-  SymmetrySPU1LR() : SymFieldLR() { all_syms["SPU1LR"] = this; }
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Sz.set("<Sz>", 2);
-    InvarStructure InvStruc[] = {
-       {"SSZ", additive},    // spin projection
-       {"P", multiplicative} // parity
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0, 1);
-  }
+ public:
+   template<typename ... Args> SymmetrySPU1LR(Args&& ... args) : SymFieldLR(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2) {
+       InvarStructure InvStruc[] = {
+         {"SSZ", additive},    // spin projection
+         {"P", multiplicative} // parity
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0, 1);
+     }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
     // The spin projection of the operator is defined by the difference
@@ -30,32 +27,27 @@ class SymmetrySPU1LR : public SymFieldLR {
   }
 
   void load() override {
-    switch (channels) {
+    switch (P.channels) {
       case 1:
 #include "spu1lr/spu1lr-1ch-In2.dat"
 #include "spu1lr/spu1lr-1ch-QN.dat"
         break;
-
       case 2:
 #include "spu1lr/spu1lr-2ch-In2.dat"
 #include "spu1lr/spu1lr-2ch-QN.dat"
         break;
-
       default: my_assert_not_reached();
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
-
     for (const auto &[I, eig]: diag) {
       const SZspin ssz  = I.get("SSZ");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * sqr(SZ(ssz));
     }
-
     Sz2 = trSZ2 / stats.Z;
     Sz  = trSZ / stats.Z;
   }
@@ -65,8 +57,6 @@ class SymmetrySPU1LR : public SymFieldLR {
   HAS_TRIPLET;
   HAS_GLOBAL;
 };
-
-Symmetry *SymSPU1LR = new SymmetrySPU1LR;
 
 #undef ISOSPINX
 #define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * delta(step.N() + 1, ch), h, qq)
@@ -81,21 +71,19 @@ Symmetry *SymSPU1LR = new SymmetrySPU1LR;
 #define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
 void SymmetrySPU1LR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "spu1lr/spu1lr-1ch-offdiag.dat"
 #include "spu1lr/spu1lr-1ch-anomalous.dat"
 #include "spu1lr/spu1lr-1ch-diag.dat"
 #include "spu1lr/spu1lr-1ch-isospinx.dat"
       break;
-
     case 2:
 #include "spu1lr/spu1lr-2ch-diag.dat"
 #include "spu1lr/spu1lr-2ch-offdiag.dat"
 #include "spu1lr/spu1lr-2ch-anomalous.dat"
 #include "spu1lr/spu1lr-2ch-isospinx.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }

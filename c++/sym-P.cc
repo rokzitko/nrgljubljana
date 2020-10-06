@@ -1,27 +1,23 @@
 class SymmetryP : public Symmetry {
   public:
-  SymmetryP() : Symmetry() { all_syms["P"] = this; }
-
-  void init() override {
-    InvarStructure InvStruc[] = {
+   template<typename ... Args> SymmetryP(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {
+     InvarStructure InvStruc[] = {
        {"P", multiplicative} // fermion parity
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(1);
-  }
+     };
+     initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+     InvarSinglet = Invar(1);
+   }
 
   void load() override {
-    switch (channels) {
+    switch (P.channels) {
       case 1:
 #include "p/p-1ch-In2.dat"
 #include "p/p-1ch-QN.dat"
         break;
-
       case 2:
 #include "p/p-2ch-In2.dat"
 #include "p/p-2ch-QN.dat"
         break;
-
       default: my_assert_not_reached();
     }
   }
@@ -29,7 +25,7 @@ class SymmetryP : public Symmetry {
   void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
   void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override{};
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {};
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override { return z2_equality(I1.get("P"), I2.get("P"), I3.get("P")); }
 
@@ -37,8 +33,6 @@ class SymmetryP : public Symmetry {
   HAS_DOUBLET;
   HAS_GLOBAL;
 };
-
-Symmetry *SymP = new SymmetryP;
 
 #undef OFFDIAG_CR_DO
 #undef OFFDIAG_CR_UP
@@ -57,7 +51,7 @@ Symmetry *SymP = new SymmetryP;
 #define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
 void SymmetryP::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "p/p-1ch-offdiag-CR-UP.dat"
 #include "p/p-1ch-offdiag-CR-DO.dat"
@@ -66,7 +60,6 @@ void SymmetryP::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxv
 #include "p/p-1ch-diag.dat"
 #include "p/p-1ch-Ixtot.dat"
       break;
-
     case 2:
 #include "p/p-2ch-offdiag-CR-UP.dat"
 #include "p/p-2ch-offdiag-CR-DO.dat"
@@ -75,7 +68,6 @@ void SymmetryP::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxv
 #include "p/p-2ch-diag.dat"
 #include "p/p-2ch-Ixtot.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }
@@ -100,7 +92,7 @@ void SymmetryP::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxv
 #define DIAG_DOWN(i, j, ch, number) diag_function(step, i, ch, number, zetaDOWN(step.N() + 1, ch), h, qq)
 
 void SymmetryP::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "p/p-1ch-offdiag-CR-UP.dat"
 #include "p/p-1ch-offdiag-CR-DO.dat"
@@ -110,7 +102,6 @@ void SymmetryP::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals
 #include "p/p-1ch-diag-DOWN.dat"
 #include "p/p-1ch-Ixtot.dat"
       break;
-
     case 2:
 #include "p/p-2ch-offdiag-CR-UP.dat"
 #include "p/p-2ch-offdiag-CR-DO.dat"
@@ -120,7 +111,6 @@ void SymmetryP::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals
 #include "p/p-2ch-diag-DOWN.dat"
 #include "p/p-2ch-Ixtot.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }

@@ -1,21 +1,18 @@
 class SymmetrySPSU2T : public Symmetry {
-  private:
-  outfield Sz2, Tz2;
+ private:
+   outfield Sz2, Tz2;
 
-  public:
-  SymmetrySPSU2T() : Symmetry() { all_syms["SPSU2T"] = this; }
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Tz2.set("<Tz^2>", 2);
-    InvarStructure InvStruc[] = {
-       {"SS", additive}, // spin
-       {"T", additive}   // angular momentum
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(1, 0);
-    Invar_f      = Invar(2, 1);
-  }
+ public:
+   template<typename ... Args> SymmetrySPSU2T(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Tz2(P, allfields, "<Tz^2>", 2) {
+       InvarStructure InvStruc[] = {
+         {"SS", additive}, // spin
+         {"T", additive}   // angular momentum
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(1, 0);
+       Invar_f      = Invar(2, 1);
+     }
 
   // Multiplicity of the (SS,T) subspace is (2S+1 = SS) times (2T+1).
   size_t mult(const Invar &I) const override { return I.get("SS") * (2 * I.get("T") + 1); }
@@ -32,8 +29,8 @@ class SymmetrySPSU2T : public Symmetry {
   }
 
   void load() override {
-    my_assert(!substeps);
-    my_assert(channels == 3);
+    my_assert(!P.substeps);
+    my_assert(P.channels == 3);
 #include "spsu2t/spsu2t-In2.dat"
 #include "spsu2t/spsu2t-QN.dat"
   } // load
@@ -41,11 +38,9 @@ class SymmetrySPSU2T : public Symmetry {
   // Same as for SYMTYPE=QS, because spin operators are angular momentum singlets.
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "T", 0);
-
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
-
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
@@ -54,32 +49,25 @@ class SymmetrySPSU2T : public Symmetry {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
-
     double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
-
     const Tangmom tp = Ip.get("T");
     const Tangmom t1 = I1.get("T");
     const int ttp    = 2 * tp + 1;
     const int tt1    = 2 * t1 + 1;
     my_assert(abs(ttp - tt1) == 2 || ttp == tt1);
-
     double angmomfactor = switch3(tt1, ttp + 2, 1. + (ttp - 1) / 3., ttp, ttp / 3., ttp - 2, (-2. + ttp) / 3.);
-
     return spinfactor * angmomfactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ2, trTZ2; // Tr[S_z^2], Tr[T_z^2]
-
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
       const Tangmom t   = I.get("T");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trSZ2 += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
       trTZ2 += sumZ * t * (t + 1) / 3.;
     }
-
     Sz2 = trSZ2 / stats.Z;
     Tz2 = trTZ2 / stats.Z;
   }
@@ -92,8 +80,6 @@ class SymmetrySPSU2T : public Symmetry {
     return triangle_inequality(I1, I2, If);
   }
 };
-
-Symmetry *SymSPSU2T = new SymmetrySPSU2T;
 
 bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
   // In these cases the subspace exists, but taking the T=2 or T=1
@@ -121,7 +107,7 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
       } else {                                                                                                                                       \
         factor = factor0;                                                                                                                            \
       }                                                                                                                                              \
-      offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                                      \
+      offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                                \
     }                                                                                                                                                \
   };
 
@@ -144,10 +130,8 @@ void SymmetrySPSU2T::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq,
   Sspin ss  = I.get("SS");
   Tangmom t = I.get("T");
   double T  = t; // crucially important to use floating point!
-
-  my_assert(!substeps);
-  my_assert(channels == 3);
-
+  my_assert(!P.substeps);
+  my_assert(P.channels == 3);
 #include "spsu2t/spsu2t-offdiag.dat"
 #include "spsu2t/spsu2t-diag.dat"
   if (!num_equal(delta(step.N() + 1, 0), 0.0)) {

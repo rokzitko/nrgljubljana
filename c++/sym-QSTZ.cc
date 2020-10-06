@@ -1,24 +1,19 @@
 class SymmetryQSTZ : public Symmetry {
-  private:
-  outfield Sz2, Tz2, Q, Q2;
+ private:
+   outfield Sz2, Tz2, Q, Q2;
 
-  public:
-  SymmetryQSTZ() : Symmetry() { all_syms["QSTZ"] = this; }
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Tz2.set("<Tz^2>", 2);
-    Q.set("<Q>", 3);
-    Q2.set("<Q^2>", 4);
-    InvarStructure InvStruc[] = {
-       {"Q", additive},  // charge
-       {"SS", additive}, // spin
-       {"TZ", additive}  // angular momentum
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0, 1, 0);
-    Invar_f      = Invar(1, 2, 1); // (1,2,1) is correct. see triangle_inequality() below!
-  }
+ public:
+   template<typename ... Args> SymmetryQSTZ(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Tz2(P, allfields, "<Tz^2>", 2),  Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
+       InvarStructure InvStruc[] = {
+         {"Q", additive},  // charge
+         {"SS", additive}, // spin
+         {"TZ", additive}  // angular momentum
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0, 1, 0);
+       Invar_f      = Invar(1, 2, 1); // (1,2,1) is correct. see triangle_inequality() below!
+     }
 
   // Multiplicity of the (Q,SS,TZ) subspace is (2S+1 = SS).
   size_t mult(const Invar &I) const override { return I.get("SS"); }
@@ -31,8 +26,8 @@ class SymmetryQSTZ : public Symmetry {
   bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
 
   void load() override {
-    my_assert(!substeps);
-    my_assert(channels == 3);
+    my_assert(!P.substeps);
+    my_assert(P.channels == 3);
 #include "qstz/qstz-In2.dat"
 #include "qstz/qstz-QN.dat"
   } // load
@@ -41,40 +36,33 @@ class SymmetryQSTZ : public Symmetry {
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "TZ", 0);
-
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
-
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !
   double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_diff(Ip, I1, "Q", 1);
-
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
-
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ2, trTZ2, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
-
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
       const Sspin ss    = I.get("SS");
       const Tangmom tz  = I.get("TZ");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
       trSZ2 += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
       trTZ2 += sumZ * tz * tz;
     }
-
     Sz2 = trSZ2 / stats.Z;
     Tz2 = trTZ2 / stats.Z;
     Q   = trQ / stats.Z;
@@ -85,8 +73,6 @@ class SymmetryQSTZ : public Symmetry {
   HAS_DOUBLET;
   HAS_TRIPLET;
 };
-
-Symmetry *SymQSTZ = new SymmetryQSTZ;
 
 // We take the coefficients of the first channel (indexed as 0),
 // because all three set are exactly the same due to orbital
@@ -99,10 +85,8 @@ Symmetry *SymQSTZ = new SymmetryQSTZ;
 
 void SymmetryQSTZ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
-
-  my_assert(!substeps);
-  my_assert(channels == 3);
-
+  my_assert(!P.substeps);
+  my_assert(P.channels == 3);
 #include "qstz/qstz-offdiag.dat"
 #include "qstz/qstz-diag.dat"
 }

@@ -6,7 +6,7 @@
 
 include(recalc-macros.m4)
 
-   namespace SU2 {
+namespace SU2 {
 #include "su2/su2-1ch-def.dat"
 #include "su2/su2-2ch-def.dat"
 }
@@ -38,7 +38,7 @@ define(`RECALC_F_TAB_SU2', {
 #include $1
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-    recalc_f(diag, qsrmax, opch[$2][$3], Ip, I1, recalc_table, $4);
+    opch[$2][$3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, $4);
   }
 })
 
@@ -96,7 +96,7 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "su2/su2-1ch-spinz.dat"
           break;
@@ -114,7 +114,7 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "su2/su2-1ch-spiny.dat"
           break;
@@ -132,7 +132,7 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "su2/su2-1ch-spinx.dat"
           break;

@@ -97,7 +97,7 @@ void SymmetryDBLISOSZ::recalc_global(const Step &step, const DiagInfo &diag, con
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "dblisosz/dblisosz-2ch-spinz.dat"
           break;

@@ -134,7 +134,7 @@ Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "spu1/spu1-1ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_1CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -144,7 +144,7 @@ Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "spu1/spu1-2ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_2CH);
   }
 };
  	     {
@@ -154,7 +154,7 @@ Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "spu1/spu1-2ch-spinupb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -169,7 +169,7 @@ Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "spu1/spu1-1ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_1CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -179,7 +179,7 @@ Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "spu1/spu1-2ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_2CH);
   }
 };
              {
@@ -189,7 +189,7 @@ Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 #include "spu1/spu1-2ch-spindownb.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_2CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -214,7 +214,7 @@ OpchChannel SymmetrySPU1::recalc_irreduc_substeps(const Step &step, const DiagIn
 #include "spu1/spu1-1ch-spinupa.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_1CH);
-    opch[M][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_1CH);
+    opch[M][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_1CH);
   }
 };
 
@@ -226,7 +226,7 @@ OpchChannel SymmetrySPU1::recalc_irreduc_substeps(const Step &step, const DiagIn
 #include "spu1/spu1-1ch-spindowna.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1::LENGTH_I_1CH);
-    opch[M][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_1CH);
+    opch[M][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1::LENGTH_I_1CH);
   }
 };
   }
@@ -590,4 +590,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
   my_assert_not_reached();
 }
 
+// XXX: 
+#undef Q1
 #undef Q2
+#undef Q3

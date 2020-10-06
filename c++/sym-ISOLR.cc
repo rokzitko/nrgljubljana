@@ -1,22 +1,19 @@
 class SymmetryISOLRcommon : public SymLR {
-  private:
-  outfield Sz2, Q2;
-
-  public:
-  SymmetryISOLRcommon() : SymLR() {} // see below: ISOLR and ISO2LR
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Q2.set("<Q^2>", 2);
-    InvarStructure InvStruc[] = {
-       {"II", additive},     // isospin
-       {"SS", additive},     // spin
-       {"P", multiplicative} // parity
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(1, 1, 1);
-    //     Invar_f = Invar(?, ?, ?)
-  }
+ private:
+   outfield Sz2, Q2;
+   
+ public:
+   template<typename ... Args> SymmetryISOLRcommon(Args&& ... args) : SymLR(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
+       InvarStructure InvStruc[] = {
+         {"II", additive},     // isospin
+         {"SS", additive},     // spin
+         {"P", multiplicative} // parity
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(1, 1, 1);
+       //     Invar_f = Invar(?, ?, ?)
+     }
 
   // Multiplicity of the I=(II,SS,P) subspace = (2I+1)(2S+1) = II SS.
   size_t mult(const Invar &I) const override {
@@ -41,40 +38,34 @@ class SymmetryISOLRcommon : public SymLR {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
-
     const Ispin iip = Ip.get("II");
     const Ispin ii1 = I1.get("II");
     my_assert(abs(ii1 - iip) == 1);
-
     const double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
     const double isofactor  = (ii1 == iip + 1 ? ISO(iip) + 1.0 : ISO(iip));
-
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
-
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
       const Sspin ss    = I.get("SS");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trSZ += sumZ * (ss * ss - 1) / 12.; // isospin multiplicity contained in sumZ
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
-
     Sz2 = trSZ / stats.Z;
     Q2  = (4 * trIZ) / stats.Z;
   }
 };
 
 class SymmetryISOLR : public SymmetryISOLRcommon {
-  public:
-  SymmetryISOLR() : SymmetryISOLRcommon() { all_syms["ISOLR"] = this; };
+ public:
+   template<typename ... Args> SymmetryISOLR(Args&& ... args) : SymmetryISOLRcommon(std::forward<Args>(args)...) {}
 
   void load() override {
-    my_assert(channels == 2);
+    my_assert(P.channels == 2);
 #include "isolr/isolr-2ch-In2.dat"
 #include "isolr/isolr-2ch-QN.dat"
   }
@@ -85,11 +76,11 @@ class SymmetryISOLR : public SymmetryISOLRcommon {
 };
 
 class SymmetryISO2LR : public SymmetryISOLRcommon {
-  public:
-  SymmetryISO2LR() : SymmetryISOLRcommon() { all_syms["ISO2LR"] = this; };
+ public:
+   template<typename ... Args> SymmetryISO2LR(Args&& ... args) : SymmetryISOLRcommon(std::forward<Args>(args)...) {}
 
   void load() override {
-    my_assert(channels == 2);
+    my_assert(P.channels == 2);
 #include "iso2lr/iso2lr-2ch-In2.dat"
 #include "iso2lr/iso2lr-2ch-QN.dat"
   }
@@ -99,9 +90,6 @@ class SymmetryISO2LR : public SymmetryISOLRcommon {
   HAS_TRIPLET;
 };
 
-Symmetry *SymISOLR  = new SymmetryISOLR;
-Symmetry *SymISO2LR = new SymmetryISO2LR;
-
 // *** Helper macros for makematrix() members in matrix.cc
 #undef OFFIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
@@ -109,14 +97,12 @@ Symmetry *SymISO2LR = new SymmetryISO2LR;
 void SymmetryISOLR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
-
 #include "isolr/isolr-2ch-offdiag.dat"
 }
 
 void SymmetryISO2LR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
-
 #include "iso2lr/iso2lr-2ch-offdiag.dat"
 }
 

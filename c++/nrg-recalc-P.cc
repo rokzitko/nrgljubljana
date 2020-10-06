@@ -43,7 +43,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-1ch-a-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, symP::LENGTH_I_1CH);
+       opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_1CH);
      }
    };
             {
@@ -52,7 +52,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-1ch-a-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, symP::LENGTH_I_1CH);
+       opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_1CH);
      }
    };
             {
@@ -61,7 +61,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-1ch-a-AN-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][2], Ip, I1, recalc_table, symP::LENGTH_I_1CH);
+       opch[0][2][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_1CH);
      }
    };
             {
@@ -70,7 +70,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-1ch-a-AN-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_1CH);
-       recalc_f(diag, qsrmax, opch[0][3], Ip, I1, recalc_table, symP::LENGTH_I_1CH);
+       opch[0][3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_1CH);
      }
    }; } break;
   case 2: { {
@@ -79,7 +79,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-2ch-a-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
+       opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_2CH);
      }
    };
 	    {
@@ -88,7 +88,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-2ch-b-CR-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
+       opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_2CH);
      }
    };
             {
@@ -97,7 +97,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-2ch-a-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
+       opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_2CH);
      }
    };
             {
@@ -106,7 +106,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-2ch-b-CR-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
+       opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_2CH);
      }
    };
     	    {
@@ -115,7 +115,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-2ch-a-AN-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][2], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
+       opch[0][2][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_2CH);
      }
    };
 	    {
@@ -124,7 +124,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-2ch-b-AN-DO.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][2], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
+       opch[1][2][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_2CH);
      }
    };
             {
@@ -133,7 +133,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-2ch-a-AN-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[0][3], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
+       opch[0][3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_2CH);
      }
    };
             {
@@ -142,7 +142,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 #include "p/p-2ch-b-AN-UP.dat"
        };
        BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == symP::LENGTH_I_2CH);
-       recalc_f(diag, qsrmax, opch[1][3], Ip, I1, recalc_table, symP::LENGTH_I_2CH);
+       opch[1][3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, symP::LENGTH_I_2CH);
      }
    } } break;
   default: my_assert_not_reached();
@@ -231,7 +231,7 @@ void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrm
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "p/p-1ch-spinz.dat"
           break;
@@ -249,7 +249,7 @@ void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrm
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "p/p-1ch-spiny.dat"
           break;
@@ -267,7 +267,7 @@ void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrm
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "p/p-1ch-spinx.dat"
           break;
@@ -284,7 +284,7 @@ void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrm
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "p/p-1ch-Qtot.dat"
           break;
@@ -301,7 +301,7 @@ void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrm
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "p/p-1ch-Iztot.dat"
           break;
@@ -318,7 +318,7 @@ void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrm
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "p/p-1ch-Ixtot.dat"
           break;
@@ -336,7 +336,7 @@ void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrm
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "p/p-1ch-Iytot.dat"
           break;
@@ -354,7 +354,7 @@ void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrm
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "p/p-1ch-Iptot.dat"
           break;
@@ -371,7 +371,7 @@ void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrm
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "p/p-1ch-Imtot.dat"
           break;

@@ -1,18 +1,16 @@
 class SymmetrySU2 : public Symmetry {
-  private:
-  outfield Q2;
+ private:
+   outfield Q2;
 
-  public:
-  SymmetrySU2() : Symmetry() { all_syms["SU2"] = this; }
-
-  void init() override {
-    Q2.set("<Q^2>", 1);
-    InvarStructure InvStruc[] = {
-       {"II", additive} // isospin
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(1);
-  }
+ public:
+   template<typename ... Args> SymmetrySU2(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+     Q2(P, allfields, "<Q^2>", 1) {
+       InvarStructure InvStruc[] = {
+         {"II", additive} // isospin
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(1);
+     }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II"));
@@ -30,38 +28,31 @@ class SymmetrySU2 : public Symmetry {
     const Ispin iip = Ip.get("II");
     const Ispin ii1 = I1.get("II");
     my_assert(abs(ii1 - iip) == 1);
-
     const double isofactor = (ii1 == iip + 1 ? ISO(iip) + 1.0 : ISO(iip));
-
     return isofactor;
   }
 
   void load() override {
-    switch (channels) {
+    switch (P.channels) {
       case 1:
 #include "su2/su2-1ch-In2.dat"
 #include "su2/su2-1ch-QN.dat"
         break;
-
       case 2:
 #include "su2/su2-2ch-In2.dat"
 #include "su2/su2-2ch-QN.dat"
         break;
-
       default: my_assert_not_reached();
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trIZ2; // Tr[I_z^2]
-
     for (const auto &[I, eig]: diag) {
       const Number ii   = I.get("II");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trIZ2 += sumZ * (ii * ii - 1) / 12.;
     }
-
     Q2 = (4 * trIZ2) / stats.Z;
   }
 
@@ -69,8 +60,6 @@ class SymmetrySU2 : public Symmetry {
   HAS_DOUBLET;
   HAS_GLOBAL;
 };
-
-Symmetry *SymSU2 = new SymmetrySU2;
 
 // For SU2, the <||f||> depend on the "type"!
 // OFFDIAG_1 corresponds to the first combination, OFFDIAG_2 to the
@@ -85,18 +74,15 @@ Symmetry *SymSU2 = new SymmetrySU2;
 void SymmetrySU2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Ispin ii = I.get("II");
   int NN   = step.getnn();
-
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "su2/su2-1ch-offdiag-1.dat"
 #include "su2/su2-1ch-offdiag-2.dat"
       break;
-
     case 2:
 #include "su2/su2-2ch-offdiag-1.dat"
 #include "su2/su2-2ch-offdiag-2.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }

@@ -8,7 +8,7 @@ namespace U1 {
 #include "u1/u1-1ch-def.dat"
 #include "u1/u1-2ch-def.dat"
 #include "u1/u1-3ch-def.dat"
-} // namespace U1
+}
 
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2015
@@ -88,7 +88,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-1ch-a-DO.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_1CH);
-    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, U1::LENGTH_I_1CH);
+    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_1CH);
   }
 };
            {
@@ -97,7 +97,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-1ch-a-UP.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_1CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, U1::LENGTH_I_1CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_1CH);
   }
 } } break;
   case 2: { {
@@ -106,7 +106,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-2ch-a-DO.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, U1::LENGTH_I_2CH);
+    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_2CH);
   }
 };
 	   {
@@ -115,7 +115,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-2ch-b-DO.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, U1::LENGTH_I_2CH);
+    opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_2CH);
   }
 };
 	   {
@@ -124,7 +124,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-2ch-a-UP.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, U1::LENGTH_I_2CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_2CH);
   }
 };
 	   {
@@ -133,7 +133,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-2ch-b-UP.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_2CH);
-    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, U1::LENGTH_I_2CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_2CH);
   }
 } } break;
   case 3: { {
@@ -142,7 +142,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-3ch-a-DO.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_3CH);
-    recalc_f(diag, qsrmax, opch[0][1], Ip, I1, recalc_table, U1::LENGTH_I_3CH);
+    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_3CH);
   }
 };
 	   {
@@ -151,7 +151,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-3ch-b-DO.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_3CH);
-    recalc_f(diag, qsrmax, opch[1][1], Ip, I1, recalc_table, U1::LENGTH_I_3CH);
+    opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_3CH);
   }
 };
 	   {
@@ -160,7 +160,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-3ch-c-DO.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_3CH);
-    recalc_f(diag, qsrmax, opch[2][1], Ip, I1, recalc_table, U1::LENGTH_I_3CH);
+    opch[2][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_3CH);
   }
 };
 	   {
@@ -169,7 +169,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-3ch-a-UP.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_3CH);
-    recalc_f(diag, qsrmax, opch[0][0], Ip, I1, recalc_table, U1::LENGTH_I_3CH);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_3CH);
   }
 };
 	   {
@@ -178,7 +178,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-3ch-b-UP.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_3CH);
-    recalc_f(diag, qsrmax, opch[1][0], Ip, I1, recalc_table, U1::LENGTH_I_3CH);
+    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_3CH);
   }
 };
 	   {
@@ -187,7 +187,7 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #include "u1/u1-3ch-c-UP.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_I_3CH);
-    recalc_f(diag, qsrmax, opch[2][0], Ip, I1, recalc_table, U1::LENGTH_I_3CH);
+    opch[2][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, U1::LENGTH_I_3CH);
   }
 } } break;
   default: my_assert_not_reached();
@@ -213,7 +213,7 @@ void SymmetryU1::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "u1/u1-1ch-spinz.dat"
           break;
@@ -234,7 +234,7 @@ void SymmetryU1::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "u1/u1-1ch-spiny.dat"
           break;
@@ -255,7 +255,7 @@ void SymmetryU1::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "u1/u1-1ch-spinx.dat"
           break;

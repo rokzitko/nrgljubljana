@@ -8,7 +8,7 @@ namespace U1 {
 #include "u1/u1-1ch-def.dat"
 #include "u1/u1-2ch-def.dat"
 #include "u1/u1-3ch-def.dat"
-} // namespace U1
+}
 
 include(recalc-macros.m4)
 
@@ -34,7 +34,7 @@ define(`RECALC_F_TAB_U1', {
 #include $1
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-    recalc_f(diag, qsrmax, opch[$2][$3], Ip, I1, recalc_table, $4);
+    opch[$2][$3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, $4);
   }
 })
 
@@ -79,7 +79,7 @@ void SymmetryU1::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "u1/u1-1ch-spinz.dat"
           break;
@@ -100,7 +100,7 @@ void SymmetryU1::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "u1/u1-1ch-spiny.dat"
           break;
@@ -121,7 +121,7 @@ void SymmetryU1::recalc_global(const Step &step, const DiagInfo &diag, const QSr
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "u1/u1-1ch-spinx.dat"
           break;

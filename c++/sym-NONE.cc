@@ -1,42 +1,35 @@
 class SymmetryNONE : public Symmetry {
   public:
-  SymmetryNONE() : Symmetry() { all_syms["NONE"] = this; }
-
-  void init() override {
-    InvarStructure InvStruc[] = {
+   template<typename ... Args> SymmetryNONE(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {
+     InvarStructure InvStruc[] = {
        {"x", additive} // dummy quantum number
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0);
-  }
+     };
+     initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+     InvarSinglet = Invar(0);
+   }
 
   void load() override {
-    switch (channels) {
+    switch (P.channels) {
       case 1:
 #include "none/none-1ch-In2.dat"
 #include "none/none-1ch-QN.dat"
         break;
-
       case 2:
 #include "none/none-2ch-In2.dat"
 #include "none/none-2ch-QN.dat"
         break;
-
       default: my_assert_not_reached();
     }
   }
 
   void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
   void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
-
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override{};
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {};
 
   DECL;
   HAS_DOUBLET;
   HAS_GLOBAL;
 };
-
-Symmetry *SymNONE = new SymmetryNONE;
 
 #undef OFFDIAG_CR_DO
 #undef OFFDIAG_CR_UP
@@ -51,21 +44,19 @@ Symmetry *SymNONE = new SymmetryNONE;
 #define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
 
 void SymmetryNONE::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "none/none-1ch-offdiag-CR-UP.dat"
 #include "none/none-1ch-offdiag-CR-DO.dat"
 #include "none/none-1ch-diag.dat"
 #include "none/none-1ch-Ixtot.dat"
       break;
-
     case 2:
 #include "none/none-2ch-offdiag-CR-UP.dat"
 #include "none/none-2ch-offdiag-CR-DO.dat"
 #include "none/none-2ch-diag.dat"
 #include "none/none-2ch-Ixtot.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }
@@ -86,7 +77,7 @@ void SymmetryNONE::makematrix_nonpolarized(Matrix &h, const Step &step, const Rm
 #define DIAG_DOWN(i, j, ch, number) diag_function(step, i, ch, number, zetaDOWN(step.N() + 1, ch), h, qq)
 
 void SymmetryNONE::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "none/none-1ch-offdiag-CR-UP.dat"
 #include "none/none-1ch-offdiag-CR-DO.dat"
@@ -94,7 +85,6 @@ void SymmetryNONE::makematrix_polarized(Matrix &h, const Step &step, const Rmaxv
 #include "none/none-1ch-diag-DOWN.dat"
 #include "none/none-1ch-Ixtot.dat"
       break;
-
     case 2:
 #include "none/none-2ch-offdiag-CR-UP.dat"
 #include "none/none-2ch-offdiag-CR-DO.dat"
@@ -102,7 +92,6 @@ void SymmetryNONE::makematrix_polarized(Matrix &h, const Step &step, const Rmaxv
 #include "none/none-2ch-diag-DOWN.dat"
 #include "none/none-2ch-Ixtot.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }

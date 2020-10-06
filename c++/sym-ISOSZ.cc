@@ -40,39 +40,32 @@ class SymmetryISOSZ : public SymField {
 #include "isosz/isosz-1ch-In2.dat"
 #include "isosz/isosz-1ch-QN.dat"
         break;
-
       case 2:
 #include "isosz/isosz-2ch-In2.dat"
 #include "isosz/isosz-2ch-QN.dat"
         break;
-
       default: my_assert_not_reached();
     }
   }
 
   double specdens_factor(const Invar &Ip, const Invar &I1) override {
     check_abs_diff(Ip, I1, "SSZ", 1);
-
     const Ispin iip = Ip.get("II");
     const Ispin ii1 = I1.get("II");
-
     const double isofactor = (ii1 == iip + 1 ? ISO(iip) + 1.0 : ISO(iip));
     return isofactor;
   }
 
   void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ, trSZ2, trIZ2; // Tr[S_z], Tr[S_z^2], Tr[I_z^2]
-
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
       const SZspin ssz  = I.get("SSZ");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * sqr(SZ(ssz));        // isospin multiplicity contained in sumZ
       trIZ2 += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
-
     Sz  = trSZ / stats.Z;
     Sz2 = trSZ2 / stats.Z;
     Q2  = (4 * trIZ2) / stats.Z;
@@ -95,11 +88,9 @@ void SymmetryISOSZ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, 
     case 1:
 #include "isosz/isosz-1ch-offdiag.dat"
       break;
-
     case 2:
 #include "isosz/isosz-2ch-offdiag.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }

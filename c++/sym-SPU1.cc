@@ -30,12 +30,10 @@ class SymmetrySPU1 : public SymField {
 #include "spu1/spu1-1ch-In2.dat"
 #include "spu1/spu1-1ch-QN.dat"
           break;
-
         case 2:
 #include "spu1/spu1-2ch-In2.dat"
 #include "spu1/spu1-2ch-QN.dat"
           break;
-
         default: my_assert_not_reached();
       } // switch
     } else {
@@ -90,14 +88,12 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Step &step, const Rm
 #include "spu1/spu1-1ch-diag.dat"
 #include "spu1/spu1-1ch-isospinx.dat"
         break;
-
       case 2:
 #include "spu1/spu1-2ch-diag.dat"
 #include "spu1/spu1-2ch-offdiag.dat"
 #include "spu1/spu1-2ch-anomalous.dat"
 #include "spu1/spu1-2ch-isospinx.dat"
         break;
-
       default: my_assert_not_reached();
     }
   } else {
@@ -154,7 +150,6 @@ void SymmetrySPU1::makematrix_polarized(Matrix &h, const Step &step, const Rmaxv
 #include "spu1/spu1-1ch-diag-DOWN.dat"
 #include "spu1/spu1-1ch-isospinx.dat"
     break;
-
   case 2:
 #include "spu1/spu1-2ch-diag-UP.dat"
 #include "spu1/spu1-2ch-diag-DOWN.dat"
@@ -163,7 +158,6 @@ void SymmetrySPU1::makematrix_polarized(Matrix &h, const Step &step, const Rmaxv
 #include "spu1/spu1-2ch-anomalous.dat"
 #include "spu1/spu1-2ch-isospinx.dat"
     break;
-
   default: my_assert_not_reached();
   } // switch
 }

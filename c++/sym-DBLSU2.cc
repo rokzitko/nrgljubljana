@@ -1,20 +1,17 @@
 class SymmetryDBLSU2 : public Symmetry {
-  private:
-  outfield Q12, Q22;
-
-  public:
-  SymmetryDBLSU2() : Symmetry() { all_syms["DBLSU2"] = this; }
-
-  void init() override {
-    Q12.set("<Q1^2>", 1);
-    Q22.set("<Q2^2>", 2);
-    InvarStructure InvStruc[] = {
-       {"II1", additive}, // isospin 1
-       {"II2", additive}, // isospin 2
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(1, 1);
-  }
+ private:
+   outfield Q12, Q22;
+   
+ public:
+   template<typename ... Args> SymmetryDBLSU2(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+     Q12(P, allfields, "<Q1^2>", 1), Q22(P, allfields, "<Q2^2>", 2) {
+       InvarStructure InvStruc[] = {
+         {"II1", additive}, // isospin 1
+         {"II2", additive}, // isospin 2
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(1, 1);
+     }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
     return su2_triangle_inequality(I1.get("II1"), I2.get("II1"), I3.get("II1"))
@@ -32,36 +29,30 @@ class SymmetryDBLSU2 : public Symmetry {
     const Ispin ii1p = Ip.get("II1");
     const Ispin ii11 = I1.get("II1");
     my_assert(abs(ii11 - ii1p) == 1);
-
     const double isofactor = (ii11 == ii1p + 1 ? ISO(ii1p) + 1.0 : ISO(ii1p));
-
     return isofactor;
   }
 
   void load() override {
-    switch (channels) {
+    switch (P.channels) {
       case 2:
 #include "dblsu2/dblsu2-2ch-In2.dat"
 #include "dblsu2/dblsu2-2ch-QN.dat"
         break;
-
       default: my_assert_not_reached();
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trIZ12; // Tr[I1_z^2]
     bucket trIZ22; // Tr[I2_z^2]
-
     for (const auto &[I, eig]: diag) {
       const Number ii1  = I.get("II1");
       const Number ii2  = I.get("II2");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trIZ12 += sumZ * (ii1 * ii1 - 1) / 12.;
       trIZ22 += sumZ * (ii2 * ii2 - 1) / 12.;
     }
-
     Q12 = (4 * trIZ12) / stats.Z;
     Q22 = (4 * trIZ22) / stats.Z;
   }
@@ -71,8 +62,6 @@ class SymmetryDBLSU2 : public Symmetry {
   HAS_GLOBAL;
 };
 
-Symmetry *SymDBLSU2 = new SymmetryDBLSU2;
-
 // see sym-SU2.cc
 
 #undef OFFDIAG_1
@@ -81,12 +70,11 @@ Symmetry *SymDBLSU2 = new SymmetryDBLSU2;
 #define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
 
 void SymmetryDBLSU2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
-  switch (channels) {
+  switch (P.channels) {
     case 2:
 #include "dblsu2/dblsu2-2ch-offdiag-1.dat"
 #include "dblsu2/dblsu2-2ch-offdiag-2.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }

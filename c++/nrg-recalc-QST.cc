@@ -143,7 +143,7 @@ Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "qst/qst-spinup+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_0);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_0);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_0);
   }
 };
 
@@ -155,7 +155,7 @@ Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "qst/qst-spinup0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_1);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_1);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_1);
   }
 };
 
@@ -167,7 +167,7 @@ Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "qst/qst-spinup-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_2);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_2);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_2);
   }
 };
 
@@ -179,7 +179,7 @@ Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "qst/qst-spindo+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_0);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_0);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_0);
   }
 };
 
@@ -191,7 +191,7 @@ Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "qst/qst-spindo0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_1);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_1);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_1);
   }
 };
 
@@ -203,7 +203,7 @@ Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 #include "qst/qst-spindo-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_2);
-    opch[0][0][Twoinvar(I1,Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_2);
+    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_2);
   }
 };
   }

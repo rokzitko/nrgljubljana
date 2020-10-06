@@ -33,17 +33,14 @@ class SymmetryQSZ : public SymField {
 #include "qsz/qsz-1ch-In2.dat"
 #include "qsz/qsz-1ch-QN.dat"
          break;
-
        case 2:
 #include "qsz/qsz-2ch-In2.dat"
 #include "qsz/qsz-2ch-QN.dat"
          break;
-
        case 3:
 #include "qsz/qsz-3ch-In2.dat"
 #include "qsz/qsz-3ch-QN.dat"
          break;
-
        default: my_assert_not_reached();
        } // switch
      } else {
@@ -114,7 +111,6 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
 #include "qsz/qsz-1ch-diag.dat"
 #include "qsz/qsz-1ch-spinz.dat" // for P.globalB
         break;
-
       case 2:
 #include "qsz/qsz-2ch-offdiag.dat"
 #include "qsz/qsz-2ch-diag.dat"
@@ -124,13 +120,11 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
 #include "qsz/qsz-2ch-runghop.dat"
         }
         break;
-
       case 3:
 #include "qsz/qsz-3ch-offdiag.dat"
 #include "qsz/qsz-3ch-diag.dat"
 #include "qsz/qsz-3ch-spinz.dat" // for P.globalB
         break;
-
       default: my_assert_not_reached();
     }
   } else {
@@ -168,7 +162,6 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
 
 void SymmetryQSZ::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   my_assert(!P.substeps); // not implemented!
-
   switch (P.channels) {
     case 1:
 #include "qsz/qsz-1ch-offdiag-UP.dat"
@@ -177,7 +170,6 @@ void SymmetryQSZ::makematrix_polarized(Matrix &h, const Step &step, const Rmaxva
 #include "qsz/qsz-1ch-diag-DOWN.dat"
 #include "qsz/qsz-1ch-spinz.dat"
       break;
-
     case 2:
 #include "qsz/qsz-2ch-offdiag-UP.dat"
 #include "qsz/qsz-2ch-offdiag-DOWN.dat"
@@ -192,7 +184,6 @@ void SymmetryQSZ::makematrix_polarized(Matrix &h, const Step &step, const Rmaxva
         my_assert_not_reached();
       }
       break;
-
     case 3:
 #include "qsz/qsz-3ch-offdiag-UP.dat"
 #include "qsz/qsz-3ch-offdiag-DOWN.dat"
@@ -200,7 +191,6 @@ void SymmetryQSZ::makematrix_polarized(Matrix &h, const Step &step, const Rmaxva
 #include "qsz/qsz-3ch-diag-DOWN.dat"
 #include "qsz/qsz-3ch-spinz.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }

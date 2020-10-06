@@ -71,17 +71,14 @@ class SymmetryISO : public SymmetryISOcommon {
 #include "iso/iso-1ch-In2.dat"
 #include "iso/iso-1ch-QN.dat"
         break;
-
       case 2:
 #include "iso/iso-2ch-In2.dat"
 #include "iso/iso-2ch-QN.dat"
         break;
-
       case 3:
 #include "iso/iso-3ch-In2.dat"
 #include "iso/iso-3ch-QN.dat"
         break;
-
       default: my_assert_not_reached();
     }
   }
@@ -101,12 +98,10 @@ class SymmetryISO2 : public SymmetryISOcommon {
 #include "iso2/iso2-1ch-In2.dat"
 #include "iso2/iso2-1ch-QN.dat"
         break;
-
       case 2:
 #include "iso2/iso2-2ch-In2.dat"
 #include "iso2/iso2-2ch-QN.dat"
         break;
-
       default: my_assert_not_reached();
     }
   }
@@ -130,20 +125,16 @@ void SymmetryISO::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, co
   // iteration.  This is consistent with the definition in
   // isospin-1ch-automatic.nb.
   int NN = step.getnn();
-
   switch (P.channels) {
     case 1:
 #include "iso/iso-1ch-offdiag.dat"
       break;
-
     case 2:
 #include "iso/iso-2ch-offdiag.dat"
       break;
-
     case 3:
 #include "iso/iso-3ch-offdiag.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }
@@ -152,16 +143,13 @@ void SymmetryISO2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, c
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
   int NN   = step.getnn();
-
   switch (P.channels) {
     case 1:
 #include "iso2/iso2-1ch-offdiag.dat"
       break;
-
     case 2:
 #include "iso2/iso2-2ch-offdiag.dat"
       break;
-
     default: my_assert_not_reached();
   }
 }
