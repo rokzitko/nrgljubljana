@@ -3,19 +3,15 @@ class SymmetryISOSZ : public SymField {
   outfield Sz2, Sz, Q2;
 
   public:
-  SymmetryISOSZ() : SymField() { all_syms["ISOSZ"] = this; }
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Sz.set("<Sz>", 2);
-    Q2.set("<Q^2>", 3);
-    InvarStructure InvStruc[] = {
-       {"II", additive}, // isospin
-       {"SSZ", additive} // spin projection
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(1, 0);
-  }
+   template<typename ... Args> SymmetryISOSZ(Args&& ... args) : SymField(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q2(P, allfields, "<Q^2>", 3) {
+       InvarStructure InvStruc[] = {
+         {"II", additive}, // isospin
+         {"SSZ", additive} // spin projection
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(1, 0);
+     }
 
   // Multiplicity of the I=(II,SSZ) subspace = (2I+1) = II.
   size_t mult(const Invar &I) const override {
@@ -39,7 +35,7 @@ class SymmetryISOSZ : public SymField {
   bool Invar_allowed(const Invar &I) override { return I.get("II") > 0; }
 
   void load() override {
-    switch (channels) {
+    switch (P.channels) {
       case 1:
 #include "isosz/isosz-1ch-In2.dat"
 #include "isosz/isosz-1ch-QN.dat"
@@ -64,7 +60,7 @@ class SymmetryISOSZ : public SymField {
     return isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ, trSZ2, trIZ2; // Tr[S_z], Tr[S_z^2], Tr[I_z^2]
 
     for (const auto &[I, eig]: diag) {
@@ -88,8 +84,6 @@ class SymmetryISOSZ : public SymField {
   HAS_GLOBAL;
 };
 
-Symmetry *SymISOSZ = new SymmetryISOSZ;
-
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
 
@@ -97,7 +91,7 @@ void SymmetryISOSZ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, 
   Ispin ii = I.get("II");
   int NN   = step.getnn();
 
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "isosz/isosz-1ch-offdiag.dat"
       break;

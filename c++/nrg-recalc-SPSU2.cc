@@ -30,7 +30,7 @@ namespace SPSU2 {
 // Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
-  if (!substeps) {
+  if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
       Invar Ip;
@@ -140,7 +140,7 @@ MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax 
 
 // Driver routine for recalc_f()
 Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
-  my_assert(!substeps);
+  my_assert(!P.substeps);
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
@@ -285,7 +285,7 @@ Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const
 
 // Driver routine for recalc_f()
 OpchChannel SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) {
-  my_assert(substeps);
+  my_assert(P.substeps);
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
@@ -321,7 +321,7 @@ OpchChannel SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagI
 // Recalculate matrix elements of a triplet tenzor operator
 MatrixElements SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
-  if (!substeps) {
+  if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
       Invar Ip;
@@ -460,7 +460,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spsu2/spsu2-1ch-Qtot.dat"
           break;
@@ -477,7 +477,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spsu2/spsu2-2ch-qdiff.dat"
           break;
@@ -491,7 +491,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spsu2/spsu2-2ch-q1.dat"
           break;
@@ -505,7 +505,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spsu2/spsu2-2ch-q2.dat"
           break;
@@ -519,7 +519,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spsu2/spsu2-1ch-Iztot.dat"
           break;
@@ -536,7 +536,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spsu2/spsu2-1ch-Ixtot.dat"
           break;
@@ -553,7 +553,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spsu2/spsu2-1ch-Iptot.dat"
           break;
@@ -570,7 +570,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spsu2/spsu2-1ch-Imtot.dat"
           break;

@@ -1,21 +1,18 @@
 class SymmetryISOcommon : public Symmetry {
   private:
-  outfield Sz2, Q2;
+   outfield Sz2, Q2;
 
   public:
-  SymmetryISOcommon() : Symmetry() {} // see below: ISO, ISO2
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Q2.set("<Q^2>", 2);
-    InvarStructure InvStruc[] = {
-       {"II", additive}, // isospin
-       {"SS", additive}  // spin
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(1, 1);
-    Invar_f      = Invar(2, 2);
-  }
+   template<typename ... Args> SymmetryISOcommon(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
+       InvarStructure InvStruc[] = {
+         {"II", additive}, // isospin
+         {"SS", additive}  // spin
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(1, 1);
+       Invar_f      = Invar(2, 2);
+     }
 
   // Multiplicity of the I=(II,SS) subspace = (2I+1)(2S+1) = II SS.
   size_t mult(const Invar &I) const override {
@@ -50,18 +47,15 @@ class SymmetryISOcommon : public Symmetry {
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
-
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
       const Sspin ss    = I.get("SS");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trSZ += sumZ * (ss * ss - 1) / 12.; // isospin multiplicity contained in sumZ
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
-
     Sz2 = trSZ / stats.Z;
     Q2  = (4 * trIZ) / stats.Z;
   }
@@ -69,10 +63,10 @@ class SymmetryISOcommon : public Symmetry {
 
 class SymmetryISO : public SymmetryISOcommon {
   public:
-  SymmetryISO() : SymmetryISOcommon() { all_syms["ISO"] = this; };
+   template<typename ... Args> SymmetryISO(Args&& ... args) : SymmetryISOcommon(std::forward<Args>(args)...) {}
 
   void load() override {
-    switch (channels) {
+    switch (P.channels) {
       case 1:
 #include "iso/iso-1ch-In2.dat"
 #include "iso/iso-1ch-QN.dat"
@@ -99,10 +93,10 @@ class SymmetryISO : public SymmetryISOcommon {
 
 class SymmetryISO2 : public SymmetryISOcommon {
   public:
-  SymmetryISO2() : SymmetryISOcommon() { all_syms["ISO2"] = this; };
+   template<typename ... Args> SymmetryISO2(Args&& ... args) : SymmetryISOcommon(std::forward<Args>(args)...) {}
 
   void load() override {
-    switch (channels) {
+    switch (P.channels) {
       case 1:
 #include "iso2/iso2-1ch-In2.dat"
 #include "iso2/iso2-1ch-QN.dat"
@@ -122,9 +116,6 @@ class SymmetryISO2 : public SymmetryISOcommon {
   HAS_TRIPLET;
 };
 
-Symmetry *SymISO  = new SymmetryISO;
-Symmetry *SymISO2 = new SymmetryISO2;
-
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
 
@@ -140,7 +131,7 @@ void SymmetryISO::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, co
   // isospin-1ch-automatic.nb.
   int NN = step.getnn();
 
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "iso/iso-1ch-offdiag.dat"
       break;
@@ -162,7 +153,7 @@ void SymmetryISO2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, c
   Ispin ii = I.get("II");
   int NN   = step.getnn();
 
-  switch (channels) {
+  switch (P.channels) {
     case 1:
 #include "iso2/iso2-1ch-offdiag.dat"
       break;

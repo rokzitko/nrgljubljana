@@ -1,19 +1,16 @@
 class SymmetrySPU1 : public SymField {
-  private:
-  outfield Sz2, Sz;
-
-  public:
-  SymmetrySPU1() : SymField() { all_syms["SPU1"] = this; }
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    Sz.set("<Sz>", 2);
-    InvarStructure InvStruc[] = {
-       {"SSZ", additive} // spin projection
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(0);
-  }
+ private:
+   outfield Sz2, Sz;
+   
+ public:
+   template<typename ... Args> SymmetrySPU1(Args&& ... args) : SymField(std::forward<Args>(args)...),
+     Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2) {
+       InvarStructure InvStruc[] = {
+         {"SSZ", additive} // spin projection
+       };
+       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       InvarSinglet = Invar(0);
+     }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
     // The spin projection of the operator is defined by the difference
@@ -28,7 +25,7 @@ class SymmetrySPU1 : public SymField {
 
   void load() override {
     if (!P.substeps) {
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1/spu1-1ch-In2.dat"
 #include "spu1/spu1-1ch-QN.dat"
@@ -50,7 +47,7 @@ class SymmetrySPU1 : public SymField {
   void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
   void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
 
     for (const auto &[I, eig]: diag) {
@@ -72,8 +69,6 @@ class SymmetrySPU1 : public SymField {
   HAS_SUBSTEPS;
 };
 
-Symmetry *SymSPU1 = new SymmetrySPU1;
-
 #undef ISOSPINX
 #define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * delta(step.N() + 1, ch), h, qq)
 
@@ -88,7 +83,7 @@ Symmetry *SymSPU1 = new SymmetrySPU1;
 
 void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   if (!P.substeps) {
-    switch (channels) {
+    switch (P.channels) {
       case 1:
 #include "spu1/spu1-1ch-offdiag.dat"
 #include "spu1/spu1-1ch-anomalous.dat"
@@ -150,7 +145,7 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Step &step, const Rm
 
 void SymmetrySPU1::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   my_assert(!P.substeps);
-  switch (channels) {
+  switch (P.channels) {
   case 1:
 #include "spu1/spu1-1ch-offdiag-UP.dat"
 #include "spu1/spu1-1ch-offdiag-DOWN.dat"

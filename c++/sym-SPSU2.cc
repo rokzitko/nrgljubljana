@@ -3,16 +3,14 @@ class SymmetrySPSU2 : public Symmetry {
   outfield Sz2;
 
   public:
-  SymmetrySPSU2() : Symmetry() { all_syms["SPSU2"] = this; }
-
-  void init() override {
-    Sz2.set("<Sz^2>", 1);
-    InvarStructure InvStruc[] = {
-       {"SS", additive} // spin
-    };
-    initInvar(InvStruc, ARRAYLENGTH(InvStruc));
-    InvarSinglet = Invar(1);
-  }
+   template<typename ... Args> SymmetrySPSU2(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+      Sz2(P, allfields, "<Sz^2>", 1) {
+        InvarStructure InvStruc[] = {
+          {"SS", additive} // spin
+        };
+        initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+        InvarSinglet = Invar(1);
+      }
 
   // Multiplicity of the I=(SS) subspace = 2S+1 = SS.
   size_t mult(const Invar &I) const override { return I.get("SS"); }
@@ -24,8 +22,8 @@ class SymmetrySPSU2 : public Symmetry {
   }
 
   void load() override {
-    if (!substeps) {
-      switch (channels) {
+    if (!P.substeps) {
+      switch (P.channels) {
         case 1:
 #include "spsu2/spsu2-1ch-In2.dat"
 #include "spsu2/spsu2-1ch-QN.dat"
@@ -53,7 +51,6 @@ class SymmetrySPSU2 : public Symmetry {
     const Sspin ssp = ground.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 2 || ss1 == ssp);
-
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
@@ -61,20 +58,16 @@ class SymmetrySPSU2 : public Symmetry {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
-
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
     bucket trSZ; // Tr[S_z^2]
-
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
       const double sumZ = calculate_Z(I, eig, factor);
-
       trSZ += sumZ * (ss * ss - 1) / 12.;
     }
-
     Sz2 = trSZ / stats.Z;
   }
 
@@ -84,8 +77,6 @@ class SymmetrySPSU2 : public Symmetry {
   HAS_GLOBAL;
   HAS_SUBSTEPS;
 };
-
-Symmetry *SymSPSU2 = new SymmetrySPSU2;
 
 // NOTE: the additional factor of 2 is due to the fact that the
 // isospin is in fact defined as 1/2 of the (d^\dag d^\dag + d d)
@@ -106,8 +97,8 @@ Symmetry *SymSPSU2 = new SymmetrySPSU2;
 void SymmetrySPSU2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
   Sspin ss = I.get("SS");
 
-  if (!substeps) {
-    switch (channels) {
+  if (!P.substeps) {
+    switch (P.channels) {
       case 1:
 #include "spsu2/spsu2-1ch-offdiag.dat"
 #include "spsu2/spsu2-1ch-anomalous.dat"

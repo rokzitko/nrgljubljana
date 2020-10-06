@@ -391,7 +391,7 @@ void SymmetryISOSZ::recalc_global(const Step &step, const DiagInfo &diag, const 
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "isosz/isosz-1ch-spinz.dat"
           break;

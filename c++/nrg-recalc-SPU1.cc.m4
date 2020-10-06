@@ -167,7 +167,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1/spu1-1ch-Qtot.dat"
           break;
@@ -184,7 +184,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1/spu1-1ch-Iztot.dat"
           break;
@@ -201,7 +201,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1/spu1-1ch-Ixtot.dat"
           break;
@@ -218,7 +218,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1/spu1-1ch-Iptot.dat"
           break;
@@ -235,7 +235,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 1:
 #include "spu1/spu1-1ch-Imtot.dat"
           break;
@@ -252,7 +252,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spu1/spu1-2ch-qdiff.dat"
           break;
@@ -266,7 +266,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spu1/spu1-2ch-q1.dat"
           break;
@@ -280,7 +280,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spu1/spu1-2ch-q2.dat"
           break;
@@ -294,7 +294,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spu1/spu1-2ch-q1up.dat"
           break;
@@ -308,7 +308,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spu1/spu1-2ch-q2up.dat"
           break;
@@ -322,7 +322,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spu1/spu1-2ch-q1do.dat"
           break;
@@ -336,7 +336,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);
       Matrix &cn        = cnew[II];
-      switch (channels) {
+      switch (P.channels) {
         case 2:
 #include "spu1/spu1-2ch-q2do.dat"
           break;

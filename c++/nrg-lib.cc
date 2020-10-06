@@ -2210,10 +2210,15 @@ void print_about_message(ostream &s) {
 
 std::unique_ptr<Symmetry> get(std::string sym_string, const Params &P, Allfields &allfields)
 {
-  if (sym_string == "QS")
-    return std::make_unique<SymmetryQS>(P, allfields);
-  if (sym_string == "QSZ")
-    return std::make_unique<SymmetryQSZ>(P, allfields);  
+  if (sym_string == "QS")     return std::make_unique<SymmetryQS>(P, allfields);
+  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ>(P, allfields);  
+#ifdef NRG_SYM_MORE
+  if (sym_string == "SPSU2")  return std::make_unique<SymmetrySPSU2>(P, allfields);
+  if (sym_string == "SPU1")   return std::make_unique<SymmetrySPU1>(P, allfields);
+  if (sym_string == "ISO")    return std::make_unique<SymmetryISO>(P, allfields);
+  if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2>(P, allfields);
+  if (sym_string == "ISOSZ")  return std::make_unique<SymmetryISOSZ>(P, allfields);
+#endif
   throw std::runtime_error("Unknown symmetry " + sym_string);
 }
 

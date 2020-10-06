@@ -64,7 +64,7 @@ class SymmetryQS : public Symmetry {
      my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
    }
-   
+
    double specdens_factor(const Invar &Ip, const Invar &I1) override {
      check_diff(Ip, I1, "Q", 1);
      const Sspin ssp = Ip.get("SS");
@@ -72,8 +72,8 @@ class SymmetryQS : public Symmetry {
      my_assert(abs(ss1 - ssp) == 1);
      return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
    }
-   
-   void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, double factor) override {
+
+   void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
      bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
      for (const auto &[I, eig]: diag) {
        const Sspin ss    = I.get("SS");

@@ -71,7 +71,7 @@ Opch SymmetryISO::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 
           `RECALC_F_TAB("iso/iso-2ch-spindown-isoupa.dat", 0, ISO1::LENGTH_I_2CH);
 	   RECALC_F_TAB("iso/iso-2ch-spindown-isoupb.dat", 1, ISO1::LENGTH_I_2CH)',
-	   
+	
           `RECALC_F_TAB("iso/iso-3ch-spindown-isoupa.dat", 0, ISO1::LENGTH_I_3CH_0);
 	   RECALC_F_TAB("iso/iso-3ch-spindown-isoupb.dat", 1, ISO1::LENGTH_I_3CH_1);
 	   RECALC_F_TAB("iso/iso-3ch-spindown-isoupc.dat", 2, ISO1::LENGTH_I_3CH_2)');
@@ -81,15 +81,14 @@ Opch SymmetryISO::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 
           `RECALC_F_TAB("iso/iso-2ch-spinup-isodowna.dat", 0, ISO1::LENGTH_I_2CH);
 	   RECALC_F_TAB("iso/iso-2ch-spinup-isodownb.dat", 1, ISO1::LENGTH_I_2CH)',
-	   
+
           `RECALC_F_TAB("iso/iso-3ch-spinup-isodowna.dat", 0, ISO1::LENGTH_I_3CH_0);
 	   RECALC_F_TAB("iso/iso-3ch-spinup-isodownb.dat", 1, ISO1::LENGTH_I_3CH_1);
 	   RECALC_F_TAB("iso/iso-3ch-spinup-isodownc.dat", 2, ISO1::LENGTH_I_3CH_2)');
 
     I1 = Invar(iip-1, ssp-1);
     ONE23(`RECALC_F_TAB("iso/iso-1ch-spindown-isodowna.dat", 0, ISO1::LENGTH_I_1CH)',
-    
-    	  `RECALC_F_TAB("iso/iso-2ch-spindown-isodowna.dat", 0, ISO1::LENGTH_I_2CH);
+	  `RECALC_F_TAB("iso/iso-2ch-spindown-isodowna.dat", 0, ISO1::LENGTH_I_2CH);
 	   RECALC_F_TAB("iso/iso-2ch-spindown-isodownb.dat", 1, ISO1::LENGTH_I_2CH)',
 
           `RECALC_F_TAB("iso/iso-3ch-spindown-isodowna.dat", 0, ISO1::LENGTH_I_3CH_0);
