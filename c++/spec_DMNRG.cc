@@ -24,9 +24,9 @@ void SPEC_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
   auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
   for (size_t rm = 0; rm < dimp; rm++) {
-    const t_eigen Em = diagIp.value(rm);
+    const t_eigen Em = diagIp.value_zero(rm);
     for (size_t rj = 0; rj < dim1; rj++) {
-      const t_eigen Ej = diagI1.value(rj);
+      const t_eigen Ej = diagI1.value_zero(rj);
       DELTA d;
       d.energy          = Ej - Em;
       const double absE = abs(d.energy);
@@ -62,9 +62,9 @@ void SPEC_DMNRGmats::calc(const Step &step, const Eigen &diagIp, const Eigen &di
   auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
   auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
   for (size_t rm = 0; rm < dimp; rm++) {
-    const t_eigen Em = diagIp.value(rm);
+    const t_eigen Em = diagIp.value_zero(rm);
     for (size_t rj = 0; rj < dim1; rj++) {
-      const t_eigen Ej = diagI1.value(rj);
+      const t_eigen Ej = diagI1.value_zero(rj);
       DELTA d;
       d.energy = Ej - Em;
       weight_bucket sumA;

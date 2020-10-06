@@ -248,7 +248,8 @@ struct RawEigen {
     value.resize(nr);
     matrix.resize(nr, dim);
   }
-  size_t getnr() const  { return value.size(); }
+  size_t getnrc() const { return value_orig.size(); } // number of computed eigenpairs
+  size_t getnr() const  { return value.size(); } // XXX: value_zero ??
   size_t getdim() const { return matrix.size2(); } // valid also after the split_in_blocks_Eigen() call
 };
   
@@ -280,7 +281,8 @@ struct Eigen : public RawEigen {
       my_assert(nrpost <= i.size1());
       i.resize(nrpost, i.size2());
     }
-    value.resize(nrpost);
+    value.resize(nrpost); // XXX
+    value_zero.resize(nrpost);
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
@@ -1294,7 +1296,7 @@ CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n
     const size_t dim = eig.getnr();
     my_assert(dim == nI.size2());
     matel_bucket sum;
-    for (size_t r = 0; r < dim; r++) sum += exp(-P.betabar * eig.value(r)) * nI(r, r);
+    for (size_t r = 0; r < dim; r++) sum += exp(-P.betabar * eig.value_zero(r)) * nI(r, r);
     tr += Sym->mult(i) * t_matel(sum);
   }
   return tr;
@@ -1304,7 +1306,7 @@ CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n
 void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, const Params &P) {
   bucket Z;
   for (const auto &[I, eig] : diag)
-    for (const auto &x : eig.value) 
+    for (const auto &x : eig.value_zero)
       Z += Sym->mult(I) * exp(-P.betabar * x);
   for (const auto &[name, m] : a.ops)   stats.expv[name] = calc_trace_singlet(diag, m) / Z;
   for (const auto &[name, m] : a.opsg)  stats.expv[name] = calc_trace_singlet(diag, m) / Z;
@@ -1367,7 +1369,7 @@ void dump_diagonal(const DiagInfo &diag, const IterInfo &a, ostream &F = std::co
 double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, double factor = 1.0) {
   bucket ZN;
   for (const auto &[i, eig]: diag) 
-    for (const auto &x : eig.value) 
+    for (const auto &x : eig.value_zero)
       ZN += Sym->mult(i) * exp(-x * step.scT() * factor);
   my_assert(ZN >= 1.0);
   return ZN;
@@ -1379,7 +1381,7 @@ Matrix diagonal_exp(const Eigen &eig, double factor = 1.0)
   Matrix m(dim, dim);
   m.clear();
   for (auto i = 0; i < dim; i++) 
-      m(i, i) = exp(-eig.value(i) * factor);
+      m(i, i) = exp(-eig.value_zero(i) * factor);
   return m;
 }
 

@@ -63,9 +63,9 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     dim1 = diagI1.getnr(); // override
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
-      const t_eigen E1 = diagI1.value(r1);
+      const t_eigen E1 = diagI1.value_zero(r1);
       for (size_t rp = 0; rp < dimp; rp++) {
-        const t_eigen Ep = diagIp.value(rp);
+        const t_eigen Ep = diagIp.value_zero(rp);
         DELTA d;
         d.energy = E1 - Ep;
         d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign); // (***)
@@ -76,9 +76,9 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     // iii-term, Eq. (16), positive frequency excitations
     const size_t dimA = diagI1.getnr();
     for (size_t rl = dim1; rl < dimA; rl++) {
-      const t_eigen El = diagI1.value(rl);
+      const t_eigen El = diagI1.value_zero(rl);
       for (size_t rk = 0; rk < dimp; rk++) {
-        const t_eigen Ek = diagIp.value(rk);
+        const t_eigen Ek = diagIp.value_zero(rk);
         DELTA d;
         d.energy = El - Ek;
         my_assert(d.energy >= 0.0); // always positive!
@@ -108,9 +108,9 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
-      const t_eigen E1 = diagI1.value(r1);
+      const t_eigen E1 = diagI1.value_zero(r1);
       for (size_t rp = 0; rp < dimp; rp++) {
-        const t_eigen Ep = diagIp.value(rp);
+        const t_eigen Ep = diagIp.value_zero(rp);
         DELTA d;
         d.energy = E1 - Ep;
         d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * step.scT()); // (***) removed (-sign)
@@ -120,10 +120,10 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   } else {
     // ii-term, Eq. (15), negative frequency excitations
     for (size_t rk = 0; rk < dim1; rk++) {
-      const t_eigen Ek  = diagI1.value(rk);
+      const t_eigen Ek  = diagI1.value_zero(rk);
       const size_t dimB = diagIp.getnr();
       for (size_t rl = dimp; rl < dimB; rl++) {
-        const t_eigen El = diagIp.value(rl);
+        const t_eigen El = diagIp.value_zero(rl);
         DELTA d;
         d.energy = Ek - El;
         my_assert(d.energy <= 0.0); // always negative!
@@ -156,9 +156,9 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
-      const double E1 = diagI1.value(r1);
+      const double E1 = diagI1.value_zero(r1);
       for (size_t rp = 0; rp < dimp; rp++) {
-        const double Ep = diagIp.value(rp);
+        const double Ep = diagIp.value_zero(rp);
         double d_energy = E1 - Ep;
         double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign); // (***)
         cs->add(step.scale() * d_energy, d_weight);
@@ -167,8 +167,8 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   } else {
     // iii-term, Eq. (16), positive frequency excitations
     const size_t dimA     = diagI1.getnr();
-    auto energies_beginIp = begin(diagIp.value);
-    auto energies_beginI1 = begin(diagI1.value);
+    auto energies_beginIp = begin(diagIp.value_zero);
+    auto energies_beginI1 = begin(diagI1.value_zero);
     if (dimA && dimp) {
       Matrix op2II_m_rho;
       const ublas::matrix_range<const Matrix> op2II_TK(op2II, ublas::range(0, op2II.size1()), ublas::range(0, rhoNIp.size1()));
@@ -204,9 +204,9 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
-      const double E1 = diagI1.value(r1);
+      const double E1 = diagI1.value_zero(r1);
       for (size_t rp = 0; rp < dimp; rp++) {
-        const double Ep = diagIp.value(rp);
+        const double Ep = diagIp.value_zero(rp);
         double d_energy = E1 - Ep;
         double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-Ep * step.scT()); // (***) removed (-sign)
         cs->add(step.scale() * d_energy, d_weight);
@@ -214,8 +214,8 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     }
   } else {
     const size_t dimB     = diagIp.getnr();
-    auto energies_beginIp = begin(diagIp.value);
-    auto energies_beginI1 = begin(diagI1.value);
+    auto energies_beginIp = begin(diagIp.value_zero);
+    auto energies_beginI1 = begin(diagI1.value_zero);
     if (dim1 && dimB) {
       const ublas::matrix_range<const Matrix> op1II_KT(op1II, ublas::range(0, rhoNI1.size1()), ublas::range(0, op1II.size2()));
       Matrix op1II_m_rho(rhoNI1.size2(), op1II_KT.size2());

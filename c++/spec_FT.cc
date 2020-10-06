@@ -15,9 +15,9 @@ void SPEC_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, c
                    spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   for (size_t r1 = 0; r1 < diagI1.getnr(); r1++) {
-    const t_eigen E1 = diagI1.value(r1);
+    const t_eigen E1 = diagI1.value_zero(r1);
     for (size_t rp = 0; rp < diagIp.getnr(); rp++) {
-      const t_eigen Ep = diagIp.value(rp);
+      const t_eigen Ep = diagIp.value_zero(rp);
       DELTA d;
       d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
       d.energy = E1 - Ep;
@@ -40,9 +40,9 @@ void SPEC_FTmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI
   double sign         = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   auto csm            = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   for (size_t r1 = 0; r1 < diagI1.getnr(); r1++) {
-    const t_eigen E1 = diagI1.value(r1);
+    const t_eigen E1 = diagI1.value_zero(r1);
     for (size_t rp = 0; rp < diagIp.getnr(); rp++) {
-      const t_eigen Ep = diagIp.value(rp);
+      const t_eigen Ep = diagIp.value_zero(rp);
       DELTA d;
       d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT())); // sign!
       d.energy = E1 - Ep;
@@ -97,9 +97,9 @@ void SPEC_GT_generic::calc(const Step &step, const Eigen &diagIp, const Eigen &d
   const double beta        = 1.0 / temperature;
   weight_bucket value;
   for (size_t r1 = 0; r1 < diagI1.getnr(); r1++) {
-    const t_eigen E1 = diagI1.value(r1);
+    const t_eigen E1 = diagI1.value_zero(r1);
     for (size_t rp = 0; rp < diagIp.getnr(); rp++) {
-      const t_eigen Ep = diagIp.value(rp);
+      const t_eigen Ep = diagIp.value_zero(rp);
       // Note that Zgt needs to be calculated with the same
       // 'temperature' parameter that we use for the exponential
       // functions in the following equation.
@@ -157,9 +157,9 @@ void SPEC_CHIT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1,
   const double beta        = 1.0 / temperature;
   weight_bucket w;
   for (size_t r1 = 0; r1 < dim1; r1++) {
-    const t_eigen E1 = diagI1.value(r1);
+    const t_eigen E1 = diagI1.value_zero(r1);
     for (size_t rp = 0; rp < dimp; rp++) {
-      const t_eigen Ep      = diagIp.value(rp);
+      const t_eigen Ep      = diagIp.value_zero(rp);
       const t_weight weight = chit_weight(step.scale() * E1, step.scale() * Ep, beta);
       w += op1II(r1, rp) * op2II(rp, r1) * weight;
     }
