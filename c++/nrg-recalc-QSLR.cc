@@ -158,7 +158,7 @@ MatrixElements SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "qslr/qslr-2ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSLR::LENGTH_D_2CH, Invar(1, 2, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSLR::LENGTH_D_2CH, Invar(1, 2, +1));
   }
 };
 
@@ -170,7 +170,7 @@ MatrixElements SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "qslr/qslr-2ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSLR::LENGTH_D_2CH, Invar(1, 2, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSLR::LENGTH_D_2CH, Invar(1, 2, +1));
   }
 };
   }
@@ -194,7 +194,7 @@ MatrixElements SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &
 #include "qslr/qslr-2ch-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_T0_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSLR::LENGTH_T0_2CH, Invar(0, 3, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSLR::LENGTH_T0_2CH, Invar(0, 3, +1));
   }
 };
 
@@ -206,7 +206,7 @@ MatrixElements SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &
 #include "qslr/qslr-2ch-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_Tpm_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSLR::LENGTH_Tpm_2CH, Invar(0, 3, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSLR::LENGTH_Tpm_2CH, Invar(0, 3, +1));
   }
 };
 
@@ -218,7 +218,7 @@ MatrixElements SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &
 #include "qslr/qslr-2ch-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSLR::LENGTH_Tpm_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSLR::LENGTH_Tpm_2CH, Invar(0, 3, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSLR::LENGTH_Tpm_2CH, Invar(0, 3, +1));
   }
 };
   }

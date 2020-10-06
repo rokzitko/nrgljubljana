@@ -41,7 +41,7 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "dblsu2/dblsu2-2ch-doubletm0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
   }
 };
 
@@ -53,7 +53,7 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "dblsu2/dblsu2-2ch-doubletp0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
   }
 };
 
@@ -65,7 +65,7 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "dblsu2/dblsu2-2ch-doublet0m.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
   }
 };
 
@@ -77,7 +77,7 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "dblsu2/dblsu2-2ch-doublet0p.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
   }
 };
   }

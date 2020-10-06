@@ -109,7 +109,7 @@ MatrixElements SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "none/none-1ch-doublet.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, NONE::LENGTH_D_1CH, Invar());
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, NONE::LENGTH_D_1CH, Invar());
   }
 } } break;
   case 2: { {
@@ -119,7 +119,7 @@ MatrixElements SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "none/none-2ch-doublet.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, NONE::LENGTH_D_2CH, Invar());
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, NONE::LENGTH_D_2CH, Invar());
   }
 } } break;
   default: my_assert_not_reached();

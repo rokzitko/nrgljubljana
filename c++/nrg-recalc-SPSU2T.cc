@@ -44,7 +44,7 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spsu2t/spsu2t-doubletp-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_1);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
   }
 };
 
@@ -56,7 +56,7 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spsu2t/spsu2t-doubletm-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_1);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
   }
 };
 
@@ -68,7 +68,7 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spsu2t/spsu2t-doubletp0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_0);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_0, Invar(1, 2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_0, Invar(1, 2, 1));
   }
 };
 
@@ -80,7 +80,7 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spsu2t/spsu2t-doubletm0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_0);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_0, Invar(1, 2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_0, Invar(1, 2, 1));
   }
 };
 
@@ -92,7 +92,7 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spsu2t/spsu2t-doubletp+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_1);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
   }
 };
 
@@ -104,7 +104,7 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spsu2t/spsu2t-doubletm+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_1);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
   }
 };
   }
@@ -221,7 +221,7 @@ MatrixElements SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax
 #include "spsu2t/spsu2t-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_T0_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPSU2T::LENGTH_T0_3CH, Invar(3, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_T0_3CH, Invar(3, 0));
   }
 };
 
@@ -233,7 +233,7 @@ MatrixElements SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax
 #include "spsu2t/spsu2t-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_Tpm_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPSU2T::LENGTH_Tpm_3CH, Invar(3, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_Tpm_3CH, Invar(3, 0));
   }
 };
 
@@ -245,7 +245,7 @@ MatrixElements SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax
 #include "spsu2t/spsu2t-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_Tpm_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPSU2T::LENGTH_Tpm_3CH, Invar(3, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_Tpm_3CH, Invar(3, 0));
   }
 };
   }

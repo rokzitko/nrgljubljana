@@ -43,7 +43,7 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-1ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_D_1CH, Invar(-1, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_1CH, Invar(-1, 1));
   }
 } } break;
   case 2: { {
@@ -53,7 +53,7 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-2ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_D_2CH, Invar(-1, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_2CH, Invar(-1, 1));
   }
 } } break;
   default: my_assert_not_reached();
@@ -68,7 +68,7 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-1ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_D_1CH, Invar(+1, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_1CH, Invar(+1, 1));
   }
 } } break;
   case 2: { {
@@ -78,7 +78,7 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-2ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_D_2CH, Invar(+1, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_2CH, Invar(+1, 1));
   }
 } } break;
   default: my_assert_not_reached();
@@ -235,7 +235,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-1ch-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_T0_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_T0_1CH, Invar(0, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_T0_1CH, Invar(0, 1));
   }
 } } break;
   case 2: { {
@@ -245,7 +245,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-2ch-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_T0_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_T0_2CH, Invar(0, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_T0_2CH, Invar(0, 1));
   }
 } } break;
   default: my_assert_not_reached();
@@ -260,7 +260,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-1ch-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_1CH, Invar(-2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_1CH, Invar(-2, 1));
   }
 } } break;
   case 2: { {
@@ -270,7 +270,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-2ch-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_2CH, Invar(-2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_2CH, Invar(-2, 1));
   }
 } } break;
   default: my_assert_not_reached();
@@ -285,7 +285,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-1ch-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_1CH, Invar(+2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_1CH, Invar(+2, 1));
   }
 } } break;
   case 2: { {
@@ -295,7 +295,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
 #include "spu1lr/spu1lr-2ch-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_2CH, Invar(+2, 1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_2CH, Invar(+2, 1));
   }
 } } break;
   default: my_assert_not_reached();

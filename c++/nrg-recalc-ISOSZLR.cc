@@ -239,7 +239,7 @@ MatrixElements SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrma
 #include "isoszlr/isoszlr-2ch-doubletmp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZLR::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, ISOSZLR::LENGTH_D_2CH, Invar(2, -1, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZLR::LENGTH_D_2CH, Invar(2, -1, +1));
   }
 };
 
@@ -251,7 +251,7 @@ MatrixElements SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrma
 #include "isoszlr/isoszlr-2ch-doubletmm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZLR::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, ISOSZLR::LENGTH_D_2CH, Invar(2, +1, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZLR::LENGTH_D_2CH, Invar(2, +1, +1));
   }
 };
 
@@ -263,7 +263,7 @@ MatrixElements SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrma
 #include "isoszlr/isoszlr-2ch-doubletpp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZLR::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, ISOSZLR::LENGTH_D_2CH, Invar(2, -1, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZLR::LENGTH_D_2CH, Invar(2, -1, +1));
   }
 };
 
@@ -275,7 +275,7 @@ MatrixElements SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrma
 #include "isoszlr/isoszlr-2ch-doubletpm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZLR::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, ISOSZLR::LENGTH_D_2CH, Invar(2, +1, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZLR::LENGTH_D_2CH, Invar(2, +1, +1));
   }
 };
   }
@@ -299,7 +299,7 @@ MatrixElements SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrma
 #include "isoszlr/isoszlr-2ch-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZLR::LENGTH_T0_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, ISOSZLR::LENGTH_T0_2CH, Invar(1, 0, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZLR::LENGTH_T0_2CH, Invar(1, 0, +1));
   }
 };
 
@@ -311,7 +311,7 @@ MatrixElements SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrma
 #include "isoszlr/isoszlr-2ch-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZLR::LENGTH_Tpm_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, ISOSZLR::LENGTH_Tpm_2CH, Invar(1, -2, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZLR::LENGTH_Tpm_2CH, Invar(1, -2, +1));
   }
 };
 
@@ -323,7 +323,7 @@ MatrixElements SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrma
 #include "isoszlr/isoszlr-2ch-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZLR::LENGTH_Tpm_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, ISOSZLR::LENGTH_Tpm_2CH, Invar(1, +2, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZLR::LENGTH_Tpm_2CH, Invar(1, +2, +1));
   }
 };
   }

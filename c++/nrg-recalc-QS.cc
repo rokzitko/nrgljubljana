@@ -47,7 +47,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-1ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_1CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_1CH, Invar(1, 2));
   }
 } } break;
   case 2: { {
@@ -57,7 +57,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-2ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_2CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_2CH, Invar(1, 2));
   }
 } } break;
   case 3: { {
@@ -67,7 +67,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-3ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_3CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_3CH, Invar(1, 2));
   }
 } } break;
   case 4: { {
@@ -77,7 +77,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-4ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_4CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_4CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_4CH, Invar(1, 2));
   }
 } } break;
   default: my_assert_not_reached();
@@ -92,7 +92,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-1ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_1CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_1CH, Invar(1, 2));
   }
 } } break;
   case 2: { {
@@ -102,7 +102,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-2ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_2CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_2CH, Invar(1, 2));
   }
 } } break;
   case 3: { {
@@ -112,7 +112,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-3ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_3CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_3CH, Invar(1, 2));
   }
 } } break;
   case 4: { {
@@ -122,7 +122,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-4ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_4CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_4CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_4CH, Invar(1, 2));
   }
 } } break;
   default: my_assert_not_reached();
@@ -142,7 +142,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-1ch-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_1CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_1CH, Invar(1, 2));
   }
 };
 
@@ -154,7 +154,7 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-1ch-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_D_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_D_1CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_D_1CH, Invar(1, 2));
   }
 };
     }
@@ -446,7 +446,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-1ch-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_T0_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_T0_1CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_T0_1CH, Invar(0, 3));
   }
 } } break;
   case 2: { {
@@ -456,7 +456,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-2ch-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_T0_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_T0_2CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_T0_2CH, Invar(0, 3));
   }
 } } break;
   case 3: { {
@@ -466,7 +466,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-3ch-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_T0_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_T0_3CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_T0_3CH, Invar(0, 3));
   }
 } } break;
   case 4: { {
@@ -476,7 +476,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-4ch-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_T0_4CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_T0_4CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_T0_4CH, Invar(0, 3));
   }
 } } break;
   default: my_assert_not_reached();
@@ -491,7 +491,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-1ch-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_Tpm_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_Tpm_1CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_Tpm_1CH, Invar(0, 3));
   }
 } } break;
   case 2: { {
@@ -501,7 +501,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-2ch-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_Tpm_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_Tpm_2CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_Tpm_2CH, Invar(0, 3));
   }
 } } break;
   case 3: { {
@@ -511,7 +511,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-3ch-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_Tpm_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_Tpm_3CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_Tpm_3CH, Invar(0, 3));
   }
 } } break;
   case 4: { {
@@ -521,7 +521,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-4ch-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_Tpm_4CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_Tpm_4CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_Tpm_4CH, Invar(0, 3));
   }
 } } break;
   default: my_assert_not_reached();
@@ -536,7 +536,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-1ch-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_Tpm_1CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_Tpm_1CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_Tpm_1CH, Invar(0, 3));
   }
 } } break;
   case 2: { {
@@ -546,7 +546,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-2ch-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_Tpm_2CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_Tpm_2CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_Tpm_2CH, Invar(0, 3));
   }
 } } break;
   case 3: { {
@@ -556,7 +556,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-3ch-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_Tpm_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_Tpm_3CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_Tpm_3CH, Invar(0, 3));
   }
 } } break;
   case 4: { {
@@ -566,7 +566,7 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #include "qs/qs-4ch-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QS::LENGTH_Tpm_4CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QS::LENGTH_Tpm_4CH, Invar(0, 3));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QS::LENGTH_Tpm_4CH, Invar(0, 3));
   }
 } } break;
   default: my_assert_not_reached();

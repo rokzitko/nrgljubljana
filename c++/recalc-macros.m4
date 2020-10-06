@@ -9,7 +9,7 @@ define(`RECALC_TAB', {
 #include $1
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $2);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, $2, $3);
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, $2, $3);
   }
 })
 

@@ -45,7 +45,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 #include "qsztz/qsztz-doubletp-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, -1, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, -1, +1));
   }
 };
 
@@ -57,7 +57,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 #include "qsztz/qsztz-doubletm-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, +1, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, +1, +1));
   }
 };
 
@@ -69,7 +69,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 #include "qsztz/qsztz-doubletp0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, -1, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, -1, 0));
   }
 };
 
@@ -81,7 +81,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 #include "qsztz/qsztz-doubletm0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, +1, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, +1, 0));
   }
 };
 
@@ -93,7 +93,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 #include "qsztz/qsztz-doubletp+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, -1, -1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, -1, -1));
   }
 };
 
@@ -105,7 +105,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 #include "qsztz/qsztz-doubletm+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, +1, -1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSZTZ::LENGTH_D_3CH, Invar(1, +1, -1));
   }
 };
   }
@@ -217,7 +217,7 @@ MatrixElements SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
 #include "qsztz/qsztz-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZTZ::LENGTH_T0_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSZTZ::LENGTH_T0_3CH, Invar(0, 3, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSZTZ::LENGTH_T0_3CH, Invar(0, 3, 0));
   }
 };
 
@@ -229,7 +229,7 @@ MatrixElements SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
 #include "qsztz/qsztz-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZTZ::LENGTH_Tpm_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSZTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSZTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
   }
 };
 
@@ -241,7 +241,7 @@ MatrixElements SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
 #include "qsztz/qsztz-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSZTZ::LENGTH_Tpm_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSZTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSZTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
   }
 };
   }

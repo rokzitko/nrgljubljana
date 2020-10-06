@@ -14,7 +14,7 @@ void recalc_f(const DiagInfo &diag,
               MatrixElements &ff, 
               const Invar &Ip, const Invar &I1, 
               const struct Recalc_f table[], 
-              size_t jmax, 
+              const size_t jmax, 
               const Invar If = Sym->Invar_f) {
   nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ") If=(" << If << ")");
   if (!Sym->recalc_f_coupled(I1, Ip, If)) {
@@ -23,18 +23,16 @@ void recalc_f(const DiagInfo &diag,
   }
   const Eigen &diagI1 = diag.at(I1);
   const Eigen &diagIp = diag.at(Ip);
-  // Number of states in Ip and in I1, i.e. the dimension of the
-  // <||f||> matrix of irreducible matrix elements.
+  // Number of states in Ip and in I1, i.e. the dimension of the <||f||> matrix of irreducible matrix elements.
   const size_t dim1 = diagI1.getnr();
   const size_t dimp = diagIp.getnr();
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
-  if (dim1 == 0 || dimp == 0) return; // truncated away! ff[II] is not created.
+  if (dim1 == 0 || dimp == 0) return; // truncated away! ff[II] is not created!
   const Twoinvar II = make_pair(I1, Ip);
   ff[II]            = Matrix(dim1, dimp); // new matrix of irreducible matrix elements
   Matrix &f         = ff[II];
   f.clear(); // Set it to all zeros.
-  // <I1||f||Ip> gets contributions from various |QSr> states. These
-  // are given by i1, ip in the Recalc_f type tables.
+  // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
   for (size_t j = 0; j < jmax; j++) {
     // rmax1, rmaxp are the dimensions of the invariant subspaces
     const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
@@ -42,16 +40,11 @@ void recalc_f(const DiagInfo &diag,
     if (!(rmax1 > 0 && rmaxp > 0)) continue;
     if (logletter('f'))
       nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
-    my_assert(my_isfinite(table[j].factor));
-    my_assert(rmax1 == rmaxp);
+    my_assert(my_isfinite(table[j].factor) && rmax1 == rmaxp);
     const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
     const Matrix &Up = diagIp.blocks[table[j].ip - 1];
-    my_assert(U1.size1() == dim1 && Up.size1() == dimp);
-    my_assert(U1.size2() == Up.size2());          // rmax1 == rmaxp
-    if (U1.size2() == 0) my_assert_not_reached(); // ??
-    my_assert(rmax1 == U1.size2());
-    my_assert(rmaxp == Up.size2());
-    my_assert(abs(table[j].factor) < 1000); // Additional sanity test: factors are in general order O(1)
+    my_assert(U1.size1() == dim1 && Up.size1() == dimp && U1.size2() == Up.size2());
+    my_assert(rmax1 == U1.size2() && rmaxp == Up.size2());
     atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(table[j].factor), U1, Up, t_factor(1.0), f);
   } // loop over j
   if (logletter('F')) dump_matrix(f);
@@ -109,15 +102,14 @@ void split_in_blocks(DiagInfo &diag, const QSrmax &qsrmax) {
 // recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
 // one should try to hand optimize.
 
-void recalc_general(const DiagInfo &diag, 
-                    const QSrmax &qsrmax, // information about the matrix structure
-                    const MatrixElements &cold,
-                    MatrixElements &cnew,
-                    const Invar &I1, // target subspace (bra)
-                    const Invar &Ip, // target subspace (ket)
-                    const struct Recalc table[],
-                    size_t jmax,      // length of table
-                    const Invar &Iop) // quantum numbers of the operator
+Matrix recalc_general(const DiagInfo &diag, 
+                      const QSrmax &qsrmax,        // information about the matrix structure
+                      const MatrixElements &cold,
+                      const Invar &I1,             // target subspace (bra)
+                      const Invar &Ip,             // target subspace (ket)
+                      const struct Recalc table[],
+                      const size_t jmax,           // length of table
+                      const Invar &Iop)            // quantum numbers of the operator
 {
   if (logletter('r')) {
     cout << "recalc_general: ";
@@ -128,9 +120,8 @@ void recalc_general(const DiagInfo &diag,
   const size_t dim1 = diagI1.getnr();
   const size_t dimp = diagIp.getnr();
   const Twoinvar II = make_pair(I1, Ip);
-  Matrix &cn = cnew[II] = Matrix(dim1, dimp); // XXX: return this one!
+  Matrix cn = Matrix(dim1, dimp);
   cn.clear();
-  if (dim1 == 0 || dimp == 0) return;
   for (size_t j = 0; j < jmax; j++) { // loop over combinations of i/ip
     if (logletter('r')) RECALC_GENERAL_DUMP;
     if (!Sym->Invar_allowed(table[j].IN1) || !Sym->Invar_allowed(table[j].INp)) continue;
@@ -144,39 +135,26 @@ void recalc_general(const DiagInfo &diag,
     const Twoinvar ININ = make_pair(table[j].IN1, table[j].INp);
     const size_t cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.
     my_assert(cnt == 0 || cnt == 1);        // Anything other than 0 or 1 is a bug!
-    // There are exceptions when a subspace might not contribute. Two
-    // are known: 1. for triplet operators, two singlet states give
-    // no contribution [SU(2) symmetry]; 2. some subspaces might not
-    // exist at low iteration steps. If triangle inequality is not
-    // satisfied and there are indeed no states for the given
-    // subspace pair, this is OK and we just skip this case.
+    // There are exceptions when a subspace might not contribute. Two are known: 1. for triplet operators, two
+    // singlet states give no contribution [SU(2) symmetry]; 2. some subspaces might not exist at low iteration
+    // steps. If triangle inequality is not satisfied and there are indeed no states for the given subspace pair,
+    // this is OK and we just skip this case.
     const bool triangle = Sym->triangle_inequality(table[j].IN1, Iop, table[j].INp);
     if (!triangle && cnt == 0) continue;
-    // All exceptions should be handled by now. If cnt != 1, this is
-    // a bug, probably related to symmetry properties and the
-    // coefficient tables for NRG transformations of matrices.
+    // All exceptions should be handled by now. If cnt != 1, this is a bug, probably related to symmetry properties
+    // and the coefficient tables for NRG transformations of matrices.
     my_assert(cnt == 1);
-    // This assertion should be performed after the triangle
-    // inequality test above!
     my_assert(my_isfinite(table[j].factor));
-    // Additional sanity test: factors are in general order O(1)
-    my_assert(abs(table[j].factor) < 1000);
-    // If we made it this far, this subspace contributes.
     if (logletter('r')) cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << endl;
-    /* RECALL: rmax1 - dimension of the subspace of invariant subspace I1
-     spanned by the states originating from the combination |I1>_i1, where
-     i1=1...P.combs. It is clearly equal to the dimension of the invariant
-     subspace IN1 from the previous (N-th) iteration. */
-    // m: irreducible elements at previous stage
-    const Matrix &m = cold.at(ININ);
-    my_assert_equal(rmax1, m.size1());
-    my_assert_equal(rmaxp, m.size2());
+    // RECALL: rmax1 - dimension of the subspace of invariant subspace I1 spanned by the states originating from the
+    //  combination |I1>_i1, where i1=1...P.combs. It is clearly equal to the dimension of the invariant subspace IN1
+    //  from the previous (N-th) iteration.
+    const Matrix &m = cold.at(ININ);     // m: irreducible elements at previous stage
+    my_assert(rmax1 == m.size1() && rmaxp == m.size2());
     const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
     const Matrix &Up = diagIp.blocks[table[j].ip - 1];
-    my_assert(U1.size1() == dim1 && U1.size2() == rmax1);
-    my_assert(Up.size1() == dimp && Up.size2() == rmaxp);
-    // Performace hot-spot. Ensure that you're using highly optimised BLAS
-    // library. Beware of the order of library parameters when linking!!
+    my_assert(U1.size1() == dim1 && U1.size2() == rmax1 && Up.size1() == dimp && Up.size2() == rmaxp);
+    // &&&& Performace hot-spot. Ensure that you're using highly optimised BLAS library.
     Matrix temp(rmax1, dimp);
     atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(1.0), m, Up, t_factor(0.0), temp);
     atlas::gemm(CblasNoTrans, CblasNoTrans, t_factor(table[j].factor), U1, temp, t_factor(1.0), cn);
@@ -187,6 +165,7 @@ void recalc_general(const DiagInfo &diag,
     dump_matrix(cn); // Dump full matrix
     cout << endl;
   }
+  return cn;
 }
 
 // This routine is used for recalculation of global operators in
@@ -195,8 +174,9 @@ void recalc1_global(const DiagInfo &diag,
                     const QSrmax &qsrmax,
                     const Invar &I, 
                     Matrix &m, // XXX: return this one
-                    size_t i1, size_t ip, 
-                    t_factor value) {
+                    const size_t i1, 
+                    const size_t ip, 
+                    const t_factor value) {
   const Eigen &diagI = diag.at(I);
   const size_t dim = diagI.getnr();
   if (dim == 0) return;

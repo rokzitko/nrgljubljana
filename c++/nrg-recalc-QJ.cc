@@ -41,7 +41,7 @@ MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qj/qj-doubletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_D_3CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QJ::LENGTH_D_3CH, Invar(1, 2));
   }
 };
 
@@ -53,7 +53,7 @@ MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #include "qj/qj-doubletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_D_3CH, Invar(1, 2));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QJ::LENGTH_D_3CH, Invar(1, 2));
   }
 };
   }
@@ -80,7 +80,7 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
 #include "qj/qj-quad1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_Q1_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q1_3CH, Invar(1, 4));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QJ::LENGTH_Q1_3CH, Invar(1, 4));
   }
 };
 
@@ -92,7 +92,7 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
 #include "qj/qj-quad2.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_Q2_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q2_3CH, Invar(1, 4));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QJ::LENGTH_Q2_3CH, Invar(1, 4));
   }
 };
 
@@ -104,7 +104,7 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
 #include "qj/qj-quad3.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_Q2_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q2_3CH, Invar(1, 4));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QJ::LENGTH_Q2_3CH, Invar(1, 4));
   }
 };
 
@@ -116,7 +116,7 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
 #include "qj/qj-quad4.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QJ::LENGTH_Q1_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QJ::LENGTH_Q1_3CH, Invar(1, 4));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QJ::LENGTH_Q1_3CH, Invar(1, 4));
   }
 };
   }

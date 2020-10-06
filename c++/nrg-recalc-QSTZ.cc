@@ -47,7 +47,7 @@ MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "qstz/qstz-doubletp-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, +1));
   }
 };
 
@@ -59,7 +59,7 @@ MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "qstz/qstz-doubletm-1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, +1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, +1));
   }
 };
 
@@ -71,7 +71,7 @@ MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "qstz/qstz-doubletp0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, 0));
   }
 };
 
@@ -83,7 +83,7 @@ MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "qstz/qstz-doubletm0.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, 0));
   }
 };
 
@@ -95,7 +95,7 @@ MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "qstz/qstz-doubletp+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, -1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, -1));
   }
 };
 
@@ -107,7 +107,7 @@ MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &
 #include "qstz/qstz-doubletm+1.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, -1));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSTZ::LENGTH_D_3CH, Invar(1, 2, -1));
   }
 };
   }
@@ -224,7 +224,7 @@ MatrixElements SymmetryQSTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &
 #include "qstz/qstz-triplets.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_T0_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_T0_3CH, Invar(0, 3, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSTZ::LENGTH_T0_3CH, Invar(0, 3, 0));
   }
 };
 
@@ -236,7 +236,7 @@ MatrixElements SymmetryQSTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &
 #include "qstz/qstz-tripletp.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_Tpm_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
   }
 };
 
@@ -248,7 +248,7 @@ MatrixElements SymmetryQSTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &
 #include "qstz/qstz-tripletm.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QSTZ::LENGTH_Tpm_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, QSTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QSTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
   }
 };
   }

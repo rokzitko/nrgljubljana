@@ -40,7 +40,7 @@ MatrixElements SymmetrySL3::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 #include "sl3/sl3-3ch-doublet.dat"
     };
     BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SL::LENGTH_D_3CH);
-    recalc_general(diag, qsrmax, cold, cnew, I1, Ip, recalc_table, SL::LENGTH_D_3CH, Invar(1, 0, 0));
+    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SL::LENGTH_D_3CH, Invar(1, 0, 0));
   }
 };
   }

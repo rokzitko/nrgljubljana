@@ -142,8 +142,7 @@ inline void Bins::add_acc(double energy, t_weight weight) {
       return;
     }
   }
-  // Note: if no suitable interval is found, the weight is
-  // discarded! XXX : should this be considered an error?
+  // Note: if no suitable interval is found, the weight is discarded!
 }
 
 // Merge two bins. They need to agree in the representative energies
