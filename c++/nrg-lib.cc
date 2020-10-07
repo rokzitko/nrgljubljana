@@ -38,6 +38,26 @@
 #include "openmp.h"
 #include "mp.h"
 
+#ifdef NRG_REAL
+using t_matel = double;                       // type for the matrix elements
+using t_eigen = double;                       // type for the eigenvalues
+using t_coef = double;                        // type for the Wilson chain coefficients
+using t_factor = double;                      // type for various prefactors in recalculations
+using t_expv = double;                        // type for expectation values of operators
+inline double CONJ_ME(double x) { return x; } // Conjugation of matrix elements: no op
+#endif
+
+#ifdef NRG_COMPLEX
+using t_matel = cmpl;
+using t_eigen = double;
+using t_coef = cmpl;
+using t_factor = cmpl;
+using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
+inline cmpl CONJ_ME(cmpl z) { return conj(z); }
+#endif
+
+using t_weight = cmpl; // spectral weight accumulators (complex in general)
+
 #include "params.cc"
 #include "outfield.cc"
 
@@ -46,9 +66,7 @@
  #define ADD_
  #include "cblas_globals.c"
  #include "cblas_dgemm.c"
- #ifdef NRG_COMPLEX
-  #include "cblas_zgemm.c"
- #endif
+ #include "cblas_zgemm.c"
  #include "cblas_xerbla.c"
 #endif
 
@@ -85,28 +103,6 @@ using SZspin = int;
 
 // Invariant subspace abstraction (container with quantum numbers)
 #include "invar.cc"
-
-// *** Commonly used types ***
-
-#ifdef NRG_REAL
-using t_matel = double;                       // type for the matrix elements
-using t_eigen = double;                       // type for the eigenvalues
-using t_coef = double;                        // type for the Wilson chain coefficients
-using t_factor = double;                      // type for various prefactors in recalculations
-using t_expv = double;                        // type for expectation values of operators
-inline double CONJ_ME(double x) { return x; } // Conjugation of matrix elements: no op
-#endif
-
-#ifdef NRG_COMPLEX
-using t_matel = cmpl;
-using t_eigen = double;
-using t_coef = cmpl;
-using t_factor = cmpl;
-using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
-inline cmpl CONJ_ME(cmpl z) { return conj(z); }
-#endif
-
-using t_weight = cmpl; // spectral weight accumulators (complex in general)
 
 /* NOTE: Row major is the C array format: A[0][0], A[0][1], A[0][2],
 A[1][0], A[1][1], etc. The default in UBLAS is row major, while LAPACK
@@ -1280,8 +1276,7 @@ double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, const doub
 Matrix diagonal_exp(const Eigen &eig, const double factor = 1.0)
 {
   const auto dim = eig.getnr();
-  Matrix m(dim, dim);
-  m.clear();
+  Matrix m = ublas::zero_matrix<t_matel>(dim, dim);
   for (auto i = 0; i < dim; i++) 
       m(i, i) = exp(-eig.value_zero(i) * factor);
   return m;
@@ -1674,8 +1669,7 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev};
   const size_t dim = rm.total();
-  Matrix h(dim, dim);
-  h.clear();
+  Matrix h = ublas::zero_matrix<t_matel>(dim, dim);
   const double scalefactor = (!P.substeps ? sqrt(P.Lambda) : pow(P.Lambda, 1. / (2. * P.channels))); // NOLINT
   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (size_t i = 1; i <= P.combs; i++) {

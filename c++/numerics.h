@@ -80,13 +80,6 @@ CONSTFNC double frobenius_norm(const Matrix &m) {
   return sum;
 }
 
-void make_identity_matrix(Matrix &m) {
-  my_assert(m.size1() == m.size2());
-  size_t dim = m.size1();
-  m.clear();
-  for (size_t i = 0; i < dim; i++) m(i, i) = 1.0;
-}
-
 // Check if the (numeric) matrix m is indeed Hermitian.
 // NOTE: current not used (8.10.2009).
 CONSTFNC bool check_is_matrix_hermitian(const Matrix &m, bool assert_it = false) {

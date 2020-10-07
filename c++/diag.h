@@ -293,25 +293,24 @@ template<typename M> Eigen diagonalise(ublas::matrix<M> &m) {
   time_mem::Timing t;
   check_is_matrix_upper(m);
   Eigen d;
-#ifdef NRG_REAL
-  if (sP.diag == "dsyev"s) 
-    d = diagonalise_dsyev(m);
-  if (sP.diag == "dsyevd"s) {
-    d = diagonalise_dsyevd(m);
-    if (d.getnrc() == 0) {
-      std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
+  if constexpr (std::is_same_v<M, double>) {
+    if (sP.diag == "dsyev"s) 
       d = diagonalise_dsyev(m);
+    if (sP.diag == "dsyevd"s) {
+      d = diagonalise_dsyevd(m);
+      if (d.getnrc() == 0) {
+        std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
+        d = diagonalise_dsyev(m);
+      }
     }
-  }
-  if (sP.diag == "dsyevr"s) 
-    d = diagonalise_dsyevr(m, sP.diagratio);
-#endif
-#ifdef NRG_COMPLEX
-  if (sP.diag == "zheev"s)  
-    d = diagonalise_zheev(m);
-  if (sP.diag == "zheevr"s) 
-    d = diagonalise_zheevr(m, sP.diagratio);
-#endif
+    if (sP.diag == "dsyevr"s) 
+      d = diagonalise_dsyevr(m, sP.diagratio);
+  } else if constexpr (std::is_same_v<M, std::complex<double>>) {
+    if (sP.diag == "zheev"s)  
+      d = diagonalise_zheev(m);
+    if (sP.diag == "zheevr"s) 
+      d = diagonalise_zheevr(m, sP.diagratio);
+  } else my_assert_not_reached();
   my_assert(d.getnrc() > 0);
   my_assert(d.matrix.size1() <= m.size1() && d.matrix.size2() == m.size2());
   if (logletter('e'))
