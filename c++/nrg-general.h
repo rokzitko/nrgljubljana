@@ -92,17 +92,8 @@ namespace mpi = boost::mpi;
 #define CONSTFNC
 #endif
 
-#define FN_ENERGIES_NRG "energies.nrg"
-#define FN_ENERGIES_DMNRG "energies.dmnrg"
-#define FN_ANNOTATED "annotated.dat"
-#define FN_TD "td"
-#define FN_TDFDM "tdfdm"
-#define FN_CUSTOM "custom"
-#define FN_CUSTOMFDM "customfdm"
-#define FN_UNITARY "unitary"
 #define FN_RHO "rho"
 #define FN_RHOFDM "rhofdm"
-#define FN_SUBSPACES "subspaces.dat"
 
 #define HIGHPREC(val) setprecision(std::numeric_limits<double>::max_digits10) << (val)
 

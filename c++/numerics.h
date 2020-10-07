@@ -4,17 +4,21 @@
 #ifndef _numerics_h_
 #define _numerics_h_
 
-// Template argument deduction does not consider implicit conversions, thus we need to define mixed integer/complex
-// arithmetic.
-//template<typename T> std::complex<T> operator+(const int& lhs, const std::complex<T> &rhs) { return T(lhs)+rhs; }
-//template<typename T> std::complex<T> operator-(const int& lhs, const std::complex<T> &rhs) { return T(lhs)-rhs; }
-//template<typename T> std::complex<T> operator*(const int& lhs, const std::complex<T> &rhs) { return T(lhs)*rhs; }
-//template<typename T> std::complex<T> operator/(const int& lhs, const std::complex<T> &rhs) { return T(lhs)/rhs; }
+template <typename T>
+  using complex_array_ref_t = T(&)[2];
 
-//template<typename T> std::complex<T> operator+(std::complex<T> &lhs, const int& rhs) { return lhs+T(rhs); }
-//template<typename T> std::complex<T> operator-(std::complex<T> &lhs, const int& rhs) { return lhs-T(rhs); }
-//template<typename T> std::complex<T> operator*(std::complex<T> &lhs, const int& rhs) { return lhs*T(rhs); }
-//template<typename T> std::complex<T> operator/(std::complex<T> &lhs, const int& rhs) { return lhs/T(rhs); }
+template<typename T>
+  complex_array_ref_t<T> reim(std::complex<T>& z) {
+    return reinterpret_cast<T(&)[2]>(z);
+  }
+
+template <typename T>
+  using complex_array_const_ref_t = const T(&)[2];
+
+template<typename T>
+  complex_array_const_ref_t<T> reim(const std::complex<T>& z) {
+    return reinterpret_cast<const T(&)[2]>(z);
+  }
 
 // Accumulator abstraction: automatically initialized to 0, result
 // checked for finiteness. Can be constructured from a STL vector of

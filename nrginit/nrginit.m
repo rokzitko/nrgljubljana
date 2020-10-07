@@ -1,8 +1,7 @@
 (* 
-  "NRG Ljubljana" - Numerical renormalization group for multiple
-  impurities and an arbitrary number of channels
+  "NRG Ljubljana" - Numerical renormalization group code
   
-  Copyright (C) 2005-2016 Rok Zitko
+  Copyright (C) 2005-2020 Rok Zitko
   
      This program is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published by
@@ -20,26 +19,22 @@
 
    Contact information:
    Rok Zitko
-   F5 - Condensed matter physics
+   F1 - Theoretical physics
    "Jozef Stefan" Institute
    Jamova 39
    SI-1000 Ljubljana
    Slovenia
 
    rok.zitko@ijs.si
-
-   $Id: nrginit.m 869 2009-11-04 16:54:09Z zitko $
 *)
 
 (* Default search path with some convenient defaults. *)
 (* Rationale: from more specialized to more generic... *)
-PACKAGEPATH = {"~",
-               "~/nrg",
-               NRGDIR};
+PACKAGEPATH = {"~", "~/nrg", NRGDIR};
 
 (**************************************************************)
 
-Print["NRG Ljubljana -- impurity problem initialization code"];
+Print["NRG Ljubljana -- initialization code"];
 Print["Dir: ", Directory[]];
 Print["Path: ", PACKAGEPATH];
 SYMTYPE = "runtime";
@@ -66,4 +61,3 @@ Get["initial.m", Path->PACKAGEPATH];
 makedata["data"];
 
 Print["Success!"];
-

@@ -1,5 +1,5 @@
 // spectral.h - Code for handling spectral function data
-// Copyright (C) 2005-2019 Rok Zitko
+// Copyright (C) 2005-2020 Rok Zitko
 
 #ifndef _spectral_h_
 #define _spectral_h_
@@ -20,21 +20,15 @@ inline t_weight WEIGHT(const Spikes::value_type &i) { return i.second; }
 
 // used in matsubata.h and in save_densfunc()
 void output(ostream &F, double x, t_weight y, bool imagpart, const double clip_tol_imag = 1e-10) {
-  F << x << " " << y.real();
-  if (imagpart) F << " " << (abs(y.imag()) > abs(y.real()) * clip_tol_imag ? y.imag() : 0.0);
-  F << endl;
-}
-
-// used in matsubara2.h
-void output(ostream &F, double x1, double x2, t_weight y, bool imagpart, const double clip_tol_imag = 1e-10) {
-  F << x1 << " " << x2 << " " << y.real();
-  if (imagpart) F << " " << (abs(y.imag()) > abs(y.real()) * clip_tol_imag ? y.imag() : 0.0);
+  const auto [r, i] = reim(y);
+  F << x << " " << r;
+  if (imagpart) F << " " << (abs(i) > abs(r) * clip_tol_imag ? i: 0.0);
   F << endl;
 }
 
 void save_densfunc(ostream &F, const Spikes &xy, bool imagpart = false) {
   F << setprecision(P.prec_xy);
-  for (const auto &i : xy) output(F, i.first, i.second, imagpart);
+  for (const auto &[e, w] : xy) output(F, e, w, imagpart);
 }
 
 #ifndef M_SQRTPI

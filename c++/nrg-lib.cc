@@ -447,8 +447,9 @@ class Stats {
    
    TD_FDM td_fdm;
 
-   Stats(const Params &P) : td(P, FN_TD), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX),
-     ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, FN_TDFDM) {}
+   Stats(const Params &P, const std::string filename_td = "td"s, const std::string filename_tdfdm = "tdfdm"s) : 
+     td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
+     ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
 };
 
 void subtract_groundstate_energy(const Stats &stats, DiagInfo &diag) {
@@ -557,18 +558,20 @@ template <typename T> string output_val(const T &x, size_t prec = std::numeric_l
 // string in order to simplify parsing. This behavior can be turned
 // off using P.noimag, which is the default.
 const double OUTPUT_IMAG_EPS = 1.0e-13;
-string output_val(const cmpl &val) {
+
+std::string output_val(const cmpl &z) {
   ostringstream F;
-  if (P.noimag || abs(val.imag()) < abs(val.real()) * OUTPUT_IMAG_EPS) {
-    F << val.real();
+  const auto [r,i] = reim(z);
+  if (P.noimag || abs(i) < abs(r) * OUTPUT_IMAG_EPS) {
+    F << r;
   } else {
-    F << val.real();
-    if (val.imag() > 0.0)
-      F << "+I" << val.imag();
+    F << r;
+    if (i > 0)
+      F << "+I" << i;
     else
-      F << "-I" << -val.imag();
+      F << "-I" << -i;
   }
-  return F.str();
+  return F.str(); // XXX: combine with formatted_output()
 }
 
 template <typename T> void formatted_output(ostream &F, T x, const Params &P) {
@@ -576,17 +579,16 @@ template <typename T> void formatted_output(ostream &F, T x, const Params &P) {
   F << setw(P.width_custom) << setprecision(P.prec_custom) << x << ' ';
 }
 
-void formatted_output(ostream &F, cmpl val, const Params &P) {
+void formatted_output(ostream &F, cmpl z, const Params &P) {
   ostringstream str;
   str << setprecision(P.prec_custom);   // This sets precision for both real and imaginary parts.
-  const auto r = val.real(); 
-  const auto i = val.imag();
+  const auto [r, i] = reim(z);
   if (P.noimag || abs(i) < abs(r) * OUTPUT_IMAG_EPS) 
     str << r;
   else
     str << r << (i > 0 ? "+I" : "-I") << (i > 0 ? i : -i);
   // The width for the whole X+IY string.
-  F << setw(P.width_custom) << str.str() << ' ';
+  F << setw(P.width_custom) << str.str() << ' '; // XXX: fmt
 }
 
 #include "bins.h"
@@ -1090,9 +1092,9 @@ class Annotated {
  public:
    Annotated(const Params &P_) : P(P_) {}
    
-   void dump(const Step &step, const DiagInfo &diag, const Stats &stats) {
+   void dump(const Step &step, const DiagInfo &diag, const Stats &stats, const std::string filename = "annotated.dat") {
      if (P.dumpannotated && !F.is_open()) { // open output file
-       F.open(FN_ANNOTATED);
+       F.open(filename);
        F << setprecision(P.dumpprecision);
      }
      std::vector<pair<t_eigen, Invar>> seznam;
@@ -1146,18 +1148,21 @@ struct Output {
   unique_ptr<ExpvOutput> custom;
   unique_ptr<ExpvOutput> customfdm;
   
-  Output(const RUNTYPE &runtype_, const IterInfo &iterinfo, Stats &stats, const Params &P_) : runtype(runtype_), P(P_), annotated(P) {
-    // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
-    // runs produce the same results.
-    if (P.dumpenergies) Fenergies.open(runtype == RUNTYPE::NRG ? FN_ENERGIES_NRG : FN_ENERGIES_DMNRG);
-    list<string> ops;
-    for (const auto &[name, m] : iterinfo.ops)  ops.push_back(name);
-    for (const auto &[name, m] : iterinfo.opsg) ops.push_back(name);
-    if (runtype == RUNTYPE::NRG)
-      custom = make_unique<ExpvOutput>(FN_CUSTOM, stats.expv, ops, P);
-    else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
-      customfdm = make_unique<ExpvOutput>(FN_CUSTOMFDM, stats.fdmexpv, ops, P);
-  }
+  Output(const RUNTYPE &runtype, const IterInfo &iterinfo, Stats &stats, const Params &P,
+         const std::string filename_nrg = "energies.nrg"s, const std::string filename_dmnrg = "energies.dmnrg"s,
+         const std::string filename_custom = "custom", const std::string filename_customfdm = "customfdm")
+    : runtype(runtype), P(P), annotated(P) {
+      // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
+      // runs produce the same results.
+      if (P.dumpenergies) Fenergies.open(runtype == RUNTYPE::NRG ? filename_nrg : filename_dmnrg);
+      list<string> ops;
+      for (const auto &[name, m] : iterinfo.ops)  ops.push_back(name);
+      for (const auto &[name, m] : iterinfo.opsg) ops.push_back(name);
+      if (runtype == RUNTYPE::NRG)
+        custom = make_unique<ExpvOutput>(filename_custom, stats.expv, ops, P);
+      else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
+        customfdm = make_unique<ExpvOutput>(filename_customfdm, stats.fdmexpv, ops, P);
+    }
 
   // Dump all energies in diag to a file
   void dump_all_energies(const DiagInfo &diag, int N) {
@@ -1171,6 +1176,20 @@ struct Output {
     }
   }
 };
+
+// Dump all absolute energies in diag to a file
+void dump_all_absolute_energies(const AllSteps &dm, const Params &P, std::string filename = "absolute_energies.dat"s) {
+  std::ofstream F(filename);
+  for (size_t N = P.Ninit; N < P.Nlen; N++) {
+    F << std::endl << "===== Iteration number: " << N << std::endl;
+    for (const auto &[i, ds]: dm.at(N)) {
+      F << "Subspace: " << i << std::endl;
+      for (const auto &x : ds.eig.absenergyG)
+        F << x << ' ';
+      F << std::endl;
+    }
+  }
+}
 
 CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n) {
   matel_bucket tr; // note: t_matel = t_expv
@@ -1249,7 +1268,7 @@ void dump_diagonal(const DiagInfo &diag, const IterInfo &a, ostream &F = std::co
 // stats.Zft, that is used to compute the spectral function with the
 // conventional approach, as well as stats.Zgt for G(T) calculations,
 // stats.Zchit for chi(T) calculations.
-double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, double factor = 1.0) {
+double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, const double factor = 1.0) {
   bucket ZN;
   for (const auto &[i, eig]: diag) 
     for (const auto &x : eig.value_zero)
@@ -1258,7 +1277,7 @@ double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, double fac
   return ZN;
 }
 
-Matrix diagonal_exp(const Eigen &eig, double factor = 1.0)
+Matrix diagonal_exp(const Eigen &eig, const double factor = 1.0)
 {
   const auto dim = eig.getnr();
   Matrix m(dim, dim);
@@ -2136,8 +2155,8 @@ void states_report(const DiagInfo &diag, ostream &fout = cout) {
 }
 
 // Save a dump of all subspaces, with dimension info, etc.
-void dump_subspaces(const AllSteps &dm, const Params &P) {
-  ofstream O(FN_SUBSPACES);
+void dump_subspaces(const AllSteps &dm, const Params &P, const std::string filename = "subspaces.dat"s) {
+  ofstream O(filename);
   for (size_t N = P.Ninit; N < P.Nmax; N++) {
     O << "Iteration " << N << endl;
     O << "len_dm=" << dm[N].size() << endl;
@@ -2225,6 +2244,9 @@ void calculation(Params &P) {
   AllSteps dm(P.Nlen);
   auto diag = run_nrg(step, iterinfo, stats, diag0, dm, P);
   if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
+  shift_abs_energies_dm(stats, dm); // we call this here, to enable a file dump
+  if (P.dumpabsenergies)
+    dump_all_absolute_energies(dm, P);
   if (P.dm) {
     if (need_rho()) {
       auto rho = init_rho(step, diag);
@@ -2232,7 +2254,6 @@ void calculation(Params &P) {
       if (!P.ZBW) calc_densitymatrix(rho, dm, P);
     }
     if (need_rhoFDM()) {
-      shift_abs_energies_dm(stats, dm);
       calc_ZnD(dm, stats);
       fdm_thermodynamics(dm, stats);
       auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, P);

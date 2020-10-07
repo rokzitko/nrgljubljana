@@ -280,8 +280,9 @@ bool already_computed(const string &prefix) {
  the second time. Here we calculate the shell-N density matrices for all
  iteration steps. */
 
-void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &P) {
-  if (P.resume && already_computed(FN_RHO)) {
+void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &P, 
+                        const std::string filename = FN_RHO) {
+  if (P.resume && already_computed(filename)) {
     cout << "Not necessary: already computed!" << endl;
     return;
   }
@@ -294,7 +295,7 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &
     DensMatElements rhoPrev;
     calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N, dm, P);
     check_trace_rho(rhoPrev); // Make sure rho is normalized to 1.
-    saveRho(N - 1, FN_RHO, rhoPrev, P);
+    saveRho(N - 1, filename, rhoPrev, P);
     rho.swap(rhoPrev);
   }
 }
@@ -377,8 +378,9 @@ double sum_wn(size_t N, const Stats &stats, const Params &P) {
   return sum;
 }
 
-void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const AllSteps &dm, const Stats &stats, const Params &P) {
-  if (P.resume && already_computed(FN_RHOFDM)) {
+void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const AllSteps &dm, const Stats &stats, const Params &P,
+                            const std::string filename = FN_RHOFDM) {
+  if (P.resume && already_computed(filename)) {
     cout << "Not necessary: already computed!" << endl;
     return;
   }
@@ -394,7 +396,7 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const All
     double diff     = (tr - expected) / expected;
     nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
     my_assert(num_equal(diff, 0.0));
-    saveRho(N - 1, FN_RHOFDM, rhoFDMPrev, P);
+    saveRho(N - 1, filename, rhoFDMPrev, P);
     rhoFDM.swap(rhoFDMPrev);
   }
 }

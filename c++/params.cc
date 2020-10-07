@@ -32,7 +32,9 @@ class Workdir {
      cout << "workdir=" << workdir << endl << endl;
    }
    std::string rhofn(const string &fn, int N) const { return workdir + "/" + fn + to_string(N); }
-   std::string unitaryfn(size_t N) const { return workdir + "/" + FN_UNITARY + to_string(N); }
+   std::string unitaryfn(size_t N, const std::string filename = "unitary"s) const {
+     return workdir + "/" + filename + to_string(N); 
+   }
 };
 
 Workdir workdir;
@@ -498,6 +500,7 @@ struct Params {
   param<bool> dump_f{"dump_f", "Dump <f> matrix elements", "false", all}; // N
 
   param<bool> dumpenergies{"dumpenergies", "Dump (all) energies to file?", "false", all};  // N
+  param<bool> dumpabsenergies{"dumpabsenergies", "Dump (all) absolute energies to file?", "false", all};  // N - new
 
   // stopafter=nrg, stops calculation after the first sweep
   // stopafter=rho, stops calculation after computing the density matrix

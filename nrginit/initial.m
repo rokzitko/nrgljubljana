@@ -1,6 +1,5 @@
 (* 
-   NRG Ljubljana -- initial.m -- Basis construction, initial Hamiltonian
-   diagonalisation and calculation of irreducible matrix elements 
+   NRG Ljubljana -- Numerical renormalization group code
   
    Copyright (C) 2005-2020 Rok Zitko
 
