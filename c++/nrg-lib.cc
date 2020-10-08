@@ -396,12 +396,6 @@ class Stats {
    double Zgt;   // grand-canonical partition function for computing G(T)
    double Zchit; // grand-canonical partition function for computing chi(T)
 
-   double E;     // energy times beta
-   double E2;    // (energy times beta) squared
-   double C;     // heat capcity (in units of 1/k_B)
-   double F;     // free energy times beta
-   double S;     // entropy: (beta E)-(beta F)
-   
    TD td;
    
    //  ** Expectation values
@@ -1560,6 +1554,22 @@ void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
     cout << "norm[" << name << "]=" << norm(m, diag, SpecdensquadFactorFnc, 0) << std::endl;
 }
 
+template<typename F>
+  double trace(F fnc, const double rescale_factor, const DiagInfo &diag) {
+    bucket b;
+    for (const auto &[i, eig] : diag) {
+      bucket sum;
+      for (const auto &x : eig.value_zero) {
+        const double betaE = rescale_factor * x;
+        const double expo  = exp(-betaE);
+        sum += fnc(betaE) * expo;
+      }
+      b += Sym->mult(i) * sum;
+    }
+    return b;
+  }
+  
+
 // We calculate thermodynamic quantities before truncation to make better use of the available states. Here we
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
 // member functions defined in symmetry.cc.
@@ -1567,28 +1577,16 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
   double rescale_factor = step.TD_factor() * additional_factor;
-  bucket Z, E, E2; // Statistical sum, Tr[beta H], Tr[(beta H)^2]
-  for (const auto &[i, eig] : diag) {
-    bucket sumZ, sumE, sumE2;
-    for (const auto &x : eig.value_zero) {
-      const double betaE = rescale_factor * x;
-      const double expo  = exp(-betaE);
-      sumE += betaE * expo;
-      sumE2 += sqr(betaE) * expo;
-      sumZ += expo;
-    }
-    const int multip = Sym->mult(i);     // take into account the multiplicity
-    Z += multip * sumZ;
-    E += multip * sumE;
-    E2 += multip * sumE2;
-  }
+  const auto Z = trace([](double x) { return 1; }, rescale_factor, diag); // partition function
+  const auto E = trace([](double x) { return x; }, rescale_factor, diag); // Tr[beta H]
+  const auto E2 = trace([](double x) { return sqr(x); }, rescale_factor, diag); // Tr[(beta H)^2]
   stats.Z = Z;
   stats.td.T  = step.Teff();
-  stats.td.E  = stats.E = E / Z;                   // beta <H>
-  stats.td.E2 = stats.E2 = E2 / Z;                 // beta^2 <H^2>
-  stats.td.C  = stats.C = stats.E2 - sqr(stats.E); // C/k_B=beta^2(<H^2>-<H>^2)
-  stats.td.F  =  stats.F = -log(Z);                // F/(k_B T)=-ln(Z)
-  stats.td.S  = stats.S = stats.E - stats.F;       // S/k_B=beta<H>+ln(Z)
+  stats.td.E  = E/Z;             // beta <H>
+  stats.td.E2 = E2/Z;            // beta^2 <H^2>
+  stats.td.C  = E2/Z - sqr(E/Z); // C/k_B=beta^2(<H^2>-<H>^2)
+  stats.td.F  = -log(Z);         // F/(k_B T)=-ln(Z)
+  stats.td.S  = E/Z+log(Z);      // S/k_B=beta<H>+ln(Z)
   Sym->calculate_TD(step, diag, stats, rescale_factor);  // symmetry-specific calculation routine
   stats.td.save_values();
 }
