@@ -317,7 +317,10 @@ class Step {
    void operator++(int) { trueN++; ndxN++; }
    size_t N() const { return ndxN; }
    size_t ndx() const { return ndxN; }
-   double scale() const { return P.SCALE(trueN+1); } // scale factor: current energy scale in units of bandwidth D
+   double energyscale() const { return P.SCALE(trueN+1); } // current energy scale in units of bandwidth D
+   double scale() const { // scale factor as used in the calculation
+     return !P.absolute ? energyscale() : 0;
+   }
    double Teff() const { return scale()/P.betabar; }  // effective temperature for thermodynamic calculations
    double scT() const { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
    pair<size_t, size_t> NM() const {
@@ -327,6 +330,7 @@ class Step {
    }
    // Compensate for different definition of SCALE in initial.m and C++ code in case of substeps==true.
    double scale_fix() const {
+     if (P.absolute) return 1.0;
      const auto [N, M] = NM();
      my_assert(ndxN == N * P.channels + M);
      size_t N_at_end_of_full_step     = N * P.channels + P.channels - 1; // M=0,...,channels-1
@@ -337,7 +341,7 @@ class Step {
    void infostring() const {
      string info = " ***** [" + (runtype == RUNTYPE::NRG ? "NRG"s : "DM"s) + "] " 
        + "Iteration " + to_string(ndxN + 1) + "/" + to_string(P.Nmax) 
-         + " (scale " + to_string(scale()) + ")" + " ***** ";
+         + " (scale " + to_string(energyscale()) + ")" + " ***** ";
      if (P.substeps) {
        const auto [N, M] = NM();
        info += " step " + to_string(N + 1) + " substep " + to_string(M + 1);
@@ -1662,12 +1666,20 @@ bool do_recalc_kept(const Step &step, const Params &P) { return string(P.strateg
 bool do_recalc_all(const Step &step, const Params &P) { return !do_recalc_kept(step, P) && !P.ZBW; }
 bool do_no_recalc(const Step &step, const Params &P) { return P.ZBW; }
 
+inline double scale_factor(const Params &P)
+{
+  if (P.absolute)
+    return 1.0;
+  else
+    return !P.substeps ? sqrt(P.Lambda) : pow(P.Lambda, 1. / (2. * P.channels)); // NOLINT
+}
+
 Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const DiagInfo &diagprev, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev};
   const size_t dim = rm.total();
   Matrix h = ublas::zero_matrix<t_matel>(dim, dim);
-  const double scalefactor = (!P.substeps ? sqrt(P.Lambda) : pow(P.Lambda, 1. / (2. * P.channels))); // NOLINT
+  const double scalefactor = scale_factor(P);
   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (size_t i = 1; i <= P.combs; i++) {
     const size_t offset = rm.offset(i);
@@ -2069,7 +2081,7 @@ DiagInfo iterate(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
 void docalc0ht(Step &step, const DiagInfo &diag0, Stats &stats, Output &output, unsigned int extra_steps, const Params &P) {
   for (int i = -int(extra_steps); i <= -1; i++) {
     step.set(P.Ninit - 1 + i);
-    double E_rescale_factor = pow(P.Lambda, i / 2.0); // NOLINT
+    double E_rescale_factor = pow(P.Lambda, i / 2.0); // NOLINT   // XXX: works with P.absolute==true?
     calculate_TD(step, diag0, stats, output, E_rescale_factor);
   }
 }

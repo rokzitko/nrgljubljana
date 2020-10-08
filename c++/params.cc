@@ -648,11 +648,11 @@ struct Params {
     else
       scale *= pow(Lambda, -N / (2. * channels) + 3 / 2. - z); // NOLINT
     my_assert(scale != 0.0);        // yes, != is intentional here.
-    scale = scale * bandrescale; // RESCALE
+    scale = scale * bandrescale; // RESCALE   // XXX: is this the appropriate place for rescaling? compatible with P.absolute==true?
     return scale;
   }
 
-  // Energy scale at the last NRG iteration
+  // Energy scale at the last NRG iteration. Use in binning and broadening code.
   double last_step_scale() { return SCALE(Nmax); }
 };
 
