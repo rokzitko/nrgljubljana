@@ -99,7 +99,7 @@ DiagInfo read_energies(ifstream &fdata, size_t nsubs, Params &P) {
     Invar I;
     fdata >> I;
     auto energies = read_vector<double>(fdata);
-    if (!P.data_has_rescaled_energies)
+    if (!P.data_has_rescaled_energies && !P.absolute)
       energies /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
     diag[I].diagonal(energies);
   }

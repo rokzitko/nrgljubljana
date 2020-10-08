@@ -321,8 +321,11 @@ class Step {
    double scale() const { // scale factor as used in the calculation
      return P.absolute ? 1.0 : energyscale();
    }
+   double unscale() const { // 'unscale' parameter for dimensionless quantities
+     return P.absolute ? energyscale() : 1.0;
+   }
    double Teff() const { return energyscale()/P.betabar; }  // effective temperature for thermodynamic calculations
-   double TD_factor() const { return P.betabar / (P.absolute ? energyscale() : 1.0); }
+   double TD_factor() const { return P.betabar / unscale(); }
    double scT() const { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
    pair<size_t, size_t> NM() const {
      size_t N = ndxN / P.channels;
