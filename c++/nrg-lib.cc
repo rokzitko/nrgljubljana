@@ -319,9 +319,10 @@ class Step {
    size_t ndx() const { return ndxN; }
    double energyscale() const { return P.SCALE(trueN+1); } // current energy scale in units of bandwidth D
    double scale() const { // scale factor as used in the calculation
-     return !P.absolute ? energyscale() : 0;
+     return P.absolute ? 1.0 : energyscale();
    }
-   double Teff() const { return scale()/P.betabar; }  // effective temperature for thermodynamic calculations
+   double Teff() const { return energyscale()/P.betabar; }  // effective temperature for thermodynamic calculations
+   double TD_factor() const { return P.betabar / (P.absolute ? energyscale() : 1.0); }
    double scT() const { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
    pair<size_t, size_t> NM() const {
      size_t N = ndxN / P.channels;
@@ -1188,14 +1189,14 @@ void dump_all_absolute_energies(const AllSteps &dm, const Params &P, std::string
   }
 }
 
-CONSTFNC t_expv calc_trace_singlet(const DiagInfo &diag, const MatrixElements &n) {
+CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n) {
   matel_bucket tr; // note: t_matel = t_expv
   for (const auto &[i, eig] : diag) {
     const auto & nI = n.at(Twoinvar{i,i});
     const size_t dim = eig.getnr();
     my_assert(dim == nI.size2());
     matel_bucket sum;
-    for (size_t r = 0; r < dim; r++) sum += exp(-P.betabar * eig.value_zero(r)) * nI(r, r);
+    for (size_t r = 0; r < dim; r++) sum += exp(-step.TD_factor() * eig.value_zero(r)) * nI(r, r);
     tr += Sym->mult(i) * t_matel(sum);
   }
   return tr;
@@ -1206,9 +1207,9 @@ void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const
   bucket Z;
   for (const auto &[I, eig] : diag)
     for (const auto &x : eig.value_zero)
-      Z += Sym->mult(I) * exp(-P.betabar * x);
-  for (const auto &[name, m] : a.ops)   stats.expv[name] = calc_trace_singlet(diag, m) / Z;
-  for (const auto &[name, m] : a.opsg)  stats.expv[name] = calc_trace_singlet(diag, m) / Z;
+      Z += Sym->mult(I) * exp(-step.TD_factor() * x);
+  for (const auto &[name, m] : a.ops)   stats.expv[name] = calc_trace_singlet(step, diag, m) / Z;
+  for (const auto &[name, m] : a.opsg)  stats.expv[name] = calc_trace_singlet(step, diag, m) / Z;
   output.custom->field_values(step.Teff());
 }
 
@@ -1573,11 +1574,9 @@ void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
 // member functions defined in symmetry.cc.
 void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &output, double additional_factor = 1.0) {
-  // Rescale factor for energies. The energies are expressed in
-  // units of omega_N, thus we need to appropriately rescale them to
-  // calculate the Boltzmann weights at the temperature scale Teff
-  // (Teff=scale/betabar).
-  double rescale_factor = P.betabar * additional_factor;
+  // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
+  // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
+  double rescale_factor = step.TD_factor() * additional_factor;
   bucket Z, E, E2; // Statistical sum, Tr[beta H], Tr[(beta H)^2]
   for (const auto &[i, eig] : diag) {
     bucket sumZ, sumE, sumE2;
@@ -1666,7 +1665,7 @@ bool do_recalc_kept(const Step &step, const Params &P) { return string(P.strateg
 bool do_recalc_all(const Step &step, const Params &P) { return !do_recalc_kept(step, P) && !P.ZBW; }
 bool do_no_recalc(const Step &step, const Params &P) { return P.ZBW; }
 
-inline double scale_factor(const Params &P)
+inline double nrg_step_scale_factor(const Params &P)
 {
   if (P.absolute)
     return 1.0;
@@ -1679,7 +1678,7 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const Rmaxvals rm{I, anc, diagprev};
   const size_t dim = rm.total();
   Matrix h = ublas::zero_matrix<t_matel>(dim, dim);
-  const double scalefactor = scale_factor(P);
+  const double scalefactor = nrg_step_scale_factor(P);
   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (size_t i = 1; i <= P.combs; i++) {
     const size_t offset = rm.offset(i);
