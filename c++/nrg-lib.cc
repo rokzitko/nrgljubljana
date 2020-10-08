@@ -1557,15 +1557,13 @@ void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
 template<typename F>
   double trace(F fnc, const double rescale_factor, const DiagInfo &diag) {
     bucket b;
-    for (const auto &[i, eig] : diag) {
-      bucket sum;
-      for (const auto &x : eig.value_zero) {
-        const double betaE = rescale_factor * x;
-        const double expo  = exp(-betaE);
-        sum += fnc(betaE) * expo;
-      }
-      b += Sym->mult(i) * sum;
-    }
+    for (const auto &[i, eig] : diag)
+      b += Sym->mult(i) * std::accumulate(eig.value_zero.cbegin(), eig.value_zero.cend(), 0.0,
+                                 [fnc, rescale_factor](double acc, const auto x) { 
+                                   const double betaE = rescale_factor * x;
+                                   const double expo  = exp(-betaE);
+                                   return acc + fnc(betaE) * expo; 
+                                 });
     return b;
   }
   
