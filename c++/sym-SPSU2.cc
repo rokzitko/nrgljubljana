@@ -138,7 +138,7 @@ void SymmetrySPSU2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, 
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, M, 0, t_matel(factor) * kappa(Ntrue, M), h, qq, In, opch)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / step.scale_fix(), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(Ntrue, M), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(step, i, M, number, zeta(Ntrue + 1, M), h, qq)

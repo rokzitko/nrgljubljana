@@ -131,9 +131,8 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
     my_assert(P.coeffactor == 1);
     const auto [N, M] = step.NM();
 
-    // Overrides. See sym-QS.cc for explanations!
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(N, M) / step.scale_fix(), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(N, M), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(step, i, M, number, zeta(N + 1, M), h, qq)

@@ -100,7 +100,8 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Step &step, const Rm
     my_assert(P.coeffactor == 1);
     const auto [Ntrue, M] = step.NM();
 
-// See above for the explanation for the (M == 1 ? -1 : 1) term.
+// XXX: note the (M == 1 ? -1 : 1) term.
+
 #undef ISOSPINX
 #define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, M, t_matel(factor) * 2.0 * (M == 1 ? -1.0 : 1.0) * delta(Ntrue + 1, M), h, qq)
 
@@ -108,7 +109,7 @@ void SymmetrySPU1::makematrix_nonpolarized(Matrix &h, const Step &step, const Rm
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, M, 0, t_matel(factor) * kappa(Ntrue, M), h, qq, In, opch)
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(Ntrue, M) / step.scale_fix(), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(Ntrue, M), h, qq, In, opch)
 
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(step, i, M, number, zeta(Ntrue + 1, M), h, qq)
@@ -159,7 +160,7 @@ void SymmetrySPU1::makematrix_polarized(Matrix &h, const Step &step, const Rmaxv
 #include "spu1/spu1-2ch-isospinx.dat"
     break;
   default: my_assert_not_reached();
-  } // switch
+  }
 }
 
 void SymmetrySPU1::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {

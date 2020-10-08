@@ -1,0 +1,86 @@
+Iteration 0
+len_dm=10
+I=-3 1 kept=1 total=1
+I=-2 2 kept=3 total=3
+I=-1 1 kept=6 total=6
+I=-1 3 kept=3 total=3
+I=0 2 kept=8 total=8
+I=0 4 kept=1 total=1
+I=1 1 kept=6 total=6
+I=1 3 kept=3 total=3
+I=2 2 kept=3 total=3
+I=3 1 kept=1 total=1
+
+Iteration 1
+len_dm=15
+I=-4 1 kept=1 total=1
+I=-3 2 kept=4 total=4
+I=-2 1 kept=10 total=10
+I=-2 3 kept=6 total=6
+I=-1 2 kept=20 total=20
+I=-1 4 kept=4 total=4
+I=0 1 kept=20 total=20
+I=0 3 kept=15 total=15
+I=0 5 kept=1 total=1
+I=1 2 kept=20 total=20
+I=1 4 kept=4 total=4
+I=2 1 kept=10 total=10
+I=2 3 kept=6 total=6
+I=3 2 kept=4 total=4
+I=4 1 kept=1 total=1
+
+Iteration 2
+len_dm=21
+I=-5 1 kept=1 total=1
+I=-4 2 kept=5 total=5
+I=-3 1 kept=15 total=15
+I=-3 3 kept=10 total=10
+I=-2 2 kept=40 total=40
+I=-2 4 kept=10 total=10
+I=-1 1 kept=50 total=50
+I=-1 3 kept=45 total=45
+I=-1 5 kept=5 total=5
+I=0 2 kept=75 total=75
+I=0 4 kept=24 total=24
+I=0 6 kept=1 total=1
+I=1 1 kept=50 total=50
+I=1 3 kept=45 total=45
+I=1 5 kept=5 total=5
+I=2 2 kept=40 total=40
+I=2 4 kept=10 total=10
+I=3 1 kept=15 total=15
+I=3 3 kept=10 total=10
+I=4 2 kept=5 total=5
+I=5 1 kept=1 total=1
+
+Iteration 3
+len_dm=28
+I=-6 1 kept=1 total=1
+I=-5 2 kept=6 total=6
+I=-4 1 kept=21 total=21
+I=-4 3 kept=15 total=15
+I=-3 2 kept=70 total=70
+I=-3 4 kept=20 total=20
+I=-2 1 kept=105 total=105
+I=-2 3 kept=105 total=105
+I=-2 5 kept=15 total=15
+I=-1 2 kept=210 total=210
+I=-1 4 kept=84 total=84
+I=-1 6 kept=6 total=6
+I=0 1 kept=175 total=175
+I=0 3 kept=189 total=189
+I=0 5 kept=35 total=35
+I=0 7 kept=1 total=1
+I=1 2 kept=210 total=210
+I=1 4 kept=84 total=84
+I=1 6 kept=6 total=6
+I=2 1 kept=105 total=105
+I=2 3 kept=105 total=105
+I=2 5 kept=15 total=15
+I=3 2 kept=70 total=70
+I=3 4 kept=20 total=20
+I=4 1 kept=21 total=21
+I=4 3 kept=15 total=15
+I=5 2 kept=6 total=6
+I=6 1 kept=1 total=1
+

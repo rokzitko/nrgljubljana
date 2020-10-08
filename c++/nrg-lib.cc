@@ -332,16 +332,6 @@ class Step {
      size_t M = ndxN - N*P.channels; // M ranges 0..channels-1
      return {N, M};
    }
-   // Compensate for different definition of SCALE in initial.m and C++ code in case of substeps==true.
-   double scale_fix() const {
-     if (P.absolute) return 1.0;
-     const auto [N, M] = NM();
-     my_assert(ndxN == N * P.channels + M);
-     size_t N_at_end_of_full_step     = N * P.channels + P.channels - 1; // M=0,...,channels-1
-     double scale_now                 = P.SCALE(ndxN + 1); // NOLINT
-     double scale_at_end_of_full_step = P.SCALE(N_at_end_of_full_step + 1); // NOLINT
-     return scale_now / scale_at_end_of_full_step;
-   }
    void infostring() const {
      string info = " ***** [" + (runtype == RUNTYPE::NRG ? "NRG"s : "DM"s) + "] " 
        + "Iteration " + to_string(ndxN + 1) + "/" + to_string(P.Nmax) 
@@ -1356,7 +1346,7 @@ bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
                                       std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));
-  nrgdump(Emax);
+  std::cout << "Emax=" << Emax/step.unscale();
   truncate_stats ts(diag);
   ts.report();
   const auto notenough = std::any_of(begin(diag), end(diag), 

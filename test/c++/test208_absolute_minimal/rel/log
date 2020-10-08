@@ -1,0 +1,225 @@
+Parallelization using MPI: Running on 1 processors.
+
+NRG Ljubljana - (c) rok.zitko@ijs.si
+Timestamp: Thu Oct  8 16:15:47 2020
+Compiled on Oct  8 2020 at 16:15:58
+
+[OpenMP] Max. number of threads: 1
+[OpenMP] Number of processors: 32
+[OpenMP] Dynamic thread adjustment: 0
+[OpenMP] Nested parallelism: 0
+
+Using Intel MKL library 2019.0.5
+Processor optimization: Intel(R) Advanced Vector Extensions 2 (Intel(R) AVX2) enabled processors
+max_threads=1 blas_max_threads=1 dynamic=1
+
+
+workdir=/work/zitko//dcpCtP
+
+Unused settings: 
+ Gamma=0.1
+ Nmax=4
+ U=1.0
+ band=flat
+ delta=0.1
+ model=SIAM
+
+Lambda=2 *
+NN1=0
+NN2avg=0
+NN2even=1
+NNtanh=0
+Ninit=0
+T=0.001
+absolute=0
+accumulation=0
+alpha=0.29999999999999999
+bandrescale=1
+betabar=1
+bins=1000
+broaden=1
+broaden_max=10
+broaden_min=-99
+broaden_min_ratio=3
+broaden_ratio=1.05
+calc0=1
+cfs=0
+cfsgt=0
+cfsls=0
+checkdiag=0
+checkrho=0
+checksumrules=0
+chitp=1
+chitp_ratio=-999
+data_has_rescaled_energies=1
+diag=dsyev
+diagratio=1
+diagth=1
+discard_immediately=9.9999999999999998e-17
+discard_trim=9.9999999999999998e-17
+discretization=Z *
+dm=0
+dmnrg=0
+dmnrgmats=0
+done=1
+dump_f=0
+dumpabs=0
+dumpabsenergies=0
+dumpannotated=0
+dumpdiagonal=0
+dumpenergies=0
+dumpgroups=1
+dumpprecision=8
+dumpscaled=1
+dumpsubspaces=0
+emax=-1
+emin=-1
+fdm=0
+fdmexpv=0
+fdmexpvn=0
+fdmgt=0
+fdmls=0
+fdmmats=0
+finite=0
+finitemats=0
+fixeps=1.0000000000000001e-15
+globalB=0
+globalBx=0
+goodE=2
+grouptol=9.9999999999999995e-07
+gtp=0.69999999999999996
+keep=100 *
+keepenergy=-1
+keepmin=0
+lastall=0
+lastalloverride=0
+linstep=0
+log=
+logall=0
+mats=100
+noimag=1
+omega0=-1
+omega0_ratio=1
+ops=n_d *
+pol2x2=0
+polarized=0
+prec_custom=10
+prec_td=10
+prec_xy=10
+preccpp=2000
+reim=0
+removefiles=1
+restart=1
+restartfactor=2
+resume=0
+rungs=0
+safeguard=1.0000000000000001e-05
+safeguardmax=200
+savebins=0
+specchit=
+specd=
+specgt=
+speci1t=
+speci2t=
+specot=
+specq=
+specs=
+spect=
+stopafter=
+strategy=kept
+substeps=0
+symtype=QS *
+tdht=0
+tri=old
+v3mmcutoff=9.9999999999999998e-17
+width_custom=16
+width_td=16
+z=1
+
+SYMMETRY TYPE: QS
+invdim=2
+0 Q additive
+1 SS additive
+Reading <||||> (e)
+Reading <||n_d||> (s)
+Reading <||||> (z)
+
+length_coef_table=4 Nmax(0)=4
+
+
+length_coef_table=4 Nmax=4
+
+Number of invariant subspaces: 6
+(-2 1) 1 states: 0.70244375519801283 
+(-1 2) 2 states: 0.19078252781592248 0.82200172519268433 
+(0 1) 3 states: 0 0.78254605076325801 1.1287335861370713 
+(0 3) 1 states: 0.31034049781059397 
+(1 2) 2 states: 0.22015927773988747 0.98867660396242873 
+(2 1) 1 states: 0.89849538389172223 
+Number of states (multiplicity taken into account): 16
+
+Computing the following operators:
+s=[]
+p=[]
+g=[]
+d=[]
+v=[]
+t=[]
+q=[]
+ot=[]
+
+Computing the following spectra:
+
+Before NRG iteration (N=0)
+<n_d>=0.96302541086906723
+
+ ***** [NRG] Iteration 1/4 (scale 0.721348) ***** 
+[1] xi(0)=0.54528747084262263 xi_scaled(0)=0.75592894601845451 zeta(1)=0
+Stats: nr=10 min=1 max=8
+Emax=4.0211244258921068 nrkept=35 nrkeptmult=64 nrall=35 nrallmult=64 
+Total energy=-1.0534314279210639  Egs=-1.1601077435080747
+Kept: 35 out of 35, ratio=1
+<n_d>=0.954
+Memory used: 398 MB Time elapsed: 0.265 s
+
+ ***** [NRG] Iteration 2/4 (scale 0.510070) ***** 
+[1] xi(1)=0.41550946829175445 xi_scaled(1)=0.81461307996255683 zeta(2)=0
+Stats: nr=15 min=1 max=20
+Emax=4.7407150268723832 nrkept=100 nrkeptmult=208 nrall=126 nrallmult=256 
+Total energy=-1.4579621234321114  Egs=-0.79308901711539925
+Kept: 100 out of 126, ratio=0.794
+<n_d>=0.947
+Memory used: 398 MB Time elapsed: 0.267 s
+
+ ***** [NRG] Iteration 3/4 (scale 0.360674) ***** 
+[1] xi(2)=0.32189917767609216 xi_scaled(2)=0.89249402972299274 zeta(3)=0
+Stats: nr=21 min=1 max=57
+Emax=4.2861279834583561 nrkept=100 nrkeptmult=219 nrall=367 nrallmult=832 
+Total energy=-1.8964279275888323  Egs=-1.2156853436927211
+Kept: 100 out of 367, ratio=0.272
+<n_d>=0.94
+Memory used: 406 MB Time elapsed: 0.271 s
+
+ ***** [NRG] Iteration 4/4 (scale 0.255035) ***** 
+[1] xi(3)=0.24026940945817135 xi_scaled(3)=0.94210418099100501 zeta(4)=0
+Stats: nr=23 min=1 max=51
+Emax=4.256295224667392 nrkept=100 nrkeptmult=215 nrall=370 nrallmult=876 
+Total energy=-2.1487639096499174  Egs=-0.98941760522204836
+Kept: 100 out of 370, ratio=0.27
+<n_d>=0.946
+Memory used: 406 MB Time elapsed: 0.275 s
+
+Total energy: -2.1487639096499174
+
+** Iteration completed.
+
+Master done. Terminating slave processes.
+Master exiting.
+
+Peak usage: 406 MB 
+
+Timing report [0]
+=============
+         All: 0.276 s
+        diag: 0.007 s
+       Other: 0.269 s

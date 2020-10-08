@@ -1,0 +1,18 @@
+Iteration 0
+len_dm=15
+I=-4 1 kept=1 total=1
+I=-3 2 kept=4 total=4
+I=-2 1 kept=10 total=10
+I=-2 3 kept=6 total=6
+I=-1 2 kept=20 total=20
+I=-1 4 kept=4 total=4
+I=0 1 kept=20 total=20
+I=0 3 kept=15 total=15
+I=0 5 kept=1 total=1
+I=1 2 kept=20 total=20
+I=1 4 kept=4 total=4
+I=2 1 kept=10 total=10
+I=2 3 kept=6 total=6
+I=3 2 kept=4 total=4
+I=4 1 kept=1 total=1
+

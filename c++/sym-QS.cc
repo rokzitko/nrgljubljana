@@ -139,14 +139,10 @@ void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, con
   } else {
     my_assert(P.coeffactor == 1);
     const auto [N, M] = step.NM();
-    cout << "scale_fix=" << step.scale_fix() << endl;
 
-// Here we need scale_fix, because SCALE() function is different from
-// the convention for rescaling in regular two-channel cases.
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(N, M) / step.scale_fix(), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(N, M), h, qq, In, opch)
 
-// No scale_fix here, because SCALE() is defined as it should be.
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(step, i, M, number, zeta(N + 1, M), h, qq)
 

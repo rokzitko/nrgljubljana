@@ -127,3 +127,11 @@ test_cfs_only
 test_dmnrg_only
 test_fdm_only
 test_nrg_only
+test207_nosubsteps_minimal
+test207_substeps_minimal
+legacy_one_jkondonew_substeps
+legacy_substeps_one_siam_ss
+legacy_substeps_one_siam_std
+test208_absolute_minimal
+test209_absolute_truncation
+test210_absolute_substeps
