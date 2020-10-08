@@ -1470,22 +1470,17 @@ void truncate_perform(DiagInfo &diag) {
 // parity -1). Generic implementation, valid for all symmetry types.
 MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
   MatrixElements nnew;
-  std::vector<Recalc> recalc_table(Sym->get_combs());
+  Recalc recalc_table[Sym->get_combs()];
   my_assert(Sym->islr() ? parity == 1 || parity == -1 : parity == 1);
   for (const auto I : diag | boost::adaptors::map_keys) {
     const Invar I1 = I;
-    const Invar Ip = (parity == -1 ? I.InvertParity() : I);
-    for (size_t i = 1; i <= P.combs; i++) {
-      Recalc r;
-      r.i1 = r.ip = i;
-      r.factor    = 1.0;
+    const Invar Ip = parity == -1 ? I.InvertParity() : I;
+    for (size_t i = 1; i <= Sym->get_combs(); i++) {
       const auto anc = Sym->ancestor(I, i);
-      r.IN1 = anc;
-      r.INp = (parity == -1 ? anc.InvertParity() : anc);
-      recalc_table[i - 1] = r; // mind the -1 shift!
+      recalc_table[i - 1] = {i, i, anc, parity == -1 ? anc.InvertParity() : anc, 1.0};
     }
-    const auto Iop = (parity == -1 ? (Sym->InvarSinglet).InvertParity() : Sym->InvarSinglet);
-    nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, &recalc_table[0], P.combs, Iop);
+    const auto Iop = parity == -1 ? (Sym->InvarSinglet).InvertParity() : Sym->InvarSinglet;
+    nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, P.combs, Iop);
   }
   return nnew;
 }
