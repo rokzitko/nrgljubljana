@@ -223,6 +223,7 @@ struct Eigen : public RawEigen {
   EVEC value_zero;     // Egs subtracted
   size_t getnr() const  { return value_zero.size(); }
   size_t nrpost = 0;   // number of eigenpairs after truncation
+  // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
   EVEC absenergyN;     // absolute energies (referenced to the lowest energy in the N-th step)
@@ -295,15 +296,12 @@ using DimSub = DimSubGen<t_eigen>;
 using Subs = map<Invar, DimSub>;
 using AllSteps = std::vector<Subs>;
 
-// NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N). It is a
-
-
 enum class RUNTYPE { NRG, DMNRG };
 
 class Step {
  private:
    // N denotes the order of the Hamiltonian. N=0 corresponds to H_0, i.e. the initial Hamiltonian
-   size_t trueN; // "true N", sets the energy scale, may be negative, trueN <= ndxN
+   int trueN; // "true N", sets the energy scale, it may be negative, trueN <= ndxN
    size_t ndxN; // "index N", iteration step, used as an array index, ndxN >= 0
    const Params &P; // reference to parameters (beta, T)
    
@@ -328,7 +326,6 @@ class Step {
      return {N, M};
    }
    // Compensate for different definition of SCALE in initial.m and C++ code in case of substeps==true.
-   // Used in sym-qs.cc and sym-qsz.cc
    double scale_fix() const {
      const auto [N, M] = NM();
      my_assert(ndxN == N * P.channels + M);

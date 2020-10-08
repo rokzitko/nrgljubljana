@@ -139,6 +139,7 @@ void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, con
   } else {
     my_assert(P.coeffactor == 1);
     const auto [N, M] = step.NM();
+    cout << "scale_fix=" << step.scale_fix() << endl;
 
 // Here we need scale_fix, because SCALE() function is different from
 // the convention for rescaling in regular two-channel cases.

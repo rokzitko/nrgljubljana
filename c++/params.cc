@@ -523,6 +523,8 @@ struct Params {
   // Check if the density matrix for CFS has trace 1.
   param<bool> checkrho{"checkrho", "Test tr(rho)=1", "false", all}; // N
 
+  param<bool> absolute{"absolute", "Do NRG without any rescaling", "false", all};
+
   // **********************************
   // Backwards compatibility parameters
   param<bool> data_has_rescaled_energies{"data_has_rescaled_energies", "Rescaled eigenvalues?", "true", all};
