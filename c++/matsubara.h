@@ -18,35 +18,35 @@ string matstypestring(matstype mt) {
 inline double ww(short n, matstype mt)
 {
   switch (mt) {
-    case matstype::bosonic: return P.Tpi * (2 * n);
-    case matstype::fermionic: return P.Tpi * (2 * n + 1);
+    case matstype::bosonic: return P.T * M_PI * (2 * n);
+    case matstype::fermionic: return P.T * M_PI * (2 * n + 1);
     default: my_assert_not_reached();
   }
 }
-inline double wb(short n) { return P.Tpi * (2 * n); }
-inline double wf(short n) { return P.Tpi * (2 * n + 1); }
+inline double wb(short n) { return P.T * M_PI * (2 * n); }
+inline double wf(short n) { return P.T * M_PI * (2 * n + 1); }
 
 class Matsubara {
-  private:
-  typedef std::vector<pair<double, t_weight>> matsgf;
-  matsgf v;
-  matstype mt;
-  public:
-  Matsubara() = default;
-  Matsubara(size_t mats, matstype _mt) : mt(_mt) {
-    my_assert(mt == matstype::bosonic || mt == matstype::fermionic);
-    for (size_t n = 0; n < mats; n++) v.push_back(make_pair(ww(n, mt), 0.0));
-  }
-  void add(size_t n, t_weight w) { v[n].second += w; }
-  void save(ostream &F) const {
-    F << setprecision(P.prec_xy);
-    for (const auto &i : v) output(F, i.first, i.second, true);
-  }
-  t_weight total_weight() const {
-    weight_bucket sum(v);
-    return sum;
-  }
-  friend class SpectrumMatsubara;
+ private:
+   using matsgf = std::vector<pair<double, t_weight>>;
+   matsgf v;
+   matstype mt;
+ public:
+   Matsubara() = default;
+   Matsubara(size_t mats, matstype _mt) : mt(_mt) {
+     my_assert(mt == matstype::bosonic || mt == matstype::fermionic);
+     for (size_t n = 0; n < mats; n++) v.push_back(make_pair(ww(n, mt), 0.0));
+   }
+   void add(size_t n, t_weight w) { v[n].second += w; }
+   template <typename T> void save(T && F) const {
+     F << setprecision(P.prec_xy);
+     for (const auto &[e, w] : v) output(F, e, w, true);
+   }
+   t_weight total_weight() const {
+     weight_bucket sum(v);
+     return sum;
+   }
+   friend class SpectrumMatsubara;
 };
 
 #endif // _matsubara_h_

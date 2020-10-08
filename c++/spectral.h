@@ -26,7 +26,8 @@ void output(ostream &F, double x, t_weight y, bool imagpart, const double clip_t
   F << endl;
 }
 
-void save_densfunc(ostream &F, const Spikes &xy, bool imagpart = false) {
+template<typename T>
+void save_densfunc(T&& F, const Spikes &xy, bool imagpart = false) {
   F << setprecision(P.prec_xy);
   for (const auto &[e, w] : xy) output(F, e, w, imagpart);
 }

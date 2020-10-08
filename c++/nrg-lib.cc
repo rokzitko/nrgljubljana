@@ -649,10 +649,8 @@ class SpectrumTemp : public Spectrum {
    ~SpectrumTemp() override {
      const std::string fn = filename + ".dat";
      cout << "Spectrum: " << opname << " " << spectype->name() << " -> " << fn << endl;
-     Spikes d(results);
-     sort(begin(d), end(d), sortfirst());
-     ofstream Fd = safe_open(fn);
-     save_densfunc(Fd, d, P.reim);
+     sort(begin(results), end(results), sortfirst());
+     save_densfunc(safe_open(fn), results, P.reim);
    }
 };
 
@@ -669,8 +667,7 @@ class SpectrumMatsubara : public Spectrum {
    }     
    ~SpectrumMatsubara() override { 
      cout << "Spectrum: " << opname << " " << spectype->name() << endl;
-     ofstream Fd = safe_open(filename + ".dat");
-     results.save(Fd);
+     results.save(safe_open(filename + ".dat"));
    }
 };
 

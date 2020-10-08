@@ -539,7 +539,6 @@ struct Params {
   size_t combs = 0;        // dimension of new shell Hilbert space, 4 for single-channel, 16 for two-channel, etc.
   bool ZBW = false;        // Zero-bandwidth calculation if Nmax=Ninit.
   size_t Nlen = 0;         // Nlen=Nmax for regular calculations. Nlen=1 for ZBW. Length of wn, wnfactor, ZnD and dm vectors.
-  double Tpi; // T*pi // XXX
 
   // Spin expressed in terms of the spin multiplicity, 2S+1. For SL & SL 3 symmetry types, P.spin is 1. Default value
   // of 2 is valid for all other symmetry types.
@@ -584,7 +583,6 @@ struct Params {
     // Take the first character (for backward compatibility)
     discretization.setvalue(string(discretization, 0, 1));
     if (chitp_ratio > 0.0) chitp.setvalue(chitp_ratio / betabar);
-    Tpi = T * M_PI;
   }
 
   void dump() {
