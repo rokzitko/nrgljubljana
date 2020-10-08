@@ -1304,7 +1304,7 @@ DensMatElements init_rho(const Step &step, const DiagInfo &diag) {
 
 // Determine the number of states to be retained.
 // Returns Emax - the highest energy to still be retained.
-t_eigen highest_retained_energy(const DiagInfo &diag) {
+t_eigen highest_retained_energy(const Step &step, const DiagInfo &diag) {
   auto energies = sort_energies(diag);
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
   const size_t totalnumber = energies.size();
@@ -1312,7 +1312,7 @@ t_eigen highest_retained_energy(const DiagInfo &diag) {
   if (P.keepenergy <= 0.0) {
     nrkeep = P.keep;
   } else {
-    double keepenergy = P.keepenergy;
+    double keepenergy = P.keepenergy * step.unscale();
     // We add 1 for historical reasons. We thus keep states with E<=Emax,
     // and one additional state which has E>Emax.
     nrkeep = 1 + count_if(begin(energies), end(energies), [=](double e) { return e <= keepenergy; });
@@ -1352,7 +1352,7 @@ struct truncate_stats {
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
 bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
-  const auto Emax = highest_retained_energy(diag);
+  const auto Emax = highest_retained_energy(step, diag);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
                                       std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));
