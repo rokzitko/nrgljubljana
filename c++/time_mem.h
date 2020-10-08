@@ -67,11 +67,11 @@ class Timing {
     cout << setw(T_WIDTH) << "All"
          << ": " << prec3(t_all.count()) << " s" << endl;
     dp t_sum;
-    for (const auto &i : t) {
+    for (const auto &[name, val] : t) {
       // Only show those that contribute more than 1% of the total time!
-      if (i.second/t_all > 0.01) {
-        cout << setw(T_WIDTH) << i.first << ": " << prec3(i.second.count()) << " s" << endl;
-        if (i.first[0] != '*') t_sum += i.second;
+      if (val/t_all > 0.01) {
+        cout << setw(T_WIDTH) << name << ": " << prec3(val.count()) << " s" << endl;
+        if (name[0] != '*') t_sum += val;
       }
     }
     cout << setw(T_WIDTH) << "Other"
@@ -128,7 +128,7 @@ class MemoryStats {
       int topusage = 0; // top usage recorded by check()
       for (const auto &i : maxvals) topusage = max(topusage, i.second);
       if (topusage != 0)
-        for (const auto &i : maxvals) F << setw(MS_WIDTH) << i.first << ": " << i.second << " kB" << endl;
+        for (const auto &[name, val] : maxvals) F << setw(MS_WIDTH) << name << ": " << val << " kB" << endl;
       my_assert(topusage <= peakusage);
     }
       F << endl << "Peak usage: " <<  peakusage / 1024 << " MB " << endl; // NOLINT
