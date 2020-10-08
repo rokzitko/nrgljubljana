@@ -81,15 +81,11 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 
 #undef SPINX
 #define SPINX(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#undef SPINY
+#define SPINY(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-#ifdef NRG_COMPLEX
-#undef SPINY
-#define SPINY(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
-#undef Complex
-#define Complex(x, y) cmpl(x, y)
-#endif // NRG_COMPLEX
 
 void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
@@ -110,6 +106,8 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
   }
 
 #ifdef NRG_COMPLEX
+#undef Complex
+#define Complex(x, y) cmpl(x, y)
   if (name == "SYtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = make_pair(I1, I1);

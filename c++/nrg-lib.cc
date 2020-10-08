@@ -520,17 +520,19 @@ bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::np
 #include "sym-SL3.cc"
 #include "sym-SPSU2LR.cc"
 #include "sym-SPSU2T.cc"
-#include "sym-SPSU2C3.cc"
 #include "sym-SPU1LR.cc"
 #include "sym-SU2.cc"
 #include "sym-QSLR.cc"
-#include "sym-QSC3.cc"
 #include "sym-QST.cc"
 #include "sym-QSTZ.cc"
 #include "sym-QSZTZ.cc"
 #include "sym-QSZLR.cc"
 #include "sym-QJ.cc"
 #include "sym-U1.cc"
+ #ifdef NRG_COMPLEX
+ #include "sym-SPSU2C3.cc"
+ #include "sym-QSC3.cc"
+ #endif
 #endif
 
 #include "read-input.cc"
@@ -2205,7 +2207,6 @@ std::unique_ptr<Symmetry> get(std::string sym_string, const Params &P, Allfields
   if (sym_string == "P")         return std::make_unique<SymmetryP>(P, allfields);
   if (sym_string == "PP")        return std::make_unique<SymmetryPP>(P, allfields);
   if (sym_string == "QJ")        return std::make_unique<SymmetryQJ>(P, allfields);
-  if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3>(P, allfields);
   if (sym_string == "QSLR")      return std::make_unique<SymmetryQSLR>(P, allfields); 
   if (sym_string == "QST")       return std::make_unique<SymmetryQST>(P, allfields);
   if (sym_string == "QSTZ")      return std::make_unique<SymmetryQSTZ>(P, allfields);
@@ -2213,12 +2214,15 @@ std::unique_ptr<Symmetry> get(std::string sym_string, const Params &P, Allfields
   if (sym_string == "QSZTZ")     return std::make_unique<SymmetryQSZTZ>(P, allfields);
   if (sym_string == "SL")        return std::make_unique<SymmetrySL>(P, allfields);
   if (sym_string == "SL3")       return std::make_unique<SymmetrySL3>(P, allfields);
-  if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3>(P, allfields);
   if (sym_string == "SPSU2LR")   return std::make_unique<SymmetrySPSU2LR>(P, allfields);
   if (sym_string == "SPSU2T")    return std::make_unique<SymmetrySPSU2T>(P, allfields);
   if (sym_string == "SPU1LR")    return std::make_unique<SymmetrySPU1LR>(P, allfields);
   if (sym_string == "SU2")       return std::make_unique<SymmetrySU2>(P, allfields);
   if (sym_string == "U1")        return std::make_unique<SymmetryU1>(P, allfields);
+ #ifdef NRG_COMPLEX
+  if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3>(P, allfields);
+  if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3>(P, allfields);
+ #endif
 #endif 
   throw std::runtime_error("Unknown symmetry " + sym_string);
 }
