@@ -458,23 +458,19 @@ void shift_abs_energies_dm(const Stats &stats, AllSteps &dm)
 }
 
 class ChainSpectrum;
-using spCS_t = shared_ptr<ChainSpectrum>;
 class BaseSpectrum;
+using spCS_t = shared_ptr<ChainSpectrum>;
 
 class SPEC {
-  public:
-  SPEC() = default;
-  SPEC(const SPEC &) = default;
-  SPEC(SPEC &&) = default;
-  SPEC &operator=(const SPEC &) = default;
-  SPEC &operator=(SPEC &&) = default;
-  virtual ~SPEC() = default;
-  virtual spCS_t make_cs(const BaseSpectrum &) = 0;
-  virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-                    const Invar &, const DensMatElements &, const Stats &stats){};
-  virtual string name() = 0;
-  virtual string merge() { return ""; }    // what merging rule to use
-  virtual string rho_type() { return ""; } // what rho type is required
+ public:
+   virtual ~SPEC() = default;
+   virtual std::shared_ptr<ChainSpectrum> make_cs(const BaseSpectrum &) = 0;
+   virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, 
+                     const BaseSpectrum &, t_factor, std::shared_ptr<ChainSpectrum>, const Invar &,
+                     const Invar &, const DensMatElements &, const Stats &stats){};
+   virtual string name() = 0;
+   virtual string merge() { return ""; }    // what merging rule to use
+   virtual string rho_type() { return ""; } // what rho type is required
 };
 
 using SPECTYPE = shared_ptr<SPEC>;
@@ -587,11 +583,6 @@ void formatted_output(ostream &F, cmpl z, const Params &P) {
 class ChainSpectrum {
   public:
   virtual void add(double energy, t_weight weight) = 0;
-  ChainSpectrum() = default;
-  ChainSpectrum(const ChainSpectrum &) = default;
-  ChainSpectrum(ChainSpectrum &&) = default;
-  ChainSpectrum &operator=(const ChainSpectrum &) = default;
-  ChainSpectrum &operator=(ChainSpectrum &&) = default;
   virtual ~ChainSpectrum() = default; // required, because there are virtual members
 };
 
@@ -638,12 +629,8 @@ class Spectrum {
    string opname, filename;
    SPECTYPE spectype;
    Spectrum(const string &_opname, const string &_filename, SPECTYPE _spectype) : opname(_opname), filename(_filename), spectype(_spectype){}; // NOLINT
-   Spectrum(const Spectrum &) = default;
-   Spectrum(Spectrum &&) = default;
-   Spectrum &operator=(const Spectrum &) = default;
-   Spectrum &operator=(Spectrum &&) = default;
    virtual ~Spectrum()= default; // required (the destructor saves the results to a file)
-   virtual void merge(spCS_t, const Step &) = 0; // called from spec.cc as the very last step
+   virtual void merge(std::shared_ptr<ChainSpectrum>, const Step &) = 0; // called from spec.cc as the very last step
    string name() { return opname; }
 };
 
@@ -655,60 +642,43 @@ class SpectrumTemp : public Spectrum {
    std::vector<pair<double, t_weight>> results;
  public:
    SpectrumTemp(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype) {}
-   void merge(spCS_t, const Step &) override;
-   SpectrumTemp(const SpectrumTemp &) = default;
-   SpectrumTemp(SpectrumTemp &&) = default;
-   SpectrumTemp &operator=(const SpectrumTemp &) = default;
-   SpectrumTemp &operator=(SpectrumTemp &&) = default;
-   ~SpectrumTemp() override;
+   void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
+     auto t = dynamic_pointer_cast<ChainSpectrumTemp>(cs);
+     copy(begin(t->v), end(t->v), back_inserter(results));
+   }
+   ~SpectrumTemp() override {
+     const std::string fn = filename + ".dat";
+     cout << "Spectrum: " << opname << " " << spectype->name() << " -> " << fn << endl;
+     Spikes d(results);
+     sort(begin(d), end(d), sortfirst());
+     ofstream Fd = safe_open(fn);
+     save_densfunc(Fd, d, P.reim);
+   }
 };
 
-void SpectrumTemp::merge(spCS_t cs, const Step & step) {
-  auto t = dynamic_pointer_cast<ChainSpectrumTemp>(cs);
-  copy(begin(t->v), end(t->v), back_inserter(results));
-}
-
-SpectrumTemp::~SpectrumTemp() {
-  string fn = filename + ".dat";
-  cout << "Spectrum: " << opname << " " << spectype->name() << " -> " << fn << endl;
-  Spikes d(results);
-  sort(begin(d), end(d), sortfirst());
-  ofstream Fd = safe_open(fn);
-  save_densfunc(Fd, d, P.reim);
-}
-
-// This container actually holds the GF on the Matsubara axis, not a
-// spectral function.
+// This container actually holds the GF on the Matsubara axis, not a spectral function.
 class SpectrumMatsubara : public Spectrum {
  private:
    Matsubara results;
  public:
    SpectrumMatsubara(const string &_opname, const string &_filename, SPECTYPE _spectype, matstype _mt)
      : Spectrum(_opname, _filename, _spectype), results(P.mats, _mt) {}
-   void merge(spCS_t, const Step &) override;
-   SpectrumMatsubara(const SpectrumMatsubara &) = default;
-   SpectrumMatsubara(SpectrumMatsubara &&) = default;
-   SpectrumMatsubara &operator=(const SpectrumMatsubara &) = default;
-   SpectrumMatsubara &operator=(SpectrumMatsubara &&) = default;
-   ~SpectrumMatsubara() override;
+   void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
+     auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
+     for (size_t n = 0; n < P.mats; n++) results.v[n].second += t->m.v[n].second;
+   }     
+   ~SpectrumMatsubara() override { 
+     cout << "Spectrum: " << opname << " " << spectype->name() << endl;
+     ofstream Fd = safe_open(filename + ".dat");
+     results.save(Fd);
+   }
 };
-
-void SpectrumMatsubara::merge(spCS_t cs, const Step &) {
-  auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
-  for (size_t n = 0; n < P.mats; n++) results.v[n].second += t->m.v[n].second;
-}
-
-SpectrumMatsubara::~SpectrumMatsubara() {
-  cout << "Spectrum: " << opname << " " << spectype->name() << endl;
-  ofstream Fd = safe_open(filename + ".dat");
-  results.save(Fd);
-}
 
 // This is mathematical trace, i.e. the sum of the diagonal elements.
 CONSTFNC double trace(const DensMatElements &m) {
-  double tr = 0.0;
-  for (const auto &[I, mat] : m) tr += Sym->mult(I) * trace_real_nochecks(mat);
-  return tr;
+  return std::accumulate(m.cbegin(), m.cend(), 0.0, 
+                         [](double acc, const auto z) { const auto &[I, mat] = z; 
+                           return acc + Sym->mult(I) * trace_real_nochecks(mat); });
 }
 
 // Check if the trace of the density matrix equals 'ref_value'.
