@@ -385,6 +385,10 @@ class Stats {
      Egs = m->second.value_orig(0);
    }
 
+   void subtract_groundstate_energy(DiagInfo &diag) {
+     for (auto &[I, eig] : diag) eig.subtract_Egs(Egs);
+   }
+
    // ** Thermodynamic quantities
    double Z;
    double Zft;   // grand-canonical partition function (at shell n)
@@ -431,10 +435,6 @@ class Stats {
      td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
      ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
 };
-
-void subtract_groundstate_energy(const Stats &stats, DiagInfo &diag) {
-  for (auto &[I, eig] : diag) eig.subtract_Egs(stats.Egs);
-}
 
 // The absenergyG[] values are shifted so that the ground state corresponds to zero. This is required in the FDM
 // approach for calculating the spectral functions. This is different from subtract_groundstate_energy(). Called from
@@ -1937,7 +1937,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
     }
     stats.find_groundstate(diag);
     if (step.nrg()) // should be done only once!
-      subtract_groundstate_energy(stats, diag);
+      stats.subtract_groundstate_energy(diag);
     auto cluster_mapping = find_clusters(sort_energies(diag), P.fixeps);
     fix_splittings(diag, cluster_mapping);
     notenough = truncate_prepare(step, diag, P);
@@ -2060,7 +2060,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
   }
   stats.find_groundstate(diag);
   if (step.nrg())      
-    subtract_groundstate_energy(stats, diag);
+    stats.subtract_groundstate_energy(diag);
   truncate_prepare(step, diag, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax empty_qsrmax{};
