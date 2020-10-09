@@ -10,7 +10,7 @@ class SpectrumRealFreq : public Spectrum {
    void continuous();
  public:
    SpectrumRealFreq(const string &opname, const string &filename, SPECTYPE spectype, const Params &P) :
-     Spectrum(opname, filename, spectype, P) {};
+     Spectrum(opname, filename, spectype, P), fspos(P), fsneg(P) {};
    void merge(spCS_t, const Step &step) override;
    ~SpectrumRealFreq() override;
 };

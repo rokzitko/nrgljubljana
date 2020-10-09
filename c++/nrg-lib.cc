@@ -440,13 +440,19 @@ class ChainSpectrum;
 class BaseSpectrum;
 using spCS_t = shared_ptr<ChainSpectrum>;
 
+// Wrapper class for NRG spectral-function algorithms
 class SPEC {
+ private:
  public:
+   const Params &P;
+   SPEC() = delete;
+   SPEC(const SPEC&) = delete;
+   SPEC(const Params &P) : P(P) {}
    virtual ~SPEC() = default;
    virtual std::shared_ptr<ChainSpectrum> make_cs(const BaseSpectrum &) = 0;
    virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, 
                      const BaseSpectrum &, t_factor, std::shared_ptr<ChainSpectrum>, const Invar &,
-                     const Invar &, const DensMatElements &, const Stats &stats){};
+                     const Invar &, const DensMatElements &, const Stats &stats) const {};
    virtual string name() = 0;
    virtual string merge() { return ""; }    // what merging rule to use
    virtual string rho_type() { return ""; } // what rho type is required
@@ -539,29 +545,34 @@ std::string formatted_output(cmpl z, const Params &P) {
 // spectral information for the entire run (i.e. the physical spectral density).
 
 class ChainSpectrum {
-  public:
-  virtual void add(double energy, t_weight weight) = 0;
-  virtual ~ChainSpectrum() = default; // required, because there are virtual members
+ private:
+   const Params &P;
+public:
+   ChainSpectrum(const Params &P) : P(P) {}
+   virtual void add(double energy, t_weight weight) = 0;
+   virtual ~ChainSpectrum() = default; // required, because there are virtual members
 };
 
 class ChainSpectrumBinning : public ChainSpectrum {
-  private:
-  Bins spos, sneg;
-  public:
-  void add(double energy, t_weight weight) override {
-    if (energy >= 0.0)
-      spos.add(energy, weight);
-    else
-      sneg.add(-energy, weight);
-  }
-  t_weight total_weight() const { return spos.total_weight() + sneg.total_weight(); }
-  friend class SpectrumRealFreq;
+ private:
+   Bins spos, sneg;
+ public:
+   ChainSpectrumBinning(const Params &P) : ChainSpectrum(P), spos(P), sneg(P) {}
+   void add(double energy, t_weight weight) override {
+     if (energy >= 0.0)
+       spos.add(energy, weight);
+     else
+       sneg.add(-energy, weight);
+   }
+   t_weight total_weight() const { return spos.total_weight() + sneg.total_weight(); }
+   friend class SpectrumRealFreq;
 };
 
 class ChainSpectrumTemp : public ChainSpectrum {
  private:
    Temp v;
  public:
+   ChainSpectrumTemp(const Params &P) : ChainSpectrum(P), v(P) {}
    void add(double T, t_weight value) override { v.add_value(T, value); }
    friend class SpectrumTemp;
 };
@@ -572,8 +583,7 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
  private:
    Matsubara m;
  public:
-   ChainSpectrumMatsubara() = delete;
-   explicit ChainSpectrumMatsubara(matstype _mt) : m(P.mats, _mt){};
+   ChainSpectrumMatsubara(const Params &P, matstype mt) : ChainSpectrum(P), m(P.mats, mt){};
    void add(size_t n, t_weight w) { m.add(n, w); }
    void add(double energy, t_weight w) override { my_assert_not_reached(); }
    t_weight total_weight() const { return m.total_weight(); }
@@ -810,19 +820,19 @@ void open_files(speclist &sl, BaseSpectrum &spec, SPECTYPE spectype, axis a, con
 // for storing spectral information.
 void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, const Params &P) {
   if (spec.prefix == "gt") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_GT>(), axis::Temp, P);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_GT>(P), axis::Temp, P);
     return;
   }
   if (spec.prefix == "i1t") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_I1T>(), axis::Temp, P);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_I1T>(P), axis::Temp, P);
     return;
   }
   if (spec.prefix == "i2t") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_I2T>(), axis::Temp, P);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_I2T>(P), axis::Temp, P);
     return;
   }
   if (spec.prefix == "chit") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_CHIT>(), axis::Temp, P);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_CHIT>(P), axis::Temp, P);
     return;
   }
   // If we did not return from this funciton by this point, what we
@@ -830,19 +840,19 @@ void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, c
   // possibilities in this case, all of which may be enabled at the
   // same time.
   if (runtype == RUNTYPE::NRG) {
-    if (P.finite) open_files(sl, spec, make_shared<SPEC_FT>(), axis::RealFreq, P);
-    if (P.finitemats) open_files(sl, spec, make_shared<SPEC_FTmats>(), axis::Matsubara, P);
+    if (P.finite) open_files(sl, spec, make_shared<SPEC_FT>(P), axis::RealFreq, P);
+    if (P.finitemats) open_files(sl, spec, make_shared<SPEC_FTmats>(P), axis::Matsubara, P);
   }
   if (runtype == RUNTYPE::DMNRG) {
-    if (P.dmnrg) open_files(sl, spec, make_shared<SPEC_DMNRG>(), axis::RealFreq, P);
-    if (P.dmnrgmats) open_files(sl, spec, make_shared<SPEC_DMNRGmats>(), axis::Matsubara, P);
-    if (P.cfs) open_files(sl, spec, make_shared<SPEC_CFS>(), axis::RealFreq, P);
-    if (P.cfsgt) open_files(sl, spec, make_shared<SPEC_CFSgt>(), axis::RealFreq, P);
-    if (P.cfsls) open_files(sl, spec, make_shared<SPEC_CFSls>(), axis::RealFreq, P);
-    if (P.fdm) open_files(sl, spec, make_shared<SPEC_FDM>(), axis::RealFreq, P);
-    if (P.fdmgt) open_files(sl, spec, make_shared<SPEC_FDMgt>(), axis::RealFreq, P);
-    if (P.fdmls) open_files(sl, spec, make_shared<SPEC_FDMls>(), axis::RealFreq, P);
-    if (P.fdmmats) open_files(sl, spec, make_shared<SPEC_FDMmats>(), axis::Matsubara, P);
+    if (P.dmnrg) open_files(sl, spec, make_shared<SPEC_DMNRG>(P), axis::RealFreq, P);
+    if (P.dmnrgmats) open_files(sl, spec, make_shared<SPEC_DMNRGmats>(P), axis::Matsubara, P);
+    if (P.cfs) open_files(sl, spec, make_shared<SPEC_CFS>(P), axis::RealFreq, P);
+    if (P.cfsgt) open_files(sl, spec, make_shared<SPEC_CFSgt>(P), axis::RealFreq, P);
+    if (P.cfsls) open_files(sl, spec, make_shared<SPEC_CFSls>(P), axis::RealFreq, P);
+    if (P.fdm) open_files(sl, spec, make_shared<SPEC_FDM>(P), axis::RealFreq, P);
+    if (P.fdmgt) open_files(sl, spec, make_shared<SPEC_FDMgt>(P), axis::RealFreq, P);
+    if (P.fdmls) open_files(sl, spec, make_shared<SPEC_FDMls>(P), axis::RealFreq, P);
+    if (P.fdmmats) open_files(sl, spec, make_shared<SPEC_FDMmats>(P), axis::Matsubara, P);
   }
 }
 

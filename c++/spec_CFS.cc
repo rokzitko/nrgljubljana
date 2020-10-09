@@ -2,40 +2,39 @@
 // contributed by Markus Greger. The optimized code is faster by an order of magnitude!
 
 class SPEC_CFSls : virtual public SPEC {
-  public:
-  spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
-  void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &, const DensMatElements &, const Stats &stats) override;
-  string name() override { return "CFSls"; }
-  string merge() override { return "CFS"; }
-  string rho_type() override { return "rho"; }
+ public:
+   SPEC_CFSls(const Params &P) : SPEC(P) {}
+   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
+   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+             const Invar &, const DensMatElements &, const Stats &stats) const override;
+   string name() override { return "CFSls"; }
+   string merge() override { return "CFS"; }
+   string rho_type() override { return "rho"; }
 };
 
 class SPEC_CFSgt : virtual public SPEC {
-  public:
-  spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
-  void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
-            const Invar &, const DensMatElements &, const Stats &stats) override;
-  string name() override { return "CFSgt"; }
-  string merge() override { return "CFS"; }
-  string rho_type() override { return "rho"; }
+ public:
+   SPEC_CFSgt(const Params &P) : SPEC(P) {}
+   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
+   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+             const Invar &, const DensMatElements &, const Stats &stats) const override;
+   string name() override { return "CFSgt"; }
+   string merge() override { return "CFS"; }
+   string rho_type() override { return "rho"; }
 };
 
 class SPEC_CFS : public SPEC_CFSls, public SPEC_CFSgt {
-  public:
-  spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(); }
-//  template<typename ... Args> void calc(Args&& ... args) override {
-//    SPEC_CFSgt::calc(std::forward<Args>(args)...);
-//    SPEC_CFSls::calc(std::forward<Args>(args)...);
-//  }
-  void calc(const Step &step, const Eigen &a1, const Eigen &a2, const Matrix &a3, const Matrix &a4, const BaseSpectrum &a5, t_factor a6, spCS_t a7,
-            const Invar &a8, const Invar &a9, const DensMatElements &rho, const Stats &stats) override {
-    SPEC_CFSgt::calc(step, a1, a2, a3, a4, a5, a6, a7, a8, a9, rho, stats);
-    SPEC_CFSls::calc(step, a1, a2, a3, a4, a5, a6, a7, a8, a9, rho, stats);
-  }
-  string name() override { return "CFS"; }
-  string merge() override { return "CFS"; }
-  string rho_type() override { return "rho"; }
+ public:
+   SPEC_CFS(const Params &P) : SPEC(P), SPEC_CFSls(P), SPEC_CFSgt(P) {}
+   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
+   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+             spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const override {
+               SPEC_CFSgt::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
+               SPEC_CFSls::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
+             }
+   string name() override { return "CFS"; }
+   string merge() override { return "CFS"; }
+   string rho_type() override { return "rho"; }
 };
 
 //#define SPEC_CFS_OLD
@@ -45,7 +44,7 @@ class SPEC_CFS : public SPEC_CFSls, public SPEC_CFSgt {
 
 #if defined(NRG_COMPLEX) || defined(SPEC_CFS_OLD)
 void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) {
+                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
@@ -91,7 +90,7 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
 }
 
 void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) {
+                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = rhoNIp.size1();
@@ -139,7 +138,7 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
 // Based on the implementation by Markus Greger.
 #if defined(NRG_REAL) && defined(SPEC_CFS_OPTIMIZED)
 void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
-                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) {
+                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
@@ -188,7 +187,7 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
 }
 
 void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
-                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) {
+                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = rhoNIp.size1();
