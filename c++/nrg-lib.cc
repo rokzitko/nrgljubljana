@@ -522,51 +522,30 @@ bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::np
 
 #include "read-input.cc"
 
-// Formated output for the expectation values
-template <typename T> string output_val(const T &x, size_t prec = std::numeric_limits<double>::max_digits10) {
-  ostringstream F;
-  F << setprecision(prec) << x;
-  return F.str();
-}
-
-// Specialization for complex values, the output format is X+IY or
-// X-IY, where X and Y are real and imaginary part, respectively. The
-// imaginary part is only shown where its value relative to the real
-// part is sufficiently large. No space is used in the outputted
-// string in order to simplify parsing. This behavior can be turned
-// off using P.noimag, which is the default.
-const double OUTPUT_IMAG_EPS = 1.0e-13;
-
-std::string output_val(const cmpl &z) {
-  ostringstream F;
-  const auto [r,i] = reim(z);
-  if (P.noimag || abs(i) < abs(r) * OUTPUT_IMAG_EPS) {
-    F << r;
-  } else {
-    F << r;
-    if (i > 0)
-      F << "+I" << i;
-    else
-      F << "-I" << -i;
+template <typename T>
+  std::string formatted_output(T x, const Params &P) {
+    return fmt::format("{x:>{width}}", "x"_a=x, "width"_a=P.width_custom);
   }
-  return F.str(); // XXX: combine with formatted_output()
+
+std::string formatted_output(double x, const Params &P) {
+  return fmt::format("{x:>{width}.{prec}}", "x"_a=x, "prec"_a=P.prec_custom, "width"_a=P.width_custom);
 }
 
-template <typename T> void formatted_output(ostream &F, T x, const Params &P) {
-  // Important: setw first, setprecision second
-  F << setw(P.width_custom) << setprecision(P.prec_custom) << x << ' ';
-}
+template <typename T>
+  bool negligible_imag_part(std::complex<T> z, const double output_imag_eps = 1e-13) {
+    return abs(z.imag()) < abs(z.real()) * output_imag_eps; 
+  }
 
-void formatted_output(ostream &F, cmpl z, const Params &P) {
-  ostringstream str;
-  str << setprecision(P.prec_custom);   // This sets precision for both real and imaginary parts.
+// The output format for complex values is X+IY or X-IY, where X and Y are real and imaginary part, respectively. The
+// imaginary part is only shown where its value relative to the real part is sufficiently large. No space is used in
+// the outputted string in order to simplify parsing.
+
+std::string formatted_output(cmpl z, const Params &P) {
   const auto [r, i] = reim(z);
-  if (P.noimag || abs(i) < abs(r) * OUTPUT_IMAG_EPS) 
-    str << r;
-  else
-    str << r << (i > 0 ? "+I" : "-I") << (i > 0 ? i : -i);
-  // The width for the whole X+IY string.
-  F << setw(P.width_custom) << str.str() << ' '; // XXX: fmt
+  const auto str = P.noimag || negligible_imag_part(z) ?
+    fmt::format("{r:.{prec}f}", "r"_a=r, "prec"_a=P.prec_custom) :
+    fmt::format("{r:.{prec}f}{s}I{absi:.{prec}f}", "r"_a=r, "s"_a=(i>0 ? '+' : '-'), "absi"_a=abs(i), "prec"_a=P.prec_custom);
+  return fmt::format("{str:>{width}}", "str"_a=str, "width"_a=P.width_custom); // the width for the whole X+iY string
 }
 
 #include "bins.h"
@@ -800,24 +779,21 @@ class ExpvOutput {
    const list<string> fields; // list of fields to be output (may be a subset of the fields actually present in m)
    const Params &P;
    void field_numbers() {     // Consecutive numbers for the columns
-     F << "#";
-     formatted_output(F, 1, P);
-     for (size_t ctr = 1; ctr <= fields.size(); ctr++) formatted_output(F, 1 + ctr, P);
+     F << '#' << formatted_output(1, P) << ' ';
+     for (size_t ctr = 1; ctr <= fields.size(); ctr++) F << formatted_output(1 + ctr, P) << ' ';
      F << endl;
    }
    // Label and field names. Label is the first column (typically the temperature).
    void field_names(string labelname = "T") {
-     F << "#";
-     formatted_output(F, labelname, P);
-     for (const auto &op : fields) formatted_output(F, op, P);
+     F << '#' << formatted_output(labelname, P) << ' ';
+     for (const auto &op : fields) F << formatted_output(op, P) << ' ';
      F << endl;
    }
  public:
    // Output the current values for the label and for all the fields
    void field_values(double labelvalue, bool cout_dump = true) {
-     F << ' ';
-     formatted_output(F, labelvalue, P);
-     for (const auto &op : fields) formatted_output(F, m[op], P);
+     F << ' ' << formatted_output(labelvalue, P) << ' ';
+     for (const auto &op : fields) F << formatted_output(m[op], P) << ' ';
      F << endl;
      if (cout_dump)
        for (const auto &op: fields)
