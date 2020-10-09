@@ -14,32 +14,33 @@ string matstypestring(matstype mt) {
   }
 }
 
-// Note: range limited to short numbers. P.piT is const double.
-inline double ww(short n, matstype mt)
+// Note: range limited to short numbers.
+inline double ww(short n, matstype mt, const double T)
 {
   switch (mt) {
-    case matstype::bosonic: return P.T * M_PI * (2 * n);
-    case matstype::fermionic: return P.T * M_PI * (2 * n + 1);
+    case matstype::bosonic: return T * M_PI * (2 * n);
+    case matstype::fermionic: return T * M_PI * (2 * n + 1);
     default: my_assert_not_reached();
   }
 }
-inline double wb(short n) { return P.T * M_PI * (2 * n); }
-inline double wf(short n) { return P.T * M_PI * (2 * n + 1); }
+inline double wb(short n, const double T) { return T * M_PI * (2 * n); }
+inline double wf(short n, const double T) { return T * M_PI * (2 * n + 1); }
 
 class Matsubara {
  private:
    using matsgf = std::vector<pair<double, t_weight>>;
    matsgf v;
    matstype mt;
+   double T;
  public:
-   Matsubara() = default;
-   Matsubara(size_t mats, matstype _mt) : mt(_mt) {
+   Matsubara() = delete;
+   Matsubara(size_t mats, matstype mt, double T) : mt(mt), T(T) {
      my_assert(mt == matstype::bosonic || mt == matstype::fermionic);
-     for (size_t n = 0; n < mats; n++) v.push_back(make_pair(ww(n, mt), 0.0));
+     for (size_t n = 0; n < mats; n++) v.push_back(make_pair(ww(n, mt, T), 0.0));
    }
    void add(size_t n, t_weight w) { v[n].second += w; }
-   template <typename T> void save(T && F) const {
-     F << setprecision(P.prec_xy);
+   template <typename T> void save(T && F, int prec) const {
+     F << setprecision(prec); // prec_xy
      for (const auto &[e, w] : v) output(F, e, w, true);
    }
    t_weight total_weight() const {

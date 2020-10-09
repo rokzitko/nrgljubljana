@@ -49,9 +49,9 @@ void SPEC_FTmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI
       d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT())); // sign!
       d.energy = E1 - Ep;
 #pragma omp parallel for schedule(static)
-      for (size_t n = 1; n < cutoff; n++) csm->add(n, d.weight / (cmpl(0, ww(n, bs.mt)) - step.scale() * d.energy));
+      for (size_t n = 1; n < cutoff; n++) csm->add(n, d.weight / (cmpl(0, ww(n, bs.mt, P.T)) - step.scale() * d.energy));
       if (abs(d.energy) > WEIGHT_TOL || bs.mt == matstype::fermionic)
-        csm->add(size_t(0), d.weight / (cmpl(0, ww(0, bs.mt)) - step.scale() * d.energy));
+        csm->add(size_t(0), d.weight / (cmpl(0, ww(0, bs.mt, P.T)) - step.scale() * d.energy));
       else // bosonic w=0 && E1=Ep case
         csm->add(size_t(0), (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * (-exp(-E1 * step.scT()) / P.T));
     }

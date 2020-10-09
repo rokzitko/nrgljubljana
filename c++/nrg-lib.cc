@@ -583,7 +583,7 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
  private:
    Matsubara m;
  public:
-   ChainSpectrumMatsubara(const Params &P, matstype mt) : ChainSpectrum(P), m(P.mats, mt){};
+   ChainSpectrumMatsubara(const Params &P, matstype mt) : ChainSpectrum(P), m(P.mats, mt, P.T){};
    void add(size_t n, t_weight w) { m.add(n, w); }
    void add(double energy, t_weight w) override { my_assert_not_reached(); }
    t_weight total_weight() const { return m.total_weight(); }
@@ -631,14 +631,14 @@ class SpectrumMatsubara : public Spectrum {
    Matsubara results;
  public:
    SpectrumMatsubara(const string &opname, const string &filename, SPECTYPE spectype, matstype mt, const Params &P)
-     : Spectrum(opname, filename, spectype, P), results(P.mats, mt) {}
+     : Spectrum(opname, filename, spectype, P), results(P.mats, mt, P.T) {}
    void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
      auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
      for (size_t n = 0; n < P.mats; n++) results.v[n].second += t->m.v[n].second;
    }     
    ~SpectrumMatsubara() override { 
      cout << "Spectrum: " << opname << " " << spectype->name() << endl;
-     results.save(safe_open(filename + ".dat"));
+     results.save(safe_open(filename + ".dat"), P.prec_xy);
    }
 };
 
