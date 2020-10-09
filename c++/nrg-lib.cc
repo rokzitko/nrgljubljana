@@ -312,7 +312,7 @@ class Step {
      ndxN = std::max(newN, 0);
    }
    void init() { set(P.Ninit); }
-   Step(const Params &P_) : P(P_) { init(); }
+//   Step(const Params &P_) : P(P_) { init(); }
    Step(const Params &P_, RUNTYPE runtype_) : P(P_), runtype(runtype_) { init(); }
    void operator++(int) { trueN++; ndxN++; }
    size_t N() const { return ndxN; }
@@ -379,15 +379,10 @@ class Stats {
    
    // Find the ground state in the current NRG shell.
    void find_groundstate(const DiagInfo &diag) {
-     Egs = DBL_MAX;
-     for (const auto &[i, eig]: diag) {
-       my_assert(eig.value_orig.size() > 0);
-       t_eigen Emin = eig.value_orig(0); // Eigenvalues are sorted
-       if (Emin < Egs) {
-         Egs    = Emin;
-         ground = i;
-       }
-     }
+     auto m = std::min_element(diag.cbegin(), diag.cend(), 
+                               [](const auto a, const auto b) { return a.second.value_orig(0) < b.second.value_orig(0); });
+     ground = m->first;
+     Egs = m->second.value_orig(0);
    }
 
    // ** Thermodynamic quantities
