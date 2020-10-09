@@ -1297,9 +1297,11 @@ struct truncate_stats {
   }
 };
 
+struct NotEnough : public std::exception {};
+
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
-bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
+void truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
@@ -1307,10 +1309,10 @@ bool truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
   std::cout << "Emax=" << Emax/step.unscale();
   truncate_stats ts(diag);
   ts.report();
-  const auto notenough = std::any_of(begin(diag), end(diag), 
-                                     [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax &&
-                                         eig.getnr() < eig.getdim(); });
-  return notenough;
+  if (std::any_of(begin(diag), end(diag), 
+                  [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax &&
+                      eig.getnr() < eig.getdim(); }))
+      throw NotEnough();
 }
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z
@@ -1922,35 +1924,33 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
   auto tasks = task_list(qsrmax);
   double diagratio = P.diagratio;
   DiagInfo diag;
-  bool notenough;
-  do {
-    if (step.nrg()) {
-      if (!(P.resume && int(step.ndx()) <= P.laststored))
-        diag = diagonalisations(step, iterinfo.opch, diagprev, tasks, diagratio, P); // compute in first run
-      else
-        diag = load_transformations(step.ndx(), P, false); // or read from disk
-    }
-    if (step.dmnrg()) {
-      diag = load_transformations(step.ndx(), P, P.removefiles); // read from disk in second run
-      shift_abs_energies(stats, diag);
-    }
-    stats.find_groundstate(diag);
-    if (step.nrg()) // should be done only once!
-      stats.subtract_groundstate_energy(diag);
-    auto cluster_mapping = find_clusters(sort_energies(diag), P.fixeps);
-    fix_splittings(diag, cluster_mapping);
-    notenough = truncate_prepare(step, diag, P);
-    if (notenough) {
-      cout << "Insufficient number of states computed." << endl;
-      if (P.restart) {
-        diagratio = min(diagratio * P.restartfactor, 1.0);
-        cout << endl
-             << "Restarting this iteration step. "
-             << "diagratio=" << diagratio << endl
-             << endl;
+  while (true) {
+    try {
+      if (step.nrg()) {
+        if (!(P.resume && int(step.ndx()) <= P.laststored))
+          diag = diagonalisations(step, iterinfo.opch, diagprev, tasks, diagratio, P); // compute in first run
+        else
+          diag = load_transformations(step.ndx(), P, false); // or read from disk
       }
+      if (step.dmnrg()) {
+        diag = load_transformations(step.ndx(), P, P.removefiles); // read from disk in second run
+        shift_abs_energies(stats, diag);
+      }
+      stats.find_groundstate(diag);
+      if (step.nrg()) // should be done only once!
+        stats.subtract_groundstate_energy(diag);
+      auto cluster_mapping = find_clusters(sort_energies(diag), P.fixeps);
+      fix_splittings(diag, cluster_mapping);
+      truncate_prepare(step, diag, P);
+      break;
     }
-  } while (step.nrg() && P.restart && notenough);
+    catch (NotEnough &e) {
+      cout << "Insufficient number of states computed." << endl;
+      if (!(step.nrg() && P.restart)) break;
+      diagratio = min(diagratio * P.restartfactor, 1.0);
+      cout << endl << "Restarting this iteration step. diagratio=" << diagratio << endl << endl;
+    }
+  }
   return diag;
 }
 
