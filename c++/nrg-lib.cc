@@ -786,14 +786,14 @@ class ExpvOutput {
    // Label and field names. Label is the first column (typically the temperature).
    void field_names(string labelname = "T") {
      F << '#' << formatted_output(labelname, P) << ' ';
-     for (const auto &op : fields) F << formatted_output(op, P) << ' ';
+     std::transform(fields.cbegin(), fields.cend(), std::ostream_iterator<std::string>(F, " "), [this](const auto op) { return formatted_output(op, P); });
      F << endl;
    }
  public:
    // Output the current values for the label and for all the fields
    void field_values(double labelvalue, bool cout_dump = true) {
      F << ' ' << formatted_output(labelvalue, P) << ' ';
-     for (const auto &op : fields) F << formatted_output(m[op], P) << ' ';
+     std::transform(fields.cbegin(), fields.cend(), std::ostream_iterator<std::string>(F, " "), [this](const auto op) { return formatted_output(m[op], P); });
      F << endl;
      if (cout_dump)
        for (const auto &op: fields)
@@ -1283,8 +1283,7 @@ void truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
                                       std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));
   std::cout << "Emax=" << Emax/step.unscale();
-  truncate_stats ts(diag);
-  ts.report();
+  truncate_stats(diag).report();
   if (std::any_of(begin(diag), end(diag), 
                   [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax &&
                       eig.getnr() < eig.getdim(); }))
