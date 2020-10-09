@@ -1928,11 +1928,10 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
       if (!(P.resume && int(step.ndx()) <= P.laststored))
         diag = diagonalisations(step, iterinfo.opch, diagprev, tasks, diagratio, P); // compute in first run
       else
-        diag = load_transformations(step.ndx(), P); // or read from disk
+        diag = load_transformations(step.ndx(), P, false); // or read from disk
     }
     if (step.dmnrg()) {
-      diag = load_transformations(step.ndx(), P); // read from disk in second run
-      if (P.removefiles) remove_transformation_files(step.ndx(), P);
+      diag = load_transformations(step.ndx(), P, P.removefiles); // read from disk in second run
       shift_abs_energies(stats, diag);
     }
     stats.find_groundstate(diag);
@@ -2054,8 +2053,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
   if (step.nrg()) 
     diag = diag0;
   if (step.dmnrg()) {
-    diag = load_transformations(step.ndx(), P);
-    if (P.removefiles) remove_transformation_files(step.ndx(), P);
+    diag = load_transformations(step.ndx(), P, P.removefiles);
     shift_abs_energies(stats, diag);
   }
   stats.find_groundstate(diag);

@@ -145,7 +145,11 @@ void save_transformations(size_t N, const DiagInfo &diag, const Params &P) {
   MATRIXF.close();
 }
 
-DiagInfo load_transformations(size_t N, const Params &P) {
+void remove_transformation_files(size_t N, const Params &P) {
+  remove(workdir.unitaryfn(N));
+}
+
+DiagInfo load_transformations(size_t N, const Params &P, bool remove_files = false) {
   DiagInfo diag;
   if (!P.ZBW) {
     my_assert(N + 1 >= P.Ninit && N + 1 <= P.Nmax);
@@ -168,13 +172,8 @@ DiagInfo load_transformations(size_t N, const Params &P) {
   }
   nrglog('H', "[total=" << total << " subspaces=" << nr << "]");
   MATRIXF.close();
+  if (remove_files) remove_transformation_files(N, P);
   return diag;
-}
-
-void remove_transformation_files(size_t N, const Params &P) {
-  if (!P.removefiles) return;
-  const string fn = workdir.unitaryfn(N);
-  if (remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
 }
 
 // Calculation of the contribution from subspace I1 of rhoN (density
