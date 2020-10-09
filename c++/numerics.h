@@ -45,33 +45,28 @@ using matel_bucket = generic_bucket<t_matel>;
 #define IS_EVEN(n) (!(IS_ODD(n)))
 #define SIGN(x) ((x) >= 0.0 ? 1 : -1)
 
-// gsl_fcmp replacement. Warning: this is not quite equivalent to the
-// functionality of gsl_fcmp, but should be sufficient for our purposes.
-CONSTFNC int my_fcmp(double x, double y, double epsilon) {
-  if (x == 0.0 && y == 0.0) // evidently equal
-    return 0;
-  // If both x and y are small, we ASSUME them to be equivalent. In this
-  // context, thus, epsilon is ABSOLUTE error.
-  if (abs(x) < epsilon && abs(y) < epsilon) return 0;
-  // Here epsilon is maximum allowable RELATIVE error.
-  if (abs(x - y) / (abs(x) + abs(y)) < epsilon) return 0;
-  if (x > y)
-    return +1;
-  else
-    return -1;
+CONSTFNC int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
+  if (x == 0.0 && y == 0.0) return 0.0; // evidently equal
+  if (abs(x) < small_epsilon && abs(y) < small_epsilon) return 0; // If both x and y are small, we ASSUME them to be equivalent
+  if (abs(x-y) < rel_epsilon * (abs(x)+abs(y))) return 0;
+  return x>y ? +1 : -1;
 }
 
-// Test if two numbers are equal to within numerical errors. (Use this for
-// comparing values that are expected to be of order 1.)
-CONSTFNC bool num_equal(double a, double b, double check_precision = 1.e-12) { return my_fcmp(a, b, check_precision) == 0; }
+CONSTFNC int my_fcmp(const double x, const double y, const double epsilon) { return my_fcmp(x, y, epsilon, epsilon); }
 
-CONSTFNC bool num_equal(cmpl a, cmpl b, double check_precision = 1.e-12) {
+// Test if two numbers are equal to within numerical errors. (Use this for comparing values that are expected to be
+// of order 1.)
+CONSTFNC bool num_equal(const double a, const double b, const double check_precision = 1.e-12) { 
+  return my_fcmp(a, b, check_precision) == 0; 
+}
+
+CONSTFNC bool num_equal(const cmpl a, const cmpl b, double check_precision = 1.e-12) {
   return (my_fcmp(a.real(), b.real(), check_precision) == 0) && (my_fcmp(a.imag(), b.imag(), check_precision) == 0);
 }
 
-CONSTFNC bool are_conjugate(double a, double b) { return num_equal(a, b); }
+CONSTFNC bool are_conjugate(const double a, const double b) { return num_equal(a, b); }
 
-CONSTFNC bool are_conjugate(cmpl a, cmpl b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
+CONSTFNC bool are_conjugate(const cmpl a, const cmpl b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
 
 CONSTFNC double frobenius_norm(const Matrix &m) {
   bucket sum;

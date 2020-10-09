@@ -121,6 +121,7 @@ Thus, as always:
  "right index the same as inner loop variable".
 */
 
+//class Matrix : public ublas::matrix<t_matel> {};
 using Matrix = ublas::matrix<t_matel>;
 
 #include "numerics.h"
