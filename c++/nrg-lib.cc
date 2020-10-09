@@ -125,27 +125,15 @@ using Matrix = ublas::matrix<t_matel>;
 
 #include "numerics.h"
 
-// Dump matrix elements: one matrix // XXX: insertor?
-void dump_matrix_elements(const Matrix &m, std::ostream &fout = std::cout,
-                          const double chopsmall = 1e-8, const size_t maxdump = 10) {
-  for (auto r1 = 0; r1 < std::min(m.size1(), maxdump); r1++) {
-    for (auto r2 = 0; r2 < std::min(m.size2(), maxdump); r2++) 
-      fout << chop(m(r1, r2), chopsmall) << ' ';
-    fout << endl;
-  }
-}
-
-//using MatrixElements = map<Twoinvar, Matrix>;
 class MatrixElements : public std::map<Twoinvar, Matrix> {
  public:
-   void dump(std::ostream &fout = std::cout,
-             const double chopsmall = 1e-8, const size_t maxdump = 10) const {
-     for (const auto &[II, mat] : *this) {
-       fout << "----" << II << "----" << endl;
-       dump_matrix_elements(mat, fout, chopsmall, maxdump);
-     }
+   std::ostream &insertor(std::ostream &os) const { 
+     for (const auto &[II, mat] : *this)
+       os << "----" << II << "----" << endl << mat << endl;
+     return os;
    }
 };
+std::ostream &operator<<(std::ostream &os, const MatrixElements &m) { return m.insertor(os); }
 
 using DensMatElements = map<Invar, Matrix>;
 
@@ -1884,13 +1872,11 @@ void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qs
 }
 
 void dump_f(const Opch &opch) {
-  cout << endl;
+  std::cout << std::endl;
   for (size_t i = 0; i < P.channels; i++)
-    for (size_t j = 0; j < P.perchannel; j++) {
-      cout << "<f> dump, i=" << i << " j=" << j << endl;
-      opch[i][j].dump();
-    }
-  cout << endl;
+    for (size_t j = 0; j < P.perchannel; j++)
+      std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << opch[i][j] << endl;
+  std::cout << std::endl;
 }
 
 // NRG diagonalisation driver: calls diagionalisations() or load_transformations(), as necessary, and performs

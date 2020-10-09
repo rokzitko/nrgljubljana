@@ -98,6 +98,14 @@ template <typename T> ostream &operator<<(ostream &os, const std::vector<T> &vec
   for (const auto &x : vec) os << x << " ";
   return os;
 }
+template <typename T> ostream &operator<<(ostream &os, const ublas::matrix<T> &m) {
+  for (auto r1 = 0; r1 < m.size1(); r1++) {
+    for (auto r2 = 0; r2 < m.size2(); r2++)
+      os << m(r1, r2) << ' ';
+    os << endl;
+  }
+  return os;
+}
 
 // Simple tokenizer class
 class string_token {
