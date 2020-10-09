@@ -1,6 +1,5 @@
-// Choose one of the following two! OLD is the non-optimized code by
-// Rok Zitko, OPTIMIZED is the hand-tuned code contributed by Markus
-// Greger. The optimized code is faster by an order of magnitude!
+// Choose one of the following two! OLD is the non-optimized code by Rok Zitko, OPTIMIZED is the hand-tuned code
+// contributed by Markus Greger. The optimized code is faster by an order of magnitude!
 
 class SPEC_CFSls : virtual public SPEC {
   public:
@@ -113,7 +112,7 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
         const t_eigen Ep = diagIp.value_zero(rp);
         DELTA d;
         d.energy = E1 - Ep;
-        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * step.scT()); // (***) removed (-sign)
+        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * step.scT());
         cs->add(step.scale() * d.energy, d.weight);
       }
     }
@@ -160,7 +159,7 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       for (size_t rp = 0; rp < dimp; rp++) {
         const double Ep = diagIp.value_zero(rp);
         double d_energy = E1 - Ep;
-        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign); // (***)
+        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
         cs->add(step.scale() * d_energy, d_weight);
       }
     }
@@ -180,7 +179,7 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
           const double Ek       = *(energies_beginIp + rk);
           const double d_energy = El - Ek;
           const double sum      = op2II_m_rho(rl, rk);
-          const double d_weight = spinfactor * op1II(rl, rk) * sum * (-sign); // (***)
+          const double d_weight = spinfactor * op1II(rl, rk) * sum * (-sign);
           cs->add(step.scale() * d_energy, d_weight);
         }
       }
@@ -208,7 +207,7 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       for (size_t rp = 0; rp < dimp; rp++) {
         const double Ep = diagIp.value_zero(rp);
         double d_energy = E1 - Ep;
-        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-Ep * step.scT()); // (***) removed (-sign)
+        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-Ep * step.scT());
         cs->add(step.scale() * d_energy, d_weight);
       }
     }
@@ -226,7 +225,7 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
           const double El       = *(energies_beginIp + rl);
           const double d_energy = Ek - El;
           const double sum      = op1II_m_rho(rk, rl);
-          double d_weight       = spinfactor * sum; // (***) removed (-sign)
+          double d_weight       = spinfactor * sum;
           d_weight *= op2II(rk, rl);
           cs->add(step.scale() * d_energy, d_weight);
         }
