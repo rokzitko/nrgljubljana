@@ -121,16 +121,12 @@ Thus, as always:
  "right index the same as inner loop variable".
 */
 
-//class Matrix : public ublas::matrix<t_matel> {};
 using Matrix = ublas::matrix<t_matel>;
 
 #include "numerics.h"
 
-using MatrixElements = map<Twoinvar, Matrix>;
-using DensMatElements = map<Invar, Matrix>;
-
-// Dump matrix elements: one matrix
-void dump_matrix_elements(const Matrix &m, ostream &fout = cout,
+// Dump matrix elements: one matrix // XXX: insertor?
+void dump_matrix_elements(const Matrix &m, std::ostream &fout = std::cout,
                           const double chopsmall = 1e-8, const size_t maxdump = 10) {
   for (auto r1 = 0; r1 < std::min(m.size1(), maxdump); r1++) {
     for (auto r2 = 0; r2 < std::min(m.size2(), maxdump); r2++) 
@@ -139,14 +135,19 @@ void dump_matrix_elements(const Matrix &m, ostream &fout = cout,
   }
 }
 
-// Dump matrix elements: all subspace pairs
-void dump_matrix_elements(const MatrixElements &m, ostream &fout = cout,
-                          const double chopsmall = 1e-8, const size_t maxdump = 10) {
-  for (const auto &[II, mat] : m) {
-    fout << "----" << II << "----" << endl;
-    dump_matrix_elements(mat, fout, chopsmall, maxdump);
-  }
-}
+//using MatrixElements = map<Twoinvar, Matrix>;
+class MatrixElements : public std::map<Twoinvar, Matrix> {
+ public:
+   void dump(std::ostream &fout = std::cout,
+             const double chopsmall = 1e-8, const size_t maxdump = 10) const {
+     for (const auto &[II, mat] : *this) {
+       fout << "----" << II << "----" << endl;
+       dump_matrix_elements(mat, fout, chopsmall, maxdump);
+     }
+   }
+};
+
+using DensMatElements = map<Invar, Matrix>;
 
 template <typename T> 
   inline pair<T, T> reverse_pair(const pair<T, T> &i) { return make_pair(i.second, i.first); }
@@ -1887,7 +1888,7 @@ void dump_f(const Opch &opch) {
   for (size_t i = 0; i < P.channels; i++)
     for (size_t j = 0; j < P.perchannel; j++) {
       cout << "<f> dump, i=" << i << " j=" << j << endl;
-      dump_matrix_elements(opch[i][j]);
+      opch[i][j].dump();
     }
   cout << endl;
 }
