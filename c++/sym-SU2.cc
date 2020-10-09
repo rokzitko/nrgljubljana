@@ -67,11 +67,11 @@ class SymmetrySU2 : public Symmetry {
 // in each channel.
 
 #undef OFFDIAG_1
-#define OFFDIAG_1(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_1(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 #undef OFFDIAG_2
-#define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetrySU2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySU2::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   Ispin ii = I.get("II");
   int NN   = step.getnn();
   switch (P.channels) {

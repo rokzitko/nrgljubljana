@@ -89,27 +89,27 @@ class SymmetryQS : public Symmetry {
    HAS_TRIPLET;
    HAS_GLOBAL;
    HAS_SUBSTEPS;
-   void show_coefficients(const Step &) override;
+   void show_coefficients(const Step &, const Coef &) override;
 };
 
-// *** Helper macros for makematrix() members in matrix.cc
+// *** Helper macros for make_matrix() members in matrix.cc
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 /* i - subspace index
    ch - channel (0 or 1)
    number - number of electrons added in channel 'ch' in subspace 'i' */
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 #undef OFFDIAG_MIX
-#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * xiR(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xiR(step.N(), ch), h, qq, In, opch)
 
 #undef RUNGHOP
-#define RUNGHOP(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * zetaR(step.N() + 1, 0), h, qq)
+#define RUNGHOP(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
 
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQS::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   Sspin ss = I.get("SS");
 
   if (!P.substeps) {
@@ -141,10 +141,10 @@ void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, con
     const auto [N, M] = step.NM();
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(N, M), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * coef.xi(N, M), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, M, number, zeta(N + 1, M), h, qq)
+#define DIAG(i, ch, number) diag_function(step, i, M, number, coef.zeta(N + 1, M), h, qq)
 
 #include "qs/qs-1ch-offdiag.dat"
 #include "qs/qs-1ch-diag.dat"
@@ -153,12 +153,12 @@ void SymmetryQS::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, con
   }
 }
 
-void SymmetryQS::show_coefficients(const Step &step) {
-  Symmetry::show_coefficients(step);
+void SymmetryQS::show_coefficients(const Step &step, const Coef &coef) {
+  Symmetry::show_coefficients(step, coef);
   if (P.rungs)
     for (unsigned int i = 0; i < P.channels; i++)
       cout << "[" << i + 1 << "]"
-           << " xi_rung(" << step.N() << ")=" << xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << zetaR(step.N() + 1, i) << endl;
+           << " xi_rung(" << step.N() << ")=" << coef.xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << coef.zetaR(step.N() + 1, i) << endl;
 }
 
 #include "nrg-recalc-QS.cc"

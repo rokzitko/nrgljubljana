@@ -16,7 +16,6 @@
 
 class Bins {
  private:
-   double base{10}; // NOLINT
    double emin{}, emax{};
    double log10emin{}, log10emax{}; // base-10 log of the limits
    void setlimits();
@@ -32,6 +31,7 @@ class Bins {
    inline static const double max_bin_shift = 2.0;
    inline static const double min_bin_shift = 2.0;
 
+   inline static const double base = 10;
    inline static const double zero_epsilon = 1e-14;
 
  public:
@@ -50,8 +50,7 @@ void Bins::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the conduction band!!
   emax = (P.emax > 0 ? P.emax : P.SCALE(0) * pow(base, max_bin_shift));
   emin = (P.emin > 0 ? P.emin : P.last_step_scale() / pow(base, min_bin_shift));
-  // Trick: use ceil/floor to obtain uniform binning grids for
-  // different values of the twist parameter z!
+  // Trick: use ceil/floor to obtain uniform binning grids for different values of the twist parameter z!
   log10emin = floor(log10(emin));
   log10emax = ceil(log10(emax));
 }
@@ -176,18 +175,16 @@ class Temp : public Spikes {
    const Params &P;
  public:
    Temp(const Params &P) : P(P) {}
-   void add_value(double energy, t_weight weight); // for ChainSpectrumTemp
+   void add_value(double energy, t_weight weight) {
+     for (auto & [e, w] : *this) {
+       if (e == energy) {
+         w += weight;
+         return;
+       }
+     }
+     // or else
+     push_back(make_pair(energy, weight));
+   }
 };
-
-inline void Temp::add_value(double energy, t_weight weight) {
-  for (auto & [e, w] : *this) {
-    if (e == energy) {
-      w += weight;
-      return;
-    }
-  }
-  // or else
-  push_back(make_pair(energy, weight));
-}
 
 #endif // _bins_h_

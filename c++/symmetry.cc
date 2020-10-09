@@ -127,7 +127,7 @@ class Symmetry {
    // Is an invariant subspace with given quantum numbers allowed?
    virtual bool Invar_allowed(const Invar &I) { return true; }
    
-   virtual void makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) = 0;
+   virtual void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) = 0;
    
    // Called from recalc_dynamicsusceptibility().  This is the factor due
    // to the spin degeneracy when calculating the trace of Sz.Sz.
@@ -152,21 +152,21 @@ class Symmetry {
    virtual MatrixElements  recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
    virtual void recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) { my_assert_not_reached(); }
    
-   virtual void show_coefficients(const Step &step) {
+   virtual void show_coefficients(const Step &step, const Coef &coef) {
      cout << setprecision(std::numeric_limits<double>::max_digits10);
      if (!P.substeps) {
        for (size_t i = 0; i < P.coefchannels; i++) {
          auto N = step.N();
          cout << "[" << i + 1 << "]"
-           << " xi(" << N << ")=" << xi(N, i) << " xi_scaled(" << N << ")=" << xi(N, i)/step.scale()
-             << " zeta(" << N+1 << ")=" << zeta(N+1, i) << endl;
+           << " xi(" << N << ")=" << coef.xi(N, i) << " xi_scaled(" << N << ")=" << coef.xi(N, i)/step.scale()
+             << " zeta(" << N+1 << ")=" << coef.zeta(N+1, i) << endl;
        }
      } else {
        const auto [N, M] = step.NM();
        for (auto i = 0; i < P.coeffactor; i++) {
          auto index = M + P.channels * i;
          cout << "[" << index << "]"
-           << " xi(" << N << ")=" << xi(N, index) << " zeta(" << N+1 << ")=" << zeta(N+1, index) << endl;
+           << " xi(" << N << ")=" << coef.xi(N, index) << " zeta(" << N+1 << ")=" << coef.zeta(N+1, index) << endl;
        }
      }
    }
@@ -180,7 +180,7 @@ std::unique_ptr<Symmetry> Sym;
 
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
-  void makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) override;                   \
+  void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) override;                   \
   Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) override
 
 // Optional declaration

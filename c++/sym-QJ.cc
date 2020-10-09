@@ -102,19 +102,19 @@ void SymmetryQJ::offdiag_function_QJ(const Step &step, unsigned int i, unsigned 
   if (triangle) { offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch); }
 }
 
-// *** Helper macros for makematrix() members in matrix.cc
+// *** Helper macros for make_matrix() members in matrix.cc
 // Jndx = 0 for doublet, Jndx = 1 for quadruplet
 #undef OFFDIAG
-#define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(step, i, j, Jndx, 0, t_matel(factor0) * xi(step.N(), 0), h, qq, In, opch)
+#define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(step, i, j, Jndx, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(step, i, 0, number, zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 inline double J(int JJ) {
   return (JJ - 1.0) / 2.0; // JJ=2J+1
 }
 
-void SymmetryQJ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQJ::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   Sspin jj = I.get("JJ");
 #include "qj/qj-offdiag.dat"
 #include "qj/qj-diag.dat"

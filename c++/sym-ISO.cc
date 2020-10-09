@@ -112,12 +112,12 @@ class SymmetryISO2 : public SymmetryISOcommon {
 };
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
-void SymmetryISO::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryISO::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
   // nn is the index of the last site in the chain, while nn+1 is the
@@ -139,7 +139,7 @@ void SymmetryISO::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, co
   }
 }
 
-void SymmetryISO2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryISO2::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
   int NN   = step.getnn();

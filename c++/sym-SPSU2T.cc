@@ -115,18 +115,18 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
 // because all three set are exactly the same due to orbital
 // symmetry.
 #undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_spsu2t(i, j, 0, 0, t_matel(factor0) * xi(step.N(), 0), h, qq, In, I, opch)
+#define OFFDIAG(i, j, factor0) offdiag_spsu2t(i, j, 0, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, I, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(step, i, 0, number, zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * 2.0 * delta(step.N() + 1, 0), h, qq)
+#define ISOSPINX(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
 
 #undef ANOMALOUS
-#define ANOMALOUS(i, j, factor) offdiag_function(step, i, j, 0, 0, t_matel(factor) * kappa(step.N(), 0), h, qq, In, opch)
+#define ANOMALOUS(i, j, factor) offdiag_function(step, i, j, 0, 0, t_matel(factor) * coef.kappa(step.N(), 0), h, qq, In, opch)
 
-void SymmetrySPSU2T::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetrySPSU2T::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   Sspin ss  = I.get("SS");
   Tangmom t = I.get("T");
   double T  = t; // crucially important to use floating point!
@@ -134,10 +134,10 @@ void SymmetrySPSU2T::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq,
   my_assert(P.channels == 3);
 #include "spsu2t/spsu2t-offdiag.dat"
 #include "spsu2t/spsu2t-diag.dat"
-  if (!num_equal(delta(step.N() + 1, 0), 0.0)) {
+  if (!num_equal(coef.delta(step.N() + 1, 0), 0.0)) {
 #include "spsu2t/spsu2t-isospinx.dat"
   }
-  if (!num_equal(kappa(step.N(), 0), 0.0)) {
+  if (!num_equal(coef.kappa(step.N(), 0), 0.0)) {
 #include "spsu2t/spsu2t-anomalous.dat"
   }
 }

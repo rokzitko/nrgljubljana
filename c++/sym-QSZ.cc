@@ -49,8 +49,8 @@ class SymmetryQSZ : public SymField {
      } // if
    }
 
-   void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
-   void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+   void make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef);
+   void make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef);
 
    void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
      bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
@@ -74,19 +74,19 @@ class SymmetryQSZ : public SymField {
    HAS_GLOBAL;
    HAS_SUBSTEPS;
    
-   void show_coefficients(const Step &) override;
+   void show_coefficients(const Step &, const Coef &) override;
 };
 
-// *** Helper macros for makematrix() members in matrix.cc
+// *** Helper macros for make_matrix() members in matrix.cc
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 /* i - subspace index
    ch - channel (0 or 1)
    number - number of electrons added in channel 'ch' in subspace 'i' */
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 #undef SPINZ
 #define SPINZ(i, j, ch, factor) spinz_function(step, i, j, ch, t_matel(factor), h, qq)
@@ -95,15 +95,15 @@ class SymmetryQSZ : public SymField {
 // matrix in the new step, i.e., the f_{N} from the f^\dag_{N_1} f_{N} hopping
 // term.
 #undef OFFDIAG_MIX
-#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * xiR(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xiR(step.N(), ch), h, qq, In, opch)
 
 #undef RUNGHOP
-#define RUNGHOP(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * zetaR(step.N() + 1, 0), h, qq)
+#define RUNGHOP(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
 
 // "non-polarized" here means that the coefficients xi do not depend on
 // spin. Note, however, that there is support for a global magnetic field,
 // cf. P.globalB.
-void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSZ::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   if (!P.substeps) {
     switch (P.channels) {
       case 1:
@@ -132,10 +132,10 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
     const auto [N, M] = step.NM();
 
 #undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * xi(N, M), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * coef.xi(N, M), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, M, number, zeta(N + 1, M), h, qq)
+#define DIAG(i, ch, number) diag_function(step, i, M, number, coef.zeta(N + 1, M), h, qq)
 
 #undef SPINZ
 #define SPINZ(i, j, ch, factor) spinz_function(step, i, j, M, t_matel(factor), h, qq)
@@ -148,18 +148,18 @@ void SymmetryQSZ::makematrix_nonpolarized(Matrix &h, const Step &step, const Rma
   }
 }
 
-#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xiUP(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_UP(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xiUP(step.N(), ch), h, qq, In, opch)
 
-#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xiDOWN(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xiDOWN(step.N(), ch), h, qq, In, opch)
 
-#define DIAG_UP(i, j, ch, number) diag_function_half(step, i, ch, number, zetaUP(step.N() + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) diag_function_half(step, i, ch, number, coef.zetaUP(step.N() + 1, ch), h, qq)
 
-#define DIAG_DOWN(i, j, ch, number) diag_function_half(step, i, ch, number, zetaDOWN(step.N() + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) diag_function_half(step, i, ch, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
 #undef SPINZ
 #define SPINZ(i, j, ch, factor) spinz_function(step, i, j, ch, t_matel(factor), h, qq)
 
-void SymmetryQSZ::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSZ::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   my_assert(!P.substeps); // not implemented!
   switch (P.channels) {
     case 1:
@@ -194,19 +194,19 @@ void SymmetryQSZ::makematrix_polarized(Matrix &h, const Step &step, const Rmaxva
   }
 }
 
-void SymmetryQSZ::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQSZ::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   if (P.polarized) 
-    makematrix_polarized(h, step, qq, I, In, opch);
+    make_matrix_polarized(h, step, qq, I, In, opch, coef);
   else
-    makematrix_nonpolarized(h, step, qq, I, In, opch);
+    make_matrix_nonpolarized(h, step, qq, I, In, opch, coef);
 }
 
-void SymmetryQSZ::show_coefficients(const Step &step) {
-  Symmetry::show_coefficients(step);
+void SymmetryQSZ::show_coefficients(const Step &step, const Coef &coef) {
+  Symmetry::show_coefficients(step, coef);
   if (P.rungs) 
     for (unsigned int i = 0; i < P.channels; i++) {
       cout << "[" << i + 1 << "]"
-        << " xi_rung(" << step.N() << ")=" << xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << zetaR(step.N() + 1, i) << endl;
+        << " xi_rung(" << step.N() << ")=" << coef.xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << coef.zetaR(step.N() + 1, i) << endl;
     }
 }
 

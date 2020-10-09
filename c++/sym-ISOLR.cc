@@ -90,17 +90,17 @@ class SymmetryISO2LR : public SymmetryISOLRcommon {
   HAS_TRIPLET;
 };
 
-// *** Helper macros for makematrix() members in matrix.cc
+// *** Helper macros for make_matrix() members in matrix.cc
 #undef OFFIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetryISOLR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryISOLR::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
 #include "isolr/isolr-2ch-offdiag.dat"
 }
 
-void SymmetryISO2LR::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryISO2LR::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
 #include "iso2lr/iso2lr-2ch-offdiag.dat"

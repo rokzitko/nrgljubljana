@@ -1,5 +1,5 @@
 // tridiag.h - Tridiagonalisation code
-// Copyright (C) 2009-2016 Rok Zitko
+// Copyright (C) 2009-2020 Rok Zitko
 
 #ifndef _tridiag_h_
 #define _tridiag_h_
@@ -32,16 +32,16 @@ void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX) {
 
 // Tridiagonalisation of the discretization coefficients. Multiple
 // precision arithmetics library GMP is required.
-void tridiag_ch(int alpha) {
+void tridiag_ch(int alpha, Coef &coef) {
   cout << "Tridiagonalisation, ch=" << alpha << ".";
   cout << " Using GMP version " << gmp_version << endl;
 
-  const unsigned int mMAX = em.max(alpha);
+  const unsigned int mMAX = coef.em.max(alpha);
   cout << "mMAX=" << mMAX << endl;
 
-  my_assert(ep.max(alpha) == mMAX);
-  my_assert(u0p.max(alpha) == mMAX);
-  my_assert(u0m.max(alpha) == mMAX);
+  my_assert(coef.ep.max(alpha) == mMAX);
+  my_assert(coef.u0p.max(alpha) == mMAX);
+  my_assert(coef.u0m.max(alpha) == mMAX);
 
   mpf_set_default_prec(P.preccpp);
   cout << "Using precision of " << P.preccpp << " digits." << endl;
@@ -74,10 +74,10 @@ void tridiag_ch(int alpha) {
 
   for (unsigned int m = 0; m <= mMAX; m++) {
     // Only real parameters are supported in this code [8.10.2009]
-    mpf_set_d(up_prev[m], check_real(u0p(m, alpha)));
-    mpf_set_d(um_prev[m], check_real(u0m(m, alpha)));
-    mpf_set_d(ep1[m], check_real(ep(m, alpha)));
-    mpf_set_d(em1[m], check_real(em(m, alpha)));
+    mpf_set_d(up_prev[m], check_real(coef.u0p(m, alpha)));
+    mpf_set_d(um_prev[m], check_real(coef.u0m(m, alpha)));
+    mpf_set_d(ep1[m], check_real(coef.ep(m, alpha)));
+    mpf_set_d(em1[m], check_real(coef.em(m, alpha)));
     mpf_mul(ep2[m], ep1[m], ep1[m]);
     mpf_mul(em2[m], em1[m], em1[m]);
   }
@@ -156,8 +156,8 @@ void tridiag_ch(int alpha) {
     double coef_xi   = dxi * P.bandrescale;
     double coef_zeta = dzeta * P.bandrescale;
 
-    xi.setvalue(n, alpha, coef_xi);
-    zeta.setvalue(n, alpha, coef_zeta);
+    coef.xi.setvalue(n, alpha, coef_xi);
+    coef.zeta.setvalue(n, alpha, coef_zeta);
 
     cout << "  xi(" << n << ")=" << HIGHPREC(dxi) << endl;
     cout << "zeta(" << n << ")=" << HIGHPREC(dzeta) << endl;
@@ -175,10 +175,10 @@ void tridiag_ch(int alpha) {
   }
 }
 
-void tridiag() {
+void tridiag(Coef &coef) {
   TIME("tridiag");
   my_assert(P.coefchannels >= 1);
-  for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha);
+  for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha, coef);
 }
 
 #endif // _tridiag_h_

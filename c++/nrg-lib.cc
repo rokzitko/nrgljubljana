@@ -350,7 +350,7 @@ class Step {
    bool nrg() const { return runtype == RUNTYPE::NRG; }
    bool dmnrg() const { return runtype == RUNTYPE::DMNRG; }
    // Index 'n' of the last site in the existing chain, f_n (at iteration 'N'). The site being added is f_{n+1}. This
-   // is the value that we use in building the matrix, cf. nrg-makematrix-ISO.cc
+   // is the value that we use in building the matrix, cf. nrg-make_matrix-ISO.cc
    int getnn() const { return ndxN; }
 };
 
@@ -1573,19 +1573,19 @@ auto make_subspaces_list(const DiagInfo &diagprev) {
   return subspaces;
 }
 
-Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const DiagInfo &diagprev, const Params &P) {
+Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev};
   Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (size_t i = 1; i <= P.combs; i++)
     for (size_t r = 0; r < rm.rmax(i); r++) 
       h(rm.offset(i) + r, rm.offset(i) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r);
-  Sym->makematrix(h, step, rm, I, anc, opch);  // Symmetry-type-specific matrix initialization steps
+  Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (logletter('m')) dump_matrix(h);
   return h;
 }
 
-DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks, const Params &P) {
+DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, const std::vector<Invar> &tasks, const Params &P) {
   DiagInfo diagnew;
   size_t nr = tasks.size();
   size_t itask = 0;
@@ -1594,7 +1594,7 @@ DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const DiagI
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {
     const Invar I  = tasks[itask];
-    auto h = prepare_task_for_diag(step, I, opch, diagprev, P);
+    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, P);
     int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
@@ -1724,7 +1724,7 @@ std::pair<Invar, Eigen> read_from(int source) {
   return {Irecv, eig};
 }
 
-DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const DiagInfo &diagprev, const std::vector<Invar> &tasks, const Params &P) {
+DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, const std::vector<Invar> &tasks, const Params &P) {
   DiagInfo diagnew;
   mpi_sync_params(); // Synchronise parameters
   list<Invar> todo; // List of all the tasks to handle
@@ -1758,7 +1758,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const DiagInfo
       I = todo.front();
       todo.pop_front();
     }
-    auto h = prepare_task_for_diag(step, I, opch, diagprev, P);
+    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, P);
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
@@ -1792,14 +1792,14 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const DiagInfo
 #endif
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
-DiagInfo diagonalisations(const Step &step, const Opch &opch, const DiagInfo &diagprev, 
+DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
                           const std::vector<Invar> &tasks, double diagratio, const Params &P) {
   TIME("diag");
   sP.init(P, diagratio);
 #ifdef NRG_MPI
-  return diagonalisations_MPI(step, opch, diagprev, tasks, P);
+  return diagonalisations_MPI(step, opch, coef, diagprev, tasks, P);
 #else
-  return diagonalisations_OpenMP(step, opch, diagprev, tasks, P);
+  return diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, P);
 #endif
 }
 
@@ -1860,9 +1860,9 @@ void dump_f(const Opch &opch) {
 
 // NRG diagonalisation driver: calls diagionalisations() or load_transformations(), as necessary, and performs
 // the truncation. All other calculations are done in after_diag(). Called from iterate().
-DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
+DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
   step.infostring();
-  Sym->show_coefficients(step);
+  Sym->show_coefficients(step, coef);
   auto tasks = task_list(qsrmax);
   double diagratio = P.diagratio;
   DiagInfo diag;
@@ -1870,7 +1870,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagI
     try {
       if (step.nrg()) {
         if (!(P.resume && int(step.ndx()) <= P.laststored))
-          diag = diagonalisations(step, iterinfo.opch, diagprev, tasks, diagratio, P); // compute in first run
+          diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, P); // compute in first run
         else
           diag = load_transformations(step.ndx(), P, false); // or read from disk
       }
@@ -1956,9 +1956,9 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
 }
 
 // Perform one iteration step
-DiagInfo iterate(const Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diagprev, Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
+DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   QSrmax qsrmax = get_qsrmax(diagprev);
-  auto diag = do_diag(step, iterinfo, stats, diagprev, qsrmax, P);
+  auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc);
   trim_matrices(diag, iterinfo);
   clear_eigenvectors(diag);
@@ -2010,10 +2010,10 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
 
 // ****************************  Main NRG loop ****************************
 
-DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diag0, Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
+DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   DiagInfo diag = diag0;
   for (step.init(); !step.end(); step++)
-    diag = iterate(step, iterinfo, stats, diag, output, dm, oprecalc, P);
+    diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, P);
   step.set(step.lastndx()); // XXX: remove this, after step is no longer global...
   return diag;
 }
@@ -2056,7 +2056,7 @@ void dump_subspaces(const AllSteps &dm, const Params &P, const std::string filen
   }
 }
 
-DiagInfo run_nrg(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
+DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   states_report(diag0);
   auto oprecalc = Oprecalc(step.runtype, iterinfo, P);
   auto output = Output(step.runtype, iterinfo, stats, P);
@@ -2065,7 +2065,7 @@ DiagInfo run_nrg(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
     docalc0ht(step, diag0, stats, output, P.tdht, P);
     docalc0(step, iterinfo, diag0, stats, output, P);
   }
-  DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, P) : nrg_loop(step, iterinfo, stats, diag0, output, dm, oprecalc, P);
+  DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, P) : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, P);
   cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
   stats.GS_energy = stats.total_energy;
   if (P.dumpsubspaces) dump_subspaces(dm, P); // XXX: only once
@@ -2131,10 +2131,10 @@ void set_symmetry(const Params &P, Stats &stats) {
 
 void calculation(Params &P) {
   Stats stats(P);
-  auto [diag0, iterinfo] = read_data(P, stats);
+  auto [diag0, iterinfo, coef] = read_data(P, stats);
   Step step{P, RUNTYPE::NRG};
   AllSteps dm(P.Nlen);
-  auto diag = run_nrg(step, iterinfo, stats, diag0, dm, P);
+  auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, P);
   if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
   shift_abs_energies_dm(stats, dm, P); // we call this here, to enable a file dump
   if (P.dumpabsenergies)
@@ -2153,9 +2153,9 @@ void calculation(Params &P) {
       if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, P);
     }
     if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-    auto [diag0_dm, iterinfo_dm] = read_data(P, stats);
+    auto [diag0_dm, iterinfo_dm, coef_dm] = read_data(P, stats);
     Step step{P, RUNTYPE::DMNRG};
-    run_nrg(step, iterinfo_dm, stats, diag0_dm, dm, P);
+    run_nrg(step, iterinfo_dm, coef_dm, stats, diag0_dm, dm, P);
     my_assert(num_equal(stats.GS_energy, stats.total_energy));
   }
 }

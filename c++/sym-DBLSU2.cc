@@ -65,11 +65,11 @@ class SymmetryDBLSU2 : public Symmetry {
 // see sym-SU2.cc
 
 #undef OFFDIAG_1
-#define OFFDIAG_1(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_1(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 #undef OFFDIAG_2
-#define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetryDBLSU2::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryDBLSU2::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   switch (P.channels) {
     case 2:
 #include "dblsu2/dblsu2-2ch-offdiag-1.dat"

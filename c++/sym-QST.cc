@@ -138,12 +138,12 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
 // because all three set are exactly the same due to orbital
 // symmetry.
 #undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_qst(i, j, 0, 0, t_matel(factor0) * xi(step.N(), 0), h, qq, In, I, opch)
+#define OFFDIAG(i, j, factor0) offdiag_qst(i, j, 0, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, I, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(step, i, 0, number, zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
-void SymmetryQST::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryQST::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   Sspin ss  = I.get("SS");
   Tangmom t = I.get("T");
   double T  = t; // crucially important to use floating point!

@@ -22,8 +22,8 @@ class SymmetryNONE : public Symmetry {
     }
   }
 
-  void makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
-  void makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch);
+  void make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef);
+  void make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef);
   void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {};
 
   DECL;
@@ -34,16 +34,16 @@ class SymmetryNONE : public Symmetry {
 #undef OFFDIAG_CR_DO
 #undef OFFDIAG_CR_UP
 
-#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
-#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
-void SymmetryNONE::makematrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryNONE::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   switch (P.channels) {
     case 1:
 #include "none/none-1ch-offdiag-CR-UP.dat"
@@ -64,19 +64,19 @@ void SymmetryNONE::makematrix_nonpolarized(Matrix &h, const Step &step, const Rm
 #undef OFFDIAG_CR_DO
 #undef OFFDIAG_CR_UP
 
-#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * xiDOWN(step.N(), ch), h, qq, In, opch)
-#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * xiUP(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_CR_DO(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xiDOWN(step.N(), ch), h, qq, In, opch)
+#define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xiUP(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
 
 #undef DIAG_UP
-#define DIAG_UP(i, j, ch, number) diag_function(step, i, ch, number, zetaUP(step.N() + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) diag_function(step, i, ch, number, coef.zetaUP(step.N() + 1, ch), h, qq)
 
 #undef DIAG_DOWN
-#define DIAG_DOWN(i, j, ch, number) diag_function(step, i, ch, number, zetaDOWN(step.N() + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) diag_function(step, i, ch, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
-void SymmetryNONE::makematrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryNONE::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   switch (P.channels) {
     case 1:
 #include "none/none-1ch-offdiag-CR-UP.dat"
@@ -96,11 +96,11 @@ void SymmetryNONE::makematrix_polarized(Matrix &h, const Step &step, const Rmaxv
   }
 }
 
-void SymmetryNONE::makematrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch) {
+void SymmetryNONE::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   if (P.polarized)
-    makematrix_polarized(h, step, qq, I, In, opch);
+    make_matrix_polarized(h, step, qq, I, In, opch, coef);
   else
-    makematrix_nonpolarized(h, step, qq, I, In, opch);
+    make_matrix_nonpolarized(h, step, qq, I, In, opch, coef);
 }
 
 #include "nrg-recalc-NONE.cc"
