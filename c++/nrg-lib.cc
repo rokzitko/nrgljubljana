@@ -261,11 +261,6 @@ private:
   }
 };
 
-template <typename T> ostream &operator<<(ostream &os, const ublas::vector<T> &v) {
-  for (const auto &x : v) os << x << ' ';
-  return os;
-}
-
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
 // density-matrix construction.
 template<typename M> struct DimSubGen {
@@ -849,6 +844,11 @@ void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec) {
   }
 }
 
+template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
+  std::copy(x.cbegin(), x.cend(), std::ostream_iterator<T>(os, " "));
+  return os;
+}
+
 class Oprecalc {
  public:
    // The following lists hold the names of operators which need to be recomputed. The default behavior is to
@@ -858,9 +858,7 @@ class Oprecalc {
    set<string> s, p, g, d, v, t, q, ot;
 
    void report(ostream &F, const string &name, const set<string> &x) {
-     F << name << "=[";
-     for (const auto &i : x) F << i << ' ';
-     F << "]" << endl;
+     F << name << "=[" << x << "]" << endl;
    }
 
    void report(ostream &F = cout) {
@@ -1083,12 +1081,8 @@ struct Output {
   void dump_all_energies(const DiagInfo &diag, int N) {
     if (!Fenergies) return;
     Fenergies << endl << "===== Iteration number: " << N << endl;
-    for (const auto &[i, eig]: diag) {
-      Fenergies << "Subspace: " << i << std::endl;
-      for (const auto &x : eig.value_zero)
-        Fenergies << x << ' ';
-      Fenergies << std::endl;
-    }
+    for (const auto &[i, eig]: diag)
+      Fenergies << "Subspace: " << i << std::endl << eig.value_zero << std::endl;
   }
 };
 
@@ -1097,12 +1091,8 @@ void dump_all_absolute_energies(const AllSteps &dm, const Params &P, std::string
   std::ofstream F(filename);
   for (size_t N = P.Ninit; N < P.Nlen; N++) {
     F << std::endl << "===== Iteration number: " << N << std::endl;
-    for (const auto &[i, ds]: dm.at(N)) {
-      F << "Subspace: " << i << std::endl;
-      for (const auto &x : ds.eig.absenergyG)
-        F << x << ' ';
-      F << std::endl;
-    }
+    for (const auto &[i, ds]: dm.at(N))
+      F << "Subspace: " << i << std::endl << ds.eig.absenergyG << std::endl;
   }
 }
 
