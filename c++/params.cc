@@ -656,9 +656,21 @@ struct Params {
   double nrg_step_scale_factor() const { // rescale factor in the RG transformation (matrix construction)
     return absolute ? 1 : (!substeps ? sqrt(Lambda) : pow(Lambda, 0.5/channels)); // NOLINT
   }
+  
+  bool need_rho() const { return cfs || dmnrg; }
+  bool need_rhoFDM() const { return fdm; }
+
+  // Define recalculation strategy
+  bool do_recalc_kept(const RUNTYPE &runtype) const {   // kept: Recalculate using vectors kept after truncation
+    return strategy == "kept" && !(cfs_flags() && runtype == RUNTYPE::DMNRG) && !ZBW; 
+  }
+  bool do_recalc_all(const RUNTYPE &runtype) const {    // all: Recalculate using all vectors
+    return !do_recalc_kept(runtype) && !ZBW; 
+  }
+  bool do_recalc_none() const { return ZBW; }
 };
 
-Params P;
+Params P; // XXX
 
 // Shared parameters for MPI parallelization.
 class sharedParam {
@@ -688,6 +700,6 @@ class sharedParam {
    }
 };
 
-sharedParam sP;
+sharedParam sP; // XXX
 
 #endif // _param_cc_

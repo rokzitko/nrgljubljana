@@ -1,17 +1,18 @@
 // Real-frequency spectral function
 class SpectrumRealFreq : public Spectrum {
-  private:
-  Bins fspos, fsneg; // Full spectral information
-  void mergeNN2(spCS_t, const Step &);
-  void mergeCFS(spCS_t);
-  void weight_report();
-  void trim();
-  void savebins();
-  void continuous();
-  public:
-  SpectrumRealFreq(const string &_opname, const string &_filename, SPECTYPE _spectype) : Spectrum(_opname, _filename, _spectype){};
-  void merge(spCS_t, const Step &step) override;
-  ~SpectrumRealFreq() override;
+ private:
+   Bins fspos, fsneg; // Full spectral information
+   void mergeNN2(spCS_t, const Step &);
+   void mergeCFS(spCS_t);
+   void weight_report();
+   void trim();
+   void savebins();
+   void continuous();
+ public:
+   SpectrumRealFreq(const string &opname, const string &filename, SPECTYPE spectype, const Params &P) :
+     Spectrum(opname, filename, spectype, P) {};
+   void merge(spCS_t, const Step &step) override;
+   ~SpectrumRealFreq() override;
 };
 
 SpectrumRealFreq::~SpectrumRealFreq() {
