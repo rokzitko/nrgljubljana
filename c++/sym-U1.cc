@@ -83,11 +83,6 @@ class SymmetryU1 : public Symmetry {
 // See also coefnew/u1/u1.m
 #define DIAG_DOUP(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * coef.zetaDOUP(step.N() + 1, ch), h, qq)
 
-#undef SPINZ
-#define SPINZ(i, j, ch, factor) spinz_function(step, i, j, ch, t_matel(factor), h, qq)
-#undef SPINX
-#define SPINX(i, j, ch, factor) spinx_function(step, i, j, ch, t_matel(factor), h, qq)
-
 void SymmetryU1::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   switch (P.channels) {
     case 1:
@@ -95,24 +90,18 @@ void SymmetryU1::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxva
 #include "u1/u1-1ch-offdiag-DO.dat"
 #include "u1/u1-1ch-diag-UP.dat"
 #include "u1/u1-1ch-diag-DOWN.dat"
-#include "u1/u1-1ch-spinz.dat" // P.globalB
-#include "u1/u1-1ch-spinx.dat" // P.globalBx
       break;
     case 2:
 #include "u1/u1-2ch-offdiag-UP.dat"
 #include "u1/u1-2ch-offdiag-DO.dat"
 #include "u1/u1-2ch-diag-UP.dat"
 #include "u1/u1-2ch-diag-DOWN.dat"
-#include "u1/u1-2ch-spinz.dat" // P.globalB
-#include "u1/u1-2ch-spinx.dat" // P.globalBx
       break;
     case 3:
 #include "u1/u1-3ch-offdiag-UP.dat"
 #include "u1/u1-3ch-offdiag-DO.dat"
 #include "u1/u1-3ch-diag-UP.dat"
 #include "u1/u1-3ch-diag-DOWN.dat"
-#include "u1/u1-3ch-spinz.dat" // P.globalB
-#include "u1/u1-3ch-spinx.dat" // P.globalBx
       break;
     default: my_assert_not_reached();
   }
@@ -129,8 +118,6 @@ void SymmetryU1::make_matrix_pol2x2(Matrix &h, const Step &step, const Rmaxvals 
 #include "u1/u1-1ch-diag-UP.dat"
 #include "u1/u1-1ch-diag-DOWN.dat"
 #include "u1/u1-1ch-diag-DOUP.dat"
-#include "u1/u1-1ch-spinz.dat" // P.globalB
-#include "u1/u1-1ch-spinx.dat" // P.globalBx
       break;
     case 2:
 #include "u1/u1-2ch-offdiag-UP.dat"
@@ -140,8 +127,6 @@ void SymmetryU1::make_matrix_pol2x2(Matrix &h, const Step &step, const Rmaxvals 
 #include "u1/u1-2ch-diag-UP.dat"
 #include "u1/u1-2ch-diag-DOWN.dat"
 #include "u1/u1-2ch-diag-DOUP.dat"
-#include "u1/u1-2ch-spinz.dat" // P.globalB
-#include "u1/u1-2ch-spinx.dat" // P.globalBx
       break;
     case 3:
 #include "u1/u1-3ch-offdiag-UP.dat"
@@ -151,8 +136,6 @@ void SymmetryU1::make_matrix_pol2x2(Matrix &h, const Step &step, const Rmaxvals 
 #include "u1/u1-3ch-diag-UP.dat"
 #include "u1/u1-3ch-diag-DOWN.dat"
 #include "u1/u1-3ch-diag-DOUP.dat"
-#include "u1/u1-3ch-spinz.dat" // P.globalB
-#include "u1/u1-3ch-spinx.dat" // P.globalBx
       break;
     default: my_assert_not_reached();
   }
@@ -170,22 +153,16 @@ void SymmetryU1::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rma
 #include "u1/u1-1ch-offdiag-UP.dat"
 #include "u1/u1-1ch-offdiag-DO.dat"
 #include "u1/u1-1ch-diag.dat"
-#include "u1/u1-1ch-spinz.dat" // P.globalB
-#include "u1/u1-1ch-spinx.dat" // P.globalBx
       break;
     case 2:
 #include "u1/u1-2ch-offdiag-UP.dat"
 #include "u1/u1-2ch-offdiag-DO.dat"
 #include "u1/u1-2ch-diag.dat"
-#include "u1/u1-2ch-spinz.dat" // P.globalB
-#include "u1/u1-2ch-spinx.dat" // P.globalBx
       break;
     case 3:
 #include "u1/u1-3ch-offdiag-UP.dat"
 #include "u1/u1-3ch-offdiag-DO.dat"
 #include "u1/u1-3ch-diag.dat"
-#include "u1/u1-3ch-spinz.dat" // P.globalB
-#include "u1/u1-3ch-spinx.dat" // P.globalBx
       break;
     default: my_assert_not_reached();
   }

@@ -474,21 +474,6 @@ struct Params {
   // approaches.
   param<bool> lastalloverride{"lastalloverride", "Override automatic lastall setting", "false", all}; // N
 
-  // ***********************************
-  // Deprecated (candidates for removal)
-
-  // Used only for symtype=QSZ and U1. IMPORTANT: this is not the correct way to
-  // add a global magnetic field for the said symmetry types.
-  param<double> globalB{"globalB", "Global magnetic field in z direction", "0.0", all}; // *
-
-  // Used only for symtype=U1. IMPORTANT: See the comment for globalB.
-  param<double> globalBx{"globalBx", "Global magnetic field in x direction", "0.0", all}; // *
-
-  // Setting 'tdht' to an integer value >0 will perform the
-  // calculations of thermodynamic quantities (output file td) at
-  // temperatures above the bandwidth D.
-  param<int> tdht{"tdht", "Calculate TD properties for T>D", "0", all}; // *
-
   // ******************************************************************
   // Parameters mostly relevant for low-level debugging and RG analysis
 
@@ -609,26 +594,6 @@ struct Params {
     validate();
     init_laststored(workdir);
     dump();
-  }
-
-  // Is i an allowed block index?
-  void allowed_block_index(size_t i) { my_assert(1 <= i && i <= combs); }
-
-  // Is ch an allowed channel index (0..P.channels-1)?
-  void allowed_channel(size_t ch) { my_assert(ch < channels); }
-
-  // Is ch an allowed index for coefficient table? There can be more coefficient tables than actual channels (for
-  // example in the case of spin-polarized conduction bands).
-  void allowed_coefchannel(size_t ch) {
-    my_assert(coefchannels >= channels);
-    my_assert(ch < coefchannels);
-  }
-
-  // Check i,j,ch parameters of *diag_function() in matrix construction
-  void allowed_ijch(size_t i, size_t j, size_t ch) {
-    allowed_block_index(i);
-    allowed_block_index(j);
-    allowed_channel(ch);
   }
 
   // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the

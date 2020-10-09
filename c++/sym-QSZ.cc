@@ -88,9 +88,6 @@ class SymmetryQSZ : public SymField {
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
-#undef SPINZ
-#define SPINZ(i, j, ch, factor) spinz_function(step, i, j, ch, t_matel(factor), h, qq)
-
 // Note ch indexes the <||f||> matrix which is used to construct the Hamiltonian
 // matrix in the new step, i.e., the f_{N} from the f^\dag_{N_1} f_{N} hopping
 // term.
@@ -109,12 +106,10 @@ void SymmetryQSZ::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rm
       case 1:
 #include "qsz/qsz-1ch-offdiag.dat"
 #include "qsz/qsz-1ch-diag.dat"
-#include "qsz/qsz-1ch-spinz.dat" // for P.globalB
         break;
       case 2:
 #include "qsz/qsz-2ch-offdiag.dat"
 #include "qsz/qsz-2ch-diag.dat"
-#include "qsz/qsz-2ch-spinz.dat" // for P.globalB
         if (P.rungs) {
 #include "qsz/qsz-2ch-offdiag-mix.dat"
 #include "qsz/qsz-2ch-runghop.dat"
@@ -123,7 +118,6 @@ void SymmetryQSZ::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rm
       case 3:
 #include "qsz/qsz-3ch-offdiag.dat"
 #include "qsz/qsz-3ch-diag.dat"
-#include "qsz/qsz-3ch-spinz.dat" // for P.globalB
         break;
       default: my_assert_not_reached();
     }
@@ -137,12 +131,8 @@ void SymmetryQSZ::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rm
 #undef DIAG
 #define DIAG(i, ch, number) diag_function(step, i, M, number, coef.zeta(N + 1, M), h, qq)
 
-#undef SPINZ
-#define SPINZ(i, j, ch, factor) spinz_function(step, i, j, M, t_matel(factor), h, qq)
-
 #include "qsz/qsz-1ch-offdiag.dat"
 #include "qsz/qsz-1ch-diag.dat"
-#include "qsz/qsz-1ch-spinz.dat" // for P.globalB
 
     if (P.rungs) my_assert_not_reached();
   }
@@ -156,9 +146,6 @@ void SymmetryQSZ::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rm
 
 #define DIAG_DOWN(i, j, ch, number) diag_function_half(step, i, ch, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
-#undef SPINZ
-#define SPINZ(i, j, ch, factor) spinz_function(step, i, j, ch, t_matel(factor), h, qq)
-
 void SymmetryQSZ::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
   my_assert(!P.substeps); // not implemented!
   switch (P.channels) {
@@ -167,14 +154,12 @@ void SymmetryQSZ::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxv
 #include "qsz/qsz-1ch-offdiag-DOWN.dat"
 #include "qsz/qsz-1ch-diag-UP.dat"
 #include "qsz/qsz-1ch-diag-DOWN.dat"
-#include "qsz/qsz-1ch-spinz.dat"
       break;
     case 2:
 #include "qsz/qsz-2ch-offdiag-UP.dat"
 #include "qsz/qsz-2ch-offdiag-DOWN.dat"
 #include "qsz/qsz-2ch-diag-UP.dat"
 #include "qsz/qsz-2ch-diag-DOWN.dat"
-#include "qsz/qsz-2ch-spinz.dat"
       if (P.rungs) {
         //#include "qsz/qsz-2ch-offdiag-mix-UP.dat"
         //#include "qsz/qsz-2ch-offdiag-mix-DOWN.dat"
@@ -188,7 +173,6 @@ void SymmetryQSZ::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxv
 #include "qsz/qsz-3ch-offdiag-DOWN.dat"
 #include "qsz/qsz-3ch-diag-UP.dat"
 #include "qsz/qsz-3ch-diag-DOWN.dat"
-#include "qsz/qsz-3ch-spinz.dat"
       break;
     default: my_assert_not_reached();
   }

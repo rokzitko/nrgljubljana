@@ -35,17 +35,14 @@ class set_of_tables {
      for (auto &i : tabs) i.read_values(fdata);
    }
    t_coef operator()(size_t N, size_t alpha) const {
-     P.allowed_coefchannel(alpha);
      my_assert(alpha < tabs.size());
      return tabs[alpha].coef(N);
    }
    size_t max(size_t alpha) const {
-     P.allowed_coefchannel(alpha);
      my_assert(alpha < tabs.size());
      return tabs[alpha].max();
    }
    void setvalue(size_t N, size_t alpha, t_coef val) {
-     P.allowed_coefchannel(alpha);
      my_assert(alpha < tabs.size() && N <= P.Nmax);
      tabs[alpha].setvalue(N, val);
    }

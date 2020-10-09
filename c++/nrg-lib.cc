@@ -2061,10 +2061,8 @@ DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats,
   auto oprecalc = Oprecalc(step.runtype, iterinfo, P);
   auto output = Output(step.runtype, iterinfo, stats, P);
   // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
-  if (step.nrg() && P.calc0 && !P.ZBW) {
-    docalc0ht(step, diag0, stats, output, P.tdht, P);
+  if (step.nrg() && P.calc0 && !P.ZBW)
     docalc0(step, iterinfo, diag0, stats, output, P);
-  }
   DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, P) : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, P);
   cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
   stats.GS_energy = stats.total_energy;
