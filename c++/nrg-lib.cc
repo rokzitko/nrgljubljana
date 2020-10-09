@@ -1185,7 +1185,7 @@ double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, const doub
 Matrix diagonal_exp(const Eigen &eig, const double factor = 1.0)
 {
   const auto dim = eig.getnr();
-  Matrix m = ublas::zero_matrix<t_matel>(dim, dim);
+  Matrix m(dim, dim, 0);
   for (auto i = 0; i < dim; i++) 
       m(i, i) = exp(-eig.value_zero(i) * factor);
   return m;
@@ -1570,28 +1570,14 @@ bool do_recalc_kept(const Step &step, const Params &P) { return string(P.strateg
 bool do_recalc_all(const Step &step, const Params &P) { return !do_recalc_kept(step, P) && !P.ZBW; }
 bool do_no_recalc(const Step &step, const Params &P) { return P.ZBW; }
 
-inline double nrg_step_scale_factor(const Params &P)
-{
-  if (P.absolute)
-    return 1.0;
-  else
-    return !P.substeps ? sqrt(P.Lambda) : pow(P.Lambda, 1. / (2. * P.channels)); // NOLINT
-}
-
 Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const DiagInfo &diagprev, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev};
-  const size_t dim = rm.total();
-  Matrix h = ublas::zero_matrix<t_matel>(dim, dim);
-  const double scalefactor = nrg_step_scale_factor(P);
-  // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
-  for (size_t i = 1; i <= P.combs; i++) {
-    const size_t offset = rm.offset(i);
+  Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
+  for (size_t i = 1; i <= P.combs; i++)
     for (size_t r = 0; r < rm.rmax(i); r++) 
-      h(offset + r, offset + r) = scalefactor * diagprev.at(anc[i]).value_zero(r);
-  }
-  // Symmetry-type-specific matrix initialization steps.
-  Sym->makematrix(h, step, rm, I, anc, opch);
+      h(rm.offset(i) + r, rm.offset(i) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r);
+  Sym->makematrix(h, step, rm, I, anc, opch);  // Symmetry-type-specific matrix initialization steps
   if (logletter('m')) dump_matrix(h);
   return h;
 }

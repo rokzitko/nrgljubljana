@@ -651,7 +651,11 @@ struct Params {
   }
 
   // Energy scale at the last NRG iteration. Use in binning and broadening code.
-  double last_step_scale() { return SCALE(Nmax); }
+  double last_step_scale() const { return SCALE(Nmax); }
+
+  double nrg_step_scale_factor() const { // rescale factor in the RG transformation (matrix construction)
+    return absolute ? 1 : (!substeps ? sqrt(Lambda) : pow(Lambda, 0.5/channels)); // NOLINT
+  }
 };
 
 Params P;
