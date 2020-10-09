@@ -43,13 +43,12 @@ using matel_bucket = generic_bucket<t_matel>;
 
 #define IS_ODD(n) ((n)&1)
 #define IS_EVEN(n) (!(IS_ODD(n)))
-#define SIGN(x) ((x) >= 0.0 ? 1 : -1)
 
 CONSTFNC int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
   if (x == 0.0 && y == 0.0) return 0.0; // evidently equal
   if (abs(x) < small_epsilon && abs(y) < small_epsilon) return 0; // If both x and y are small, we ASSUME them to be equivalent
   if (abs(x-y) < rel_epsilon * (abs(x)+abs(y))) return 0;
-  return x>y ? +1 : -1;
+  return boost::math::sign(x-y);
 }
 
 CONSTFNC int my_fcmp(const double x, const double y, const double epsilon) { return my_fcmp(x, y, epsilon, epsilon); }

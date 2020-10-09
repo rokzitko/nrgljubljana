@@ -40,6 +40,8 @@ using namespace std;
 #include <unistd.h>
 #include <cstdlib> // mkdtemp
 
+#include <boost/math/special_functions/sign.hpp>
+
 #include <boost/range/adaptor/map.hpp>
 
 // ublas matrix & vector containers
