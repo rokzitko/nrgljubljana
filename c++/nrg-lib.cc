@@ -619,7 +619,7 @@ class SpectrumTemp : public Spectrum {
    }
    ~SpectrumTemp() override {
      cout << "Spectrum: " << opname << " " << spectype->name() << endl;
-     sort(begin(results), end(results), sortfirst());
+     ranges::sort(results, sortfirst());
      save_densfunc(safe_open(filename + ".dat"), results, P.prec_xy, P.reim); // XXX: save_densfunc as memebr?
    }
 };
@@ -743,8 +743,7 @@ std::vector<t_eigen> sort_energies(const DiagInfo &diag) {
   std::vector<t_eigen> energies;
   for (const auto &eig: diag | boost::adaptors::map_values)
     energies.insert(end(energies), begin(eig.value_zero), end(eig.value_zero));
-  sort(begin(energies), end(energies));
-  return energies;
+  return energies | ranges::move | ranges::actions::sort;
 }
 
 #include "splitting.cc"
@@ -1023,7 +1022,7 @@ class Annotated {
      for (const auto &[I, eig] : diag)
        for (const auto e : eig.value_zero)
          seznam.emplace_back(e, I);
-     sort(begin(seznam), end(seznam));
+     ranges::sort(seznam);
      size_t len = std::min<size_t>(seznam.size(), P.dumpannotated);
      // If states are clustered, we dump the full cluster
      for (size_t i = len; i < seznam.size() - 1; i++) {
@@ -1048,7 +1047,7 @@ class Annotated {
            total_degeneracy += Sym->mult(I);
            i++;
          }
-         sort(begin(QNstrings), end(QNstrings));
+         ranges::sort(QNstrings);
          for (const auto &j : QNstrings) F << " (" << j << ")";
          F << " [" << total_degeneracy << "]" << endl;
        }
@@ -1825,9 +1824,9 @@ std::vector<Invar> task_list(const QSrmax &qsrmax) {
   if (logletter('S'))   // report matrix sizes
     for (const auto &[size, I] : tasks_with_sizes) 
       cout << "size(" << I << ")=" << size << endl;
-  std::vector<Invar> sorted_tasks;
-  transform(cbegin(tasks_with_sizes), cend(tasks_with_sizes), std::back_inserter(sorted_tasks), [](const auto &p) { return p.second; });
-  return sorted_tasks;
+//  std::vector<Invar> sorted_tasks;
+//  ranges::transform(tasks_with_sizes, std::back_inserter(sorted_tasks), [](const auto &p) { return p.second; });
+  return tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
