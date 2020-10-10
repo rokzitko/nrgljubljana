@@ -1608,14 +1608,17 @@ const int TAG_EIGEN_INT      = 10;
 const int TAG_EIGEN_VEC      = 11;
 const int TAG_EIGEN_RMAXVALS = 12;
 
-void mpi_sync_params(DiagParams &DP) {
+void mpi_send_params(const DiagParams &DP) {
+  mpilog("Sending diag parameters " << DP.diag << " " << DP.diagratio);
   for (size_t i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_SYNC, 0);
-  mpi::broadcast(*mpiw, DP, 0);
+  auto DPcopy = DP;
+  mpi::broadcast(*mpiw, DPcopy, 0);
 }
 
-DiagParams mpi_sync_params() {
+DiagParams mpi_receive_params() {
   DiagParams DP;
   mpi::broadcast(*mpiw, DP, 0);
+  mpilog("Received diag parameters " << DP.diag << " " << DP.diagratio);
   return DP;
 }
 
@@ -1660,6 +1663,7 @@ void mpi_send_matrix_linebyline(int dest, const Matrix &m) {
   mpiw->send(dest, TAG_MATRIX_SIZE, size1);
   auto size2 = m.size2();
   mpiw->send(dest, TAG_MATRIX_SIZE, size2);
+  mpilog("Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
   for (size_t i = 0; i < size1; i++) {
     ublas::vector<t_matel> vec = ublas::matrix_row<const Matrix>(m, i);
     mpiw->send(dest, TAG_MATRIX_LINE, vec);
@@ -1672,6 +1676,7 @@ auto mpi_receive_matrix_linebyline(int source) {
   size_t size2;
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size2));
   Matrix m(size1, size2);
+  mpilog("Receiving matrix of size " << size1 << " x " << size2 << " line by line from " << source);
   for (auto i = 0; i < size1; i++) {
     ublas::vector<t_matel> vec;
     check_status(mpiw->recv(source, TAG_MATRIX_LINE, vec));
@@ -1694,11 +1699,13 @@ auto mpi_receive_eigen_whole(int source) {
 void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   Eigen eigmock; // empty Eigen
   mpiw->send(dest, TAG_EIGEN, eigmock);
+  mpilog("Sending eigen from " << mpiw->rank() << " to " << dest);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig);
   mpi_send_matrix_linebyline(dest, eig.matrix);
 }
 
 auto mpi_receive_eigen_linebyline(int source) {
+  mpilog("Receiving eigen from " << source << " on " << mpiw->rank());
   Eigen eigmock;
   check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
   Eigen eig;
@@ -1709,9 +1716,11 @@ auto mpi_receive_eigen_linebyline(int source) {
 
 // Read results from a slave process.
 std::pair<Invar, Eigen> read_from(int source) {
+  mpilog("Reading results from " << source);
   auto eig = mpi_receive_eigen(source);
   Invar Irecv;
   check_status(mpiw->recv(source, TAG_INVAR, Irecv));
+  mpilog("Received results for subspace " << Irecv << " [nr=" << eig.getnr() << ", dim=" << eig.getdim() << "]");
   my_assert(eig.value_orig.size() == eig.matrix.size1());
   my_assert(eig.matrix.size1() <= eig.matrix.size2());
   return {Irecv, eig};
@@ -1720,7 +1729,7 @@ std::pair<Invar, Eigen> read_from(int source) {
 DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
                               const std::vector<Invar> &tasks, const DiagParams &DP, const Params &P) {
   DiagInfo diagnew;
-  mpi_sync_params(); // Synchronise parameters
+  mpi_send_params(DP); // Synchronise parameters
   list<Invar> todo; // List of all the tasks to handle
   copy(begin(tasks), end(tasks), back_inserter(todo));
   list<Invar> done; // List of finished tasks.
@@ -2173,10 +2182,11 @@ void run_nrg_slave() {
     if (mpiw->iprobe(master, mpi::any_tag)) { // message can be received.
       int task;
       auto status = mpiw->recv(master, mpi::any_tag, task);
+      mpilog("Slave " << mpiw->rank() << " received message with tag " << status.tag());
       check_status(status);
       switch (status.tag()) {
         case TAG_SYNC:
-          DP = mpi_sync_params();
+          DP = mpi_receive_params();
           break;
         case TAG_DIAG:
           slave_diag(master, DP);

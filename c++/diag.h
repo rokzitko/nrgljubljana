@@ -288,6 +288,7 @@ void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
 template<typename M> Eigen diagonalise(ublas::matrix<M> &m, const DiagParams &DP) {
+  mpilog("diagonalise " << m.size1() << "x" << m.size2() << " " << DP.diag << " " << DP.diagratio);
   time_mem::Timing t;
   check_is_matrix_upper(m);
   Eigen d;
@@ -314,8 +315,8 @@ template<typename M> Eigen diagonalise(ublas::matrix<M> &m, const DiagParams &DP
   if (DP.logletter('e'))
     dump_eigenvalues(d);
   checkdiag(d);
-  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrc() << " [" << myrank() << "]");
-  nrglogdp('t', "Elapsed: " << setprecision(3) << t.total_in_seconds() << " [" << myrank() << "]");
+  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrc() << " [rank " << myrank() << "]");
+  nrglogdp('t', "Elapsed: " << setprecision(3) << t.total_in_seconds() << " [rank " << myrank() << "]");
   return d;
 }
 

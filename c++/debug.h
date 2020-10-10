@@ -14,10 +14,16 @@
 #define debug(...) cout << __VA_ARGS__ << endl;
 
 // character c defines what to log
-#define nrglog(c, ...)                                                                                                                               \
-  if (P.logletter(c)) { cout << __VA_ARGS__ << endl; }
-#define nrglogdp(c, ...)                                                                                                                               \
-  if (DP.logletter(c)) { cout << __VA_ARGS__ << endl; }
+#define nrglog(c, ...)   if (P.logletter(c)) { cout << __VA_ARGS__ << endl; }
+#define nrglogdp(c, ...) if (DP.logletter(c)) { cout << __VA_ARGS__ << endl; }
+
+//#define MPI_DEBUG
+
+#ifdef MPI_DEBUG
+ #define mpilog(...) { cout << __VA_ARGS__ << " [rank " << myrank() << "]" << endl; }
+#else
+ #define mpilog(...) {}
+#endif
 
 // Dump the value of variable STR to the standard output.
 #define nrgdump(STR) cout << #STR << "=" << (STR) << " "
