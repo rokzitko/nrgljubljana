@@ -110,8 +110,6 @@ legacy_discretization_dmft_asym_qs
 legacy_discretization_ferromagnetic1
 legacy_fdmexpv2
 legacy_fdmexpv3
-legacy_globalB1
-legacy_globalB2
 legacy_Himp
 legacy_matsubara_test1-qs
 legacy_matsubara_test2-zbw-qs
@@ -121,7 +119,6 @@ legacy_sigma_trick_kondo
 legacy_sigma_trick_siam_qs
 legacy_simple
 legacy_spectral_gtls-qsz-T1e-10
-legacy_tdht
 legacy_total_energy_SIAM
 test_cfs_only
 test_dmnrg_only
