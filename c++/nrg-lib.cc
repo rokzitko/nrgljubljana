@@ -355,7 +355,7 @@ class Step {
    int getnn() const { return ndxN; }
 };
 
-#include <range/v3/algorithm/for_each.hpp>
+#include <range/v3/all.hpp>
 
 // Namespace for storing various statistical quantities calculated during iteration.
 class Stats {
@@ -432,7 +432,7 @@ void shift_abs_energies(const Stats &stats, DiagInfo &diag) {
 void shift_abs_energies_dm(const Stats &stats, AllSteps &dm, const Params &P)
 {
   for (size_t N = P.Ninit; N < P.Nlen; N++)
-    for (auto &[I, ds] : dm[N]) 
+    for (auto &ds : dm[N] | boost::adaptors::map_values)
       ds.eig.shift_absenergyG(stats.GS_energy);
 }
 
@@ -633,7 +633,7 @@ class SpectrumMatsubara : public Spectrum {
      : Spectrum(opname, filename, spectype, P), results(P.mats, mt, P.T) {}
    void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
      auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
-     for (size_t n = 0; n < P.mats; n++) results.v[n].second += t->m.v[n].second;
+     for (size_t n = 0; n < results.v.size(); n++) results.v[n].second += t->m.v[n].second;
    }     
    ~SpectrumMatsubara() override { 
      cout << "Spectrum: " << opname << " " << spectype->name() << endl;
@@ -741,7 +741,7 @@ double norm(const MatrixElements &m, const DiagInfo &diag, IIfnc factor_fnc, int
 
 std::vector<t_eigen> sort_energies(const DiagInfo &diag) {
   std::vector<t_eigen> energies;
-  for (const auto &[i, eig]: diag)
+  for (const auto &eig: diag | boost::adaptors::map_values)
     energies.insert(end(energies), begin(eig.value_zero), end(eig.value_zero));
   sort(begin(energies), end(energies));
   return energies;
@@ -749,11 +749,9 @@ std::vector<t_eigen> sort_energies(const DiagInfo &diag) {
 
 #include "splitting.cc"
 
-inline size_t size_subspace(const DiagInfo &diag, const Invar &I) { // XXX : necessary??
-  if (const auto f = diag.find(I); f != diag.cend())
-    return f->second.getnr();
-  else
-    return 0;
+inline size_t size_subspace(const DiagInfo &diag, const Invar &I) {
+  const auto f = diag.find(I);
+  return f != diag.cend() ? f->second.getnr() : 0;
 }
 
 // Determine the ranges of index r
@@ -1080,8 +1078,8 @@ struct Output {
       // runs produce the same results.
       if (P.dumpenergies) Fenergies.open(runtype == RUNTYPE::NRG ? filename_nrg : filename_dmnrg);
       list<string> ops;
-      for (const auto &[name, m] : iterinfo.ops)  ops.push_back(name);
-      for (const auto &[name, m] : iterinfo.opsg) ops.push_back(name);
+      for (const auto &name : iterinfo.ops | boost::adaptors::map_keys)  ops.push_back(name);
+      for (const auto &name : iterinfo.opsg | boost::adaptors::map_keys) ops.push_back(name);
       if (runtype == RUNTYPE::NRG)
         custom = make_unique<ExpvOutput>(filename_custom, stats.expv, ops, P);
       else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
@@ -1092,8 +1090,8 @@ struct Output {
   void dump_all_energies(const DiagInfo &diag, int N) {
     if (!Fenergies) return;
     Fenergies << endl << "===== Iteration number: " << N << endl;
-    for (const auto &[i, eig]: diag)
-      Fenergies << "Subspace: " << i << std::endl << eig.value_zero << std::endl;
+    for (const auto &[I, eig]: diag)
+      Fenergies << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
   }
 };
 
@@ -1102,20 +1100,20 @@ void dump_all_absolute_energies(const AllSteps &dm, const Params &P, std::string
   std::ofstream F(filename);
   for (size_t N = P.Ninit; N < P.Nlen; N++) {
     F << std::endl << "===== Iteration number: " << N << std::endl;
-    for (const auto &[i, ds]: dm.at(N))
-      F << "Subspace: " << i << std::endl << ds.eig.absenergyG << std::endl;
+    for (const auto &[I, ds]: dm.at(N))
+      F << "Subspace: " << I << std::endl << ds.eig.absenergyG << std::endl;
   }
 }
 
 CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n) {
   matel_bucket tr; // note: t_matel = t_expv
-  for (const auto &[i, eig] : diag) {
-    const auto & nI = n.at(Twoinvar{i,i});
+  for (const auto &[I, eig] : diag) {
+    const auto & nI = n.at({I,I});
     const size_t dim = eig.getnr();
     my_assert(dim == nI.size2());
     matel_bucket sum;
     for (size_t r = 0; r < dim; r++) sum += exp(-step.TD_factor() * eig.value_zero(r)) * nI(r, r);
-    tr += Sym->mult(i) * t_matel(sum);
+    tr += Sym->mult(I) * t_matel(sum);
   }
   return tr;
 }
@@ -1126,22 +1124,22 @@ void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const
   for (const auto &[I, eig] : diag)
     for (const auto &x : eig.value_zero)
       Z += Sym->mult(I) * exp(-step.TD_factor() * x);
-  for (const auto &[name, m] : a.ops)   stats.expv[name] = calc_trace_singlet(step, diag, m) / Z;
-  for (const auto &[name, m] : a.opsg)  stats.expv[name] = calc_trace_singlet(step, diag, m) / Z;
+  for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(step, diag, m) / Z;
+  for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(step, diag, m) / Z;
   output.custom->field_values(step.Teff());
 }
 
 CONSTFNC t_expv calc_trace_fdm_kept(const Step &step, const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm) {
   matel_bucket tr;
-  for (const auto &[i, eig] : diag) {
-    const auto & nI = n.at(Twoinvar{i,i});
-    const auto ret  = dm[step.N()].at(i).kept;
-    const auto & mat = rhoFDM.at(i);
+  for (const auto &[I, eig] : diag) {
+    const auto & nI = n.at({I,I});
+    const auto ret  = dm[step.N()].at(I).kept;
+    const auto & mat = rhoFDM.at(I);
     matel_bucket sum;
     for (auto k = 0; k < ret; k++) // over kept states ONLY
       for (auto j = 0; j < ret; j++) 
         sum += mat(k, j) * nI(j, k);
-    tr += Sym->mult(i) * t_matel(sum);
+    tr += Sym->mult(I) * t_matel(sum);
   }
   return tr;
 }
@@ -1165,7 +1163,7 @@ void dump_diagonal_op(const DiagInfo &diag, const std::string name, const Matrix
   F << "Diagonal matrix elements of operator " << name << std::endl;
   for (const auto &[I, eig] : diag) {
     F << I << ": ";
-    dump_diagonal_matrix(n.at(Twoinvar{I,I}), P.dumpdiagonal, F);
+    dump_diagonal_matrix(n.at({I,I}), P.dumpdiagonal, F);
   }
 }
 
@@ -1187,9 +1185,9 @@ void dump_diagonal(const DiagInfo &diag, const IterInfo &a, const Params &P, ost
 // stats.Zchit for chi(T) calculations.
 double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, const double factor = 1.0) {
   bucket ZN;
-  for (const auto &[i, eig]: diag) 
+  for (const auto &[I, eig]: diag) 
     for (const auto &x : eig.value_zero)
-      ZN += Sym->mult(i) * exp(-x * step.scT() * factor);
+      ZN += Sym->mult(I) * exp(-x * step.scT() * factor);
   my_assert(ZN >= 1.0);
   return ZN;
 }
@@ -1448,9 +1446,9 @@ void trim_matrices(DiagInfo &diag, IterInfo &a) {
 }
 
 void clear_eigenvectors(DiagInfo &diag) {
-  for (auto &[i, eig] : diag)
-    for (auto &j : eig.blocks) 
-      j = Matrix(0, 0);
+  for (auto &eig : diag | boost::adaptors::map_values)
+    for (auto &m : eig.blocks) 
+      m = Matrix(0, 0);
 }
 
 auto CorrelatorFactorFnc   = [](const Invar &Ip, const Invar &I1) { return Sym->mult(I1); };
@@ -1488,12 +1486,12 @@ void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
 template<typename F>
   double trace(F fnc, const double rescale_factor, const DiagInfo &diag) {
     bucket b;
-    for (const auto &[i, eig] : diag)
-      b += Sym->mult(i) * std::accumulate(eig.value_zero.cbegin(), eig.value_zero.cend(), 0.0,
-                                 [fnc, rescale_factor](double acc, const auto x) { 
-                                   const double betaE = rescale_factor * x;
-                                   return acc + fnc(betaE) * exp(-betaE);
-                                 });
+    for (const auto &[I, eig] : diag)
+      b += Sym->mult(I) * std::accumulate(eig.value_zero.cbegin(), eig.value_zero.cend(), 0.0,
+                                          [fnc, rescale_factor](double acc, const auto x) { 
+                                            const double betaE = rescale_factor * x;
+                                            return acc + fnc(betaE) * exp(-betaE);
+                                          });
     return b;
   }
   
@@ -1900,7 +1898,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
 // store_transformations(). absenergyG is updated to its correct values (referrenced to absolute 0) in
 // shift_abs_energies().
 void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
-  for (auto &[i, eig] : diag) {
+  for (auto &eig : diag | boost::adaptors::map_values) {
     eig.absenergyN = eig.value_zero * step.scale();        // referenced to the lowest energy in current NRG step (not modified later on)
     eig.absenergy = eig.absenergyN;
     for (auto &x : eig.absenergy) x += stats.total_energy; // absolute energies (not modified later on)
@@ -2021,15 +2019,15 @@ DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats
 // Total number of states (symmetry taken into account)
 size_t count_states(const DiagInfo &diag) {
   size_t states = 0;
-  for (const auto &[i, eig]: diag) 
-    states += Sym->mult(i) * eig.getnr();
+  for (const auto &[I, eig]: diag) 
+    states += Sym->mult(I) * eig.getnr();
   return states;
 }
 
 // Count non-empty subspaces
 size_t count_subspaces(const DiagInfo &diag) {
   size_t subspaces = 0;
-  for (const auto &[i, eig]: diag) 
+  for (const auto &eig: diag | boost::adaptors::map_values)
     if (eig.getnr()) 
       subspaces++;
   return subspaces;
@@ -2038,9 +2036,9 @@ size_t count_subspaces(const DiagInfo &diag) {
 // Dump information about states (e.g. before the start of the iteration).
 void states_report(const DiagInfo &diag, ostream &fout = cout) {
   fout << "Number of invariant subspaces: " << count_subspaces(diag) << endl;
-  for (const auto &[i, eig]: diag) 
+  for (const auto &[I, eig]: diag) 
     if (eig.getnr()) 
-      fout << "(" << i << ") " << eig.getnr() << " states: " << eig.value_orig << endl;
+      fout << "(" << I << ") " << eig.getnr() << " states: " << eig.value_orig << endl;
   fout << "Number of states (multiplicity taken into account): " << count_states(diag) << endl << endl;
 }
 
