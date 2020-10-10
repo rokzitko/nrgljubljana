@@ -9,7 +9,7 @@
 // This structure is used in spec*.cc
 struct DELTA {
   double energy{};
-  t_weight weight; // XXX: {} ?
+  t_weight weight{};
 };
 
 // Container for holding spectral information represented by delta
@@ -70,9 +70,7 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 }
 
 CONSTFNC t_weight sum_weights(const Spikes &s) {
-  t_weight sum = 0.0;
-  for (const auto &[e, w] : s) sum += w; // XXX stl algo
-  return sum;
+  return ranges::accumulate(s, t_weight{}, [](const auto &sum, const auto &p) { return sum+p.second; });
 }
 
 // Calculate "moment"-th spectral moment.

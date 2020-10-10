@@ -1938,7 +1938,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   cout << endl << "Before NRG iteration";
   cout << " (N=" << step.N() << ")" << endl;
-  perform_basic_measurements(step, diag0, stats, output); // XXX
+  perform_basic_measurements(step, diag0, stats, output);
   AllSteps empty_dm{};
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, P);
   if (P.checksumrules) operator_sumrules(diag0, iterinfo);

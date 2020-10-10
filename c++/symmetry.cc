@@ -97,7 +97,7 @@ class Symmetry {
    Invar InvarSinglet; // QNs for singlet operator
    Invar Invar_f;      // QNs for f operator
    
-   size_t get_combs() const { return P.combs; } // XXX -> combs
+   size_t get_combs() const { return P.combs; }
    
    // For some symmetry types with two-channels we distinguish between
    // even and odd parity with respect to the channel-interchange
@@ -119,7 +119,7 @@ class Symmetry {
    
    double calculate_Z(const Invar I, const Eigen &eig, double rescale_factor) const {
      double sumZ = 0;
-     for (const auto &x : eig.value_zero) sumZ += exp(-rescale_factor * x); // XXX std::accumulate
+     for (const auto &x : eig.value_zero) sumZ += exp(-rescale_factor * x);
      return mult(I) * sumZ;
    }
    
@@ -203,7 +203,6 @@ class Symmetry {
 
    Matrix recalc_f(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I1,
                    const Invar &Ip, const struct Recalc_f table[], const size_t jmax);
-// XXX                   const Invar If = Invar_f) const;
 
    Matrix recalc_general(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold,
                          const Invar &I1, const Invar &Ip, const struct Recalc table[], const size_t jmax, const Invar &Iop) const;

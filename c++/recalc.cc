@@ -37,9 +37,8 @@ Matrix Symmetry::recalc_f(const DiagInfo &diag,
                           const struct Recalc_f table[], 
                           const size_t jmax)
 {
-  const Invar If = Invar_f; // XXX
-  nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ") If=(" << If << ")");
-  if (!Sym->recalc_f_coupled(I1, Ip, If)) {
+  nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+  if (!Sym->recalc_f_coupled(I1, Ip, Invar_f)) {
     nrglog('f', "Does not fulfill the triangle inequalities.");
     return Matrix(0,0);
   }
