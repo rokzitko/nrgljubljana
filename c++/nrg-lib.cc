@@ -439,14 +439,14 @@ class BaseSpectrum;
 using spCS_t = shared_ptr<ChainSpectrum>;
 
 // Wrapper class for NRG spectral-function algorithms
-class SPEC {
+class Algo {
  private:
  public:
    const Params &P;
-   SPEC() = delete;
-   SPEC(const SPEC&) = delete;
-   SPEC(const Params &P) : P(P) {}
-   virtual ~SPEC() = default;
+   Algo() = delete;
+   Algo(const Algo&) = delete;
+   Algo(const Params &P) : P(P) {}
+   virtual ~Algo() = default;
    virtual std::shared_ptr<ChainSpectrum> make_cs(const BaseSpectrum &) = 0;
    virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, 
                      const BaseSpectrum &, t_factor, std::shared_ptr<ChainSpectrum>, const Invar &,
@@ -455,8 +455,6 @@ class SPEC {
    virtual string merge() { return ""; }    // what merging rule to use
    virtual string rho_type() { return ""; } // what rho type is required
 };
-
-using SPECTYPE = shared_ptr<SPEC>;
 
 #include "spectral.h"
 
@@ -590,10 +588,10 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
 class Spectrum {
  public:
    string opname, filename;
-   SPECTYPE spectype;
+   shared_ptr<Algo> algotype;
    const Params &P;
-   Spectrum(const string &opname, const string &filename, SPECTYPE spectype, const Params &P) :
-     opname(opname), filename(filename), spectype(spectype), P(P) {}; // NOLINT
+   Spectrum(const string &opname, const string &filename, shared_ptr<Algo> algotype, const Params &P) :
+     opname(opname), filename(filename), algotype(algotype), P(P) {}; // NOLINT
    virtual ~Spectrum()= default; // required (the destructor saves the results to a file)
    virtual void merge(std::shared_ptr<ChainSpectrum>, const Step &) = 0; // called from spec.cc as the very last step
    string name() { return opname; }
@@ -606,14 +604,14 @@ class SpectrumTemp : public Spectrum {
  private:
    Spikes results;
  public:
-   SpectrumTemp(const string &opname, const string &filename, SPECTYPE spectype, const Params &P) : 
-     Spectrum(opname, filename, spectype, P) {}
+   SpectrumTemp(const string &opname, const string &filename, shared_ptr<Algo> algotype, const Params &P) : 
+     Spectrum(opname, filename, algotype, P) {}
    void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
      auto t = dynamic_pointer_cast<ChainSpectrumTemp>(cs);
      copy(begin(t->v), end(t->v), back_inserter(results));
    }
    ~SpectrumTemp() override {
-     cout << "Spectrum: " << opname << " " << spectype->name() << endl;
+     cout << "Spectrum: " << opname << " " << algotype->name() << endl;
      ranges::sort(results, sortfirst());
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }
@@ -624,14 +622,14 @@ class SpectrumMatsubara : public Spectrum {
  private:
    Matsubara results;
  public:
-   SpectrumMatsubara(const string &opname, const string &filename, SPECTYPE spectype, matstype mt, const Params &P)
-     : Spectrum(opname, filename, spectype, P), results(P.mats, mt, P.T) {}
+   SpectrumMatsubara(const string &opname, const string &filename, shared_ptr<Algo> algotype, matstype mt, const Params &P)
+     : Spectrum(opname, filename, algotype, P), results(P.mats, mt, P.T) {}
    void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
      auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
      for (size_t n = 0; n < results.v.size(); n++) results.v[n].second += t->m.v[n].second;
    }     
    ~SpectrumMatsubara() override { 
-     cout << "Spectrum: " << opname << " " << spectype->name() << endl;
+     cout << "Spectrum: " << opname << " " << algotype->name() << endl;
      results.save(safe_open(filename + ".dat"), P.prec_xy);
    }
 };
@@ -652,39 +650,32 @@ void check_trace_rho(const DensMatElements &m, double ref_value = 1.0) {
 
 enum class axis { RealFreq, Temp, Matsubara };
 
-string axisstring(axis a) {
-  switch (a) {
-    case axis::RealFreq: return "RealFreq";
-    case axis::Temp: return "Temp";
-    case axis::Matsubara: return "Matsubara";
-    default: my_assert_not_reached();
-  }
+std::ostream & operator<<(std::ostream &os, const axis &a) {
+  if (a == axis::RealFreq)  os << "RealFreq";
+  if (a == axis::Temp)      os << "Temp";
+  if (a == axis::Matsubara) os << "Matsubara";
+  return os;
 }
 
-ostream &operator<<(ostream &os, const axis a) { return os << axisstring(a); }
-
-// class BaseSpectrum contains all information about calculating the spectrum: pointers to the operator data and
-// miscelaneous data, such as the spectrum type. Functions calc_specdens() et al. receive an object of this type as
-// input.
+// All information about calculating a spectral function: pointers to the operator data, raw spectral data acccumulators,
+// algorithm, etc.
 class BaseSpectrum {
  public:
    string name;
    string prefix; // "dens", "corr", etc.
    const MatrixElements &op1, &op2;
-   shared_ptr<Spectrum> spec;
-   SPECTYPE spectype{}; // SPEC_FT, ...
+   shared_ptr<Spectrum> spec;  
+   shared_ptr<Algo>     algotype; // Algo_FDM, Algo_DMNRG,...
    axis a;              // axis::RealFreq, axis::Temp, axis::Matsubara, etc.
    matstype mt;         // matstype::bosonic, matstype::fermionic, etc.
    int spin{};          // -1 or +1, or 0 where irrelevant
-   string fullname() const {
-     string s = name + " " + prefix + " " + spectype->name() + " " + axisstring(a);
-     if (a != axis::RealFreq && a != axis::Temp) s += " " + matstypestring(mt);
+   std::string fullname() const {
+     std::string s = fmt::format("{} {} {} {}", name, prefix, algotype ? algotype->name() : "[Algorithm not set]", a);
+     if (a == axis::Matsubara) s += " " + matstypestring(mt);
      return s;
    }
    BaseSpectrum(const MatrixElements &op1, const MatrixElements &op2, const string name, const string prefix, const matstype mt, const int spin) :
-     name(name), prefix(prefix), op1(op1), op2(op2), a(axis::RealFreq), mt(mt), spin(spin) {
-       std::cout << "Spectrum: " << fullname() << std::endl;
-     }
+     name(name), prefix(prefix), op1(op1), op2(op2), a(axis::RealFreq), mt(mt), spin(spin) {}
 };
 using speclist = std::list<BaseSpectrum>;
 
@@ -773,36 +764,36 @@ class ExpvOutput {
    }
 };
 
-void open_files(speclist &sl, BaseSpectrum &spec, const SPECTYPE spectype, const axis a, const Params &P) {
-  const string fn = spec.prefix + "_" + spectype->name() + "_dens_" + spec.name; // no suffix (.dat vs. .bin)
+// open_files() and open_files_spec() open the output files and establishe the data structures for storing spectral
+// information.
+void open_files(speclist &sl, BaseSpectrum &spec, shared_ptr<Algo> algotype, const axis a, const Params &P) {
+  const string fn = spec.prefix + "_" + (algotype ? algotype->name() : "OOPS") + "_dens_" + spec.name; // no suffix (.dat vs. .bin)
   switch (a) {
-    case axis::RealFreq:  spec.spec = make_shared<SpectrumRealFreq>(spec.name, fn, spectype, P); break;
-    case axis::Temp:      spec.spec = make_shared<SpectrumTemp>(spec.name, fn, spectype, P); break;
-    case axis::Matsubara: spec.spec = make_shared<SpectrumMatsubara>(spec.name, fn, spectype, spec.mt, P); break;
+    case axis::RealFreq:  spec.spec = make_shared<SpectrumRealFreq>(spec.name, fn, algotype, P); break;
+    case axis::Temp:      spec.spec = make_shared<SpectrumTemp>(spec.name, fn, algotype, P); break;
+    case axis::Matsubara: spec.spec = make_shared<SpectrumMatsubara>(spec.name, fn, algotype, spec.mt, P); break;
     default: my_assert_not_reached();
   }
-  spec.spectype = spectype;
+  spec.algotype = algotype;
   spec.a        = a;
   sl.push_back(spec);
 }
 
-// open_files_spec() opens the output files and establishes the data structures
-// for storing spectral information.
 void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, const Params &P) {
   if (spec.prefix == "gt") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_GT>(P), axis::Temp, P);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_GT>(P), axis::Temp, P);
     return;
   }
   if (spec.prefix == "i1t") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_I1T>(P), axis::Temp, P);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_I1T>(P), axis::Temp, P);
     return;
   }
   if (spec.prefix == "i2t") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_I2T>(P), axis::Temp, P);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_I2T>(P), axis::Temp, P);
     return;
   }
   if (spec.prefix == "chit") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<SPEC_CHIT>(P), axis::Temp, P);
+    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_CHIT>(P), axis::Temp, P);
     return;
   }
   // If we did not return from this funciton by this point, what we
@@ -810,19 +801,19 @@ void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, c
   // possibilities in this case, all of which may be enabled at the
   // same time.
   if (runtype == RUNTYPE::NRG) {
-    if (P.finite) open_files(sl, spec, make_shared<SPEC_FT>(P), axis::RealFreq, P);
-    if (P.finitemats) open_files(sl, spec, make_shared<SPEC_FTmats>(P), axis::Matsubara, P);
+    if (P.finite) open_files(sl, spec, make_shared<Algo_FT>(P), axis::RealFreq, P);
+    if (P.finitemats) open_files(sl, spec, make_shared<Algo_FTmats>(P), axis::Matsubara, P);
   }
   if (runtype == RUNTYPE::DMNRG) {
-    if (P.dmnrg) open_files(sl, spec, make_shared<SPEC_DMNRG>(P), axis::RealFreq, P);
-    if (P.dmnrgmats) open_files(sl, spec, make_shared<SPEC_DMNRGmats>(P), axis::Matsubara, P);
-    if (P.cfs) open_files(sl, spec, make_shared<SPEC_CFS>(P), axis::RealFreq, P);
-    if (P.cfsgt) open_files(sl, spec, make_shared<SPEC_CFSgt>(P), axis::RealFreq, P);
-    if (P.cfsls) open_files(sl, spec, make_shared<SPEC_CFSls>(P), axis::RealFreq, P);
-    if (P.fdm) open_files(sl, spec, make_shared<SPEC_FDM>(P), axis::RealFreq, P);
-    if (P.fdmgt) open_files(sl, spec, make_shared<SPEC_FDMgt>(P), axis::RealFreq, P);
-    if (P.fdmls) open_files(sl, spec, make_shared<SPEC_FDMls>(P), axis::RealFreq, P);
-    if (P.fdmmats) open_files(sl, spec, make_shared<SPEC_FDMmats>(P), axis::Matsubara, P);
+    if (P.dmnrg) open_files(sl, spec, make_shared<Algo_DMNRG>(P), axis::RealFreq, P);
+    if (P.dmnrgmats) open_files(sl, spec, make_shared<Algo_DMNRGmats>(P), axis::Matsubara, P);
+    if (P.cfs) open_files(sl, spec, make_shared<Algo_CFS>(P), axis::RealFreq, P);
+    if (P.cfsgt) open_files(sl, spec, make_shared<Algo_CFSgt>(P), axis::RealFreq, P);
+    if (P.cfsls) open_files(sl, spec, make_shared<Algo_CFSls>(P), axis::RealFreq, P);
+    if (P.fdm) open_files(sl, spec, make_shared<Algo_FDM>(P), axis::RealFreq, P);
+    if (P.fdmgt) open_files(sl, spec, make_shared<Algo_FDMgt>(P), axis::RealFreq, P);
+    if (P.fdmls) open_files(sl, spec, make_shared<Algo_FDMls>(P), axis::RealFreq, P);
+    if (P.fdmmats) open_files(sl, spec, make_shared<Algo_FDMmats>(P), axis::Matsubara, P);
   }
 }
 
@@ -940,6 +931,7 @@ class Oprecalc {
         if (const auto name = sdname(name1, name2, spin); stringtoken.find(name)) {
           BaseSpectrum spec(op1, op2, name, prefix, mt, spin);
           open_files_spec(runtype, spectra, spec, P);
+          std::cout << "Spectrum: " << spec.fullname() << std::endl;
           rec1.insert(name1);
           rec2.insert(name2);
         }
@@ -1068,7 +1060,7 @@ struct Output {
     : runtype(runtype), P(P), annotated(P) {
       // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
       // runs produce the same results.
-      if (P.dumpenergies) Fenergies.open(filename_energies);
+      if (P.dumpenergies && runtype == RUNTYPE::NRG) Fenergies.open(filename_energies);
       list<string> ops;
       for (const auto &name : iterinfo.ops  | boost::adaptors::map_keys) ops.push_back(name);
       for (const auto &name : iterinfo.opsg | boost::adaptors::map_keys) ops.push_back(name);
@@ -1261,7 +1253,7 @@ void truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
                                       std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));
-  std::cout << "Emax=" << Emax/step.unscale();
+  std::cout << "Emax=" << Emax/step.unscale() << " ";
   truncate_stats(diag).report();
   if (std::any_of(begin(diag), end(diag), 
                   [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax &&
@@ -1787,6 +1779,13 @@ QSrmax get_qsrmax(const DiagInfo &diagprev) {
   return qsrmax;
 }
 
+QSrmax get_empty_qsrmax(const DiagInfo &diag) {
+  QSrmax qsrmax;
+  for (const auto &I : diag | boost::adaptors::map_keys)
+    qsrmax[I] = Rmaxvals();
+  return qsrmax;
+}
+
 // List of invariant subspaces in which diagonalisations need to be performed
 std::vector<Invar> task_list(const QSrmax &qsrmax, const Params &P) {
   std::vector<pair<size_t, Invar>> tasks_with_sizes;
@@ -1902,12 +1901,14 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
       save_transformations(step.ndx(), diag, P);
     perform_basic_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
   }
-  split_in_blocks(diag, qsrmax);
+  if (!P.ZBW)
+    split_in_blocks(diag, qsrmax);
   if (P.do_recalc_all(step.runtype)) { // Either ...
     oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
   }
-  truncate_perform(diag);              // Actual truncation occurs at this point
+  if (!P.ZBW)
+    truncate_perform(diag);            // Actual truncation occurs at this point
   store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_irreducible(step, diag, qsrmax, iterinfo.opch, P);
@@ -1962,8 +1963,8 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
     stats.subtract_groundstate_energy(diag);
   truncate_prepare(step, diag, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
-  QSrmax empty_qsrmax{};
-  after_diag(step, iterinfo, stats, diag, output, empty_qsrmax, dm, oprecalc, P);
+  QSrmax qsrmax = get_empty_qsrmax(diag);
+  after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, P);
   return diag;
 }
 

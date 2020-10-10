@@ -10,14 +10,14 @@ class SpectrumRealFreq : public Spectrum {
    void savebins();
    void continuous();
  public:
-   SpectrumRealFreq(const string &opname, const string &filename, SPECTYPE spectype, const Params &P) :
-     Spectrum(opname, filename, spectype, P), fspos(P), fsneg(P) {};
+   SpectrumRealFreq(const string &opname, const string &filename, shared_ptr<Algo> algotype, const Params &P) :
+     Spectrum(opname, filename, algotype, P), fspos(P), fsneg(P) {};
    void merge(spCS_t, const Step &step) override;
    ~SpectrumRealFreq() override;
 };
 
 SpectrumRealFreq::~SpectrumRealFreq() {
-  cout << "Spectrum: " << opname << " " << spectype->name() << " ->"; // appended in savebins() & continuous()
+  cout << "Spectrum: " << opname << " " << algotype->name() << " ->"; // appended in savebins() & continuous()
   trim();
   savebins();
   continuous();
@@ -27,8 +27,8 @@ SpectrumRealFreq::~SpectrumRealFreq() {
 // Merge the spectrum for a finite Wilson chain into the "true" NRG spectrum. For complete Fock space NRG
 // calculation, the merging tricks are not necessary: we just collect all the delta peaks from all iterations.
 void SpectrumRealFreq::merge(spCS_t cs, const Step &step) {
-  if (spectype->merge() == "NN2") return mergeNN2(cs, step);
-  if (spectype->merge() == "CFS") return mergeCFS(cs);
+  if (algotype->merge() == "NN2") return mergeNN2(cs, step);
+  if (algotype->merge() == "CFS") return mergeCFS(cs);
   my_assert_not_reached();
 }
 

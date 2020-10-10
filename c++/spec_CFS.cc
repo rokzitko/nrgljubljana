@@ -1,9 +1,9 @@
 // Choose one of the following two! OLD is the non-optimized code by Rok Zitko, OPTIMIZED is the hand-tuned code
 // contributed by Markus Greger. The optimized code is faster by an order of magnitude!
 
-class SPEC_CFSls : virtual public SPEC {
+class Algo_CFSls : virtual public Algo {
  public:
-   SPEC_CFSls(const Params &P) : SPEC(P) {}
+   Algo_CFSls(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -12,9 +12,9 @@ class SPEC_CFSls : virtual public SPEC {
    string rho_type() override { return "rho"; }
 };
 
-class SPEC_CFSgt : virtual public SPEC {
+class Algo_CFSgt : virtual public Algo {
  public:
-   SPEC_CFSgt(const Params &P) : SPEC(P) {}
+   Algo_CFSgt(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -23,27 +23,27 @@ class SPEC_CFSgt : virtual public SPEC {
    string rho_type() override { return "rho"; }
 };
 
-class SPEC_CFS : public SPEC_CFSls, public SPEC_CFSgt {
+class Algo_CFS : public Algo_CFSls, public Algo_CFSgt {
  public:
-   SPEC_CFS(const Params &P) : SPEC(P), SPEC_CFSls(P), SPEC_CFSgt(P) {}
+   Algo_CFS(const Params &P) : Algo(P), Algo_CFSls(P), Algo_CFSgt(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
              spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const override {
-               SPEC_CFSgt::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
-               SPEC_CFSls::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
+               Algo_CFSgt::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
+               Algo_CFSls::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
              }
    string name() override { return "CFS"; }
    string merge() override { return "CFS"; }
    string rho_type() override { return "rho"; }
 };
 
-//#define SPEC_CFS_OLD
-#define SPEC_CFS_OPTIMIZED
+//#define Algo_CFS_OLD
+#define Algo_CFS_OPTIMIZED
 
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 
-#if defined(NRG_COMPLEX) || defined(SPEC_CFS_OLD)
-void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+#if defined(NRG_COMPLEX) || defined(Algo_CFS_OLD)
+void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const Matrix &rhoNIp = rho.at(Ip);
@@ -51,7 +51,7 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   auto dimp            = rhoNIp.size1();
   auto dim1            = rhoNI1.size1();
   // Convention: k-loops over retained states, l-loop over discarded states.
-  // i-term, Eq. (11). This part is analogous to that for SPEC_FT, i.e., it has the form of the usual Lehmann
+  // i-term, Eq. (11). This part is analogous to that for Algo_FT, i.e., it has the form of the usual Lehmann
   // representation.
   if (step.last()) {
     dim1 = diagI1.getnr(); // override
@@ -85,7 +85,7 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   } // if (last)
 }
 
-void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
@@ -127,8 +127,8 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
 #endif
 
 // Based on the implementation by Markus Greger.
-#if defined(NRG_REAL) && defined(SPEC_CFS_OPTIMIZED)
-void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
+#if defined(NRG_REAL) && defined(Algo_CFS_OPTIMIZED)
+void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const Matrix &rhoNIp = rho.at(Ip);
@@ -174,7 +174,7 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   } // if (last)
 }
 
-void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
+void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, double spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);

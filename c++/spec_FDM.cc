@@ -1,8 +1,8 @@
 // Recall: II=(Ij,Ii) <i|A|j> <j|B|i>. B is d^dag. We conjugate A.
 
-class SPEC_FDMls : virtual public SPEC {
+class Algo_FDMls : virtual public Algo {
  public:
-   SPEC_FDMls(const Params &P) : SPEC(P) {}
+   Algo_FDMls(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -11,9 +11,9 @@ class SPEC_FDMls : virtual public SPEC {
    string rho_type() override { return "rhoFDM"; }
 };
 
-class SPEC_FDMgt : virtual public SPEC {
+class Algo_FDMgt : virtual public Algo {
  public:
-   SPEC_FDMgt(const Params &P) : SPEC(P) {}
+   Algo_FDMgt(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -22,14 +22,14 @@ class SPEC_FDMgt : virtual public SPEC {
    string rho_type() override { return "rhoFDM"; }
 };
 
-class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
+class Algo_FDM : public Algo_FDMls, public Algo_FDMgt {
  public:
-   SPEC_FDM(const Params &P) : SPEC(P), SPEC_FDMls(P), SPEC_FDMgt(P) {}
+   Algo_FDM(const Params &P) : Algo(P), Algo_FDMls(P), Algo_FDMgt(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
              spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const override {
-               SPEC_FDMgt::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
-               SPEC_FDMls::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
+               Algo_FDMgt::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
+               Algo_FDMls::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
              }
    string name() override { return "FDM"; }
    string merge() override { return "CFS"; }
@@ -44,7 +44,7 @@ class SPEC_FDM : public SPEC_FDMls, public SPEC_FDMgt {
     const t_eigen E##n = diagI##n.absenergyG(n);
 
 // *********** Greater correlation function ***********
-void SPEC_FDMgt::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_FDMgt::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) const {
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM.at(Ii);
@@ -86,7 +86,7 @@ if (allj > 0 && reti > 0) {
 }
 
 // ************ Lesser correlation functions ***************
-void SPEC_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) const {
   double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const double wnf   = stats.wnfactor[step.ndx()];
@@ -128,9 +128,9 @@ cs->add(d.energy, d.weight);
 }
 }
 
-class SPEC_FDMmats : public SPEC {
+class Algo_FDMmats : public Algo {
  public:
-   SPEC_FDMmats(const Params &P) : SPEC(P) {}
+   Algo_FDMmats(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(P, bs.mt); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -140,7 +140,7 @@ class SPEC_FDMmats : public SPEC {
 
 // *********** Matsubara axis version  ***********
 
-void SPEC_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
+void Algo_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                         t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) const {
   const size_t cutoff = P.mats;
   // (-sign)=1 for fermionic case, (-sign)=-1 for bosonic case

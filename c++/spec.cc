@@ -20,14 +20,14 @@ template <typename FactorFnc, typename CheckSpinFnc>
 void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, 
                   FactorFnc &factorfnc, CheckSpinFnc &checkspinfnc, 
                   const DensMatElements &rho, const DensMatElements &rhoFDM, const Stats &stats) {
-  auto cs = bs.spectype->make_cs(bs);
-  const auto & rho_here = bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : rho;
+  auto cs = bs.algotype->make_cs(bs);
+  const auto & rho_here = bs.algotype->rho_type() == "rhoFDM" ? rhoFDM : rho;
   // Strategy: we loop through all subspace pairs and check whether they have non-zero irreducible matrix elements.
   for(const auto &[Ii, diagi]: diag)
     for(const auto &[Ij, diagj]: diag) {
       const Twoinvar II {Ij,Ii};
       if (bs.op1.count(II) && bs.op2.count(II) && checkspinfnc(Ij, Ii, bs.spin))
-        bs.spectype->calc(step, diagi, diagj, bs.op1.at(II), bs.op2.at(II), bs, factorfnc(Ii, Ij), cs, Ii, Ij, rho_here, stats);
+        bs.algotype->calc(step, diagi, diagj, bs.op1.at(II), bs.op2.at(II), bs, factorfnc(Ii, Ij), cs, Ii, Ij, rho_here, stats);
     }
   bs.spec->merge(cs, step);
 }

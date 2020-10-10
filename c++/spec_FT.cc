@@ -1,6 +1,6 @@
-class SPEC_FT : public SPEC {
+class Algo_FT : public Algo {
  public:
-   SPEC_FT(const Params &P) : SPEC(P) {}
+   Algo_FT(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -12,7 +12,7 @@ class SPEC_FT : public SPEC {
 // This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
 // s=1 for bosons, s=-1 for fermions
 // See Eq.(9) in Peters, Pruschke, Anders, PRB (74) 245114 (2006)
-void SPEC_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                    spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   for (size_t r1 = 0; r1 < diagI1.getnr(); r1++) {
@@ -27,16 +27,16 @@ void SPEC_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, c
   }
 }
 
-class SPEC_FTmats : public SPEC {
+class Algo_FTmats : public Algo {
  public:
-   SPEC_FTmats(const Params &P) : SPEC(P) {}
+   Algo_FTmats(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(P, bs.mt); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "FTmats"; }
 };
 
-void SPEC_FTmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
+void Algo_FTmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                        t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   const size_t cutoff = P.mats;
   double sign         = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
@@ -58,32 +58,32 @@ void SPEC_FTmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI
   }
 }
 
-class SPEC_GT_generic : public SPEC {
+class Algo_GT_generic : public Algo {
  protected:
    int power{};
  public:
-   SPEC_GT_generic(const Params &P) : SPEC(P) {}
+   Algo_GT_generic(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumTemp>(P); }
    void calc(const Step &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "ERROR"; }
 };
 
-class SPEC_GT : public SPEC_GT_generic {
+class Algo_GT : public Algo_GT_generic {
  public:
-   SPEC_GT(const Params &P) : SPEC_GT_generic(P) { power = 0; }
+   Algo_GT(const Params &P) : Algo_GT_generic(P) { power = 0; }
    string name() override { return "GT"; }
 };
 
-class SPEC_I1T : public SPEC_GT_generic {
+class Algo_I1T : public Algo_GT_generic {
  public:
-   SPEC_I1T(const Params &P) : SPEC_GT_generic(P) { power = 1; }
+   Algo_I1T(const Params &P) : Algo_GT_generic(P) { power = 1; }
   string name() override { return "I1T"; }
 };
 
-class SPEC_I2T : public SPEC_GT_generic {
+class Algo_I2T : public Algo_GT_generic {
  public:
-   SPEC_I2T(const Params &P) : SPEC_GT_generic(P) { power = 2; }
+   Algo_I2T(const Params &P) : Algo_GT_generic(P) { power = 2; }
    string name() override { return "I2T"; }
 };
 
@@ -92,7 +92,7 @@ class SPEC_I2T : public SPEC_GT_generic {
 // we are not calculating a spectral function (i.e. a collection of delta
 // peaks), but rather a tabulated G(T), so binning needs to be turned off.
 // See Yoshida, Seridonio, Oliveira, arxiv:0906.4289, Eq. (8).
-void SPEC_GT_generic::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
+void Algo_GT_generic::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                            t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   my_assert(sign == S_FERMIONIC);                  // restricted implementation
@@ -134,9 +134,9 @@ inline t_weight chit_weight(double En, double Em, double beta) {
   }
 }
 
-class SPEC_CHIT : public SPEC {
+class Algo_CHIT : public Algo {
  public:
-   SPEC_CHIT(const Params &P) : SPEC(P) {}
+   Algo_CHIT(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumTemp>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -147,7 +147,7 @@ class SPEC_CHIT : public SPEC {
 // elements of global operators. Binning needs to be turned off. Note that Zchit needs to be calculated with the same
 // 'temperature' parameter that we use for the exponential functions in the following equation. The output is
 // chi/beta = k_B T chi, as we prefer.
-void SPEC_CHIT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_CHIT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   my_assert(sign == S_BOSONIC); // restricted implementation

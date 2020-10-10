@@ -23,9 +23,7 @@ class outfield {
        }
      }
    template<typename T> void setvalue(T x) {
-     ostringstream tmp;
-     tmp << setw(P.width_td) << setprecision(P.prec_td) << x; // XXX fmt
-     value    = tmp.str();
+     value = fmt::format("{x:>{width}.{prec}}", "x"_a=x, "prec"_a=P.prec_td, "width"_a=P.width_td);
    }
    template<typename T> void operator=(T x) { setvalue(x); }
    void putheader(ostream &F) const { F << setw(P.width_td) << desc << " "; }
