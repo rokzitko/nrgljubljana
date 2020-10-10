@@ -681,36 +681,16 @@ class BaseSpectrum {
      if (a != axis::RealFreq && a != axis::Temp) s += " " + matstypestring(mt);
      return s;
    }
-   void about() { cout << "Spectrum: " << fullname() << endl; }
    BaseSpectrum(const MatrixElements &op1, const MatrixElements &op2, const string name, const string prefix, const matstype mt, const int spin) :
-     name(name), prefix(prefix), op1(op1), op2(op2), a(axis::RealFreq), mt(mt), spin(spin) {}
+     name(name), prefix(prefix), op1(op1), op2(op2), a(axis::RealFreq), mt(mt), spin(spin) {
+       std::cout << "Spectrum: " << fullname() << std::endl;
+     }
 };
-
-// XXX: remove this, if possible
-class speclist;
-using lsl = list<speclist *>;
-lsl allspectra; // list of list of spectra
-
-class speclist {
-//: public list<BaseSpectrum> {
- private:
-   list<BaseSpectrum> spectra;
- public:
-   speclist() { allspectra.push_back(this); }
-   auto begin() { return spectra.begin(); }
-   auto end() { return spectra.end(); }
-   void push_back(BaseSpectrum &bs) { spectra.push_back(bs); }
-   // Broaden spectra, close spectral files and deallocate all data storage (in destructor!)
-   void clear() { spectra.clear(); }
-   void about() {
-     for (auto &i : spectra) i.about();
-   }
-};
-
-using IIfnc = std::function<t_factor(const Invar &, const Invar &)>;
+using speclist = std::list<BaseSpectrum>;
 
 // Operator sumrules.
-double norm(const MatrixElements &m, const DiagInfo &diag, IIfnc factor_fnc, int SPIN) {
+template<typename T>
+double norm(const MatrixElements &m, const DiagInfo &diag, T factor_fnc, int SPIN) {
   weight_bucket sum;
   for (const auto &[Ip, eigp] : diag) {
     for (const auto &[I1, eig1] : diag) {
@@ -793,7 +773,7 @@ class ExpvOutput {
    }
 };
 
-void open_files(speclist &sl, BaseSpectrum &spec, SPECTYPE spectype, axis a, const Params &P) {
+void open_files(speclist &sl, BaseSpectrum &spec, const SPECTYPE spectype, const axis a, const Params &P) {
   const string fn = spec.prefix + "_" + spectype->name() + "_dens_" + spec.name; // no suffix (.dat vs. .bin)
   switch (a) {
     case axis::RealFreq:  spec.spec = make_shared<SpectrumRealFreq>(spec.name, fn, spectype, P); break;
@@ -888,7 +868,7 @@ class Oprecalc {
    }
 
    void report(ostream &F = cout) {
-     F << "Computing the following operators:" << endl;
+     F << endl << "Computing the following operators:" << endl;
      report(F, "s", s);
      report(F, "p", p);
      report(F, "g", g);
@@ -969,6 +949,7 @@ class Oprecalc {
 
   // Reset lists of operators which need to be iterated
   Oprecalc(const RUNTYPE &runtype, const IterInfo &a, const Params &P) {
+    cout << endl << "Computing the following spectra:" << endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
     loopover(runtype, P, a.ops,  a.ops,  sts, spectraS, "corr", s, s, matstype::bosonic);
@@ -1006,15 +987,7 @@ class Oprecalc {
     string_token stq(P.specq);
     loopover(runtype, P, a.opq, a.opq, stq, spectraQ, "specq", q, q, matstype::fermionic);
     report();
-    cout << endl << "Computing the following spectra:" << endl;
-    for (const auto &i : allspectra) i->about();
   }
-   
-   ~Oprecalc() {
-     TIME("broaden");
-     for (auto &i : allspectra) i->clear(); // XXX
-   }
-   
 };
 
 // Store eigenvalue & quantum numbers information (flow diagrams)
@@ -1487,7 +1460,6 @@ template<typename F>
                                           });
     return b;
   }
-  
 
 // We calculate thermodynamic quantities before truncation to make better use of the available states. Here we
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
