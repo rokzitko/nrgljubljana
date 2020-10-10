@@ -15,22 +15,24 @@ struct DELTA {
 // Container for holding spectral information represented by delta
 // peaks. "Weight" is of type t_weight (complex).
 typedef pair<double, t_weight> t_delta_peak;
-using Spikes = std::vector<t_delta_peak>;
 
 // XXX: move to output.h
 // used in matsubata.h and in save_densfunc()
 inline void output(ostream &F, const double x, const t_weight y, const bool imagpart, const double clip_tol_imag = 1e-10) {
   const auto [r, i] = reim(y);
   F << x << " " << r;
-  if (imagpart) F << " " << (abs(i) > abs(r) * clip_tol_imag ? i: 0.0);
+  if (imagpart) F << " " << (abs(i)>abs(r)*clip_tol_imag ? i : 0);
   F << endl;
 }
 
-template<typename T>
-void save_densfunc(T&& F, const Spikes &xy, const int prec, const bool imagpart) {
-  F << setprecision(prec);
-  for (const auto &[e, w] : xy) output(F, e, w, imagpart);
-}
+class Spikes : public std::vector<t_delta_peak> {
+ public:
+   template<typename T>
+     void save(T&& F, const int prec, const bool imagpart) {
+       F << setprecision(prec);
+       for (const auto &[e, w] : *this) output(F, e, w, imagpart);
+     }
+};
 
 #ifndef M_SQRTPI
 #define M_SQRTPI 1.7724538509055160273

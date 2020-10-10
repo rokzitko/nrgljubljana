@@ -143,13 +143,10 @@ class SPEC_CHIT : public SPEC {
    string name() override { return "CHIT"; }
 };
 
-// Calculation of the temperature-dependent susceptibility chi_AB(T)
-// using the linear response theory and the matrix elements of global
-// operators. Binning needs to be turned off.
-// Note that Zchit needs to be calculated with the same 'temperature'
-// parameter that we use for the exponential functions in the
-// following equation.
-// NOTE: The output is chi/beta = k_B T chi, as we prefer.
+// Calculation of the temperature-dependent susceptibility chi_AB(T) using the linear response theory and the matrix
+// elements of global operators. Binning needs to be turned off. Note that Zchit needs to be calculated with the same
+// 'temperature' parameter that we use for the exponential functions in the following equation. The output is
+// chi/beta = k_B T chi, as we prefer.
 void SPEC_CHIT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);

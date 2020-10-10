@@ -185,6 +185,6 @@ void SpectrumRealFreq::continuous() {
   string fn = filename + ".dat";
   cout << " " << fn;
   ofstream Fdensity = safe_open(fn);
-  save_densfunc(Fdensity, densityneg, P.prec_xy, P.reim);
-  save_densfunc(Fdensity, densitypos, P.prec_xy, P.reim);
+  densityneg.save(Fdensity, P.prec_xy, P.reim);
+  densitypos.save(Fdensity, P.prec_xy, P.reim);
 }

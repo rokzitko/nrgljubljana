@@ -604,7 +604,7 @@ class Spectrum {
 // G(T) type of results, i.e. not a real spectrum
 class SpectrumTemp : public Spectrum {
  private:
-   std::vector<pair<double, t_weight>> results;
+   Spikes results;
  public:
    SpectrumTemp(const string &opname, const string &filename, SPECTYPE spectype, const Params &P) : 
      Spectrum(opname, filename, spectype, P) {}
@@ -615,7 +615,7 @@ class SpectrumTemp : public Spectrum {
    ~SpectrumTemp() override {
      cout << "Spectrum: " << opname << " " << spectype->name() << endl;
      ranges::sort(results, sortfirst());
-     save_densfunc(safe_open(filename + ".dat"), results, P.prec_xy, P.reim); // XXX: save_densfunc as memebr?
+     results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }
 };
 
@@ -1919,7 +1919,6 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, Output &output, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
-  // XXX: move find_groundstate & subtraction here!
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
@@ -2004,7 +2003,7 @@ DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats
   DiagInfo diag = diag0;
   for (step.init(); !step.end(); step++)
     diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, P);
-  step.set(step.lastndx()); // XXX: remove this, after step is no longer global...
+  step.set(step.lastndx());
   return diag;
 }
 
@@ -2056,7 +2055,7 @@ DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats,
   DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, P) : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, P);
   cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
   stats.GS_energy = stats.total_energy;
-  if (P.dumpsubspaces) dump_subspaces(dm, P); // XXX: only once
+  if (step.nrgrun() && P.dumpsubspaces) dump_subspaces(dm, P);
   cout << endl << "** Iteration completed." << endl << endl;
   return diag;
 }

@@ -50,8 +50,7 @@ Matrix Symmetry::recalc_f(const DiagInfo &diag,
   const size_t dimp = diagIp.getnr();
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   const Twoinvar II = {I1, Ip};
-  Matrix f = Matrix(dim1, dimp);
-  f.clear(); // Set it to all zeros.
+  Matrix f = Matrix(dim1, dimp, 0);
   if (dim1 && dimp) {
     // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
     for (size_t j = 0; j < jmax; j++) {
@@ -96,8 +95,7 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
   const size_t dim1 = diagI1.getnr();
   const size_t dimp = diagIp.getnr();
   const Twoinvar II = {I1, Ip};
-  Matrix cn = Matrix(dim1, dimp);
-  cn.clear();
+  Matrix cn = Matrix(dim1, dimp, 0);
   if (dim1 == 0 || dimp == 0) return cn; // empty matrix
   for (size_t j = 0; j < jmax; j++) { // loop over combinations of i/ip
     if (P.logletter('r')) {

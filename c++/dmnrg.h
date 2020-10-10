@@ -242,9 +242,8 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = Sym->dmnrg_subspaces(I);
     size_t dim          = dimsub.kept;
-    rhoPrev[I]          = Matrix(dim, dim);
+    rhoPrev[I]          = Matrix(dim, dim, 0);
     if (!dim) continue;
-    rhoPrev[I].clear();
     for (size_t i = 1; i <= P.combs; i++) {
       Invar sub = subs[i];
       const auto x = rho.find(sub);
@@ -310,12 +309,11 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &
 // A. Weichselbaum, J. von Delft, Phys. Rev. Lett. 99, 076402 (2007)
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
-DensMatElements init_rho_FDM(size_t N, const AllSteps &dm, const Stats &stats, const Params &P) { // XXX: dm
+DensMatElements init_rho_FDM(const size_t N, const AllSteps &dm, const Stats &stats, const Params &P) {
   DensMatElements rhoFDM;
   double tr = 0.0;
   for (const auto &[I, ds] : dm[N]) {
-    rhoFDM[I]     = Matrix(ds.max(), ds.max());
-    rhoFDM[I].clear();
+    rhoFDM[I] = Matrix(ds.max(), ds.max(), 0);
     Matrix &rhoI = rhoFDM[I];
     for (size_t i = ds.min(); i < ds.max(); i++) {
       const double betaE = ds.eig.absenergyN[i] / P.T;
@@ -347,9 +345,8 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   for (const auto &[I, ds] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = Sym->dmnrg_subspaces(I);
     size_t dim          = ds.kept;
-    rhoFDMPrev[I]       = Matrix(dim, dim);
+    rhoFDMPrev[I]       = Matrix(dim, dim, 0);
     if (!dim) continue;
-    rhoFDMPrev[I].clear();
     for (size_t i = 1; i <= P.combs; i++) {
       const auto sub = subs[i];
       // DM construction for non-Abelian symmetries: must include

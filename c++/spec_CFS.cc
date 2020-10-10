@@ -50,13 +50,9 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = rhoNIp.size1();
   auto dim1            = rhoNI1.size1();
-  // Convention: k-loops over retained states, l-loop over discarded
-  // states.
-  // i-term, Eq. (11). This part is analogous to that for SPEC_FT,
-  // i.e., it has the form of the usual Lehmann representation. In a
-  // typical calculation only a small contribution to the total
-  // weight comes from this term. (This is the case both for T=0 and
-  // T!=0 calculation.)
+  // Convention: k-loops over retained states, l-loop over discarded states.
+  // i-term, Eq. (11). This part is analogous to that for SPEC_FT, i.e., it has the form of the usual Lehmann
+  // representation.
   if (step.last()) {
     dim1 = diagI1.getnr(); // override
     dimp = diagIp.getnr();
@@ -66,7 +62,7 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
         const t_eigen Ep = diagIp.value_zero(rp);
         DELTA d;
         d.energy = E1 - Ep;
-        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign); // (***)
+        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
         cs->add(step.scale() * d.energy, d.weight);
       }
     }
@@ -81,8 +77,8 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
         d.energy = El - Ek;
         my_assert(d.energy >= 0.0); // always positive!
         weight_bucket sum;
-        for (size_t rkp = 0; rkp < dimp; rkp++) sum += op2II(rl, rkp) * rhoNIp(rkp, rk); // no sign here!
-        d.weight = spinfactor * CONJ_ME(op1II(rl, rk)) * t_weight(sum) * (-sign);        // (***)
+        for (size_t rkp = 0; rkp < dimp; rkp++) sum += op2II(rl, rkp) * rhoNIp(rkp, rk);
+        d.weight = spinfactor * CONJ_ME(op1II(rl, rk)) * t_weight(sum) * (-sign);
         cs->add(step.scale() * d.energy, d.weight);
       }
     }
@@ -95,13 +91,8 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = rhoNIp.size1();
   auto dim1            = rhoNI1.size1();
-  // Convention: k-loops over retained states, l-loop over discarded
-  // states.
-  // i-term, Eq. (11). This part is analogous to that for SPEC_FT,
-  // i.e., it has the form of the usual Lehmann representation. In a
-  // typical calculation only a small contribution to the total
-  // weight comes from this term. (This is the case both for T=0 and
-  // T!=0 calculation.)
+  // Convention: k-loops over retained states, l-loop over discarded states.
+  // i-term, Eq. (11).
   if (step.last()) {
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
@@ -127,7 +118,7 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
         my_assert(d.energy <= 0.0); // always negative!
         weight_bucket sum;
         for (size_t rkp = 0; rkp < dim1; rkp++) sum += CONJ_ME(op1II(rkp, rl)) * rhoNI1(rkp, rk);
-        d.weight = spinfactor * t_weight(sum) * op2II(rk, rl); // (***) removed (-sign)
+        d.weight = spinfactor * t_weight(sum) * op2II(rk, rl);
         cs->add(step.scale() * d.energy, d.weight);
       }
     }
@@ -146,10 +137,7 @@ void SPEC_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   auto dim1            = rhoNI1.size1();
   // Convention: k-loops over retained states, l-loop over discarded
   // states.
-  // i-term, Eq. (11). This part is analogous to that for SPEC_FT,
-  // i.e. it has the form of the usual Lehmann representation. In a
-  // typical calculation only a small contribution to the total
-  // weight comes from this term.
+  // i-term, Eq. (11).
   if (step.last()) {
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
@@ -192,12 +180,8 @@ void SPEC_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = rhoNIp.size1();
   auto dim1            = rhoNI1.size1();
-  // Convention: k-loops over retained states, l-loop over
-  // discarded states.
-  // i-term, Eq. (11). This part is analogous to that for SPEC_FT,
-  // i.e. it has the form of the usual Lehmann representation. In a
-  // typical calculation only a small contribution to the total
-  // weight comes from this term.
+  // Convention: k-loops over retained states, l-loop over discarded states.
+  // i-term, Eq. (11).
   if (step.last()) {
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();

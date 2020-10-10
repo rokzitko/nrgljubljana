@@ -1,13 +1,8 @@
 #ifndef _spec_cc_
 #define _spec_cc_
 
-// GENERAL NOTE: CONJ_ME() and reversal of indexes is appropriate for spectral functions of fermionic operators,
-// since we need to distinguish between d and d^\dag. For generic G_{AB}, this is an unnecessary complication and
-// confusing. For real symmetric operators, the result is not affected. For complex Hermitian, the same is true. But
-// it is ugly.
-
-// For argument 'sign' in calc_generic_* functions. This is the only
-// difference between the GFs for bosonic and fermionic operators.
+// For argument 'sign' in calc_generic_* functions. This is the only difference between the GFs for bosonic and
+// fermionic operators.
 const double S_FERMIONIC = -1.0;
 const double S_BOSONIC   = 1.0;
 
