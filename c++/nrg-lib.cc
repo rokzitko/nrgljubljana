@@ -355,23 +355,23 @@ class Step {
    int getnn() const { return ndxN; }
 };
 
+#include <range/v3/algorithm/for_each.hpp>
+
 // Namespace for storing various statistical quantities calculated during iteration.
 class Stats {
  public:
    // ** Ground-state subspace and energy at the current NRG iteration
    Invar ground;
    t_eigen Egs;
-   
-   // Find the ground state in the current NRG shell.
    void find_groundstate(const DiagInfo &diag) {
-     auto m = std::min_element(diag.cbegin(), diag.cend(), 
-                               [](const auto a, const auto b) { return a.second.value_orig(0) < b.second.value_orig(0); });
-     ground = m->first;
-     Egs = m->second.value_orig(0);
+     auto [I, eig] = *std::min_element(diag.cbegin(), diag.cend(), 
+                                      [](const auto a, const auto b) { return a.second.value_orig(0) < b.second.value_orig(0); });
+     ground = I;
+     Egs = eig.value_orig(0);
    }
 
    void subtract_groundstate_energy(DiagInfo &diag) {
-     for (auto &[I, eig] : diag) eig.subtract_Egs(Egs);
+     ranges::for_each(diag | boost::adaptors::map_values, [this](auto &eig) { eig.subtract_Egs(Egs); });
    }
 
    // ** Thermodynamic quantities
@@ -425,8 +425,7 @@ class Stats {
 // approach for calculating the spectral functions. This is different from subtract_groundstate_energy(). Called from
 // do_diag() when diag is loaded from a stored file during the second pass of the NRG iteration.
 void shift_abs_energies(const Stats &stats, DiagInfo &diag) {
-  for (auto &[I, eig] : diag) 
-    eig.shift_absenergyG(stats.GS_energy);
+  ranges::for_each(diag | boost::adaptors::map_values, [&stats](auto &eig) { eig.shift_absenergyG(stats.GS_energy); });
 }
 
 // called before calc_ZnD()
