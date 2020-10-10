@@ -1809,12 +1809,10 @@ QSrmax get_qsrmax(const DiagInfo &diagprev) {
 
 // List of invariant subspaces in which diagonalisations need to be performed
 std::vector<Invar> task_list(const QSrmax &qsrmax) {
-  std::vector<Invar> tasks;
-  for (const auto &[I, rm] : qsrmax)
-    if (rm.total()) tasks.push_back(I);
   std::vector<pair<size_t, Invar>> tasks_with_sizes;
-  for (const auto &I : tasks) 
-    tasks_with_sizes.emplace_back(qsrmax.at(I).total(), I);
+  for (const auto &[I, rm] : qsrmax)
+//    if (rm.total())
+      tasks_with_sizes.emplace_back(rm.total(), I);
   // Sort in the *decreasing* order!
   sort(rbegin(tasks_with_sizes), rend(tasks_with_sizes));
   auto nr       = tasks_with_sizes.size();
@@ -1824,8 +1822,6 @@ std::vector<Invar> task_list(const QSrmax &qsrmax) {
   if (logletter('S'))   // report matrix sizes
     for (const auto &[size, I] : tasks_with_sizes) 
       cout << "size(" << I << ")=" << size << endl;
-//  std::vector<Invar> sorted_tasks;
-//  ranges::transform(tasks_with_sizes, std::back_inserter(sorted_tasks), [](const auto &p) { return p.second; });
   return tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
 }
 
