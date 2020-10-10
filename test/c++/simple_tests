@@ -53,7 +53,6 @@ test55_gt_ls
 test56_dsyevr
 test57_diagratio
 test58_dsyev
-test59_checkdiag
 test5_disc_y
 test60_discard_immediately
 test61_discard_trim
