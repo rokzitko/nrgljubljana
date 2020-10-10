@@ -25,7 +25,6 @@ template <typename FactorFnc, typename CheckSpinFnc>
 void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, 
                   FactorFnc &factorfnc, CheckSpinFnc &checkspinfnc, 
                   const DensMatElements &rho, const DensMatElements &rhoFDM, const Stats &stats) {
-  nrglog('g', "calc_generic() " << bs.fullname());
   auto cs = bs.spectype->make_cs(bs);
   const auto & rho_here = bs.spectype->rho_type() == "rhoFDM" ? rhoFDM : rho;
   // Strategy: we loop through all subspace pairs and check whether they have non-zero irreducible matrix elements.

@@ -460,9 +460,6 @@ using SPECTYPE = shared_ptr<SPEC>;
 
 #include "spectral.h"
 
-// Returns true if option 'c' is selected for logging // XXX move to P?
-bool logletter(char c) { return (sP.logall ? true : sP.log.find(c) != string::npos); }
-
 #include "coef.cc"
 #include "tridiag.h"
 #include "diag.h"
@@ -893,7 +890,8 @@ class Oprecalc {
    
    // Wrapper routine for recalculations
    template <typename RecalcFnc>
-     MatrixElements recalc_common(const MatrixElements &mold, RecalcFnc recalc_fnc, const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const std::string name, const string &tip) {
+     MatrixElements recalc_common(const MatrixElements &mold, RecalcFnc recalc_fnc, const Step &step, const DiagInfo &diag, 
+                                  const QSrmax &qsrmax, const std::string name, const string &tip, const Params &P) {
        nrglog('0', "Recalculate " << tip << " " << name);
        auto mnew = recalc_fnc(diag, qsrmax, mold);
        if (tip == "g") Sym->recalc_global(step, diag, qsrmax, name, mnew);
@@ -909,19 +907,19 @@ class Oprecalc {
    ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
      void recalculate_operators(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, IterInfo &a, const Params &P) {
        for (auto &[name, m] : a.ops)
-         m = recalc_or_clear(do_s(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, diag, qsrmax, name, "s");
+         m = recalc_or_clear(do_s(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, diag, qsrmax, name, "s", P);
        for (auto &[name, m] : a.opsp)
-         m = recalc_or_clear(p.count(name),       m, [](const auto &... pr) { return recalc_singlet(pr..., -1);      }, step, diag, qsrmax, name, "p");
+         m = recalc_or_clear(p.count(name),       m, [](const auto &... pr) { return recalc_singlet(pr..., -1);      }, step, diag, qsrmax, name, "p", P);
        for (auto &[name, m] : a.opsg) 
-         m = recalc_or_clear(do_g(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, diag, qsrmax, name, "g");
+         m = recalc_or_clear(do_g(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, diag, qsrmax, name, "g", P);
        for (auto &[name, m] : a.opd)
-         m = recalc_or_clear(d.count(name),       m, [](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, step, diag, qsrmax, name, "d");
+         m = recalc_or_clear(d.count(name),       m, [](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, step, diag, qsrmax, name, "d", P);
        for (auto &[name, m] : a.opt)
-         m = recalc_or_clear(t.count(name),       m, [](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, step, diag, qsrmax, name, "t");
+         m = recalc_or_clear(t.count(name),       m, [](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, step, diag, qsrmax, name, "t", P);
        for (auto &[name, m] : a.opot)
-         m = recalc_or_clear(ot.count(name),      m, [](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, diag, qsrmax, name, "ot");
+         m = recalc_or_clear(ot.count(name),      m, [](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, diag, qsrmax, name, "ot", P);
        for (auto &[name, m] : a.opq)
-         m = recalc_or_clear(q.count(name),       m, [](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, step, diag, qsrmax, name, "q");
+         m = recalc_or_clear(q.count(name),       m, [](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, step, diag, qsrmax, name, "q", P);
      }
 
    // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
@@ -1320,7 +1318,7 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, const Params &P) {
   }
   cout << "ZZG=" << HIGHPREC(stats.ZZG) << endl;
   cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << endl;
-  if (logletter('w')) {
+  if (P.logletter('w')) {
     for (size_t N = P.Ninit; N < P.Nlen; N++) 
       cout << "ZG[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDG[N])) << endl;
     for (size_t N = P.Ninit; N < P.Nlen; N++) 
@@ -1397,7 +1395,7 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
       recalc_table[i - 1] = {i, i, anc, parity == -1 ? anc.InvertParity() : anc, 1.0};
     }
     const auto Iop = parity == -1 ? (Sym->InvarSinglet).InvertParity() : Sym->InvarSinglet;
-    nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, Sym->get_combs(), Iop);
+    nnew[Twoinvar(I1,Ip)] = Sym->recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, Sym->get_combs(), Iop);
   }
   return nnew;
 }
@@ -1572,11 +1570,12 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
     for (size_t r = 0; r < rm.rmax(i); r++) 
       h(rm.offset(i) + r, rm.offset(i) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r);
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
-  if (logletter('m')) dump_matrix(h);
+  if (P.logletter('m')) dump_matrix(h);
   return h;
 }
 
-DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, const std::vector<Invar> &tasks, const Params &P) {
+DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
+                                 const std::vector<Invar> &tasks, const DiagParams &DP, const Params &P) {
   DiagInfo diagnew;
   size_t nr = tasks.size();
   size_t itask = 0;
@@ -1589,7 +1588,7 @@ DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef 
     int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
-    Eigen e = diagonalise(h);
+    Eigen e = diagonalise(h, DP);
 #pragma omp critical
     { diagnew[I] = e; }
   }
@@ -1609,7 +1608,16 @@ const int TAG_EIGEN_INT      = 10;
 const int TAG_EIGEN_VEC      = 11;
 const int TAG_EIGEN_RMAXVALS = 12;
 
-void mpi_sync_params();
+void mpi_sync_params(DiagParams &DP) {
+  for (size_t i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_SYNC, 0);
+  mpi::broadcast(*mpiw, DP, 0);
+}
+
+DiagParams mpi_sync_params() {
+  DiagParams DP;
+  mpi::broadcast(*mpiw, DP, 0);
+  return DP;
+}
 
 void check_status(mpi::status status) {
   if (status.error()) {
@@ -1652,7 +1660,6 @@ void mpi_send_matrix_linebyline(int dest, const Matrix &m) {
   mpiw->send(dest, TAG_MATRIX_SIZE, size1);
   auto size2 = m.size2();
   mpiw->send(dest, TAG_MATRIX_SIZE, size2);
-  nrglog('M', "Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
   for (size_t i = 0; i < size1; i++) {
     ublas::vector<t_matel> vec = ublas::matrix_row<const Matrix>(m, i);
     mpiw->send(dest, TAG_MATRIX_LINE, vec);
@@ -1664,7 +1671,6 @@ auto mpi_receive_matrix_linebyline(int source) {
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size1));
   size_t size2;
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size2));
-  nrglog('M', "Receiving matrix of size " << size1 << " x " << size2 << " line by line from " << source);
   Matrix m(size1, size2);
   for (auto i = 0; i < size1; i++) {
     ublas::vector<t_matel> vec;
@@ -1688,13 +1694,11 @@ auto mpi_receive_eigen_whole(int source) {
 void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
   Eigen eigmock; // empty Eigen
   mpiw->send(dest, TAG_EIGEN, eigmock);
-  nrglog('M', "Sending eigen from " << mpiw->rank() << " to " << dest);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig);
   mpi_send_matrix_linebyline(dest, eig.matrix);
 }
 
 auto mpi_receive_eigen_linebyline(int source) {
-  nrglog('M', "Receiving eigen from " << source << " on " << mpiw->rank());
   Eigen eigmock;
   check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
   Eigen eig;
@@ -1705,17 +1709,16 @@ auto mpi_receive_eigen_linebyline(int source) {
 
 // Read results from a slave process.
 std::pair<Invar, Eigen> read_from(int source) {
-  nrglog('M', "Reading results from " << source);
   auto eig = mpi_receive_eigen(source);
   Invar Irecv;
   check_status(mpiw->recv(source, TAG_INVAR, Irecv));
-  nrglog('M', "Received results for subspace " << Irecv << " [nr=" << eig.getnr() << ", dim=" << eig.getdim() << "]");
   my_assert(eig.value_orig.size() == eig.matrix.size1());
   my_assert(eig.matrix.size1() <= eig.matrix.size2());
   return {Irecv, eig};
 }
 
-DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, const std::vector<Invar> &tasks, const Params &P) {
+DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
+                              const std::vector<Invar> &tasks, const DiagParams &DP, const Params &P) {
   DiagInfo diagnew;
   mpi_sync_params(); // Synchronise parameters
   list<Invar> todo; // List of all the tasks to handle
@@ -1753,7 +1756,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
-      diagnew[I] = diagonalise(h);
+      diagnew[I] = diagonalise(h, DP);
       nodes.push_back(0);
       done.push_back(I);
     } else {
@@ -1786,11 +1789,10 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
 DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
                           const std::vector<Invar> &tasks, double diagratio, const Params &P) {
   TIME("diag");
-  sP.init(P, diagratio);
 #ifdef NRG_MPI
-  return diagonalisations_MPI(step, opch, coef, diagprev, tasks, P);
+  return diagonalisations_MPI(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), P);
 #else
-  return diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, P);
+  return diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), P);
 #endif
 }
 
@@ -1803,17 +1805,18 @@ QSrmax get_qsrmax(const DiagInfo &diagprev) {
 }
 
 // List of invariant subspaces in which diagonalisations need to be performed
-std::vector<Invar> task_list(const QSrmax &qsrmax) {
+std::vector<Invar> task_list(const QSrmax &qsrmax, const Params &P) {
   std::vector<pair<size_t, Invar>> tasks_with_sizes;
   for (const auto &[I, rm] : qsrmax)
-    tasks_with_sizes.emplace_back(rm.total(), I);
+    if (rm.total())
+      tasks_with_sizes.emplace_back(rm.total(), I);
   // Sort in the *decreasing* order!
   sort(rbegin(tasks_with_sizes), rend(tasks_with_sizes));
   auto nr       = tasks_with_sizes.size();
   auto min_size = tasks_with_sizes.back().first;
   auto max_size = tasks_with_sizes.front().first;
   cout << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << endl;
-  if (logletter('S'))   // report matrix sizes
+  if (P.logletter('S'))   // report matrix sizes
     for (const auto &[size, I] : tasks_with_sizes) 
       cout << "size(" << I << ")=" << size << endl;
   return tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
@@ -1849,7 +1852,7 @@ void dump_f(const Opch &opch) {
 DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
-  auto tasks = task_list(qsrmax);
+  auto tasks = task_list(qsrmax, P);
   double diagratio = P.diagratio;
   DiagInfo diag;
   while (true) {
@@ -1898,7 +1901,7 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
 {
   for (const auto &[I, eig]: diag) {
     const auto f = qsrmax.find(I);
-    dm[step.ndx()][I] = { eig.getnr(), eig.getdim(), f != qsrmax.cend() ? f->second : Rmaxvals{}, eig, step.last() };
+    dm[step.ndx()][I] = { eig.getnr(), eig.getdim(), f != qsrmax.cend() ? f->second : Rmaxvals{}, eig, step.last() }; // XXX
   }
   truncate_stats ts(diag);
   double ratio = double(ts.nrkept) / ts.nrall;
@@ -2136,21 +2139,10 @@ void calculation(Params &P) {
   }
 }
 
-#ifdef NRG_MPI
-void mpi_sync_params() {
-  // Synchronize global parameters
-  if (mpiw->rank() == 0)
-    for (size_t i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_SYNC, 0);
-  mpi::broadcast(*mpiw, sP, 0);
-}
-#endif
-
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
   // Workdir workdir;
-  Params P;
-  P.read_parameters(workdir);
-  sP.init(P);
+  Params P("param", "param", workdir);
   calculation(P);
 #ifdef NRG_MPI
   cout << "Master done. Terminating slave processes." << endl;
@@ -2162,13 +2154,13 @@ void run_nrg_master() {
 
 #ifdef NRG_MPI
 // Handle a diagonalisation request:
-void slave_diag(const int master) {
+void slave_diag(const int master, const DiagParams &DP) {
   // 1. receive the matrix and the subspace identification
   auto m = mpi_receive_matrix(master);
   Invar I;
   check_status(mpiw->recv(master, TAG_INVAR, I));
   // 2. preform the diagonalisation
-  Eigen eig = diagonalise(m);
+  Eigen eig = diagonalise(m, DP);
   // 3. send back the results
   mpi_send_eigen(master, eig);
   mpiw->send(master, TAG_INVAR, I);
@@ -2176,18 +2168,18 @@ void slave_diag(const int master) {
 
 void run_nrg_slave() {
   constexpr auto master = 0;
+  DiagParams DP;
   for (;;) {
     if (mpiw->iprobe(master, mpi::any_tag)) { // message can be received.
       int task;
       auto status = mpiw->recv(master, mpi::any_tag, task);
       check_status(status);
-      nrglog('M', "Slave " << mpiw->rank() << " received message with tag " << status.tag());
       switch (status.tag()) {
         case TAG_SYNC:
-          mpi_sync_params();
+          DP = mpi_sync_params();
           break;
         case TAG_DIAG:
-          slave_diag(master);
+          slave_diag(master, DP);
           break;
         case TAG_EXIT:
           return; // exit from run_slave()

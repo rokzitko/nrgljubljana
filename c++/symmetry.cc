@@ -36,7 +36,23 @@ Opch newopch(const Params &P)
     opch1clear(opch, i, P);
   return opch;
 }
-  
+
+struct Recalc_f {
+    size_t i1; // subspace indexes
+    size_t ip;
+    t_factor factor;
+};
+
+// Structure which holds subspace information and factor for each of nonzero irreducible matrix elements. cf.
+// Hofstetter PhD p. 120. <Q+1 S+-1/2 .. i1 ||f^\dag|| Q S .. ip>_N = factor < IN1 .. ||f^\dag|| INp ..>_{N_1}
+struct Recalc {
+    size_t i1{}; // combination of states
+    size_t ip{};
+    Invar IN1; // subspace in N-1 stage
+    Invar INp;
+    t_factor factor{}; // additional multiplicative factor
+};
+
 class Symmetry {
  protected:
    const Params &P;
@@ -184,6 +200,16 @@ class Symmetry {
    }
    
    virtual bool recalc_f_coupled(const Invar I1, const Invar I2, const Invar If) { return true; } // used in recalc_f()
+
+   Matrix recalc_f(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I1,
+                   const Invar &Ip, const struct Recalc_f table[], const size_t jmax);
+// XXX                   const Invar If = Invar_f) const;
+
+   Matrix recalc_general(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold,
+                         const Invar &I1, const Invar &Ip, const struct Recalc table[], const size_t jmax, const Invar &Iop) const;
+   
+   void recalc1_global(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I,
+                       Matrix &m, const size_t i1, const size_t ip, const t_factor value) const;
 };
 
 // List of all symmetries that are compiled-in, indexed by the symmtry name string.

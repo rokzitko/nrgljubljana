@@ -456,7 +456,7 @@ struct Params {
     fr - debug recalculation of irreducible matrix elements <||f||>
     ies - debug matrix construction and diagonalization
   */
-  param<string> log{"log", "list of tokens to define what to log", "", all}; // N
+  param<string> logstr{"log", "list of tokens to define what to log", "", all}; // N
   param<bool> logall{"logall", "Log everything", "false", all};              // N
 
   // ********************************************
@@ -571,7 +571,7 @@ struct Params {
     for (const auto &i : all) i->dump();
   }
 
-  void read_parameters(const Workdir &workdir, string filename = "param", string block = "param") {
+  Params(string filename, string block, const Workdir &workdir) {
     auto parsed_params = parser(filename, block);
     for (const auto &i : all) {
       const string keyword = i->getkeyword();
@@ -637,32 +637,33 @@ struct Params {
   // reduce the upper limit of the patching window to omega_N*goodE*Lambda, i.e., by a factor of Lambda compared to
   // the N/N+2 patching where the upper limit is omega_N*goodE*Lambda^2.
   double getEfactor() const {
-    return (channels == 1 && !NN1) ? Lambda : sqrt(Lambda);
+    return (channels == 1 && !NN1) ? Lambda : std::sqrt(Lambda);
   }
 
   double getE0()   const { return goodE; }
   double getEmin() const { return getE0(); }
   double getEx()   const { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
   double getEmax() const { return getE0() * sqr(getEfactor()); }
+
+  // Returns true if option 'c' is selected for logging
+  bool logletter(char c) const { return (logall ? true : std::string(logstr).find(c) != string::npos); }
 };
 
-// Shared parameters for MPI parallelization.
-class sharedParam {
+class DiagParams {
  public:
-   // Parameters which have to be known to the slave processes (which only perform diagonalizations).
    std::string diag{};
    double diagratio{};
    bool logall{};
-   string log;
+   std::string logstr{};
 
-   void init(const Params &P, double _diagratio = -1) {
-     // init() has to be called at the beginning of the program (after parsing the parameters in P), but also before
-     // each series of diagonalizations, because diagratio might have changed!
+   DiagParams() {}
+   DiagParams(const Params &P, const double diagratio_ = -1) {
      diag      = P.diag;
-     diagratio = _diagratio > 0 ? _diagratio : P.diagratio;
+     diagratio = diagratio_ > 0 ? diagratio_ : P.diagratio;
      logall    = P.logall;
-     log       = P.log;
+     logstr    = P.logstr;
    }
+   bool logletter(char c) const { return (logall ? true : logstr.find(c) != string::npos); }
 
  private:
    friend class boost::serialization::access;
@@ -670,10 +671,8 @@ class sharedParam {
       ar &diag;
       ar &diagratio;
       ar &logall;
-      ar &log;
+      ar &logstr;
    }
 };
 
-sharedParam sP; // XXX
-
-#endif // _param_cc_
+#endif

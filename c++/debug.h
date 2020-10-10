@@ -1,5 +1,5 @@
 // debug.h - auxiliary debugging macros
-// Copyright (C) 2005-2019 Rok Zitko
+// Copyright (C) 2005-2020 Rok Zitko
 
 #ifndef _debug_h_
 #define _debug_h_
@@ -15,7 +15,9 @@
 
 // character c defines what to log
 #define nrglog(c, ...)                                                                                                                               \
-  if (logletter(c)) { cout << __VA_ARGS__ << endl; }
+  if (P.logletter(c)) { cout << __VA_ARGS__ << endl; }
+#define nrglogdp(c, ...)                                                                                                                               \
+  if (DP.logletter(c)) { cout << __VA_ARGS__ << endl; }
 
 // Dump the value of variable STR to the standard output.
 #define nrgdump(STR) cout << #STR << "=" << (STR) << " "

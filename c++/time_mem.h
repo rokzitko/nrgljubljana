@@ -61,9 +61,7 @@ class Timing {
   void report() {
     const int T_WIDTH  = 12;
     const dp t_all = total();
-    cout << endl;
-    cout << "Timing report [" << myrank() << "]" << endl;
-    cout << "=============" << endl;
+    cout << endl << "Timing report [" << myrank() << "]" << endl;
     cout << setw(T_WIDTH) << "All"
          << ": " << prec3(t_all.count()) << " s" << endl;
     dp t_sum;

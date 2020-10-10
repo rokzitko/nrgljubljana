@@ -42,11 +42,9 @@ mapdd find_clusters(const std::vector<t_eigen> &energies, double epsilon) {
       size++;
     } else { // end of cluster detected
       auto i1 = i;
-      if (logletter('X')) cluster_show(i0, i1);
       if (size > 1) {            // is this a real cluster?
         if (cluster_splitting(i0, i1)) { // are the states actually split?
           t_eigen replace_with = *i0;    // use the lowest eigenvalue of the cluster
-          if (logletter('X')) cout << " -> " << setprecision(std::numeric_limits<double>::max_digits10) << replace_with << endl;
           for (auto j = (i0 + 1); j != i1; ++j) // skip 1st
             if (*j != *i0) cluster_mapping.insert(make_pair(*j, replace_with));
         }

@@ -1,66 +1,6 @@
 #ifndef _recalc_cc_
 #define _recalc_cc_
 
-struct Recalc_f {
-  size_t i1; // subspace indexes
-  size_t ip;
-  t_factor factor;
-};
-
-// Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
-Matrix recalc_f(const DiagInfo &diag, 
-                const QSrmax &qsrmax, 
-                const Invar &I1,
-                const Invar &Ip, 
-                const struct Recalc_f table[], 
-                const size_t jmax, 
-                const Invar If = Sym->Invar_f) {
-  nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ") If=(" << If << ")");
-  if (!Sym->recalc_f_coupled(I1, Ip, If)) {
-    nrglog('f', "Does not fulfill the triangle inequalities.");
-    return Matrix(0,0);
-  }
-  const Eigen &diagI1 = diag.at(I1);
-  const Eigen &diagIp = diag.at(Ip);
-  // Number of states in Ip and in I1, i.e. the dimension of the <||f||> matrix of irreducible matrix elements.
-  const size_t dim1 = diagI1.getnr();
-  const size_t dimp = diagIp.getnr();
-  nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
-  const Twoinvar II = {I1, Ip};
-  Matrix f = Matrix(dim1, dimp);
-  f.clear(); // Set it to all zeros.
-  if (dim1 && dimp) {
-    // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
-    for (size_t j = 0; j < jmax; j++) {
-      // rmax1, rmaxp are the dimensions of the invariant subspaces
-      const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
-      const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
-      if (!(rmax1 > 0 && rmaxp > 0)) continue;
-      if (logletter('f'))
-        nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
-      my_assert(my_isfinite(table[j].factor) && rmax1 == rmaxp);
-      const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
-      const Matrix &Up = diagIp.blocks[table[j].ip - 1];
-      my_assert(U1.size1() == dim1 && Up.size1() == dimp && U1.size2() == Up.size2());
-      my_assert(rmax1 == U1.size2() && rmaxp == Up.size2());
-      atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(table[j].factor), U1, Up, t_factor(1.0), f);
-    } // loop over j
-  }
-  if (logletter('F')) dump_matrix(f);
-  return f;
-}
-
-// Structure which holds subspace information and factor for each
-// of nonzero irreducible matrix elements. cf. Hofstetter PhD p. 120
-// <Q+1 S+-1/2 .. i1 ||f^\dag|| Q S .. ip>_N = factor < IN1 .. ||f^\dag|| INp ..>_{N_1}
-struct Recalc {
-  size_t i1{}; // combination of states
-  size_t ip{};
-  Invar IN1; // subspace in N-1 stage
-  Invar INp;
-  t_factor factor{}; // additional multiplicative factor
-};
-
 // We split the matrices of eigenvectors in blocks according to the partition into "ancestor subspaces". At the price
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
@@ -89,21 +29,65 @@ void split_in_blocks(DiagInfo &diag, const QSrmax &qsrmax) {
     split_in_blocks_Eigen(I, eig, qsrmax);
 }
 
+// Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
+Matrix Symmetry::recalc_f(const DiagInfo &diag, 
+                          const QSrmax &qsrmax, 
+                          const Invar &I1,
+                          const Invar &Ip, 
+                          const struct Recalc_f table[], 
+                          const size_t jmax)
+{
+  const Invar If = Invar_f; // XXX
+  nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ") If=(" << If << ")");
+  if (!Sym->recalc_f_coupled(I1, Ip, If)) {
+    nrglog('f', "Does not fulfill the triangle inequalities.");
+    return Matrix(0,0);
+  }
+  const Eigen &diagI1 = diag.at(I1);
+  const Eigen &diagIp = diag.at(Ip);
+  // Number of states in Ip and in I1, i.e. the dimension of the <||f||> matrix of irreducible matrix elements.
+  const size_t dim1 = diagI1.getnr();
+  const size_t dimp = diagIp.getnr();
+  nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
+  const Twoinvar II = {I1, Ip};
+  Matrix f = Matrix(dim1, dimp);
+  f.clear(); // Set it to all zeros.
+  if (dim1 && dimp) {
+    // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
+    for (size_t j = 0; j < jmax; j++) {
+      // rmax1, rmaxp are the dimensions of the invariant subspaces
+      const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
+      const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
+      if (!(rmax1 > 0 && rmaxp > 0)) continue;
+      if (P.logletter('f'))
+        nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
+      my_assert(my_isfinite(table[j].factor) && rmax1 == rmaxp);
+      const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
+      const Matrix &Up = diagIp.blocks[table[j].ip - 1];
+      my_assert(U1.size1() == dim1 && Up.size1() == dimp && U1.size2() == Up.size2());
+      my_assert(rmax1 == U1.size2() && rmaxp == Up.size2());
+      atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(table[j].factor), U1, Up, t_factor(1.0), f);
+    } // loop over j
+  }
+  if (P.logletter('F')) dump_matrix(f);
+  return f;
+}
+
 // Recalculate the (irreducible) matrix elements of various operators. This is the most important routine in this
 // program, so it is heavily instrumentalized for debugging purposes. It is called from recalc_doublet(),
 // recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
 // one should try to hand optimize.
 
-Matrix recalc_general(const DiagInfo &diag, 
-                      const QSrmax &qsrmax,        // information about the matrix structure
-                      const MatrixElements &cold,
-                      const Invar &I1,             // target subspace (bra)
-                      const Invar &Ip,             // target subspace (ket)
-                      const struct Recalc table[],
-                      const size_t jmax,           // length of table
-                      const Invar &Iop)            // quantum numbers of the operator
+Matrix Symmetry::recalc_general(const DiagInfo &diag, 
+                                const QSrmax &qsrmax,        // information about the matrix structure
+                                const MatrixElements &cold,
+                                const Invar &I1,             // target subspace (bra)
+                                const Invar &Ip,             // target subspace (ket)
+                                const struct Recalc table[],
+                                const size_t jmax,           // length of table
+                                const Invar &Iop) const      // quantum numbers of the operator
 {
-  if (logletter('r')) {
+  if (P.logletter('r')) {
     cout << "recalc_general: ";
     nrgdump3(I1, Ip, Iop) << endl;
   }
@@ -116,7 +100,7 @@ Matrix recalc_general(const DiagInfo &diag,
   cn.clear();
   if (dim1 == 0 || dimp == 0) return cn; // empty matrix
   for (size_t j = 0; j < jmax; j++) { // loop over combinations of i/ip
-    if (logletter('r')) {
+    if (P.logletter('r')) {
       nrgdump3(j, I1, Ip);
       nrgdump2(table[j].i1, table[j].ip);
       nrgdump2(table[j].IN1, table[j].INp);
@@ -143,7 +127,7 @@ Matrix recalc_general(const DiagInfo &diag,
     // and the coefficient tables for NRG transformations of matrices.
     my_assert(cnt == 1);
     my_assert(my_isfinite(table[j].factor));
-    if (logletter('r')) cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << endl;
+    if (P.logletter('r')) cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << endl;
     // RECALL: rmax1 - dimension of the subspace of invariant subspace I1 spanned by the states originating from the
     //  combination |I1>_i1, where i1=1...P.combs. It is clearly equal to the dimension of the invariant subspace IN1
     //  from the previous (N-th) iteration.
@@ -157,24 +141,20 @@ Matrix recalc_general(const DiagInfo &diag,
     atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(1.0), m, Up, t_factor(0.0), temp);
     atlas::gemm(CblasNoTrans, CblasNoTrans, t_factor(table[j].factor), U1, temp, t_factor(1.0), cn);
   } // over table
-  if (logletter('R')) {
-    cout << endl;
-    cout << "Matrix dump, I1=" << I1 << " Ip=" << Ip << ":" << endl;
-    dump_matrix(cn); // Dump full matrix
-    cout << endl;
-  }
+  if (P.logletter('R'))
+    std::cout << std::endl << "Matrix dump, I1=" << I1 << " Ip=" << Ip << ":" << std::endl << cn << std::endl;
   return cn;
 }
 
 // This routine is used for recalculation of global operators in
 // nrg-recalc-*.cc
-void recalc1_global(const DiagInfo &diag,
-                    const QSrmax &qsrmax,
-                    const Invar &I, 
-                    Matrix &m, // XXX: return this one
-                    const size_t i1, 
-                    const size_t ip, 
-                    const t_factor value) {
+void Symmetry::recalc1_global(const DiagInfo &diag,
+                              const QSrmax &qsrmax,
+                              const Invar &I, 
+                              Matrix &m, // XXX: return this one
+                              const size_t i1, 
+                              const size_t ip, 
+                              const t_factor value) const {
   const Eigen &diagI = diag.at(I);
   const size_t dim = diagI.getnr();
   if (dim == 0) return;

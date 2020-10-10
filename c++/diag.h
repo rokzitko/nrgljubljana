@@ -7,8 +7,6 @@
 #define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"
 
-bool logletter(char);
-
 template<typename T, typename V> void copy(T* eigenvalues, ublas::vector<V>& diagvalues, size_t M) {
   if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)
     cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << endl;
@@ -289,35 +287,35 @@ void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t
 
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
-template<typename M> Eigen diagonalise(ublas::matrix<M> &m) {
+template<typename M> Eigen diagonalise(ublas::matrix<M> &m, const DiagParams &DP) {
   time_mem::Timing t;
   check_is_matrix_upper(m);
   Eigen d;
   if constexpr (std::is_same_v<M, double>) {
-    if (sP.diag == "dsyev"s) 
+    if (DP.diag == "dsyev"s) 
       d = diagonalise_dsyev(m);
-    if (sP.diag == "dsyevd"s) {
+    if (DP.diag == "dsyevd"s) {
       d = diagonalise_dsyevd(m);
       if (d.getnrc() == 0) {
         std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
         d = diagonalise_dsyev(m);
       }
     }
-    if (sP.diag == "dsyevr"s) 
-      d = diagonalise_dsyevr(m, sP.diagratio);
+    if (DP.diag == "dsyevr"s) 
+      d = diagonalise_dsyevr(m, DP.diagratio);
   } else if constexpr (std::is_same_v<M, std::complex<double>>) {
-    if (sP.diag == "zheev"s)  
+    if (DP.diag == "zheev"s)  
       d = diagonalise_zheev(m);
-    if (sP.diag == "zheevr"s) 
-      d = diagonalise_zheevr(m, sP.diagratio);
+    if (DP.diag == "zheevr"s) 
+      d = diagonalise_zheevr(m, DP.diagratio);
   } else my_assert_not_reached();
   my_assert(d.getnrc() > 0);
   my_assert(d.matrix.size1() <= m.size1() && d.matrix.size2() == m.size2());
-  if (logletter('e'))
+  if (DP.logletter('e'))
     dump_eigenvalues(d);
   checkdiag(d);
-  nrglog('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrc() << " [" << myrank() << "]");
-  nrglog('t', "Elapsed: " << setprecision(3) << t.total_in_seconds() << " [" << myrank() << "]");
+  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrc() << " [" << myrank() << "]");
+  nrglogdp('t', "Elapsed: " << setprecision(3) << t.total_in_seconds() << " [" << myrank() << "]");
   return d;
 }
 
