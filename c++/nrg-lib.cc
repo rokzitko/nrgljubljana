@@ -270,7 +270,7 @@ template<typename M> struct DimSubGen {
   using EVEC = ublas::vector<M>;
   size_t kept  = 0;
   size_t total = 0;
-  Rmaxvals rmax;   // substructure of vectors omega
+  Rmaxvals rmax;
   Eigen eig;
   bool is_last = false;
   size_t min() const { return (is_last ? 0 : kept); } // min(), max() return the range of D states to be summed over in FDM
@@ -1882,10 +1882,8 @@ void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
 
 void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, AllSteps &dm)
 {
-  for (const auto &[I, eig]: diag) {
-    const auto f = qsrmax.find(I);
-    dm[step.ndx()][I] = { eig.getnr(), eig.getdim(), f != qsrmax.cend() ? f->second : Rmaxvals{}, eig, step.last() }; // XXX
-  }
+  for (const auto &[I, eig]: diag) 
+    dm[step.ndx()][I] = { eig.getnr(), eig.getdim(), qsrmax.at(I), eig, step.last() };
   truncate_stats ts(diag);
   double ratio = double(ts.nrkept) / ts.nrall;
   cout << "Kept: " << ts.nrkept << " out of " << ts.nrall << ", ratio=" << setprecision(3) << ratio << endl;
