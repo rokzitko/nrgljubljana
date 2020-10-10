@@ -692,6 +692,7 @@ using lsl = list<speclist *>;
 lsl allspectra; // list of list of spectra
 
 class speclist {
+//: public list<BaseSpectrum> {
  private:
    list<BaseSpectrum> spectra;
  public:
@@ -705,8 +706,6 @@ class speclist {
      for (auto &i : spectra) i.about();
    }
 };
-
-speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
 
 using IIfnc = std::function<t_factor(const Invar &, const Invar &)>;
 
@@ -852,6 +851,14 @@ template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
   return os;
 }
 
+auto CorrelatorFactorFnc   = [](const Invar &Ip, const Invar &I1) { return Sym->mult(I1); };
+auto SpecdensFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->specdens_factor(Ip, I1); };
+auto SpecdensquadFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdensquad_factor(Ip, I1); };
+auto SpinSuscFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->dynamicsusceptibility_factor(Ip, I1); };
+auto OrbSuscFactorFnc      = [](const Invar &Ip, const Invar &I1) { return Sym->dynamic_orb_susceptibility_factor(Ip, I1); };
+auto TrivialCheckSpinFnc   = [](const Invar &Ip, const Invar &I1, int SPIN) { return true; };
+auto SpecdensCheckSpinFnc  = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
+
 class Oprecalc {
  public:
    // The following lists hold the names of operators which need to be recomputed. The default behavior is to
@@ -859,6 +866,22 @@ class Oprecalc {
    // open_files(). In addition, singlet operators are always recomputed in the first NRG run, so that we can
    // calculate the expectation values.
    set<string> s, p, g, d, v, t, q, ot;
+
+   speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
+
+   // Calculate spectral densities
+   void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM, const Stats &stats) {
+     TIME("spec");
+     for (auto &i : spectraS)    calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+     for (auto &i : spectraCHIT) calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+     for (auto &i : spectraD)    calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
+     for (auto &i : spectraT)    calc_generic(i, step, diag, SpinSuscFactorFnc,     TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+     for (auto &i : spectraOT)   calc_generic(i, step, diag, OrbSuscFactorFnc,      TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+     for (auto &i : spectraQ)    calc_generic(i, step, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc,  rho, rhoFDM, stats);
+     for (auto &i : spectraGT)   calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
+     for (auto &i : spectraI1T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
+     for (auto &i : spectraI2T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
+   }
 
    void report(ostream &F, const string &name, const set<string> &x) {
      F << name << "=[" << x << "]" << endl;
@@ -989,7 +1012,7 @@ class Oprecalc {
    
    ~Oprecalc() {
      TIME("broaden");
-     for (auto &i : allspectra) i->clear();
+     for (auto &i : allspectra) i->clear(); // XXX
    }
    
 };
@@ -1443,28 +1466,6 @@ void clear_eigenvectors(DiagInfo &diag) {
       m = Matrix(0, 0);
 }
 
-auto CorrelatorFactorFnc   = [](const Invar &Ip, const Invar &I1) { return Sym->mult(I1); };
-auto SpecdensFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->specdens_factor(Ip, I1); };
-auto SpecdensquadFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdensquad_factor(Ip, I1); };
-auto SpinSuscFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->dynamicsusceptibility_factor(Ip, I1); };
-auto OrbSuscFactorFnc      = [](const Invar &Ip, const Invar &I1) { return Sym->dynamic_orb_susceptibility_factor(Ip, I1); };
-auto TrivialCheckSpinFnc   = [](const Invar &Ip, const Invar &I1, int SPIN) { return true; };
-auto SpecdensCheckSpinFnc  = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
-
-// Calculate spectral densities
-void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM, const Stats &stats) {
-  TIME("spec");
-  for (auto &i : spectraS)    calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-  for (auto &i : spectraCHIT) calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-  for (auto &i : spectraD)    calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
-  for (auto &i : spectraT)    calc_generic(i, step, diag, SpinSuscFactorFnc,     TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-  for (auto &i : spectraOT)   calc_generic(i, step, diag, OrbSuscFactorFnc,      TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-  for (auto &i : spectraQ)    calc_generic(i, step, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-  for (auto &i : spectraGT)   calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
-  for (auto &i : spectraI1T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
-  for (auto &i : spectraI2T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
-}
-
 void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
   // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
   // irrelevant (0).
@@ -1509,7 +1510,7 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
   stats.td.save_values();
 }
 
-void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output, const DiagInfo &diag, 
+void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output, Oprecalc &oprecalc, const DiagInfo &diag, 
                                  const IterInfo &iterinfo, const AllSteps &dm, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
@@ -1528,7 +1529,7 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
     if (P.need_rhoFDM()) 
       rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);
   }
-  spectral_densities(step, diag, rho, rhoFDM, stats);
+  oprecalc.spectral_densities(step, diag, rho, rhoFDM, stats);
   if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, P);
   if (step.nrg() && P.dumpdiagonal) dump_diagonal(diag, iterinfo, P);
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm, P);
@@ -1933,7 +1934,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
     split_in_blocks(diag, qsrmax);
   if (P.do_recalc_all(step.runtype)) { // Either ...
     oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
-    calculate_spectral_and_expv(step, stats, output, diag, iterinfo, dm, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
   }
   if (!P.ZBW) 
     truncate_perform(diag);            // Actual truncation occurs at this point
@@ -1944,11 +1945,10 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   }
   if (P.do_recalc_kept(step.runtype)) { // ... or ...
     oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
-    calculate_spectral_and_expv(step, stats, output, diag, iterinfo, dm, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
   }
-  if (P.do_recalc_none()) { // ... or this
-    calculate_spectral_and_expv(step, stats, output, diag, iterinfo, dm, P);
-  }
+  if (P.do_recalc_none())  // ... or this
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
   if (P.checksumrules) operator_sumrules(diag, iterinfo);
 }
 
@@ -1964,13 +1964,13 @@ DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
 }
 
 // Perform calculations with quantities from 'data' file
-void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats &stats, Output &output, const Params &P) {
+void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats &stats, Output &output, Oprecalc &oprecalc, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   cout << endl << "Before NRG iteration";
   cout << " (N=" << step.N() << ")" << endl;
   perform_basic_measurements(step, diag0, stats, output); // XXX
   AllSteps empty_dm{};
-  calculate_spectral_and_expv(step, stats, output, diag0, iterinfo, empty_dm, P);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, P);
   if (P.checksumrules) operator_sumrules(diag0, iterinfo);
 }
 
@@ -2051,11 +2051,11 @@ DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats,
   auto output = Output(step.runtype, iterinfo, stats, P);
   // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
   if (step.nrg() && P.calc0 && !P.ZBW)
-    docalc0(step, iterinfo, diag0, stats, output, P);
+    docalc0(step, iterinfo, diag0, stats, output, oprecalc, P);
   DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, P) : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, P);
   cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
   stats.GS_energy = stats.total_energy;
-  if (step.nrgrun() && P.dumpsubspaces) dump_subspaces(dm, P);
+  if (step.nrg() && P.dumpsubspaces) dump_subspaces(dm, P);
   cout << endl << "** Iteration completed." << endl << endl;
   return diag;
 }
