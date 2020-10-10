@@ -4,54 +4,34 @@
 #ifndef _matrix_cc_
 #define _matrix_cc_
 
-/* +++ Construct an offdiagonal part of the Hamiltonian. +++
+// +++ Construct an offdiagonal part of the Hamiltonian. +++
 
- i,j - indexes of matrix blocks that constitue the total Hamiltonian matrix
-       in the given invariant subspace. Not all possible blocks do contribute.
- ch - contribution of which channel is being considered? 0,1,..
- factor0 - the coefficient which multiplies the irreducible matrix
-           elements. This coefficient takes into account the multiplicities.
-           For simple symmetries, this factor is +-1, where the sign is
-           related to the fermionic anticommutations that are required to
-           shift around the creation/annihilation operators that appear in the
-           hopping operator.
-
- NOTE: the offdiagonal part depends on xi(N), while zeta(N) affect the
- diagonal part of the Hamiltonian matrix! 
-*/
-
-bool offdiag_contributes(size_t i, size_t j, size_t ch, const Rmaxvals &qq) {
+bool Symmetry::offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const {
   my_assert(i != j);
-  const size_t size1 = qq.rmax(i);
-  const size_t size2 = qq.rmax(j);
-  // Here we test if the block (i,j) exists at all. If it doesn't, we
-  // immediately return, otherwise the following assertion will trigger a
-  // false error message and abort the execution.
-  const bool contributes = (size1 > 0) && (size2 > 0);
-  return contributes;
+  return qq.rmax(i) && qq.rmax(j);
 }
 
-// i,j - indexes of the out-of-diagonal matrix block that we are
-//       constructing
-// ch,fnr - channel and extra index to locate the correct block of
-//          the <||f||> matrix (irreducible matrix elements)
-// factor - appropriate factor (includes the Clebsch-Gordan coefficients
-//          as well as the xi hopping parameter)
+// i,j - indexes of the out-of-diagonal matrix block that we are constructing
+// ch,fnr - channel and extra index to locate the correct block of the <||f||> matrix (irreducible matrix elements)
 // h - matrix being built
 // qq - matrix dimensions data (to determine the position in the matrix)
-// In - In[i] and In[j] are the invariant subspaces of required <||f||>
-//      matrix elements
-void offdiag_function(const Step &step, size_t i, size_t j,
-                      size_t ch,      // channel number
-                      size_t fnr,     // extra index for <||f||>, usually 0
-                      t_matel factor, // may be complex (in principle)
-                      Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) {
-  if (!offdiag_contributes(i, j, ch, qq))
+// In - In[i] and In[j] are the invariant subspaces of required <||f||> matrix elements
+// factor  - the coefficient which multiplies the irreducible matrix elements. This coefficient takes into account
+//           the multiplicities.
+// NOTE: the offdiagonal part depends on xi(N), while zeta(N) affect the diagonal part of the Hamiltonian matrix! 
+void Symmetry::offdiag_function(const Step &step, const size_t i, const size_t j,
+                                const size_t ch,      // channel number
+                                const size_t fnr,     // extra index for <||f||>, usually 0
+                                const t_matel factor, // may be complex (in principle)
+                                Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const 
+{
+  // Here we test if the block (i,j) exists at all. If it doesn't, we immediately return, otherwise the following
+  // assertion will trigger a false error message and abort the execution.
+  if (!offdiag_contributes(i, j, qq))
     return;
   if (!my_isfinite(factor)) {
-    cout << "offdiag_function() critical error: factor is not finite." << endl;
     cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor=" << factor << endl;
-    exit(1);
+    throw std::runtime_error("offdiag_function() critical error: factor is not finite");
   }
   const size_t begin1 = qq.offset(i);
   const size_t begin2 = qq.offset(j);
@@ -64,15 +44,14 @@ void offdiag_function(const Step &step, size_t i, size_t j,
   const t_matel factor_scaled = factor / step.scale();
   const auto f = opch[ch][fnr].find(II);
   if (f == opch[ch][fnr].cend()) {
-    cout << "offdiag_function() critical error: subspace does not exist." << endl;
     cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor_scaled=" << factor_scaled << endl;
     cout << "source subspaces II=" << II << endl;
-    exit(1);
+    throw std::runtime_error("offdiag_function(): subspace does not exist.");
   }
   const auto &mat = f->second;
   my_assert(size1 == mat.size1() && size2 == mat.size2());
-  // We are building the upper triangular part of the Hermitian Hamiltonian.
-  // Thus usually i < j. If not, we must conjugate transpose the contribution!
+  // We are building the upper triangular part of the Hermitian Hamiltonian. Thus usually i < j. If not, we must
+  // conjugate transpose the contribution!
   const bool conj_transpose = i > j;
   if (conj_transpose) {
     ublas::matrix_range<Matrix> hsub(h, ublas::range(begin2, begin2 + size2), ublas::range(begin1, begin1 + size1));
@@ -83,51 +62,48 @@ void offdiag_function(const Step &step, size_t i, size_t j,
   }
 }
 
-/* +++ Shift the diagonal matrix elements by the number of electrons
- multiplied by the required constant(s) zeta. +++
-
- 'number' is the number of electrons for channel 'ch' in invariant
- subspaces indexed by 'i'. Note that 'number' is a floating point
- number: this is required, for example, in the LR symmetric basis
- sets.
-
- NOTE: for problems where a given invariant subspace does not
- correspond to a fixed number of added electrons, a generalized
- routine should be used. 
-*/
-void diag_function(const Step &step, size_t i, size_t ch, double number, t_coef sc_zeta, Matrix &h, const Rmaxvals &qq) {
-  my_assert(number >= 0.0 && number <= 14.0);
+// +++ Shift the diagonal matrix elements by the number of electrons multiplied by the required constant(s) zeta. +++
+//
+// 'number' is the number of electrons for channel 'ch' in invariant subspaces indexed by 'i'. Note that 'number' is
+// a floating point number: this is required, for example, in the LR symmetric basis sets.
+//
+// NOTE: for problems where a given invariant subspace does not correspond to a fixed number of added electrons, a
+// generalized routine should be used. 
+void Symmetry::diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+                                  Matrix &h, const Rmaxvals &qq, const double f) const 
+{
   const size_t begin1 = qq.offset(i);
   const size_t size1  = qq.rmax(i);
   // For convenience we subtract the average site occupancy.
   const double avgoccup = ((double)P.spin) / 2; // multiplicity divided by 2
   // Energy shift of the diagonal matrix elements in the NRG Hamiltonian. WARNING: for N=0, we are not adding the
   //  first site of the Wilson chain (indexed as 0), but the second one (indexed as 1). Therefore the appropriate
-  //  zeta is not zeta(0), but zeta(1). zeta(0) is the shift applied to the f[0] orbital in initial.m !!! */
-  const t_coef shift = sc_zeta * (number - avgoccup) / step.scale();
+  //  zeta is not zeta(0), but zeta(1). zeta(0) is the shift applied to the f[0] orbital in initial.m !!!
+  const t_coef shift = sc_zeta * (number - f*avgoccup) / step.scale();
   for (size_t j = begin1; j < begin1 + size1; j++) h(j, j) += shift;
 }
 
-// Compare with diag_function()
-void diag_function_half(const Step &step, size_t i, size_t ch, double number, t_matel sc_zeta, Matrix &h, const Rmaxvals &qq) {
-  const size_t begin1 = qq.offset(i);
-  const size_t size1  = qq.rmax(i);
-  // For convenience we subtract the average site occupancy.
-  const double avgoccup = ((double)P.spin) / 2; // multiplicity divided by 2
-  // avgoccup is divided by a further factor of 2 compared
-  // to diag_function() above!
-  const t_matel shift = sc_zeta * (number - avgoccup / 2) / step.scale();
-  for (size_t j = begin1; j < begin1 + size1; j++) h(j, j) += shift;
+void Symmetry::diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_matel sc_zeta, 
+                             Matrix &h, const Rmaxvals &qq) const 
+{
+  diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 1);
+}
+
+void Symmetry::diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_matel sc_zeta, 
+                                  Matrix &h, const Rmaxvals &qq) const 
+{
+  diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 0.5);
 }
 
 // +++ Shift the offdiagonal matrix elements by factor. +++
 
-void diag_offdiag_function(const Step &step, size_t i, size_t j, size_t chin, t_matel factor, Matrix &h, const Rmaxvals &qq) {
+void Symmetry::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_matel factor, 
+                                     Matrix &h, const Rmaxvals &qq) const {
   if (i > j) return; // only upper triangular part
-  size_t begin1    = qq.offset(i);
-  size_t size1     = qq.rmax(i);
-  size_t begin2    = qq.offset(j);
-  size_t size2     = qq.rmax(j);
+  size_t begin1 = qq.offset(i);
+  size_t size1  = qq.rmax(i);
+  size_t begin2 = qq.offset(j);
+  size_t size2  = qq.rmax(j);
   bool contributes = (size1 > 0) && (size2 > 0);
   if (!contributes) return;
   my_assert(size1 == size2);

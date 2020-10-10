@@ -127,6 +127,18 @@ class Symmetry {
    // Is an invariant subspace with given quantum numbers allowed?
    virtual bool Invar_allowed(const Invar &I) { return true; }
    
+   bool offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const;
+   void offdiag_function(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_matel factor,
+                         Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const;
+   void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
+                           Matrix &h, const Rmaxvals &qq, const double f) const;
+   void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
+                      Matrix &h, const Rmaxvals &qq) const;
+   void diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_matel sc_zeta,
+                           Matrix &h, const Rmaxvals &qq) const;
+   void diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_matel factor,
+                              Matrix &h, const Rmaxvals &qq) const;
+  
    virtual void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) = 0;
    
    // Called from recalc_dynamicsusceptibility().  This is the factor due

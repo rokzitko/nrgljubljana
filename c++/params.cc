@@ -646,7 +646,7 @@ struct Params {
   double getEmax() const { return getE0() * sqr(getEfactor()); }
 };
 
-Params P; // XXX
+//Params P; // XXX
 
 // Shared parameters for MPI parallelization.
 class sharedParam {

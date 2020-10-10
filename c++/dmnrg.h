@@ -256,7 +256,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
   } // loop over invariant spaces
 }
 
-bool file_exists(const string &fn)
+inline bool file_exists(const std::string &fn)
 {
   ofstream F(fn, ios::binary | ios::out);
   return bool(F);
@@ -264,9 +264,9 @@ bool file_exists(const string &fn)
 
 // Returns true if all the required density matrices are already
 // saved on the disk.
-bool already_computed(const string &prefix) {
-  for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
-    const string fn = workdir.rhofn(prefix, N - 1); // note the minus 1
+bool already_computed(const std::string &prefix, const Params &P) {
+  for (auto N = P.Nmax - 1; N > P.Ninit; N--) {
+    const std::string fn = workdir.rhofn(prefix, N - 1); // note the minus 1
     if (!file_exists(fn)) {
       cout << fn << " not found. Computing." << endl;
       return false;
@@ -281,7 +281,7 @@ bool already_computed(const string &prefix) {
 
 void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &P, 
                         const std::string filename = FN_RHO) {
-  if (P.resume && already_computed(filename)) {
+  if (P.resume && already_computed(filename, P)) {
     cout << "Not necessary: already computed!" << endl;
     return;
   }
@@ -379,7 +379,7 @@ double sum_wn(size_t N, const Stats &stats, const Params &P) {
 
 void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const AllSteps &dm, const Stats &stats, const Params &P,
                             const std::string filename = FN_RHOFDM) {
-  if (P.resume && already_computed(filename)) {
+  if (P.resume && already_computed(filename, P)) {
     cout << "Not necessary: already computed!" << endl;
     return;
   }

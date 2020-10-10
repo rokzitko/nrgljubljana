@@ -1852,8 +1852,9 @@ void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qs
 
 void dump_f(const Opch &opch) {
   std::cout << std::endl;
-  for (size_t i = 0; i < P.channels; i++)
-    for (size_t j = 0; j < P.perchannel; j++)
+//  for (const auto &&[i, ch] : opch | ranges::views::enumerateh)
+  for (size_t i = 0; i < opch.size(); i++)
+    for (size_t j = 0; j < opch[i].size(); j++)
       std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << opch[i][j] << endl;
   std::cout << std::endl;
 }
@@ -1920,7 +1921,7 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
 }
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
-void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, Output &output, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc) {
+void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, Output &output, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   // XXX: move find_groundstate & subtraction here!
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << endl;
@@ -1959,7 +1960,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
 DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   QSrmax qsrmax = get_qsrmax(diagprev);
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, P);
-  after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc);
+  after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, P);
   trim_matrices(diag, iterinfo);
   clear_eigenvectors(diag);
   time_mem::memory_time_brief_report();
@@ -2004,7 +2005,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
   truncate_prepare(step, diag, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax empty_qsrmax{};
-  after_diag(step, iterinfo, stats, diag, output, empty_qsrmax, dm, oprecalc);
+  after_diag(step, iterinfo, stats, diag, output, empty_qsrmax, dm, oprecalc, P);
   return diag;
 }
 
@@ -2170,7 +2171,7 @@ void mpi_sync_params() {
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
   // Workdir workdir;
-//  Params P; // XXX
+  Params P; // XXX
   P.read_parameters(workdir);
   sP.init(P);
   calculation(P);
