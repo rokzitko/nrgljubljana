@@ -1062,14 +1062,15 @@ struct Output {
   unique_ptr<ExpvOutput> customfdm;
   
   Output(const RUNTYPE &runtype, const IterInfo &iterinfo, Stats &stats, const Params &P,
-         const std::string filename_nrg = "energies.nrg"s, const std::string filename_dmnrg = "energies.dmnrg"s,
-         const std::string filename_custom = "custom", const std::string filename_customfdm = "customfdm")
+         const std::string filename_energies= "energies.nrg"s,
+         const std::string filename_custom = "custom", 
+         const std::string filename_customfdm = "customfdm")
     : runtype(runtype), P(P), annotated(P) {
       // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
       // runs produce the same results.
-      if (P.dumpenergies) Fenergies.open(runtype == RUNTYPE::NRG ? filename_nrg : filename_dmnrg);
+      if (P.dumpenergies) Fenergies.open(filename_energies);
       list<string> ops;
-      for (const auto &name : iterinfo.ops | boost::adaptors::map_keys)  ops.push_back(name);
+      for (const auto &name : iterinfo.ops  | boost::adaptors::map_keys) ops.push_back(name);
       for (const auto &name : iterinfo.opsg | boost::adaptors::map_keys) ops.push_back(name);
       if (runtype == RUNTYPE::NRG)
         custom = make_unique<ExpvOutput>(filename_custom, stats.expv, ops, P);
@@ -1510,9 +1511,9 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
 void perform_basic_measurements(const Step &step, const DiagInfo &diag, Stats &stats, Output &output) {
-  output.dump_all_energies(diag, step.ndx()); // XXX
-  if (step.nrg()) calculate_TD(step, diag, stats, output);
-  if (step.nrg()) output.annotated.dump(step, diag, stats);
+  output.dump_all_energies(diag, step.ndx());
+  calculate_TD(step, diag, stats, output);
+  output.annotated.dump(step, diag, stats);
 }
 
 // Make a list of subspaces for the new iteration. Generic implementation: use the quantum number differences in
@@ -1897,18 +1898,19 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   stats.rel_Egs[step.ndx()] = stats.Egs;
   stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
   stats.energy_offsets[step.ndx()] = stats.total_energy;
-  if (step.nrg()) // only in the first run, in the second one the data is loaded from file!
-    calc_abs_energies(step, diag, stats);
-  if (step.nrg() && P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
-    save_transformations(step.ndx(), diag, P);
-  perform_basic_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
-  if (!P.ZBW)
+  if (step.nrg()) {
+    calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
+    if (P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
+      save_transformations(step.ndx(), diag, P);
+    perform_basic_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
+  }
+  if (!P.ZBW) // XXX necessary?
     split_in_blocks(diag, qsrmax);
   if (P.do_recalc_all(step.runtype)) { // Either ...
     oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
   }
-  if (!P.ZBW) 
+  if (!P.ZBW) // XXX necessary?
     truncate_perform(diag);            // Actual truncation occurs at this point
   store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
