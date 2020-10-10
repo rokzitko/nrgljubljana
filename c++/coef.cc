@@ -30,8 +30,8 @@ class set_of_tables {
 
  public:
    size_t nr_tabs() const { return tabs.size(); }
-   void read(ifstream &fdata) {
-     tabs.resize(P.coefchannels);
+   void read(ifstream &fdata, int coefchannels) {
+     tabs.resize(coefchannels);
      for (auto &i : tabs) i.read_values(fdata);
    }
    t_coef operator()(size_t N, size_t alpha) const {
@@ -43,12 +43,18 @@ class set_of_tables {
      return tabs[alpha].max();
    }
    void setvalue(size_t N, size_t alpha, t_coef val) {
-     my_assert(alpha < tabs.size() && N <= P.Nmax);
+     my_assert(alpha < tabs.size());
      tabs[alpha].setvalue(N, val);
    }
 };
 
-struct Coef {
+class Coef {
+ private:
+   const Params &P;
+   
+ public:
+   Coef(const Params &P) : P(P) {}
+   
    set_of_tables xi;   // f^dag_N f_N+1 terms
    set_of_tables zeta; // f^dag_N f_N terms
 

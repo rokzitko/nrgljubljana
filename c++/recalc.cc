@@ -26,7 +26,7 @@ Matrix recalc_f(const DiagInfo &diag,
   const size_t dim1 = diagI1.getnr();
   const size_t dimp = diagIp.getnr();
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
-  const Twoinvar II = make_pair(I1, Ip);
+  const Twoinvar II = {I1, Ip};
   Matrix f = Matrix(dim1, dimp);
   f.clear(); // Set it to all zeros.
   if (dim1 && dimp) {
@@ -66,11 +66,12 @@ struct Recalc {
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
 // completed!
 void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
-  e.blocks.resize(P.combs);
+  const auto combs = qsrmax.at(I).combs();
+  e.blocks.resize(combs);
   const size_t nr = e.getnr(); // nr. of eigenpairs
   my_assert(nr > 0);
   my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
-  for (size_t block = 0; block < P.combs; block++) {
+  for (size_t block = 0; block < combs; block++) {
     const size_t rmax   = qsrmax.at(I).rmax(block + 1); // offset 1
     const size_t offset = qsrmax.at(I).offset(block + 1);
     my_assert(e.matrix.size1() >= nr);
@@ -110,7 +111,7 @@ Matrix recalc_general(const DiagInfo &diag,
   const Eigen &diagIp = diag.at(Ip);
   const size_t dim1 = diagI1.getnr();
   const size_t dimp = diagIp.getnr();
-  const Twoinvar II = make_pair(I1, Ip);
+  const Twoinvar II = {I1, Ip};
   Matrix cn = Matrix(dim1, dimp);
   cn.clear();
   if (dim1 == 0 || dimp == 0) return cn; // empty matrix
@@ -129,7 +130,7 @@ Matrix recalc_general(const DiagInfo &diag,
     const auto IN1 = Sym->ancestor(I1, table[j].i1);
     const auto INp = Sym->ancestor(Ip, table[j].ip);
     my_assert(IN1 == table[j].IN1 && INp == table[j].INp);
-    const Twoinvar ININ = make_pair(table[j].IN1, table[j].INp);
+    const Twoinvar ININ = {table[j].IN1, table[j].INp};
     const size_t cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.
     my_assert(cnt == 0 || cnt == 1);        // Anything other than 0 or 1 is a bug!
     // There are exceptions when a subspace might not contribute. Two are known: 1. for triplet operators, two

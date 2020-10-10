@@ -70,13 +70,13 @@ void Bins::loggrid_acc() {
   bins.resize(0);
   for (double e = emin; e <= emax; e *= pow(base, 1.0 / P.bins)) {
     double x = (emax - a) / emax * e + a;
-    bins.push_back(make_pair(x, 0.0));
+    bins.emplace_back(x, 0);
   }
   if (P.linstep != 0.0) {
     my_assert(P.linstep > 0.0);
-    for (double e = a; e > 0.0; e -= P.linstep) bins.push_back(make_pair(e, 0.0));
+    for (double e = a; e > 0.0; e -= P.linstep) bins.emplace_back(e, 0);
   }
-  bins.push_back(make_pair(DBL_MIN, 0.0)); // add zero point
+  bins.emplace_back(DBL_MIN, 0); // add zero point
   sort(begin(bins), end(bins), sortfirst());
   my_assert(bins.size() >= 2);
 }
@@ -84,7 +84,7 @@ void Bins::loggrid_acc() {
 void Bins::loggrid_std() {
   const auto nrbins = (size_t)((log10emax - log10emin) * P.bins + 1.0);
   bins.resize(nrbins); // Note: Spikes is a vector type!
-  for (size_t i = 0; i < nrbins; i++) bins[i] = make_pair(pow(base, log10emin + (double)i / P.bins), 0.0);
+  for (size_t i = 0; i < nrbins; i++) bins[i] = {pow(base, log10emin + (double)i / P.bins), 0};
 }
 
 // Unbiased assignment of the spectral weight to bins.
@@ -183,7 +183,7 @@ class Temp : public Spikes {
        }
      }
      // or else
-     push_back(make_pair(energy, weight));
+     emplace_back(energy, weight);
    }
 };
 

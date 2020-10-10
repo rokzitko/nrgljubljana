@@ -6,8 +6,18 @@
 
 #include "mp.h"
 
-// Fix normalization of u_{n,m}, v_{n,m} to 1. IMPORTANT: pass by
-// reference!
+class Tridiag {
+   Params &P;
+ public:
+   void tridiag_ch(int alpha, Coef &coef);
+   Tridiag(Coef &coef, Params &P) : P(P) {
+     TIME("tridiag");
+     my_assert(P.coefchannels >= 1);
+     for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha, coef);
+   }
+};
+   
+// Fix normalization of u_{n,m}, v_{n,m} to 1. IMPORTANT: pass by reference!
 void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX) {
   // Constants
   my_mpf mpZERO, mpONE;
@@ -30,9 +40,8 @@ void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX) {
   }
 }
 
-// Tridiagonalisation of the discretization coefficients. Multiple
-// precision arithmetics library GMP is required.
-void tridiag_ch(int alpha, Coef &coef) {
+// Tridiagonalisation of the discretization coefficients. Multiple precision arithmetics library GMP is required.
+void Tridiag::tridiag_ch(int alpha, Coef &coef) {
   cout << "Tridiagonalisation, ch=" << alpha << ".";
   cout << " Using GMP version " << gmp_version << endl;
 
@@ -173,12 +182,6 @@ void tridiag_ch(int alpha, Coef &coef) {
       mpf_set(up_prev[m], up[m]);
     }
   }
-}
-
-void tridiag(Coef &coef) {
-  TIME("tridiag");
-  my_assert(P.coefchannels >= 1);
-  for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha, coef);
 }
 
 #endif // _tridiag_h_

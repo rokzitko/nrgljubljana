@@ -172,35 +172,29 @@ std::vector<double> make_mesh() {
   return vecE;
 }
 
-// Save binary raw (binned) spectral function. If using complex
-// numbers and P.reim==true, we save triplets (energy,real part,imag
-// part).
+// Save binary raw (binned) spectral function. If using complex numbers and P.reim==true, we save triplets
+// (energy,real part,imag part).
 void SpectrumRealFreq::savebins() {
   if (!P.savebins) return;
   string fn = filename + ".bin";
   cout << " " << fn;
   ofstream Fbins = safe_open(fn, true); // true=binary!
-  for (const auto &i : fspos.bins) {
-    const double w = WEIGHT(i).real();
-    const double e = ENERGY(i);
+  for (const auto &[e, w] : fspos.bins) {
+    const auto [wr, wi] = reim(w);
     my_assert(e > 0.0);
     Fbins.write((char *)&e, sizeof(double));
-    Fbins.write((char *)&w, sizeof(double));
-    if (P.reim) {
-      const double wi = WEIGHT(i).imag();
+    Fbins.write((char *)&wr, sizeof(double));
+    if (P.reim)
       Fbins.write((char *)&wi, sizeof(double));
-    }
   }
-  for (const auto &i : fsneg.bins) {
-    const double w = WEIGHT(i).real();
-    const double e = -ENERGY(i);
+  for (const auto &[abse, w] : fsneg.bins) {
+    const auto [wr, wi] = reim(w);
+    const double e = -abse;
     my_assert(e < 0.0); // attention!
     Fbins.write((char *)&e, sizeof(double));
-    Fbins.write((char *)&w, sizeof(double));
-    if (P.reim) {
-      const double wi = WEIGHT(i).imag();
+    Fbins.write((char *)&wr, sizeof(double));
+    if (P.reim) 
       Fbins.write((char *)&wi, sizeof(double));
-    }
   }
 }
 
@@ -217,28 +211,24 @@ void SpectrumRealFreq::continuous() {
   std::vector<double> vecE = make_mesh(); // Energies on the mesh
   for (double E : vecE) {
     weight_bucket valpos, valneg;
-    for (const auto &i : fspos.bins) {
-      const t_weight w = WEIGHT(i);
-      const double e   = ENERGY(i);
+    for (const auto &[e, w] : fspos.bins) {
       my_assert(e > 0.0);
       valpos += w * BR_NEW(E, e, alpha, omega0);
       valneg += w * BR_NEW(-E, e, alpha, omega0);
     }
-    for (const auto &i : fsneg.bins) {
-      const t_weight w = WEIGHT(i);
-      const double e   = ENERGY(i);
+    for (const auto &[e, w] : fsneg.bins) {
       my_assert(e > 0.0); // attention!
       valneg += w * BR_NEW(-E, -e, alpha, omega0);
       valpos += w * BR_NEW(E, -e, alpha, omega0);
     }
-    densitypos.push_back(make_pair(E, valpos));
-    densityneg.push_back(make_pair(-E, valneg));
+    densitypos.push_back({E, valpos});
+    densityneg.push_back({-E, valneg});
   }
   sort(begin(densityneg), end(densityneg), sortfirst());
   sort(begin(densitypos), end(densitypos), sortfirst());
   string fn = filename + ".dat";
   cout << " " << fn;
   ofstream Fdensity = safe_open(fn);
-  save_densfunc(Fdensity, densityneg, P.reim);
-  save_densfunc(Fdensity, densitypos, P.reim);
+  save_densfunc(Fdensity, densityneg, P.prec_xy, P.reim);
+  save_densfunc(Fdensity, densitypos, P.prec_xy, P.reim);
 }

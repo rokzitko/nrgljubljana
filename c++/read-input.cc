@@ -174,7 +174,7 @@ std::tuple<DiagInfo, IterInfo, Coef> read_data(Params &P, Stats &stats) {
   skip_comments(fdata);
   IterInfo iterinfo0;
   read_irreduc_f(fdata, diag0, iterinfo0.opch, P);
-  Coef coef;
+  Coef coef(P);
   while (true) {
     /* skip white space */
     while (!fdata.eof() && isspace(fdata.peek())) fdata.get();
@@ -196,27 +196,27 @@ std::tuple<DiagInfo, IterInfo, Coef> read_data(Params &P, Stats &stats) {
       case 'o': iterinfo0.opot[opname] = read_matrix_elements(fdata, diag0); break;
       case 'q': iterinfo0.opq[opname]  = read_matrix_elements(fdata, diag0); break;
       case 'z':
-        coef.xi.read(fdata);
-        coef.zeta.read(fdata);
+        coef.xi.read(fdata, P.coefchannels);
+        coef.zeta.read(fdata, P.coefchannels);
         break;
       case 'Z':
-        coef.delta.read(fdata);
-        coef.kappa.read(fdata);
+        coef.delta.read(fdata, P.coefchannels);
+        coef.kappa.read(fdata, P.coefchannels);
         break;
       case 'X':
-        coef.xiR.read(fdata);
-        coef.zetaR.read(fdata);
+        coef.xiR.read(fdata, P.coefchannels);
+        coef.zetaR.read(fdata, P.coefchannels);
         break;
       case 'T':
-        coef.ep.read(fdata);
-        coef.em.read(fdata);
-        coef.u0p.read(fdata);
-        coef.u0m.read(fdata);
+        coef.ep.read(fdata, P.coefchannels);
+        coef.em.read(fdata, P.coefchannels);
+        coef.u0p.read(fdata, P.coefchannels);
+        coef.u0m.read(fdata, P.coefchannels);
         break;
     default: throw std::invalid_argument(fmt::format("Unknown block {} in data file.", ch));
     }
   }
-  if (string(P.tri) == "cpp") tridiag(coef); // before calling determine_Nmax()
+  if (string(P.tri) == "cpp") Tridiag(coef, P); // before calling determine_Nmax()
   determine_Nmax(coef, P);
   return {diag0, iterinfo0, coef};
 }

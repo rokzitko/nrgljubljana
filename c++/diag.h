@@ -315,8 +315,7 @@ template<typename M> Eigen diagonalise(ublas::matrix<M> &m) {
   my_assert(d.matrix.size1() <= m.size1() && d.matrix.size2() == m.size2());
   if (logletter('e'))
     dump_eigenvalues(d);
-  if (P.checkdiag)
-    checkdiag(d);
+  checkdiag(d);
   nrglog('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrc() << " [" << myrank() << "]");
   nrglog('t', "Elapsed: " << setprecision(3) << t.total_in_seconds() << " [" << myrank() << "]");
   return d;

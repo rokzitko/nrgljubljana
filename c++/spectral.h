@@ -4,10 +4,12 @@
 #ifndef _spectral_h_
 #define _spectral_h_
 
+// XXX redundancy: keep one of DELTA & t_delta_peak
+
 // This structure is used in spec*.cc
 struct DELTA {
   double energy{};
-  t_weight weight;
+  t_weight weight; // XXX: {} ?
 };
 
 // Container for holding spectral information represented by delta
@@ -15,11 +17,9 @@ struct DELTA {
 typedef pair<double, t_weight> t_delta_peak;
 using Spikes = std::vector<t_delta_peak>;
 
-inline double ENERGY(const Spikes::value_type &i) { return i.first; }
-inline t_weight WEIGHT(const Spikes::value_type &i) { return i.second; }
-
+// XXX: move to output.h
 // used in matsubata.h and in save_densfunc()
-void output(ostream &F, double x, t_weight y, bool imagpart, const double clip_tol_imag = 1e-10) {
+inline void output(ostream &F, const double x, const t_weight y, const bool imagpart, const double clip_tol_imag = 1e-10) {
   const auto [r, i] = reim(y);
   F << x << " " << r;
   if (imagpart) F << " " << (abs(i) > abs(r) * clip_tol_imag ? i: 0.0);
@@ -27,8 +27,8 @@ void output(ostream &F, double x, t_weight y, bool imagpart, const double clip_t
 }
 
 template<typename T>
-void save_densfunc(T&& F, const Spikes &xy, bool imagpart = false) {
-  F << setprecision(P.prec_xy);
+void save_densfunc(T&& F, const Spikes &xy, const int prec, const bool imagpart) {
+  F << setprecision(prec);
   for (const auto &[e, w] : xy) output(F, e, w, imagpart);
 }
 
@@ -69,16 +69,16 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 
 CONSTFNC t_weight sum_weights(const Spikes &s) {
   t_weight sum = 0.0;
-  for (const auto &i : s) sum += WEIGHT(i);
+  for (const auto &[e, w] : s) sum += w; // XXX stl algo
   return assert_isfinite(sum);
 }
 
 // Calculate "moment"-th spectral moment.
 CONSTFNC t_weight moment(const Spikes &sneg, const Spikes &spos, int moment) {
   t_weight sumA = 0.0;
-  for (const auto &i : spos) sumA += WEIGHT(i) * pow(ENERGY(i), moment);
+  for (const auto &[e, w] : spos) sumA += w * pow(e, moment);
   t_weight sumB = 0.0;
-  for (const auto &i : sneg) sumB += WEIGHT(i) * pow(-ENERGY(i), moment);
+  for (const auto &[e, w] : sneg) sumB += w * pow(-e, moment);
   t_weight sum = sumA + sumB;
   return assert_isfinite(sum);
 }
@@ -90,9 +90,9 @@ CONSTFNC double bose_fnc(const double omega, const double T) { return 1 / (1 - e
 // Integrated spectral function with a kernel as in FDT for fermions
 CONSTFNC t_weight fd_fermi(const Spikes &sneg, const Spikes &spos, double const T) {
   t_weight sumA = 0.0;
-  for (const auto &i : spos) sumA += WEIGHT(i) * fermi_fnc(ENERGY(i), T);
+  for (const auto &[e, w] : spos) sumA += w * fermi_fnc(e, T);
   t_weight sumB = 0.0;
-  for (const auto &i : sneg) sumB += WEIGHT(i) * fermi_fnc(-ENERGY(i), T);
+  for (const auto &[e, w] : sneg) sumB += w * fermi_fnc(-e, T);
   t_weight sum = sumA + sumB;
   return assert_isfinite(sum);
 }
@@ -100,9 +100,9 @@ CONSTFNC t_weight fd_fermi(const Spikes &sneg, const Spikes &spos, double const 
 // Ditto for bosons
 CONSTFNC t_weight fd_bose(const Spikes &sneg, const Spikes &spos, double const T) {
   t_weight sumA = 0.0;
-  for (const auto &i : spos) sumA += WEIGHT(i) * bose_fnc(ENERGY(i), T);
+  for (const auto &[e, w] : spos) sumA += w * bose_fnc(e, T);
   t_weight sumB = 0.0;
-  for (const auto &i : sneg) sumB += WEIGHT(i) * bose_fnc(-ENERGY(i), T);
+  for (const auto &[e, w] : sneg) sumB += w * bose_fnc(-e, T);
   t_weight sum = sumA + sumB;
   return sum; // removed assertion due to false triggers
 }

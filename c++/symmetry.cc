@@ -29,7 +29,7 @@ void opch1clear(Opch &opch, int i, const Params &P)
     opch[i][j].clear(); // set all ublas matrix elements to zero
 }
 
-Opch newopch(const Params &)
+Opch newopch(const Params &P)
 {
   Opch opch(P.channels);
   for (size_t i = 0; i < P.channels; i++)

@@ -36,7 +36,7 @@ class Matsubara {
    Matsubara() = delete;
    Matsubara(size_t mats, matstype mt, double T) : mt(mt), T(T) {
      my_assert(mt == matstype::bosonic || mt == matstype::fermionic);
-     for (size_t n = 0; n < mats; n++) v.push_back(make_pair(ww(n, mt, T), 0.0));
+     for (size_t n = 0; n < mats; n++) v.emplace_back(ww(n, mt, T), 0);
    }
    void add(size_t n, t_weight w) { v[n].second += w; }
    template <typename T> void save(T && F, int prec) const {

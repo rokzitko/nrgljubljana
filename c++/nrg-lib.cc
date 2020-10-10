@@ -140,7 +140,7 @@ std::ostream &operator<<(std::ostream &os, const MatrixElements &m) { return m.i
 using DensMatElements = map<Invar, Matrix>;
 
 template <typename T> 
-  inline pair<T, T> reverse_pair(const pair<T, T> &i) { return make_pair(i.second, i.first); }
+  inline pair<T, T> reverse_pair(const pair<T, T> &i) { return {i.second, i.first}; }
 
 // Map of operators matrices
 using CustomOp = map<string, MatrixElements>;
@@ -182,6 +182,7 @@ class Rmaxvals {
    size_t offset(size_t i) const { return std::accumulate(begin(values), begin(values) + (i-1), 0); }
    size_t operator[](size_t i) const { return rmax(i); }
    size_t total() const { return std::accumulate(begin(values), end(values), 0); } // total number of states
+   size_t combs() const { return values.size(); }
  private:
    friend ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
      for (const auto &x : rmax.values) os << x << ' ';
@@ -618,10 +619,9 @@ class SpectrumTemp : public Spectrum {
      copy(begin(t->v), end(t->v), back_inserter(results));
    }
    ~SpectrumTemp() override {
-     const std::string fn = filename + ".dat";
-     cout << "Spectrum: " << opname << " " << spectype->name() << " -> " << fn << endl;
+     cout << "Spectrum: " << opname << " " << spectype->name() << endl;
      sort(begin(results), end(results), sortfirst());
-     save_densfunc(safe_open(fn), results, P.reim);
+     save_densfunc(safe_open(filename + ".dat"), results, P.prec_xy, P.reim); // XXX: save_densfunc as memebr?
    }
 };
 
@@ -2170,7 +2170,7 @@ void mpi_sync_params() {
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
   // Workdir workdir;
-  // Params P; // XXX
+//  Params P; // XXX
   P.read_parameters(workdir);
   sP.init(P);
   calculation(P);

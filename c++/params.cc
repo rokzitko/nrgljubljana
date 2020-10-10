@@ -500,11 +500,6 @@ struct Params {
 
   param<bool> checksumrules{"checksumrules", "Check operator sumrules", "false", all}; // N
 
-  // It is possible that diagonalisation fails for some reason. If
-  // checkvectors=true, additional tests are performed: finiteness
-  // of all values, normalization and orthogonality tests.
-  param<bool> checkdiag{"checkdiag", "Test diag results", "false", all}; // N
-
   // Check if the density matrix for CFS has trace 1.
   param<bool> checkrho{"checkrho", "Test tr(rho)=1", "false", all}; // N
 
