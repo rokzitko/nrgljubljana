@@ -1902,14 +1902,12 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
       save_transformations(step.ndx(), diag, P);
     perform_basic_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
   }
-  if (!P.ZBW) // XXX necessary?
-    split_in_blocks(diag, qsrmax);
+  split_in_blocks(diag, qsrmax);
   if (P.do_recalc_all(step.runtype)) { // Either ...
     oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
   }
-  if (!P.ZBW) // XXX necessary?
-    truncate_perform(diag);            // Actual truncation occurs at this point
+  truncate_perform(diag);              // Actual truncation occurs at this point
   store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_irreducible(step, diag, qsrmax, iterinfo.opch, P);
