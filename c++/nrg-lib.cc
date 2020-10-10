@@ -179,9 +179,9 @@ class Rmaxvals {
    Rmaxvals() = default;
    Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev);
    size_t rmax(size_t i) const { return values[i-1]; } // FOR COMPATIBILITY OFFSET 1!
-   size_t offset(size_t i) const { return std::accumulate(begin(values), begin(values) + (i-1), 0); }
+   size_t offset(size_t i) const { return ranges::accumulate(begin(values), begin(values) + (i-1), 0); }
    size_t operator[](size_t i) const { return rmax(i); }
-   size_t total() const { return std::accumulate(begin(values), end(values), 0); } // total number of states
+   size_t total() const { return ranges::accumulate(values, 0); } // total number of states
    size_t combs() const { return values.size(); }
  private:
    friend ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
@@ -354,8 +354,6 @@ class Step {
    // is the value that we use in building the matrix, cf. nrg-make_matrix-ISO.cc
    int getnn() const { return ndxN; }
 };
-
-#include <range/v3/all.hpp>
 
 // Namespace for storing various statistical quantities calculated during iteration.
 class Stats {
@@ -1174,14 +1172,11 @@ void dump_diagonal(const DiagInfo &diag, const IterInfo &a, const Params &P, ost
 
 // DM-NRG: initialization of the density matrix -----------------------------
 
-// Calculate grand canonical partition function at current NRG energy
-// shell. This is not the same as the true partition function of the
-// full problem! Instead this is the Z_N that is used to initialize
-// the density matrix, i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N>
-// <l;N|.  calc_grand_canonical_Z() is also used to calculate
-// stats.Zft, that is used to compute the spectral function with the
-// conventional approach, as well as stats.Zgt for G(T) calculations,
-// stats.Zchit for chi(T) calculations.
+// Calculate grand canonical partition function at current NRG energy shell. This is not the same as the true
+// partition function of the full problem! Instead this is the Z_N that is used to initialize the density matrix,
+// i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N> <l;N|.  calc_grand_canonical_Z() is also used to calculate
+// stats.Zft, that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for
+// G(T) calculations, stats.Zchit for chi(T) calculations.
 double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, const double factor = 1.0) {
   bucket ZN;
   for (const auto &[I, eig]: diag) 
@@ -1573,7 +1568,7 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev};
   Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
-  for (size_t i = 1; i <= P.combs; i++)
+  for (size_t i = 1; i <= Sym->get_combs(); i++)
     for (size_t r = 0; r < rm.rmax(i); r++) 
       h(rm.offset(i) + r, rm.offset(i) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r);
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
@@ -1811,8 +1806,7 @@ QSrmax get_qsrmax(const DiagInfo &diagprev) {
 std::vector<Invar> task_list(const QSrmax &qsrmax) {
   std::vector<pair<size_t, Invar>> tasks_with_sizes;
   for (const auto &[I, rm] : qsrmax)
-//    if (rm.total())
-      tasks_with_sizes.emplace_back(rm.total(), I);
+    tasks_with_sizes.emplace_back(rm.total(), I);
   // Sort in the *decreasing* order!
   sort(rbegin(tasks_with_sizes), rend(tasks_with_sizes));
   auto nr       = tasks_with_sizes.size();
@@ -1844,10 +1838,9 @@ void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qs
 
 void dump_f(const Opch &opch) {
   std::cout << std::endl;
-//  for (const auto &&[i, ch] : opch | ranges::views::enumerateh)
-  for (size_t i = 0; i < opch.size(); i++)
-    for (size_t j = 0; j < opch[i].size(); j++)
-      std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << opch[i][j] << endl;
+  for (const auto &&[i, ch] : opch | ranges::views::enumerate)
+    for (const auto &&[j, mat] : ch | ranges::views::enumerate)
+      std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << mat << endl;
   std::cout << std::endl;
 }
 
@@ -1957,14 +1950,6 @@ DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
   clear_eigenvectors(diag);
   time_mem::memory_time_brief_report();
   return diag;
-}
-
-void docalc0ht(Step &step, const DiagInfo &diag0, Stats &stats, Output &output, unsigned int extra_steps, const Params &P) {
-  for (int i = -int(extra_steps); i <= -1; i++) {
-    step.set(P.Ninit - 1 + i);
-    double E_rescale_factor = pow(P.Lambda, i / 2.0); // NOLINT   // XXX: works with P.absolute==true?
-    calculate_TD(step, diag0, stats, output, E_rescale_factor);
-  }
 }
 
 // Perform calculations with quantities from 'data' file
@@ -2163,7 +2148,7 @@ void mpi_sync_params() {
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
   // Workdir workdir;
-  Params P; // XXX
+  Params P;
   P.read_parameters(workdir);
   sP.init(P);
   calculation(P);

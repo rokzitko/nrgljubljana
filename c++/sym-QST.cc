@@ -122,7 +122,7 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
 
 #define offdiag_qst(i, j, ch, fnr, factor0, h, qq, In, I, opch)                                                                                      \
   {                                                                                                                                                  \
-    const bool contributes = offdiag_contributes(i, j, ch, qq);                                                                                      \
+    const bool contributes = offdiag_contributes(i, j, qq);                                                                                          \
     if (contributes) {                                                                                                                               \
       t_matel factor;                                                                                                                                \
       if (qst_exception(i, j, I)) {                                                                                                                  \
@@ -130,13 +130,12 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
       } else {                                                                                                                                       \
         factor = factor0;                                                                                                                            \
       }                                                                                                                                              \
-      offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                                      \
+      offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                                \
     }                                                                                                                                                \
   };
 
-// We take the coefficients of the first channel (indexed as 0),
-// because all three set are exactly the same due to orbital
-// symmetry.
+// We take the coefficients of the first channel (indexed as 0), because all three set are exactly the same due to
+// orbital symmetry.
 #undef OFFDIAG
 #define OFFDIAG(i, j, factor0) offdiag_qst(i, j, 0, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, I, opch)
 

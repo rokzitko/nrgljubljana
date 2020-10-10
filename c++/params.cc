@@ -37,7 +37,7 @@ class Workdir {
    }
 };
 
-Workdir workdir;
+Workdir workdir; // XXX
 
 void set_workdir(const string &dir_) {
   std::string dir = default_workdir;
@@ -645,8 +645,6 @@ struct Params {
   double getEx()   const { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
   double getEmax() const { return getE0() * sqr(getEfactor()); }
 };
-
-//Params P; // XXX
 
 // Shared parameters for MPI parallelization.
 class sharedParam {

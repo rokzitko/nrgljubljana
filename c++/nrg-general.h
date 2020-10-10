@@ -83,6 +83,8 @@ namespace mpi = boost::mpi;
 #include <fmt/format.h>
 using namespace fmt::literals;
 
+#include <range/v3/all.hpp>
+
 // Support for compiler dependant optimizations
 
 #ifdef __GNUC__

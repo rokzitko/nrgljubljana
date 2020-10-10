@@ -82,11 +82,9 @@ class SymmetrySPSU2T : public Symmetry {
 };
 
 bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
-  // In these cases the subspace exists, but taking the T=2 or T=1
-  // limit shows that the coefficient is actually zero, so there is
-  // no contribution. (Directly computed factor is nan.)
-  // This exception handling is added io order to avoid false positives
-  // in error detection assertions.
+  // In these cases the subspace exists, but taking the T=2 or T=1 limit shows that the coefficient is actually zero,
+  // so there is no contribution. (Directly computed factor is nan.) This exception handling is added io order to
+  // avoid false positives in error detection assertions.
 
   // see spsu2t_exceptions.nb
   Tangmom T = I.get("T");
@@ -99,7 +97,7 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
 
 #define offdiag_spsu2t(i, j, ch, fnr, factor0, h, qq, In, I, opch)                                                                                   \
   {                                                                                                                                                  \
-    const bool contributes = offdiag_contributes(i, j, ch, qq);                                                                                      \
+    const bool contributes = offdiag_contributes(i, j, qq);                                                                                          \
     if (contributes) {                                                                                                                               \
       t_matel factor;                                                                                                                                \
       if (spsu2t_exception(i, j, I)) {                                                                                                               \
