@@ -2,9 +2,10 @@
 class SpectrumRealFreq : public Spectrum {
  private:
    Bins fspos, fsneg; // Full spectral information
+   void mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step);
    void mergeNN2(spCS_t, const Step &);
    void mergeCFS(spCS_t);
-   void weight_report();
+   void weight_report(const double imag_tolerance = 1e-10);
    void trim();
    void savebins();
    void continuous();
@@ -20,13 +21,11 @@ SpectrumRealFreq::~SpectrumRealFreq() {
   trim();
   savebins();
   continuous();
-  cout << endl;
   weight_report();
 }
 
-/* Merge the spectrum for a finite Wilson chain into the "true" NRG
- spectrum. For complete Fock space NRG calculation, the merging tricks are
- not necessary: we just collect all the delta peaks from all iterations. */
+// Merge the spectrum for a finite Wilson chain into the "true" NRG spectrum. For complete Fock space NRG
+// calculation, the merging tricks are not necessary: we just collect all the delta peaks from all iterations.
 void SpectrumRealFreq::merge(spCS_t cs, const Step &step) {
   if (spectype->merge() == "NN2") return mergeNN2(cs, step);
   if (spectype->merge() == "CFS") return mergeCFS(cs);
@@ -40,52 +39,23 @@ void SpectrumRealFreq::mergeCFS(spCS_t cs) {
   fsneg.merge(csb->sneg);
 }
 
-// energy scale factor that is exponentiated
-// N/N+1 patching is recommended for larger values of Lambda,
-// so as to reduce the upper limit of the patching window to
-// omega_N*goodE*Lambda, i.e., by a factor of Lambda
-// compared to the N/N+2 patching where the upper limit is
-// omega_N*goodE*Lambda^2.
-double getfactor() {
-  double factor;
-  if (P.channels == 1 && !P.NN1)
-    factor = P.Lambda; // N/N+2 patching
-  else
-    factor = sqrt(P.Lambda); // N/N+1 patching
-  return factor;
-}
+// Window functions: f(0)=0, f(1)=1.
+inline double fnc_linear(const double x) { return x; }
 
-double getE0() { return P.goodE; }
+inline double fnc_tanh_0(const double x, const double NNtanh) { return tanh(NNtanh * (x - 0.5)); }
 
-// Note: in the current iteration, spectral peaks in the [0:Emin] are
-// discarded.
-double getEmin() { return getE0(); }
-
-// The "peak" energy of the "window function" in the patching procedure.
-double getEx() { return getE0() * getfactor(); }
-
-double getEmax() { return getE0() * sqr(getfactor()); }
-
-// Window function: f(0)=0, f(1)=1.
-inline double fnc_linear(double x) { return x; }
-
-inline double fnc_tanh_0(double x) { return tanh(P.NNtanh * (x - 0.5)); }
-
-inline double fnc_tanh(double x) {
-  const double f0 = fnc_tanh_0(0.0);
-  const double fx = fnc_tanh_0(x);
-  const double f1 = fnc_tanh_0(1.0);
+inline double fnc_tanh(const double x, const double NNtanh) {
+  const double f0 = fnc_tanh_0(0, NNtanh);
+  const double fx = fnc_tanh_0(x, NNtanh);
+  const double f1 = fnc_tanh_0(1, NNtanh);
   return (fx - f0) / (f1 - f0);
 }
 
-inline double fnc(double x) {
-  if (P.NNtanh > 0.0)
-    return fnc_tanh(x);
-  else
-    return fnc_linear(x);
+inline double fnc(double x, const Params &P) {
+  return P.NNtanh > 0 ? fnc_tanh(x, P.NNtanh) : fnc_linear(x);
 }
 
-inline double windowfunction(double E, double Emin, double Ex, double Emax, const Step &step) {
+inline double windowfunction(const double E, const double Emin, const double Ex, const double Emax, const Step &step, const Params &P) {
   // Exception 1
   if (E <= Ex && step.last()) return 1.0;
   // Exception 2
@@ -93,19 +63,19 @@ inline double windowfunction(double E, double Emin, double Ex, double Emax, cons
   // Exception 3
   if (P.ZBW) return 1.0;
   if (E <= Emin || E >= Emax) return 0.0;
-  if (Emin < E && E <= Ex) return fnc((E - Emin) / (Ex - Emin));
-  if (Ex < E && E < Emax) return 1.0 - fnc((E - Ex) / (Emax - Ex));
+  if (Emin < E && E <= Ex) return fnc((E - Emin) / (Ex - Emin), P);
+  if (Ex < E && E < Emax) return 1.0 - fnc((E - Ex) / (Emax - Ex), P);
   my_assert_not_reached();
 }
 
 // Here we perform the actual merging of data using the N/N+2 scheme.
 // Note that we use a windowfunction (see above) to accomplish the
 // smooth combining of data.
-void mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step) {
-  double Emin = step.scale() * getEmin(); // p
-  double Ex   = step.scale() * getEx();   // p Lambda
-  double Emax = step.scale() * getEmax(); // p Lambda^2
-  if (P.ZBW) {                          // override for zero bandwidth calculation
+void SpectrumRealFreq::mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step) {
+  double Emin = step.scale() * P.getEmin(); // p
+  double Ex   = step.scale() * P.getEx();   // p Lambda
+  double Emax = step.scale() * P.getEmax(); // p Lambda^2
+  if (P.ZBW) {                              // override for zero bandwidth calculation
     Emin = 0;
     Emax = std::numeric_limits<double>::max(); // infinity
   }
@@ -116,7 +86,7 @@ void mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step) {
     const t_weight weight = cs.bins[i].second;
     if (Emin < energy && energy < Emax && weight != 0.0) {
       const double factor = (P.NN2avg ? 0.5 : 1.0);
-      fullspec.bins[i].second += factor * weight * windowfunction(energy, Emin, Ex, Emax, step);
+      fullspec.bins[i].second += factor * weight * windowfunction(energy, Emin, Ex, Emax, step, P);
     }
   }
 }
@@ -128,24 +98,16 @@ void mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step) {
 
 void SpectrumRealFreq::mergeNN2(spCS_t cs, const Step &step) {
   auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
-
   if (!step.N_for_merging()) return;
   mergeNN2half(fspos, csb->spos, step);
   mergeNN2half(fsneg, csb->sneg, step);
 }
 
-const double IMAG_TOLERANCE = 1e-10;
-
-void SpectrumRealFreq::weight_report() {
-  auto fmt = [](t_weight x) -> string {
-    if (abs(x.imag()) < IMAG_TOLERANCE)
-      return to_string(x.real());
-    else
-      return to_string(x);
-  };
+void SpectrumRealFreq::weight_report(const double imag_tolerance) {
+  auto fmt = [imag_tolerance](t_weight x) -> string { return abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
   const t_weight twneg = fsneg.total_weight();
   const t_weight twpos = fspos.total_weight();
-  cout << "[" << opname << "]"
+  cout << endl << "[" << opname << "]"
        << " pos=" << fmt(twpos) << " neg=" << fmt(twneg) << " sum= " << fmt(twpos + twneg) << endl;
   // Spectral moments from delta-peaks
   const t_weight mom1 = moment(fsneg.bins, fspos.bins, 1);
@@ -156,20 +118,6 @@ void SpectrumRealFreq::weight_report() {
   const t_weight b    = fd_bose(fsneg.bins, fspos.bins, P.T);
   cout << "mu1=" << fmt(mom1) << " mu2=" << fmt(mom2) << " mu3=" << fmt(mom3) << " mu4=" << fmt(mom4) << endl;
   cout << "f=" << fmt(f) << " b=" << fmt(b) << endl;
-}
-
-/* Here we set the lowest frequency at which we will evaluate the spectral
- density. If the value is not predefined in the parameters file, use the
- smallest scale from the calculation multiplied by P.broaden_min_ratio. */
-
-double get_broaden_min() { return (P.broaden_min <= 0.0 ? P.broaden_min_ratio * P.last_step_scale() : P.broaden_min); }
-
-// Energy mesh for spectral functions
-std::vector<double> make_mesh() {
-  const double broaden_min = get_broaden_min();
-  std::vector<double> vecE; // Energies on the mesh
-  for (double E = P.broaden_max; E > broaden_min; E /= P.broaden_ratio) vecE.push_back(E);
-  return vecE;
 }
 
 // Save binary raw (binned) spectral function. If using complex numbers and P.reim==true, we save triplets
@@ -203,12 +151,20 @@ void SpectrumRealFreq::trim() {
   fsneg.trim();
 }
 
+// Energy mesh for spectral functions
+std::vector<double> make_mesh(const Params &P) {
+  const double broaden_min = P.get_broaden_min();
+  std::vector<double> vecE; // Energies on the mesh
+  for (double E = P.broaden_max; E > broaden_min; E /= P.broaden_ratio) vecE.push_back(E);
+  return vecE;
+}
+
 void SpectrumRealFreq::continuous() {
   if (!P.broaden) return;
   const double alpha  = P.alpha;
   const double omega0 = (P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0);
   Spikes densitypos, densityneg;
-  std::vector<double> vecE = make_mesh(); // Energies on the mesh
+  std::vector<double> vecE = make_mesh(P); // Energies on the mesh
   for (double E : vecE) {
     weight_bucket valpos, valneg;
     for (const auto &[e, w] : fspos.bins) {
@@ -221,8 +177,8 @@ void SpectrumRealFreq::continuous() {
       valneg += w * BR_NEW(-E, -e, alpha, omega0);
       valpos += w * BR_NEW(E, -e, alpha, omega0);
     }
-    densitypos.push_back({E, valpos});
-    densityneg.push_back({-E, valneg});
+    densitypos.emplace_back(E, valpos);
+    densityneg.emplace_back(-E, valneg);
   }
   sort(begin(densityneg), end(densityneg), sortfirst());
   sort(begin(densitypos), end(densitypos), sortfirst());

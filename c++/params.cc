@@ -628,6 +628,22 @@ struct Params {
     return !do_recalc_kept(runtype) && !ZBW; 
   }
   bool do_recalc_none() const { return ZBW; }
+
+  // Here we set the lowest frequency at which we will evaluate the spectral density. If the value is not predefined
+  // in the parameters file, use the smallest scale from the calculation multiplied by P.broaden_min_ratio.
+  double get_broaden_min() const { return broaden_min <= 0.0 ? broaden_min_ratio * last_step_scale() : broaden_min; }
+  
+  // Energy scale factor that is exponentiated. N/N+1 patching is recommended for larger values of Lambda, so as to
+  // reduce the upper limit of the patching window to omega_N*goodE*Lambda, i.e., by a factor of Lambda compared to
+  // the N/N+2 patching where the upper limit is omega_N*goodE*Lambda^2.
+  double getEfactor() const {
+    return (channels == 1 && !NN1) ? Lambda : sqrt(Lambda);
+  }
+
+  double getE0()   const { return goodE; }
+  double getEmin() const { return getE0(); }
+  double getEx()   const { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
+  double getEmax() const { return getE0() * sqr(getEfactor()); }
 };
 
 Params P; // XXX
