@@ -70,7 +70,7 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 CONSTFNC t_weight sum_weights(const Spikes &s) {
   t_weight sum = 0.0;
   for (const auto &[e, w] : s) sum += w; // XXX stl algo
-  return assert_isfinite(sum);
+  return sum;
 }
 
 // Calculate "moment"-th spectral moment.
@@ -79,8 +79,7 @@ CONSTFNC t_weight moment(const Spikes &sneg, const Spikes &spos, int moment) {
   for (const auto &[e, w] : spos) sumA += w * pow(e, moment);
   t_weight sumB = 0.0;
   for (const auto &[e, w] : sneg) sumB += w * pow(-e, moment);
-  t_weight sum = sumA + sumB;
-  return assert_isfinite(sum);
+  return sumA + sumB;
 }
 
 CONSTFNC double fermi_fnc(const double omega, const double T) { return 1 / (1 + exp(-omega / T)); }
@@ -93,8 +92,7 @@ CONSTFNC t_weight fd_fermi(const Spikes &sneg, const Spikes &spos, double const 
   for (const auto &[e, w] : spos) sumA += w * fermi_fnc(e, T);
   t_weight sumB = 0.0;
   for (const auto &[e, w] : sneg) sumB += w * fermi_fnc(-e, T);
-  t_weight sum = sumA + sumB;
-  return assert_isfinite(sum);
+  return sumA + sumB;
 }
 
 // Ditto for bosons
@@ -103,8 +101,7 @@ CONSTFNC t_weight fd_bose(const Spikes &sneg, const Spikes &spos, double const T
   for (const auto &[e, w] : spos) sumA += w * bose_fnc(e, T);
   t_weight sumB = 0.0;
   for (const auto &[e, w] : sneg) sumB += w * bose_fnc(-e, T);
-  t_weight sum = sumA + sumB;
-  return sum; // removed assertion due to false triggers
+  return sumA + sumB;
 }
 
 #endif // _spectral_h_

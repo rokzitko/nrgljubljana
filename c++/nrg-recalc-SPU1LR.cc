@@ -326,7 +326,7 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
 void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -343,7 +343,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
 
   if (name == "Iztot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -360,7 +360,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
 
   if (name == "Ixtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -377,7 +377,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
 
   if (name == "Iptot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -394,7 +394,7 @@ void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const
 
   if (name == "Imtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:

@@ -111,7 +111,7 @@ Opch SymmetrySL3::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 void SymmetrySL3::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-qtot.dat"
     }
@@ -120,7 +120,7 @@ void SymmetrySL3::recalc_global(const Step &step, const DiagInfo &diag, const QS
 
   if (name == "N1") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-N1.dat"
     }
@@ -129,7 +129,7 @@ void SymmetrySL3::recalc_global(const Step &step, const DiagInfo &diag, const QS
 
   if (name == "N2") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-N2.dat"
     }
@@ -138,7 +138,7 @@ void SymmetrySL3::recalc_global(const Step &step, const DiagInfo &diag, const QS
 
   if (name == "N3") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
 #include "sl3/sl3-3ch-N3.dat"
     }

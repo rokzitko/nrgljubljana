@@ -90,7 +90,7 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -110,7 +110,7 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
 #define Complex(x, y) cmpl(x, y)
   if (name == "SYtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -128,7 +128,7 @@ void SymmetrySU2::recalc_global(const Step &step, const DiagInfo &diag, const QS
 
   if (name == "SXtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:

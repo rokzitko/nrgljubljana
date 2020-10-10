@@ -153,7 +153,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
 
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -170,7 +170,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
 
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -184,7 +184,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
 
   if (name == "Q1") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -198,7 +198,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
 
   if (name == "Q2") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -212,7 +212,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
 
   if (name == "Iztot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -229,7 +229,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
 
   if (name == "Ixtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -246,7 +246,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
 
   if (name == "Iptot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -263,7 +263,7 @@ void SymmetrySPSU2::recalc_global(const Step &step, const DiagInfo &diag, const 
 
   if (name == "Imtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:

@@ -166,7 +166,7 @@ ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -180,7 +180,7 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 
   if (name == "Q1") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -194,7 +194,7 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 
   if (name == "Q2") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -208,7 +208,7 @@ void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:

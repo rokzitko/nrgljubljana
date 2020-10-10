@@ -91,7 +91,7 @@ Opch SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -106,7 +106,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 #ifdef NRG_COMPLEX
   if (name == "SYtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -121,7 +121,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 
   if (name == "SXtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -135,7 +135,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -149,7 +149,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 
   if (name == "Iztot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -163,7 +163,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 
   if (name == "Ixtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -178,7 +178,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 #ifdef NRG_COMPLEX
   if (name == "Iytot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -193,7 +193,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 
   if (name == "Iptot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -207,7 +207,7 @@ void SymmetryPP::recalc_global(const Step &step, const DiagInfo &diag, const QSr
 
   if (name == "Imtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:

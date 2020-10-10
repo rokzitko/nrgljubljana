@@ -165,7 +165,7 @@ MatrixElements SymmetrySPU1::recalc_triplet(const DiagInfo &diag, const QSrmax &
 void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -182,7 +182,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Iztot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -199,7 +199,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Ixtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -216,7 +216,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Iptot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -233,7 +233,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Imtot") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 1:
@@ -250,7 +250,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -264,7 +264,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Q1") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -278,7 +278,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Q2") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -292,7 +292,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Q1UP") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -306,7 +306,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Q2UP") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -320,7 +320,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Q1DO") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
@@ -334,7 +334,7 @@ void SymmetrySPU1::recalc_global(const Step &step, const DiagInfo &diag, const Q
 
   if (name == "Q2DO") {
     for(const auto &[I1, eig]: diag) {
-      const Twoinvar II = make_pair(I1, I1);
+      const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
       switch (P.channels) {
         case 2:
