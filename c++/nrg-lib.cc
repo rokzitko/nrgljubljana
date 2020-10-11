@@ -340,6 +340,37 @@ class DensMatElements : public std::map<Invar, Matrix> {
                               [mult](double acc, const auto z) { const auto &[I, mat] = z; 
                                 return acc + mult(I) * trace_real_nochecks(mat); });
      }
+   void save(size_t N, const string &prefix) const {
+     const string fn = workdir.rhofn(prefix, N);
+     std::ofstream MATRIXF(fn, ios::binary | ios::out);
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
+     boost::archive::binary_oarchive oa(MATRIXF);
+     size_t nr = this->size();
+     oa << nr;
+     for (const auto &[I, mat] : *this) {
+       oa << I;
+       ::save(oa, mat);
+       if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));  // Check each time
+     }
+     MATRIXF.close();
+   }
+   void load(size_t N, const string &prefix, const bool remove_files) {
+     const string fn = workdir.rhofn(prefix, N);
+     std::ifstream MATRIXF(fn, ios::binary | ios::in);
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
+     boost::archive::binary_iarchive ia(MATRIXF);
+     size_t nr;
+     ia >> nr;
+     for (auto cnt = 0; cnt < nr; cnt++) {
+       Invar inv;
+       ia >> inv;
+       ::load(ia, (*this)[inv]);
+       if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));  // Check each time
+     }
+     MATRIXF.close();
+     if (remove_files)
+       if (remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
+   }
 };
 
 // Map of operators matrices
@@ -1613,11 +1644,11 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
   DensMatElements rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
-      rho = loadRho(step.ndx(), FN_RHO, P);
+      rho.load(step.ndx(), FN_RHO, P.removefiles);
       check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
     }
     if (P.need_rhoFDM()) 
-      rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);
+      rhoFDM.load(step.ndx(), FN_RHOFDM, P.removefiles);
   }
   oprecalc.spectral_densities(step, diag, rho, rhoFDM, stats);
   if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, P);
@@ -2146,7 +2177,7 @@ void calculation(Params &P) {
   if (P.dm) {
     if (P.need_rho()) {
       auto rho = init_rho(step, diag);
-      saveRho(step.lastndx(), FN_RHO, rho, P);
+      rho.save(step.lastndx(), FN_RHO);
       if (!P.ZBW) calc_densitymatrix(rho, dm, P);
     }
     if (P.need_rhoFDM()) {
@@ -2155,7 +2186,7 @@ void calculation(Params &P) {
         report_ZnD(stats, P);
       fdm_thermodynamics(dm, stats, P.T);
       auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, P.T);
-      saveRho(step.lastndx(), FN_RHOFDM, rhoFDM, P);
+      rhoFDM.save(step.lastndx(), FN_RHOFDM);
       if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, P);
     }
     if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
