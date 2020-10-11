@@ -153,15 +153,15 @@ using Opch = std::vector<OpchChannel>;
 // Object of class IterInfo cotains full information about matrix representations 
 // when entering stage N of the NRG iteration.
 class IterInfo {
-  public:
-  Opch opch;     // f operators (channels)
-  CustomOp ops;  // singlet operators (even parity)
-  CustomOp opsp; // singlet operators (odd parity)
-  CustomOp opsg; // singlet operators [global op]
-  CustomOp opd;  // doublet operators (spectral functions)
-  CustomOp opt;  // triplet operators (dynamical spin susceptibility)
-  CustomOp opq;  // quadruplet operators (spectral functions for J=3/2)
-  CustomOp opot; // orbital triplet operators
+ public:
+   Opch opch;     // f operators (channels)
+   CustomOp ops;  // singlet operators (even parity)
+   CustomOp opsp; // singlet operators (odd parity)
+   CustomOp opsg; // singlet operators [global op]
+   CustomOp opd;  // doublet operators (spectral functions)
+   CustomOp opt;  // triplet operators (dynamical spin susceptibility)
+   CustomOp opq;  // quadruplet operators (spectral functions for J=3/2)
+   CustomOp opot; // orbital triplet operators
 };
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
@@ -232,7 +232,6 @@ private:
   }
 };
 
-//using DiagInfo = map<Invar, Eigen>; 
 // Full information after diagonalizations (eigenspectra in all subspaces)
 class DiagInfo : public std::map<Invar, Eigen> {
  public:
@@ -249,6 +248,16 @@ class DiagInfo : public std::map<Invar, Eigen> {
    }
    void subtract_GS_energy(const t_eigen GS_energy) {
      ranges::for_each(this->eigs(), [GS_energy](auto &eig) { eig.subtract_GS_energy(GS_energy); });
+   }
+   std::vector<t_eigen> sorted_energies() const {
+     std::vector<t_eigen> energies;
+     for (const auto &eig: this->eigs())
+       energies.insert(energies.end(), eig.value_zero.begin(), eig.value_zero.end());
+     return energies | ranges::move | ranges::actions::sort;
+   }
+   void dump_value_zero(ostream &F) const {
+     for (const auto &[I, eig]: *this)
+       F << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
    }
 };
 
@@ -674,36 +683,20 @@ class BaseSpectrum {
 using speclist = std::list<BaseSpectrum>;
 
 // Operator sumrules.
-template<typename T>
-double norm(const MatrixElements &m, const DiagInfo &diag, T factor_fnc, int SPIN) {
+template<typename F> double norm(const MatrixElements &m, F factor_fnc, int SPIN) {
   weight_bucket sum;
-  for (const auto &Ip : diag.subspaces()) {
-    for (const auto &I1 : diag.subspaces()) {
-      if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
-      if (auto it = m.find(Twoinvar{I1, Ip}); it != m.end()) {
-        const auto mat = it->second;
-        const auto spinfactor = factor_fnc(Ip, I1);
-        for (size_t r1 = 0; r1 < mat.size1(); r1++)
-          for (size_t rp = 0; rp < mat.size2(); rp++) 
-            sum += spinfactor * sqr(abs(mat(r1, rp)));
-      }
-    }
+  for (const auto &[II, mat] : m) {
+    const auto & [I1, Ip] = II;
+    if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
+    sum += factor_fnc(Ip, I1) * frobenius_norm(mat);
   }
-  // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
-  return 2.0 * cmpl(sum).real();
+  return 2.0 * cmpl(sum).real(); // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
 }
 
 #include "spec.cc"
 #include "dmnrg.h"
 
 // **** Helper functions for the NRG RUN ****
-
-std::vector<t_eigen> sort_energies(const DiagInfo &diag) {
-  std::vector<t_eigen> energies;
-  for (const auto &eig: diag | boost::adaptors::map_values)
-    energies.insert(end(energies), begin(eig.value_zero), end(eig.value_zero));
-  return energies | ranges::move | ranges::actions::sort;
-}
 
 #include "splitting.cc"
 
@@ -823,6 +816,16 @@ auto SpinSuscFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->
 auto OrbSuscFactorFnc      = [](const Invar &Ip, const Invar &I1) { return Sym->dynamic_orb_susceptibility_factor(Ip, I1); };
 auto TrivialCheckSpinFnc   = [](const Invar &Ip, const Invar &I1, int SPIN) { return true; };
 auto SpecdensCheckSpinFnc  = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
+
+void operator_sumrules(const IterInfo &a) {
+  // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
+  // irrelevant (0).
+  const int SPIN = Sym->isfield() ? 1 : 0;
+  for (const auto &[name, m] : a.opd)
+    cout << "norm[" << name << "]=" << norm(m, SpecdensFactorFnc, SPIN) << std::endl;
+  for (const auto &[name, m] : a.opq)
+    cout << "norm[" << name << "]=" << norm(m, SpecdensquadFactorFnc, 0) << std::endl;
+}
 
 class Oprecalc {
  public:
@@ -1068,8 +1071,7 @@ struct Output {
   void dump_all_energies(const DiagInfo &diag, int N) {
     if (!Fenergies) return;
     Fenergies << endl << "===== Iteration number: " << N << endl;
-    for (const auto &[I, eig]: diag)
-      Fenergies << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
+    diag.dump_value_zero(Fenergies);
   }
 };
 
@@ -1194,7 +1196,7 @@ DensMatElements init_rho(const Step &step, const DiagInfo &diag) {
 // Determine the number of states to be retained.
 // Returns Emax - the highest energy to still be retained.
 t_eigen highest_retained_energy(const Step &step, const DiagInfo &diag, const Params &P) {
-  auto energies = sort_energies(diag);
+  auto energies = diag.sorted_energies();
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
   const size_t totalnumber = energies.size();
   size_t nrkeep;
@@ -1424,16 +1426,6 @@ void clear_eigenvectors(DiagInfo &diag) {
   for (auto &eig : diag | boost::adaptors::map_values)
     for (auto &m : eig.blocks) 
       m = Matrix(0, 0);
-}
-
-void operator_sumrules(const DiagInfo &diag, const IterInfo &a) {
-  // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
-  // irrelevant (0).
-  const int SPIN = (Sym->isfield() ? 1 : 0);
-  for (const auto &[name, m] : a.opd)
-    cout << "norm[" << name << "]=" << norm(m, diag, SpecdensFactorFnc, SPIN) << std::endl;
-  for (const auto &[name, m] : a.opq)
-    cout << "norm[" << name << "]=" << norm(m, diag, SpecdensquadFactorFnc, 0) << std::endl;
 }
 
 template<typename F>
@@ -1846,7 +1838,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
       stats.Egs = diag.find_groundstate();
       if (step.nrg()) // should be done only once!
         diag.subtract_Egs(stats.Egs);
-      auto cluster_mapping = find_clusters(sort_energies(diag), P.fixeps);
+      auto cluster_mapping = find_clusters(diag.sorted_energies(), P.fixeps);
       fix_splittings(diag, cluster_mapping);
       truncate_prepare(step, diag, P);
       break;
@@ -1914,7 +1906,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   }
   if (P.do_recalc_none())  // ... or this
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
-  if (P.checksumrules) operator_sumrules(diag, iterinfo);
+  if (P.checksumrules) operator_sumrules(iterinfo);
 }
 
 // Perform one iteration step
@@ -1936,7 +1928,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
   perform_basic_measurements(step, diag0, stats, output);
   AllSteps empty_dm{};
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, P);
-  if (P.checksumrules) operator_sumrules(diag0, iterinfo);
+  if (P.checksumrules) operator_sumrules(iterinfo);
 }
 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.

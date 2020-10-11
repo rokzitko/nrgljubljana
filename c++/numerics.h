@@ -67,7 +67,7 @@ CONSTFNC bool are_conjugate(const double a, const double b) { return num_equal(a
 
 CONSTFNC bool are_conjugate(const cmpl a, const cmpl b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
 
-CONSTFNC double frobenius_norm(const Matrix &m) {
+CONSTFNC double frobenius_norm(const Matrix &m) { // Frobenius norm (without taking the final square root!)
   bucket sum;
   for (size_t i = 0; i < m.size1(); i++)
     for (size_t j = 0; j < m.size2(); j++) sum += sqr(abs(m(i, j)));
