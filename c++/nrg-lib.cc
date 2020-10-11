@@ -304,7 +304,18 @@ using DimSub = DimSubGen<t_eigen>;
 // Full information about the number of states and matrix dimensions
 // Example: dm[N].rmax[I] etc.
 using Subs = map<Invar, DimSub>;
-using AllSteps = std::vector<Subs>;
+
+class AllSteps : public std::vector<Subs> {
+ public:
+   AllSteps(int N) { this->resize(N); }
+   void dump_absenergyG(ostream &F, const int Nbegin, const int Nend) const {
+     for (auto N = Nbegin; N < Nend; N++) {
+       F << std::endl << "===== Iteration number: " << N << std::endl;
+       for (const auto &[I, ds]: this->at(N))
+         F << "Subspace: " << I << std::endl << ds.eig.absenergyG << std::endl;
+     }
+   }
+};
 
 class Step {
  private:
@@ -1078,11 +1089,7 @@ struct Output {
 // Dump all absolute energies in diag to a file
 void dump_all_absolute_energies(const AllSteps &dm, const Params &P, std::string filename = "absolute_energies.dat"s) {
   std::ofstream F(filename);
-  for (size_t N = P.Ninit; N < P.Nlen; N++) {
-    F << std::endl << "===== Iteration number: " << N << std::endl;
-    for (const auto &[I, ds]: dm.at(N))
-      F << "Subspace: " << I << std::endl << ds.eig.absenergyG << std::endl;
-  }
+  dm.dump_absenergyG(F, P.Ninit, P.Nlen);
 }
 
 CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n) {
@@ -1926,7 +1933,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
   cout << endl << "Before NRG iteration";
   cout << " (N=" << step.N() << ")" << endl;
   perform_basic_measurements(step, diag0, stats, output);
-  AllSteps empty_dm{};
+  AllSteps empty_dm(0);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, P);
   if (P.checksumrules) operator_sumrules(iterinfo);
 }
