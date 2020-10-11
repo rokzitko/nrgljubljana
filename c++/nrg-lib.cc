@@ -315,6 +315,19 @@ class Opch : public std::vector<OpchChannel> {
  public:
    Opch() {}
    Opch(size_t nrch) { this->resize(nrch); }
+   Opch(ifstream &fdata, const DiagInfo &diag, const Params &P) {
+     this->resize(P.channels);
+     for (size_t i = 0; i < P.channels; i++) {
+       (*this)[i] = OpchChannel(P.perchannel);
+       for (size_t j = 0; j < P.perchannel; j++) {
+         char ch;
+         size_t iread, jread;
+         fdata >> ch >> iread >> jread;
+         my_assert(ch == 'f' && i == iread && j == jread);
+         (*this)[i][j] = MatrixElements(fdata, diag);
+       }
+     }
+   }
    void dump() {
      std::cout << std::endl;
      for (const auto &&[i, ch] : *this | ranges::views::enumerate)

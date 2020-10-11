@@ -91,21 +91,6 @@ void read_gs_energy(ifstream &fdata, Stats &stats) {
   fdata >> stats.total_energy;
 }
 
-void read_irreduc_f(ifstream &fdata, const DiagInfo &diag, Opch &opch, Params &P) {
-  nrglog('@', "read_irreduc_f()");
-  opch = Opch(P.channels);
-  for (size_t i = 0; i < P.channels; i++) {
-    opch[i] = OpchChannel(P.perchannel);
-    for (size_t j = 0; j < P.perchannel; j++) {
-      char ch;
-      size_t iread, jread;
-      fdata >> ch >> iread >> jread;
-      my_assert(ch == 'f' && i == iread && j == jread);
-      opch[i][j] = MatrixElements(fdata, diag);
-    }
-  }
-}
-
 // Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
 // tridiagonalization routines (if not using the tables computed by initial.m).
 void determine_Nmax(const Coef &coef, Params &P) {
@@ -140,7 +125,7 @@ std::tuple<DiagInfo, IterInfo, Coef> read_data(Params &P, Stats &stats) {
   DiagInfo diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);
   IterInfo iterinfo0;
-  read_irreduc_f(fdata, diag0, iterinfo0.opch, P);
+  iterinfo0.opch = Opch(fdata, diag0, P);
   Coef coef(P);
   while (true) {
     /* skip white space */
