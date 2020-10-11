@@ -156,7 +156,18 @@ using CustomOp = std::map<std::string, MatrixElements>;
 // Vector containing irreducible matrix elements of f operators.
 using OpchChannel = std::vector<MatrixElements>;
 // Each channel contains P.perchannel OpchChannel matrices.
-using Opch = std::vector<OpchChannel>;
+class Opch : public std::vector<OpchChannel> {
+ public:
+   Opch() {}
+   Opch(size_t nrch) { this->resize(nrch); }
+   void dump() {
+     std::cout << std::endl;
+     for (const auto &&[i, ch] : *this | ranges::views::enumerate)
+       for (const auto &&[j, mat] : ch | ranges::views::enumerate)
+         std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << mat << endl;
+     std::cout << std::endl;
+   }
+};
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
 struct RawEigen {
@@ -253,11 +264,6 @@ class DiagInfo : public std::map<Invar, Eigen> {
      for (const auto &[I, eig]: *this)
        F << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
    }
-   void states_report(ostream &F) const {
-     for (const auto &[I, eig]: *this) 
-       if (eig.getnr()) 
-         F << "(" << I << ") " << eig.getnr() << " states: " << eig.value_orig << std::endl;
-   }
    void truncate_perform() {
      for (auto &[I, eig] : *this) eig.truncate_perform(); // Truncate subspace to appropriate size
    }
@@ -271,7 +277,7 @@ class DiagInfo : public std::map<Invar, Eigen> {
          m = Matrix(0, 0);
    }
    // Total number of states (symmetry taken into account)
-   template <typename MF> auto count_states(MF mult) const {
+   template <typename MF> auto count_states(MF && mult) const {
      size_t states = 0;
      for (const auto &[I, eig]: *this)
        states += mult(I) * eig.getnr();
@@ -285,6 +291,14 @@ class DiagInfo : public std::map<Invar, Eigen> {
          subspaces++;
      return subspaces;
    }
+   template <typename MF>
+     void states_report(MF && mult, ostream &F = std::cout) const {
+       F << "Number of invariant subspaces: " << count_subspaces() << endl;
+       for (const auto &[I, eig]: *this) 
+         if (eig.getnr()) 
+           F << "(" << I << ") " << eig.getnr() << " states: " << eig.value_orig << std::endl;
+       F << "Number of states (multiplicity taken into account): " << count_states(mult) << std::endl << std::endl;
+     }
 };
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
@@ -1832,14 +1846,6 @@ void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qs
   }
 }
 
-void dump_f(const Opch &opch) {
-  std::cout << std::endl;
-  for (const auto &&[i, ch] : opch | ranges::views::enumerate)
-    for (const auto &&[j, mat] : ch | ranges::views::enumerate)
-      std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << mat << endl;
-  std::cout << std::endl;
-}
-
 // NRG diagonalisation driver: calls diagionalisations() or load_transformations(), as necessary, and performs
 // the truncation. All other calculations are done in after_diag(). Called from iterate().
 DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
@@ -1915,7 +1921,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   dm.store(step.ndx(), diag, qsrmax, step.last());  // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_irreducible(step, diag, qsrmax, iterinfo.opch, P);
-    if (P.dump_f) dump_f(iterinfo.opch);
+    if (P.dump_f) iterinfo.opch.dump();
   }
   if (P.do_recalc_kept(step.runtype)) { // ... or ...
     oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, P);
@@ -1983,15 +1989,8 @@ DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats
   return diag;
 }
 
-// Dump information about states (e.g. before the start of the iteration).
-void states_report(const DiagInfo &diag, ostream &fout = cout) {
-  fout << "Number of invariant subspaces: " << diag.count_subspaces() << endl;
-  diag.states_report(fout);
-  fout << "Number of states (multiplicity taken into account): " << diag.count_states(Sym->multfnc()) << endl << endl;
-}
-
 DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
-  states_report(diag0);
+  diag0.states_report(Sym->multfnc());
   auto oprecalc = Oprecalc(step.runtype, iterinfo, P);
   auto output = Output(step.runtype, iterinfo, stats, P);
   // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
