@@ -107,13 +107,13 @@ bool already_computed(const std::string &prefix, const Params &P) {
  the second time. Here we calculate the shell-N density matrices for all
  iteration steps. */
 
-void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &P, 
+void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P, 
                         const std::string filename = FN_RHO) {
   if (P.resume && already_computed(filename, P)) {
     cout << "Not necessary: already computed!" << endl;
     return;
   }
-  check_trace_rho(rho); // Must be 1.
+  check_trace_rho(rho, Sym); // Must be 1.
   if (P.ZBW) return;
   TIME("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
@@ -121,7 +121,7 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &
     DiagInfo diag_loaded(N);
     DensMatElements rhoPrev;
     calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N, dm, P);
-    check_trace_rho(rhoPrev); // Make sure rho is normalized to 1.
+    check_trace_rho(rhoPrev, Sym); // Make sure rho is normalized to 1.
     rhoPrev.save(N-1, filename);
     rho.swap(rhoPrev);
   }
