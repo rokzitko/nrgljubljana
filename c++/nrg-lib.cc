@@ -259,6 +259,18 @@ class DiagInfo : public std::map<Invar, Eigen> {
      for (const auto &[I, eig]: *this)
        F << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
    }
+   void truncate_perform() {
+     for (auto &[I, eig] : *this) eig.truncate_perform(); // Truncate subspace to appropriate size
+   }
+   size_t size_subspace(const Invar &I) const {
+     const auto f = this->find(I);
+     return f != this->cend() ? f->second.getnr() : 0;
+   }
+   void clear_eigenvectors() {
+     for (auto &eig : this->eigs())
+       for (auto &m : eig.blocks) 
+         m = Matrix(0, 0);
+   }
 };
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
@@ -711,17 +723,12 @@ template<typename F> double norm(const MatrixElements &m, F factor_fnc, int SPIN
 
 #include "splitting.cc"
 
-inline size_t size_subspace(const DiagInfo &diag, const Invar &I) {
-  const auto f = diag.find(I);
-  return f != diag.cend() ? f->second.getnr() : 0;
-}
-
 // Determine the ranges of index r
 Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagprev) {
   values.resize(Sym->get_combs());
   for (size_t i = 0; i < Sym->get_combs(); i++) {
     const bool combination_allowed = Sym->triangle_inequality(I, InVec[i+1], Sym->QN[i+1]);
-    values[i] = combination_allowed ? size_subspace(diagprev, InVec[i+1]) : 0;
+    values[i] = combination_allowed ? diagprev.size_subspace(InVec[i+1]) : 0;
   }
 }
 
@@ -1146,18 +1153,21 @@ void dump_diagonal_matrix(const Matrix &m, size_t max_nr, ostream &F)
   F << std::endl;
 }
 
-void dump_diagonal_op(const DiagInfo &diag, const std::string name, const MatrixElements &n, const Params &P, ostream &F) {
+void dump_diagonal_op(const std::string name, const MatrixElements &n, const Params &P, ostream &F) {
   F << "Diagonal matrix elements of operator " << name << std::endl;
-  for (const auto &[I, eig] : diag) {
-    F << I << ": ";
-    dump_diagonal_matrix(n.at({I,I}), P.dumpdiagonal, F);
+  for (const auto &[II, mat] : n) {
+    const auto & [I1, I2] = II;
+    if (I1 == I2) {
+      F << I1 << ": ";
+      dump_diagonal_matrix(mat, P.dumpdiagonal, F);
+    }
   }
 }
 
-void dump_diagonal(const DiagInfo &diag, const IterInfo &a, const Params &P, ostream &F = std::cout)
+void dump_diagonal(const IterInfo &a, const Params &P, ostream &F = std::cout)
 {
-  for (const auto &[name, m] : a.ops)  dump_diagonal_op(diag, name, m, P, F);
-  for (const auto &[name, m] : a.opsg) dump_diagonal_op(diag, name, m, P, F);
+  for (const auto &[name, m] : a.ops)  dump_diagonal_op(name, m, P, F);
+  for (const auto &[name, m] : a.opsg) dump_diagonal_op(name, m, P, F);
 }
 
 // DM-NRG: initialization of the density matrix -----------------------------
@@ -1368,11 +1378,6 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats, const Params &P)
   stats.td_fdm.save_values();
 }
 
-// Actually truncate matrices. Drop subspaces with no states kept.
-void truncate_perform(DiagInfo &diag) {
-  for (auto &[I, eig] : diag) eig.truncate_perform(); // Truncate subspace to appropriate size
-}
-
 // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
 // parity -1). Generic implementation, valid for all symmetry types.
 MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
@@ -1429,12 +1434,6 @@ void trim_matrices(DiagInfo &diag, IterInfo &a) {
   trim_op(diag, a.opq);
 }
 
-void clear_eigenvectors(DiagInfo &diag) {
-  for (auto &eig : diag | boost::adaptors::map_values)
-    for (auto &m : eig.blocks) 
-      m = Matrix(0, 0);
-}
-
 template<typename F>
   double trace(F fnc, const double rescale_factor, const DiagInfo &diag) {
     bucket b;
@@ -1489,7 +1488,7 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
   }
   oprecalc.spectral_densities(step, diag, rho, rhoFDM, stats);
   if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, P);
-  if (step.nrg() && P.dumpdiagonal) dump_diagonal(diag, iterinfo, P);
+  if (step.nrg() && P.dumpdiagonal) dump_diagonal(iterinfo, P);
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm, P);
 }
 
@@ -1864,7 +1863,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
 // store_transformations(). absenergyG is updated to its correct values (referrenced to absolute 0) in
 // shift_abs_energies().
 void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
-  for (auto &eig : diag | boost::adaptors::map_values) {
+  for (auto &eig : diag.eigs()) {
     eig.absenergyN = eig.value_zero * step.scale();        // referenced to the lowest energy in current NRG step (not modified later on)
     eig.absenergy = eig.absenergyN;
     for (auto &x : eig.absenergy) x += stats.total_energy; // absolute energies (not modified later on)
@@ -1882,7 +1881,8 @@ void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, A
 }
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
-void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, Output &output, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
+void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, 
+                Output &output, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
@@ -1901,7 +1901,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
   }
   if (!P.ZBW)
-    truncate_perform(diag);            // Actual truncation occurs at this point
+    diag.truncate_perform();           // Actual truncation occurs at this point
   store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_irreducible(step, diag, qsrmax, iterinfo.opch, P);
@@ -1922,7 +1922,7 @@ DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, P);
   trim_matrices(diag, iterinfo);
-  clear_eigenvectors(diag);
+  diag.clear_eigenvectors();
   time_mem::memory_time_brief_report();
   return diag;
 }
@@ -1963,7 +1963,8 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
 
 // ****************************  Main NRG loop ****************************
 
-DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
+DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, 
+                  Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   DiagInfo diag = diag0;
   for (step.init(); !step.end(); step++)
     diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, P);
@@ -1982,7 +1983,7 @@ size_t count_states(const DiagInfo &diag) {
 // Count non-empty subspaces
 size_t count_subspaces(const DiagInfo &diag) {
   size_t subspaces = 0;
-  for (const auto &eig: diag | boost::adaptors::map_values)
+  for (const auto &eig: diag.eigs())
     if (eig.getnr()) 
       subspaces++;
   return subspaces;
