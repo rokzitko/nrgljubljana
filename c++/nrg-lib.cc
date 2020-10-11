@@ -137,7 +137,15 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
 };
 std::ostream &operator<<(std::ostream &os, const MatrixElements &m) { return m.insertor(os); }
 
-using DensMatElements = std::map<Invar, Matrix>;
+class DensMatElements : public std::map<Invar, Matrix> {
+ public:
+   template <typename MF>
+     double trace(MF mult) const {
+       return std::accumulate(this->cbegin(), this->cend(), 0.0, 
+                              [mult](double acc, const auto z) { const auto &[I, mat] = z; 
+                                return acc + mult(I) * trace_real_nochecks(mat); });
+     }
+};
 
 template <typename T> 
   inline std::pair<T, T> reverse_pair(const pair<T, T> &i) { return {i.second, i.first}; }
@@ -682,17 +690,9 @@ class SpectrumMatsubara : public Spectrum {
    }
 };
 
-// This is mathematical trace, i.e. the sum of the diagonal elements.
-CONSTFNC double trace(const DensMatElements &m) {
-  return std::accumulate(m.cbegin(), m.cend(), 0.0, 
-                         [](double acc, const auto z) { const auto &[I, mat] = z; 
-                           return acc + Sym->mult(I) * trace_real_nochecks(mat); });
-}
-
 // Check if the trace of the density matrix equals 'ref_value'.
 void check_trace_rho(const DensMatElements &m, double ref_value = 1.0) {
-  const double tr = trace(m);
-  if (!num_equal(trace(m), ref_value)) 
+  if (!num_equal(m.trace([](const auto &I) { return Sym->mult(I); }), ref_value))
     throw std::runtime_error("check_trace_rho() failed");
 }
 
@@ -1139,26 +1139,28 @@ void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const
   output.custom->field_values(step.Teff());
 }
 
-CONSTFNC t_expv calc_trace_fdm_kept(const Step &step, const DiagInfo &diag, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm) {
+template<typename T>
+  T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const size_t range)
+{
+  T sum{};
+  for (auto i = 0; i < range; i++)
+    for (auto j = 0; j < range; j++) 
+      sum += A(i, j) * B(j, i);
+  return sum;
+}
+
+CONSTFNC t_expv calc_trace_fdm_kept(size_t ndx, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm) {
   matel_bucket tr;
-  for (const auto &[I, eig] : diag) {
-    const auto & nI = n.at({I,I});
-    const auto ret  = dm[step.N()].at(I).kept;
-    const auto & mat = rhoFDM.at(I);
-    matel_bucket sum;
-    for (auto k = 0; k < ret; k++) // over kept states ONLY
-      for (auto j = 0; j < ret; j++) 
-        sum += mat(k, j) * nI(j, k);
-    tr += Sym->mult(I) * t_matel(sum);
-  }
+  for (const auto &[I, rhoI] : rhoFDM)
+    tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), dm[ndx].at(I).kept); // over kept states ONLY
   return tr;
 }
 
 // Expectation values using the FDM algorithm
 void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, 
                          const DensMatElements &rhoFDM, const AllSteps &dm, const Params &P) {
-  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step, diag, m, rhoFDM, dm);
-  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step, diag, m, rhoFDM, dm);
+  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm);
+  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm);
   output.customfdm->field_values(P.T);
 }
 
@@ -1222,7 +1224,7 @@ DensMatElements init_rho(const Step &step, const DiagInfo &diag) {
   DensMatElements rho;
   for (const auto &[I, eig]: diag)
     rho[I] = diagonal_exp(eig, step.scT()) / calc_grand_canonical_Z(step, diag);
-  my_assert(num_equal(trace(rho), 1.0, 1e-8)); // NOLINT
+  check_trace_rho(rho);
   return rho;
 }
 
@@ -1497,8 +1499,7 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
   if (step.dmnrg()) {
     if (P.need_rho()) {
       rho = loadRho(step.ndx(), FN_RHO, P);
-      if (P.checkrho)
-        check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
+      check_trace_rho(rho); // Check if Tr[rho]=1, i.e. the normalization
     }
     if (P.need_rhoFDM()) 
       rhoFDM = loadRho(step.ndx(), FN_RHOFDM, P);

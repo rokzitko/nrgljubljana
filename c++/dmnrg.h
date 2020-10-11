@@ -387,7 +387,7 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const All
     DiagInfo diag_loaded = load_transformations(N, P);
     DensMatElements rhoFDMPrev;
     calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, rhoFDMPrev, N, dm, stats, P);
-    double tr       = trace(rhoFDMPrev);
+    double tr       = rhoFDMPrev.trace([](const auto &I) { return Sym->mult(I); });
     double expected = sum_wn(N, stats, P);
     double diff     = (tr - expected) / expected;
     nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);

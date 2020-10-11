@@ -500,9 +500,6 @@ struct Params {
 
   param<bool> checksumrules{"checksumrules", "Check operator sumrules", "false", all}; // N
 
-  // Check if the density matrix for CFS has trace 1.
-  param<bool> checkrho{"checkrho", "Test tr(rho)=1", "false", all}; // N
-
   param<bool> absolute{"absolute", "Do NRG without any rescaling", "false", all};
 
   // **********************************
