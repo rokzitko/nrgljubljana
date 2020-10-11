@@ -137,13 +137,13 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
 };
 std::ostream &operator<<(std::ostream &os, const MatrixElements &m) { return m.insertor(os); }
 
-using DensMatElements = map<Invar, Matrix>;
+using DensMatElements = std::map<Invar, Matrix>;
 
 template <typename T> 
-  inline pair<T, T> reverse_pair(const pair<T, T> &i) { return {i.second, i.first}; }
+  inline std::pair<T, T> reverse_pair(const pair<T, T> &i) { return {i.second, i.first}; }
 
 // Map of operators matrices
-using CustomOp = map<string, MatrixElements>;
+using CustomOp = std::map<std::string, MatrixElements>;
 
 // Vector containing irreducible matrix elements of f operators.
 using OpchChannel = std::vector<MatrixElements>;
@@ -164,38 +164,6 @@ class IterInfo {
   CustomOp opot; // orbital triplet operators
 };
 
-class Eigen;
-class Stats;
-
-using DiagInfo = map<Invar, Eigen>; // Full information after diagonalizations
-
-// Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
-// the index "r" which ranges from 1 through rmax.
-
-class Rmaxvals {
- private:
-   ublas::vector<size_t> values;
- public:
-   Rmaxvals() = default;
-   Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev);
-   size_t rmax(size_t i) const { return values[i-1]; } // FOR COMPATIBILITY OFFSET 1!
-   size_t offset(size_t i) const { return ranges::accumulate(begin(values), begin(values) + (i-1), 0); }
-   size_t operator[](size_t i) const { return rmax(i); }
-   size_t total() const { return ranges::accumulate(values, 0); } // total number of states
-   size_t combs() const { return values.size(); }
- private:
-   friend ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
-     for (const auto &x : rmax.values) os << x << ' ';
-     return os;
-   }
-   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
-   friend class boost::serialization::access;
-};
-
-using QSrmax = map<Invar, Rmaxvals>;
-
-// statement about scaling, not about possible linear shifts/offsets.
-
 // Result of a diagonalisation: eigenvalues and eigenvectors
 struct RawEigen {
   using EVEC = ublas::vector<t_eigen>;
@@ -207,14 +175,14 @@ struct RawEigen {
     value_orig.resize(nr);
     matrix.resize(nr, dim);
   }
-  size_t getnrc() const { return value_orig.size(); } // number of computed eigenpairs
-  size_t getdim() const { return matrix.size2(); } // valid also after the split_in_blocks_Eigen() call
+  auto getnrc() const { return value_orig.size(); } // number of computed eigenpairs
+  auto getdim() const { return matrix.size2(); } // valid also after the split_in_blocks_Eigen() call
 };
   
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
 struct Eigen : public RawEigen {
   EVEC value_zero;     // Egs subtracted
-  size_t getnr() const  { return value_zero.size(); }
+  auto getnr() const  { return value_zero.size(); }
   size_t nrpost = 0;   // number of eigenpairs after truncation
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
@@ -228,7 +196,7 @@ struct Eigen : public RawEigen {
   Eigen() : RawEigen() {}
   Eigen(size_t nr, size_t rmax) : RawEigen(nr, rmax) {}
   // Returns the number of eigenpairs after truncation.
-  size_t getnrkept() const { return nrpost; }
+  auto getnrkept() const { return nrpost; }
   // Truncate to nrpost states.
   void truncate_prepare_subspace(size_t _nrpost) {
     nrpost = _nrpost;
@@ -263,6 +231,38 @@ private:
      ar &absenergy; ar &absenergyG; ar &absenergyN;
   }
 };
+
+//using DiagInfo = map<Invar, Eigen>; 
+// Full information after diagonalizations (eigenspectra in all subspaces)
+class DiagInfo : public std::map<Invar, Eigen> {
+ public:
+   auto subspaces() const { return *this | boost::adaptors::map_keys; }
+};
+
+// Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
+// the index "r" which ranges from 1 through rmax.
+
+class Rmaxvals {
+ private:
+   ublas::vector<size_t> values;
+ public:
+   Rmaxvals() = default;
+   Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev);
+   auto rmax(size_t i) const { return values[i-1]; } // FOR COMPATIBILITY OFFSET 1!
+   auto offset(size_t i) const { return ranges::accumulate(begin(values), begin(values) + (i-1), 0); }
+   auto operator[](size_t i) const { return rmax(i); }
+   auto total() const { return ranges::accumulate(values, 0); } // total number of states
+   auto combs() const { return values.size(); }
+ private:
+   friend ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
+     for (const auto &x : rmax.values) os << x << ' ';
+     return os;
+   }
+   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
+   friend class boost::serialization::access;
+};
+
+using QSrmax = map<Invar, Rmaxvals>;
 
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
 // density-matrix construction.
@@ -683,8 +683,8 @@ using speclist = std::list<BaseSpectrum>;
 template<typename T>
 double norm(const MatrixElements &m, const DiagInfo &diag, T factor_fnc, int SPIN) {
   weight_bucket sum;
-  for (const auto &[Ip, eigp] : diag) {
-    for (const auto &[I1, eig1] : diag) {
+  for (const auto &Ip : diag.subspaces()) {
+    for (const auto &I1 : diag.subspaces()) {
       if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
       if (auto it = m.find(Twoinvar{I1, Ip}); it != m.end()) {
         const auto mat = it->second;
@@ -1376,7 +1376,7 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
   MatrixElements nnew;
   Recalc recalc_table[Sym->get_combs()];
   my_assert(Sym->islr() ? parity == 1 || parity == -1 : parity == 1);
-  for (const auto I : diag | boost::adaptors::map_keys) {
+  for (const auto &I : diag.subspaces()) {
     const Invar I1 = I;
     const Invar Ip = parity == -1 ? I.InvertParity() : I;
     for (size_t i = 1; i <= Sym->get_combs(); i++) {
@@ -1781,7 +1781,7 @@ QSrmax get_qsrmax(const DiagInfo &diagprev) {
 
 QSrmax get_empty_qsrmax(const DiagInfo &diag) {
   QSrmax qsrmax;
-  for (const auto &I : diag | boost::adaptors::map_keys)
+  for (const auto &I : diag.subspaces())
     qsrmax[I] = Rmaxvals();
   return qsrmax;
 }
