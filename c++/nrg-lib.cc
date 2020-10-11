@@ -224,12 +224,6 @@ struct Eigen : public RawEigen {
     // Eigen
     ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergyN;
   } 
-private:
-  friend class boost::serialization::access;
-  template <class Archive> void serialize(Archive &ar, const unsigned int version) {
-     ar &value_orig; ar &matrix; ar &value_zero; ar &nrpost;
-     ar &absenergy; ar &absenergyG; ar &absenergyN;
-  }
 };
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
@@ -1731,17 +1725,15 @@ DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef 
 }
 
 #ifdef NRG_MPI
-const int TAG_EXIT           = 2;
-const int TAG_DIAG           = 3;
-const int TAG_SYNC           = 4;
-const int TAG_MATRIX         = 5;
-const int TAG_INVAR          = 6;
-const int TAG_EIGEN          = 7;
-const int TAG_MATRIX_SIZE    = 8;
-const int TAG_MATRIX_LINE    = 9;
-const int TAG_EIGEN_INT      = 10;
-const int TAG_EIGEN_VEC      = 11;
-const int TAG_EIGEN_RMAXVALS = 12;
+const int TAG_EXIT        = 2;
+const int TAG_DIAG        = 3;
+const int TAG_SYNC        = 4;
+const int TAG_MATRIX      = 5;
+const int TAG_INVAR       = 6;
+const int TAG_MATRIX_SIZE = 8;
+const int TAG_MATRIX_LINE = 9;
+const int TAG_EIGEN_INT   = 10;
+const int TAG_EIGEN_VEC   = 11;
 
 void mpi_send_params(const DiagParams &DP) {
   mpilog("Sending diag parameters " << DP.diag << " " << DP.diagratio);
@@ -1766,34 +1758,7 @@ void check_status(mpi::status status) {
 
 // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
 
-//#define MPI_WHOLEMATRIX
-#define MPI_LINEBYLINE
-
-#ifdef MPI_WHOLEMATRIX
-#define mpi_send_matrix mpi_send_matrix_wholematrix
-#define mpi_receive_matrix mpi_receive_matrix_wholematrix
-#define mpi_send_eigen mpi_send_eigen_whole
-#define mpi_receive_eigen mpi_receive_eigen_whole
-#endif
-
-#ifdef MPI_LINEBYLINE
-#define mpi_send_matrix mpi_send_matrix_linebyline
-#define mpi_receive_matrix mpi_receive_matrix_linebyline
-#define mpi_send_eigen mpi_send_eigen_linebyline
-#define mpi_receive_eigen mpi_receive_eigen_linebyline
-#endif
-
-void mpi_send_matrix_wholematrix(int dest, Matrix &m) { 
-  mpiw->send(dest, TAG_MATRIX, m); 
-}
-
-auto mpi_receive_matrix_wholematrix(int source) {
-  Matrix m;
-  check_status(mpiw->recv(source, TAG_MATRIX, m));
-  return m;
-}
-
-void mpi_send_matrix_linebyline(int dest, const Matrix &m) {
+void mpi_send_matrix(int dest, const Matrix &m) {
   auto size1 = m.size1();
   mpiw->send(dest, TAG_MATRIX_SIZE, size1);
   auto size2 = m.size2();
@@ -1805,7 +1770,7 @@ void mpi_send_matrix_linebyline(int dest, const Matrix &m) {
   }
 }
 
-auto mpi_receive_matrix_linebyline(int source) {
+auto mpi_receive_matrix(int source) {
   size_t size1;
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size1));
   size_t size2;
@@ -1821,31 +1786,17 @@ auto mpi_receive_matrix_linebyline(int source) {
   return m;
 }
 
-void mpi_send_eigen_whole(int dest, const Eigen &eig) { 
-  mpiw->send(dest, TAG_EIGEN, eig); 
-}
-
-auto mpi_receive_eigen_whole(int source) {
-  Eigen eig;
-  check_status(mpiw->recv(source, TAG_EIGEN, eig));
-  return eig;
-}
-
-void mpi_send_eigen_linebyline(int dest, const Eigen &eig) {
-  Eigen eigmock; // empty Eigen
-  mpiw->send(dest, TAG_EIGEN, eigmock);
+void mpi_send_eigen(int dest, const Eigen &eig) {
   mpilog("Sending eigen from " << mpiw->rank() << " to " << dest);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig);
-  mpi_send_matrix_linebyline(dest, eig.matrix);
+  mpi_send_matrix(dest, eig.matrix);
 }
 
-auto mpi_receive_eigen_linebyline(int source) {
+auto mpi_receive_eigen(int source) {
   mpilog("Receiving eigen from " << source << " on " << mpiw->rank());
-  Eigen eigmock;
-  check_status(mpiw->recv(source, TAG_EIGEN, eigmock));
   Eigen eig;
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value_orig));
-  eig.matrix = mpi_receive_matrix_linebyline(source);
+  eig.matrix = mpi_receive_matrix(source);
   return eig;
 }
 
@@ -1909,7 +1860,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
       mpiw->send(i, TAG_INVAR, I);
     }
     // Check for terminated jobs
-    while (auto status = mpiw->iprobe(mpi::any_source, TAG_EIGEN)) {
+    while (auto status = mpiw->iprobe(mpi::any_source, TAG_EIGEN_VEC)) {
       nrglog('M', "Receiveing results from " << status->source());
       auto [Irecv, eig] = read_from(status->source());
       diagnew[Irecv] = eig;
@@ -1920,7 +1871,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
   }
   // Keep reading results sent from the slave processes until all tasks have been completed.
   while (done.size() != tasks.size()) {
-    auto status = mpiw->probe(mpi::any_source, TAG_EIGEN);
+    auto status = mpiw->probe(mpi::any_source, TAG_EIGEN_VEC);
     auto [Irecv, eig]  = read_from(status.source());
     diagnew[Irecv] = eig;
     done.push_back(Irecv);
