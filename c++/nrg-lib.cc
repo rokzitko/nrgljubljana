@@ -310,7 +310,24 @@ class Rmaxvals {
    friend class boost::serialization::access;
 };
 
-using QSrmax = map<Invar, Rmaxvals>;
+class QSrmax : public std::map<Invar, Rmaxvals> {
+ public:
+   QSrmax() {}
+   QSrmax(const DiagInfo &);
+   // List of invariant subspaces in which diagonalisations need to be performed
+   std::vector<Invar> task_list() const {
+     std::vector<pair<size_t, Invar>> tasks_with_sizes;
+     for (const auto &[I, rm] : *this)
+       if (rm.total())
+         tasks_with_sizes.emplace_back(rm.total(), I);
+     ranges::sort(tasks_with_sizes, std::greater<>()); // sort in the *decreasing* order!
+     auto nr       = tasks_with_sizes.size();
+     auto min_size = tasks_with_sizes.back().first;
+     auto max_size = tasks_with_sizes.front().first;
+     cout << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << endl;
+     return tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
+   }
+};
 
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
 // density-matrix construction.
@@ -361,6 +378,11 @@ class AllSteps : public std::vector<Subs> {
      for (auto N = Nbegin; N < Nend; N++)
        for (auto &ds : this->at(N) | boost::adaptors::map_values)
          ds.eig.subtract_GS_energy(GS_energy);
+   }
+   void store(const size_t ndx, const DiagInfo &diag, const QSrmax &qsrmax, const bool last) {
+     my_assert(Nbegin <= ndx && ndx < Nend);
+     for (const auto &[I, eig]: diag) 
+       (*this)[ndx][I] = { eig.getnr(), eig.getdim(), qsrmax.at(I), eig, last };
    }
 };
 
@@ -1325,11 +1347,14 @@ void truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
                                       std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));
   std::cout << "Emax=" << Emax/step.unscale() << " ";
-  truncate_stats(diag).report();
+  truncate_stats ts(diag);
+  ts.report();
   if (std::any_of(begin(diag), end(diag), 
                   [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax &&
                       eig.getnr() < eig.getdim(); }))
       throw NotEnough();
+  double ratio = double(ts.nrkept) / ts.nrall;
+  cout << "Kept: " << ts.nrkept << " out of " << ts.nrall << ", ratio=" << setprecision(3) << ratio << endl;
 }
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z
@@ -1785,36 +1810,9 @@ DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, 
 }
 
 // Determine the structure of matrices in the new NRG shell
-QSrmax get_qsrmax(const DiagInfo &diagprev) {
-  QSrmax qsrmax;
+QSrmax::QSrmax(const DiagInfo &diagprev) {
   for (const auto &I : make_subspaces_list(diagprev))
-    qsrmax[I] = Rmaxvals{I, Sym->ancestors(I), diagprev};
-  return qsrmax;
-}
-
-QSrmax get_empty_qsrmax(const DiagInfo &diag) {
-  QSrmax qsrmax;
-  for (const auto &I : diag.subspaces())
-    qsrmax[I] = Rmaxvals();
-  return qsrmax;
-}
-
-// List of invariant subspaces in which diagonalisations need to be performed
-std::vector<Invar> task_list(const QSrmax &qsrmax, const Params &P) {
-  std::vector<pair<size_t, Invar>> tasks_with_sizes;
-  for (const auto &[I, rm] : qsrmax)
-    if (rm.total())
-      tasks_with_sizes.emplace_back(rm.total(), I);
-  // Sort in the *decreasing* order!
-  sort(rbegin(tasks_with_sizes), rend(tasks_with_sizes));
-  auto nr       = tasks_with_sizes.size();
-  auto min_size = tasks_with_sizes.back().first;
-  auto max_size = tasks_with_sizes.front().first;
-  cout << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << endl;
-  if (P.logletter('S'))   // report matrix sizes
-    for (const auto &[size, I] : tasks_with_sizes) 
-      cout << "size(" << I << ")=" << size << endl;
-  return tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
+    (*this)[I] = Rmaxvals{I, Sym->ancestors(I), diagprev};
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
@@ -1847,7 +1845,7 @@ void dump_f(const Opch &opch) {
 DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
-  auto tasks = task_list(qsrmax, P);
+  auto tasks = qsrmax.task_list();
   double diagratio = P.diagratio;
   DiagInfo diag;
   while (true) {
@@ -1892,16 +1890,6 @@ void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
   }
 }
 
-void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, AllSteps &dm)
-{
-  my_assert(dm.Nbegin <= step.ndx() && step.ndx() < dm.Nend);
-  for (const auto &[I, eig]: diag) 
-    dm[step.ndx()][I] = { eig.getnr(), eig.getdim(), qsrmax.at(I), eig, step.last() };
-  truncate_stats ts(diag);
-  double ratio = double(ts.nrkept) / ts.nrall;
-  cout << "Kept: " << ts.nrkept << " out of " << ts.nrall << ", ratio=" << setprecision(3) << ratio << endl;
-}
-
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, 
                 Output &output, QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
@@ -1923,8 +1911,8 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
   }
   if (!P.ZBW)
-    diag.truncate_perform();           // Actual truncation occurs at this point
-  store_to_dm(step, diag, qsrmax, dm); // Store information about subspaces and states for DM algorithms
+    diag.truncate_perform();                        // Actual truncation occurs at this point
+  dm.store(step.ndx(), diag, qsrmax, step.last());  // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_irreducible(step, diag, qsrmax, iterinfo.opch, P);
     if (P.dump_f) dump_f(iterinfo.opch);
@@ -1941,7 +1929,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
 // Perform one iteration step
 DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, 
                  Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
-  QSrmax qsrmax = get_qsrmax(diagprev);
+  QSrmax qsrmax{diagprev};
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, P);
   iterinfo.trim_matrices(diag);
@@ -1979,7 +1967,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
     diag.subtract_Egs(stats.Egs);
   truncate_prepare(step, diag, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
-  QSrmax qsrmax = get_empty_qsrmax(diag);
+  QSrmax qsrmax{diag}; // ZZZ
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, P);
   return diag;
 }
