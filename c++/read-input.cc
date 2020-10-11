@@ -91,21 +91,6 @@ void read_gs_energy(ifstream &fdata, Stats &stats) {
   fdata >> stats.total_energy;
 }
 
-// Read energies of initial states. nsubs is the number of subspaces.
-DiagInfo read_energies(ifstream &fdata, size_t nsubs, Params &P) {
-  DiagInfo diag;
-  for (size_t i = 1; i <= nsubs; i++) {
-    Invar I;
-    fdata >> I;
-    auto energies = read_vector<double>(fdata);
-    if (!P.data_has_rescaled_energies && !P.absolute)
-      energies /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
-    diag[I].diagonal(energies);
-  }
-  my_assert(diag.size() == nsubs);
-  return diag;
-}
-
 // Read irreducible matrix elements from stream fdata and store them in a map of matrices.
 MatrixElements read_matrix_elements(ifstream &fdata, const DiagInfo &diag) {
   MatrixElements m;
@@ -169,8 +154,7 @@ std::tuple<DiagInfo, IterInfo, Coef> read_data(Params &P, Stats &stats) {
   read_Nmax(fdata, P);
   size_t nsubs = read_nsubs(fdata);
   skip_comments(fdata);
-  DiagInfo diag0; // 0-th step of the NRG iteration
-  diag0 = read_energies(fdata, nsubs, P);
+  DiagInfo diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);
   IterInfo iterinfo0;
   read_irreduc_f(fdata, diag0, iterinfo0.opch, P);

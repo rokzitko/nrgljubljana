@@ -240,6 +240,18 @@ private:
 // Full information after diagonalizations (eigenspectra in all subspaces)
 class DiagInfo : public std::map<Invar, Eigen> {
  public:
+   DiagInfo() {}
+   DiagInfo(ifstream &fdata, const size_t nsubs, const Params &P) {
+     for (auto i = 1; i <= nsubs; i++) {
+       Invar I;
+       fdata >> I;
+       auto energies = read_vector<double>(fdata);
+       if (!P.data_has_rescaled_energies && !P.absolute)
+         energies /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
+       (*this)[I].diagonal(energies);
+     }
+     my_assert(size() == nsubs);
+   }
    auto subspaces() const { return *this | boost::adaptors::map_keys; }
    auto eigs() const { return *this | boost::adaptors::map_values; }
    auto eigs() { return *this | boost::adaptors::map_values; }
