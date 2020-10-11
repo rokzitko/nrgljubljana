@@ -127,48 +127,6 @@ using Matrix = ublas::matrix<t_matel>;
 
 #include "numerics.h"
 
-class MatrixElements : public std::map<Twoinvar, Matrix> {
- public:
-   std::ostream &insertor(std::ostream &os) const { 
-     for (const auto &[II, mat] : *this)
-       os << "----" << II << "----" << endl << mat << endl;
-     return os;
-   }
-};
-std::ostream &operator<<(std::ostream &os, const MatrixElements &m) { return m.insertor(os); }
-
-class DensMatElements : public std::map<Invar, Matrix> {
- public:
-   template <typename MF>
-     double trace(MF mult) const {
-       return std::accumulate(this->cbegin(), this->cend(), 0.0, 
-                              [mult](double acc, const auto z) { const auto &[I, mat] = z; 
-                                return acc + mult(I) * trace_real_nochecks(mat); });
-     }
-};
-
-template <typename T> 
-  inline std::pair<T, T> reverse_pair(const pair<T, T> &i) { return {i.second, i.first}; }
-
-// Map of operators matrices
-using CustomOp = std::map<std::string, MatrixElements>;
-
-// Vector containing irreducible matrix elements of f operators.
-using OpchChannel = std::vector<MatrixElements>;
-// Each channel contains P.perchannel OpchChannel matrices.
-class Opch : public std::vector<OpchChannel> {
- public:
-   Opch() {}
-   Opch(size_t nrch) { this->resize(nrch); }
-   void dump() {
-     std::cout << std::endl;
-     for (const auto &&[i, ch] : *this | ranges::views::enumerate)
-       for (const auto &&[j, mat] : ch | ranges::views::enumerate)
-         std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << mat << endl;
-     std::cout << std::endl;
-   }
-};
-
 // Result of a diagonalisation: eigenvalues and eigenvectors
 struct RawEigen {
   using EVEC = ublas::vector<t_eigen>;
@@ -311,6 +269,59 @@ class DiagInfo : public std::map<Invar, Eigen> {
            F << "(" << I << ") " << eig.getnr() << " states: " << eig.value_orig << std::endl;
        F << "Number of states (multiplicity taken into account): " << count_states(mult) << std::endl << std::endl;
      }
+};
+
+class MatrixElements : public std::map<Twoinvar, Matrix> {
+ public:
+   MatrixElements() {}
+   MatrixElements(ifstream &fdata, const DiagInfo &diag) {
+     size_t nf; // Number of I1 x I2 combinations
+     fdata >> nf;
+     for (size_t i = 1; i <= nf; i++) {
+       Invar I1, I2;
+       fdata >> I1 >> I2;
+       if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
+         read_matrix(fdata, (*this)[{I1, I2}], it1->second.getnr(), it2->second.getnr());
+       else
+         throw std::runtime_error("Corrupted input file.");
+     }
+     my_assert(this->size() == nf);
+   }
+   std::ostream &insertor(std::ostream &os) const { 
+     for (const auto &[II, mat] : *this)
+       os << "----" << II << "----" << endl << mat << endl;
+     return os;
+   }
+};
+std::ostream &operator<<(std::ostream &os, const MatrixElements &m) { return m.insertor(os); }
+
+class DensMatElements : public std::map<Invar, Matrix> {
+ public:
+   template <typename MF>
+     double trace(MF mult) const {
+       return std::accumulate(this->cbegin(), this->cend(), 0.0, 
+                              [mult](double acc, const auto z) { const auto &[I, mat] = z; 
+                                return acc + mult(I) * trace_real_nochecks(mat); });
+     }
+};
+
+// Map of operators matrices
+using CustomOp = std::map<std::string, MatrixElements>;
+
+// Vector containing irreducible matrix elements of f operators.
+using OpchChannel = std::vector<MatrixElements>;
+// Each channel contains P.perchannel OpchChannel matrices.
+class Opch : public std::vector<OpchChannel> {
+ public:
+   Opch() {}
+   Opch(size_t nrch) { this->resize(nrch); }
+   void dump() {
+     std::cout << std::endl;
+     for (const auto &&[i, ch] : *this | ranges::views::enumerate)
+       for (const auto &&[j, mat] : ch | ranges::views::enumerate)
+         std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << mat << endl;
+     std::cout << std::endl;
+   }
 };
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of

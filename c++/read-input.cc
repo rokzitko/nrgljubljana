@@ -91,23 +91,6 @@ void read_gs_energy(ifstream &fdata, Stats &stats) {
   fdata >> stats.total_energy;
 }
 
-// Read irreducible matrix elements from stream fdata and store them in a map of matrices.
-MatrixElements read_matrix_elements(ifstream &fdata, const DiagInfo &diag) {
-  MatrixElements m;
-  size_t nf; // Number of I1 x I2 combinations
-  fdata >> nf;
-  for (size_t i = 1; i <= nf; i++) {
-    Invar I1, I2;
-    fdata >> I1 >> I2;
-    if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
-      read_matrix(fdata, m[{I1, I2}], it1->second.getnr(), it2->second.getnr());
-    else
-      throw std::runtime_error("Corrupted input file. Stopped in read_matrix_elements()");
-  }
-  my_assert(m.size() == nf);
-  return m;
-}
-
 void read_irreduc_f(ifstream &fdata, const DiagInfo &diag, Opch &opch, Params &P) {
   nrglog('@', "read_irreduc_f()");
   opch = Opch(P.channels);
@@ -118,7 +101,7 @@ void read_irreduc_f(ifstream &fdata, const DiagInfo &diag, Opch &opch, Params &P
       size_t iread, jread;
       fdata >> ch >> iread >> jread;
       my_assert(ch == 'f' && i == iread && j == jread);
-      opch[i][j] = read_matrix_elements(fdata, diag);
+      opch[i][j] = MatrixElements(fdata, diag);
     }
   }
 }
@@ -172,13 +155,13 @@ std::tuple<DiagInfo, IterInfo, Coef> read_data(Params &P, Stats &stats) {
         // ignore embedded comment lines
         break;
       case 'e': read_gs_energy(fdata, stats); break;
-      case 's': iterinfo0.ops[opname]  = read_matrix_elements(fdata, diag0); break;
-      case 'p': iterinfo0.opsp[opname] = read_matrix_elements(fdata, diag0); break;
-      case 'g': iterinfo0.opsg[opname] = read_matrix_elements(fdata, diag0); break;
-      case 'd': iterinfo0.opd[opname]  = read_matrix_elements(fdata, diag0); break;
-      case 't': iterinfo0.opt[opname]  = read_matrix_elements(fdata, diag0); break;
-      case 'o': iterinfo0.opot[opname] = read_matrix_elements(fdata, diag0); break;
-      case 'q': iterinfo0.opq[opname]  = read_matrix_elements(fdata, diag0); break;
+      case 's': iterinfo0.ops[opname]  = MatrixElements(fdata, diag0); break;
+      case 'p': iterinfo0.opsp[opname] = MatrixElements(fdata, diag0); break;
+      case 'g': iterinfo0.opsg[opname] = MatrixElements(fdata, diag0); break;
+      case 'd': iterinfo0.opd[opname]  = MatrixElements(fdata, diag0); break;
+      case 't': iterinfo0.opt[opname]  = MatrixElements(fdata, diag0); break;
+      case 'o': iterinfo0.opot[opname] = MatrixElements(fdata, diag0); break;
+      case 'q': iterinfo0.opq[opname]  = MatrixElements(fdata, diag0); break;
       case 'z':
         coef.xi.read(fdata, P.coefchannels);
         coef.zeta.read(fdata, P.coefchannels);
