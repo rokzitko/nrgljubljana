@@ -218,12 +218,12 @@ struct Eigen : public RawEigen {
   void subtract_Egs(double Egs) {
     value_zero = value_orig;
     for (auto &x : value_zero) x -= Egs;
-    my_assert(value_zero[0] >= 0.0);
+    my_assert(value_zero[0] >= 0);
   }
-  void shift_absenergyG(double GS_energy) {
+  void subtract_GS_energy(double GS_energy) {
     for (auto &x : absenergyG) x -= GS_energy;
+    my_assert(absenergyG[0] >= 0);
   }
-
 private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
@@ -237,6 +237,19 @@ private:
 class DiagInfo : public std::map<Invar, Eigen> {
  public:
    auto subspaces() const { return *this | boost::adaptors::map_keys; }
+   auto eigs() const { return *this | boost::adaptors::map_values; }
+   auto eigs() { return *this | boost::adaptors::map_values; }
+   t_eigen find_groundstate() const {
+     auto [Iground, eig] = *ranges::min_element(*this, [](const auto a, const auto b) { return a.second.value_orig(0) < b.second.value_orig(0); });
+     auto Egs = eig.value_orig(0);
+     return Egs;
+   }
+   void subtract_Egs(const t_eigen Egs) {
+     ranges::for_each(this->eigs(), [Egs](auto &eig)       { eig.subtract_Egs(Egs); });
+   }
+   void subtract_GS_energy(const t_eigen GS_energy) {
+     ranges::for_each(this->eigs(), [GS_energy](auto &eig) { eig.subtract_GS_energy(GS_energy); });
+   }
 };
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
@@ -358,20 +371,8 @@ class Step {
 // Namespace for storing various statistical quantities calculated during iteration.
 class Stats {
  public:
-   // ** Ground-state subspace and energy at the current NRG iteration
-   Invar ground;
    t_eigen Egs;
-   void find_groundstate(const DiagInfo &diag) {
-     auto [I, eig] = *std::min_element(diag.cbegin(), diag.cend(), 
-                                      [](const auto a, const auto b) { return a.second.value_orig(0) < b.second.value_orig(0); });
-     ground = I;
-     Egs = eig.value_orig(0);
-   }
-
-   void subtract_groundstate_energy(DiagInfo &diag) {
-     ranges::for_each(diag | boost::adaptors::map_values, [this](auto &eig) { eig.subtract_Egs(Egs); });
-   }
-
+   
    // ** Thermodynamic quantities
    double Z;
    double Zft;   // grand-canonical partition function (at shell n)
@@ -419,19 +420,12 @@ class Stats {
      ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
 };
 
-// The absenergyG[] values are shifted so that the ground state corresponds to zero. This is required in the FDM
-// approach for calculating the spectral functions. This is different from subtract_groundstate_energy(). Called from
-// do_diag() when diag is loaded from a stored file during the second pass of the NRG iteration.
-void shift_abs_energies(const Stats &stats, DiagInfo &diag) {
-  ranges::for_each(diag | boost::adaptors::map_values, [&stats](auto &eig) { eig.shift_absenergyG(stats.GS_energy); });
-}
-
 // called before calc_ZnD()
 void shift_abs_energies_dm(const Stats &stats, AllSteps &dm, const Params &P)
 {
   for (size_t N = P.Ninit; N < P.Nlen; N++)
     for (auto &ds : dm[N] | boost::adaptors::map_values)
-      ds.eig.shift_absenergyG(stats.GS_energy);
+      ds.eig.subtract_GS_energy(stats.GS_energy);
 }
 
 class ChainSpectrum;
@@ -1847,11 +1841,11 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
       }
       if (step.dmnrg()) {
         diag = load_transformations(step.ndx(), P, P.removefiles); // read from disk in second run
-        shift_abs_energies(stats, diag);
+        diag.subtract_GS_energy(stats.GS_energy);
       }
-      stats.find_groundstate(diag);
+      stats.Egs = diag.find_groundstate();
       if (step.nrg()) // should be done only once!
-        stats.subtract_groundstate_energy(diag);
+        diag.subtract_Egs(stats.Egs);
       auto cluster_mapping = find_clusters(sort_energies(diag), P.fixeps);
       fix_splittings(diag, cluster_mapping);
       truncate_prepare(step, diag, P);
@@ -1956,11 +1950,11 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
     diag = diag0;
   if (step.dmnrg()) {
     diag = load_transformations(step.ndx(), P, P.removefiles);
-    shift_abs_energies(stats, diag);
+    diag.subtract_GS_energy(stats.GS_energy);
   }
-  stats.find_groundstate(diag);
+  stats.Egs = diag.find_groundstate();
   if (step.nrg())      
-    stats.subtract_groundstate_energy(diag);
+    diag.subtract_Egs(stats.Egs);
   truncate_prepare(step, diag, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax qsrmax = get_empty_qsrmax(diag);
