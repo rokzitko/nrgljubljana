@@ -338,9 +338,8 @@ using DimSub = DimSubGen<t_eigen>;
 using Subs = map<Invar, DimSub>;
 
 class AllSteps : public std::vector<Subs> {
- private:
-   size_t Nbegin, Nend; // range of valid indexes
  public:
+   size_t Nbegin, Nend; // range of valid indexes
    AllSteps(size_t Nbegin, size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
    void dump_absenergyG(ostream &F) const {
      for (auto N = Nbegin; N < Nend; N++) {
@@ -353,7 +352,7 @@ class AllSteps : public std::vector<Subs> {
      std::ofstream F(filename);
      this->dump_absenergyG(F);
    }
-   void shift_abs_energies_dm(const double GS_energy) {
+   void shift_abs_energies(const double GS_energy) {
      for (auto N = Nbegin; N < Nend; N++)
        for (auto &ds : this->at(N) | boost::adaptors::map_values)
          ds.eig.subtract_GS_energy(GS_energy);
@@ -1294,17 +1293,17 @@ void truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z
 // (stats.ZZG), computed with respect to absolute energies.
 // calc_ZnD() must be called before the second NRG run.
-void calc_ZnD(const AllSteps &dm, Stats &stats, const Params &P) {
+void calc_ZnD(const AllSteps &dm, Stats &stats, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
-  for (size_t N = P.Ninit; N < P.Nlen; N++) { // here size_t, because Ninit>=0
+  for (auto N = dm.Nbegin; N < dm.Nend; N++) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
     mpf_set_d(ZnDG, 0.0);
     mpf_set_d(ZnDN, 0.0);
     for (const auto &[I, ds] : dm[N])
       for (size_t i = ds.min(); i < ds.max(); i++) {
         my_mpf g, n;
-        mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.absenergyG[i]/P.T)); // absenergyG >= 0.0
-        mpf_set_d(n, Sym->mult(I) * exp(-ds.eig.absenergyN[i]/P.T)); // absenergyN >= 0.0
+        mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.absenergyG[i]/T)); // absenergyG >= 0.0
+        mpf_set_d(n, Sym->mult(I) * exp(-ds.eig.absenergyN[i]/T)); // absenergyN >= 0.0
         mpf_add(ZnDG, ZnDG, g);
         mpf_add(ZnDN, ZnDN, n);
       }
@@ -1315,59 +1314,60 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, const Params &P) {
   // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
   my_mpf ZZG;
   mpf_set_d(ZZG, 0.0);
-  for (size_t N = P.Ninit; N < P.Nlen; N++) {
+  for (size_t N = dm.Nbegin; N < dm.Nend; N++) {
     my_mpf a;
     mpf_set(a, stats.ZnDG[N]);
     my_mpf b;
-    mpf_set_d(b, P.combs);
-    mpf_pow_ui(b, b, P.Nlen - N - 1);
+    mpf_set_d(b, Sym->get_combs());
+    mpf_pow_ui(b, b, dm.Nend - N - 1);
     my_mpf c;
     mpf_mul(c, a, b);
     mpf_add(ZZG, ZZG, c);
   }
   stats.ZZG = mpf_get_d(ZZG);
   bucket sumwn;
-  for (size_t N = P.Ninit; N < P.Nlen; N++) {
+  for (size_t N = dm.Nbegin; N < dm.Nend; N++) {
     // This is w_n defined after Eq. (8) in the WvD paper.
-    const double wn = pow(double(P.combs), int(P.Nlen - N - 1)) * mpf_get_d(stats.ZnDG[N]) / stats.ZZG;
+    const double wn = pow(Sym->get_combs(), int(dm.Nend - N - 1)) * mpf_get_d(stats.ZnDG[N]) / stats.ZZG;
     stats.wn[N] = wn;
     sumwn += wn;
-    const double w = pow(double(P.combs), int(P.Nlen - N - 1)) / stats.ZZG;
+    const double w = pow(Sym->get_combs(), int(dm.Nend - N - 1)) / stats.ZZG;
     stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function.
   }
   cout << "ZZG=" << HIGHPREC(stats.ZZG) << endl;
   cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << endl;
-  if (P.logletter('w')) {
-    for (size_t N = P.Ninit; N < P.Nlen; N++) 
-      cout << "ZG[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDG[N])) << endl;
-    for (size_t N = P.Ninit; N < P.Nlen; N++) 
-      cout << "ZN[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDN[N])) << endl;
-    for (size_t N = P.Ninit; N < P.Nlen; N++) 
-      cout << "w[" << N << "]=" << HIGHPREC(stats.wn[N]) << endl;
-    for (size_t N = P.Ninit; N < P.Nlen; N++)
-      cout << "wfactor[" << N << "]=" << HIGHPREC(stats.wnfactor[N]) << endl;
-  }
   my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
+}
+
+void report_ZnD(Stats &stats, const Params &P) {
+  for (size_t N = P.Ninit; N < P.Nlen; N++) 
+    cout << "ZG[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDG[N])) << endl;
+  for (size_t N = P.Ninit; N < P.Nlen; N++) 
+    cout << "ZN[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDN[N])) << endl;
+  for (size_t N = P.Ninit; N < P.Nlen; N++) 
+    cout << "w[" << N << "]=" << HIGHPREC(stats.wn[N]) << endl;
+  for (size_t N = P.Ninit; N < P.Nlen; N++)
+    cout << "wfactor[" << N << "]=" << HIGHPREC(stats.wnfactor[N]) << endl;
 }
 
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
-void fdm_thermodynamics(const AllSteps &dm, Stats &stats, const Params &P)
+void fdm_thermodynamics(const AllSteps &dm, Stats &stats, const double T)
 {
-  stats.td_fdm.T = P.T;
-  stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/P.T); // this is the true partition function
-  stats.td_fdm.F = stats.F_fdm = -log(stats.ZZG)*P.T+stats.GS_energy; // F = -k_B*T*log(Z)
+  stats.td_fdm.T = T;
+  stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
+  stats.td_fdm.F = stats.F_fdm = -log(stats.ZZG)*T+stats.GS_energy; // F = -k_B*T*log(Z)
   // We use multiple precision arithmetics to ensure sufficient accuracy in the calculation of
   // the variance of energy and thus the heat capacity.
   my_mpf E, E2;
   mpf_set_d(E, 0.0);
   mpf_set_d(E2, 0.0);
-  for (size_t N = P.Ninit; N < P.Nlen; N++)
+  for (size_t N = dm.Nbegin; N < dm.Nend; N++)
     if (stats.wn[N] > 1e-16) 
       for (const auto &[I, ds] : dm[N]) 
         for (size_t i = ds.min(); i < ds.max(); i++) {
           my_mpf weight;
-          mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.absenergyN[i]/P.T));
+          mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.absenergyN[i]/T));
           mpf_div(weight, weight, stats.ZnDN[N]);
           my_mpf e;
           mpf_set_d(e, ds.eig.absenergy[i]);
@@ -1383,8 +1383,8 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats, const Params &P)
   mpf_mul(sqrE, E, E);
   my_mpf varE;
   mpf_sub(varE, E2, sqrE);
-  stats.td_fdm.C = stats.C_fdm = mpf_get_d(varE)/pow(double(P.T),2);
-  stats.td_fdm.S = stats.S_fdm = (stats.E_fdm-stats.F_fdm)/P.T;
+  stats.td_fdm.C = stats.C_fdm = mpf_get_d(varE)/pow(T,2);
+  stats.td_fdm.S = stats.S_fdm = (stats.E_fdm-stats.F_fdm)/T;
   cout << endl;
   cout << "Z_fdm=" << HIGHPREC(stats.Z_fdm) << endl;
   cout << "F_fdm=" << HIGHPREC(stats.F_fdm) << endl;
@@ -2086,7 +2086,7 @@ void calculation(Params &P) {
   AllSteps dm(P.Ninit, P.Nlen);
   auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, P);
   if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
-  dm.shift_abs_energies_dm(stats.GS_energy); // we call this here, to enable a file dump
+  dm.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
   if (P.dumpabsenergies)
     dm.dump_all_absolute_energies();
   if (P.dm) {
@@ -2096,9 +2096,11 @@ void calculation(Params &P) {
       if (!P.ZBW) calc_densitymatrix(rho, dm, P);
     }
     if (P.need_rhoFDM()) {
-      calc_ZnD(dm, stats, P);
-      fdm_thermodynamics(dm, stats, P);
-      auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, P);
+      calc_ZnD(dm, stats, P.T);
+      if (P.logletter('w')) 
+        report_ZnD(stats, P);
+      fdm_thermodynamics(dm, stats, P.T);
+      auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, P.T);
       saveRho(step.lastndx(), FN_RHOFDM, rhoFDM, P);
       if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, P);
     }

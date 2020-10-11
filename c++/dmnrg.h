@@ -244,7 +244,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
     size_t dim          = dimsub.kept;
     rhoPrev[I]          = Matrix(dim, dim, 0);
     if (!dim) continue;
-    for (size_t i = 1; i <= P.combs; i++) {
+    for (size_t i = 1; i <= Sym->get_combs(); i++) {
       Invar sub = subs[i];
       const auto x = rho.find(sub);
       const auto y = diag.find(sub);
@@ -309,14 +309,14 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &
 // A. Weichselbaum, J. von Delft, Phys. Rev. Lett. 99, 076402 (2007)
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
-DensMatElements init_rho_FDM(const size_t N, const AllSteps &dm, const Stats &stats, const Params &P) {
+DensMatElements init_rho_FDM(const size_t N, const AllSteps &dm, const Stats &stats, const double T) {
   DensMatElements rhoFDM;
   double tr = 0.0;
   for (const auto &[I, ds] : dm[N]) {
     rhoFDM[I] = Matrix(ds.max(), ds.max(), 0);
     Matrix &rhoI = rhoFDM[I];
     for (size_t i = ds.min(); i < ds.max(); i++) {
-      const double betaE = ds.eig.absenergyN[i] / P.T;
+      const double betaE = ds.eig.absenergyN[i] / T;
       const double ratio = stats.wn[N] / stats.ZnDNd[N];
       double val2        = exp(-betaE) * ratio;
       val2               = std::isfinite(val2) ? val2 : 0.0;
@@ -326,7 +326,6 @@ DensMatElements init_rho_FDM(const size_t N, const AllSteps &dm, const Stats &st
   }
   // Trace should be equal to the total weight of the shell-N contribution to the FDM.
   const double diff = (tr - stats.wn[N]) / stats.wn[N]; // relative error
-  nrglog('w', "tr=" << tr << " diff=" << diff);
   if (std::isfinite(diff) && !num_equal(diff, 0.0, 1e-8))
     my_assert(stats.wn[N] < 1e-12);    // ..OK if small enough overall.
   return rhoFDM;
@@ -341,13 +340,13 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
   if (!step.last(N))
-    rhoDD = init_rho_FDM(N, dm, stats, P);
+    rhoDD = init_rho_FDM(N, dm, stats, P.T);
   for (const auto &[I, ds] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = Sym->dmnrg_subspaces(I);
     size_t dim          = ds.kept;
     rhoFDMPrev[I]       = Matrix(dim, dim, 0);
     if (!dim) continue;
-    for (size_t i = 1; i <= P.combs; i++) {
+    for (size_t i = 1; i <= Sym->get_combs(); i++) {
       const auto sub = subs[i];
       // DM construction for non-Abelian symmetries: must include
       // the ratio of multiplicities as a coefficient.
