@@ -77,14 +77,14 @@ class Symmetry {
      anc.combine(input[i]);
      return anc; // I.combine(input[i]) == input[i].combine(I)
    }
-   
+
    InvarVec ancestors(const Invar &I) const {
      auto input = input_subspaces();
      for (size_t i = 1; i <= P.combs; i++)
        input[i].combine(I); // In is the list of differences wrt I
      return input;
    }
-   
+
    InvarVec dmnrg_subspaces(const Invar &I) const {
      auto input = input_subspaces();
      for (size_t i = 1; i <= P.combs; i++) {
@@ -93,60 +93,60 @@ class Symmetry {
      }
      return input;
    }
-   
+
    Invar InvarSinglet; // QNs for singlet operator
    Invar Invar_f;      // QNs for f operator
-   
+
    size_t get_combs() const { return P.combs; }
-   
+
    // For some symmetry types with two-channels we distinguish between
    // even and odd parity with respect to the channel-interchange
    // operation.
    virtual bool islr() { return false; }
-   
+
    // Ditto for 3 channels: C_3 symmetry.
    virtual bool isc3() { return false; }
-   
+
    // For some symmetry types, we may distinguish between spin-up
    // and spin-down quantities (in particular spin-up and spin-down
    // spectral functions).
    virtual bool isfield() { return false; }
-   
+
    // Multiplicity of the states in the invariant subspace
    virtual size_t mult(const Invar &) const {
      return 1;
    };
-   
+
    auto multfnc() const {
      return [this](const Invar &I) { return this->mult(I); };
    }
-   
+
    double calculate_Z(const Invar I, const Eigen &eig, double rescale_factor) const {
      double sumZ = 0;
      for (const auto &x : eig.value_zero) sumZ += exp(-rescale_factor * x);
      return mult(I) * sumZ;
    }
-   
+
    // Does the combination of invariant subspaces I1 and I2 contribute
    // to the spectral function corresponding to spin SPIN?
    virtual bool check_SPIN(const Invar &I1, const Invar &I2, const int &SPIN) const {
      my_assert(SPIN == 0);
      return true;
    }
-   
+
    // Is the triangle inequality satisfied for I1, I2, and I3 (i.e. if
    // Clebsch-Gordan coefficient can be different from zero).  This is
    // important, for example, for triplet operators which are zero
    // when evaluated between two singlet states.
    virtual bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const { return true; }
-   
+
    // Setup the combinations of quantum numbers that are used in the
    // construction of the Hamiltonian matrix.
    virtual void load() = 0;
-   
+
    // Is an invariant subspace with given quantum numbers allowed?
    virtual bool Invar_allowed(const Invar &I) const { return true; }
-   
+
    bool offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const;
    void offdiag_function(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_matel factor,
                          Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const;
@@ -158,22 +158,22 @@ class Symmetry {
                            Matrix &h, const Rmaxvals &qq) const;
    void diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_matel factor,
                               Matrix &h, const Rmaxvals &qq) const;
-  
+
    virtual void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) = 0;
-   
+
    // Called from recalc_dynamicsusceptibility().  This is the factor due
    // to the spin degeneracy when calculating the trace of Sz.Sz.
    virtual double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
-   
+
    // Called from recalc_dynamic_orb_susceptibility().  This is the factor due
    // to the orbital moment degeneracy when calculating the trace of Tz.Tz.
    virtual double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
-   
+
    // Called from calc_specdens().
    // See spectral_density_clebschgordan.nb and DMNRG_clebschgordan.nb.
    virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
    virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
-   
+
    virtual void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) = 0;
 
    virtual Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) { my_assert_not_reached(); }
@@ -183,7 +183,7 @@ class Symmetry {
    virtual MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
    virtual MatrixElements  recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
    virtual void recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) { my_assert_not_reached(); }
-   
+
    // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
    //  parity -1). Generic implementation, valid for all symmetry types.
    MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
@@ -202,7 +202,7 @@ class Symmetry {
      }
      return nnew;
    }
-   
+
    virtual void show_coefficients(const Step &step, const Coef &coef) {
      cout << setprecision(std::numeric_limits<double>::max_digits10);
      if (!P.substeps) {
@@ -221,7 +221,7 @@ class Symmetry {
        }
      }
    }
-   
+
    virtual bool recalc_f_coupled(const Invar I1, const Invar I2, const Invar If) { return true; } // used in recalc_f()
 
    Matrix recalc_f(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I1,
@@ -229,7 +229,7 @@ class Symmetry {
 
    Matrix recalc_general(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold,
                          const Invar &I1, const Invar &Ip, const struct Recalc table[], const size_t jmax, const Invar &Iop) const;
-   
+
    void recalc1_global(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I,
                        Matrix &m, const size_t i1, const size_t ip, const t_factor value) const;
 
@@ -242,13 +242,9 @@ class Symmetry {
    auto SpecdensCheckSpinFnc() const  { return [this](const Invar &I1, const Invar &Ip, int SPIN) { return this->check_SPIN(I1, Ip, SPIN); }; }
 };
 
-// List of all symmetries that are compiled-in, indexed by the symmtry name string.
-std::map<std::string, Symmetry *> all_syms;
-std::shared_ptr<Symmetry> Sym;
-
 // Add DECL declaration in each symmetry class
-#define DECL                                                                                                                                         \
-  void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) override;                   \
+#define DECL                                                                                                                                           \
+  void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) override;  \
   Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) override
 
 // Optional declaration

@@ -3,7 +3,7 @@
 
 class Stats;
 
-void set_symmetry(const Params &P, Stats &stats);
+shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
 std::string parse_datafile_header(istream &fdata, const int expected_version = 9)
@@ -111,14 +111,14 @@ void determine_Nmax(const Coef &coef, Params &P) {
 inline void skipline(ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
-std::tuple<DiagInfo, IterInfo, Coef> read_data(Params &P, Stats &stats) {
+std::tuple<DiagInfo, IterInfo, Coef, shared_ptr<Symmetry>> read_data(Params &P, Stats &stats) {
   skipline();
   ifstream fdata("data");
   if (!fdata) throw std::runtime_error("Can't load initial data.");
   auto sym_string = parse_datafile_header(fdata);
   my_assert(sym_string == P.symtype.value());
   read_nr_channels(fdata, sym_string, P);
-  set_symmetry(P, stats);
+  auto Sym = set_symmetry(P, stats);
   read_Nmax(fdata, P);
   size_t nsubs = read_nsubs(fdata);
   skip_comments(fdata);
@@ -170,7 +170,7 @@ std::tuple<DiagInfo, IterInfo, Coef> read_data(Params &P, Stats &stats) {
   }
   if (string(P.tri) == "cpp") Tridiag(coef, P); // before calling determine_Nmax()
   determine_Nmax(coef, P);
-  return {diag0, iterinfo0, coef};
+  return {diag0, iterinfo0, coef, Sym};
 }
 
 #endif

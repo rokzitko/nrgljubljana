@@ -1490,7 +1490,7 @@ struct NotEnough : public std::exception {};
 
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
-void truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
+void truncate_prepare(const Step &step, DiagInfo &diag, shared_ptr<Symmetry> Sym, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
@@ -1696,7 +1696,8 @@ auto make_subspaces_list(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
   return subspaces;
 }
 
-Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, const Params &P) {
+Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const Coef &coef, 
+                             const DiagInfo &diagprev, shared_ptr<Symmetry> Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev, Sym};
   Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
@@ -1709,7 +1710,7 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
 }
 
 DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
-                                 const std::vector<Invar> &tasks, const DiagParams &DP, const Params &P) {
+                                 const std::vector<Invar> &tasks, const DiagParams &DP, shared_ptr<Symmetry> Sym, const Params &P) {
   DiagInfo diagnew;
   size_t nr = tasks.size();
   size_t itask = 0;
@@ -1718,7 +1719,7 @@ DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef 
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {
     const Invar I  = tasks[itask];
-    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, P);
+    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, Sym, P);
     int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
@@ -1861,7 +1862,7 @@ std::pair<Invar, Eigen> read_from(int source) {
 }
 
 DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
-                              const std::vector<Invar> &tasks, const DiagParams &DP, const Params &P) {
+                              const std::vector<Invar> &tasks, const DiagParams &DP, shared_ptr<Symmetry> Sym, const Params &P) {
   DiagInfo diagnew;
   mpi_send_params(DP); // Synchronise parameters
   list<Invar> todo; // List of all the tasks to handle
@@ -1895,7 +1896,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
       I = todo.front();
       todo.pop_front();
     }
-    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, P);
+    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, Sym, P);
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
@@ -1930,12 +1931,12 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
 DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
-                          const std::vector<Invar> &tasks, double diagratio, const Params &P) {
+                          const std::vector<Invar> &tasks, double diagratio, shared_ptr<Symmetry> Sym, const Params &P) {
   TIME("diag");
 #ifdef NRG_MPI
-  return diagonalisations_MPI(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), P);
+  return diagonalisations_MPI(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
 #else
-  return diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), P);
+  return diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
 #endif
 }
 
@@ -1973,7 +1974,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
     try {
       if (step.nrg()) {
         if (!(P.resume && int(step.ndx()) <= P.laststored))
-          diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, P); // compute in first run
+          diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, Sym, P); // compute in first run
         else
           diag = DiagInfo(step.ndx(), false); // or read from disk
       }
@@ -1986,7 +1987,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
         diag.subtract_Egs(stats.Egs);
       auto cluster_mapping = find_clusters(diag.sorted_energies(), P.fixeps);
       fix_splittings(diag, cluster_mapping);
-      truncate_prepare(step, diag, P);
+      truncate_prepare(step, diag, Sym, P);
       break;
     }
     catch (NotEnough &e) {
@@ -2088,7 +2089,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
   stats.Egs = diag.find_groundstate();
   if (step.nrg())      
     diag.subtract_Egs(stats.Egs);
-  truncate_prepare(step, diag, P); // determine # of kept and discarded states
+  truncate_prepare(step, diag, Sym, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax qsrmax{diag, Sym};
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
@@ -2172,18 +2173,19 @@ std::unique_ptr<Symmetry> get(const std::string sym_string, const Params &P, All
 
 // Called immediately after parsing the information about the number of channels from the data file. This ensures
 // that Invar can be parsed correctly.
-void set_symmetry(const Params &P, Stats &stats) {
+shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats) {
   my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
   cout << "SYMMETRY TYPE: " << P.symtype.value() << endl;
-  Sym = get(P.symtype.value(), P, stats.td.allfields);
+  auto Sym = get(P.symtype.value(), P, stats.td.allfields);
   Sym->load();
+  return Sym;
 }
 
 void calculation() {
   // Workdir workdir;
   Params P("param", "param", workdir);
   Stats stats(P);
-  auto [diag0, iterinfo, coef] = read_data(P, stats);
+  auto [diag0, iterinfo, coef, Sym] = read_data(P, stats);
   Step step{P, RUNTYPE::NRG};
   AllSteps dm(P.Ninit, P.Nlen);
   auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym, P);
@@ -2207,9 +2209,9 @@ void calculation() {
       if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, P);
     }
     if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-    auto [diag0_dm, iterinfo_dm, coef_dm] = read_data(P, stats);
+    auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data(P, stats);
     Step step{P, RUNTYPE::DMNRG};
-    run_nrg(step, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym, P);
+    run_nrg(step, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm, P);
     my_assert(num_equal(stats.GS_energy, stats.total_energy));
   }
   if (P.done) { ofstream D("DONE"); } // Indicate completion by creating a flag file
