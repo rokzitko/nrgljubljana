@@ -158,20 +158,6 @@ using OpchChannel = std::vector<MatrixElements>;
 // Each channel contains P.perchannel OpchChannel matrices.
 using Opch = std::vector<OpchChannel>;
 
-// Object of class IterInfo cotains full information about matrix representations 
-// when entering stage N of the NRG iteration.
-class IterInfo {
- public:
-   Opch opch;     // f operators (channels)
-   CustomOp ops;  // singlet operators (even parity)
-   CustomOp opsp; // singlet operators (odd parity)
-   CustomOp opsg; // singlet operators [global op]
-   CustomOp opd;  // doublet operators (spectral functions)
-   CustomOp opt;  // triplet operators (dynamical spin susceptibility)
-   CustomOp opq;  // quadruplet operators (spectral functions for J=3/2)
-   CustomOp opot; // orbital triplet operators
-};
-
 // Result of a diagonalisation: eigenvalues and eigenvectors
 struct RawEigen {
   using EVEC = ublas::vector<t_eigen>;
@@ -360,6 +346,17 @@ class AllSteps : public std::vector<Subs> {
      std::ofstream F(filename);
      this->dump_absenergyG(F);
    }
+   // Save a dump of all subspaces, with dimension info, etc.
+   void dump_subspaces(const std::string filename = "subspaces.dat"s) const {
+     ofstream O(filename);
+     for (auto N = Nbegin; N < Nend; N++) {
+       O << "Iteration " << N << std::endl;
+       O << "len_dm=" << this->at(N).size() << std::endl;
+       for (const auto &[I, DS] : this->at(N))
+         O << "I=" << I << " kept=" << DS.kept << " total=" << DS.total << std::endl;
+       O << std::endl;
+     }
+   }
    void shift_abs_energies(const double GS_energy) {
      for (auto N = Nbegin; N < Nend; N++)
        for (auto &ds : this->at(N) | boost::adaptors::map_values)
@@ -512,6 +509,81 @@ class Algo {
    virtual string rho_type() { return ""; } // what rho type is required
 };
 
+void dump_diagonal_matrix(const Matrix &m, const size_t max_nr, ostream &F)
+{
+  for (auto r = 0; r < std::min<size_t>(m.size1(), max_nr); r++)
+    F << m(r,r) << ' ';
+  F << std::endl;
+}
+
+void dump_diagonal_op(const std::string name, const MatrixElements &n, const size_t max_nr, ostream &F) {
+  F << "Diagonal matrix elements of operator " << name << std::endl;
+  for (const auto &[II, mat] : n) {
+    const auto & [I1, I2] = II;
+    if (I1 == I2) {
+      F << I1 << ": ";
+      dump_diagonal_matrix(mat, max_nr, F);
+    }
+  }
+}
+
+// We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
+// required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
+// recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.
+void trim_matel(const DiagInfo &diag, MatrixElements &op) {
+  for (auto &[II, mat] : op) {
+    const auto &[I1, I2] = II;
+    // Current matrix dimensions
+    const auto size1 = mat.size1();
+    const auto size2 = mat.size2();
+    if (size1 == 0 || size2 == 0) continue;
+    // Target matrix dimensions
+    const auto nr1 = diag.at(I1).getnr();
+    const auto nr2 = diag.at(I2).getnr();
+    my_assert(nr1 <= size1 && nr2 <= size2);
+    if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
+      continue;
+    ublas::matrix_range<Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
+    Matrix m2new = m2;
+    mat.swap(m2new);
+  }
+}
+
+void trim_op(const DiagInfo &diag, CustomOp &allops) {
+  for (auto &[name, op] : allops) 
+    trim_matel(diag, op);
+}
+
+// Object of class IterInfo cotains full information about matrix representations 
+// when entering stage N of the NRG iteration.
+class IterInfo {
+ public:
+   Opch opch;     // f operators (channels)
+   CustomOp ops;  // singlet operators (even parity)
+   CustomOp opsp; // singlet operators (odd parity)
+   CustomOp opsg; // singlet operators [global op]
+   CustomOp opd;  // doublet operators (spectral functions)
+   CustomOp opt;  // triplet operators (dynamical spin susceptibility)
+   CustomOp opq;  // quadruplet operators (spectral functions for J=3/2)
+   CustomOp opot; // orbital triplet operators
+
+   void dump_diagonal(const size_t max_nr, ostream &F = std::cout) const {
+     if (max_nr) {
+       for (const auto &[name, m] : ops)  dump_diagonal_op(name, m, max_nr, F);
+       for (const auto &[name, m] : opsg) dump_diagonal_op(name, m, max_nr, F);
+     }
+   }
+   void trim_matrices(const DiagInfo &diag) {
+     trim_op(diag, ops);
+     trim_op(diag, opsp);
+     trim_op(diag, opsg);
+     trim_op(diag, opd);
+     trim_op(diag, opt);
+     trim_op(diag, opot);
+     trim_op(diag, opq);
+   }
+};
+
 #include "spectral.h"
 
 #include "coef.cc"
@@ -558,6 +630,27 @@ class Algo {
  #include "sym-QSC3.cc"
  #endif
 #endif
+
+// Operator sumrules.
+template<typename F> double norm(const MatrixElements &m, F factor_fnc, int SPIN) {
+  weight_bucket sum;
+  for (const auto &[II, mat] : m) {
+    const auto & [I1, Ip] = II;
+    if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
+    sum += factor_fnc(Ip, I1) * frobenius_norm(mat);
+  }
+  return 2.0 * cmpl(sum).real(); // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
+}
+
+void operator_sumrules(const IterInfo &a) {
+  // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
+  // irrelevant (0).
+  const int SPIN = Sym->isfield() ? 1 : 0;
+  for (const auto &[name, m] : a.opd)
+    cout << "norm[" << name << "]=" << norm(m, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
+  for (const auto &[name, m] : a.opq)
+    cout << "norm[" << name << "]=" << norm(m, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
+}
 
 #include "read-input.cc"
 
@@ -727,17 +820,6 @@ class BaseSpectrum {
 };
 using speclist = std::list<BaseSpectrum>;
 
-// Operator sumrules.
-template<typename F> double norm(const MatrixElements &m, F factor_fnc, int SPIN) {
-  weight_bucket sum;
-  for (const auto &[II, mat] : m) {
-    const auto & [I1, Ip] = II;
-    if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
-    sum += factor_fnc(Ip, I1) * frobenius_norm(mat);
-  }
-  return 2.0 * cmpl(sum).real(); // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
-}
-
 #include "spec.cc"
 #include "dmnrg.h"
 
@@ -847,16 +929,6 @@ void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, c
 template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
   std::copy(x.cbegin(), x.cend(), std::ostream_iterator<T>(os, " "));
   return os;
-}
-
-void operator_sumrules(const IterInfo &a) {
-  // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
-  // irrelevant (0).
-  const int SPIN = Sym->isfield() ? 1 : 0;
-  for (const auto &[name, m] : a.opd)
-    cout << "norm[" << name << "]=" << norm(m, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
-  for (const auto &[name, m] : a.opq)
-    cout << "norm[" << name << "]=" << norm(m, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
 }
 
 class Oprecalc {
@@ -1156,30 +1228,6 @@ void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, c
   output.customfdm->field_values(P.T);
 }
 
-void dump_diagonal_matrix(const Matrix &m, size_t max_nr, ostream &F)
-{
-  for (auto r = 0; r < std::min<size_t>(m.size1(), max_nr); r++)
-    F << m(r,r) << ' ';
-  F << std::endl;
-}
-
-void dump_diagonal_op(const std::string name, const MatrixElements &n, const Params &P, ostream &F) {
-  F << "Diagonal matrix elements of operator " << name << std::endl;
-  for (const auto &[II, mat] : n) {
-    const auto & [I1, I2] = II;
-    if (I1 == I2) {
-      F << I1 << ": ";
-      dump_diagonal_matrix(mat, P.dumpdiagonal, F);
-    }
-  }
-}
-
-void dump_diagonal(const IterInfo &a, const Params &P, ostream &F = std::cout)
-{
-  for (const auto &[name, m] : a.ops)  dump_diagonal_op(name, m, P, F);
-  for (const auto &[name, m] : a.opsg) dump_diagonal_op(name, m, P, F);
-}
-
 // DM-NRG: initialization of the density matrix -----------------------------
 
 // Calculate grand canonical partition function at current NRG energy shell. This is not the same as the true
@@ -1408,43 +1456,6 @@ MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const 
   return nnew;
 }
 
-// We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
-// required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
-// recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.
-void trim_matel(DiagInfo &diag, MatrixElements &op) {
-  for (auto &[II, mat] : op) {
-    const auto &[I1, I2] = II;
-    // Current matrix dimensions
-    const auto size1 = mat.size1();
-    const auto size2 = mat.size2();
-    if (size1 == 0 || size2 == 0) continue;
-    // Target matrix dimensions
-    const auto nr1 = diag[I1].getnr();
-    const auto nr2 = diag[I2].getnr();
-    my_assert(nr1 <= size1 && nr2 <= size2);
-    if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
-      continue;
-    ublas::matrix_range<Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
-    Matrix m2new = m2;
-    mat.swap(m2new);
-  }
-}
-
-void trim_op(DiagInfo &diag, CustomOp &allops) {
-  for (auto &[name, op] : allops) 
-    trim_matel(diag, op);
-}
-
-void trim_matrices(DiagInfo &diag, IterInfo &a) {
-  trim_op(diag, a.ops);
-  trim_op(diag, a.opsp);
-  trim_op(diag, a.opsg);
-  trim_op(diag, a.opd);
-  trim_op(diag, a.opt);
-  trim_op(diag, a.opot);
-  trim_op(diag, a.opq);
-}
-
 template<typename F>
   double trace(F fnc, const double rescale_factor, const DiagInfo &diag) {
     bucket b;
@@ -1498,7 +1509,7 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
   }
   oprecalc.spectral_densities(step, diag, rho, rhoFDM, stats);
   if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, P);
-  if (step.nrg() && P.dumpdiagonal) dump_diagonal(iterinfo, P);
+  if (step.nrg()) iterinfo.dump_diagonal(P.dumpdiagonal);
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm, P);
 }
 
@@ -1883,6 +1894,7 @@ void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
 
 void store_to_dm(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, AllSteps &dm)
 {
+  my_assert(dm.Nbegin <= step.ndx() && step.ndx() < dm.Nend);
   for (const auto &[I, eig]: diag) 
     dm[step.ndx()][I] = { eig.getnr(), eig.getdim(), qsrmax.at(I), eig, step.last() };
   truncate_stats ts(diag);
@@ -1927,11 +1939,12 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
 }
 
 // Perform one iteration step
-DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
+DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, 
+                 Output &output, AllSteps &dm, Oprecalc &oprecalc, const Params &P) {
   QSrmax qsrmax = get_qsrmax(diagprev);
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, P);
-  trim_matrices(diag, iterinfo);
+  iterinfo.trim_matrices(diag);
   diag.clear_eigenvectors();
   time_mem::memory_time_brief_report();
   return diag;
@@ -1989,18 +2002,6 @@ void states_report(const DiagInfo &diag, ostream &fout = cout) {
   fout << "Number of states (multiplicity taken into account): " << diag.count_states(Sym->multfnc()) << endl << endl;
 }
 
-// Save a dump of all subspaces, with dimension info, etc.
-void dump_subspaces(const AllSteps &dm, const Params &P, const std::string filename = "subspaces.dat"s) {
-  ofstream O(filename);
-  for (size_t N = P.Ninit; N < P.Nmax; N++) {
-    O << "Iteration " << N << endl;
-    O << "len_dm=" << dm[N].size() << endl;
-    for (const auto &[I, DS] : dm[N])
-      O << "I=" << I << " kept=" << DS.kept << " total=" << DS.total << endl;
-    O << endl;
-  }
-}
-
 DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, AllSteps &dm, const Params &P) {
   states_report(diag0);
   auto oprecalc = Oprecalc(step.runtype, iterinfo, P);
@@ -2011,7 +2012,7 @@ DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats,
   DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, P) : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, P);
   cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
   stats.GS_energy = stats.total_energy;
-  if (step.nrg() && P.dumpsubspaces) dump_subspaces(dm, P);
+  if (step.nrg() && P.dumpsubspaces) dm.dump_subspaces();
   cout << endl << "** Iteration completed." << endl << endl;
   return diag;
 }
