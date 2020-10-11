@@ -117,7 +117,7 @@ class Symmetry {
      return 1;
    };
    
-   auto multfnc() { 
+   auto multfnc() const {
      return [this](const Invar &I) { return this->mult(I); };
    }
    
@@ -129,7 +129,7 @@ class Symmetry {
    
    // Does the combination of invariant subspaces I1 and I2 contribute
    // to the spectral function corresponding to spin SPIN?
-   virtual bool check_SPIN(const Invar &I1, const Invar &I2, const int &SPIN) {
+   virtual bool check_SPIN(const Invar &I1, const Invar &I2, const int &SPIN) const {
      my_assert(SPIN == 0);
      return true;
    }
@@ -138,7 +138,7 @@ class Symmetry {
    // Clebsch-Gordan coefficient can be different from zero).  This is
    // important, for example, for triplet operators which are zero
    // when evaluated between two singlet states.
-   virtual bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) { return true; }
+   virtual bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const { return true; }
    
    // Setup the combinations of quantum numbers that are used in the
    // construction of the Hamiltonian matrix.
@@ -163,16 +163,16 @@ class Symmetry {
    
    // Called from recalc_dynamicsusceptibility().  This is the factor due
    // to the spin degeneracy when calculating the trace of Sz.Sz.
-   virtual double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) { return 1.0; }
+   virtual double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
    
    // Called from recalc_dynamic_orb_susceptibility().  This is the factor due
    // to the orbital moment degeneracy when calculating the trace of Tz.Tz.
-   virtual double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) { return 1.0; }
+   virtual double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
    
    // Called from calc_specdens().
    // See spectral_density_clebschgordan.nb and DMNRG_clebschgordan.nb.
-   virtual double specdens_factor(const Invar &Ip, const Invar &I1) { return 1.0; }
-   virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) { return 1.0; }
+   virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
+   virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
    
    virtual void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) = 0;
 
@@ -213,6 +213,14 @@ class Symmetry {
    
    void recalc1_global(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I,
                        Matrix &m, const size_t i1, const size_t ip, const t_factor value) const;
+
+   auto CorrelatorFactorFnc() const   { return [this](const Invar &Ip, const Invar &I1) { return this->mult(I1); }; }
+   auto SpecdensFactorFnc() const     { return [this](const Invar &Ip, const Invar &I1) { return this->specdens_factor(Ip, I1); }; }
+   auto SpecdensquadFactorFnc() const { return [this](const Invar &Ip, const Invar &I1) { return this->specdensquad_factor(Ip, I1); }; }
+   auto SpinSuscFactorFnc() const     { return [this](const Invar &Ip, const Invar &I1) { return this->dynamicsusceptibility_factor(Ip, I1); }; }
+   auto OrbSuscFactorFnc() const      { return [this](const Invar &Ip, const Invar &I1) { return this->dynamic_orb_susceptibility_factor(Ip, I1); }; }
+   auto TrivialCheckSpinFnc() const   { return [this](const Invar &Ip, const Invar &I1, int SPIN) { return true; }; }
+   auto SpecdensCheckSpinFnc() const  { return [this](const Invar &I1, const Invar &Ip, int SPIN) { return this->check_SPIN(I1, Ip, SPIN); }; }
 };
 
 // List of all symmetries that are compiled-in, indexed by the symmtry name string.

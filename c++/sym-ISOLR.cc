@@ -29,12 +29,12 @@ class SymmetryISOLRcommon : public SymLR {
     return isospin_ok && spin_ok;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && z2_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);

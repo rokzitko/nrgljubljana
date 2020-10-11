@@ -18,7 +18,7 @@ class SymmetryQST : public Symmetry {
   // Multiplicity of the (Q,SS,T) subspace is (2S+1 = SS) times (2T+1).
   size_t mult(const Invar &I) const override { return I.get("SS") * (2 * I.get("T") + 1); }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && su2_triangle_inequality(2 * I1.get("T") + 1, 2 * I2.get("T") + 1, 2 * I3.get("T") + 1);
   }
@@ -37,7 +37,7 @@ class SymmetryQST : public Symmetry {
   } // load
 
   // Same as for SYMTYPE=QS, because spin operators are angular momentum singlets.
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "T", 0);
     const Sspin ssp = Ip.get("SS");
@@ -46,7 +46,7 @@ class SymmetryQST : public Symmetry {
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
-  double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) override {
+  double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "SS", 0);
     const Sspin tp = Ip.get("T");
@@ -59,7 +59,7 @@ class SymmetryQST : public Symmetry {
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !
   // See clebsch_gordan_qst.nb
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");

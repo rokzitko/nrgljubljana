@@ -14,7 +14,7 @@ class SymmetryQSZLR : public SymFieldLR {
        InvarSinglet = Invar(0, 0, 1);
      }
 
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
+  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
     const SZspin ssz1  = I1.get("SSZ");
@@ -23,7 +23,7 @@ class SymmetryQSZLR : public SymFieldLR {
     return sszop == SPIN;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ"))
        && z2_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }

@@ -13,7 +13,7 @@ class SymmetryDBLSU2 : public Symmetry {
        InvarSinglet = Invar(1, 1);
      }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return su2_triangle_inequality(I1.get("II1"), I2.get("II1"), I3.get("II1"))
        && su2_triangle_inequality(I1.get("II2"), I2.get("II2"), I3.get("II2"));
   }
@@ -25,7 +25,7 @@ class SymmetryDBLSU2 : public Symmetry {
   bool Invar_allowed(const Invar &I) override { return (I.get("II1") > 0) && (I.get("II2") > 0); }
 
   // TO DO: support for the doublets wrt the second quantum number
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const Ispin ii1p = Ip.get("II1");
     const Ispin ii11 = I1.get("II1");
     my_assert(abs(ii11 - ii1p) == 1);

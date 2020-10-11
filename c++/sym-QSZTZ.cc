@@ -18,7 +18,7 @@ class SymmetryQSZTZ : public Symmetry {
 
   size_t mult(const Invar &I) const override { return 1; }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SZ"), I2.get("SZ"), I3.get("SZ"))
        && u1_equality(I1.get("TZ"), I2.get("TZ"), I3.get("TZ"));
   }

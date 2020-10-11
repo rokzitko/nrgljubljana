@@ -692,7 +692,7 @@ class SpectrumMatsubara : public Spectrum {
 
 // Check if the trace of the density matrix equals 'ref_value'.
 void check_trace_rho(const DensMatElements &m, double ref_value = 1.0) {
-  if (!num_equal(m.trace([](const auto &I) { return Sym->mult(I); }), ref_value))
+  if (!num_equal(m.trace(Sym->multfnc()), ref_value))
     throw std::runtime_error("check_trace_rho() failed");
 }
 
@@ -849,22 +849,14 @@ template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
   return os;
 }
 
-auto CorrelatorFactorFnc   = [](const Invar &Ip, const Invar &I1) { return Sym->mult(I1); };
-auto SpecdensFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->specdens_factor(Ip, I1); };
-auto SpecdensquadFactorFnc = [](const Invar &Ip, const Invar &I1) { return Sym->specdensquad_factor(Ip, I1); };
-auto SpinSuscFactorFnc     = [](const Invar &Ip, const Invar &I1) { return Sym->dynamicsusceptibility_factor(Ip, I1); };
-auto OrbSuscFactorFnc      = [](const Invar &Ip, const Invar &I1) { return Sym->dynamic_orb_susceptibility_factor(Ip, I1); };
-auto TrivialCheckSpinFnc   = [](const Invar &Ip, const Invar &I1, int SPIN) { return true; };
-auto SpecdensCheckSpinFnc  = [](const Invar &I1, const Invar &Ip, int SPIN) { return Sym->check_SPIN(I1, Ip, SPIN); };
-
 void operator_sumrules(const IterInfo &a) {
   // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
   // irrelevant (0).
   const int SPIN = Sym->isfield() ? 1 : 0;
   for (const auto &[name, m] : a.opd)
-    cout << "norm[" << name << "]=" << norm(m, SpecdensFactorFnc, SPIN) << std::endl;
+    cout << "norm[" << name << "]=" << norm(m, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
   for (const auto &[name, m] : a.opq)
-    cout << "norm[" << name << "]=" << norm(m, SpecdensquadFactorFnc, 0) << std::endl;
+    cout << "norm[" << name << "]=" << norm(m, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
 }
 
 class Oprecalc {
@@ -880,15 +872,15 @@ class Oprecalc {
    // Calculate spectral densities
    void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM, const Stats &stats) {
      TIME("spec");
-     for (auto &i : spectraS)    calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-     for (auto &i : spectraCHIT) calc_generic(i, step, diag, CorrelatorFactorFnc,   TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-     for (auto &i : spectraD)    calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
-     for (auto &i : spectraT)    calc_generic(i, step, diag, SpinSuscFactorFnc,     TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-     for (auto &i : spectraOT)   calc_generic(i, step, diag, OrbSuscFactorFnc,      TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-     for (auto &i : spectraQ)    calc_generic(i, step, diag, SpecdensquadFactorFnc, TrivialCheckSpinFnc,  rho, rhoFDM, stats);
-     for (auto &i : spectraGT)   calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
-     for (auto &i : spectraI1T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
-     for (auto &i : spectraI2T)  calc_generic(i, step, diag, SpecdensFactorFnc,     SpecdensCheckSpinFnc, rho, rhoFDM, stats);
+     for (auto &i : spectraS)    calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
+     for (auto &i : spectraCHIT) calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
+     for (auto &i : spectraD)    calc_generic(i, step, diag, Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), rho, rhoFDM, stats);
+     for (auto &i : spectraT)    calc_generic(i, step, diag, Sym->SpinSuscFactorFnc(),     Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
+     for (auto &i : spectraOT)   calc_generic(i, step, diag, Sym->OrbSuscFactorFnc(),      Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
+     for (auto &i : spectraQ)    calc_generic(i, step, diag, Sym->SpecdensquadFactorFnc(), Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
+     for (auto &i : spectraGT)   calc_generic(i, step, diag, Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), rho, rhoFDM, stats);
+     for (auto &i : spectraI1T)  calc_generic(i, step, diag, Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), rho, rhoFDM, stats);
+     for (auto &i : spectraI2T)  calc_generic(i, step, diag, Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), rho, rhoFDM, stats);
    }
 
    void report(ostream &F, const string &name, const set<string> &x) {
@@ -1994,7 +1986,7 @@ DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats
 void states_report(const DiagInfo &diag, ostream &fout = cout) {
   fout << "Number of invariant subspaces: " << diag.count_subspaces() << endl;
   diag.states_report(fout);
-  fout << "Number of states (multiplicity taken into account): " << diag.count_states([](const auto I) { return Sym->mult(I); }) << endl << endl;
+  fout << "Number of states (multiplicity taken into account): " << diag.count_states(Sym->multfnc()) << endl << endl;
 }
 
 // Save a dump of all subspaces, with dimension info, etc.

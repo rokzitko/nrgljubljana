@@ -27,7 +27,7 @@ class SymmetryP : public Symmetry {
 
   void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {};
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override { return z2_equality(I1.get("P"), I2.get("P"), I3.get("P")); }
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override { return z2_equality(I1.get("P"), I2.get("P"), I3.get("P")); }
 
   DECL;
   HAS_DOUBLET;

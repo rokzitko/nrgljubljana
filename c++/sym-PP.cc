@@ -24,7 +24,7 @@ class SymmetryPP : public Symmetry {
 
   void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {};
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return z2_equality(I1.get("Pa"), I2.get("Pa"), I3.get("Pa")) && z2_equality(I1.get("Pb"), I2.get("Pb"), I3.get("Pb"));
   }
 

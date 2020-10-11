@@ -18,7 +18,7 @@ class SymmetryQSTZ : public Symmetry {
   // Multiplicity of the (Q,SS,TZ) subspace is (2S+1 = SS).
   size_t mult(const Invar &I) const override { return I.get("SS"); }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && u1_equality(I1.get("TZ"), I2.get("TZ"), I3.get("TZ"));
   }
@@ -33,7 +33,7 @@ class SymmetryQSTZ : public Symmetry {
   } // load
 
   // Same as for SYMTYPE=QS, because spin operators are angular momentum singlets.
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "TZ", 0);
     const Sspin ssp = Ip.get("SS");
@@ -43,7 +43,7 @@ class SymmetryQSTZ : public Symmetry {
   }
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");

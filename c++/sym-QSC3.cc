@@ -21,7 +21,7 @@ class SymmetryQSC3 : public SymC3 {
 
   bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && c3_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }
@@ -32,7 +32,7 @@ class SymmetryQSC3 : public SymC3 {
 #include "qsc3/qsc3-QN.dat"
   }
 
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "P", 0);
     const Sspin ssp = Ip.get("SS");
@@ -41,7 +41,7 @@ class SymmetryQSC3 : public SymC3 {
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
     check_diff(Ip, I1, "P", 0); // only P=0 implemented
     const Sspin ssp = Ip.get("SS");

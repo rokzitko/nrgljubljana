@@ -21,7 +21,7 @@ class SymmetryQSLR : public SymLR {
 
   bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && z2_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }
@@ -32,7 +32,7 @@ class SymmetryQSLR : public SymLR {
 #include "qslr/qslr-2ch-QN.dat"
   }
 
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 0);
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
@@ -40,7 +40,7 @@ class SymmetryQSLR : public SymLR {
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");

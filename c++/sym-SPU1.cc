@@ -12,7 +12,7 @@ class SymmetrySPU1 : public SymField {
        InvarSinglet = Invar(0);
      }
 
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
+  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
     SZspin ssz1  = I1.get("SSZ");
@@ -21,7 +21,7 @@ class SymmetrySPU1 : public SymField {
     return sszop == SPIN;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override { return u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ")); }
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override { return u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ")); }
 
   void load() override {
     if (!P.substeps) {

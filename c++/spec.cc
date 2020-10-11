@@ -18,7 +18,7 @@ const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 
 template <typename FactorFnc, typename CheckSpinFnc>
 void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, 
-                  FactorFnc &factorfnc, CheckSpinFnc &checkspinfnc, 
+                  FactorFnc && factorfnc, CheckSpinFnc && checkspinfnc, 
                   const DensMatElements &rho, const DensMatElements &rhoFDM, const Stats &stats) {
   auto cs = bs.algotype->make_cs(bs);
   const auto & rho_here = bs.algotype->rho_type() == "rhoFDM" ? rhoFDM : rho;

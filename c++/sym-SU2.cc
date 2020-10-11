@@ -12,7 +12,7 @@ class SymmetrySU2 : public Symmetry {
        InvarSinglet = Invar(1);
      }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II"));
   }
 
@@ -24,7 +24,7 @@ class SymmetrySU2 : public Symmetry {
   // We always must have I >= 0.
   bool Invar_allowed(const Invar &I) override { return I.get("II") > 0; }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const Ispin iip = Ip.get("II");
     const Ispin ii1 = I1.get("II");
     my_assert(abs(ii1 - iip) == 1);

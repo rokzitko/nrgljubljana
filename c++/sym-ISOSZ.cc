@@ -18,7 +18,7 @@ class SymmetryISOSZ : public SymField {
     return I.get("II"); // isospin multiplicity
   }
 
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
+  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
     SZspin ssz1  = I1.get("SSZ");
@@ -27,7 +27,7 @@ class SymmetryISOSZ : public SymField {
     return sszop == SPIN;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ")) && su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II"));
   }
 
@@ -48,7 +48,7 @@ class SymmetryISOSZ : public SymField {
     }
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_abs_diff(Ip, I1, "SSZ", 1);
     const Ispin iip = Ip.get("II");
     const Ispin ii1 = I1.get("II");

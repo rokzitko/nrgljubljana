@@ -17,7 +17,7 @@ class SymmetryISOSZLR : public SymFieldLR {
   // Multiplicity of the I=(II,SSZ) subspace = (2I+1) = II.
   size_t mult(const Invar &I) const override { return I.get("II"); }
 
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
+  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
     SZspin ssz1  = I1.get("SSZ");
@@ -26,7 +26,7 @@ class SymmetryISOSZLR : public SymFieldLR {
     return sszop == SPIN;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ")) && su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II"))
        && z2_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }
@@ -37,7 +37,7 @@ class SymmetryISOSZLR : public SymFieldLR {
 #include "isoszlr/isoszlr-2ch-QN.dat"
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_abs_diff(Ip, I1, "SSZ", 1);
     const Ispin iip = Ip.get("II");
     const Ispin ii1 = I1.get("II");

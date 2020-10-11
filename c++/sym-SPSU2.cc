@@ -17,7 +17,7 @@ class SymmetrySPSU2 : public Symmetry {
 
   bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"));
   }
 
@@ -47,14 +47,14 @@ class SymmetrySPSU2 : public Symmetry {
     }
   }
 
-  double dynamicsusceptibility_factor(const Invar &ground, const Invar &I1) override {
-    const Sspin ssp = ground.get("SS");
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
+    const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 2 || ss1 == ssp);
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);

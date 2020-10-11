@@ -17,7 +17,7 @@ class SymmetrySPSU2T : public Symmetry {
   // Multiplicity of the (SS,T) subspace is (2S+1 = SS) times (2T+1).
   size_t mult(const Invar &I) const override { return I.get("SS") * (2 * I.get("T") + 1); }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && su2_triangle_inequality(2 * I1.get("T") + 1, 2 * I2.get("T") + 1, 2 * I3.get("T") + 1);
   }
@@ -36,7 +36,7 @@ class SymmetrySPSU2T : public Symmetry {
   } // load
 
   // Same as for SYMTYPE=QS, because spin operators are angular momentum singlets.
-  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) override {
+  double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "T", 0);
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
@@ -45,7 +45,7 @@ class SymmetrySPSU2T : public Symmetry {
   }
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const Sspin ssp = Ip.get("SS");
     const Sspin ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);

@@ -12,7 +12,7 @@ class SymmetryU1 : public Symmetry {
        InvarSinglet = Invar(0);
      }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override { return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")); }
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override { return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")); }
 
   void load() override {
     switch (P.channels) {

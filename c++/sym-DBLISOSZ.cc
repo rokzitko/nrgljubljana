@@ -14,7 +14,7 @@ class SymmetryDBLISOSZ : public SymField {
        InvarSinglet = Invar(1, 1, 0);
      }
 
-   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) override {
+   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
      // The spin projection of the operator is defined by the difference
      // in Sz of both the invariant subspaces.
      SZspin ssz1  = I1.get("SSZ");
@@ -23,7 +23,7 @@ class SymmetryDBLISOSZ : public SymField {
      return sszop == SPIN;
    }
 
-   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) override {
+   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
      return su2_triangle_inequality(I1.get("II1"), I2.get("II1"), I3.get("II1"))
        && su2_triangle_inequality(I1.get("II2"), I2.get("II2"), I3.get("II2")) && u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ"));
    }
@@ -38,7 +38,7 @@ class SymmetryDBLISOSZ : public SymField {
   // second isospin quantum number. Since the doublet operators are either doublets
   // with respect to one or another, this function should always return a non-zero
   // value!
-  double specdens_factor(const Invar &Ip, const Invar &I1) override {
+  double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_abs_diff(Ip, I1, "SSZ", 1);
     const Ispin ii1p = Ip.get("II1");
     const Ispin ii11 = I1.get("II1");
