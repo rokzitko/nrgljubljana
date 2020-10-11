@@ -801,7 +801,7 @@ class IterInfo {
 #endif
 
 // Operator sumrules.
-template<typename F> double norm(const MatrixElements &m, F factor_fnc, int SPIN) {
+template<typename F> double norm(const MatrixElements &m, shared_ptr<Symmetry> Sym, F factor_fnc, int SPIN) {
   weight_bucket sum;
   for (const auto &[II, mat] : m) {
     const auto & [I1, Ip] = II;
@@ -811,14 +811,14 @@ template<typename F> double norm(const MatrixElements &m, F factor_fnc, int SPIN
   return 2.0 * cmpl(sum).real(); // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
 }
 
-void operator_sumrules(const IterInfo &a) {
+void operator_sumrules(const IterInfo &a, shared_ptr<Symmetry> Sym) {
   // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
   // irrelevant (0).
   const int SPIN = Sym->isfield() ? 1 : 0;
   for (const auto &[name, m] : a.opd)
-    cout << "norm[" << name << "]=" << norm(m, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
+    cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
   for (const auto &[name, m] : a.opq)
-    cout << "norm[" << name << "]=" << norm(m, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
+    cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
 }
 
 #include "read-input.cc"
@@ -2060,7 +2060,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   }
   if (P.do_recalc_none())  // ... or this
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, P);
-  if (P.checksumrules) operator_sumrules(iterinfo);
+  if (P.checksumrules) operator_sumrules(iterinfo, Sym);
 }
 
 // Perform one iteration step
@@ -2083,7 +2083,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
   perform_basic_measurements(step, diag0, stats, output);
   AllSteps empty_dm(0, 0);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, P);
-  if (P.checksumrules) operator_sumrules(iterinfo);
+  if (P.checksumrules) operator_sumrules(iterinfo, Sym);
 }
 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.

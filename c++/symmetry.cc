@@ -224,8 +224,8 @@ class Symmetry {
 };
 
 // List of all symmetries that are compiled-in, indexed by the symmtry name string.
-map<string, Symmetry *> all_syms;
-std::unique_ptr<Symmetry> Sym;
+std::map<std::string, Symmetry *> all_syms;
+std::shared_ptr<Symmetry> Sym;
 
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                         \
