@@ -1725,15 +1725,7 @@ DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef 
 }
 
 #ifdef NRG_MPI
-const int TAG_EXIT        = 2;
-const int TAG_DIAG        = 3;
-const int TAG_SYNC        = 4;
-const int TAG_MATRIX      = 5;
-const int TAG_INVAR       = 6;
-const int TAG_MATRIX_SIZE = 8;
-const int TAG_MATRIX_LINE = 9;
-const int TAG_EIGEN_INT   = 10;
-const int TAG_EIGEN_VEC   = 11;
+enum TAG : int { TAG_EXIT = 1, TAG_DIAG, TAG_SYNC, TAG_MATRIX, TAG_INVAR, TAG_MATRIX_SIZE, TAG_MATRIX_LINE, TAG_EIGEN_INT, TAG_EIGEN_VEC };
 
 void mpi_send_params(const DiagParams &DP) {
   mpilog("Sending diag parameters " << DP.diag << " " << DP.diagratio);
