@@ -125,6 +125,29 @@ Thus, as always:
 
 using Matrix = ublas::matrix<t_matel>;
 
+template <typename T>
+  void save(boost::archive::binary_oarchive &oa, const ublas::matrix<T> &m) {
+    const auto size1 = m.size1();
+    const auto size2 = m.size2();
+    oa << size1 << size2;
+    for (auto i = 0; i < size1; i++) {
+      ublas::vector<T> vec = ublas::matrix_row<const ublas::matrix<T>>(m, i);
+      oa << vec;
+    }
+  }
+
+template <typename T>
+  void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) {
+    size_t size1, size2;
+    ia >> size1 >> size2;
+    m = ublas::matrix<T>(size1, size2);
+    for (auto i = 0; i < size1; i++) {
+      ublas::vector<T> vec;
+      ia >> vec;
+      ublas::matrix_row<ublas::matrix<T>>(m, i) = vec;
+    }
+  }
+
 #include "numerics.h"
 
 // Result of a diagonalisation: eigenvalues and eigenvectors

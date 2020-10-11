@@ -4,47 +4,10 @@
 #ifndef _dmnrg_h_
 #define _dmnrg_h_
 
-// Choose one!
-#define LINEBYLINE
-//#define WHOLEMATRIX
-
-#ifdef WHOLEMATRIX
-void saveMatrix(boost::archive::binary_oarchive &oa, const Matrix &m) { oa << m; }
-void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m) { ia >> m; }
-void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) { oa << m; } // everything!
-void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) { ia >> m; } // everything!
-#endif
-
-// This approach is required for large problem sizes where an
-// individual matrix could exceed 2GB. This has been an issue with
-// serialization of matrices for MPI due to limited maximal MPI
-// message size.
-#ifdef LINEBYLINE
-void saveMatrix(boost::archive::binary_oarchive &oa, const Matrix &m) {
-  const size_t size1 = m.size1();
-  const size_t size2 = m.size2();
-  oa << size1 << size2;
-  for (size_t i = 0; i < size1; i++) {
-    ublas::vector<t_matel> vec = ublas::matrix_row<const Matrix>(m, i);
-    oa << vec;
-  }
-}
-
-void loadMatrix(boost::archive::binary_iarchive &ia, Matrix &m) {
-  size_t size1, size2;
-  ia >> size1 >> size2;
-  m = Matrix(size1, size2);
-  for (size_t i = 0; i < size1; i++) {
-    ublas::vector<t_matel> vec;
-    ia >> vec;
-    ublas::matrix_row<Matrix>(m, i) = vec;
-  }
-}
-
 void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
   // RawEigen
   oa << m.value_orig;
-  saveMatrix(oa, m.matrix);
+  save(oa, m.matrix);
   // Eigen
   oa << m.value_zero << m.nrpost;
   oa << m.absenergy << m.absenergyG << m.absenergyN;
@@ -53,12 +16,11 @@ void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
 void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
   // RawEigen
   ia >> m.value_orig;
-  loadMatrix(ia, m.matrix);
+  load(ia, m.matrix);
   // Eigen
   ia >> m.value_zero >> m.nrpost;
   ia >> m.absenergy >> m.absenergyG >> m.absenergyN;
 }
-#endif
 
 void saveRho(size_t N, const string &prefix, const DensMatElements &rho, const Params &P) {
   nrglog('H', "Storing density matrices [N=" << N << "]... ");
@@ -73,7 +35,7 @@ void saveRho(size_t N, const string &prefix, const DensMatElements &rho, const P
   size_t total = 0;
   for (const auto &[I, mat] : rho) {
     oa << I;
-    saveMatrix(oa, mat);
+    save(oa, mat);
     if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));  // Check each time
     cnt++;
     total += mat.size1();
@@ -97,7 +59,7 @@ DensMatElements loadRho(size_t N, const string &prefix, const Params &P) {
   for (size_t cnt = 0; cnt < nr; cnt++) {
     Invar inv;
     ia >> inv;
-    loadMatrix(ia, rho[inv]);
+    load(ia, rho[inv]);
     if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));  // Check each time
     total += rho[inv].size1();
   }
