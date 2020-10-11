@@ -306,6 +306,35 @@ class DiagInfo : public std::map<Invar, Eigen> {
            F << "(" << I << ") " << eig.getnr() << " states: " << eig.value_orig << std::endl;
        F << "Number of states (multiplicity taken into account): " << count_states(mult) << std::endl << std::endl;
      }
+   void save(const size_t N) const {
+     const string fn = workdir.unitaryfn(N);
+     ofstream MATRIXF(fn, ios::binary | ios::out);
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
+     boost::archive::binary_oarchive oa(MATRIXF);
+     auto nr = this->size();
+     oa << nr;
+     for(const auto &[I, eig]: *this) {
+       oa << I;
+       eig.save(oa);
+       if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn)); // Check after each write.
+     }
+   }
+   void load(const size_t N, const bool remove_files = false) {
+     const string fn = workdir.unitaryfn(N);
+     std::ifstream MATRIXF(fn, ios::binary | ios::in);
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
+     boost::archive::binary_iarchive ia(MATRIXF);
+     size_t nr; // Number of subspaces
+     ia >> nr;
+     for (auto cnt = 0; cnt < nr; cnt++) {
+       Invar inv;
+       ia >> inv;
+       (*this)[inv].load(ia);
+       if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
+     }
+     if (remove_files) remove(fn);
+   }
+   DiagInfo(const size_t N, const bool remove_files = false) { load(N, remove_files); }
 };
 
 class MatrixElements : public std::map<Twoinvar, Matrix> {
@@ -1950,8 +1979,6 @@ void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qs
   }
 }
 
-// NRG diagonalisation driver: calls diagionalisations() or load_transformations(), as necessary, and performs
-// the truncation. All other calculations are done in after_diag(). Called from iterate().
 DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, QSrmax &qsrmax, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
@@ -1964,10 +1991,10 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
         if (!(P.resume && int(step.ndx()) <= P.laststored))
           diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, P); // compute in first run
         else
-          diag = load_transformations(step.ndx(), P, false); // or read from disk
+          diag = DiagInfo(step.ndx(), false); // or read from disk
       }
       if (step.dmnrg()) {
-        diag = load_transformations(step.ndx(), P, P.removefiles); // read from disk in second run
+        diag = DiagInfo(step.ndx(), P.removefiles); // read from disk in second run
         diag.subtract_GS_energy(stats.GS_energy);
       }
       stats.Egs = diag.find_groundstate();
@@ -2011,7 +2038,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
-      save_transformations(step.ndx(), diag, P);
+      diag.save(step.ndx());
     perform_basic_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
   }
   if (!P.ZBW)
@@ -2069,7 +2096,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
   if (step.nrg()) 
     diag = diag0;
   if (step.dmnrg()) {
-    diag = load_transformations(step.ndx(), P, P.removefiles);
+    diag = DiagInfo(step.ndx(), P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
   stats.Egs = diag.find_groundstate();
@@ -2077,7 +2104,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
     diag.subtract_Egs(stats.Egs);
   truncate_prepare(step, diag, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
-  QSrmax qsrmax{diag}; // ZZZ
+  QSrmax qsrmax{diag};
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, P);
   return diag;
 }

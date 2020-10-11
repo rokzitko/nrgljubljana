@@ -109,14 +109,13 @@ void SpectrumRealFreq::weight_report(const double imag_tolerance) {
   const t_weight twpos = fspos.total_weight();
   cout << endl << "[" << opname << "]"
        << " pos=" << fmt(twpos) << " neg=" << fmt(twneg) << " sum= " << fmt(twpos + twneg) << endl;
-  // Spectral moments from delta-peaks
-  const t_weight mom1 = moment(fsneg.bins, fspos.bins, 1);
-  const t_weight mom2 = moment(fsneg.bins, fspos.bins, 2);
-  const t_weight mom3 = moment(fsneg.bins, fspos.bins, 3);
-  const t_weight mom4 = moment(fsneg.bins, fspos.bins, 4);
-  const t_weight f    = fd_fermi(fsneg.bins, fspos.bins, P.T);
-  const t_weight b    = fd_bose(fsneg.bins, fspos.bins, P.T);
-  cout << "mu1=" << fmt(mom1) << " mu2=" << fmt(mom2) << " mu3=" << fmt(mom3) << " mu4=" << fmt(mom4) << endl;
+  for (int m = 1; m <= 4; m++) {
+    const auto mom = moment(fsneg.bins, fspos.bins, m);   // Spectral moments from delta-peaks
+    cout << fmt::format("mu{}={} ", m, fmt(mom));
+  }
+  std::cout << std::endl;
+  const t_weight f = fd_fermi(fsneg.bins, fspos.bins, P.T);
+  const t_weight b = fd_bose(fsneg.bins, fspos.bins, P.T);
   cout << "f=" << fmt(f) << " b=" << fmt(b) << endl;
 }
 

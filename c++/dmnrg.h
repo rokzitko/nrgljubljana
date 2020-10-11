@@ -4,74 +4,6 @@
 #ifndef _dmnrg_h_
 #define _dmnrg_h_
 
-// save_transformations() stores all required information (energies, transformation matrices, subspace labels,
-// dimensions of 'alpha' subspaces) that is needed to calculate reduced density matrix in the DM-NRG technique.
-// Matrices are stored on disk as binary files.
-
-// This function is called after the diagonalisation but prior to truncation (at iteration N) with DiagInfo diag,
-// i.e. with *all calculated* (eigenvalue, eigenvector) pairs. NOTE: if diag=dsyevr, we effectively perform a
-// truncation at the moment of the partial diagonalization!!
-
-void save_transformations(size_t N, const DiagInfo &diag, const Params &P) {
-  // P.Ninit-1 corresponds to the zero-th step, when diag contains the
-  // eigenvalues from the initial diagonalization and the unitary matrices
-  // are all identity matrices.
-  if (!P.ZBW) {
-    my_assert(N + 1 >= P.Ninit && N + 1 <= P.Nmax);
-  } else
-    my_assert(N == P.Ninit);
-  nrglog('H', "Storing transformation matrices (N=" << N << ")...");
-  const string fn = workdir.unitaryfn(N);
-  ofstream MATRIXF(fn, ios::binary | ios::out);
-  if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
-  boost::archive::binary_oarchive oa(MATRIXF);
-  size_t nr = diag.size();
-  oa << nr;
-  size_t cnt   = 0;
-  size_t total = 0;
-  for(const auto &[I, eig]: diag) {
-    oa << I;
-    eig.save(oa);
-    if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn)); // Check after each write.
-    cnt++;
-    total += eig.getnr();
-  }
-  my_assert(cnt == nr);
-  nrglog('H', "[total=" << total << " subspaces=" << cnt << "]");
-  MATRIXF.close();
-}
-
-void remove_transformation_files(size_t N, const Params &P) {
-  remove(workdir.unitaryfn(N));
-}
-
-DiagInfo load_transformations(size_t N, const Params &P, bool remove_files = false) {
-  DiagInfo diag;
-  if (!P.ZBW) {
-    my_assert(N + 1 >= P.Ninit && N + 1 <= P.Nmax);
-  } else
-    my_assert(N == P.Ninit);
-  nrglog('H', "Loading transformation matrices (N=" << N << ")...");
-  const string fn = workdir.unitaryfn(N);
-  std::ifstream MATRIXF(fn, ios::binary | ios::in);
-  if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
-  boost::archive::binary_iarchive ia(MATRIXF);
-  size_t nr; // Number of subspaces
-  ia >> nr;
-  size_t total = 0;
-  for (size_t cnt = 0; cnt < nr; cnt++) {
-    Invar inv;
-    ia >> inv;
-    diag[inv].load(ia);
-    if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
-    total += diag[inv].getnr();
-  }
-  nrglog('H', "[total=" << total << " subspaces=" << nr << "]");
-  MATRIXF.close();
-  if (remove_files) remove_transformation_files(N, P);
-  return diag;
-}
-
 // Calculation of the contribution from subspace I1 of rhoN (density
 // matrix at iteration N) to rhoNEW (density matrix at iteration N-1)
 void cdmI(const size_t i,        // Subspace index (alpha=1,...,P.combs)
@@ -186,7 +118,7 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, const Params &
   TIME("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     cout << "[DM] " << N << endl;
-    DiagInfo diag_loaded = load_transformations(N, P);
+    DiagInfo diag_loaded(N);
     DensMatElements rhoPrev;
     calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N, dm, P);
     check_trace_rho(rhoPrev); // Make sure rho is normalized to 1.
@@ -280,7 +212,7 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const All
   TIME("FDM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     cout << "[FDM] " << N << endl;
-    DiagInfo diag_loaded = load_transformations(N, P);
+    DiagInfo diag_loaded(N);
     DensMatElements rhoFDMPrev;
     calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, rhoFDMPrev, N, dm, stats, P);
     double tr       = rhoFDMPrev.trace(Sym->multfnc());
