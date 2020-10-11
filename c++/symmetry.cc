@@ -145,7 +145,7 @@ class Symmetry {
    virtual void load() = 0;
    
    // Is an invariant subspace with given quantum numbers allowed?
-   virtual bool Invar_allowed(const Invar &I) { return true; }
+   virtual bool Invar_allowed(const Invar &I) const { return true; }
    
    bool offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const;
    void offdiag_function(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_matel factor,
@@ -183,6 +183,25 @@ class Symmetry {
    virtual MatrixElements recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
    virtual MatrixElements  recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
    virtual void recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) { my_assert_not_reached(); }
+   
+   // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
+   //  parity -1). Generic implementation, valid for all symmetry types.
+   MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
+     MatrixElements nnew;
+     Recalc recalc_table[get_combs()];
+     my_assert(islr() ? parity == 1 || parity == -1 : parity == 1);
+     for (const auto &I : diag.subspaces()) {
+       const Invar I1 = I;
+       const Invar Ip = parity == -1 ? I.InvertParity() : I;
+       for (size_t i = 1; i <= get_combs(); i++) {
+         const auto anc = ancestor(I, i);
+         recalc_table[i - 1] = {i, i, anc, parity == -1 ? anc.InvertParity() : anc, 1.0};
+       }
+       const auto Iop = parity == -1 ? InvarSinglet.InvertParity() : InvarSinglet;
+       nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, get_combs(), Iop);
+     }
+     return nnew;
+   }
    
    virtual void show_coefficients(const Step &step, const Coef &coef) {
      cout << setprecision(std::numeric_limits<double>::max_digits10);

@@ -462,7 +462,7 @@ class Rmaxvals {
 class QSrmax : public std::map<Invar, Rmaxvals> {
  public:
    QSrmax() {}
-   QSrmax(const DiagInfo &);
+   QSrmax(const DiagInfo &, shared_ptr<Symmetry>);
    // List of invariant subspaces in which diagonalisations need to be performed
    std::vector<Invar> task_list() const {
      std::vector<pair<size_t, Invar>> tasks_with_sizes;
@@ -1173,11 +1173,11 @@ class Oprecalc {
    ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
      void recalculate_operators(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, IterInfo &a, shared_ptr<Symmetry> Sym, const Params &P) {
        for (auto &[name, m] : a.ops)
-         m = recalc_or_clear(do_s(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, diag, qsrmax, name, "s", Sym, P);
+         m = recalc_or_clear(do_s(name, P, step), m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, step, diag, qsrmax, name, "s", Sym, P);
        for (auto &[name, m] : a.opsp)
-         m = recalc_or_clear(p.count(name),       m, [](const auto &... pr) { return recalc_singlet(pr..., -1);      }, step, diag, qsrmax, name, "p", Sym, P);
+         m = recalc_or_clear(p.count(name),       m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, step, diag, qsrmax, name, "p", Sym, P);
        for (auto &[name, m] : a.opsg) 
-         m = recalc_or_clear(do_g(name, P, step), m, [](const auto &... pr) { return recalc_singlet(pr..., 1);       }, step, diag, qsrmax, name, "g", Sym, P);
+         m = recalc_or_clear(do_g(name, P, step), m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, step, diag, qsrmax, name, "g", Sym, P);
        for (auto &[name, m] : a.opd)
          m = recalc_or_clear(d.count(name),       m, [Sym](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, step, diag, qsrmax, name, "d", Sym, P);
        for (auto &[name, m] : a.opt)
@@ -1212,7 +1212,7 @@ class Oprecalc {
   }
 
   // Reset lists of operators which need to be iterated
-  Oprecalc(const RUNTYPE &runtype, const IterInfo &a, const Params &P) {
+  Oprecalc(const RUNTYPE &runtype, const IterInfo &a, shared_ptr<Symmetry> Sym, const Params &P) {
     cout << endl << "Computing the following spectra:" << endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
@@ -1269,7 +1269,7 @@ class Annotated {
  public:
    Annotated(const Params &P) : P(P) {}
    
-   void dump(const Step &step, const DiagInfo &diag, const Stats &stats, const std::string filename = "annotated.dat") {
+   void dump(const Step &step, const DiagInfo &diag, const Stats &stats, shared_ptr<Symmetry> Sym, const std::string filename = "annotated.dat") {
      if (P.dumpannotated && !F.is_open()) { // open output file
        F.open(filename);
        F << setprecision(P.dumpprecision);
@@ -1350,7 +1350,7 @@ struct Output {
   }
 };
 
-CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n) {
+CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n, shared_ptr<Symmetry> Sym) {
   matel_bucket tr; // note: t_matel = t_expv
   for (const auto &[I, eig] : diag) {
     const auto & nI = n.at({I,I});
@@ -1364,13 +1364,13 @@ CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const
 }
 
 // Measure thermodynamic expectation values of singlet operators
-void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, const Params &P) {
+void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, shared_ptr<Symmetry> Sym, const Params &P) {
   bucket Z;
   for (const auto &[I, eig] : diag)
     for (const auto &x : eig.value_zero)
       Z += Sym->mult(I) * exp(-step.TD_factor() * x);
-  for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(step, diag, m) / Z;
-  for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(step, diag, m) / Z;
+  for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(step, diag, m, Sym) / Z;
+  for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(step, diag, m, Sym) / Z;
   output.custom->field_values(step.Teff());
 }
 
@@ -1384,7 +1384,7 @@ template<typename T>
   return sum;
 }
 
-CONSTFNC t_expv calc_trace_fdm_kept(size_t ndx, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm) {
+CONSTFNC t_expv calc_trace_fdm_kept(size_t ndx, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm, shared_ptr<Symmetry> Sym) {
   matel_bucket tr;
   for (const auto &[I, rhoI] : rhoFDM)
     tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), dm[ndx].at(I).kept); // over kept states ONLY
@@ -1393,9 +1393,9 @@ CONSTFNC t_expv calc_trace_fdm_kept(size_t ndx, const MatrixElements &n, const D
 
 // Expectation values using the FDM algorithm
 void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, 
-                         const DensMatElements &rhoFDM, const AllSteps &dm, const Params &P) {
-  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm);
-  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm);
+                         const DensMatElements &rhoFDM, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P) {
+  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
+  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
   output.customfdm->field_values(P.T);
 }
 
@@ -1406,7 +1406,7 @@ void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, c
 // i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N> <l;N|.  calc_grand_canonical_Z() is also used to calculate
 // stats.Zft, that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for
 // G(T) calculations, stats.Zchit for chi(T) calculations.
-double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, const double factor = 1.0) {
+double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, shared_ptr<Symmetry> Sym, const double factor = 1.0) {
   bucket ZN;
   for (const auto &[I, eig]: diag) 
     for (const auto &x : eig.value_zero)
@@ -1434,7 +1434,7 @@ Matrix diagonal_exp(const Eigen &eig, const double factor = 1.0)
 DensMatElements init_rho(const Step &step, const DiagInfo &diag, shared_ptr<Symmetry> Sym) {
   DensMatElements rho;
   for (const auto &[I, eig]: diag)
-    rho[I] = diagonal_exp(eig, step.scT()) / calc_grand_canonical_Z(step, diag);
+    rho[I] = diagonal_exp(eig, step.scT()) / calc_grand_canonical_Z(step, diag, Sym);
   check_trace_rho(rho, Sym);
   return rho;
 }
@@ -1471,15 +1471,15 @@ t_eigen highest_retained_energy(const Step &step, const DiagInfo &diag, const Pa
 
 struct truncate_stats {
   size_t nrall, nrallmult, nrkept, nrkeptmult;
-  truncate_stats(const DiagInfo &diag) {
+  truncate_stats(const DiagInfo &diag, shared_ptr<Symmetry> Sym) {
     nrall = std::accumulate(begin(diag), end(diag), 0,
                             [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getdim(); });
     nrallmult = std::accumulate(begin(diag), end(diag), 0,
-                                [](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getdim(); });
+                                [Sym](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getdim(); });
     nrkept = std::accumulate(begin(diag), end(diag), 0, 
                              [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
     nrkeptmult = std::accumulate(begin(diag), end(diag), 0,
-                                 [](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getnrkept(); });
+                                 [Sym](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getnrkept(); });
   }
   void report() {
     nrgdump4(nrkept, nrkeptmult, nrall, nrallmult) << std::endl;
@@ -1496,7 +1496,7 @@ void truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
                                       std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));
   std::cout << "Emax=" << Emax/step.unscale() << " ";
-  truncate_stats ts(diag);
+  truncate_stats ts(diag, Sym);
   ts.report();
   if (std::any_of(begin(diag), end(diag), 
                   [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax &&
@@ -1509,7 +1509,7 @@ void truncate_prepare(const Step &step, DiagInfo &diag, const Params &P) {
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z
 // (stats.ZZG), computed with respect to absolute energies.
 // calc_ZnD() must be called before the second NRG run.
-void calc_ZnD(const AllSteps &dm, Stats &stats, const double T) {
+void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
   for (auto N = dm.Nbegin; N < dm.Nend; N++) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
@@ -1568,7 +1568,7 @@ void report_ZnD(Stats &stats, const Params &P) {
 
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
-void fdm_thermodynamics(const AllSteps &dm, Stats &stats, const double T)
+void fdm_thermodynamics(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const double T)
 {
   stats.td_fdm.T = T;
   stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
@@ -1611,27 +1611,8 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats, const double T)
   stats.td_fdm.save_values();
 }
 
-// Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
-// parity -1). Generic implementation, valid for all symmetry types.
-MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
-  MatrixElements nnew;
-  Recalc recalc_table[Sym->get_combs()];
-  my_assert(Sym->islr() ? parity == 1 || parity == -1 : parity == 1);
-  for (const auto &I : diag.subspaces()) {
-    const Invar I1 = I;
-    const Invar Ip = parity == -1 ? I.InvertParity() : I;
-    for (size_t i = 1; i <= Sym->get_combs(); i++) {
-      const auto anc = Sym->ancestor(I, i);
-      recalc_table[i - 1] = {i, i, anc, parity == -1 ? anc.InvertParity() : anc, 1.0};
-    }
-    const auto Iop = parity == -1 ? (Sym->InvarSinglet).InvertParity() : Sym->InvarSinglet;
-    nnew[Twoinvar(I1,Ip)] = Sym->recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, Sym->get_combs(), Iop);
-  }
-  return nnew;
-}
-
 template<typename F>
-  double trace(F fnc, const double rescale_factor, const DiagInfo &diag) {
+  double trace(F fnc, const double rescale_factor, const DiagInfo &diag, shared_ptr<Symmetry> Sym) {
     bucket b;
     for (const auto &[I, eig] : diag)
       b += Sym->mult(I) * std::accumulate(eig.value_zero.cbegin(), eig.value_zero.cend(), 0.0,
@@ -1645,13 +1626,13 @@ template<typename F>
 // We calculate thermodynamic quantities before truncation to make better use of the available states. Here we
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
 // member functions defined in symmetry.cc.
-void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &output, double additional_factor = 1.0) {
+void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &output, shared_ptr<Symmetry> Sym, double additional_factor = 1.0) {
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
   double rescale_factor = step.TD_factor() * additional_factor;
-  const auto Z = trace([](double x) { return 1; }, rescale_factor, diag); // partition function
-  const auto E = trace([](double x) { return x; }, rescale_factor, diag); // Tr[beta H]
-  const auto E2 = trace([](double x) { return sqr(x); }, rescale_factor, diag); // Tr[(beta H)^2]
+  const auto Z = trace([](double x) { return 1; }, rescale_factor, diag, Sym); // partition function
+  const auto E = trace([](double x) { return x; }, rescale_factor, diag, Sym); // Tr[beta H]
+  const auto E2 = trace([](double x) { return sqr(x); }, rescale_factor, diag, Sym); // Tr[(beta H)^2]
   stats.Z = Z;
   stats.td.T  = step.Teff();
   stats.td.E  = E/Z;             // beta <H>
@@ -1667,11 +1648,11 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
                                  const IterInfo &iterinfo, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
-  stats.Zft = calc_grand_canonical_Z(step, diag);
+  stats.Zft = calc_grand_canonical_Z(step, diag, Sym);
   if (string(P.specgt) != "" || string(P.speci1t) != "" || string(P.speci2t) != "")
-    stats.Zgt = calc_grand_canonical_Z(step, diag, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
+    stats.Zgt = calc_grand_canonical_Z(step, diag, Sym, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
   if (string(P.specchit) != "") 
-    stats.Zchit = calc_grand_canonical_Z(step, diag, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
+    stats.Zchit = calc_grand_canonical_Z(step, diag, Sym, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
   DensMatElements rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
@@ -1682,23 +1663,23 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
       rhoFDM.load(step.ndx(), FN_RHOFDM, P.removefiles);
   }
   oprecalc.spectral_densities(step, diag, rho, rhoFDM, stats, Sym);
-  if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, P);
+  if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, Sym, P);
   if (step.nrg()) iterinfo.dump_diagonal(P.dumpdiagonal);
-  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm, P);
+  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm, Sym, P);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
-void perform_basic_measurements(const Step &step, const DiagInfo &diag, Stats &stats, Output &output) {
+void perform_basic_measurements(const Step &step, const DiagInfo &diag, shared_ptr<Symmetry> Sym, Stats &stats, Output &output) {
   output.dump_all_energies(diag, step.ndx());
-  calculate_TD(step, diag, stats, output);
-  output.annotated.dump(step, diag, stats);
+  calculate_TD(step, diag, stats, output, Sym);
+  output.annotated.dump(step, diag, stats, Sym);
 }
 
 // Make a list of subspaces for the new iteration. Generic implementation: use the quantum number differences in
 // array In[] (obtained by a call to function input_subspaces), make a list of all possible subspaces and remove
 // duplicates.
-auto make_subspaces_list(const DiagInfo &diagprev) {
+auto make_subspaces_list(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
   list<Invar> subspaces;
   for (const auto &[I, eig] : diagprev)
     if (eig.getnr()) {
@@ -1959,13 +1940,13 @@ DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, 
 }
 
 // Determine the structure of matrices in the new NRG shell
-QSrmax::QSrmax(const DiagInfo &diagprev) {
-  for (const auto &I : make_subspaces_list(diagprev))
+QSrmax::QSrmax(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
+  for (const auto &I : make_subspaces_list(diagprev, Sym))
     (*this)[I] = Rmaxvals{I, Sym->ancestors(I), diagprev, Sym};
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
-void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, const Params &P) {
+void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, shared_ptr<Symmetry> Sym, const Params &P) {
   TIME("recalc f");
   if (!P.substeps) {
     opch = Sym->recalc_irreduc(step, diag, qsrmax, P);
@@ -2042,7 +2023,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
       diag.save(step.ndx());
-    perform_basic_measurements(step, diag, stats, output); // Measurements are performed before the truncation!
+    perform_basic_measurements(step, diag, Sym, stats, output); // Measurements are performed before the truncation!
   }
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
@@ -2054,7 +2035,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
     diag.truncate_perform();                        // Actual truncation occurs at this point
   dm.store(step.ndx(), diag, qsrmax, step.last());  // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
-    recalc_irreducible(step, diag, qsrmax, iterinfo.opch, P);
+    recalc_irreducible(step, diag, qsrmax, iterinfo.opch, Sym, P);
     if (P.dump_f) iterinfo.opch.dump();
   }
   if (P.do_recalc_kept(step.runtype)) { // ... or ...
@@ -2069,7 +2050,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
 // Perform one iteration step
 DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev,
                  Output &output, AllSteps &dm, Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
-  QSrmax qsrmax{diagprev};
+  QSrmax qsrmax{diagprev, Sym};
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, Sym, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
   iterinfo.trim_matrices(diag);
@@ -2084,7 +2065,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   cout << endl << "Before NRG iteration";
   cout << " (N=" << step.N() << ")" << endl;
-  perform_basic_measurements(step, diag0, stats, output);
+  perform_basic_measurements(step, diag0, Sym, stats, output);
   AllSteps empty_dm(0, 0);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, Sym, P);
   if (P.checksumrules) operator_sumrules(iterinfo, Sym);
@@ -2109,7 +2090,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
     diag.subtract_Egs(stats.Egs);
   truncate_prepare(step, diag, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
-  QSrmax qsrmax{diag};
+  QSrmax qsrmax{diag, Sym};
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
   return diag;
 }
@@ -2128,7 +2109,7 @@ DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats
 DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, 
                  AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P) {
   diag0.states_report(Sym->multfnc());
-  auto oprecalc = Oprecalc(step.runtype, iterinfo, P);
+  auto oprecalc = Oprecalc(step.runtype, iterinfo, Sym, P);
   auto output = Output(step.runtype, iterinfo, stats, P);
   // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
   if (step.nrg() && P.calc0 && !P.ZBW)
@@ -2217,13 +2198,13 @@ void calculation() {
       if (!P.ZBW) calc_densitymatrix(rho, dm, Sym, P);
     }
     if (P.need_rhoFDM()) {
-      calc_ZnD(dm, stats, P.T);
+      calc_ZnD(dm, stats, Sym, P.T);
       if (P.logletter('w')) 
         report_ZnD(stats, P);
-      fdm_thermodynamics(dm, stats, P.T);
-      auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, P.T);
+      fdm_thermodynamics(dm, stats, Sym, P.T);
+      auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, Sym, P.T);
       rhoFDM.save(step.lastndx(), FN_RHOFDM);
-      if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, P);
+      if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, P);
     }
     if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
     auto [diag0_dm, iterinfo_dm, coef_dm] = read_data(P, stats);

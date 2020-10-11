@@ -21,7 +21,7 @@ class SymmetryQJ : public Symmetry {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("JJ"), I2.get("JJ"), I3.get("JJ"));
   }
 
-  bool Invar_allowed(const Invar &I) override {
+  bool Invar_allowed(const Invar &I) const override {
     const bool spin_ok = I.get("JJ") > 0;
     return spin_ok;
   }

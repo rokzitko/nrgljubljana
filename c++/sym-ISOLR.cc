@@ -23,7 +23,7 @@ class SymmetryISOLRcommon : public SymLR {
   }
 
   // We always must have S >= 0 and I >= 0.
-  bool Invar_allowed(const Invar &I) override {
+  bool Invar_allowed(const Invar &I) const override {
     const bool isospin_ok = I.get("II") > 0;
     const bool spin_ok    = I.get("SS") > 0;
     return isospin_ok && spin_ok;

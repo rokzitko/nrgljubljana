@@ -38,7 +38,7 @@ Matrix Symmetry::recalc_f(const DiagInfo &diag,
                           const size_t jmax)
 {
   nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
-  if (!Sym->recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (!recalc_f_coupled(I1, Ip, Invar_f)) {
     nrglog('f', "Does not fulfill the triangle inequalities.");
     return Matrix(0,0);
   }
@@ -103,13 +103,13 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
       nrgdump2(table[j].IN1, table[j].INp);
       nrgdump(table[j].factor) << endl;
     }
-    if (!Sym->Invar_allowed(table[j].IN1) || !Sym->Invar_allowed(table[j].INp)) continue;
+    if (!Invar_allowed(table[j].IN1) || !Invar_allowed(table[j].INp)) continue;
     const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
     const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
     // Proceed if this combination of i1/ip contributes.
     if (rmax1 == 0 || rmaxp == 0) continue;
-    const auto IN1 = Sym->ancestor(I1, table[j].i1);
-    const auto INp = Sym->ancestor(Ip, table[j].ip);
+    const auto IN1 = ancestor(I1, table[j].i1);
+    const auto INp = ancestor(Ip, table[j].ip);
     my_assert(IN1 == table[j].IN1 && INp == table[j].INp);
     const Twoinvar ININ = {table[j].IN1, table[j].INp};
     const size_t cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.
@@ -118,7 +118,7 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
     // singlet states give no contribution [SU(2) symmetry]; 2. some subspaces might not exist at low iteration
     // steps. If triangle inequality is not satisfied and there are indeed no states for the given subspace pair,
     // this is OK and we just skip this case.
-    const bool triangle = Sym->triangle_inequality(table[j].IN1, Iop, table[j].INp);
+    const bool triangle = triangle_inequality(table[j].IN1, Iop, table[j].INp);
     if (!triangle && cnt == 0) continue;
     // All exceptions should be handled by now. If cnt != 1, this is a bug, probably related to symmetry properties
     // and the coefficient tables for NRG transformations of matrices.

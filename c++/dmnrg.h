@@ -65,7 +65,7 @@ void cdmI(const size_t i,        // Subspace index (alpha=1,...,P.combs)
 void calc_densitymatrix_iterN(const DiagInfo &diag,
                               const DensMatElements &rho, // input
                               DensMatElements &rhoPrev,   // output
-                              size_t N, const AllSteps &dm, const Params &P) {
+                              size_t N, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = Sym->dmnrg_subspaces(I);
@@ -107,7 +107,7 @@ bool already_computed(const std::string &prefix, const Params &P) {
  the second time. Here we calculate the shell-N density matrices for all
  iteration steps. */
 
-void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P, 
+void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P,
                         const std::string filename = FN_RHO) {
   if (P.resume && already_computed(filename, P)) {
     cout << "Not necessary: already computed!" << endl;
@@ -120,7 +120,7 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, shared_ptr<Sym
     cout << "[DM] " << N << endl;
     DiagInfo diag_loaded(N);
     DensMatElements rhoPrev;
-    calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N, dm, P);
+    calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N, dm, Sym, P);
     check_trace_rho(rhoPrev, Sym); // Make sure rho is normalized to 1.
     rhoPrev.save(N-1, filename);
     rho.swap(rhoPrev);
@@ -137,7 +137,7 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, shared_ptr<Sym
 // A. Weichselbaum, J. von Delft, Phys. Rev. Lett. 99, 076402 (2007)
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
-DensMatElements init_rho_FDM(const size_t N, const AllSteps &dm, const Stats &stats, const double T) {
+DensMatElements init_rho_FDM(const size_t N, const AllSteps &dm, const Stats &stats, shared_ptr<Symmetry> Sym, const double T) {
   DensMatElements rhoFDM;
   double tr = 0.0;
   for (const auto &[I, ds] : dm[N]) {
@@ -164,11 +164,11 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
                                   const DensMatElements &rhoFDM, // input
                                   DensMatElements &rhoFDMPrev,   // output
                                   size_t N, const AllSteps &dm, const Stats &stats,
-                                  const Params &P) {
+                                  shared_ptr<Symmetry> Sym, const Params &P) {
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements rhoDD;
   if (!step.last(N))
-    rhoDD = init_rho_FDM(N, dm, stats, P.T);
+    rhoDD = init_rho_FDM(N, dm, stats, Sym, P.T);
   for (const auto &[I, ds] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const InvarVec subs = Sym->dmnrg_subspaces(I);
     size_t dim          = ds.kept;
@@ -202,8 +202,8 @@ double sum_wn(size_t N, const Stats &stats, const Params &P) {
   return sum;
 }
 
-void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const AllSteps &dm, const Stats &stats, const Params &P,
-                            const std::string filename = FN_RHOFDM) {
+void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const AllSteps &dm, const Stats &stats, 
+                            shared_ptr<Symmetry> Sym, const Params &P, const std::string filename = FN_RHOFDM) {
   if (P.resume && already_computed(filename, P)) {
     cout << "Not necessary: already computed!" << endl;
     return;
@@ -214,7 +214,7 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const All
     cout << "[FDM] " << N << endl;
     DiagInfo diag_loaded(N);
     DensMatElements rhoFDMPrev;
-    calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, rhoFDMPrev, N, dm, stats, P);
+    calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, rhoFDMPrev, N, dm, stats, Sym, P);
     double tr       = rhoFDMPrev.trace(Sym->multfnc());
     double expected = sum_wn(N, stats, P);
     double diff     = (tr - expected) / expected;

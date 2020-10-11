@@ -22,7 +22,7 @@ class SymmetrySPSU2T : public Symmetry {
        && su2_triangle_inequality(2 * I1.get("T") + 1, 2 * I2.get("T") + 1, 2 * I3.get("T") + 1);
   }
 
-  bool Invar_allowed(const Invar &I) override {
+  bool Invar_allowed(const Invar &I) const override {
     const bool spin_ok   = I.get("SS") > 0;
     const bool angmom_ok = I.get("T") >= 0;
     return spin_ok && angmom_ok;

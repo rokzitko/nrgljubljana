@@ -15,7 +15,7 @@ class SymmetrySPSU2 : public Symmetry {
   // Multiplicity of the I=(SS) subspace = 2S+1 = SS.
   size_t mult(const Invar &I) const override { return I.get("SS"); }
 
-  bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
+  bool Invar_allowed(const Invar &I) const override { return I.get("SS") > 0; }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"));

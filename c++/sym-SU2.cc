@@ -22,7 +22,7 @@ class SymmetrySU2 : public Symmetry {
   }
 
   // We always must have I >= 0.
-  bool Invar_allowed(const Invar &I) override { return I.get("II") > 0; }
+  bool Invar_allowed(const Invar &I) const override { return I.get("II") > 0; }
 
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const Ispin iip = Ip.get("II");

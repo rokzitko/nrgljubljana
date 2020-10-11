@@ -32,7 +32,7 @@ class SymmetryDBLISOSZ : public SymField {
   size_t mult(const Invar &I) const override { return I.get("II1") * I.get("II2"); }
 
   // We always must have I1 >= 0 and I2 >= 0.
-  bool Invar_allowed(const Invar &I) override { return (I.get("II1") > 0) && (I.get("II2") > 0); }
+  bool Invar_allowed(const Invar &I) const override { return (I.get("II1") > 0) && (I.get("II2") > 0); }
 
   // This function supports isospin doublets with respect to either first or the
   // second isospin quantum number. Since the doublet operators are either doublets

@@ -32,7 +32,7 @@ class SymmetryISOSZ : public SymField {
   }
 
   // We always must have I >= 0.
-  bool Invar_allowed(const Invar &I) override { return I.get("II") > 0; }
+  bool Invar_allowed(const Invar &I) const override { return I.get("II") > 0; }
 
   void load() override {
     switch (P.channels) {

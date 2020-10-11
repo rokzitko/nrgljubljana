@@ -22,7 +22,7 @@ class SymmetryDBLSU2 : public Symmetry {
   size_t mult(const Invar &I) const override { return I.get("II1") * I.get("II2"); }
 
   // We always must have I1 >= 0 and I2 >= 0.
-  bool Invar_allowed(const Invar &I) override { return (I.get("II1") > 0) && (I.get("II2") > 0); }
+  bool Invar_allowed(const Invar &I) const override { return (I.get("II1") > 0) && (I.get("II2") > 0); }
 
   // TO DO: support for the doublets wrt the second quantum number
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {

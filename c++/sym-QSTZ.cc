@@ -23,7 +23,7 @@ class SymmetryQSTZ : public Symmetry {
        && u1_equality(I1.get("TZ"), I2.get("TZ"), I3.get("TZ"));
   }
 
-  bool Invar_allowed(const Invar &I) override { return I.get("SS") > 0; }
+  bool Invar_allowed(const Invar &I) const override { return I.get("SS") > 0; }
 
   void load() override {
     my_assert(!P.substeps);
