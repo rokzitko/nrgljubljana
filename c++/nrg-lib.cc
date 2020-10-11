@@ -2141,7 +2141,7 @@ void print_about_message(ostream &s) {
   s << "Compiled on " << __DATE__ << " at " << __TIME__ << endl << endl;
 }
 
-std::unique_ptr<Symmetry> get(std::string sym_string, const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry> get(const std::string sym_string, const Params &P, Allfields &allfields)
 {
   if (sym_string == "QS")     return std::make_unique<SymmetryQS>(P, allfields);
   if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ>(P, allfields);  
@@ -2191,7 +2191,9 @@ void set_symmetry(const Params &P, Stats &stats) {
   Sym->load();
 }
 
-void calculation(Params &P) {
+void calculation() {
+  // Workdir workdir;
+  Params P("param", "param", workdir);
   Stats stats(P);
   auto [diag0, iterinfo, coef] = read_data(P, stats);
   Step step{P, RUNTYPE::NRG};
@@ -2222,19 +2224,15 @@ void calculation(Params &P) {
     run_nrg(step, iterinfo_dm, coef_dm, stats, diag0_dm, dm, P);
     my_assert(num_equal(stats.GS_energy, stats.total_energy));
   }
+  if (P.done) { ofstream D("DONE"); } // Indicate completion by creating a flag file
 }
 
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
-  // Workdir workdir;
-  Params P("param", "param", workdir);
-  calculation(P);
+  calculation();
 #ifdef NRG_MPI
-  cout << "Master done. Terminating slave processes." << endl;
   for (int i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_EXIT, 0);
-  cout << "Master exiting." << endl;
 #endif
-  if (P.done) { ofstream D("DONE"); } // Indicate completion by creating a flag file
 }
 
 #ifdef NRG_MPI
