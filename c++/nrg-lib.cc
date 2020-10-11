@@ -259,6 +259,11 @@ class DiagInfo : public std::map<Invar, Eigen> {
      for (const auto &[I, eig]: *this)
        F << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
    }
+   void states_report(ostream &F) const {
+     for (const auto &[I, eig]: *this) 
+       if (eig.getnr()) 
+         F << "(" << I << ") " << eig.getnr() << " states: " << eig.value_orig << std::endl;
+   }
    void truncate_perform() {
      for (auto &[I, eig] : *this) eig.truncate_perform(); // Truncate subspace to appropriate size
    }
@@ -270,6 +275,21 @@ class DiagInfo : public std::map<Invar, Eigen> {
      for (auto &eig : this->eigs())
        for (auto &m : eig.blocks) 
          m = Matrix(0, 0);
+   }
+   // Total number of states (symmetry taken into account)
+   template <typename MF> auto count_states(MF mult) const {
+     size_t states = 0;
+     for (const auto &[I, eig]: *this)
+       states += mult(I) * eig.getnr();
+     return states;
+   }
+   // Count non-empty subspaces
+   auto count_subspaces() const {
+     size_t subspaces = 0;
+     for (const auto &eig: this->eigs())
+       if (eig.getnr()) 
+         subspaces++;
+     return subspaces;
    }
 };
 
@@ -318,14 +338,25 @@ using DimSub = DimSubGen<t_eigen>;
 using Subs = map<Invar, DimSub>;
 
 class AllSteps : public std::vector<Subs> {
+ private:
+   size_t Nbegin, Nend; // range of valid indexes
  public:
-   AllSteps(int N) { this->resize(N); }
-   void dump_absenergyG(ostream &F, const int Nbegin, const int Nend) const {
+   AllSteps(size_t Nbegin, size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
+   void dump_absenergyG(ostream &F) const {
      for (auto N = Nbegin; N < Nend; N++) {
        F << std::endl << "===== Iteration number: " << N << std::endl;
        for (const auto &[I, ds]: this->at(N))
          F << "Subspace: " << I << std::endl << ds.eig.absenergyG << std::endl;
      }
+   }
+   void dump_all_absolute_energies(std::string filename = "absolute_energies.dat"s) {
+     std::ofstream F(filename);
+     this->dump_absenergyG(F);
+   }
+   void shift_abs_energies_dm(const double GS_energy) {
+     for (auto N = Nbegin; N < Nend; N++)
+       for (auto &ds : this->at(N) | boost::adaptors::map_values)
+         ds.eig.subtract_GS_energy(GS_energy);
    }
 };
 
@@ -451,14 +482,6 @@ class Stats {
      td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
      ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
 };
-
-// called before calc_ZnD()
-void shift_abs_energies_dm(const Stats &stats, AllSteps &dm, const Params &P)
-{
-  for (size_t N = P.Ninit; N < P.Nlen; N++)
-    for (auto &ds : dm[N] | boost::adaptors::map_values)
-      ds.eig.subtract_GS_energy(stats.GS_energy);
-}
 
 class ChainSpectrum;
 class BaseSpectrum;
@@ -1092,12 +1115,6 @@ struct Output {
     diag.dump_value_zero(Fenergies);
   }
 };
-
-// Dump all absolute energies in diag to a file
-void dump_all_absolute_energies(const AllSteps &dm, const Params &P, std::string filename = "absolute_energies.dat"s) {
-  std::ofstream F(filename);
-  dm.dump_absenergyG(F, P.Ninit, P.Nlen);
-}
 
 CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n) {
   matel_bucket tr; // note: t_matel = t_expv
@@ -1933,7 +1950,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
   cout << endl << "Before NRG iteration";
   cout << " (N=" << step.N() << ")" << endl;
   perform_basic_measurements(step, diag0, stats, output);
-  AllSteps empty_dm(0);
+  AllSteps empty_dm(0, 0);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, P);
   if (P.checksumrules) operator_sumrules(iterinfo);
 }
@@ -1972,30 +1989,11 @@ DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats
   return diag;
 }
 
-// Total number of states (symmetry taken into account)
-size_t count_states(const DiagInfo &diag) {
-  size_t states = 0;
-  for (const auto &[I, eig]: diag) 
-    states += Sym->mult(I) * eig.getnr();
-  return states;
-}
-
-// Count non-empty subspaces
-size_t count_subspaces(const DiagInfo &diag) {
-  size_t subspaces = 0;
-  for (const auto &eig: diag.eigs())
-    if (eig.getnr()) 
-      subspaces++;
-  return subspaces;
-}
-
 // Dump information about states (e.g. before the start of the iteration).
 void states_report(const DiagInfo &diag, ostream &fout = cout) {
-  fout << "Number of invariant subspaces: " << count_subspaces(diag) << endl;
-  for (const auto &[I, eig]: diag) 
-    if (eig.getnr()) 
-      fout << "(" << I << ") " << eig.getnr() << " states: " << eig.value_orig << endl;
-  fout << "Number of states (multiplicity taken into account): " << count_states(diag) << endl << endl;
+  fout << "Number of invariant subspaces: " << diag.count_subspaces() << endl;
+  diag.states_report(fout);
+  fout << "Number of states (multiplicity taken into account): " << diag.count_states([](const auto I) { return Sym->mult(I); }) << endl << endl;
 }
 
 // Save a dump of all subspaces, with dimension info, etc.
@@ -2085,12 +2083,12 @@ void calculation(Params &P) {
   Stats stats(P);
   auto [diag0, iterinfo, coef] = read_data(P, stats);
   Step step{P, RUNTYPE::NRG};
-  AllSteps dm(P.Nlen);
+  AllSteps dm(P.Ninit, P.Nlen);
   auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, P);
   if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
-  shift_abs_energies_dm(stats, dm, P); // we call this here, to enable a file dump
+  dm.shift_abs_energies_dm(stats.GS_energy); // we call this here, to enable a file dump
   if (P.dumpabsenergies)
-    dump_all_absolute_energies(dm, P);
+    dm.dump_all_absolute_energies();
   if (P.dm) {
     if (P.need_rho()) {
       auto rho = init_rho(step, diag);
