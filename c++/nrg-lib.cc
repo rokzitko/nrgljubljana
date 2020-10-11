@@ -210,6 +210,20 @@ struct Eigen : public RawEigen {
     for (auto &x : absenergyG) x -= GS_energy;
     my_assert(absenergyG[0] >= 0);
   }
+  void save(boost::archive::binary_oarchive &oa) const {
+    // RawEigen
+    oa << value_orig;
+    ::save(oa, matrix);
+    // Eigen
+    oa << value_zero << nrpost << absenergy << absenergyG << absenergyN;
+  }  
+  void load(boost::archive::binary_iarchive &ia) {
+    // RawEigen
+    ia >> value_orig;
+    ::load(ia, matrix);
+    // Eigen
+    ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergyN;
+  } 
 private:
   friend class boost::serialization::access;
   template <class Archive> void serialize(Archive &ar, const unsigned int version) {

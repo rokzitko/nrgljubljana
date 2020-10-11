@@ -4,24 +4,6 @@
 #ifndef _dmnrg_h_
 #define _dmnrg_h_
 
-void saveEigen(boost::archive::binary_oarchive &oa, const Eigen &m) {
-  // RawEigen
-  oa << m.value_orig;
-  save(oa, m.matrix);
-  // Eigen
-  oa << m.value_zero << m.nrpost;
-  oa << m.absenergy << m.absenergyG << m.absenergyN;
-}
-
-void loadEigen(boost::archive::binary_iarchive &ia, Eigen &m) {
-  // RawEigen
-  ia >> m.value_orig;
-  load(ia, m.matrix);
-  // Eigen
-  ia >> m.value_zero >> m.nrpost;
-  ia >> m.absenergy >> m.absenergyG >> m.absenergyN;
-}
-
 void saveRho(size_t N, const string &prefix, const DensMatElements &rho, const Params &P) {
   nrglog('H', "Storing density matrices [N=" << N << "]... ");
   my_assert(P.Ninit <= N && N <= P.Nmax - 1);
@@ -97,7 +79,7 @@ void save_transformations(size_t N, const DiagInfo &diag, const Params &P) {
   size_t total = 0;
   for(const auto &[I, eig]: diag) {
     oa << I;
-    saveEigen(oa, eig);
+    eig.save(oa);
     if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn)); // Check after each write.
     cnt++;
     total += eig.getnr();
@@ -128,7 +110,7 @@ DiagInfo load_transformations(size_t N, const Params &P, bool remove_files = fal
   for (size_t cnt = 0; cnt < nr; cnt++) {
     Invar inv;
     ia >> inv;
-    loadEigen(ia, diag[inv]);
+    diag[inv].load(ia);
     if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
     total += diag[inv].getnr();
   }
