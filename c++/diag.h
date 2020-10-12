@@ -1,4 +1,4 @@
-// tridiag.h - Diagonalisation code
+// diag.h - Diagonalisation code
 // Copyright (C) 2009-2020 Rok Zitko
 
 #ifndef _diag_h_
@@ -7,26 +7,26 @@
 #define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"
 
-template<typename T, typename V> void copy(T* eigenvalues, ublas::vector<V>& diagvalues, size_t M) {
+template<typename T, typename V> void copy(T* eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
   if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)
     cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << endl;
   diagvalues.resize(M);
   copy(eigenvalues, eigenvalues + M, begin(diagvalues));
 }
 
-template<typename T, typename V> void copy(T* eigenvectors, ublas::matrix<V>& diagvectors, size_t dim, size_t M)
+template<typename T, typename V> void copy(T* eigenvectors, ublas::matrix<V>& diagvectors, const size_t dim, const size_t M)
 {
   diagvectors.resize(M, dim);
-  for (size_t r = 0; r < M; r++)
-    for (size_t j = 0; j < dim; j++) 
+  for (const auto r: range0(M))
+    for (const auto j: range0(dim))
       diagvectors(r, j) = eigenvectors[dim * r + j];
 }
 
 template<> void copy<lapack_complex_double, cmpl>(lapack_complex_double * eigenvectors, ublas::matrix<cmpl>& diagvectors, size_t dim, size_t M)
 {
   diagvectors.resize(M, dim);
-  for (size_t r = 0; r < dim; r++)
-    for (size_t j = 0; j < dim; j++) {
+  for (const auto r: range0(M))
+    for (const auto j: range0(dim)) {
       lapack_complex_double v = eigenvectors[dim * r + j];
       diagvectors(r, j) = cmpl(v.real, v.imag);
     }
@@ -259,20 +259,20 @@ void checkdiag(const Eigen &d,
   const auto dim = d.getdim();   // dimension of the eigenvector
   my_assert(d.matrix.size2() == dim);
   // Check normalization
-  for (auto r = 0; r < M; r++) {
+  for (const auto r: range0(M)) {
     assert_isfinite(d.value_orig(r));
     double sumabs = 0.0;
-    for (size_t j = 0; j < dim; j++) {
+    for (const auto j: range0(dim)) {
       assert_isfinite(d.matrix(r, j));
       sumabs += sqr(abs(d.matrix(r, j)));
     }
     my_assert(num_equal(sumabs, 1.0, NORMALIZATION_EPSILON));
   }
   // Check orthogonality
-  for (size_t r1 = 0; r1 < M; r1++)
-    for (size_t r2 = r1 + 1; r2 < M; r2++) {
+  for (const auto r1: range0(M))
+    for (const auto r2: boost::irange(r1+1, M)) {
       t_matel skpdt = 0.0;
-      for (size_t j = 0; j < dim; j++) skpdt += CONJ_ME(d.matrix(r1, j)) * d.matrix(r2, j);
+      for (const auto j: range0(dim)) skpdt += CONJ_ME(d.matrix(r1, j)) * d.matrix(r2, j);
       my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
     }
 }

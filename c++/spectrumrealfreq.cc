@@ -79,9 +79,9 @@ void SpectrumRealFreq::mergeNN2half(Bins &fullspec, const Bins &cs, const Step &
     Emin = 0;
     Emax = std::numeric_limits<double>::max(); // infinity
   }
-  const size_t len = fullspec.bins.size();
+  const auto len = fullspec.bins.size();
   my_assert(len == cs.bins.size()); // We require equivalent bin sets!!
-  for (size_t i = 0; i < len; i++) {
+  for (const auto i: range0(len)) {
     const double energy   = cs.bins[i].first;
     const t_weight weight = cs.bins[i].second;
     if (Emin < energy && energy < Emax && weight != 0.0) {
@@ -123,7 +123,7 @@ void SpectrumRealFreq::weight_report(const double imag_tolerance) {
 // (energy,real part,imag part).
 void SpectrumRealFreq::savebins() {
   if (!P.savebins) return;
-  string fn = filename + ".bin";
+  const std::string fn = filename + ".bin";
   cout << " " << fn;
   ofstream Fbins = safe_open(fn, true); // true=binary!
   for (const auto &[e, w] : fspos.bins) {
@@ -161,10 +161,10 @@ std::vector<double> make_mesh(const Params &P) {
 void SpectrumRealFreq::continuous() {
   if (!P.broaden) return;
   const double alpha  = P.alpha;
-  const double omega0 = (P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0);
+  const double omega0 = P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0;
   Spikes densitypos, densityneg;
-  std::vector<double> vecE = make_mesh(P); // Energies on the mesh
-  for (double E : vecE) {
+  const std::vector<double> vecE = make_mesh(P); // Energies on the mesh
+  for (const double E : vecE) {
     weight_bucket valpos, valneg;
     for (const auto &[e, w] : fspos.bins) {
       my_assert(e > 0.0);
@@ -179,9 +179,9 @@ void SpectrumRealFreq::continuous() {
     densitypos.emplace_back(E, valpos);
     densityneg.emplace_back(-E, valneg);
   }
-  sort(begin(densityneg), end(densityneg), sortfirst());
-  sort(begin(densitypos), end(densitypos), sortfirst());
-  string fn = filename + ".dat";
+  ranges::sort(densityneg, sortfirst());
+  ranges::sort(densitypos, sortfirst());
+  const std::string fn = filename + ".dat";
   cout << " " << fn;
   ofstream Fdensity = safe_open(fn);
   densityneg.save(Fdensity, P.prec_xy, P.reim);

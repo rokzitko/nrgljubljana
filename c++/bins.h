@@ -68,23 +68,19 @@ void Bins::loggrid_acc() {
   const double a = P.accumulation;
   my_assert(a > 0.0);
   bins.resize(0);
-  for (double e = emin; e <= emax; e *= pow(base, 1.0 / P.bins)) {
-    double x = (emax - a) / emax * e + a;
-    bins.emplace_back(x, 0);
-  }
-  if (P.linstep != 0.0) {
-    my_assert(P.linstep > 0.0);
+  for (double e = emin; e <= emax; e *= pow(base, 1.0 / P.bins)) 
+    bins.emplace_back((emax - a) / emax * e + a, 0);
+  if (P.linstep > 0) 
     for (double e = a; e > 0.0; e -= P.linstep) bins.emplace_back(e, 0);
-  }
   bins.emplace_back(DBL_MIN, 0); // add zero point
-  sort(begin(bins), end(bins), sortfirst());
+  ranges::sort(bins, sortfirst());
   my_assert(bins.size() >= 2);
 }
 
 void Bins::loggrid_std() {
   const auto nrbins = (size_t)((log10emax - log10emin) * P.bins + 1.0);
   bins.resize(nrbins); // Note: Spikes is a vector type!
-  for (size_t i = 0; i < nrbins; i++) bins[i] = {pow(base, log10emin + (double)i / P.bins), 0};
+  for (const auto i : range0(nrbins)) bins[i] = { pow(base, log10emin + (double)i / P.bins), 0 };
 }
 
 // Unbiased assignment of the spectral weight to bins.
@@ -118,9 +114,9 @@ inline void Bins::add_std(double energy, t_weight weight) {
 }
 
 inline void Bins::add_acc(double energy, t_weight weight) {
-  for (size_t i = 0; i < bins.size()-1; i++) {
-    auto &[e1, w1] = bins[i];
-    auto &[e2, w2] = bins[i+1];
+  for (const auto i: range0(bins.size()-1)) {
+    auto &[e1, w1] = bins[i]; // non-const
+    auto &[e2, w2] = bins[i+1]; // non-const
     my_assert(e1 < e2);
     if (e1 < energy && energy < e2) {
       const double dx      = e2 - e1;
@@ -137,9 +133,9 @@ inline void Bins::add_acc(double energy, t_weight weight) {
 // (first element of the pairs).
 void Bins::merge(const Bins &b) {
   my_assert(bins.size() == b.bins.size());
-  for (size_t i = 0; i < bins.size(); i++) {
+  for (const auto i: range0(bins.size())) {
     auto &[e1, w1] = bins[i];
-    auto &[e2, w2] = b.bins[i];
+    const auto &[e2, w2] = b.bins[i];
     my_assert(e1 == e2);
     w1 += w2;
   }
@@ -149,10 +145,10 @@ void Bins::merge(const Bins &b) {
 void Bins::trim() {
   Spikes bins2;
   bucket discarded_weight_abs;
-  size_t nr = bins.size();
+  const auto nr = bins.size();
   bins2.reserve(nr);
   // nr-1, because we need to compute the energy interval size 'ewidth'
-  for (size_t i = 0; i < nr - 1; i++) {
+  for (const auto i: range0(nr-1)) {
     const auto [e, wg] = bins[i];
     const double enext = bins[i + 1].first; // increasing!
     my_assert(enext > e);

@@ -24,9 +24,9 @@ void Algo_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
   auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
-  for (size_t rm = 0; rm < dimp; rm++) {
+  for (const auto rm: range0(dimp)) {
     const t_eigen Em = diagIp.value_zero(rm);
-    for (size_t rj = 0; rj < dim1; rj++) {
+    for (const auto rj: range0(dim1)) {
       const t_eigen Ej = diagI1.value_zero(rj);
       DELTA d;
       d.energy          = Ej - Em;
@@ -34,10 +34,10 @@ void Algo_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       if (absE < Emin || absE > Emax) // does not contribute
         continue;
       weight_bucket sumA;
-      for (size_t ri = 0; ri < dimp; ri++) sumA += op2II(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
+      for (const auto ri: range0(dimp)) sumA += op2II(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
       t_weight weightA = t_weight(sumA) * CONJ_ME(op1II(rj, rm));
       weight_bucket sumB;
-      for (size_t ri = 0; ri < dim1; ri++) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
+      for (const auto ri: range0(dim1)) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
       t_weight weightB = t_weight(sumB) * op2II(rj, rm);
       d.weight         = spinfactor * (weightA + (-sign) * weightB);
       cs->add(step.scale() * d.energy, d.weight);
@@ -63,17 +63,17 @@ void Algo_DMNRGmats::calc(const Step &step, const Eigen &diagIp, const Eigen &di
   const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
   auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
-  for (size_t rm = 0; rm < dimp; rm++) {
+  for (const auto rm: range0(dimp)) {
     const t_eigen Em = diagIp.value_zero(rm);
-    for (size_t rj = 0; rj < dim1; rj++) {
+    for (const auto rj: range0(dim1)) {
       const t_eigen Ej = diagI1.value_zero(rj);
       DELTA d;
       d.energy = Ej - Em;
       weight_bucket sumA;
-      for (size_t ri = 0; ri < dimp; ri++) sumA += op2II(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
+      for (const auto ri: range0(dimp)) sumA += op2II(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
       t_weight weightA = t_weight(sumA) * CONJ_ME(op1II(rj, rm));
       weight_bucket sumB;
-      for (size_t ri = 0; ri < dim1; ri++) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
+      for (const auto ri: range0(dim1)) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
       t_weight weightB = t_weight(sumB) * op2II(rj, rm);
       d.weight         = spinfactor * (weightA + (-sign) * weightB);
       for (size_t n = 1; n < P.mats; n++) csm->add(n, d.weight / (cmpl(0, ww(n, bs.mt, P.T)) - step.scale() * d.energy));

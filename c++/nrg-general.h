@@ -42,7 +42,7 @@ using namespace std;
 #include <cstdlib> // mkdtemp
 
 #include <boost/math/special_functions/sign.hpp>
-
+#include <boost/range/irange.hpp>
 #include <boost/range/adaptor/map.hpp>
 
 // ublas matrix & vector containers

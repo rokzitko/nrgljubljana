@@ -98,6 +98,7 @@ class Symmetry {
    Invar Invar_f;      // QNs for f operator
 
    size_t get_combs() const { return P.combs; }
+   auto combs1() const { return boost::irange(size_t(1), size_t(P.combs+1)); } // note: 1-based!
 
    // For some symmetry types with two-channels we distinguish between
    // even and odd parity with respect to the channel-interchange

@@ -644,6 +644,8 @@ struct Params {
 
   // Returns true if option 'c' is selected for logging
   bool logletter(char c) const { return (logall ? true : std::string(logstr).find(c) != string::npos); }
+  
+  auto Nall() const { return boost::irange(size_t(Ninit), size_t(Nlen)); }
 };
 
 class DiagParams {

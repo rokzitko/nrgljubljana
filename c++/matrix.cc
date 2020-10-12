@@ -80,7 +80,7 @@ void Symmetry::diag_function_impl(const Step &step, const size_t i, const size_t
   //  first site of the Wilson chain (indexed as 0), but the second one (indexed as 1). Therefore the appropriate
   //  zeta is not zeta(0), but zeta(1). zeta(0) is the shift applied to the f[0] orbital in initial.m !!!
   const t_coef shift = sc_zeta * (number - f*avgoccup) / step.scale();
-  for (size_t j = begin1; j < begin1 + size1; j++) h(j, j) += shift;
+  for (const auto j: boost::irange(begin1, begin1+size1)) h(j, j) += shift;
 }
 
 void Symmetry::diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_matel sc_zeta, 
@@ -108,7 +108,7 @@ void Symmetry::diag_offdiag_function(const Step &step, const size_t i, const siz
   if (!contributes) return;
   my_assert(size1 == size2);
   const t_matel factor_scaled = factor / step.scale();
-  for (size_t l = 0; l < size1; l++) h(begin1 + l, begin2 + l) += factor_scaled;
+  for (const auto l: range0(size1)) h(begin1 + l, begin2 + l) += factor_scaled;
 }
 
 #endif // _matrix_cc_

@@ -8,12 +8,12 @@
 void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
   const auto combs = qsrmax.at(I).combs();
   e.blocks.resize(combs);
-  const size_t nr = e.getnr(); // nr. of eigenpairs
+  const auto nr = e.getnr(); // nr. of eigenpairs
   my_assert(nr > 0);
   my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
-  for (size_t block = 0; block < combs; block++) {
-    const size_t rmax   = qsrmax.at(I).rmax(block + 1); // offset 1
-    const size_t offset = qsrmax.at(I).offset(block + 1);
+  for (const auto block: range0(combs)) {
+    const auto rmax   = qsrmax.at(I).rmax(block + 1); // offset 1
+    const auto offset = qsrmax.at(I).offset(block + 1);
     my_assert(e.matrix.size1() >= nr);
     my_assert(e.matrix.size2() >= offset + rmax);
     ublas::matrix_range<Matrix> Up(e.matrix, ublas::range(0, nr), ublas::range(offset, offset + rmax));
@@ -45,17 +45,17 @@ Matrix Symmetry::recalc_f(const DiagInfo &diag,
   const Eigen &diagI1 = diag.at(I1);
   const Eigen &diagIp = diag.at(Ip);
   // Number of states in Ip and in I1, i.e. the dimension of the <||f||> matrix of irreducible matrix elements.
-  const size_t dim1 = diagI1.getnr();
-  const size_t dimp = diagIp.getnr();
+  const auto dim1 = diagI1.getnr();
+  const auto dimp = diagIp.getnr();
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   const Twoinvar II = {I1, Ip};
   Matrix f = Matrix(dim1, dimp, 0);
   if (dim1 && dimp) {
     // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
-    for (size_t j = 0; j < jmax; j++) {
+    for (const auto j: range0(jmax)) {
       // rmax1, rmaxp are the dimensions of the invariant subspaces
-      const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
-      const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
+      const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1);
+      const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
       if (!(rmax1 > 0 && rmaxp > 0)) continue;
       if (P.logletter('f'))
         nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
@@ -91,12 +91,12 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
   }
   const Eigen &diagI1 = diag.at(I1);
   const Eigen &diagIp = diag.at(Ip);
-  const size_t dim1 = diagI1.getnr();
-  const size_t dimp = diagIp.getnr();
+  const auto dim1 = diagI1.getnr();
+  const auto dimp = diagIp.getnr();
   const Twoinvar II = {I1, Ip};
   Matrix cn = Matrix(dim1, dimp, 0);
   if (dim1 == 0 || dimp == 0) return cn; // empty matrix
-  for (size_t j = 0; j < jmax; j++) { // loop over combinations of i/ip
+  for (const auto j: range0(jmax)) { // loop over combinations of i/ip
     if (P.logletter('r')) {
       nrgdump3(j, I1, Ip);
       nrgdump2(table[j].i1, table[j].ip);
@@ -104,15 +104,15 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
       nrgdump(table[j].factor) << endl;
     }
     if (!Invar_allowed(table[j].IN1) || !Invar_allowed(table[j].INp)) continue;
-    const size_t rmax1 = qsrmax.at(I1).rmax(table[j].i1);
-    const size_t rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
+    const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1);
+    const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
     // Proceed if this combination of i1/ip contributes.
     if (rmax1 == 0 || rmaxp == 0) continue;
     const auto IN1 = ancestor(I1, table[j].i1);
     const auto INp = ancestor(Ip, table[j].ip);
     my_assert(IN1 == table[j].IN1 && INp == table[j].INp);
     const Twoinvar ININ = {table[j].IN1, table[j].INp};
-    const size_t cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.
+    const auto cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.
     my_assert(cnt == 0 || cnt == 1);        // Anything other than 0 or 1 is a bug!
     // There are exceptions when a subspace might not contribute. Two are known: 1. for triplet operators, two
     // singlet states give no contribution [SU(2) symmetry]; 2. some subspaces might not exist at low iteration
@@ -153,10 +153,10 @@ void Symmetry::recalc1_global(const DiagInfo &diag,
                               const size_t ip, 
                               const t_factor value) const {
   const Eigen &diagI = diag.at(I);
-  const size_t dim = diagI.getnr();
+  const auto dim = diagI.getnr();
   if (dim == 0) return;
-  const size_t rmax1 = qsrmax.at(I).rmax(i1);
-  const size_t rmaxp = qsrmax.at(I).rmax(ip);
+  const auto rmax1 = qsrmax.at(I).rmax(i1);
+  const auto rmaxp = qsrmax.at(I).rmax(ip);
   my_assert(rmax1 == rmaxp);
   if (rmax1 == 0 || rmaxp == 0) return;
   const Matrix &U1 = diagI.blocks[i1 - 1];

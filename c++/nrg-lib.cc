@@ -125,15 +125,14 @@ Thus, as always:
 
 using Matrix = ublas::matrix<t_matel>;
 
+template<typename T> auto range0(const T b) { return boost::irange(T{0}, b); }
+template<typename T> auto range1(const T b) { return boost::irange(T{1}, b+1); }
+
 template <typename T>
   void save(boost::archive::binary_oarchive &oa, const ublas::matrix<T> &m) {
-    const auto size1 = m.size1();
-    const auto size2 = m.size2();
-    oa << size1 << size2;
-    for (auto i = 0; i < size1; i++) {
-      ublas::vector<T> vec = ublas::matrix_row<const ublas::matrix<T>>(m, i);
-      oa << vec;
-    }
+    oa << m.size1() << m.size2();
+    for (const auto i : range0(m.size1()))
+      oa << ublas::vector<T>(ublas::matrix_row<const ublas::matrix<T>>(m, i));
   }
 
 template <typename T>
@@ -141,7 +140,7 @@ template <typename T>
     size_t size1, size2;
     ia >> size1 >> size2;
     m = ublas::matrix<T>(size1, size2);
-    for (auto i = 0; i < size1; i++) {
+    for (const auto i : range0(size1)) {
       ublas::vector<T> vec;
       ia >> vec;
       ublas::matrix_row<ublas::matrix<T>>(m, i) = vec;
@@ -163,12 +162,14 @@ struct RawEigen {
   }
   auto getnrc() const { return value_orig.size(); } // number of computed eigenpairs
   auto getdim() const { return matrix.size2(); } // valid also after the split_in_blocks_Eigen() call
+  auto all() const { return range0(getnrc()); } // iterator over all states
 };
   
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
 struct Eigen : public RawEigen {
   EVEC value_zero;     // Egs subtracted
   auto getnr() const  { return value_zero.size(); }
+  auto kept() const { return range0(getnr()); } // iterator over kept states
   size_t nrpost = 0;   // number of eigenpairs after truncation
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
@@ -231,7 +232,7 @@ class DiagInfo : public std::map<Invar, Eigen> {
  public:
    DiagInfo() {}
    DiagInfo(ifstream &fdata, const size_t nsubs, const Params &P) {
-     for (auto i = 1; i <= nsubs; i++) {
+     for (const auto i : range1(nsubs)) {
        Invar I;
        fdata >> I;
        auto energies = read_vector<double>(fdata);
@@ -320,7 +321,7 @@ class DiagInfo : public std::map<Invar, Eigen> {
      boost::archive::binary_iarchive ia(MATRIXF);
      size_t nr; // Number of subspaces
      ia >> nr;
-     for (auto cnt = 0; cnt < nr; cnt++) {
+     for (const auto cnt : range0(nr)) {
        Invar inv;
        ia >> inv;
        (*this)[inv].load(ia);
@@ -337,7 +338,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
    MatrixElements(ifstream &fdata, const DiagInfo &diag) {
      size_t nf; // Number of I1 x I2 combinations
      fdata >> nf;
-     for (size_t i = 1; i <= nf; i++) {
+     for (const auto i : range0(nf)) {
        Invar I1, I2;
        fdata >> I1 >> I2;
        if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
@@ -384,7 +385,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
      boost::archive::binary_iarchive ia(MATRIXF);
      size_t nr;
      ia >> nr;
-     for (auto cnt = 0; cnt < nr; cnt++) {
+     for (const auto cnt : range0(nr)) {
        Invar inv;
        ia >> inv;
        ::load(ia, (*this)[inv]);
@@ -408,9 +409,9 @@ class Opch : public std::vector<OpchChannel> {
    Opch(size_t nrch) { this->resize(nrch); }
    Opch(ifstream &fdata, const DiagInfo &diag, const Params &P) {
      this->resize(P.channels);
-     for (size_t i = 0; i < P.channels; i++) {
+     for (const auto i : range0(size_t(P.channels))) {
        (*this)[i] = OpchChannel(P.perchannel);
-       for (size_t j = 0; j < P.perchannel; j++) {
+       for (const auto j : range0(size_t(P.perchannel))) {
          char ch;
          size_t iread, jread;
          fdata >> ch >> iread >> jread;
@@ -483,6 +484,7 @@ template<typename M> struct DimSubGen {
   bool is_last = false;
   size_t min() const { return (is_last ? 0 : kept); } // min(), max() return the range of D states to be summed over in FDM
   size_t max() const { return total; }
+  auto all() const { return boost::irange(min(), max()); }
 };
 
 using DimSub = DimSubGen<t_eigen>;
@@ -495,8 +497,9 @@ class AllSteps : public std::vector<Subs> {
  public:
    size_t Nbegin, Nend; // range of valid indexes
    AllSteps(size_t Nbegin, size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
+   auto Nall() const { return boost::irange(Nbegin, Nend); }
    void dump_absenergyG(ostream &F) const {
-     for (auto N = Nbegin; N < Nend; N++) {
+     for (const auto N : Nall()) {
        F << std::endl << "===== Iteration number: " << N << std::endl;
        for (const auto &[I, ds]: this->at(N))
          F << "Subspace: " << I << std::endl << ds.eig.absenergyG << std::endl;
@@ -509,7 +512,7 @@ class AllSteps : public std::vector<Subs> {
    // Save a dump of all subspaces, with dimension info, etc.
    void dump_subspaces(const std::string filename = "subspaces.dat"s) const {
      ofstream O(filename);
-     for (auto N = Nbegin; N < Nend; N++) {
+     for (const auto N : Nall()) {
        O << "Iteration " << N << std::endl;
        O << "len_dm=" << this->at(N).size() << std::endl;
        for (const auto &[I, DS] : this->at(N))
@@ -518,7 +521,7 @@ class AllSteps : public std::vector<Subs> {
      }
    }
    void shift_abs_energies(const double GS_energy) {
-     for (auto N = Nbegin; N < Nend; N++)
+     for (const auto N : Nall())
        for (auto &ds : this->at(N) | boost::adaptors::map_values)
          ds.eig.subtract_GS_energy(GS_energy);
    }
@@ -676,7 +679,7 @@ class Algo {
 
 void dump_diagonal_matrix(const Matrix &m, const size_t max_nr, ostream &F)
 {
-  for (auto r = 0; r < std::min<size_t>(m.size1(), max_nr); r++)
+  for (const auto r : range0(std::min(m.size1(), max_nr)))
     F << m(r,r) << ' ';
   F << std::endl;
 }
@@ -940,7 +943,7 @@ class SpectrumMatsubara : public Spectrum {
      : Spectrum(opname, filename, algotype, P), results(P.mats, mt, P.T) {}
    void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
      auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
-     for (size_t n = 0; n < results.v.size(); n++) results.v[n].second += t->m.v[n].second;
+     for (const auto n : range0(results.v.size())) results.v[n].second += t->m.v[n].second;
    }     
    ~SpectrumMatsubara() override { 
      cout << "Spectrum: " << opname << " " << algotype->name() << endl;
@@ -995,7 +998,7 @@ using speclist = std::list<BaseSpectrum>;
 // Determine the ranges of index r
 Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
   values.resize(Sym->get_combs());
-  for (size_t i = 0; i < Sym->get_combs(); i++) {
+  for (const auto i : range0(Sym->get_combs())) {
     const bool combination_allowed = Sym->triangle_inequality(I, InVec[i+1], Sym->QN[i+1]);
     values[i] = combination_allowed ? diagprev.size_subspace(InVec[i+1]) : 0;
   }
@@ -1012,7 +1015,7 @@ class ExpvOutput {
    const Params &P;
    void field_numbers() {     // Consecutive numbers for the columns
      F << '#' << formatted_output(1, P) << ' ';
-     for (size_t ctr = 1; ctr <= fields.size(); ctr++) F << formatted_output(1 + ctr, P) << ' ';
+     for (const auto ctr : range1(fields.size())) F << formatted_output(1 + ctr, P) << ' ';
      F << endl;
    }
    // Label and field names. Label is the first column (typically the temperature).
@@ -1277,7 +1280,7 @@ class Annotated {
      // If states are clustered, we dump the full cluster
      for (size_t i = len; i < seznam.size() - 1; i++) {
        // If the next state has an energy within P.grouptol, add it to the list.
-       if (my_fcmp(seznam[i].first, seznam[i - 1].first, P.grouptol) == 0)
+       if (my_fcmp(seznam[i].first, seznam[i-1].first, P.grouptol) == 0)
          len++;
        else
          break;
@@ -1348,10 +1351,10 @@ CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const
   matel_bucket tr; // note: t_matel = t_expv
   for (const auto &[I, eig] : diag) {
     const auto & nI = n.at({I,I});
-    const size_t dim = eig.getnr();
+    const auto dim = eig.getnr();
     my_assert(dim == nI.size2());
     matel_bucket sum;
-    for (size_t r = 0; r < dim; r++) sum += exp(-step.TD_factor() * eig.value_zero(r)) * nI(r, r);
+    for (const auto r : range0(dim)) sum += exp(-step.TD_factor() * eig.value_zero(r)) * nI(r, r);
     tr += Sym->mult(I) * t_matel(sum);
   }
   return tr;
@@ -1372,8 +1375,8 @@ template<typename T>
   T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const size_t range)
 {
   T sum{};
-  for (auto i = 0; i < range; i++)
-    for (auto j = 0; j < range; j++) 
+  for (const auto i : range0(range))
+       for (const auto j : range0(range)) 
       sum += A(i, j) * B(j, i);
   return sum;
 }
@@ -1413,7 +1416,7 @@ Matrix diagonal_exp(const Eigen &eig, const double factor = 1.0)
 {
   const auto dim = eig.getnr();
   Matrix m(dim, dim, 0);
-  for (auto i = 0; i < dim; i++) 
+  for (const auto i: range0(dim)) 
       m(i, i) = exp(-eig.value_zero(i) * factor);
   return m;
 }
@@ -1505,12 +1508,12 @@ void truncate_prepare(const Step &step, DiagInfo &diag, shared_ptr<Symmetry> Sym
 // calc_ZnD() must be called before the second NRG run.
 void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
-  for (auto N = dm.Nbegin; N < dm.Nend; N++) {
+  for (const auto N : dm.Nall()) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
     mpf_set_d(ZnDG, 0.0);
     mpf_set_d(ZnDN, 0.0);
     for (const auto &[I, ds] : dm[N])
-      for (size_t i = ds.min(); i < ds.max(); i++) {
+      for (const auto i : ds.all()) {
         my_mpf g, n;
         mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.absenergyG[i]/T)); // absenergyG >= 0.0
         mpf_set_d(n, Sym->mult(I) * exp(-ds.eig.absenergyN[i]/T)); // absenergyN >= 0.0
@@ -1524,7 +1527,7 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const 
   // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
   my_mpf ZZG;
   mpf_set_d(ZZG, 0.0);
-  for (size_t N = dm.Nbegin; N < dm.Nend; N++) {
+  for (const auto N : dm.Nall()) {
     my_mpf a;
     mpf_set(a, stats.ZnDG[N]);
     my_mpf b;
@@ -1536,7 +1539,7 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const 
   }
   stats.ZZG = mpf_get_d(ZZG);
   bucket sumwn;
-  for (size_t N = dm.Nbegin; N < dm.Nend; N++) {
+  for (const auto N : dm.Nall()) {
     // This is w_n defined after Eq. (8) in the WvD paper.
     const double wn = pow(Sym->get_combs(), int(dm.Nend - N - 1)) * mpf_get_d(stats.ZnDG[N]) / stats.ZZG;
     stats.wn[N] = wn;
@@ -1550,13 +1553,13 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const 
 }
 
 void report_ZnD(Stats &stats, const Params &P) {
-  for (size_t N = P.Ninit; N < P.Nlen; N++) 
+  for (const auto N : P.Nall())
     cout << "ZG[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDG[N])) << endl;
-  for (size_t N = P.Ninit; N < P.Nlen; N++) 
+  for (const auto N : P.Nall())
     cout << "ZN[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDN[N])) << endl;
-  for (size_t N = P.Ninit; N < P.Nlen; N++) 
+  for (const auto N : P.Nall())
     cout << "w[" << N << "]=" << HIGHPREC(stats.wn[N]) << endl;
-  for (size_t N = P.Ninit; N < P.Nlen; N++)
+  for (const auto N : P.Nall())
     cout << "wfactor[" << N << "]=" << HIGHPREC(stats.wnfactor[N]) << endl;
 }
 
@@ -1572,10 +1575,10 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> S
   my_mpf E, E2;
   mpf_set_d(E, 0.0);
   mpf_set_d(E2, 0.0);
-  for (size_t N = dm.Nbegin; N < dm.Nend; N++)
+  for (const auto N : dm.Nall())
     if (stats.wn[N] > 1e-16) 
       for (const auto &[I, ds] : dm[N]) 
-        for (size_t i = ds.min(); i < ds.max(); i++) {
+        for (const auto i : ds.all()) {
           my_mpf weight;
           mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.absenergyN[i]/T));
           mpf_div(weight, weight, stats.ZnDN[N]);
@@ -1678,7 +1681,7 @@ auto make_subspaces_list(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
   for (const auto &[I, eig] : diagprev)
     if (eig.getnr()) {
       auto input = Sym->input_subspaces(); // make a new copy of subspaces list
-      for (size_t i = 1; i <= Sym->get_combs(); i++) {
+      for (const auto i : Sym->combs1()) {
         input[i].inverse(); // IMPORTANT!
         input[i].combine(I);
         if (Sym->Invar_allowed(input[i])) 
@@ -1695,8 +1698,8 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev, Sym};
   Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
-  for (size_t i = 1; i <= Sym->get_combs(); i++)
-    for (size_t r = 0; r < rm.rmax(i); r++) 
+  for (const auto i : Sym->combs1())
+    for (const auto r : range0(rm.rmax(i)))
       h(rm.offset(i) + r, rm.offset(i) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r);
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
@@ -1756,7 +1759,7 @@ void mpi_send_matrix(int dest, const Matrix &m) {
   auto size2 = m.size2();
   mpiw->send(dest, TAG_MATRIX_SIZE, size2);
   mpilog("Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
-  for (size_t i = 0; i < size1; i++) {
+  for (const auto i: range0(size1)) {
     ublas::vector<t_matel> vec = ublas::matrix_row<const Matrix>(m, i);
     mpiw->send(dest, TAG_MATRIX_LINE, vec);
   }
@@ -1769,7 +1772,7 @@ auto mpi_receive_matrix(int source) {
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size2));
   Matrix m(size1, size2);
   mpilog("Receiving matrix of size " << size1 << " x " << size2 << " line by line from " << source);
-  for (auto i = 0; i < size1; i++) {
+  for (const auto i: range0(size1)) {
     ublas::vector<t_matel> vec;
     check_status(mpiw->recv(source, TAG_MATRIX_LINE, vec));
     my_assert(vec.size() == size2);
@@ -1814,7 +1817,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
   // List of the available computation nodes (including the master,
   // which is always at the very beginnig of the deque).
   deque<int> nodes;
-  for (auto i = 0; i < mpiw->size(); i++) nodes.push_back(i);
+  for (const auto i: range0(mpiw->size())) nodes.push_back(i);
   nrglog('M', "nrtasks=" << tasks.size() << " nrnodes=" << mpiw->size());
   while (!todo.empty()) {
     my_assert(!nodes.empty());
@@ -1896,11 +1899,11 @@ void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qs
     opch = Sym->recalc_irreduc(step, diag, qsrmax, P);
   } else {
     const auto [N, M] = step.NM();
-    for (size_t i = 0; i < P.channels; i++)
+    for (const auto i: range0(size_t(P.channels)))
       if (i == M) {
         opch[i] = Sym->recalc_irreduc_substeps(step, diag, qsrmax, P, i);
       } else {
-        for (size_t j = 0; j < P.perchannel; j++) 
+        for (const auto j: range0(size_t(P.perchannel)))
           opch[i][j] = Sym->recalc_doublet(diag, qsrmax, opch[i][j]);
       }
   }
