@@ -162,14 +162,15 @@ struct RawEigen {
   }
   auto getnrc() const { return value_orig.size(); } // number of computed eigenpairs
   auto getdim() const { return matrix.size2(); } // valid also after the split_in_blocks_Eigen() call
-  auto all() const { return range0(getnrc()); } // iterator over all states
 };
   
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
 struct Eigen : public RawEigen {
   EVEC value_zero;     // Egs subtracted
-  auto getnr() const  { return value_zero.size(); }
-  auto kept() const { return range0(getnr()); } // iterator over kept states
+  auto getnr() const  { return value_zero.size(); }                   // number of stored (=kept) states
+  auto all() const { return range0(getnrc()); }                       // iterator over all states
+  auto kept() const { return range0(getnr()); }                       // iterator over kept states
+  auto discarded() const { return boost::irange(getnr(), getnrc()); } // iterator over discarded states
   size_t nrpost = 0;   // number of eigenpairs after truncation
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
@@ -925,7 +926,7 @@ class SpectrumTemp : public Spectrum {
      Spectrum(opname, filename, algotype, P) {}
    void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
      auto t = dynamic_pointer_cast<ChainSpectrumTemp>(cs);
-     copy(begin(t->v), end(t->v), back_inserter(results));
+     std::copy(begin(t->v), end(t->v), std::back_inserter(results));
    }
    ~SpectrumTemp() override {
      cout << "Spectrum: " << opname << " " << algotype->name() << endl;
@@ -1449,7 +1450,7 @@ t_eigen highest_retained_energy(const Step &step, const DiagInfo &diag, const Pa
     double keepenergy = P.keepenergy * step.unscale();
     // We add 1 for historical reasons. We thus keep states with E<=Emax,
     // and one additional state which has E>Emax.
-    nrkeep = 1 + count_if(begin(energies), end(energies), [=](double e) { return e <= keepenergy; });
+    nrkeep = 1 + ranges::count_if(energies, [=](double e) { return e <= keepenergy; });
     nrkeep = std::clamp<size_t>(nrkeep, P.keepmin, P.keep);
   }
   // Check for near degeneracy and ensure that the truncation occurs in a
@@ -1469,14 +1470,10 @@ t_eigen highest_retained_energy(const Step &step, const DiagInfo &diag, const Pa
 struct truncate_stats {
   size_t nrall, nrallmult, nrkept, nrkeptmult;
   truncate_stats(const DiagInfo &diag, shared_ptr<Symmetry> Sym) {
-    nrall = std::accumulate(begin(diag), end(diag), 0,
-                            [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getdim(); });
-    nrallmult = std::accumulate(begin(diag), end(diag), 0,
-                                [Sym](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getdim(); });
-    nrkept = std::accumulate(begin(diag), end(diag), 0, 
-                             [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
-    nrkeptmult = std::accumulate(begin(diag), end(diag), 0,
-                                 [Sym](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getnrkept(); });
+    nrall = ranges::accumulate(diag, 0, [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getdim(); });
+    nrallmult = ranges::accumulate(diag, 0, [Sym](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getdim(); });
+    nrkept = ranges::accumulate(diag, 0, [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
+    nrkeptmult = ranges::accumulate(diag, 0, [Sym](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getnrkept(); });
   }
   void report() {
     nrgdump4(nrkept, nrkeptmult, nrall, nrallmult) << std::endl;
@@ -1491,15 +1488,14 @@ void truncate_prepare(const Step &step, DiagInfo &diag, shared_ptr<Symmetry> Sym
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
-                                      std::count_if(begin(eig.value_zero), end(eig.value_zero), [Emax](double e) { return e <= Emax; }));
+                                      ranges::count_if(eig.value_zero, [Emax](const double e) { return e <= Emax; }));
   std::cout << "Emax=" << Emax/step.unscale() << " ";
   truncate_stats ts(diag, Sym);
   ts.report();
-  if (std::any_of(begin(diag), end(diag), 
-                  [Emax](const auto &d) { const auto &[I, eig] = d; return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax &&
-                      eig.getnr() < eig.getdim(); }))
+  if (ranges::any_of(diag, [Emax](const auto &d) { const auto &[I, eig] = d; 
+    return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax && eig.getnr() < eig.getdim(); }))
       throw NotEnough();
-  double ratio = double(ts.nrkept) / ts.nrall;
+  const double ratio = double(ts.nrkept) / ts.nrall;
   cout << "Kept: " << ts.nrkept << " out of " << ts.nrall << ", ratio=" << setprecision(3) << ratio << endl;
 }
 
@@ -1612,11 +1608,8 @@ template<typename F>
   double trace(F fnc, const double rescale_factor, const DiagInfo &diag, shared_ptr<Symmetry> Sym) {
     bucket b;
     for (const auto &[I, eig] : diag)
-      b += Sym->mult(I) * std::accumulate(eig.value_zero.cbegin(), eig.value_zero.cend(), 0.0,
-                                          [fnc, rescale_factor](double acc, const auto x) { 
-                                            const double betaE = rescale_factor * x;
-                                            return acc + fnc(betaE) * exp(-betaE);
-                                          });
+      b += Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0, [fnc, rescale_factor](double acc, const auto x) { 
+        const double betaE = rescale_factor * x; return acc + fnc(betaE) * exp(-betaE); });
     return b;
   }
 
