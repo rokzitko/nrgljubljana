@@ -54,7 +54,9 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // i-term, Eq. (11). This part is analogous to that for Algo_FT, i.e., it has the form of the usual Lehmann
   // representation.
   if (step.last()) {
-    dim1 = diagI1.getnr(); // override
+    my_assert(dim1 == diagI1.getnr());
+    my_assert(dimp == diagIp.getnr());
+    dim1 = diagI1.getnr(); // override  
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
       const t_eigen E1 = diagI1.value_zero(r1);
@@ -94,6 +96,8 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // Convention: k-loops over retained states, l-loop over discarded states.
   // i-term, Eq. (11).
   if (step.last()) {
+    my_assert(dim1 == diagI1.getnr());
+    my_assert(dimp == diagIp.getnr());
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
@@ -139,6 +143,8 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // states.
   // i-term, Eq. (11).
   if (step.last()) {
+    my_assert(dim1 == diagI1.getnr());
+    my_assert(dimp == diagIp.getnr());
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
@@ -183,6 +189,8 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // Convention: k-loops over retained states, l-loop over discarded states.
   // i-term, Eq. (11).
   if (step.last()) {
+    my_assert(dim1 == diagI1.getnr());
+    my_assert(dimp == diagIp.getnr());
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
