@@ -53,29 +53,25 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // representation.
   if (step.last()) {
     for (const auto r1: diagI1.kept()) {
-      const t_eigen E1 = diagI1.value_zero(r1);
       for (const auto rp: diagIp.kept()) {
-        const t_eigen Ep = diagIp.value_zero(rp);
-        DELTA d;
-        d.energy = E1 - Ep;
-        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
-        cs->add(step.scale() * d.energy, d.weight);
+        const auto E1 = diagI1.value_zero(r1);
+        const auto Ep = diagIp.value_zero(rp);
+        const auto energy = E1 - Ep;
+        const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
+        cs->add(step.scale() * energy, weight);
       }
     }
   } else {
     // iii-term, Eq. (16), positive frequency excitations
-    const auto dimA = diagI1.getnrstored();
     for (const auto rl: diagI1.discarded()) {
-      const t_eigen El = diagI1.value_zero(rl);
       for (const auto rk: diagIp.kept()) {
-        const t_eigen Ek = diagIp.value_zero(rk);
-        DELTA d;
-        d.energy = El - Ek;
-        my_assert(d.energy >= 0.0); // always positive!
-        weight_bucket sum;
+        const auto El = diagI1.value_zero(rl);
+        const auto Ek = diagIp.value_zero(rk);
+        const auto energy = El - Ek; // always positive!
+        t_weight sum{};
         for (const auto rkp: diagIp.kept()) sum += op2II(rl, rkp) * rhoNIp(rkp, rk);
-        d.weight = spinfactor * CONJ_ME(op1II(rl, rk)) * t_weight(sum) * (-sign);
-        cs->add(step.scale() * d.energy, d.weight);
+        const auto weight = spinfactor * CONJ_ME(op1II(rl, rk)) * sum * (-sign);
+        cs->add(step.scale() * energy, weight);
       }
     }
   } // if (last)
@@ -89,29 +85,25 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // i-term, Eq. (11).
   if (step.last()) {
     for (const auto r1: diagI1.kept()) {
-      const t_eigen E1 = diagI1.value_zero(r1);
       for (const auto rp: diagIp.kept()) {
-        const t_eigen Ep = diagIp.value_zero(rp);
-        DELTA d;
-        d.energy = E1 - Ep;
-        d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * step.scT());
-        cs->add(step.scale() * d.energy, d.weight);
+        const auto E1 = diagI1.value_zero(r1);
+        const auto Ep = diagIp.value_zero(rp);
+        const auto energy = E1 - Ep;
+        const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * step.scT());
+        cs->add(step.scale() * energy, weight);
       }
     }
   } else {
     // ii-term, Eq. (15), negative frequency excitations
     for (const auto rk: diagI1.kept()) {
-      const t_eigen Ek  = diagI1.value_zero(rk);
-      const auto dimB = diagIp.getnrstored();
       for (const auto rl: diagIp.discarded()) {
-        const t_eigen El = diagIp.value_zero(rl);
-        DELTA d;
-        d.energy = Ek - El;
-        my_assert(d.energy <= 0.0); // always negative!
-        weight_bucket sum;
+        const auto Ek = diagI1.value_zero(rk);
+        const auto El = diagIp.value_zero(rl);
+        const auto energy = Ek - El; // always negative!
+        t_weight sum{};
         for (const auto rkp: diagI1.kept()) sum += CONJ_ME(op1II(rkp, rl)) * rhoNI1(rkp, rk);
-        d.weight = spinfactor * t_weight(sum) * op2II(rk, rl);
-        cs->add(step.scale() * d.energy, d.weight);
+        const auto weight = spinfactor * sum * op2II(rk, rl);
+        cs->add(step.scale() * energy, weight);
       }
     }
   } // if (last)
@@ -131,12 +123,12 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // i-term, Eq. (11).
   if (step.last()) {
     for (const auto r1: diagI1.kept()) {
-      const double E1 = diagI1.value_zero(r1);
       for (const auto rp: diagIp.kept()) {
-        const double Ep = diagIp.value_zero(rp);
-        double d_energy = E1 - Ep;
-        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
-        cs->add(step.scale() * d_energy, d_weight);
+        const auto E1 = diagI1.value_zero(r1);
+        const auto Ep = diagIp.value_zero(rp);
+        const auto energy = E1 - Ep;
+        const auto weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
+        cs->add(step.scale() * energy, weight);
       }
     }
   } else {
@@ -148,13 +140,13 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       op2II_m_rho = Matrix(op2II_TK.size1(), rhoNIp.size2());
       atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2II_TK, rhoNIp, 0.0, op2II_m_rho); // rhoNEW <- rhoNEW + factor T U
       for (const auto rl: diagI1.discarded()) {
-        const double El = diagI1.value_zero(rl);
         for (const auto rk: diagIp.kept()) {
-          const double Ek       = diagIp.value_zero(rk);
-          const double d_energy = El - Ek;
-          const double sum      = op2II_m_rho(rl, rk);
-          const double d_weight = spinfactor * op1II(rl, rk) * sum * (-sign);
-          cs->add(step.scale() * d_energy, d_weight);
+          const auto El       = diagI1.value_zero(rl);
+          const auto Ek       = diagIp.value_zero(rk);
+          const auto energy = El - Ek;
+          const auto sum      = op2II_m_rho(rl, rk);
+          const auto weight = spinfactor * op1II(rl, rk) * sum * (-sign);
+          cs->add(step.scale() * energy, weight);
         }
       }
     }
@@ -170,12 +162,12 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // i-term, Eq. (11).
   if (step.last()) {
     for (const auto r1: diagI1.kept()) {
-      const double E1 = diagI1.value_zero(r1);
       for (const auto rp: diagIp.kept()) {
-        const double Ep = diagIp.value_zero(rp);
-        double d_energy = E1 - Ep;
-        double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-Ep * step.scT());
-        cs->add(step.scale() * d_energy, d_weight);
+        const auto E1 = diagI1.value_zero(r1);
+        const auto Ep = diagIp.value_zero(rp);
+        const auto energy = E1 - Ep;
+        const auto weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-Ep * step.scT());
+        cs->add(step.scale() * energy, weight);
       }
     }
   } else {
@@ -185,14 +177,13 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       Matrix op1II_m_rho(rhoNI1.size2(), op1II_KT.size2());
       atlas::gemm(CblasTrans, CblasNoTrans, 1.0, rhoNI1, op1II_KT, 0.0, op1II_m_rho); // rhoNEW <- rhoNEW + factor T U
       for (const auto rk: diagI1.kept()) {                                          // ii-term, Eq. (15), negative frequency excitations
-        const double Ek = diagI1.value_zero(rk);
         for (const auto rl: diagIp.discarded()) {
-          const double El       = diagIp.value_zero(rl);
-          const double d_energy = Ek - El;
-          const double sum      = op1II_m_rho(rk, rl);
-          double d_weight       = spinfactor * sum;
-          d_weight *= op2II(rk, rl);
-          cs->add(step.scale() * d_energy, d_weight);
+          const auto Ek       = diagI1.value_zero(rk);
+          const auto El       = diagIp.value_zero(rl);
+          const auto energy = Ek - El;
+          const auto sum      = op1II_m_rho(rk, rl);
+          const auto weight = spinfactor * sum * op2II(rk, rl);
+          cs->add(step.scale() * energy, weight);
         }
       }
     }
