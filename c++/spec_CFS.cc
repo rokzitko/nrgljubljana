@@ -48,16 +48,10 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
-  auto dimp            = rhoNIp.size1();
-  auto dim1            = rhoNI1.size1();
   // Convention: k-loops over retained states, l-loop over discarded states.
   // i-term, Eq. (11). This part is analogous to that for Algo_FT, i.e., it has the form of the usual Lehmann
   // representation.
   if (step.last()) {
-    my_assert(dim1 == diagI1.getnrstored());
-    my_assert(dimp == diagIp.getnrstored());
-    dim1 = diagI1.getnrstored(); // override  
-    dimp = diagIp.getnrstored();
     for (const auto r1: diagI1.kept()) {
       const t_eigen E1 = diagI1.value_zero(r1);
       for (const auto rp: diagIp.kept()) {
@@ -70,16 +64,16 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     }
   } else {
     // iii-term, Eq. (16), positive frequency excitations
-    const size_t dimA = diagI1.getnrstored();
-    for (size_t rl = dim1; rl < dimA; rl++) {
+    const auto dimA = diagI1.getnrstored();
+    for (const auto rl: diagI1.discarded()) {
       const t_eigen El = diagI1.value_zero(rl);
-      for (size_t rk = 0; rk < dimp; rk++) {
+      for (const auto rk: diagIp.kept()) {
         const t_eigen Ek = diagIp.value_zero(rk);
         DELTA d;
         d.energy = El - Ek;
         my_assert(d.energy >= 0.0); // always positive!
         weight_bucket sum;
-        for (size_t rkp = 0; rkp < dimp; rkp++) sum += op2II(rl, rkp) * rhoNIp(rkp, rk);
+        for (const auto rkp: diagIp.kept()) sum += op2II(rl, rkp) * rhoNIp(rkp, rk);
         d.weight = spinfactor * CONJ_ME(op1II(rl, rk)) * t_weight(sum) * (-sign);
         cs->add(step.scale() * d.energy, d.weight);
       }
@@ -91,18 +85,12 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
-  auto dimp            = rhoNIp.size1();
-  auto dim1            = rhoNI1.size1();
   // Convention: k-loops over retained states, l-loop over discarded states.
   // i-term, Eq. (11).
   if (step.last()) {
-    my_assert(dim1 == diagI1.getnrstored());
-    my_assert(dimp == diagIp.getnrstored());
-    dim1 = diagI1.getnrstored();
-    dimp = diagIp.getnrstored();
-    for (size_t r1 = 0; r1 < dim1; r1++) {
+    for (const auto r1: diagI1.kept()) {
       const t_eigen E1 = diagI1.value_zero(r1);
-      for (size_t rp = 0; rp < dimp; rp++) {
+      for (const auto rp: diagIp.kept()) {
         const t_eigen Ep = diagIp.value_zero(rp);
         DELTA d;
         d.energy = E1 - Ep;
@@ -112,16 +100,16 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     }
   } else {
     // ii-term, Eq. (15), negative frequency excitations
-    for (size_t rk = 0; rk < dim1; rk++) {
+    for (const auto rk: diagI1.kept()) {
       const t_eigen Ek  = diagI1.value_zero(rk);
-      const size_t dimB = diagIp.getnrstored();
-      for (size_t rl = dimp; rl < dimB; rl++) {
+      const auto dimB = diagIp.getnrstored();
+      for (const auto rl: diagIp.discarded()) {
         const t_eigen El = diagIp.value_zero(rl);
         DELTA d;
         d.energy = Ek - El;
         my_assert(d.energy <= 0.0); // always negative!
         weight_bucket sum;
-        for (size_t rkp = 0; rkp < dim1; rkp++) sum += CONJ_ME(op1II(rkp, rl)) * rhoNI1(rkp, rk);
+        for (const auto rkp: diagI1.kept()) sum += CONJ_ME(op1II(rkp, rl)) * rhoNI1(rkp, rk);
         d.weight = spinfactor * t_weight(sum) * op2II(rk, rl);
         cs->add(step.scale() * d.energy, d.weight);
       }
@@ -138,18 +126,13 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = rhoNIp.size1();
-  auto dim1            = rhoNI1.size1();
   // Convention: k-loops over retained states, l-loop over discarded
   // states.
   // i-term, Eq. (11).
   if (step.last()) {
-    my_assert(dim1 == diagI1.getnrkept());
-    my_assert(dimp == diagIp.getnrkept());
-    dim1 = diagI1.getnrstored();
-    dimp = diagIp.getnrstored();
-    for (size_t r1 = 0; r1 < dim1; r1++) {
+    for (const auto r1: diagI1.kept()) {
       const double E1 = diagI1.value_zero(r1);
-      for (size_t rp = 0; rp < dimp; rp++) {
+      for (const auto rp: diagIp.kept()) {
         const double Ep = diagIp.value_zero(rp);
         double d_energy = E1 - Ep;
         double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
@@ -158,18 +141,16 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     }
   } else {
     // iii-term, Eq. (16), positive frequency excitations
-    const size_t dimA     = diagI1.getnrstored();
-    auto energies_beginIp = begin(diagIp.value_zero);
-    auto energies_beginI1 = begin(diagI1.value_zero);
+    const auto dimA     = diagI1.getnrstored();
     if (dimA && dimp) {
       Matrix op2II_m_rho;
       const ublas::matrix_range<const Matrix> op2II_TK(op2II, ublas::range(0, op2II.size1()), ublas::range(0, rhoNIp.size1()));
       op2II_m_rho = Matrix(op2II_TK.size1(), rhoNIp.size2());
       atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2II_TK, rhoNIp, 0.0, op2II_m_rho); // rhoNEW <- rhoNEW + factor T U
-      for (size_t rl = dim1; rl < dimA; rl++) {
-        const double El = *(energies_beginI1 + rl);
-        for (size_t rk = 0; rk < dimp; rk++) {
-          const double Ek       = *(energies_beginIp + rk);
+      for (const auto rl: diagI1.discarded()) {
+        const double El = diagI1.value_zero(rl);
+        for (const auto rk: diagIp.kept()) {
+          const double Ek       = diagIp.value_zero(rk);
           const double d_energy = El - Ek;
           const double sum      = op2II_m_rho(rl, rk);
           const double d_weight = spinfactor * op1II(rl, rk) * sum * (-sign);
@@ -184,19 +165,10 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
-  auto dimp            = rhoNIp.size1();
   auto dim1            = rhoNI1.size1();
   // Convention: k-loops over retained states, l-loop over discarded states.
   // i-term, Eq. (11).
   if (step.last()) {
-    cout << "dim1=" << dim1 << endl;
-    cout << "nr1=" << diagI1.getnrstored() << endl;
-    cout << "nrc1=" << diagI1.getnrcomputed() << endl;
-    cout << "nrkept1=" << diagI1.getnrkept() << endl;
-    my_assert(dim1 == diagI1.getnrkept());
-    my_assert(dimp == diagIp.getnrkept());
-    dim1 = diagI1.getnrstored();
-    dimp = diagIp.getnrstored();
     for (const auto r1: diagI1.kept()) {
       const double E1 = diagI1.value_zero(r1);
       for (const auto rp: diagIp.kept()) {
@@ -207,17 +179,15 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       }
     }
   } else {
-    const size_t dimB     = diagIp.getnrstored();
-    auto energies_beginIp = begin(diagIp.value_zero);
-    auto energies_beginI1 = begin(diagI1.value_zero);
+    const auto dimB     = diagIp.getnrstored();
     if (dim1 && dimB) {
       const ublas::matrix_range<const Matrix> op1II_KT(op1II, ublas::range(0, rhoNI1.size1()), ublas::range(0, op1II.size2()));
       Matrix op1II_m_rho(rhoNI1.size2(), op1II_KT.size2());
       atlas::gemm(CblasTrans, CblasNoTrans, 1.0, rhoNI1, op1II_KT, 0.0, op1II_m_rho); // rhoNEW <- rhoNEW + factor T U
-      for (size_t rk = 0; rk < dim1; rk++) {                                          // ii-term, Eq. (15), negative frequency excitations
-        const double Ek = *(energies_beginI1 + rk);
-        for (size_t rl = dimp; rl < dimB; rl++) {
-          const double El       = *(energies_beginIp + rl);
+      for (const auto rk: diagI1.kept()) {                                          // ii-term, Eq. (15), negative frequency excitations
+        const double Ek = diagI1.value_zero(rk);
+        for (const auto rl: diagIp.discarded()) {
+          const double El       = diagIp.value_zero(rl);
           const double d_energy = Ek - El;
           const double sum      = op1II_m_rho(rk, rl);
           double d_weight       = spinfactor * sum;
