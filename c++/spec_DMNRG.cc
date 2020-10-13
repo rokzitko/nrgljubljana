@@ -14,12 +14,8 @@ class Algo_DMNRG : public Algo {
 void Algo_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
-  double Emin = P.getEmin(); // used in optimization
-  double Emax = P.getEmax();
-  if (P.ZBW) {
-    Emin = 0;
-    Emax = std::numeric_limits<double>::max(); // infinity
-  }
+  const double Emin = P.ZBW ? 0 : P.getEmin();
+  const double Emax = P.ZBW ? std::numeric_limits<double>::max() : P.getEmax();
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
   auto dimp            = min(rhoNIp.size1(), diagIp.getnrstored());
