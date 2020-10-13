@@ -143,8 +143,8 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // states.
   // i-term, Eq. (11).
   if (step.last()) {
-    my_assert(dim1 == diagI1.getnr());
-    my_assert(dimp == diagIp.getnr());
+    my_assert(dim1 == diagI1.getnrkept());
+    my_assert(dimp == diagIp.getnrkept());
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {
@@ -191,10 +191,10 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   if (step.last()) {
     cout << "dim1=" << dim1 << endl;
     cout << "nr1=" << diagI1.getnr() << endl;
-    cout << "nrc1=" << diagI1.getnrc() << endl;
+    cout << "nrc1=" << diagI1.getnrcomputed() << endl;
     cout << "nrkept1=" << diagI1.getnrkept() << endl;
-    my_assert(dim1 == diagI1.getnr());
-    my_assert(dimp == diagIp.getnr());
+    my_assert(dim1 == diagI1.getnrkept());
+    my_assert(dimp == diagIp.getnrkept());
     dim1 = diagI1.getnr();
     dimp = diagIp.getnr();
     for (size_t r1 = 0; r1 < dim1; r1++) {

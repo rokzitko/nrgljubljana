@@ -160,8 +160,8 @@ struct RawEigen {
     value_orig.resize(nr);
     matrix.resize(nr, dim);
   }
-  auto getnrc() const { return value_orig.size(); } // number of computed eigenpairs
-  auto getdim() const { return matrix.size2(); } // valid also after the split_in_blocks_Eigen() call
+  auto getnrcomputed() const { return value_orig.size(); } // number of computed eigenpairs
+  auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
 };
   
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
@@ -169,12 +169,12 @@ struct Eigen : public RawEigen {
   EVEC value_zero;     // Egs subtracted
   size_t nrpost = 0;   // number of eigenpairs after truncation
   auto getnr() const  { return value_zero.size(); }                   // number of stored (=kept) states
-  auto getnrall() const { return getnrc(); }                          // all = all computed
+  auto getnrall() const { return getnrcomputed(); }                   // all = all computed
   auto getnrkept() const { return nrpost; }
-  auto getnrdiscarded() const { return getnrc()-nrpost; }
-  auto all() const { return range0(getnrc()); }                       // iterator over all states
-  auto kept() const { return range0(getnr()); }                       // iterator over kept states
-  auto discarded() const { return boost::irange(getnr(), getnrc()); } // iterator over discarded states
+  auto getnrdiscarded() const { return getnrcomputed()-nrpost; }
+  auto all() const { return range0(getnrcomputed()); }                       // iterator over all states
+  auto kept() const { return range0(getnr()); }                              // iterator over kept states
+  auto discarded() const { return boost::irange(getnr(), getnrcomputed()); } // iterator over discarded states
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]

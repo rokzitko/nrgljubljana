@@ -255,7 +255,7 @@ void checkdiag(const Eigen &d,
                const double NORMALIZATION_EPSILON = 1e-12,
                const double ORTHOGONALITY_EPSILON = 1e-12)
 {
-  const auto M = d.getnrc(); // number of eigenpairs
+  const auto M = d.getnrcomputed(); // number of eigenpairs
   const auto dim = d.getdim();   // dimension of the eigenvector
   my_assert(d.matrix.size2() == dim);
   // Check normalization
@@ -280,7 +280,7 @@ void checkdiag(const Eigen &d,
 void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t>::max())
 {
   cout << "eig= ";
-  for_each_n(cbegin(d.value_orig), min(d.getnrc(), max_nr), 
+  for_each_n(cbegin(d.value_orig), min(d.getnrcomputed(), max_nr), 
            [](const t_eigen x) { cout << x << ' '; });
   cout << endl;
 }
@@ -297,7 +297,7 @@ template<typename M> Eigen diagonalise(ublas::matrix<M> &m, const DiagParams &DP
       d = diagonalise_dsyev(m);
     if (DP.diag == "dsyevd"s) {
       d = diagonalise_dsyevd(m);
-      if (d.getnrc() == 0) {
+      if (d.getnrcomputed() == 0) {
         std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
         d = diagonalise_dsyev(m);
       }
@@ -310,12 +310,12 @@ template<typename M> Eigen diagonalise(ublas::matrix<M> &m, const DiagParams &DP
     if (DP.diag == "zheevr"s) 
       d = diagonalise_zheevr(m, DP.diagratio);
   } else my_assert_not_reached();
-  my_assert(d.getnrc() > 0);
+  my_assert(d.getnrcomputed() > 0);
   my_assert(d.matrix.size1() <= m.size1() && d.matrix.size2() == m.size2());
   if (DP.logletter('e'))
     dump_eigenvalues(d);
   checkdiag(d);
-  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrc() << " [rank " << myrank() << "]");
+  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrcomputed() << " [rank " << myrank() << "]");
   nrglogdp('t', "Elapsed: " << setprecision(3) << t.total_in_seconds() << " [rank " << myrank() << "]");
   return d;
 }
