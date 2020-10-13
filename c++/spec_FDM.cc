@@ -45,44 +45,42 @@ class Algo_FDM : public Algo_FDMls, public Algo_FDMgt {
 
 // *********** Greater correlation function ***********
 void Algo_FDMgt::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
-                      spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) const {
+                      spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) const 
+{
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM.at(Ii);
   const Matrix &rhoj = rhoFDM.at(Ij);
-  const size_t reti  = (step.last() ? 0 : rhoi.size1());
-  const size_t retj  = (step.last() ? 0 : rhoj.size1());
-  const size_t alli  = diagIi.getnrstored();
-  const size_t allj  = diagIj.getnrstored();
+  const auto reti  = step.last() ? 0 : diagIi.getnrkept();
+  const auto retj  = step.last() ? 0 : diagIj.getnrkept();
+  const auto alli  = diagIi.getnrstored();
+  const auto allj  = diagIj.getnrstored();
   LOOP_D(i)
-  LOOP_D(j) // A3
-     DELTA d;
-  d.energy = Ej - Ei;
-  d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
-  cs->add(d.energy, d.weight);
-}
-}
-LOOP_D(i)
-LOOP_K(j) // A2
-   DELTA d;
-d.energy = Ej - Ei;
-d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
-cs->add(d.energy, d.weight);
-}
-}
-if (allj > 0 && reti > 0) {
-  // B [D=allj,K=reti] x rho [reti,reti]
-  const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, allj), ublas::range(0, reti));
-  Matrix op2_rho(allj, reti);
-  atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2cut, rhoi, 0.0, op2_rho);
-  LOOP_K(i)
-  LOOP_D(j) // A1
-     DELTA d;
-  d.energy = Ej - Ei;
-  d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2_rho(j, i);
-  cs->add(d.energy, d.weight);
-}
-}
-}
+   LOOP_D(j)
+    const auto energy = Ej - Ei;
+    const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
+    cs->add(energy, weight);
+   }
+  }
+  LOOP_D(i)
+   LOOP_K(j)
+    const auto energy = Ej - Ei;
+    const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
+    cs->add(energy, weight);
+   }
+  }
+  if (allj > 0 && reti > 0) {
+    // B [D=allj,K=reti] x rho [reti,reti]
+    const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, allj), ublas::range(0, reti));
+    Matrix op2_rho(allj, reti);
+    atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2cut, rhoi, 0.0, op2_rho);
+    LOOP_K(i)
+     LOOP_D(j)
+      const auto energy = Ej - Ei;
+      const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2_rho(j, i);
+      cs->add(energy, weight);
+     }
+    }
+  }
 }
 
 // ************ Lesser correlation functions ***************
@@ -92,40 +90,37 @@ void Algo_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM.at(Ii);
   const Matrix &rhoj = rhoFDM.at(Ij);
-  const size_t reti  = (step.last() ? 0 : rhoi.size1());
-  const size_t retj  = (step.last() ? 0 : rhoj.size1());
-  const size_t alli  = diagIi.getnrstored();
-  const size_t allj  = diagIj.getnrstored();
+  const auto reti  = step.last() ? 0 : diagIi.getnrkept();
+  const auto retj  = step.last() ? 0 : diagIj.getnrkept();
+  const auto alli  = diagIi.getnrstored();
+  const auto allj  = diagIj.getnrstored();
   LOOP_D(i)
-  LOOP_D(j) // B3
-     DELTA d;
-  d.energy = Ej - Ei;
-  d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
-  cs->add(d.energy, d.weight);
-}
-}
-if (retj > 0 && alli > 0) {
-  // rho [retj, retj] x B [K=retj, D=alli]
-  const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, retj), ublas::range(0, alli));
-  Matrix rho_op2(retj, alli);
-  atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
-  LOOP_D(i)
-  LOOP_K(j) // B2
-     DELTA d;
-  d.energy = Ej - Ei;
-  d.weight = spinfactor * CONJ_ME(op1II(j, i)) * rho_op2(j, i) * (-sign);
-  cs->add(d.energy, d.weight);
-}
-}
-}
-LOOP_K(i)
-LOOP_D(j) // B1
-   DELTA d;
-d.energy = Ej - Ei;
-d.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
-cs->add(d.energy, d.weight);
-}
-}
+   LOOP_D(j) // B3
+    const auto energy = Ej - Ei;
+    const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
+    cs->add(energy, weight);
+   }
+  }
+  if (retj > 0 && alli > 0) {
+    // rho [retj, retj] x B [K=retj, D=alli]
+    const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, retj), ublas::range(0, alli));
+    Matrix rho_op2(retj, alli);
+    atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
+    LOOP_D(i)
+     LOOP_K(j)
+      const auto energy = Ej - Ei;
+      const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * rho_op2(j, i) * (-sign);
+      cs->add(energy, weight);
+     }
+    }
+  }
+  LOOP_K(i)
+   LOOP_D(j)
+    const auto energy = Ej - Ei;
+    const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
+    cs->add(energy, weight);
+   }
+  }
 }
 
 class Algo_FDMmats : public Algo {
@@ -148,54 +143,51 @@ void Algo_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diag
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM.at(Ii);
   const Matrix &rhoj = rhoFDM.at(Ij);
-  const size_t reti  = (step.last() ? 0 : rhoi.size1());
-  const size_t retj  = (step.last() ? 0 : rhoj.size1());
-  const size_t alli  = diagIi.getnrstored();
-  const size_t allj  = diagIj.getnrstored();
-  LOOP_D(i) LOOP_D(j) DELTA dA; // A3
-  dA.energy = Ej - Ei;
-  dA.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T); // a[ij] b[ji] exp(-beta e[i])
-  DELTA dB;                                                                            // B3
-  dB.energy = dA.energy;
-  dB.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T); // a[ij] b[ji] sign exp(-beta e[j])
-#pragma omp parallel for schedule(static)
-  for (size_t n = 1; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, ww(n, bs.mt, P.T)) - dA.energy));
-  if (bs.mt == matstype::fermionic || abs(dA.energy) > WEIGHT_TOL)
-    csm->add(size_t(0), (dA.weight + dB.weight) / (cmpl(0, ww(0, bs.mt, P.T)) - dA.energy));
-  else // bosonic w=0 && Ei=Ej case
-    csm->add(size_t(0), (-dA.weight / t_weight(P.T)));
-}
-}
-if (retj > 0 && alli > 0) {
-  // rho [retj, retj] x B [retj, alli]
-  const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, retj), ublas::range(0, alli));
-  Matrix rho_op2(retj, alli);
-  atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
-  LOOP_D(i) LOOP_K(j) DELTA dA; // A2
-  dA.energy = Ej - Ei;
-  dA.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
-  DELTA dB; // B2
-  dB.energy = dA.energy;
-  dB.weight = spinfactor * CONJ_ME(op1II(j, i)) * rho_op2(j, i) * (-sign);
-#pragma omp parallel for schedule(static)
-  for (size_t n = 0; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, ww(n, bs.mt, P.T)) - dB.energy));
-}
-}
-}
-if (allj > 0 && reti > 0) {
-  // B [allj,reti] x rho [reti,reti]
-  const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, allj), ublas::range(0, reti));
-  Matrix op2_rho(allj, reti);
-  atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2cut, rhoi, 0.0, op2_rho);
-  LOOP_K(i) LOOP_D(j) DELTA dA; // A1
-  dA.energy = Ej - Ei;
-  dA.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2_rho(j, i);
-  DELTA dB; // B1
-  dB.energy = dA.energy;
-  dB.weight = spinfactor * (-sign) * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ej / P.T);
-#pragma omp parallel for schedule(static)
-  for (size_t n = 0; n < cutoff; n++) csm->add(n, (dA.weight + dB.weight) / (cmpl(0, ww(n, bs.mt, P.T)) - dA.energy));
-}
-}
-}
+  const auto reti  = (step.last() ? 0 : rhoi.size1());
+  const auto retj  = (step.last() ? 0 : rhoj.size1());
+  const auto alli  = diagIi.getnrstored();
+  const auto allj  = diagIj.getnrstored();
+  LOOP_D(i)
+   LOOP_D(j) 
+    const auto energy = Ej - Ei;
+    const auto weightA = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T); // a[ij] b[ji] exp(-beta e[i])
+    const auto weightB = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T); // a[ij] b[ji] sign exp(-beta e[j])
+    #pragma omp parallel for schedule(static)
+    for (size_t n = 1; n < cutoff; n++) csm->add(n, (weightA + weightB) / (cmpl(0, ww(n, bs.mt, P.T)) - energy));
+    if (bs.mt == matstype::fermionic || abs(energy) > WEIGHT_TOL)
+      csm->add(size_t(0), (weightA + weightB) / (cmpl(0, ww(0, bs.mt, P.T)) - energy));
+    else // bosonic w=0 && Ei=Ej case
+      csm->add(size_t(0), (-weightA / t_weight(P.T)));
+    }
+  }
+  if (retj > 0 && alli > 0) {
+     // rho [retj, retj] x B [retj, alli]
+    const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, retj), ublas::range(0, alli));
+    Matrix rho_op2(retj, alli);
+    atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
+    LOOP_D(i) 
+     LOOP_K(j) 
+      const auto energy = Ej - Ei;
+      const auto weightA = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
+      const auto weightB = spinfactor * CONJ_ME(op1II(j, i)) * rho_op2(j, i) * (-sign);
+      #pragma omp parallel for schedule(static)
+      for (size_t n = 0; n < cutoff; n++) csm->add(n, (weightA + weightB) / (cmpl(0, ww(n, bs.mt, P.T)) - energy));
+     }
+    }
+  }
+  if (allj > 0 && reti > 0) {
+    // B [allj,reti] x rho [reti,reti]
+    const ublas::matrix_range<const Matrix> op2cut(op2II, ublas::range(0, allj), ublas::range(0, reti));
+    Matrix op2_rho(allj, reti);
+    atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2cut, rhoi, 0.0, op2_rho);
+    LOOP_K(i) 
+     LOOP_D(j)
+      const auto energy = Ej - Ei;
+      const auto weightA = spinfactor * CONJ_ME(op1II(j, i)) * op2_rho(j, i);
+      const auto weightB = spinfactor * (-sign) * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ej / P.T);
+      #pragma omp parallel for schedule(static)
+      for (size_t n = 0; n < cutoff; n++) csm->add(n, (weightA + weightB) / (cmpl(0, ww(n, bs.mt, P.T)) - energy));
+     }
+    }
+  }
 }
