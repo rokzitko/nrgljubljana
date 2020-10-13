@@ -476,6 +476,14 @@ class QSrmax : public std::map<Invar, Rmaxvals> {
      cout << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << endl;
      return tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
    }
+   void dump() const {
+     for(const auto &[I, rm]: *this)
+       std::cout << "rmaxvals(" << I << ")=" << rm << " total=" << rm.total() << std::endl;
+   }
+   auto at_or_null(const Invar &I) const {
+     const auto i = this->find(I);
+     return i == this->cend() ? Rmaxvals() : i->second;
+   }
 };
 
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
@@ -501,7 +509,7 @@ using Subs = map<Invar, DimSub>;
 class AllSteps : public std::vector<Subs> {
  public:
    size_t Nbegin, Nend; // range of valid indexes
-   AllSteps(size_t Nbegin, size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
+   AllSteps(size_t Nbegin, size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
    auto Nall() const { return boost::irange(Nbegin, Nend); }
    void dump_absenergyG(ostream &F) const {
      for (const auto N : Nall()) {
@@ -532,8 +540,8 @@ class AllSteps : public std::vector<Subs> {
    }
    void store(const size_t ndx, const DiagInfo &diag, const QSrmax &qsrmax, const bool last) {
      my_assert(Nbegin <= ndx && ndx < Nend);
-     for (const auto &[I, eig]: diag) 
-       (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), qsrmax.at(I), eig, last };
+     for (const auto &[I, eig]: diag)
+       (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), qsrmax.at_or_null(I), eig, last };
    }
 };
 
@@ -2034,7 +2042,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
     diag.subtract_Egs(stats.Egs);
   truncate_prepare(step, diag, Sym, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
-  QSrmax qsrmax{diag, Sym};
+  QSrmax qsrmax{};
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
   return diag;
 }
