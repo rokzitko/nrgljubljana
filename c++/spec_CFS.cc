@@ -58,9 +58,9 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     my_assert(dimp == diagIp.getnrstored());
     dim1 = diagI1.getnrstored(); // override  
     dimp = diagIp.getnrstored();
-    for (size_t r1 = 0; r1 < dim1; r1++) {
+    for (const auto r1: diagI1.kept()) {
       const t_eigen E1 = diagI1.value_zero(r1);
-      for (size_t rp = 0; rp < dimp; rp++) {
+      for (const auto rp: diagIp.kept()) {
         const t_eigen Ep = diagIp.value_zero(rp);
         DELTA d;
         d.energy = E1 - Ep;
@@ -197,9 +197,9 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     my_assert(dimp == diagIp.getnrkept());
     dim1 = diagI1.getnrstored();
     dimp = diagIp.getnrstored();
-    for (size_t r1 = 0; r1 < dim1; r1++) {
+    for (const auto r1: diagI1.kept()) {
       const double E1 = diagI1.value_zero(r1);
-      for (size_t rp = 0; rp < dimp; rp++) {
+      for (const auto rp: diagIp.kept()) {
         const double Ep = diagIp.value_zero(rp);
         double d_energy = E1 - Ep;
         double d_weight = (spinfactor / stats.Zft) * op1II(r1, rp) * op2II(r1, rp) * exp(-Ep * step.scT());
