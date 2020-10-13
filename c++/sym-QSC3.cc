@@ -74,16 +74,14 @@ class SymmetryQSC3 : public SymC3 {
 #define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 void SymmetryQSC3::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
-  if constexpr (std::is_same_v(t_matel, std::complex<double>)) {
-    my_assert(P.channels == 3);
-    Sspin ss = I.get("SS");
+  my_assert(P.channels == 3);
+  Sspin ss = I.get("SS");
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
 #define sqrt(x) csqrt(x)
 #include "qsc3/qsc3-diag.dat"
 #include "qsc3/qsc3-offdiag.dat"
 #undef sqrt
-  } else my_assert_not_reached();
 }
 
 #include "nrg-recalc-QSC3.cc"

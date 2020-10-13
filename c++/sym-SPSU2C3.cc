@@ -64,9 +64,8 @@ class SymmetrySPSU2C3 : public SymC3 {
 #define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 void SymmetrySPSU2C3::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
-  if constexpr (std::is_same_v(t_matel, std::complex<double>)) {
-    my_assert(P.channels == 3);
-    Sspin ss = I.get("SS");
+  my_assert(P.channels == 3);
+  Sspin ss = I.get("SS");
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
 #define sqrt(x) csqrt(x)
@@ -74,7 +73,6 @@ void SymmetrySPSU2C3::make_matrix(Matrix &h, const Step &step, const Rmaxvals &q
 #include "spsu2c3/spsu2c3-offdiag.dat"
 #include "spsu2c3/spsu2c3-isospinx.dat"
 #undef sqrt
-  } else my_assert_not_reached();
 }
 
 #include "nrg-recalc-SPSU2C3.cc"

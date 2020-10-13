@@ -1363,7 +1363,7 @@ CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const
 
 // Measure thermodynamic expectation values of singlet operators
 void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, shared_ptr<Symmetry> Sym, const Params &P) {
-  bucket Z;
+  t_expv Z{};
   for (const auto &[I, eig] : diag)
     for (const auto &x : eig.value_zero)
       Z += Sym->mult(I) * exp(-step.TD_factor() * x);
@@ -1407,13 +1407,13 @@ void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, c
 double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, shared_ptr<Symmetry> Sym, const double factor = 1.0) {
   bucket ZN;
   for (const auto &[I, eig]: diag) 
-    for (const auto &x : eig.value_zero)
-      ZN += Sym->mult(I) * exp(-x * step.scT() * factor);
+    for (const auto &i : eig.kept()) // sum over all kept states
+      ZN += Sym->mult(I) * exp(-eig.value_zero(i) * step.scT() * factor);
   my_assert(ZN >= 1.0);
   return ZN;
 }
 
-Matrix diagonal_exp(const Eigen &eig, const double factor = 1.0)
+Matrix diagonal_exp(const Eigen &eig, const double factor)
 {
   const auto dim = eig.getnr();
   Matrix m(dim, dim, 0);
