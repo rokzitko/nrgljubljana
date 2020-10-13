@@ -167,11 +167,14 @@ struct RawEigen {
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
 struct Eigen : public RawEigen {
   EVEC value_zero;     // Egs subtracted
+  size_t nrpost = 0;   // number of eigenpairs after truncation
   auto getnr() const  { return value_zero.size(); }                   // number of stored (=kept) states
+  auto getnrall() const { return getnrc(); }                          // all = all computed
+  auto getnrkept() const { return nrpost; }
+  auto getnrdiscarded() const { return getnrc()-nrpost; }
   auto all() const { return range0(getnrc()); }                       // iterator over all states
   auto kept() const { return range0(getnr()); }                       // iterator over kept states
   auto discarded() const { return boost::irange(getnr(), getnrc()); } // iterator over discarded states
-  size_t nrpost = 0;   // number of eigenpairs after truncation
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
@@ -183,8 +186,6 @@ struct Eigen : public RawEigen {
   std::vector<Matrix> blocks;
   Eigen() : RawEigen() {}
   Eigen(size_t nr, size_t rmax) : RawEigen(nr, rmax) {}
-  // Returns the number of eigenpairs after truncation.
-  auto getnrkept() const { return nrpost; }
   // Truncate to nrpost states.
   void truncate_prepare_subspace(size_t _nrpost) {
     nrpost = _nrpost;
@@ -1646,6 +1647,7 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
   DensMatElements rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
+      cout << "load" << endl; // XXX
       rho.load(step.ndx(), FN_RHO, P.removefiles);
       check_trace_rho(rho, Sym); // Check if Tr[rho]=1, i.e. the normalization
     }

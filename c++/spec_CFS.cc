@@ -192,6 +192,7 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     cout << "dim1=" << dim1 << endl;
     cout << "nr1=" << diagI1.getnr() << endl;
     cout << "nrc1=" << diagI1.getnrc() << endl;
+    cout << "nrkept1=" << diagI1.getnrkept() << endl;
     my_assert(dim1 == diagI1.getnr());
     my_assert(dimp == diagIp.getnr());
     dim1 = diagI1.getnr();
