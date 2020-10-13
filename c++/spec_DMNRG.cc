@@ -18,21 +18,19 @@ void Algo_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   const double Emax = P.ZBW ? std::numeric_limits<double>::max() : P.getEmax();
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
-  auto dimp            = min(rhoNIp.size1(), diagIp.getnrstored());
-  auto dim1            = min(rhoNI1.size1(), diagI1.getnrstored());
-  for (const auto rm: range0(dimp)) {
-    const auto Em = diagIp.value_zero(rm);
-    for (const auto rj: range0(dim1)) {
+  for (const auto rm: diagIp.kept()) {
+    for (const auto rj: diagI1.kept()) {
+      const auto Em = diagIp.value_zero(rm);
       const auto Ej = diagI1.value_zero(rj);
       const auto energy = Ej - Em;
       const auto absE = abs(energy);
       if (absE < Emin || absE > Emax) // does not contribute
         continue;
       t_weight sumA{};
-      for (const auto ri: range0(dimp)) sumA += op2II(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
+      for (const auto ri: diagIp.kept()) sumA += op2II(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
       const auto weightA = t_weight(sumA) * CONJ_ME(op1II(rj, rm));
       t_weight sumB{};
-      for (const auto ri: range0(dim1)) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
+      for (const auto ri: diagI1.kept()) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
       const auto weightB = t_weight(sumB) * op2II(rj, rm);
       const auto weight  = spinfactor * (weightA + (-sign) * weightB);
       cs->add(step.scale() * energy, weight);
@@ -56,18 +54,16 @@ void Algo_DMNRGmats::calc(const Step &step, const Eigen &diagIp, const Eigen &di
   auto csm   = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
-  auto dimp            = min(rhoNIp.size1(), diagIp.getnrstored());
-  auto dim1            = min(rhoNI1.size1(), diagI1.getnrstored());
-  for (const auto rm: range0(dimp)) {
-    const auto Em = diagIp.value_zero(rm);
-    for (const auto rj: range0(dim1)) {
+  for (const auto rm: diagIp.kept()) {
+    for (const auto rj: diagI1.kept()) {
+      const auto Em = diagIp.value_zero(rm);
       const auto Ej = diagI1.value_zero(rj);
       const auto energy = Ej - Em;
       t_weight sumA{};
-      for (const auto ri: range0(dimp)) sumA += op2II(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
+      for (const auto ri: diagIp.kept()) sumA += op2II(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
       const auto weightA = sumA * CONJ_ME(op1II(rj, rm));
       t_weight sumB{};
-      for (const auto ri: range0(dim1)) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
+      for (const auto ri: diagI1.kept()) sumB += CONJ_ME(op1II(ri, rm)) * rhoNI1(rj, ri); // non-optimal
       const auto weightB = sumB * op2II(rj, rm);
       const auto weight  = spinfactor * (weightA + (-sign) * weightB);
       for (size_t n = 1; n < P.mats; n++) csm->add(n, weight / (cmpl(0, ww(n, bs.mt, P.T)) - step.scale() * energy));
