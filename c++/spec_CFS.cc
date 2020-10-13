@@ -43,10 +43,9 @@ class Algo_CFS : public Algo_CFSls, public Algo_CFSgt {
 //#if defined(NRG_REAL) && defined(Algo_CFS_OPTIMIZED)
 void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
-  double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
-  const Matrix &rhoNIp = rho.at(Ip);
-  const Matrix &rhoNI1 = rho.at(I1);
-  auto dimp            = rhoNIp.size1();
+  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
+  const auto &rhoNIp = rho.at(Ip);
+  const auto &rhoNI1 = rho.at(I1);
   // Convention: k-loops over retained states, l-loop over discarded states.
   // i-term, Eq. (11).
   if (step.last()) {
@@ -61,8 +60,7 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     }
   } else {
     // iii-term, Eq. (16), positive frequency excitations
-    const auto dimA     = diagI1.getnrstored();
-    if (dimA && dimp) {
+    if (op2II.size1() && rhoNIp.size1()) {
       Matrix op2II_m_rho;
       const ublas::matrix_range<const Matrix> op2II_TK(op2II, ublas::range(0, op2II.size1()), ublas::range(0, rhoNIp.size1()));
       op2II_m_rho = Matrix(op2II_TK.size1(), rhoNIp.size2());
@@ -83,9 +81,8 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
 
 void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
-  const Matrix &rhoNIp = rho.at(Ip);
-  const Matrix &rhoNI1 = rho.at(I1);
-  auto dim1            = rhoNI1.size1();
+  const auto &rhoNIp = rho.at(Ip);
+  const auto &rhoNI1 = rho.at(I1);
   // Convention: k-loops over retained states, l-loop over discarded states.
   // i-term, Eq. (11).
   if (step.last()) {
@@ -99,8 +96,7 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       }
     }
   } else {
-    const auto dimB     = diagIp.getnrstored();
-    if (dim1 && dimB) {
+    if (rhoNI1.size1() && op1II.size2()) {
       const ublas::matrix_range<const Matrix> op1II_KT(op1II, ublas::range(0, rhoNI1.size1()), ublas::range(0, op1II.size2()));
       Matrix op1II_m_rho(rhoNI1.size2(), op1II_KT.size2());
       if constexpr (std::is_same_v<t_matel, double>) {

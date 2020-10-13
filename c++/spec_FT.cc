@@ -14,7 +14,7 @@ class Algo_FT : public Algo {
 // See Eq.(9) in Peters, Pruschke, Anders, PRB (74) 245114 (2006)
 void Algo_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                    spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
-  double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
+  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   for (const auto r1: diagI1.kept()) {
     const t_eigen E1 = diagI1.value_zero(r1);
     for (const auto rp: diagIp.kept()) {
@@ -39,7 +39,7 @@ class Algo_FTmats : public Algo {
 void Algo_FTmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                        t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   const size_t cutoff = P.mats;
-  double sign         = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
+  const auto sign     = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   auto csm            = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   for (const auto r1: diagI1.kept()) {
     const t_eigen E1 = diagI1.value_zero(r1);
@@ -94,8 +94,8 @@ class Algo_I2T : public Algo_GT_generic {
 // See Yoshida, Seridonio, Oliveira, arxiv:0906.4289, Eq. (8).
 void Algo_GT_generic::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                            t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
-  double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
-  my_assert(sign == S_FERMIONIC);                  // restricted implementation
+  my_assert(bs.mt == matstype::fermionic);                  // restricted implementation
+  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   const double temperature = P.gtp * step.scale(); // in absolute units!
   const double beta        = 1.0 / temperature;
   weight_bucket value;
@@ -149,7 +149,7 @@ class Algo_CHIT : public Algo {
 // chi/beta = k_B T chi, as we prefer.
 void Algo_CHIT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
-  double sign = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
+  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   my_assert(sign == S_BOSONIC); // restricted implementation
   const double temperature = P.chitp * step.scale(); // in absolute units!
   const double beta        = 1.0 / temperature;

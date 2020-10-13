@@ -3,8 +3,8 @@
 
 // For argument 'sign' in calc_generic_* functions. This is the only difference between the GFs for bosonic and
 // fermionic operators.
-const double S_FERMIONIC = -1.0;
-const double S_BOSONIC   = 1.0;
+const int S_FERMIONIC = -1;
+const int S_BOSONIC   = 1;
 
 const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 

@@ -88,7 +88,7 @@ if (allj > 0 && reti > 0) {
 // ************ Lesser correlation functions ***************
 void Algo_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) const {
-  double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
+  const auto sign    = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM.at(Ii);
   const Matrix &rhoj = rhoFDM.at(Ij);
@@ -143,8 +143,7 @@ class Algo_FDMmats : public Algo {
 void Algo_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                         t_factor spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) const {
   const size_t cutoff = P.mats;
-  // (-sign)=1 for fermionic case, (-sign)=-1 for bosonic case
-  double sign        = (bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC);
+  const auto sign    = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   auto csm           = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM.at(Ii);
