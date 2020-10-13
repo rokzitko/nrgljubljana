@@ -23,7 +23,7 @@ void cdmI(const size_t i,        // Subspace index (alpha=1,...,P.combs)
   my_assert(rhoNEW.size1() == rhoNEW.size2()); // quadratic matrix
   // number of states taken into account in the density-matrix at
   // *current* (Nth) stage (in subspace I1)
-  const size_t nromega = rhoN.size2();
+  const size_t nromega = rhoN.size2(); // XXX
   my_assert(rhoN.size1() == rhoN.size2()); // quadratic matrix
   // continue only if connection exists
   if (nromega == 0 || dim == 0) return;
@@ -36,12 +36,9 @@ void cdmI(const size_t i,        // Subspace index (alpha=1,...,P.combs)
   my_assert(rmax == dim);
   // Check range of omega: do the dimensions of C^N_I1(omega omega') and
   // U^N_I1(omega|r1) match?
-  // diagI1.getnr() is the total number of states
-  // obtained after diagonalisation. It can exceed nromega due to
-  // truncation.
   // We do this test at this point, to ensure rmax!=0 and dim!=0
   // and nromega!=0, otherwise there is no contribution anyway.
-  const size_t I1nr = diagI1.getnr();
+  const size_t I1nr = diagI1.getnrstored();
   my_assert(nromega <= I1nr);
   // offset gives the offset that is added to r1,rp to find the
   // elements ri in U^N_I1(omega|ri)

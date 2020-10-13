@@ -8,7 +8,7 @@
 void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
   const auto combs = qsrmax.at(I).combs();
   e.blocks.resize(combs);
-  const auto nr = e.getnr(); // nr. of eigenpairs
+  const auto nr = e.getnrstored(); // nr. of eigenpairs
   my_assert(nr > 0);
   my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
   for (const auto block: range0(combs)) {
@@ -45,8 +45,8 @@ Matrix Symmetry::recalc_f(const DiagInfo &diag,
   const Eigen &diagI1 = diag.at(I1);
   const Eigen &diagIp = diag.at(Ip);
   // Number of states in Ip and in I1, i.e. the dimension of the <||f||> matrix of irreducible matrix elements.
-  const auto dim1 = diagI1.getnr();
-  const auto dimp = diagIp.getnr();
+  const auto dim1 = diagI1.getnrstored();
+  const auto dimp = diagIp.getnrstored();
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   const Twoinvar II = {I1, Ip};
   Matrix f = Matrix(dim1, dimp, 0);
@@ -91,8 +91,8 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
   }
   const Eigen &diagI1 = diag.at(I1);
   const Eigen &diagIp = diag.at(Ip);
-  const auto dim1 = diagI1.getnr();
-  const auto dimp = diagIp.getnr();
+  const auto dim1 = diagI1.getnrstored();
+  const auto dimp = diagIp.getnrstored();
   const Twoinvar II = {I1, Ip};
   Matrix cn = Matrix(dim1, dimp, 0);
   if (dim1 == 0 || dimp == 0) return cn; // empty matrix
@@ -153,7 +153,7 @@ void Symmetry::recalc1_global(const DiagInfo &diag,
                               const size_t ip, 
                               const t_factor value) const {
   const Eigen &diagI = diag.at(I);
-  const auto dim = diagI.getnr();
+  const auto dim = diagI.getnrstored();
   if (dim == 0) return;
   const auto rmax1 = qsrmax.at(I).rmax(i1);
   const auto rmaxp = qsrmax.at(I).rmax(ip);

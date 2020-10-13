@@ -54,10 +54,10 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // i-term, Eq. (11). This part is analogous to that for Algo_FT, i.e., it has the form of the usual Lehmann
   // representation.
   if (step.last()) {
-    my_assert(dim1 == diagI1.getnr());
-    my_assert(dimp == diagIp.getnr());
-    dim1 = diagI1.getnr(); // override  
-    dimp = diagIp.getnr();
+    my_assert(dim1 == diagI1.getnrstored());
+    my_assert(dimp == diagIp.getnrstored());
+    dim1 = diagI1.getnrstored(); // override  
+    dimp = diagIp.getnrstored();
     for (size_t r1 = 0; r1 < dim1; r1++) {
       const t_eigen E1 = diagI1.value_zero(r1);
       for (size_t rp = 0; rp < dimp; rp++) {
@@ -70,7 +70,7 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     }
   } else {
     // iii-term, Eq. (16), positive frequency excitations
-    const size_t dimA = diagI1.getnr();
+    const size_t dimA = diagI1.getnrstored();
     for (size_t rl = dim1; rl < dimA; rl++) {
       const t_eigen El = diagI1.value_zero(rl);
       for (size_t rk = 0; rk < dimp; rk++) {
@@ -96,10 +96,10 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // Convention: k-loops over retained states, l-loop over discarded states.
   // i-term, Eq. (11).
   if (step.last()) {
-    my_assert(dim1 == diagI1.getnr());
-    my_assert(dimp == diagIp.getnr());
-    dim1 = diagI1.getnr();
-    dimp = diagIp.getnr();
+    my_assert(dim1 == diagI1.getnrstored());
+    my_assert(dimp == diagIp.getnrstored());
+    dim1 = diagI1.getnrstored();
+    dimp = diagIp.getnrstored();
     for (size_t r1 = 0; r1 < dim1; r1++) {
       const t_eigen E1 = diagI1.value_zero(r1);
       for (size_t rp = 0; rp < dimp; rp++) {
@@ -114,7 +114,7 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     // ii-term, Eq. (15), negative frequency excitations
     for (size_t rk = 0; rk < dim1; rk++) {
       const t_eigen Ek  = diagI1.value_zero(rk);
-      const size_t dimB = diagIp.getnr();
+      const size_t dimB = diagIp.getnrstored();
       for (size_t rl = dimp; rl < dimB; rl++) {
         const t_eigen El = diagIp.value_zero(rl);
         DELTA d;
@@ -145,8 +145,8 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   if (step.last()) {
     my_assert(dim1 == diagI1.getnrkept());
     my_assert(dimp == diagIp.getnrkept());
-    dim1 = diagI1.getnr();
-    dimp = diagIp.getnr();
+    dim1 = diagI1.getnrstored();
+    dimp = diagIp.getnrstored();
     for (size_t r1 = 0; r1 < dim1; r1++) {
       const double E1 = diagI1.value_zero(r1);
       for (size_t rp = 0; rp < dimp; rp++) {
@@ -158,7 +158,7 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
     }
   } else {
     // iii-term, Eq. (16), positive frequency excitations
-    const size_t dimA     = diagI1.getnr();
+    const size_t dimA     = diagI1.getnrstored();
     auto energies_beginIp = begin(diagIp.value_zero);
     auto energies_beginI1 = begin(diagI1.value_zero);
     if (dimA && dimp) {
@@ -190,13 +190,13 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   // i-term, Eq. (11).
   if (step.last()) {
     cout << "dim1=" << dim1 << endl;
-    cout << "nr1=" << diagI1.getnr() << endl;
+    cout << "nr1=" << diagI1.getnrstored() << endl;
     cout << "nrc1=" << diagI1.getnrcomputed() << endl;
     cout << "nrkept1=" << diagI1.getnrkept() << endl;
     my_assert(dim1 == diagI1.getnrkept());
     my_assert(dimp == diagIp.getnrkept());
-    dim1 = diagI1.getnr();
-    dimp = diagIp.getnr();
+    dim1 = diagI1.getnrstored();
+    dimp = diagIp.getnrstored();
     for (size_t r1 = 0; r1 < dim1; r1++) {
       const double E1 = diagI1.value_zero(r1);
       for (size_t rp = 0; rp < dimp; rp++) {
@@ -207,7 +207,7 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       }
     }
   } else {
-    const size_t dimB     = diagIp.getnr();
+    const size_t dimB     = diagIp.getnrstored();
     auto energies_beginIp = begin(diagIp.value_zero);
     auto energies_beginI1 = begin(diagI1.value_zero);
     if (dim1 && dimB) {

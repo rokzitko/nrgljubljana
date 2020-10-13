@@ -165,16 +165,19 @@ struct RawEigen {
 };
   
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
-struct Eigen : public RawEigen {
-  EVEC value_zero;     // Egs subtracted
-  size_t nrpost = 0;   // number of eigenpairs after truncation
-  auto getnr() const  { return value_zero.size(); }                   // number of stored (=kept) states
-  auto getnrall() const { return getnrcomputed(); }                   // all = all computed
-  auto getnrkept() const { return nrpost; }
-  auto getnrdiscarded() const { return getnrcomputed()-nrpost; }
-  auto all() const { return range0(getnrcomputed()); }                       // iterator over all states
-  auto kept() const { return range0(getnr()); }                              // iterator over kept states
-  auto discarded() const { return boost::irange(getnr(), getnrcomputed()); } // iterator over discarded states
+class Eigen : public RawEigen {
+ private:
+  long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
+ public:
+  EVEC value_zero;   // eigenvalues with Egs subtracted
+  size_t getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }
+  auto getnrstored() const  { return value_zero.size(); }                   // number of stored states
+  auto getnrall() const { return getnrcomputed(); }                         // all = all computed
+  auto getnrkept() const { return getnrpost(); }
+  auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }
+  auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
+  auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
+  auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
@@ -187,9 +190,9 @@ struct Eigen : public RawEigen {
   Eigen() : RawEigen() {}
   Eigen(size_t nr, size_t rmax) : RawEigen(nr, rmax) {}
   // Truncate to nrpost states.
-  void truncate_prepare_subspace(size_t _nrpost) {
-    nrpost = _nrpost;
-    my_assert(nrpost <= getnr());
+  void truncate_prepare_subspace(size_t nrpost_) {
+    nrpost = nrpost_;
+    my_assert(nrpost <= getnrstored());
   }
   void truncate_perform() {
     for (auto &i : blocks) {
@@ -273,7 +276,7 @@ class DiagInfo : public std::map<Invar, Eigen> {
    }
    size_t size_subspace(const Invar &I) const {
      const auto f = this->find(I);
-     return f != this->cend() ? f->second.getnr() : 0;
+     return f != this->cend() ? f->second.getnrstored() : 0;
    }
    void clear_eigenvectors() {
      for (auto &eig : this->eigs())
@@ -284,14 +287,14 @@ class DiagInfo : public std::map<Invar, Eigen> {
    template <typename MF> auto count_states(MF && mult) const {
      size_t states = 0;
      for (const auto &[I, eig]: *this)
-       states += mult(I) * eig.getnr();
+       states += mult(I) * eig.getnrstored();
      return states;
    }
    // Count non-empty subspaces
    auto count_subspaces() const {
      size_t subspaces = 0;
      for (const auto &eig: this->eigs())
-       if (eig.getnr()) 
+       if (eig.getnrstored()) 
          subspaces++;
      return subspaces;
    }
@@ -299,8 +302,8 @@ class DiagInfo : public std::map<Invar, Eigen> {
      void states_report(MF && mult, ostream &F = std::cout) const {
        F << "Number of invariant subspaces: " << count_subspaces() << endl;
        for (const auto &[I, eig]: *this) 
-         if (eig.getnr()) 
-           F << "(" << I << ") " << eig.getnr() << " states: " << eig.value_orig << std::endl;
+         if (eig.getnrstored()) 
+           F << "(" << I << ") " << eig.getnrstored() << " states: " << eig.value_orig << std::endl;
        F << "Number of states (multiplicity taken into account): " << count_states(mult) << std::endl << std::endl;
      }
    void save(const size_t N) const {
@@ -344,7 +347,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
        Invar I1, I2;
        fdata >> I1 >> I2;
        if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
-         read_matrix(fdata, (*this)[{I1, I2}], it1->second.getnr(), it2->second.getnr());
+         read_matrix(fdata, (*this)[{I1, I2}], it1->second.getnrstored(), it2->second.getnrstored());
        else
          throw std::runtime_error("Corrupted input file.");
      }
@@ -530,7 +533,7 @@ class AllSteps : public std::vector<Subs> {
    void store(const size_t ndx, const DiagInfo &diag, const QSrmax &qsrmax, const bool last) {
      my_assert(Nbegin <= ndx && ndx < Nend);
      for (const auto &[I, eig]: diag) 
-       (*this)[ndx][I] = { eig.getnr(), eig.getdim(), qsrmax.at(I), eig, last };
+       (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), qsrmax.at(I), eig, last };
    }
 };
 
@@ -708,8 +711,8 @@ void trim_matel(const DiagInfo &diag, MatrixElements &op) {
     const auto size2 = mat.size2();
     if (size1 == 0 || size2 == 0) continue;
     // Target matrix dimensions
-    const auto nr1 = diag.at(I1).getnr();
-    const auto nr2 = diag.at(I2).getnr();
+    const auto nr1 = diag.at(I1).getnrstored();
+    const auto nr2 = diag.at(I2).getnrstored();
     my_assert(nr1 <= size1 && nr2 <= size2);
     if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
       continue;
@@ -1353,7 +1356,7 @@ CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const
   matel_bucket tr; // note: t_matel = t_expv
   for (const auto &[I, eig] : diag) {
     const auto & nI = n.at({I,I});
-    const auto dim = eig.getnr();
+    const auto dim = eig.getnrstored();
     my_assert(dim == nI.size2());
     matel_bucket sum;
     for (const auto r : range0(dim)) sum += exp(-step.TD_factor() * eig.value_zero(r)) * nI(r, r);
@@ -1416,7 +1419,7 @@ double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, shared_ptr
 
 Matrix diagonal_exp(const Eigen &eig, const double factor)
 {
-  const auto dim = eig.getnr();
+  const auto dim = eig.getnrstored();
   Matrix m(dim, dim, 0);
   for (const auto i: range0(dim)) 
       m(i, i) = exp(-eig.value_zero(i) * factor);
@@ -1488,13 +1491,13 @@ struct NotEnough : public std::exception {};
 void truncate_prepare(const Step &step, DiagInfo &diag, shared_ptr<Symmetry> Sym, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
-    diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnr() :
+    diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnrcomputed() :
                                       ranges::count_if(eig.value_zero, [Emax](const double e) { return e <= Emax; }));
   std::cout << "Emax=" << Emax/step.unscale() << " ";
   truncate_stats ts(diag, Sym);
   ts.report();
   if (ranges::any_of(diag, [Emax](const auto &d) { const auto &[I, eig] = d; 
-    return eig.getnr() == eig.getnrkept() && eig.value_zero(eig.getnr()-1) != Emax && eig.getnr() < eig.getdim(); }))
+    return eig.getnrkept() == eig.getnrcomputed() && eig.value_zero(eig.getnrcomputed()-1) != Emax && eig.getnrcomputed() < eig.getdim(); }))
       throw NotEnough();
   const double ratio = double(ts.nrkept) / ts.nrall;
   cout << "Kept: " << ts.nrkept << " out of " << ts.nrall << ", ratio=" << setprecision(3) << ratio << endl;
@@ -1647,7 +1650,6 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
   DensMatElements rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
-      cout << "load" << endl; // XXX
       rho.load(step.ndx(), FN_RHO, P.removefiles);
       check_trace_rho(rho, Sym); // Check if Tr[rho]=1, i.e. the normalization
     }
@@ -1674,7 +1676,7 @@ void perform_basic_measurements(const Step &step, const DiagInfo &diag, shared_p
 auto make_subspaces_list(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
   list<Invar> subspaces;
   for (const auto &[I, eig] : diagprev)
-    if (eig.getnr()) {
+    if (eig.getnrstored()) {
       auto input = Sym->input_subspaces(); // make a new copy of subspaces list
       for (const auto i : Sym->combs1()) {
         input[i].inverse(); // IMPORTANT!
@@ -1796,7 +1798,7 @@ std::pair<Invar, Eigen> read_from(int source) {
   auto eig = mpi_receive_eigen(source);
   Invar Irecv;
   check_status(mpiw->recv(source, TAG_INVAR, Irecv));
-  mpilog("Received results for subspace " << Irecv << " [nr=" << eig.getnr() << ", dim=" << eig.getdim() << "]");
+  mpilog("Received results for subspace " << Irecv << " [nr=" << eig.getnrstored() << ", dim=" << eig.getdim() << "]");
   my_assert(eig.value_orig.size() == eig.matrix.size1());
   my_assert(eig.matrix.size1() <= eig.matrix.size2());
   return {Irecv, eig};

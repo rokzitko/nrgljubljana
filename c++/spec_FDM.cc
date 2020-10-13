@@ -51,8 +51,8 @@ void Algo_FDMgt::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
   const Matrix &rhoj = rhoFDM.at(Ij);
   const size_t reti  = (step.last() ? 0 : rhoi.size1());
   const size_t retj  = (step.last() ? 0 : rhoj.size1());
-  const size_t alli  = diagIi.getnr();
-  const size_t allj  = diagIj.getnr();
+  const size_t alli  = diagIi.getnrstored();
+  const size_t allj  = diagIj.getnrstored();
   LOOP_D(i)
   LOOP_D(j) // A3
      DELTA d;
@@ -94,8 +94,8 @@ void Algo_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
   const Matrix &rhoj = rhoFDM.at(Ij);
   const size_t reti  = (step.last() ? 0 : rhoi.size1());
   const size_t retj  = (step.last() ? 0 : rhoj.size1());
-  const size_t alli  = diagIi.getnr();
-  const size_t allj  = diagIj.getnr();
+  const size_t alli  = diagIi.getnrstored();
+  const size_t allj  = diagIj.getnrstored();
   LOOP_D(i)
   LOOP_D(j) // B3
      DELTA d;
@@ -151,8 +151,8 @@ void Algo_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diag
   const Matrix &rhoj = rhoFDM.at(Ij);
   const size_t reti  = (step.last() ? 0 : rhoi.size1());
   const size_t retj  = (step.last() ? 0 : rhoj.size1());
-  const size_t alli  = diagIi.getnr();
-  const size_t allj  = diagIj.getnr();
+  const size_t alli  = diagIi.getnrstored();
+  const size_t allj  = diagIj.getnrstored();
   LOOP_D(i) LOOP_D(j) DELTA dA; // A3
   dA.energy = Ej - Ei;
   dA.weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T); // a[ij] b[ji] exp(-beta e[i])

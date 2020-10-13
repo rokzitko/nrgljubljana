@@ -22,8 +22,8 @@ void Algo_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   }
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
-  auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
-  auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
+  auto dimp            = min(rhoNIp.size1(), diagIp.getnrstored());
+  auto dim1            = min(rhoNI1.size1(), diagI1.getnrstored());
   for (const auto rm: range0(dimp)) {
     const t_eigen Em = diagIp.value_zero(rm);
     for (const auto rj: range0(dim1)) {
@@ -61,8 +61,8 @@ void Algo_DMNRGmats::calc(const Step &step, const Eigen &diagIp, const Eigen &di
   auto csm   = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
-  auto dimp            = min(rhoNIp.size1(), diagIp.getnr());
-  auto dim1            = min(rhoNI1.size1(), diagI1.getnr());
+  auto dimp            = min(rhoNIp.size1(), diagIp.getnrstored());
+  auto dim1            = min(rhoNI1.size1(), diagI1.getnrstored());
   for (const auto rm: range0(dimp)) {
     const t_eigen Em = diagIp.value_zero(rm);
     for (const auto rj: range0(dim1)) {
