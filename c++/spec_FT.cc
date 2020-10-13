@@ -16,13 +16,12 @@ void Algo_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, c
                    spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   for (const auto r1: diagI1.kept()) {
-    const t_eigen E1 = diagI1.value_zero(r1);
+    const auto E1 = diagI1.value_zero(r1);
     for (const auto rp: diagIp.kept()) {
-      const t_eigen Ep = diagIp.value_zero(rp);
-      DELTA d;
-      d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
-      d.energy = E1 - Ep;
-      cs->add(step.scale() * d.energy, d.weight);
+      const auto Ep = diagIp.value_zero(rp);
+      const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
+      const auto energy = E1 - Ep;
+      cs->add(step.scale() * energy, weight);
     }
   }
 }
@@ -42,16 +41,15 @@ void Algo_FTmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI
   const auto sign     = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   auto csm            = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   for (const auto r1: diagI1.kept()) {
-    const t_eigen E1 = diagI1.value_zero(r1);
-    for (const size_t rp: diagIp.kept()) {
-      const t_eigen Ep = diagIp.value_zero(rp);
-      DELTA d;
-      d.weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT())); // sign!
-      d.energy = E1 - Ep;
+    const auto E1 = diagI1.value_zero(r1);
+    for (const auto rp: diagIp.kept()) {
+      const auto Ep = diagIp.value_zero(rp);
+      const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT())); // sign!
+      const auto energy = E1 - Ep;
 #pragma omp parallel for schedule(static)
-      for (size_t n = 1; n < cutoff; n++) csm->add(n, d.weight / (cmpl(0, ww(n, bs.mt, P.T)) - step.scale() * d.energy));
-      if (abs(d.energy) > WEIGHT_TOL || bs.mt == matstype::fermionic)
-        csm->add(size_t(0), d.weight / (cmpl(0, ww(0, bs.mt, P.T)) - step.scale() * d.energy));
+      for (size_t n = 1; n < cutoff; n++) csm->add(n, weight / (cmpl(0, ww(n, bs.mt, P.T)) - step.scale() * energy));
+      if (abs(energy) > WEIGHT_TOL || bs.mt == matstype::fermionic)
+        csm->add(size_t(0), weight / (cmpl(0, ww(0, bs.mt, P.T)) - step.scale() * energy));
       else // bosonic w=0 && E1=Ep case
         csm->add(size_t(0), (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * (-exp(-E1 * step.scT()) / P.T));
     }

@@ -4,16 +4,7 @@
 #ifndef _spectral_h_
 #define _spectral_h_
 
-// XXX redundancy: keep one of DELTA & t_delta_peak
-
-// This structure is used in spec*.cc
-struct DELTA {
-  double energy{};
-  t_weight weight{};
-};
-
-// Container for holding spectral information represented by delta
-// peaks. "Weight" is of type t_weight (complex).
+// Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
 typedef pair<double, t_weight> t_delta_peak;
 
 // XXX: move to output.h
