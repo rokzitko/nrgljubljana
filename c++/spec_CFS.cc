@@ -1,6 +1,3 @@
-// Choose one of the following two! OLD is the non-optimized code by Rok Zitko, OPTIMIZED is the hand-tuned code
-// contributed by Markus Greger. The optimized code is faster by an order of magnitude!
-
 class Algo_CFSls : virtual public Algo {
  public:
    Algo_CFSls(const Params &P) : Algo(P) {}
@@ -40,7 +37,6 @@ class Algo_CFS : public Algo_CFSls, public Algo_CFSgt {
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 
 // Based on the implementation by Markus Greger.
-//#if defined(NRG_REAL) && defined(Algo_CFS_OPTIMIZED)
 void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
@@ -53,9 +49,8 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       for (const auto rp: diagIp.kept()) {
         const auto E1 = diagI1.value_zero(r1);
         const auto Ep = diagIp.value_zero(rp);
-        const auto energy = E1 - Ep;
         const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
-        cs->add(step.scale() * energy, weight);
+        cs->add(step.scale() * (E1-Ep), weight);
       }
     }
   } else {
@@ -69,10 +64,8 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
         for (const auto rk: diagIp.kept()) {
           const auto El       = diagI1.value_zero(rl);
           const auto Ek       = diagIp.value_zero(rk);
-          const auto energy = El - Ek;
-          const auto sum      = op2II_m_rho(rl, rk);
-          const auto weight = spinfactor * CONJ_ME(op1II(rl, rk)) * sum * (-sign);
-          cs->add(step.scale() * energy, weight);
+          const auto weight = spinfactor * CONJ_ME(op1II(rl, rk)) * op2II_m_rho(rl, rk) * (-sign);
+          cs->add(step.scale() * (El-Ek), weight);
         }
       }
     }
@@ -90,9 +83,8 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       for (const auto rp: diagIp.kept()) {
         const auto E1 = diagI1.value_zero(r1);
         const auto Ep = diagIp.value_zero(rp);
-        const auto energy = E1 - Ep;
         const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * step.scT());
-        cs->add(step.scale() * energy, weight);
+        cs->add(step.scale() * (E1-Ep), weight);
       }
     }
   } else {
@@ -109,10 +101,8 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
         for (const auto rl: diagIp.discarded()) {
           const auto Ek       = diagI1.value_zero(rk);
           const auto El       = diagIp.value_zero(rl);
-          const auto energy = Ek - El;
-          const auto sum      = op1II_m_rho(rk, rl);
-          const auto weight = spinfactor * sum * op2II(rk, rl);
-          cs->add(step.scale() * energy, weight);
+          const auto weight = spinfactor * op1II_m_rho(rk, rl) * op2II(rk, rl);
+          cs->add(step.scale() * (Ek-El), weight);
         }
       }
     }
