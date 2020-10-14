@@ -23,6 +23,10 @@ class Spikes : public std::vector<t_delta_peak> {
        F << setprecision(prec);
        for (const auto &[e, w] : *this) output(F, e, w, imagpart);
      }
+   t_weight sum_weights() const {
+     return ranges::accumulate(*this, t_weight{}, [](const auto &sum, const auto &p) { return sum+p.second; });
+}
+
 };
 
 #ifndef M_SQRTPI
@@ -58,10 +62,6 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
   double BR_h = exp(-sqr(log(abs(e) / omega0) / alpha));
   my_assert(BR_h >= 0.0 && BR_h <= 1.0);
   return part_l * BR_h + BR_G(e, ept, omega0) * (1.0 - BR_h);
-}
-
-CONSTFNC t_weight sum_weights(const Spikes &s) {
-  return ranges::accumulate(s, t_weight{}, [](const auto &sum, const auto &p) { return sum+p.second; });
 }
 
 // Calculate "moment"-th spectral moment.

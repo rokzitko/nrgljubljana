@@ -30,9 +30,9 @@ class Bins {
    // bottom-most bins.
    inline static const double max_bin_shift = 2.0;
    inline static const double min_bin_shift = 2.0;
-
    inline static const double base = 10;
    inline static const double zero_epsilon = 1e-14;
+   inline static const double discarded_weight_warn_limit = 1e-8;
 
  public:
    Spikes bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs
@@ -42,7 +42,7 @@ class Bins {
    inline void add(double energy, t_weight weight);
    void merge(const Bins &b);
    void trim();
-   t_weight total_weight() const { return sum_weights(bins); }
+   t_weight total_weight() const { return bins.sum_weights(); }
 };
 
 
@@ -68,10 +68,10 @@ void Bins::loggrid_acc() {
   const double a = P.accumulation;
   my_assert(a > 0.0);
   bins.resize(0);
-  for (double e = emin; e <= emax; e *= pow(base, 1.0 / P.bins)) 
+  for (auto e = emin; e <= emax; e *= pow(base, 1.0 / P.bins)) 
     bins.emplace_back((emax - a) / emax * e + a, 0);
   if (P.linstep > 0) 
-    for (double e = a; e > 0.0; e -= P.linstep) bins.emplace_back(e, 0);
+    for (auto e = a; e > 0.0; e -= P.linstep) bins.emplace_back(e, 0);
   bins.emplace_back(DBL_MIN, 0); // add zero point
   ranges::sort(bins, sortfirst());
   my_assert(bins.size() >= 2);
@@ -119,8 +119,8 @@ inline void Bins::add_acc(double energy, t_weight weight) {
     auto &[e2, w2] = bins[i+1]; // non-const
     my_assert(e1 < e2);
     if (e1 < energy && energy < e2) {
-      const double dx      = e2 - e1;
-      const double reldist = (energy - e1) / dx;
+      const auto dx      = e2 - e1;
+      const auto reldist = (energy - e1) / dx;
       w1 += (1.0 - reldist) * weight;
       w2 += reldist * weight;
       return;
@@ -143,26 +143,23 @@ void Bins::merge(const Bins &b) {
 
 // Only keep bins which are "heavy" enough.
 void Bins::trim() {
-  Spikes bins2;
+  Spikes orig{};
+  orig.swap(bins);
   bucket discarded_weight_abs;
-  const auto nr = bins.size();
-  bins2.reserve(nr);
   // nr-1, because we need to compute the energy interval size 'ewidth'
-  for (const auto i: range0(nr-1)) {
-    const auto [e, wg] = bins[i];
-    const double enext = bins[i + 1].first; // increasing!
-    my_assert(enext > e);
-    const double ewidth = enext - e;
-    if (abs(wg) < P.discard_trim * ewidth)
-      discarded_weight_abs += abs(wg);
+  for (const auto i: range0(orig.size()-1)) {
+    const auto [e, w] = orig[i];
+    const auto e_next = orig[i+1].first;
+    my_assert(e_next > e);  // increasing!
+    const auto e_width = e_next - e;
+    if (abs(w) >= P.discard_trim * e_width)
+      bins.push_back(orig[i]);
     else
-      bins2.push_back(bins[i]);
+      discarded_weight_abs += abs(w);
   }
   // Always keep the last one.. This ensures that we keep information about the energy range on which the
   // calculations has been performed.
-  bins2.push_back(bins[nr - 1]);
-  bins.swap(bins2);
-  const double discarded_weight_warn_limit = 1e-8;
+  bins.push_back(orig.back());
   if (discarded_weight_abs > discarded_weight_warn_limit) cout << "WARNING: we are probably discarding too much weight!" << endl;
 }
 
