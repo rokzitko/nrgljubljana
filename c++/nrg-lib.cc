@@ -171,6 +171,7 @@ class Eigen : public RawEigen {
   auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
   auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
+  auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
@@ -557,8 +558,8 @@ class Step {
    double TD_factor() const { return P.betabar / unscale(); }
    double scT() const { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
    pair<size_t, size_t> NM() const {
-     size_t N = ndxN / P.channels;
-     size_t M = ndxN - N*P.channels; // M ranges 0..channels-1
+     const size_t N = ndxN / P.channels;
+     const size_t M = ndxN - N*P.channels; // M ranges 0..channels-1
      return {N, M};
    }
    void infostring() const {
@@ -1255,7 +1256,8 @@ class Annotated {
    explicit Annotated(const Params &P) : P(P) {}
    
    void dump(const Step &step, const DiagInfo &diag, const Stats &stats, shared_ptr<Symmetry> Sym, const std::string filename = "annotated.dat") {
-     if (P.dumpannotated && !F.is_open()) { // open output file
+     if (!P.dumpannotated) return;
+     if (!F.is_open()) { // open output file
        F.open(filename);
        F << setprecision(P.dumpprecision);
      }
@@ -1264,16 +1266,9 @@ class Annotated {
        for (const auto e : eig.value_zero)
          seznam.emplace_back(e, I);
      ranges::sort(seznam);
-     size_t len = std::min<size_t>(seznam.size(), P.dumpannotated);
+     size_t len = std::min<size_t>(seznam.size(), P.dumpannotated); // non-const
      // If states are clustered, we dump the full cluster
-     for (size_t i = len; i < seznam.size() - 1; i++) {
-       // If the next state has an energy within P.grouptol, add it to the list.
-       if (my_fcmp(seznam[i].first, seznam[i-1].first, P.grouptol) == 0)
-         len++;
-       else
-         break;
-     }
-     my_assert(len <= seznam.size());
+     while (len < seznam.size()-1 && my_fcmp(seznam[len].first, seznam[len-1].first, P.grouptol) == 0) len++;
      auto scale = [&step, &stats, this](auto x) { return scaled_energy(x, step, stats, P.dumpscaled, P.dumpabs); };
      if (P.dumpgroups) {
        // Group by degeneracies
