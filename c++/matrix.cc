@@ -29,37 +29,31 @@ void Symmetry::offdiag_function(const Step &step, const size_t i, const size_t j
   // assertion will trigger a false error message and abort the execution.
   if (!offdiag_contributes(i, j, qq))
     return;
-  if (!my_isfinite(factor)) {
-    cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor=" << factor << endl;
-    throw std::runtime_error("offdiag_function() critical error: factor is not finite");
-  }
-  const size_t begin1 = qq.offset(i);
-  const size_t begin2 = qq.offset(j);
-  const size_t size1  = qq.rmax(i);
-  const size_t size2  = qq.rmax(j);
+  if (!my_isfinite(factor))
+    throw std::runtime_error(fmt::format("offdiag_function(): factor not finite {} {} {} {}", i, j, ch, fnr));
+  const auto begin1 = qq.offset(i);
+  const auto begin2 = qq.offset(j);
+  const auto size1  = qq.rmax(i);
+  const auto size2  = qq.rmax(j);
   // already checked in offdiag_contributes(), but we do it again out of paranoia...
   my_assert(size1 && size2);
   // < In[i] r | f^\dag | In[j] r' >
-  const Twoinvar II {In[i], In[j]};
-  const t_matel factor_scaled = factor / step.scale();
-  const auto f = opch[ch][fnr].find(II);
-  if (f == opch[ch][fnr].cend()) {
-    cout << "i=" << i << " j=" << j << " ch=" << ch << " fnr=" << fnr << " factor_scaled=" << factor_scaled << endl;
-    cout << "source subspaces II=" << II << endl;
-    throw std::runtime_error("offdiag_function(): subspace does not exist.");
-  }
-  const auto &mat = f->second;
-  my_assert(size1 == mat.size1() && size2 == mat.size2());
-  // We are building the upper triangular part of the Hermitian Hamiltonian. Thus usually i < j. If not, we must
-  // conjugate transpose the contribution!
-  const bool conj_transpose = i > j;
-  if (conj_transpose) {
-    ublas::matrix_range<Matrix> hsub(h, ublas::range(begin2, begin2 + size2), ublas::range(begin1, begin1 + size1));
-    noalias(hsub) += CONJ_ME(factor_scaled) * herm(mat);
-  } else {
-    ublas::matrix_range<Matrix> hsub(h, ublas::range(begin1, begin1 + size1), ublas::range(begin2, begin2 + size2));
-    noalias(hsub) += factor_scaled * mat;
-  }
+  if (const auto f = opch[ch][fnr].find({In[i], In[j]}); f != opch[ch][fnr].cend()) {
+    const auto &mat = f->second;
+    my_assert(size1 == mat.size1() && size2 == mat.size2());
+    const auto factor_scaled = factor / step.scale();
+    // We are building the upper triangular part of the Hermitian Hamiltonian. Thus usually i < j. If not, we must
+    // conjugate transpose the contribution!
+    const bool conj_transpose = i > j;
+    if (conj_transpose) {
+      ublas::matrix_range<Matrix> hsub(h, ublas::range(begin2, begin2 + size2), ublas::range(begin1, begin1 + size1));
+      noalias(hsub) += CONJ_ME(factor_scaled) * herm(mat);
+    } else {
+      ublas::matrix_range<Matrix> hsub(h, ublas::range(begin1, begin1 + size1), ublas::range(begin2, begin2 + size2));
+      noalias(hsub) += factor_scaled * mat;
+    }
+  } else
+    throw std::runtime_error(fmt::format("offdiag_function(): matrix not found {} {} {} {}", i, j, ch, fnr));
 }
 
 // +++ Shift the diagonal matrix elements by the number of electrons multiplied by the required constant(s) zeta. +++
@@ -72,14 +66,14 @@ void Symmetry::offdiag_function(const Step &step, const size_t i, const size_t j
 void Symmetry::diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                                   Matrix &h, const Rmaxvals &qq, const double f) const 
 {
-  const size_t begin1 = qq.offset(i);
-  const size_t size1  = qq.rmax(i);
+  const auto begin1 = qq.offset(i);
+  const auto size1  = qq.rmax(i);
   // For convenience we subtract the average site occupancy.
-  const double avgoccup = ((double)P.spin) / 2; // multiplicity divided by 2
+  const auto avgoccup = (double)P.spin / 2; // multiplicity divided by 2
   // Energy shift of the diagonal matrix elements in the NRG Hamiltonian. WARNING: for N=0, we are not adding the
   //  first site of the Wilson chain (indexed as 0), but the second one (indexed as 1). Therefore the appropriate
   //  zeta is not zeta(0), but zeta(1). zeta(0) is the shift applied to the f[0] orbital in initial.m !!!
-  const t_coef shift = sc_zeta * (number - f*avgoccup) / step.scale();
+  const auto shift = sc_zeta * (number - f*avgoccup) / step.scale();
   for (const auto j: boost::irange(begin1, begin1+size1)) h(j, j) += shift;
 }
 
@@ -100,14 +94,14 @@ void Symmetry::diag_function_half(const Step &step, const size_t i, const size_t
 void Symmetry::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_matel factor, 
                                      Matrix &h, const Rmaxvals &qq) const {
   if (i > j) return; // only upper triangular part
-  size_t begin1 = qq.offset(i);
-  size_t size1  = qq.rmax(i);
-  size_t begin2 = qq.offset(j);
-  size_t size2  = qq.rmax(j);
-  bool contributes = (size1 > 0) && (size2 > 0);
+  const auto begin1 = qq.offset(i);
+  const auto size1  = qq.rmax(i);
+  const auto begin2 = qq.offset(j);
+  const auto size2  = qq.rmax(j);
+  const auto contributes = (size1 > 0) && (size2 > 0);
   if (!contributes) return;
   my_assert(size1 == size2);
-  const t_matel factor_scaled = factor / step.scale();
+  const auto factor_scaled = factor / step.scale();
   for (const auto l: range0(size1)) h(begin1 + l, begin2 + l) += factor_scaled;
 }
 

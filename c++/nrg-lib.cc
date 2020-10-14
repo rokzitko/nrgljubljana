@@ -445,9 +445,9 @@ class Rmaxvals {
  public:
    Rmaxvals() = default;
    Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym);
-   auto rmax(size_t i) const { return values[i-1]; } // FOR COMPATIBILITY OFFSET 1!
-   auto offset(size_t i) const { return ranges::accumulate(begin(values), begin(values) + (i-1), 0); }
-   auto operator[](size_t i) const { return rmax(i); }
+   auto rmax(const size_t i) const { return values[i-1]; } // FOR COMPATIBILITY OFFSET 1!
+   auto offset(const size_t i) const { return ranges::accumulate(begin(values), begin(values) + (i-1), size_t{0}); }
+   auto operator[](const size_t i) const { return rmax(i); }
    auto total() const { return ranges::accumulate(values, 0); } // total number of states
    auto combs() const { return values.size(); }
  private:
