@@ -4,19 +4,16 @@
 
  Copyright (C) 2005-2020 Rok Zitko
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
+   License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any
+   later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+   warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+   details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+   You should have received a copy of the GNU General Public License along with this program; if not, write to the
+   Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
    Contact information:
    Rok Zitko
@@ -103,25 +100,21 @@ using Sspin = int;
 using Tangmom = int;
 using SZspin = int;
 
-// Invariant subspace abstraction (container with quantum numbers)
 #include "invar.cc"
 
-/* NOTE: Row major is the C array format: A[0][0], A[0][1], A[0][2],
-A[1][0], A[1][1], etc. The default in UBLAS is row major, while LAPACK
-routines expect column major matrices. Of course, this is of no concern for
-symmetric matrices. Default storage type is unbounded_array<T>.
-
-Thus, as always:
-  first index - row
-  second index - column
-
- when accessing columns - stride=m.size2()
- when accessing rows - stide=1
-
- Optimization rule: use stride 1 sequential access where possible.
- ublas default matrix storage is row major (i.e. C-like). The rule is
- "right index the same as inner loop variable".
-*/
+// NOTE: Row major is the C array format: A[0][0], A[0][1], A[0][2], A[1][0], A[1][1], etc. The default in UBLAS is
+// row major, while LAPACK routines expect column major matrices. Of course, this is of no concern for symmetric
+// matrices. Default storage type is unbounded_array<T>.
+//
+// Thus, as always:
+//  first index - row
+//  second index - column
+//
+// when accessing columns - stride=m.size2()
+// when accessing rows - stide=1
+//
+// Optimization rule: use stride 1 sequential access where possible. ublas default matrix storage is row major (i.e.
+// C-like). The rule is "right index the same as inner loop variable".
 
 using Matrix = ublas::matrix<t_matel>;
 
@@ -153,7 +146,7 @@ template <typename T>
 struct RawEigen {
   using EVEC = ublas::vector<t_eigen>;
   EVEC value_orig;     // eigenvalues as computed
-  Matrix matrix; // eigenvectors
+  Matrix matrix;       // eigenvectors
   RawEigen() {}
   RawEigen(size_t nr, size_t dim) {
     my_assert(nr <= dim);
@@ -235,7 +228,7 @@ class Eigen : public RawEigen {
 // Full information after diagonalizations (eigenspectra in all subspaces)
 class DiagInfo : public std::map<Invar, Eigen> {
  public:
-   DiagInfo() {}
+   explicit DiagInfo() {}
    DiagInfo(ifstream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {
        Invar I;
@@ -285,18 +278,10 @@ class DiagInfo : public std::map<Invar, Eigen> {
    }
    // Total number of states (symmetry taken into account)
    template <typename MF> auto count_states(MF && mult) const {
-     size_t states = 0;
-     for (const auto &[I, eig]: *this)
-       states += mult(I) * eig.getnrstored();
-     return states;
+     return ranges::accumulate(*this, 0, [mult](auto n, const auto &x) { const auto &[I, eig] = x; return n + mult(I)*eig.getnrstored(); });
    }
-   // Count non-empty subspaces
-   auto count_subspaces() const {
-     size_t subspaces = 0;
-     for (const auto &eig: this->eigs())
-       if (eig.getnrstored()) 
-         subspaces++;
-     return subspaces;
+   auto count_subspaces() const {    // Count non-empty subspaces
+     return ranges::count_if(this->eigs(), [](const auto &eig) { return eig.getnrstored()>0; });
    }
    template <typename MF>
      void states_report(MF && mult, ostream &F = std::cout) const {
@@ -311,8 +296,7 @@ class DiagInfo : public std::map<Invar, Eigen> {
      ofstream MATRIXF(fn, ios::binary | ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
-     auto nr = this->size();
-     oa << nr;
+     oa << this->size();
      for(const auto &[I, eig]: *this) {
        oa << I;
        eig.save(oa);
@@ -374,8 +358,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
      std::ofstream MATRIXF(fn, ios::binary | ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
-     size_t nr = this->size();
-     oa << nr;
+     oa << this->size();
      for (const auto &[I, mat] : *this) {
        oa << I;
        ::save(oa, mat);
@@ -495,7 +478,7 @@ template<typename M> struct DimSubGen {
   Rmaxvals rmax;
   Eigen eig;
   bool is_last = false;
-  size_t min() const { return (is_last ? 0 : kept); } // min(), max() return the range of D states to be summed over in FDM
+  size_t min() const { return is_last ? 0 : kept; } // min(), max() return the range of D states to be summed over in FDM
   size_t max() const { return total; }
   auto all() const { return boost::irange(min(), max()); }
 };
@@ -622,10 +605,10 @@ class Stats {
    t_eigen Egs;
    
    // ** Thermodynamic quantities
-   double Z;
-   double Zft;   // grand-canonical partition function (at shell n)
-   double Zgt;   // grand-canonical partition function for computing G(T)
-   double Zchit; // grand-canonical partition function for computing chi(T)
+   double Z{};
+   double Zft{};   // grand-canonical partition function (at shell n)
+   double Zgt{};   // grand-canonical partition function for computing G(T)
+   double Zchit{}; // grand-canonical partition function for computing chi(T)
 
    TD td;
    
@@ -636,10 +619,10 @@ class Stats {
    // ** Energies
    // "total_energy" is the total energy of the ground state at the current iteration. This is the sum of all the 
    // zero state energies (eigenvalue shifts converted to absolute energies) for all the iteration steps so far.
-   t_eigen total_energy;
+   t_eigen total_energy{};
    // GS_energy is the energy of the ground states in absolute units. It is equal to the value of the variable
    // "total_energy" at the end of the iteration.
-   t_eigen GS_energy;
+   t_eigen GS_energy{};
    std::vector<double> rel_Egs;        // Values of 'Egs' for all NRG steps.
    std::vector<double> abs_Egs;        // Values of 'Egs' (multiplied by the scale, i.e. in absolute scale) for all NRG steps.
    std::vector<double> energy_offsets; // Values of "total_energy" for all NRG steps.
@@ -653,13 +636,13 @@ class Stats {
    std::vector<double> wn;       // Weights w_n. They sum to 1.
    std::vector<double> wnfactor; // wn/ZnDG
 
-   double ZZG;                   // grand-canonical partition function with energies referred to the ground state energy
+   double ZZG{};                 // grand-canonical partition function with energies referred to the ground state energy
 
-   double Z_fdm;                 // grand-canonical partition function (full-shell) at temperature T
-   double F_fdm;                 // free-energy at temperature T
-   double E_fdm;                 // energy at temperature T
-   double C_fdm;                 // heat capacity at temperature T
-   double S_fdm;                 // entropy at temperature T
+   double Z_fdm{};               // grand-canonical partition function (full-shell) at temperature T
+   double F_fdm{};               // free-energy at temperature T
+   double E_fdm{};               // energy at temperature T
+   double C_fdm{};               // heat capacity at temperature T
+   double S_fdm{};               // entropy at temperature T
    
    TD_FDM td_fdm;
 
@@ -735,8 +718,8 @@ void trim_op(const DiagInfo &diag, CustomOp &allops) {
     trim_matel(diag, op);
 }
 
-// Object of class IterInfo cotains full information about matrix representations 
-// when entering stage N of the NRG iteration.
+// Object of class IterInfo cotains full information about matrix representations when entering stage N of the NRG
+// iteration.
 class IterInfo {
  public:
    Opch opch;     // f operators (channels)
@@ -913,8 +896,7 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
    friend class SpectrumMatsubara;
 };
 
-// Object of class spectrum will contain everything that we know about a
-// spectral density.
+// Object of class spectrum will contain everything that we know about a spectral density.
 class Spectrum {
  public:
    string opname, filename;
@@ -1003,9 +985,6 @@ using speclist = std::list<BaseSpectrum>;
 
 #include "spec.cc"
 #include "dmnrg.h"
-
-// **** Helper functions for the NRG RUN ****
-
 #include "splitting.cc"
 
 // Determine the ranges of index r
@@ -1017,8 +996,6 @@ Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagpr
   }
 }
 
-// *********************************** NRG RUN **********************************
-// 
 // Formatted output of the computed expectation values
 class ExpvOutput {
  private:
@@ -1086,10 +1063,8 @@ void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, c
     if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_CHIT>(P), axis::Temp, P);
     return;
   }
-  // If we did not return from this funciton by this point, what we
-  // are computing is the spectral function. There are several
-  // possibilities in this case, all of which may be enabled at the
-  // same time.
+  // If we did not return from this funciton by this point, what we are computing is the spectral function. There are
+  // several possibilities in this case, all of which may be enabled at the same time.
   if (runtype == RUNTYPE::NRG) {
     if (P.finite) open_files(sl, spec, make_shared<Algo_FT>(P), axis::RealFreq, P);
     if (P.finitemats) open_files(sl, spec, make_shared<Algo_FTmats>(P), axis::Matsubara, P);
@@ -1277,7 +1252,7 @@ class Annotated {
    const Params &P;
 
  public:
-   Annotated(const Params &P) : P(P) {}
+   explicit Annotated(const Params &P) : P(P) {}
    
    void dump(const Step &step, const DiagInfo &diag, const Stats &stats, shared_ptr<Symmetry> Sym, const std::string filename = "annotated.dat") {
      if (P.dumpannotated && !F.is_open()) { // open output file
@@ -1409,8 +1384,6 @@ void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, c
   output.customfdm->field_values(P.T);
 }
 
-// DM-NRG: initialization of the density matrix -----------------------------
-
 // Calculate grand canonical partition function at current NRG energy shell. This is not the same as the true
 // partition function of the full problem! Instead this is the Z_N that is used to initialize the density matrix,
 // i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N> <l;N|.  calc_grand_canonical_Z() is also used to calculate
@@ -1449,8 +1422,7 @@ DensMatElements init_rho(const Step &step, const DiagInfo &diag, shared_ptr<Symm
   return rho;
 }
 
-// Determine the number of states to be retained.
-// Returns Emax - the highest energy to still be retained.
+// Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.
 t_eigen highest_retained_energy(const Step &step, const DiagInfo &diag, const Params &P) {
   auto energies = diag.sorted_energies();
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
@@ -1460,13 +1432,12 @@ t_eigen highest_retained_energy(const Step &step, const DiagInfo &diag, const Pa
     nrkeep = P.keep;
   } else {
     double keepenergy = P.keepenergy * step.unscale();
-    // We add 1 for historical reasons. We thus keep states with E<=Emax,
-    // and one additional state which has E>Emax.
+    // We add 1 for historical reasons. We thus keep states with E<=Emax, and one additional state which has E>Emax.
     nrkeep = 1 + ranges::count_if(energies, [=](double e) { return e <= keepenergy; });
     nrkeep = std::clamp<size_t>(nrkeep, P.keepmin, P.keep);
   }
-  // Check for near degeneracy and ensure that the truncation occurs in a
-  // "gap" between nearly-degenerate clusters of eigenvalues.
+  // Check for near degeneracy and ensure that the truncation occurs in a "gap" between nearly-degenerate clusters of
+  // eigenvalues.
   if (P.safeguard > 0.0) {
     size_t cnt_extra = 0;
     while (nrkeep < totalnumber && (energies[nrkeep] - energies[nrkeep - 1]) <= P.safeguard && cnt_extra < P.safeguardmax) {
@@ -1511,9 +1482,8 @@ void truncate_prepare(const Step &step, DiagInfo &diag, shared_ptr<Symmetry> Sym
   cout << "Kept: " << ts.nrkept << " out of " << ts.nrall << ", ratio=" << setprecision(3) << ratio << endl;
 }
 
-// Calculate partial statistical sums, ZnD*, and the grand canonical Z
-// (stats.ZZG), computed with respect to absolute energies.
-// calc_ZnD() must be called before the second NRG run.
+// Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
+// energies. calc_ZnD() must be called before the second NRG run.
 void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
   for (const auto N : dm.Nall()) {
@@ -1665,8 +1635,10 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
       rhoFDM.load(step.ndx(), FN_RHOFDM, P.removefiles);
   }
   oprecalc.spectral_densities(step, diag, rho, rhoFDM, stats, Sym);
-  if (step.nrg()) measure_singlet(step, stats, diag, iterinfo, output, Sym, P);
-  if (step.nrg()) iterinfo.dump_diagonal(P.dumpdiagonal);
+  if (step.nrg()) {
+    measure_singlet(step, stats, diag, iterinfo, output, Sym, P);
+    iterinfo.dump_diagonal(P.dumpdiagonal);
+  }
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm, Sym, P);
 }
 

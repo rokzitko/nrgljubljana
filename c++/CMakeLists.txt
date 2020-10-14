@@ -104,7 +104,7 @@ if(ANALYZE_SOURCES)
 	TARGET nrgljubljana_c
 	COMMAND ${CPPCHECK_EXECUTABLE}
 	  --enable=warning,style,performance,portability
-	  --std=c++17 -fconcepts
+	  --std=c++17
 	  --template=gcc
 	  --verbose
 	  --force

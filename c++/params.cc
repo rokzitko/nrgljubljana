@@ -655,14 +655,11 @@ class DiagParams {
    bool logall{};
    std::string logstr{};
 
-   DiagParams() {}
-   DiagParams(const Params &P, const double diagratio_ = -1) {
-     diag      = P.diag;
-     diagratio = diagratio_ > 0 ? diagratio_ : P.diagratio;
-     logall    = P.logall;
-     logstr    = P.logstr;
-   }
-   bool logletter(char c) const { return (logall ? true : logstr.find(c) != string::npos); }
+   explicit DiagParams() {}
+   DiagParams(const Params &P, const double diagratio_ = -1) :
+     diag(P.diag), diagratio(diagratio_ > 0 ? diagratio_ : P.diagratio),
+     logall(P.logall), logstr(P.logstr) {}
+   bool logletter(char c) const { return logall ? true : logstr.find(c) != string::npos; }
 
  private:
    friend class boost::serialization::access;
