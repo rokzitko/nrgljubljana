@@ -26,7 +26,7 @@ endif()
 
 # ############
 # Define Project
-project(NRGLJUBLJANA VERSION 2020.09 LANGUAGES C CXX)
+project(NRGLJUBLJANA VERSION 2020.10 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # Get the git hash & print status
@@ -61,6 +61,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Global compiler options
 add_compile_options(
   $<$<CONFIG:Debug>:-Og>
+  $<$<CONFIG:Debug>:-fno-var-tracking>
   $<$<CONFIG:Debug>:-ggdb3>
 )
 
