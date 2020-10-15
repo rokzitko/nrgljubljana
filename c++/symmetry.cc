@@ -149,8 +149,8 @@ class Symmetry {
    virtual bool Invar_allowed(const Invar &I) const { return true; }
 
    bool offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const;
-   void offdiag_function(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_matel factor,
-                         Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const;
+   void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_matel factor,
+                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const;
    void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
                            Matrix &h, const Rmaxvals &qq, const double f) const;
    void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 

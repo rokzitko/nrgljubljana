@@ -105,7 +105,7 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
       } else {                                                                                                                                       \
         factor = factor0;                                                                                                                            \
       }                                                                                                                                              \
-      offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                                \
+      offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                                \
     }                                                                                                                                                \
   };
 

@@ -6,10 +6,14 @@
 
 // +++ Construct an offdiagonal part of the Hamiltonian. +++
 
-bool Symmetry::offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const {
+inline bool Symmetry::offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const {
   my_assert(i != j);
-  return qq.rmax(i) && qq.rmax(j);
+  return qq.exists(i) && qq.exists(j);
 }
+
+// We test if the block (i,j) exists at all. If not, factor is not evaluated. This prevents divisions by zero.
+#define offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch) \
+  { if (offdiag_contributes(i, j, qq)) offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch); }
 
 // i,j - indexes of the out-of-diagonal matrix block that we are constructing
 // ch,fnr - channel and extra index to locate the correct block of the <||f||> matrix (irreducible matrix elements)
@@ -19,16 +23,12 @@ bool Symmetry::offdiag_contributes(const size_t i, const size_t j, const Rmaxval
 // factor  - the coefficient which multiplies the irreducible matrix elements. This coefficient takes into account
 //           the multiplicities.
 // NOTE: the offdiagonal part depends on xi(N), while zeta(N) affect the diagonal part of the Hamiltonian matrix! 
-void Symmetry::offdiag_function(const Step &step, const size_t i, const size_t j,
-                                const size_t ch,      // channel number
-                                const size_t fnr,     // extra index for <||f||>, usually 0
-                                const t_matel factor, // may be complex (in principle)
-                                Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const 
+void Symmetry::offdiag_function_impl(const Step &step, const size_t i, const size_t j,
+                                     const size_t ch,      // channel number
+                                     const size_t fnr,     // extra index for <||f||>, usually 0
+                                     const t_matel factor, // may be complex (in principle)
+                                     Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const 
 {
-  // Here we test if the block (i,j) exists at all. If it doesn't, we immediately return, otherwise the following
-  // assertion will trigger a false error message and abort the execution.
-  if (!offdiag_contributes(i, j, qq))
-    return;
   if (!my_isfinite(factor))
     throw std::runtime_error(fmt::format("offdiag_function(): factor not finite {} {} {} {}", i, j, ch, fnr));
   const auto begin1 = qq.offset(i);
