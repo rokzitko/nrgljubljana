@@ -38,34 +38,25 @@ Matrix Symmetry::recalc_f(const DiagInfo &diag,
                           const size_t jmax)
 {
   nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
-  if (!recalc_f_coupled(I1, Ip, Invar_f)) {
-    nrglog('f', "Does not fulfill the triangle inequalities.");
-    return Matrix(0,0);
-  }
   const Eigen &diagI1 = diag.at(I1);
   const Eigen &diagIp = diag.at(Ip);
   // Number of states in Ip and in I1, i.e. the dimension of the <||f||> matrix of irreducible matrix elements.
   const auto dim1 = diagI1.getnrstored();
   const auto dimp = diagIp.getnrstored();
-  nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
-  const Twoinvar II = {I1, Ip};
   Matrix f = Matrix(dim1, dimp, 0);
-  if (dim1 && dimp) {
-    // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
-    for (const auto j: range0(jmax)) {
-      // rmax1, rmaxp are the dimensions of the invariant subspaces
-      const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1);
-      const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
-      if (!(rmax1 > 0 && rmaxp > 0)) continue;
-      if (P.logletter('f'))
-        nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
-      my_assert(my_isfinite(table[j].factor) && rmax1 == rmaxp);
-      const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
-      const Matrix &Up = diagIp.blocks[table[j].ip - 1];
-      my_assert(U1.size1() == dim1 && Up.size1() == dimp && U1.size2() == Up.size2());
-      my_assert(rmax1 == U1.size2() && rmaxp == Up.size2());
-      atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(table[j].factor), U1, Up, t_factor(1.0), f);
-    } // loop over j
+  // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
+  for (const auto j: range0(jmax)) {
+    const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1); // dimensions of the invariant subspaces
+    const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
+    if (!(rmax1 > 0 && rmaxp > 0)) continue;
+    if (P.logletter('f'))
+      nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
+    my_assert(my_isfinite(table[j].factor) && rmax1 == rmaxp);
+    const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
+    const Matrix &Up = diagIp.blocks[table[j].ip - 1];
+    my_assert(U1.size1() == dim1 && Up.size1() == dimp && U1.size2() == Up.size2());
+    my_assert(rmax1 == U1.size2() && rmaxp == Up.size2());
+    atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(table[j].factor), U1, Up, t_factor(1.0), f);
   }
   if (P.logletter('F')) dump_matrix(f);
   return f;
@@ -93,9 +84,7 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
   const Eigen &diagIp = diag.at(Ip);
   const auto dim1 = diagI1.getnrstored();
   const auto dimp = diagIp.getnrstored();
-  const Twoinvar II = {I1, Ip};
   Matrix cn = Matrix(dim1, dimp, 0);
-  if (dim1 == 0 || dimp == 0) return cn; // empty matrix
   for (const auto j: range0(jmax)) { // loop over combinations of i/ip
     if (P.logletter('r')) {
       nrgdump3(j, I1, Ip);

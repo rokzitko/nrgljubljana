@@ -10,8 +10,6 @@ define(`RECALC_TAB', {
 #include $1
       };
       cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), $2);
-    } else {
-      cnew[II] = Matrix(0,0); // ???
     }
   }
 })
@@ -25,8 +23,6 @@ define(`RECALC_F_TAB', {
 #include $1
       };
       opch[$2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[$2][0][II] = Matrix(0,0); // ???
     }
   }
 })
@@ -40,8 +36,6 @@ define(`RECALC_F_TAB_N', {
 #include $1
       };
       opch[$2][$3][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[$2][$3][II] = Matrix(0,0); // ???
     }
   }
 })
