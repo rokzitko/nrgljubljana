@@ -319,7 +319,7 @@ class DiagInfo : public std::map<Invar, Eigen> {
      }
      if (remove_files) remove(fn);
    }
-   DiagInfo(const size_t N, const bool remove_files = false) { load(N, remove_files); }
+   explicit DiagInfo(const size_t N, const bool remove_files = false) { load(N, remove_files); }
 };
 
 class MatrixElements : public std::map<Twoinvar, Matrix> {
@@ -395,7 +395,7 @@ using OpchChannel = std::vector<MatrixElements>;
 class Opch : public std::vector<OpchChannel> {
  public:
    Opch() {}
-   Opch(size_t nrch) { this->resize(nrch); }
+   explicit Opch(const size_t nrch) { this->resize(nrch); }
    Opch(ifstream &fdata, const DiagInfo &diag, const Params &P) {
      this->resize(P.channels);
      for (const auto i : range0(size_t(P.channels))) {
@@ -545,7 +545,7 @@ class Step {
    }
    void init() { set(P.Ninit); }
    Step(const Params &P_, RUNTYPE runtype_) : P(P_), runtype(runtype_) { init(); }
-   void operator++(int) { trueN++; ndxN++; }
+   void next() { trueN++; ndxN++; }
    size_t N() const { return ndxN; }
    size_t ndx() const { return ndxN; }
    double energyscale() const { return P.SCALE(trueN+1); } // current energy scale in units of bandwidth D
@@ -648,7 +648,7 @@ class Stats {
    
    TD_FDM td_fdm;
 
-   Stats(const Params &P, const std::string filename_td = "td"s, const std::string filename_tdfdm = "tdfdm"s) : 
+   explicit Stats(const Params &P, const std::string filename_td = "td"s, const std::string filename_tdfdm = "tdfdm"s) : 
      td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
      ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
 };
@@ -664,7 +664,7 @@ class Algo {
    const Params &P;
    Algo() = delete;
    Algo(const Algo&) = delete;
-   Algo(const Params &P) : P(P) {}
+   explicit Algo(const Params &P) : P(P) {}
    virtual ~Algo() = default;
    virtual std::shared_ptr<ChainSpectrum> make_cs(const BaseSpectrum &) = 0;
    virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, 
@@ -842,7 +842,7 @@ std::string formatted_output(cmpl z, const Params &P) {
   const auto [r, i] = reim(z);
   const auto str = P.noimag || negligible_imag_part(z) ?
     fmt::format("{r:.{prec}f}", "r"_a=r, "prec"_a=P.prec_custom) :
-    fmt::format("{r:.{prec}f}{s}I{absi:.{prec}f}", "r"_a=r, "s"_a=(i>0 ? '+' : '-'), "absi"_a=abs(i), "prec"_a=P.prec_custom);
+    fmt::format("{r:.{prec}f}{s}I{absi:.{prec}f}", "r"_a=r, "s"_a=(i>0 ? "+" : "-"), "absi"_a=abs(i), "prec"_a=P.prec_custom);
   return fmt::format("{str:>{width}}", "str"_a=str, "width"_a=P.width_custom); // the width for the whole X+iY string
 }
 
@@ -856,7 +856,7 @@ class ChainSpectrum {
  private:
    const Params &P;
 public:
-   ChainSpectrum(const Params &P) : P(P) {}
+   explicit ChainSpectrum(const Params &P) : P(P) {}
    virtual void add(double energy, t_weight weight) = 0;
    virtual ~ChainSpectrum() = default; // required, because there are virtual members
 };
@@ -865,7 +865,7 @@ class ChainSpectrumBinning : public ChainSpectrum {
  private:
    Bins spos, sneg;
  public:
-   ChainSpectrumBinning(const Params &P) : ChainSpectrum(P), spos(P), sneg(P) {}
+   explicit ChainSpectrumBinning(const Params &P) : ChainSpectrum(P), spos(P), sneg(P) {}
    void add(double energy, t_weight weight) override {
      if (energy >= 0.0)
        spos.add(energy, weight);
@@ -880,7 +880,7 @@ class ChainSpectrumTemp : public ChainSpectrum {
  private:
    Temp v;
  public:
-   ChainSpectrumTemp(const Params &P) : ChainSpectrum(P), v(P) {}
+   explicit ChainSpectrumTemp(const Params &P) : ChainSpectrum(P), v(P) {}
    void add(double T, t_weight value) override { v.add_value(T, value); }
    friend class SpectrumTemp;
 };
@@ -2020,7 +2020,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
 DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, 
                   Output &output, AllSteps &dm, Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
   DiagInfo diag = diag0;
-  for (step.init(); !step.end(); step++)
+  for (step.init(); !step.end(); step.next())
     diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, Sym, P);
   step.set(step.lastndx());
   return diag;
@@ -2129,8 +2129,8 @@ void calculation() {
     }
     if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
     auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data(P, stats);
-    Step step{P, RUNTYPE::DMNRG};
-    run_nrg(step, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm, P);
+    Step step_dmnrg{P, RUNTYPE::DMNRG};
+    run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm, P);
     my_assert(num_equal(stats.GS_energy, stats.total_energy));
   }
   if (P.done) { ofstream D("DONE"); } // Indicate completion by creating a flag file

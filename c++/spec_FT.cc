@@ -1,6 +1,6 @@
 class Algo_FT : public Algo {
  public:
-   Algo_FT(const Params &P) : Algo(P) {}
+   explicit Algo_FT(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -28,7 +28,7 @@ void Algo_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, c
 
 class Algo_FTmats : public Algo {
  public:
-   Algo_FTmats(const Params &P) : Algo(P) {}
+   explicit Algo_FTmats(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(P, bs.mt); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -60,7 +60,7 @@ class Algo_GT_generic : public Algo {
  protected:
    int power{};
  public:
-   Algo_GT_generic(const Params &P) : Algo(P) {}
+   explicit Algo_GT_generic(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumTemp>(P); }
    void calc(const Step &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -69,19 +69,19 @@ class Algo_GT_generic : public Algo {
 
 class Algo_GT : public Algo_GT_generic {
  public:
-   Algo_GT(const Params &P) : Algo_GT_generic(P) { power = 0; }
+   explicit Algo_GT(const Params &P) : Algo_GT_generic(P) { power = 0; }
    string name() override { return "GT"; }
 };
 
 class Algo_I1T : public Algo_GT_generic {
  public:
-   Algo_I1T(const Params &P) : Algo_GT_generic(P) { power = 1; }
+   explicit Algo_I1T(const Params &P) : Algo_GT_generic(P) { power = 1; }
   string name() override { return "I1T"; }
 };
 
 class Algo_I2T : public Algo_GT_generic {
  public:
-   Algo_I2T(const Params &P) : Algo_GT_generic(P) { power = 2; }
+   explicit Algo_I2T(const Params &P) : Algo_GT_generic(P) { power = 2; }
    string name() override { return "I2T"; }
 };
 
@@ -93,7 +93,6 @@ class Algo_I2T : public Algo_GT_generic {
 void Algo_GT_generic::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                            t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   my_assert(bs.mt == matstype::fermionic);                  // restricted implementation
-  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   const double temperature = P.gtp * step.scale(); // in absolute units!
   const double beta        = 1.0 / temperature;
   weight_bucket value;
@@ -147,8 +146,7 @@ class Algo_CHIT : public Algo {
 // chi/beta = k_B T chi, as we prefer.
 void Algo_CHIT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
-  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
-  my_assert(sign == S_BOSONIC); // restricted implementation
+  my_assert(bs.mt == matstype::bosonic); // restricted implementation
   const double temperature = P.chitp * step.scale(); // in absolute units!
   const double beta        = 1.0 / temperature;
   weight_bucket w;

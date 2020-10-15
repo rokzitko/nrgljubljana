@@ -5,7 +5,7 @@
 // This file pertains to (I) subspaces
 
 // m4 macros for nrg-recalc-*.cc files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+// Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
@@ -37,22 +37,32 @@ MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &q
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "su2/su2-1ch-doubletm.dat" << ", len=" << SU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "su2/su2-1ch-doubletm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "su2/su2-2ch-doubletm.dat" << ", len=" << SU2::LENGTH_D_2CH << ", Iop=" << Invar(2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "su2/su2-2ch-doubletm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -62,22 +72,32 @@ MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &q
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "su2/su2-1ch-doubletp.dat" << ", len=" << SU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "su2/su2-1ch-doubletp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SU2::LENGTH_D_1CH, Invar(2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "su2/su2-2ch-doubletp.dat" << ", len=" << SU2::LENGTH_D_2CH << ", Iop=" << Invar(2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "su2/su2-2ch-doubletp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SU2::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SU2::LENGTH_D_2CH, Invar(2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();

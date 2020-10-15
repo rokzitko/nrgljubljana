@@ -5,7 +5,7 @@
 // This file pertains to (I1,I2) subspaces
 
 // m4 macros for nrg-recalc-*.cc files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+// Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
@@ -36,48 +36,68 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
     Ip = Invar(ii11 - 1, ii21);
     {
   nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletm0.dat" << ", len=" << DBLSU2::LENGTH_D1_2CH << ", Iop=" << Invar(2, 0) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-doubletm0.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 };
 
     Ip = Invar(ii11 + 1, ii21);
     {
   nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletp0.dat" << ", len=" << DBLSU2::LENGTH_D1_2CH << ", Iop=" << Invar(2, 0) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-doubletp0.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 };
 
     Ip = Invar(ii11, ii21 - 1);
     {
   nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0m.dat" << ", len=" << DBLSU2::LENGTH_D2_2CH << ", Iop=" << Invar(0, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-doublet0m.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 };
 
     Ip = Invar(ii11, ii21 + 1);
     {
   nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0p.dat" << ", len=" << DBLSU2::LENGTH_D2_2CH << ", Iop=" << Invar(0, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-doublet0p.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 };
   }

@@ -76,7 +76,7 @@ class SymmetrySPSU2T : public Symmetry {
   HAS_DOUBLET;
   HAS_TRIPLET;
 
-  bool recalc_f_coupled(const Invar I1, const Invar I2, const Invar If) override {
+  bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) override {
     return triangle_inequality(I1, I2, If);
   }
 };

@@ -38,7 +38,7 @@ class Bins {
    Spikes bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs
    operator const Spikes &() const { return bins; }
    operator Spikes &() { return bins; }
-   Bins(const Params &P) : P(P) { loggrid(); } // default: logarithmic grid
+   explicit Bins(const Params &P) : P(P) { loggrid(); } // default: logarithmic grid
    inline void add(double energy, t_weight weight);
    void merge(const Bins &b);
    void trim();
@@ -167,7 +167,7 @@ class Temp : public Spikes {
  private:
    const Params &P;
  public:
-   Temp(const Params &P) : P(P) {}
+   explicit Temp(const Params &P) : P(P) {}
    void add_value(double energy, t_weight weight) {
      for (auto & [e, w] : *this) {
        if (e == energy) {

@@ -10,7 +10,7 @@ namespace PP {
 }
 
 // m4 macros for nrg-recalc-*.cc files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+// Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 

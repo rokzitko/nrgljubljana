@@ -2,7 +2,7 @@
 class coef_table {
  private:
    ublas::vector<t_coef> t;
-   
+
  public:
    // Read values from a stream f
    void read_values(ifstream &f) {
@@ -51,10 +51,10 @@ class set_of_tables {
 class Coef {
  private:
    const Params &P;
-   
+
  public:
-   Coef(const Params &P) : P(P) {}
-   
+   explicit Coef(const Params &P) : P(P) {}
+
    set_of_tables xi;   // f^dag_N f_N+1 terms
    set_of_tables zeta; // f^dag_N f_N terms
 

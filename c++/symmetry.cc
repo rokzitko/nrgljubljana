@@ -70,8 +70,8 @@ class Symmetry {
    Symmetry(const Params &P_, Allfields &allfields_) : P(P_), allfields(allfields_), In(P.combs+1), QN(P.combs+1) {}
 
    InvarVec input_subspaces() const { return In; }
-   
-   Invar ancestor(Invar I, size_t i) const {
+
+   Invar ancestor(const Invar &I, const size_t i) const {
      const auto input = input_subspaces();
      Invar anc = I;
      anc.combine(input[i]);
@@ -122,7 +122,7 @@ class Symmetry {
      return [this](const Invar &I) { return this->mult(I); };
    }
 
-   double calculate_Z(const Invar I, const Eigen &eig, double rescale_factor) const {
+   double calculate_Z(const Invar &I, const Eigen &eig, double rescale_factor) const {
      double sumZ = 0;
      for (const auto &x : eig.value_zero) sumZ += exp(-rescale_factor * x);
      return mult(I) * sumZ;
@@ -223,7 +223,7 @@ class Symmetry {
      }
    }
 
-   virtual bool recalc_f_coupled(const Invar I1, const Invar I2, const Invar If) { return true; } // used in recalc_f()
+   virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) { return true; } // used in recalc_f()
 
    Matrix recalc_f(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I1,
                    const Invar &Ip, const struct Recalc_f table[], const size_t jmax);

@@ -6,7 +6,7 @@
 // Version for EVEN number of impurities.
 
 // m4 macros for nrg-recalc-*.cc files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+// Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
@@ -39,22 +39,32 @@ MatrixElements SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-1ch-doubletmp.dat" << ", len=" << ISO2::LENGTH_D_1CH << ", Iop=" << Invar(2, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-1ch-doubletmp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_1CH, Invar(2, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_1CH, Invar(2, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-2ch-doubletmp.dat" << ", len=" << ISO2::LENGTH_D_2CH << ", Iop=" << Invar(2, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-2ch-doubletmp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_2CH, Invar(2, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_2CH, Invar(2, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -64,22 +74,32 @@ MatrixElements SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-1ch-doubletmm.dat" << ", len=" << ISO2::LENGTH_D_1CH << ", Iop=" << Invar(2, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-1ch-doubletmm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_1CH, Invar(2, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_1CH, Invar(2, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-2ch-doubletmm.dat" << ", len=" << ISO2::LENGTH_D_2CH << ", Iop=" << Invar(2, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-2ch-doubletmm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_2CH, Invar(2, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_2CH, Invar(2, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -89,22 +109,32 @@ MatrixElements SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-1ch-doubletpp.dat" << ", len=" << ISO2::LENGTH_D_1CH << ", Iop=" << Invar(2, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-1ch-doubletpp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_1CH, Invar(2, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_1CH, Invar(2, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-2ch-doubletpp.dat" << ", len=" << ISO2::LENGTH_D_2CH << ", Iop=" << Invar(2, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-2ch-doubletpp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_2CH, Invar(2, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_2CH, Invar(2, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -114,22 +144,32 @@ MatrixElements SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-1ch-doubletpm.dat" << ", len=" << ISO2::LENGTH_D_1CH << ", Iop=" << Invar(2, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-1ch-doubletpm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_1CH, Invar(2, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_1CH, Invar(2, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-2ch-doubletpm.dat" << ", len=" << ISO2::LENGTH_D_2CH << ", Iop=" << Invar(2, 2) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-2ch-doubletpm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_2CH, Invar(2, 2));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_D_2CH, Invar(2, 2));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -159,32 +199,50 @@ Opch SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-1ch-spinup-isoupa.dat" << ", ch=" << 0 << ", len=" << ISO2::LENGTH_I_1CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-1ch-spinup-isoupa.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_1CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_1CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-2ch-spinup-isoupa.dat" << ", ch=" << 0 << ", len=" << ISO2::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-2ch-spinup-isoupa.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 };
      	    {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-2ch-spinup-isoupb.dat" << ", ch=" << 1 << ", len=" << ISO2::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-2ch-spinup-isoupb.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+    } else {
+      opch[1][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -194,32 +252,50 @@ Opch SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-1ch-spindown-isoupa.dat" << ", ch=" << 0 << ", len=" << ISO2::LENGTH_I_1CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-1ch-spindown-isoupa.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_1CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_1CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-2ch-spindown-isoupa.dat" << ", ch=" << 0 << ", len=" << ISO2::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-2ch-spindown-isoupa.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 };
 	    {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-2ch-spindown-isoupb.dat" << ", ch=" << 1 << ", len=" << ISO2::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-2ch-spindown-isoupb.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+    } else {
+      opch[1][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -229,32 +305,50 @@ Opch SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-1ch-spinup-isodowna.dat" << ", ch=" << 0 << ", len=" << ISO2::LENGTH_I_1CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-1ch-spinup-isodowna.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_1CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_1CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-2ch-spinup-isodowna.dat" << ", ch=" << 0 << ", len=" << ISO2::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-2ch-spinup-isodowna.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 };
 	    {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-2ch-spinup-isodownb.dat" << ", ch=" << 1 << ", len=" << ISO2::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-2ch-spinup-isodownb.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+    } else {
+      opch[1][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -264,32 +358,50 @@ Opch SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-1ch-spindown-isodowna.dat" << ", ch=" << 0 << ", len=" << ISO2::LENGTH_I_1CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-1ch-spindown-isodowna.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_1CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_1CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-2ch-spindown-isodowna.dat" << ", ch=" << 0 << ", len=" << ISO2::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-2ch-spindown-isodowna.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 };
 	    {
   nrglog('f', "RECALC_F(fn=" << "iso2/iso2-2ch-spindown-isodownb.dat" << ", ch=" << 1 << ", len=" << ISO2::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "iso2/iso2-2ch-spindown-isodownb.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISO2::LENGTH_I_2CH);
+    } else {
+      opch[1][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -310,22 +422,32 @@ MatrixElements SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-1ch-triplets.dat" << ", len=" << ISO2::LENGTH_T0_1CH << ", Iop=" << Invar(1, 3) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-1ch-triplets.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_T0_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_T0_1CH, Invar(1, 3));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_T0_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_T0_1CH, Invar(1, 3));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-2ch-triplets.dat" << ", len=" << ISO2::LENGTH_T0_2CH << ", Iop=" << Invar(1, 3) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-2ch-triplets.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_T0_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_T0_2CH, Invar(1, 3));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_T0_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_T0_2CH, Invar(1, 3));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -335,22 +457,32 @@ MatrixElements SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-1ch-tripletp.dat" << ", len=" << ISO2::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, 3) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-1ch-tripletp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_Tpm_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_Tpm_1CH, Invar(1, 3));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_Tpm_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_Tpm_1CH, Invar(1, 3));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-2ch-tripletp.dat" << ", len=" << ISO2::LENGTH_Tpm_2CH << ", Iop=" << Invar(1, 3) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-2ch-tripletp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_Tpm_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_Tpm_2CH, Invar(1, 3));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_Tpm_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_Tpm_2CH, Invar(1, 3));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -360,22 +492,32 @@ MatrixElements SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-1ch-tripletm.dat" << ", len=" << ISO2::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, 3) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-1ch-tripletm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_Tpm_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_Tpm_1CH, Invar(1, 3));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_Tpm_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_Tpm_1CH, Invar(1, 3));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "iso2/iso2-2ch-tripletm.dat" << ", len=" << ISO2::LENGTH_Tpm_2CH << ", Iop=" << Invar(1, 3) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "iso2/iso2-2ch-tripletm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_Tpm_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_Tpm_2CH, Invar(1, 3));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISO2::LENGTH_Tpm_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISO2::LENGTH_Tpm_2CH, Invar(1, 3));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();

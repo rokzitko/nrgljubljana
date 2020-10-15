@@ -41,7 +41,7 @@ class Matsubara {
    void add(size_t n, t_weight w) { v[n].second += w; }
    template <typename T> void save(T && F, int prec) const {
      F << setprecision(prec); // prec_xy
-     for (const auto &[e, w] : v) output(F, e, w, true);
+     for (const auto &[e, w] : v) outputxy(F, e, w, true);
    }
    t_weight total_weight() const {
      weight_bucket sum(v);

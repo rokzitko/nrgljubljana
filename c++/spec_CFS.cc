@@ -1,6 +1,6 @@
 class Algo_CFSls : virtual public Algo {
  public:
-   Algo_CFSls(const Params &P) : Algo(P) {}
+   explicit Algo_CFSls(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -11,7 +11,7 @@ class Algo_CFSls : virtual public Algo {
 
 class Algo_CFSgt : virtual public Algo {
  public:
-   Algo_CFSgt(const Params &P) : Algo(P) {}
+   explicit Algo_CFSgt(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -22,7 +22,7 @@ class Algo_CFSgt : virtual public Algo {
 
 class Algo_CFS : public Algo_CFSls, public Algo_CFSgt {
  public:
-   Algo_CFS(const Params &P) : Algo(P), Algo_CFSls(P), Algo_CFSgt(P) {}
+   explicit Algo_CFS(const Params &P) : Algo(P), Algo_CFSls(P), Algo_CFSgt(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
              spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const override {

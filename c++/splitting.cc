@@ -7,7 +7,7 @@ using mapdd = unordered_map<t_eigen, t_eigen>;
 void fix_splittings(DiagInfo &diag, const mapdd &cluster_mapping) {
   for(auto &[I, eig]: diag) { 
     for (auto &r : eig.value_zero) 
-      if (auto m = cluster_mapping.find(r); m != end(cluster_mapping))
+      if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
         r = m->second;
   }
 }

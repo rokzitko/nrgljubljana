@@ -112,7 +112,7 @@ struct Params {
   list<parambase *> all; // Container for all parameters
 
   param<string> symtype{"symtype", "Symmetry type", "", all}; // S
-  
+
   // *************************************************************
   // Parameters controlling discretization scheme and Wilson chain
 
@@ -644,7 +644,7 @@ struct Params {
 
   // Returns true if option 'c' is selected for logging
   bool logletter(char c) const { return (logall ? true : std::string(logstr).find(c) != string::npos); }
-  
+
   auto Nall() const { return boost::irange(size_t(Ninit), size_t(Nlen)); }
 };
 
@@ -655,8 +655,8 @@ class DiagParams {
    bool logall{};
    std::string logstr{};
 
-   explicit DiagParams() {}
-   DiagParams(const Params &P, const double diagratio_ = -1) :
+   DiagParams() {}
+   explicit DiagParams(const Params &P, const double diagratio_ = -1) :
      diag(P.diag), diagratio(diagratio_ > 0 ? diagratio_ : P.diagratio),
      logall(P.logall), logstr(P.logstr) {}
    bool logletter(char c) const { return logall ? true : logstr.find(c) != string::npos; }

@@ -11,7 +11,7 @@ namespace U1 {
 }
 
 // m4 macros for nrg-recalc-*.cc files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+// Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
@@ -36,32 +36,47 @@ MatrixElements SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "u1/u1-1ch-doublet.dat" << ", len=" << U1::LENGTH_D_1CH << ", Iop=" << Invar(1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "u1/u1-1ch-doublet.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, U1::LENGTH_D_1CH, Invar(1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, U1::LENGTH_D_1CH, Invar(1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "u1/u1-2ch-doublet.dat" << ", len=" << U1::LENGTH_D_2CH << ", Iop=" << Invar(1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "u1/u1-2ch-doublet.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, U1::LENGTH_D_2CH, Invar(1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, U1::LENGTH_D_2CH, Invar(1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 3: { {
   nrglog('f', "RECALC(fn=" << "u1/u1-3ch-doublet.dat" << ", len=" << U1::LENGTH_D_3CH << ", Iop=" << Invar(1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "u1/u1-3ch-doublet.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_D_3CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, U1::LENGTH_D_3CH, Invar(1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == U1::LENGTH_D_3CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, U1::LENGTH_D_3CH, Invar(1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();

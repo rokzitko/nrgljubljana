@@ -10,7 +10,7 @@ namespace SPU1LR {
 } // namespace SPU1LR
 
 // m4 macros for nrg-recalc-*.cc files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+// Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
@@ -38,22 +38,32 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-doubletp.dat" << ", len=" << SPU1LR::LENGTH_D_1CH << ", Iop=" << Invar(-1, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-1ch-doubletp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_1CH, Invar(-1, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_1CH, Invar(-1, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-doubletp.dat" << ", len=" << SPU1LR::LENGTH_D_2CH << ", Iop=" << Invar(-1, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-doubletp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_2CH, Invar(-1, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_2CH, Invar(-1, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -63,22 +73,32 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-doubletm.dat" << ", len=" << SPU1LR::LENGTH_D_1CH << ", Iop=" << Invar(+1, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-1ch-doubletm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_1CH, Invar(+1, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_1CH, Invar(+1, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-doubletm.dat" << ", len=" << SPU1LR::LENGTH_D_2CH << ", Iop=" << Invar(+1, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-doubletm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_2CH, Invar(+1, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_D_2CH, Invar(+1, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -101,32 +121,50 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-1ch-spinupa.dat" << ", ch=" << 0 << ", len=" << SPU1LR::LENGTH_I_1CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-1ch-spinupa.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_1CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_1CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spinupa.dat" << ", ch=" << 0 << ", len=" << SPU1LR::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-spinupa.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 };
 	    {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spinupb.dat" << ", ch=" << 1 << ", len=" << SPU1LR::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-spinupb.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    } else {
+      opch[1][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -136,32 +174,50 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-1ch-spindowna.dat" << ", ch=" << 0 << ", len=" << SPU1LR::LENGTH_I_1CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-1ch-spindowna.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_1CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_1CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spindowna.dat" << ", ch=" << 0 << ", len=" << SPU1LR::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-spindowna.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 };
             {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spindownb.dat" << ", ch=" << 1 << ", len=" << SPU1LR::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-spindownb.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    } else {
+      opch[1][0][II] = Matrix(0,0);
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -173,44 +229,68 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
       I1 = Invar(sszp + 1, -pp);
       {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spinupdiffa.dat" << ", ch=" << 0 << ", len=" << SPU1LR::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-spinupdiffa.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 };
       {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spinupdiffb.dat" << ", ch=" << 1 << ", len=" << SPU1LR::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-spinupdiffb.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    } else {
+      opch[1][0][II] = Matrix(0,0);
+    }
   }
 };
 
       I1 = Invar(sszp - 1, -pp);
       {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spindowndiffa.dat" << ", ch=" << 0 << ", len=" << SPU1LR::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-spindowndiffa.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    } else {
+      opch[0][0][II] = Matrix(0,0);
+    }
   }
 };
       {
   nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spindowndiffb.dat" << ", ch=" << 1 << ", len=" << SPU1LR::LENGTH_I_2CH << ")");
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
+      struct Recalc_f recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-spindowndiffb.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPU1LR::LENGTH_I_2CH);
+    } else {
+      opch[1][0][II] = Matrix(0,0);
+    }
   }
 };
     }
@@ -230,22 +310,32 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-triplets.dat" << ", len=" << SPU1LR::LENGTH_T0_1CH << ", Iop=" << Invar(0, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-1ch-triplets.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_T0_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_T0_1CH, Invar(0, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_T0_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_T0_1CH, Invar(0, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-triplets.dat" << ", len=" << SPU1LR::LENGTH_T0_2CH << ", Iop=" << Invar(0, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-triplets.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_T0_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_T0_2CH, Invar(0, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_T0_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_T0_2CH, Invar(0, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -255,22 +345,32 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-tripletp.dat" << ", len=" << SPU1LR::LENGTH_Tpm_1CH << ", Iop=" << Invar(-2, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-1ch-tripletp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_1CH, Invar(-2, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_1CH, Invar(-2, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-tripletp.dat" << ", len=" << SPU1LR::LENGTH_Tpm_2CH << ", Iop=" << Invar(-2, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-tripletp.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_2CH, Invar(-2, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_2CH, Invar(-2, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();
@@ -280,22 +380,32 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-tripletm.dat" << ", len=" << SPU1LR::LENGTH_Tpm_1CH << ", Iop=" << Invar(+2, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-1ch-tripletm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_1CH, Invar(+2, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_1CH, Invar(+2, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-tripletm.dat" << ", len=" << SPU1LR::LENGTH_Tpm_2CH << ", Iop=" << Invar(+2, 1) << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "spu1lr/spu1lr-2ch-tripletm.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_2CH, Invar(+2, 1));
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPU1LR::LENGTH_Tpm_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPU1LR::LENGTH_Tpm_2CH, Invar(+2, 1));
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();

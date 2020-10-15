@@ -7,8 +7,7 @@
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
 using t_delta_peak = std::pair<double, t_weight>;
 
-// used in matsubata.h and in save_densfunc()
-inline void output(std::ostream &F, const double x, const t_weight y, const bool imagpart, const double clip_tol_imag = 1e-10) {
+inline void outputxy(std::ostream &F, const double x, const t_weight y, const bool imagpart, const double clip_tol_imag = 1e-10) {
   const auto [r, i] = reim(y);
   F << x << " " << r;
   if (imagpart) F << " " << (abs(i)>abs(r)*clip_tol_imag ? i : 0);
@@ -20,7 +19,7 @@ class Spikes : public std::vector<t_delta_peak> {
    template<typename T>
      void save(T&& F, const int prec, const bool imagpart) {
        F << setprecision(prec);
-       for (const auto &[e, w] : *this) output(F, e, w, imagpart);
+       for (const auto &[e, w] : *this) outputxy(F, e, w, imagpart);
      }
    t_weight sum_weights() const {
      return ranges::accumulate(*this, t_weight{}, [](const auto &sum, const auto &p) { return sum+p.second; });
@@ -76,8 +75,9 @@ CONSTFNC double fermi_fnc(const double omega, const double T) {
   return 1 / (1 + exp(-omega / T)); 
 }
 
-CONSTFNC double bose_fnc(const double omega, const double T) { 
-  return omega != 0.0 ? 1 / (1 - exp(-omega / T)) : std::numeric_limits<double>::quiet_NaN();
+CONSTFNC double bose_fnc(const double omega, const double T) {
+  const auto d = 1.0 - exp(-omega / T);
+  return d != 0.0 ? 1.0/d : std::numeric_limits<double>::quiet_NaN();
 }
 
 template<typename F>

@@ -39,32 +39,23 @@ void SpectrumRealFreq::mergeCFS(spCS_t cs) {
   fsneg.merge(csb->sneg);
 }
 
-// Window functions: f(0)=0, f(1)=1.
-inline double fnc_linear(const double x) { return x; }
-
-inline double fnc_tanh_0(const double x, const double NNtanh) { return tanh(NNtanh * (x - 0.5)); }
-
-inline double fnc_tanh(const double x, const double NNtanh) {
-  const double f0 = fnc_tanh_0(0, NNtanh);
-  const double fx = fnc_tanh_0(x, NNtanh);
-  const double f1 = fnc_tanh_0(1, NNtanh);
-  return (fx - f0) / (f1 - f0);
-}
-
-inline double fnc(double x, const Params &P) {
-  return P.NNtanh > 0 ? fnc_tanh(x, P.NNtanh) : fnc_linear(x);
-}
-
 inline double windowfunction(const double E, const double Emin, const double Ex, const double Emax, const Step &step, const Params &P) {
-  // Exception 1
-  if (E <= Ex && step.last()) return 1.0;
-  // Exception 2
-  if (E >= Ex && step.first()) return 1.0;
-  // Exception 3
-  if (P.ZBW) return 1.0;
-  if (E <= Emin || E >= Emax) return 0.0;
-  if (Emin < E && E <= Ex) return fnc((E - Emin) / (Ex - Emin), P);
-  if (Ex < E && E < Emax) return 1.0 - fnc((E - Ex) / (Emax - Ex), P);
+  if (E <= Ex && step.last()) return 1.0;  // Exception 1
+  if (E >= Ex && step.first()) return 1.0; // Exception 2
+  if (P.ZBW) return 1.0;                   // Exception 3
+  if (E <= Emin || E >= Emax) return 0.0;  // Optimization
+  // Window functions: f(0)=0, f(1)=1.
+  auto fnc_linear = [](const auto x) { return x ; };
+  auto fnc_tanh_0 = [](const double x, const double NNtanh) { return tanh(NNtanh * (x - 0.5)); };
+  auto fnc_tanh = [fnc_tanh_0](const double x, const double NNtanh) {
+    const double f0 = fnc_tanh_0(0, NNtanh);
+    const double fx = fnc_tanh_0(x, NNtanh);
+    const double f1 = fnc_tanh_0(1, NNtanh);
+    return (fx - f0) / (f1 - f0);
+  };
+  auto fnc = [P, fnc_linear, fnc_tanh](const auto x) { return P.NNtanh > 0 ? fnc_tanh(x, P.NNtanh) : fnc_linear(x); };
+  if (Emin < E && E <= Ex) return fnc((E - Emin) / (Ex - Emin));
+  if (Ex < E && E < Emax) return 1.0 - fnc((E - Ex) / (Emax - Ex));
   my_assert_not_reached();
 }
 

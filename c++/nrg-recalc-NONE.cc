@@ -10,7 +10,7 @@ namespace NONE {
 } // namespace NONE
 
 // m4 macros for nrg-recalc-*.cc files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2015
+// Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 // m4 comment: $2 is length, $3,... are quantum numbers
 
@@ -104,22 +104,32 @@ MatrixElements SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "none/none-1ch-doublet.dat" << ", len=" << NONE::LENGTH_D_1CH << ", Iop=" << Invar() << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "none/none-1ch-doublet.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_1CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, NONE::LENGTH_D_1CH, Invar());
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_1CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, NONE::LENGTH_D_1CH, Invar());
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "none/none-2ch-doublet.dat" << ", len=" << NONE::LENGTH_D_2CH << ", Iop=" << Invar() << ")");
-  if (diag.count(Ip)) {
-    struct Recalc recalc_table[] = {
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc recalc_table[] = {
 #include "none/none-2ch-doublet.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_2CH);
-    cnew[Twoinvar(I1, Ip)] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, NONE::LENGTH_D_2CH, Invar());
+      };
+      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == NONE::LENGTH_D_2CH);
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, NONE::LENGTH_D_2CH, Invar());
+    } else {
+      cnew[II] = Matrix(0,0); // ???
+    }
   }
 } } break;
   default: my_assert_not_reached();

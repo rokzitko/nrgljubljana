@@ -2,7 +2,7 @@
 
 class Algo_DMNRG : public Algo {
  public:
-   Algo_DMNRG(const Params &P) : Algo(P) {}
+   explicit Algo_DMNRG(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
@@ -40,7 +40,7 @@ void Algo_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
 
 class Algo_DMNRGmats : public Algo {
  public:
-   Algo_DMNRGmats(const Params &P) : Algo(P) {}
+   explicit Algo_DMNRGmats(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(P, bs.mt); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
