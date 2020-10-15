@@ -7,7 +7,8 @@
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
-// m4 comment: $2 is length, $3,... are quantum numbers
+
+
 
 
 
@@ -20,10 +21,6 @@
 
 
 
-
-   namespace QST {
-#include "qst/qst-def.dat"
-}
 
 // Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
@@ -43,15 +40,14 @@ MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 
     Ip = Invar(q1 - 1, ss1 + 1, t1 - 1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-doubletp-1.dat" << ", len=" << QST::LENGTH_D_3CH_a << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-doubletp-1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-doubletp-1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_a);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -60,15 +56,14 @@ MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 
     Ip = Invar(q1 - 1, ss1 - 1, t1 - 1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-doubletm-1.dat" << ", len=" << QST::LENGTH_D_3CH_a << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-doubletm-1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-doubletm-1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_a);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -77,15 +72,14 @@ MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 
     Ip = Invar(q1 - 1, ss1 + 1, t1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-doubletp0.dat" << ", len=" << QST::LENGTH_D_3CH_b << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-doubletp0.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-doubletp0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_b);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_D_3CH_b, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -94,15 +88,14 @@ MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 
     Ip = Invar(q1 - 1, ss1 - 1, t1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-doubletm0.dat" << ", len=" << QST::LENGTH_D_3CH_b << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-doubletm0.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-doubletm0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_b);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_D_3CH_b, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -111,15 +104,14 @@ MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 
     Ip = Invar(q1 - 1, ss1 + 1, t1 + 1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-doubletp+1.dat" << ", len=" << QST::LENGTH_D_3CH_a << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-doubletp+1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-doubletp+1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_a);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -128,15 +120,14 @@ MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 
     Ip = Invar(q1 - 1, ss1 - 1, t1 + 1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-doubletm+1.dat" << ", len=" << QST::LENGTH_D_3CH_a << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-doubletm+1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-doubletm+1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_D_3CH_a);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_D_3CH_a, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -167,108 +158,96 @@ Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
     // generated files for symtype=QST.
     I1 = Invar(qp + 1, ssp + 1, tp + 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "qst/qst-spinup+1.dat" << ", ch=" << 0 << ", len=" << QST::LENGTH_I_3CH_0 << ")");
+  nrglog('f', "RECALC_F(fn=" << "qst/qst-spinup+1.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "qst/qst-spinup+1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_0);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_0);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(qp + 1, ssp + 1, tp);
     {
-  nrglog('f', "RECALC_F(fn=" << "qst/qst-spinup0.dat" << ", ch=" << 0 << ", len=" << QST::LENGTH_I_3CH_1 << ")");
+  nrglog('f', "RECALC_F(fn=" << "qst/qst-spinup0.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "qst/qst-spinup0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_1);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_1);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(qp + 1, ssp + 1, tp - 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "qst/qst-spinup-1.dat" << ", ch=" << 0 << ", len=" << QST::LENGTH_I_3CH_2 << ")");
+  nrglog('f', "RECALC_F(fn=" << "qst/qst-spinup-1.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "qst/qst-spinup-1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_2);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_2);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(qp + 1, ssp - 1, tp + 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "qst/qst-spindo+1.dat" << ", ch=" << 0 << ", len=" << QST::LENGTH_I_3CH_0 << ")");
+  nrglog('f', "RECALC_F(fn=" << "qst/qst-spindo+1.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "qst/qst-spindo+1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_0);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_0);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(qp + 1, ssp - 1, tp);
     {
-  nrglog('f', "RECALC_F(fn=" << "qst/qst-spindo0.dat" << ", ch=" << 0 << ", len=" << QST::LENGTH_I_3CH_1 << ")");
+  nrglog('f', "RECALC_F(fn=" << "qst/qst-spindo0.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "qst/qst-spindo0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_1);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_1);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(qp + 1, ssp - 1, tp - 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "qst/qst-spindo-1.dat" << ", ch=" << 0 << ", len=" << QST::LENGTH_I_3CH_2 << ")");
+  nrglog('f', "RECALC_F(fn=" << "qst/qst-spindo-1.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "qst/qst-spindo-1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_I_3CH_2);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, QST::LENGTH_I_3CH_2);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
@@ -289,15 +268,14 @@ MatrixElements SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &q
 
     Ip = Invar(q1, ss1, t1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-triplets.dat" << ", len=" << QST::LENGTH_T0_3CH << ", Iop=" << Invar(0, 3, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-triplets.dat" << ", Iop=" << Invar(0, 3, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-triplets.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_T0_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_T0_3CH, Invar(0, 3, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 3, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -306,15 +284,14 @@ MatrixElements SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &q
 
     Ip = Invar(q1, ss1 + 2, t1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-tripletp.dat" << ", len=" << QST::LENGTH_Tpm_3CH << ", Iop=" << Invar(0, 3, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-tripletp.dat" << ", Iop=" << Invar(0, 3, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-tripletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_Tpm_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 3, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -323,15 +300,14 @@ MatrixElements SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &q
 
     Ip = Invar(q1, ss1 - 2, t1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-tripletm.dat" << ", len=" << QST::LENGTH_Tpm_3CH << ", Iop=" << Invar(0, 3, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-tripletm.dat" << ", Iop=" << Invar(0, 3, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-tripletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_Tpm_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 3, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -358,15 +334,14 @@ MatrixElements SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrma
 
     Ip = Invar(q1, ss1, t1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-orb-triplets.dat" << ", len=" << QST::LENGTH_OT0_3CH << ", Iop=" << Invar(0, 1, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-orb-triplets.dat" << ", Iop=" << Invar(0, 1, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-orb-triplets.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_OT0_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_OT0_3CH, Invar(0, 1, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 1, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -375,15 +350,14 @@ MatrixElements SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrma
 
     Ip = Invar(q1, ss1, t1 + 1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-orb-tripletp.dat" << ", len=" << QST::LENGTH_OTpm_3CH << ", Iop=" << Invar(0, 1, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-orb-tripletp.dat" << ", Iop=" << Invar(0, 1, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-orb-tripletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_OTpm_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_OTpm_3CH, Invar(0, 1, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 1, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -392,15 +366,14 @@ MatrixElements SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrma
 
     Ip = Invar(q1, ss1, t1 - 1);
     {
-  nrglog('f', "RECALC(fn=" << "qst/qst-orb-tripletm.dat" << ", len=" << QST::LENGTH_OTpm_3CH << ", Iop=" << Invar(0, 1, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "qst/qst-orb-tripletm.dat" << ", Iop=" << Invar(0, 1, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "qst/qst-orb-tripletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == QST::LENGTH_OTpm_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, QST::LENGTH_OTpm_3CH, Invar(0, 1, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 1, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }

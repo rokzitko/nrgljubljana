@@ -3,7 +3,7 @@ class SymmetryQSZ : public SymField {
    outfield Sz2, Sz, Q, Q2;
 
  public:
-   template<typename ... Args> SymmetryQSZ(Args&& ... args) : SymField(std::forward<Args>(args)...),
+   template<typename ... Args> explicit SymmetryQSZ(Args&& ... args) : SymField(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
        InvarStructure InvStruc[] = {
          {"Q", additive},  // charge

@@ -6,11 +6,8 @@
 
 include(recalc-macros.m4)
 
-namespace QSLR {
-#include "qslr/qslr-2ch-def.dat"
-}
-
 // Driver routine for recalc_f()
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 Opch SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -34,27 +31,28 @@ Opch SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
     // ****** CASE I: SAME PARITY ******
 
     I1 = Invar(qp + 1, ssp + 1, lrp);
-    RECALC_F_TAB("qslr/qslr-2ch-spinupa.dat", 0, QSLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qslr/qslr-2ch-spinupb.dat", 1, QSLR::LENGTH_I_2CH);
+    RECALC_F_TAB("qslr/qslr-2ch-spinupa.dat", 0);
+    RECALC_F_TAB("qslr/qslr-2ch-spinupb.dat", 1);
 
     I1 = Invar(qp + 1, ssp - 1, lrp);
-    RECALC_F_TAB("qslr/qslr-2ch-spindowna.dat", 0, QSLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qslr/qslr-2ch-spindownb.dat", 1, QSLR::LENGTH_I_2CH);
+    RECALC_F_TAB("qslr/qslr-2ch-spindowna.dat", 0);
+    RECALC_F_TAB("qslr/qslr-2ch-spindownb.dat", 1);
 
     // ****** CASE II: DIFFERENT PARITY ******
 
     I1 = Invar(qp + 1, ssp + 1, -lrp);
-    RECALC_F_TAB("qslr/qslr-2ch-spinupdiffa.dat", 0, QSLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qslr/qslr-2ch-spinupdiffb.dat", 1, QSLR::LENGTH_I_2CH);
+    RECALC_F_TAB("qslr/qslr-2ch-spinupdiffa.dat", 0);
+    RECALC_F_TAB("qslr/qslr-2ch-spinupdiffb.dat", 1);
 
     I1 = Invar(qp + 1, ssp - 1, -lrp);
-    RECALC_F_TAB("qslr/qslr-2ch-spindowndiffa.dat", 0, QSLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qslr/qslr-2ch-spindowndiffb.dat", 1, QSLR::LENGTH_I_2CH);
+    RECALC_F_TAB("qslr/qslr-2ch-spindowndiffa.dat", 0);
+    RECALC_F_TAB("qslr/qslr-2ch-spindowndiffb.dat", 1);
   }
   return opch;
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 MatrixElements SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -64,15 +62,16 @@ MatrixElements SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &
     Invar Ip;
 
     Ip = Invar(q1 - 1, ss1 + 1, p1);
-    RECALC_TAB("qslr/qslr-2ch-doubletp.dat", QSLR::LENGTH_D_2CH, Invar(1, 2, +1));
+    RECALC_TAB("qslr/qslr-2ch-doubletp.dat", Invar(1, 2, +1));
 
     Ip = Invar(q1 - 1, ss1 - 1, p1);
-    RECALC_TAB("qslr/qslr-2ch-doubletm.dat", QSLR::LENGTH_D_2CH, Invar(1, 2, +1));
+    RECALC_TAB("qslr/qslr-2ch-doubletm.dat", Invar(1, 2, +1));
   }
   return cnew;
 }
 
 // Recalculate matrix elements of a triplet tenzor operator [EVEN PARITY]
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 MatrixElements SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -82,13 +81,13 @@ MatrixElements SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &
     Invar Ip;
 
     Ip = Invar(q1, ss1, p1);
-    RECALC_TAB("qslr/qslr-2ch-triplets.dat", QSLR::LENGTH_T0_2CH, Invar(0, 3, +1));
+    RECALC_TAB("qslr/qslr-2ch-triplets.dat", Invar(0, 3, +1));
 
     Ip = Invar(q1, ss1 + 2, p1);
-    RECALC_TAB("qslr/qslr-2ch-tripletp.dat", QSLR::LENGTH_Tpm_2CH, Invar(0, 3, +1));
+    RECALC_TAB("qslr/qslr-2ch-tripletp.dat", Invar(0, 3, +1));
 
     Ip = Invar(q1, ss1 - 2, p1);
-    RECALC_TAB("qslr/qslr-2ch-tripletm.dat", QSLR::LENGTH_Tpm_2CH, Invar(0, 3, +1));
+    RECALC_TAB("qslr/qslr-2ch-tripletm.dat", Invar(0, 3, +1));
   }
   return cnew;
 }

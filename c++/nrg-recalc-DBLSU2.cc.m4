@@ -6,10 +6,6 @@
 
 include(recalc-macros.m4)
 
-namespace DBLSU2 {
-#include "dblsu2/dblsu2-2ch-def.dat"
-}
-
 // Recalculate matrix elements of a doublet tenzor operator
 MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
@@ -19,32 +15,19 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
     Invar Ip;
 
     Ip = Invar(ii11 - 1, ii21);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doubletm0.dat", DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+    RECALC_TAB("dblsu2/dblsu2-2ch-doubletm0.dat", Invar(2, 0));
 
     Ip = Invar(ii11 + 1, ii21);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doubletp0.dat", DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+    RECALC_TAB("dblsu2/dblsu2-2ch-doubletp0.dat", Invar(2, 0));
 
     Ip = Invar(ii11, ii21 - 1);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0m.dat", DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0m.dat", Invar(0, 2));
 
     Ip = Invar(ii11, ii21 + 1);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0p.dat", DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0p.dat", Invar(0, 2));
   }
   return cnew;
 }
-
-// Override the recalc_f definition: we need to track the type (1 or 2) of
-// the f-matrices.
-
-define(`RECALC_F_TAB_SU2', {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
-#include $1
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-    opch[$2][$3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, $4);
-  }
-})
 
 // Driver routine for recalc_f()
 Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
@@ -65,20 +48,20 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
     // type 2: [f^dag_DO, f_UP]
 
     I1 = Invar(ii1p + 1, ii2p);
-    RECALC_F_TAB_SU2("dblsu2/dblsu2-2ch-type1-isoup-a.dat", 0, 0, DBLSU2::LENGTH_I_2CH);
-    RECALC_F_TAB_SU2("dblsu2/dblsu2-2ch-type2-isoup-a.dat", 0, 1, DBLSU2::LENGTH_I_2CH);
+    RECALC_F_TAB_N("dblsu2/dblsu2-2ch-type1-isoup-a.dat", 0, 0);
+    RECALC_F_TAB_N("dblsu2/dblsu2-2ch-type2-isoup-a.dat", 0, 1);
 
     I1 = Invar(ii1p, ii2p + 1);
-    RECALC_F_TAB_SU2("dblsu2/dblsu2-2ch-type1-isoup-b.dat", 1, 0, DBLSU2::LENGTH_I_2CH);
-    RECALC_F_TAB_SU2("dblsu2/dblsu2-2ch-type2-isoup-b.dat", 1, 1, DBLSU2::LENGTH_I_2CH);
+    RECALC_F_TAB_N("dblsu2/dblsu2-2ch-type1-isoup-b.dat", 1, 0);
+    RECALC_F_TAB_N("dblsu2/dblsu2-2ch-type2-isoup-b.dat", 1, 1);
 
     I1 = Invar(ii1p - 1, ii2p);
-    RECALC_F_TAB_SU2("dblsu2/dblsu2-2ch-type1-isodown-a.dat", 0, 0, DBLSU2::LENGTH_I_2CH);
-    RECALC_F_TAB_SU2("dblsu2/dblsu2-2ch-type2-isodown-a.dat", 0, 1, DBLSU2::LENGTH_I_2CH);
+    RECALC_F_TAB_N("dblsu2/dblsu2-2ch-type1-isodown-a.dat", 0, 0);
+    RECALC_F_TAB_N("dblsu2/dblsu2-2ch-type2-isodown-a.dat", 0, 1);
 
     I1 = Invar(ii1p, ii2p - 1);
-    RECALC_F_TAB_SU2("dblsu2/dblsu2-2ch-type1-isodown-b.dat", 1, 0, DBLSU2::LENGTH_I_2CH);
-    RECALC_F_TAB_SU2("dblsu2/dblsu2-2ch-type2-isodown-b.dat", 1, 1, DBLSU2::LENGTH_I_2CH);
+    RECALC_F_TAB_N("dblsu2/dblsu2-2ch-type1-isodown-b.dat", 1, 0);
+    RECALC_F_TAB_N("dblsu2/dblsu2-2ch-type2-isodown-b.dat", 1, 1);
   }
   return opch;
 }

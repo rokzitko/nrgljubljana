@@ -6,21 +6,15 @@
 
 include(recalc-macros.m4)
 
-namespace SL {
-#include "sl/sl-1ch-def.dat"
-#include "sl/sl-2ch-def.dat"
-#include "sl/sl-3ch-def.dat"
-}
-
 // Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetrySL::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
-    ONE23(`RECALC_TAB("sl/sl-1ch-doublet.dat", SL::LENGTH_D_1CH, Invar(1))',
-    	  `RECALC_TAB("sl/sl-2ch-doublet.dat", SL::LENGTH_D_2CH, Invar(1))',
-          `RECALC_TAB("sl/sl-3ch-doublet.dat", SL::LENGTH_D_3CH, Invar(1))');
+    ONE23(`RECALC_TAB("sl/sl-1ch-doublet.dat", Invar(1))',
+    	  `RECALC_TAB("sl/sl-2ch-doublet.dat", Invar(1))',
+          `RECALC_TAB("sl/sl-3ch-doublet.dat", Invar(1))');
   }
   return cnew;
 }
@@ -31,10 +25,14 @@ Opch SymmetrySL::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
-    ONE23(`RECALC_F_TAB("sl/sl-1ch-a.dat", 0, SL::LENGTH_I_1CH)',
-    	  `RECALC_F_TAB("sl/sl-2ch-a.dat", 0, SL::LENGTH_I_2CH); RECALC_F_TAB("sl/sl-2ch-b.dat", 1, SL::LENGTH_I_2CH)',
-    	  `RECALC_F_TAB("sl/sl-3ch-a.dat", 0, SL::LENGTH_I_3CH); RECALC_F_TAB("sl/sl-3ch-b.dat", 1, SL::LENGTH_I_3CH);
-          RECALC_F_TAB("sl/sl-3ch-c.dat", 2, SL::LENGTH_I_3CH)' );
+    ONE23(`RECALC_F_TAB("sl/sl-1ch-a.dat", 0)',
+    
+    	   `RECALC_F_TAB("sl/sl-2ch-a.dat", 0); 
+          RECALC_F_TAB("sl/sl-2ch-b.dat", 1)',
+
+         `RECALC_F_TAB("sl/sl-3ch-a.dat", 0); 
+          RECALC_F_TAB("sl/sl-3ch-b.dat", 1);
+          RECALC_F_TAB("sl/sl-3ch-c.dat", 2)' );
   }
   return opch;
 }

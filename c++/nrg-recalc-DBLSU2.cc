@@ -7,7 +7,8 @@
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
-// m4 comment: $2 is length, $3,... are quantum numbers
+
+
 
 
 
@@ -21,10 +22,6 @@
 
 
 
-namespace DBLSU2 {
-#include "dblsu2/dblsu2-2ch-def.dat"
-}
-
 // Recalculate matrix elements of a doublet tenzor operator
 MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
@@ -35,15 +32,14 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ii11 - 1, ii21);
     {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletm0.dat" << ", len=" << DBLSU2::LENGTH_D1_2CH << ", Iop=" << Invar(2, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletm0.dat" << ", Iop=" << Invar(2, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-doubletm0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -52,15 +48,14 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ii11 + 1, ii21);
     {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletp0.dat" << ", len=" << DBLSU2::LENGTH_D1_2CH << ", Iop=" << Invar(2, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletp0.dat" << ", Iop=" << Invar(2, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-doubletp0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D1_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D1_2CH, Invar(2, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -69,15 +64,14 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ii11, ii21 - 1);
     {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0m.dat" << ", len=" << DBLSU2::LENGTH_D2_2CH << ", Iop=" << Invar(0, 2) << ")");
+  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0m.dat" << ", Iop=" << Invar(0, 2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-doublet0m.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -86,15 +80,14 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ii11, ii21 + 1);
     {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0p.dat" << ", len=" << DBLSU2::LENGTH_D2_2CH << ", Iop=" << Invar(0, 2) << ")");
+  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0p.dat" << ", Iop=" << Invar(0, 2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-doublet0p.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_D2_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, DBLSU2::LENGTH_D2_2CH, Invar(0, 2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -103,11 +96,6 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
   }
   return cnew;
 }
-
-// Override the recalc_f definition: we need to track the type (1 or 2) of
-// the f-matrices.
-
-
 
 // Driver routine for recalc_f()
 Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
@@ -129,81 +117,121 @@ Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 
     I1 = Invar(ii1p + 1, ii2p);
     {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type1-isoup-a.dat" << ", ch=" << 0 << ", n=" << 0 << ")");
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc_f recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-type1-isoup-a.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
+      };
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+    } else {
+      opch[0][0][II] = Matrix(0,0); // ???
+    }
   }
 };
     {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type2-isoup-a.dat" << ", ch=" << 0 << ", n=" << 1 << ")");
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc_f recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-type2-isoup-a.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
+      };
+      opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+    } else {
+      opch[0][1][II] = Matrix(0,0); // ???
+    }
   }
 };
 
     I1 = Invar(ii1p, ii2p + 1);
     {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type1-isoup-b.dat" << ", ch=" << 1 << ", n=" << 0 << ")");
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc_f recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-type1-isoup-b.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
+      };
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+    } else {
+      opch[1][0][II] = Matrix(0,0); // ???
+    }
   }
 };
     {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type2-isoup-b.dat" << ", ch=" << 1 << ", n=" << 1 << ")");
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc_f recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-type2-isoup-b.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
+      };
+      opch[1][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+    } else {
+      opch[1][1][II] = Matrix(0,0); // ???
+    }
   }
 };
 
     I1 = Invar(ii1p - 1, ii2p);
     {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type1-isodown-a.dat" << ", ch=" << 0 << ", n=" << 0 << ")");
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc_f recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-type1-isodown-a.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    opch[0][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
+      };
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+    } else {
+      opch[0][0][II] = Matrix(0,0); // ???
+    }
   }
 };
     {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type2-isodown-a.dat" << ", ch=" << 0 << ", n=" << 1 << ")");
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc_f recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-type2-isodown-a.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    opch[0][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
+      };
+      opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+    } else {
+      opch[0][1][II] = Matrix(0,0); // ???
+    }
   }
 };
 
     I1 = Invar(ii1p, ii2p - 1);
     {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type1-isodown-b.dat" << ", ch=" << 1 << ", n=" << 0 << ")");
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc_f recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-type1-isodown-b.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    opch[1][0][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
+      };
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+    } else {
+      opch[1][0][II] = Matrix(0,0); // ???
+    }
   }
 };
     {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
+  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type2-isodown-b.dat" << ", ch=" << 1 << ", n=" << 1 << ")");
+  auto II = Twoinvar(I1, Ip);
+  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
+      struct Recalc_f recalc_table[] = {
 #include "dblsu2/dblsu2-2ch-type2-isodown-b.dat"
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == DBLSU2::LENGTH_I_2CH);
-    opch[1][1][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, DBLSU2::LENGTH_I_2CH);
+      };
+      opch[1][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+    } else {
+      opch[1][1][II] = Matrix(0,0); // ???
+    }
   }
 };
   }

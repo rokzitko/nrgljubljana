@@ -7,7 +7,8 @@
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
-// m4 comment: $2 is length, $3,... are quantum numbers
+
+
 
 
 
@@ -21,11 +22,6 @@
 
 
 
-namespace ISOSZ {
-#include "isosz/isosz-1ch-def.dat"
-#include "isosz/isosz-2ch-def.dat"
-}
-
 // Recalculate matrix elements of a doublet tenzor operator
 MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
@@ -37,30 +33,28 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ii1 - 1, ssz1 + 1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletmp.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, -1) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletmp.dat" << ", Iop=" << Invar(2, -1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-doubletmp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, -1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, -1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletmp.dat" << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, -1) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletmp.dat" << ", Iop=" << Invar(2, -1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-doubletmp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, -1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, -1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -72,30 +66,28 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ii1-1, ssz1-1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletmm.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, +1) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletmm.dat" << ", Iop=" << Invar(2, +1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-doubletmm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, +1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, +1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletmm.dat" << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, +1) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletmm.dat" << ", Iop=" << Invar(2, +1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-doubletmm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, +1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, +1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -107,30 +99,28 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ii1+1, ssz1+1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletpp.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, -1) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletpp.dat" << ", Iop=" << Invar(2, -1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-doubletpp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, -1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, -1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletpp.dat" << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, -1) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletpp.dat" << ", Iop=" << Invar(2, -1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-doubletpp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, -1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, -1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -142,30 +132,28 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ii1+1, ssz1-1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletpm.dat" << ", len=" << ISOSZ::LENGTH_D_1CH << ", Iop=" << Invar(2, +1) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-doubletpm.dat" << ", Iop=" << Invar(2, +1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-doubletpm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_D_1CH, Invar(2, +1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, +1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletpm.dat" << ", len=" << ISOSZ::LENGTH_D_2CH << ", Iop=" << Invar(2, +1) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-doubletpm.dat" << ", Iop=" << Invar(2, +1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-doubletpm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_D_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_D_2CH, Invar(2, +1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, +1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -197,50 +185,44 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     I1 = Invar(iip + 1, sszp + 1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spinup-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spinup-isoupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-1ch-spinup-isoupa.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isoupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spinup-isoupa.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
-	    {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isoupb.dat" << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+	          {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isoupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spinup-isoupb.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[1][0][II] = Matrix(0,0);
+      opch[1][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
@@ -250,50 +232,44 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     I1 = Invar(iip+1, sszp-1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spindown-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spindown-isoupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-1ch-spindown-isoupa.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isoupa.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isoupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spindown-isoupa.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
-	    {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isoupb.dat" << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+	          {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isoupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spindown-isoupb.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[1][0][II] = Matrix(0,0);
+      opch[1][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
@@ -303,50 +279,44 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     I1 = Invar(iip-1, sszp+1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spinup-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spinup-isodowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-1ch-spinup-isodowna.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isodowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spinup-isodowna.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
-  	    {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isodownb.dat" << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  	        {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spinup-isodownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spinup-isodownb.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[1][0][II] = Matrix(0,0);
+      opch[1][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
@@ -356,50 +326,44 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     I1 = Invar(iip-1, sszp-1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spindown-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_1CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-1ch-spindown-isodowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-1ch-spindown-isodowna.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_1CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isodowna.dat" << ", ch=" << 0 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isodowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spindown-isodowna.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
-	    {
-  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isodownb.dat" << ", ch=" << 1 << ", len=" << ISOSZ::LENGTH_I_2CH << ")");
+	          {
+  nrglog('f', "RECALC_F(fn=" << "isosz/isosz-2ch-spindown-isodownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "isosz/isosz-2ch-spindown-isodownb.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_I_2CH);
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ISOSZ::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[1][0][II] = Matrix(0,0);
+      opch[1][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
@@ -420,30 +384,28 @@ MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ii1, ssz1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-triplets.dat" << ", len=" << ISOSZ::LENGTH_T0_1CH << ", Iop=" << Invar(1, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-triplets.dat" << ", Iop=" << Invar(1, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-triplets.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_T0_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_T0_1CH, Invar(1, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-triplets.dat" << ", len=" << ISOSZ::LENGTH_T0_2CH << ", Iop=" << Invar(1, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-triplets.dat" << ", Iop=" << Invar(1, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-triplets.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_T0_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_T0_2CH, Invar(1, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -455,30 +417,28 @@ MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ii1, ssz1+2);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-tripletp.dat" << ", len=" << ISOSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, -2) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-tripletp.dat" << ", Iop=" << Invar(1, -2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-tripletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_1CH, Invar(1, -2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, -2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-tripletp.dat" << ", len=" << ISOSZ::LENGTH_Tpm_2CH << ", Iop=" << Invar(1, -2) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-tripletp.dat" << ", Iop=" << Invar(1, -2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-tripletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_2CH, Invar(1, -2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, -2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -490,30 +450,28 @@ MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ii1, ssz1-2);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-tripletm.dat" << ", len=" << ISOSZ::LENGTH_Tpm_1CH << ", Iop=" << Invar(1, +2) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-1ch-tripletm.dat" << ", Iop=" << Invar(1, +2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-1ch-tripletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_1CH, Invar(1, +2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, +2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-tripletm.dat" << ", len=" << ISOSZ::LENGTH_Tpm_2CH << ", Iop=" << Invar(1, +2) << ")");
+  nrglog('f', "RECALC(fn=" << "isosz/isosz-2ch-tripletm.dat" << ", Iop=" << Invar(1, +2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "isosz/isosz-2ch-tripletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == ISOSZ::LENGTH_Tpm_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ISOSZ::LENGTH_Tpm_2CH, Invar(1, +2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, +2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }

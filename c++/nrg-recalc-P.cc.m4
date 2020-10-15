@@ -4,22 +4,7 @@
 // Rok Zitko, rok.zitko@ijs.si, July 2017
 // This file pertains to the case with only fermion number parity.
 
-namespace symP {
-#include "p/p-1ch-def.dat"
-#include "p/p-2ch-def.dat"
-}
-
 include(recalc-macros.m4)
-
-define(`RECALC_F_TAB_P', {
-     if (diag.count(I1)) {
-       struct Recalc_f recalc_table[] = {
-#include $1
-       };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-       opch[$2][$3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, $4);
-     }
-   })
 
 // Driver routine for recalc_f()
 Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
@@ -29,18 +14,19 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
 
     Invar I1 = Invar(-p); // always the opposite fermion parity!
 
-    ONETWO(`RECALC_F_TAB_P("p/p-1ch-a-CR-DO.dat", 0, 0, symP::LENGTH_I_1CH);
-            RECALC_F_TAB_P("p/p-1ch-a-CR-UP.dat", 0, 1, symP::LENGTH_I_1CH);
-            RECALC_F_TAB_P("p/p-1ch-a-AN-DO.dat", 0, 2, symP::LENGTH_I_1CH);
-            RECALC_F_TAB_P("p/p-1ch-a-AN-UP.dat", 0, 3, symP::LENGTH_I_1CH);',
-    	   `RECALC_F_TAB_P("p/p-2ch-a-CR-DO.dat", 0, 0, symP::LENGTH_I_2CH);
-	    RECALC_F_TAB_P("p/p-2ch-b-CR-DO.dat", 1, 0, symP::LENGTH_I_2CH);
-            RECALC_F_TAB_P("p/p-2ch-a-CR-UP.dat", 0, 1, symP::LENGTH_I_2CH);
-            RECALC_F_TAB_P("p/p-2ch-b-CR-UP.dat", 1, 1, symP::LENGTH_I_2CH);
-    	    RECALC_F_TAB_P("p/p-2ch-a-AN-DO.dat", 0, 2, symP::LENGTH_I_2CH);
-	    RECALC_F_TAB_P("p/p-2ch-b-AN-DO.dat", 1, 2, symP::LENGTH_I_2CH);
-            RECALC_F_TAB_P("p/p-2ch-a-AN-UP.dat", 0, 3, symP::LENGTH_I_2CH);
-            RECALC_F_TAB_P("p/p-2ch-b-AN-UP.dat", 1, 3, symP::LENGTH_I_2CH)');
+    ONETWO(`RECALC_F_TAB_N("p/p-1ch-a-CR-DO.dat", 0, 0);
+            RECALC_F_TAB_N("p/p-1ch-a-CR-UP.dat", 0, 1);
+            RECALC_F_TAB_N("p/p-1ch-a-AN-DO.dat", 0, 2);
+            RECALC_F_TAB_N("p/p-1ch-a-AN-UP.dat", 0, 3);',
+
+           `RECALC_F_TAB_N("p/p-2ch-a-CR-DO.dat", 0, 0);
+	          RECALC_F_TAB_N("p/p-2ch-b-CR-DO.dat", 1, 0);
+            RECALC_F_TAB_N("p/p-2ch-a-CR-UP.dat", 0, 1);
+            RECALC_F_TAB_N("p/p-2ch-b-CR-UP.dat", 1, 1);
+    	      RECALC_F_TAB_N("p/p-2ch-a-AN-DO.dat", 0, 2);
+	          RECALC_F_TAB_N("p/p-2ch-b-AN-DO.dat", 1, 2);
+            RECALC_F_TAB_N("p/p-2ch-a-AN-UP.dat", 0, 3);
+            RECALC_F_TAB_N("p/p-2ch-b-AN-UP.dat", 1, 3);');
   }
   return opch;
 }
@@ -52,8 +38,8 @@ MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsr
     int p1   = I1.get("P");
     Invar Ip = Invar(-p1); // always the opposite fermion parity!
 
-    ONETWO(`RECALC_TAB("p/p-1ch-doublet.dat", symP::LENGTH_D_1CH, Invar(-1))',
-           `RECALC_TAB("p/p-2ch-doublet.dat", symP::LENGTH_D_2CH, Invar(-1))');
+    ONETWO(`RECALC_TAB("p/p-1ch-doublet.dat", Invar(-1))',
+           `RECALC_TAB("p/p-2ch-doublet.dat", Invar(-1))');
   }
   return cnew;
 }

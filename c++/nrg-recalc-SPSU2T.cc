@@ -7,7 +7,8 @@
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
-// m4 comment: $2 is length, $3,... are quantum numbers
+
+
 
 
 
@@ -20,10 +21,6 @@
 
 
 
-
-namespace SPSU2T {
-#include "spsu2t/spsu2t-def.dat"
-}
 
 // Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
@@ -38,15 +35,14 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ss1 + 1, t1 - 1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp-1.dat" << ", len=" << SPSU2T::LENGTH_D_3CH_1 << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp-1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2t/spsu2t-doubletp-1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_1);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -55,15 +51,14 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ss1 - 1, t1 - 1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm-1.dat" << ", len=" << SPSU2T::LENGTH_D_3CH_1 << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm-1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2t/spsu2t-doubletm-1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_1);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -72,15 +67,14 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ss1 + 1, t1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp0.dat" << ", len=" << SPSU2T::LENGTH_D_3CH_0 << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp0.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2t/spsu2t-doubletp0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_0);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_0, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -89,15 +83,14 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ss1 - 1, t1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm0.dat" << ", len=" << SPSU2T::LENGTH_D_3CH_0 << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm0.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2t/spsu2t-doubletm0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_0);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_0, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -106,15 +99,14 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ss1 + 1, t1 + 1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp+1.dat" << ", len=" << SPSU2T::LENGTH_D_3CH_1 << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp+1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2t/spsu2t-doubletp+1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_1);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -123,15 +115,14 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ss1 - 1, t1 + 1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm+1.dat" << ", len=" << SPSU2T::LENGTH_D_3CH_1 << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm+1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2t/spsu2t-doubletm+1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_D_3CH_1);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -161,108 +152,96 @@ Opch SymmetrySPSU2T::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
     // generated files for symtype=SPSU2T.
     I1 = Invar(ssp + 1, tp + 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spinup+1.dat" << ", ch=" << 0 << ", len=" << SPSU2T::LENGTH_I_3CH_0 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spinup+1.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2t/spsu2t-spinup+1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_I_3CH_0);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2T::LENGTH_I_3CH_0);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(ssp + 1, tp);
     {
-  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spinup0.dat" << ", ch=" << 0 << ", len=" << SPSU2T::LENGTH_I_3CH_1 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spinup0.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2t/spsu2t-spinup0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_I_3CH_1);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2T::LENGTH_I_3CH_1);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(ssp + 1, tp - 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spinup-1.dat" << ", ch=" << 0 << ", len=" << SPSU2T::LENGTH_I_3CH_2 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spinup-1.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2t/spsu2t-spinup-1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_I_3CH_2);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2T::LENGTH_I_3CH_2);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(ssp - 1, tp + 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spindo+1.dat" << ", ch=" << 0 << ", len=" << SPSU2T::LENGTH_I_3CH_0 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spindo+1.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2t/spsu2t-spindo+1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_I_3CH_0);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2T::LENGTH_I_3CH_0);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(ssp - 1, tp);
     {
-  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spindo0.dat" << ", ch=" << 0 << ", len=" << SPSU2T::LENGTH_I_3CH_1 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spindo0.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2t/spsu2t-spindo0.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_I_3CH_1);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2T::LENGTH_I_3CH_1);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(ssp - 1, tp - 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spindo-1.dat" << ", ch=" << 0 << ", len=" << SPSU2T::LENGTH_I_3CH_2 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2t/spsu2t-spindo-1.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2t/spsu2t-spindo-1.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_I_3CH_2);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2T::LENGTH_I_3CH_2);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
@@ -281,15 +260,14 @@ MatrixElements SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ss1, t1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-triplets.dat" << ", len=" << SPSU2T::LENGTH_T0_3CH << ", Iop=" << Invar(3, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-triplets.dat" << ", Iop=" << Invar(3, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2t/spsu2t-triplets.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_T0_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_T0_3CH, Invar(3, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -298,15 +276,14 @@ MatrixElements SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ss1 + 2, t1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-tripletp.dat" << ", len=" << SPSU2T::LENGTH_Tpm_3CH << ", Iop=" << Invar(3, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-tripletp.dat" << ", Iop=" << Invar(3, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2t/spsu2t-tripletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_Tpm_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_Tpm_3CH, Invar(3, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -315,15 +292,14 @@ MatrixElements SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax
 
     Ip = Invar(ss1 - 2, t1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-tripletm.dat" << ", len=" << SPSU2T::LENGTH_Tpm_3CH << ", Iop=" << Invar(3, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-tripletm.dat" << ", Iop=" << Invar(3, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2t/spsu2t-tripletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2T::LENGTH_Tpm_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2T::LENGTH_Tpm_3CH, Invar(3, 0));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3, 0));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }

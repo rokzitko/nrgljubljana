@@ -4,11 +4,6 @@
 // Rok Zitko, rok.zitko@ijs.si, Dec 2008.
 // This file pertains to (S) subspaces
 
-namespace SPU1 {
-#include "spu1/spu1-1ch-def.dat"
-#include "spu1/spu1-2ch-def.dat"
-} // namespace SPU1
-
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
@@ -20,12 +15,12 @@ MatrixElements SymmetrySPU1::recalc_doublet(const DiagInfo &diag, const QSrmax &
       Invar Ip;
 
       Ip = Invar(ssz1 + 1);
-     ONETWO(`RECALC_TAB("spu1/spu1-1ch-doubletp.dat", SPU1::LENGTH_D_1CH, Invar(-1))',
-           `RECALC_TAB("spu1/spu1-2ch-doubletp.dat", SPU1::LENGTH_D_2CH, Invar(-1))');
+     ONETWO(`RECALC_TAB("spu1/spu1-1ch-doubletp.dat", Invar(-1))',
+           `RECALC_TAB("spu1/spu1-2ch-doubletp.dat", Invar(-1))');
 
      Ip = Invar(ssz1-1);
-     ONETWO(`RECALC_TAB("spu1/spu1-1ch-doubletm.dat", SPU1::LENGTH_D_1CH, Invar(+1))',
-            `RECALC_TAB("spu1/spu1-2ch-doubletm.dat", SPU1::LENGTH_D_2CH, Invar(+1))');
+     ONETWO(`RECALC_TAB("spu1/spu1-1ch-doubletm.dat", Invar(+1))',
+            `RECALC_TAB("spu1/spu1-2ch-doubletm.dat", Invar(+1))');
     }
   } else {
     for(const auto &[I1, eig]: diag) {
@@ -33,10 +28,10 @@ MatrixElements SymmetrySPU1::recalc_doublet(const DiagInfo &diag, const QSrmax &
       Invar Ip;
 
       Ip = Invar(ssz1 + 1);
-      RECALC_TAB("spu1/spu1-1ch-doubletp.dat", SPU1::LENGTH_D_1CH, Invar(-1));
+      RECALC_TAB("spu1/spu1-1ch-doubletp.dat", Invar(-1));
 
       Ip = Invar(ssz1 - 1);
-      RECALC_TAB("spu1/spu1-1ch-doubletm.dat", SPU1::LENGTH_D_1CH, Invar(+1));
+      RECALC_TAB("spu1/spu1-1ch-doubletm.dat", Invar(+1));
     }
   }
   return cnew;
@@ -51,16 +46,16 @@ Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
     Invar I1;
 
     I1 = Invar(sszp + 1);
-     ONETWO(`RECALC_F_TAB("spu1/spu1-1ch-spinupa.dat", 0, SPU1::LENGTH_I_1CH)',
+     ONETWO(`RECALC_F_TAB("spu1/spu1-1ch-spinupa.dat", 0)',
 
-            `RECALC_F_TAB("spu1/spu1-2ch-spinupa.dat", 0, SPU1::LENGTH_I_2CH);
- 	     RECALC_F_TAB("spu1/spu1-2ch-spinupb.dat", 1, SPU1::LENGTH_I_2CH)');
+            `RECALC_F_TAB("spu1/spu1-2ch-spinupa.dat", 0);
+ 	           RECALC_F_TAB("spu1/spu1-2ch-spinupb.dat", 1)');
 
      I1 = Invar(sszp-1);
-     ONETWO(`RECALC_F_TAB("spu1/spu1-1ch-spindowna.dat", 0, SPU1::LENGTH_I_1CH)',
+     ONETWO(`RECALC_F_TAB("spu1/spu1-1ch-spindowna.dat", 0)',
 
-            `RECALC_F_TAB("spu1/spu1-2ch-spindowna.dat", 0, SPU1::LENGTH_I_2CH);
-             RECALC_F_TAB("spu1/spu1-2ch-spindownb.dat", 1, SPU1::LENGTH_I_2CH)');
+            `RECALC_F_TAB("spu1/spu1-2ch-spindowna.dat", 0);
+             RECALC_F_TAB("spu1/spu1-2ch-spindownb.dat", 1)');
   }
   return opch;
 }
@@ -74,10 +69,10 @@ OpchChannel SymmetrySPU1::recalc_irreduc_substeps(const Step &step, const DiagIn
     Invar I1;
 
     I1 = Invar(sszp + 1);
-    RECALC_F_TAB("spu1/spu1-1ch-spinupa.dat", M, SPU1::LENGTH_I_1CH);
+    RECALC_F_TAB("spu1/spu1-1ch-spinupa.dat", M);
 
     I1 = Invar(sszp - 1);
-    RECALC_F_TAB("spu1/spu1-1ch-spindowna.dat", M, SPU1::LENGTH_I_1CH);
+    RECALC_F_TAB("spu1/spu1-1ch-spindowna.dat", M);
   }
   return opch[M];
 }
@@ -91,16 +86,16 @@ MatrixElements SymmetrySPU1::recalc_triplet(const DiagInfo &diag, const QSrmax &
       Invar Ip;
 
       Ip = Invar(ssz1);
-     ONETWO(`RECALC_TAB("spu1/spu1-1ch-triplets.dat", SPU1::LENGTH_T0_1CH, Invar(0))',
-           `RECALC_TAB("spu1/spu1-2ch-triplets.dat", SPU1::LENGTH_T0_2CH, Invar(0))');
+     ONETWO(`RECALC_TAB("spu1/spu1-1ch-triplets.dat", Invar(0))',
+           `RECALC_TAB("spu1/spu1-2ch-triplets.dat", Invar(0))');
 
      Ip = Invar(ssz1+2);
-     ONETWO(`RECALC_TAB("spu1/spu1-1ch-tripletp.dat", SPU1::LENGTH_Tpm_1CH, Invar(-2))',
-           `RECALC_TAB("spu1/spu1-2ch-tripletp.dat", SPU1::LENGTH_Tpm_2CH, Invar(-2))');
+     ONETWO(`RECALC_TAB("spu1/spu1-1ch-tripletp.dat", Invar(-2))',
+           `RECALC_TAB("spu1/spu1-2ch-tripletp.dat", Invar(-2))');
 
      Ip = Invar(ssz1-2);
-     ONETWO(`RECALC_TAB("spu1/spu1-1ch-tripletm.dat", SPU1::LENGTH_Tpm_1CH, Invar(+2))',
-            `RECALC_TAB("spu1/spu1-2ch-tripletm.dat", SPU1::LENGTH_Tpm_2CH, Invar(+2))');
+     ONETWO(`RECALC_TAB("spu1/spu1-1ch-tripletm.dat", Invar(+2))',
+            `RECALC_TAB("spu1/spu1-2ch-tripletm.dat", Invar(+2))');
     }
   } else {
     for(const auto &[I1, eig]: diag) {
@@ -108,13 +103,13 @@ MatrixElements SymmetrySPU1::recalc_triplet(const DiagInfo &diag, const QSrmax &
       Invar Ip;
 
       Ip = Invar(ssz1);
-      RECALC_TAB("spu1/spu1-1ch-triplets.dat", SPU1::LENGTH_T0_1CH, Invar(0));
+      RECALC_TAB("spu1/spu1-1ch-triplets.dat", Invar(0));
 
       Ip = Invar(ssz1 + 2);
-      RECALC_TAB("spu1/spu1-1ch-tripletp.dat", SPU1::LENGTH_Tpm_1CH, Invar(-2));
+      RECALC_TAB("spu1/spu1-1ch-tripletp.dat", Invar(-2));
 
       Ip = Invar(ssz1 - 2);
-      RECALC_TAB("spu1/spu1-1ch-tripletm.dat", SPU1::LENGTH_Tpm_1CH, Invar(+2));
+      RECALC_TAB("spu1/spu1-1ch-tripletm.dat", Invar(+2));
     }
   }
   return cnew;

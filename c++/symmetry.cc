@@ -258,25 +258,25 @@ class Symmetry {
 
 class SymField : public Symmetry {
  public:
-   template<typename ... Args> SymField(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {}
+   template<typename ... Args> explicit SymField(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {}
    bool isfield() override { return true; }
 };
 
 class SymLR : public Symmetry {
  public:
-   template<typename ... Args> SymLR(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {}
+   template<typename ... Args> explicit SymLR(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {}
    bool islr() override { return true; }
 };
 
 class SymC3 : public Symmetry {
  public:
-   template<typename ... Args> SymC3(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {}
+   template<typename ... Args> explicit SymC3(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {}
    bool isc3() override { return true; }
 };
 
 class SymFieldLR : public Symmetry {
   public:
-   template<typename ... Args> SymFieldLR(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {}
+   template<typename ... Args> explicit SymFieldLR(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {}
    bool isfield() override { return true; }
    bool islr() override { return true; }
 };

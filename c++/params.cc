@@ -32,7 +32,7 @@ class Workdir {
      cout << "workdir=" << workdir << endl << endl;
    }
    std::string rhofn(const string &fn, int N) const { return workdir + "/" + fn + to_string(N); }
-   std::string unitaryfn(size_t N, const std::string filename = "unitary"s) const {
+   std::string unitaryfn(size_t N, const std::string &filename = "unitary"s) const {
      return workdir + "/" + filename + to_string(N); 
    }
 };
@@ -568,7 +568,7 @@ struct Params {
     for (const auto &i : all) i->dump();
   }
 
-  Params(string filename, string block, const Workdir &workdir) {
+  Params(const string filename, const string block, const Workdir &workdir) {
     auto parsed_params = parser(filename, block);
     for (const auto &i : all) {
       const string keyword = i->getkeyword();

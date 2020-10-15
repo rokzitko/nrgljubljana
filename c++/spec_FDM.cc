@@ -125,7 +125,7 @@ void Algo_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
 
 class Algo_FDMmats : public Algo {
  public:
-   Algo_FDMmats(const Params &P) : Algo(P) {}
+   explicit Algo_FDMmats(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(P, bs.mt); }
    void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;

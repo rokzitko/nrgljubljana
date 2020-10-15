@@ -4,12 +4,6 @@
 // Rok Zitko, rok.zitko@ijs.si, June 2006, Oct 2012
 // This file pertains to (Q) subspaces
 
-namespace U1 {
-#include "u1/u1-1ch-def.dat"
-#include "u1/u1-2ch-def.dat"
-#include "u1/u1-3ch-def.dat"
-}
-
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
@@ -18,25 +12,12 @@ MatrixElements SymmetryU1::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
-    ONE23(`RECALC_TAB("u1/u1-1ch-doublet.dat", U1::LENGTH_D_1CH, Invar(1))',
-    	  `RECALC_TAB("u1/u1-2ch-doublet.dat", U1::LENGTH_D_2CH, Invar(1))',
-	  `RECALC_TAB("u1/u1-3ch-doublet.dat", U1::LENGTH_D_3CH, Invar(1))');
+    ONE23(`RECALC_TAB("u1/u1-1ch-doublet.dat", Invar(1))',
+    	    `RECALC_TAB("u1/u1-2ch-doublet.dat", Invar(1))',
+	        `RECALC_TAB("u1/u1-3ch-doublet.dat", Invar(1))');
   }
   return cnew;
 }
-
-// Override the recalc_f definition: we need to track the spin index of
-// the f-matrices.
-
-define(`RECALC_F_TAB_U1', {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
-#include $1
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-    opch[$2][$3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, $4);
-  }
-})
 
 // Driver routine for recalc_f()
 Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
@@ -44,20 +25,20 @@ Opch SymmetryU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
-    ONE23(`RECALC_F_TAB_U1("u1/u1-1ch-a-DO.dat", 0, 1, U1::LENGTH_I_1CH);
-           RECALC_F_TAB_U1("u1/u1-1ch-a-UP.dat", 0, 0, U1::LENGTH_I_1CH)',
+    ONE23(`RECALC_F_TAB_N("u1/u1-1ch-a-DO.dat", 0, 1);
+           RECALC_F_TAB_N("u1/u1-1ch-a-UP.dat", 0, 0)',
 
-          `RECALC_F_TAB_U1("u1/u1-2ch-a-DO.dat", 0, 1, U1::LENGTH_I_2CH);
-	   RECALC_F_TAB_U1("u1/u1-2ch-b-DO.dat", 1, 1, U1::LENGTH_I_2CH);
-	   RECALC_F_TAB_U1("u1/u1-2ch-a-UP.dat", 0, 0, U1::LENGTH_I_2CH);
-	   RECALC_F_TAB_U1("u1/u1-2ch-b-UP.dat", 1, 0, U1::LENGTH_I_2CH)',
+          `RECALC_F_TAB_N("u1/u1-2ch-a-DO.dat", 0, 1);
+	         RECALC_F_TAB_N("u1/u1-2ch-b-DO.dat", 1, 1);
+	         RECALC_F_TAB_N("u1/u1-2ch-a-UP.dat", 0, 0);
+	         RECALC_F_TAB_N("u1/u1-2ch-b-UP.dat", 1, 0)',
 
-          `RECALC_F_TAB_U1("u1/u1-3ch-a-DO.dat", 0, 1, U1::LENGTH_I_3CH);
-	   RECALC_F_TAB_U1("u1/u1-3ch-b-DO.dat", 1, 1, U1::LENGTH_I_3CH);
-	   RECALC_F_TAB_U1("u1/u1-3ch-c-DO.dat", 2, 1, U1::LENGTH_I_3CH);
-	   RECALC_F_TAB_U1("u1/u1-3ch-a-UP.dat", 0, 0, U1::LENGTH_I_3CH);
-	   RECALC_F_TAB_U1("u1/u1-3ch-b-UP.dat", 1, 0, U1::LENGTH_I_3CH);
-	   RECALC_F_TAB_U1("u1/u1-3ch-c-UP.dat", 2, 0, U1::LENGTH_I_3CH)');
+          `RECALC_F_TAB_N("u1/u1-3ch-a-DO.dat", 0, 1);
+	         RECALC_F_TAB_N("u1/u1-3ch-b-DO.dat", 1, 1);
+	         RECALC_F_TAB_N("u1/u1-3ch-c-DO.dat", 2, 1);
+	         RECALC_F_TAB_N("u1/u1-3ch-a-UP.dat", 0, 0);
+	         RECALC_F_TAB_N("u1/u1-3ch-b-UP.dat", 1, 0);
+	         RECALC_F_TAB_N("u1/u1-3ch-c-UP.dat", 2, 0);');
   }
   return opch;
 }

@@ -4,22 +4,7 @@
 // Rok Zitko, rok.zitko@ijs.si, June 2006, April 2010
 // This file pertains to the case with no symmetry.
 
-namespace NONE {
-#include "none/none-1ch-def.dat"
-#include "none/none-2ch-def.dat"
-} // namespace NONE
-
 include(recalc-macros.m4)
-
-define(`RECALC_F_TAB_NONE', {
-     if (diag.count(I1)) {
-       struct Recalc_f recalc_table[] = {
-#include $1
-       };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-       opch[$2][$3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, $4);
-     }
-   })
 
 // Driver routine for recalc_f()
 Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
@@ -27,12 +12,13 @@ Opch SymmetryNONE::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   for(const auto &[Ip, eig]: diag) {
     Invar I1 = Invar();
 
-    ONETWO(`RECALC_F_TAB_NONE("none/none-1ch-a-CR-DO.dat", 0, 0, NONE::LENGTH_I_1CH);
-            RECALC_F_TAB_NONE("none/none-1ch-a-CR-UP.dat", 0, 1, NONE::LENGTH_I_1CH);',
-    	   `RECALC_F_TAB_NONE("none/none-2ch-a-CR-DO.dat", 0, 0, NONE::LENGTH_I_2CH);
-	    RECALC_F_TAB_NONE("none/none-2ch-b-CR-DO.dat", 1, 0, NONE::LENGTH_I_2CH);
-            RECALC_F_TAB_NONE("none/none-2ch-a-CR-UP.dat", 0, 1, NONE::LENGTH_I_2CH);
-            RECALC_F_TAB_NONE("none/none-2ch-b-CR-UP.dat", 1, 1, NONE::LENGTH_I_2CH)');
+    ONETWO(`RECALC_F_TAB_N("none/none-1ch-a-CR-DO.dat", 0, 0);
+            RECALC_F_TAB_N("none/none-1ch-a-CR-UP.dat", 0, 1);',
+
+           `RECALC_F_TAB_N("none/none-2ch-a-CR-DO.dat", 0, 0);
+	          RECALC_F_TAB_N("none/none-2ch-b-CR-DO.dat", 1, 0);
+            RECALC_F_TAB_N("none/none-2ch-a-CR-UP.dat", 0, 1);
+            RECALC_F_TAB_N("none/none-2ch-b-CR-UP.dat", 1, 1)');
   }
   return opch;
 }
@@ -43,8 +29,8 @@ MatrixElements SymmetryNONE::recalc_doublet(const DiagInfo &diag, const QSrmax &
   for(const auto &[I1, eig]: diag) {
     Invar Ip = Invar();
 
-    ONETWO(`RECALC_TAB("none/none-1ch-doublet.dat", NONE::LENGTH_D_1CH, Invar())',
-           `RECALC_TAB("none/none-2ch-doublet.dat", NONE::LENGTH_D_2CH, Invar())');
+    ONETWO(`RECALC_TAB("none/none-1ch-doublet.dat", Invar())',
+           `RECALC_TAB("none/none-2ch-doublet.dat", Invar())');
   }
   return cnew;
 }

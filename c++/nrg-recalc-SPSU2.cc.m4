@@ -4,12 +4,6 @@
 // Rok Zitko, rok.zitko@ijs.si, Feb 2006, Dec 2007
 // This file pertains to (S) subspaces
 
-namespace SPSU2 {
-#include "spsu2/spsu2-1ch-def.dat"
-#include "spsu2/spsu2-2ch-def.dat"
-#include "spsu2/spsu2-3ch-def.dat"
-} // namespace SPSU2
-
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
@@ -21,14 +15,14 @@ MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax 
       Invar Ip;
 
       Ip = Invar(ss1 + 1);
-    ONE23(`RECALC_TAB("spsu2/spsu2-1ch-doubletp.dat", SPSU2::LENGTH_D_1CH, Invar(2))',
-          `RECALC_TAB("spsu2/spsu2-2ch-doubletp.dat", SPSU2::LENGTH_D_2CH, Invar(2))',
-          `RECALC_TAB("spsu2/spsu2-3ch-doubletp.dat", SPSU2::LENGTH_D_3CH, Invar(2))');
+    ONE23(`RECALC_TAB("spsu2/spsu2-1ch-doubletp.dat", Invar(2))',
+          `RECALC_TAB("spsu2/spsu2-2ch-doubletp.dat", Invar(2))',
+          `RECALC_TAB("spsu2/spsu2-3ch-doubletp.dat", Invar(2))');
 
     Ip = Invar(ss1-1);
-    ONE23(`RECALC_TAB("spsu2/spsu2-1ch-doubletm.dat", SPSU2::LENGTH_D_1CH, Invar(2))',
-          `RECALC_TAB("spsu2/spsu2-2ch-doubletm.dat", SPSU2::LENGTH_D_2CH, Invar(2))',
-          `RECALC_TAB("spsu2/spsu2-3ch-doubletm.dat", SPSU2::LENGTH_D_3CH, Invar(2))');
+    ONE23(`RECALC_TAB("spsu2/spsu2-1ch-doubletm.dat", Invar(2))',
+          `RECALC_TAB("spsu2/spsu2-2ch-doubletm.dat", Invar(2))',
+          `RECALC_TAB("spsu2/spsu2-3ch-doubletm.dat", Invar(2))');
     }
   } else {
     for(const auto &[I1, eig]: diag) {
@@ -36,16 +30,17 @@ MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax 
       Invar Ip;
 
       Ip = Invar(ss1 + 1);
-      RECALC_TAB("spsu2/spsu2-1ch-doubletp.dat", SPSU2::LENGTH_D_1CH, Invar(2));
+      RECALC_TAB("spsu2/spsu2-1ch-doubletp.dat", Invar(2));
 
       Ip = Invar(ss1 - 1);
-      RECALC_TAB("spsu2/spsu2-1ch-doubletm.dat", SPSU2::LENGTH_D_1CH, Invar(2));
+      RECALC_TAB("spsu2/spsu2-1ch-doubletm.dat", Invar(2));
     }
   }
   return cnew;
 }
 
 // Driver routine for recalc_f()
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   my_assert(!P.substeps);
   Opch opch = newopch(P);
@@ -54,20 +49,24 @@ Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     Invar I1;
 
     I1 = Invar(ssp + 1);
-    ONE23(`RECALC_F_TAB("spsu2/spsu2-1ch-spinupa.dat", 0, SPSU2::LENGTH_I_1CH)',
-          `RECALC_F_TAB("spsu2/spsu2-2ch-spinupa.dat", 0, SPSU2::LENGTH_I_2CH);
-	   RECALC_F_TAB("spsu2/spsu2-2ch-spinupb.dat", 1, SPSU2::LENGTH_I_2CH)',
-          `RECALC_F_TAB("spsu2/spsu2-3ch-spinupa.dat", 0, SPSU2::LENGTH_I_3CH_0);
-	   RECALC_F_TAB("spsu2/spsu2-3ch-spinupb.dat", 1, SPSU2::LENGTH_I_3CH_1);
-	   RECALC_F_TAB("spsu2/spsu2-3ch-spinupc.dat", 2, SPSU2::LENGTH_I_3CH_2)');
+    ONE23(`RECALC_F_TAB("spsu2/spsu2-1ch-spinupa.dat", 0)',
+
+          `RECALC_F_TAB("spsu2/spsu2-2ch-spinupa.dat", 0);
+	         RECALC_F_TAB("spsu2/spsu2-2ch-spinupb.dat", 1)',
+           
+          `RECALC_F_TAB("spsu2/spsu2-3ch-spinupa.dat", 0);
+       	   RECALC_F_TAB("spsu2/spsu2-3ch-spinupb.dat", 1);
+	         RECALC_F_TAB("spsu2/spsu2-3ch-spinupc.dat", 2)');
 
     I1 = Invar(ssp-1);
-    ONE23(`RECALC_F_TAB("spsu2/spsu2-1ch-spindowna.dat", 0, SPSU2::LENGTH_I_1CH)',
-          `RECALC_F_TAB("spsu2/spsu2-2ch-spindowna.dat", 0, SPSU2::LENGTH_I_2CH);
-           RECALC_F_TAB("spsu2/spsu2-2ch-spindownb.dat", 1, SPSU2::LENGTH_I_2CH)',
-          `RECALC_F_TAB("spsu2/spsu2-3ch-spindowna.dat", 0, SPSU2::LENGTH_I_3CH_0);
-           RECALC_F_TAB("spsu2/spsu2-3ch-spindownb.dat", 1, SPSU2::LENGTH_I_3CH_1);
-           RECALC_F_TAB("spsu2/spsu2-3ch-spindownc.dat", 2, SPSU2::LENGTH_I_3CH_2)');
+    ONE23(`RECALC_F_TAB("spsu2/spsu2-1ch-spindowna.dat", 0)',
+
+          `RECALC_F_TAB("spsu2/spsu2-2ch-spindowna.dat", 0);
+           RECALC_F_TAB("spsu2/spsu2-2ch-spindownb.dat", 1)',
+
+          `RECALC_F_TAB("spsu2/spsu2-3ch-spindowna.dat", 0);
+           RECALC_F_TAB("spsu2/spsu2-3ch-spindownb.dat", 1);
+           RECALC_F_TAB("spsu2/spsu2-3ch-spindownc.dat", 2)');
 
     // Note: for 3ch cases, the lengths in the three channels are not the same!
     // The same thing occurs for all SU(2)_spin cases, for instance for symtype=QS.
@@ -85,10 +84,10 @@ OpchChannel SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagI
     Invar I1;
 
     I1 = Invar(ssp + 1);
-    RECALC_F_TAB("spsu2/spsu2-1ch-spinupa.dat", M, SPSU2::LENGTH_I_1CH);
+    RECALC_F_TAB("spsu2/spsu2-1ch-spinupa.dat", M);
 
     I1 = Invar(ssp - 1);
-    RECALC_F_TAB("spsu2/spsu2-1ch-spindowna.dat", M, SPSU2::LENGTH_I_1CH);
+    RECALC_F_TAB("spsu2/spsu2-1ch-spindowna.dat", M);
   }
   return opch[M];
 }
@@ -102,19 +101,19 @@ MatrixElements SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax 
       Invar Ip;
 
       Ip = Invar(ss1);
-    ONE23(`RECALC_TAB("spsu2/spsu2-1ch-triplets.dat", SPSU2::LENGTH_T0_1CH, Invar(3))',
-          `RECALC_TAB("spsu2/spsu2-2ch-triplets.dat", SPSU2::LENGTH_T0_2CH, Invar(3))',
-          `RECALC_TAB("spsu2/spsu2-3ch-triplets.dat", SPSU2::LENGTH_T0_3CH, Invar(3))');
+    ONE23(`RECALC_TAB("spsu2/spsu2-1ch-triplets.dat", Invar(3))',
+          `RECALC_TAB("spsu2/spsu2-2ch-triplets.dat", Invar(3))',
+          `RECALC_TAB("spsu2/spsu2-3ch-triplets.dat", Invar(3))');
 
     Ip = Invar(ss1+2);
-    ONE23(`RECALC_TAB("spsu2/spsu2-1ch-tripletp.dat", SPSU2::LENGTH_Tpm_1CH, Invar(3))',
-          `RECALC_TAB("spsu2/spsu2-2ch-tripletp.dat", SPSU2::LENGTH_Tpm_2CH, Invar(3))',
-          `RECALC_TAB("spsu2/spsu2-3ch-tripletp.dat", SPSU2::LENGTH_Tpm_3CH, Invar(3))');
+    ONE23(`RECALC_TAB("spsu2/spsu2-1ch-tripletp.dat", Invar(3))',
+          `RECALC_TAB("spsu2/spsu2-2ch-tripletp.dat", Invar(3))',
+          `RECALC_TAB("spsu2/spsu2-3ch-tripletp.dat", Invar(3))');
 
     Ip = Invar(ss1-2);
-    ONETWO(`RECALC_TAB("spsu2/spsu2-1ch-tripletm.dat", SPSU2::LENGTH_Tpm_1CH, Invar(3))',
-           `RECALC_TAB("spsu2/spsu2-2ch-tripletm.dat", SPSU2::LENGTH_Tpm_2CH, Invar(3))',
-           `RECALC_TAB("spsu2/spsu2-3ch-tripletm.dat", SPSU2::LENGTH_Tpm_3CH, Invar(3))');
+    ONETWO(`RECALC_TAB("spsu2/spsu2-1ch-tripletm.dat", Invar(3))',
+           `RECALC_TAB("spsu2/spsu2-2ch-tripletm.dat", Invar(3))',
+           `RECALC_TAB("spsu2/spsu2-3ch-tripletm.dat", Invar(3))');
     }
   } else my_assert_not_reached();
   return cnew;

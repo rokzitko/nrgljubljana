@@ -156,7 +156,7 @@ struct InvarStructure {
   int type;
 };
 
-void initInvar(const InvarStructure *structure, const size_t len) {
+void initInvar(const InvarStructure *structure, const size_t len) { // XXX
   Invar::invdim = len;
   Invar::qntype.resize(len);
   for (size_t i = 0; i < len; i++) {

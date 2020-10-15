@@ -6,10 +6,6 @@
 
 include(recalc-macros.m4)
 
-namespace QSZTZ {
-#include "qsztz/qsztz-def.dat"
-}
-
 // Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
@@ -23,22 +19,22 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
     // 1 = triplet (because working with abs orbital momentum QNs)
 
     Ip = Invar(q1 - 1, ssz1 + 1, tz1 - 1);
-    RECALC_TAB("qsztz/qsztz-doubletp-1.dat", QSZTZ::LENGTH_D_3CH, Invar(1, -1, +1));
+    RECALC_TAB("qsztz/qsztz-doubletp-1.dat", Invar(1, -1, +1));
 
     Ip = Invar(q1 - 1, ssz1 - 1, tz1 - 1);
-    RECALC_TAB("qsztz/qsztz-doubletm-1.dat", QSZTZ::LENGTH_D_3CH, Invar(1, +1, +1));
+    RECALC_TAB("qsztz/qsztz-doubletm-1.dat", Invar(1, +1, +1));
 
     Ip = Invar(q1 - 1, ssz1 + 1, tz1);
-    RECALC_TAB("qsztz/qsztz-doubletp0.dat", QSZTZ::LENGTH_D_3CH, Invar(1, -1, 0));
+    RECALC_TAB("qsztz/qsztz-doubletp0.dat", Invar(1, -1, 0));
 
     Ip = Invar(q1 - 1, ssz1 - 1, tz1);
-    RECALC_TAB("qsztz/qsztz-doubletm0.dat", QSZTZ::LENGTH_D_3CH, Invar(1, +1, 0));
+    RECALC_TAB("qsztz/qsztz-doubletm0.dat", Invar(1, +1, 0));
 
     Ip = Invar(q1 - 1, ssz1 + 1, tz1 + 1);
-    RECALC_TAB("qsztz/qsztz-doubletp+1.dat", QSZTZ::LENGTH_D_3CH, Invar(1, -1, -1));
+    RECALC_TAB("qsztz/qsztz-doubletp+1.dat", Invar(1, -1, -1));
 
     Ip = Invar(q1 - 1, ssz1 - 1, tz1 + 1);
-    RECALC_TAB("qsztz/qsztz-doubletm+1.dat", QSZTZ::LENGTH_D_3CH, Invar(1, +1, -1));
+    RECALC_TAB("qsztz/qsztz-doubletm+1.dat", Invar(1, +1, -1));
   }
   return cnew;
 }
@@ -57,22 +53,22 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     Invar I1;
 
     I1 = Invar(qp + 1, sszp + 1, tzp + 1);
-    RECALC_F_TAB("qsztz/qsztz-spinup+1.dat", 0, QSZTZ::LENGTH_I_3CH);
+    RECALC_F_TAB("qsztz/qsztz-spinup+1.dat", 0);
 
     I1 = Invar(qp + 1, sszp + 1, tzp);
-    RECALC_F_TAB("qsztz/qsztz-spinup0.dat", 0, QSZTZ::LENGTH_I_3CH);
+    RECALC_F_TAB("qsztz/qsztz-spinup0.dat", 0);
 
     I1 = Invar(qp + 1, sszp + 1, tzp - 1);
-    RECALC_F_TAB("qsztz/qsztz-spinup-1.dat", 0, QSZTZ::LENGTH_I_3CH);
+    RECALC_F_TAB("qsztz/qsztz-spinup-1.dat", 0);
 
     I1 = Invar(qp + 1, sszp - 1, tzp + 1);
-    RECALC_F_TAB("qsztz/qsztz-spindo+1.dat", 0, QSZTZ::LENGTH_I_3CH);
+    RECALC_F_TAB("qsztz/qsztz-spindo+1.dat", 0);
 
     I1 = Invar(qp + 1, sszp - 1, tzp);
-    RECALC_F_TAB("qsztz/qsztz-spindo0.dat", 0, QSZTZ::LENGTH_I_3CH);
+    RECALC_F_TAB("qsztz/qsztz-spindo0.dat", 0);
 
     I1 = Invar(qp + 1, sszp - 1, tzp - 1);
-    RECALC_F_TAB("qsztz/qsztz-spindo-1.dat", 0, QSZTZ::LENGTH_I_3CH);
+    RECALC_F_TAB("qsztz/qsztz-spindo-1.dat", 0);
   }
   return opch;
 }
@@ -87,13 +83,13 @@ MatrixElements SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
     Invar Ip;
 
     Ip = Invar(q1, ssz1, tz1);
-    RECALC_TAB("qsztz/qsztz-triplets.dat", QSZTZ::LENGTH_T0_3CH, Invar(0, 3, 0));
+    RECALC_TAB("qsztz/qsztz-triplets.dat", Invar(0, 3, 0));
 
     Ip = Invar(q1, ssz1 + 2, tz1);
-    RECALC_TAB("qsztz/qsztz-tripletp.dat", QSZTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+    RECALC_TAB("qsztz/qsztz-tripletp.dat", Invar(0, 3, 0));
 
     Ip = Invar(q1, ssz1 - 2, tz1);
-    RECALC_TAB("qsztz/qsztz-tripletm.dat", QSZTZ::LENGTH_Tpm_3CH, Invar(0, 3, 0));
+    RECALC_TAB("qsztz/qsztz-tripletm.dat", Invar(0, 3, 0));
   }
   return cnew;
 }

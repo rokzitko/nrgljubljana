@@ -34,7 +34,7 @@ std::string parse_datafile_header(istream &fdata, const int expected_version = 9
 
 // Read the number of channels from data file. Also sets P.combs accordingly, depending on the spin of the conduction
 // band electrons.
-void read_nr_channels(ifstream &fdata, std::string sym_string, Params &P) {
+void read_nr_channels(ifstream &fdata, std::string &sym_string, Params &P) {
   size_t channels;
   fdata >> channels;
   my_assert(channels >= 1);

@@ -6,10 +6,6 @@
 
 include(recalc-macros.m4)
 
-namespace QJ {
-#include "qj/qj-def.dat"
-}
-
 // Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
@@ -19,10 +15,10 @@ MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
     Invar Ip;
 
     Ip = Invar(q1 - 1, jj1 + 1);
-    RECALC_TAB("qj/qj-doubletp.dat", QJ::LENGTH_D_3CH, Invar(1, 2));
+    RECALC_TAB("qj/qj-doubletp.dat", Invar(1, 2));
 
     Ip = Invar(q1 - 1, jj1 - 1);
-    RECALC_TAB("qj/qj-doubletm.dat", QJ::LENGTH_D_3CH, Invar(1, 2));
+    RECALC_TAB("qj/qj-doubletm.dat", Invar(1, 2));
   }
   return cnew;
 }
@@ -40,16 +36,16 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
     Invar Ip;
 
     Ip = Invar(q1 - 1, jj1 + 3);
-    RECALC_TAB("qj/qj-quad1.dat", QJ::LENGTH_Q1_3CH, Invar(1, 4));
+    RECALC_TAB("qj/qj-quad1.dat", Invar(1, 4));
 
     Ip = Invar(q1 - 1, jj1 + 1);
-    RECALC_TAB("qj/qj-quad2.dat", QJ::LENGTH_Q2_3CH, Invar(1, 4));
+    RECALC_TAB("qj/qj-quad2.dat", Invar(1, 4));
 
     Ip = Invar(q1 - 1, jj1 - 1);
-    RECALC_TAB("qj/qj-quad3.dat", QJ::LENGTH_Q2_3CH, Invar(1, 4));
+    RECALC_TAB("qj/qj-quad3.dat", Invar(1, 4));
 
     Ip = Invar(q1 - 1, jj1 - 3);
-    RECALC_TAB("qj/qj-quad4.dat", QJ::LENGTH_Q1_3CH, Invar(1, 4));
+    RECALC_TAB("qj/qj-quad4.dat", Invar(1, 4));
   }
   return cnew;
 }
@@ -63,18 +59,18 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
     Invar I1;
 
     I1 = Invar(qp + 1, jjp + 3);
-    RECALC_F_TAB("qj/qj-spin_j3_2-jz3_2.dat", 1, QJ::LENGTH_I_3CH_j3_2_jz3_2);
+    RECALC_F_TAB("qj/qj-spin_j3_2-jz3_2.dat", 1);
 
     I1 = Invar(qp + 1, jjp + 1);
-    RECALC_F_TAB("qj/qj-spin_j1_2-jz1_2.dat", 0, QJ::LENGTH_I_3CH_j1_2_jz1_2);
-    RECALC_F_TAB("qj/qj-spin_j3_2-jz1_2.dat", 1, QJ::LENGTH_I_3CH_j3_2_jz1_2);
+    RECALC_F_TAB("qj/qj-spin_j1_2-jz1_2.dat", 0);
+    RECALC_F_TAB("qj/qj-spin_j3_2-jz1_2.dat", 1);
 
     I1 = Invar(qp + 1, jjp - 1);
-    RECALC_F_TAB("qj/qj-spin_j1_2-jz-1_2.dat", 0, QJ::LENGTH_I_3CH_j1_2_jzM1_2);
-    RECALC_F_TAB("qj/qj-spin_j3_2-jz-1_2.dat", 1, QJ::LENGTH_I_3CH_j3_2_jzM1_2);
+    RECALC_F_TAB("qj/qj-spin_j1_2-jz-1_2.dat", 0);
+    RECALC_F_TAB("qj/qj-spin_j3_2-jz-1_2.dat", 1);
 
     I1 = Invar(qp + 1, jjp - 3);
-    RECALC_F_TAB("qj/qj-spin_j3_2-jz-3_2.dat", 1, QJ::LENGTH_I_3CH_j3_2_jzM3_2);
+    RECALC_F_TAB("qj/qj-spin_j3_2-jz-3_2.dat", 1);
   }
   return opch;
 }

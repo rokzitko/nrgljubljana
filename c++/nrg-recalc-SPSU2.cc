@@ -4,16 +4,11 @@
 // Rok Zitko, rok.zitko@ijs.si, Feb 2006, Dec 2007
 // This file pertains to (S) subspaces
 
-namespace SPSU2 {
-#include "spsu2/spsu2-1ch-def.dat"
-#include "spsu2/spsu2-2ch-def.dat"
-#include "spsu2/spsu2-3ch-def.dat"
-} // namespace SPSU2
-
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
-// m4 comment: $2 is length, $3,... are quantum numbers
+
+
 
 
 
@@ -38,45 +33,42 @@ MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax 
       Ip = Invar(ss1 + 1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-doubletp.dat" << ", len=" << SPSU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-doubletp.dat" << ", Iop=" << Invar(2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-1ch-doubletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_D_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_D_1CH, Invar(2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-doubletp.dat" << ", len=" << SPSU2::LENGTH_D_2CH << ", Iop=" << Invar(2) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-doubletp.dat" << ", Iop=" << Invar(2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-2ch-doubletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_D_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_D_2CH, Invar(2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 3: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-3ch-doubletp.dat" << ", len=" << SPSU2::LENGTH_D_3CH << ", Iop=" << Invar(2) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-3ch-doubletp.dat" << ", Iop=" << Invar(2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-3ch-doubletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_D_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_D_3CH, Invar(2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -88,45 +80,42 @@ MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ss1-1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-doubletm.dat" << ", len=" << SPSU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-doubletm.dat" << ", Iop=" << Invar(2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-1ch-doubletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_D_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_D_1CH, Invar(2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-doubletm.dat" << ", len=" << SPSU2::LENGTH_D_2CH << ", Iop=" << Invar(2) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-doubletm.dat" << ", Iop=" << Invar(2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-2ch-doubletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_D_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_D_2CH, Invar(2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 3: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-3ch-doubletm.dat" << ", len=" << SPSU2::LENGTH_D_3CH << ", Iop=" << Invar(2) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-3ch-doubletm.dat" << ", Iop=" << Invar(2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-3ch-doubletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_D_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_D_3CH, Invar(2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -142,15 +131,14 @@ MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax 
 
       Ip = Invar(ss1 + 1);
       {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-doubletp.dat" << ", len=" << SPSU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-doubletp.dat" << ", Iop=" << Invar(2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-1ch-doubletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_D_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_D_1CH, Invar(2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -159,15 +147,14 @@ MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax 
 
       Ip = Invar(ss1 - 1);
       {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-doubletm.dat" << ", len=" << SPSU2::LENGTH_D_1CH << ", Iop=" << Invar(2) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-doubletm.dat" << ", Iop=" << Invar(2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-1ch-doubletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_D_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_D_1CH, Invar(2));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -179,6 +166,7 @@ MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax 
 }
 
 // Driver routine for recalc_f()
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   my_assert(!P.substeps);
   Opch opch = newopch(P);
@@ -189,98 +177,86 @@ Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     I1 = Invar(ssp + 1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-1ch-spinupa.dat" << ", ch=" << 0 << ", len=" << SPSU2::LENGTH_I_1CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-1ch-spinupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-1ch-spinupa.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_1CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-2ch-spinupa.dat" << ", ch=" << 0 << ", len=" << SPSU2::LENGTH_I_2CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-2ch-spinupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-2ch-spinupa.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_2CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
-	   {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-2ch-spinupb.dat" << ", ch=" << 1 << ", len=" << SPSU2::LENGTH_I_2CH << ")");
+	         {
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-2ch-spinupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-2ch-spinupb.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_2CH);
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[1][0][II] = Matrix(0,0);
+      opch[1][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 3: { {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spinupa.dat" << ", ch=" << 0 << ", len=" << SPSU2::LENGTH_I_3CH_0 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spinupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-3ch-spinupa.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_0);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_3CH_0);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
-	   {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spinupb.dat" << ", ch=" << 1 << ", len=" << SPSU2::LENGTH_I_3CH_1 << ")");
+       	   {
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spinupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-3ch-spinupb.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_1);
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_3CH_1);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[1][0][II] = Matrix(0,0);
+      opch[1][0][II] = Matrix(0,0); // ???
     }
   }
 };
-	   {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spinupc.dat" << ", ch=" << 2 << ", len=" << SPSU2::LENGTH_I_3CH_2 << ")");
+	         {
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spinupc.dat" << ", ch=" << 2 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-3ch-spinupc.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_2);
-      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_3CH_2);
+      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[2][0][II] = Matrix(0,0);
+      opch[2][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
@@ -290,98 +266,86 @@ Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     I1 = Invar(ssp-1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-1ch-spindowna.dat" << ", ch=" << 0 << ", len=" << SPSU2::LENGTH_I_1CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-1ch-spindowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-1ch-spindowna.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_1CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_1CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-2ch-spindowna.dat" << ", ch=" << 0 << ", len=" << SPSU2::LENGTH_I_2CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-2ch-spindowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-2ch-spindowna.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_2CH);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_2CH);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
            {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-2ch-spindownb.dat" << ", ch=" << 1 << ", len=" << SPSU2::LENGTH_I_2CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-2ch-spindownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-2ch-spindownb.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_2CH);
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_2CH);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[1][0][II] = Matrix(0,0);
+      opch[1][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 3: { {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spindowna.dat" << ", ch=" << 0 << ", len=" << SPSU2::LENGTH_I_3CH_0 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spindowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-3ch-spindowna.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_0);
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_3CH_0);
+      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[0][0][II] = Matrix(0,0);
+      opch[0][0][II] = Matrix(0,0); // ???
     }
   }
 };
            {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spindownb.dat" << ", ch=" << 1 << ", len=" << SPSU2::LENGTH_I_3CH_1 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spindownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-3ch-spindownb.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_1);
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_3CH_1);
+      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[1][0][II] = Matrix(0,0);
+      opch[1][0][II] = Matrix(0,0); // ???
     }
   }
 };
            {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spindownc.dat" << ", ch=" << 2 << ", len=" << SPSU2::LENGTH_I_3CH_2 << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-3ch-spindownc.dat" << ", ch=" << 2 << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-3ch-spindownc.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_3CH_2);
-      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_3CH_2);
+      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[2][0][II] = Matrix(0,0);
+      opch[2][0][II] = Matrix(0,0); // ???
     }
   }
 } } break;
@@ -405,36 +369,32 @@ OpchChannel SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagI
 
     I1 = Invar(ssp + 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-1ch-spinupa.dat" << ", ch=" << M << ", len=" << SPSU2::LENGTH_I_1CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-1ch-spinupa.dat" << ", ch=" << M << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-1ch-spinupa.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_1CH);
-      opch[M][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_1CH);
+      opch[M][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[M][0][II] = Matrix(0,0);
+      opch[M][0][II] = Matrix(0,0); // ???
     }
   }
 };
 
     I1 = Invar(ssp - 1);
     {
-  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-1ch-spindowna.dat" << ", ch=" << M << ", len=" << SPSU2::LENGTH_I_1CH << ")");
+  nrglog('f', "RECALC_F(fn=" << "spsu2/spsu2-1ch-spindowna.dat" << ", ch=" << M << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
       struct Recalc_f recalc_table[] = {
 #include "spsu2/spsu2-1ch-spindowna.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_I_1CH);
-      opch[M][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, SPSU2::LENGTH_I_1CH);
+      opch[M][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
     } else {
-      opch[M][0][II] = Matrix(0,0);
+      opch[M][0][II] = Matrix(0,0); // ???
     }
   }
 };
@@ -453,45 +413,42 @@ MatrixElements SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax 
       Ip = Invar(ss1);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-triplets.dat" << ", len=" << SPSU2::LENGTH_T0_1CH << ", Iop=" << Invar(3) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-triplets.dat" << ", Iop=" << Invar(3) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-1ch-triplets.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_T0_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_T0_1CH, Invar(3));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-triplets.dat" << ", len=" << SPSU2::LENGTH_T0_2CH << ", Iop=" << Invar(3) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-triplets.dat" << ", Iop=" << Invar(3) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-2ch-triplets.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_T0_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_T0_2CH, Invar(3));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 3: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-3ch-triplets.dat" << ", len=" << SPSU2::LENGTH_T0_3CH << ", Iop=" << Invar(3) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-3ch-triplets.dat" << ", Iop=" << Invar(3) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-3ch-triplets.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_T0_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_T0_3CH, Invar(3));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -503,45 +460,42 @@ MatrixElements SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ss1+2);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-tripletp.dat" << ", len=" << SPSU2::LENGTH_Tpm_1CH << ", Iop=" << Invar(3) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-tripletp.dat" << ", Iop=" << Invar(3) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-1ch-tripletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_Tpm_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_Tpm_1CH, Invar(3));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-tripletp.dat" << ", len=" << SPSU2::LENGTH_Tpm_2CH << ", Iop=" << Invar(3) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-tripletp.dat" << ", Iop=" << Invar(3) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-2ch-tripletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_Tpm_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_Tpm_2CH, Invar(3));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 3: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-3ch-tripletp.dat" << ", len=" << SPSU2::LENGTH_Tpm_3CH << ", Iop=" << Invar(3) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-3ch-tripletp.dat" << ", Iop=" << Invar(3) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-3ch-tripletp.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_Tpm_3CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_Tpm_3CH, Invar(3));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
@@ -553,30 +507,28 @@ MatrixElements SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax 
     Ip = Invar(ss1-2);
     switch (P.channels) {
   case 1: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-tripletm.dat" << ", len=" << SPSU2::LENGTH_Tpm_1CH << ", Iop=" << Invar(3) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-1ch-tripletm.dat" << ", Iop=" << Invar(3) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-1ch-tripletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_Tpm_1CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_Tpm_1CH, Invar(3));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }
   }
 } } break;
   case 2: { {
-  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-tripletm.dat" << ", len=" << SPSU2::LENGTH_Tpm_2CH << ", Iop=" << Invar(3) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2/spsu2-2ch-tripletm.dat" << ", Iop=" << Invar(3) << ")");
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       struct Recalc recalc_table[] = {
 #include "spsu2/spsu2-2ch-tripletm.dat"
       };
-      BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == SPSU2::LENGTH_Tpm_2CH);
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, SPSU2::LENGTH_Tpm_2CH, Invar(3));
+      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3));
     } else {
       cnew[II] = Matrix(0,0); // ???
     }

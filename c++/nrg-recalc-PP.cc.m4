@@ -5,21 +5,7 @@
 // This file pertains to the case with only fermion number parities
 // (one per channel).
 
-namespace PP {
-#include "pp/pp-2ch-def.dat"
-}
-
 include(recalc-macros.m4)
-
-define(`RECALC_F_TAB_P', {
-     if (diag.count(I1)) {
-       struct Recalc_f recalc_table[] = {
-#include $1
-       };
-       BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-       opch[$2][$3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, $4);
-     }
-   })
 
 // Driver routine for recalc_f()
 Opch SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
@@ -30,18 +16,18 @@ Opch SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 
     {
       Invar I1 = Invar(-pa, pb);
-      RECALC_F_TAB_P("pp/pp-2ch-a-CR-DO.dat", 0, 0, PP::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-a-CR-UP.dat", 0, 1, PP::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-a-AN-DO.dat", 0, 2, PP::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-a-AN-UP.dat", 0, 3, PP::LENGTH_I_2CH);
+      RECALC_F_TAB_N("pp/pp-2ch-a-CR-DO.dat", 0, 0);
+      RECALC_F_TAB_N("pp/pp-2ch-a-CR-UP.dat", 0, 1);
+      RECALC_F_TAB_N("pp/pp-2ch-a-AN-DO.dat", 0, 2);
+      RECALC_F_TAB_N("pp/pp-2ch-a-AN-UP.dat", 0, 3);
     }
 
     {
       Invar I1 = Invar(pa, -pb);
-      RECALC_F_TAB_P("pp/pp-2ch-b-CR-DO.dat", 1, 0, PP::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-b-CR-UP.dat", 1, 1, PP::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-b-AN-DO.dat", 1, 2, PP::LENGTH_I_2CH);
-      RECALC_F_TAB_P("pp/pp-2ch-b-AN-UP.dat", 1, 3, PP::LENGTH_I_2CH);
+      RECALC_F_TAB_N("pp/pp-2ch-b-CR-DO.dat", 1, 0);
+      RECALC_F_TAB_N("pp/pp-2ch-b-CR-UP.dat", 1, 1);
+      RECALC_F_TAB_N("pp/pp-2ch-b-AN-DO.dat", 1, 2);
+      RECALC_F_TAB_N("pp/pp-2ch-b-AN-UP.dat", 1, 3);
     }
   }
   return opch;

@@ -6,12 +6,8 @@
 
 include(recalc-macros.m4)
 
-namespace SU2 {
-#include "su2/su2-1ch-def.dat"
-#include "su2/su2-2ch-def.dat"
-}
-
 // Recalculate matrix elements of a doublet tenzor operator
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -19,30 +15,18 @@ MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &q
     Invar Ip;
 
     Ip = Invar(ii1 - 1);
-    ONETWO(`RECALC_TAB("su2/su2-1ch-doubletm.dat", SU2::LENGTH_D_1CH, Invar(2))',
-           `RECALC_TAB("su2/su2-2ch-doubletm.dat", SU2::LENGTH_D_2CH, Invar(2))');
+    ONETWO(`RECALC_TAB("su2/su2-1ch-doubletm.dat", Invar(2))',
+           `RECALC_TAB("su2/su2-2ch-doubletm.dat", Invar(2))');
 
     Ip = Invar(ii1+1);
-    ONETWO(`RECALC_TAB("su2/su2-1ch-doubletp.dat", SU2::LENGTH_D_1CH, Invar(2))',
-    	   `RECALC_TAB("su2/su2-2ch-doubletp.dat", SU2::LENGTH_D_2CH, Invar(2))');
+    ONETWO(`RECALC_TAB("su2/su2-1ch-doubletp.dat", Invar(2))',
+    	     `RECALC_TAB("su2/su2-2ch-doubletp.dat", Invar(2))');
   }
   return cnew;
 }
 
-// Override the recalc_f definition: we need to track the type (1 or 2) of
-// the f-matrices.
-
-define(`RECALC_F_TAB_SU2', {
-  if (diag.count(I1)) {
-    struct Recalc_f recalc_table[] = {
-#include $1
-    };
-    BOOST_STATIC_ASSERT(ARRAYLENGTH(recalc_table) == $4);
-    opch[$2][$3][Twoinvar(I1, Ip)] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, $4);
-  }
-})
-
 // Driver routine for recalc_f()
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -59,22 +43,22 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
     // type 2: [f^dag_DO, f_UP]
 
     I1 = Invar(iip + 1);
-    ONETWO(`RECALC_F_TAB_SU2("su2/su2-1ch-type1-isoup-a.dat", 0, 0, SU2::LENGTH_I_1CH);
-            RECALC_F_TAB_SU2("su2/su2-1ch-type2-isoup-a.dat", 0, 1, SU2::LENGTH_I_1CH)',
+    ONETWO(`RECALC_F_TAB_N("su2/su2-1ch-type1-isoup-a.dat", 0, 0);
+            RECALC_F_TAB_N("su2/su2-1ch-type2-isoup-a.dat", 0, 1)',
 
-           `RECALC_F_TAB_SU2("su2/su2-2ch-type1-isoup-a.dat", 0, 0, SU2::LENGTH_I_2CH);
-	    RECALC_F_TAB_SU2("su2/su2-2ch-type1-isoup-b.dat", 1, 0, SU2::LENGTH_I_2CH);
-            RECALC_F_TAB_SU2("su2/su2-2ch-type2-isoup-a.dat", 0, 1, SU2::LENGTH_I_2CH);
-	    RECALC_F_TAB_SU2("su2/su2-2ch-type2-isoup-b.dat", 1, 1, SU2::LENGTH_I_2CH)');
+           `RECALC_F_TAB_N("su2/su2-2ch-type1-isoup-a.dat", 0, 0);
+	          RECALC_F_TAB_N("su2/su2-2ch-type1-isoup-b.dat", 1, 0);
+            RECALC_F_TAB_N("su2/su2-2ch-type2-isoup-a.dat", 0, 1);
+	          RECALC_F_TAB_N("su2/su2-2ch-type2-isoup-b.dat", 1, 1)');
 
     I1 = Invar(iip-1);
-    ONETWO(`RECALC_F_TAB_SU2("su2/su2-1ch-type1-isodown-a.dat", 0, 0, SU2::LENGTH_I_1CH);
-            RECALC_F_TAB_SU2("su2/su2-1ch-type2-isodown-a.dat", 0, 1, SU2::LENGTH_I_1CH)',
+    ONETWO(`RECALC_F_TAB_N("su2/su2-1ch-type1-isodown-a.dat", 0, 0);
+            RECALC_F_TAB_N("su2/su2-1ch-type2-isodown-a.dat", 0, 1)',
 
-           `RECALC_F_TAB_SU2("su2/su2-2ch-type1-isodown-a.dat", 0, 0, SU2::LENGTH_I_2CH);
-	    RECALC_F_TAB_SU2("su2/su2-2ch-type1-isodown-b.dat", 1, 0, SU2::LENGTH_I_2CH);
-            RECALC_F_TAB_SU2("su2/su2-2ch-type2-isodown-a.dat", 0, 1, SU2::LENGTH_I_2CH);
-	    RECALC_F_TAB_SU2("su2/su2-2ch-type2-isodown-b.dat", 1, 1, SU2::LENGTH_I_2CH)');
+           `RECALC_F_TAB_N("su2/su2-2ch-type1-isodown-a.dat", 0, 0);
+	          RECALC_F_TAB_N("su2/su2-2ch-type1-isodown-b.dat", 1, 0);
+            RECALC_F_TAB_N("su2/su2-2ch-type2-isodown-a.dat", 0, 1);
+	          RECALC_F_TAB_N("su2/su2-2ch-type2-isodown-b.dat", 1, 1)');
   }
   return opch;
 }

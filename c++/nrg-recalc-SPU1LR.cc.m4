@@ -4,11 +4,6 @@
 // Rok Zitko, rok.zitko@ijs.si, May 2010
 // This file pertains to (SZ,P) subspaces
 
-namespace SPU1LR {
-#include "spu1lr/spu1lr-1ch-def.dat"
-#include "spu1lr/spu1lr-2ch-def.dat"
-} // namespace SPU1LR
-
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
@@ -20,12 +15,12 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
     Invar Ip;
 
     Ip = Invar(ssz1 + 1);
-    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-doubletp.dat", SPU1LR::LENGTH_D_1CH, Invar(-1, 1))',
-           `RECALC_TAB("spu1lr/spu1lr-2ch-doubletp.dat", SPU1LR::LENGTH_D_2CH, Invar(-1, 1))');
+    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-doubletp.dat", Invar(-1, 1))',
+           `RECALC_TAB("spu1lr/spu1lr-2ch-doubletp.dat", Invar(-1, 1))');
 
     Ip = Invar(ssz1-1);
-    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-doubletm.dat", SPU1LR::LENGTH_D_1CH, Invar(+1, 1))',
-           `RECALC_TAB("spu1lr/spu1lr-2ch-doubletm.dat", SPU1LR::LENGTH_D_2CH, Invar(+1, 1))');
+    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-doubletm.dat", Invar(+1, 1))',
+           `RECALC_TAB("spu1lr/spu1lr-2ch-doubletm.dat", Invar(+1, 1))');
   }
   return cnew;
 }
@@ -41,27 +36,27 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
     // CASE I: SAME PARITY
 
     I1 = Invar(sszp + 1, pp);
-    ONETWO(`RECALC_F_TAB("spu1lr/spu1lr-1ch-spinupa.dat", 0, SPU1LR::LENGTH_I_1CH)',
+    ONETWO(`RECALC_F_TAB("spu1lr/spu1lr-1ch-spinupa.dat", 0)',
 
-           `RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupa.dat", 0, SPU1LR::LENGTH_I_2CH);
-	    RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupb.dat", 1, SPU1LR::LENGTH_I_2CH)');
+           `RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupa.dat", 0);
+	          RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupb.dat", 1)');
 
     I1 = Invar(sszp-1, pp);
-    ONETWO(`RECALC_F_TAB("spu1lr/spu1lr-1ch-spindowna.dat", 0, SPU1LR::LENGTH_I_1CH)',
+    ONETWO(`RECALC_F_TAB("spu1lr/spu1lr-1ch-spindowna.dat", 0)',
 
-           `RECALC_F_TAB("spu1lr/spu1lr-2ch-spindowna.dat", 0, SPU1LR::LENGTH_I_2CH);
-            RECALC_F_TAB("spu1lr/spu1lr-2ch-spindownb.dat", 1, SPU1LR::LENGTH_I_2CH)');
+           `RECALC_F_TAB("spu1lr/spu1lr-2ch-spindowna.dat", 0);
+            RECALC_F_TAB("spu1lr/spu1lr-2ch-spindownb.dat", 1)');
 
    // CASE II: OPPOSITE PARITY
 
     if (P.channels == 2) {
       I1 = Invar(sszp + 1, -pp);
-      RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupdiffa.dat", 0, SPU1LR::LENGTH_I_2CH);
-      RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupdiffb.dat", 1, SPU1LR::LENGTH_I_2CH);
+      RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupdiffa.dat", 0);
+      RECALC_F_TAB("spu1lr/spu1lr-2ch-spinupdiffb.dat", 1);
 
       I1 = Invar(sszp - 1, -pp);
-      RECALC_F_TAB("spu1lr/spu1lr-2ch-spindowndiffa.dat", 0, SPU1LR::LENGTH_I_2CH);
-      RECALC_F_TAB("spu1lr/spu1lr-2ch-spindowndiffb.dat", 1, SPU1LR::LENGTH_I_2CH);
+      RECALC_F_TAB("spu1lr/spu1lr-2ch-spindowndiffa.dat", 0);
+      RECALC_F_TAB("spu1lr/spu1lr-2ch-spindowndiffb.dat", 1);
     }
   }
   return opch;
@@ -76,16 +71,16 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
     Invar Ip;
 
     Ip = Invar(ssz1);
-    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-triplets.dat", SPU1LR::LENGTH_T0_1CH, Invar(0, 1))',
-           `RECALC_TAB("spu1lr/spu1lr-2ch-triplets.dat", SPU1LR::LENGTH_T0_2CH, Invar(0, 1))');
+    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-triplets.dat", Invar(0, 1))',
+           `RECALC_TAB("spu1lr/spu1lr-2ch-triplets.dat", Invar(0, 1))');
 
     Ip = Invar(ssz1+2);
-    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-tripletp.dat", SPU1LR::LENGTH_Tpm_1CH, Invar(-2, 1))',
-           `RECALC_TAB("spu1lr/spu1lr-2ch-tripletp.dat", SPU1LR::LENGTH_Tpm_2CH, Invar(-2, 1))');
+    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-tripletp.dat", Invar(-2, 1))',
+           `RECALC_TAB("spu1lr/spu1lr-2ch-tripletp.dat", Invar(-2, 1))');
 
     Ip = Invar(ssz1-2);
-    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-tripletm.dat", SPU1LR::LENGTH_Tpm_1CH, Invar(+2, 1))',
-           `RECALC_TAB("spu1lr/spu1lr-2ch-tripletm.dat", SPU1LR::LENGTH_Tpm_2CH, Invar(+2, 1))');
+    ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-tripletm.dat", Invar(+2, 1))',
+           `RECALC_TAB("spu1lr/spu1lr-2ch-tripletm.dat", Invar(+2, 1))');
   }
   return cnew;
 }

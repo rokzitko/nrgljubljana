@@ -6,10 +6,6 @@
 
 include(recalc-macros.m4)
 
-namespace DBLISOSZ {
-#include "dblisosz/dblisosz-2ch-def.dat"
-}
-
 // Recalculate matrix elements of a doublet tenzor operator
 MatrixElements SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
@@ -20,28 +16,28 @@ MatrixElements SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrm
     Invar Ip;
 
     Ip = Invar(ii11 - 1, ii21, ssz1 - 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doubletm0m.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 1, +1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doubletm0m.dat", Invar(2, 1, +1));
 
     Ip = Invar(ii11 - 1, ii21, ssz1 + 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doubletm0p.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 1, -1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doubletm0p.dat", Invar(2, 1, -1));
 
     Ip = Invar(ii11 + 1, ii21, ssz1 - 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doubletp0m.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 1, +1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doubletp0m.dat", Invar(2, 1, +1));
 
     Ip = Invar(ii11 + 1, ii21, ssz1 + 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doubletp0p.dat", DBLISOSZ::LENGTH_D1_2CH, Invar(2, 1, -1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doubletp0p.dat", Invar(2, 1, -1));
 
     Ip = Invar(ii11, ii21 - 1, ssz1 - 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0mm.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(1, 2, +1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0mm.dat", Invar(1, 2, +1));
 
     Ip = Invar(ii11, ii21 - 1, ssz1 + 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0mp.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(1, 2, -1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0mp.dat", Invar(1, 2, -1));
 
     Ip = Invar(ii11, ii21 + 1, ssz1 - 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0pm.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(1, 2, +1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0pm.dat", Invar(1, 2, +1));
 
     Ip = Invar(ii11, ii21 + 1, ssz1 + 1);
-    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0pp.dat", DBLISOSZ::LENGTH_D2_2CH, Invar(1, 2, -1));
+    RECALC_TAB("dblisosz/dblisosz-2ch-doublet0pp.dat", Invar(1, 2, -1));
   }
   return cnew;
 }
@@ -60,31 +56,29 @@ Opch SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, co
     // the new site (f_{n+1}).
     int NN = step.getnn();
 
-    // RECALC_F_TAB_... (filename, channel_number, array_length)
-
     I1 = Invar(ii1p + 1, ii2p, sszp + 1);
-    RECALC_F_TAB("dblisosz/dblisosz-2ch-type1-isoup-a.dat", 0, DBLISOSZ::LENGTH_I_2CH);
+    RECALC_F_TAB("dblisosz/dblisosz-2ch-type1-isoup-a.dat", 0);
 
     I1 = Invar(ii1p + 1, ii2p, sszp - 1);
-    RECALC_F_TAB("dblisosz/dblisosz-2ch-type2-isoup-a.dat", 0, DBLISOSZ::LENGTH_I_2CH);
+    RECALC_F_TAB("dblisosz/dblisosz-2ch-type2-isoup-a.dat", 0);
 
     I1 = Invar(ii1p, ii2p + 1, sszp + 1);
-    RECALC_F_TAB("dblisosz/dblisosz-2ch-type1-isoup-b.dat", 1, DBLISOSZ::LENGTH_I_2CH);
+    RECALC_F_TAB("dblisosz/dblisosz-2ch-type1-isoup-b.dat", 1);
 
     I1 = Invar(ii1p, ii2p + 1, sszp - 1);
-    RECALC_F_TAB("dblisosz/dblisosz-2ch-type2-isoup-b.dat", 1, DBLISOSZ::LENGTH_I_2CH);
+    RECALC_F_TAB("dblisosz/dblisosz-2ch-type2-isoup-b.dat", 1);
 
     I1 = Invar(ii1p - 1, ii2p, sszp + 1);
-    RECALC_F_TAB("dblisosz/dblisosz-2ch-type1-isodown-a.dat", 0, DBLISOSZ::LENGTH_I_2CH);
+    RECALC_F_TAB("dblisosz/dblisosz-2ch-type1-isodown-a.dat", 0);
 
     I1 = Invar(ii1p - 1, ii2p, sszp - 1);
-    RECALC_F_TAB("dblisosz/dblisosz-2ch-type2-isodown-a.dat", 0, DBLISOSZ::LENGTH_I_2CH);
+    RECALC_F_TAB("dblisosz/dblisosz-2ch-type2-isodown-a.dat", 0);
 
     I1 = Invar(ii1p, ii2p - 1, sszp + 1);
-    RECALC_F_TAB("dblisosz/dblisosz-2ch-type1-isodown-b.dat", 1, DBLISOSZ::LENGTH_I_2CH);
+    RECALC_F_TAB("dblisosz/dblisosz-2ch-type1-isodown-b.dat", 1);
 
     I1 = Invar(ii1p, ii2p - 1, sszp - 1);
-    RECALC_F_TAB("dblisosz/dblisosz-2ch-type2-isodown-b.dat", 1, DBLISOSZ::LENGTH_I_2CH);
+    RECALC_F_TAB("dblisosz/dblisosz-2ch-type2-isodown-b.dat", 1);
   }
   return opch;
 }

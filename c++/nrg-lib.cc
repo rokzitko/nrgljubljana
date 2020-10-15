@@ -604,7 +604,7 @@ class Step {
 // Namespace for storing various statistical quantities calculated during iteration.
 class Stats {
  public:
-   t_eigen Egs;
+   t_eigen Egs{};
    
    // ** Thermodynamic quantities
    double Z{};
@@ -682,7 +682,7 @@ void dump_diagonal_matrix(const Matrix &m, const size_t max_nr, ostream &F)
   F << std::endl;
 }
 
-void dump_diagonal_op(const std::string name, const MatrixElements &n, const size_t max_nr, ostream &F) {
+void dump_diagonal_op(const std::string &name, const MatrixElements &n, const size_t max_nr, ostream &F) {
   F << "Diagonal matrix elements of operator " << name << std::endl;
   for (const auto &[II, mat] : n) {
     const auto & [I1, I2] = II;
@@ -1026,7 +1026,7 @@ class ExpvOutput {
        for (const auto &op: fields)
          std::cout << "<" << op << ">=" << m[op] << std::endl;
    }
-   ExpvOutput(const string &fn, map<string, t_expv> &m_, const list<string> fields_, const Params &P_) : m(m_), fields(std::move(fields_)), P(P_) {
+   ExpvOutput(const string &fn, map<string, t_expv> &m_, const list<string> &fields_, const Params &P_) : m(m_), fields(fields_), P(P_) {
      F.open(fn);
      field_numbers();
      field_names();
@@ -2049,7 +2049,7 @@ void print_about_message(ostream &s) {
   s << "Compiled on " << __DATE__ << " at " << __TIME__ << endl << endl;
 }
 
-std::unique_ptr<Symmetry> get(const std::string sym_string, const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry> get(const std::string &sym_string, const Params &P, Allfields &allfields)
 {
   if (sym_string == "QS")     return std::make_unique<SymmetryQS>(P, allfields);
   if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ>(P, allfields);  

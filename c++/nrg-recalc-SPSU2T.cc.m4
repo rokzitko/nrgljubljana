@@ -6,10 +6,6 @@
 
 include(recalc-macros.m4)
 
-namespace SPSU2T {
-#include "spsu2t/spsu2t-def.dat"
-}
-
 // Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
@@ -22,22 +18,22 @@ MatrixElements SymmetrySPSU2T::recalc_doublet(const DiagInfo &diag, const QSrmax
     // Two different lengths: D_3CH_a and D_3CH_b
 
     Ip = Invar(ss1 + 1, t1 - 1);
-    RECALC_TAB("spsu2t/spsu2t-doubletp-1.dat", SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletp-1.dat", Invar(1, 2, 1));
 
     Ip = Invar(ss1 - 1, t1 - 1);
-    RECALC_TAB("spsu2t/spsu2t-doubletm-1.dat", SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletm-1.dat", Invar(1, 2, 1));
 
     Ip = Invar(ss1 + 1, t1);
-    RECALC_TAB("spsu2t/spsu2t-doubletp0.dat", SPSU2T::LENGTH_D_3CH_0, Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletp0.dat", Invar(1, 2, 1));
 
     Ip = Invar(ss1 - 1, t1);
-    RECALC_TAB("spsu2t/spsu2t-doubletm0.dat", SPSU2T::LENGTH_D_3CH_0, Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletm0.dat", Invar(1, 2, 1));
 
     Ip = Invar(ss1 + 1, t1 + 1);
-    RECALC_TAB("spsu2t/spsu2t-doubletp+1.dat", SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletp+1.dat", Invar(1, 2, 1));
 
     Ip = Invar(ss1 - 1, t1 + 1);
-    RECALC_TAB("spsu2t/spsu2t-doubletm+1.dat", SPSU2T::LENGTH_D_3CH_1, Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletm+1.dat", Invar(1, 2, 1));
   }
   return cnew;
 }
@@ -61,22 +57,22 @@ Opch SymmetrySPSU2T::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
     // indexes in different files!! That's indeed the case for the
     // generated files for symtype=SPSU2T.
     I1 = Invar(ssp + 1, tp + 1);
-    RECALC_F_TAB("spsu2t/spsu2t-spinup+1.dat", 0, SPSU2T::LENGTH_I_3CH_0);
+    RECALC_F_TAB("spsu2t/spsu2t-spinup+1.dat", 0);
 
     I1 = Invar(ssp + 1, tp);
-    RECALC_F_TAB("spsu2t/spsu2t-spinup0.dat", 0, SPSU2T::LENGTH_I_3CH_1);
+    RECALC_F_TAB("spsu2t/spsu2t-spinup0.dat", 0);
 
     I1 = Invar(ssp + 1, tp - 1);
-    RECALC_F_TAB("spsu2t/spsu2t-spinup-1.dat", 0, SPSU2T::LENGTH_I_3CH_2);
+    RECALC_F_TAB("spsu2t/spsu2t-spinup-1.dat", 0);
 
     I1 = Invar(ssp - 1, tp + 1);
-    RECALC_F_TAB("spsu2t/spsu2t-spindo+1.dat", 0, SPSU2T::LENGTH_I_3CH_0);
+    RECALC_F_TAB("spsu2t/spsu2t-spindo+1.dat", 0);
 
     I1 = Invar(ssp - 1, tp);
-    RECALC_F_TAB("spsu2t/spsu2t-spindo0.dat", 0, SPSU2T::LENGTH_I_3CH_1);
+    RECALC_F_TAB("spsu2t/spsu2t-spindo0.dat", 0);
 
     I1 = Invar(ssp - 1, tp - 1);
-    RECALC_F_TAB("spsu2t/spsu2t-spindo-1.dat", 0, SPSU2T::LENGTH_I_3CH_2);
+    RECALC_F_TAB("spsu2t/spsu2t-spindo-1.dat", 0);
   }
   return opch;
 }
@@ -91,13 +87,13 @@ MatrixElements SymmetrySPSU2T::recalc_triplet(const DiagInfo &diag, const QSrmax
     Invar Ip;
 
     Ip = Invar(ss1, t1);
-    RECALC_TAB("spsu2t/spsu2t-triplets.dat", SPSU2T::LENGTH_T0_3CH, Invar(3, 0));
+    RECALC_TAB("spsu2t/spsu2t-triplets.dat", Invar(3, 0));
 
     Ip = Invar(ss1 + 2, t1);
-    RECALC_TAB("spsu2t/spsu2t-tripletp.dat", SPSU2T::LENGTH_Tpm_3CH, Invar(3, 0));
+    RECALC_TAB("spsu2t/spsu2t-tripletp.dat", Invar(3, 0));
 
     Ip = Invar(ss1 - 2, t1);
-    RECALC_TAB("spsu2t/spsu2t-tripletm.dat", SPSU2T::LENGTH_Tpm_3CH, Invar(3, 0));
+    RECALC_TAB("spsu2t/spsu2t-tripletm.dat", Invar(3, 0));
   }
   return cnew;
 }

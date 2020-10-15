@@ -3,7 +3,7 @@ class SymmetryQS : public Symmetry {
   outfield Sz2, Q, Q2;
 
   public:
-   template<typename ... Args> SymmetryQS(Args&& ... args) : Symmetry(std::forward<Args>(args)...), 
+   template<typename ... Args> explicit SymmetryQS(Args&& ... args) : Symmetry(std::forward<Args>(args)...), 
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        InvarStructure InvStruc[] = {
          {"Q", additive}, // charge

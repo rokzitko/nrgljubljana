@@ -4,10 +4,6 @@
 // Rok Zitko, rok.zitko@ijs.si, June 2006
 // This file pertains to (Q,Sz,P) subspaces
 
-namespace QSZLR {
-#include "qszlr/qszlr-2ch-def.dat"
-}
-
 include(recalc-macros.m4)
 
 // Driver routine for recalc_f()
@@ -25,22 +21,22 @@ Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
 
     Invar I1;
     I1 = Invar(qp + 1, sszp + 1, pp);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spinupa.dat", 0, QSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spinupb.dat", 1, QSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("qszlr/qszlr-2ch-spinupa.dat", 0);
+    RECALC_F_TAB("qszlr/qszlr-2ch-spinupb.dat", 1);
 
     I1 = Invar(qp + 1, sszp - 1, pp);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spindowna.dat", 0, QSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spindownb.dat", 1, QSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("qszlr/qszlr-2ch-spindowna.dat", 0);
+    RECALC_F_TAB("qszlr/qszlr-2ch-spindownb.dat", 1);
 
     // ****** CASE II: DIFFERENT PARITY ******
 
     I1 = Invar(qp + 1, sszp + 1, -pp);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spinupdiffa.dat", 0, QSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spinupdiffb.dat", 1, QSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("qszlr/qszlr-2ch-spinupdiffa.dat", 0);
+    RECALC_F_TAB("qszlr/qszlr-2ch-spinupdiffb.dat", 1);
 
     I1 = Invar(qp + 1, sszp - 1, -pp);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spindowndiffa.dat", 0, QSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("qszlr/qszlr-2ch-spindowndiffb.dat", 1, QSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("qszlr/qszlr-2ch-spindowndiffa.dat", 0);
+    RECALC_F_TAB("qszlr/qszlr-2ch-spindowndiffb.dat", 1);
   }
   return opch;
 }

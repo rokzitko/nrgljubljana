@@ -6,10 +6,6 @@
 
 include(recalc-macros.m4)
 
-namespace ISOSZLR {
-#include "isoszlr/isoszlr-2ch-def.dat"
-}
-
 // Driver routine for recalc_f()
 Opch SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
@@ -27,38 +23,38 @@ Opch SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, con
     // ****** CASE I: SAME PARITY ******
 
     I1 = Invar(iip + 1, sszp + 1, pp);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isoupa.dat", 0, ISOSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isoupb.dat", 1, ISOSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isoupa.dat", 0);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isoupb.dat", 1);
 
     I1 = Invar(iip + 1, sszp - 1, pp);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isoupa.dat", 0, ISOSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isoupb.dat", 1, ISOSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isoupa.dat", 0);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isoupb.dat", 1);
 
     I1 = Invar(iip - 1, sszp + 1, pp);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isodowna.dat", 0, ISOSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isodownb.dat", 1, ISOSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isodowna.dat", 0);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isodownb.dat", 1);
 
     I1 = Invar(iip - 1, sszp - 1, pp);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodowna.dat", 0, ISOSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodownb.dat", 1, ISOSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodowna.dat", 0);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodownb.dat", 1);
 
     // ****** CASE II: DIFFERENT PARITY ******
 
     I1 = Invar(iip + 1, sszp + 1, -pp);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isoupdiffa.dat", 0, ISOSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isoupdiffb.dat", 1, ISOSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isoupdiffa.dat", 0);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isoupdiffb.dat", 1);
 
     I1 = Invar(iip + 1, sszp - 1, -pp);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isoupdiffa.dat", 0, ISOSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isoupdiffb.dat", 1, ISOSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isoupdiffa.dat", 0);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isoupdiffb.dat", 1);
 
     I1 = Invar(iip - 1, sszp + 1, -pp);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isodowndiffa.dat", 0, ISOSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isodowndiffb.dat", 1, ISOSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isodowndiffa.dat", 0);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spinup-isodowndiffb.dat", 1);
 
     I1 = Invar(iip - 1, sszp - 1, -pp);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodowndiffa.dat", 0, ISOSZLR::LENGTH_I_2CH);
-    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodowndiffb.dat", 1, ISOSZLR::LENGTH_I_2CH);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodowndiffa.dat", 0);
+    RECALC_F_TAB("isoszlr/isoszlr-2ch-spindown-isodowndiffb.dat", 1);
   }
   return opch;
 }
@@ -73,16 +69,16 @@ MatrixElements SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrma
     Invar Ip;
 
     Ip = Invar(ii1 - 1, ssz1 + 1, p1);
-    RECALC_TAB("isoszlr/isoszlr-2ch-doubletmp.dat", ISOSZLR::LENGTH_D_2CH, Invar(2, -1, +1));
+    RECALC_TAB("isoszlr/isoszlr-2ch-doubletmp.dat", Invar(2, -1, +1));
 
     Ip = Invar(ii1 - 1, ssz1 - 1, p1);
-    RECALC_TAB("isoszlr/isoszlr-2ch-doubletmm.dat", ISOSZLR::LENGTH_D_2CH, Invar(2, +1, +1));
+    RECALC_TAB("isoszlr/isoszlr-2ch-doubletmm.dat", Invar(2, +1, +1));
 
     Ip = Invar(ii1 + 1, ssz1 + 1, p1);
-    RECALC_TAB("isoszlr/isoszlr-2ch-doubletpp.dat", ISOSZLR::LENGTH_D_2CH, Invar(2, -1, +1));
+    RECALC_TAB("isoszlr/isoszlr-2ch-doubletpp.dat", Invar(2, -1, +1));
 
     Ip = Invar(ii1 + 1, ssz1 - 1, p1);
-    RECALC_TAB("isoszlr/isoszlr-2ch-doubletpm.dat", ISOSZLR::LENGTH_D_2CH, Invar(2, +1, +1));
+    RECALC_TAB("isoszlr/isoszlr-2ch-doubletpm.dat", Invar(2, +1, +1));
   }
   return cnew;
 }
@@ -97,13 +93,13 @@ MatrixElements SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrma
     Invar Ip;
 
     Ip = Invar(ii1, ssz1, p1);
-    RECALC_TAB("isoszlr/isoszlr-2ch-triplets.dat", ISOSZLR::LENGTH_T0_2CH, Invar(1, 0, +1));
+    RECALC_TAB("isoszlr/isoszlr-2ch-triplets.dat", Invar(1, 0, +1));
 
     Ip = Invar(ii1, ssz1 + 2, p1);
-    RECALC_TAB("isoszlr/isoszlr-2ch-tripletp.dat", ISOSZLR::LENGTH_Tpm_2CH, Invar(1, -2, +1));
+    RECALC_TAB("isoszlr/isoszlr-2ch-tripletp.dat", Invar(1, -2, +1));
 
     Ip = Invar(ii1, ssz1 - 2, p1);
-    RECALC_TAB("isoszlr/isoszlr-2ch-tripletm.dat", ISOSZLR::LENGTH_Tpm_2CH, Invar(1, +2, +1));
+    RECALC_TAB("isoszlr/isoszlr-2ch-tripletm.dat", Invar(1, +2, +1));
   }
   return cnew;
 }

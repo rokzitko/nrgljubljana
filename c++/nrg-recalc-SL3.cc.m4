@@ -6,10 +6,6 @@
 
 include(recalc-macros.m4)
 
-namespace SL3 {
-#include "sl3/sl3-3ch-def.dat"
-}
-
 // Recalculate matrix elements of a "doublet" tensor operator
 MatrixElements SymmetrySL3::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
@@ -18,7 +14,7 @@ MatrixElements SymmetrySL3::recalc_doublet(const DiagInfo &diag, const QSrmax &q
     Number q21 = I1.get("Q2");
     Number q31 = I1.get("Q3");
     Invar Ip   = Invar(q11 - 1, q21, q31); // This is a channel 1 operator
-    RECALC_TAB("sl3/sl3-3ch-doublet.dat", SL::LENGTH_D_3CH, Invar(1, 0, 0));
+    RECALC_TAB("sl3/sl3-3ch-doublet.dat", Invar(1, 0, 0));
   }
   return cnew;
 }
@@ -34,13 +30,13 @@ Opch SymmetrySL3::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
     Invar I1;
 
     I1 = Invar(q1p + 1, q2p, q3p);
-    RECALC_F_TAB("sl3/sl3-3ch-a.dat", 0, SL3::LENGTH_I_3CH);
+    RECALC_F_TAB("sl3/sl3-3ch-a.dat", 0);
 
     I1 = Invar(q1p, q2p + 1, q3p);
-    RECALC_F_TAB("sl3/sl3-3ch-b.dat", 1, SL3::LENGTH_I_3CH);
+    RECALC_F_TAB("sl3/sl3-3ch-b.dat", 1);
 
     I1 = Invar(q1p, q2p, q3p + 1);
-    RECALC_F_TAB("sl3/sl3-3ch-c.dat", 2, SL3::LENGTH_I_3CH);
+    RECALC_F_TAB("sl3/sl3-3ch-c.dat", 2);
   }
   return opch;
 }
