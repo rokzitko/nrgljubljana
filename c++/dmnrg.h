@@ -130,10 +130,11 @@ DensMatElements init_rho_FDM(const size_t N, const AllSteps &dm, const Stats &st
       tr               += Sym->mult(I) * val2;
     }
   }
-  // Trace should be equal to the total weight of the shell-N contribution to the FDM.
-  const auto diff = (tr - stats.wn[N]) / stats.wn[N]; // relative error
-  if (std::isfinite(diff) && !num_equal(diff, 0.0, 1e-8))
-    my_assert(stats.wn[N] < 1e-12);    // ..OK if small enough overall.
+  if (stats.wn[N] != 0.0) {
+    // Trace should be equal to the total weight of the shell-N contribution to the FDM.
+    const auto diff = (tr - stats.wn[N]) / stats.wn[N]; // relative error
+    if (!num_equal(diff, 0.0, 1e-8)) my_assert(stats.wn[N] < 1e-12); // OK if small enough overall
+  }
   return rhoFDM;
 }
 

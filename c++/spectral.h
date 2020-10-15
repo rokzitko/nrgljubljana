@@ -5,11 +5,10 @@
 #define _spectral_h_
 
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
-typedef pair<double, t_weight> t_delta_peak;
+using t_delta_peak = std::pair<double, t_weight>;
 
-// XXX: move to output.h
 // used in matsubata.h and in save_densfunc()
-inline void output(ostream &F, const double x, const t_weight y, const bool imagpart, const double clip_tol_imag = 1e-10) {
+inline void output(std::ostream &F, const double x, const t_weight y, const bool imagpart, const double clip_tol_imag = 1e-10) {
   const auto [r, i] = reim(y);
   F << x << " " << r;
   if (imagpart) F << " " << (abs(i)>abs(r)*clip_tol_imag ? i : 0);
@@ -73,26 +72,31 @@ CONSTFNC t_weight moment(const Spikes &sneg, const Spikes &spos, int moment) {
   return sumA + sumB;
 }
 
-CONSTFNC double fermi_fnc(const double omega, const double T) { return 1 / (1 + exp(-omega / T)); }
+CONSTFNC double fermi_fnc(const double omega, const double T) { 
+  return 1 / (1 + exp(-omega / T)); 
+}
 
-CONSTFNC double bose_fnc(const double omega, const double T) { return 1 / (1 - exp(-omega / T)); }
+CONSTFNC double bose_fnc(const double omega, const double T) { 
+  return omega != 0.0 ? 1 / (1 - exp(-omega / T)) : std::numeric_limits<double>::quiet_NaN();
+}
+
+template<typename F>
+  auto sum(const Spikes &s, const bool invert, F && f) {
+    t_weight z{};
+    for (const auto &[e, w] : s) z += w * f(invert ? -e : e);
+    return z;
+  }
 
 // Integrated spectral function with a kernel as in FDT for fermions
-CONSTFNC t_weight fd_fermi(const Spikes &sneg, const Spikes &spos, double const T) {
-  t_weight sumA = 0.0;
-  for (const auto &[e, w] : spos) sumA += w * fermi_fnc(e, T);
-  t_weight sumB = 0.0;
-  for (const auto &[e, w] : sneg) sumB += w * fermi_fnc(-e, T);
-  return sumA + sumB;
+CONSTFNC auto fd_fermi(const Spikes &sneg, const Spikes &spos, double const T) {
+  auto fnc = [T](const auto x) { return fermi_fnc(x, T); };
+  return sum(sneg, true, fnc) + sum(spos, false, fnc);
 }
 
 // Ditto for bosons
-CONSTFNC t_weight fd_bose(const Spikes &sneg, const Spikes &spos, double const T) {
-  t_weight sumA = 0.0;
-  for (const auto &[e, w] : spos) sumA += w * bose_fnc(e, T);
-  t_weight sumB = 0.0;
-  for (const auto &[e, w] : sneg) sumB += w * bose_fnc(-e, T);
-  return sumA + sumB;
+CONSTFNC auto fd_bose(const Spikes &sneg, const Spikes &spos, double const T) {
+  auto fnc = [T](const auto x) { return bose_fnc(x, T); };
+  return sum(sneg, true, fnc) + sum(spos, false, fnc);
 }
 
 #endif // _spectral_h_
