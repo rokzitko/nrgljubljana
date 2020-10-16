@@ -1512,15 +1512,12 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const 
   }
   stats.ZZG = mpf_get_d(ZZG);
   cout << "ZZG=" << HIGHPREC(stats.ZZG) << endl;
-  bucket sumwn;
   for (const auto N : dm.Nall()) {
     const double w  = pow(Sym->get_combs(), int(dm.Nend - N - 1)) / stats.ZZG;
-    stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function; also used in dmnrg.h.
-    const double wn = w * mpf_get_d(stats.ZnDG[N]); // This is w_n defined after Eq. (8) in the WvD paper.
-    stats.wn[N] = wn;
-    sumwn += wn;
+    stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function.
+    stats.wn[N] = w * mpf_get_d(stats.ZnDG[N]); // This is w_n defined after Eq. (8) in the WvD paper.
   }
-  // const auto sumwn = ranges::accumulate(stats.wn, 0.0); // XXX
+  const auto sumwn = ranges::accumulate(stats.wn, 0.0);
   cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << endl;
   my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
 }

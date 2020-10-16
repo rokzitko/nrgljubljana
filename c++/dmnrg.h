@@ -121,7 +121,7 @@ DensMatElements init_rho_FDM(const size_t N, const AllSteps &dm, const Stats &st
     rhoFDM[I] = Matrix(ds.max(), ds.max(), 0);
     if (stats.ZnDNd[N] != 0.0)
       for (const auto i: ds.all())
-        rhoFDM[I](i, i) = exp(-ds.eig.absenergyN[i] / T) * stats.wn[N] / stats.ZnDNd[N]; // XXX: wnfactor
+        rhoFDM[I](i, i) = exp(-ds.eig.absenergyN[i] / T) * stats.wn[N] / stats.ZnDNd[N];
   }
   if (stats.wn[N] != 0.0) { // note: wn \propto ZnDNd, so this is the same condition as above
     // Trace should be equal to the total weight of the shell-N contribution to the FDM.
