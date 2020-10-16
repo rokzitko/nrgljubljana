@@ -563,13 +563,9 @@ class Step {
      return {N, M};
    }
    void infostring() const {
-     string info = " ***** [" + (runtype == RUNTYPE::NRG ? "NRG"s : "DM"s) + "] " 
-       + "Iteration " + to_string(ndxN + 1) + "/" + to_string(P.Nmax) 
-         + " (scale " + to_string(energyscale()) + ")" + " ***** ";
-     if (P.substeps) {
-       const auto [N, M] = NM();
-       info += " step " + to_string(N + 1) + " substep " + to_string(M + 1);
-     }
+     auto info = fmt::format(" ***** [{}] Iteration {}/{} (scale {}) ***** ", runtype == RUNTYPE::NRG ? "NRG"s : "DM"s, 
+                             ndxN+1, int(P.Nmax), energyscale());
+     info += P.substeps ? fmt::format(" step {} substep {}", NM().first+1, NM().second+1) : "";
      fmt::print(fmt::emphasis::bold, "\n{}\n", info);
    }
    void set_ZBW() {
