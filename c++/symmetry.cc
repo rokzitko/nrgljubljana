@@ -123,9 +123,7 @@ class Symmetry {
    }
 
    double calculate_Z(const Invar &I, const Eigen &eig, double rescale_factor) const {
-     double sumZ = 0;
-     for (const auto &x : eig.value_zero) sumZ += exp(-rescale_factor * x);
-     return mult(I) * sumZ;
+     return mult(I) * ranges::accumulate(eig.value_zero, 0.0, [rf=rescale_factor](auto sum, const auto &x) { return sum+exp(-rf*x); });
    }
 
    // Does the combination of invariant subspaces I1 and I2 contribute

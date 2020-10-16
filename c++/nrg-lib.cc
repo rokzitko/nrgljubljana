@@ -350,8 +350,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
  public:
    template <typename MF>
      double trace(MF mult) const {
-       return std::accumulate(this->cbegin(), this->cend(), 0.0, // XXX: ranges
-                              [mult](double acc, const auto z) { const auto &[I, mat] = z; 
+       return ranges::accumulate(*this, 0.0, [mult](double acc, const auto z) { const auto &[I, mat] = z; 
                                 return acc + mult(I) * trace_real_nochecks(mat); });
      }
    void save(size_t N, const string &prefix) const {
@@ -1512,16 +1511,16 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const 
     mpf_add(ZZG, ZZG, c);
   }
   stats.ZZG = mpf_get_d(ZZG);
+  cout << "ZZG=" << HIGHPREC(stats.ZZG) << endl;
   bucket sumwn;
   for (const auto N : dm.Nall()) {
-    // This is w_n defined after Eq. (8) in the WvD paper.
-    const double wn = pow(Sym->get_combs(), int(dm.Nend - N - 1)) * mpf_get_d(stats.ZnDG[N]) / stats.ZZG;
+    const double w  = pow(Sym->get_combs(), int(dm.Nend - N - 1)) / stats.ZZG;
+    stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function; also used in dmnrg.h.
+    const double wn = w * mpf_get_d(stats.ZnDG[N]); // This is w_n defined after Eq. (8) in the WvD paper.
     stats.wn[N] = wn;
     sumwn += wn;
-    const double w = pow(Sym->get_combs(), int(dm.Nend - N - 1)) / stats.ZZG;
-    stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function.
   }
-  cout << "ZZG=" << HIGHPREC(stats.ZZG) << endl;
+  // const auto sumwn = ranges::accumulate(stats.wn, 0.0); // XXX
   cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << endl;
   my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
 }

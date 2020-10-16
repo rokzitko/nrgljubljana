@@ -117,20 +117,15 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, shared_ptr<Sym
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
 DensMatElements init_rho_FDM(const size_t N, const AllSteps &dm, const Stats &stats, shared_ptr<Symmetry> Sym, const double T) {
   DensMatElements rhoFDM;
-  double tr = 0.0;
   for (const auto &[I, ds] : dm[N]) {
     rhoFDM[I] = Matrix(ds.max(), ds.max(), 0);
-    Matrix &rhoI = rhoFDM[I];
-    if (stats.ZnDNd[N] != 0.0) {
-      for (const auto i: ds.all()) {
-        const auto val2  = exp(-ds.eig.absenergyN[i] / T) * stats.wn[N] / stats.ZnDNd[N];
-        rhoI(i, i)       = val2;
-        tr               += Sym->mult(I) * val2; // XXX DensMatElements::trace
-      }
-    } // else zero matrix (shell N does not contribute)
+    if (stats.ZnDNd[N] != 0.0)
+      for (const auto i: ds.all())
+        rhoFDM[I](i, i) = exp(-ds.eig.absenergyN[i] / T) * stats.wn[N] / stats.ZnDNd[N]; // XXX: wnfactor
   }
   if (stats.wn[N] != 0.0) { // note: wn \propto ZnDNd, so this is the same condition as above
     // Trace should be equal to the total weight of the shell-N contribution to the FDM.
+    const auto tr = rhoFDM.trace(Sym->multfnc());
     const auto diff = (tr - stats.wn[N]) / stats.wn[N]; // relative error
     if (!num_equal(diff, 0.0, 1e-8)) my_assert(stats.wn[N] < 1e-12); // OK if small enough overall
   }
