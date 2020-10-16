@@ -424,7 +424,7 @@ class Symmetry;
 
 class Rmaxvals {
  private:
-   ublas::vector<size_t> values;
+   std::vector<size_t> values;
    shared_ptr<Symmetry> Sym;
  public:
    Rmaxvals() = default;
@@ -1002,11 +1002,8 @@ using speclist = std::list<BaseSpectrum>;
 
 // Determine the ranges of index r
 Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
-  values.resize(Sym->nr_combs()); // AAA
-  for (const auto i : Sym->combs()) {
-    const bool combination_allowed = Sym->triangle_inequality(I, InVec[i], Sym->QN_subspace(i));
-    values[i] = combination_allowed ? diagprev.size_subspace(InVec[i]) : 0; // AAA: push_back
-  }
+  for (const auto &[i, In] : InVec | ranges::views::enumerate)
+    values.push_back(Sym->triangle_inequality(I, In, Sym->QN_subspace(i)) ? diagprev.size_subspace(In) : 0);
 }
 
 // Formatted output of the computed expectation values
