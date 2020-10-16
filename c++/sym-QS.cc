@@ -45,11 +45,11 @@ class SymmetryQS : public Symmetry {
 #include "qs/qs-4ch-QN.dat"
           break;
         default: my_assert_not_reached();
-      } // switch
+      }
     } else {
 #include "qs/qs-1ch-In2.dat"
 #include "qs/qs-1ch-QN.dat"
-    } // if
+    }
    }
 
    double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {

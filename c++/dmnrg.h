@@ -53,6 +53,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
     const auto dim  = dimsub.kept;
     rhoPrev[I]      = Matrix(dim, dim, 0);
     if (dim == 0) continue;
+//    for (const auto &sub: subs) { : 0-based
     for (const auto i : Sym->combs1()) {
       Invar sub = subs[i];
       const auto x = rho.find(sub);

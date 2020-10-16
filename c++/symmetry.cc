@@ -57,7 +57,6 @@ class Symmetry {
  protected:
    const Params &P;
    Allfields &allfields;
-
  public:
    // In and QN contain information about how the invariant subspaces at consecutive iteration steps are combined. In
    // is the array of quantum number DIFFERENCES used in the construction of the basis. QN is the array of the
@@ -66,26 +65,30 @@ class Symmetry {
    // retain in the calculation, while In involves those quantum numbers that "drop out" of the problem due to the
    // symmetry.
    std::vector<Invar> In, QN;
-
+   virtual void load() = 0; // load In, QN
+   void erase_first() { // drop the first element in In, QN to convert to 0-based vectors
+     In.erase(In.begin());
+     QN.erase(QN.begin());
+   }
+   Invar InvarSinglet; // QNs for singlet operator
+   Invar Invar_f;      // QNs for f operator
    Symmetry(const Params &P_, Allfields &allfields_) : P(P_), allfields(allfields_), In(P.combs+1), QN(P.combs+1) {}
-
-   InvarVec input_subspaces() const { return In; }
-
-   Invar ancestor(const Invar &I, const size_t i) const {
+   auto input_subspaces() const { return In; }
+   auto ancestor(const Invar &I, const size_t i) const {
      const auto input = input_subspaces();
      Invar anc = I;
      anc.combine(input[i]);
      return anc; // I.combine(input[i]) == input[i].combine(I)
    }
-
-   InvarVec ancestors(const Invar &I) const {
+   size_t get_combs() const { return P.combs; }
+   auto combs1() const { return boost::irange(size_t(1), size_t(P.combs+1)); } // note: 1-based!
+   auto ancestors(const Invar &I) const {
      auto input = input_subspaces();
      for (size_t i = 1; i <= P.combs; i++)
        input[i].combine(I); // In is the list of differences wrt I
      return input;
    }
-
-   InvarVec dmnrg_subspaces(const Invar &I) const {
+   auto dmnrg_subspaces(const Invar &I) const {
      auto input = input_subspaces();
      for (size_t i = 1; i <= P.combs; i++) {
        input[i].inverse();
@@ -93,56 +96,24 @@ class Symmetry {
      }
      return input;
    }
-
-   Invar InvarSinglet; // QNs for singlet operator
-   Invar Invar_f;      // QNs for f operator
-
-   size_t get_combs() const { return P.combs; }
-   auto combs1() const { return boost::irange(size_t(1), size_t(P.combs+1)); } // note: 1-based!
-
-   // For some symmetry types with two-channels we distinguish between
-   // even and odd parity with respect to the channel-interchange
-   // operation.
+   // For some symmetry types with two-channels we distinguish between even and odd parity with respect to the
+   // channel-interchange operation.
    virtual bool islr() { return false; }
-
    // Ditto for 3 channels: C_3 symmetry.
    virtual bool isc3() { return false; }
-
-   // For some symmetry types, we may distinguish between spin-up
-   // and spin-down quantities (in particular spin-up and spin-down
-   // spectral functions).
+   // For some symmetry types, we may distinguish between spin-up and spin-down quantities (in particular spin-up and
+   // spin-down spectral functions).
    virtual bool isfield() { return false; }
-
    // Multiplicity of the states in the invariant subspace
-   virtual size_t mult(const Invar &) const {
-     return 1;
-   };
-
-   auto multfnc() const {
-     return [this](const Invar &I) { return this->mult(I); };
-   }
-
-   double calculate_Z(const Invar &I, const Eigen &eig, double rescale_factor) const {
+   virtual size_t mult(const Invar &) const { return 1; };
+   auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
+   double calculate_Z(const Invar &I, const Eigen &eig, const double rescale_factor) const {
      return mult(I) * ranges::accumulate(eig.value_zero, 0.0, [rf=rescale_factor](auto sum, const auto &x) { return sum+exp(-rf*x); });
    }
-
-   // Does the combination of invariant subspaces I1 and I2 contribute
-   // to the spectral function corresponding to spin SPIN?
-   virtual bool check_SPIN(const Invar &I1, const Invar &I2, const int &SPIN) const {
-     my_assert(SPIN == 0);
-     return true;
-   }
-
-   // Is the triangle inequality satisfied for I1, I2, and I3 (i.e. if
-   // Clebsch-Gordan coefficient can be different from zero).  This is
-   // important, for example, for triplet operators which are zero
-   // when evaluated between two singlet states.
+   // Does the combination of subspaces I1 and I2 contribute to the spectral function corresponding to spin SPIN?
+   virtual bool check_SPIN(const Invar &I1, const Invar &I2, const int &SPIN) const { return true; }
+   // Is the triangle inequality satisfied (i.e. can Clebsch-Gordan coefficient be different from zero)?
    virtual bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const { return true; }
-
-   // Setup the combinations of quantum numbers that are used in the
-   // construction of the Hamiltonian matrix.
-   virtual void load() = 0;
-
    // Is an invariant subspace with given quantum numbers allowed?
    virtual bool Invar_allowed(const Invar &I) const { return true; }
 

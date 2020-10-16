@@ -285,6 +285,11 @@ void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t
   cout << endl;
 }
 
+template<typename M>
+  bool has_lesseq_rows(const ublas::matrix<M> &A, const ublas::matrix<M> &B) {
+    return A.size1() <= B.size1() && A.size2() == B.size2();
+  }
+
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
 template<typename M> Eigen diagonalise(ublas::matrix<M> &m, const DiagParams &DP) {
@@ -311,7 +316,7 @@ template<typename M> Eigen diagonalise(ublas::matrix<M> &m, const DiagParams &DP
       d = diagonalise_zheevr(m, DP.diagratio);
   } else my_assert_not_reached();
   my_assert(d.getnrcomputed() > 0);
-  my_assert(d.matrix.size1() <= m.size1() && d.matrix.size2() == m.size2());
+  my_assert(has_lesseq_rows(d.matrix, m));
   if (DP.logletter('e'))
     dump_eigenvalues(d);
   checkdiag(d);
