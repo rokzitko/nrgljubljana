@@ -116,20 +116,20 @@ class MemoryStats {
     return memused;
   }
   // Usually only the peak memory usage is relevant (e.g. to constrain memory in job submissions).
-  void report(ostream &F = cout, bool verbose = false) const {
+  void report(bool verbose = false) const {
 #ifdef HAS_MEMORY_USAGE
     if (verbose) {
       const int MS_WIDTH = 12;
-      F << endl;
-      F << "Memory usage report [" << myrank() << "]" << endl;
-      F << "===================" << endl;
+      std::cout << endl;
+      std::cout << "Memory usage report [" << myrank() << "]" << endl;
+      std::cout << "===================" << endl;
       int topusage = 0; // top usage recorded by check()
       for (const auto &i : maxvals) topusage = max(topusage, i.second);
       if (topusage != 0)
-        for (const auto &[name, val] : maxvals) F << setw(MS_WIDTH) << name << ": " << val << " kB" << endl;
+        for (const auto &[name, val] : maxvals) std::cout << setw(MS_WIDTH) << name << ": " << val << " kB" << endl;
       my_assert(topusage <= peakusage);
     }
-      F << endl << "Peak usage: " <<  peakusage / 1024 << " MB " << endl; // NOLINT
+    fmt::print("\nPeak usage: {} MB\n", peakusage / 1024); // NOLINT
 #endif
   }
 };

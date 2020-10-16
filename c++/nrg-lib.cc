@@ -285,12 +285,12 @@ class DiagInfo : public std::map<Invar, Eigen> {
      return ranges::count_if(this->eigs(), [](const auto &eig) { return eig.getnrstored()>0; });
    }
    template <typename MF>
-     void states_report(MF && mult, ostream &F = std::cout) const {
-       F << "Number of invariant subspaces: " << count_subspaces() << endl;
+     void states_report(MF && mult) const {
+       fmt::print("Number of invariant subspaces: {}\n", count_subspaces());
        for (const auto &[I, eig]: *this) 
          if (eig.getnrstored()) 
-           F << "(" << I << ") " << eig.getnrstored() << " states: " << eig.value_orig << std::endl;
-       F << "Number of states (multiplicity taken into account): " << count_states(mult) << std::endl << std::endl;
+           fmt::print("({}) {} states: {}\n", I.str(), eig.getnrstored(), eig.value_orig);
+       fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
    void save(const size_t N) const {
      const string fn = workdir.unitaryfn(N);
@@ -570,7 +570,7 @@ class Step {
        const auto [N, M] = NM();
        info += " step " + to_string(N + 1) + " substep " + to_string(M + 1);
      }
-     cout << endl << info << endl;
+     fmt::print(fmt::emphasis::bold, "\n{}\n", info);
    }
    void set_ZBW() {
      trueN = P.Ninit - 1; // if Ninit=0, trueN will be -1 (this is the only exceptional case)
@@ -942,7 +942,7 @@ class SpectrumMatsubara : public Spectrum {
      for (const auto n : range0(results.v.size())) results.v[n].second += t->m.v[n].second;
    }     
    ~SpectrumMatsubara() override { 
-     cout << "Spectrum: " << opname << " " << algotype->name() << endl;
+     fmt::print(fmt::emphasis::bold, "Spectrum: {} -> {}\n", opname, algotype->name());
      results.save(safe_open(filename + ".dat"), P.prec_xy);
    }
 };
@@ -960,6 +960,12 @@ std::ostream & operator<<(std::ostream &os, const axis &a) {
   if (a == axis::Temp)      os << "Temp";
   if (a == axis::Matsubara) os << "Matsubara";
   return os;
+}
+
+inline std::string to_string(std::complex<double> &z) {
+  ostringstream s;
+  s << z;
+  return s.str();
 }
 
 // All information about calculating a spectral function: pointers to the operator data, raw spectral data acccumulators,
@@ -1023,7 +1029,7 @@ class ExpvOutput {
      F << endl;
      if (cout_dump)
        for (const auto &op: fields)
-         std::cout << "<" << op << ">=" << m[op] << std::endl;
+         fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op]));
    }
    ExpvOutput(const string &fn, map<string, t_expv> &m_, const list<string> &fields_, const Params &P_) : m(m_), fields(fields_), P(P_) {
      F.open(fn);
@@ -1345,10 +1351,9 @@ CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const
 
 // Measure thermodynamic expectation values of singlet operators
 void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, shared_ptr<Symmetry> Sym, const Params &P) {
-  t_expv Z{};
-  for (const auto &[I, eig] : diag)
-    for (const auto &x : eig.value_zero)
-      Z += Sym->mult(I) * exp(-step.TD_factor() * x);
+  const auto Z = ranges::accumulate(diag, t_expv{}, [&Sym, &step](auto total, const auto &d) { const auto &[I, eig] = d;
+    return total + Sym->mult(I) * ranges::accumulate(eig.value_zero, t_expv{},
+                                                     [f=step.TD_factor()](auto sum, const auto &x) { return sum + exp(-f*x); }); });
   for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(step, diag, m, Sym) / Z;
   for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(step, diag, m, Sym) / Z;
   output.custom->field_values(step.Teff());
@@ -1474,7 +1479,7 @@ void truncate_prepare(const Step &step, DiagInfo &diag, shared_ptr<Symmetry> Sym
     return eig.getnrkept() == eig.getnrcomputed() && eig.value_zero(eig.getnrcomputed()-1) != Emax && eig.getnrcomputed() < eig.getdim(); }))
       throw NotEnough();
   const double ratio = double(ts.nrkept) / ts.nrall;
-  cout << "Kept: " << ts.nrkept << " out of " << ts.nrall << ", ratio=" << setprecision(3) << ratio << endl;
+  fmt::print(FMT_STRING("Kept: {} out of {}, ratio={:.3}\n"), ts.nrkept, ts.nrall, ratio);
 }
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
@@ -1906,10 +1911,10 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
       break;
     }
     catch (NotEnough &e) {
-      cout << "Insufficient number of states computed." << endl;
+      fmt::print(fmt::emphasis::bold | fg(fmt::color::yellow), "Insufficient number of states computed.\n");
       if (!(step.nrg() && P.restart)) break;
       diagratio = min(diagratio * P.restartfactor, 1.0);
-      cout << endl << "Restarting this iteration step. diagratio=" << diagratio << endl << endl;
+      fmt::print(fmt::emphasis::bold | fg(fmt::color::yellow), "\nRestarting this iteration step. diagratio={}\n\n", diagratio);
     }
   }
   return diag;
@@ -2032,17 +2037,17 @@ DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats,
     docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym, P);
   DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, Sym, P) 
     : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, Sym, P);
-  cout << endl << "Total energy: " << HIGHPREC(stats.total_energy) << endl;
+  fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
   stats.GS_energy = stats.total_energy;
   if (step.nrg() && P.dumpsubspaces) dm.dump_subspaces();
   cout << endl << "** Iteration completed." << endl << endl;
   return diag;
 }
 
-void print_about_message(ostream &s) {
-  s << "NRG Ljubljana - (c) rok.zitko@ijs.si" << endl;
-  s << "Timestamp: " << __TIMESTAMP__ << endl;
-  s << "Compiled on " << __DATE__ << " at " << __TIME__ << endl << endl;
+void print_about_message() {
+  fmt::print(fmt::emphasis::bold, "NRG Ljubljana - (c) rok.zitko@ijs.si\n");
+  fmt::print(fmt::emphasis::bold, "Timestamp: {}\n",  __TIMESTAMP__);
+  fmt::print(fmt::emphasis::bold, "Compiled on {} at {}\n\n", __DATE__, __TIME__);
 }
 
 std::unique_ptr<Symmetry> get(const std::string &sym_string, const Params &P, Allfields &allfields)

@@ -30,7 +30,6 @@ class Invar {
    
    friend class boost::serialization::access;
    template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &data; }
-
    
  public:
    inline static std::vector<int> qntype; // must be defined before calls to Invar::combine() and Invar::invert()
@@ -59,6 +58,7 @@ class Invar {
      return os;
    }
    friend ostream &operator<<(ostream &os, const Invar &invar) { return invar.insertor(os); }
+   std::string str() const { ostringstream s; insertor(s); return s.str(); }
    istream &extractor(istream &is) {
      for (auto &i : data) {
        int qn;

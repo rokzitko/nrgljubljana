@@ -82,6 +82,8 @@ namespace mpi = boost::mpi;
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
+#include <fmt/color.h>
+#include <fmt/ranges.h>
 using namespace fmt::literals;
 
 #include <range/v3/all.hpp>
