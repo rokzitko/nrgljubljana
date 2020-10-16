@@ -50,19 +50,15 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
                               const size_t N, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
-    const auto subs = Sym->new_subspaces(I);
     const auto dim  = dimsub.kept;
     rhoPrev[I]      = Matrix(dim, dim, 0);
     if (dim == 0) continue;
-//    for (const auto &sub: subs) { : 0-based
-    for (const auto i : Sym->combs()) { // DDD
-      Invar sub = subs[i];
+    const auto ns = Sym->new_subspaces(I);
+    for (const auto &[i, sub] : ns | ranges::views::enumerate) {
       const auto x = rho.find(sub);
       const auto y = diag.find(sub);
-      if (x != rho.end() && y != diag.end()) {
-        const auto coef = double(Sym->mult(sub)) / double(Sym->mult(I));
-        cdmI(i, sub, x->second, y->second, rhoPrev[I], N, coef, dm, P);
-      }
+      if (x != rho.end() && y != diag.end())
+        cdmI(i, sub, x->second, y->second, rhoPrev[I], N, double(Sym->mult(sub)) / double(Sym->mult(I)), dm, P);
     }
   }
 }
