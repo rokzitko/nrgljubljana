@@ -1,10 +1,9 @@
 class SymmetryP : public Symmetry {
   public:
    template<typename ... Args> SymmetryP(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {
-     InvarStructure InvStruc[] = {
+     initInvar({
        {"P", multiplicative} // fermion parity
-     };
-     initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+     });
      InvarSinglet = Invar(1);
    }
 

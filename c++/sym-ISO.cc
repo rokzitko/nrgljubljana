@@ -5,11 +5,10 @@ class SymmetryISOcommon : public Symmetry {
   public:
    template<typename ... Args> SymmetryISOcommon(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"II", additive}, // isospin
          {"SS", additive}  // spin
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(1, 1);
        Invar_f      = Invar(2, 2);
      }

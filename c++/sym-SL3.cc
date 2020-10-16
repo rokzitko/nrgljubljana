@@ -7,12 +7,11 @@ class SymmetrySL3 : public Symmetry {
      Q1(P, allfields, "<Q1>", 1), Q12(P, allfields, "<Q1^2>", 2), sQ12(P, allfields, "<sQ1^2>", 3),
      Q2(P, allfields, "<Q2>", 4), Q22(P, allfields, "<Q2^2>", 5), sQ22(P, allfields, "<sQ2^2>", 6),
      Q3(P, allfields, "<Q3>", 7), Q32(P, allfields, "<Q3^2>", 8), sQ32(P, allfields, "<sQ3^2>", 9) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"Q1", additive}, // charge in channel 1
          {"Q2", additive}, // charge in channel 2
          {"Q3", additive}  // charge in channel 3
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(0, 0, 0);
      }
 

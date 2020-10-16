@@ -24,7 +24,6 @@ inline std::string typestr(const int t) {
   }
 }
 
-
 class Invar {
  private:
    InvType data;
@@ -156,14 +155,13 @@ struct InvarStructure {
   int type;
 };
 
-void initInvar(const InvarStructure *structure, const size_t len) { // XXX
-  Invar::invdim = len;
-  Invar::qntype.resize(len);
-  for (size_t i = 0; i < len; i++) {
-    const auto & [n, t] = structure[i];
+void initInvar(std::initializer_list<InvarStructure> l) {
+  Invar::invdim = l.size();
+  auto i = 0;
+  for (const auto & [n, t]: l) {
     my_assert(t == additive || t == multiplicative || t == mod3);
-    Invar::name[n] = i;
-    Invar::qntype[i] = t;
+    Invar::name[n] = i++;
+    Invar::qntype.push_back(t);
     std::cout << fmt::format("{} {} {}\n", i, n, typestr(t));
   }
 }

@@ -5,14 +5,13 @@ class SymmetryISOLRcommon : public SymLR {
  public:
    template<typename ... Args> SymmetryISOLRcommon(Args&& ... args) : SymLR(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"II", additive},     // isospin
          {"SS", additive},     // spin
          {"P", multiplicative} // parity
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(1, 1, 1);
-       //     Invar_f = Invar(?, ?, ?)
+       // Invar_f = Invar(?, ?, ?)
      }
 
   // Multiplicity of the I=(II,SS,P) subspace = (2I+1)(2S+1) = II SS.

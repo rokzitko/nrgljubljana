@@ -6,12 +6,11 @@ class SymmetryQSZTZ : public Symmetry {
    template<typename ... Args> SymmetryQSZTZ(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
      Sz(P, allfields, "<Sz>", 1), Sz2(P, allfields, "<Sz^2>", 2), Tz(P, allfields, "<Tz>", 3), Tz2(P, allfields, "<Tz^2>", 4),
      Q(P, allfields, "<Q>", 5), Q2(P, allfields, "<Q^2>", 6) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"Q", additive},  // charge
          {"SZ", additive}, // spin
          {"TZ", additive}  // angular momentum
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(0, 0, 0);
        Invar_f      = Invar(1, 2, 1);
      }

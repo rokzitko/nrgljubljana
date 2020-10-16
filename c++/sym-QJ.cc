@@ -5,11 +5,10 @@ class SymmetryQJ : public Symmetry {
  public:
    template<typename ... Args> SymmetryQJ(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
      Jz2(P, allfields, "<Jz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"Q", additive}, // charge
          {"JJ", additive} // total angular momentum
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(0, 1);
        Invar_f      = Invar(1, 4);
      }

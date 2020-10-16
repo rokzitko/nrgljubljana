@@ -5,12 +5,11 @@ class SymmetryISOSZLR : public SymFieldLR {
  public:
    template<typename ... Args> SymmetryISOSZLR(Args&& ... args) : SymFieldLR(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q2(P, allfields, "<Q^2>", 3) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"II", additive},     // isospin
          {"SSZ", additive},    // spin projection
          {"P", multiplicative} // parity
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(1, 0, 1);
      }
 

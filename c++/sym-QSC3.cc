@@ -5,12 +5,11 @@ class SymmetryQSC3 : public SymC3 {
  public:
    template<typename ... Args> SymmetryQSC3(Args&& ... args) : SymC3(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"Q", additive},  // charge
          {"SS", additive}, // spin
          {"P", mod3}       // C_3 rep
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(0, 1, 0);
      }
 

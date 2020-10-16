@@ -5,12 +5,11 @@ class SymmetryDBLISOSZ : public SymField {
  public:
    template<typename ... Args> SymmetryDBLISOSZ(Args&& ... args) : SymField(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q12(P, allfields, "<Q1^2>", 3), Q22(P, allfields, "<Q2^2>", 4) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"II1", additive}, // isospin 1
          {"II2", additive}, // isospin 2
          {"SSZ", additive}  // spin projection
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(1, 1, 0);
      }
 

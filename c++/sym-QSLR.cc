@@ -5,12 +5,11 @@ class SymmetryQSLR : public SymLR {
  public:
    template<typename ... Args> SymmetryQSLR(Args&& ... args) : SymLR(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"Q", additive},      // charge
          {"SS", additive},     // spin
          {"P", multiplicative} // parity
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(0, 1, 1);
      }
 

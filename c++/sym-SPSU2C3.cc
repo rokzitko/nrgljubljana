@@ -5,11 +5,10 @@ class SymmetrySPSU2C3 : public SymC3 {
  public:
    template<typename ... Args> SymmetrySPSU2C3(Args&& ... args) : SymC3(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"SS", additive}, // spin
          {"P", mod3}       // C_3 rep
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(1, 0); // spin-singlet, C_3 P=0
      }
 

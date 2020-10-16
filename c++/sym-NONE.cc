@@ -1,10 +1,9 @@
 class SymmetryNONE : public Symmetry {
   public:
    template<typename ... Args> SymmetryNONE(Args&& ... args) : Symmetry(std::forward<Args>(args)...) {
-     InvarStructure InvStruc[] = {
+     initInvar({
        {"x", additive} // dummy quantum number
-     };
-     initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+     });
      InvarSinglet = Invar(0);
    }
 

@@ -5,10 +5,9 @@ class SymmetrySU2 : public Symmetry {
  public:
    template<typename ... Args> SymmetrySU2(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
      Q2(P, allfields, "<Q^2>", 1) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"II", additive} // isospin
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(1);
      }
 

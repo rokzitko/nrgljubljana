@@ -5,11 +5,10 @@ class SymmetryQS : public Symmetry {
   public:
    template<typename ... Args> explicit SymmetryQS(Args&& ... args) : Symmetry(std::forward<Args>(args)...), 
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"Q", additive}, // charge
          {"SS", additive} // spin
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(0, 1);
        Invar_f      = Invar(1, 2);
      }

@@ -5,11 +5,10 @@ class SymmetrySPSU2LR : public SymLR {
  public:
    template<typename ... Args> SymmetrySPSU2LR(Args&& ... args) : SymLR(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"SS", additive},     // spin
          {"P", multiplicative} // parity
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(0, 1);
      }
 

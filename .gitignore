@@ -6,4 +6,5 @@ build_*
 run_tests*
 *.pyc
 nrg
+nrgcmpl
 TODO*

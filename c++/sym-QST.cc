@@ -5,12 +5,11 @@ class SymmetryQST : public Symmetry {
  public:
    template<typename ... Args> SymmetryQST(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
      Sz2(P, allfields, "<Sz^2>", 1), Tz2(P, allfields, "<Tz^2>", 2),  Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"Q", additive},  // charge
          {"SS", additive}, // spin
          {"T", additive}   // angular momentum
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(0, 1, 0);
        Invar_f      = Invar(1, 2, 1); // (1,2,1) is correct. see triangle_inequality() below!
      }

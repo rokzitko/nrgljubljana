@@ -5,11 +5,10 @@ class SymmetryDBLSU2 : public Symmetry {
  public:
    template<typename ... Args> SymmetryDBLSU2(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
      Q12(P, allfields, "<Q1^2>", 1), Q22(P, allfields, "<Q2^2>", 2) {
-       InvarStructure InvStruc[] = {
+       initInvar({
          {"II1", additive}, // isospin 1
          {"II2", additive}, // isospin 2
-       };
-       initInvar(InvStruc, ARRAYLENGTH(InvStruc));
+       });
        InvarSinglet = Invar(1, 1);
      }
 
