@@ -23,7 +23,7 @@ void cdmI(const size_t i,        // Subspace index
   const auto nromega = rhoN.size2();
   if (nromega == 0 || dim == 0) return;   // continue only if connection exists
   // rmax (info[I1].rmax[i]) is the range of r in U^N_I1(omega|ri), only those states that we actually kept..
-  const auto rmax = dm[N].at(I1).rmax.rmax(i-1); // XXX
+  const auto rmax = dm[N].at(I1).rmax.rmax(i-1); // RRR
   if (rmax == 0) return;    // rmax can be zero in the case a subspace has been completely truncated
   my_assert(rmax == dim);   // Otherwise, rmax must equal dim
   // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match? We do this test at
@@ -31,7 +31,7 @@ void cdmI(const size_t i,        // Subspace index
   const auto I1nr = diagI1.getnrstored();
   my_assert(nromega <= I1nr);
   // offset gives the offset that is added to r1,rp to find the elements ri in U^N_I1(omega|ri)
-  const auto offset = dm[N].at(I1).rmax.offset(i-1); // XXX
+  const auto offset = dm[N].at(I1).rmax.offset(i-1); // RRR
   const auto dim1   = diagI1.matrix.size1();
   const auto dim2   = diagI1.matrix.size2();
   my_assert(nromega <= dim1 && offset + dim <= dim2);
@@ -49,7 +49,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
                               const size_t N, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
-    const auto subs = Sym->dmnrg_subspaces(I);
+    const auto subs = Sym->new_subspaces(I);
     const auto dim  = dimsub.kept;
     rhoPrev[I]      = Matrix(dim, dim, 0);
     if (dim == 0) continue;
@@ -144,7 +144,7 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   if (!step.last(N))
     rhoDD = init_rho_FDM(N, dm, stats, Sym, P.T);
   for (const auto &[I, ds] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
-    const auto subs = Sym->dmnrg_subspaces(I);
+    const auto subs = Sym->new_subspaces(I);
     const auto dim  = ds.kept;
     rhoFDMPrev[I]   = Matrix(dim, dim, 0);
     if (!dim) continue;

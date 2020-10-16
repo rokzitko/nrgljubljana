@@ -108,8 +108,8 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
     const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
     // Proceed if this combination of i1/ip contributes.
     if (rmax1 == 0 || rmaxp == 0) continue;
-    const auto IN1 = ancestor(I1, table[j].i1-1); // XXX
-    const auto INp = ancestor(Ip, table[j].ip-1); // XXX
+    const auto IN1 = ancestor(I1, table[j].i1-1); // RRR
+    const auto INp = ancestor(Ip, table[j].ip-1); // RRR
     my_assert(IN1 == table[j].IN1 && INp == table[j].INp);
     const Twoinvar ININ = {table[j].IN1, table[j].INp};
     const auto cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.
@@ -159,8 +159,8 @@ void Symmetry::recalc1_global(const DiagInfo &diag,
   const auto rmaxp = qsrmax.at(I).rmax(ip);
   my_assert(rmax1 == rmaxp);
   if (rmax1 == 0 || rmaxp == 0) return;
-  const Matrix &U1 = diagI.blocks[i1 - 1];
-  const Matrix &Up = diagI.blocks[ip - 1];
+  const Matrix &U1 = diagI.blocks[i1-1];
+  const Matrix &Up = diagI.blocks[ip-1];
   my_assert(U1.size1() == dim && U1.size2() == rmax1);
   my_assert(Up.size1() == dim && Up.size2() == rmaxp);
   // m = m + value * U1 * Up^trans

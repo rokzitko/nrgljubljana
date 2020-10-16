@@ -4,35 +4,28 @@
 #ifndef _symmetry_cc_
 #define _symmetry_cc_
 
-// Check if the triangle inequality is satisfied (i.e. if
-// Clebsch-Gordan coefficient can be different from zero). This is
-// important, for example, for triplet operators, which are zero when
-// evaluated between two singlet states.
-// Arguments ss1, ss2, ss3 are spin multiplicities.
-// Returns true if the inequality is satisfied, false otherwise.
+// Check if the triangle inequality is satisfied (i.e. if Clebsch-Gordan coefficient can be different from zero).
+// This is important, for example, for triplet operators, which are zero when evaluated between two singlet states.
+// Arguments ss1, ss2, ss3 are spin multiplicities. Returns true if the inequality is satisfied, false otherwise.
 bool su2_triangle_inequality(int ss1, int ss2, int ss3) {
-  return (abs(ss1 - ss2) <= ss3 - 1) && (abs(ss2 - ss3) <= ss1 - 1) && (abs(ss3 - ss1) <= ss2 - 1);
+  return (abs(ss1-ss2) <= ss3-1) && (abs(ss2-ss3) <= ss1-1) && (abs(ss3-ss1) <= ss2-1);
 }
 
-// The equality for U(1) symmetry.
-bool u1_equality(int q1, int q2, int q3) { return q1 == q2 + q3; }
-
+bool u1_equality(int q1, int q2, int q3) { return q1 == q2 + q3; }     // Equality for U(1) symmetry
 bool z2_equality(int p1, int p2, int p3) { return p1 == p2 * p3; }
-
-// C_3 quantum number: Equality modulo 3
-bool c3_equality(int p1, int p2, int p3) { return p1 == (p2 + p3) % 3; }
+bool c3_equality(int p1, int p2, int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
 
 void opch1clear(Opch &opch, int i, const Params &P)
 {
   opch[i].resize(P.perchannel);
-  for (size_t j = 0; j < P.perchannel; j++) 
+  for (const auto j: range0(P.perchannel))
     opch[i][j].clear(); // set all ublas matrix elements to zero
 }
 
 Opch newopch(const Params &P)
 {
   Opch opch(P.channels);
-  for (size_t i = 0; i < P.channels; i++)
+  for (const auto i: range0(P.channels))
     opch1clear(opch, i, P);
   return opch;
 }
@@ -74,7 +67,7 @@ class Symmetry {
    Invar Invar_f;      // QNs for f operator
    Symmetry(const Params &P_, Allfields &allfields_) : P(P_), allfields(allfields_), In(P.combs+1), QN(P.combs+1) {}
    auto input_subspaces() const { return In; }
-   auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; } // XXX
+   auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; }
    auto ancestor(const Invar &I, const size_t i) const {
      my_assert(i < P.combs);
      const auto input = input_subspaces();
@@ -82,19 +75,19 @@ class Symmetry {
      anc.combine(input[i]);
      return anc; // I.combine(input[i]) == input[i].combine(I)
    }
-   size_t get_combs() const {
+   size_t nr_combs() const {
      my_assert(P.combs == In.size());
      my_assert(P.combs == QN.size());
      return P.combs; 
    }
-   auto combs() const { return range0(get_combs()); }
+   auto combs() const { return range0(nr_combs()); }
    auto ancestors(const Invar &I) const {
      auto input = input_subspaces();
      for (const auto i: combs())
        input[i].combine(I); // In is the list of differences wrt I
      return input;
    }
-   auto dmnrg_subspaces(const Invar &I) const {
+   auto new_subspaces(const Invar &I) const {
      auto input = input_subspaces();
      for (const auto i: combs()) {
        input[i].inverse();
@@ -164,17 +157,17 @@ class Symmetry {
    //  parity -1). Generic implementation, valid for all symmetry types.
    MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
      MatrixElements nnew;
-     Recalc recalc_table[get_combs()];
+     Recalc recalc_table[nr_combs()];
      my_assert(islr() ? parity == 1 || parity == -1 : parity == 1);
      for (const auto &I : diag.subspaces()) {
        const Invar I1 = I;
        const Invar Ip = parity == -1 ? I.InvertParity() : I;
-       for (size_t i = 1; i <= get_combs(); i++) {
-         const auto anc = ancestor(I, i-1); // RRR
-         recalc_table[i - 1] = {i, i, anc, parity == -1 ? anc.InvertParity() : anc, 1.0};
+       for (const auto i: combs()) {
+         const auto anc = ancestor(I, i);
+         recalc_table[i] = {i+1, i+1, anc, parity == -1 ? anc.InvertParity() : anc, 1.0}; // RRR
        }
        const auto Iop = parity == -1 ? InvarSinglet.InvertParity() : InvarSinglet;
-       nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, get_combs(), Iop);
+       nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, nr_combs(), Iop);
      }
      return nnew;
    }

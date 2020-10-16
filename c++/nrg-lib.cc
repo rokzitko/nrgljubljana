@@ -1005,10 +1005,10 @@ using speclist = std::list<BaseSpectrum>;
 
 // Determine the ranges of index r
 Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
-  values.resize(Sym->get_combs());
-  for (const auto i : range0(Sym->get_combs())) {
+  values.resize(Sym->nr_combs()); // AAA
+  for (const auto i : Sym->combs()) {
     const bool combination_allowed = Sym->triangle_inequality(I, InVec[i], Sym->QN_subspace(i));
-    values[i] = combination_allowed ? diagprev.size_subspace(InVec[i]) : 0;
+    values[i] = combination_allowed ? diagprev.size_subspace(InVec[i]) : 0; // AAA: push_back
   }
 }
 
@@ -1518,7 +1518,7 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const 
     my_mpf a;
     mpf_set(a, stats.ZnDG[N]);
     my_mpf b;
-    mpf_set_d(b, Sym->get_combs());
+    mpf_set_d(b, Sym->nr_combs());
     mpf_pow_ui(b, b, dm.Nend - N - 1);
     my_mpf c;
     mpf_mul(c, a, b);
@@ -1527,7 +1527,7 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const 
   stats.ZZG = mpf_get_d(ZZG);
   cout << "ZZG=" << HIGHPREC(stats.ZZG) << endl;
   for (const auto N : dm.Nall()) {
-    const double w  = pow(Sym->get_combs(), int(dm.Nend - N - 1)) / stats.ZZG;
+    const double w  = pow(Sym->nr_combs(), int(dm.Nend - N - 1)) / stats.ZZG;
     stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function.
     stats.wn[N] = w * mpf_get_d(stats.ZnDG[N]); // This is w_n defined after Eq. (8) in the WvD paper.
   }
@@ -1656,23 +1656,16 @@ void perform_basic_measurements(const Step &step, const DiagInfo &diag, shared_p
   output.annotated.dump(step, diag, stats, Sym);
 }
 
-// Make a list of subspaces for the new iteration. Generic implementation: use the quantum number differences in
-// array In[] (obtained by a call to function input_subspaces), make a list of all possible subspaces and remove
-// duplicates.
+// Make a list of subspaces for the new iteration.
 auto make_subspaces_list(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
-  list<Invar> subspaces;
-  for (const auto &[I, eig] : diagprev)
-    if (eig.getnrstored()) {
-      auto input = Sym->input_subspaces(); // make a new copy of subspaces list
-      for (const auto i : Sym->combs()) {
-        input[i].inverse(); // IMPORTANT!
-        input[i].combine(I);
-        if (Sym->Invar_allowed(input[i])) 
-          subspaces.push_back(input[i]);
-      } // XXX: dmnrg_subspaces
-    }
+  std::list<Invar> subspaces;
+  for (const auto &I : diagprev.subspaces()) {
+    const auto all = Sym->new_subspaces(I);
+    auto non_empty = all | ranges::views::filter([&Sym](const auto &In) { return Sym->Invar_allowed(In); });
+    std::copy(non_empty.begin(), non_empty.end(), std::back_inserter(subspaces)); // CCC
+  }
   subspaces.sort();
-  subspaces.unique();
+  subspaces.unique(); // remove duplicates
   return subspaces;
 }
 
@@ -1682,8 +1675,8 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const Rmaxvals rm{I, anc, diagprev, Sym};
   Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (const auto i : Sym->combs())
-    for (const auto r : range0(rm.rmax(i+1))) // XXX
-      h(rm.offset(i+1) + r, rm.offset(i+1) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r); // XXX
+    for (const auto r : range0(rm.rmax(i+1))) // RRR
+      h(rm.offset(i+1) + r, rm.offset(i+1) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r); // RRR
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
   return h;
@@ -2108,7 +2101,6 @@ shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats) {
   auto Sym = get(P.symtype.value(), P, stats.td.allfields);
   Sym->load();
   Sym->erase_first();
-  cout << "size=" << Sym->get_combs() << endl;
   return Sym;
 }
 

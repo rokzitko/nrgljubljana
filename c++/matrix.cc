@@ -31,7 +31,7 @@ void Symmetry::offdiag_function_impl(const Step &step, const size_t i, const siz
 {
   if (!my_isfinite(factor))
     throw std::runtime_error(fmt::format("offdiag_function(): factor not finite {} {} {} {}", i, j, ch, fnr));
-  const auto begin1 = qq.offset(i);
+  const auto begin1 = qq.offset(i); // RRR
   const auto begin2 = qq.offset(j);
   const auto size1  = qq.rmax(i);
   const auto size2  = qq.rmax(j);
@@ -66,7 +66,7 @@ void Symmetry::offdiag_function_impl(const Step &step, const size_t i, const siz
 void Symmetry::diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                                   Matrix &h, const Rmaxvals &qq, const double f) const 
 {
-  const auto begin1 = qq.offset(i);
+  const auto begin1 = qq.offset(i); // RRR
   const auto size1  = qq.rmax(i);
   // For convenience we subtract the average site occupancy.
   const auto avgoccup = (double)P.spin / 2; // multiplicity divided by 2
@@ -94,7 +94,7 @@ void Symmetry::diag_function_half(const Step &step, const size_t i, const size_t
 void Symmetry::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_matel factor, 
                                      Matrix &h, const Rmaxvals &qq) const {
   if (i > j) return; // only upper triangular part
-  const auto begin1 = qq.offset(i);
+  const auto begin1 = qq.offset(i); // RRR
   const auto size1  = qq.rmax(i);
   const auto begin2 = qq.offset(j);
   const auto size2  = qq.rmax(j);
