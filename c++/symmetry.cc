@@ -57,7 +57,6 @@ class Symmetry {
  protected:
    const Params &P;
    Allfields &allfields;
- public:
    // In and QN contain information about how the invariant subspaces at consecutive iteration steps are combined. In
    // is the array of quantum number DIFFERENCES used in the construction of the basis. QN is the array of the
    // conserved quantum numbers corresponding to the states being added. For example, in case of SU(2) symmetry, In
@@ -65,8 +64,9 @@ class Symmetry {
    // retain in the calculation, while In involves those quantum numbers that "drop out" of the problem due to the
    // symmetry.
    std::vector<Invar> In, QN;
+ public:
    virtual void load() = 0; // load In, QN
-   void erase_first() { // drop the first element in In, QN to convert to 0-based vectors
+   void erase_first() { // drop the first element in In, QN to convert to 0-based vectors; call after load()
      In.erase(In.begin());
      QN.erase(QN.begin());
    }
@@ -74,23 +74,29 @@ class Symmetry {
    Invar Invar_f;      // QNs for f operator
    Symmetry(const Params &P_, Allfields &allfields_) : P(P_), allfields(allfields_), In(P.combs+1), QN(P.combs+1) {}
    auto input_subspaces() const { return In; }
+   auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; } // XXX
    auto ancestor(const Invar &I, const size_t i) const {
+     my_assert(i < P.combs);
      const auto input = input_subspaces();
      Invar anc = I;
      anc.combine(input[i]);
      return anc; // I.combine(input[i]) == input[i].combine(I)
    }
-   size_t get_combs() const { return P.combs; }
-   auto combs1() const { return boost::irange(size_t(1), size_t(P.combs+1)); } // note: 1-based!
+   size_t get_combs() const {
+     my_assert(P.combs == In.size());
+     my_assert(P.combs == QN.size());
+     return P.combs; 
+   }
+   auto combs() const { return range0(get_combs()); }
    auto ancestors(const Invar &I) const {
      auto input = input_subspaces();
-     for (size_t i = 1; i <= P.combs; i++)
+     for (const auto i: combs())
        input[i].combine(I); // In is the list of differences wrt I
      return input;
    }
    auto dmnrg_subspaces(const Invar &I) const {
      auto input = input_subspaces();
-     for (size_t i = 1; i <= P.combs; i++) {
+     for (const auto i: combs()) {
        input[i].inverse();
        input[i].combine(I);
      }
@@ -146,7 +152,7 @@ class Symmetry {
 
    virtual void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) = 0;
 
-   virtual Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) { my_assert_not_reached(); }
+   virtual Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) { my_assert_not_reached(); } // XXX: P in symmetry
    virtual OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) { my_assert_not_reached(); }
    virtual MatrixElements recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
    virtual MatrixElements recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) { my_assert_not_reached(); }
@@ -164,7 +170,7 @@ class Symmetry {
        const Invar I1 = I;
        const Invar Ip = parity == -1 ? I.InvertParity() : I;
        for (size_t i = 1; i <= get_combs(); i++) {
-         const auto anc = ancestor(I, i);
+         const auto anc = ancestor(I, i-1); // RRR
          recalc_table[i - 1] = {i, i, anc, parity == -1 ? anc.InvertParity() : anc, 1.0};
        }
        const auto Iop = parity == -1 ? InvarSinglet.InvertParity() : InvarSinglet;

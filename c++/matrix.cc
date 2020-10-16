@@ -38,7 +38,7 @@ void Symmetry::offdiag_function_impl(const Step &step, const size_t i, const siz
   // already checked in offdiag_contributes(), but we do it again out of paranoia...
   my_assert(size1 && size2);
   // < In[i] r | f^\dag | In[j] r' >
-  if (const auto f = opch[ch][fnr].find({In[i], In[j]}); f != opch[ch][fnr].cend()) {
+  if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) { // RRR
     const auto &mat = f->second;
     my_assert(size1 == mat.size1() && size2 == mat.size2());
     const auto factor_scaled = factor / step.scale();

@@ -425,15 +425,28 @@ class Symmetry;
 class Rmaxvals {
  private:
    ublas::vector<size_t> values;
+   shared_ptr<Symmetry> Sym;
  public:
    Rmaxvals() = default;
    Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym);
-   auto rmax(const size_t i) const { return values[i-1]; } // FOR COMPATIBILITY OFFSET 1!
-   auto exists(const size_t i) const { return values[i-1] > 0; }
-   auto offset(const size_t i) const { return ranges::accumulate(begin(values), begin(values) + (i-1), size_t{0}); }
-   auto operator[](const size_t i) const { return rmax(i); }
-   auto total() const { return ranges::accumulate(values, 0); } // total number of states
    auto combs() const { return values.size(); }
+   auto rmax(const size_t i) const {
+     my_assert(1 <= i && i <= combs());
+     return values[i-1]; // FOR COMPATIBILITY OFFSET 1!
+   }
+   auto exists(const size_t i) const {
+     my_assert(1 <= i && i <= combs());
+     return values[i-1] > 0; 
+   }
+   auto offset(const size_t i) const {
+     my_assert(1 <= i && i <= combs());
+     return ranges::accumulate(begin(values), begin(values) + (i-1), size_t{0});
+   }
+   auto operator[](const size_t i) const {
+     my_assert(1 <= i && i <= combs());
+     return rmax(i); 
+   }
+   auto total() const { return ranges::accumulate(values, 0); } // total number of states
  private:
    friend ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
      for (const auto &x : rmax.values) os << x << ' ';
@@ -994,8 +1007,8 @@ using speclist = std::list<BaseSpectrum>;
 Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
   values.resize(Sym->get_combs());
   for (const auto i : range0(Sym->get_combs())) {
-    const bool combination_allowed = Sym->triangle_inequality(I, InVec[i+1], Sym->QN[i+1]);
-    values[i] = combination_allowed ? diagprev.size_subspace(InVec[i+1]) : 0;
+    const bool combination_allowed = Sym->triangle_inequality(I, InVec[i], Sym->QN_subspace(i));
+    values[i] = combination_allowed ? diagprev.size_subspace(InVec[i]) : 0;
   }
 }
 
@@ -1651,12 +1664,12 @@ auto make_subspaces_list(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
   for (const auto &[I, eig] : diagprev)
     if (eig.getnrstored()) {
       auto input = Sym->input_subspaces(); // make a new copy of subspaces list
-      for (const auto i : Sym->combs1()) {
+      for (const auto i : Sym->combs()) {
         input[i].inverse(); // IMPORTANT!
         input[i].combine(I);
         if (Sym->Invar_allowed(input[i])) 
           subspaces.push_back(input[i]);
-      }
+      } // XXX: dmnrg_subspaces
     }
   subspaces.sort();
   subspaces.unique();
@@ -1668,9 +1681,9 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev, Sym};
   Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
-  for (const auto i : Sym->combs1())
-    for (const auto r : range0(rm.rmax(i)))
-      h(rm.offset(i) + r, rm.offset(i) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r);
+  for (const auto i : Sym->combs())
+    for (const auto r : range0(rm.rmax(i+1))) // XXX
+      h(rm.offset(i+1) + r, rm.offset(i+1) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r); // XXX
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
   return h;
@@ -2094,6 +2107,8 @@ shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats) {
   cout << "SYMMETRY TYPE: " << P.symtype.value() << endl;
   auto Sym = get(P.symtype.value(), P, stats.td.allfields);
   Sym->load();
+  Sym->erase_first();
+  cout << "size=" << Sym->get_combs() << endl;
   return Sym;
 }
 
