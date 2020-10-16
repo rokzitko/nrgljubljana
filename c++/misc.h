@@ -85,7 +85,7 @@ bool find_block(ifstream &F, const string &s) {
 }
 
 // Parse the [param] block of an input file.
-map<string, string> parser(const string filename, const string block = "param"s) {
+map<string, string> parser(const string &filename, const string &block) {
   ifstream F = safe_open_for_reading(filename);
   if (find_block(F, block))
     return parse_block(F);

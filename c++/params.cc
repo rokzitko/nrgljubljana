@@ -568,7 +568,7 @@ struct Params {
     for (const auto &i : all) i->dump();
   }
 
-  Params(const string filename, const string block, const Workdir &workdir) {
+  Params(const string &filename, const string &block, const Workdir &workdir) {
     auto parsed_params = parser(filename, block);
     for (const auto &i : all) {
       const string keyword = i->getkeyword();
