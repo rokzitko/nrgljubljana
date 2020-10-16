@@ -6,8 +6,6 @@
 
 include(recalc-macros.m4)
 
-// Recalculate matrix elements of a doublet tenzor operator
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 MatrixElements SymmetryISO::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -34,10 +32,6 @@ MatrixElements SymmetryISO::recalc_doublet(const DiagInfo &diag, const QSrmax &q
   return cnew;
 }
 
-// (ISO): Four calls of recalc_f() are necessary for each channel.
-
-// Driver routine for recalc_f()
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 Opch SymmetryISO::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -95,8 +89,6 @@ Opch SymmetryISO::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   return opch;
 }
 
-// Recalculate matrix elements of a triplet tenzor operator
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 MatrixElements SymmetryISO::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {

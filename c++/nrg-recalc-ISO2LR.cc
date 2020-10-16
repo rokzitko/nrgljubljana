@@ -31,8 +31,6 @@ double sign(double x) {
 
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
-// Driver routine for recalc_f()
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -306,7 +304,6 @@ Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 MatrixElements SymmetryISO2LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -383,7 +380,6 @@ MatrixElements SymmetryISO2LR::recalc_doublet(const DiagInfo &diag, const QSrmax
 }
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 MatrixElements SymmetryISO2LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {

@@ -22,10 +22,8 @@
 
 
 
-// NOTE: p is ket (right side), 1 is bra (left side). OP is sandwiched
-// in between. Thus Q[p] + Q[op] = Q[1].
+// NOTE: p is ket (right side), 1 is bra (left side). OP is sandwiched in between. Thus Q[p] + Q[op] = Q[1].
 
-// Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   if (!P.substeps) {
@@ -176,7 +174,6 @@ MatrixElements SymmetryQSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &q
   return cnew;
 }
 
-// Driver routine for recalc_f()
 Opch SymmetryQSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -410,7 +407,6 @@ OpchChannel SymmetryQSZ::recalc_irreduc_substeps(const Step &step, const DiagInf
   return opch[M];
 }
 
-// Recalculate matrix elements of a triplet tenzor operator
 MatrixElements SymmetryQSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   if (!P.substeps) {

@@ -22,7 +22,6 @@
 
 
 
-// Recalculate matrix elements of a doublet tenzor operator
 MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -167,7 +166,6 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 
 // (ISOSZ): Four calls of recalc_f() are necessary for each channel.
 
-// Driver routine for recalc_f()
 Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -373,7 +371,6 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   return opch;
 }
 
-// Recalculate matrix elements of a triplet tenzor operator
 MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {

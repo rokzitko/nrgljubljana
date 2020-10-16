@@ -22,7 +22,6 @@
 
 
 
-// Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -99,7 +98,6 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
   return cnew;
 }
 
-// Driver routine for recalc_f()
 Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -270,7 +268,6 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
   return opch;
 }
 
-// Recalculate matrix elements of a triplet tenzor operator
 MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {

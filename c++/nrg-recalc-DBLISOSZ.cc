@@ -22,7 +22,6 @@
 
 
 
-// Recalculate matrix elements of a doublet tenzor operator
 MatrixElements SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -162,7 +161,6 @@ MatrixElements SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrm
   return cnew;
 }
 
-// Driver routine for recalc_f()
 Opch SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {

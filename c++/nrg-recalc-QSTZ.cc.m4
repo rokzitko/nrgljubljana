@@ -6,7 +6,6 @@
 
 include(recalc-macros.m4)
 
-// Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -45,7 +44,6 @@ MatrixElements SymmetryQSTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &
 // ch=2 <-> Tz=0
 // ch=3 <-> Tz=-1
 
-// Driver routine for recalc_f()
 Opch SymmetryQSTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -80,7 +78,6 @@ Opch SymmetryQSTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   return opch;
 }
 
-// Recalculate matrix elements of a triplet tenzor operator
 MatrixElements SymmetryQSTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {

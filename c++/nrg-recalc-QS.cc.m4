@@ -6,8 +6,6 @@
 
 include(recalc-macros.m4)
 
-// Recalculate matrix elements of a doublet tensor operator
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives // XXX
 MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   if (!P.substeps) {
@@ -49,7 +47,6 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 // See Krishna-Murthy p. 1034, equation (B10).
 
 // Driver routine for recalc_f()
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -92,9 +89,8 @@ Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   }
   return opch;
 }
-
-// Driver routine for recalc_f()
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
+ 
+// Driver routine for recalc_f() for substeps=true, i.e., chain by chain diagonalisations
 OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -112,7 +108,6 @@ OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   if (!P.substeps) {
@@ -155,7 +150,6 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #undef QTOT
 #define QTOT(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {

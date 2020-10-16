@@ -23,7 +23,6 @@
 
 
 
-// Driver routine for recalc_f()
 Opch SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -158,8 +157,7 @@ Opch SymmetryPP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-// Isospin operator need an appropriate phase factor (bipartite
-// sublattice index)
+// Isospin operator need an appropriate phase factor (bipartite sublattice index) 
 #define USEISOFACTOR
 
 #if defined(USEISOFACTOR)

@@ -6,8 +6,6 @@
 
 include(recalc-macros.m4)
 
-// Driver routine for recalc_f()
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 Opch SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -52,7 +50,6 @@ Opch SymmetryQSLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 MatrixElements SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -71,7 +68,6 @@ MatrixElements SymmetryQSLR::recalc_doublet(const DiagInfo &diag, const QSrmax &
 }
 
 // Recalculate matrix elements of a triplet tenzor operator [EVEN PARITY]
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 MatrixElements SymmetryQSLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {

@@ -22,7 +22,6 @@
 
 
 
-// Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   if (!P.substeps) {
@@ -165,8 +164,6 @@ MatrixElements SymmetrySPSU2::recalc_doublet(const DiagInfo &diag, const QSrmax 
   return cnew;
 }
 
-// Driver routine for recalc_f()
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO
 Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   my_assert(!P.substeps);
   Opch opch = newopch(P);
@@ -359,7 +356,6 @@ Opch SymmetrySPSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   return opch;
 }
 
-// Driver routine for recalc_f()
 OpchChannel SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) {
   my_assert(P.substeps);
   Opch opch = newopch(P);
@@ -402,7 +398,6 @@ OpchChannel SymmetrySPSU2::recalc_irreduc_substeps(const Step &step, const DiagI
   return opch[M];
 }
 
-// Recalculate matrix elements of a triplet tenzor operator
 MatrixElements SymmetrySPSU2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   if (!P.substeps) {

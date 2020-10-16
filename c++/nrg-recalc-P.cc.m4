@@ -6,7 +6,6 @@
 
 include(recalc-macros.m4)
 
-// Driver routine for recalc_f()
 Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -31,7 +30,6 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   return opch;
 }
 
-// Recalculate matrix elements of a doublet tensor operator
 MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
@@ -49,8 +47,7 @@ MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsr
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-// Isospin operator need an appropriate phase factor (bipartite
-// sublattice index)
+// Isospin operator need an appropriate phase factor (bipartite sublattice index) 
 #define USEISOFACTOR
 
 #if defined(USEISOFACTOR)

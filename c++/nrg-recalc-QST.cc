@@ -317,7 +317,7 @@ MatrixElements SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &q
   return cnew;
 }
 
-// Recalculate matrix elements of a triplet tenzor operator
+// Recalculate matrix elements of an orbital triplet tenzor operator
 MatrixElements SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
   MatrixElements cnew;
   for(const auto &[I1, eig]: diag) {
