@@ -1864,12 +1864,12 @@ QSrmax::QSrmax(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
 void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, shared_ptr<Symmetry> Sym, const Params &P) {
   TIME("recalc f");
   if (!P.substeps) {
-    opch = Sym->recalc_irreduc(step, diag, qsrmax, P);
+    opch = Sym->recalc_irreduc(step, diag, qsrmax);
   } else {
     const auto [N, M] = step.NM();
     for (const auto i: range0(size_t(P.channels)))
       if (i == M) {
-        opch[i] = Sym->recalc_irreduc_substeps(step, diag, qsrmax, P, i);
+        opch[i] = Sym->recalc_irreduc_substeps(step, diag, qsrmax, i);
       } else {
         for (const auto j: range0(size_t(P.perchannel)))
           opch[i][j] = Sym->recalc_doublet(diag, qsrmax, opch[i][j]);

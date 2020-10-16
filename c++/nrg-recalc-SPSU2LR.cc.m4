@@ -22,7 +22,7 @@ MatrixElements SymmetrySPSU2LR::recalc_doublet(const DiagInfo &diag, const QSrma
   return cnew;
 }
 
-Opch SymmetrySPSU2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetrySPSU2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");

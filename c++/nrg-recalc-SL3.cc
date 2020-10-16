@@ -47,7 +47,7 @@ MatrixElements SymmetrySL3::recalc_doublet(const DiagInfo &diag, const QSrmax &q
   return cnew;
 }
 
-Opch SymmetrySL3::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetrySL3::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number q1p = Ip.get("Q1");

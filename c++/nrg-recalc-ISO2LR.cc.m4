@@ -15,7 +15,7 @@ double sign(double x) {
 
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
-Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetryISO2LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;

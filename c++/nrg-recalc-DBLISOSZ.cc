@@ -161,7 +161,7 @@ MatrixElements SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrm
   return cnew;
 }
 
-Opch SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;

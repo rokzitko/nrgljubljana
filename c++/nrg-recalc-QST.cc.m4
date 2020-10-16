@@ -48,7 +48,7 @@ MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp  = Ip.get("Q");

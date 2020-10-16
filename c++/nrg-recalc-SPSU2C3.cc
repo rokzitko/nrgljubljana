@@ -24,7 +24,7 @@
 
 #define xRECALC_F_TAB(a, b, c) 0;
 
-Opch SymmetrySPSU2C3::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetrySPSU2C3::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
 #ifdef NRG_COMPLEX
   // CONVENTION: primed indeces are on the right side (ket)

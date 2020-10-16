@@ -36,7 +36,7 @@ MatrixElements SymmetrySPU1::recalc_doublet(const DiagInfo &diag, const QSrmax &
   return cnew;
 }
 
-Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   my_assert(!P.substeps);
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -58,7 +58,7 @@ Opch SymmetrySPU1::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   return opch;
 }
 
-OpchChannel SymmetrySPU1::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P, int M) {
+OpchChannel SymmetrySPU1::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, int M) {
   my_assert(P.substeps);
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {

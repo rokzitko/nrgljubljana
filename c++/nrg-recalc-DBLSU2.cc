@@ -96,7 +96,7 @@ MatrixElements SymmetryDBLSU2::recalc_doublet(const DiagInfo &diag, const QSrmax
   return cnew;
 }
 
-Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetryDBLSU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;

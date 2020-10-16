@@ -50,7 +50,7 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
   return cnew;
 }
 
-Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");

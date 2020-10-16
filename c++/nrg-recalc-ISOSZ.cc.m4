@@ -34,7 +34,7 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 
 // (ISOSZ): Four calls of recalc_f() are necessary for each channel.
 
-Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, const Params &P) {
+Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
   Opch opch = newopch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
