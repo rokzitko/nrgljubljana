@@ -16,6 +16,7 @@ void cdmI(const size_t i,        // Subspace index
           const AllSteps &dm,
           const Params &P) 
 {
+  my_assert(i < P.combs);
   nrglog('D', "cdmI i=" << i << " I1=" << I1 << " factor=" << factor);
   // Range of indexes r and r' in matrix C^{QS,N}_{r,r'}, cf. Eq. (3.55) in my dissertation.
   const auto dim = rhoNEW.size2();
@@ -23,7 +24,7 @@ void cdmI(const size_t i,        // Subspace index
   const auto nromega = rhoN.size2();
   if (nromega == 0 || dim == 0) return;   // continue only if connection exists
   // rmax (info[I1].rmax[i]) is the range of r in U^N_I1(omega|ri), only those states that we actually kept..
-  const auto rmax = dm[N].at(I1).rmax.rmax(i-1); // RRR
+  const auto rmax = dm[N].at(I1).rmax.rmax(i);
   if (rmax == 0) return;    // rmax can be zero in the case a subspace has been completely truncated
   my_assert(rmax == dim);   // Otherwise, rmax must equal dim
   // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match? We do this test at
@@ -31,7 +32,7 @@ void cdmI(const size_t i,        // Subspace index
   const auto I1nr = diagI1.getnrstored();
   my_assert(nromega <= I1nr);
   // offset gives the offset that is added to r1,rp to find the elements ri in U^N_I1(omega|ri)
-  const auto offset = dm[N].at(I1).rmax.offset(i-1); // RRR
+  const auto offset = dm[N].at(I1).rmax.offset(i);
   const auto dim1   = diagI1.matrix.size1();
   const auto dim2   = diagI1.matrix.size2();
   my_assert(nromega <= dim1 && offset + dim <= dim2);
@@ -54,7 +55,7 @@ void calc_densitymatrix_iterN(const DiagInfo &diag,
     rhoPrev[I]      = Matrix(dim, dim, 0);
     if (dim == 0) continue;
 //    for (const auto &sub: subs) { : 0-based
-    for (const auto i : Sym->combs()) {
+    for (const auto i : Sym->combs()) { // DDD
       Invar sub = subs[i];
       const auto x = rho.find(sub);
       const auto y = diag.find(sub);

@@ -12,8 +12,8 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
   my_assert(nr > 0);
   my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
   for (const auto block: range0(combs)) {
-    const auto rmax   = qsrmax.at(I).rmax(block + 1); // offset 1
-    const auto offset = qsrmax.at(I).offset(block + 1); // RRR
+    const auto rmax   = qsrmax.at(I).rmax(block);
+    const auto offset = qsrmax.at(I).offset(block);
     my_assert(e.matrix.size1() >= nr);
     my_assert(e.matrix.size2() >= offset + rmax);
     ublas::matrix_range<Matrix> Up(e.matrix, ublas::range(0, nr), ublas::range(offset, offset + rmax));
@@ -53,9 +53,11 @@ Matrix Symmetry::recalc_f(const DiagInfo &diag,
   if (dim1 && dimp) {
     // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
     for (const auto j: range0(jmax)) {
+      my_assert(1 <= table[j].i1 && table[j].i1 <= nr_combs());
+      my_assert(1 <= table[j].ip && table[j].ip <= nr_combs());
       // rmax1, rmaxp are the dimensions of the invariant subspaces
-      const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1);
-      const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
+      const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1-1);
+      const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip-1);
       if (!(rmax1 > 0 && rmaxp > 0)) continue;
       if (P.logletter('f'))
         nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
@@ -97,6 +99,8 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
   Matrix cn = Matrix(dim1, dimp, 0);
   if (dim1 == 0 || dimp == 0) return cn; // empty matrix
   for (const auto j: range0(jmax)) { // loop over combinations of i/ip
+    my_assert(1 <= table[j].i1 && table[j].i1 <= nr_combs());
+    my_assert(1 <= table[j].ip && table[j].ip <= nr_combs());
     if (P.logletter('r')) {
       nrgdump3(j, I1, Ip);
       nrgdump2(table[j].i1, table[j].ip);
@@ -104,12 +108,12 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
       nrgdump(table[j].factor) << endl;
     }
     if (!Invar_allowed(table[j].IN1) || !Invar_allowed(table[j].INp)) continue;
-    const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1);
-    const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip);
+    const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1-1);
+    const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip-1);
     // Proceed if this combination of i1/ip contributes.
     if (rmax1 == 0 || rmaxp == 0) continue;
-    const auto IN1 = ancestor(I1, table[j].i1-1); // RRR
-    const auto INp = ancestor(Ip, table[j].ip-1); // RRR
+    const auto IN1 = ancestor(I1, table[j].i1-1);
+    const auto INp = ancestor(Ip, table[j].ip-1);
     my_assert(IN1 == table[j].IN1 && INp == table[j].INp);
     const Twoinvar ININ = {table[j].IN1, table[j].INp};
     const auto cnt    = cold.count(ININ); // Number of (IN1,INp) subspaces.
@@ -143,20 +147,21 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
   return cn;
 }
 
-// This routine is used for recalculation of global operators in
-// nrg-recalc-*.cc
+// This routine is used for recalculation of global operators in nrg-recalc-*.cc
 void Symmetry::recalc1_global(const DiagInfo &diag,
                               const QSrmax &qsrmax,
                               const Invar &I, 
                               Matrix &m, // XXX: return this one
                               const size_t i1, 
                               const size_t ip, 
-                              const t_factor value) const {
+                              const t_factor value) const 
+{
+  my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
   const Eigen &diagI = diag.at(I);
   const auto dim = diagI.getnrstored();
   if (dim == 0) return;
-  const auto rmax1 = qsrmax.at(I).rmax(i1);
-  const auto rmaxp = qsrmax.at(I).rmax(ip);
+  const auto rmax1 = qsrmax.at(I).rmax(i1-1);
+  const auto rmaxp = qsrmax.at(I).rmax(ip-1);
   my_assert(rmax1 == rmaxp);
   if (rmax1 == 0 || rmaxp == 0) return;
   const Matrix &U1 = diagI.blocks[i1-1];
@@ -164,7 +169,7 @@ void Symmetry::recalc1_global(const DiagInfo &diag,
   my_assert(U1.size1() == dim && U1.size2() == rmax1);
   my_assert(Up.size1() == dim && Up.size2() == rmaxp);
   // m = m + value * U1 * Up^trans
-  atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(value), U1, Up, t_factor(1.0), m);
+  atlas::gemm(CblasNoTrans, CblasConjTrans, value, U1, Up, t_factor(1.0), m);
 }
 
 #endif // _recalc_cc_

@@ -164,7 +164,7 @@ class Symmetry {
        const Invar Ip = parity == -1 ? I.InvertParity() : I;
        for (const auto i: combs()) {
          const auto anc = ancestor(I, i);
-         recalc_table[i] = {i+1, i+1, anc, parity == -1 ? anc.InvertParity() : anc, 1.0}; // RRR
+         recalc_table[i] = {i+1, i+1, anc, parity == -1 ? anc.InvertParity() : anc, 1.0};
        }
        const auto Iop = parity == -1 ? InvarSinglet.InvertParity() : InvarSinglet;
        nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, nr_combs(), Iop);

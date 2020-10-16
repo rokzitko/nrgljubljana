@@ -6,9 +6,10 @@
 
 // +++ Construct an offdiagonal part of the Hamiltonian. +++
 
-inline bool Symmetry::offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const {
+inline bool Symmetry::offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const { // i,j are 1-based
+  my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
   my_assert(i != j);
-  return qq.exists(i) && qq.exists(j);
+  return qq.exists(i-1) && qq.exists(j-1);
 }
 
 // We test if the block (i,j) exists at all. If not, factor is not evaluated. This prevents divisions by zero.
@@ -29,16 +30,17 @@ void Symmetry::offdiag_function_impl(const Step &step, const size_t i, const siz
                                      const t_matel factor, // may be complex (in principle)
                                      Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const 
 {
+  my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
   if (!my_isfinite(factor))
     throw std::runtime_error(fmt::format("offdiag_function(): factor not finite {} {} {} {}", i, j, ch, fnr));
-  const auto begin1 = qq.offset(i); // RRR
-  const auto begin2 = qq.offset(j);
-  const auto size1  = qq.rmax(i);
-  const auto size2  = qq.rmax(j);
+  const auto begin1 = qq.offset(i-1);
+  const auto begin2 = qq.offset(j-1);
+  const auto size1  = qq.rmax(i-1);
+  const auto size2  = qq.rmax(j-1);
   // already checked in offdiag_contributes(), but we do it again out of paranoia...
   my_assert(size1 && size2);
   // < In[i] r | f^\dag | In[j] r' >
-  if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) { // RRR
+  if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) {
     const auto &mat = f->second;
     my_assert(size1 == mat.size1() && size2 == mat.size2());
     const auto factor_scaled = factor / step.scale();
@@ -66,8 +68,9 @@ void Symmetry::offdiag_function_impl(const Step &step, const size_t i, const siz
 void Symmetry::diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                                   Matrix &h, const Rmaxvals &qq, const double f) const 
 {
-  const auto begin1 = qq.offset(i); // RRR
-  const auto size1  = qq.rmax(i);
+  my_assert(1 <= i && i <= qq.combs());
+  const auto begin1 = qq.offset(i-1);
+  const auto size1  = qq.rmax(i-1);
   // For convenience we subtract the average site occupancy.
   const auto avgoccup = (double)P.spin / 2; // multiplicity divided by 2
   // Energy shift of the diagonal matrix elements in the NRG Hamiltonian. WARNING: for N=0, we are not adding the
@@ -92,12 +95,14 @@ void Symmetry::diag_function_half(const Step &step, const size_t i, const size_t
 // +++ Shift the offdiagonal matrix elements by factor. +++
 
 void Symmetry::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_matel factor, 
-                                     Matrix &h, const Rmaxvals &qq) const {
+                                     Matrix &h, const Rmaxvals &qq) const 
+{
+  my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
   if (i > j) return; // only upper triangular part
-  const auto begin1 = qq.offset(i); // RRR
-  const auto size1  = qq.rmax(i);
-  const auto begin2 = qq.offset(j);
-  const auto size2  = qq.rmax(j);
+  const auto begin1 = qq.offset(i-1);
+  const auto size1  = qq.rmax(i-1);
+  const auto begin2 = qq.offset(j-1);
+  const auto size2  = qq.rmax(j-1);
   const auto contributes = (size1 > 0) && (size2 > 0);
   if (!contributes) return;
   my_assert(size1 == size2);

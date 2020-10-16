@@ -431,21 +431,18 @@ class Rmaxvals {
    Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym);
    auto combs() const { return values.size(); }
    auto rmax(const size_t i) const {
-     my_assert(1 <= i && i <= combs());
-     return values[i-1]; // FOR COMPATIBILITY OFFSET 1!
+     my_assert(i < combs());
+     return values[i];
    }
    auto exists(const size_t i) const {
-     my_assert(1 <= i && i <= combs());
-     return values[i-1] > 0; 
+     my_assert(i < combs());
+     return values[i] > 0; 
    }
    auto offset(const size_t i) const {
-     my_assert(1 <= i && i <= combs());
-     return ranges::accumulate(begin(values), begin(values) + (i-1), size_t{0});
+     my_assert(i < combs());
+     return ranges::accumulate(begin(values), begin(values) + i, size_t{0});
    }
-   auto operator[](const size_t i) const {
-     my_assert(1 <= i && i <= combs());
-     return rmax(i); 
-   }
+   auto operator[](const size_t i) const { return rmax(i); }
    auto total() const { return ranges::accumulate(values, 0); } // total number of states
  private:
    friend ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
@@ -1675,8 +1672,8 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
   const Rmaxvals rm{I, anc, diagprev, Sym};
   Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (const auto i : Sym->combs())
-    for (const auto r : range0(rm.rmax(i+1))) // RRR
-      h(rm.offset(i+1) + r, rm.offset(i+1) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r); // RRR
+    for (const auto r : range0(rm.rmax(i)))
+      h(rm.offset(i) + r, rm.offset(i) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r);
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
   return h;
