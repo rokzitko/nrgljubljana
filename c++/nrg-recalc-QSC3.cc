@@ -49,12 +49,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spinup0-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -63,12 +63,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spinup0-b.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -77,12 +77,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spinup0-c.dat"
-      };
-      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[2][0][II] = Matrix(0,0); // ???
+        };
+        opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -93,12 +93,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spindown0-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -107,12 +107,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spindown0-b.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -121,12 +121,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spindown0-c.dat"
-      };
-      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[2][0][II] = Matrix(0,0); // ???
+        };
+        opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -137,12 +137,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spinup1-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -151,12 +151,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spinup1-b.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -165,12 +165,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spinup1-c.dat"
-      };
-      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[2][0][II] = Matrix(0,0); // ???
+        };
+        opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -181,12 +181,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spindown1-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -195,12 +195,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spindown1-b.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -209,12 +209,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spindown1-c.dat"
-      };
-      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[2][0][II] = Matrix(0,0); // ???
+        };
+        opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -225,12 +225,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spinup2-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -239,12 +239,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spinup2-b.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -253,12 +253,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spinup2-c.dat"
-      };
-      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[2][0][II] = Matrix(0,0); // ???
+        };
+        opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -269,12 +269,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spindown2-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -283,12 +283,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spindown2-b.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -297,12 +297,12 @@ Opch SymmetryQSC3::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qsc3/qsc3-spindown2-c.dat"
-      };
-      opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[2][0][II] = Matrix(0,0); // ???
+        };
+        opch[2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };

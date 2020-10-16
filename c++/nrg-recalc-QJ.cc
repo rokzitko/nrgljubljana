@@ -36,12 +36,12 @@ MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "qj/qj-doubletp.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
+      }(); // immediately executed lambda
     }
   }
 };
@@ -52,12 +52,12 @@ MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "qj/qj-doubletm.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
+      }(); // immediately executed lambda
     }
   }
 };
@@ -83,12 +83,12 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "qj/qj-quad1.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+      }(); // immediately executed lambda
     }
   }
 };
@@ -99,12 +99,12 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "qj/qj-quad2.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+      }(); // immediately executed lambda
     }
   }
 };
@@ -115,12 +115,12 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "qj/qj-quad3.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+      }(); // immediately executed lambda
     }
   }
 };
@@ -131,12 +131,12 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "qj/qj-quad4.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+      }(); // immediately executed lambda
     }
   }
 };
@@ -158,12 +158,12 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j3_2-jz3_2.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -174,12 +174,12 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j1_2-jz1_2.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -188,12 +188,12 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j3_2-jz1_2.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -204,12 +204,12 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j1_2-jz-1_2.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -218,12 +218,12 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j3_2-jz-1_2.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -234,12 +234,12 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j3_2-jz-3_2.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };

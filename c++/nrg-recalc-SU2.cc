@@ -37,12 +37,12 @@ MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "su2/su2-1ch-doubletm.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
+      }(); // immediately executed lambda
     }
   }
 } } break;
@@ -51,12 +51,12 @@ MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "su2/su2-2ch-doubletm.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
+      }(); // immediately executed lambda
     }
   }
 } } break;
@@ -70,12 +70,12 @@ MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "su2/su2-1ch-doubletp.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
+      }(); // immediately executed lambda
     }
   }
 } } break;
@@ -84,12 +84,12 @@ MatrixElements SymmetrySU2::recalc_doublet(const DiagInfo &diag, const QSrmax &q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+        struct Recalc recalc_table[] = {
 #include "su2/su2-2ch-doubletp.dat"
-      };
-      cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
-    } else {
-      cnew[II] = Matrix(0,0); // ???
+        };
+        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2));
+      }(); // immediately executed lambda
     }
   }
 } } break;
@@ -123,12 +123,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-1ch-type1-isoup-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -137,12 +137,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-1ch-type2-isoup-a.dat"
-      };
-      opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][1][II] = Matrix(0,0); // ???
+        };
+        opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 } } break;
@@ -151,12 +151,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type1-isoup-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -165,12 +165,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type1-isoup-b.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -179,12 +179,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type2-isoup-a.dat"
-      };
-      opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][1][II] = Matrix(0,0); // ???
+        };
+        opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -193,12 +193,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type2-isoup-b.dat"
-      };
-      opch[1][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][1][II] = Matrix(0,0); // ???
+        };
+        opch[1][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 } } break;
@@ -212,12 +212,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-1ch-type1-isodown-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -226,12 +226,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-1ch-type2-isodown-a.dat"
-      };
-      opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][1][II] = Matrix(0,0); // ???
+        };
+        opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 } } break;
@@ -240,12 +240,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type1-isodown-a.dat"
-      };
-      opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][0][II] = Matrix(0,0); // ???
+        };
+        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -254,12 +254,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type1-isodown-b.dat"
-      };
-      opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][0][II] = Matrix(0,0); // ???
+        };
+        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -268,12 +268,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type2-isodown-a.dat"
-      };
-      opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[0][1][II] = Matrix(0,0); // ???
+        };
+        opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 };
@@ -282,12 +282,12 @@ Opch SymmetrySU2::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      struct Recalc_f recalc_table[] = {
+      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
+       struct Recalc_f recalc_table[] = {
 #include "su2/su2-2ch-type2-isodown-b.dat"
-      };
-      opch[1][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
-    } else {
-      opch[1][1][II] = Matrix(0,0); // ???
+        };
+        opch[1][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+      }();
     }
   }
 } } break;

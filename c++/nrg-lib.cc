@@ -350,7 +350,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
  public:
    template <typename MF>
      double trace(MF mult) const {
-       return std::accumulate(this->cbegin(), this->cend(), 0.0, 
+       return std::accumulate(this->cbegin(), this->cend(), 0.0, // XXX: ranges
                               [mult](double acc, const auto z) { const auto &[I, mat] = z; 
                                 return acc + mult(I) * trace_real_nochecks(mat); });
      }
