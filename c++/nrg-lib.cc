@@ -1650,16 +1650,14 @@ void perform_basic_measurements(const Step &step, const DiagInfo &diag, shared_p
   output.annotated.dump(step, diag, stats, Sym);
 }
 
-// Make a list of subspaces for the new iteration.
-auto make_subspaces_list(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
-  std::list<Invar> subspaces;
+// Subspaces for the new iteration
+auto new_subspaces(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
+  std::set<Invar> subspaces;
   for (const auto &I : diagprev.subspaces()) {
     const auto all = Sym->new_subspaces(I);
-    auto non_empty = all | ranges::views::filter([&Sym](const auto &In) { return Sym->Invar_allowed(In); });
-    std::copy(non_empty.begin(), non_empty.end(), std::back_inserter(subspaces)); // CCC
+    const auto non_empty = all | ranges::views::filter([&Sym](const auto &In) { return Sym->Invar_allowed(In); }) | ranges::to<std::vector>();
+    std::copy(non_empty.begin(), non_empty.end(), std::inserter(subspaces, subspaces.end()));
   }
-  subspaces.sort();
-  subspaces.unique(); // remove duplicates
   return subspaces;
 }
 
@@ -1858,7 +1856,7 @@ DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, 
 
 // Determine the structure of matrices in the new NRG shell
 QSrmax::QSrmax(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
-  for (const auto &I : make_subspaces_list(diagprev, Sym))
+  for (const auto &I : new_subspaces(diagprev, Sym))
     (*this)[I] = Rmaxvals{I, Sym->ancestors(I), diagprev, Sym};
 }
 
