@@ -3,10 +3,10 @@
 
 class Stats;
 
-shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats);
+std::shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
-std::string parse_datafile_header(istream &fdata, const int expected_version = 9)
+auto parse_datafile_header(std::istream &fdata, const int expected_version = 9)
 {
   std::string sym_string = "";
   int dataversion = -1;
@@ -16,13 +16,13 @@ std::string parse_datafile_header(istream &fdata, const int expected_version = 9
       fdata.ignore(); // ignore '!'
       fdata >> dataversion;
     } else {
-      string line;
-      getline(fdata, line);
-      string::size_type pos = line.find("symtype", 1);
-      if (pos != string::npos) {
+      std::string line;
+      std::getline(fdata, line);
+      auto pos = line.find("symtype", 1);
+      if (pos != std::string::npos) {
         // Symmetry type declaration
-        string::size_type p = line.find_last_of(" \t");
-        if (p != string::npos && p < line.size() - 1)
+        auto p = line.find_last_of(" \t");
+        if (p != std::string::npos && p < line.size() - 1)
           sym_string = line.substr(p + 1); // global variable
       }
     }
@@ -34,7 +34,7 @@ std::string parse_datafile_header(istream &fdata, const int expected_version = 9
 
 // Read the number of channels from data file. Also sets P.combs accordingly, depending on the spin of the conduction
 // band electrons.
-void read_nr_channels(ifstream &fdata, std::string &sym_string, Params &P) {
+void read_nr_channels(std::ifstream &fdata, const std::string &sym_string, Params &P) {
   size_t channels;
   fdata >> channels;
   my_assert(channels >= 1);
@@ -72,13 +72,13 @@ void read_nr_channels(ifstream &fdata, std::string &sym_string, Params &P) {
 }
 
 // Read the length of the Wilson chain
-void read_Nmax(ifstream &fdata, Params &P) {
+void read_Nmax(std::ifstream &fdata, Params &P) {
   size_t nmax;
   fdata >> nmax;
   P.Nmax = nmax;
 }
 
-size_t read_nsubs(ifstream &fdata)
+auto read_nsubs(std::ifstream &fdata)
 {
   size_t nsubs; // Number of invariant subspaces
   fdata >> nsubs;
@@ -87,14 +87,14 @@ size_t read_nsubs(ifstream &fdata)
 }
 
 // Read the ground state energy from data file ('e' flag)
-void read_gs_energy(ifstream &fdata, Stats &stats) {
+void read_gs_energy(std::ifstream &fdata, Stats &stats) {
   fdata >> stats.total_energy;
 }
 
 // Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
 // tridiagonalization routines (if not using the tables computed by initial.m).
 void determine_Nmax(const Coef &coef, Params &P) {
-  size_t length_coef_table = coef.xi.max(0); // all channels have same nr. of coefficients
+  const auto length_coef_table = coef.xi.max(0); // all channels have same nr. of coefficients
   std::cout << endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << endl << std::endl;
   my_assert(length_coef_table == P.Nmax);
   if (P.substeps) P.Nmax = P.channels * P.Nmax;
@@ -108,31 +108,31 @@ void determine_Nmax(const Coef &coef, Params &P) {
   std::cout << endl << "length_coef_table=" << length_coef_table << " Nmax=" << P.Nmax << endl << std::endl;
 }
 
-inline void skipline(ostream &F = std::cout) { F << std::endl; }
+inline void skipline(std::ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
-std::tuple<DiagInfo, IterInfo, Coef, shared_ptr<Symmetry>> read_data(Params &P, Stats &stats) {
+template<typename S> auto read_data(Params &P, Stats &stats) {
   skipline();
-  ifstream fdata("data");
+  std::ifstream fdata("data");
   if (!fdata) throw std::runtime_error("Can't load initial data.");
-  auto sym_string = parse_datafile_header(fdata);
+  const auto sym_string = parse_datafile_header(fdata);
   my_assert(sym_string == P.symtype.value());
   read_nr_channels(fdata, sym_string, P);
   auto Sym = set_symmetry(P, stats);
   read_Nmax(fdata, P);
-  size_t nsubs = read_nsubs(fdata);
+  const auto nsubs = read_nsubs(fdata);
   skip_comments(fdata);
   DiagInfo diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);
   IterInfo iterinfo0;
   iterinfo0.opch = Opch(fdata, diag0, P);
-  Coef coef(P);
+  Coef_tmpl<S> coef(P);
   while (true) {
     /* skip white space */
-    while (!fdata.eof() && isspace(fdata.peek())) fdata.get();
+    while (!fdata.eof() && std::isspace(fdata.peek())) fdata.get();
     if (fdata.eof()) break;
-    char ch = fdata.get();
-    string opname;
+    auto ch = fdata.get();
+    std::string opname;
     getline(fdata, opname);
     if (ch != '#') debug("Reading <||" << opname << "||> (" << ch << ")");
     switch (ch) {
@@ -168,9 +168,9 @@ std::tuple<DiagInfo, IterInfo, Coef, shared_ptr<Symmetry>> read_data(Params &P, 
     default: throw std::invalid_argument(fmt::format("Unknown block {} in data file.", ch));
     }
   }
-  if (string(P.tri) == "cpp") Tridiag(coef, P); // before calling determine_Nmax()
+  if (std::string(P.tri) == "cpp") Tridiag(coef, P); // before calling determine_Nmax()
   determine_Nmax(coef, P);
-  return {diag0, iterinfo0, coef, Sym};
+  return std::make_tuple(diag0, iterinfo0, coef, Sym);
 }
 
 #endif

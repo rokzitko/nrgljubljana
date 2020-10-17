@@ -2139,7 +2139,7 @@ private:
 public:
   NRG_calculation() : P("param", "param", workdir), stats(P) {}
   void go() {
-    auto [diag0, iterinfo, coef, Sym] = read_data(P, stats);
+    auto [diag0, iterinfo, coef, Sym] = read_data<S>(P, stats);
     Step step{P, RUNTYPE::NRG};
     AllSteps dm(P.Ninit, P.Nlen);
     auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym, P);
@@ -2163,7 +2163,7 @@ public:
         if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-      auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data(P, stats);
+      auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data<S>(P, stats);
       Step step_dmnrg{P, RUNTYPE::DMNRG};
       run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm, P);
       my_assert(num_equal(stats.GS_energy, stats.total_energy));
