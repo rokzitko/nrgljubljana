@@ -167,22 +167,22 @@ template <typename T>
 #include "numerics.h"
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
-template <typename S> struct RawEigen : public traits<S> {
+template <typename S> class Eigen_tmpl : public traits<S> {
+public:
+  using t_matel2 = typename traits<S>::t_matel;
+  using Matrix2 = ublas::matrix<t_matel2>;
   using EVEC = ublas::vector<t_eigen>;
   EVEC value_orig;               // eigenvalues as computed
-  ublas::matrix<t_matel> matrix; // eigenvectors
-  RawEigen() {}
-  RawEigen(const size_t nr, const size_t dim) {
+  Matrix2 matrix; // eigenvectors
+  Eigen_tmpl() {}
+  Eigen_tmpl(const size_t nr, const size_t dim) {
     my_assert(nr <= dim);
     value_orig.resize(nr);
     matrix.resize(nr, dim);
   }
   auto getnrcomputed() const { return value_orig.size(); } // number of computed eigenpairs
   auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
-};
-  
-// Augments RawEigen with the information about truncation and block structure of the eigenvectors.
-class Eigen : public RawEigen<scalar> {
+  // Now add information about truncation and block structure of the eigenvectors
  private:
   long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
  public:
@@ -205,10 +205,8 @@ class Eigen : public RawEigen<scalar> {
   // using the efficient BLAS routines when performing recalculations of
   // the matrix elements.
   std::vector<Matrix> blocks;
-  Eigen() : RawEigen() {}
-  Eigen(size_t nr, size_t rmax) : RawEigen(nr, rmax) {}
   // Truncate to nrpost states.
-  void truncate_prepare_subspace(size_t nrpost_) {
+  void truncate_prepare_subspace(const size_t nrpost_) {
     nrpost = nrpost_;
     my_assert(nrpost <= getnrstored());
   }
@@ -249,6 +247,7 @@ class Eigen : public RawEigen<scalar> {
     ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergyN;
   } 
 };
+using Eigen = Eigen_tmpl<scalar>;
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
 class DiagInfo : public std::map<Invar, Eigen>, public traits<scalar> {
@@ -1712,7 +1711,7 @@ DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef 
     const int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
-    Eigen e = diagonalise(h, DP);
+    Eigen e = diagonalise<scalar>(h, DP);
 #pragma omp critical
     { diagnew[I] = e; }
   }
@@ -1720,7 +1719,8 @@ DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef 
 }
 
 #ifdef NRG_MPI
-enum TAG : int { TAG_EXIT = 1, TAG_DIAG, TAG_SYNC, TAG_MATRIX, TAG_INVAR, TAG_MATRIX_SIZE, TAG_MATRIX_LINE, TAG_EIGEN_INT, TAG_EIGEN_VEC };
+enum TAG : int { TAG_EXIT = 1, TAG_DIAG_DBL, TAG_DIAG_CMPL, TAG_SYNC, TAG_MATRIX, TAG_INVAR, 
+                 TAG_MATRIX_SIZE, TAG_MATRIX_LINE, TAG_EIGEN_INT, TAG_EIGEN_VEC };
 
 void mpi_send_params(const DiagParams &DP) {
   mpilog("Sending diag parameters " << DP.diag << " " << DP.diagratio);
@@ -1744,53 +1744,52 @@ void check_status(mpi::status status) {
 }
 
 // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
-
-void mpi_send_matrix(const int dest, const Matrix &m) {
+template<typename S> void mpi_send_matrix(const int dest, const ublas::matrix<S> &m) {
   const auto size1 = m.size1();
   mpiw->send(dest, TAG_MATRIX_SIZE, size1);
   const auto size2 = m.size2();
   mpiw->send(dest, TAG_MATRIX_SIZE, size2);
   mpilog("Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
   for (const auto i: range0(size1)) {
-    ublas::vector<t_matel> vec = ublas::matrix_row<const Matrix>(m, i);
+    ublas::vector<S> vec = ublas::matrix_row<const ublas::matrix<S>>(m, i);
     mpiw->send(dest, TAG_MATRIX_LINE, vec);
   }
 }
 
-auto mpi_receive_matrix(const int source) {
+template<typename S> auto mpi_receive_matrix(const int source) {
   size_t size1;
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size1));
   size_t size2;
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size2));
-  Matrix m(size1, size2);
+  ublas::matrix<S> m(size1, size2);
   mpilog("Receiving matrix of size " << size1 << " x " << size2 << " line by line from " << source);
   for (const auto i: range0(size1)) {
-    ublas::vector<t_matel> vec;
+    ublas::vector<S> vec;
     check_status(mpiw->recv(source, TAG_MATRIX_LINE, vec));
     my_assert(vec.size() == size2);
-    ublas::matrix_row<Matrix>(m, i) = vec;
+    ublas::matrix_row<ublas::matrix<S>>(m, i) = vec;
   }
   return m;
 }
 
-void mpi_send_eigen(const int dest, const Eigen &eig) {
+template<typename S> void mpi_send_eigen(const int dest, const Eigen_tmpl<S> &eig) {
   mpilog("Sending eigen from " << mpiw->rank() << " to " << dest);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig);
-  mpi_send_matrix(dest, eig.matrix);
+  mpi_send_matrix<S>(dest, eig.matrix);
 }
 
-auto mpi_receive_eigen(const int source) {
+template<typename S> auto mpi_receive_eigen(const int source) {
   mpilog("Receiving eigen from " << source << " on " << mpiw->rank());
-  Eigen eig;
+  Eigen_tmpl<S> eig;
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value_orig));
-  eig.matrix = mpi_receive_matrix(source);
+  eig.matrix = mpi_receive_matrix<S>(source);
   return eig;
 }
 
 // Read results from a slave process.
-std::pair<Invar, Eigen> read_from(int source) {
+template<typename S> std::pair<Invar, Eigen_tmpl<S>> read_from(int source) {
   mpilog("Reading results from " << source);
-  const auto eig = mpi_receive_eigen(source);
+  const auto eig = mpi_receive_eigen<S>(source);
   Invar Irecv;
   check_status(mpiw->recv(source, TAG_INVAR, Irecv));
   mpilog("Received results for subspace " << Irecv << " [nr=" << eig.getnrstored() << ", dim=" << eig.getdim() << "]");
@@ -1799,13 +1798,14 @@ std::pair<Invar, Eigen> read_from(int source) {
   return {Irecv, eig};
 }
 
+template<typename S>
 DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
                               const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry> Sym, const Params &P) {
   DiagInfo diagnew;
   mpi_send_params(DP); // Synchronise parameters
   std::list<Invar> todo; // List of all the tasks to handle
   std::copy(tasks.begin(), tasks.end(), std::back_inserter(todo)); // BBB: constr
-  list<Invar> done; // List of finished tasks.
+  std::list<Invar> done; // List of finished tasks.
   // List of the available computation nodes (including the master,
   // which is always at the very beginnig of the deque).
   std::deque<int> nodes;
@@ -1838,18 +1838,18 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
-      diagnew[I] = diagonalise(h, DP);
+      diagnew[I] = diagonalise<S>(h, DP);
       nodes.push_back(0);
       done.push_back(I);
     } else {
-      mpiw->send(i, TAG_DIAG, 0);
-      mpi_send_matrix(i, h);
+      mpiw->send(i, std::is_same_v<S, double> ? TAG_DIAG_DBL : TAG_DIAG_CMPL, 0);
+      mpi_send_matrix<S>(i, h);
       mpiw->send(i, TAG_INVAR, I);
     }
     // Check for terminated jobs
     while (auto status = mpiw->iprobe(mpi::any_source, TAG_EIGEN_VEC)) {
       nrglog('M', "Receiveing results from " << status->source());
-      const auto [Irecv, eig] = read_from(status->source());
+      const auto [Irecv, eig] = read_from<S>(status->source());
       diagnew[Irecv] = eig;
       done.push_back(Irecv);
       // The node is now available for new tasks!
@@ -1859,11 +1859,24 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
   // Keep reading results sent from the slave processes until all tasks have been completed.
   while (done.size() != tasks.size()) {
     const auto status = mpiw->probe(mpi::any_source, TAG_EIGEN_VEC);
-    const auto [Irecv, eig]  = read_from(status.source());
+    const auto [Irecv, eig]  = read_from<S>(status.source());
     diagnew[Irecv] = eig;
     done.push_back(Irecv);
   }
   return diagnew;
+}
+
+// Handle a diagonalisation request
+template<typename S> void slave_diag(const int master, const DiagParams &DP) {
+  // 1. receive the matrix and the subspace identification
+  auto m = mpi_receive_matrix<S>(master);
+  Invar I;
+  check_status(mpiw->recv(master, TAG_INVAR, I));
+  // 2. preform the diagonalisation
+  const auto eig = diagonalise<S>(m, DP);
+  // 3. send back the results
+  mpi_send_eigen<S>(master, eig);
+  mpiw->send(master, TAG_INVAR, I);
 }
 #endif
 
@@ -1872,7 +1885,7 @@ DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, 
                           const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry> Sym, const Params &P) {
   TIME("diag");
 #ifdef NRG_MPI
-  return diagonalisations_MPI(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
+  return diagonalisations_MPI<scalar>(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
 #else
   return diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
 #endif
@@ -2120,65 +2133,66 @@ std::shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats) {
   return Sym;
 }
 
-void calculation() {
-  // Workdir workdir;
-  Params P("param", "param", workdir);
-  Stats stats(P);
-  auto [diag0, iterinfo, coef, Sym] = read_data(P, stats);
-  Step step{P, RUNTYPE::NRG};
-  AllSteps dm(P.Ninit, P.Nlen);
-  auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym, P);
-  if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
-  dm.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
-  if (P.dumpabsenergies)
-    dm.dump_all_absolute_energies();
-  if (P.dm) {
-    if (P.need_rho()) {
-      auto rho = init_rho(step, diag, Sym);
-      rho.save(step.lastndx(), FN_RHO);
-      if (!P.ZBW) calc_densitymatrix(rho, dm, Sym, P);
+template <typename S> class NRG_calculation : public traits<S>{
+private:
+  // XXX: Workdir workdir;
+  Params P;
+  Stats stats;
+public:
+  using scalar = S;
+  NRG_calculation() : P("param", "param", workdir), stats(P) {}
+  void go() {
+    auto [diag0, iterinfo, coef, Sym] = read_data(P, stats);
+    Step step{P, RUNTYPE::NRG};
+    AllSteps dm(P.Ninit, P.Nlen);
+    auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym, P);
+    if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
+    dm.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
+    if (P.dumpabsenergies)
+      dm.dump_all_absolute_energies();
+    if (P.dm) {
+      if (P.need_rho()) {
+        auto rho = init_rho(step, diag, Sym);
+        rho.save(step.lastndx(), FN_RHO);
+        if (!P.ZBW) calc_densitymatrix(rho, dm, Sym, P);
+      }
+      if (P.need_rhoFDM()) {
+        calc_ZnD(dm, stats, Sym, P.T);
+        if (P.logletter('w')) 
+          report_ZnD(stats, P);
+        fdm_thermodynamics(dm, stats, Sym, P.T);
+        auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, Sym, P.T);
+        rhoFDM.save(step.lastndx(), FN_RHOFDM);
+        if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, P);
+      }
+      if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
+      auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data(P, stats);
+      Step step_dmnrg{P, RUNTYPE::DMNRG};
+      run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm, P);
+      my_assert(num_equal(stats.GS_energy, stats.total_energy));
     }
-    if (P.need_rhoFDM()) {
-      calc_ZnD(dm, stats, Sym, P.T);
-      if (P.logletter('w')) 
-        report_ZnD(stats, P);
-      fdm_thermodynamics(dm, stats, Sym, P.T);
-      auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, Sym, P.T);
-      rhoFDM.save(step.lastndx(), FN_RHOFDM);
-      if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, P);
-    }
-    if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-    auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data(P, stats);
-    Step step_dmnrg{P, RUNTYPE::DMNRG};
-    run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm, P);
-    my_assert(num_equal(stats.GS_energy, stats.total_energy));
   }
-  if (P.done) { std::ofstream D("DONE"); } // Indicate completion by creating a flag file
-}
-
+  ~NRG_calculation() {
+    if (P.done) { std::ofstream D("DONE"); } // Indicate completion by creating a flag file
+  }
+};
+  
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
-  calculation();
+#ifdef NRG_REAL
+  NRG_calculation<double> calc;
+#endif
+#ifdef NRG_COMPLEX
+  NRG_calculation<std::complex<double>> calc;
+#endif
+  calc.go();
 #ifdef NRG_MPI
   for (auto i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_EXIT, 0);
 #endif
 }
 
-#ifdef NRG_MPI
-// Handle a diagonalisation request:
-void slave_diag(const int master, const DiagParams &DP) {
-  // 1. receive the matrix and the subspace identification
-  auto m = mpi_receive_matrix(master);
-  Invar I;
-  check_status(mpiw->recv(master, TAG_INVAR, I));
-  // 2. preform the diagonalisation
-  Eigen eig = diagonalise(m, DP);
-  // 3. send back the results
-  mpi_send_eigen(master, eig);
-  mpiw->send(master, TAG_INVAR, I);
-}
-
 void run_nrg_slave() {
+#ifdef NRG_MPI
   constexpr auto master = 0;
   DiagParams DP;
   for (;;) {
@@ -2191,9 +2205,12 @@ void run_nrg_slave() {
         case TAG_SYNC:
           DP = mpi_receive_params();
           break;
-        case TAG_DIAG:
-          slave_diag(master, DP);
+        case TAG_DIAG_DBL:
+          slave_diag<double>(master, DP);
           break;
+        case TAG_DIAG_CMPL:
+          slave_diag<std::complex<double>>(master, DP);
+          break;      
         case TAG_EXIT:
           return; // exit from run_slave()
         default: 
@@ -2202,7 +2219,5 @@ void run_nrg_slave() {
       }
     } else usleep(100); // sleep to reduce the load on the computer. (OpenMPI "feature" workaround)
   }
-}
-#else
-void run_nrg_slave() {}
 #endif
+}

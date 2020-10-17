@@ -7,48 +7,38 @@
 #define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"
 
-template<typename T, typename V> void copy(T* eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
+template<typename T, typename V> void copy_val(T* eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
   if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)
     std::cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << std::endl;
   diagvalues.resize(M);
-  copy(eigenvalues, eigenvalues + M, begin(diagvalues));
+  std::copy(eigenvalues, eigenvalues + M, std::begin(diagvalues));
 }
 
-template<typename T, typename V> void copy(T* eigenvectors, ublas::matrix<V>& diagvectors, const size_t dim, const size_t M)
+// Handle complex-type conversions (used in copy_vec)
+double to_matel(const double x) { return x; }
+std::complex<double> to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
+
+template<typename T, typename V>
+void copy_vec(T* eigenvectors, ublas::matrix<V>& diagvectors, const size_t dim, const size_t M)
 {
   diagvectors.resize(M, dim);
   for (const auto r: range0(M))
     for (const auto j: range0(dim))
-      diagvectors(r, j) = eigenvectors[dim * r + j];
+      diagvectors(r, j) = to_matel(eigenvectors[dim * r + j]);
 }
 
-template<> void copy<lapack_complex_double, cmpl>(lapack_complex_double * eigenvectors, ublas::matrix<cmpl>& diagvectors, size_t dim, size_t M)
+template<typename S, typename T, typename U> auto copy_results(T* eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
 {
-  diagvectors.resize(M, dim);
-  for (const auto r: range0(M))
-    for (const auto j: range0(dim)) {
-      lapack_complex_double v = eigenvectors[dim * r + j];
-      diagvectors(r, j) = cmpl(v.real, v.imag);
-    }
-}
-
-template<typename T, typename U> Eigen copy_results(T* eigenvalues, U* eigenvectors, char jobz, size_t dim, size_t M)
-{
-  Eigen d(M, dim);
-  copy(eigenvalues, d.value_orig, M);
+  Eigen_tmpl<S> d(M, dim);
+  copy_val(eigenvalues, d.value_orig, M);
   if (jobz == 'V')
-    copy(eigenvectors, d.matrix, dim, M);
+    copy_vec(eigenvectors, d.matrix, dim, M);
   my_assert(d.value_orig.size() == d.matrix.size1());
   return d;
 }
 
-// Perform diagonalisation: wrappers for LAPACK
-// m: matrix to be diagonalised
-// diag: eigenvalues and eigenvectors
-// jobz: 'N' for values only, 'V' for values and vectors
-
-#ifdef NRG_REAL
-Eigen diagonalise_dsyev(ublas::matrix<double> &m, char jobz = 'V') {
+// Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
+auto diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
   t_matel *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
@@ -66,12 +56,10 @@ Eigen diagonalise_dsyev(ublas::matrix<double> &m, char jobz = 'V') {
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  return copy_results(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
 }
-#endif
 
-#ifdef NRG_REAL
-Eigen diagonalise_dsyevd(ublas::matrix<double> &m, char jobz = 'V')
+auto diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
 {
   const size_t dim = m.size1();
   t_matel *ham = bindings::traits::matrix_storage(m);
@@ -101,12 +89,10 @@ Eigen diagonalise_dsyevd(ublas::matrix<double> &m, char jobz = 'V')
     else
       throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   }
-  return copy_results(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
 }
-#endif  
 
-#ifdef NRG_REAL
-Eigen diagonalise_dsyevr(ublas::matrix<double> &m, double ratio = 1.0,  char jobz = 'V')
+auto diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V')
 {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
@@ -160,12 +146,10 @@ Eigen diagonalise_dsyevr(ublas::matrix<double> &m, double ratio = 1.0,  char job
     M = MM;
     my_assert(M > 0); // at least one
   }
-  return copy_results(eigenvalues, Z.get(), jobz, dim, M);
+  return copy_results<double>(eigenvalues, Z.get(), jobz, dim, M);
 }
-#endif
 
-#ifdef NRG_COMPLEX
-Eigen diagonalise_zheev(ublas::matrix<cmpl> &m, char jobz = 'V') {
+auto diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
   lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
@@ -185,12 +169,10 @@ Eigen diagonalise_zheev(ublas::matrix<cmpl> &m, char jobz = 'V') {
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, RWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  return copy_results(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<cmpl>(eigenvalues, ham, jobz, dim, dim);
 }
-#endif
   
-#ifdef NRG_COMPLEX
-Eigen diagonalise_zheevr(ublas::matrix<cmpl> &m, double ratio = 1.0, char jobz = 'V') {
+auto diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio = 1.0, const char jobz = 'V') {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
@@ -247,16 +229,16 @@ Eigen diagonalise_zheevr(ublas::matrix<cmpl> &m, double ratio = 1.0, char jobz =
     M = MM;
     my_assert(M > 0); // at least one
   }
-  return copy_results(eigenvalues, Z.get(), jobz, dim, M);
+  return copy_results<cmpl>(eigenvalues, Z.get(), jobz, dim, M);
 }
-#endif
 
-void checkdiag(const Eigen &d, 
+template<typename S>
+void checkdiag(const Eigen_tmpl<S> &d, 
                const double NORMALIZATION_EPSILON = 1e-12,
                const double ORTHOGONALITY_EPSILON = 1e-12)
 {
   const auto M = d.getnrcomputed(); // number of eigenpairs
-  const auto dim = d.getdim();   // dimension of the eigenvector
+  const auto dim = d.getdim();      // dimension of the eigenvector
   my_assert(d.matrix.size2() == dim);
   // Check normalization
   for (const auto r: range0(M)) {
@@ -271,32 +253,33 @@ void checkdiag(const Eigen &d,
   // Check orthogonality
   for (const auto r1: range0(M))
     for (const auto r2: boost::irange(r1+1, M)) {
-      t_matel skpdt = 0.0;
+      S skpdt{};
       for (const auto j: range0(dim)) skpdt += conj_me(d.matrix(r1, j)) * d.matrix(r2, j);
       my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
     }
 }
 
-void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t>::max())
+template<typename M>
+  void dump_eigenvalues(const Eigen_tmpl<M> &d, const size_t max_nr = std::numeric_limits<size_t>::max())
 {
   std::cout << "eig= ";
-  for_each_n(cbegin(d.value_orig), min(d.getnrcomputed(), max_nr), 
-           [](const t_eigen x) { std::cout << x << ' '; });
+  std::for_each_n(d.value_orig.cbegin(), min(d.getnrcomputed(), max_nr), 
+                  [](const t_eigen x) { std::cout << x << ' '; });
   std::cout << std::endl;
 }
 
-template<typename M>
-  bool has_lesseq_rows(const ublas::matrix<M> &A, const ublas::matrix<M> &B) {
+template<typename M, typename N>
+  bool has_lesseq_rows(const ublas::matrix<M> &A, const ublas::matrix<N> &B) {
     return A.size1() <= B.size1() && A.size2() == B.size2();
   }
 
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
-template<typename M> Eigen diagonalise(ublas::matrix<M> &m, const DiagParams &DP) {
+template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP) {
   mpilog("diagonalise " << m.size1() << "x" << m.size2() << " " << DP.diag << " " << DP.diagratio);
   time_mem::Timing t;
   check_is_matrix_upper(m);
-  Eigen d;
+  Eigen_tmpl<M> d;
   if constexpr (std::is_same_v<M, double>) {
     if (DP.diag == "dsyev"s) 
       d = diagonalise_dsyev(m);
@@ -309,12 +292,13 @@ template<typename M> Eigen diagonalise(ublas::matrix<M> &m, const DiagParams &DP
     }
     if (DP.diag == "dsyevr"s) 
       d = diagonalise_dsyevr(m, DP.diagratio);
-  } else if constexpr (std::is_same_v<M, std::complex<double>>) {
+  }
+  if constexpr (std::is_same_v<M, std::complex<double>>) {
     if (DP.diag == "zheev"s)  
       d = diagonalise_zheev(m);
     if (DP.diag == "zheevr"s) 
       d = diagonalise_zheevr(m, DP.diagratio);
-  } else my_assert_not_reached();
+  }
   my_assert(d.getnrcomputed() > 0);
   my_assert(has_lesseq_rows(d.matrix, m));
   if (DP.logletter('e'))
