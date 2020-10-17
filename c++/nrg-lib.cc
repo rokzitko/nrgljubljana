@@ -36,24 +36,48 @@
 #include "mp.h"
 
 #ifdef NRG_REAL
+using scalar = double;
 using t_matel = double;                       // type for the matrix elements
-using t_eigen = double;                       // type for the eigenvalues
 using t_coef = double;                        // type for the Wilson chain coefficients
 using t_factor = double;                      // type for various prefactors in recalculations
 using t_expv = double;                        // type for expectation values of operators
-inline double CONJ_ME(double x) { return x; } // Conjugation of matrix elements: no op
 #endif
 
 #ifdef NRG_COMPLEX
+using scalar = cmpl;
 using t_matel = cmpl;
-using t_eigen = double;
 using t_coef = cmpl;
 using t_factor = cmpl;
 using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
-inline cmpl CONJ_ME(cmpl z) { return conj(z); }
 #endif
 
-using t_weight = cmpl; // spectral weight accumulators (complex in general)
+using t_eigen = double;  // type for the eigenvalues (always double)
+using t_weight = cmpl;   // spectral weight accumulators (always complex)
+
+template <typename S> struct traits {};
+
+template <> struct traits<double> {
+  using t_matel = double;                       // type for the matrix elements
+  using t_coef = double;                        // type for the Wilson chain coefficients
+  using t_factor = double;                      // type for various prefactors in recalculations
+  using t_expv = double;                        // type for expectation values of operators
+  using t_eigen = double;  // type for the eigenvalues (always double)
+  using t_weight = cmpl;   // spectral weight accumulators (always complex)
+  using Matrix = ublas::matrix<t_matel>;
+};
+
+template <> struct traits<cmpl> {
+  using t_matel = cmpl;
+  using t_coef = cmpl;
+  using t_factor = cmpl;
+  using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
+  using t_eigen = double;  // type for the eigenvalues (always double)
+  using t_weight = cmpl;   // spectral weight accumulators (always complex)
+  using Matrix = ublas::matrix<t_matel>;
+};
+
+inline cmpl conj_me(const cmpl &z) { return conj(z); } // conjugation
+inline double conj_me(const double x) { return x; }    // no op
 
 enum class RUNTYPE { NRG, DMNRG };
 
@@ -93,7 +117,7 @@ int myrank() { return mpiw->rank(); } // used in diag.h, time_mem.h
 int myrank() { return 0; }
 #endif
 
-// Quantum number types defined to enforce type checking
+// Quantum number types
 using Number = int;
 using Ispin = int;
 using Sspin = int;
@@ -143,12 +167,12 @@ template <typename T>
 #include "numerics.h"
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
-struct RawEigen {
+template <typename S> struct RawEigen : public traits<S> {
   using EVEC = ublas::vector<t_eigen>;
-  EVEC value_orig;     // eigenvalues as computed
-  Matrix matrix;       // eigenvectors
+  EVEC value_orig;               // eigenvalues as computed
+  ublas::matrix<t_matel> matrix; // eigenvectors
   RawEigen() {}
-  RawEigen(size_t nr, size_t dim) {
+  RawEigen(const size_t nr, const size_t dim) {
     my_assert(nr <= dim);
     value_orig.resize(nr);
     matrix.resize(nr, dim);
@@ -158,7 +182,7 @@ struct RawEigen {
 };
   
 // Augments RawEigen with the information about truncation and block structure of the eigenvectors.
-class Eigen : public RawEigen {
+class Eigen : public RawEigen<scalar> {
  private:
   long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
  public:
@@ -227,7 +251,7 @@ class Eigen : public RawEigen {
 };
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
-class DiagInfo : public std::map<Invar, Eigen> {
+class DiagInfo : public std::map<Invar, Eigen>, public traits<scalar> {
  public:
    explicit DiagInfo() {}
    DiagInfo(ifstream &fdata, const size_t nsubs, const Params &P) {

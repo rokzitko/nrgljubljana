@@ -57,14 +57,14 @@ void Algo_FDMgt::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
   LOOP_D(i)
    LOOP_D(j)
     const auto energy = Ej - Ei;
-    const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
+    const auto weight = spinfactor * conj_me(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
     cs->add(energy, weight);
    }
   }
   LOOP_D(i)
    LOOP_K(j)
     const auto energy = Ej - Ei;
-    const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
+    const auto weight = spinfactor * conj_me(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
     cs->add(energy, weight);
    }
   }
@@ -76,7 +76,7 @@ void Algo_FDMgt::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
     LOOP_K(i)
      LOOP_D(j)
       const auto energy = Ej - Ei;
-      const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2_rho(j, i);
+      const auto weight = spinfactor * conj_me(op1II(j, i)) * op2_rho(j, i);
       cs->add(energy, weight);
      }
     }
@@ -97,7 +97,7 @@ void Algo_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
   LOOP_D(i)
    LOOP_D(j) // B3
     const auto energy = Ej - Ei;
-    const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
+    const auto weight = spinfactor * conj_me(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
     cs->add(energy, weight);
    }
   }
@@ -109,7 +109,7 @@ void Algo_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
     LOOP_D(i)
      LOOP_K(j)
       const auto energy = Ej - Ei;
-      const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * rho_op2(j, i) * (-sign);
+      const auto weight = spinfactor * conj_me(op1II(j, i)) * rho_op2(j, i) * (-sign);
       cs->add(energy, weight);
      }
     }
@@ -117,7 +117,7 @@ void Algo_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
   LOOP_K(i)
    LOOP_D(j)
     const auto energy = Ej - Ei;
-    const auto weight = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
+    const auto weight = spinfactor * conj_me(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T);
     cs->add(energy, weight);
    }
   }
@@ -150,8 +150,8 @@ void Algo_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diag
   LOOP_D(i)
    LOOP_D(j) 
     const auto energy = Ej - Ei;
-    const auto weightA = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T); // a[ij] b[ji] exp(-beta e[i])
-    const auto weightB = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T); // a[ij] b[ji] sign exp(-beta e[j])
+    const auto weightA = spinfactor * conj_me(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T); // a[ij] b[ji] exp(-beta e[i])
+    const auto weightB = spinfactor * conj_me(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T); // a[ij] b[ji] sign exp(-beta e[j])
     #pragma omp parallel for schedule(static)
     for (size_t n = 1; n < cutoff; n++) csm->add(n, (weightA + weightB) / (cmpl(0, ww(n, bs.mt, P.T)) - energy));
     if (bs.mt == matstype::fermionic || abs(energy) > WEIGHT_TOL)
@@ -168,8 +168,8 @@ void Algo_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diag
     LOOP_D(i) 
      LOOP_K(j) 
       const auto energy = Ej - Ei;
-      const auto weightA = spinfactor * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
-      const auto weightB = spinfactor * CONJ_ME(op1II(j, i)) * rho_op2(j, i) * (-sign);
+      const auto weightA = spinfactor * conj_me(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ei / P.T);
+      const auto weightB = spinfactor * conj_me(op1II(j, i)) * rho_op2(j, i) * (-sign);
       #pragma omp parallel for schedule(static)
       for (size_t n = 0; n < cutoff; n++) csm->add(n, (weightA + weightB) / (cmpl(0, ww(n, bs.mt, P.T)) - energy));
      }
@@ -183,8 +183,8 @@ void Algo_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diag
     LOOP_K(i) 
      LOOP_D(j)
       const auto energy = Ej - Ei;
-      const auto weightA = spinfactor * CONJ_ME(op1II(j, i)) * op2_rho(j, i);
-      const auto weightB = spinfactor * (-sign) * CONJ_ME(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ej / P.T);
+      const auto weightA = spinfactor * conj_me(op1II(j, i)) * op2_rho(j, i);
+      const auto weightB = spinfactor * (-sign) * conj_me(op1II(j, i)) * op2II(j, i) * wnf * exp(-Ej / P.T);
       #pragma omp parallel for schedule(static)
       for (size_t n = 0; n < cutoff; n++) csm->add(n, (weightA + weightB) / (cmpl(0, ww(n, bs.mt, P.T)) - energy));
      }

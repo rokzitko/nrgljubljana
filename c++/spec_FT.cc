@@ -19,7 +19,7 @@ void Algo_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, c
     const auto E1 = diagI1.value_zero(r1);
     for (const auto rp: diagIp.kept()) {
       const auto Ep = diagIp.value_zero(rp);
-      const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
+      const auto weight = (spinfactor / stats.Zft) * conj_me(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
       const auto energy = E1 - Ep;
       cs->add(step.scale() * energy, weight);
     }
@@ -44,14 +44,14 @@ void Algo_FTmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI
     const auto E1 = diagI1.value_zero(r1);
     for (const auto rp: diagIp.kept()) {
       const auto Ep = diagIp.value_zero(rp);
-      const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT())); // sign!
+      const auto weight = (spinfactor / stats.Zft) * conj_me(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT())); // sign!
       const auto energy = E1 - Ep;
 #pragma omp parallel for schedule(static)
       for (size_t n = 1; n < cutoff; n++) csm->add(n, weight / (cmpl(0, ww(n, bs.mt, P.T)) - step.scale() * energy));
       if (abs(energy) > WEIGHT_TOL || bs.mt == matstype::fermionic)
         csm->add(size_t(0), weight / (cmpl(0, ww(0, bs.mt, P.T)) - step.scale() * energy));
       else // bosonic w=0 && E1=Ep case
-        csm->add(size_t(0), (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * (-exp(-E1 * step.scT()) / P.T));
+        csm->add(size_t(0), (spinfactor / stats.Zft) * conj_me(op1II(r1, rp)) * op2II(r1, rp) * (-exp(-E1 * step.scT()) / P.T));
     }
   }
 }
@@ -103,7 +103,7 @@ void Algo_GT_generic::calc(const Step &step, const Eigen &diagIp, const Eigen &d
       // Note that Zgt needs to be calculated with the same
       // 'temperature' parameter that we use for the exponential
       // functions in the following equation.
-      value += beta * (spinfactor / stats.Zgt) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp)
+      value += beta * (spinfactor / stats.Zgt) * conj_me(op1II(r1, rp)) * op2II(r1, rp)
          / (exp(+E1 * step.scale() * beta) + exp(+Ep * step.scale() * beta)) * pow((E1 - Ep) * step.scale(), power);
     } // loop over r1
   }   // loop over rp

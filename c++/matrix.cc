@@ -49,7 +49,7 @@ void Symmetry::offdiag_function_impl(const Step &step, const size_t i, const siz
     const bool conj_transpose = i > j;
     if (conj_transpose) {
       ublas::matrix_range<Matrix> hsub(h, ublas::range(begin2, begin2 + size2), ublas::range(begin1, begin1 + size1));
-      noalias(hsub) += CONJ_ME(factor_scaled) * herm(mat);
+      noalias(hsub) += conj_me(factor_scaled) * herm(mat);
     } else {
       ublas::matrix_range<Matrix> hsub(h, ublas::range(begin1, begin1 + size1), ublas::range(begin2, begin2 + size2));
       noalias(hsub) += factor_scaled * mat;

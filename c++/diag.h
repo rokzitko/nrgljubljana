@@ -272,7 +272,7 @@ void checkdiag(const Eigen &d,
   for (const auto r1: range0(M))
     for (const auto r2: boost::irange(r1+1, M)) {
       t_matel skpdt = 0.0;
-      for (const auto j: range0(dim)) skpdt += CONJ_ME(d.matrix(r1, j)) * d.matrix(r2, j);
+      for (const auto j: range0(dim)) skpdt += conj_me(d.matrix(r1, j)) * d.matrix(r2, j);
       my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
     }
 }

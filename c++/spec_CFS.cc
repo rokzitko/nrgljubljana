@@ -49,7 +49,7 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       for (const auto rp: diagIp.kept()) {
         const auto E1 = diagI1.value_zero(r1);
         const auto Ep = diagIp.value_zero(rp);
-        const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
+        const auto weight = (spinfactor / stats.Zft) * conj_me(op1II(r1, rp)) * op2II(r1, rp) * exp(-E1 * step.scT()) * (-sign);
         cs->add(step.scale() * (E1-Ep), weight);
       }
     }
@@ -64,7 +64,7 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
         for (const auto rk: diagIp.kept()) {
           const auto El       = diagI1.value_zero(rl);
           const auto Ek       = diagIp.value_zero(rk);
-          const auto weight = spinfactor * CONJ_ME(op1II(rl, rk)) * op2II_m_rho(rl, rk) * (-sign);
+          const auto weight = spinfactor * conj_me(op1II(rl, rk)) * op2II_m_rho(rl, rk) * (-sign);
           cs->add(step.scale() * (El-Ek), weight);
         }
       }
@@ -83,7 +83,7 @@ void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
       for (const auto rp: diagIp.kept()) {
         const auto E1 = diagI1.value_zero(r1);
         const auto Ep = diagIp.value_zero(rp);
-        const auto weight = (spinfactor / stats.Zft) * CONJ_ME(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * step.scT());
+        const auto weight = (spinfactor / stats.Zft) * conj_me(op1II(r1, rp)) * op2II(r1, rp) * exp(-Ep * step.scT());
         cs->add(step.scale() * (E1-Ep), weight);
       }
     }
