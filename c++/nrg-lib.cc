@@ -1649,15 +1649,17 @@ template<typename F, typename S>
 auto trace(F fnc, const double rescale_factor, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry> Sym) {
     auto b = 0.0;
     for (const auto &[I, eig] : diag)
-      b += Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0, [fnc, rescale_factor](double acc, const auto x) { 
-        const double betaE = rescale_factor * x; return acc + fnc(betaE) * exp(-betaE); });
+      b += Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0, [fnc, rescale_factor](auto acc, const auto x) { 
+        const auto betaE = rescale_factor * x; return acc + fnc(betaE) * exp(-betaE); });
     return b;
   }
 
 // We calculate thermodynamic quantities before truncation to make better use of the available states. Here we
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
 // member functions defined in symmetry.cc.
-void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &output, std::shared_ptr<Symmetry> Sym, const double additional_factor = 1.0) {
+template<typename S>
+void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, Stats &stats, Output_tmpl<S> &output, 
+                  std::shared_ptr<Symmetry> Sym, const double additional_factor = 1.0) {
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
   const auto rescale_factor = step.TD_factor() * additional_factor;
@@ -1675,8 +1677,10 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
   stats.td.save_values();
 }
 
-void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output, Oprecalc &oprecalc, const DiagInfo &diag, 
-                                 const IterInfo &iterinfo, const AllSteps &dm, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+void calculate_spectral_and_expv(const Step &step, Stats &stats, Output_tmpl<S> &output, Oprecalc_tmpl<S> &oprecalc, 
+                                 const DiagInfo_tmpl<S> &diag, const IterInfo_tmpl<S> &iterinfo, const AllSteps_tmpl<S> &dm, 
+                                 std::shared_ptr<Symmetry> Sym, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
   stats.Zft = grand_canonical_Z(step, diag, Sym);
@@ -1684,7 +1688,7 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
     stats.Zgt = grand_canonical_Z(step, diag, Sym, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
   if (string(P.specchit) != "") 
     stats.Zchit = grand_canonical_Z(step, diag, Sym, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
-  DensMatElements rho, rhoFDM;
+  DensMatElements_tmpl<S> rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
       rho.load(step.ndx(), FN_RHO, P.removefiles);
@@ -1703,14 +1707,17 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
 
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
-void perform_basic_measurements(const Step &step, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym, Stats &stats, Output &output) {
+template<typename S>
+void perform_basic_measurements(const Step &step, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry> Sym, 
+                                Stats &stats, Output_tmpl<S> &output) {
   output.dump_all_energies(diag, step.ndx());
   calculate_TD(step, diag, stats, output, Sym);
   output.annotated.dump(step, diag, stats, Sym);
 }
 
 // Subspaces for the new iteration
-auto new_subspaces(const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym) {
+template<typename S>
+auto new_subspaces(const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry> Sym) {
   std::set<Invar> subspaces;
   for (const auto &I : diagprev.subspaces()) {
     const auto all = Sym->new_subspaces(I);
@@ -1720,8 +1727,9 @@ auto new_subspaces(const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym) {
   return subspaces;
 }
 
-Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const Coef &coef, 
-                             const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+typename traits<S>::Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, 
+                                                 const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry> Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev, Sym};
   Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
