@@ -1411,11 +1411,11 @@ void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, c
 
 // Calculate grand canonical partition function at current NRG energy shell. This is not the same as the true
 // partition function of the full problem! Instead this is the Z_N that is used to initialize the density matrix,
-// i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N> <l;N|.  calc_grand_canonical_Z() is also used to calculate
-// stats.Zft, that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for
-// G(T) calculations, stats.Zchit for chi(T) calculations.
-double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym, const double factor = 1.0) {
-  bucket ZN;
+// i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N> <l;N|.  grand_canonical_Z() is also used to calculate stats.Zft,
+// that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for G(T)
+// calculations, stats.Zchit for chi(T) calculations.
+auto grand_canonical_Z(const Step &step, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym, const double factor = 1.0) {
+  double ZN{};
   for (const auto &[I, eig]: diag) 
     for (const auto &i : eig.kept()) // sum over all kept states
       ZN += Sym->mult(I) * exp(-eig.value_zero(i) * step.scT() * factor);
@@ -1423,12 +1423,11 @@ double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, std::share
   return ZN;
 }
 
-Matrix diagonal_exp(const Eigen &eig, const double factor)
-{
+template<typename S> auto diagonal_exp(const Eigen_tmpl<S> &eig, const double factor) {
   const auto dim = eig.getnrstored();
-  Matrix m(dim, dim, 0);
+  typename traits<S>::Matrix m(dim, dim, 0);
   for (const auto i: range0(dim)) 
-      m(i, i) = exp(-eig.value_zero(i) * factor);
+    m(i, i) = exp(-eig.value_zero(i) * factor);
   return m;
 }
 
@@ -1442,7 +1441,7 @@ Matrix diagonal_exp(const Eigen &eig, const double factor)
 DensMatElements init_rho(const Step &step, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym) {
   DensMatElements rho;
   for (const auto &[I, eig]: diag)
-    rho[I] = diagonal_exp(eig, step.scT()) / calc_grand_canonical_Z(step, diag, Sym);
+    rho[I] = diagonal_exp(eig, step.scT()) / grand_canonical_Z(step, diag, Sym);
   check_trace_rho(rho, Sym);
   return rho;
 }
@@ -1642,11 +1641,11 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
                                  const IterInfo &iterinfo, const AllSteps &dm, std::shared_ptr<Symmetry> Sym, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
-  stats.Zft = calc_grand_canonical_Z(step, diag, Sym);
+  stats.Zft = grand_canonical_Z(step, diag, Sym);
   if (string(P.specgt) != "" || string(P.speci1t) != "" || string(P.speci2t) != "")
-    stats.Zgt = calc_grand_canonical_Z(step, diag, Sym, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
+    stats.Zgt = grand_canonical_Z(step, diag, Sym, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
   if (string(P.specchit) != "") 
-    stats.Zchit = calc_grand_canonical_Z(step, diag, Sym, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
+    stats.Zchit = grand_canonical_Z(step, diag, Sym, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
   DensMatElements rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
