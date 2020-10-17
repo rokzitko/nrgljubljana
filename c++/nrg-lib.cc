@@ -1423,16 +1423,18 @@ template<typename T>
   return sum;
 }
 
-CONSTFNC t_expv calc_trace_fdm_kept(const size_t ndx, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm, std::shared_ptr<Symmetry> Sym) {
-  matel_bucket tr;
+template<typename S>
+CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements_tmpl<S> &n, const DensMatElements_tmpl<S> &rhoFDM, 
+                                  const AllSteps_tmpl<S> &dm, std::shared_ptr<Symmetry> Sym) {
+  typename traits<S>::t_matel tr{};
   for (const auto &[I, rhoI] : rhoFDM)
     tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), dm[ndx].at(I).kept); // over kept states ONLY
   return tr;
 }
 
-// Expectation values using the FDM algorithm
-void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, 
-                         const DensMatElements &rhoFDM, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo_tmpl<S> &diag, const IterInfo_tmpl<S> &a, Output_tmpl<S> &output, 
+                         const DensMatElements_tmpl<S> &rhoFDM, const AllSteps_tmpl<S> &dm, shared_ptr<Symmetry> Sym, const Params &P) {
   for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
   for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
   output.customfdm->field_values(P.T);
@@ -1443,7 +1445,8 @@ void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, c
 // i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N> <l;N|.  grand_canonical_Z() is also used to calculate stats.Zft,
 // that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for G(T)
 // calculations, stats.Zchit for chi(T) calculations.
-auto grand_canonical_Z(const Step &step, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym, const double factor = 1.0) {
+template<typename S>
+auto grand_canonical_Z(const Step &step, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry> Sym, const double factor = 1.0) {
   double ZN{};
   for (const auto &[I, eig]: diag) 
     for (const auto &i : eig.kept()) // sum over all kept states
@@ -1467,8 +1470,9 @@ template<typename S> auto diagonal_exp(const Eigen_tmpl<S> &eig, const double fa
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-DensMatElements init_rho(const Step &step, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym) {
-  DensMatElements rho;
+template<typename S>
+auto init_rho(const Step &step, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry> Sym) {
+  DensMatElements_tmpl<S> rho;
   for (const auto &[I, eig]: diag)
     rho[I] = diagonal_exp(eig, step.scT()) / grand_canonical_Z(step, diag, Sym);
   check_trace_rho(rho, Sym);
@@ -1476,7 +1480,8 @@ DensMatElements init_rho(const Step &step, const DiagInfo &diag, std::shared_ptr
 }
 
 // Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.
-auto highest_retained_energy(const Step &step, const DiagInfo &diag, const Params &P) {
+template<typename S>
+auto highest_retained_energy(const Step &step, const DiagInfo_tmpl<S> &diag, const Params &P) {
   auto energies = diag.sorted_energies();
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
   const auto totalnumber = energies.size();
@@ -1505,7 +1510,8 @@ auto highest_retained_energy(const Step &step, const DiagInfo &diag, const Param
 
 struct truncate_stats {
   size_t nrall, nrallmult, nrkept, nrkeptmult;
-  truncate_stats(const DiagInfo &diag, shared_ptr<Symmetry> Sym) {
+  template<typename S>
+  truncate_stats(const DiagInfo_tmpl<S> &diag, shared_ptr<Symmetry> Sym) {
     nrall = ranges::accumulate(diag, 0, [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getdim(); });
     nrallmult = ranges::accumulate(diag, 0, [Sym](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getdim(); });
     nrkept = ranges::accumulate(diag, 0, [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
