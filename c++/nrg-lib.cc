@@ -1745,10 +1745,10 @@ void check_status(mpi::status status) {
 
 // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
 
-void mpi_send_matrix(int dest, const Matrix &m) {
-  auto size1 = m.size1();
+void mpi_send_matrix(const int dest, const Matrix &m) {
+  const auto size1 = m.size1();
   mpiw->send(dest, TAG_MATRIX_SIZE, size1);
-  auto size2 = m.size2();
+  const auto size2 = m.size2();
   mpiw->send(dest, TAG_MATRIX_SIZE, size2);
   mpilog("Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
   for (const auto i: range0(size1)) {
@@ -1757,7 +1757,7 @@ void mpi_send_matrix(int dest, const Matrix &m) {
   }
 }
 
-auto mpi_receive_matrix(int source) {
+auto mpi_receive_matrix(const int source) {
   size_t size1;
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size1));
   size_t size2;
@@ -1773,13 +1773,13 @@ auto mpi_receive_matrix(int source) {
   return m;
 }
 
-void mpi_send_eigen(int dest, const Eigen &eig) {
+void mpi_send_eigen(const int dest, const Eigen &eig) {
   mpilog("Sending eigen from " << mpiw->rank() << " to " << dest);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig);
   mpi_send_matrix(dest, eig.matrix);
 }
 
-auto mpi_receive_eigen(int source) {
+auto mpi_receive_eigen(const int source) {
   mpilog("Receiving eigen from " << source << " on " << mpiw->rank());
   Eigen eig;
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value_orig));
@@ -1790,7 +1790,7 @@ auto mpi_receive_eigen(int source) {
 // Read results from a slave process.
 std::pair<Invar, Eigen> read_from(int source) {
   mpilog("Reading results from " << source);
-  auto eig = mpi_receive_eigen(source);
+  const auto eig = mpi_receive_eigen(source);
   Invar Irecv;
   check_status(mpiw->recv(source, TAG_INVAR, Irecv));
   mpilog("Received results for subspace " << Irecv << " [nr=" << eig.getnrstored() << ", dim=" << eig.getdim() << "]");
@@ -1800,16 +1800,16 @@ std::pair<Invar, Eigen> read_from(int source) {
 }
 
 DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
-                              const std::vector<Invar> &tasks, const DiagParams &DP, shared_ptr<Symmetry> Sym, const Params &P) {
+                              const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry> Sym, const Params &P) {
   DiagInfo diagnew;
   mpi_send_params(DP); // Synchronise parameters
-  list<Invar> todo; // List of all the tasks to handle
-  copy(begin(tasks), end(tasks), back_inserter(todo));
+  std::list<Invar> todo; // List of all the tasks to handle
+  std::copy(tasks.begin(), tasks.end(), std::back_inserter(todo)); // BBB: constr
   list<Invar> done; // List of finished tasks.
   // List of the available computation nodes (including the master,
   // which is always at the very beginnig of the deque).
-  deque<int> nodes;
-  for (const auto i: range0(mpiw->size())) nodes.push_back(i);
+  std::deque<int> nodes;
+  for (const auto i: range0(mpiw->size())) nodes.push_back(i); // BBB: iota
   nrglog('M', "nrtasks=" << tasks.size() << " nrnodes=" << mpiw->size());
   while (!todo.empty()) {
     my_assert(!nodes.empty());
@@ -1834,7 +1834,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
       I = todo.front();
       todo.pop_front();
     }
-    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, Sym, P);
+    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, Sym, P); // non-const
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {
       // On master, diagonalize immediately.
@@ -1849,7 +1849,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
     // Check for terminated jobs
     while (auto status = mpiw->iprobe(mpi::any_source, TAG_EIGEN_VEC)) {
       nrglog('M', "Receiveing results from " << status->source());
-      auto [Irecv, eig] = read_from(status->source());
+      const auto [Irecv, eig] = read_from(status->source());
       diagnew[Irecv] = eig;
       done.push_back(Irecv);
       // The node is now available for new tasks!
@@ -1858,8 +1858,8 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
   }
   // Keep reading results sent from the slave processes until all tasks have been completed.
   while (done.size() != tasks.size()) {
-    auto status = mpiw->probe(mpi::any_source, TAG_EIGEN_VEC);
-    auto [Irecv, eig]  = read_from(status.source());
+    const auto status = mpiw->probe(mpi::any_source, TAG_EIGEN_VEC);
+    const auto [Irecv, eig]  = read_from(status.source());
     diagnew[Irecv] = eig;
     done.push_back(Irecv);
   }
@@ -1869,7 +1869,7 @@ DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &co
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
 DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
-                          const std::vector<Invar> &tasks, double diagratio, shared_ptr<Symmetry> Sym, const Params &P) {
+                          const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry> Sym, const Params &P) {
   TIME("diag");
 #ifdef NRG_MPI
   return diagonalisations_MPI(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
@@ -1879,7 +1879,7 @@ DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, 
 }
 
 // Determine the structure of matrices in the new NRG shell
-QSrmax::QSrmax(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
+QSrmax::QSrmax(const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym) {
   for (const auto &I : new_subspaces(diagprev, Sym))
     (*this)[I] = Rmaxvals{I, Sym->ancestors(I), diagprev, Sym};
 }
