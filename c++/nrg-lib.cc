@@ -513,8 +513,8 @@ template<typename M> struct DimSubGen {
   Rmaxvals rmax;
   Eigen eig;
   bool is_last = false;
-  size_t min() const { return is_last ? 0 : kept; } // min(), max() return the range of D states to be summed over in FDM
-  size_t max() const { return total; }
+  auto min() const { return is_last ? 0 : kept; } // min(), max() return the range of D states to be summed over in FDM
+  auto max() const { return total; }
   auto all() const { return boost::irange(min(), max()); }
 };
 
@@ -522,14 +522,14 @@ using DimSub = DimSubGen<t_eigen>;
 
 // Full information about the number of states and matrix dimensions
 // Example: dm[N].rmax[I] etc.
-using Subs = map<Invar, DimSub>;
+using Subs = std::map<Invar, DimSub>;
 
 class AllSteps : public std::vector<Subs> {
  public:
    size_t Nbegin, Nend; // range of valid indexes
-   AllSteps(size_t Nbegin, size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
+   AllSteps(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
    auto Nall() const { return boost::irange(Nbegin, Nend); }
-   void dump_absenergyG(ostream &F) const {
+   void dump_absenergyG(std::ostream &F) const {
      for (const auto N : Nall()) {
        F << std::endl << "===== Iteration number: " << N << std::endl;
        for (const auto &[I, ds]: this->at(N))
@@ -542,7 +542,7 @@ class AllSteps : public std::vector<Subs> {
    }
    // Save a dump of all subspaces, with dimension info, etc.
    void dump_subspaces(const std::string filename = "subspaces.dat"s) const {
-     ofstream O(filename);
+     std::ofstream O(filename);
      for (const auto N : Nall()) {
        O << "Iteration " << N << std::endl;
        O << "len_dm=" << this->at(N).size() << std::endl;
@@ -704,14 +704,14 @@ class Algo {
    virtual string rho_type() { return ""; } // what rho type is required
 };
 
-void dump_diagonal_matrix(const Matrix &m, const size_t max_nr, ostream &F)
+void dump_diagonal_matrix(const Matrix &m, const size_t max_nr, std::ostream &F)
 {
   for (const auto r : range0(std::min(m.size1(), max_nr)))
     F << m(r,r) << ' ';
   F << std::endl;
 }
 
-void dump_diagonal_op(const std::string &name, const MatrixElements &n, const size_t max_nr, ostream &F) {
+void dump_diagonal_op(const std::string &name, const MatrixElements &n, const size_t max_nr, std::ostream &F) {
   F << "Diagonal matrix elements of operator " << name << std::endl;
   for (const auto &[II, mat] : n) {
     const auto & [I1, I2] = II;
@@ -762,7 +762,7 @@ class IterInfo {
    CustomOp opq;  // quadruplet operators (spectral functions for J=3/2)
    CustomOp opot; // orbital triplet operators
 
-   void dump_diagonal(const size_t max_nr, ostream &F = std::cout) const {
+   void dump_diagonal(const size_t max_nr, std::ostream &F = std::cout) const {
      if (max_nr) {
        for (const auto &[name, m] : ops)  dump_diagonal_op(name, m, max_nr, F);
        for (const auto &[name, m] : opsg) dump_diagonal_op(name, m, max_nr, F);
@@ -850,16 +850,16 @@ void operator_sumrules(const IterInfo &a, shared_ptr<Symmetry> Sym) {
 #include "read-input.cc"
 
 template <typename T>
-  std::string formatted_output(T x, const Params &P) {
+  std::string formatted_output(const T x, const Params &P) {
     return fmt::format("{x:>{width}}", "x"_a=x, "width"_a=P.width_custom);
   }
 
-std::string formatted_output(double x, const Params &P) {
+std::string formatted_output(const double x, const Params &P) {
   return fmt::format("{x:>{width}.{prec}}", "x"_a=x, "prec"_a=P.prec_custom, "width"_a=P.width_custom);
 }
 
 template <typename T>
-  bool negligible_imag_part(std::complex<T> z, const double output_imag_eps = 1e-13) {
+  bool negligible_imag_part(const std::complex<T> &z, const double output_imag_eps = 1e-13) {
     return abs(z.imag()) < abs(z.real()) * output_imag_eps; 
   }
 
@@ -867,7 +867,7 @@ template <typename T>
 // imaginary part is only shown where its value relative to the real part is sufficiently large. No space is used in
 // the outputted string in order to simplify parsing.
 
-std::string formatted_output(cmpl z, const Params &P) {
+std::string formatted_output(const cmpl z, const Params &P) {
   const auto [r, i] = reim(z);
   const auto str = P.noimag || negligible_imag_part(z) ?
     fmt::format("{r:.{prec}f}", "r"_a=r, "prec"_a=P.prec_custom) :
@@ -886,7 +886,7 @@ class ChainSpectrum {
    const Params &P;
 public:
    explicit ChainSpectrum(const Params &P) : P(P) {}
-   virtual void add(double energy, t_weight weight) = 0;
+   virtual void add(const double energy, const t_weight weight) = 0;
    virtual ~ChainSpectrum() = default; // required, because there are virtual members
 };
 
@@ -895,7 +895,7 @@ class ChainSpectrumBinning : public ChainSpectrum {
    Bins spos, sneg;
  public:
    explicit ChainSpectrumBinning(const Params &P) : ChainSpectrum(P), spos(P), sneg(P) {}
-   void add(double energy, t_weight weight) override {
+   void add(const double energy, const t_weight weight) override {
      if (energy >= 0.0)
        spos.add(energy, weight);
      else
@@ -910,7 +910,7 @@ class ChainSpectrumTemp : public ChainSpectrum {
    Temp v;
  public:
    explicit ChainSpectrumTemp(const Params &P) : ChainSpectrum(P), v(P) {}
-   void add(double T, t_weight value) override { v.add_value(T, value); }
+   void add(const double T, const t_weight value) override { v.add_value(T, value); }
    friend class SpectrumTemp;
 };
 
@@ -921,23 +921,23 @@ class ChainSpectrumMatsubara : public ChainSpectrum {
    Matsubara m;
  public:
    ChainSpectrumMatsubara(const Params &P, matstype mt) : ChainSpectrum(P), m(P.mats, mt, P.T){};
-   void add(size_t n, t_weight w) { m.add(n, w); }
-   void add(double energy, t_weight w) override { my_assert_not_reached(); }
-   t_weight total_weight() const { return m.total_weight(); }
+   void add(const size_t n, const t_weight w) { m.add(n, w); }
+   void add(const double energy, const t_weight w) override { my_assert_not_reached(); }
+   auto total_weight() const { return m.total_weight(); }
    friend class SpectrumMatsubara;
 };
 
 // Object of class spectrum will contain everything that we know about a spectral density.
 class Spectrum {
  public:
-   string opname, filename;
-   shared_ptr<Algo> algotype;
+   std::string opname, filename;
+   std::shared_ptr<Algo> algotype;
    const Params &P;
-   Spectrum(const string &opname, const string &filename, shared_ptr<Algo> algotype, const Params &P) :
+   Spectrum(const std::string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, const Params &P) :
      opname(opname), filename(filename), algotype(algotype), P(P) {}; // NOLINT
    virtual ~Spectrum()= default; // required (the destructor saves the results to a file)
    virtual void merge(std::shared_ptr<ChainSpectrum>, const Step &) = 0; // called from spec.cc as the very last step
-   string name() { return opname; }
+   auto name() { return opname; }
 };
 
 #include "spectrumrealfreq.cc"
@@ -965,7 +965,7 @@ class SpectrumMatsubara : public Spectrum {
  private:
    Matsubara results;
  public:
-   SpectrumMatsubara(const string &opname, const string &filename, shared_ptr<Algo> algotype, matstype mt, const Params &P)
+   SpectrumMatsubara(const string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, matstype mt, const Params &P)
      : Spectrum(opname, filename, algotype, P), results(P.mats, mt, P.T) {}
    void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
      auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
@@ -978,7 +978,7 @@ class SpectrumMatsubara : public Spectrum {
 };
 
 // Check if the trace of the density matrix equals 'ref_value'.
-void check_trace_rho(const DensMatElements &m, shared_ptr<Symmetry> Sym, double ref_value = 1.0) {
+void check_trace_rho(const DensMatElements &m, std::shared_ptr<Symmetry> Sym, const double ref_value = 1.0) {
   if (!num_equal(m.trace(Sym->multfnc()), ref_value))
     throw std::runtime_error("check_trace_rho() failed");
 }
@@ -1067,7 +1067,7 @@ class ExpvOutput {
 
 // open_files() and open_files_spec() open the output files and establishe the data structures for storing spectral
 // information.
-void open_files(speclist &sl, BaseSpectrum &spec, shared_ptr<Algo> algotype, const axis a, const Params &P) {
+void open_files(speclist &sl, BaseSpectrum &spec, std::shared_ptr<Algo> algotype, const axis a, const Params &P) {
   const string fn = spec.prefix + "_" + (algotype ? algotype->name() : "OOPS") + "_dens_" + spec.name; // no suffix (.dat vs. .bin)
   switch (a) {
     case axis::RealFreq:  spec.spec = make_shared<SpectrumRealFreq>(spec.name, fn, algotype, P); break;
