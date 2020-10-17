@@ -1450,7 +1450,7 @@ DensMatElements init_rho(const Step &step, const DiagInfo &diag, shared_ptr<Symm
 }
 
 // Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.
-t_eigen highest_retained_energy(const Step &step, const DiagInfo &diag, const Params &P) {
+auto highest_retained_energy(const Step &step, const DiagInfo &diag, const Params &P) {
   auto energies = diag.sorted_energies();
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
   const size_t totalnumber = energies.size();
