@@ -1885,7 +1885,7 @@ QSrmax::QSrmax(const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym) {
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
-void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, shared_ptr<Symmetry> Sym, const Params &P) {
+void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, std::shared_ptr<Symmetry> Sym, const Params &P) {
   TIME("recalc f");
   if (!P.substeps) {
     opch = Sym->recalc_irreduc(step, diag, qsrmax);
@@ -1902,11 +1902,11 @@ void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qs
 }
 
 DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, 
-                 QSrmax &qsrmax, shared_ptr<Symmetry> Sym, const Params &P) {
+                 QSrmax &qsrmax, std::shared_ptr<Symmetry> Sym, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   auto tasks = qsrmax.task_list();
-  double diagratio = P.diagratio;
+  double diagratio = P.diagratio; // non-const
   DiagInfo diag;
   while (true) {
     try {
@@ -1923,7 +1923,7 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
       stats.Egs = diag.find_groundstate();
       if (step.nrg()) // should be done only once!
         diag.subtract_Egs(stats.Egs);
-      auto cluster_mapping = find_clusters(diag.sorted_energies(), P.fixeps);
+      const auto cluster_mapping = find_clusters(diag.sorted_energies(), P.fixeps);
       fix_splittings(diag, cluster_mapping);
       truncate_prepare(step, diag, Sym, P);
       break;
@@ -1952,7 +1952,7 @@ void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, Output &output,
-                QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
+                QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
@@ -1988,7 +1988,7 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
 
 // Perform one iteration step
 DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev,
-                 Output &output, AllSteps &dm, Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
+                 Output &output, AllSteps &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   QSrmax qsrmax{diagprev, Sym};
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, Sym, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
@@ -2000,7 +2000,7 @@ DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
 
 // Perform calculations with quantities from 'data' file
 void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats &stats, Output &output, 
-             Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
+             Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
@@ -2013,8 +2013,8 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
 DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diag0, Output &output, 
-                 AllSteps &dm, Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
-  std::cout << endl << "Zero bandwidth calculation" << std::endl;
+                 AllSteps &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+  std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
   DiagInfo diag;
