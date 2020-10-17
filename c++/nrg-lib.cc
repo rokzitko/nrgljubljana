@@ -766,16 +766,16 @@ template<typename S> void trim_op(const DiagInfo_tmpl<S> &diag, CustomOp_tmpl<S>
 
 // Object of class IterInfo cotains full information about matrix representations when entering stage N of the NRG
 // iteration.
-class IterInfo {
+template<typename S> class IterInfo_tmpl {
  public:
-   Opch opch;     // f operators (channels)
-   CustomOp ops;  // singlet operators (even parity)
-   CustomOp opsp; // singlet operators (odd parity)
-   CustomOp opsg; // singlet operators [global op]
-   CustomOp opd;  // doublet operators (spectral functions)
-   CustomOp opt;  // triplet operators (dynamical spin susceptibility)
-   CustomOp opq;  // quadruplet operators (spectral functions for J=3/2)
-   CustomOp opot; // orbital triplet operators
+   Opch_tmpl<S> opch;     // f operators (channels)
+   CustomOp_tmpl<S> ops;  // singlet operators (even parity)
+   CustomOp_tmpl<S> opsp; // singlet operators (odd parity)
+   CustomOp_tmpl<S> opsg; // singlet operators [global op]
+   CustomOp_tmpl<S> opd;  // doublet operators (spectral functions)
+   CustomOp_tmpl<S> opt;  // triplet operators (dynamical spin susceptibility)
+   CustomOp_tmpl<S> opq;  // quadruplet operators (spectral functions for J=3/2)
+   CustomOp_tmpl<S> opot; // orbital triplet operators
 
    void dump_diagonal(const size_t max_nr, std::ostream &F = std::cout) const {
      if (max_nr) {
@@ -783,7 +783,7 @@ class IterInfo {
        for (const auto &[name, m] : opsg) dump_diagonal_op(name, m, max_nr, F);
      }
    }
-   void trim_matrices(const DiagInfo &diag) {
+   void trim_matrices(const DiagInfo_tmpl<S> &diag) {
      trim_op(diag, ops);
      trim_op(diag, opsp);
      trim_op(diag, opsg);
@@ -793,6 +793,7 @@ class IterInfo {
      trim_op(diag, opq);
    }
 };
+using IterInfo = IterInfo_tmpl<scalar>;
 
 #include "spectral.h"
 
@@ -842,7 +843,8 @@ class IterInfo {
 #endif
 
 // Operator sumrules.
-template<typename F> double norm(const MatrixElements &m, shared_ptr<Symmetry> Sym, F factor_fnc, int SPIN) {
+template<typename S, typename F> 
+double norm(const MatrixElements_tmpl<S> &m, shared_ptr<Symmetry> Sym, F factor_fnc, const int SPIN) {
   weight_bucket sum;
   for (const auto &[II, mat] : m) {
     const auto & [I1, Ip] = II;
@@ -852,7 +854,8 @@ template<typename F> double norm(const MatrixElements &m, shared_ptr<Symmetry> S
   return 2.0 * cmpl(sum).real(); // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
 }
 
-void operator_sumrules(const IterInfo &a, shared_ptr<Symmetry> Sym) {
+template<typename S>
+void operator_sumrules(const IterInfo_tmpl<S> &a, shared_ptr<Symmetry> Sym) {
   // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
   // irrelevant (0).
   const int SPIN = Sym->isfield() ? 1 : 0;
@@ -993,7 +996,8 @@ class SpectrumMatsubara : public Spectrum {
 };
 
 // Check if the trace of the density matrix equals 'ref_value'.
-void check_trace_rho(const DensMatElements &m, std::shared_ptr<Symmetry> Sym, const double ref_value = 1.0) {
+template<typename S>
+void check_trace_rho(const DensMatElements_tmpl<S> &m, std::shared_ptr<Symmetry> Sym, const double ref_value = 1.0) {
   if (!num_equal(m.trace(Sym->multfnc()), ref_value))
     throw std::runtime_error("check_trace_rho() failed");
 }
@@ -1047,8 +1051,10 @@ Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo_tmpl<S>
 }
 
 // Formatted output of the computed expectation values
-class ExpvOutput {
+template<typename S>
+class ExpvOutput_tmpl {
  private:
+   using t_expv = typename traits<S>::t_expv;
    std::ofstream F;                     // output stream
    std::map<std::string, t_expv> &m;    // reference to the name->value mapping
    const std::list<std::string> fields; // list of fields to be output (may be a subset of the fields actually present in m)
@@ -1059,14 +1065,14 @@ class ExpvOutput {
      F << std::endl;
    }
    // Label and field names. Label is the first column (typically the temperature).
-   void field_names(string labelname = "T") {
+   void field_names(const std::string labelname = "T") {
      F << '#' << formatted_output(labelname, P) << ' ';
      std::transform(fields.cbegin(), fields.cend(), std::ostream_iterator<std::string>(F, " "), [this](const auto op) { return formatted_output(op, P); });
      F << std::endl;
    }
  public:
    // Output the current values for the label and for all the fields
-   void field_values(double labelvalue, bool cout_dump = true) {
+   void field_values(const double labelvalue, const bool cout_dump = true) {
      F << ' ' << formatted_output(labelvalue, P) << ' ';
      std::transform(fields.cbegin(), fields.cend(), std::ostream_iterator<std::string>(F, " "), [this](const auto op) { return formatted_output(m[op], P); });
      F << std::endl;
@@ -1074,12 +1080,13 @@ class ExpvOutput {
        for (const auto &op: fields)
          fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op]));
    }
-   ExpvOutput(const string &fn, map<string, t_expv> &m_, const list<string> &fields_, const Params &P_) : m(m_), fields(fields_), P(P_) {
+   ExpvOutput_tmpl(const string &fn, map<string, t_expv> &m_, const list<string> &fields_, const Params &P_) : m(m_), fields(fields_), P(P_) {
      F.open(fn);
      field_numbers();
      field_names();
    }
 };
+using ExpvOutput = ExpvOutput_tmpl<scalar>;
 
 // open_files() and open_files_spec() open the output files and establishe the data structures for storing spectral
 // information.
