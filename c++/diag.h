@@ -27,7 +27,7 @@ void copy_vec(T* eigenvectors, ublas::matrix<V>& diagvectors, const size_t dim, 
       diagvectors(r, j) = to_matel(eigenvectors[dim * r + j]);
 }
 
-template<typename S, typename T, typename U> auto copy_results(T* eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
+template<typename T, typename U, typename S> auto copy_results(T* eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
 {
   Eigen_tmpl<S> d(M, dim);
   copy_val(eigenvalues, d.value_orig, M);
@@ -38,9 +38,9 @@ template<typename S, typename T, typename U> auto copy_results(T* eigenvalues, U
 }
 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
-auto diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
+Eigen_tmpl<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
-  t_matel *ham = bindings::traits::matrix_storage(m);
+  double *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
@@ -56,13 +56,13 @@ auto diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<double,double,double>(eigenvalues, ham, jobz, dim, dim);
 }
 
-auto diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
+Eigen_tmpl<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
 {
   const size_t dim = m.size1();
-  t_matel *ham = bindings::traits::matrix_storage(m);
+  double *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim];
   char UPLO  = 'L';
   int NN     = dim;
@@ -85,14 +85,14 @@ auto diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
     // dsyevd sometimes fails to converge (INFO>0). In such cases we do not trigger
     // an error but return 0, to permit error recovery.
     if (INFO > 0)
-      return Eigen();
+      return Eigen_tmpl<double>();
     else
       throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   }
-  return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<t_eigen,double,double>(eigenvalues, ham, jobz, dim, dim);
 }
 
-auto diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V')
+Eigen_tmpl<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V')
 {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
@@ -105,7 +105,7 @@ auto diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, cons
     RANGE = 'I';
   } else
     RANGE = 'A';
-  t_matel *ham = bindings::traits::matrix_storage(m);
+  double *ham = bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix
@@ -124,7 +124,7 @@ auto diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, cons
   //  The support of the eigenvectors in Z, i.e., the indices
   //  indicating the nonzero elements in Z.  The i-th eigenvector is
   //  nonzero only in elements ISUPPZ( 2*i-1 ) through ISUPPZ(2*i).
-  auto Z = std::make_unique<t_matel[]>(LDZ * M); // eigenvectors
+  auto Z = std::make_unique<double[]>(LDZ * M); // eigenvectors
   int LWORK0  = -1;
   int LIWORK0 = -1;
   double WORK0[1];
@@ -146,10 +146,10 @@ auto diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, cons
     M = MM;
     my_assert(M > 0); // at least one
   }
-  return copy_results<double>(eigenvalues, Z.get(), jobz, dim, M);
+  return copy_results<t_eigen,double,double>(eigenvalues, Z.get(), jobz, dim, M);
 }
 
-auto diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V') {
+Eigen_tmpl<cmpl> diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
   lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   t_eigen eigenvalues[dim]; // eigenvalues on exit
@@ -169,10 +169,10 @@ auto diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V') {
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, RWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  return copy_results<cmpl>(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<t_eigen,lapack_complex_double,cmpl>(eigenvalues, ham, jobz, dim, dim);
 }
   
-auto diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio = 1.0, const char jobz = 'V') {
+Eigen_tmpl<cmpl> diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio = 1.0, const char jobz = 'V') {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
@@ -229,7 +229,7 @@ auto diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio = 1.0, const 
     M = MM;
     my_assert(M > 0); // at least one
   }
-  return copy_results<cmpl>(eigenvalues, Z.get(), jobz, dim, M);
+  return copy_results<t_eigen,lapack_complex_double,cmpl>(eigenvalues, Z.get(), jobz, dim, M);
 }
 
 template<typename S>

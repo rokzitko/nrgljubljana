@@ -139,13 +139,13 @@ template <typename T> void read_matrix(std::istream &F, ublas::matrix<T> &m, con
 
 // Check if the value x is real [for complex number calculations].
 CONSTFNC inline auto is_real(const double x) { return x; }
-CONSTFNC inline auto is_real(const std::complex<double> &z, const double check_real_tolerance = 1e-8) {
+CONSTFNC inline auto is_real(const std::complex<double> z, const double check_real_tolerance = 1e-8) {
   return abs(z.imag()) <= check_real_tolerance;
 }
 
 // Check if x is real and return the real part, i.e. x.real().
 CONSTFNC inline auto check_real(double x) { return x; }
-CONSTFNC inline auto check_real(std::complex<double> &z) {
+CONSTFNC inline auto check_real(std::complex<double> z) {
   if (!is_real(z)) std::cout << "Warning: expected real number, but got " << z << std::endl;
   return z.real();
 }

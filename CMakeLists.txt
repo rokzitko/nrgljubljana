@@ -228,9 +228,12 @@ if(SYM_ALL)
   message(STATUS "Building the full set of symmetry types")
 endif()
 
-# Complex-number version of the code
+option(BUILD_REAL    "Build the real-number version of the code" ON)
 option(BUILD_COMPLEX "Build the complex-number version of the code" ON)
 
+if(BUILD_REAL)
+  message(STATUS "Building the real-number version of the code")
+endif()
 if(BUILD_COMPLEX)
   message(STATUS "Building the complex-number version of the code")
 endif()
