@@ -1300,26 +1300,23 @@ class Oprecalc_tmpl {
 };
 using Oprecalc = Oprecalc_tmpl<scalar>;
 
-// Store eigenvalue & quantum numbers information (flow diagrams)
+// Store eigenvalue & quantum numbers information (RG flow diagrams)
 class Annotated {
  private:
    std::ofstream F;
-   
    // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor)
    inline t_eigen scaled_energy(t_eigen e, const Step &step, const Stats &stats, bool scaled = true, bool absolute = false) {
      return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0);
    }
-   
    const Params &P;
-
  public:
    explicit Annotated(const Params &P) : P(P) {}
-   
-   void dump(const Step &step, const DiagInfo &diag, const Stats &stats, shared_ptr<Symmetry> Sym, const std::string filename = "annotated.dat") {
+   template<typename S> void dump(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats &stats, 
+                                  shared_ptr<Symmetry> Sym, const std::string filename = "annotated.dat") {
      if (!P.dumpannotated) return;
      if (!F.is_open()) { // open output file
        F.open(filename);
-       F << setprecision(P.dumpprecision);
+       F << std::setprecision(P.dumpprecision);
      }
      std::vector<pair<t_eigen, Invar>> seznam;
      for (const auto &[I, eig] : diag)
@@ -1357,18 +1354,18 @@ class Annotated {
 };
 
 // Handle all output
-struct Output {
-  RUNTYPE runtype;
+template<typename S>
+struct Output_tmpl {
+  const RUNTYPE runtype;
   const Params &P;
   Annotated annotated;
   std::ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
-  std::unique_ptr<ExpvOutput> custom;
-  std::unique_ptr<ExpvOutput> customfdm;
-  
-  Output(const RUNTYPE &runtype, const IterInfo &iterinfo, Stats &stats, const Params &P,
-         const std::string filename_energies= "energies.nrg"s,
-         const std::string filename_custom = "custom", 
-         const std::string filename_customfdm = "customfdm")
+  std::unique_ptr<ExpvOutput_tmpl<S>> custom;
+  std::unique_ptr<ExpvOutput_tmpl<S>> customfdm;
+  Output_tmpl(const RUNTYPE &runtype, const IterInfo_tmpl<S> &iterinfo, Stats &stats, const Params &P,
+              const std::string filename_energies= "energies.nrg"s,
+              const std::string filename_custom = "custom", 
+              const std::string filename_customfdm = "customfdm")
     : runtype(runtype), P(P), annotated(P) {
       // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
       // runs produce the same results.
@@ -1377,18 +1374,18 @@ struct Output {
       for (const auto &name : iterinfo.ops  | boost::adaptors::map_keys) ops.push_back(name);
       for (const auto &name : iterinfo.opsg | boost::adaptors::map_keys) ops.push_back(name);
       if (runtype == RUNTYPE::NRG)
-        custom = std::make_unique<ExpvOutput>(filename_custom, stats.expv, ops, P);
+        custom = std::make_unique<ExpvOutput_tmpl<S>>(filename_custom, stats.expv, ops, P);
       else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
-        customfdm = std::make_unique<ExpvOutput>(filename_customfdm, stats.fdmexpv, ops, P);
+        customfdm = std::make_unique<ExpvOutput_tmpl<S>>(filename_customfdm, stats.fdmexpv, ops, P);
     }
-
   // Dump all energies in diag to a file
-  void dump_all_energies(const DiagInfo &diag, const int N) {
+  void dump_all_energies(const DiagInfo_tmpl<S> &diag, const int N) {
     if (!Fenergies) return;
-    Fenergies << endl << "===== Iteration number: " << N << std::endl;
+    Fenergies << std::endl << "===== Iteration number: " << N << std::endl;
     diag.dump_value_zero(Fenergies);
   }
 };
+using Output = Output_tmpl<scalar>;
 
 CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n, std::shared_ptr<Symmetry> Sym) {
   matel_bucket tr; // note: t_matel = t_expv
