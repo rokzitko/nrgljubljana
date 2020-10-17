@@ -14,13 +14,13 @@
 // during broadening, we may consider "bins" as delta peaks, rather than as interval representations (true bins). In
 // other words, what we are doing here is coarse graining rather than binning!
 
-class Bins {
+class Bins : public traits<scalar> {
  private:
    double emin{}, emax{};
    double log10emin{}, log10emax{}; // base-10 log of the limits
    void setlimits();
-   inline void add_std(double energy, t_weight weight);
-   inline void add_acc(double energy, t_weight weight);
+   inline void add_std(const double energy, const t_weight weight);
+   inline void add_acc(const double energy, const t_weight weight);
    void loggrid_std(); // standard NRG logarithmic mesh for spec. funcions
    void loggrid_acc(); // log grid with shifted accumulation point
    void loggrid();
@@ -39,10 +39,10 @@ class Bins {
    operator const Spikes &() const { return bins; }
    operator Spikes &() { return bins; }
    explicit Bins(const Params &P) : P(P) { loggrid(); } // default: logarithmic grid
-   inline void add(double energy, t_weight weight);
+   inline void add(const double energy, const t_weight weight);
    void merge(const Bins &b);
    void trim();
-   t_weight total_weight() const { return bins.sum_weights(); }
+   auto total_weight() const { return bins.sum_weights(); }
 };
 
 
@@ -84,7 +84,7 @@ void Bins::loggrid_std() {
 }
 
 // Unbiased assignment of the spectral weight to bins.
-inline void Bins::add(double energy, t_weight weight) {
+inline void Bins::add(const double energy, const t_weight weight) {
   if (abs(weight) < P.discard_immediately * energy) return;
   if (P.accumulation > 0.0)
     add_acc(energy, weight);
@@ -92,7 +92,7 @@ inline void Bins::add(double energy, t_weight weight) {
     add_std(energy, weight);
 }
 
-inline void Bins::add_std(double energy, t_weight weight) {
+inline void Bins::add_std(const double energy, const t_weight weight) {
   // Important: if 'energy' is lower than the lower limit of the first interval, the weight is assigned to the first
   // bin. This is especially relevant for collecting the omega=0 data in bosonic correlators. (rz, 25 Oct 2012)
   if (energy < zero_epsilon) { // handle this special case separately (for reasons of efficiency)
@@ -113,7 +113,7 @@ inline void Bins::add_std(double energy, t_weight weight) {
   }
 }
 
-inline void Bins::add_acc(double energy, t_weight weight) {
+inline void Bins::add_acc(const double energy, const t_weight weight) {
   for (const auto i: range0(bins.size()-1)) {
     auto &[e1, w1] = bins[i]; // non-const
     auto &[e2, w2] = bins[i+1]; // non-const
@@ -168,7 +168,7 @@ class Temp : public Spikes {
    const Params &P;
  public:
    explicit Temp(const Params &P) : P(P) {}
-   void add_value(double energy, t_weight weight) {
+   void add_value(const double energy, const t_weight weight) {
      for (auto & [e, w] : *this) {
        if (e == energy) {
          w += weight;

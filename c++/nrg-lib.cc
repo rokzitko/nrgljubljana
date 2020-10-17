@@ -375,7 +375,7 @@ class DensMatElements : public std::map<Invar, Matrix>, public traits<scalar> {
    template <typename MF>
      auto trace(MF mult) const {
        return ranges::accumulate(*this, 0.0, [mult](double acc, const auto z) { const auto &[I, mat] = z; 
-         return acc + mult(I) * trace_real_nochecks(mat); });
+         return acc + mult(I) * trace_real(mat); });
      }
    void save(const size_t N, const string &prefix) const {
      const std::string fn = workdir.rhofn(prefix, N);
