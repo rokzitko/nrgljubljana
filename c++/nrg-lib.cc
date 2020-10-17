@@ -187,7 +187,7 @@ class Eigen : public RawEigen<scalar> {
   long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
  public:
   EVEC value_zero;   // eigenvalues with Egs subtracted
-  size_t getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }
+  auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }
   auto getnrstored() const  { return value_zero.size(); }                   // number of stored states
   auto getnrall() const { return getnrcomputed(); }                         // all = all computed
   auto getnrkept() const { return getnrpost(); }
@@ -225,12 +225,12 @@ class Eigen : public RawEigen<scalar> {
     value_orig = value_zero = v;
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
   }
-  void subtract_Egs(double Egs) {
+  void subtract_Egs(const double Egs) {
     value_zero = value_orig;
     for (auto &x : value_zero) x -= Egs;
     my_assert(value_zero[0] >= 0);
   }
-  void subtract_GS_energy(double GS_energy) {
+  void subtract_GS_energy(const double GS_energy) {
     for (auto &x : absenergyG) x -= GS_energy;
     my_assert(absenergyG[0] >= 0);
   }
@@ -268,9 +268,9 @@ class DiagInfo : public std::map<Invar, Eigen>, public traits<scalar> {
    auto subspaces() const { return *this | boost::adaptors::map_keys; }
    auto eigs() const { return *this | boost::adaptors::map_values; }
    auto eigs() { return *this | boost::adaptors::map_values; }
-   t_eigen find_groundstate() const {
-     auto [Iground, eig] = *ranges::min_element(*this, [](const auto a, const auto b) { return a.second.value_orig(0) < b.second.value_orig(0); });
-     auto Egs = eig.value_orig(0);
+   auto find_groundstate() const {
+     const auto [Iground, eig] = *ranges::min_element(*this, [](const auto a, const auto b) { return a.second.value_orig(0) < b.second.value_orig(0); });
+     const auto Egs = eig.value_orig(0);
      return Egs;
    }
    void subtract_Egs(const t_eigen Egs) {
@@ -285,7 +285,7 @@ class DiagInfo : public std::map<Invar, Eigen>, public traits<scalar> {
        energies.insert(energies.end(), eig.value_zero.begin(), eig.value_zero.end());
      return energies | ranges::move | ranges::actions::sort;
    }
-   void dump_value_zero(ostream &F) const {
+   void dump_value_zero(std::ostream &F) const {
      for (const auto &[I, eig]: *this)
        F << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
    }
@@ -317,7 +317,7 @@ class DiagInfo : public std::map<Invar, Eigen>, public traits<scalar> {
        fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
    void save(const size_t N) const {
-     const string fn = workdir.unitaryfn(N);
+     const std::string fn = workdir.unitaryfn(N);
      ofstream MATRIXF(fn, ios::binary | ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
@@ -329,8 +329,8 @@ class DiagInfo : public std::map<Invar, Eigen>, public traits<scalar> {
      }
    }
    void load(const size_t N, const bool remove_files = false) {
-     const string fn = workdir.unitaryfn(N);
-     std::ifstream MATRIXF(fn, ios::binary | ios::in);
+     const std::string fn = workdir.unitaryfn(N);
+     std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
      size_t nr; // Number of subspaces
@@ -346,10 +346,10 @@ class DiagInfo : public std::map<Invar, Eigen>, public traits<scalar> {
    explicit DiagInfo(const size_t N, const bool remove_files = false) { load(N, remove_files); }
 };
 
-class MatrixElements : public std::map<Twoinvar, Matrix> {
+class MatrixElements : public std::map<Twoinvar, Matrix>, public traits<scalar> {
  public:
    MatrixElements() {}
-   MatrixElements(ifstream &fdata, const DiagInfo &diag) {
+   MatrixElements(std::ifstream &fdata, const DiagInfo &diag) {
      size_t nf; // Number of I1 x I2 combinations
      fdata >> nf;
      for (const auto i : range0(nf)) {
@@ -364,22 +364,22 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
    }
    std::ostream &insertor(std::ostream &os) const { 
      for (const auto &[II, mat] : *this)
-       os << "----" << II << "----" << endl << mat << std::endl;
+       os << "----" << II << "----" << std::endl << mat << std::endl;
      return os;
    }
 };
 std::ostream &operator<<(std::ostream &os, const MatrixElements &m) { return m.insertor(os); }
 
-class DensMatElements : public std::map<Invar, Matrix> {
+class DensMatElements : public std::map<Invar, Matrix>, public traits<scalar> {
  public:
    template <typename MF>
-     double trace(MF mult) const {
+     auto trace(MF mult) const {
        return ranges::accumulate(*this, 0.0, [mult](double acc, const auto z) { const auto &[I, mat] = z; 
-                                return acc + mult(I) * trace_real_nochecks(mat); });
+         return acc + mult(I) * trace_real_nochecks(mat); });
      }
-   void save(size_t N, const string &prefix) const {
-     const string fn = workdir.rhofn(prefix, N);
-     std::ofstream MATRIXF(fn, ios::binary | ios::out);
+   void save(const size_t N, const string &prefix) const {
+     const std::string fn = workdir.rhofn(prefix, N);
+     std::ofstream MATRIXF(fn, std::ios::binary | std::ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
      oa << this->size();
@@ -390,9 +390,9 @@ class DensMatElements : public std::map<Invar, Matrix> {
      }
      MATRIXF.close();
    }
-   void load(size_t N, const string &prefix, const bool remove_files) {
-     const string fn = workdir.rhofn(prefix, N);
-     std::ifstream MATRIXF(fn, ios::binary | ios::in);
+   void load(const size_t N, const string &prefix, const bool remove_files) {
+     const std::string fn = workdir.rhofn(prefix, N);
+     std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
      size_t nr;
@@ -449,7 +449,7 @@ class Symmetry;
 class Rmaxvals {
  private:
    std::vector<size_t> values;
-   shared_ptr<Symmetry> Sym;
+   std::shared_ptr<Symmetry> Sym;
  public:
    Rmaxvals() = default;
    Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym);
@@ -2037,7 +2037,7 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
 // ****************************  Main NRG loop ****************************
 
 DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, 
-                  Output &output, AllSteps &dm, Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
+                  Output &output, AllSteps &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   DiagInfo diag = diag0;
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, Sym, P);
@@ -2046,7 +2046,7 @@ DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats
 }
 
 DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, 
-                 AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P) {
+                 AllSteps &dm, std::shared_ptr<Symmetry> Sym, const Params &P) {
   diag0.states_report(Sym->multfnc());
   auto oprecalc = Oprecalc(step.runtype, iterinfo, Sym, P);
   auto output = Output(step.runtype, iterinfo, stats, P);
@@ -2058,7 +2058,7 @@ DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats,
   fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
   stats.GS_energy = stats.total_energy;
   if (step.nrg() && P.dumpsubspaces) dm.dump_subspaces();
-  std::cout << endl << "** Iteration completed." << endl << std::endl;
+  fmt::print("\n** Iteration completed.\n\n");
   return diag;
 }
 
@@ -2111,7 +2111,7 @@ std::unique_ptr<Symmetry> get(const std::string &sym_string, const Params &P, Al
 
 // Called immediately after parsing the information about the number of channels from the data file. This ensures
 // that Invar can be parsed correctly.
-shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats) {
+std::shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats) {
   my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
   std::cout << "SYMMETRY TYPE: " << P.symtype.value() << std::endl;
   auto Sym = get(P.symtype.value(), P, stats.td.allfields);
@@ -2147,20 +2147,20 @@ void calculation() {
       rhoFDM.save(step.lastndx(), FN_RHOFDM);
       if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, P);
     }
-    if (string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
+    if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
     auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data(P, stats);
     Step step_dmnrg{P, RUNTYPE::DMNRG};
     run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm, P);
     my_assert(num_equal(stats.GS_energy, stats.total_energy));
   }
-  if (P.done) { ofstream D("DONE"); } // Indicate completion by creating a flag file
+  if (P.done) { std::ofstream D("DONE"); } // Indicate completion by creating a flag file
 }
 
 // Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
   calculation();
 #ifdef NRG_MPI
-  for (int i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_EXIT, 0);
+  for (auto i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_EXIT, 0);
 #endif
 }
 
@@ -2184,7 +2184,7 @@ void run_nrg_slave() {
   for (;;) {
     if (mpiw->iprobe(master, mpi::any_tag)) { // message can be received.
       int task;
-      auto status = mpiw->recv(master, mpi::any_tag, task);
+      const auto status = mpiw->recv(master, mpi::any_tag, task);
       mpilog("Slave " << mpiw->rank() << " received message with tag " << status.tag());
       check_status(status);
       switch (status.tag()) {
