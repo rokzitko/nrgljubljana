@@ -1144,18 +1144,20 @@ template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
   return os;
 }
 
-class Oprecalc {
+template<typename S>
+class Oprecalc_tmpl {
  public:
    // The following lists hold the names of operators which need to be recomputed. The default behavior is to
    // recompute all the operators that are required to calculate the requested spectral densities, see function
    // open_files(). In addition, singlet operators are always recomputed in the first NRG run, so that we can
    // calculate the expectation values.
-   set<string> s, p, g, d, v, t, q, ot;
+   std::set<std::string> s, p, g, d, v, t, q, ot;
 
    speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
 
    // Calculate spectral densities
-   void spectral_densities(const Step &step, const DiagInfo &diag, DensMatElements &rho, DensMatElements &rhoFDM, const Stats &stats, shared_ptr<Symmetry> Sym) {
+   void spectral_densities(const Step &step, const DiagInfo_tmpl<S> &diag, DensMatElements_tmpl<S> &rho, DensMatElements_tmpl<S> &rhoFDM, 
+                           const Stats &stats, shared_ptr<Symmetry> Sym) {
      TIME("spec");
      for (auto &i : spectraS)    calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
      for (auto &i : spectraCHIT) calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
@@ -1168,12 +1170,12 @@ class Oprecalc {
      for (auto &i : spectraI2T)  calc_generic(i, step, diag, Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), rho, rhoFDM, stats);
    }
 
-   void report(ostream &F, const string &name, const set<string> &x) {
+   void report(std::ostream &F, const std::string &name, const std::set<std::string> &x) {
      F << name << "=[" << x << "]" << std::endl;
    }
 
-   void report(ostream &F = cout) {
-     F << endl << "Computing the following operators:" << std::endl;
+   void report(std::ostream &F = std::cout) {
+     F << std::endl << "Computing the following operators:" << std::endl;
      report(F, "s", s);
      report(F, "p", p);
      report(F, "g", g);
@@ -1184,13 +1186,13 @@ class Oprecalc {
      report(F, "ot", ot);
    }
    
-   bool do_s(const string &name, const Params &P, const Step &step) {
+   bool do_s(const std::string &name, const Params &P, const Step &step) {
      if (step.nrg()) return true;                                          // for computing <O> 
      if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
      return s.count(name);
    }
    
-   bool do_g(const string &name, const Params &P, const Step &step) {
+   bool do_g(const std::string &name, const Params &P, const Step &step) {
      if (step.nrg()) return true;                                          // for computing <O>
      if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
      return g.count(name);
@@ -1198,8 +1200,8 @@ class Oprecalc {
    
    // Wrapper routine for recalculations
    template <typename RecalcFnc>
-     MatrixElements recalc_common(const MatrixElements &mold, RecalcFnc recalc_fnc, const Step &step, const DiagInfo &diag,
-                                  const QSrmax &qsrmax, const std::string name, const string &tip, shared_ptr<Symmetry> Sym, const Params &P) {
+     MatrixElements_tmpl<S> recalc_common(const MatrixElements_tmpl<S> &mold, RecalcFnc recalc_fnc, const Step &step, const DiagInfo_tmpl<S> &diag,
+                                  const QSrmax &qsrmax, const std::string name, const std::string &tip, shared_ptr<Symmetry> Sym, const Params &P) {
        nrglog('0', "Recalculate " << tip << " " << name);
        auto mnew = recalc_fnc(diag, qsrmax, mold);
        if (tip == "g") Sym->recalc_global(step, diag, qsrmax, name, mnew);
@@ -1207,13 +1209,14 @@ class Oprecalc {
      }
    
    template <typename ... Args>
-     MatrixElements recalc_or_clear(bool recalc, Args&& ... args) {
-       return recalc ? recalc_common(std::forward<Args>(args)...) : MatrixElements();
+     MatrixElements_tmpl<S> recalc_or_clear(bool recalc, Args&& ... args) {
+       return recalc ? recalc_common(std::forward<Args>(args)...) : MatrixElements_tmpl<S>();
      }
 
    // Recalculate operator matrix representations
    ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-     void recalculate_operators(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, IterInfo &a, shared_ptr<Symmetry> Sym, const Params &P) {
+     void recalculate_operators(const Step &step, const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, 
+                                IterInfo_tmpl<S> &a, shared_ptr<Symmetry> Sym, const Params &P) {
        for (auto &[name, m] : a.ops)
          m = recalc_or_clear(do_s(name, P, step), m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, step, diag, qsrmax, name, "s", Sym, P);
        for (auto &[name, m] : a.opsp)
@@ -1232,14 +1235,14 @@ class Oprecalc {
 
    // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
    // If SPIN == 1 or SPIN == -1, '-u' or '-d' is appended to the string.
-   string sdname(const string &a, const string &b, int spin = 0) {
+   auto sdname(const std::string &a, const std::string &b, const int spin = 0) {
      return a + "-" + b + (spin == 0 ? "" : (spin == 1 ? "-u" : "-d"));
    }
 
    void loopover(const RUNTYPE &runtype, const Params &P,
-                 const CustomOp &set1, const CustomOp &set2,
-                 const string_token &stringtoken, speclist &spectra, const string &prefix,
-                 set<string> &rec1, set<string> &rec2, matstype mt, int spin = 0) {
+                 const CustomOp_tmpl<S> &set1, const CustomOp_tmpl<S> &set2,
+                 const string_token &stringtoken, speclist &spectra, const std::string &prefix,
+                 std::set<std::string> &rec1, std::set<std::string> &rec2, matstype mt, const int spin = 0) {
     for (const auto &[name1, op1] : set1) {
       for (const auto &[name2, op2] : set2) {
         if (const auto name = sdname(name1, name2, spin); stringtoken.find(name)) {
@@ -1254,8 +1257,8 @@ class Oprecalc {
   }
 
   // Reset lists of operators which need to be iterated
-  Oprecalc(const RUNTYPE &runtype, const IterInfo &a, shared_ptr<Symmetry> Sym, const Params &P) {
-    std::cout << endl << "Computing the following spectra:" << std::endl;
+  Oprecalc_tmpl(const RUNTYPE &runtype, const IterInfo_tmpl<S> &a, shared_ptr<Symmetry> Sym, const Params &P) {
+    std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
     loopover(runtype, P, a.ops,  a.ops,  sts, spectraS, "corr", s, s, matstype::bosonic);
@@ -1295,6 +1298,7 @@ class Oprecalc {
     report();
   }
 };
+using Oprecalc = Oprecalc_tmpl<scalar>;
 
 // Store eigenvalue & quantum numbers information (flow diagrams)
 class Annotated {
