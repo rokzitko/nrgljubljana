@@ -167,10 +167,10 @@ template <typename T>
 #include "numerics.h"
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
-template <typename S> class Eigen_tmpl : public traits<S> {
+template <typename S> class Eigen_tmpl {
 public:
-  using t_matel2 = typename traits<S>::t_matel;
-  using Matrix2 = ublas::matrix<t_matel2>;
+  using t_eigen = typename traits<S>::t_eigen;
+  using Matrix2 = typename traits<S>::Matrix;
   using EVEC = ublas::vector<t_eigen>;
   EVEC value_orig;               // eigenvalues as computed
   Matrix2 matrix; // eigenvectors
@@ -204,7 +204,7 @@ public:
   // subspace from which they originate. This separation is required for
   // using the efficient BLAS routines when performing recalculations of
   // the matrix elements.
-  std::vector<Matrix> blocks;
+  std::vector<Matrix2> blocks;
   // Truncate to nrpost states.
   void truncate_prepare_subspace(const size_t nrpost_) {
     nrpost = nrpost_;
@@ -250,7 +250,7 @@ public:
 using Eigen = Eigen_tmpl<scalar>;
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
-class DiagInfo : public std::map<Invar, Eigen>, public traits<scalar> {
+class DiagInfo : public std::map<Invar, Eigen> {
  public:
    explicit DiagInfo() {}
    DiagInfo(ifstream &fdata, const size_t nsubs, const Params &P) {
@@ -345,7 +345,7 @@ class DiagInfo : public std::map<Invar, Eigen>, public traits<scalar> {
    explicit DiagInfo(const size_t N, const bool remove_files = false) { load(N, remove_files); }
 };
 
-class MatrixElements : public std::map<Twoinvar, Matrix>, public traits<scalar> {
+class MatrixElements : public std::map<Twoinvar, Matrix> {
  public:
    MatrixElements() {}
    MatrixElements(std::ifstream &fdata, const DiagInfo &diag) {
@@ -369,7 +369,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix>, public traits<scalar> 
 };
 std::ostream &operator<<(std::ostream &os, const MatrixElements &m) { return m.insertor(os); }
 
-class DensMatElements : public std::map<Invar, Matrix>, public traits<scalar> {
+class DensMatElements : public std::map<Invar, Matrix> {
  public:
    template <typename MF>
      auto trace(MF mult) const {
@@ -703,8 +703,7 @@ class Algo {
    virtual string rho_type() { return ""; } // what rho type is required
 };
 
-void dump_diagonal_matrix(const Matrix &m, const size_t max_nr, std::ostream &F)
-{
+template<typename M> void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr, std::ostream &F) {
   for (const auto r : range0(std::min(m.size1(), max_nr)))
     F << m(r,r) << ' ';
   F << std::endl;
@@ -2133,13 +2132,12 @@ std::shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats) {
   return Sym;
 }
 
-template <typename S> class NRG_calculation : public traits<S>{
+template <typename S> class NRG_calculation {
 private:
   // XXX: Workdir workdir;
   Params P;
   Stats stats;
 public:
-  using scalar = S;
   NRG_calculation() : P("param", "param", workdir), stats(P) {}
   void go() {
     auto [diag0, iterinfo, coef, Sym] = read_data(P, stats);
