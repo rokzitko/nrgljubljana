@@ -416,25 +416,31 @@ class DensMatElements_tmpl : public std::map<Invar, typename traits<S>::Matrix> 
 using DensMatElements = DensMatElements_tmpl<scalar>;
 
 // Map of operators matrices
-using CustomOp = std::map<std::string, MatrixElements>;
+template<typename S>
+using CustomOp_tmpl = std::map<std::string, MatrixElements_tmpl<S>>;
+using CustomOp = CustomOp_tmpl<scalar>;
 
 // Vector containing irreducible matrix elements of f operators.
-using OpchChannel = std::vector<MatrixElements>;
+template<typename S>
+using OpchChannel_tmpl = std::vector<MatrixElements_tmpl<S>>;
+using OpchChannel = OpchChannel_tmpl<scalar>;
+
 // Each channel contains P.perchannel OpchChannel matrices.
-class Opch : public std::vector<OpchChannel> {
+template<typename S>
+class Opch_tmpl : public std::vector<OpchChannel_tmpl<S>> {
  public:
-   Opch() {}
-   explicit Opch(const size_t nrch) { this->resize(nrch); }
-   Opch(ifstream &fdata, const DiagInfo &diag, const Params &P) {
+   Opch_tmpl() {}
+   explicit Opch_tmpl(const size_t nrch) { this->resize(nrch); }
+   Opch_tmpl(std::ifstream &fdata, const DiagInfo_tmpl<S> &diag, const Params &P) {
      this->resize(P.channels);
      for (const auto i : range0(size_t(P.channels))) {
-       (*this)[i] = OpchChannel(P.perchannel);
+       (*this)[i] = OpchChannel_tmpl<S>(P.perchannel);
        for (const auto j : range0(size_t(P.perchannel))) {
          char ch;
          size_t iread, jread;
          fdata >> ch >> iread >> jread;
          my_assert(ch == 'f' && i == iread && j == jread);
-         (*this)[i][j] = MatrixElements(fdata, diag);
+         (*this)[i][j] = MatrixElements_tmpl<S>(fdata, diag);
        }
      }
    }
@@ -446,6 +452,7 @@ class Opch : public std::vector<OpchChannel> {
      std::cout << std::endl;
    }
 };
+using Opch = Opch_tmpl<scalar>;
 
 class Symmetry;
 
