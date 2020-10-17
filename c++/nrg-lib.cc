@@ -481,7 +481,7 @@ class Rmaxvals {
 class QSrmax : public std::map<Invar, Rmaxvals> {
  public:
    QSrmax() {}
-   QSrmax(const DiagInfo &, shared_ptr<Symmetry>);
+   template<typename S> QSrmax(const DiagInfo_tmpl<S> &, shared_ptr<Symmetry>);
    // List of invariant subspaces in which diagonalisations need to be performed
    std::vector<Invar> task_list() const {
      std::vector<pair<size_t, Invar>> tasks_with_sizes;
@@ -1893,13 +1893,15 @@ DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, 
 }
 
 // Determine the structure of matrices in the new NRG shell
-QSrmax::QSrmax(const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym) {
+template<typename S>
+QSrmax::QSrmax(const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry> Sym) {
   for (const auto &I : new_subspaces(diagprev, Sym))
     (*this)[I] = Rmaxvals{I, Sym->ancestors(I), diagprev, Sym};
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
-void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, Opch &opch, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+void recalc_irreducible(const Step &step, const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, Opch &opch, std::shared_ptr<Symmetry> Sym, const Params &P) {
   TIME("recalc f");
   if (!P.substeps) {
     opch = Sym->recalc_irreduc(step, diag, qsrmax);
@@ -1915,23 +1917,24 @@ void recalc_irreducible(const Step &step, const DiagInfo &diag, const QSrmax &qs
   }
 }
 
-DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev, 
-                 QSrmax &qsrmax, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+auto do_diag(const Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diagprev,
+             QSrmax &qsrmax, std::shared_ptr<Symmetry> Sym, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   auto tasks = qsrmax.task_list();
   double diagratio = P.diagratio; // non-const
-  DiagInfo diag;
+  DiagInfo_tmpl<S> diag;
   while (true) {
     try {
       if (step.nrg()) {
         if (!(P.resume && int(step.ndx()) <= P.laststored))
           diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, Sym, P); // compute in first run
         else
-          diag = DiagInfo(step.ndx(), false); // or read from disk
+          diag = DiagInfo_tmpl<S>(step.ndx(), false); // or read from disk
       }
       if (step.dmnrg()) {
-        diag = DiagInfo(step.ndx(), P.removefiles); // read from disk in second run
+        diag = DiagInfo_tmpl<S>(step.ndx(), P.removefiles); // read from disk in second run
         diag.subtract_GS_energy(stats.GS_energy);
       }
       stats.Egs = diag.find_groundstate();
@@ -1955,7 +1958,8 @@ DiagInfo do_diag(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
 // Absolute energies. Must be called in the first NRG run after stats.total_energy has been updated, but before
 // store_transformations(). absenergyG is updated to its correct values (referrenced to absolute 0) in
 // shift_abs_energies().
-void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
+template<typename S>
+void calc_abs_energies(const Step &step, DiagInfo_tmpl<S> &diag, const Stats &stats) {
   for (auto &eig : diag.eigs()) {
     eig.absenergyN = eig.value_zero * step.scale();        // referenced to the lowest energy in current NRG step (not modified later on)
     eig.absenergy = eig.absenergyN;
@@ -1965,8 +1969,9 @@ void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
 }
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
-void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, Output &output,
-                QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo_tmpl<S> &diag, Output &output,
+                QSrmax &qsrmax, AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
@@ -2001,8 +2006,9 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &di
 }
 
 // Perform one iteration step
-DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diagprev,
-                 Output &output, AllSteps &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+auto iterate(const Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diagprev,
+             Output &output, AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   QSrmax qsrmax{diagprev, Sym};
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, Sym, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
@@ -2013,25 +2019,27 @@ DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
 }
 
 // Perform calculations with quantities from 'data' file
-void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats &stats, Output &output, 
+template<typename S>
+void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo_tmpl<S> &diag0, Stats &stats, Output &output, 
              Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output);
-  AllSteps empty_dm(0, 0);
+  AllSteps_tmpl<S> empty_dm(0, 0);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, Sym, P);
   if (P.checksumrules) operator_sumrules(iterinfo, Sym);
 }
 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
-DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diag0, Output &output, 
-                 AllSteps &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+auto nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo_tmpl<S> &diag0, Output &output, 
+             AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
-  DiagInfo diag;
+  DiagInfo_tmpl<S> diag;
   if (step.nrg()) 
     diag = diag0;
   if (step.dmnrg()) {
@@ -2050,24 +2058,26 @@ DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &d
 
 // ****************************  Main NRG loop ****************************
 
-DiagInfo nrg_loop(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, 
-                  Output &output, AllSteps &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
-  DiagInfo diag = diag0;
+template<typename S>
+auto nrg_loop(Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diag0,
+              Output &output, AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+  auto diag = diag0;
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, Sym, P);
   step.set(step.lastndx());
   return diag;
 }
 
-DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats, const DiagInfo &diag0, 
-                 AllSteps &dm, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+auto run_nrg(Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diag0,
+             AllSteps_tmpl<S> &dm, std::shared_ptr<Symmetry> Sym, const Params &P) {
   diag0.states_report(Sym->multfnc());
   auto oprecalc = Oprecalc(step.runtype, iterinfo, Sym, P);
   auto output = Output(step.runtype, iterinfo, stats, P);
   // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
   if (step.nrg() && P.calc0 && !P.ZBW)
     docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym, P);
-  DiagInfo diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, Sym, P) 
+  auto diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, Sym, P) 
     : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, Sym, P);
   fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
   stats.GS_energy = stats.total_energy;
