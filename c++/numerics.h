@@ -101,7 +101,7 @@ void dump_matrix(const Matrix &m, ostream &fout = cout) {
   fout << setprecision(std::numeric_limits<double>::max_digits10);
   for (auto r1 = 0; r1 < m.size1(); r1++) {
     for (auto r2 = 0; r2 < m.size2(); r2++) fout << setw(23) << m(r1, r2) << " ";
-    fout << endl;
+    fout << std::endl;
   }
 }
 
@@ -156,7 +156,7 @@ CONSTFNC inline auto check_real(const t_matel x) {
 #ifdef NRG_REAL
   return x;
 #else
-  if (!is_real(x)) cout << "Warning: expected real number, but got " << x << endl;
+  if (!is_real(x)) std::cout << "Warning: expected real number, but got " << x << std::endl;
   return x.real();
 #endif
 }

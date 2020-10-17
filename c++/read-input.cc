@@ -95,17 +95,17 @@ void read_gs_energy(ifstream &fdata, Stats &stats) {
 // tridiagonalization routines (if not using the tables computed by initial.m).
 void determine_Nmax(const Coef &coef, Params &P) {
   size_t length_coef_table = coef.xi.max(0); // all channels have same nr. of coefficients
-  cout << endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << endl << endl;
+  std::cout << endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << endl << std::endl;
   my_assert(length_coef_table == P.Nmax);
   if (P.substeps) P.Nmax = P.channels * P.Nmax;
   P.Nlen = P.Nmax;       // this is the usual situation
   if (P.Nmax == P.Ninit) {
-    cout << endl << "ZBW=true -> zero-bandwidth calculation" << endl;
+    std::cout << endl << "ZBW=true -> zero-bandwidth calculation" << std::endl;
     P.ZBW  = true;
     P.Nlen = P.Nmax + 1; // an additional element in the tables for ZBW=true
   }
   my_assert(P.Nlen < MAX_NDX);
-  cout << endl << "length_coef_table=" << length_coef_table << " Nmax=" << P.Nmax << endl << endl;
+  std::cout << endl << "length_coef_table=" << length_coef_table << " Nmax=" << P.Nmax << endl << std::endl;
 }
 
 inline void skipline(ostream &F = std::cout) { F << std::endl; }

@@ -61,19 +61,19 @@ class Timing {
   void report() {
     const int T_WIDTH  = 12;
     const dp t_all = total();
-    cout << endl << "Timing report [" << myrank() << "]" << endl;
-    cout << setw(T_WIDTH) << "All"
-         << ": " << prec3(t_all.count()) << " s" << endl;
+    std::cout << endl << "Timing report [" << myrank() << "]" << std::endl;
+    std::cout << setw(T_WIDTH) << "All"
+         << ": " << prec3(t_all.count()) << " s" << std::endl;
     dp t_sum;
     for (const auto &[name, val] : t) {
       // Only show those that contribute more than 1% of the total time!
       if (val/t_all > 0.01) {
-        cout << setw(T_WIDTH) << name << ": " << prec3(val.count()) << " s" << endl;
+        std::cout << setw(T_WIDTH) << name << ": " << prec3(val.count()) << " s" << std::endl;
         if (name[0] != '*') t_sum += val;
       }
     }
-    cout << setw(T_WIDTH) << "Other"
-         << ": " << prec3((t_all-t_sum).count()) << " s" << endl;
+    std::cout << setw(T_WIDTH) << "Other"
+         << ": " << prec3((t_all-t_sum).count()) << " s" << std::endl;
   }
 };
 
@@ -120,13 +120,13 @@ class MemoryStats {
 #ifdef HAS_MEMORY_USAGE
     if (verbose) {
       const int MS_WIDTH = 12;
-      std::cout << endl;
-      std::cout << "Memory usage report [" << myrank() << "]" << endl;
-      std::cout << "===================" << endl;
+      std::cout << std::endl;
+      std::cout << "Memory usage report [" << myrank() << "]" << std::endl;
+      std::cout << "===================" << std::endl;
       int topusage = 0; // top usage recorded by check()
       for (const auto &i : maxvals) topusage = max(topusage, i.second);
       if (topusage != 0)
-        for (const auto &[name, val] : maxvals) std::cout << setw(MS_WIDTH) << name << ": " << val << " kB" << endl;
+        for (const auto &[name, val] : maxvals) std::cout << setw(MS_WIDTH) << name << ": " << val << " kB" << std::endl;
       my_assert(topusage <= peakusage);
     }
     fmt::print("\nPeak usage: {} MB\n", peakusage / 1024); // NOLINT

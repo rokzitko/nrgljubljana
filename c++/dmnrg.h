@@ -75,7 +75,7 @@ bool already_computed(const std::string &prefix, const Params &P) {
   for (auto N = P.Nmax - 1; N > P.Ninit; N--) {
     const std::string fn = workdir.rhofn(prefix, N - 1); // note the minus 1
     if (!file_exists(fn)) {
-      cout << fn << " not found. Computing." << endl;
+      std::cout << fn << " not found. Computing." << std::endl;
       return false;
     }
   }
@@ -93,7 +93,7 @@ void calc_densitymatrix(DensMatElements &rho, const AllSteps &dm, shared_ptr<Sym
   if (P.ZBW) return;
   TIME("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
-    cout << "[DM] " << N << endl;
+    std::cout << "[DM] " << N << std::endl;
     DiagInfo diag_loaded(N);
     DensMatElements rhoPrev;
     calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N, dm, Sym, P);
@@ -176,7 +176,7 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements &rhoFDM, const All
   if (P.ZBW) return;
   TIME("FDM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
-    cout << "[FDM] " << N << endl;
+    std::cout << "[FDM] " << N << std::endl;
     DiagInfo diag_loaded(N);
     DensMatElements rhoFDMPrev;
     calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, rhoFDMPrev, N, dm, stats, Sym, P);

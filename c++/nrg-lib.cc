@@ -103,9 +103,9 @@ namespace time_mem {
  void memory_report() { ms.report(); }
  void memory_time_brief_report() {
 #ifdef HAS_MEMORY_USAGE
-   cout << "Memory used: " << long(ms.used() / 1024) << " MB "; // NOLINT
+   std::cout << "Memory used: " << long(ms.used() / 1024) << " MB "; // NOLINT
 #endif
-   cout << "Time elapsed: " << prec3(tm.total_in_seconds()) << " s" << endl;
+   std::cout << "Time elapsed: " << prec3(tm.total_in_seconds()) << " s" << std::endl;
  }
 }
 
@@ -364,7 +364,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
    }
    std::ostream &insertor(std::ostream &os) const { 
      for (const auto &[II, mat] : *this)
-       os << "----" << II << "----" << endl << mat << endl;
+       os << "----" << II << "----" << endl << mat << std::endl;
      return os;
    }
 };
@@ -436,7 +436,7 @@ class Opch : public std::vector<OpchChannel> {
      std::cout << std::endl;
      for (const auto &&[i, ch] : *this | ranges::views::enumerate)
        for (const auto &&[j, mat] : ch | ranges::views::enumerate)
-         std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << mat << endl;
+         std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << mat << std::endl;
      std::cout << std::endl;
    }
 };
@@ -491,7 +491,7 @@ class QSrmax : public std::map<Invar, Rmaxvals> {
      auto nr       = tasks_with_sizes.size();
      auto min_size = tasks_with_sizes.back().first;
      auto max_size = tasks_with_sizes.front().first;
-     cout << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << endl;
+     std::cout << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << std::endl;
      return tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
    }
    void dump() const {
@@ -644,8 +644,8 @@ class Stats {
    TD td;
    
    //  ** Expectation values
-   map<string, t_expv> expv;    // expectation values of custom operators
-   map<string, t_expv> fdmexpv; // Expectation values computed using the FDM algorithm
+   std::map<std::string, t_expv> expv;    // expectation values of custom operators
+   std::map<std::string, t_expv> fdmexpv; // Expectation values computed using the FDM algorithm
    
    // ** Energies
    // "total_energy" is the total energy of the ground state at the current iteration. This is the sum of all the 
@@ -842,9 +842,9 @@ void operator_sumrules(const IterInfo &a, shared_ptr<Symmetry> Sym) {
   // irrelevant (0).
   const int SPIN = Sym->isfield() ? 1 : 0;
   for (const auto &[name, m] : a.opd)
-    cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
+    std::cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
   for (const auto &[name, m] : a.opq)
-    cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
+    std::cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
 }
 
 #include "read-input.cc"
@@ -947,14 +947,14 @@ class SpectrumTemp : public Spectrum {
  private:
    Spikes results;
  public:
-   SpectrumTemp(const string &opname, const string &filename, shared_ptr<Algo> algotype, const Params &P) : 
+   SpectrumTemp(const std::string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, const Params &P) : 
      Spectrum(opname, filename, algotype, P) {}
    void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
      auto t = dynamic_pointer_cast<ChainSpectrumTemp>(cs);
-     std::copy(begin(t->v), end(t->v), std::back_inserter(results));
+     std::copy(t->v.begin(), t->v.end(), std::back_inserter(results));
    }
    ~SpectrumTemp() override {
-     cout << "Spectrum: " << opname << " " << algotype->name() << endl;
+     std::cout << "Spectrum: " << opname << " " << algotype->name() << std::endl;
      ranges::sort(results, sortfirst());
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }
@@ -993,7 +993,7 @@ std::ostream & operator<<(std::ostream &os, const axis &a) {
 }
 
 inline std::string to_string(std::complex<double> &z) {
-  ostringstream s;
+  std::ostringstream s;
   s << z;
   return s.str();
 }
@@ -1002,11 +1002,11 @@ inline std::string to_string(std::complex<double> &z) {
 // algorithm, etc.
 class BaseSpectrum {
  public:
-   string name;
-   string prefix; // "dens", "corr", etc.
+   std::string name;
+   std::string prefix; // "dens", "corr", etc.
    const MatrixElements &op1, &op2;
-   shared_ptr<Spectrum> spec;  
-   shared_ptr<Algo>     algotype; // Algo_FDM, Algo_DMNRG,...
+   std::shared_ptr<Spectrum> spec;  
+   std::shared_ptr<Algo>     algotype; // Algo_FDM, Algo_DMNRG,...
    axis a;              // axis::RealFreq, axis::Temp, axis::Matsubara, etc.
    matstype mt;         // matstype::bosonic, matstype::fermionic, etc.
    int spin{};          // -1 or +1, or 0 where irrelevant
@@ -1015,7 +1015,7 @@ class BaseSpectrum {
      if (a == axis::Matsubara) s += " " + matstypestring(mt);
      return s;
    }
-   BaseSpectrum(const MatrixElements &op1, const MatrixElements &op2, const string name, const string prefix, const matstype mt, const int spin) :
+   BaseSpectrum(const MatrixElements &op1, const MatrixElements &op2, const std::string name, const std::string prefix, const matstype mt, const int spin) :
      name(name), prefix(prefix), op1(op1), op2(op2), a(axis::RealFreq), mt(mt), spin(spin) {}
 };
 using speclist = std::list<BaseSpectrum>;
@@ -1025,7 +1025,7 @@ using speclist = std::list<BaseSpectrum>;
 #include "splitting.cc"
 
 // Determine the ranges of index r
-Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
+Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym) {
   for (const auto &[i, In] : InVec | ranges::views::enumerate)
     values.push_back(Sym->triangle_inequality(I, In, Sym->QN_subspace(i)) ? diagprev.size_subspace(In) : 0);
 }
@@ -1033,27 +1033,27 @@ Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagpr
 // Formatted output of the computed expectation values
 class ExpvOutput {
  private:
-   ofstream F;                // output stream
-   map<string, t_expv> &m;    // reference to the name->value mapping
-   const list<string> fields; // list of fields to be output (may be a subset of the fields actually present in m)
+   std::ofstream F;                     // output stream
+   std::map<std::string, t_expv> &m;    // reference to the name->value mapping
+   const std::list<std::string> fields; // list of fields to be output (may be a subset of the fields actually present in m)
    const Params &P;
    void field_numbers() {     // Consecutive numbers for the columns
      F << '#' << formatted_output(1, P) << ' ';
      for (const auto ctr : range1(fields.size())) F << formatted_output(1 + ctr, P) << ' ';
-     F << endl;
+     F << std::endl;
    }
    // Label and field names. Label is the first column (typically the temperature).
    void field_names(string labelname = "T") {
      F << '#' << formatted_output(labelname, P) << ' ';
      std::transform(fields.cbegin(), fields.cend(), std::ostream_iterator<std::string>(F, " "), [this](const auto op) { return formatted_output(op, P); });
-     F << endl;
+     F << std::endl;
    }
  public:
    // Output the current values for the label and for all the fields
    void field_values(double labelvalue, bool cout_dump = true) {
      F << ' ' << formatted_output(labelvalue, P) << ' ';
      std::transform(fields.cbegin(), fields.cend(), std::ostream_iterator<std::string>(F, " "), [this](const auto op) { return formatted_output(m[op], P); });
-     F << endl;
+     F << std::endl;
      if (cout_dump)
        for (const auto &op: fields)
          fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op]));
@@ -1146,11 +1146,11 @@ class Oprecalc {
    }
 
    void report(ostream &F, const string &name, const set<string> &x) {
-     F << name << "=[" << x << "]" << endl;
+     F << name << "=[" << x << "]" << std::endl;
    }
 
    void report(ostream &F = cout) {
-     F << endl << "Computing the following operators:" << endl;
+     F << endl << "Computing the following operators:" << std::endl;
      report(F, "s", s);
      report(F, "p", p);
      report(F, "g", g);
@@ -1232,7 +1232,7 @@ class Oprecalc {
 
   // Reset lists of operators which need to be iterated
   Oprecalc(const RUNTYPE &runtype, const IterInfo &a, shared_ptr<Symmetry> Sym, const Params &P) {
-    cout << endl << "Computing the following spectra:" << endl;
+    std::cout << endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
     loopover(runtype, P, a.ops,  a.ops,  sts, spectraS, "corr", s, s, matstype::bosonic);
@@ -1318,12 +1318,12 @@ class Annotated {
          }
          ranges::sort(QNstrings);
          for (const auto &j : QNstrings) F << " (" << j << ")";
-         F << " [" << total_degeneracy << "]" << endl;
+         F << " [" << total_degeneracy << "]" << std::endl;
        }
      } else {
        seznam.resize(len); // truncate!
        for (const auto &[e, I] : seznam) 
-         F << scale(e) << " " << I << endl;
+         F << scale(e) << " " << I << std::endl;
      }
      F << std::endl; // Consecutive iterations are separated by an empty line
    }
@@ -1358,7 +1358,7 @@ struct Output {
   // Dump all energies in diag to a file
   void dump_all_energies(const DiagInfo &diag, int N) {
     if (!Fenergies) return;
-    Fenergies << endl << "===== Iteration number: " << N << endl;
+    Fenergies << endl << "===== Iteration number: " << N << std::endl;
     diag.dump_value_zero(Fenergies);
   }
 };
@@ -1543,26 +1543,26 @@ void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const 
     mpf_add(ZZG, ZZG, c);
   }
   stats.ZZG = mpf_get_d(ZZG);
-  cout << "ZZG=" << HIGHPREC(stats.ZZG) << endl;
+  std::cout << "ZZG=" << HIGHPREC(stats.ZZG) << std::endl;
   for (const auto N : dm.Nall()) {
     const double w  = pow(Sym->nr_combs(), int(dm.Nend - N - 1)) / stats.ZZG;
     stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function.
     stats.wn[N] = w * mpf_get_d(stats.ZnDG[N]); // This is w_n defined after Eq. (8) in the WvD paper.
   }
   const auto sumwn = ranges::accumulate(stats.wn, 0.0);
-  cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << endl;
+  std::cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << std::endl;
   my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
 }
 
 void report_ZnD(Stats &stats, const Params &P) {
   for (const auto N : P.Nall())
-    cout << "ZG[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDG[N])) << endl;
+    std::cout << "ZG[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDG[N])) << std::endl;
   for (const auto N : P.Nall())
-    cout << "ZN[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDN[N])) << endl;
+    std::cout << "ZN[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDN[N])) << std::endl;
   for (const auto N : P.Nall())
-    cout << "w[" << N << "]=" << HIGHPREC(stats.wn[N]) << endl;
+    std::cout << "w[" << N << "]=" << HIGHPREC(stats.wn[N]) << std::endl;
   for (const auto N : P.Nall())
-    cout << "wfactor[" << N << "]=" << HIGHPREC(stats.wnfactor[N]) << endl;
+    std::cout << "wfactor[" << N << "]=" << HIGHPREC(stats.wnfactor[N]) << std::endl;
 }
 
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
@@ -1600,13 +1600,13 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> S
   mpf_sub(varE, E2, sqrE);
   stats.td_fdm.C = stats.C_fdm = mpf_get_d(varE)/pow(T,2);
   stats.td_fdm.S = stats.S_fdm = (stats.E_fdm-stats.F_fdm)/T;
-  cout << endl;
-  cout << "Z_fdm=" << HIGHPREC(stats.Z_fdm) << endl;
-  cout << "F_fdm=" << HIGHPREC(stats.F_fdm) << endl;
-  cout << "E_fdm=" << HIGHPREC(stats.E_fdm) << endl;
-  cout << "C_fdm=" << HIGHPREC(stats.C_fdm) << endl;
-  cout << "S_fdm=" << HIGHPREC(stats.S_fdm) << endl;
-  cout << endl;
+  std::cout << std::endl;
+  std::cout << "Z_fdm=" << HIGHPREC(stats.Z_fdm) << std::endl;
+  std::cout << "F_fdm=" << HIGHPREC(stats.F_fdm) << std::endl;
+  std::cout << "E_fdm=" << HIGHPREC(stats.E_fdm) << std::endl;
+  std::cout << "C_fdm=" << HIGHPREC(stats.C_fdm) << std::endl;
+  std::cout << "S_fdm=" << HIGHPREC(stats.S_fdm) << std::endl;
+  std::cout << std::endl;
   stats.td_fdm.save_values();
 }
 
@@ -1738,7 +1738,7 @@ DiagParams mpi_receive_params() {
 
 void check_status(mpi::status status) {
   if (status.error()) {
-    cout << "MPI communication error. rank=" << mpiw->rank() << endl;
+    std::cout << "MPI communication error. rank=" << mpiw->rank() << std::endl;
     mpienv->abort(1);
   }
 }
@@ -1954,7 +1954,7 @@ void calc_abs_energies(const Step &step, DiagInfo &diag, const Stats &stats) {
 void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo &diag, Output &output,
                 QSrmax &qsrmax, AllSteps &dm, Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
-  cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << endl;
+  std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
   stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
   stats.energy_offsets[step.ndx()] = stats.total_energy;
@@ -2002,8 +2002,8 @@ DiagInfo iterate(const Step &step, IterInfo &iterinfo, const Coef &coef, Stats &
 void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats &stats, Output &output, 
              Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
-  cout << endl << "Before NRG iteration";
-  cout << " (N=" << step.N() << ")" << endl;
+  std::cout << endl << "Before NRG iteration";
+  std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output);
   AllSteps empty_dm(0, 0);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, Sym, P);
@@ -2014,7 +2014,7 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo &diag0, Stats 
 // It replaces do_diag() and calls after_diag() as the last step.
 DiagInfo nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo &diag0, Output &output, 
                  AllSteps &dm, Oprecalc &oprecalc, shared_ptr<Symmetry> Sym, const Params &P) {
-  cout << endl << "Zero bandwidth calculation" << endl;
+  std::cout << endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
   DiagInfo diag;
@@ -2058,7 +2058,7 @@ DiagInfo run_nrg(Step &step, IterInfo &iterinfo, const Coef &coef, Stats &stats,
   fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
   stats.GS_energy = stats.total_energy;
   if (step.nrg() && P.dumpsubspaces) dm.dump_subspaces();
-  cout << endl << "** Iteration completed." << endl << endl;
+  std::cout << endl << "** Iteration completed." << endl << std::endl;
   return diag;
 }
 
@@ -2113,7 +2113,7 @@ std::unique_ptr<Symmetry> get(const std::string &sym_string, const Params &P, Al
 // that Invar can be parsed correctly.
 shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats) {
   my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
-  cout << "SYMMETRY TYPE: " << P.symtype.value() << endl;
+  std::cout << "SYMMETRY TYPE: " << P.symtype.value() << std::endl;
   auto Sym = get(P.symtype.value(), P, stats.td.allfields);
   Sym->load();
   Sym->erase_first();
@@ -2197,7 +2197,7 @@ void run_nrg_slave() {
         case TAG_EXIT:
           return; // exit from run_slave()
         default: 
-          cout << "MPI error: unknown tag on " << mpiw->rank() << endl; 
+          std::cout << "MPI error: unknown tag on " << mpiw->rank() << std::endl; 
           break;
       }
     } else usleep(100); // sleep to reduce the load on the computer. (OpenMPI "feature" workaround)

@@ -156,8 +156,8 @@ void SymmetryQS::show_coefficients(const Step &step, const Coef &coef) {
   Symmetry::show_coefficients(step, coef);
   if (P.rungs)
     for (unsigned int i = 0; i < P.channels; i++)
-      cout << "[" << i + 1 << "]"
-           << " xi_rung(" << step.N() << ")=" << coef.xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << coef.zetaR(step.N() + 1, i) << endl;
+      std::cout << "[" << i + 1 << "]"
+           << " xi_rung(" << step.N() << ")=" << coef.xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << coef.zetaR(step.N() + 1, i) << std::endl;
 }
 
 #include "nrg-recalc-QS.cc"

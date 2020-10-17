@@ -17,7 +17,7 @@ class SpectrumRealFreq : public Spectrum {
 };
 
 SpectrumRealFreq::~SpectrumRealFreq() {
-  cout << "Spectrum: " << opname << " " << algotype->name() << " ->"; // appended in savebins() & continuous()
+  std::cout << "Spectrum: " << opname << " " << algotype->name() << " ->"; // appended in savebins() & continuous()
   trim();
   savebins();
   continuous();
@@ -98,16 +98,16 @@ void SpectrumRealFreq::weight_report(const double imag_tolerance) {
   auto fmt = [imag_tolerance](t_weight x) -> string { return abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
   const t_weight twneg = fsneg.total_weight();
   const t_weight twpos = fspos.total_weight();
-  cout << endl << "[" << opname << "]"
-       << " pos=" << fmt(twpos) << " neg=" << fmt(twneg) << " sum= " << fmt(twpos + twneg) << endl;
+  std::cout << endl << "[" << opname << "]"
+       << " pos=" << fmt(twpos) << " neg=" << fmt(twneg) << " sum= " << fmt(twpos + twneg) << std::endl;
   for (int m = 1; m <= 4; m++) {
     const auto mom = moment(fsneg.bins, fspos.bins, m);   // Spectral moments from delta-peaks
-    cout << fmt::format("mu{}={} ", m, fmt(mom));
+    std::cout << fmt::format("mu{}={} ", m, fmt(mom));
   }
   std::cout << std::endl;
   const t_weight f = fd_fermi(fsneg.bins, fspos.bins, P.T);
   const t_weight b = fd_bose(fsneg.bins, fspos.bins, P.T);
-  cout << "f=" << fmt(f) << " b=" << fmt(b) << endl;
+  std::cout << "f=" << fmt(f) << " b=" << fmt(b) << std::endl;
 }
 
 // Save binary raw (binned) spectral function. If using complex numbers and P.reim==true, we save triplets
@@ -115,7 +115,7 @@ void SpectrumRealFreq::weight_report(const double imag_tolerance) {
 void SpectrumRealFreq::savebins() {
   if (!P.savebins) return;
   const std::string fn = filename + ".bin";
-  cout << " " << fn;
+  std::cout << " " << fn;
   ofstream Fbins = safe_open(fn, true); // true=binary!
   for (const auto &[e, w] : fspos.bins) {
     const auto [wr, wi] = reim(w);
@@ -173,7 +173,7 @@ void SpectrumRealFreq::continuous() {
   ranges::sort(densityneg, sortfirst());
   ranges::sort(densitypos, sortfirst());
   const std::string fn = filename + ".dat";
-  cout << " " << fn;
+  std::cout << " " << fn;
   ofstream Fdensity = safe_open(fn);
   densityneg.save(Fdensity, P.prec_xy, P.reim);
   densitypos.save(Fdensity, P.prec_xy, P.reim);

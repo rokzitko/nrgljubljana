@@ -11,7 +11,7 @@ inline void outputxy(std::ostream &F, const double x, const t_weight y, const bo
   const auto [r, i] = reim(y);
   F << x << " " << r;
   if (imagpart) F << " " << (abs(i)>abs(r)*clip_tol_imag ? i : 0);
-  F << endl;
+  F << std::endl;
 }
 
 class Spikes : public std::vector<t_delta_peak> {

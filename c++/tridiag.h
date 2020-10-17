@@ -42,18 +42,18 @@ void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX) {
 
 // Tridiagonalisation of the discretization coefficients. Multiple precision arithmetics library GMP is required.
 void Tridiag::tridiag_ch(int alpha, Coef &coef) {
-  cout << "Tridiagonalisation, ch=" << alpha << ".";
-  cout << " Using GMP version " << gmp_version << endl;
+  std::cout << "Tridiagonalisation, ch=" << alpha << ".";
+  std::cout << " Using GMP version " << gmp_version << std::endl;
 
   const unsigned int mMAX = coef.em.max(alpha);
-  cout << "mMAX=" << mMAX << endl;
+  std::cout << "mMAX=" << mMAX << std::endl;
 
   my_assert(coef.ep.max(alpha) == mMAX);
   my_assert(coef.u0p.max(alpha) == mMAX);
   my_assert(coef.u0m.max(alpha) == mMAX);
 
   mpf_set_default_prec(P.preccpp);
-  cout << "Using precision of " << P.preccpp << " digits." << endl;
+  std::cout << "Using precision of " << P.preccpp << " digits." << std::endl;
 
   // Constants
   my_mpf mpZERO;
@@ -168,8 +168,8 @@ void Tridiag::tridiag_ch(int alpha, Coef &coef) {
     coef.xi.setvalue(n, alpha, coef_xi);
     coef.zeta.setvalue(n, alpha, coef_zeta);
 
-    cout << "  xi(" << n << ")=" << HIGHPREC(dxi) << endl;
-    cout << "zeta(" << n << ")=" << HIGHPREC(dzeta) << endl;
+    std::cout << "  xi(" << n << ")=" << HIGHPREC(dxi) << std::endl;
+    std::cout << "zeta(" << n << ")=" << HIGHPREC(dzeta) << std::endl;
 
     // Store results from previous iteration
     mpf_set(xi_prev, mpxi);

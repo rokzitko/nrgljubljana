@@ -173,20 +173,20 @@ class Symmetry {
    }
 
    virtual void show_coefficients(const Step &step, const Coef &coef) {
-     cout << setprecision(std::numeric_limits<double>::max_digits10);
+     std::cout << setprecision(std::numeric_limits<double>::max_digits10);
      if (!P.substeps) {
        for (size_t i = 0; i < P.coefchannels; i++) {
          auto N = step.N();
-         cout << "[" << i + 1 << "]"
+         std::cout << "[" << i + 1 << "]"
            << " xi(" << N << ")=" << coef.xi(N, i) << " xi_scaled(" << N << ")=" << coef.xi(N, i)/step.scale()
-             << " zeta(" << N+1 << ")=" << coef.zeta(N+1, i) << endl;
+             << " zeta(" << N+1 << ")=" << coef.zeta(N+1, i) << std::endl;
        }
      } else {
        const auto [N, M] = step.NM();
        for (auto i = 0; i < P.coeffactor; i++) {
          auto index = M + P.channels * i;
-         cout << "[" << index << "]"
-           << " xi(" << N << ")=" << coef.xi(N, index) << " zeta(" << N+1 << ")=" << coef.zeta(N+1, index) << endl;
+         std::cout << "[" << index << "]"
+           << " xi(" << N << ")=" << coef.xi(N, index) << " zeta(" << N+1 << ")=" << coef.zeta(N+1, index) << std::endl;
        }
      }
    }

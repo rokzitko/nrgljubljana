@@ -15,7 +15,7 @@ using namespace std;
 #include <boost/stacktrace.hpp>
 
 inline void print_trace() {
-  cout << "Backtrace:" << endl << boost::stacktrace::stacktrace() << endl;
+  std::cout << "Backtrace:" << endl << boost::stacktrace::stacktrace() << std::endl;
 }
 
 #define assert_isfinite(x) finite_test_fnc(x, __FILE__, __LINE__)
@@ -31,9 +31,9 @@ inline int isfinite(cmpl z) { return (std::isfinite(z.real()) && std::isfinite(z
 template <typename T> 
 inline  T finite_test_fnc(T x, const char *file, int line) {
   if (!my_isfinite(x)) {
-    cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;
-    cout << "File " << file << ", line " << line << "." << endl;
-    cout << "Finiteness assertion" << endl;
+    std::cout << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;
+    std::cout << "File " << file << ", line " << line << "." << std::endl;
+    std::cout << "Finiteness assertion" << std::endl;
     print_trace();
     exit(1);
   }
@@ -43,9 +43,9 @@ inline  T finite_test_fnc(T x, const char *file, int line) {
 #define my_assert(x)                                                                                                                                 \
   do {                                                                                                                                               \
     if (!(x)) {                                                                                                                                      \
-      cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;                                                                                       \
-      cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                           \
-      cout << #x << endl;                                                                                                                            \
+      std::cout << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                                       \
+      std::cout << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                           \
+      std::cout << #x << std::endl;                                                                                                                            \
       print_trace();                                                                                                                                 \
       exit(1);                                                                                                                                       \
     }                                                                                                                                                \
@@ -55,11 +55,11 @@ inline  T finite_test_fnc(T x, const char *file, int line) {
 #define my_assert_equal(a, b)                                                                                                                        \
   do {                                                                                                                                               \
     if (!(a == b)) {                                                                                                                                 \
-      cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;                                                                                       \
-      cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                           \
-      cout << #a << "=" << a << endl;                                                                                                                \
-      cout << #b << "=" << b << endl;                                                                                                                \
-      cout << "Exiting." << endl;                                                                                                                    \
+      std::cout << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                                       \
+      std::cout << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                           \
+      std::cout << #a << "=" << a << std::endl;                                                                                                                \
+      std::cout << #b << "=" << b << std::endl;                                                                                                                \
+      std::cout << "Exiting." << std::endl;                                                                                                                    \
       print_trace();                                                                                                                                 \
       exit(1);                                                                                                                                       \
     }                                                                                                                                                \
@@ -67,9 +67,9 @@ inline  T finite_test_fnc(T x, const char *file, int line) {
 
 #define my_assert_not_reached()                                                                                                                      \
   do {                                                                                                                                               \
-    cout << "#### EXITING DUE TO FAILED ASSERTION." << endl;                                                                                         \
-    cout << "File " << __FILE__ << ", line " << __LINE__ << "." << endl;                                                                             \
-    cout << "Should never be reached." << endl;                                                                                                      \
+    std::cout << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                                         \
+    std::cout << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                             \
+    std::cout << "Should never be reached." << std::endl;                                                                                                      \
     print_trace();                                                                                                                                   \
     exit(1);                                                                                                                                         \
   } while (0)

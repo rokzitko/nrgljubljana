@@ -160,7 +160,7 @@ void Bins::trim() {
   // Always keep the last one.. This ensures that we keep information about the energy range on which the
   // calculations has been performed.
   bins.push_back(orig.back());
-  if (discarded_weight_abs > discarded_weight_warn_limit) cout << "WARNING: we are probably discarding too much weight!" << endl;
+  if (discarded_weight_abs > discarded_weight_warn_limit) std::cout << "WARNING: we are probably discarding too much weight!" << std::endl;
 }
 
 class Temp : public Spikes {

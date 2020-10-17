@@ -88,8 +88,8 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
                                 const Invar &Iop) const      // quantum numbers of the operator
 {
   if (P.logletter('r')) {
-    cout << "recalc_general: ";
-    nrgdump3(I1, Ip, Iop) << endl;
+    std::cout << "recalc_general: ";
+    nrgdump3(I1, Ip, Iop) << std::endl;
   }
   const Eigen &diagI1 = diag.at(I1);
   const Eigen &diagIp = diag.at(Ip);
@@ -105,7 +105,7 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
       nrgdump3(j, I1, Ip);
       nrgdump2(table[j].i1, table[j].ip);
       nrgdump2(table[j].IN1, table[j].INp);
-      nrgdump(table[j].factor) << endl;
+      nrgdump(table[j].factor) << std::endl;
     }
     if (!Invar_allowed(table[j].IN1) || !Invar_allowed(table[j].INp)) continue;
     const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1-1);
@@ -128,7 +128,7 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
     // and the coefficient tables for NRG transformations of matrices.
     my_assert(cnt == 1);
     my_assert(my_isfinite(table[j].factor));
-    if (P.logletter('r')) cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << endl;
+    if (P.logletter('r')) std::cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << std::endl;
     // RECALL: rmax1 - dimension of the subspace of invariant subspace I1 spanned by the states originating from the
     //  combination |I1>_i1, where i1=1...P.combs. It is clearly equal to the dimension of the invariant subspace IN1
     //  from the previous (N-th) iteration.

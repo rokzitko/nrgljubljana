@@ -29,7 +29,7 @@ class Workdir {
        workdir = w;
      else
        workdir = default_workdir;
-     cout << "workdir=" << workdir << endl << endl;
+     std::cout << "workdir=" << workdir << endl << std::endl;
    }
    std::string rhofn(const string &fn, int N) const { return workdir + "/" + fn + to_string(N); }
    std::string unitaryfn(size_t N, const std::string &filename = "unitary"s) const {
@@ -88,7 +88,7 @@ template <typename T>
           if (i->getkeyword() == keyword) throw std::runtime_error("param class internal error: keyword conflict.");
     allparams.push_back((parambase *)this);
   }
-  void dump() override { cout << _keyword << "=" << data << (!defaultval ? " *" : "") << endl; }
+  void dump() override { std::cout << _keyword << "=" << data << (!defaultval ? " *" : "") << std::endl; }
   // This line enables to access parameters using an object as a rvalue
   inline operator const T &() const { return data; }
   inline T value() const { return data; }
@@ -536,7 +536,7 @@ struct Params {
         if (F.good())
           laststored = N;
       }
-      cout << "Last unitary file found: " << laststored << endl;
+      std::cout << "Last unitary file found: " << laststored << std::endl;
     }
   }
 
@@ -564,7 +564,7 @@ struct Params {
 
   void dump() {
     all.sort([](auto a, auto b) { return a->getkeyword() < b->getkeyword(); });
-    cout << setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
+    std::cout << setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
     for (const auto &i : all) i->dump();
   }
 
@@ -578,10 +578,10 @@ struct Params {
       }
     }
     if (parsed_params.size()) {
-      cout << "Unused settings: " << endl;
+      std::cout << "Unused settings: " << std::endl;
       for (const auto &[key, value] : parsed_params)
-        cout << " " << key << "=" << value << endl;
-      cout << endl;
+        std::cout << " " << key << "=" << value << std::endl;
+      std::cout << std::endl;
     }
     validate();
     init_laststored(workdir);

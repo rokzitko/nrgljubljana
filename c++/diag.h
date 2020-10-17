@@ -9,7 +9,7 @@
 
 template<typename T, typename V> void copy(T* eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
   if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)
-    cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << endl;
+    std::cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << std::endl;
   diagvalues.resize(M);
   copy(eigenvalues, eigenvalues + M, begin(diagvalues));
 }
@@ -156,7 +156,7 @@ Eigen diagonalise_dsyevr(ublas::matrix<double> &m, double ratio = 1.0,  char job
                 IWORK.get(), &LIWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   if (MM != int(M)) {
-    cout << "dsyevr computed " << MM << "/" << M << endl;
+    std::cout << "dsyevr computed " << MM << "/" << M << std::endl;
     M = MM;
     my_assert(M > 0); // at least one
   }
@@ -243,7 +243,7 @@ Eigen diagonalise_zheevr(ublas::matrix<cmpl> &m, double ratio = 1.0, char jobz =
                 RWORK.get(), &LRWORK, IWORK.get(), &LIWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("zheevr failed. INFO={}", INFO));
   if (MM != int(M)) {
-    cout << "zheevr computed " << MM << "/" << M << endl;
+    std::cout << "zheevr computed " << MM << "/" << M << std::endl;
     M = MM;
     my_assert(M > 0); // at least one
   }
@@ -279,10 +279,10 @@ void checkdiag(const Eigen &d,
 
 void dump_eigenvalues(const Eigen &d, size_t max_nr = std::numeric_limits<size_t>::max())
 {
-  cout << "eig= ";
+  std::cout << "eig= ";
   for_each_n(cbegin(d.value_orig), min(d.getnrcomputed(), max_nr), 
-           [](const t_eigen x) { cout << x << ' '; });
-  cout << endl;
+           [](const t_eigen x) { std::cout << x << ' '; });
+  std::cout << std::endl;
 }
 
 template<typename M>

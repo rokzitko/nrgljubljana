@@ -14,9 +14,9 @@ void fix_splittings(DiagInfo &diag, const mapdd &cluster_mapping) {
 
 template<typename T>
   void cluster_show(const T &i0, const T &i1) {
-    cout << "[";
-    for (auto j = i0; j != i1; ++j) { cout << HIGHPREC(*j) << " "; }
-    cout << "]" << endl;
+    std::cout << "[";
+    for (auto j = i0; j != i1; ++j) { std::cout << HIGHPREC(*j) << " "; }
+    std::cout << "]" << std::endl;
   }
 
 // Returns true if not all the states have the same energy.
