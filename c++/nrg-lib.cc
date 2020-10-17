@@ -1526,7 +1526,8 @@ struct NotEnough : public std::exception {};
 
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
-void truncate_prepare(const Step &step, DiagInfo &diag, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+void truncate_prepare(const Step &step, DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry> Sym, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnrcomputed() :
@@ -1543,7 +1544,8 @@ void truncate_prepare(const Step &step, DiagInfo &diag, std::shared_ptr<Symmetry
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
 // energies. calc_ZnD() must be called before the second NRG run.
-void calc_ZnD(const AllSteps &dm, Stats &stats, std::shared_ptr<Symmetry> Sym, const double T) {
+template<typename S>
+void calc_ZnD(const AllSteps_tmpl<S> &dm, Stats &stats, std::shared_ptr<Symmetry> Sym, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
   for (const auto N : dm.Nall()) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
@@ -1599,7 +1601,8 @@ void report_ZnD(Stats &stats, const Params &P) {
 
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
-void fdm_thermodynamics(const AllSteps &dm, Stats &stats, std::shared_ptr<Symmetry> Sym, const double T)
+template<typename S>
+void fdm_thermodynamics(const AllSteps_tmpl<S> &dm, Stats &stats, std::shared_ptr<Symmetry> Sym, const double T)
 {
   stats.td_fdm.T = T;
   stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
@@ -1642,9 +1645,9 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats, std::shared_ptr<Symmet
   stats.td_fdm.save_values();
 }
 
-template<typename F>
-  double trace(F fnc, const double rescale_factor, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym) {
-    bucket b;
+template<typename F, typename S>
+auto trace(F fnc, const double rescale_factor, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry> Sym) {
+    auto b = 0.0;
     for (const auto &[I, eig] : diag)
       b += Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0, [fnc, rescale_factor](double acc, const auto x) { 
         const double betaE = rescale_factor * x; return acc + fnc(betaE) * exp(-betaE); });
