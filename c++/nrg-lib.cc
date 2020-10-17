@@ -374,15 +374,16 @@ template<typename S>
 std::ostream &operator<<(std::ostream &os, const MatrixElements_tmpl<S> &m) { return m.insertor(os); }
 using MatrixElements = MatrixElements_tmpl<scalar>;
 
-class DensMatElements : public std::map<Invar, Matrix> {
+template<typename S>
+class DensMatElements_tmpl : public std::map<Invar, typename traits<S>::Matrix> {
  public:
    template <typename MF>
      auto trace(MF mult) const {
        return ranges::accumulate(*this, 0.0, [mult](double acc, const auto z) { const auto &[I, mat] = z; 
          return acc + mult(I) * trace_real(mat); });
      }
-   void save(const size_t N, const string &prefix) const {
-     const std::string fn = workdir.rhofn(prefix, N);
+   void save(const size_t N, const std::string &prefix) const {
+     const auto fn = workdir.rhofn(prefix, N);
      std::ofstream MATRIXF(fn, std::ios::binary | std::ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
@@ -395,7 +396,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
      MATRIXF.close();
    }
    void load(const size_t N, const string &prefix, const bool remove_files) {
-     const std::string fn = workdir.rhofn(prefix, N);
+     const auto fn = workdir.rhofn(prefix, N);
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
@@ -412,6 +413,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
        if (remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
    }
 };
+using DensMatElements = DensMatElements_tmpl<scalar>;
 
 // Map of operators matrices
 using CustomOp = std::map<std::string, MatrixElements>;
