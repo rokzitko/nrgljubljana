@@ -122,7 +122,7 @@ template<typename S> auto read_data(Params &P, Stats &stats) {
   read_Nmax(fdata, P);
   const auto nsubs = read_nsubs(fdata);
   skip_comments(fdata);
-  DiagInfo diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
+  DiagInfo_tmpl<S> diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);
   IterInfo iterinfo0;
   iterinfo0.opch = Opch(fdata, diag0, P);

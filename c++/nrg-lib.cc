@@ -250,10 +250,11 @@ public:
 using Eigen = Eigen_tmpl<scalar>;
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
-class DiagInfo : public std::map<Invar, Eigen> {
+template<typename S>
+class DiagInfo_tmpl : public std::map<Invar, Eigen_tmpl<S>> {
  public:
-   explicit DiagInfo() {}
-   DiagInfo(ifstream &fdata, const size_t nsubs, const Params &P) {
+   explicit DiagInfo_tmpl() {}
+   DiagInfo_tmpl(std::ifstream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {
        Invar I;
        fdata >> I;
@@ -262,7 +263,7 @@ class DiagInfo : public std::map<Invar, Eigen> {
          energies /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
        (*this)[I].diagonal(energies);
      }
-     my_assert(size() == nsubs);
+     my_assert(this->size() == nsubs);
    }
    auto subspaces() const { return *this | boost::adaptors::map_keys; }
    auto eigs() const { return *this | boost::adaptors::map_values; }
@@ -342,8 +343,9 @@ class DiagInfo : public std::map<Invar, Eigen> {
      }
      if (remove_files) remove(fn);
    }
-   explicit DiagInfo(const size_t N, const bool remove_files = false) { load(N, remove_files); }
+   explicit DiagInfo_tmpl(const size_t N, const bool remove_files = false) { load(N, remove_files); }
 };
+using DiagInfo = DiagInfo_tmpl<scalar>;
 
 class MatrixElements : public std::map<Twoinvar, Matrix> {
  public:
@@ -505,28 +507,28 @@ class QSrmax : public std::map<Invar, Rmaxvals> {
 
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
 // density-matrix construction.
-template<typename M> struct DimSubGen {
-  using EVEC = ublas::vector<M>;
+template<typename M> struct DimSub_tmpl {
   size_t kept  = 0;
   size_t total = 0;
   Rmaxvals rmax;
-  Eigen eig;
+  Eigen_tmpl<M> eig;
   bool is_last = false;
   auto min() const { return is_last ? 0 : kept; } // min(), max() return the range of D states to be summed over in FDM
   auto max() const { return total; }
   auto all() const { return boost::irange(min(), max()); }
 };
-
-using DimSub = DimSubGen<t_eigen>;
+using DimSub = DimSub_tmpl<scalar>;
 
 // Full information about the number of states and matrix dimensions
 // Example: dm[N].rmax[I] etc.
-using Subs = std::map<Invar, DimSub>;
+template<typename S>
+using Subs = std::map<Invar, DimSub_tmpl<S>>;
 
-class AllSteps : public std::vector<Subs> {
+template<typename S>
+class AllSteps_tmpl : public std::vector<Subs<S>> {
  public:
-   size_t Nbegin, Nend; // range of valid indexes
-   AllSteps(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
+   const size_t Nbegin, Nend; // range of valid indexes
+   AllSteps_tmpl(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
    auto Nall() const { return boost::irange(Nbegin, Nend); }
    void dump_absenergyG(std::ostream &F) const {
      for (const auto N : Nall()) {
@@ -561,6 +563,7 @@ class AllSteps : public std::vector<Subs> {
        (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), qsrmax.at_or_null(I), eig, last };
    }
 };
+using AllSteps = AllSteps_tmpl<scalar>;
 
 class Step {
  private:
@@ -570,13 +573,13 @@ class Step {
    const Params &P; // reference to parameters (beta, T)
    
  public:
-   RUNTYPE runtype; // NRG vs. DM-NRG run
-   void set(int newN) {
+   const RUNTYPE runtype; // NRG vs. DM-NRG run
+   void set(const int newN) {
      trueN = newN;
      ndxN = std::max(newN, 0);
    }
    void init() { set(P.Ninit); }
-   Step(const Params &P_, RUNTYPE runtype_) : P(P_), runtype(runtype_) { init(); }
+   Step(const Params &P_, const RUNTYPE runtype_) : P(P_), runtype(runtype_) { init(); }
    void next() { trueN++; ndxN++; }
    size_t N() const { return ndxN; }
    size_t ndx() const { return ndxN; }
@@ -2141,7 +2144,7 @@ public:
   void go() {
     auto [diag0, iterinfo, coef, Sym] = read_data<S>(P, stats);
     Step step{P, RUNTYPE::NRG};
-    AllSteps dm(P.Ninit, P.Nlen);
+    AllSteps_tmpl<S> dm(P.Ninit, P.Nlen);
     auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym, P);
     if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
     dm.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
