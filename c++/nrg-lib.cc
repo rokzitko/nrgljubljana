@@ -1387,23 +1387,26 @@ struct Output_tmpl {
 };
 using Output = Output_tmpl<scalar>;
 
-CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n, std::shared_ptr<Symmetry> Sym) {
-  matel_bucket tr; // note: t_matel = t_expv
+template<typename S>
+CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo_tmpl<S> &diag, const MatrixElements_tmpl<S> &n, std::shared_ptr<Symmetry> Sym) {
+  typename traits<S>::t_matel tr{};
   for (const auto &[I, eig] : diag) {
     const auto & nI = n.at({I,I});
     const auto dim = eig.getnrstored();
     my_assert(dim == nI.size2());
-    matel_bucket sum;
+    typename traits<S>::t_matel sum{};
     for (const auto r : range0(dim)) sum += exp(-step.TD_factor() * eig.value_zero(r)) * nI(r, r);
-    tr += Sym->mult(I) * t_matel(sum);
+    tr += Sym->mult(I) * sum;
   }
-  return tr;
+  return tr; // note: t_expv = t_matel
 }
 
 // Measure thermodynamic expectation values of singlet operators
-void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, std::shared_ptr<Symmetry> Sym, const Params &P) {
-  const auto Z = ranges::accumulate(diag, t_expv{}, [&Sym, &step](auto total, const auto &d) { const auto &[I, eig] = d;
-    return total + Sym->mult(I) * ranges::accumulate(eig.value_zero, t_expv{},
+template<typename S>
+void measure_singlet(const Step &step, Stats &stats, const DiagInfo_tmpl<S> &diag, const IterInfo_tmpl<S> &a, 
+                     Output_tmpl<S> &output, std::shared_ptr<Symmetry> Sym, const Params &P) {
+  const auto Z = ranges::accumulate(diag, 0.0, [&Sym, &step](auto total, const auto &d) { const auto &[I, eig] = d;
+    return total + Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0,
                                                      [f=step.TD_factor()](auto sum, const auto &x) { return sum + exp(-f*x); }); });
   for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(step, diag, m, Sym) / Z;
   for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(step, diag, m, Sym) / Z;
