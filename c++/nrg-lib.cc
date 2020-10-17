@@ -347,10 +347,11 @@ class DiagInfo_tmpl : public std::map<Invar, Eigen_tmpl<S>> {
 };
 using DiagInfo = DiagInfo_tmpl<scalar>;
 
-class MatrixElements : public std::map<Twoinvar, Matrix> {
+template<typename S>
+class MatrixElements_tmpl : public std::map<Twoinvar, typename traits<S>::Matrix> {
  public:
-   MatrixElements() {}
-   MatrixElements(std::ifstream &fdata, const DiagInfo &diag) {
+   MatrixElements_tmpl() {}
+   MatrixElements_tmpl(std::ifstream &fdata, const DiagInfo_tmpl<S> &diag) {
      size_t nf; // Number of I1 x I2 combinations
      fdata >> nf;
      for (const auto i : range0(nf)) {
@@ -369,7 +370,9 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
      return os;
    }
 };
-std::ostream &operator<<(std::ostream &os, const MatrixElements &m) { return m.insertor(os); }
+template<typename S>
+std::ostream &operator<<(std::ostream &os, const MatrixElements_tmpl<S> &m) { return m.insertor(os); }
+using MatrixElements = MatrixElements_tmpl<scalar>;
 
 class DensMatElements : public std::map<Invar, Matrix> {
  public:
