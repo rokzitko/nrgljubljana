@@ -10,7 +10,7 @@ class SpectrumRealFreq : public Spectrum {
    void savebins();
    void continuous();
  public:
-   SpectrumRealFreq(const string &opname, const string &filename, shared_ptr<Algo> algotype, const Params &P) :
+   SpectrumRealFreq(const std::string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, const Params &P) :
      Spectrum(opname, filename, algotype, P), fspos(P), fsneg(P) {};
    void merge(spCS_t, const Step &step) override;
    ~SpectrumRealFreq() override;
@@ -48,9 +48,9 @@ inline double windowfunction(const double E, const double Emin, const double Ex,
   auto fnc_linear = [](const auto x) { return x ; };
   auto fnc_tanh_0 = [](const double x, const double NNtanh) { return tanh(NNtanh * (x - 0.5)); };
   auto fnc_tanh = [fnc_tanh_0](const double x, const double NNtanh) {
-    const double f0 = fnc_tanh_0(0, NNtanh);
-    const double fx = fnc_tanh_0(x, NNtanh);
-    const double f1 = fnc_tanh_0(1, NNtanh);
+    const auto f0 = fnc_tanh_0(0, NNtanh);
+    const auto fx = fnc_tanh_0(x, NNtanh);
+    const auto f1 = fnc_tanh_0(1, NNtanh);
     return (fx - f0) / (f1 - f0);
   };
   auto fnc = [P, fnc_linear, fnc_tanh](const auto x) { return P.NNtanh > 0 ? fnc_tanh(x, P.NNtanh) : fnc_linear(x); };
@@ -63,9 +63,9 @@ inline double windowfunction(const double E, const double Emin, const double Ex,
 // Note that we use a windowfunction (see above) to accomplish the
 // smooth combining of data.
 void SpectrumRealFreq::mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step) {
-  double Emin = step.scale() * P.getEmin(); // p
-  double Ex   = step.scale() * P.getEx();   // p Lambda
-  double Emax = step.scale() * P.getEmax(); // p Lambda^2
+  auto Emin = step.scale() * P.getEmin(); // p
+  auto Ex   = step.scale() * P.getEx();   // p Lambda
+  auto Emax = step.scale() * P.getEmax(); // p Lambda^2
   if (P.ZBW) {                              // override for zero bandwidth calculation
     Emin = 0;
     Emax = std::numeric_limits<double>::max(); // infinity
@@ -73,10 +73,9 @@ void SpectrumRealFreq::mergeNN2half(Bins &fullspec, const Bins &cs, const Step &
   const auto len = fullspec.bins.size();
   my_assert(len == cs.bins.size()); // We require equivalent bin sets!!
   for (const auto i: range0(len)) {
-    const double energy   = cs.bins[i].first;
-    const t_weight weight = cs.bins[i].second;
+    const auto [energy, weight] = cs.bins[i];
     if (Emin < energy && energy < Emax && weight != 0.0) {
-      const double factor = (P.NN2avg ? 0.5 : 1.0);
+      const auto factor = P.NN2avg ? 0.5 : 1.0;
       fullspec.bins[i].second += factor * weight * windowfunction(energy, Emin, Ex, Emax, step, P);
     }
   }
@@ -95,18 +94,18 @@ void SpectrumRealFreq::mergeNN2(spCS_t cs, const Step &step) {
 }
 
 void SpectrumRealFreq::weight_report(const double imag_tolerance) {
-  auto fmt = [imag_tolerance](t_weight x) -> string { return abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
-  const t_weight twneg = fsneg.total_weight();
-  const t_weight twpos = fspos.total_weight();
-  std::cout << endl << "[" << opname << "]"
+  auto fmt = [imag_tolerance](t_weight x) -> std::string { return abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
+  const auto twneg = fsneg.total_weight();
+  const auto twpos = fspos.total_weight();
+  std::cout << std::endl << "[" << opname << "]"
        << " pos=" << fmt(twpos) << " neg=" << fmt(twneg) << " sum= " << fmt(twpos + twneg) << std::endl;
   for (int m = 1; m <= 4; m++) {
     const auto mom = moment(fsneg.bins, fspos.bins, m);   // Spectral moments from delta-peaks
     std::cout << fmt::format("mu{}={} ", m, fmt(mom));
   }
   std::cout << std::endl;
-  const t_weight f = fd_fermi(fsneg.bins, fspos.bins, P.T);
-  const t_weight b = fd_bose(fsneg.bins, fspos.bins, P.T);
+  const auto f = fd_fermi(fsneg.bins, fspos.bins, P.T);
+  const auto b = fd_bose (fsneg.bins, fspos.bins, P.T);
   std::cout << "f=" << fmt(f) << " b=" << fmt(b) << std::endl;
 }
 
@@ -114,22 +113,22 @@ void SpectrumRealFreq::weight_report(const double imag_tolerance) {
 // (energy,real part,imag part).
 void SpectrumRealFreq::savebins() {
   if (!P.savebins) return;
-  const std::string fn = filename + ".bin";
+  const auto fn = filename + ".bin";
   std::cout << " " << fn;
-  ofstream Fbins = safe_open(fn, true); // true=binary!
+  std::ofstream Fbins = safe_open(fn, true); // true=binary!
   for (const auto &[e, w] : fspos.bins) {
     const auto [wr, wi] = reim(w);
     my_assert(e > 0.0);
-    Fbins.write((char *)&e, sizeof(double));
+    Fbins.write((char *)&e,  sizeof(double));
     Fbins.write((char *)&wr, sizeof(double));
     if (P.reim)
       Fbins.write((char *)&wi, sizeof(double));
   }
   for (const auto &[abse, w] : fsneg.bins) {
     const auto [wr, wi] = reim(w);
-    const double e = -abse;
+    const auto e = -abse;
     my_assert(e < 0.0); // attention!
-    Fbins.write((char *)&e, sizeof(double));
+    Fbins.write((char *)&e,  sizeof(double));
     Fbins.write((char *)&wr, sizeof(double));
     if (P.reim) 
       Fbins.write((char *)&wi, sizeof(double));
@@ -154,8 +153,8 @@ void SpectrumRealFreq::continuous() {
   const double alpha  = P.alpha;
   const double omega0 = P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0;
   Spikes densitypos, densityneg;
-  const std::vector<double> vecE = make_mesh(P); // Energies on the mesh
-  for (const double E : vecE) {
+  const auto vecE = make_mesh(P); // Energies on the mesh
+  for (const auto E : vecE) {
     weight_bucket valpos, valneg;
     for (const auto &[e, w] : fspos.bins) {
       my_assert(e > 0.0);
@@ -172,9 +171,9 @@ void SpectrumRealFreq::continuous() {
   }
   ranges::sort(densityneg, sortfirst());
   ranges::sort(densitypos, sortfirst());
-  const std::string fn = filename + ".dat";
+  const auto fn = filename + ".dat";
   std::cout << " " << fn;
-  ofstream Fdensity = safe_open(fn);
+  std::ofstream Fdensity = safe_open(fn);
   densityneg.save(Fdensity, P.prec_xy, P.reim);
   densitypos.save(Fdensity, P.prec_xy, P.reim);
 }

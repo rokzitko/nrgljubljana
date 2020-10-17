@@ -1,7 +1,7 @@
 // Code for correcting floating-point roundoff errors
 // Rok Zitko, rok.zitko@ijs.si
 
-using mapdd = unordered_map<t_eigen, t_eigen>;
+using mapdd = std::unordered_map<t_eigen, t_eigen>;
 
 // Fix splittings of eigenvalues. Returns true if any changes had been made.
 void fix_splittings(DiagInfo &diag, const mapdd &cluster_mapping) {
@@ -44,7 +44,7 @@ mapdd find_clusters(const std::vector<t_eigen> &energies, double epsilon) {
       auto i1 = i;
       if (size > 1) {            // is this a real cluster?
         if (cluster_splitting(i0, i1)) { // are the states actually split?
-          t_eigen replace_with = *i0;    // use the lowest eigenvalue of the cluster
+          auto replace_with = *i0;    // use the lowest eigenvalue of the cluster
           for (auto j = (i0 + 1); j != i1; ++j) // skip 1st
             if (*j != *i0) cluster_mapping.insert(make_pair(*j, replace_with));
         }
