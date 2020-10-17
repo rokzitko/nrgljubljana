@@ -1334,9 +1334,9 @@ struct Output {
   RUNTYPE runtype;
   const Params &P;
   Annotated annotated;
-  ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
-  unique_ptr<ExpvOutput> custom;
-  unique_ptr<ExpvOutput> customfdm;
+  std::ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
+  std::unique_ptr<ExpvOutput> custom;
+  std::unique_ptr<ExpvOutput> customfdm;
   
   Output(const RUNTYPE &runtype, const IterInfo &iterinfo, Stats &stats, const Params &P,
          const std::string filename_energies= "energies.nrg"s,
@@ -1346,24 +1346,24 @@ struct Output {
       // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
       // runs produce the same results.
       if (P.dumpenergies && runtype == RUNTYPE::NRG) Fenergies.open(filename_energies);
-      list<string> ops;
+      std::list<std::string> ops;
       for (const auto &name : iterinfo.ops  | boost::adaptors::map_keys) ops.push_back(name);
       for (const auto &name : iterinfo.opsg | boost::adaptors::map_keys) ops.push_back(name);
       if (runtype == RUNTYPE::NRG)
-        custom = make_unique<ExpvOutput>(filename_custom, stats.expv, ops, P);
+        custom = std::make_unique<ExpvOutput>(filename_custom, stats.expv, ops, P);
       else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
-        customfdm = make_unique<ExpvOutput>(filename_customfdm, stats.fdmexpv, ops, P);
+        customfdm = std::make_unique<ExpvOutput>(filename_customfdm, stats.fdmexpv, ops, P);
     }
 
   // Dump all energies in diag to a file
-  void dump_all_energies(const DiagInfo &diag, int N) {
+  void dump_all_energies(const DiagInfo &diag, const int N) {
     if (!Fenergies) return;
     Fenergies << endl << "===== Iteration number: " << N << std::endl;
     diag.dump_value_zero(Fenergies);
   }
 };
 
-CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n, shared_ptr<Symmetry> Sym) {
+CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const MatrixElements &n, std::shared_ptr<Symmetry> Sym) {
   matel_bucket tr; // note: t_matel = t_expv
   for (const auto &[I, eig] : diag) {
     const auto & nI = n.at({I,I});
@@ -1377,7 +1377,7 @@ CONSTFNC t_expv calc_trace_singlet(const Step &step, const DiagInfo &diag, const
 }
 
 // Measure thermodynamic expectation values of singlet operators
-void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, shared_ptr<Symmetry> Sym, const Params &P) {
+void measure_singlet(const Step &step, Stats &stats, const DiagInfo &diag, const IterInfo &a, Output &output, std::shared_ptr<Symmetry> Sym, const Params &P) {
   const auto Z = ranges::accumulate(diag, t_expv{}, [&Sym, &step](auto total, const auto &d) { const auto &[I, eig] = d;
     return total + Sym->mult(I) * ranges::accumulate(eig.value_zero, t_expv{},
                                                      [f=step.TD_factor()](auto sum, const auto &x) { return sum + exp(-f*x); }); });
@@ -1396,7 +1396,7 @@ template<typename T>
   return sum;
 }
 
-CONSTFNC t_expv calc_trace_fdm_kept(size_t ndx, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm, shared_ptr<Symmetry> Sym) {
+CONSTFNC t_expv calc_trace_fdm_kept(const size_t ndx, const MatrixElements &n, const DensMatElements &rhoFDM, const AllSteps &dm, std::shared_ptr<Symmetry> Sym) {
   matel_bucket tr;
   for (const auto &[I, rhoI] : rhoFDM)
     tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), dm[ndx].at(I).kept); // over kept states ONLY
@@ -1416,7 +1416,7 @@ void measure_singlet_fdm(const Step &step, Stats &stats, const DiagInfo &diag, c
 // i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N> <l;N|.  calc_grand_canonical_Z() is also used to calculate
 // stats.Zft, that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for
 // G(T) calculations, stats.Zchit for chi(T) calculations.
-double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, shared_ptr<Symmetry> Sym, const double factor = 1.0) {
+double calc_grand_canonical_Z(const Step &step, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym, const double factor = 1.0) {
   bucket ZN;
   for (const auto &[I, eig]: diag) 
     for (const auto &i : eig.kept()) // sum over all kept states
@@ -1441,7 +1441,7 @@ Matrix diagonal_exp(const Eigen &eig, const double factor)
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-DensMatElements init_rho(const Step &step, const DiagInfo &diag, shared_ptr<Symmetry> Sym) {
+DensMatElements init_rho(const Step &step, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym) {
   DensMatElements rho;
   for (const auto &[I, eig]: diag)
     rho[I] = diagonal_exp(eig, step.scT()) / calc_grand_canonical_Z(step, diag, Sym);
@@ -1453,12 +1453,12 @@ DensMatElements init_rho(const Step &step, const DiagInfo &diag, shared_ptr<Symm
 auto highest_retained_energy(const Step &step, const DiagInfo &diag, const Params &P) {
   auto energies = diag.sorted_energies();
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
-  const size_t totalnumber = energies.size();
+  const auto totalnumber = energies.size();
   size_t nrkeep;
   if (P.keepenergy <= 0.0) {
     nrkeep = P.keep;
   } else {
-    double keepenergy = P.keepenergy * step.unscale();
+    const auto keepenergy = P.keepenergy * step.unscale();
     // We add 1 for historical reasons. We thus keep states with E<=Emax, and one additional state which has E>Emax.
     nrkeep = 1 + ranges::count_if(energies, [=](double e) { return e <= keepenergy; });
     nrkeep = std::clamp<size_t>(nrkeep, P.keepmin, P.keep);
@@ -1494,7 +1494,7 @@ struct NotEnough : public std::exception {};
 
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
-void truncate_prepare(const Step &step, DiagInfo &diag, shared_ptr<Symmetry> Sym, const Params &P) {
+void truncate_prepare(const Step &step, DiagInfo &diag, std::shared_ptr<Symmetry> Sym, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnrcomputed() :
@@ -1511,7 +1511,7 @@ void truncate_prepare(const Step &step, DiagInfo &diag, shared_ptr<Symmetry> Sym
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
 // energies. calc_ZnD() must be called before the second NRG run.
-void calc_ZnD(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const double T) {
+void calc_ZnD(const AllSteps &dm, Stats &stats, std::shared_ptr<Symmetry> Sym, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
   for (const auto N : dm.Nall()) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
@@ -1567,7 +1567,7 @@ void report_ZnD(Stats &stats, const Params &P) {
 
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
-void fdm_thermodynamics(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> Sym, const double T)
+void fdm_thermodynamics(const AllSteps &dm, Stats &stats, std::shared_ptr<Symmetry> Sym, const double T)
 {
   stats.td_fdm.T = T;
   stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
@@ -1611,7 +1611,7 @@ void fdm_thermodynamics(const AllSteps &dm, Stats &stats, shared_ptr<Symmetry> S
 }
 
 template<typename F>
-  double trace(F fnc, const double rescale_factor, const DiagInfo &diag, shared_ptr<Symmetry> Sym) {
+  double trace(F fnc, const double rescale_factor, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym) {
     bucket b;
     for (const auto &[I, eig] : diag)
       b += Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0, [fnc, rescale_factor](double acc, const auto x) { 
@@ -1622,10 +1622,10 @@ template<typename F>
 // We calculate thermodynamic quantities before truncation to make better use of the available states. Here we
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
 // member functions defined in symmetry.cc.
-void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &output, shared_ptr<Symmetry> Sym, double additional_factor = 1.0) {
+void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &output, std::shared_ptr<Symmetry> Sym, const double additional_factor = 1.0) {
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
-  double rescale_factor = step.TD_factor() * additional_factor;
+  const auto rescale_factor = step.TD_factor() * additional_factor;
   const auto Z = trace([](double x) { return 1; }, rescale_factor, diag, Sym); // partition function
   const auto E = trace([](double x) { return x; }, rescale_factor, diag, Sym); // Tr[beta H]
   const auto E2 = trace([](double x) { return sqr(x); }, rescale_factor, diag, Sym); // Tr[(beta H)^2]
@@ -1641,7 +1641,7 @@ void calculate_TD(const Step &step, const DiagInfo &diag, Stats &stats, Output &
 }
 
 void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output, Oprecalc &oprecalc, const DiagInfo &diag, 
-                                 const IterInfo &iterinfo, const AllSteps &dm, shared_ptr<Symmetry> Sym, const Params &P) {
+                                 const IterInfo &iterinfo, const AllSteps &dm, std::shared_ptr<Symmetry> Sym, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
   stats.Zft = calc_grand_canonical_Z(step, diag, Sym);
@@ -1668,14 +1668,14 @@ void calculate_spectral_and_expv(const Step &step, Stats &stats, Output &output,
 
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
-void perform_basic_measurements(const Step &step, const DiagInfo &diag, shared_ptr<Symmetry> Sym, Stats &stats, Output &output) {
+void perform_basic_measurements(const Step &step, const DiagInfo &diag, std::shared_ptr<Symmetry> Sym, Stats &stats, Output &output) {
   output.dump_all_energies(diag, step.ndx());
   calculate_TD(step, diag, stats, output, Sym);
   output.annotated.dump(step, diag, stats, Sym);
 }
 
 // Subspaces for the new iteration
-auto new_subspaces(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
+auto new_subspaces(const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym) {
   std::set<Invar> subspaces;
   for (const auto &I : diagprev.subspaces()) {
     const auto all = Sym->new_subspaces(I);
@@ -1686,7 +1686,7 @@ auto new_subspaces(const DiagInfo &diagprev, shared_ptr<Symmetry> Sym) {
 }
 
 Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch, const Coef &coef, 
-                             const DiagInfo &diagprev, shared_ptr<Symmetry> Sym, const Params &P) {
+                             const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev, Sym};
   Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
@@ -1699,17 +1699,17 @@ Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch &opch,
 }
 
 DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
-                                 const std::vector<Invar> &tasks, const DiagParams &DP, shared_ptr<Symmetry> Sym, const Params &P) {
+                                 const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry> Sym, const Params &P) {
   DiagInfo diagnew;
-  size_t nr = tasks.size();
+  const auto nr = tasks.size();
   size_t itask = 0;
   // cppcheck-suppress unreadVariable symbolName=nth
-  int nth = P.diagth; // NOLINT
+  const int nth = P.diagth; // NOLINT
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {
     const Invar I  = tasks[itask];
-    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, Sym, P);
-    int thid = omp_get_thread_num();
+    auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, Sym, P); // non-const, consumed by diagonalise()
+    const int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
     Eigen e = diagonalise(h, DP);
@@ -1724,7 +1724,7 @@ enum TAG : int { TAG_EXIT = 1, TAG_DIAG, TAG_SYNC, TAG_MATRIX, TAG_INVAR, TAG_MA
 
 void mpi_send_params(const DiagParams &DP) {
   mpilog("Sending diag parameters " << DP.diag << " " << DP.diagratio);
-  for (size_t i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_SYNC, 0);
+  for (auto i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_SYNC, 0);
   auto DPcopy = DP;
   mpi::broadcast(*mpiw, DPcopy, 0);
 }
