@@ -465,7 +465,8 @@ class Rmaxvals {
    std::shared_ptr<Symmetry> Sym;
  public:
    Rmaxvals() = default;
-   Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo &diagprev, shared_ptr<Symmetry> Sym);
+   template<typename S>
+     Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo_tmpl<S> &diagprev, shared_ptr<Symmetry> Sym);
    auto combs() const { return values.size(); }
    auto rmax(const size_t i) const {
      my_assert(i < combs());
@@ -724,7 +725,8 @@ template<typename M> void dump_diagonal_matrix(const ublas::matrix<M> &m, const 
   F << std::endl;
 }
 
-void dump_diagonal_op(const std::string &name, const MatrixElements &n, const size_t max_nr, std::ostream &F) {
+template<typename S>
+void dump_diagonal_op(const std::string &name, const MatrixElements_tmpl<S> &n, const size_t max_nr, std::ostream &F) {
   F << "Diagonal matrix elements of operator " << name << std::endl;
   for (const auto &[II, mat] : n) {
     const auto & [I1, I2] = II;
@@ -738,7 +740,7 @@ void dump_diagonal_op(const std::string &name, const MatrixElements &n, const si
 // We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
 // required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
 // recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.
-void trim_matel(const DiagInfo &diag, MatrixElements &op) {
+template<typename S> void trim_matel(const DiagInfo_tmpl<S> &diag, MatrixElements_tmpl<S> &op) {
   for (auto &[II, mat] : op) {
     const auto &[I1, I2] = II;
     // Current matrix dimensions
@@ -751,13 +753,13 @@ void trim_matel(const DiagInfo &diag, MatrixElements &op) {
     my_assert(nr1 <= size1 && nr2 <= size2);
     if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
       continue;
-    ublas::matrix_range<Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
-    Matrix m2new = m2;
+    ublas::matrix_range<typename traits<S>::Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
+    typename traits<S>::Matrix m2new = m2;
     mat.swap(m2new);
   }
 }
 
-void trim_op(const DiagInfo &diag, CustomOp &allops) {
+template<typename S> void trim_op(const DiagInfo_tmpl<S> &diag, CustomOp_tmpl<S> &allops) {
   for (auto &[name, op] : allops) 
     trim_matel(diag, op);
 }
@@ -1038,7 +1040,8 @@ using speclist = std::list<BaseSpectrum>;
 #include "splitting.cc"
 
 // Determine the ranges of index r
-Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo &diagprev, std::shared_ptr<Symmetry> Sym) {
+template<typename S>
+Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry> Sym) {
   for (const auto &[i, In] : InVec | ranges::views::enumerate)
     values.push_back(Sym->triangle_inequality(I, In, Sym->QN_subspace(i)) ? diagprev.size_subspace(In) : 0);
 }
