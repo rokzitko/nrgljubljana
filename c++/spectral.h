@@ -6,17 +6,18 @@
 
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
 template<typename S>
-using t_delta_peak = std::pair<double, typename traits<S>::t_weight>;
+using t_delta_peak_tmpl = std::pair<double, typename traits<S>::t_weight>;
+using t_delta_peak = t_delta_peak_tmpl<scalar>;
 
-inline void outputxy(std::ostream &F, const double x, const std::complex<double> y, const bool imagpart, const double clip_tol_imag = 1e-10) {
-  const auto [r, i] = reim(y);
+inline void outputxy(std::ostream &F, const double x, const std::complex<double> z, const bool imagpart, const double clip_tol_imag = 1e-10) {
+  const auto [r, i] = reim(z);
   F << x << " " << r;
   if (imagpart) F << " " << (abs(i)>abs(r)*clip_tol_imag ? i : 0);
   F << std::endl;
 }
 
 template<typename S>
-class Spikes : public std::vector<t_delta_peak<S>> {
+class Spikes_tmpl : public std::vector<t_delta_peak_tmpl<S>> {
  public:
    template<typename T>
      void save(T&& F, const int prec, const bool imagpart) {
@@ -27,6 +28,7 @@ class Spikes : public std::vector<t_delta_peak<S>> {
      return ranges::accumulate(*this, t_weight{}, [](const auto &sum, const auto &p) { return sum+p.second; });
    }
 };
+using Spikes = Spikes_tmpl<scalar>;
 
 #ifndef M_SQRTPI
 #define M_SQRTPI 1.7724538509055160273
@@ -64,12 +66,12 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 }
 
 // Calculate "moment"-th spectral moment.
-CONSTFNC t_weight moment(const Spikes &sneg, const Spikes &spos, int moment) {
-  t_weight sumA = 0.0;
-  for (const auto &[e, w] : spos) sumA += w * pow(e, moment);
-  t_weight sumB = 0.0;
-  for (const auto &[e, w] : sneg) sumB += w * pow(-e, moment);
-  return sumA + sumB;
+template<typename S>
+CONSTFNC auto moment(const Spikes_tmpl<S> &s_neg, const Spikes_tmpl<S> &s_pos, const int moment) {
+  using t_weight = typename traits<S>::t_weight;
+  auto sumA = ranges::accumulate(s_pos, t_weight{}, [moment](auto s, const auto &x){ const auto &[e,w] = x; return s+w*pow(e,moment); });
+  auto sumB = ranges::accumulate(s_neg, t_weight{}, [moment](auto s, const auto &x){ const auto &[e,w] = x; return s+w*pow(-e,moment); });
+  return sumA+sumB;
 }
 
 CONSTFNC double fermi_fnc(const double omega, const double T) { 
@@ -81,23 +83,24 @@ CONSTFNC double bose_fnc(const double omega, const double T) {
   return d != 0.0 ? 1.0/d : std::numeric_limits<double>::quiet_NaN();
 }
 
-template<typename F>
-  auto sum(const Spikes &s, const bool invert, F && f) {
-    t_weight z{};
-    for (const auto &[e, w] : s) z += w * f(invert ? -e : e);
-    return z;
-  }
+template<typename F, typename S>
+auto sum(const Spikes_tmpl<S> &s, const bool invert, F && f) {
+  using t_weight = typename traits<S>::t_weight;
+  return ranges::accumulate(s, t_weight{}, [&f,invert](auto s, const auto &x){ const auto &[e,w] = x; return s+w*f(invert ? -e : e); });
+}
 
 // Integrated spectral function with a kernel as in FDT for fermions
-CONSTFNC auto fd_fermi(const Spikes &sneg, const Spikes &spos, double const T) {
+template<typename S>
+CONSTFNC auto fd_fermi(const Spikes_tmpl<S> &s_neg, const Spikes_tmpl<S> &s_pos, double const T) {
   auto fnc = [T](const auto x) { return fermi_fnc(x, T); };
-  return sum(sneg, true, fnc) + sum(spos, false, fnc);
+  return sum(s_neg, true, fnc) + sum(s_pos, false, fnc);
 }
 
 // Ditto for bosons
-CONSTFNC auto fd_bose(const Spikes &sneg, const Spikes &spos, double const T) {
+template<typename S>
+CONSTFNC auto fd_bose(const Spikes_tmpl<S> &s_neg, const Spikes_tmpl<S> &s_pos, double const T) {
   auto fnc = [T](const auto x) { return bose_fnc(x, T); };
-  return sum(sneg, true, fnc) + sum(spos, false, fnc);
+  return sum(s_neg, true, fnc) + sum(s_pos, false, fnc);
 }
 
 #endif // _spectral_h_
