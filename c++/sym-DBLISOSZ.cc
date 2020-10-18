@@ -1,16 +1,21 @@
-class SymmetryDBLISOSZ : public SymField {
+template<typename SC>
+class SymmetryDBLISOSZ_tmpl : public SymField_tmpl<SC> {
  private:
    outfield Sz2, Sz, Q12, Q22;
-
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
+   
  public:
-   template<typename ... Args> SymmetryDBLISOSZ(Args&& ... args) : SymField(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryDBLISOSZ_tmpl(const Params &P, Allfields &allfields) : SymField_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q12(P, allfields, "<Q1^2>", 3), Q22(P, allfields, "<Q2^2>", 4) {
        initInvar({
          {"II1", additive}, // isospin 1
          {"II2", additive}, // isospin 2
          {"SSZ", additive}  // spin projection
        });
-       InvarSinglet = Invar(1, 1, 0);
+       this->InvarSinglet = Invar(1, 1, 0);
      }
 
    bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
@@ -70,7 +75,7 @@ class SymmetryDBLISOSZ : public SymField {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
     bucket trIZ12;      // Tr[I1_z^2]
     bucket trIZ22;      // Tr[I2_z^2]
@@ -78,7 +83,7 @@ class SymmetryDBLISOSZ : public SymField {
       const Number ii1  = I.get("II1");
       const Number ii2  = I.get("II2");
       const SZspin ssz  = I.get("SSZ");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * sqr(SZ(ssz)); // isospin multiplicity contained in sumZ
       trIZ12 += sumZ * (ii1 * ii1 - 1) / 12.;
@@ -98,7 +103,8 @@ class SymmetryDBLISOSZ : public SymField {
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetryDBLISOSZ::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryDBLISOSZ_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   switch (P.channels) {
     case 2:
 #include "dblisosz/dblisosz-2ch-offdiag.dat"

@@ -6,8 +6,9 @@
 
 include(recalc-macros.m4)
 
-MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryISOSZ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -34,8 +35,9 @@ MatrixElements SymmetryISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 
 // (ISOSZ): Four calls of recalc_f() are necessary for each channel.
 
-Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryISOSZ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -75,8 +77,9 @@ Opch SymmetryISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   return opch;
 }
 
-MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryISOSZ_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -98,9 +101,10 @@ MatrixElements SymmetryISOSZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
 }
 
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetryISOSZ::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+template<typename SC>
+void SymmetryISOSZ_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
@@ -117,6 +121,6 @@ void SymmetryISOSZ::recalc_global(const Step &step, const DiagInfo &diag, const 
     }
     return;
   }
-  
+
   my_assert_not_reached();
 }

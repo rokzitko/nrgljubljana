@@ -7,8 +7,9 @@
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
@@ -27,8 +28,9 @@ MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 #define If(cond, a, b) (cond ? a : b)
 
 // Recalculate matrix elements of a quadruplet tensor operator
-MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
@@ -50,8 +52,9 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
   return cnew;
 }
 
-Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin jjp = Ip.get("JJ");

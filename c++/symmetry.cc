@@ -250,26 +250,27 @@ class SymField_tmpl : public Symmetry_tmpl<S> {
 };
 using SymField = SymField_tmpl<scalar>;
 
-/*
-class SymLR : public Symmetry {
+template<typename S>
+class SymLR_tmpl : public Symmetry_tmpl<S> {
  public:
-   explicit SymLR(const Params &P) : Symmetry_tmpl<S>(P) {}
+   explicit SymLR_tmpl(const Params &P) : Symmetry_tmpl<S>(P) {}
    bool islr() override { return true; }
 };
 
-class SymC3 : public Symmetry {
+template<typename S>
+class SymC3_tmpl : public Symmetry_tmpl<S> {
  public:
-   explicit SymC3(const Params &P) : Symmetry_tmpl<S>(S) {}
+   explicit SymC3_tmpl(const Params &P) : Symmetry_tmpl<S>(P) {}
    bool isc3() override { return true; }
 };
 
-class SymFieldLR : public Symmetry {
+template<typename S>
+class SymFieldLR_tmpl : public Symmetry_tmpl<S> {
   public:
-   explicit SymFieldLR(const Params &P) : Symmetry_tmpl<S>) {}
+   explicit SymFieldLR_tmpl(const Params &P) : Symmetry_tmpl<S>(P) {}
    bool isfield() override { return true; }
    bool islr() override { return true; }
 };
-*/
 
 // Helper functions
 void check_abs_diff(const Invar &Ip, const Invar &I1, const string &what, int diff) {

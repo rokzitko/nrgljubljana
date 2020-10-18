@@ -6,8 +6,9 @@
 
 include(recalc-macros.m4)
 
-Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryQSZLR_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     SZspin sszp = Ip.get("SSZ");

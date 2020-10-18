@@ -7,8 +7,9 @@
 include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
-MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryQST_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1  = I1.get("Q");
     Sspin ss1  = I1.get("SS");
@@ -48,8 +49,9 @@ MatrixElements SymmetryQST::recalc_doublet(const DiagInfo &diag, const QSrmax &q
 // ch=3 <-> Tz=-1
 
 // Driver routine for recalc_f()
-Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryQST_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp  = Ip.get("Q");
     Sspin ssp  = Ip.get("SS");
@@ -84,8 +86,9 @@ Opch SymmetryQST::recalc_irreduc(const Step &step, const DiagInfo &diag, const Q
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-MatrixElements SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryQST_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1  = I1.get("Q");
     Sspin ss1  = I1.get("SS");
@@ -107,8 +110,9 @@ MatrixElements SymmetryQST::recalc_triplet(const DiagInfo &diag, const QSrmax &q
 }
 
 // Recalculate matrix elements of an orbital triplet tenzor operator
-MatrixElements SymmetryQST::recalc_orb_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryQST_tmpl<SC>::recalc_orb_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1  = I1.get("Q");
     Sspin ss1  = I1.get("SS");

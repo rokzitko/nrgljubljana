@@ -22,8 +22,9 @@
 
 
 
-Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     int p    = Ip.get("P");
 
@@ -204,8 +205,9 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   return opch;
 }
 
-MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryP_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int p1   = I1.get("P");
     Invar Ip = Invar(-p1); // always the opposite fermion parity!
@@ -246,9 +248,9 @@ MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsr
 }
 
 #undef SPINX
-#define SPINX(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINX(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 // Isospin operator need an appropriate phase factor (bipartite sublattice index) 
 #define USEISOFACTOR
@@ -261,31 +263,32 @@ MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsr
 
 #ifdef NRG_COMPLEX
 #undef SPINY
-#define SPINY(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef ISOSPINY
-#define ISOSPINY(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *complex<double>(ISOFACTOR))
+#define ISOSPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *complex<double>(ISOFACTOR))
 
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
 #endif // NRG_COMPLEX
 
 #undef CHARGE
-#define CHARGE(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef ISOSPINZ
-#define ISOSPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define ISOSPINZ(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef ISOSPINX
-#define ISOSPINX(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
+#define ISOSPINX(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
 #undef ISOSPINP
-#define ISOSPINP(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
+#define ISOSPINP(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
 #undef ISOSPINM
-#define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
+#define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
-void SymmetryP::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+template<typename SC>
+void SymmetryP_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};

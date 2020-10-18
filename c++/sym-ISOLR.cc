@@ -1,17 +1,23 @@
-class SymmetryISOLRcommon : public SymLR {
+template<typename SC>
+class SymmetryISOLRcommon_tmpl : public SymLR_tmpl<SC> {
  private:
    outfield Sz2, Q2;
-   
+
+ protected:
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
+
  public:
-   template<typename ... Args> SymmetryISOLRcommon(Args&& ... args) : SymLR(std::forward<Args>(args)...),
+   SymmetryISOLRcommon_tmpl(const Params &P, Allfields &allfields) : SymLR_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
        initInvar({
          {"II", additive},     // isospin
          {"SS", additive},     // spin
          {"P", multiplicative} // parity
        });
-       InvarSinglet = Invar(1, 1, 1);
-       // Invar_f = Invar(?, ?, ?)
+       this->InvarSinglet = Invar(1, 1, 1);
+       // this->Invar_f = Invar(?, ?, ?)
      }
 
   // Multiplicity of the I=(II,SS,P) subspace = (2I+1)(2S+1) = II SS.
@@ -45,12 +51,12 @@ class SymmetryISOLRcommon : public SymLR {
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
       const Sspin ss    = I.get("SS");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * (ss * ss - 1) / 12.; // isospin multiplicity contained in sumZ
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
@@ -59,9 +65,16 @@ class SymmetryISOLRcommon : public SymLR {
   }
 };
 
-class SymmetryISOLR : public SymmetryISOLRcommon {
+template<typename SC>
+class SymmetryISOLR_tmpl : public SymmetryISOLRcommon_tmpl<SC> {
+ private:
+   using SymmetryISOLRcommon_tmpl<SC>::P;
+   using SymmetryISOLRcommon_tmpl<SC>::In;
+   using SymmetryISOLRcommon_tmpl<SC>::QN;
+
  public:
-   template<typename ... Args> SymmetryISOLR(Args&& ... args) : SymmetryISOLRcommon(std::forward<Args>(args)...) {}
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryISOLR_tmpl(const Params &P, Allfields &allfields) : SymmetryISOLRcommon_tmpl<SC>(P, allfields) {}
 
   void load() override {
     my_assert(P.channels == 2);
@@ -74,9 +87,16 @@ class SymmetryISOLR : public SymmetryISOLRcommon {
   HAS_TRIPLET;
 };
 
-class SymmetryISO2LR : public SymmetryISOLRcommon {
+template<typename SC>
+class SymmetryISO2LR_tmpl : public SymmetryISOLRcommon_tmpl<SC> {
+ private:
+   using SymmetryISOLRcommon_tmpl<SC>::P;
+   using SymmetryISOLRcommon_tmpl<SC>::In;
+   using SymmetryISOLRcommon_tmpl<SC>::QN;
+
  public:
-   template<typename ... Args> SymmetryISO2LR(Args&& ... args) : SymmetryISOLRcommon(std::forward<Args>(args)...) {}
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryISO2LR_tmpl(const Params &P, Allfields &allfields) : SymmetryISOLRcommon_tmpl<SC>(P, allfields) {}
 
   void load() override {
     my_assert(P.channels == 2);
@@ -93,13 +113,15 @@ class SymmetryISO2LR : public SymmetryISOLRcommon {
 #undef OFFIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetryISOLR::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryISOLR_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
 #include "isolr/isolr-2ch-offdiag.dat"
 }
 
-void SymmetryISO2LR::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryISO2LR_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
 #include "iso2lr/iso2lr-2ch-offdiag.dat"

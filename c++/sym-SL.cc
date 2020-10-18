@@ -1,14 +1,19 @@
-class SymmetrySL : public Symmetry {
+template<typename SC>
+class SymmetrySL_tmpl : public Symmetry_tmpl<SC> {
  private:
    outfield Q, Q2, sQ2;
-   
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
+
  public:
-   template<typename ... Args> SymmetrySL(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetrySL_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Q(P, allfields, "<Q>", 1), Q2(P, allfields, "<Q^2>", 2), sQ2(P, allfields, "<sQ^2>", 3) {
        initInvar({
          {"Q", additive} // charge
        });
-       InvarSinglet = Invar(0);
+       this->InvarSinglet = Invar(0);
      }
 
   void load() override {
@@ -32,11 +37,11 @@ class SymmetrySL : public Symmetry {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trQ, trQ2; // Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
     }
@@ -55,9 +60,10 @@ class SymmetrySL : public Symmetry {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
-void SymmetrySL::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetrySL_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   switch (P.channels) {
     case 1:
 #include "sl/sl-1ch-offdiag.dat"

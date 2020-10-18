@@ -1,15 +1,20 @@
-class SymmetryDBLSU2 : public Symmetry {
+template<typename SC>
+class SymmetryDBLSU2_tmpl : public Symmetry_tmpl<SC> {
  private:
    outfield Q12, Q22;
-   
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
+
  public:
-   template<typename ... Args> SymmetryDBLSU2(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryDBLSU2_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Q12(P, allfields, "<Q1^2>", 1), Q22(P, allfields, "<Q2^2>", 2) {
        initInvar({
          {"II1", additive}, // isospin 1
          {"II2", additive}, // isospin 2
        });
-       InvarSinglet = Invar(1, 1);
+       this->InvarSinglet = Invar(1, 1);
      }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
@@ -42,13 +47,13 @@ class SymmetryDBLSU2 : public Symmetry {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trIZ12; // Tr[I1_z^2]
     bucket trIZ22; // Tr[I2_z^2]
     for (const auto &[I, eig]: diag) {
       const Number ii1  = I.get("II1");
       const Number ii2  = I.get("II2");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trIZ12 += sumZ * (ii1 * ii1 - 1) / 12.;
       trIZ22 += sumZ * (ii2 * ii2 - 1) / 12.;
     }
@@ -68,7 +73,8 @@ class SymmetryDBLSU2 : public Symmetry {
 #undef OFFDIAG_2
 #define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetryDBLSU2::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryDBLSU2_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   switch (P.channels) {
     case 2:
 #include "dblsu2/dblsu2-2ch-offdiag-1.dat"

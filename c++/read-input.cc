@@ -134,7 +134,7 @@ template<typename S> auto read_data(Params &P, Stats_tmpl<S> &stats) {
     /* skip white space */
     while (!fdata.eof() && std::isspace(fdata.peek())) fdata.get();
     if (fdata.eof()) break;
-    auto ch = fdata.get();
+    char ch = fdata.get();
     std::string opname;
     getline(fdata, opname);
     if (ch != '#') debug("Reading <||" << opname << "||> (" << ch << ")");

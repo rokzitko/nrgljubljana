@@ -6,8 +6,9 @@
 
 include(recalc-macros.m4)
 
-MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -24,8 +25,9 @@ MatrixElements SymmetrySPU1LR::recalc_doublet(const DiagInfo &diag, const QSrmax
   return cnew;
 }
 
-Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
     int pp      = Ip.get("P");
@@ -60,8 +62,9 @@ Opch SymmetrySPU1LR::recalc_irreduc(const Step &step, const DiagInfo &diag, cons
   return opch;
 }
 
-MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -83,25 +86,26 @@ MatrixElements SymmetrySPU1LR::recalc_triplet(const DiagInfo &diag, const QSrmax
 }
 
 #undef CHARGE
-#define CHARGE(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef ISOSPINZ
-#define ISOSPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define ISOSPINZ(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 // NOTE: the transverse components of the isospin depend on the site
 // index! This is taken into account by appropriately multiplying 'value'
 // by (-1)^N.
 
 #undef ISOSPINX
-#define ISOSPINX(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
+#define ISOSPINX(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 #undef ISOSPINP
-#define ISOSPINP(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
+#define ISOSPINP(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 #undef ISOSPINM
-#define ISOSPINM(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
+#define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
-void SymmetrySPU1LR::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+template<typename SC>
+void SymmetrySPU1LR_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

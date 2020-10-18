@@ -2156,37 +2156,37 @@ std::unique_ptr<Symmetry> get(const std::string &sym_string, const Params &P, Al
   if (sym_string == "QS")     return std::make_unique<SymmetryQS_tmpl<S>>(P, allfields);
   if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ_tmpl<S>>(P, allfields);
 #ifdef NRG_SYM_MORE
-  if (sym_string == "ISO")    return std::make_unique<SymmetryISO>(P, allfields);
-  if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2>(P, allfields);
-  if (sym_string == "ISOSZ")  return std::make_unique<SymmetryISOSZ>(P, allfields);
-  if (sym_string == "SPSU2")  return std::make_unique<SymmetrySPSU2>(P, allfields);
-  if (sym_string == "SPU1")   return std::make_unique<SymmetrySPU1>(P, allfields);
+  if (sym_string == "ISO")    return std::make_unique<SymmetryISO_tmpl<S>>(P, allfields);
+  if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2_tmpl<S>>(P, allfields);
+  if (sym_string == "ISOSZ")  return std::make_unique<SymmetryISOSZ_tmpl<S>>(P, allfields);
+  if (sym_string == "SPSU2")  return std::make_unique<SymmetrySPSU2_tmpl<S>>(P, allfields);
+  if (sym_string == "SPU1")   return std::make_unique<SymmetrySPU1_tmpl<S>>(P, allfields);
 #endif
 #ifdef NRG_SYM_ALL
-  if (sym_string == "DBLISOSZ")  return std::make_unique<SymmetryDBLISOSZ>(P, allfields);
-  if (sym_string == "DBLSU2")    return std::make_unique<SymmetryDBLSU2>(P, allfields);
-  if (sym_string == "ISOLR")     return std::make_unique<SymmetryISOLR>(P, allfields);
-  if (sym_string == "ISO2LR")    return std::make_unique<SymmetryISO2LR>(P, allfields);
-  if (sym_string == "ISOSZLR")   return std::make_unique<SymmetryISOSZLR>(P, allfields);
-  if (sym_string == "NONE")      return std::make_unique<SymmetryNONE>(P, allfields);
-  if (sym_string == "P")         return std::make_unique<SymmetryP>(P, allfields);
-  if (sym_string == "PP")        return std::make_unique<SymmetryPP>(P, allfields);
-  if (sym_string == "QJ")        return std::make_unique<SymmetryQJ>(P, allfields);
-  if (sym_string == "QSLR")      return std::make_unique<SymmetryQSLR>(P, allfields); 
-  if (sym_string == "QST")       return std::make_unique<SymmetryQST>(P, allfields);
-  if (sym_string == "QSTZ")      return std::make_unique<SymmetryQSTZ>(P, allfields);
-  if (sym_string == "QSZLR")     return std::make_unique<SymmetryQSZLR>(P, allfields);
-  if (sym_string == "QSZTZ")     return std::make_unique<SymmetryQSZTZ>(P, allfields);
-  if (sym_string == "SL")        return std::make_unique<SymmetrySL>(P, allfields);
-  if (sym_string == "SL3")       return std::make_unique<SymmetrySL3>(P, allfields);
-  if (sym_string == "SPSU2LR")   return std::make_unique<SymmetrySPSU2LR>(P, allfields);
-  if (sym_string == "SPSU2T")    return std::make_unique<SymmetrySPSU2T>(P, allfields);
-  if (sym_string == "SPU1LR")    return std::make_unique<SymmetrySPU1LR>(P, allfields);
-  if (sym_string == "SU2")       return std::make_unique<SymmetrySU2>(P, allfields);
-  if (sym_string == "U1")        return std::make_unique<SymmetryU1>(P, allfields);
+  if (sym_string == "DBLISOSZ")  return std::make_unique<SymmetryDBLISOSZ_tmpl<S>>(P, allfields);
+  if (sym_string == "DBLSU2")    return std::make_unique<SymmetryDBLSU2_tmpl<S>>(P, allfields);
+  if (sym_string == "ISOLR")     return std::make_unique<SymmetryISOLR_tmpl<S>>(P, allfields);
+  if (sym_string == "ISO2LR")    return std::make_unique<SymmetryISO2LR_tmpl<S>>(P, allfields);
+  if (sym_string == "ISOSZLR")   return std::make_unique<SymmetryISOSZLR_tmpl<S>>(P, allfields);
+  if (sym_string == "NONE")      return std::make_unique<SymmetryNONE_tmpl<S>>(P, allfields);
+  if (sym_string == "P")         return std::make_unique<SymmetryP_tmpl<S>>(P, allfields);
+  if (sym_string == "PP")        return std::make_unique<SymmetryPP_tmpl<S>>(P, allfields);
+  if (sym_string == "QJ")        return std::make_unique<SymmetryQJ_tmpl<S>>(P, allfields);
+  if (sym_string == "QSLR")      return std::make_unique<SymmetryQSLR_tmpl<S>>(P, allfields); 
+  if (sym_string == "QST")       return std::make_unique<SymmetryQST_tmpl<S>>(P, allfields);
+  if (sym_string == "QSTZ")      return std::make_unique<SymmetryQSTZ_tmpl<S>>(P, allfields);
+  if (sym_string == "QSZLR")     return std::make_unique<SymmetryQSZLR_tmpl<S>>(P, allfields);
+  if (sym_string == "QSZTZ")     return std::make_unique<SymmetryQSZTZ_tmpl<S>>(P, allfields);
+  if (sym_string == "SL")        return std::make_unique<SymmetrySL_tmpl<S>>(P, allfields);
+  if (sym_string == "SL3")       return std::make_unique<SymmetrySL3_tmpl<S>>(P, allfields);
+  if (sym_string == "SPSU2LR")   return std::make_unique<SymmetrySPSU2LR_tmpl<S>>(P, allfields);
+  if (sym_string == "SPSU2T")    return std::make_unique<SymmetrySPSU2T_tmpl<S>>(P, allfields);
+  if (sym_string == "SPU1LR")    return std::make_unique<SymmetrySPU1LR_tmpl<S>>(P, allfields);
+  if (sym_string == "SU2")       return std::make_unique<SymmetrySU2_tmpl<S>>(P, allfields);
+  if (sym_string == "U1")        return std::make_unique<SymmetryU1_tmpl<S>>(P, allfields);
  #ifdef NRG_COMPLEX
-  if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3>(P, allfields);
-  if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3>(P, allfields);
+  if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3_tmpl<S>>(P, allfields);
+  if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3_tmpl<S>>(P, allfields);
  #endif
 #endif 
   throw std::runtime_error("Unknown symmetry " + sym_string);

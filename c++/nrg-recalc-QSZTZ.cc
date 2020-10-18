@@ -22,8 +22,9 @@
 
 
 
-MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryQSZTZ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1   = I1.get("Q");
     Sspin ssz1  = I1.get("SZ");
@@ -136,8 +137,9 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
 // ch=2 <-> Tz=0
 // ch=3 <-> Tz=-1
 
-Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryQSZTZ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp   = Ip.get("Q");
     Sspin sszp  = Ip.get("SZ");
@@ -243,8 +245,9 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   return opch;
 }
 
-MatrixElements SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryQSZTZ_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1   = I1.get("Q");
     Sspin ssz1  = I1.get("SZ");

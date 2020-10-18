@@ -22,8 +22,9 @@
 
 
 
-Opch SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryISOSZLR_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -283,8 +284,9 @@ Opch SymmetryISOSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, con
 }
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
-MatrixElements SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryISOSZLR_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");
@@ -359,8 +361,9 @@ MatrixElements SymmetryISOSZLR::recalc_doublet(const DiagInfo &diag, const QSrma
 }
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
-MatrixElements SymmetryISOSZLR::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryISOSZLR_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1   = I1.get("II");
     SZspin ssz1 = I1.get("SSZ");

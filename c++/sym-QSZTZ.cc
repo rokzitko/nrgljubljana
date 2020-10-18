@@ -1,9 +1,14 @@
-class SymmetryQSZTZ : public Symmetry {
+template<typename SC>
+class SymmetryQSZTZ_tmpl : public Symmetry_tmpl<SC> {
  private:
    outfield Sz, Sz2, Tz, Tz2, Q, Q2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
  public:
-   template<typename ... Args> SymmetryQSZTZ(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryQSZTZ_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Sz(P, allfields, "<Sz>", 1), Sz2(P, allfields, "<Sz^2>", 2), Tz(P, allfields, "<Tz>", 3), Tz2(P, allfields, "<Tz^2>", 4),
      Q(P, allfields, "<Q>", 5), Q2(P, allfields, "<Q^2>", 6) {
        initInvar({
@@ -11,8 +16,8 @@ class SymmetryQSZTZ : public Symmetry {
          {"SZ", additive}, // spin
          {"TZ", additive}  // angular momentum
        });
-       InvarSinglet = Invar(0, 0, 0);
-       Invar_f      = Invar(1, 2, 1);
+       this->InvarSinglet = Invar(0, 0, 0);
+       this->Invar_f      = Invar(1, 2, 1);
      }
 
   size_t mult(const Invar &I) const override { return 1; }
@@ -31,13 +36,13 @@ class SymmetryQSZTZ : public Symmetry {
 #include "qsztz/qsztz-QN.dat"
   } // load
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ, trSZ2, trTZ, trTZ2, trQ, trQ2;
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
       const Sspin ssz   = I.get("SZ");
       const Tangmom tz  = I.get("TZ");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
       trSZ += sumZ * (ssz - 1) / 2.;
@@ -64,9 +69,10 @@ class SymmetryQSZTZ : public Symmetry {
 #define OFFDIAG(i, j, factor0) offdiag_function(step, i, j, 0, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
-void SymmetryQSZTZ::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryQSZTZ_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   my_assert(!P.substeps);
   my_assert(P.channels == 3);
 #include "qsztz/qsztz-offdiag.dat"

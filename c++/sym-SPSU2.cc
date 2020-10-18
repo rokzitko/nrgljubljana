@@ -1,14 +1,19 @@
-class SymmetrySPSU2 : public Symmetry {
+template<typename SC>
+class SymmetrySPSU2_tmpl : public Symmetry_tmpl<SC> {
   private:
-  outfield Sz2;
+   outfield Sz2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
   public:
-   template<typename ... Args> SymmetrySPSU2(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetrySPSU2_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
       Sz2(P, allfields, "<Sz^2>", 1) {
         initInvar({
           {"SS", additive} // spin
         });
-        InvarSinglet = Invar(1);
+        this->InvarSinglet = Invar(1);
       }
 
   // Multiplicity of the I=(SS) subspace = 2S+1 = SS.
@@ -60,11 +65,11 @@ class SymmetrySPSU2 : public Symmetry {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ; // Tr[S_z^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * (ss * ss - 1) / 12.;
     }
     Sz2 = trSZ / stats.Z;
@@ -82,7 +87,7 @@ class SymmetrySPSU2 : public Symmetry {
 // pairing operator.
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.kappa(step.N(), ch), h, qq, In, opch)
@@ -91,9 +96,10 @@ class SymmetrySPSU2 : public Symmetry {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
-void SymmetrySPSU2::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetrySPSU2_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin ss = I.get("SS");
 
   if (!P.substeps) {
@@ -131,7 +137,7 @@ void SymmetrySPSU2::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq,
 // (-1) factor for M==1.
 // (M == 1 ? -1 : 1)
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, M, t_matel(factor) * 2.0 * (M == 1 ? -1.0 : 1.0) * coef.delta(Ntrue + 1, M), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, M, t_matel(factor) * 2.0 * (M == 1 ? -1.0 : 1.0) * coef.delta(Ntrue + 1, M), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, M, 0, t_matel(factor) * coef.kappa(Ntrue, M), h, qq, In, opch)
@@ -140,7 +146,7 @@ void SymmetrySPSU2::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq,
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * coef.xi(Ntrue, M), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, M, number, coef.zeta(Ntrue + 1, M), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, M, number, coef.zeta(Ntrue + 1, M), h, qq)
 
 #include "spsu2/spsu2-1ch-offdiag.dat"
 #include "spsu2/spsu2-1ch-anomalous.dat"

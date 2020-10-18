@@ -1,15 +1,20 @@
-class SymmetrySPSU2C3 : public SymC3 {
+template<typename SC>
+class SymmetrySPSU2C3_tmpl : public SymC3_tmpl<SC> {
  private:
    outfield Sz2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
  public:
-   template<typename ... Args> SymmetrySPSU2C3(Args&& ... args) : SymC3(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetrySPSU2C3_tmpl(const Params &P, Allfields &allfields) : SymC3_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1) {
        initInvar({
          {"SS", additive}, // spin
          {"P", mod3}       // C_3 rep
        });
-       InvarSinglet = Invar(1, 0); // spin-singlet, C_3 P=0
+       this->InvarSinglet = Invar(1, 0); // spin-singlet, C_3 P=0
      }
 
   size_t mult(const Invar &I) const override { return I.get("SS"); }
@@ -39,30 +44,30 @@ class SymmetrySPSU2C3 : public SymC3 {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ2; // Tr[S_z^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ2 += sumZ * (ss * ss - 1) / 12.;
     }
     Sz2 = trSZ2 / stats.Z;
   }
 
   DECL;
-  // HAS_DOUBLET; HAS_TRIPLET;
 };
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
+#define ISOSPINX(i, j, factor) this->diag_offdiag_function(step, i, j, 0, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
 
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
-void SymmetrySPSU2C3::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetrySPSU2C3_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   my_assert(P.channels == 3);
   Sspin ss = I.get("SS");
 #undef Complex

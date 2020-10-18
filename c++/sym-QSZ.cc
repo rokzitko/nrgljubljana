@@ -8,7 +8,7 @@ class SymmetryQSZ_tmpl : public SymField_tmpl<SC> {
 
  public:
    using Matrix = typename traits<SC>::Matrix;
-   explicit SymmetryQSZ_tmpl(const Params &P, Allfields &allfields) : SymField_tmpl<SC>(P),
+   SymmetryQSZ_tmpl(const Params &P, Allfields &allfields) : SymField_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
        initInvar({
          {"Q", additive},  // charge

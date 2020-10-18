@@ -1,16 +1,21 @@
-class SymmetryQSC3 : public SymC3 {
+template<typename SC>
+class SymmetryQSC3_tmpl : public SymC3_tmpl<SC> {
  private:
    outfield Sz2, Q, Q2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
  public:
-   template<typename ... Args> SymmetryQSC3(Args&& ... args) : SymC3(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryQSC3_tmpl(const Params &P, Allfields &allfields) : SymC3_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"Q", additive},  // charge
          {"SS", additive}, // spin
          {"P", mod3}       // C_3 rep
        });
-       InvarSinglet = Invar(0, 1, 0);
+       this->InvarSinglet = Invar(0, 1, 0);
      }
 
   // Multiplicity of the I=(Q,SS,P) subspace = 2S+1 = SS.
@@ -48,12 +53,12 @@ class SymmetryQSC3 : public SymC3 {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ2, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
       const Number q    = I.get("Q");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
       trSZ2 += sumZ * (ss * ss - 1) / 12.;
@@ -70,9 +75,10 @@ class SymmetryQSC3 : public SymC3 {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
-void SymmetryQSC3::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryQSC3_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   my_assert(P.channels == 3);
   Sspin ss = I.get("SS");
 #undef Complex

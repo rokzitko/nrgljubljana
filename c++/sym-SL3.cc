@@ -1,9 +1,14 @@
-class SymmetrySL3 : public Symmetry {
+template<typename SC>
+class SymmetrySL3_tmpl : public Symmetry_tmpl<SC> {
   private:
-  outfield Q1, Q12, sQ12, Q2, Q22, sQ22, Q3, Q32, sQ32;
+   outfield Q1, Q12, sQ12, Q2, Q22, sQ22, Q3, Q32, sQ32;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
   public:
-   template<typename ... Args> SymmetrySL3(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+    using Matrix = typename traits<SC>::Matrix;
+   SymmetrySL3_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Q1(P, allfields, "<Q1>", 1), Q12(P, allfields, "<Q1^2>", 2), sQ12(P, allfields, "<sQ1^2>", 3),
      Q2(P, allfields, "<Q2>", 4), Q22(P, allfields, "<Q2^2>", 5), sQ22(P, allfields, "<sQ2^2>", 6),
      Q3(P, allfields, "<Q3>", 7), Q32(P, allfields, "<Q3^2>", 8), sQ32(P, allfields, "<sQ3^2>", 9) {
@@ -12,7 +17,7 @@ class SymmetrySL3 : public Symmetry {
          {"Q2", additive}, // charge in channel 2
          {"Q3", additive}  // charge in channel 3
        });
-       InvarSinglet = Invar(0, 0, 0);
+       this->InvarSinglet = Invar(0, 0, 0);
      }
 
   void load() override {
@@ -25,7 +30,7 @@ class SymmetrySL3 : public Symmetry {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trQ1, trQ12; // Tr[Q], Tr[Q^2]
     bucket trQ2, trQ22;
     bucket trQ3, trQ32;
@@ -33,7 +38,7 @@ class SymmetrySL3 : public Symmetry {
       const Number q1   = I.get("Q1");
       const Number q2   = I.get("Q2");
       const Number q3   = I.get("Q3");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trQ1 += sumZ * q1;
       trQ12 += sumZ * q1 * q1;
       trQ2 += sumZ * q2;
@@ -64,9 +69,10 @@ class SymmetrySL3 : public Symmetry {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
-void SymmetrySL3::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetrySL3_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   switch (P.channels) {
     case 3:
 #include "sl3/sl3-3ch-offdiag.dat"

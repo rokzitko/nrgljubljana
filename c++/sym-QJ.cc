@@ -1,16 +1,21 @@
-class SymmetryQJ : public Symmetry {
+template<typename SC>
+class SymmetryQJ_tmpl : public Symmetry_tmpl<SC> {
  private:
    outfield Jz2, Q, Q2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
  public:
-   template<typename ... Args> SymmetryQJ(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryQJ_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Jz2(P, allfields, "<Jz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"Q", additive}, // charge
          {"JJ", additive} // total angular momentum
        });
-       InvarSinglet = Invar(0, 1);
-       Invar_f      = Invar(1, 4);
+       this->InvarSinglet = Invar(0, 1);
+       this->Invar_f      = Invar(1, 4);
      }
 
   // Multiplicity of the (Q,JJ) subspace is 2J+1 = JJ.
@@ -30,12 +35,12 @@ class SymmetryQJ : public Symmetry {
 #include "qj/qj-QN.dat"
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trJZ2, trQ, trQ2; // Tr[J_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Sspin jj    = I.get("JJ");
       const Number q    = I.get("Q");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
       trJZ2 += sumZ * (jj * jj - 1) / 12.;
@@ -77,8 +82,9 @@ class SymmetryQJ : public Symmetry {
     return 0;
   }
 
+  // AAA: const
   void offdiag_function_QJ(const Step &step, unsigned int i, unsigned int j, unsigned int ch, unsigned int fnr, t_matel factor, Matrix &h, const Rmaxvals &qq,
-                           const InvarVec &In, const Opch &opch);
+                           const InvarVec &In, const Opch_tmpl<SC> &opch);
 
   HAS_DOUBLET;
   HAS_QUADRUPLET;
@@ -87,13 +93,14 @@ class SymmetryQJ : public Symmetry {
 
 #include <boost/math/special_functions/factorials.hpp>
 
-double Factorial(double x) { return boost::math::factorial<double>(round(x)); }
+double Factorial(const double x) { return boost::math::factorial<double>(round(x)); }
 
-void SymmetryQJ::offdiag_function_QJ(const Step &step, unsigned int i, unsigned int j,
+template<typename SC>
+void SymmetryQJ_tmpl<SC>::offdiag_function_QJ(const Step &step, unsigned int i, unsigned int j,
                                      unsigned int ch,  // channel number
                                      unsigned int fnr, // extra index for <||f||>, usually 0
                                      t_matel factor,   // may be complex (in principle)
-                                     Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) {
+                                     Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch_tmpl<SC> &opch) {
   const Invar Iop     = (ch == 0 ? Invar(1, 2) : Invar(1, 4));
   const Invar I1      = In[i];
   const Invar I2      = In[j];
@@ -107,13 +114,14 @@ void SymmetryQJ::offdiag_function_QJ(const Step &step, unsigned int i, unsigned 
 #define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(step, i, j, Jndx, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 inline double J(int JJ) {
   return (JJ - 1.0) / 2.0; // JJ=2J+1
 }
 
-void SymmetryQJ::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryQJ_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin jj = I.get("JJ");
 #include "qj/qj-offdiag.dat"
 #include "qj/qj-diag.dat"

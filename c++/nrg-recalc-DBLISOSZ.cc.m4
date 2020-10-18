@@ -6,8 +6,9 @@
 
 include(recalc-macros.m4)
 
-MatrixElements SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryDBLISOSZ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii11 = I1.get("II1");
     Ispin ii21 = I1.get("II2");
@@ -41,8 +42,9 @@ MatrixElements SymmetryDBLISOSZ::recalc_doublet(const DiagInfo &diag, const QSrm
   return cnew;
 }
 
-Opch SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryDBLISOSZ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -82,9 +84,10 @@ Opch SymmetryDBLISOSZ::recalc_irreduc(const Step &step, const DiagInfo &diag, co
 }
 
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetryDBLISOSZ::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+template<typename SC>
+void SymmetryDBLISOSZ_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
   if (name == "SZtot") {
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

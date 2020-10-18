@@ -1,17 +1,22 @@
-class SymmetryQSTZ : public Symmetry {
+template<typename SC>
+class SymmetryQSTZ_tmpl : public Symmetry_tmpl<SC> {
  private:
    outfield Sz2, Tz2, Q, Q2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
  public:
-   template<typename ... Args> SymmetryQSTZ(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryQSTZ_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Tz2(P, allfields, "<Tz^2>", 2),  Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
        initInvar({
          {"Q", additive},  // charge
          {"SS", additive}, // spin
          {"TZ", additive}  // angular momentum
        });
-       InvarSinglet = Invar(0, 1, 0);
-       Invar_f      = Invar(1, 2, 1); // (1,2,1) is correct. see triangle_inequality() below!
+       this->InvarSinglet = Invar(0, 1, 0);
+       this->Invar_f      = Invar(1, 2, 1); // (1,2,1) is correct. see triangle_inequality() below!
      }
 
   // Multiplicity of the (Q,SS,TZ) subspace is (2S+1 = SS).
@@ -50,13 +55,13 @@ class SymmetryQSTZ : public Symmetry {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ2, trTZ2, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
       const Sspin ss    = I.get("SS");
       const Tangmom tz  = I.get("TZ");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
       trSZ2 += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
@@ -80,9 +85,10 @@ class SymmetryQSTZ : public Symmetry {
 #define OFFDIAG(i, j, factor0) offdiag_function(step, i, j, 0, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
-void SymmetryQSTZ::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryQSTZ_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin ss = I.get("SS");
   my_assert(!P.substeps);
   my_assert(P.channels == 3);

@@ -1,14 +1,19 @@
-class SymmetrySU2 : public Symmetry {
+template<typename SC>
+class SymmetrySU2_tmpl : public Symmetry_tmpl<SC> {
  private:
    outfield Q2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
  public:
-   template<typename ... Args> SymmetrySU2(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetrySU2_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Q2(P, allfields, "<Q^2>", 1) {
        initInvar({
          {"II", additive} // isospin
        });
-       InvarSinglet = Invar(1);
+       this->InvarSinglet = Invar(1);
      }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
@@ -45,11 +50,11 @@ class SymmetrySU2 : public Symmetry {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trIZ2; // Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Number ii   = I.get("II");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trIZ2 += sumZ * (ii * ii - 1) / 12.;
     }
     Q2 = (4 * trIZ2) / stats.Z;
@@ -70,7 +75,8 @@ class SymmetrySU2 : public Symmetry {
 #undef OFFDIAG_2
 #define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetrySU2::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetrySU2_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Ispin ii = I.get("II");
   int NN   = step.getnn();
   switch (P.channels) {

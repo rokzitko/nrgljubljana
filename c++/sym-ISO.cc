@@ -1,16 +1,22 @@
-class SymmetryISOcommon : public Symmetry {
+template<typename SC>
+class SymmetryISOcommon_tmpl : public Symmetry_tmpl<SC> {
   private:
    outfield Sz2, Q2;
 
+  protected:
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
+
   public:
-   template<typename ... Args> SymmetryISOcommon(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+   SymmetryISOcommon_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
        initInvar({
          {"II", additive}, // isospin
          {"SS", additive}  // spin
        });
-       InvarSinglet = Invar(1, 1);
-       Invar_f      = Invar(2, 2);
+       this->InvarSinglet = Invar(1, 1);
+       this->Invar_f      = Invar(2, 2);
      }
 
   // Multiplicity of the I=(II,SS) subspace = (2I+1)(2S+1) = II SS.
@@ -46,12 +52,12 @@ class SymmetryISOcommon : public Symmetry {
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
       const Sspin ss    = I.get("SS");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * (ss * ss - 1) / 12.; // isospin multiplicity contained in sumZ
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
@@ -60,9 +66,16 @@ class SymmetryISOcommon : public Symmetry {
   }
 };
 
-class SymmetryISO : public SymmetryISOcommon {
+template<typename SC>
+class SymmetryISO_tmpl : public SymmetryISOcommon_tmpl<SC> {
+  private:
+   using SymmetryISOcommon_tmpl<SC>::P;
+   using SymmetryISOcommon_tmpl<SC>::In;
+   using SymmetryISOcommon_tmpl<SC>::QN;
+
   public:
-   template<typename ... Args> SymmetryISO(Args&& ... args) : SymmetryISOcommon(std::forward<Args>(args)...) {}
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryISO_tmpl(const Params &P, Allfields &allfields) : SymmetryISOcommon_tmpl<SC>(P, allfields) {}
 
   void load() override {
     switch (P.channels) {
@@ -87,9 +100,16 @@ class SymmetryISO : public SymmetryISOcommon {
   HAS_TRIPLET;
 };
 
-class SymmetryISO2 : public SymmetryISOcommon {
+template<typename SC>
+class SymmetryISO2_tmpl : public SymmetryISOcommon_tmpl<SC> {
+  private:
+   using SymmetryISOcommon_tmpl<SC>::P;
+   using SymmetryISOcommon_tmpl<SC>::In;
+   using SymmetryISOcommon_tmpl<SC>::QN;
+
   public:
-   template<typename ... Args> SymmetryISO2(Args&& ... args) : SymmetryISOcommon(std::forward<Args>(args)...) {}
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryISO2_tmpl(const Params &P, Allfields &allfields) : SymmetryISOcommon_tmpl<SC>(P, allfields) {}
 
   void load() override {
     switch (P.channels) {
@@ -114,9 +134,10 @@ class SymmetryISO2 : public SymmetryISOcommon {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
-void SymmetryISO::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryISO_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
   // nn is the index of the last site in the chain, while nn+1 is the
@@ -138,7 +159,8 @@ void SymmetryISO::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, c
   }
 }
 
-void SymmetryISO2::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryISO2_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
   int NN   = step.getnn();

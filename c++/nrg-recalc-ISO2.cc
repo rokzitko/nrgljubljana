@@ -23,8 +23,9 @@
 
 
 
-MatrixElements SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryISO2_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -165,8 +166,9 @@ MatrixElements SymmetryISO2::recalc_doublet(const DiagInfo &diag, const QSrmax &
   return cnew;
 }
 
-Opch SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryISO2_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  Opch_tmpl<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -370,8 +372,9 @@ Opch SymmetryISO2::recalc_irreduc(const Step &step, const DiagInfo &diag, const 
   return opch;
 }
 
-MatrixElements SymmetryISO2::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryISO2_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");

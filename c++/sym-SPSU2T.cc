@@ -1,16 +1,21 @@
-class SymmetrySPSU2T : public Symmetry {
+template<typename SC>
+class SymmetrySPSU2T_tmpl : public Symmetry_tmpl<SC> {
  private:
    outfield Sz2, Tz2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
  public:
-   template<typename ... Args> SymmetrySPSU2T(Args&& ... args) : Symmetry(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetrySPSU2T_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Tz2(P, allfields, "<Tz^2>", 2) {
        initInvar({
          {"SS", additive}, // spin
          {"T", additive}   // angular momentum
        });
-       InvarSinglet = Invar(1, 0);
-       Invar_f      = Invar(2, 1);
+       this->InvarSinglet = Invar(1, 0);
+       this->Invar_f      = Invar(2, 1);
      }
 
   // Multiplicity of the (SS,T) subspace is (2S+1 = SS) times (2T+1).
@@ -58,12 +63,12 @@ class SymmetrySPSU2T : public Symmetry {
     return spinfactor * angmomfactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ2, trTZ2; // Tr[S_z^2], Tr[T_z^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
       const Tangmom t   = I.get("T");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ2 += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
       trTZ2 += sumZ * t * (t + 1) / 3.;
     }
@@ -80,6 +85,7 @@ class SymmetrySPSU2T : public Symmetry {
   }
 };
 
+// AAA: const
 bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
   // In these cases the subspace exists, but taking the T=2 or T=1 limit shows that the coefficient is actually zero,
   // so there is no contribution. (Directly computed factor is nan.) This exception handling is added io order to
@@ -104,26 +110,26 @@ bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
       } else {                                                                                                                                       \
         factor = factor0;                                                                                                                            \
       }                                                                                                                                              \
-      offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                           \
+      this->offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                           \
     }                                                                                                                                                \
   };
 
-// We take the coefficients of the first channel (indexed as 0),
-// because all three set are exactly the same due to orbital
-// symmetry.
+// We take the coefficients of the first channel (indexed as 0), because all three set are exactly the same due to
+// orbital symmetry.
 #undef OFFDIAG
 #define OFFDIAG(i, j, factor0) offdiag_spsu2t(i, j, 0, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, I, opch)
 
 #undef DIAG
-#define DIAG(i, number) diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
+#define ISOSPINX(i, j, factor) this->diag_offdiag_function(step, i, j, 0, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, factor) offdiag_function(step, i, j, 0, 0, t_matel(factor) * coef.kappa(step.N(), 0), h, qq, In, opch)
 
-void SymmetrySPSU2T::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetrySPSU2T_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin ss  = I.get("SS");
   Tangmom t = I.get("T");
   double T  = t; // crucially important to use floating point!

@@ -1,15 +1,20 @@
-class SymmetryISOSZ : public SymField {
+template<typename SC>
+class SymmetryISOSZ_tmpl : public SymField_tmpl<SC> {
   private:
-  outfield Sz2, Sz, Q2;
+   outfield Sz2, Sz, Q2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
   public:
-   template<typename ... Args> SymmetryISOSZ(Args&& ... args) : SymField(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetryISOSZ_tmpl(const Params &P, Allfields &allfields) : SymField_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"II", additive}, // isospin
          {"SSZ", additive} // spin projection
        });
-       InvarSinglet = Invar(1, 0);
+       this->InvarSinglet = Invar(1, 0);
      }
 
   // Multiplicity of the I=(II,SSZ) subspace = (2I+1) = II.
@@ -55,12 +60,12 @@ class SymmetryISOSZ : public SymField {
     return isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ, trSZ2, trIZ2; // Tr[S_z], Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
       const SZspin ssz  = I.get("SSZ");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * sqr(SZ(ssz));        // isospin multiplicity contained in sumZ
       trIZ2 += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
@@ -79,7 +84,8 @@ class SymmetryISOSZ : public SymField {
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
-void SymmetryISOSZ::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetryISOSZ_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Ispin ii = I.get("II");
   int NN   = step.getnn();
 

@@ -1,15 +1,20 @@
-class SymmetrySPU1LR : public SymFieldLR {
+template<typename SC>
+class SymmetrySPU1LR_tmpl : public SymFieldLR_tmpl<SC> {
  private:
    outfield Sz2, Sz;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
  public:
-   template<typename ... Args> SymmetrySPU1LR(Args&& ... args) : SymFieldLR(std::forward<Args>(args)...),
+   using Matrix = typename traits<SC>::Matrix;
+   SymmetrySPU1LR_tmpl(const Params &P, Allfields &allfields) : SymFieldLR_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2) {
        initInvar({
          {"SSZ", additive},    // spin projection
          {"P", multiplicative} // parity
        });
-       InvarSinglet = Invar(0, 1);
+       this->InvarSinglet = Invar(0, 1);
      }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
@@ -39,11 +44,11 @@ class SymmetrySPU1LR : public SymFieldLR {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
     for (const auto &[I, eig]: diag) {
       const SZspin ssz  = I.get("SSZ");
-      const double sumZ = calculate_Z(I, eig, factor);
+      const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * sqr(SZ(ssz));
     }
@@ -58,7 +63,7 @@ class SymmetrySPU1LR : public SymFieldLR {
 };
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.kappa(step.N(), ch), h, qq, In, opch)
@@ -67,9 +72,10 @@ class SymmetrySPU1LR : public SymFieldLR {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
-void SymmetrySPU1LR::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename SC>
+void SymmetrySPU1LR_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   switch (P.channels) {
     case 1:
 #include "spu1lr/spu1lr-1ch-offdiag.dat"
