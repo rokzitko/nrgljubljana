@@ -746,20 +746,21 @@ MatrixElements_tmpl<SC> SymmetryQS_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<
 }
 
 #undef QDIFF
-#define QDIFF(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define QDIFF(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q1
-#define Q1(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define Q1(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef Q2
-#define Q2(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define Q2(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef QTOT
-#define QTOT(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define QTOT(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 template<typename SC>
 void SymmetryQS_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, 
-                                       std::string name, MatrixElements_tmpl<SC> &cnew) {
+                                        std::string name, MatrixElements_tmpl<SC> &cnew) {
+  // AAA: m4 macros!! RECALC_GLOBAL("Qdiff", ...)
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

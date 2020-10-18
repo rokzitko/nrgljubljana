@@ -3,7 +3,8 @@ class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
  private:
    outfield Sz2, Q, Q2;
    using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::recalc1_global;
+   using Symmetry_tmpl<SC>::In;
+   using Symmetry_tmpl<SC>::QN;
 
  public:
    using Matrix = typename Symmetry_tmpl<SC>::Matrix;
@@ -30,8 +31,6 @@ class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
    }
 
    void load() override {
-     using Symmetry_tmpl<SC>::In;
-     using Symmetry_tmpl<SC>::QN;
      if (!P.substeps) {
       switch (P.channels) {
         case 1:
@@ -113,8 +112,8 @@ class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
 #undef RUNGHOP
 #define RUNGHOP(i, j, factor) this->diag_offdiag_function(step, i, j, 0, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
 
-//ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
 template<typename SC>
+ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives; must appear after template
 void SymmetryQS_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
                                      const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin ss = I.get("SS");
