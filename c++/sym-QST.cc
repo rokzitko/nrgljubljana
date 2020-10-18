@@ -121,7 +121,7 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
 
 #define offdiag_qst(i, j, ch, fnr, factor0, h, qq, In, I, opch)                                                                                      \
   {                                                                                                                                                  \
-    const bool contributes = offdiag_contributes(i, j, qq);                                                                                          \
+    const bool contributes = qq.offdiag_contributes(i, j);                                                                                           \
     if (contributes) {                                                                                                                               \
       t_matel factor;                                                                                                                                \
       if (qst_exception(i, j, I)) {                                                                                                                  \
@@ -129,7 +129,7 @@ bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
       } else {                                                                                                                                       \
         factor = factor0;                                                                                                                            \
       }                                                                                                                                              \
-      offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                                \
+      offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                           \
     }                                                                                                                                                \
   };
 

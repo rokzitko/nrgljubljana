@@ -39,13 +39,13 @@ Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     {
   nrglog('f', "RECALC_F(fn=" << "qszlr/qszlr-2ch-spinupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qszlr/qszlr-2ch-spinupa.dat"
         };
-        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -53,13 +53,13 @@ Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     {
   nrglog('f', "RECALC_F(fn=" << "qszlr/qszlr-2ch-spinupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qszlr/qszlr-2ch-spinupb.dat"
         };
-        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -69,13 +69,13 @@ Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     {
   nrglog('f', "RECALC_F(fn=" << "qszlr/qszlr-2ch-spindowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qszlr/qszlr-2ch-spindowna.dat"
         };
-        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -83,13 +83,13 @@ Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     {
   nrglog('f', "RECALC_F(fn=" << "qszlr/qszlr-2ch-spindownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qszlr/qszlr-2ch-spindownb.dat"
         };
-        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -101,13 +101,13 @@ Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     {
   nrglog('f', "RECALC_F(fn=" << "qszlr/qszlr-2ch-spinupdiffa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qszlr/qszlr-2ch-spinupdiffa.dat"
         };
-        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -115,13 +115,13 @@ Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     {
   nrglog('f', "RECALC_F(fn=" << "qszlr/qszlr-2ch-spinupdiffb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qszlr/qszlr-2ch-spinupdiffb.dat"
         };
-        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -131,13 +131,13 @@ Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     {
   nrglog('f', "RECALC_F(fn=" << "qszlr/qszlr-2ch-spindowndiffa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qszlr/qszlr-2ch-spindowndiffa.dat"
         };
-        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -145,13 +145,13 @@ Opch SymmetryQSZLR::recalc_irreduc(const Step &step, const DiagInfo &diag, const
     {
   nrglog('f', "RECALC_F(fn=" << "qszlr/qszlr-2ch-spindowndiffb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qszlr/qszlr-2ch-spindowndiffb.dat"
         };
-        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }

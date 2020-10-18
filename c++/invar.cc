@@ -5,6 +5,7 @@
 #define _nrg_invar_
 
 // Conversion functions: multiplicity (integer) -> quantum number (floating point)
+// WARNING: avoid using S as template variable in places where S() is used!!!
 inline double S(const Sspin SS)    { return (SS - 1.0) / 2.0; }
 inline double ISO(const Ispin II)  { return (II - 1.0) / 2.0; }
 inline double SZ(const SZspin SSZ) { return (SSZ - 1.0) / 2.0; }

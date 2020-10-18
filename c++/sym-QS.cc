@@ -1,16 +1,20 @@
-class SymmetryQS : public Symmetry {
-  private:
-  outfield Sz2, Q, Q2;
+template<typename SC>
+class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
+ private:
+   outfield Sz2, Q, Q2;
+   using Symmetry_tmpl<SC>::P;
+   using Symmetry_tmpl<SC>::recalc1_global;
 
-  public:
-   template<typename ... Args> explicit SymmetryQS(Args&& ... args) : Symmetry(std::forward<Args>(args)...), 
+ public:
+   using Matrix = typename Symmetry_tmpl<SC>::Matrix;
+   explicit SymmetryQS_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"Q", additive}, // charge
          {"SS", additive} // spin
        });
-       InvarSinglet = Invar(0, 1);
-       Invar_f      = Invar(1, 2);
+       this->InvarSinglet = Invar(0, 1);
+       this->Invar_f      = Invar(1, 2);
      }
 
    // Multiplicity of the (Q,SS) subspace is 2S+1 = SS.
@@ -26,7 +30,9 @@ class SymmetryQS : public Symmetry {
    }
 
    void load() override {
-    if (!P.substeps) {
+     using Symmetry_tmpl<SC>::In;
+     using Symmetry_tmpl<SC>::QN;
+     if (!P.substeps) {
       switch (P.channels) {
         case 1:
 #include "qs/qs-1ch-In2.dat"
@@ -68,12 +74,12 @@ class SymmetryQS : public Symmetry {
      return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
    }
 
-   void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+   void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
      bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
      for (const auto &[I, eig]: diag) {
        const Sspin ss    = I.get("SS");
        const Number q    = I.get("Q");
-       const double sumZ = calculate_Z(I, eig, factor);
+       const double sumZ = this->calculate_Z(I, eig, factor);
        trQ += sumZ * q;
        trQ2 += sumZ * q * q;
        trSZ += sumZ * (ss * ss - 1) / 12.;
@@ -88,7 +94,7 @@ class SymmetryQS : public Symmetry {
    HAS_TRIPLET;
    HAS_GLOBAL;
    HAS_SUBSTEPS;
-   void show_coefficients(const Step &, const Coef &) override;
+   void show_coefficients(const Step &, const Coef_tmpl<SC> &) override;
 };
 
 // *** Helper macros for make_matrix() members in matrix.cc
@@ -99,16 +105,18 @@ class SymmetryQS : public Symmetry {
    ch - channel (0 or 1)
    number - number of electrons added in channel 'ch' in subspace 'i' */
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 #undef OFFDIAG_MIX
 #define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xiR(step.N(), ch), h, qq, In, opch)
 
 #undef RUNGHOP
-#define RUNGHOP(i, j, factor) diag_offdiag_function(step, i, j, 0, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
+#define RUNGHOP(i, j, factor) this->diag_offdiag_function(step, i, j, 0, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
 
-ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-void SymmetryQS::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+//ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
+template<typename SC>
+void SymmetryQS_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+                                     const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
   Sspin ss = I.get("SS");
 
   if (!P.substeps) {
@@ -143,7 +151,7 @@ void SymmetryQS::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, co
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * coef.xi(N, M), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) diag_function(step, i, M, number, coef.zeta(N + 1, M), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, M, number, coef.zeta(N + 1, M), h, qq)
 
 #include "qs/qs-1ch-offdiag.dat"
 #include "qs/qs-1ch-diag.dat"
@@ -152,12 +160,14 @@ void SymmetryQS::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, co
   }
 }
 
-void SymmetryQS::show_coefficients(const Step &step, const Coef &coef) {
-  Symmetry::show_coefficients(step, coef);
+template<typename SC>
+void SymmetryQS_tmpl<SC>::show_coefficients(const Step &step, const Coef_tmpl<SC> &coef) {
+  Symmetry_tmpl<SC>::show_coefficients(step, coef);
   if (P.rungs)
     for (unsigned int i = 0; i < P.channels; i++)
       std::cout << "[" << i + 1 << "]"
-           << " xi_rung(" << step.N() << ")=" << coef.xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << coef.zetaR(step.N() + 1, i) << std::endl;
+           << " xi_rung(" << step.N() << ")=" << coef.xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" 
+           << coef.zetaR(step.N() + 1, i) << std::endl;
 }
 
 #include "nrg-recalc-QS.cc"

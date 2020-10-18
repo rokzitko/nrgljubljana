@@ -481,6 +481,15 @@ class Rmaxvals {
    }
    auto operator[](const size_t i) const { return rmax(i); }
    auto total() const { return ranges::accumulate(values, 0); } // total number of states
+   // *** Mathematica interfacing: i1,j1 are 1-based
+   bool offdiag_contributes(const size_t i1, const size_t j1) const { // i,j are 1-based (Mathematica interface)
+     my_assert(1 <= i1 && i1 <= combs() && 1 <= j1 && j1 <= combs());
+     my_assert(i1 != j1);
+     return exists(i1-1) && exists(j1-1); // shift by 1
+   }
+   auto chunk(const size_t i1) const {
+     return std::make_pair(offset(i1-1), rmax(i1-1));
+   }
  private:
    friend ostream &operator<<(ostream &os, const Rmaxvals &rmax) {
      for (const auto &x : rmax.values) os << x << ' ';
@@ -810,7 +819,7 @@ using IterInfo = IterInfo_tmpl<scalar>;
 // Select which symmetries to compile in.
 #ifdef NRG_SYM_BASIC
 #include "sym-QS.cc"
-#include "sym-QSZ.cc"
+//#include "sym-QSZ.cc"
 #endif
 #ifdef NRG_SYM_MORE
 #include "sym-ISO.cc"
@@ -2141,10 +2150,11 @@ void print_about_message() {
   fmt::print(fmt::emphasis::bold, "Compiled on {} at {}\n\n", __DATE__, __TIME__);
 }
 
+template<typename S>
 std::unique_ptr<Symmetry> get(const std::string &sym_string, const Params &P, Allfields &allfields)
 {
-  if (sym_string == "QS")     return std::make_unique<SymmetryQS>(P, allfields);
-  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ>(P, allfields);  
+  if (sym_string == "QS")     return std::make_unique<SymmetryQS_tmpl<S>>(P, allfields);
+//  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ>(P, allfields);  
 #ifdef NRG_SYM_MORE
   if (sym_string == "ISO")    return std::make_unique<SymmetryISO>(P, allfields);
   if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2>(P, allfields);
@@ -2188,7 +2198,7 @@ template <typename S>
 std::shared_ptr<Symmetry> set_symmetry(const Params &P, Stats_tmpl<S> &stats) {
   my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
   std::cout << "SYMMETRY TYPE: " << P.symtype.value() << std::endl;
-  auto Sym = get(P.symtype.value(), P, stats.td.allfields);
+  auto Sym = get<S>(P.symtype.value(), P, stats.td.allfields);
   Sym->load();
   Sym->erase_first();
   return Sym;

@@ -10,7 +10,7 @@ define(`RECALC_TAB', {
         Recalc recalc_table[] = {
 #include $1
         };
-        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), $2);
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), $2);
       }(); // immediately executed lambda
     }
   }
@@ -19,13 +19,13 @@ define(`RECALC_TAB', {
 define(`RECALC_F_TAB', {
   nrglog('f', "RECALC_F(fn=" << $1 << ", ch=" << $2 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include $1
         };
-        opch[$2][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[$2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -34,13 +34,13 @@ define(`RECALC_F_TAB', {
 define(`RECALC_F_TAB_N', {
   nrglog('f', "RECALC_F(fn=" << $1 << ", ch=" << $2 << ", n=" << $3 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include $1
         };
-        opch[$2][$3][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[$2][$3][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }

@@ -32,11 +32,11 @@ template<typename T>
   }
 
 // Find clusters of values which differ by at most 'epsilon'
-mapdd find_clusters(const std::vector<t_eigen> &energies, double epsilon) {
+mapdd find_clusters(const std::vector<t_eigen> &energies, double epsilon) { // AAA: auto ?
   my_assert(energies.size());
   mapdd cluster_mapping;
   auto e0 = energies[0];      // energy of the lower boundary of the cluster, [e0:e1]
-  auto i0 = cbegin(energies); // iterator to the lower boundary of the cluster, [i0:i1]
+  auto i0 = cbegin(energies); // iterator to the lower boundary of the cluster, [i0:i1] /// AAA
   int size = 1;                // number of states in the current cluster
   for (auto i = begin(energies); i != end(energies); ++i) {
     if ((*i - e0) < epsilon) { // in the cluster

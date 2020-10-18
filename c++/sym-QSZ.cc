@@ -1,9 +1,12 @@
-class SymmetryQSZ : public SymField {
+template<typename S>
+class SymmetryQSZ_tmpl : public SymField_tmpl<S> {
  private:
+   Allfields &allfields;
    outfield Sz2, Sz, Q, Q2;
 
  public:
-   template<typename ... Args> explicit SymmetryQSZ(Args&& ... args) : SymField(std::forward<Args>(args)...),
+   using Matrix = typename SymField_tmpl<S>::Matrix;
+   explicit SymmetryQSZ_tmpl(const Params &P, const Allfields &allfields) : SymField_tmpl<S>(P), allfields(allfields),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
        initInvar({
          {"Q", additive},  // charge
@@ -48,10 +51,12 @@ class SymmetryQSZ : public SymField {
      } // if
    }
 
-   void make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef);
-   void make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef);
+   void make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+                              const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef);
+   void make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+                                 const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef);
 
-   void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) override {
+   void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats_tmpl<S> &stats, const double factor) override {
      bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
      for (const auto &[I, eig]: diag) {
        const SZspin ssz  = I.get("SSZ");
@@ -73,7 +78,7 @@ class SymmetryQSZ : public SymField {
    HAS_GLOBAL;
    HAS_SUBSTEPS;
    
-   void show_coefficients(const Step &, const Coef &) override;
+   void show_coefficients(const Step &, const Coef_tmpl<S> &) override;
 };
 
 // *** Helper macros for make_matrix() members in matrix.cc
@@ -99,7 +104,9 @@ class SymmetryQSZ : public SymField {
 // "non-polarized" here means that the coefficients xi do not depend on
 // spin. Note, however, that there is support for a global magnetic field,
 // cf. P.globalB.
-void SymmetryQSZ::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename S>
+void SymmetryQSZ_tmpl<S>::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+                                                   const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef) {
   if (!P.substeps) {
     switch (P.channels) {
       case 1:
@@ -145,7 +152,9 @@ void SymmetryQSZ::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rm
 
 #define DIAG_DOWN(i, j, ch, number) diag_function_half(step, i, ch, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
-void SymmetryQSZ::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename S>
+void SymmetryQSZ_impl<S>::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+                                                const Opch_impl<S> &opch, const Coef_impl<S> &coef) {
   my_assert(!P.substeps); // not implemented!
   switch (P.channels) {
     case 1:
@@ -177,15 +186,18 @@ void SymmetryQSZ::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxv
   }
 }
 
-void SymmetryQSZ::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) {
+template<typename S>
+void SymmetryQSZ_impl<S>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In,
+                                      const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef) {
   if (P.polarized) 
     make_matrix_polarized(h, step, qq, I, In, opch, coef);
   else
     make_matrix_nonpolarized(h, step, qq, I, In, opch, coef);
 }
 
-void SymmetryQSZ::show_coefficients(const Step &step, const Coef &coef) {
-  Symmetry::show_coefficients(step, coef);
+template<typename S>
+void SymmetryQSZ_impl<S>::show_coefficients(const Step &step, const Coef_tmpl<S> &coef) {
+  Symmetry_impl<S>::show_coefficients(step, coef);
   if (P.rungs) 
     for (unsigned int i = 0; i < P.channels; i++) {
       std::cout << "[" << i + 1 << "]"

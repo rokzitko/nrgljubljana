@@ -40,8 +40,8 @@ auto Symmetry_tmpl<S>::recalc_f(const DiagInfo_tmpl<S> &diag,
                                 const Recalc_f_tmpl<S> table[], 
                                 const size_t jmax)
 {
-  nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
-  if (!recalc_f_coupled(I1, Ip, Invar_f)) {
+  nrglog('f', "recalc_f() ** f: I1=(" << I1 << ") Ip=(" << Ip << ")");
+  if (!recalc_f_coupled(I1, Ip, this->Invar_f)) {
     nrglog('f', "Does not fulfill the triangle inequalities.");
     return Matrix(0,0);
   }
@@ -62,8 +62,8 @@ auto Symmetry_tmpl<S>::recalc_f(const DiagInfo_tmpl<S> &diag,
       const auto rmax1 = qsrmax.at(I1).rmax(table[j].i1-1);
       const auto rmaxp = qsrmax.at(Ip).rmax(table[j].ip-1);
       if (!(rmax1 > 0 && rmaxp > 0)) continue;
-      if (P.logletter('f'))
-        nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp);
+      if (P.logletter('f')) 
+        nrgdump6(j, table[j].i1, table[j].ip, table[j].factor, rmax1, rmaxp) << std::endl;
       my_assert(my_isfinite(table[j].factor) && rmax1 == rmaxp);
       const Matrix &U1 = diagI1.blocks[table[j].i1 - 1]; // offset 1.. argh!
       const Matrix &Up = diagIp.blocks[table[j].ip - 1];
@@ -145,8 +145,7 @@ auto Symmetry_tmpl<S>::recalc_general(const DiagInfo_tmpl<S> &diag,
     atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), m, Up, t_coef(0.0), temp);
     atlas::gemm(CblasNoTrans, CblasNoTrans, table[j].factor, U1, temp, t_coef(1.0), cn);
   } // over table
-  if (P.logletter('R'))
-    std::cout << std::endl << "Matrix dump, I1=" << I1 << " Ip=" << Ip << ":" << std::endl << cn << std::endl;
+  if (P.logletter('R')) dump_matrix(cn);
   return cn;
 }
 

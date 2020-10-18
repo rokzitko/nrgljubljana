@@ -96,7 +96,9 @@ CONSTFNC inline auto psgn(const int n) { return n % 2 == 0 ? 1.0 : -1.0; }
 template<typename M> void dump_matrix(const ublas::matrix<M> &m, std::ostream &fout = std::cout) {
   boost::io::ios_base_all_saver ofs(fout);
   fout << std::setprecision(std::numeric_limits<double>::max_digits10);
+  fout << fmt::format("Matrix: {}x{}\n", m.size1(), m.size2());
   for (auto r1 = 0; r1 < m.size1(); r1++) {
+    fout << std::setw(6) << r1 << ":";
     for (auto r2 = 0; r2 < m.size2(); r2++) fout << std::setw(23) << m(r1, r2) << " ";
     fout << std::endl;
   }

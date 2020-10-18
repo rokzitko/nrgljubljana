@@ -6,8 +6,9 @@
 
 include(recalc-macros.m4)
 
-MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template <typename SC>
+MatrixElements_tmpl<SC> SymmetryQS_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
@@ -47,8 +48,9 @@ MatrixElements SymmetryQS::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
 // See Krishna-Murthy p. 1034, equation (B10).
 
 // Driver routine for recalc_f()
-Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) {
-  Opch opch = newopch(P);
+template<typename SC>
+Opch_tmpl<SC> SymmetryQS_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+  auto opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin ssp = Ip.get("SS");
@@ -91,8 +93,9 @@ Opch SymmetryQS::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
 }
  
 // Driver routine for recalc_f() for substeps=true, i.e., chain by chain diagonalisations
-OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, int M) {
-  Opch opch = newopch(P);
+template<typename SC>
+OpchChannel_tmpl<SC> SymmetryQS_tmpl<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, int M) {
+  auto opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin ssp = Ip.get("SS");
@@ -108,8 +111,9 @@ OpchChannel SymmetryQS::recalc_irreduc_substeps(const Step &step, const DiagInfo
 }
 
 // Recalculate matrix elements of a triplet tenzor operator
-MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold) {
-  MatrixElements cnew;
+template<typename SC>
+MatrixElements_tmpl<SC> SymmetryQS_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
+  MatrixElements_tmpl<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Number q1 = I1.get("Q");
@@ -150,7 +154,9 @@ MatrixElements SymmetryQS::recalc_triplet(const DiagInfo &diag, const QSrmax &qs
 #undef QTOT
 #define QTOT(i1, ip, ch, value) recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-void SymmetryQS::recalc_global(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, string name, MatrixElements &cnew) {
+template<typename SC>
+void SymmetryQS_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, 
+                                       std::string name, MatrixElements_tmpl<SC> &cnew) {
   if (name == "Qdiff") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

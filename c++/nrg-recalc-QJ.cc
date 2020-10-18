@@ -40,7 +40,7 @@ MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
         Recalc recalc_table[] = {
 #include "qj/qj-doubletp.dat"
         };
-        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
       }(); // immediately executed lambda
     }
   }
@@ -56,7 +56,7 @@ MatrixElements SymmetryQJ::recalc_doublet(const DiagInfo &diag, const QSrmax &qs
         Recalc recalc_table[] = {
 #include "qj/qj-doubletm.dat"
         };
-        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
       }(); // immediately executed lambda
     }
   }
@@ -87,7 +87,7 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
         Recalc recalc_table[] = {
 #include "qj/qj-quad1.dat"
         };
-        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
       }(); // immediately executed lambda
     }
   }
@@ -103,7 +103,7 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
         Recalc recalc_table[] = {
 #include "qj/qj-quad2.dat"
         };
-        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
       }(); // immediately executed lambda
     }
   }
@@ -119,7 +119,7 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
         Recalc recalc_table[] = {
 #include "qj/qj-quad3.dat"
         };
-        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
       }(); // immediately executed lambda
     }
   }
@@ -135,7 +135,7 @@ MatrixElements SymmetryQJ::recalc_quadruplet(const DiagInfo &diag, const QSrmax 
         Recalc recalc_table[] = {
 #include "qj/qj-quad4.dat"
         };
-        cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
       }(); // immediately executed lambda
     }
   }
@@ -156,13 +156,13 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
     {
   nrglog('f', "RECALC_F(fn=" << "qj/qj-spin_j3_2-jz3_2.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j3_2-jz3_2.dat"
         };
-        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -172,13 +172,13 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
     {
   nrglog('f', "RECALC_F(fn=" << "qj/qj-spin_j1_2-jz1_2.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j1_2-jz1_2.dat"
         };
-        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -186,13 +186,13 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
     {
   nrglog('f', "RECALC_F(fn=" << "qj/qj-spin_j3_2-jz1_2.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j3_2-jz1_2.dat"
         };
-        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -202,13 +202,13 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
     {
   nrglog('f', "RECALC_F(fn=" << "qj/qj-spin_j1_2-jz-1_2.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j1_2-jz-1_2.dat"
         };
-        opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -216,13 +216,13 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
     {
   nrglog('f', "RECALC_F(fn=" << "qj/qj-spin_j3_2-jz-1_2.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j3_2-jz-1_2.dat"
         };
-        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
@@ -232,13 +232,13 @@ Opch SymmetryQJ::recalc_irreduc(const Step &step, const DiagInfo &diag, const QS
     {
   nrglog('f', "RECALC_F(fn=" << "qj/qj-spin_j3_2-jz-3_2.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
+  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
         Recalc_f recalc_table[] = {
 #include "qj/qj-spin_j3_2-jz-3_2.dat"
         };
-        opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
       }();
     }
   }
