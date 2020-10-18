@@ -4,7 +4,8 @@
 using mapdd = std::unordered_map<t_eigen, t_eigen>;
 
 // Fix splittings of eigenvalues. Returns true if any changes had been made.
-void fix_splittings(DiagInfo &diag, const mapdd &cluster_mapping) {
+template<typename S>
+void fix_splittings(DiagInfo_tmpl<S> &diag, const mapdd &cluster_mapping) {
   for(auto &[I, eig]: diag) { 
     for (auto &r : eig.value_zero) 
       if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())

@@ -5,16 +5,18 @@
 #define _spectral_h_
 
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
-using t_delta_peak = std::pair<double, t_weight>;
+template<typename S>
+using t_delta_peak = std::pair<double, typename traits<S>::t_weight>;
 
-inline void outputxy(std::ostream &F, const double x, const t_weight y, const bool imagpart, const double clip_tol_imag = 1e-10) {
+inline void outputxy(std::ostream &F, const double x, const std::complex<double> y, const bool imagpart, const double clip_tol_imag = 1e-10) {
   const auto [r, i] = reim(y);
   F << x << " " << r;
   if (imagpart) F << " " << (abs(i)>abs(r)*clip_tol_imag ? i : 0);
   F << std::endl;
 }
 
-class Spikes : public std::vector<t_delta_peak> {
+template<typename S>
+class Spikes : public std::vector<t_delta_peak<S>> {
  public:
    template<typename T>
      void save(T&& F, const int prec, const bool imagpart) {

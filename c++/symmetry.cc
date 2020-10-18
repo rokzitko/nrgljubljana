@@ -193,11 +193,11 @@ class Symmetry {
 
    virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) { return true; } // used in recalc_f()
 
-   Matrix recalc_f(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I1,
-                   const Invar &Ip, const struct Recalc_f table[], const size_t jmax);
+   auto recalc_f(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I1,
+                 const Invar &Ip, const struct Recalc_f table[], const size_t jmax);
 
    Matrix recalc_general(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold,
-                         const Invar &I1, const Invar &Ip, const struct Recalc table[], const size_t jmax, const Invar &Iop) const;
+                       const Invar &I1, const Invar &Ip, const struct Recalc table[], const size_t jmax, const Invar &Iop) const;
 
    void recalc1_global(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I,
                        Matrix &m, const size_t i1, const size_t ip, const t_factor value) const;

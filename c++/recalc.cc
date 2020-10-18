@@ -5,7 +5,8 @@
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
 // completed!
-void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
+template<typename S>
+void split_in_blocks_Eigen(const Invar &I, Eigen_tmpl<S> &e, const QSrmax &qsrmax) {
   const auto combs = qsrmax.at(I).combs();
   e.blocks.resize(combs);
   const auto nr = e.getnrstored(); // nr. of eigenpairs
@@ -16,7 +17,7 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
     const auto offset = qsrmax.at(I).offset(block);
     my_assert(e.matrix.size1() >= nr);
     my_assert(e.matrix.size2() >= offset + rmax);
-    ublas::matrix_range<Matrix> Up(e.matrix, ublas::range(0, nr), ublas::range(offset, offset + rmax));
+    ublas::matrix_range<typename traits<S>::Matrix> Up(e.matrix, ublas::range(0, nr), ublas::range(offset, offset + rmax));
     e.blocks[block] = Matrix(Up);
     my_assert(e.blocks[block].size1() == nr);
     my_assert(e.blocks[block].size2() == rmax);
@@ -24,18 +25,19 @@ void split_in_blocks_Eigen(const Invar &I, Eigen &e, const QSrmax &qsrmax) {
   e.matrix = Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!
 }
 
-void split_in_blocks(DiagInfo &diag, const QSrmax &qsrmax) {
+template<typename S>
+void split_in_blocks(DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax) {
   for(auto &[I, eig]: diag)
     split_in_blocks_Eigen(I, eig, qsrmax);
 }
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
-Matrix Symmetry::recalc_f(const DiagInfo &diag, 
-                          const QSrmax &qsrmax, 
-                          const Invar &I1,
-                          const Invar &Ip, 
-                          const struct Recalc_f table[], 
-                          const size_t jmax)
+auto Symmetry::recalc_f(const DiagInfo &diag, 
+                        const QSrmax &qsrmax, 
+                        const Invar &I1,
+                        const Invar &Ip, 
+                        const struct Recalc_f table[], 
+                        const size_t jmax)
 {
   nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
   if (!recalc_f_coupled(I1, Ip, Invar_f)) {

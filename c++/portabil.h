@@ -22,14 +22,14 @@ inline void print_trace() {
 
 inline bool my_isfinite(const double x) { return std::isfinite(x); }
 
-using cmpl = complex<double>;
+using cmpl = std::complex<double>;
 
 inline bool my_isfinite(cmpl z) { return std::isfinite(z.real()) && std::isfinite(z.imag()); }
 
 inline int isfinite(cmpl z) { return (std::isfinite(z.real()) && std::isfinite(z.imag()) ? 1 : 0); }
 
 template <typename T> 
-inline  T finite_test_fnc(T x, const char *file, int line) {
+inline T finite_test_fnc(T x, const char *file, const int line) {
   if (!my_isfinite(x)) {
     std::cout << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;
     std::cout << "File " << file << ", line " << line << "." << std::endl;
@@ -140,25 +140,25 @@ inline int memoryused() {
 inline int memoryused() { return 0; }
 #endif
 
-inline ofstream safe_open(string filename, bool binary = false) {
+inline std::ofstream safe_open(const std::string filename, const bool binary = false) {
   my_assert(filename != "");
-  ios::openmode flag = ios::out;
-  if (binary) flag |= ios::binary;
-  ofstream F(filename, flag);
+  std::ios::openmode flag = std::ios::out;
+  if (binary) flag |= std::ios::binary;
+  std::ofstream F(filename, flag);
   if (!F) throw std::runtime_error(fmt::format("Can't open {} for writing", filename));
   return F;
 }
 
-inline ifstream safe_open_for_reading(string filename, bool binary = false) {
+inline std::ifstream safe_open_for_reading(const std::string filename, const bool binary = false) {
   my_assert(filename != "");
-  ios::openmode flag = ios::in;
-  if (binary) flag |= ios::binary;
-  ifstream F(filename, flag);
+  std::ios::openmode flag = std::ios::in;
+  if (binary) flag |= std::ios::binary;
+  std::ifstream F(filename, flag);
   if (!F) throw std::runtime_error(fmt::format("Can't open {} for reading", filename));
   return F;
 }
 
-inline int remove(const string &filename) { return remove(filename.c_str()); } // C function
+inline int remove(const std::string &filename) { return remove(filename.c_str()); } // C function
 
 #if defined(__clang__) || defined (__GNUC__)
 # define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
