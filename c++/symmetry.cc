@@ -35,7 +35,7 @@ template<typename S>
 struct Recalc_f_tmpl {
   size_t i1; // subspace indexes
   size_t ip;
-  typename traits<S>::t_factor factor;
+  typename traits<S>::t_coef factor;
 };
 using Recalc_f = Recalc_f_tmpl<scalar>;
 
@@ -47,7 +47,7 @@ struct Recalc_tmpl {
   size_t ip{};
   Invar IN1; // subspace in N-1 stage
   Invar INp;
-  typename traits<S>::t_factor factor{}; // additional multiplicative factor
+  typename traits<S>::t_coef factor{}; // additional multiplicative factor
 };
 using Recalc = Recalc_tmpl<scalar>;
 
@@ -128,7 +128,7 @@ class Symmetry_tmpl {
    
    bool offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const;
    void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_coef factor,
-                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const; // AAA
+                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch_tmpl<S> &opch) const; // AAA
    void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                            Matrix &h, const Rmaxvals &qq, const double f) const;
    void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
@@ -204,14 +204,14 @@ class Symmetry_tmpl {
 
    virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) { return true; } // used in recalc_f()
 
-   auto recalc_f(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I1,
-                 const Invar &Ip, const Recalc_f table[], const size_t jmax);
+   auto recalc_f(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const Invar &I1,
+                 const Invar &Ip, const Recalc_f_tmpl<S> table[], const size_t jmax);
 
-   auto recalc_general(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold,
-                       const Invar &I1, const Invar &Ip, const Recalc table[], const size_t jmax, const Invar &Iop) const;
+   auto recalc_general(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<S> &cold,
+                       const Invar &I1, const Invar &Ip, const Recalc_tmpl<S> table[], const size_t jmax, const Invar &Iop) const;
 
-   void recalc1_global(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I,
-                       Matrix &m, const size_t i1, const size_t ip, const t_factor value) const;
+   void recalc1_global(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const Invar &I,
+                       Matrix &m, const size_t i1, const size_t ip, const t_coef value) const;
 
    auto CorrelatorFactorFnc() const   { return [this](const Invar &Ip, const Invar &I1) { return this->mult(I1); }; }
    auto SpecdensFactorFnc() const     { return [this](const Invar &Ip, const Invar &I1) { return this->specdens_factor(Ip, I1); }; }

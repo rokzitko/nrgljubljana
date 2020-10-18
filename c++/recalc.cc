@@ -33,11 +33,11 @@ void split_in_blocks(DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax) {
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<typename S>
-auto Symmetry_tmpl<S>::recalc_f(const DiagInfo &diag, 
+auto Symmetry_tmpl<S>::recalc_f(const DiagInfo_tmpl<S> &diag, 
                                 const QSrmax &qsrmax, 
                                 const Invar &I1,
                                 const Invar &Ip, 
-                                const Recalc_f table[], 
+                                const Recalc_f_tmpl<S> table[], 
                                 const size_t jmax)
 {
   nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
@@ -45,8 +45,8 @@ auto Symmetry_tmpl<S>::recalc_f(const DiagInfo &diag,
     nrglog('f', "Does not fulfill the triangle inequalities.");
     return Matrix(0,0);
   }
-  const Eigen &diagI1 = diag.at(I1);
-  const Eigen &diagIp = diag.at(Ip);
+  const Eigen_tmpl<S> &diagI1 = diag.at(I1);
+  const Eigen_tmpl<S> &diagIp = diag.at(Ip);
   // Number of states in Ip and in I1, i.e. the dimension of the <||f||> matrix of irreducible matrix elements.
   const auto dim1 = diagI1.getnrstored();
   const auto dimp = diagIp.getnrstored();
@@ -69,7 +69,7 @@ auto Symmetry_tmpl<S>::recalc_f(const DiagInfo &diag,
       const Matrix &Up = diagIp.blocks[table[j].ip - 1];
       my_assert(U1.size1() == dim1 && Up.size1() == dimp && U1.size2() == Up.size2());
       my_assert(rmax1 == U1.size2() && rmaxp == Up.size2());
-      atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(table[j].factor), U1, Up, t_factor(1.0), f);
+      atlas::gemm(CblasNoTrans, CblasConjTrans, table[j].factor, U1, Up, t_coef(1.0), f);
     } // loop over j
   }
   if (P.logletter('F')) dump_matrix(f);
@@ -81,12 +81,12 @@ auto Symmetry_tmpl<S>::recalc_f(const DiagInfo &diag,
 // recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
 // one should try to hand optimize.
 template<typename S>
-auto Symmetry_tmpl<S>::recalc_general(const DiagInfo &diag, 
+auto Symmetry_tmpl<S>::recalc_general(const DiagInfo_tmpl<S> &diag,
                                       const QSrmax &qsrmax,        // information about the matrix structure
-                                      const MatrixElements &cold,
+                                      const MatrixElements_tmpl<S> &cold,
                                       const Invar &I1,             // target subspace (bra)
                                       const Invar &Ip,             // target subspace (ket)
-                                      const Recalc table[],
+                                      const Recalc_tmpl<S> table[],
                                       const size_t jmax,           // length of table
                                       const Invar &Iop) const      // quantum numbers of the operator
 {
@@ -94,8 +94,8 @@ auto Symmetry_tmpl<S>::recalc_general(const DiagInfo &diag,
     std::cout << "recalc_general: ";
     nrgdump3(I1, Ip, Iop) << std::endl;
   }
-  const Eigen &diagI1 = diag.at(I1);
-  const Eigen &diagIp = diag.at(Ip);
+  const Eigen_tmpl<S> &diagI1 = diag.at(I1);
+  const Eigen_tmpl<S> &diagIp = diag.at(Ip);
   const auto dim1 = diagI1.getnrstored();
   const auto dimp = diagIp.getnrstored();
   const Twoinvar II = {I1, Ip};
@@ -142,8 +142,8 @@ auto Symmetry_tmpl<S>::recalc_general(const DiagInfo &diag,
     my_assert(U1.size1() == dim1 && U1.size2() == rmax1 && Up.size1() == dimp && Up.size2() == rmaxp);
     // &&&& Performace hot-spot. Ensure that you're using highly optimised BLAS library.
     Matrix temp(rmax1, dimp);
-    atlas::gemm(CblasNoTrans, CblasConjTrans, t_factor(1.0), m, Up, t_factor(0.0), temp);
-    atlas::gemm(CblasNoTrans, CblasNoTrans, t_factor(table[j].factor), U1, temp, t_factor(1.0), cn);
+    atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), m, Up, t_coef(0.0), temp);
+    atlas::gemm(CblasNoTrans, CblasNoTrans, table[j].factor, U1, temp, t_coef(1.0), cn);
   } // over table
   if (P.logletter('R'))
     std::cout << std::endl << "Matrix dump, I1=" << I1 << " Ip=" << Ip << ":" << std::endl << cn << std::endl;
@@ -152,16 +152,16 @@ auto Symmetry_tmpl<S>::recalc_general(const DiagInfo &diag,
 
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
 template<typename S>
-void Symmetry_tmpl<S>::recalc1_global(const DiagInfo &diag,
+void Symmetry_tmpl<S>::recalc1_global(const DiagInfo_tmpl<S> &diag,
                                       const QSrmax &qsrmax,
                                       const Invar &I, 
                                       Matrix &m, // XXX: return this one
                                       const size_t i1, 
                                       const size_t ip, 
-                                      const t_factor value) const 
+                                      const t_coef value) const 
 {
   my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
-  const Eigen &diagI = diag.at(I);
+  const Eigen_tmpl<S> &diagI = diag.at(I);
   const auto dim = diagI.getnrstored();
   if (dim == 0) return;
   const auto rmax1 = qsrmax.at(I).rmax(i1-1);
@@ -173,7 +173,7 @@ void Symmetry_tmpl<S>::recalc1_global(const DiagInfo &diag,
   my_assert(U1.size1() == dim && U1.size2() == rmax1);
   my_assert(Up.size1() == dim && Up.size2() == rmaxp);
   // m = m + value * U1 * Up^trans
-  atlas::gemm(CblasNoTrans, CblasConjTrans, value, U1, Up, t_factor(1.0), m);
+  atlas::gemm(CblasNoTrans, CblasConjTrans, value, U1, Up, t_coef(1.0), m);
 }
 
 #endif // _recalc_cc_

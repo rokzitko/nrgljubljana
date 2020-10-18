@@ -39,7 +39,7 @@
 using scalar = double;
 using t_matel = double;                       // type for the matrix elements
 using t_coef = double;                        // type for the Wilson chain coefficients
-using t_factor = double;                      // type for various prefactors in recalculations
+using t_coef = double;                      // type for various prefactors in recalculations
 using t_expv = double;                        // type for expectation values of operators
 #endif
 
@@ -47,7 +47,7 @@ using t_expv = double;                        // type for expectation values of 
 using scalar = cmpl;
 using t_matel = cmpl;
 using t_coef = cmpl;
-using t_factor = cmpl;
+using t_coef = cmpl;
 using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
 #endif
 
@@ -57,10 +57,9 @@ using t_weight = cmpl;   // spectral weight accumulators (always complex)
 template <typename S> struct traits {};
 
 template <> struct traits<double> {
-  using t_matel = double;                       // type for the matrix elements
-  using t_coef = double;                        // type for the Wilson chain coefficients
-  using t_factor = double;                      // type for various prefactors in recalculations
-  using t_expv = double;                        // type for expectation values of operators
+  using t_matel = double;  // type for the matrix elements
+  using t_coef = double;   // type for the Wilson chain coefficients & various prefactors
+  using t_expv = double;   // type for expectation values of operators
   using t_eigen = double;  // type for the eigenvalues (always double)
   using t_weight = cmpl;   // spectral weight accumulators (always complex)
   using Matrix = ublas::matrix<t_matel>;
@@ -69,8 +68,7 @@ template <> struct traits<double> {
 template <> struct traits<cmpl> {
   using t_matel = cmpl;
   using t_coef = cmpl;
-  using t_factor = cmpl;
-  using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
+  using t_expv = cmpl;     // we allow the calculation of expectation values of non-Hermitian operators!
   using t_eigen = double;  // type for the eigenvalues (always double)
   using t_weight = cmpl;   // spectral weight accumulators (always complex)
   using Matrix = ublas::matrix<t_matel>;
@@ -717,7 +715,7 @@ class Algo {
    virtual ~Algo() = default;
    virtual std::shared_ptr<ChainSpectrum> make_cs(const BaseSpectrum &) = 0;
    virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, 
-                     const BaseSpectrum &, t_factor, std::shared_ptr<ChainSpectrum>, const Invar &,
+                     const BaseSpectrum &, t_coef, std::shared_ptr<ChainSpectrum>, const Invar &,
                      const Invar &, const DensMatElements &, const Stats &stats) const {};
    virtual string name() = 0;
    virtual string merge() { return ""; }    // what merging rule to use

@@ -30,7 +30,7 @@ void Symmetry_tmpl<S>::offdiag_function_impl(const Step &step, const size_t i, c
                                              const size_t ch,      // channel number
                                              const size_t fnr,     // extra index for <||f||>, usually 0
                                              const t_coef factor,  // may be complex (in principle)
-                                             Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const 
+                                             Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch_tmpl<S> &opch) const 
 {
   my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
   if (!my_isfinite(factor))

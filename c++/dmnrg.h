@@ -12,7 +12,7 @@ void cdmI(const size_t i,        // Subspace index
           const Eigen &diagI1,   // contains U_{I1}
           Matrix &rhoNEW,        // rho^{N-1}
           const size_t N,
-          const t_factor factor, // multiplicative factor that accounts for multiplicity
+          const t_coef factor, // multiplicative factor that accounts for multiplicity
           const AllSteps &dm,
           const Params &P) 
 {
@@ -38,8 +38,8 @@ void cdmI(const size_t i,        // Subspace index
   my_assert(nromega <= dim1 && offset + dim <= dim2);
   const ublas::matrix_range<const Matrix> U(diagI1.matrix, ublas::range(0, nromega), ublas::range(offset, offset + dim));
   Matrix T(dim, nromega);
-  atlas::gemm(CblasConjTrans, CblasNoTrans, t_factor(1.0), U, rhoN, t_factor(0.0), T);    // T <- U^dag rhoN
-  atlas::gemm(CblasNoTrans, CblasNoTrans, t_factor(factor), T, U, t_factor(1.0), rhoNEW); // rhoNEW <- rhoNEW + factor T U
+  atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, rhoN, t_coef(0.0), T);    // T <- U^dag rhoN
+  atlas::gemm(CblasNoTrans, CblasNoTrans, factor, T, U, t_coef(1.0), rhoNEW); // rhoNEW <- rhoNEW + factor T U
 }
 
 // Calculation of the shell-N REDUCED DENSITY MATRICES: Calculate rho at previous iteration (N-1, rhoPrev) from rho
@@ -148,7 +148,7 @@ void calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
     for (const auto i : Sym->combs()) {
       const auto sub = subs[i];
       // DM construction for non-Abelian symmetries: must include the ratio of multiplicities as a coefficient.
-      const t_factor coef = double(Sym->mult(sub)) / double(Sym->mult(I));
+      const t_coef coef = double(Sym->mult(sub)) / double(Sym->mult(I));
       // Contribution from the KK sector.
       const auto x1 = rhoFDM.find(sub);
       const auto y = diag.find(sub);

@@ -2,7 +2,7 @@ class Algo_FT : public Algo {
  public:
    explicit Algo_FT(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
-   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_coef, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "FT"; }
    string merge() override { return "NN2"; }
@@ -12,7 +12,7 @@ class Algo_FT : public Algo {
 // This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
 // s=1 for bosons, s=-1 for fermions
 // See Eq.(9) in Peters, Pruschke, Anders, PRB (74) 245114 (2006)
-void Algo_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
                    spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   for (const auto r1: diagI1.kept()) {
@@ -30,13 +30,13 @@ class Algo_FTmats : public Algo {
  public:
    explicit Algo_FTmats(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(P, bs.mt); }
-   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_coef, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "FTmats"; }
 };
 
 void Algo_FTmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
-                       t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
+                       t_coef spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   const size_t cutoff = P.mats;
   const auto sign     = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   auto csm            = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
@@ -62,7 +62,7 @@ class Algo_GT_generic : public Algo {
  public:
    explicit Algo_GT_generic(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumTemp>(P); }
-   void calc(const Step &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+   void calc(const Step &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_coef, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "ERROR"; }
 };
@@ -91,7 +91,7 @@ class Algo_I2T : public Algo_GT_generic {
 // peaks), but rather a tabulated G(T), so binning needs to be turned off.
 // See Yoshida, Seridonio, Oliveira, arxiv:0906.4289, Eq. (8).
 void Algo_GT_generic::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
-                           t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
+                           t_coef spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   my_assert(bs.mt == matstype::fermionic);                  // restricted implementation
   const double temperature = P.gtp * step.scale(); // in absolute units!
   const double beta        = 1.0 / temperature;
@@ -135,7 +135,7 @@ class Algo_CHIT : public Algo {
  public:
    explicit Algo_CHIT(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumTemp>(P); }
-   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_coef, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "CHIT"; }
 };
@@ -144,7 +144,7 @@ class Algo_CHIT : public Algo {
 // elements of global operators. Binning needs to be turned off. Note that Zchit needs to be calculated with the same
 // 'temperature' parameter that we use for the exponential functions in the following equation. The output is
 // chi/beta = k_B T chi, as we prefer.
-void Algo_CHIT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_CHIT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
                      spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
   my_assert(bs.mt == matstype::bosonic); // restricted implementation
   const double temperature = P.chitp * step.scale(); // in absolute units!

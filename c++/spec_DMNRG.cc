@@ -4,14 +4,14 @@ class Algo_DMNRG : public Algo {
  public:
    explicit Algo_DMNRG(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
-   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_coef, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "DMNRG"; }
    string merge() override { return "NN2"; }
    string rho_type() override { return "rho"; }
 };
 
-void Algo_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   const double Emin = P.ZBW ? 0 : P.getEmin();
@@ -42,14 +42,14 @@ class Algo_DMNRGmats : public Algo {
  public:
    explicit Algo_DMNRGmats(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(P, bs.mt); }
-   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_coef, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "DMNRGmats"; }
    string rho_type() override { return "rho"; }
 };
 
 void Algo_DMNRGmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
-                          t_factor spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
+                          t_coef spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   auto csm   = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   const Matrix &rhoNIp = rho.at(Ip);

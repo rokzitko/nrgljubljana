@@ -2,7 +2,7 @@ class Algo_CFSls : virtual public Algo {
  public:
    explicit Algo_CFSls(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
-   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_coef, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "CFSls"; }
    string merge() override { return "CFS"; }
@@ -13,7 +13,7 @@ class Algo_CFSgt : virtual public Algo {
  public:
    explicit Algo_CFSgt(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
-   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_factor, spCS_t, const Invar &,
+   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_coef, spCS_t, const Invar &,
              const Invar &, const DensMatElements &, const Stats &stats) const override;
    string name() override { return "CFSgt"; }
    string merge() override { return "CFS"; }
@@ -24,7 +24,7 @@ class Algo_CFS : public Algo_CFSls, public Algo_CFSgt {
  public:
    explicit Algo_CFS(const Params &P) : Algo(P), Algo_CFSls(P), Algo_CFSgt(P) {}
    spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
              spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const override {
                Algo_CFSgt::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
                Algo_CFSls::calc(step, diagIp, diagI1, op1II, op2II, bs, spinfactor, cs, Ip, I1, rho, stats);
@@ -37,7 +37,7 @@ class Algo_CFS : public Algo_CFSls, public Algo_CFSgt {
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 
 // Based on the implementation by Markus Greger.
-void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
   const auto &rhoNIp = rho.at(Ip);
@@ -72,7 +72,7 @@ void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1
   }
 }
 
-void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_factor spinfactor,
+void Algo_CFSgt::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
   const auto &rhoNIp = rho.at(Ip);
   const auto &rhoNI1 = rho.at(I1);
