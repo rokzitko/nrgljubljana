@@ -5,19 +5,19 @@
 #define _misc_h_
 
 // Conversion functions
-template <class T> T fromstring(const string &str) {
+template <class T> T fromstring(const std::string &str) {
   T result;
   try {
     result = boost::lexical_cast<T>(str);
   } catch (boost::bad_lexical_cast &) { throw std::runtime_error(fmt::format("Lexical cast [{}] failed.", str)); }
   return result;
 }
-template <> bool fromstring(const string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
+template <> bool fromstring(const std::string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
 // for T=int, std::to_string is used
-template <class T> string to_string(const T val) { return boost::lexical_cast<string>(val); }
+template <class T> std::string to_string(const T val) { return boost::lexical_cast<std::string>(val); }
 
 // switch statement with three cases
-template <typename T, typename T1> T switch3(T1 x0, T1 x1, T y1, T1 x2, T y2, T1 x3, T y3) {
+template <typename T, typename T1> T switch3(const T1 x0, const T1 x1, const T y1, const T1 x2, const T y2, const T1 x3, const T y3) {
   if (x0 == x1) return y1;
   if (x0 == x2) return y2;
   if (x0 == x3) return y3;
@@ -25,10 +25,10 @@ template <typename T, typename T1> T switch3(T1 x0, T1 x1, T y1, T1 x2, T y2, T1
 }
 
 // Get next line from stream F, skipping empty lines and comments.
-string getnextline(ifstream &F) {
-  string line;
+std::string getnextline(std::ifstream &F) {
+  std::string line;
   while (F) {
-    getline(F, line);
+    std::getline(F, line);
     if (!F) // bail out
       break;
     if (line.length() == 0) // skip empty lines
@@ -40,27 +40,27 @@ string getnextline(ifstream &F) {
   return ""; // error
 }
 
-void strip_trailing_whitespace(string &s) {
-  string::reverse_iterator it = rbegin(s);
-  while (it != rend(s) && isspace(*it)) {
+void strip_trailing_whitespace(std::string &s) {
+  std::string::reverse_iterator it = s.rbegin();
+  while (it != s.rend() && isspace(*it)) {
     s.erase(--it.base());
-    it = rbegin(s);
+    it = s.rbegin();
   }
 }
 
 // Parse a block of "keyword=value" lines.
-auto parse_block(ifstream &F) {
-  map<string, string> parsed_params; 
+auto parse_block(std::ifstream &F) {
+  std::map<std::string, std::string> parsed_params; 
   while (F) {
-    string line = getnextline(F);
+    std::string line = getnextline(F);
     if (!F) break;
     if (line[0] == '[') // new block, we're done!
       break;
-    string::size_type pos_eq = line.find_first_of('=');
-    if (pos_eq == string::npos) // not found
+    std::string::size_type pos_eq = line.find_first_of('=');
+    if (pos_eq == std::string::npos) // not found
       continue;
-    const string keyword = line.substr(0, pos_eq);
-    string value         = line.substr(pos_eq + 1);
+    const std::string keyword = line.substr(0, pos_eq);
+    std::string value         = line.substr(pos_eq + 1);
     // Important: Strip trailing whitespace to avoid hard-to-detect problems!
     // (Note: INI parsers do this by convention!)
     strip_trailing_whitespace(value);
@@ -72,13 +72,13 @@ auto parse_block(ifstream &F) {
 }
 
 // Locate block [name] in a file stream. Returns true if succeessful.
-bool find_block(ifstream &F, const string &s) {
-  string target = "[" + s + "]";
+bool find_block(std::ifstream &F, const std::string &s) {
+  std::string target = "[" + s + "]";
   F.clear();
-  F.seekg(0, ios::beg);
+  F.seekg(0, std::ios::beg);
   while (F) {
-    string line;
-    getline(F, line);
+    std::string line;
+    std::getline(F, line);
     if (F && target.compare(line) == 0) { break; }
   }
   return !F.fail(); // True if found.
@@ -113,28 +113,28 @@ template <typename T> ostream &operator<<(ostream &os, const ublas::matrix<T> &m
 
 // Simple tokenizer class
 class string_token {
-  private:
-  string s;
-  list<string> l;
-  public:
-  explicit string_token(string _s) : s(std::move(_s)) {
-    string::size_type pos = 0;
-    string::size_type first, last;
-    while ((first = s.find_first_not_of(" ", pos)) != string::npos) {
-      last         = s.find_first_of(" ", first);
-      string token = string(s, first, last - first);
-      l.push_back(token);
-      if (last == string::npos)
-        break;
-      else
-        pos = last + 1;
-    }
-  }
-  bool find(string x) const { return std::find(begin(l), end(l), x) != end(l); }
+ private:
+   std::string s;
+   std::list<std::string> l;
+ public:
+   explicit string_token(string _s) : s(std::move(_s)) {
+     string::size_type pos = 0;
+     string::size_type first, last;
+     while ((first = s.find_first_not_of(" ", pos)) != string::npos) {
+       last              = s.find_first_of(" ", first);
+       std::string token = std::string(s, first, last - first);
+       l.push_back(token);
+       if (last == std::string::npos)
+         break;
+       else
+         pos = last + 1;
+     }
+   }
+   bool find(string x) const { return std::find(l.begin(), l.end(), x) != l.end(); }
 };
 
 // Skip comment lines in the input stream 'f'.
-void skip_comments(istream &f, bool output = false, ostream &OUT = cout) {
+void skip_comments(std::istream &f, const bool output = false, std::ostream &OUT = std::cout) {
   while (f) {
     char ch = f.peek();
     // skip white space and line breaks
@@ -145,8 +145,8 @@ void skip_comments(istream &f, bool output = false, ostream &OUT = cout) {
     // break the loop if a non-comment like found
     if (ch != '#') break;
     f.ignore(); // ignore '#'
-    string line;
-    getline(f, line);
+    std::string line;
+    std::getline(f, line);
     if (output) OUT << ">> " << line << std::endl;
   }
 }
