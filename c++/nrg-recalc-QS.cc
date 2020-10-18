@@ -22,7 +22,7 @@
 
 
 
-template <typename SC>
+template<typename SC>
 MatrixElements_tmpl<SC> SymmetryQS_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
   MatrixElements_tmpl<SC> cnew;
   if (!P.substeps) {

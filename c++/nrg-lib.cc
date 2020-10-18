@@ -819,7 +819,7 @@ using IterInfo = IterInfo_tmpl<scalar>;
 // Select which symmetries to compile in.
 #ifdef NRG_SYM_BASIC
 #include "sym-QS.cc"
-//#include "sym-QSZ.cc"
+#include "sym-QSZ.cc"
 #endif
 #ifdef NRG_SYM_MORE
 #include "sym-ISO.cc"
@@ -2154,7 +2154,7 @@ template<typename S>
 std::unique_ptr<Symmetry> get(const std::string &sym_string, const Params &P, Allfields &allfields)
 {
   if (sym_string == "QS")     return std::make_unique<SymmetryQS_tmpl<S>>(P, allfields);
-//  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ>(P, allfields);  
+  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ_tmpl<S>>(P, allfields);
 #ifdef NRG_SYM_MORE
   if (sym_string == "ISO")    return std::make_unique<SymmetryISO>(P, allfields);
   if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2>(P, allfields);
