@@ -40,7 +40,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "qsztz/qsztz-doubletp-1.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, -1, +1));
@@ -56,7 +56,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "qsztz/qsztz-doubletm-1.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, +1, +1));
@@ -72,7 +72,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "qsztz/qsztz-doubletp0.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, -1, 0));
@@ -88,7 +88,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "qsztz/qsztz-doubletm0.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, +1, 0));
@@ -104,7 +104,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "qsztz/qsztz-doubletp+1.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, -1, -1));
@@ -120,7 +120,7 @@ MatrixElements SymmetryQSZTZ::recalc_doublet(const DiagInfo &diag, const QSrmax 
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "qsztz/qsztz-doubletm+1.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, +1, -1));
@@ -151,7 +151,7 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "qsztz/qsztz-spinup+1.dat"
         };
         opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -167,7 +167,7 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "qsztz/qsztz-spinup0.dat"
         };
         opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -183,7 +183,7 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "qsztz/qsztz-spinup-1.dat"
         };
         opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -199,7 +199,7 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "qsztz/qsztz-spindo+1.dat"
         };
         opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -215,7 +215,7 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "qsztz/qsztz-spindo0.dat"
         };
         opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -231,7 +231,7 @@ Opch SymmetryQSZTZ::recalc_irreduc(const Step &step, const DiagInfo &diag, const
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "qsztz/qsztz-spindo-1.dat"
         };
         opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -258,7 +258,7 @@ MatrixElements SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "qsztz/qsztz-triplets.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 3, 0));
@@ -274,7 +274,7 @@ MatrixElements SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "qsztz/qsztz-tripletp.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 3, 0));
@@ -290,7 +290,7 @@ MatrixElements SymmetryQSZTZ::recalc_triplet(const DiagInfo &diag, const QSrmax 
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "qsztz/qsztz-tripletm.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(0, 3, 0));

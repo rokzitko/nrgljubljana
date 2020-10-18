@@ -36,7 +36,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-1ch-a-CR-DO.dat"
         };
         opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -50,7 +50,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-1ch-a-CR-UP.dat"
         };
         opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -64,7 +64,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-1ch-a-AN-DO.dat"
         };
         opch[0][2][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -78,7 +78,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-1ch-a-AN-UP.dat"
         };
         opch[0][3][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -92,7 +92,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-2ch-a-CR-DO.dat"
         };
         opch[0][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -106,7 +106,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-2ch-b-CR-DO.dat"
         };
         opch[1][0][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -120,7 +120,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-2ch-a-CR-UP.dat"
         };
         opch[0][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -134,7 +134,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-2ch-b-CR-UP.dat"
         };
         opch[1][1][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -148,7 +148,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-2ch-a-AN-DO.dat"
         };
         opch[0][2][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -162,7 +162,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-2ch-b-AN-DO.dat"
         };
         opch[1][2][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -176,7 +176,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-2ch-a-AN-UP.dat"
         };
         opch[0][3][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -190,7 +190,7 @@ Opch SymmetryP::recalc_irreduc(const Step &step, const DiagInfo &diag, const QSr
   if (diag.count(I1) && diag.count(Ip) && recalc_f_coupled(I1, Ip, Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-       struct Recalc_f recalc_table[] = {
+        Recalc_f recalc_table[] = {
 #include "p/p-2ch-b-AN-UP.dat"
         };
         opch[1][3][II] = recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
@@ -217,7 +217,7 @@ MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsr
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "p/p-1ch-doublet.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(-1));
@@ -231,7 +231,7 @@ MatrixElements SymmetryP::recalc_doublet(const DiagInfo &diag, const QSrmax &qsr
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        struct Recalc recalc_table[] = {
+        Recalc recalc_table[] = {
 #include "p/p-2ch-doublet.dat"
         };
         cnew[II] = recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(-1));

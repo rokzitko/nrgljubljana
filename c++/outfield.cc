@@ -10,7 +10,7 @@ using Allfields = std::vector<outfield*>;
 class outfield {
  private:
    const Params &P;
-   string desc;
+   string desc; // AAA
    string value{};
  public:
    explicit outfield(const Params &P_, Allfields &allfields, const string &desc_, int position = -1)

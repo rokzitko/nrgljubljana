@@ -32,12 +32,13 @@ void split_in_blocks(DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax) {
 }
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
-auto Symmetry::recalc_f(const DiagInfo &diag, 
-                        const QSrmax &qsrmax, 
-                        const Invar &I1,
-                        const Invar &Ip, 
-                        const struct Recalc_f table[], 
-                        const size_t jmax)
+template<typename S>
+auto Symmetry_tmpl<S>::recalc_f(const DiagInfo &diag, 
+                                const QSrmax &qsrmax, 
+                                const Invar &I1,
+                                const Invar &Ip, 
+                                const Recalc_f table[], 
+                                const size_t jmax)
 {
   nrglog('f', "recalc_f() ** f: (" << I1 << ") (" << Ip << ")");
   if (!recalc_f_coupled(I1, Ip, Invar_f)) {
@@ -79,15 +80,15 @@ auto Symmetry::recalc_f(const DiagInfo &diag,
 // program, so it is heavily instrumentalized for debugging purposes. It is called from recalc_doublet(),
 // recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
 // one should try to hand optimize.
-
-Matrix Symmetry::recalc_general(const DiagInfo &diag, 
-                                const QSrmax &qsrmax,        // information about the matrix structure
-                                const MatrixElements &cold,
-                                const Invar &I1,             // target subspace (bra)
-                                const Invar &Ip,             // target subspace (ket)
-                                const struct Recalc table[],
-                                const size_t jmax,           // length of table
-                                const Invar &Iop) const      // quantum numbers of the operator
+template<typename S>
+auto Symmetry_tmpl<S>::recalc_general(const DiagInfo &diag, 
+                                      const QSrmax &qsrmax,        // information about the matrix structure
+                                      const MatrixElements &cold,
+                                      const Invar &I1,             // target subspace (bra)
+                                      const Invar &Ip,             // target subspace (ket)
+                                      const Recalc table[],
+                                      const size_t jmax,           // length of table
+                                      const Invar &Iop) const      // quantum numbers of the operator
 {
   if (P.logletter('r')) {
     std::cout << "recalc_general: ";
@@ -150,13 +151,14 @@ Matrix Symmetry::recalc_general(const DiagInfo &diag,
 }
 
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
-void Symmetry::recalc1_global(const DiagInfo &diag,
-                              const QSrmax &qsrmax,
-                              const Invar &I, 
-                              Matrix &m, // XXX: return this one
-                              const size_t i1, 
-                              const size_t ip, 
-                              const t_factor value) const 
+template<typename S>
+void Symmetry_tmpl<S>::recalc1_global(const DiagInfo &diag,
+                                      const QSrmax &qsrmax,
+                                      const Invar &I, 
+                                      Matrix &m, // XXX: return this one
+                                      const size_t i1, 
+                                      const size_t ip, 
+                                      const t_factor value) const 
 {
   my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
   const Eigen &diagI = diag.at(I);

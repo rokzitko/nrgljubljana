@@ -15,14 +15,15 @@ bool u1_equality(const int q1, const int q2, const int q3) { return q1 == q2 + q
 bool z2_equality(const int p1, const int p2, const int p3) { return p1 == p2 * p3; }
 bool c3_equality(const int p1, const int p2, const int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
 
-void opch1clear(Opch &opch, const int i, const Params &P)
+template<typename S>
+void opch1clear(Opch_tmpl<S> &opch, const int i, const Params &P)
 {
   opch[i].resize(P.perchannel);
   for (const auto j: range0(P.perchannel))
     opch[i][j].clear(); // set all ublas matrix elements to zero
 }
 
-Opch newopch(const Params &P)
+Opch newopch(const Params &P) // AAA: can't distinguish by return type!
 {
   Opch opch(P.channels);
   for (const auto i: range0(P.channels))
@@ -30,23 +31,28 @@ Opch newopch(const Params &P)
   return opch;
 }
 
-struct Recalc_f {
-    size_t i1; // subspace indexes
-    size_t ip;
-    t_factor factor;
+template<typename S>
+struct Recalc_f_tmpl {
+  size_t i1; // subspace indexes
+  size_t ip;
+  typename traits<S>::t_factor factor;
 };
+using Recalc_f = Recalc_f_tmpl<scalar>;
 
 // Structure which holds subspace information and factor for each of nonzero irreducible matrix elements. cf.
 // Hofstetter PhD p. 120. <Q+1 S+-1/2 .. i1 ||f^\dag|| Q S .. ip>_N = factor < IN1 .. ||f^\dag|| INp ..>_{N_1}
-struct Recalc {
-    size_t i1{}; // combination of states
-    size_t ip{};
-    Invar IN1; // subspace in N-1 stage
-    Invar INp;
-    t_factor factor{}; // additional multiplicative factor
+template<typename S>
+struct Recalc_tmpl {
+  size_t i1{}; // combination of states
+  size_t ip{};
+  Invar IN1; // subspace in N-1 stage
+  Invar INp;
+  typename traits<S>::t_factor factor{}; // additional multiplicative factor
 };
+using Recalc = Recalc_tmpl<scalar>;
 
-class Symmetry {
+template<typename S>
+class Symmetry_tmpl {
  protected:
    const Params &P;
    Allfields &allfields;
@@ -65,7 +71,7 @@ class Symmetry {
    }
    Invar InvarSinglet; // QNs for singlet operator
    Invar Invar_f;      // QNs for f operator
-   Symmetry(const Params &P_, Allfields &allfields_) : P(P_), allfields(allfields_), In(P.combs+1), QN(P.combs+1) {}
+   Symmetry_tmpl(const Params &P_, Allfields &allfields_) : P(P_), allfields(allfields_), In(P.combs+1), QN(P.combs+1) {}
    auto input_subspaces() const { return In; }
    auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; }
    auto ancestor(const Invar &I, const size_t i) const {
@@ -106,7 +112,7 @@ class Symmetry {
    // Multiplicity of the states in the invariant subspace
    virtual size_t mult(const Invar &) const { return 1; };
    auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
-   double calculate_Z(const Invar &I, const Eigen &eig, const double rescale_factor) const { // XXX: auto?
+   double calculate_Z(const Invar &I, const Eigen_tmpl<S> &eig, const double rescale_factor) const { // XXX: auto?
      return mult(I) * ranges::accumulate(eig.value_zero, 0.0, [rf=rescale_factor](auto sum, const auto &x) { return sum+exp(-rf*x); });
    }
    // Does the combination of subspaces I1 and I2 contribute to the spectral function corresponding to spin SPIN?
@@ -116,19 +122,24 @@ class Symmetry {
    // Is an invariant subspace with given quantum numbers allowed?
    virtual bool Invar_allowed(const Invar &I) const { return true; }
 
+   using Matrix = typename traits<S>::Matrix;
+   using t_matel = typename traits<S>::t_matel;
+   using t_coef = typename traits<S>::t_coef;
+   
    bool offdiag_contributes(const size_t i, const size_t j, const Rmaxvals &qq) const;
-   void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_matel factor,
-                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const;
-   void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
+   void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_coef factor,
+                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch &opch) const; // AAA
+   void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                            Matrix &h, const Rmaxvals &qq, const double f) const;
    void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
                       Matrix &h, const Rmaxvals &qq) const;
-   void diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_matel sc_zeta,
+   void diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                            Matrix &h, const Rmaxvals &qq) const;
-   void diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_matel factor,
+   void diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor,
                               Matrix &h, const Rmaxvals &qq) const;
 
-   virtual void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch &opch, const Coef &coef) = 0;
+   virtual void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+                            const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef) = 0;
 
    // Called from recalc_dynamicsusceptibility().  This is the factor due
    // to the spin degeneracy when calculating the trace of Sz.Sz.
@@ -143,7 +154,7 @@ class Symmetry {
    virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
    virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
 
-   virtual void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) = 0;
+   virtual void calculate_TD(const Step &step, const DiagInfo &diag, const Stats &stats, double factor) = 0; // AAA: templatize
 
    virtual Opch recalc_irreduc(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax) { my_assert_not_reached(); }
    virtual OpchChannel recalc_irreduc_substeps(const Step &step, const DiagInfo &diag, const QSrmax &qsrmax, int M) { my_assert_not_reached(); }
@@ -155,9 +166,9 @@ class Symmetry {
 
    // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
    //  parity -1). Generic implementation, valid for all symmetry types.
-   MatrixElements recalc_singlet(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &nold, int parity) {
-     MatrixElements nnew;
-     Recalc recalc_table[nr_combs()];
+   MatrixElements_tmpl<S> recalc_singlet(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<S> &nold, const int parity) {
+     MatrixElements_tmpl<S> nnew;
+     Recalc recalc_table[nr_combs()]; // AAA
      my_assert(islr() ? parity == 1 || parity == -1 : parity == 1);
      for (const auto &I : diag.subspaces()) {
        const Invar I1 = I;
@@ -172,11 +183,11 @@ class Symmetry {
      return nnew;
    }
 
-   virtual void show_coefficients(const Step &step, const Coef &coef) {
-     std::cout << setprecision(std::numeric_limits<double>::max_digits10);
+   virtual void show_coefficients(const Step &step, const Coef_tmpl<S> &coef) {
+     std::cout << std::setprecision(std::numeric_limits<double>::max_digits10);
      if (!P.substeps) {
        for (size_t i = 0; i < P.coefchannels; i++) {
-         auto N = step.N();
+         const auto N = step.N();
          std::cout << "[" << i + 1 << "]"
            << " xi(" << N << ")=" << coef.xi(N, i) << " xi_scaled(" << N << ")=" << coef.xi(N, i)/step.scale()
              << " zeta(" << N+1 << ")=" << coef.zeta(N+1, i) << std::endl;
@@ -184,7 +195,7 @@ class Symmetry {
      } else {
        const auto [N, M] = step.NM();
        for (auto i = 0; i < P.coeffactor; i++) {
-         auto index = M + P.channels * i;
+         const auto index = M + P.channels * i;
          std::cout << "[" << index << "]"
            << " xi(" << N << ")=" << coef.xi(N, index) << " zeta(" << N+1 << ")=" << coef.zeta(N+1, index) << std::endl;
        }
@@ -194,10 +205,10 @@ class Symmetry {
    virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) { return true; } // used in recalc_f()
 
    auto recalc_f(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I1,
-                 const Invar &Ip, const struct Recalc_f table[], const size_t jmax);
+                 const Invar &Ip, const Recalc_f table[], const size_t jmax);
 
-   Matrix recalc_general(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold,
-                       const Invar &I1, const Invar &Ip, const struct Recalc table[], const size_t jmax, const Invar &Iop) const;
+   auto recalc_general(const DiagInfo &diag, const QSrmax &qsrmax, const MatrixElements &cold,
+                       const Invar &I1, const Invar &Ip, const Recalc table[], const size_t jmax, const Invar &Iop) const;
 
    void recalc1_global(const DiagInfo &diag, const QSrmax &qsrmax, const Invar &I,
                        Matrix &m, const size_t i1, const size_t ip, const t_factor value) const;
@@ -210,6 +221,7 @@ class Symmetry {
    auto TrivialCheckSpinFnc() const   { return [this](const Invar &Ip, const Invar &I1, int SPIN) { return true; }; }
    auto SpecdensCheckSpinFnc() const  { return [this](const Invar &I1, const Invar &Ip, int SPIN) { return this->check_SPIN(I1, Ip, SPIN); }; }
 };
+using Symmetry = Symmetry_tmpl<scalar>;
 
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                                                           \

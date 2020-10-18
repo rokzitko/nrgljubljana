@@ -454,7 +454,8 @@ class Opch_tmpl : public std::vector<OpchChannel_tmpl<S>> {
 };
 using Opch = Opch_tmpl<scalar>;
 
-class Symmetry;
+template<typename S> class Symmetry_tmpl;
+using Symmetry = Symmetry_tmpl<scalar>;
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
 // the index "r" which ranges from 1 through rmax.
