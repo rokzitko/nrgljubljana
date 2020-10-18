@@ -15,12 +15,12 @@ using namespace std;
 #include <boost/stacktrace.hpp>
 
 inline void print_trace() {
-  std::cout << "Backtrace:" << endl << boost::stacktrace::stacktrace() << std::endl;
+  std::cout << "Backtrace:" << std::endl << boost::stacktrace::stacktrace() << std::endl;
 }
 
 #define assert_isfinite(x) finite_test_fnc(x, __FILE__, __LINE__)
 
-inline bool my_isfinite(double x) { return std::isfinite(x); }
+inline bool my_isfinite(const double x) { return std::isfinite(x); }
 
 using cmpl = complex<double>;
 

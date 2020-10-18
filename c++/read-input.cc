@@ -1,9 +1,11 @@
 #ifndef _read_input_cc_
 #define _read_input_cc_
 
-class Stats;
+template<typename S>
+class Stats_tmpl;
 
-std::shared_ptr<Symmetry> set_symmetry(const Params &P, Stats &stats);
+template<typename S>
+std::shared_ptr<Symmetry> set_symmetry(const Params &P, Stats_tmpl<S> &stats);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
 auto parse_datafile_header(std::istream &fdata, const int expected_version = 9)
@@ -87,7 +89,8 @@ auto read_nsubs(std::ifstream &fdata)
 }
 
 // Read the ground state energy from data file ('e' flag)
-void read_gs_energy(std::ifstream &fdata, Stats &stats) {
+template<typename S>
+void read_gs_energy(std::ifstream &fdata, Stats_tmpl<S> &stats) {
   fdata >> stats.total_energy;
 }
 
@@ -95,23 +98,23 @@ void read_gs_energy(std::ifstream &fdata, Stats &stats) {
 // tridiagonalization routines (if not using the tables computed by initial.m).
 void determine_Nmax(const Coef &coef, Params &P) {
   const auto length_coef_table = coef.xi.max(0); // all channels have same nr. of coefficients
-  std::cout << endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << endl << std::endl;
+  std::cout << std::endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << std::endl << std::endl;
   my_assert(length_coef_table == P.Nmax);
   if (P.substeps) P.Nmax = P.channels * P.Nmax;
   P.Nlen = P.Nmax;       // this is the usual situation
   if (P.Nmax == P.Ninit) {
-    std::cout << endl << "ZBW=true -> zero-bandwidth calculation" << std::endl;
+    std::cout << std::endl << "ZBW=true -> zero-bandwidth calculation" << std::endl;
     P.ZBW  = true;
     P.Nlen = P.Nmax + 1; // an additional element in the tables for ZBW=true
   }
   my_assert(P.Nlen < MAX_NDX);
-  std::cout << endl << "length_coef_table=" << length_coef_table << " Nmax=" << P.Nmax << endl << std::endl;
+  std::cout << std::endl << "length_coef_table=" << length_coef_table << " Nmax=" << P.Nmax << std::endl << std::endl;
 }
 
 inline void skipline(std::ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
-template<typename S> auto read_data(Params &P, Stats &stats) {
+template<typename S> auto read_data(Params &P, Stats_tmpl<S> &stats) {
   skipline();
   std::ifstream fdata("data");
   if (!fdata) throw std::runtime_error("Can't load initial data.");
