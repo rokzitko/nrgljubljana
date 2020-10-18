@@ -16,10 +16,10 @@ const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 // Calculate (finite temperature) spectral function 1/Pi Im << op1^\dag(t) op2(0) >>. Required spin direction is
 // determined by 'SPIN'. For SPIN=0 both spin direction are equivalent. For QSZ, we need to differentiate the two.
 
-template <typename FactorFnc, typename CheckSpinFnc>
-void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo &diag, 
+template <typename FactorFnc, typename CheckSpinFnc, typename S>
+void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo_tmpl<S> &diag, 
                   FactorFnc && factorfnc, CheckSpinFnc && checkspinfnc, 
-                  const DensMatElements &rho, const DensMatElements &rhoFDM, const Stats &stats) {
+                  const DensMatElements_tmpl<S> &rho, const DensMatElements_tmpl<S> &rhoFDM, const Stats &stats) {
   auto cs = bs.algotype->make_cs(bs);
   const auto & rho_here = bs.algotype->rho_type() == "rhoFDM" ? rhoFDM : rho;
   // Strategy: we loop through all subspace pairs and check whether they have non-zero irreducible matrix elements.

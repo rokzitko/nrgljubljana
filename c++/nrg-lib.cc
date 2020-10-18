@@ -1741,9 +1741,10 @@ typename traits<S>::Matrix prepare_task_for_diag(const Step &step, const Invar &
   return h;
 }
 
-DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
-                                 const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry> Sym, const Params &P) {
-  DiagInfo diagnew;
+template<typename S>
+auto diagonalisations_OpenMP(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, const DiagInfo_tmpl<S> &diagprev,
+                             const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry> Sym, const Params &P) {
+  DiagInfo_tmpl<S> diagnew;
   const auto nr = tasks.size();
   size_t itask = 0;
   // cppcheck-suppress unreadVariable symbolName=nth
@@ -1755,7 +1756,7 @@ DiagInfo diagonalisations_OpenMP(const Step &step, const Opch &opch, const Coef 
     const int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
-    Eigen e = diagonalise<scalar>(h, DP);
+    Eigen e = diagonalise<S>(h, DP);
 #pragma omp critical
     { diagnew[I] = e; }
   }
@@ -1795,7 +1796,7 @@ template<typename S> void mpi_send_matrix(const int dest, const ublas::matrix<S>
   mpiw->send(dest, TAG_MATRIX_SIZE, size2);
   mpilog("Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
   for (const auto i: range0(size1)) {
-    ublas::vector<S> vec = ublas::matrix_row<const ublas::matrix<S>>(m, i);
+    ublas::vector<typename traits<S>::t_matel> vec = ublas::matrix_row<const ublas::matrix<S>>(m, i); // YYY
     mpiw->send(dest, TAG_MATRIX_LINE, vec);
   }
 }
@@ -1805,13 +1806,13 @@ template<typename S> auto mpi_receive_matrix(const int source) {
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size1));
   size_t size2;
   check_status(mpiw->recv(source, TAG_MATRIX_SIZE, size2));
-  ublas::matrix<S> m(size1, size2);
+  typename traits<S>::Matrix m(size1, size2);
   mpilog("Receiving matrix of size " << size1 << " x " << size2 << " line by line from " << source);
   for (const auto i: range0(size1)) {
-    ublas::vector<S> vec;
+    ublas::vector<typename traits<S>::t_matel> vec;
     check_status(mpiw->recv(source, TAG_MATRIX_LINE, vec));
     my_assert(vec.size() == size2);
-    ublas::matrix_row<ublas::matrix<S>>(m, i) = vec;
+    ublas::matrix_row<typename traits<S>::Matrix>(m, i) = vec;
   }
   return m;
 }
@@ -1843,9 +1844,9 @@ template<typename S> std::pair<Invar, Eigen_tmpl<S>> read_from(int source) {
 }
 
 template<typename S>
-DiagInfo diagonalisations_MPI(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
+DiagInfo diagonalisations_MPI(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, const DiagInfo_tmpl<S> &diagprev, 
                               const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry> Sym, const Params &P) {
-  DiagInfo diagnew;
+  DiagInfo_tmpl<S> diagnew;
   mpi_send_params(DP); // Synchronise parameters
   std::list<Invar> todo; // List of all the tasks to handle
   std::copy(tasks.begin(), tasks.end(), std::back_inserter(todo)); // BBB: constr
@@ -1925,8 +1926,9 @@ template<typename S> void slave_diag(const int master, const DiagParams &DP) {
 #endif
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
-DiagInfo diagonalisations(const Step &step, const Opch &opch, const Coef &coef, const DiagInfo &diagprev, 
-                          const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry> Sym, const Params &P) {
+template<typename S>
+auto diagonalisations(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, const DiagInfo_tmpl<S> &diagprev, 
+                      const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry> Sym, const Params &P) {
   TIME("diag");
 #ifdef NRG_MPI
   return diagonalisations_MPI<scalar>(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
@@ -1961,7 +1963,7 @@ void recalc_irreducible(const Step &step, const DiagInfo_tmpl<S> &diag, const QS
 }
 
 template<typename S>
-auto do_diag(const Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diagprev,
+auto do_diag(const Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diagprev,
              QSrmax &qsrmax, std::shared_ptr<Symmetry> Sym, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
@@ -2013,8 +2015,8 @@ void calc_abs_energies(const Step &step, DiagInfo_tmpl<S> &diag, const Stats &st
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<typename S>
-void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo_tmpl<S> &diag, Output &output,
-                QSrmax &qsrmax, AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+void after_diag(const Step &step, IterInfo_tmpl<S> &iterinfo, Stats &stats, DiagInfo_tmpl<S> &diag, Output_tmpl<S> &output,
+                QSrmax &qsrmax, AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
@@ -2050,8 +2052,8 @@ void after_diag(const Step &step, IterInfo &iterinfo, Stats &stats, DiagInfo_tmp
 
 // Perform one iteration step
 template<typename S>
-auto iterate(const Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diagprev,
-             Output &output, AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+auto iterate(const Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diagprev,
+             Output_tmpl<S> &output, AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   QSrmax qsrmax{diagprev, Sym};
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, Sym, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
@@ -2063,8 +2065,8 @@ auto iterate(const Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Sta
 
 // Perform calculations with quantities from 'data' file
 template<typename S>
-void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo_tmpl<S> &diag0, Stats &stats, Output &output, 
-             Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+void docalc0(Step &step, const IterInfo_tmpl<S> &iterinfo, const DiagInfo_tmpl<S> &diag0, Stats &stats, Output_tmpl<S> &output, 
+             Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
@@ -2077,16 +2079,16 @@ void docalc0(Step &step, const IterInfo &iterinfo, const DiagInfo_tmpl<S> &diag0
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
 template<typename S>
-auto nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo_tmpl<S> &diag0, Output &output, 
-             AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+auto nrg_ZBW(Step &step, IterInfo_tmpl<S> &iterinfo, Stats &stats, const DiagInfo_tmpl<S> &diag0, Output_tmpl<S> &output, 
+             AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
   DiagInfo_tmpl<S> diag;
-  if (step.nrg()) 
+  if (step.nrg())
     diag = diag0;
   if (step.dmnrg()) {
-    diag = DiagInfo(step.ndx(), P.removefiles);
+    diag = DiagInfo_tmpl<S>(step.ndx(), P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
   stats.Egs = diag.find_groundstate();
@@ -2102,8 +2104,8 @@ auto nrg_ZBW(Step &step, IterInfo &iterinfo, Stats &stats, const DiagInfo_tmpl<S
 // ****************************  Main NRG loop ****************************
 
 template<typename S>
-auto nrg_loop(Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diag0,
-              Output &output, AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
+auto nrg_loop(Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diag0,
+              Output &output, AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry> Sym, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, Sym, P);
@@ -2112,7 +2114,7 @@ auto nrg_loop(Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Stats &s
 }
 
 template<typename S>
-auto run_nrg(Step &step, IterInfo &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diag0,
+auto run_nrg(Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats &stats, const DiagInfo_tmpl<S> &diag0,
              AllSteps_tmpl<S> &dm, std::shared_ptr<Symmetry> Sym, const Params &P) {
   diag0.states_report(Sym->multfnc());
   auto oprecalc = Oprecalc(step.runtype, iterinfo, Sym, P);

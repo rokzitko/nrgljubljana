@@ -7,15 +7,15 @@
 // Check if the triangle inequality is satisfied (i.e. if Clebsch-Gordan coefficient can be different from zero).
 // This is important, for example, for triplet operators, which are zero when evaluated between two singlet states.
 // Arguments ss1, ss2, ss3 are spin multiplicities. Returns true if the inequality is satisfied, false otherwise.
-bool su2_triangle_inequality(int ss1, int ss2, int ss3) {
+bool su2_triangle_inequality(const int ss1, const int ss2, const int ss3) {
   return (abs(ss1-ss2) <= ss3-1) && (abs(ss2-ss3) <= ss1-1) && (abs(ss3-ss1) <= ss2-1);
 }
 
-bool u1_equality(int q1, int q2, int q3) { return q1 == q2 + q3; }     // Equality for U(1) symmetry
-bool z2_equality(int p1, int p2, int p3) { return p1 == p2 * p3; }
-bool c3_equality(int p1, int p2, int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
+bool u1_equality(const int q1, const int q2, const int q3) { return q1 == q2 + q3; }     // Equality for U(1) symmetry
+bool z2_equality(const int p1, const int p2, const int p3) { return p1 == p2 * p3; }
+bool c3_equality(const int p1, const int p2, const int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
 
-void opch1clear(Opch &opch, int i, const Params &P)
+void opch1clear(Opch &opch, const int i, const Params &P)
 {
   opch[i].resize(P.perchannel);
   for (const auto j: range0(P.perchannel))
@@ -106,7 +106,7 @@ class Symmetry {
    // Multiplicity of the states in the invariant subspace
    virtual size_t mult(const Invar &) const { return 1; };
    auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
-   double calculate_Z(const Invar &I, const Eigen &eig, const double rescale_factor) const {
+   double calculate_Z(const Invar &I, const Eigen &eig, const double rescale_factor) const { // XXX: auto?
      return mult(I) * ranges::accumulate(eig.value_zero, 0.0, [rf=rescale_factor](auto sum, const auto &x) { return sum+exp(-rf*x); });
    }
    // Does the combination of subspaces I1 and I2 contribute to the spectral function corresponding to spin SPIN?

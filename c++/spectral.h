@@ -23,8 +23,7 @@ class Spikes : public std::vector<t_delta_peak> {
      }
    t_weight sum_weights() const {
      return ranges::accumulate(*this, t_weight{}, [](const auto &sum, const auto &p) { return sum+p.second; });
-}
-
+   }
 };
 
 #ifndef M_SQRTPI

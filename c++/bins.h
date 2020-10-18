@@ -14,7 +14,7 @@
 // during broadening, we may consider "bins" as delta peaks, rather than as interval representations (true bins). In
 // other words, what we are doing here is coarse graining rather than binning!
 
-class Bins : public traits<scalar> {
+class Bins {
  private:
    double emin{}, emax{};
    double log10emin{}, log10emax{}; // base-10 log of the limits
@@ -44,7 +44,6 @@ class Bins : public traits<scalar> {
    void trim();
    auto total_weight() const { return bins.sum_weights(); }
 };
-
 
 void Bins::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the conduction band!!
