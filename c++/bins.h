@@ -14,8 +14,10 @@
 // during broadening, we may consider "bins" as delta peaks, rather than as interval representations (true bins). In
 // other words, what we are doing here is coarse graining rather than binning!
 
-class Bins {
+template<typename S>
+class Bins_tmpl {
  private:
+   using t_weight = typename traits<S>::t_weight;
    double emin{}, emax{};
    double log10emin{}, log10emax{}; // base-10 log of the limits
    void setlimits();
@@ -35,17 +37,19 @@ class Bins {
    inline static const double discarded_weight_warn_limit = 1e-8;
 
  public:
-   Spikes bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs
-   operator const Spikes &() const { return bins; }
-   operator Spikes &() { return bins; }
-   explicit Bins(const Params &P) : P(P) { loggrid(); } // default: logarithmic grid
+   Spikes_tmpl<S> bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs
+   operator const Spikes_tmpl<S> &() const { return bins; }
+   operator Spikes_tmpl<S> &() { return bins; }
+   explicit Bins_tmpl(const Params &P) : P(P) { loggrid(); } // default: logarithmic grid
    inline void add(const double energy, const t_weight weight);
-   void merge(const Bins &b);
+   void merge(const Bins_tmpl<S> &b);
    void trim();
    auto total_weight() const { return bins.sum_weights(); }
 };
+using Bins = Bins_tmpl<scalar>;
 
-void Bins::setlimits() {
+template<typename S>
+void Bins_tmpl<S>::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the conduction band!!
   emax = (P.emax > 0 ? P.emax : P.SCALE(0) * pow(base, max_bin_shift));
   emin = (P.emin > 0 ? P.emin : P.last_step_scale() / pow(base, min_bin_shift));
@@ -54,7 +58,8 @@ void Bins::setlimits() {
   log10emax = ceil(log10(emax));
 }
 
-void Bins::loggrid() {
+template<typename S>
+void Bins_tmpl<S>::loggrid() {
   my_assert(P.bins > 0);
   setlimits();
   if (P.accumulation > 0.0)
@@ -63,7 +68,8 @@ void Bins::loggrid() {
     loggrid_std();
 }
 
-void Bins::loggrid_acc() {
+template<typename S>
+void Bins_tmpl<S>::loggrid_acc() {
   const double a = P.accumulation;
   my_assert(a > 0.0);
   bins.resize(0);
@@ -76,14 +82,16 @@ void Bins::loggrid_acc() {
   my_assert(bins.size() >= 2);
 }
 
-void Bins::loggrid_std() {
+template<typename S>
+void Bins_tmpl<S>::loggrid_std() {
   const auto nrbins = (size_t)((log10emax - log10emin) * P.bins + 1.0);
   bins.resize(nrbins); // Note: Spikes is a vector type!
   for (const auto i : range0(nrbins)) bins[i] = { pow(base, log10emin + (double)i / P.bins), 0 };
 }
 
 // Unbiased assignment of the spectral weight to bins.
-inline void Bins::add(const double energy, const t_weight weight) {
+template<typename S>
+inline void Bins_tmpl<S>::add(const double energy, const t_weight weight) {
   if (abs(weight) < P.discard_immediately * energy) return;
   if (P.accumulation > 0.0)
     add_acc(energy, weight);
@@ -91,7 +99,8 @@ inline void Bins::add(const double energy, const t_weight weight) {
     add_std(energy, weight);
 }
 
-inline void Bins::add_std(const double energy, const t_weight weight) {
+template<typename S>
+inline void Bins_tmpl<S>::add_std(const double energy, const t_weight weight) {
   // Important: if 'energy' is lower than the lower limit of the first interval, the weight is assigned to the first
   // bin. This is especially relevant for collecting the omega=0 data in bosonic correlators. (rz, 25 Oct 2012)
   if (energy < zero_epsilon) { // handle this special case separately (for reasons of efficiency)
@@ -112,7 +121,8 @@ inline void Bins::add_std(const double energy, const t_weight weight) {
   }
 }
 
-inline void Bins::add_acc(const double energy, const t_weight weight) {
+template<typename S>
+inline void Bins_tmpl<S>::add_acc(const double energy, const t_weight weight) {
   for (const auto i: range0(bins.size()-1)) {
     auto &[e1, w1] = bins[i]; // non-const
     auto &[e2, w2] = bins[i+1]; // non-const
@@ -130,7 +140,8 @@ inline void Bins::add_acc(const double energy, const t_weight weight) {
 
 // Merge two bins. They need to agree in the representative energies
 // (first element of the pairs).
-void Bins::merge(const Bins &b) {
+template<typename S>
+void Bins_tmpl<S>::merge(const Bins_tmpl<S> &b) {
   my_assert(bins.size() == b.bins.size());
   for (const auto i: range0(bins.size())) {
     auto &[e1, w1] = bins[i];
@@ -141,7 +152,8 @@ void Bins::merge(const Bins &b) {
 }
 
 // Only keep bins which are "heavy" enough.
-void Bins::trim() {
+template<typename S>
+void Bins_tmpl<S>::trim() {
   Spikes orig{};
   orig.swap(bins);
   bucket discarded_weight_abs;
@@ -162,11 +174,13 @@ void Bins::trim() {
   if (discarded_weight_abs > discarded_weight_warn_limit) std::cout << "WARNING: we are probably discarding too much weight!" << std::endl;
 }
 
-class Temp : public Spikes {
+template<typename S>
+class Temp_tmpl : public Spikes_tmpl<S> {
  private:
    const Params &P;
+   using t_weight = typename traits<S>::t_weight;
  public:
-   explicit Temp(const Params &P) : P(P) {}
+   explicit Temp_tmpl(const Params &P) : P(P) {}
    void add_value(const double energy, const t_weight weight) {
      for (auto & [e, w] : *this) {
        if (e == energy) {
@@ -175,8 +189,9 @@ class Temp : public Spikes {
        }
      }
      // or else
-     emplace_back(energy, weight);
+     this->emplace_back(energy, weight);
    }
 };
+using Temp = Temp_tmpl<scalar>;
 
 #endif // _bins_h_

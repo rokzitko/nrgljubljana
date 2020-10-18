@@ -520,11 +520,11 @@ class QSrmax : public std::map<Invar, Rmaxvals> {
 
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
 // density-matrix construction.
-template<typename M> struct DimSub_tmpl {
+template<typename S> struct DimSub_tmpl {
   size_t kept  = 0;
   size_t total = 0;
   Rmaxvals rmax;
-  Eigen_tmpl<M> eig;
+  Eigen_tmpl<S> eig;
   bool is_last = false;
   auto min() const { return is_last ? 0 : kept; } // min(), max() return the range of D states to be summed over in FDM
   auto max() const { return total; }
