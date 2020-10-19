@@ -1678,14 +1678,14 @@ void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, Stats_tmpl<S> 
   const auto rescale_factor = step.TD_factor() * additional_factor;
   const auto Z = trace([](double x) { return 1; }, rescale_factor, diag, Sym); // partition function
   const auto E = trace([](double x) { return x; }, rescale_factor, diag, Sym); // Tr[beta H]
-  const auto E2 = trace([](double x) { return sqr(x); }, rescale_factor, diag, Sym); // Tr[(beta H)^2]
+  const auto E2 = trace([](double x) { return pow(x,2); }, rescale_factor, diag, Sym); // Tr[(beta H)^2]
   stats.Z = Z;
   stats.td.T  = step.Teff();
-  stats.td.E  = E/Z;             // beta <H>
-  stats.td.E2 = E2/Z;            // beta^2 <H^2>
-  stats.td.C  = E2/Z - sqr(E/Z); // C/k_B=beta^2(<H^2>-<H>^2)
-  stats.td.F  = -log(Z);         // F/(k_B T)=-ln(Z)
-  stats.td.S  = E/Z+log(Z);      // S/k_B=beta<H>+ln(Z)
+  stats.td.E  = E/Z;               // beta <H>
+  stats.td.E2 = E2/Z;              // beta^2 <H^2>
+  stats.td.C  = E2/Z - pow(E/Z,2); // C/k_B=beta^2(<H^2>-<H>^2)
+  stats.td.F  = -log(Z);           // F/(k_B T)=-ln(Z)
+  stats.td.S  = E/Z+log(Z);        // S/k_B=beta<H>+ln(Z)
   Sym->calculate_TD(step, diag, stats, rescale_factor);  // symmetry-specific calculation routine
   stats.td.save_values();
 }

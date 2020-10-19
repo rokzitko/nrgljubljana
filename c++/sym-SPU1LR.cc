@@ -50,7 +50,7 @@ class SymmetrySPU1LR_tmpl : public SymFieldLR_tmpl<SC> {
       const SZspin ssz  = I.get("SSZ");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * SZ(ssz);
-      trSZ2 += sumZ * sqr(SZ(ssz));
+      trSZ2 += sumZ * pow(SZ(ssz),2);
     }
     Sz2 = trSZ2 / stats.Z;
     Sz  = trSZ / stats.Z;

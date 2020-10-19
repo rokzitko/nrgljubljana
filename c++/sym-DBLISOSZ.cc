@@ -85,7 +85,7 @@ class SymmetryDBLISOSZ_tmpl : public SymField_tmpl<SC> {
       const SZspin ssz  = I.get("SSZ");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * SZ(ssz);
-      trSZ2 += sumZ * sqr(SZ(ssz)); // isospin multiplicity contained in sumZ
+      trSZ2 += sumZ * pow(SZ(ssz),2); // isospin multiplicity contained in sumZ
       trIZ12 += sumZ * (ii1 * ii1 - 1) / 12.;
       trIZ22 += sumZ * (ii2 * ii2 - 1) / 12.;
     }

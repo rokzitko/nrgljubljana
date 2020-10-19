@@ -246,7 +246,7 @@ void checkdiag(const Eigen_tmpl<S> &d,
     double sumabs = 0.0;
     for (const auto j: range0(dim)) {
       assert_isfinite(d.matrix(r, j));
-      sumabs += sqr(abs(d.matrix(r, j)));
+      sumabs += pow(abs(d.matrix(r, j)),2);
     }
     my_assert(num_equal(sumabs, 1.0, NORMALIZATION_EPSILON));
   }

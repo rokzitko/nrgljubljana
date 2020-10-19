@@ -45,9 +45,9 @@ class SymmetryQSZLR_tmpl : public SymFieldLR_tmpl<SC> {
       const Number q    = I.get("Q");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * SZ(ssz);
-      trSZ2 += sumZ * sqr(SZ(ssz));
+      trSZ2 += sumZ * pow(SZ(ssz),2);
       trQ += sumZ * q;
-      trQ2 += sumZ * sqr(q);
+      trQ2 += sumZ * pow(q,2);
     }
     Sz2 = trSZ2 / stats.Z;
     Sz  = trSZ / stats.Z;

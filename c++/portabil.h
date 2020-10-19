@@ -6,11 +6,6 @@
 
 using namespace std;
 
-// Square raises x to the power of two
-#ifndef HAVE_SQR
-#define sqr(x) ((x) * (x))
-#endif
-
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 #include <boost/stacktrace.hpp>
 
@@ -77,10 +72,6 @@ inline T finite_test_fnc(T x, const char *file, const int line) {
 // Workaround
 #ifndef __TIMESTAMP__
 #define __TIMESTAMP__ ""
-#endif
-
-#ifndef ARRAYLENGTH
-#define ARRAYLENGTH(x) (sizeof(x) / sizeof(*(x)))
 #endif
 
 // *** Memory usage

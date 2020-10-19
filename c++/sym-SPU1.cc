@@ -56,7 +56,7 @@ class SymmetrySPU1_tmpl : public  SymField_tmpl<SC> {
       const double sumZ = this->calculate_Z(I, eig, factor);
 
       trSZ += sumZ * SZ(ssz);
-      trSZ2 += sumZ * sqr(SZ(ssz));
+      trSZ2 += sumZ * pow(SZ(ssz),2);
     }
 
     Sz2 = trSZ2 / stats.Z;

@@ -42,12 +42,12 @@ inline double BR_L(double e, double ept, double alpha, double omega0) {
   if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
   if (ept == 0.0) return 0.0;
   const double gamma = alpha/4.0;
-  return exp(-sqr(log(e / ept) / alpha - gamma)) / (alpha * abs(e) * M_SQRTPI);
+  return exp(-pow(log(e / ept) / alpha - gamma, 2)) / (alpha * abs(e) * M_SQRTPI);
 }
 
 // Normalized to 1, width omega0. The kernel is symmetric in both
 // arguments.
-inline double BR_G(double e, double ept, double omega0) { return exp(-sqr((e - ept) / omega0)) / (omega0 * M_SQRTPI); }
+inline double BR_G(double e, double ept, double omega0) { return exp(-pow((e - ept) / omega0, 2)) / (omega0 * M_SQRTPI); }
 
 // Note: 'ept' is the energy of the delta peak in the raw spectrum,
 // 'e' is the energy of the data point in the broadened spectrum.
@@ -60,7 +60,7 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
   // of 'ept'! This breaks the normalization at finite temperatures.
   // On the other hand, it gives nicer spectra when used in conjunction
   // with the self-energy trick.
-  double BR_h = exp(-sqr(log(abs(e) / omega0) / alpha));
+  double BR_h = exp(-pow(log(abs(e) / omega0) / alpha, 2));
   my_assert(BR_h >= 0.0 && BR_h <= 1.0);
   return part_l * BR_h + BR_G(e, ept, omega0) * (1.0 - BR_h);
 }

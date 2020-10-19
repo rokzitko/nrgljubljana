@@ -67,7 +67,7 @@ CONSTFNC auto are_conjugate(const cmpl &a, const cmpl &b) { return num_equal(a.r
 template<typename M> auto frobenius_norm(const ublas::matrix<M> &m) { // Frobenius norm (without taking the final square root!)
   double sum{};
   for (auto i = 0; i < m.size1(); i++)
-    for (auto j = 0; j < m.size2(); j++) sum += sqr(abs(m(i, j)));
+    for (auto j = 0; j < m.size2(); j++) sum += pow(abs(m(i, j)),2);
   return sum;
 }
 

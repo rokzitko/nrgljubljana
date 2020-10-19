@@ -640,7 +640,7 @@ struct Params {
   double getE0()   const { return goodE; }
   double getEmin() const { return getE0(); }
   double getEx()   const { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
-  double getEmax() const { return getE0() * sqr(getEfactor()); }
+  double getEmax() const { return getE0() * pow(getEfactor(),2); }
 
   // Returns true if option 'c' is selected for logging
   bool logletter(char c) const { return (logall ? true : std::string(logstr).find(c) != string::npos); }
