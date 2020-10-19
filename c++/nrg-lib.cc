@@ -1090,11 +1090,35 @@ void prepare_spec_algo(speclist &sl, M && op1, M && op2, int spin, std::string n
     spec.algo = std::make_shared<Algo_FT>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
   if (algoname == "FTmats") 
     spec.algo = std::make_shared<Algo_FTmats>(GFMatsubara(name,algoname,filename,gt,P), gt, P);
+  if (algoname == "GT")
+    spec.algo = std::make_shared<Algo_GT<0>>(TempDependence(name,algoname,filename,P), gt, P);
+  if (algoname == "I1T")
+    spec.algo = std::make_shared<Algo_GT<1>>(TempDependence(name,algoname,filename,P), gt, P);
+  if (algoname == "I2T")
+    spec.algo = std::make_shared<Algo_GT<2>>(TempDependence(name,algoname,filename,P), gt, P);
+  if (algoname == "CHIT")
+    spec.algo = std::make_shared<Algo_CHIT>(TempDependence(name,algoname,filename,P), gt, P);
   sl.push_back(spec);
 }
 
 template<typename M>
 void prepare_spec(const RUNTYPE &runtype, speclist &sl, M && op1, M && op2, std::string name, std::string prefix, gf_type gt, int spin, const Params &P) { 
+  if (prefix == "gt") {
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "GT", gt, P);
+    return;
+  }
+  if (prefix == "i1t") {
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "I1T", gt, P);
+    return;
+  }
+  if (prefix == "i2t") {
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "I2T", gt, P);
+    return;
+  }
+  if (prefix == "chit") {
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "CHIT", gt, P);
+    return;
+  }
   // If we did not return from this funciton by this point, what we are computing is the spectral function. There are
   // several possibilities in this case, all of which may be enabled at the same time.
   if (runtype == RUNTYPE::NRG) {
@@ -1105,22 +1129,6 @@ void prepare_spec(const RUNTYPE &runtype, speclist &sl, M && op1, M && op2, std:
 
 /*
 void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, const Params &P) {
-  if (spec.prefix == "gt") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_GT>(P), axis::Temp, P);
-    return;
-  }
-  if (spec.prefix == "i1t") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_I1T>(P), axis::Temp, P);
-    return;
-  }
-  if (spec.prefix == "i2t") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_I2T>(P), axis::Temp, P);
-    return;
-  }
-  if (spec.prefix == "chit") {
-    if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_CHIT>(P), axis::Temp, P);
-    return;
-  }
 
  if (runtype == RUNTYPE::DMNRG) {
     if (P.dmnrg) open_files(sl, spec, make_shared<Algo_DMNRG>(P), axis::RealFreq, P);
@@ -1272,8 +1280,8 @@ class Oprecalc_tmpl {
     loopover(runtype, P, a.opt, a.opt, stt, spectraT, "spin", t, t, gf_type::bosonic);
     string_token stot(P.specot);
     loopover(runtype, P, a.opot, a.opot, stot, spectraOT, "orbspin", ot, ot, gf_type::bosonic);
-    const int varmin = (Sym->isfield() ? -1 : 0);
-    const int varmax = (Sym->isfield() ? +1 : 0);
+    const auto varmin = Sym->isfield() ? -1 : 0;
+    const auto varmax = Sym->isfield() ? +1 : 0;
     // Spectral functions (doublet operators)
     string_token std(P.specd);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
