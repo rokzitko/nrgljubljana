@@ -173,12 +173,13 @@ class Symmetry_tmpl {
      for (const auto &I : diag.subspaces()) {
        const Invar I1 = I;
        const Invar Ip = parity == -1 ? I.InvertParity() : I;
+       std::vector<Recalc_tmpl<S>> recalc_table;
        for (const auto i: combs()) {
          const auto anc = ancestor(I, i);
-         recalc_table[i] = {i+1, i+1, anc, parity == -1 ? anc.InvertParity() : anc, 1.0};
+         recalc_table.push_back({i+1, i+1, anc, parity == -1 ? anc.InvertParity() : anc, 1.0});
        }
        const auto Iop = parity == -1 ? InvarSinglet.InvertParity() : InvarSinglet;
-       nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, nr_combs(), Iop);
+       nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, Iop);
      }
      return nnew;
    }
@@ -204,11 +205,13 @@ class Symmetry_tmpl {
 
    virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) { return true; } // used in recalc_f()
 
-   auto recalc_f(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const Invar &I1,
-                 const Invar &Ip, const Recalc_f_tmpl<S> table[], const size_t jmax);
-
-   auto recalc_general(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<S> &cold,
-                       const Invar &I1, const Invar &Ip, const Recalc_tmpl<S> table[], const size_t jmax, const Invar &Iop) const;
+   template<typename T>
+     auto recalc_f(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const Invar &I1,
+                   const Invar &Ip, const T &table);
+   
+   template<typename T>
+     auto recalc_general(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<S> &cold,
+                         const Invar &I1, const Invar &Ip, const T &table, const Invar &Iop) const;
 
    void recalc1_global(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const Invar &I,
                        Matrix &m, const size_t i1, const size_t ip, const t_coef value) const;

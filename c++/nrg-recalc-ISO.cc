@@ -38,10 +38,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-1ch-doubletmp.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2));
       }(); // immediately executed lambda
     }
   }
@@ -52,10 +52,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-2ch-doubletmp.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2));
       }(); // immediately executed lambda
     }
   }
@@ -71,10 +71,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-1ch-doubletmm.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2));
       }(); // immediately executed lambda
     }
   }
@@ -85,10 +85,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-2ch-doubletmm.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2));
       }(); // immediately executed lambda
     }
   }
@@ -104,10 +104,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-1ch-doubletpp.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2));
       }(); // immediately executed lambda
     }
   }
@@ -118,10 +118,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-2ch-doubletpp.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2));
       }(); // immediately executed lambda
     }
   }
@@ -137,10 +137,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-1ch-doubletpm.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2));
       }(); // immediately executed lambda
     }
   }
@@ -151,10 +151,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-2ch-doubletpm.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(2, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2));
       }(); // immediately executed lambda
     }
   }
@@ -188,10 +188,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-1ch-spinup-isoupa.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -202,10 +202,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-2ch-spinup-isoupa.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -216,10 +216,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-2ch-spinup-isoupb.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -230,10 +230,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spinup-isoupa.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -244,10 +244,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spinup-isoupb.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -258,10 +258,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spinup-isoupc.dat"
         };
-        opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -277,10 +277,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-1ch-spindown-isoupa.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -291,10 +291,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-2ch-spindown-isoupa.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -305,10 +305,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-2ch-spindown-isoupb.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -319,10 +319,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spindown-isoupa.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -333,10 +333,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spindown-isoupb.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -347,10 +347,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spindown-isoupc.dat"
         };
-        opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -366,10 +366,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-1ch-spinup-isodowna.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -380,10 +380,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-2ch-spinup-isodowna.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -394,10 +394,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-2ch-spinup-isodownb.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -408,10 +408,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spinup-isodowna.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -422,10 +422,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spinup-isodownb.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -436,10 +436,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spinup-isodownc.dat"
         };
-        opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -455,10 +455,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-1ch-spindown-isodowna.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -469,10 +469,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-2ch-spindown-isodowna.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -483,10 +483,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-2ch-spindown-isodownb.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -497,10 +497,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spindown-isodowna.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -511,10 +511,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spindown-isodownb.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -525,10 +525,10 @@ Opch_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "iso/iso-3ch-spindown-isodownc.dat"
         };
-        opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -555,10 +555,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-1ch-triplets.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 3));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3));
       }(); // immediately executed lambda
     }
   }
@@ -569,10 +569,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-2ch-triplets.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 3));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3));
       }(); // immediately executed lambda
     }
   }
@@ -588,10 +588,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-1ch-tripletp.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 3));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3));
       }(); // immediately executed lambda
     }
   }
@@ -602,10 +602,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-2ch-tripletp.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 3));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3));
       }(); // immediately executed lambda
     }
   }
@@ -621,10 +621,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-1ch-tripletm.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 3));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3));
       }(); // immediately executed lambda
     }
   }
@@ -635,10 +635,10 @@ MatrixElements_tmpl<SC> SymmetryISO_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "iso/iso-2ch-tripletm.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 3));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3));
       }(); // immediately executed lambda
     }
   }

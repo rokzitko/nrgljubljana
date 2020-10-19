@@ -1530,7 +1530,7 @@ struct truncate_stats {
     nrkeptmult = ranges::accumulate(diag, 0, [Sym](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getnrkept(); });
   }
   void report() {
-    nrgdump4(nrkept, nrkeptmult, nrall, nrallmult) << std::endl;
+    std::cout << nrgdump4(nrkept, nrkeptmult, nrall, nrallmult) << std::endl;
   }
 };
 

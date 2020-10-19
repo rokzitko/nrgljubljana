@@ -7,10 +7,10 @@ define(`RECALC_TAB', {
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include $1
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), $2);
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, $2);
       }(); // immediately executed lambda
     }
   }
@@ -22,10 +22,10 @@ define(`RECALC_F_TAB', {
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include $1
         };
-        opch[$2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[$2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -37,10 +37,10 @@ define(`RECALC_F_TAB_N', {
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include $1
         };
-        opch[$2][$3][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[$2][$3][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }

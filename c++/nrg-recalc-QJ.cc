@@ -38,10 +38,10 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "qj/qj-doubletp.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2));
       }(); // immediately executed lambda
     }
   }
@@ -54,10 +54,10 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "qj/qj-doubletm.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2));
       }(); // immediately executed lambda
     }
   }
@@ -86,10 +86,10 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tm
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "qj/qj-quad1.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
       }(); // immediately executed lambda
     }
   }
@@ -102,10 +102,10 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tm
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "qj/qj-quad2.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
       }(); // immediately executed lambda
     }
   }
@@ -118,10 +118,10 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tm
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "qj/qj-quad3.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
       }(); // immediately executed lambda
     }
   }
@@ -134,10 +134,10 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tm
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "qj/qj-quad4.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 4));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
       }(); // immediately executed lambda
     }
   }
@@ -162,10 +162,10 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "qj/qj-spin_j3_2-jz3_2.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -178,10 +178,10 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "qj/qj-spin_j1_2-jz1_2.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -192,10 +192,10 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "qj/qj-spin_j3_2-jz1_2.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -208,10 +208,10 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "qj/qj-spin_j1_2-jz-1_2.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -222,10 +222,10 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "qj/qj-spin_j3_2-jz-1_2.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -238,10 +238,10 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "qj/qj-spin_j3_2-jz-3_2.dat"
         };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }

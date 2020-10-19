@@ -40,10 +40,10 @@ MatrixElements_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "spsu2t/spsu2t-doubletp-1.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
       }(); // immediately executed lambda
     }
   }
@@ -56,10 +56,10 @@ MatrixElements_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "spsu2t/spsu2t-doubletm-1.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
       }(); // immediately executed lambda
     }
   }
@@ -72,10 +72,10 @@ MatrixElements_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "spsu2t/spsu2t-doubletp0.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
       }(); // immediately executed lambda
     }
   }
@@ -88,10 +88,10 @@ MatrixElements_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "spsu2t/spsu2t-doubletm0.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
       }(); // immediately executed lambda
     }
   }
@@ -104,10 +104,10 @@ MatrixElements_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "spsu2t/spsu2t-doubletp+1.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
       }(); // immediately executed lambda
     }
   }
@@ -120,10 +120,10 @@ MatrixElements_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "spsu2t/spsu2t-doubletm+1.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(1, 2, 1));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
       }(); // immediately executed lambda
     }
   }
@@ -157,10 +157,10 @@ Opch_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "spsu2t/spsu2t-spinup+1.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -173,10 +173,10 @@ Opch_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "spsu2t/spsu2t-spinup0.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -189,10 +189,10 @@ Opch_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "spsu2t/spsu2t-spinup-1.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -205,10 +205,10 @@ Opch_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "spsu2t/spsu2t-spindo+1.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -221,10 +221,10 @@ Opch_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "spsu2t/spsu2t-spindo0.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -237,10 +237,10 @@ Opch_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc_f recalc_table[] = {
+        std::initializer_list<Recalc_f> recalc_table = {
 #include "spsu2t/spsu2t-spindo-1.dat"
         };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table));
+        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
       }();
     }
   }
@@ -265,10 +265,10 @@ MatrixElements_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "spsu2t/spsu2t-triplets.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3, 0));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(3, 0));
       }(); // immediately executed lambda
     }
   }
@@ -281,10 +281,10 @@ MatrixElements_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "spsu2t/spsu2t-tripletp.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3, 0));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(3, 0));
       }(); // immediately executed lambda
     }
   }
@@ -297,10 +297,10 @@ MatrixElements_tmpl<SC> SymmetrySPSU2T_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        Recalc recalc_table[] = {
+        std::initializer_list<Recalc> recalc_table = {
 #include "spsu2t/spsu2t-tripletm.dat"
         };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, ARRAYLENGTH(recalc_table), Invar(3, 0));
+        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(3, 0));
       }(); // immediately executed lambda
     }
   }

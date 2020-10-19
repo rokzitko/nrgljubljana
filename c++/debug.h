@@ -7,7 +7,7 @@
 // Non-recoverable error or explicit request to stop at some calculation stage
 #define exit1(...)                                                                                                                                   \
   {                                                                                                                                                  \
-    std::cout << endl << __VA_ARGS__ << std::endl;                                                                                                             \
+    std::cout << std::endl << __VA_ARGS__ << std::endl;                                                                                              \
     exit(1);                                                                                                                                         \
   }
 
@@ -25,22 +25,13 @@
  #define mpilog(...) {}
 #endif
 
-// Dump the value of variable STR to the standard output.
-#define nrgdump(STR) std::cout << #STR << "=" << (STR) << " "
+#define nrgdump3(STR1, STR2, STR3) #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " "
 
-#define nrgdump2(STR1, STR2) std::cout << #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " "
+#define nrgdump4(STR1, STR2, STR3, STR4)                                                                                                     \
+  #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " " << #STR4 << "=" << (STR4) << " "
 
-#define nrgdump3(STR1, STR2, STR3) std::cout << #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " "
-
-#define nrgdump4(STR1, STR2, STR3, STR4)                                                                                                             \
-  std::cout << #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " " << #STR4 << "=" << (STR4) << " "
-
-#define nrgdump5(STR1, STR2, STR3, STR4, STR5)                                                                                                       \
-  std::cout << #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " " << #STR4 << "=" << (STR4) << " " << #STR5  \
+#define nrgdump5(STR1, STR2, STR3, STR4, STR5)                                                                                               \
+  #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " " << #STR4 << "=" << (STR4) << " " << #STR5  \
        << "=" << (STR5) << " "
-
-#define nrgdump6(STR1, STR2, STR3, STR4, STR5, STR6)                                                                                                 \
-  std::cout << #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " " << #STR4 << "=" << (STR4) << " " << #STR5  \
-       << "=" << (STR5) << " " << #STR6 << "=" << (STR6) << " "
 
 #endif
