@@ -726,9 +726,9 @@ class Algo {
    virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, 
                      const BaseSpectrum &, t_coef, std::shared_ptr<ChainSpectrum>, const Invar &,
                      const Invar &, const DensMatElements &, const Stats &stats) const {};
-   virtual string name() = 0;
-   virtual string merge() { return ""; }    // what merging rule to use
-   virtual string rho_type() { return ""; } // what rho type is required
+   virtual std::string name() = 0;
+   virtual std::string merge() { return ""; }    // what merging rule to use
+   virtual std::string rho_type() { return ""; } // what rho type is required
 };
 
 template<typename M> void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr, std::ostream &F) {

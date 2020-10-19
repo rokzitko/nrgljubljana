@@ -85,24 +85,24 @@ bool find_block(std::ifstream &F, const std::string &s) {
 }
 
 // Parse the [param] block of an input file.
-map<string, string> parser(const string &filename, const string &block) {
-  ifstream F = safe_open_for_reading(filename);
-  if (find_block(F, block))
-    return parse_block(F);
-  return {};
+auto parser(const std::string &filename, const std::string &block) {
+  auto F = safe_open_for_reading(filename);
+  if (!find_block(F, block))
+    throw std::runtime_error(fmt::format("Block {} not found in input file {}.", block, filename));
+  return parse_block(F);
 }
 
 // Input/output
-template <typename T1, typename T2> ostream &operator<<(ostream &os, const pair<T1, T2> &p) { return os << p.first << ' ' << p.second; }
-template <typename T> ostream &operator<<(ostream &os, const std::vector<T> &vec) {
+template <typename T1, typename T2> std::ostream &operator<<(std::ostream &os, const std::pair<T1, T2> &p) { return os << p.first << ' ' << p.second; }
+template <typename T> std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
   for (const auto &x : vec) os << x << " ";
   return os;
 }
-template <typename T> ostream &operator<<(ostream &os, const ublas::vector<T> &vec) {
+template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::vector<T> &vec) {
   for (const auto &x : vec) os << x << " ";
   return os;
 }
-template <typename T> ostream &operator<<(ostream &os, const ublas::matrix<T> &m) {
+template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::matrix<T> &m) {
   for (auto r1 = 0; r1 < m.size1(); r1++) {
     for (auto r2 = 0; r2 < m.size2(); r2++)
       os << m(r1, r2) << ' ';
@@ -120,7 +120,7 @@ class string_token {
    explicit string_token(string _s) : s(std::move(_s)) {
      string::size_type pos = 0;
      string::size_type first, last;
-     while ((first = s.find_first_not_of(" ", pos)) != string::npos) {
+     while ((first = s.find_first_not_of(" ", pos)) != std::string::npos) {
        last              = s.find_first_of(" ", first);
        std::string token = std::string(s, first, last - first);
        l.push_back(token);
@@ -130,7 +130,7 @@ class string_token {
          pos = last + 1;
      }
    }
-   bool find(string x) const { return std::find(l.begin(), l.end(), x) != l.end(); }
+   bool find(std::string x) const { return std::find(l.begin(), l.end(), x) != l.end(); }
 };
 
 // Skip comment lines in the input stream 'f'.
