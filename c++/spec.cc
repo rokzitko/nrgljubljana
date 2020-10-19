@@ -4,16 +4,16 @@
 const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 
 #include "spec_FT.cc"
-//#include "spec_DMNRG.cc"
-//#include "spec_FDM.cc"
-//#include "spec_CFS.cc"
+#include "spec_DMNRG.cc"
+#include "spec_FDM.cc"
+#include "spec_CFS.cc"
 
 // Calculate (finite temperature) spectral function 1/Pi Im << op1^\dag(t) op2(0) >>. Required spin direction is
 // determined by 'SPIN'. For SPIN=0 both spin direction are equivalent. For QSZ, we need to differentiate the two.
 
 template <typename FactorFnc, typename CheckSpinFnc, typename S>
-void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo_tmpl<S> &diag, 
-                  FactorFnc && factorfnc, CheckSpinFnc && checkspinfnc, 
+void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo_tmpl<S> &diag,
+                  FactorFnc && factorfnc, CheckSpinFnc && checkspinfnc,
                   const DensMatElements_tmpl<S> &rho, const DensMatElements_tmpl<S> &rhoFDM, const Stats &stats) {
   bs.algo->begin(step);
   const auto & rho_here = bs.algo->rho_type() == "rhoFDM" ? rhoFDM : rho;
