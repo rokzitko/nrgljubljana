@@ -912,8 +912,8 @@ std::string gf_typestring(gf_type gt) { // XXX: used anywhere?
 }
 
 // Sign factor in GFs for bosonic/fermionic operators.
-inline constexpr auto S_FERMIONIC = -1;
 inline constexpr auto S_BOSONIC   = 1;
+inline constexpr auto S_FERMIONIC = -1;
 int gf_sign(const gf_type gt)
 {
   return gt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC;
@@ -1085,10 +1085,11 @@ template<typename M>
 void prepare_spec_algo(speclist &sl, M && op1, M && op2, int spin, std::string name, std::string prefix, std::string algoname, gf_type gt, const Params &P) {
   fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname);
   const auto filename = prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
-  const auto sign = gf_sign(gt);
   BaseSpectrum spec(std::forward<M>(op1), std::forward<M>(op2), spin);
   if (algoname == "FT")
-    spec.algo = std::make_shared<Algo_FT>(SpectrumRealFreq(name,algoname,filename,P), sign, P);
+    spec.algo = std::make_shared<Algo_FT>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
+  if (algoname == "FTmats") 
+    spec.algo = std::make_shared<Algo_FTmats>(GFMatsubara(name,algoname,filename,gt,P), gt, P);
   sl.push_back(spec);
 }
 
@@ -1097,7 +1098,8 @@ void prepare_spec(const RUNTYPE &runtype, speclist &sl, M && op1, M && op2, std:
   // If we did not return from this funciton by this point, what we are computing is the spectral function. There are
   // several possibilities in this case, all of which may be enabled at the same time.
   if (runtype == RUNTYPE::NRG) {
-    if (P.finite) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FT", gt, P); // XXX make_shared drugje!
+    if (P.finite)     prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FT",     gt, P);
+    if (P.finitemats) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FTmats", gt, P);
   }
 }
 
@@ -1119,13 +1121,8 @@ void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, c
     if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_CHIT>(P), axis::Temp, P);
     return;
   }
-  // If we did not return from this funciton by this point, what we are computing is the spectral function. There are
-  // several possibilities in this case, all of which may be enabled at the same time.
-  if (runtype == RUNTYPE::NRG) {
-    if (P.finite) open_files(sl, spec, make_shared<Algo_FT>(P), axis::RealFreq, P);
-    if (P.finitemats) open_files(sl, spec, make_shared<Algo_FTmats>(P), axis::Matsubara, P);
-  }
-  if (runtype == RUNTYPE::DMNRG) {
+
+ if (runtype == RUNTYPE::DMNRG) {
     if (P.dmnrg) open_files(sl, spec, make_shared<Algo_DMNRG>(P), axis::RealFreq, P);
     if (P.dmnrgmats) open_files(sl, spec, make_shared<Algo_DMNRGmats>(P), axis::Matsubara, P);
     if (P.cfs) open_files(sl, spec, make_shared<Algo_CFS>(P), axis::RealFreq, P);
