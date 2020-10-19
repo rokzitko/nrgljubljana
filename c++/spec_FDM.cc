@@ -86,7 +86,7 @@ void Algo_FDMgt::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj
 // ************ Lesser correlation functions ***************
 void Algo_FDMls::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
                       spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) const {
-  const auto sign    = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
+  const auto sign    = bs.mt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC;
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM.at(Ii);
   const Matrix &rhoj = rhoFDM.at(Ij);
@@ -138,7 +138,7 @@ class Algo_FDMmats : public Algo {
 void Algo_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                         t_coef spinfactor, spCS_t cs, const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) const {
   const size_t cutoff = P.mats;
-  const auto sign    = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
+  const auto sign    = bs.mt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC;
   auto csm           = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   const double wnf   = stats.wnfactor[step.ndx()];
   const Matrix &rhoi = rhoFDM.at(Ii);
@@ -154,7 +154,7 @@ void Algo_FDMmats::calc(const Step &step, const Eigen &diagIi, const Eigen &diag
     const auto weightB = spinfactor * conj_me(op1II(j, i)) * op2II(j, i) * (-sign) * wnf * exp(-Ej / P.T); // a[ij] b[ji] sign exp(-beta e[j])
     #pragma omp parallel for schedule(static)
     for (size_t n = 1; n < cutoff; n++) csm->add(n, (weightA + weightB) / (cmpl(0, ww(n, bs.mt, P.T)) - energy));
-    if (bs.mt == matstype::fermionic || abs(energy) > WEIGHT_TOL)
+    if (bs.mt == gf_type::fermionic || abs(energy) > WEIGHT_TOL)
       csm->add(size_t(0), (weightA + weightB) / (cmpl(0, ww(0, bs.mt, P.T)) - energy));
     else // bosonic w=0 && Ei=Ej case
       csm->add(size_t(0), (-weightA / t_weight(P.T)));

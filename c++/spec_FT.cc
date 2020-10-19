@@ -1,30 +1,36 @@
 class Algo_FT : public Algo {
+ private:
+   SpectrumRealFreq spec;
+   const int sign;
+   using CS = ChainSpectrumBinning;
+   std::unique_ptr<CS> cs;
  public:
-   explicit Algo_FT(const Params &P) : Algo(P) {}
-   spCS_t make_cs(const BaseSpectrum &) override { return make_shared<ChainSpectrumBinning>(P); }
-   void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, const BaseSpectrum &, t_coef, spCS_t, const Invar &,
-             const Invar &, const DensMatElements &, const Stats &stats) const override;
-   string name() override { return "FT"; }
-   string merge() override { return "NN2"; }
+   explicit Algo_FT(SpectrumRealFreq spec, const int sign, const Params &P) : Algo(P), spec(std::move(spec)), sign(sign) {}
+   void begin(const Step &) override {
+     cs = std::make_unique<CS>(P);
+   }
+   // The first matrix element is conjugated!
+   // This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
+   // s=1 for bosons, s=-1 for fermions
+   // See Eq.(9) in Peters, Pruschke, Anders, PRB (74) 245114 (2006)
+   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, const t_coef factor,
+             const Invar &, const Invar &, const DensMatElements &, const Stats &stats) override
+   {
+     for (const auto r1: diagI1.kept()) {
+       const auto E1 = diagI1.value_zero(r1);
+       for (const auto rp: diagIp.kept()) {
+         const auto Ep = diagIp.value_zero(rp);
+         const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
+         const auto energy = E1 - Ep;
+         cs->add(step.scale() * energy, weight);
+       }
+     }
+   }
+   void end(const Step &step) override {
+     spec.mergeNN2(*cs.get(), step);
+     cs.reset();
+   }
 };
-
-// The first matrix element is conjugated!
-// This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
-// s=1 for bosons, s=-1 for fermions
-// See Eq.(9) in Peters, Pruschke, Anders, PRB (74) 245114 (2006)
-void Algo_FT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
-                   spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &, const Stats &stats) const {
-  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
-  for (const auto r1: diagI1.kept()) {
-    const auto E1 = diagI1.value_zero(r1);
-    for (const auto rp: diagIp.kept()) {
-      const auto Ep = diagIp.value_zero(rp);
-      const auto weight = (spinfactor / stats.Zft) * conj_me(op1II(r1, rp)) * op2II(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
-      const auto energy = E1 - Ep;
-      cs->add(step.scale() * energy, weight);
-    }
-  }
-}
 
 class Algo_FTmats : public Algo {
  public:

@@ -1,43 +1,40 @@
 // Real-frequency spectral function
-class SpectrumRealFreq : public Spectrum {
+class SpectrumRealFreq {
  private:
-   Bins fspos, fsneg; // Full spectral information
+   const std::string name, algoname, filename; // e.g. "A_d-A_d", "FT", "spec_A_d-A_d_dens_FT.dat"
+   const Params &P;
+   Bins fspos, fsneg; // Full spectral information, separately for positive and negative frequencies
    void mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step);
-   void mergeNN2(spCS_t, const Step &);
-   void mergeCFS(spCS_t);
    void weight_report(const double imag_tolerance = 1e-10);
-   void trim();
+   void trim() {
+     fspos.trim();
+     fsneg.trim();
+   }
    void savebins();
    void continuous();
  public:
-   SpectrumRealFreq(const std::string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, const Params &P) :
-     Spectrum(opname, filename, algotype, P), fspos(P), fsneg(P) {};
-   void merge(spCS_t, const Step &step) override;
-   ~SpectrumRealFreq() override;
+   SpectrumRealFreq(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
+     name(name), algoname(algoname), filename(filename), P(P), fspos(P), fsneg(P) {};
+   // Spectrum merging for complete Fock space calculation: we just collect all the delta peaks.
+   void mergeCFS(const ChainSpectrumBinning &cs) {
+     fspos.merge(cs.spos);
+     fsneg.merge(cs.sneg);
+   }
+   // Spectrum merging using the N/N+n patching.
+   // See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001)
+   void mergeNN2(const ChainSpectrumBinning &cs, const Step &step) {
+     if (!step.N_for_merging()) return;
+     mergeNN2half(fspos, cs.spos, step);
+     mergeNN2half(fsneg, cs.sneg, step);
+   }
+   ~SpectrumRealFreq() {
+     std::cout << "Spectrum: " << name << " " << algoname << " ->"; // savebins() & continuous() append the filenames
+     trim();
+     if (P.savebins) savebins();
+     if (P.broaden) continuous();
+     weight_report();
+   }
 };
-
-SpectrumRealFreq::~SpectrumRealFreq() {
-  std::cout << "Spectrum: " << opname << " " << algotype->name() << " ->"; // appended in savebins() & continuous()
-  trim();
-  savebins();
-  continuous();
-  weight_report();
-}
-
-// Merge the spectrum for a finite Wilson chain into the "true" NRG spectrum. For complete Fock space NRG
-// calculation, the merging tricks are not necessary: we just collect all the delta peaks from all iterations.
-void SpectrumRealFreq::merge(spCS_t cs, const Step &step) {
-  if (algotype->merge() == "NN2") return mergeNN2(cs, step);
-  if (algotype->merge() == "CFS") return mergeCFS(cs);
-  my_assert_not_reached();
-}
-
-// Spectrum merging for complete Fock space calculation.
-void SpectrumRealFreq::mergeCFS(spCS_t cs) {
-  auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
-  fspos.merge(csb->spos);
-  fsneg.merge(csb->sneg);
-}
 
 inline double windowfunction(const double E, const double Emin, const double Ex, const double Emax, const Step &step, const Params &P) {
   if (E <= Ex && step.last()) return 1.0;  // Exception 1
@@ -81,24 +78,11 @@ void SpectrumRealFreq::mergeNN2half(Bins &fullspec, const Bins &cs, const Step &
   }
 }
 
-// Spectrum merging using the N/N+n patching. One has to be careful about
-// the specifics, in particular the values of Emin, Ex and Emax. The
-// current choice seems to be working quite all right.
-// See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001).
-
-void SpectrumRealFreq::mergeNN2(spCS_t cs, const Step &step) {
-  auto csb = dynamic_pointer_cast<ChainSpectrumBinning>(cs);
-  if (!step.N_for_merging()) return;
-  mergeNN2half(fspos, csb->spos, step);
-  mergeNN2half(fsneg, csb->sneg, step);
-}
-
 void SpectrumRealFreq::weight_report(const double imag_tolerance) {
   auto fmt = [imag_tolerance](t_weight x) -> std::string { return abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
   const auto twneg = fsneg.total_weight();
   const auto twpos = fspos.total_weight();
-  std::cout << std::endl << "[" << opname << "]"
-       << " pos=" << fmt(twpos) << " neg=" << fmt(twneg) << " sum= " << fmt(twpos + twneg) << std::endl;
+  std::cout << std::endl << "pos=" << fmt(twpos) << " neg=" << fmt(twneg) << " sum= " << fmt(twpos + twneg) << std::endl;
   for (int m = 1; m <= 4; m++) {
     const auto mom = moment(fsneg.bins, fspos.bins, m);   // Spectral moments from delta-peaks
     std::cout << fmt::format("mu{}={} ", m, fmt(mom));
@@ -112,7 +96,6 @@ void SpectrumRealFreq::weight_report(const double imag_tolerance) {
 // Save binary raw (binned) spectral function. If using complex numbers and P.reim==true, we save triplets
 // (energy,real part,imag part).
 void SpectrumRealFreq::savebins() {
-  if (!P.savebins) return;
   const auto fn = filename + ".bin";
   std::cout << " " << fn;
   std::ofstream Fbins = safe_open(fn, true); // true=binary!
@@ -135,11 +118,6 @@ void SpectrumRealFreq::savebins() {
   }
 }
 
-void SpectrumRealFreq::trim() {
-  fspos.trim();
-  fsneg.trim();
-}
-
 // Energy mesh for spectral functions
 std::vector<double> make_mesh(const Params &P) {
   const double broaden_min = P.get_broaden_min();
@@ -149,7 +127,6 @@ std::vector<double> make_mesh(const Params &P) {
 }
 
 void SpectrumRealFreq::continuous() {
-  if (!P.broaden) return;
   const double alpha  = P.alpha;
   const double omega0 = P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0;
   Spikes densitypos, densityneg;

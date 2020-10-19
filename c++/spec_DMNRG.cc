@@ -13,7 +13,7 @@ class Algo_DMNRG : public Algo {
 
 void Algo_DMNRG::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
-  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
+  const auto sign = bs.mt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC;
   const double Emin = P.ZBW ? 0 : P.getEmin();
   const double Emax = P.ZBW ? std::numeric_limits<double>::max() : P.getEmax();
   const Matrix &rhoNIp = rho.at(Ip);
@@ -50,7 +50,7 @@ class Algo_DMNRGmats : public Algo {
 
 void Algo_DMNRGmats::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs,
                           t_coef spinfactor, spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
-  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
+  const auto sign = bs.mt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC;
   auto csm   = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
   const Matrix &rhoNIp = rho.at(Ip);
   const Matrix &rhoNI1 = rho.at(I1);
@@ -67,7 +67,7 @@ void Algo_DMNRGmats::calc(const Step &step, const Eigen &diagIp, const Eigen &di
       const auto weightB = sumB * op2II(rj, rm);
       const auto weight  = spinfactor * (weightA + (-sign) * weightB);
       for (size_t n = 1; n < P.mats; n++) csm->add(n, weight / (cmpl(0, ww(n, bs.mt, P.T)) - step.scale() * energy));
-      if (abs(energy) > WEIGHT_TOL || bs.mt == matstype::fermionic)
+      if (abs(energy) > WEIGHT_TOL || bs.mt == gf_type::fermionic)
         csm->add(size_t(0), weight / (cmpl(0, ww(0, bs.mt, P.T)) - step.scale() * energy));
       else // bosonic w=0 && E1=Ep case
         csm->add(size_t(0), spinfactor * (-weightA / t_weight(P.T)));

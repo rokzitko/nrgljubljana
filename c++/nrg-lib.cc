@@ -709,10 +709,6 @@ class Stats_tmpl {
 };
 using Stats = Stats_tmpl<scalar>;
 
-class ChainSpectrum;
-class BaseSpectrum;
-using spCS_t = shared_ptr<ChainSpectrum>;
-
 // Wrapper class for NRG spectral-function algorithms
 class Algo {
  private:
@@ -722,12 +718,10 @@ class Algo {
    Algo(const Algo&) = delete;
    explicit Algo(const Params &P) : P(P) {}
    virtual ~Algo() = default;
-   virtual std::shared_ptr<ChainSpectrum> make_cs(const BaseSpectrum &) = 0;
-   virtual void calc(const Step &step, const Eigen &, const Eigen &, const Matrix &, const Matrix &, 
-                     const BaseSpectrum &, t_coef, std::shared_ptr<ChainSpectrum>, const Invar &,
-                     const Invar &, const DensMatElements &, const Stats &stats) const {};
-   virtual std::string name() = 0;
-   virtual std::string merge() { return ""; }    // what merging rule to use
+   virtual void begin(const Step &) {}
+   virtual void calc(const Step &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, 
+                     const t_coef, const Invar &, const Invar &, const DensMatElements &, const Stats &stats) {} // XXX: =0 ?
+   virtual void end(const Step &) {}
    virtual std::string rho_type() { return ""; } // what rho type is required
 };
 
@@ -905,73 +899,72 @@ std::string formatted_output(const cmpl z, const Params &P) {
   return fmt::format("{str:>{width}}", "str"_a=str, "width"_a=P.width_custom); // the width for the whole X+iY string
 }
 
+// #### GF's
+
+enum class gf_type { bosonic, fermionic };
+
+std::string gf_typestring(gf_type gt) { // XXX: used anywhere?
+  switch (gt) {
+  case gf_type::bosonic: return "bosonic";
+  case gf_type::fermionic: return "fermionic";
+  default: my_assert_not_reached();
+  }
+}
+
+// Sign factor in GFs for bosonic/fermionic operators.
+inline constexpr auto S_FERMIONIC = -1;
+inline constexpr auto S_BOSONIC   = 1;
+int gf_sign(const gf_type gt)
+{
+  return gt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC;
+}
+
 #include "bins.h"
+#include "matsubara.h"
 
-// Object of class 'ChainSpectrum' will contain information about the spectral density calculated at a given stage of
-// the NRG run, i.e. for a finite Wilson chain.  We then merge it in an object of class 'Spectrum' which holds the
-// spectral information for the entire run (i.e. the physical spectral density).
+// Object of class ChainSpectrum* contains information about the spectral density calculated at a given NRG shell. It
+// is merged into an object of class Spectrum* which holds the spectral information for the entire run.
 
-class ChainSpectrum {
+class ChainSpectrumBinning {
  private:
    const Params &P;
-public:
-   explicit ChainSpectrum(const Params &P) : P(P) {}
-   virtual void add(const double energy, const t_weight weight) = 0;
-   virtual ~ChainSpectrum() = default; // required, because there are virtual members
-};
-
-class ChainSpectrumBinning : public ChainSpectrum {
- private:
    Bins spos, sneg;
  public:
-   explicit ChainSpectrumBinning(const Params &P) : ChainSpectrum(P), spos(P), sneg(P) {}
-   void add(const double energy, const t_weight weight) override {
+   explicit ChainSpectrumBinning(const Params &P) : P(P), spos(P), sneg(P) {}
+   void add(const double energy, const t_weight weight) {
      if (energy >= 0.0)
        spos.add(energy, weight);
      else
        sneg.add(-energy, weight);
    }
-   t_weight total_weight() const { return spos.total_weight() + sneg.total_weight(); }
+   auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
    friend class SpectrumRealFreq;
 };
 
-class ChainSpectrumTemp : public ChainSpectrum {
+class ChainSpectrumTemp {
  private:
+   const Params &P;
    Temp v;
  public:
-   explicit ChainSpectrumTemp(const Params &P) : ChainSpectrum(P), v(P) {}
-   void add(const double T, const t_weight value) override { v.add_value(T, value); }
+   explicit ChainSpectrumTemp(const Params &P) : P(P), v(P) {}
+   void add(const double T, const t_weight value) { v.add_value(T, value); }
    friend class SpectrumTemp;
 };
 
-#include "matsubara.h"
-
-class ChainSpectrumMatsubara : public ChainSpectrum {
+class ChainSpectrumMatsubara {
  private:
+   const Params &P;
    Matsubara m;
  public:
-   ChainSpectrumMatsubara(const Params &P, matstype mt) : ChainSpectrum(P), m(P.mats, mt, P.T){};
+   explicit ChainSpectrumMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
    void add(const size_t n, const t_weight w) { m.add(n, w); }
-   void add(const double energy, const t_weight w) override { my_assert_not_reached(); }
    auto total_weight() const { return m.total_weight(); }
    friend class SpectrumMatsubara;
 };
 
-// Object of class spectrum will contain everything that we know about a spectral density.
-class Spectrum {
- public:
-   std::string opname, filename;
-   std::shared_ptr<Algo> algotype;
-   const Params &P;
-   Spectrum(const std::string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, const Params &P) :
-     opname(opname), filename(filename), algotype(algotype), P(P) {}; // NOLINT
-   virtual ~Spectrum()= default; // required (the destructor saves the results to a file)
-   virtual void merge(std::shared_ptr<ChainSpectrum>, const Step &) = 0; // called from spec.cc as the very last step
-   auto name() { return opname; }
-};
-
 #include "spectrumrealfreq.cc"
 
+/*
 // G(T) type of results, i.e. not a real spectrum
 class SpectrumTemp : public Spectrum {
  private:
@@ -995,7 +988,7 @@ class SpectrumMatsubara : public Spectrum {
  private:
    Matsubara results;
  public:
-   SpectrumMatsubara(const string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, matstype mt, const Params &P)
+   SpectrumMatsubara(const string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, gf_type mt, const Params &P)
      : Spectrum(opname, filename, algotype, P), results(P.mats, mt, P.T) {}
    void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
      auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
@@ -1006,6 +999,7 @@ class SpectrumMatsubara : public Spectrum {
      results.save(safe_open(filename + ".dat"), P.prec_xy);
    }
 };
+*/
 
 // Check if the trace of the density matrix equals 'ref_value'.
 template<typename S>
@@ -1016,38 +1010,28 @@ void check_trace_rho(const DensMatElements_tmpl<S> &m, std::shared_ptr<Symmetry>
 
 enum class axis { RealFreq, Temp, Matsubara };
 
-std::ostream & operator<<(std::ostream &os, const axis &a) {
+std::ostream & operator<<(std::ostream &os, const axis &a) { // XXX: keep this?
   if (a == axis::RealFreq)  os << "RealFreq";
   if (a == axis::Temp)      os << "Temp";
   if (a == axis::Matsubara) os << "Matsubara";
   return os;
 }
 
-inline std::string to_string(std::complex<double> &z) {
+inline std::string to_string(std::complex<double> &z) { // XXX: i/o?
   std::ostringstream s;
   s << z;
   return s.str();
 }
 
-// All information about calculating a spectral function: pointers to the operator data, raw spectral data acccumulators,
-// algorithm, etc.
+// All information about calculating a spectral function: pointers to the operator data, raw spectral data
+// acccumulators, algorithm, etc.
 class BaseSpectrum {
  public:
-   std::string name;
-   std::string prefix; // "dens", "corr", etc.
    const MatrixElements &op1, &op2;
-   std::shared_ptr<Spectrum> spec;  
-   std::shared_ptr<Algo>     algotype; // Algo_FDM, Algo_DMNRG,...
-   axis a;              // axis::RealFreq, axis::Temp, axis::Matsubara, etc.
-   matstype mt;         // matstype::bosonic, matstype::fermionic, etc.
-   int spin{};          // -1 or +1, or 0 where irrelevant
-   std::string fullname() const {
-     std::string s = fmt::format("{} {} {} {}", name, prefix, algotype ? algotype->name() : "[Algorithm not set]", a);
-     if (a == axis::Matsubara) s += " " + matstypestring(mt);
-     return s;
-   }
-   BaseSpectrum(const MatrixElements &op1, const MatrixElements &op2, const std::string name, const std::string prefix, const matstype mt, const int spin) :
-     name(name), prefix(prefix), op1(op1), op2(op2), a(axis::RealFreq), mt(mt), spin(spin) {}
+   int spin{};                      // -1 or +1, or 0 where irrelevant
+   std::shared_ptr<Algo> algo;      // Algo_FDM, Algo_DMNRG,...
+   BaseSpectrum(const MatrixElements &op1, const MatrixElements &op2, const int spin) :
+     op1(op1), op2(op2), spin(spin) {}
 };
 using speclist = std::list<BaseSpectrum>;
 
@@ -1100,21 +1084,28 @@ class ExpvOutput_tmpl {
 };
 using ExpvOutput = ExpvOutput_tmpl<scalar>;
 
-// open_files() and open_files_spec() open the output files and establishe the data structures for storing spectral
-// information.
-void open_files(speclist &sl, BaseSpectrum &spec, std::shared_ptr<Algo> algotype, const axis a, const Params &P) {
-  const string fn = spec.prefix + "_" + (algotype ? algotype->name() : "OOPS") + "_dens_" + spec.name; // no suffix (.dat vs. .bin)
-  switch (a) {
-    case axis::RealFreq:  spec.spec = make_shared<SpectrumRealFreq>(spec.name, fn, algotype, P); break;
-    case axis::Temp:      spec.spec = make_shared<SpectrumTemp>(spec.name, fn, algotype, P); break;
-    case axis::Matsubara: spec.spec = make_shared<SpectrumMatsubara>(spec.name, fn, algotype, spec.mt, P); break;
-    default: my_assert_not_reached();
-  }
-  spec.algotype = algotype;
-  spec.a        = a;
+// Establish the data structures for storing spectral information [and prepare output files].
+template<typename M>
+void prepare_spec_algo(speclist &sl, M && op1, M && op2, int spin, std::string name, std::string prefix, std::string algoname, gf_type gt, const Params &P) {
+  fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname);
+  const auto filename = prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
+  const auto sign = gf_sign(gt);
+  BaseSpectrum spec(std::forward<M>(op1), std::forward<M>(op2), spin);
+  if (algoname == "FT")
+    spec.algo = std::make_shared<Algo_FT>(SpectrumRealFreq(name,algoname,filename,P), sign, P);
   sl.push_back(spec);
 }
 
+template<typename M>
+void prepare_spec(const RUNTYPE &runtype, speclist &sl, M && op1, M && op2, std::string name, std::string prefix, gf_type gt, int spin, const Params &P) { 
+  // If we did not return from this funciton by this point, what we are computing is the spectral function. There are
+  // several possibilities in this case, all of which may be enabled at the same time.
+  if (runtype == RUNTYPE::NRG) {
+    if (P.finite) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FT", gt, P); // XXX make_shared drugje!
+  }
+}
+
+/*
 void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, const Params &P) {
   if (spec.prefix == "gt") {
     if (runtype == RUNTYPE::NRG) open_files(sl, spec, make_shared<Algo_GT>(P), axis::Temp, P);
@@ -1150,6 +1141,7 @@ void open_files_spec(const RUNTYPE &runtype, speclist &sl, BaseSpectrum &spec, c
     if (P.fdmmats) open_files(sl, spec, make_shared<Algo_FDMmats>(P), axis::Matsubara, P);
   }
 }
+*/
 
 template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
   std::copy(x.cbegin(), x.cend(), std::ostream_iterator<T>(os, " "));
@@ -1254,13 +1246,11 @@ class Oprecalc_tmpl {
    void loopover(const RUNTYPE &runtype, const Params &P,
                  const CustomOp_tmpl<S> &set1, const CustomOp_tmpl<S> &set2,
                  const string_token &stringtoken, speclist &spectra, const std::string &prefix,
-                 std::set<std::string> &rec1, std::set<std::string> &rec2, matstype mt, const int spin = 0) {
+                 std::set<std::string> &rec1, std::set<std::string> &rec2, gf_type mt, const int spin = 0) { // mt -> gt
     for (const auto &[name1, op1] : set1) {
       for (const auto &[name2, op2] : set2) {
         if (const auto name = sdname(name1, name2, spin); stringtoken.find(name)) {
-          BaseSpectrum spec(op1, op2, name, prefix, mt, spin);
-          open_files_spec(runtype, spectra, spec, P);
-          std::cout << "Spectrum: " << spec.fullname() << std::endl;
+          prepare_spec(runtype, spectra, op1, op2, name, prefix, mt, spin, P);
           rec1.insert(name1);
           rec2.insert(name2);
         }
@@ -1273,40 +1263,40 @@ class Oprecalc_tmpl {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
-    loopover(runtype, P, a.ops,  a.ops,  sts, spectraS, "corr", s, s, matstype::bosonic);
-    loopover(runtype, P, a.opsp, a.opsp, sts, spectraS, "corr", p, p, matstype::bosonic);
-    loopover(runtype, P, a.opsg, a.opsg, sts, spectraS, "corr", g, g, matstype::bosonic);
-    loopover(runtype, P, a.ops,  a.opsg, sts, spectraS, "corr", s, g, matstype::bosonic);
-    loopover(runtype, P, a.opsg, a.ops,  sts, spectraS, "corr", g, s, matstype::bosonic);
+    loopover(runtype, P, a.ops,  a.ops,  sts, spectraS, "corr", s, s, gf_type::bosonic);
+    loopover(runtype, P, a.opsp, a.opsp, sts, spectraS, "corr", p, p, gf_type::bosonic);
+    loopover(runtype, P, a.opsg, a.opsg, sts, spectraS, "corr", g, g, gf_type::bosonic);
+    loopover(runtype, P, a.ops,  a.opsg, sts, spectraS, "corr", s, g, gf_type::bosonic);
+    loopover(runtype, P, a.opsg, a.ops,  sts, spectraS, "corr", g, s, gf_type::bosonic);
     // Global susceptibilities (global singlet operators)
     string_token stchit(P.specchit);
-    loopover(runtype, P, a.ops,  a.ops,  stchit, spectraCHIT, "chit", s, s, matstype::bosonic);
-    loopover(runtype, P, a.ops,  a.opsg, stchit, spectraCHIT, "chit", s, g, matstype::bosonic);
-    loopover(runtype, P, a.opsg, a.ops,  stchit, spectraCHIT, "chit", g, s, matstype::bosonic);
-    loopover(runtype, P, a.opsg, a.opsg, stchit, spectraCHIT, "chit", g, g, matstype::bosonic);
+    loopover(runtype, P, a.ops,  a.ops,  stchit, spectraCHIT, "chit", s, s, gf_type::bosonic);
+    loopover(runtype, P, a.ops,  a.opsg, stchit, spectraCHIT, "chit", s, g, gf_type::bosonic);
+    loopover(runtype, P, a.opsg, a.ops,  stchit, spectraCHIT, "chit", g, s, gf_type::bosonic);
+    loopover(runtype, P, a.opsg, a.opsg, stchit, spectraCHIT, "chit", g, g, gf_type::bosonic);
     // Dynamic spin susceptibilities (triplet operators)
     string_token stt(P.spect);
-    loopover(runtype, P, a.opt, a.opt, stt, spectraT, "spin", t, t, matstype::bosonic);
+    loopover(runtype, P, a.opt, a.opt, stt, spectraT, "spin", t, t, gf_type::bosonic);
     string_token stot(P.specot);
-    loopover(runtype, P, a.opot, a.opot, stot, spectraOT, "orbspin", ot, ot, matstype::bosonic);
+    loopover(runtype, P, a.opot, a.opot, stot, spectraOT, "orbspin", ot, ot, gf_type::bosonic);
     const int varmin = (Sym->isfield() ? -1 : 0);
     const int varmax = (Sym->isfield() ? +1 : 0);
     // Spectral functions (doublet operators)
     string_token std(P.specd);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, std, spectraD, "spec", d, d, matstype::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, std, spectraD, "spec", d, d, gf_type::fermionic, SPIN);
     string_token stgt(P.specgt);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, stgt, spectraGT, "gt", d, d, matstype::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, stgt, spectraGT, "gt", d, d, gf_type::fermionic, SPIN);
     string_token sti1t(P.speci1t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, sti1t, spectraI1T, "i1t", d, d, matstype::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, sti1t, spectraI1T, "i1t", d, d, gf_type::fermionic, SPIN);
     string_token sti2t(P.speci2t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, sti2t, spectraI2T, "i2t", d, d, matstype::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, sti2t, spectraI2T, "i2t", d, d, gf_type::fermionic, SPIN);
     // Spectral functions (quadruplet operators)
     string_token stq(P.specq);
-    loopover(runtype, P, a.opq, a.opq, stq, spectraQ, "specq", q, q, matstype::fermionic);
+    loopover(runtype, P, a.opq, a.opq, stq, spectraQ, "specq", q, q, gf_type::fermionic);
     report();
   }
 };

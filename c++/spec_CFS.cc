@@ -39,7 +39,7 @@ class Algo_CFS : public Algo_CFSls, public Algo_CFSgt {
 // Based on the implementation by Markus Greger.
 void Algo_CFSls::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1II, const Matrix &op2II, const BaseSpectrum &bs, t_coef spinfactor,
                       spCS_t cs, const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) const {
-  const auto sign = bs.mt == matstype::bosonic ? S_BOSONIC : S_FERMIONIC;
+  const auto sign = bs.mt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC;
   const auto &rhoNIp = rho.at(Ip);
   const auto &rhoNI1 = rho.at(I1);
   // Convention: k-loops over retained states, l-loop over discarded states.
