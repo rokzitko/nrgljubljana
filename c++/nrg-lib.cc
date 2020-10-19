@@ -922,15 +922,12 @@ int gf_sign(const gf_type gt)
 #include "bins.h"
 #include "matsubara.h"
 
-// Object of class ChainSpectrum* contains information about the spectral density calculated at a given NRG shell. It
-// is merged into an object of class Spectrum* which holds the spectral information for the entire run.
-
-class ChainSpectrumBinning {
+class ChainBinning {
  private:
    const Params &P;
    Bins spos, sneg;
  public:
-   explicit ChainSpectrumBinning(const Params &P) : P(P), spos(P), sneg(P) {}
+   explicit ChainBinning(const Params &P) : P(P), spos(P), sneg(P) {}
    void add(const double energy, const t_weight weight) {
      if (energy >= 0.0)
        spos.add(energy, weight);
@@ -941,65 +938,64 @@ class ChainSpectrumBinning {
    friend class SpectrumRealFreq;
 };
 
-class ChainSpectrumTemp {
- private:
-   const Params &P;
-   Temp v;
- public:
-   explicit ChainSpectrumTemp(const Params &P) : P(P), v(P) {}
-   void add(const double T, const t_weight value) { v.add_value(T, value); }
-   friend class SpectrumTemp;
-};
-
-class ChainSpectrumMatsubara {
+class ChainMatsubara {
  private:
    const Params &P;
    Matsubara m;
  public:
-   explicit ChainSpectrumMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
+   explicit ChainMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
    void add(const size_t n, const t_weight w) { m.add(n, w); }
    auto total_weight() const { return m.total_weight(); }
-   friend class SpectrumMatsubara;
+   friend class GFMatsubara;
+};
+
+class ChainTempDependence {
+ private:
+   const Params &P;
+   Temp v;
+ public:
+   explicit ChainTempDependence(const Params &P) : P(P), v(P) {}
+   void add(const double T, const t_weight value) { v.add_value(T, value); }
+   friend class TempDependence;
 };
 
 #include "spectrumrealfreq.cc"
 
-/*
-// G(T) type of results, i.e. not a real spectrum
-class SpectrumTemp : public Spectrum {
+class GFMatsubara {
  private:
+   const std::string name, algoname, filename;
+   const Params &P;
+   Matsubara results;
+ public:
+   GFMatsubara(const string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
+     name(name), algoname(algoname), filename(filename), P(P), results(P.mats, gt, P.T) {}
+   void merge(const ChainMatsubara &cm) {
+     results.merge(cm.m);
+   }     
+   ~GFMatsubara() {
+     fmt::print(fmt::emphasis::bold, "GF Matsubara: {} {} -> {}\n", name, algoname, filename);
+     results.save(safe_open(filename + ".dat"), P.prec_xy);
+   }
+};
+
+class TempDependence {
+ private:
+   const std::string name, algoname, filename;
+   const Params &P;
    Spikes results;
  public:
-   SpectrumTemp(const std::string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, const Params &P) : 
-     Spectrum(opname, filename, algotype, P) {}
-   void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
-     auto t = dynamic_pointer_cast<ChainSpectrumTemp>(cs);
-     std::copy(t->v.begin(), t->v.end(), std::back_inserter(results));
+   TempDependence(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
+     name(name), algoname(algoname), filename(filename),  P(P) {}
+   void merge(const ChainTempDependence &ctd) {
+     std::copy(ctd.v.begin(), ctd.v.end(), std::back_inserter(results));
    }
-   ~SpectrumTemp() override {
-     std::cout << "Spectrum: " << opname << " " << algotype->name() << std::endl;
+   ~TempDependence() {
+     fmt::print(fmt::emphasis::bold, "Temperature dependence: {} {} -> {}\n", name, algoname, filename);
      ranges::sort(results, sortfirst());
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }
 };
 
-// This container actually holds the GF on the Matsubara axis, not a spectral function.
-class SpectrumMatsubara : public Spectrum {
- private:
-   Matsubara results;
- public:
-   SpectrumMatsubara(const string &opname, const std::string &filename, std::shared_ptr<Algo> algotype, gf_type mt, const Params &P)
-     : Spectrum(opname, filename, algotype, P), results(P.mats, mt, P.T) {}
-   void merge(std::shared_ptr<ChainSpectrum> cs, const Step &) override {
-     auto t = dynamic_pointer_cast<ChainSpectrumMatsubara>(cs);
-     for (const auto n : range0(results.v.size())) results.v[n].second += t->m.v[n].second;
-   }     
-   ~SpectrumMatsubara() override { 
-     fmt::print(fmt::emphasis::bold, "Spectrum: {} -> {}\n", opname, algotype->name());
-     results.save(safe_open(filename + ".dat"), P.prec_xy);
-   }
-};
-*/
 
 // Check if the trace of the density matrix equals 'ref_value'.
 template<typename S>

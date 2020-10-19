@@ -15,20 +15,17 @@ class SpectrumRealFreq {
  public:
    SpectrumRealFreq(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
      name(name), algoname(algoname), filename(filename), P(P), fspos(P), fsneg(P) {};
-   // Spectrum merging for complete Fock space calculation: we just collect all the delta peaks.
-   void mergeCFS(const ChainSpectrumBinning &cs) {
-     fspos.merge(cs.spos);
+   void mergeCFS(const ChainBinning &cs) {
+     fspos.merge(cs.spos); // Collect delta peaks
      fsneg.merge(cs.sneg);
    }
-   // Spectrum merging using the N/N+n patching.
-   // See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001)
-   void mergeNN2(const ChainSpectrumBinning &cs, const Step &step) {
+   void mergeNN2(const ChainBinning &cs, const Step &step) {
      if (!step.N_for_merging()) return;
-     mergeNN2half(fspos, cs.spos, step);
+     mergeNN2half(fspos, cs.spos, step); // Spectrum merging using the N/N+n patching.
      mergeNN2half(fsneg, cs.sneg, step);
    }
    ~SpectrumRealFreq() {
-     std::cout << "Spectrum: " << name << " " << algoname << " ->"; // savebins() & continuous() append the filenames
+     fmt::print(fmt::emphasis::bold, "Spectrum: {} {} -> ", name, algoname); // savebins() & continuous() append the filenames
      trim();
      if (P.savebins) savebins();
      if (P.broaden) continuous();
@@ -56,9 +53,9 @@ inline double windowfunction(const double E, const double Emin, const double Ex,
   my_assert_not_reached();
 }
 
-// Here we perform the actual merging of data using the N/N+2 scheme.
-// Note that we use a windowfunction (see above) to accomplish the
-// smooth combining of data.
+// Here we perform the actual merging of data using the N/N+2 scheme. Note that we use a windowfunction (see above)
+// to accomplish the smooth combining of data.
+// See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001)
 void SpectrumRealFreq::mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step) {
   auto Emin = step.scale() * P.getEmin(); // p
   auto Ex   = step.scale() * P.getEx();   // p Lambda

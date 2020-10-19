@@ -26,6 +26,13 @@ class Matsubara {
      for (const auto n: range0(mats)) v.emplace_back(ww(n, mt, T), 0);
    }
    void add(size_t n, cmpl w) { v[n].second += w; }
+   void merge(const Matsubara &m2) {
+     my_assert(v.size() == m2.v.size());
+     for (const auto n: range0(v.size())) {
+       my_assert(v[n].first == m2.v[n].first);
+       v[n].second += m2.v[n].second;
+     }
+   }
    template <typename T> void save(T && F, int prec) const {
      F << setprecision(prec); // prec_xy
      for (const auto &[e, w] : v) outputxy(F, e, w, true);
@@ -34,7 +41,6 @@ class Matsubara {
      weight_bucket sum(v); // XXX sum function?
      return sum;
    }
-   friend class SpectrumMatsubara;
 };
 
 #endif // _matsubara_h_

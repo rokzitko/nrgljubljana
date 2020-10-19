@@ -2,7 +2,7 @@ class Algo_FT : public Algo {
  private:
    SpectrumRealFreq spec;
    const int sign;
-   using CS = ChainSpectrumBinning;
+   using CS = ChainBinning;
    std::unique_ptr<CS> cs;
  public:
    explicit Algo_FT(SpectrumRealFreq spec, const int sign, const Params &P) : Algo(P), spec(std::move(spec)), sign(sign) {}
@@ -32,7 +32,10 @@ class Algo_FT : public Algo {
    }
 };
 
-class Algo_FTmats : public Algo {
+/*
+ class Algo_FTmats : public Algo {
+ private:
+   SpectrumMatsubara spec;
  public:
    explicit Algo_FTmats(const Params &P) : Algo(P) {}
    spCS_t make_cs(const BaseSpectrum &bs) override { return make_shared<ChainSpectrumMatsubara>(P, bs.mt); }
@@ -166,3 +169,4 @@ void Algo_CHIT::calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1,
   }
   cs->add(temperature, spinfactor / stats.Zchit * t_weight(w));
 }
+*/
