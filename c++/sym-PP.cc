@@ -49,11 +49,7 @@ class SymmetryPP_tmpl : public Symmetry_tmpl<SC> {
 #define OFFDIAG_AN_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 3, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-<<<<<<< HEAD
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
-=======
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, ch, factor * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
->>>>>>> 7eaf25f... symmetry* templatization
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
 
 #undef DIAG
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
@@ -84,11 +80,7 @@ void SymmetryPP_tmpl<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, 
 #define OFFDIAG_AN_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 3, t_matel(factor) * coef.xiUP(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-<<<<<<< HEAD
-#define ISOSPINX(i, j, ch, factor) diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
-=======
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, ch, factor * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
->>>>>>> 7eaf25f... symmetry* templatization
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
 
 #undef DIAG_UP
 #define DIAG_UP(i, j, ch, number) this->diag_function(step, i, ch, number, coef.zetaUP(step.N() + 1, ch), h, qq)
