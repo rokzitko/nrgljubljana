@@ -14,7 +14,7 @@ class SpectrumRealFreq {
    void continuous();
  public:
    SpectrumRealFreq(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
-     name(name), algoname(algoname), filename(filename), P(P), fspos(P), fsneg(P) {};
+     name(name), algoname(algoname), filename(filename), P(P), fspos(P), fsneg(P) {}
    void mergeCFS(const ChainBinning &cs) {
      fspos.merge(cs.spos); // Collect delta peaks
      fsneg.merge(cs.sneg);
@@ -24,7 +24,7 @@ class SpectrumRealFreq {
      mergeNN2half(fspos, cs.spos, step); // Spectrum merging using the N/N+n patching.
      mergeNN2half(fsneg, cs.sneg, step);
    }
-   ~SpectrumRealFreq() {
+   void save() {
      fmt::print(fmt::emphasis::bold, "Spectrum: {} {} -> ", name, algoname); // savebins() & continuous() append the filenames
      trim();
      if (P.savebins) savebins();

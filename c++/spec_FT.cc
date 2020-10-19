@@ -5,7 +5,7 @@ class Algo_FT : public Algo {
    using CB = ChainBinning;
    std::unique_ptr<CB> cb;
  public:
-   explicit Algo_FT(SpectrumRealFreq spec, gf_type gt, const Params &P) : Algo(P), spec(std::move(spec)), sign(gf_sign(gt)) {}
+   explicit Algo_FT(SpectrumRealFreq && spec, gf_type gt, const Params &P) : Algo(P), spec(std::move(spec)), sign(gf_sign(gt)) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    // The first matrix element is conjugated! This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
    void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, const t_coef factor,
@@ -25,6 +25,7 @@ class Algo_FT : public Algo {
      spec.mergeNN2(*cb.get(), step);
      cb.reset();
    }
+   ~Algo_FT() { spec.save(); }
 };
 
 class Algo_FTmats : public Algo {
@@ -35,7 +36,7 @@ class Algo_FTmats : public Algo {
    using CM = ChainMatsubara;
    std::unique_ptr<CM> cm;
  public:
-   explicit Algo_FTmats(GFMatsubara gf, gf_type gt, const Params &P) : Algo(P), gf(std::move(gf)), sign(gf_sign(gt)), gt(gt) {}
+   explicit Algo_FTmats(GFMatsubara && gf, gf_type gt, const Params &P) : Algo(P), gf(std::move(gf)), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override {
      cm = std::make_unique<CM>(P, gt);
    }
@@ -62,6 +63,7 @@ class Algo_FTmats : public Algo {
      gf.merge(*cm.get());
      cm.reset();
    }
+   ~Algo_FTmats() { gf.save(); }
 };
 
 // Calculation of the temperature-dependent linear conductrance G(T) using the linear response theory &
@@ -73,7 +75,7 @@ class Algo_GT : public Algo {
    using CT = ChainTempDependence;
    std::unique_ptr<CT> ct;
  public:
-   explicit Algo_GT(TempDependence td, gf_type gt, const Params &P) : Algo(P), td(std::move(td)) {
+   explicit Algo_GT(TempDependence && td, gf_type gt, const Params &P) : Algo(P), td(std::move(td)) {
      my_assert(gt == gf_type::fermionic);
    }
    void begin(const Step &) override { ct = std::make_unique<CT>(P); }
@@ -82,7 +84,7 @@ class Algo_GT : public Algo {
    {
      const double temperature = P.gtp * step.scale(); // in absolute units!
      const double beta        = 1.0 / temperature;
-     weight_bucket value;
+     t_weight value{};
      for (const auto r1: diagI1.kept()) {
        const auto E1 = diagI1.value_zero(r1);
        for (const auto rp: diagIp.kept()) {
@@ -98,6 +100,7 @@ class Algo_GT : public Algo {
    void end(const Step &) override {
      td.merge(*ct.get());
    }
+   ~Algo_GT() { td.save(); }
 };
 
 
@@ -129,16 +132,16 @@ class Algo_CHIT : public Algo {
    using CT = ChainTempDependence;
    std::unique_ptr<CT> ct;
  public:
-   explicit Algo_CHIT(TempDependence td, gf_type gt, const Params &P) : Algo(P), td(std::move(td)) {
+   explicit Algo_CHIT(TempDependence && td, gf_type gt, const Params &P) : Algo(P), td(std::move(td)) {
      my_assert(gt == gf_type::bosonic);
    }
    void begin(const Step &) override { ct = std::make_unique<CT>(P); }
    void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &, const Invar &, const DensMatElements &, const Stats &stats) const 
+             const Invar &, const Invar &, const DensMatElements &, const Stats &stats) override
    {
      const double temperature = P.chitp * step.scale(); // in absolute units!
      const double beta        = 1.0 / temperature;
-     weight_bucket value;
+     t_weight value{};
      for (const auto r1: diagI1.kept()) {
        const auto E1 = diagI1.value_zero(r1);
        for (const auto rp: diagIp.kept()) {
@@ -152,4 +155,5 @@ class Algo_CHIT : public Algo {
    void end(const Step &) override {
      td.merge(*ct.get());
    }
+   ~Algo_CHIT() { td.save(); }
 };

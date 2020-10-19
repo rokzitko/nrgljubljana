@@ -967,12 +967,12 @@ class GFMatsubara {
    const Params &P;
    Matsubara results;
  public:
-   GFMatsubara(const string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
+   GFMatsubara(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
      name(name), algoname(algoname), filename(filename), P(P), results(P.mats, gt, P.T) {}
    void merge(const ChainMatsubara &cm) {
      results.merge(cm.m);
-   }     
-   ~GFMatsubara() {
+   }
+   void save() {
      fmt::print(fmt::emphasis::bold, "GF Matsubara: {} {} -> {}\n", name, algoname, filename);
      results.save(safe_open(filename + ".dat"), P.prec_xy);
    }
@@ -989,7 +989,7 @@ class TempDependence {
    void merge(const ChainTempDependence &ctd) {
      std::copy(ctd.v.begin(), ctd.v.end(), std::back_inserter(results));
    }
-   ~TempDependence() {
+   void save() {
      fmt::print(fmt::emphasis::bold, "Temperature dependence: {} {} -> {}\n", name, algoname, filename);
      ranges::sort(results, sortfirst());
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
@@ -1240,14 +1240,14 @@ class Oprecalc_tmpl {
 
    // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
    // If SPIN == 1 or SPIN == -1, '-u' or '-d' is appended to the string.
-   auto sdname(const std::string &a, const std::string &b, const int spin = 0) {
+   auto sdname(const std::string &a, const std::string &b, const int spin) {
      return a + "-" + b + (spin == 0 ? "" : (spin == 1 ? "-u" : "-d"));
    }
 
    void loopover(const RUNTYPE &runtype, const Params &P,
                  const CustomOp_tmpl<S> &set1, const CustomOp_tmpl<S> &set2,
                  const string_token &stringtoken, speclist &spectra, const std::string &prefix,
-                 std::set<std::string> &rec1, std::set<std::string> &rec2, gf_type mt, const int spin = 0) { // mt -> gt
+                 std::set<std::string> &rec1, std::set<std::string> &rec2, gf_type mt, const int spin) { // XXX:mt -> gt
     for (const auto &[name1, op1] : set1) {
       for (const auto &[name2, op2] : set2) {
         if (const auto name = sdname(name1, name2, spin); stringtoken.find(name)) {
@@ -1264,22 +1264,22 @@ class Oprecalc_tmpl {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
-    loopover(runtype, P, a.ops,  a.ops,  sts, spectraS, "corr", s, s, gf_type::bosonic);
-    loopover(runtype, P, a.opsp, a.opsp, sts, spectraS, "corr", p, p, gf_type::bosonic);
-    loopover(runtype, P, a.opsg, a.opsg, sts, spectraS, "corr", g, g, gf_type::bosonic);
-    loopover(runtype, P, a.ops,  a.opsg, sts, spectraS, "corr", s, g, gf_type::bosonic);
-    loopover(runtype, P, a.opsg, a.ops,  sts, spectraS, "corr", g, s, gf_type::bosonic);
+    loopover(runtype, P, a.ops,  a.ops,  sts, spectraS, "corr", s, s, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsp, a.opsp, sts, spectraS, "corr", p, p, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.opsg, sts, spectraS, "corr", g, g, gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.opsg, sts, spectraS, "corr", s, g, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.ops,  sts, spectraS, "corr", g, s, gf_type::bosonic, 0);
     // Global susceptibilities (global singlet operators)
     string_token stchit(P.specchit);
-    loopover(runtype, P, a.ops,  a.ops,  stchit, spectraCHIT, "chit", s, s, gf_type::bosonic);
-    loopover(runtype, P, a.ops,  a.opsg, stchit, spectraCHIT, "chit", s, g, gf_type::bosonic);
-    loopover(runtype, P, a.opsg, a.ops,  stchit, spectraCHIT, "chit", g, s, gf_type::bosonic);
-    loopover(runtype, P, a.opsg, a.opsg, stchit, spectraCHIT, "chit", g, g, gf_type::bosonic);
+    loopover(runtype, P, a.ops,  a.ops,  stchit, spectraCHIT, "chit", s, s, gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.opsg, stchit, spectraCHIT, "chit", s, g, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.ops,  stchit, spectraCHIT, "chit", g, s, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.opsg, stchit, spectraCHIT, "chit", g, g, gf_type::bosonic, 0);
     // Dynamic spin susceptibilities (triplet operators)
     string_token stt(P.spect);
-    loopover(runtype, P, a.opt, a.opt, stt, spectraT, "spin", t, t, gf_type::bosonic);
+    loopover(runtype, P, a.opt, a.opt, stt, spectraT, "spin", t, t, gf_type::bosonic, 0);
     string_token stot(P.specot);
-    loopover(runtype, P, a.opot, a.opot, stot, spectraOT, "orbspin", ot, ot, gf_type::bosonic);
+    loopover(runtype, P, a.opot, a.opot, stot, spectraOT, "orbspin", ot, ot, gf_type::bosonic, 0);
     const auto varmin = Sym->isfield() ? -1 : 0;
     const auto varmax = Sym->isfield() ? +1 : 0;
     // Spectral functions (doublet operators)
@@ -1297,7 +1297,7 @@ class Oprecalc_tmpl {
       loopover(runtype, P, a.opd, a.opd, sti2t, spectraI2T, "i2t", d, d, gf_type::fermionic, SPIN);
     // Spectral functions (quadruplet operators)
     string_token stq(P.specq);
-    loopover(runtype, P, a.opq, a.opq, stq, spectraQ, "specq", q, q, gf_type::fermionic);
+    loopover(runtype, P, a.opq, a.opq, stq, spectraQ, "specq", q, q, gf_type::fermionic, 0);
     report();
   }
 };
