@@ -38,7 +38,7 @@ void cdmI(const size_t i,        // Subspace index
   const auto dim2   = diagI1.matrix.size2();
   my_assert(nromega <= dim1 && offset + dim <= dim2);
   const ublas::matrix_range<const typename traits<S>::Matrix> U(diagI1.matrix, ublas::range(0, nromega), ublas::range(offset, offset + dim));
-  Matrix T(dim, nromega);
+  typename traits<S>::Matrix T(dim, nromega);
   atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, rhoN, t_coef(0.0), T);    // T <- U^dag rhoN
   atlas::gemm(CblasNoTrans, CblasNoTrans, factor, T, U, t_coef(1.0), rhoNEW); // rhoNEW <- rhoNEW + factor T U
 }
@@ -53,7 +53,7 @@ void calc_densitymatrix_iterN(const DiagInfo_tmpl<S> &diag,
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   for (const auto &[I, dimsub] : dm[N - 1]) { // loop over all subspaces at *previous* iteration
     const auto dim  = dimsub.kept;
-    rhoPrev[I]      = Matrix(dim, dim, 0);
+    rhoPrev[I]      = typename traits<S>::Matrix(dim, dim, 0);
     if (dim == 0) continue;
     const auto ns = Sym->new_subspaces(I);
     for (const auto &[i, sub] : ns | ranges::views::enumerate) {

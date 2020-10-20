@@ -148,7 +148,7 @@ class Symmetry_tmpl {
    virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
    virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
 
-   virtual void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats &stats, const double factor) = 0; // AAA: templatize
+   virtual void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats_tmpl<S> &stats, const double factor) = 0; // AAA: templatize
 
    virtual Opch_tmpl<S> recalc_irreduc(const Step &step, const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax) { my_assert_not_reached(); }
    virtual OpchChannel_tmpl<S> recalc_irreduc_substeps(const Step &step, const DiagInfo_tmpl<S> &diag, 

@@ -114,7 +114,8 @@ void determine_Nmax(const Coef &coef, Params &P) {
 inline void skipline(std::ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
-template<typename S> auto read_data(Params &P, Stats_tmpl<S> &stats) {
+template<typename S> 
+auto read_data(Params &P, Stats_tmpl<S> &stats) {
   skipline();
   std::ifstream fdata("data");
   if (!fdata) throw std::runtime_error("Can't load initial data.");
@@ -127,8 +128,8 @@ template<typename S> auto read_data(Params &P, Stats_tmpl<S> &stats) {
   skip_comments(fdata);
   DiagInfo_tmpl<S> diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);
-  IterInfo iterinfo0;
-  iterinfo0.opch = Opch(fdata, diag0, P);
+  IterInfo_tmpl<S> iterinfo0;
+  iterinfo0.opch = Opch_tmpl<S>(fdata, diag0, P);
   Coef_tmpl<S> coef(P);
   while (true) {
     /* skip white space */
@@ -143,13 +144,13 @@ template<typename S> auto read_data(Params &P, Stats_tmpl<S> &stats) {
         // ignore embedded comment lines
         break;
       case 'e': read_gs_energy(fdata, stats); break;
-      case 's': iterinfo0.ops[opname]  = MatrixElements(fdata, diag0); break;
-      case 'p': iterinfo0.opsp[opname] = MatrixElements(fdata, diag0); break;
-      case 'g': iterinfo0.opsg[opname] = MatrixElements(fdata, diag0); break;
-      case 'd': iterinfo0.opd[opname]  = MatrixElements(fdata, diag0); break;
-      case 't': iterinfo0.opt[opname]  = MatrixElements(fdata, diag0); break;
-      case 'o': iterinfo0.opot[opname] = MatrixElements(fdata, diag0); break;
-      case 'q': iterinfo0.opq[opname]  = MatrixElements(fdata, diag0); break;
+      case 's': iterinfo0.ops[opname]  = MatrixElements_tmpl<S>(fdata, diag0); break;
+      case 'p': iterinfo0.opsp[opname] = MatrixElements_tmpl<S>(fdata, diag0); break;
+      case 'g': iterinfo0.opsg[opname] = MatrixElements_tmpl<S>(fdata, diag0); break;
+      case 'd': iterinfo0.opd[opname]  = MatrixElements_tmpl<S>(fdata, diag0); break;
+      case 't': iterinfo0.opt[opname]  = MatrixElements_tmpl<S>(fdata, diag0); break;
+      case 'o': iterinfo0.opot[opname] = MatrixElements_tmpl<S>(fdata, diag0); break;
+      case 'q': iterinfo0.opq[opname]  = MatrixElements_tmpl<S>(fdata, diag0); break;
       case 'z':
         coef.xi.read(fdata, P.coefchannels);
         coef.zeta.read(fdata, P.coefchannels);

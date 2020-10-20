@@ -140,7 +140,7 @@ using SZspin = int;
 // Optimization rule: use stride 1 sequential access where possible. ublas default matrix storage is row major (i.e.
 // C-like). The rule is "right index the same as inner loop variable".
 
-using Matrix = ublas::matrix<t_matel>;
+// AAA using Matrix = ublas::matrix<t_matel>;
 
 template<typename T> auto range0(const T b) { return boost::irange(T{0}, b); }
 template<typename T> auto range1(const T b) { return boost::irange(T{1}, b+1); }
@@ -247,7 +247,7 @@ public:
     ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergyN;
   } 
 };
-using Eigen = Eigen_tmpl<scalar>;
+// AAA using Eigen = Eigen_tmpl<scalar>;
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
 template<typename S>
@@ -346,7 +346,7 @@ class DiagInfo_tmpl : public std::map<Invar, Eigen_tmpl<S>> {
    }
    explicit DiagInfo_tmpl(const size_t N, const bool remove_files = false) { load(N, remove_files); }
 };
-using DiagInfo = DiagInfo_tmpl<scalar>;
+// AAA using DiagInfo = DiagInfo_tmpl<scalar>;
 
 template<typename S>
 class MatrixElements_tmpl : public std::map<Twoinvar, typename traits<S>::Matrix> {
@@ -373,7 +373,7 @@ class MatrixElements_tmpl : public std::map<Twoinvar, typename traits<S>::Matrix
 };
 template<typename S>
 std::ostream &operator<<(std::ostream &os, const MatrixElements_tmpl<S> &m) { return m.insertor(os); }
-using MatrixElements = MatrixElements_tmpl<scalar>;
+// AAA using MatrixElements = MatrixElements_tmpl<scalar>;
 
 template<typename S>
 class DensMatElements_tmpl : public std::map<Invar, typename traits<S>::Matrix> {
@@ -414,17 +414,17 @@ class DensMatElements_tmpl : public std::map<Invar, typename traits<S>::Matrix> 
        if (remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
    }
 };
-using DensMatElements = DensMatElements_tmpl<scalar>;
+// AAA using DensMatElements = DensMatElements_tmpl<scalar>;
 
 // Map of operators matrices
 template<typename S>
 using CustomOp_tmpl = std::map<std::string, MatrixElements_tmpl<S>>;
-using CustomOp = CustomOp_tmpl<scalar>;
+// AAA using CustomOp = CustomOp_tmpl<scalar>;
 
 // Vector containing irreducible matrix elements of f operators.
 template<typename S>
 using OpchChannel_tmpl = std::vector<MatrixElements_tmpl<S>>;
-using OpchChannel = OpchChannel_tmpl<scalar>;
+// AAA using OpchChannel = OpchChannel_tmpl<scalar>;
 
 // Each channel contains P.perchannel OpchChannel matrices.
 template<typename S>
@@ -453,10 +453,10 @@ class Opch_tmpl : public std::vector<OpchChannel_tmpl<S>> {
      std::cout << std::endl;
    }
 };
-using Opch = Opch_tmpl<scalar>;
+// AAA using Opch = Opch_tmpl<scalar>;
 
 template<typename S> class Symmetry_tmpl;
-using Symmetry = Symmetry_tmpl<scalar>;
+// AAA using Symmetry = Symmetry_tmpl<scalar>;
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
 // the index "r" which ranges from 1 through rmax.
@@ -540,7 +540,7 @@ template<typename S> struct DimSub_tmpl {
   auto max() const { return total; }
   auto all() const { return boost::irange(min(), max()); }
 };
-using DimSub = DimSub_tmpl<scalar>;
+// AAA using DimSub = DimSub_tmpl<scalar>;
 
 // Full information about the number of states and matrix dimensions
 // Example: dm[N].rmax[I] etc.
@@ -586,7 +586,7 @@ class AllSteps_tmpl : public std::vector<Subs<S>> {
        (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), qsrmax.at_or_null(I), eig, last };
    }
 };
-using AllSteps = AllSteps_tmpl<scalar>;
+// AAA using AllSteps = AllSteps_tmpl<scalar>;
 
 class Step {
  private:
@@ -709,7 +709,7 @@ class Stats_tmpl {
      td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
      ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
 };
-using Stats = Stats_tmpl<scalar>;
+// AAA using Stats = Stats_tmpl<scalar>;
 
 // Wrapper class for NRG spectral-function algorithms
 template<typename S>
@@ -729,7 +729,7 @@ class Algo_tmpl {
    virtual void end(const Step &) = 0;
    virtual std::string rho_type() { return ""; } // what rho type is required
 };
-using Algo = Algo_tmpl<scalar>;
+// AAA using Algo = Algo_tmpl<scalar>;
 
 template<typename M> 
 inline void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr, std::ostream &F) {
@@ -806,7 +806,7 @@ template<typename S> class IterInfo_tmpl {
      trim_op(diag, opq);
    }
 };
-using IterInfo = IterInfo_tmpl<scalar>;
+// AAA using IterInfo = IterInfo_tmpl<scalar>;
 
 #include "spectral.h"
 
@@ -935,7 +935,7 @@ class ChainBinning_tmpl {
    auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
    template<typename T> friend class SpectrumRealFreq_tmpl;
 };
-using ChainBinning = ChainBinning_tmpl<scalar>;
+// AAA using ChainBinning = ChainBinning_tmpl<scalar>;
 
 template<typename S>
 class ChainMatsubara_tmpl {
@@ -948,7 +948,7 @@ class ChainMatsubara_tmpl {
    void add(const size_t n, const t_weight w) { m.add(n, w); }
    template<typename T> friend class GFMatsubara_tmpl;
 };
-using ChainMatsubara = ChainMatsubara_tmpl<scalar>;
+// AAA using ChainMatsubara = ChainMatsubara_tmpl<scalar>;
 
 template<typename S>
 class ChainTempDependence_tmpl {
@@ -961,7 +961,7 @@ class ChainTempDependence_tmpl {
    void add(const double T, const t_weight value) { v.add_value(T, value); }
    template<typename T> friend class TempDependence_tmpl;
 };
-using ChainTempDependence = ChainTempDependence_tmpl<scalar>;
+// AAA using ChainTempDependence = ChainTempDependence_tmpl<scalar>;
 
 #include "spectrumrealfreq.cc"
 
@@ -982,7 +982,7 @@ class GFMatsubara_tmpl {
      results.save(safe_open(filename + ".dat"), P.prec_xy);
    }
 };
-using GFMatsubara = GFMatsubara_tmpl<scalar>;
+// AAA using GFMatsubara = GFMatsubara_tmpl<scalar>;
 
 template<typename S>
 class TempDependence_tmpl {
@@ -1002,7 +1002,7 @@ class TempDependence_tmpl {
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }
 };
-using TempDependence = TempDependence_tmpl<scalar>;
+// AAA using TempDependence = TempDependence_tmpl<scalar>;
 
 
 // Check if the trace of the density matrix equals 'ref_value'.
@@ -1034,14 +1034,14 @@ class BaseSpectrum_tmpl {
  public:
    const MatrixElements_tmpl<S> &op1, &op2;
    int spin{};                      // -1 or +1, or 0 where irrelevant
-   std::shared_ptr<Algo> algo;      // Algo_FDM, Algo_DMNRG,...
+   std::shared_ptr<Algo_tmpl<S>> algo;      // Algo_FDM, Algo_DMNRG,...
    BaseSpectrum_tmpl(const MatrixElements_tmpl<S> &op1, const MatrixElements_tmpl<S> &op2, const int spin) :
      op1(op1), op2(op2), spin(spin) {}
 };
-using BaseSpectrum = BaseSpectrum_tmpl<scalar>;
+// AAA using BaseSpectrum = BaseSpectrum_tmpl<scalar>;
 template <typename S>
 using speclist_tmpl = std::list<BaseSpectrum_tmpl<S>>;
-using speclist = speclist_tmpl<scalar>;
+// AAA using speclist = speclist_tmpl<scalar>;
 
 #include "spec.cc"
 #include "dmnrg.h"
@@ -1091,7 +1091,7 @@ class ExpvOutput_tmpl {
      field_names();
    }
 };
-using ExpvOutput = ExpvOutput_tmpl<scalar>;
+// AAA using ExpvOutput = ExpvOutput_tmpl<scalar>;
 
 // Establish the data structures for storing spectral information [and prepare output files].
 template<typename S, typename M>
@@ -1101,9 +1101,9 @@ void prepare_spec_algo(speclist_tmpl<S> &sl, M && op1, M && op2, int spin,
   const auto filename = prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
   BaseSpectrum_tmpl<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin);
   if (algoname == "FT")
-    spec.algo = std::make_shared<Algo_FT>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_FT_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FTmats") 
-    spec.algo = std::make_shared<Algo_FTmats>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
+    spec.algo = std::make_shared<Algo_FTmats_tmpl<S>>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
   if (algoname == "GT")
     spec.algo = std::make_shared<Algo_GT_tmpl<S,0>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "I1T")
@@ -1111,25 +1111,25 @@ void prepare_spec_algo(speclist_tmpl<S> &sl, M && op1, M && op2, int spin,
   if (algoname == "I2T")
     spec.algo = std::make_shared<Algo_GT_tmpl<S,2>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "CHIT")
-    spec.algo = std::make_shared<Algo_CHIT>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_CHIT_tmpl<S>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "DMNRG")
-    spec.algo = std::make_shared<Algo_DMNRG>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_DMNRG_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "DMNRGmats") 
-    spec.algo = std::make_shared<Algo_DMNRGmats>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
+    spec.algo = std::make_shared<Algo_DMNRGmats_tmpl<S>>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
   if (algoname == "CFS")
-    spec.algo = std::make_shared<Algo_CFS>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_CFS_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "CFSls")
-    spec.algo = std::make_shared<Algo_CFSls>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_CFSls_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "CFSgt")
-    spec.algo = std::make_shared<Algo_CFSgt>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_CFSgt_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FDM")
-    spec.algo = std::make_shared<Algo_FDM>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_FDM_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FDMls")
-    spec.algo = std::make_shared<Algo_FDMls>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_FDMls_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FDMgt")
-    spec.algo = std::make_shared<Algo_FDMgt>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_FDMgt_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FDMmats") 
-    spec.algo = std::make_shared<Algo_FDMmats>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
+    spec.algo = std::make_shared<Algo_FDMmats_tmpl<S>>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
   sl.push_back(spec);
 }
 
@@ -1329,7 +1329,7 @@ class Oprecalc_tmpl {
     report();
   }
 };
-using Oprecalc = Oprecalc_tmpl<scalar>;
+// AAA using Oprecalc = Oprecalc_tmpl<scalar>;
 
 // Store eigenvalue & quantum numbers information (RG flow diagrams)
 class Annotated {
@@ -1418,7 +1418,7 @@ struct Output_tmpl {
     diag.dump_value_zero(Fenergies);
   }
 };
-using Output = Output_tmpl<scalar>;
+// AAA using Output = Output_tmpl<scalar>;
 
 template<typename S>
 CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo_tmpl<S> &diag, 
@@ -1879,8 +1879,8 @@ template<typename S> std::pair<Invar, Eigen_tmpl<S>> read_from(int source) {
 }
 
 template<typename S>
-DiagInfo diagonalisations_MPI(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, const DiagInfo_tmpl<S> &diagprev, 
-                              const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+DiagInfo_tmpl<S> diagonalisations_MPI(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, const DiagInfo_tmpl<S> &diagprev, 
+                                      const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
   DiagInfo_tmpl<S> diagnew;
   mpi_send_params(DP); // Synchronise parameters
   std::list<Invar> todo; // List of all the tasks to handle
@@ -2141,7 +2141,7 @@ auto nrg_ZBW(Step &step, IterInfo_tmpl<S> &iterinfo, Stats_tmpl<S> &stats, const
 
 template<typename S>
 auto nrg_loop(Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diag0,
-              Output &output, AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+              Output_tmpl<S> &output, AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, Sym, P);
@@ -2153,8 +2153,8 @@ template<typename S>
 auto run_nrg(Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diag0,
              AllSteps_tmpl<S> &dm, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
   diag0.states_report(Sym->multfnc());
-  auto oprecalc = Oprecalc(step.runtype, iterinfo, Sym, P);
-  auto output = Output(step.runtype, iterinfo, stats, P);
+  auto oprecalc = Oprecalc_tmpl<S>(step.runtype, iterinfo, Sym, P);
+  auto output = Output_tmpl<S>(step.runtype, iterinfo, stats, P);
   // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
   if (step.nrg() && P.calc0 && !P.ZBW)
     docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym, P);

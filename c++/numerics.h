@@ -107,7 +107,8 @@ template<typename M> void dump_matrix(const ublas::matrix<M> &m, std::ostream &f
 // Chop numerical noise
 template <typename T> CONSTFNC inline T chop(const T x, const double xlimit = 1.e-8) { return std::abs(x) < xlimit ? 0.0 : x; }
 
-void assert_issquare(const Matrix &m) { my_assert(m.size1() == m.size2()); }
+template<typename T>
+void assert_issquare(const ublas::matrix<T> &m) { my_assert(m.size1() == m.size2()); }
 
 // Powers, such as (-1)^n, appear in the coupling coefficients.
 CONSTFNC inline double Power(const double i, const double nn) { return std::pow(i, nn); }
