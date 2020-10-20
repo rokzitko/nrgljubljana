@@ -700,6 +700,11 @@ class Algo_tmpl {
    virtual std::string rho_type() { return ""; } // what rho type is required
 };
 
+auto spec_fn(const std::string &name, const std::string &prefix, const std::string &algoname, const bool save = true) {
+  if (save) fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname); // Don't show if it's not going to be saved
+  return prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
+}
+
 template<typename M> 
 inline void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr, std::ostream &F) {
   for (const auto r : range0(std::min(m.size1(), max_nr)))
@@ -785,41 +790,9 @@ template<typename S> class IterInfo_tmpl {
 #include "matrix.cc"
 #include "recalc.cc"
 
-// Select which symmetries to compile in.
-#ifdef NRG_SYM_BASIC
-#include "sym-QS.cc"
-#include "sym-QSZ.cc"
-#endif
-#ifdef NRG_SYM_MORE
-#include "sym-ISO.cc"
-#include "sym-ISOSZ.cc"
-#include "sym-SPSU2.cc"
-#include "sym-SPU1.cc"
-#endif
-#ifdef NRG_SYM_ALL
-#include "sym-DBLSU2.cc"
-#include "sym-DBLISOSZ.cc"
-#include "sym-ISOLR.cc"
-#include "sym-ISOSZLR.cc"
-#include "sym-NONE.cc"
-#include "sym-P.cc"
-#include "sym-PP.cc"
-#include "sym-SL.cc"
-#include "sym-SL3.cc"
-#include "sym-SPSU2LR.cc"
-#include "sym-SPSU2T.cc"
-#include "sym-SPU1LR.cc"
-#include "sym-SU2.cc"
-#include "sym-QSLR.cc"
-#include "sym-QST.cc"
-#include "sym-QSTZ.cc"
-#include "sym-QSZTZ.cc"
-#include "sym-QSZLR.cc"
-#include "sym-QJ.cc"
-#include "sym-U1.cc"
-#include "sym-SPSU2C3.cc"
-#include "sym-QSC3.cc"
-#endif
+#include "sym-basic.h"
+#include "sym-more.h"
+#include "sym-all.h"
 
 // Operator sumrules
 template<typename S, typename F> 
@@ -1052,80 +1025,50 @@ class ExpvOutput_tmpl {
 };
 
 // Establish the data structures for storing spectral information [and prepare output files].
-template<typename S, typename M>
+template<typename A, typename S, typename M>
 void prepare_spec_algo(speclist_tmpl<S> &sl, M && op1, M && op2, int spin, 
-                       std::string name, std::string prefix, std::string algoname, const gf_type gt, const Params &P) {
-  fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname);
-  const auto filename = prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
-  BaseSpectrum_tmpl<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin);
-  if (algoname == "FT")
-    spec.algo = std::make_shared<Algo_FT_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "FTmats") 
-    spec.algo = std::make_shared<Algo_FTmats_tmpl<S>>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
-  if (algoname == "GT")
-    spec.algo = std::make_shared<Algo_GT_tmpl<S,0>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "I1T")
-    spec.algo = std::make_shared<Algo_GT_tmpl<S,1>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "I2T")
-    spec.algo = std::make_shared<Algo_GT_tmpl<S,2>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "CHIT")
-    spec.algo = std::make_shared<Algo_CHIT_tmpl<S>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "DMNRG")
-    spec.algo = std::make_shared<Algo_DMNRG_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "DMNRGmats") 
-    spec.algo = std::make_shared<Algo_DMNRGmats_tmpl<S>>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
-  if (algoname == "CFS")
-    spec.algo = std::make_shared<Algo_CFS_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "CFSls")
-    spec.algo = std::make_shared<Algo_CFSls_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "CFSgt")
-    spec.algo = std::make_shared<Algo_CFSgt_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "FDM")
-    spec.algo = std::make_shared<Algo_FDM_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "FDMls")
-    spec.algo = std::make_shared<Algo_FDMls_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "FDMgt")
-    spec.algo = std::make_shared<Algo_FDMgt_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
-  if (algoname == "FDMmats") 
-    spec.algo = std::make_shared<Algo_FDMmats_tmpl<S>>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
+                       std::string name, std::string prefix, const gf_type gt, const Params &P) {
+
+  BaseSpectrum_tmpl<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin); // AAA algo too!
+  spec.algo = std::make_shared<A>(name, prefix, gt, P);
   sl.push_back(spec);
 }
 
 template<typename S, typename M>
 void prepare_spec(const RUNTYPE &runtype, speclist_tmpl<S> &sl, M && op1, M && op2, 
                   const std::string name, const std::string prefix, const gf_type gt, const int spin, const Params &P) { 
-  if (prefix == "gt") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "GT", gt, P);
+ if (prefix == "gt") {
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT_tmpl<S,0>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   if (prefix == "i1t") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "I1T", gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT_tmpl<S,1>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   if (prefix == "i2t") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "I2T", gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT_tmpl<S,2>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   if (prefix == "chit") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "CHIT", gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_CHIT_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   // If we did not return from this funciton by this point, what we are computing is the spectral function. There are
   // several possibilities in this case, all of which may be enabled at the same time.
   if (runtype == RUNTYPE::NRG) {
-    if (P.finite)     prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FT",       gt, P);
-    if (P.finitemats) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FTmats",   gt, P);
+    if (P.finite)     prepare_spec_algo<Algo_FT_tmpl<S>>    (sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.finitemats) prepare_spec_algo<Algo_FTmats_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
   }
   if (runtype == RUNTYPE::DMNRG) {
-    if (P.dmnrg)     prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "DMNRG",     gt, P);
-    if (P.dmnrgmats) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "DMNRGmats", gt, P);
-    if (P.cfs)       prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "CFS",       gt, P);
-    if (P.cfsgt)     prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "CFSgt",     gt, P);
-    if (P.cfsls)     prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "CFSls",     gt, P);
-    if (P.fdm)       prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FDM",       gt, P);
-    if (P.fdmgt)     prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FDMgt",     gt, P);
-    if (P.fdmls)     prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FDMls",     gt, P);
-    if (P.fdmmats)   prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "FDMmats",   gt, P);
+    if (P.dmnrg)     prepare_spec_algo<Algo_DMNRG_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.dmnrgmats) prepare_spec_algo<Algo_DMNRGmats_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.cfs)       prepare_spec_algo<Algo_CFS_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.cfsgt)     prepare_spec_algo<Algo_CFSgt_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.cfsls)     prepare_spec_algo<Algo_CFSls_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdm)       prepare_spec_algo<Algo_FDM_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdmgt)     prepare_spec_algo<Algo_FDMgt_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdmls)     prepare_spec_algo<Algo_FDMls_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdmmats)   prepare_spec_algo<Algo_FDMmats_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
   }
 }
 

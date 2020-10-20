@@ -3,6 +3,7 @@
 template<typename S>
 class Algo_DMNRG_tmpl : public Algo_tmpl<S> {
  private:
+   inline static const std::string algoname = "DMNRG";
    SpectrumRealFreq_tmpl<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
    using CB = ChainBinning_tmpl<S>;
@@ -13,10 +14,10 @@ class Algo_DMNRG_tmpl : public Algo_tmpl<S> {
    using t_eigen = typename traits<S>::t_eigen;
    using t_weight = typename traits<S>::t_weight;
    using Algo_tmpl<S>::P;
-   explicit Algo_DMNRG_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P) : 
-     Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)) {}
+   Algo_DMNRG_tmpl(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
+     Algo_tmpl<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname), P), sign(gf_sign(gt)) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements_tmpl<S> &rho, const Stats_tmpl<S> &stats) override
    {
      const double Emin = P.ZBW ? 0 : P.getEmin();
@@ -53,6 +54,7 @@ class Algo_DMNRG_tmpl : public Algo_tmpl<S> {
 template<typename S>
 class Algo_DMNRGmats_tmpl : public Algo_tmpl<S> {
  private:
+   inline static const std::string algoname = "DMNRGmats";
    GFMatsubara_tmpl<S> gf;
    const int sign;
    const gf_type gt;
@@ -64,10 +66,10 @@ class Algo_DMNRGmats_tmpl : public Algo_tmpl<S> {
    using t_eigen = typename traits<S>::t_eigen;
    using t_weight = typename traits<S>::t_weight;
    using Algo_tmpl<S>::P;
-   explicit Algo_DMNRGmats_tmpl(GFMatsubara_tmpl<S> gf, const gf_type gt, const Params &P) : 
-     Algo_tmpl<S>(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}
+   Algo_DMNRGmats_tmpl(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
+     Algo_tmpl<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
-   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements_tmpl<S> &rho, const Stats_tmpl<S> &stats) override
    {
      const Matrix &rhoNIp = rho.at(Ip);
