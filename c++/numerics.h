@@ -20,6 +20,11 @@ template<typename T>
     return reinterpret_cast<const T(&)[2]>(z);
   }
 
+template<typename U, typename V>
+  V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs
+    return ranges::accumulate(v, V{}, [](auto sum, const auto el) { return sum+el.second; });
+  }
+
 // Accumulator abstraction: automatically initialized to 0, result checked for finiteness.
 template <typename T> class generic_bucket {
 private:

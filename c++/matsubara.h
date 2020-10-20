@@ -13,12 +13,6 @@ inline auto ww(const short n, const gf_type mt, const double T)
 inline auto wb(const short n, const double T) { return T * M_PI * (2 * n); }
 inline auto wf(const short n, const double T) { return T * M_PI * (2 * n + 1); }
 
-// XXX: numerics.h ?
-template<typename U, typename V>
-V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs
-  return ranges::accumulate(v, V{}, [](auto sum, const auto el) { return sum+el.second; });
-}
-
 template<typename S>
 class Matsubara_tmpl {
  private:

@@ -50,7 +50,7 @@ using scalar = cmpl;
 #endif
 
 //AAA using t_eigen = double;  // type for the eigenvalues (always double)
-using t_weight = cmpl;   // spectral weight accumulators (always complex)
+//AAA using t_weight = cmpl;   // spectral weight accumulators (always complex)
 
 template <typename S> struct traits {};
 

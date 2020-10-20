@@ -24,9 +24,7 @@ class Spikes_tmpl : public std::vector<t_delta_peak_tmpl<S>> {
        F << std::setprecision(prec);
        for (const auto &[e, w] : *this) outputxy(F, e, w, imagpart);
      }
-   t_weight sum_weights() const {
-     return ranges::accumulate(*this, t_weight{}, [](const auto &sum, const auto &p) { return sum+p.second; });
-   }
+   auto sum_weights() const { return sum2(*this); }
 };
 using Spikes = Spikes_tmpl<scalar>;
 

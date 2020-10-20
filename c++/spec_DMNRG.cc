@@ -11,6 +11,7 @@ class Algo_DMNRG_tmpl : public Algo_tmpl<S> {
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
    using t_eigen = typename traits<S>::t_eigen;
+   using t_weight = typename traits<S>::t_weight;
    using Algo_tmpl<S>::P;
    explicit Algo_DMNRG_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P) : 
      Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)) {}
@@ -32,10 +33,10 @@ class Algo_DMNRG_tmpl : public Algo_tmpl<S> {
            continue;
          t_weight sumA{};
          for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
-         const auto weightA = t_weight(sumA) * conj_me(op1(rj, rm));
+         const auto weightA = sumA * conj_me(op1(rj, rm));
          t_weight sumB{};
          for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
-         const auto weightB = t_weight(sumB) * op2(rj, rm);
+         const auto weightB = sumB * op2(rj, rm);
          const auto weight  = factor * (weightA + (-sign) * weightB);
          cb->add(step.scale() * energy, weight);
        }
@@ -62,6 +63,7 @@ class Algo_DMNRGmats_tmpl : public Algo_tmpl<S> {
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
    using t_eigen = typename traits<S>::t_eigen;
+   using t_weight = typename traits<S>::t_weight;
    using Algo_tmpl<S>::P;
    explicit Algo_DMNRGmats_tmpl(GFMatsubara_tmpl<S> gf, const gf_type gt, const Params &P) : 
      Algo_tmpl<S>(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}
@@ -76,10 +78,10 @@ class Algo_DMNRGmats_tmpl : public Algo_tmpl<S> {
          const auto Em = diagIp.value_zero(rm);
          const auto Ej = diagI1.value_zero(rj);
          const auto energy = Ej - Em;
-         typename traits<S>::t_weight sumA{};
+         t_weight sumA{};
          for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
          const auto weightA = sumA * conj_me(op1(rj, rm));
-         typename traits<S>::t_weight sumB{};
+         t_weight sumB{};
          for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
          const auto weightB = sumB * op2(rj, rm);
          const auto weight  = factor * (weightA + (-sign) * weightB);
