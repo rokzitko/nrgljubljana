@@ -45,7 +45,7 @@ class SymmetrySPSU2C3_tmpl : public SymC3_tmpl<SC> {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     bucket trSZ2; // Tr[S_z^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");

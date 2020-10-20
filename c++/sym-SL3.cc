@@ -31,7 +31,7 @@ class SymmetrySL3_tmpl : public Symmetry_tmpl<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     bucket trQ1, trQ12; // Tr[Q], Tr[Q^2]
     bucket trQ2, trQ22;
     bucket trQ3, trQ32;

@@ -24,21 +24,20 @@ class Clusters {
  public:
    using t_eigen = typename traits<S>::t_eigen;
    std::unordered_map<t_eigen, t_eigen> cluster_mapping;
-
    // Fix splittings of eigenvalues. Returns true if any changes had been made.
-   void fix(DiagInfo_tmpl<S> &diag) {
+   void fix_it(DiagInfo_tmpl<S> &diag) {
      for(auto &[I, eig]: diag) { 
        for (auto &r : eig.value_zero) 
          if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
            r = m->second;
      }
    }
-   
    // Find clusters of values which differ by at most 'epsilon'
-   Clusters(const std::vector<t_eigen> &energies, double epsilon) { // AAA: auto ?
+   Clusters(DiagInfo_tmpl<S> &diag, const double epsilon, bool fix = true) {
+     const auto energies = diag.sorted_energies();
      my_assert(energies.size());
      auto e0 = energies[0];      // energy of the lower boundary of the cluster, [e0:e1]
-     auto i0 = energies.cbegin(); // iterator to the lower boundary of the cluster, [i0:i1] /// AAA
+     auto i0 = energies.cbegin(); // iterator to the lower boundary of the cluster, [i0:i1]
      int size = 1;                // number of states in the current cluster
      for (auto i = energies.begin(); i != energies.end(); ++i) {
        if ((*i - e0) < epsilon) { // in the cluster
@@ -57,5 +56,6 @@ class Clusters {
          size = 1;
        }
      }
-   }   
+     if (fix) fix_it(diag);
+   }
 };

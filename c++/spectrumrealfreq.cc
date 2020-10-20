@@ -34,7 +34,6 @@ class SpectrumRealFreq_tmpl {
      weight_report();
    }
 };
-// AAA using SpectrumRealFreq = SpectrumRealFreq_tmpl<scalar>;
 
 inline double windowfunction(const double E, const double Emin, const double Ex, const double Emax, const Step &step, const Params &P) {
   if (E <= Ex && step.last()) return 1.0;  // Exception 1

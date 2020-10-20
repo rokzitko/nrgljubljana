@@ -76,7 +76,7 @@ class SymmetryDBLISOSZ_tmpl : public SymField_tmpl<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     auto trSZ = 0.0, trSZ2 = 0.0; // Tr[S_z], Tr[S_z^2]
     auto trIZ12 = 0.0;      // Tr[I1_z^2]
     auto trIZ22 = 0.0;      // Tr[I2_z^2]

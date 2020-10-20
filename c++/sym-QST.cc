@@ -84,7 +84,7 @@ class SymmetryQST_tmpl : public Symmetry_tmpl<SC> {
     return spinfactor * angmomfactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     bucket trSZ, trTZ, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
@@ -112,7 +112,7 @@ class SymmetryQST_tmpl : public Symmetry_tmpl<SC> {
   }
 };
 
-bool qst_exception(unsigned int i, unsigned int j, const Invar &I) {
+bool qst_exception(const unsigned int i, const unsigned int j, const Invar &I) {
   // In these cases the subspace exists, but taking the T=2 or T=1
   // limit shows that the coefficient is actually zero, so there is
   // no contribution. (Directly computed factor is nan.)

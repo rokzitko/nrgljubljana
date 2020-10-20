@@ -10,8 +10,8 @@ using Allfields = std::vector<outfield*>;
 class outfield {
  private:
    const Params &P;
-   string desc; // AAA
-   string value{};
+   const std::string desc;
+   std::string value{};
  public:
    explicit outfield(const Params &P_, Allfields &allfields, const string &desc_, int position = -1)
      : P(P_), desc(desc_) {
@@ -35,8 +35,8 @@ class outfield {
 struct TD {
   Allfields allfields;
   const Params &P;
-  std::string filename;
-  ofstream O;
+  const std::string filename;
+  std::ofstream O;
   outfield T, E, E2, C, F, S;
   bool header_saved = false;
   void save_header() {

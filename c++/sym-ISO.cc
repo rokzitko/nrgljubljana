@@ -52,7 +52,7 @@ class SymmetryISOcommon_tmpl : public Symmetry_tmpl<SC> {
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");

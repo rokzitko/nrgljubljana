@@ -36,7 +36,6 @@ class Algo_FT_tmpl : public Algo_tmpl<S> {
    }
    ~Algo_FT_tmpl() { spec.save(); }
 };
-// AAA using Algo_FT = Algo_FT_tmpl<scalar>;
 
 template<typename S>
 class Algo_FTmats_tmpl : public Algo_tmpl<S> {
@@ -79,7 +78,6 @@ class Algo_FTmats_tmpl : public Algo_tmpl<S> {
    }
    ~Algo_FTmats_tmpl() { gf.save(); }
 };
-// AAA using Algo_FTmats = Algo_FTmats_tmpl<scalar>;
 
 // Calculation of the temperature-dependent linear conductrance G(T) using the linear response theory &
 // impurity-level spectral density.  See Yoshida, Seridonio, Oliveira, arxiv:0906.4289, Eq. (8).
@@ -180,4 +178,3 @@ class Algo_CHIT_tmpl : public Algo_tmpl<S> {
    }
    ~Algo_CHIT_tmpl() { td.save(); }
 };
-// AAA using Algo_CHIT = Algo_CHIT_tmpl<scalar>;

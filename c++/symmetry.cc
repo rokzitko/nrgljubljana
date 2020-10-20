@@ -16,7 +16,7 @@ bool z2_equality(const int p1, const int p2, const int p3) { return p1 == p2 * p
 bool c3_equality(const int p1, const int p2, const int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
 
 template<typename S>
-auto newopch(const Params &P) // AAA: can't distinguish by return type!
+auto newopch(const Params &P)
 {
   Opch_tmpl<S> opch(P.channels);
   for (auto &oc: opch) {
@@ -66,7 +66,7 @@ class Symmetry_tmpl {
    }
    Invar InvarSinglet; // QNs for singlet operator
    Invar Invar_f;      // QNs for f operator
-   Symmetry_tmpl(const Params &P_) : P(P_), In(P.combs+1), QN(P.combs+1) {} // AAA: explicit?
+   explicit Symmetry_tmpl(const Params &P_) : P(P_), In(P.combs+1), QN(P.combs+1) {}
    auto input_subspaces() const { return In; }
    auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; }
    auto ancestor(const Invar &I, const size_t i) const {
@@ -122,7 +122,7 @@ class Symmetry_tmpl {
    using t_coef = typename traits<S>::t_coef;
    
    void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_coef factor,
-                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch_tmpl<S> &opch) const; // AAA
+                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch_tmpl<S> &opch) const;
    void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                            Matrix &h, const Rmaxvals &qq, const double f) const;
    void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
@@ -148,7 +148,7 @@ class Symmetry_tmpl {
    virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
    virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
 
-   virtual void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats_tmpl<S> &stats, const double factor) = 0; // AAA: templatize
+   virtual void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats_tmpl<S> &stats, const double factor) = 0;
 
    virtual Opch_tmpl<S> recalc_irreduc(const Step &step, const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax) { my_assert_not_reached(); }
    virtual OpchChannel_tmpl<S> recalc_irreduc_substeps(const Step &step, const DiagInfo_tmpl<S> &diag, 
@@ -168,7 +168,6 @@ class Symmetry_tmpl {
    //  parity -1). Generic implementation, valid for all symmetry types.
    MatrixElements_tmpl<S> recalc_singlet(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<S> &nold, const int parity) {
      MatrixElements_tmpl<S> nnew;
-     Recalc recalc_table[nr_combs()]; // AAA
      my_assert(islr() ? parity == 1 || parity == -1 : parity == 1);
      for (const auto &I : diag.subspaces()) {
        const Invar I1 = I;

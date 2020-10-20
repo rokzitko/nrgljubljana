@@ -36,7 +36,7 @@ class SymmetryQJ_tmpl : public Symmetry_tmpl<SC> {
 #include "qj/qj-QN.dat"
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     bucket trJZ2, trQ, trQ2; // Tr[J_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Sspin jj    = I.get("JJ");
@@ -83,9 +83,15 @@ class SymmetryQJ_tmpl : public Symmetry_tmpl<SC> {
     return 0;
   }
 
-  // AAA: const
-  void offdiag_function_QJ(const Step &step, unsigned int i, unsigned int j, unsigned int ch, unsigned int fnr, t_matel factor, Matrix &h, const Rmaxvals &qq,
-                           const InvarVec &In, const Opch_tmpl<SC> &opch);
+   void offdiag_function_QJ(const Step &step, const unsigned int i, const unsigned int j, const unsigned int ch, const unsigned int fnr, const t_matel factor, Matrix &h, const Rmaxvals &qq,
+                            const InvarVec &In, const Opch_tmpl<SC> &opch)
+   {
+     const Invar Iop     = ch == 0 ? Invar(1, 2) : Invar(1, 4);
+     const Invar I1      = In[i];
+     const Invar I2      = In[j];
+     const bool triangle = triangle_inequality(I1, I2, Iop); // I1 = I2+Iop
+     if (triangle) { offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch); }
+   }
 
   HAS_DOUBLET;
   HAS_QUADRUPLET;
@@ -95,19 +101,6 @@ class SymmetryQJ_tmpl : public Symmetry_tmpl<SC> {
 #include <boost/math/special_functions/factorials.hpp>
 
 double Factorial(const double x) { return boost::math::factorial<double>(round(x)); }
-
-template<typename SC>
-void SymmetryQJ_tmpl<SC>::offdiag_function_QJ(const Step &step, unsigned int i, unsigned int j,
-                                     unsigned int ch,  // channel number
-                                     unsigned int fnr, // extra index for <||f||>, usually 0
-                                     t_matel factor,   // may be complex (in principle)
-                                     Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch_tmpl<SC> &opch) {
-  const Invar Iop     = (ch == 0 ? Invar(1, 2) : Invar(1, 4));
-  const Invar I1      = In[i];
-  const Invar I2      = In[j];
-  const bool triangle = triangle_inequality(I1, I2, Iop); // I1 = I2+Iop
-  if (triangle) { offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch); }
-}
 
 // *** Helper macros for make_matrix() members in matrix.cc
 // Jndx = 0 for doublet, Jndx = 1 for quadruplet

@@ -49,7 +49,6 @@ class Algo_DMNRG_tmpl : public Algo_tmpl<S> {
    ~Algo_DMNRG_tmpl() { spec.save(); }
    std::string rho_type() override { return "rho"; }
 };
-// AAA using Algo_DMNRG = Algo_DMNRG_tmpl<scalar>;
 
 template<typename S>
 class Algo_DMNRGmats_tmpl : public Algo_tmpl<S> {
@@ -100,4 +99,3 @@ class Algo_DMNRGmats_tmpl : public Algo_tmpl<S> {
    ~Algo_DMNRGmats_tmpl() { gf.save(); }
    std::string rho_type() override { return "rho"; }
 };
-// AAA using Algo_DMNRGmats = Algo_DMNRGmats_tmpl<scalar>;

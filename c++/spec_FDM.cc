@@ -69,7 +69,6 @@ class Algo_FDMls_tmpl : virtual public Algo_tmpl<S> {
    ~Algo_FDMls_tmpl() { if (save) spec.save(); }
    std::string rho_type() override { return "rhoFDM"; }
 };
-// AAA using Algo_FDMls = Algo_FDMls_tmpl<scalar>;
 
 template<typename S>
 class Algo_FDMgt_tmpl : virtual public Algo_tmpl<S> {
@@ -133,7 +132,6 @@ class Algo_FDMgt_tmpl : virtual public Algo_tmpl<S> {
    ~Algo_FDMgt_tmpl() { if (save) spec.save(); }
    std::string rho_type() override { return "rhoFDM"; }
 };
-// AAA using Algo_FDMgt = Algo_FDMgt_tmpl<scalar>;
 
 template<typename S>
 class Algo_FDM_tmpl : public Algo_FDMls_tmpl<S>, public Algo_FDMgt_tmpl<S> {
@@ -166,7 +164,6 @@ class Algo_FDM_tmpl : public Algo_FDMls_tmpl<S>, public Algo_FDMgt_tmpl<S> {
    ~Algo_FDM_tmpl() { spec_tot.save(); }
    std::string rho_type() override { return "rhoFDM"; }
 };
-// AAA using Algo_FDM = Algo_FDM_tmpl<scalar>;
 
 template<typename S>
 class Algo_FDMmats_tmpl : public Algo_tmpl<S> {
@@ -247,4 +244,3 @@ class Algo_FDMmats_tmpl : public Algo_tmpl<S> {
    ~Algo_FDMmats_tmpl() { gf.save(); }
    std::string rho_type() override { return "rhoFDM"; }
 };
-// AAA using Algo_FDMmats = Algo_FDMmats_tmpl<scalar>;

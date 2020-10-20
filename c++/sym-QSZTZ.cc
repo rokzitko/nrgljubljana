@@ -37,7 +37,7 @@ class SymmetryQSZTZ_tmpl : public Symmetry_tmpl<SC> {
 #include "qsztz/qsztz-QN.dat"
   } // load
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     bucket trSZ, trSZ2, trTZ, trTZ2, trQ, trQ2;
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");

@@ -51,7 +51,7 @@ class SymmetrySU2_tmpl : public Symmetry_tmpl<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     bucket trIZ2; // Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Number ii   = I.get("II");

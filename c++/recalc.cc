@@ -18,7 +18,6 @@ void split_in_blocks_Eigen(const Invar &I, Eigen_tmpl<S> &e, const QSrmax &qsrma
     my_assert(e.matrix.size1() >= nr);
     my_assert(e.matrix.size2() >= offset + rmax);
     ublas::matrix_range<typename traits<S>::Matrix> Up(e.matrix, ublas::range(0, nr), ublas::range(offset, offset + rmax));
-//    e.blocks[block] = Matrix(Up); //AAAA
     e.blocks[block] = Up;
     my_assert(e.blocks[block].size1() == nr);
     my_assert(e.blocks[block].size2() == rmax);

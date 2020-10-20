@@ -57,7 +57,6 @@ class Algo_CFSls_tmpl : virtual public Algo_tmpl<S> {
    ~Algo_CFSls_tmpl() { if (save) spec.save(); }
    std::string rho_type() override { return "rho"; }
 };
-// AAA using Algo_CFSls = Algo_CFSls_tmpl<scalar>;
 
 template<typename S>
 class Algo_CFSgt_tmpl : virtual public Algo_tmpl<S> {
@@ -118,7 +117,6 @@ class Algo_CFSgt_tmpl : virtual public Algo_tmpl<S> {
    ~Algo_CFSgt_tmpl() { if (save) spec.save(); }
    std::string rho_type() override { return "rho"; }
 };
-// AAA using Algo_CFSgt = Algo_CFSgt_tmpl<scalar>;
 
 template<typename S>
 class Algo_CFS_tmpl : public Algo_CFSls_tmpl<S>, public Algo_CFSgt_tmpl<S> {
@@ -150,4 +148,3 @@ class Algo_CFS_tmpl : public Algo_CFSls_tmpl<S>, public Algo_CFSgt_tmpl<S> {
    ~Algo_CFS_tmpl() { spec_tot.save(); }
    std::string rho_type() override { return "rho"; }
 };
-// AAA using Algo_CFS = Algo_CFS_tmpl<scalar>;

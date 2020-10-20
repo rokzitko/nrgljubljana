@@ -64,7 +64,7 @@ class SymmetrySPSU2T_tmpl : public Symmetry_tmpl<SC> {
     return spinfactor * angmomfactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     bucket trSZ2, trTZ2; // Tr[S_z^2], Tr[T_z^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
@@ -86,8 +86,7 @@ class SymmetrySPSU2T_tmpl : public Symmetry_tmpl<SC> {
   }
 };
 
-// AAA: const
-bool spsu2t_exception(unsigned int i, unsigned int j, const Invar &I) {
+bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I) {
   // In these cases the subspace exists, but taking the T=2 or T=1 limit shows that the coefficient is actually zero,
   // so there is no contribution. (Directly computed factor is nan.) This exception handling is added io order to
   // avoid false positives in error detection assertions.

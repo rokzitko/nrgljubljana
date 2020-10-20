@@ -56,7 +56,7 @@ class SymmetryQSTZ_tmpl : public Symmetry_tmpl<SC> {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
     bucket trSZ2, trTZ2, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");

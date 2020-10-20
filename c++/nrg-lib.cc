@@ -37,20 +37,12 @@
 
 #ifdef NRG_REAL
 using scalar = double;
-//AAA using t_matel = double;                       // type for the matrix elements
-//AAA using t_coef = double;                        // type for the Wilson chain coefficients
-//AAA using t_expv = double;                        // type for expectation values of operators
 #endif
 
 #ifdef NRG_COMPLEX
 using scalar = cmpl;
-//AAA using t_matel = cmpl;
-//AAA using t_coef = cmpl;
-//AAA using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
 #endif
 
-//AAA using t_eigen = double;  // type for the eigenvalues (always double)
-//AAA using t_weight = cmpl;   // spectral weight accumulators (always complex)
 
 template <typename S> struct traits {};
 
@@ -138,7 +130,6 @@ using SZspin = int;
 // Optimization rule: use stride 1 sequential access where possible. ublas default matrix storage is row major (i.e.
 // C-like). The rule is "right index the same as inner loop variable".
 
-// AAA using Matrix = ublas::matrix<t_matel>;
 
 template<typename T> auto range0(const T b) { return boost::irange(T{0}, b); }
 template<typename T> auto range1(const T b) { return boost::irange(T{1}, b+1); }
@@ -245,7 +236,6 @@ public:
     ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergyN;
   } 
 };
-// AAA using Eigen = Eigen_tmpl<scalar>;
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
 template<typename S>
@@ -345,7 +335,6 @@ class DiagInfo_tmpl : public std::map<Invar, Eigen_tmpl<S>> {
    }
    explicit DiagInfo_tmpl(const size_t N, const bool remove_files = false) { load(N, remove_files); }
 };
-// AAA using DiagInfo = DiagInfo_tmpl<scalar>;
 
 template<typename S>
 class MatrixElements_tmpl : public std::map<Twoinvar, typename traits<S>::Matrix> {
@@ -372,7 +361,6 @@ class MatrixElements_tmpl : public std::map<Twoinvar, typename traits<S>::Matrix
 };
 template<typename S>
 std::ostream &operator<<(std::ostream &os, const MatrixElements_tmpl<S> &m) { return m.insertor(os); }
-// AAA using MatrixElements = MatrixElements_tmpl<scalar>;
 
 template<typename S>
 class DensMatElements_tmpl : public std::map<Invar, typename traits<S>::Matrix> {
@@ -413,17 +401,14 @@ class DensMatElements_tmpl : public std::map<Invar, typename traits<S>::Matrix> 
        if (remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
    }
 };
-// AAA using DensMatElements = DensMatElements_tmpl<scalar>;
 
 // Map of operators matrices
 template<typename S>
 using CustomOp_tmpl = std::map<std::string, MatrixElements_tmpl<S>>;
-// AAA using CustomOp = CustomOp_tmpl<scalar>;
 
 // Vector containing irreducible matrix elements of f operators.
 template<typename S>
 using OpchChannel_tmpl = std::vector<MatrixElements_tmpl<S>>;
-// AAA using OpchChannel = OpchChannel_tmpl<scalar>;
 
 // Each channel contains P.perchannel OpchChannel matrices.
 template<typename S>
@@ -452,10 +437,8 @@ class Opch_tmpl : public std::vector<OpchChannel_tmpl<S>> {
      std::cout << std::endl;
    }
 };
-// AAA using Opch = Opch_tmpl<scalar>;
 
 template<typename S> class Symmetry_tmpl;
-// AAA using Symmetry = Symmetry_tmpl<scalar>;
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
 // the index "r" which ranges from 1 through rmax.
@@ -539,7 +522,6 @@ template<typename S> struct DimSub_tmpl {
   auto max() const { return total; }
   auto all() const { return boost::irange(min(), max()); }
 };
-// AAA using DimSub = DimSub_tmpl<scalar>;
 
 // Full information about the number of states and matrix dimensions
 // Example: dm[N].rmax[I] etc.
@@ -585,7 +567,6 @@ class AllSteps_tmpl : public std::vector<Subs<S>> {
        (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), qsrmax.at_or_null(I), eig, last };
    }
 };
-// AAA using AllSteps = AllSteps_tmpl<scalar>;
 
 class Step {
  private:
@@ -708,7 +689,6 @@ class Stats_tmpl {
      td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
      ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
 };
-// AAA using Stats = Stats_tmpl<scalar>;
 
 // Wrapper class for NRG spectral-function algorithms
 template<typename S>
@@ -728,7 +708,6 @@ class Algo_tmpl {
    virtual void end(const Step &) = 0;
    virtual std::string rho_type() { return ""; } // what rho type is required
 };
-// AAA using Algo = Algo_tmpl<scalar>;
 
 template<typename M> 
 inline void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr, std::ostream &F) {
@@ -805,7 +784,6 @@ template<typename S> class IterInfo_tmpl {
      trim_op(diag, opq);
    }
 };
-// AAA using IterInfo = IterInfo_tmpl<scalar>;
 
 #include "spectral.h"
 
@@ -934,7 +912,6 @@ class ChainBinning_tmpl {
    auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
    template<typename T> friend class SpectrumRealFreq_tmpl;
 };
-// AAA using ChainBinning = ChainBinning_tmpl<scalar>;
 
 template<typename S>
 class ChainMatsubara_tmpl {
@@ -947,7 +924,6 @@ class ChainMatsubara_tmpl {
    void add(const size_t n, const t_weight w) { m.add(n, w); }
    template<typename T> friend class GFMatsubara_tmpl;
 };
-// AAA using ChainMatsubara = ChainMatsubara_tmpl<scalar>;
 
 template<typename S>
 class ChainTempDependence_tmpl {
@@ -960,7 +936,6 @@ class ChainTempDependence_tmpl {
    void add(const double T, const t_weight value) { v.add_value(T, value); }
    template<typename T> friend class TempDependence_tmpl;
 };
-// AAA using ChainTempDependence = ChainTempDependence_tmpl<scalar>;
 
 #include "spectrumrealfreq.cc"
 
@@ -981,7 +956,6 @@ class GFMatsubara_tmpl {
      results.save(safe_open(filename + ".dat"), P.prec_xy);
    }
 };
-// AAA using GFMatsubara = GFMatsubara_tmpl<scalar>;
 
 template<typename S>
 class TempDependence_tmpl {
@@ -1001,7 +975,6 @@ class TempDependence_tmpl {
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }
 };
-// AAA using TempDependence = TempDependence_tmpl<scalar>;
 
 
 // Check if the trace of the density matrix equals 'ref_value'.
@@ -1037,10 +1010,8 @@ class BaseSpectrum_tmpl {
    BaseSpectrum_tmpl(const MatrixElements_tmpl<S> &op1, const MatrixElements_tmpl<S> &op2, const int spin) :
      op1(op1), op2(op2), spin(spin) {}
 };
-// AAA using BaseSpectrum = BaseSpectrum_tmpl<scalar>;
 template <typename S>
 using speclist_tmpl = std::list<BaseSpectrum_tmpl<S>>;
-// AAA using speclist = speclist_tmpl<scalar>;
 
 #include "spec.cc"
 #include "dmnrg.h"
@@ -1090,7 +1061,6 @@ class ExpvOutput_tmpl {
      field_names();
    }
 };
-// AAA using ExpvOutput = ExpvOutput_tmpl<scalar>;
 
 // Establish the data structures for storing spectral information [and prepare output files].
 template<typename S, typename M>
@@ -1328,7 +1298,6 @@ class Oprecalc_tmpl {
     report();
   }
 };
-// AAA using Oprecalc = Oprecalc_tmpl<scalar>;
 
 // Store eigenvalue & quantum numbers information (RG flow diagrams)
 class Annotated {
@@ -1417,7 +1386,6 @@ struct Output_tmpl {
     diag.dump_value_zero(Fenergies);
   }
 };
-// AAA using Output = Output_tmpl<scalar>;
 
 template<typename S>
 CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo_tmpl<S> &diag, 
@@ -2020,8 +1988,7 @@ auto do_diag(const Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &c
       stats.Egs = diag.find_groundstate();
       if (step.nrg()) // should be done only once!
         diag.subtract_Egs(stats.Egs);
-      Clusters<S> clusters(diag.sorted_energies(), P.fixeps); // XXX: single step
-      clusters.fix(diag);
+      Clusters<S> clusters(diag, P.fixeps);
       truncate_prepare(step, diag, Sym, P);
       break;
     }
