@@ -961,6 +961,9 @@ inline std::string to_string(std::complex<double> &z) { // XXX: i/o?
   return s.str();
 }
 
+using FactorFnc = std::function<double(const Invar &, const Invar &)>;
+using CheckFnc = std::function<bool(const Invar &, const Invar &, int)>;
+
 // All information about calculating a spectral function: pointers to the operator data, raw spectral data
 // acccumulators, algorithm, etc.
 template <typename S>
@@ -970,8 +973,10 @@ class BaseSpectrum {
    int spin{};                      // -1 or +1, or 0 where irrelevant
    using spAlgo = std::shared_ptr<Algo<S>>;
    spAlgo algo;      // Algo_FDM, Algo_DMNRG,...
-   BaseSpectrum(const MatrixElements<S> &op1, const MatrixElements<S> &op2, const int spin, spAlgo algo) :
-     op1(op1), op2(op2), spin(spin), algo(algo) {}
+   FactorFnc ff;
+   CheckFnc cf;
+   BaseSpectrum(const MatrixElements<S> &op1, const MatrixElements<S> &op2, const int spin, spAlgo algo, FactorFnc ff, CheckFnc cf) :
+     op1(op1), op2(op2), spin(spin), algo(algo), ff(ff), cf(cf) {}
 };
 template <typename S>
 using speclist = std::list<BaseSpectrum<S>>;
@@ -1027,48 +1032,48 @@ class ExpvOutput {
 
 // Establish the data structures for storing spectral information [and prepare output files].
 template<typename A, typename S, typename M>
-void prepare_spec_algo(speclist<S> &sl, M && op1, M && op2, int spin, 
+void prepare_spec_algo(speclist<S> &sl, FactorFnc ff, CheckFnc cf, M && op1, M && op2, int spin, 
                        std::string name, std::string prefix, const gf_type gt, const Params &P) {
-
-  BaseSpectrum<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin, std::make_shared<A>(name, prefix, gt, P)); // AAA algo too!
+  BaseSpectrum<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin, std::make_shared<A>(name, prefix, gt, P), ff, cf); // AAA algo too!
   sl.push_back(spec);
 }
 
 template<typename S, typename M>
-void prepare_spec(const RUNTYPE &runtype, speclist<S> &sl, M && op1, M && op2, 
+void prepare_spec(const RUNTYPE &runtype, speclist<S> &sl, FactorFnc ff, CheckFnc cf,
+                  M && op1, M && op2, 
                   const std::string name, const std::string prefix, const gf_type gt, const int spin, const Params &P) { 
  if (prefix == "gt") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT<S,0>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT<S,0>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   if (prefix == "i1t") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT<S,1>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT<S,1>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   if (prefix == "i2t") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT<S,2>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT<S,2>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   if (prefix == "chit") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_CHIT<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_CHIT<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   // If we did not return from this funciton by this point, what we are computing is the spectral function. There are
   // several possibilities in this case, all of which may be enabled at the same time.
   if (runtype == RUNTYPE::NRG) {
-    if (P.finite)     prepare_spec_algo<Algo_FT<S>>    (sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.finitemats) prepare_spec_algo<Algo_FTmats<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.finite)     prepare_spec_algo<Algo_FT<S>>    (sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.finitemats) prepare_spec_algo<Algo_FTmats<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
   }
   if (runtype == RUNTYPE::DMNRG) {
-    if (P.dmnrg)     prepare_spec_algo<Algo_DMNRG<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.dmnrgmats) prepare_spec_algo<Algo_DMNRGmats<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.cfs)       prepare_spec_algo<Algo_CFS<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.cfsgt)     prepare_spec_algo<Algo_CFSgt<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.cfsls)     prepare_spec_algo<Algo_CFSls<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.fdm)       prepare_spec_algo<Algo_FDM<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.fdmgt)     prepare_spec_algo<Algo_FDMgt<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.fdmls)     prepare_spec_algo<Algo_FDMls<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.fdmmats)   prepare_spec_algo<Algo_FDMmats<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.dmnrg)     prepare_spec_algo<Algo_DMNRG<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.dmnrgmats) prepare_spec_algo<Algo_DMNRGmats<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.cfs)       prepare_spec_algo<Algo_CFS<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.cfsgt)     prepare_spec_algo<Algo_CFSgt<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.cfsls)     prepare_spec_algo<Algo_CFSls<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdm)       prepare_spec_algo<Algo_FDM<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdmgt)     prepare_spec_algo<Algo_FDMgt<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdmls)     prepare_spec_algo<Algo_FDMls<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdmmats)   prepare_spec_algo<Algo_FDMmats<S>>(sl, ff, cf, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
   }
 }
 
@@ -1080,27 +1085,16 @@ template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
 template<typename S>
 class Oprecalc {
  public:
-   // The following lists hold the names of operators which need to be recomputed. The default behavior is to
-   // recompute all the operators that are required to calculate the requested spectral densities, see function
-   // open_files(). In addition, singlet operators are always recomputed in the first NRG run, so that we can
-   // calculate the expectation values.
+   // Names of operators which need to be recomputed: those required to calculate the spectral densities.
    std::set<std::string> s, p, g, d, v, t, q, ot;
 
-   speclist<S> spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
+   speclist<S> spectra;
 
    // Calculate spectral densities
    void spectral_densities(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM, 
                            const Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym) {
      TIME("spec");
-     for (auto &i : spectraS)    calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
-     for (auto &i : spectraCHIT) calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
-     for (auto &i : spectraD)    calc_generic(i, step, diag, Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), rho, rhoFDM, stats);
-     for (auto &i : spectraT)    calc_generic(i, step, diag, Sym->SpinSuscFactorFnc(),     Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
-     for (auto &i : spectraOT)   calc_generic(i, step, diag, Sym->OrbSuscFactorFnc(),      Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
-     for (auto &i : spectraQ)    calc_generic(i, step, diag, Sym->SpecdensquadFactorFnc(), Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
-     for (auto &i : spectraGT)   calc_generic(i, step, diag, Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), rho, rhoFDM, stats);
-     for (auto &i : spectraI1T)  calc_generic(i, step, diag, Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), rho, rhoFDM, stats);
-     for (auto &i : spectraI2T)  calc_generic(i, step, diag, Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), rho, rhoFDM, stats);
+     for (auto &i : spectra) calc_generic(i, step, diag, rho, rhoFDM, stats);
    }
 
    void report(std::ostream &F, const std::string &name, const std::set<std::string> &x) {
@@ -1119,6 +1113,7 @@ class Oprecalc {
      report(F, "ot", ot);
    }
    
+   // Singlet operators are always recomputed in the first NRG run, so that we can calculate the expectation values.
    bool do_s(const std::string &name, const Params &P, const Step &step) {
      if (step.nrg()) return true;                                          // for computing <O> 
      if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
@@ -1175,12 +1170,13 @@ class Oprecalc {
 
    void loopover(const RUNTYPE &runtype, const Params &P,
                  const CustomOp<S> &set1, const CustomOp<S> &set2,
-                 const string_token &stringtoken, speclist<S> &spectra, const std::string &prefix,
+                 const string_token &stringtoken, speclist<S> &spectra, FactorFnc ff, CheckFnc cf,
+                 const std::string &prefix,
                  std::set<std::string> &rec1, std::set<std::string> &rec2, const gf_type mt, const int spin) { // XXX:mt -> gt
     for (const auto &[name1, op1] : set1) {
       for (const auto &[name2, op2] : set2) {
         if (const auto name = sdname(name1, name2, spin); stringtoken.find(name)) {
-          prepare_spec(runtype, spectra, op1, op2, name, prefix, mt, spin, P);
+          prepare_spec(runtype, spectra, ff, cf, op1, op2, name, prefix, mt, spin, P);
           rec1.insert(name1);
           rec2.insert(name2);
         }
@@ -1193,40 +1189,40 @@ class Oprecalc {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
-    loopover(runtype, P, a.ops,  a.ops,  sts, spectraS, "corr", s, s, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsp, a.opsp, sts, spectraS, "corr", p, p, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.opsg, sts, spectraS, "corr", g, g, gf_type::bosonic, 0);
-    loopover(runtype, P, a.ops,  a.opsg, sts, spectraS, "corr", s, g, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.ops,  sts, spectraS, "corr", g, s, gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", s, s, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsp, a.opsp, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", p, p, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", g, g, gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", s, g, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", g, s, gf_type::bosonic, 0);
     // Global susceptibilities (global singlet operators)
     string_token stchit(P.specchit);
-    loopover(runtype, P, a.ops,  a.ops,  stchit, spectraCHIT, "chit", s, s, gf_type::bosonic, 0);
-    loopover(runtype, P, a.ops,  a.opsg, stchit, spectraCHIT, "chit", s, g, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.ops,  stchit, spectraCHIT, "chit", g, s, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.opsg, stchit, spectraCHIT, "chit", g, g, gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", s, s, gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", s, g, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", g, s, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", g, g, gf_type::bosonic, 0);
     // Dynamic spin susceptibilities (triplet operators)
     string_token stt(P.spect);
-    loopover(runtype, P, a.opt, a.opt, stt, spectraT, "spin", t, t, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opt, a.opt, stt, spectra,  Sym->SpinSuscFactorFnc(),     Sym->TrivialCheckSpinFnc(),  "spin", t, t, gf_type::bosonic, 0);
     string_token stot(P.specot);
-    loopover(runtype, P, a.opot, a.opot, stot, spectraOT, "orbspin", ot, ot, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opot, a.opot, stot, spectra, Sym->OrbSuscFactorFnc(),      Sym->TrivialCheckSpinFnc(), "orbspin", ot, ot, gf_type::bosonic, 0);
     const auto varmin = Sym->isfield() ? -1 : 0;
     const auto varmax = Sym->isfield() ? +1 : 0;
     // Spectral functions (doublet operators)
     string_token std(P.specd);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, std, spectraD, "spec", d, d, gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, std, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "spec", d, d, gf_type::fermionic, SPIN);
     string_token stgt(P.specgt);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, stgt, spectraGT, "gt", d, d, gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, stgt, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "gt", d, d, gf_type::fermionic, SPIN);
     string_token sti1t(P.speci1t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, sti1t, spectraI1T, "i1t", d, d, gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, sti1t, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(),"i1t", d, d, gf_type::fermionic, SPIN);
     string_token sti2t(P.speci2t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, sti2t, spectraI2T, "i2t", d, d, gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, sti2t, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "i2t", d, d, gf_type::fermionic, SPIN);
     // Spectral functions (quadruplet operators)
     string_token stq(P.specq);
-    loopover(runtype, P, a.opq, a.opq, stq, spectraQ, "specq", q, q, gf_type::fermionic, 0);
+    loopover(runtype, P, a.opq, a.opq, stq, spectra,  Sym->SpecdensquadFactorFnc(), Sym->TrivialCheckSpinFnc(),  "specq", q, q, gf_type::fermionic, 0);
     report();
   }
 };
