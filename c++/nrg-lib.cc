@@ -1788,7 +1788,7 @@ auto diagonalisations_OpenMP(const Step &step, const Opch_tmpl<S> &opch, const C
     const int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
-    Eigen e = diagonalise<S>(h, DP);
+    auto e = diagonalise<S>(h, DP);
 #pragma omp critical
     { diagnew[I] = e; }
   }
