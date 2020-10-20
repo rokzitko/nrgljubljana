@@ -968,9 +968,10 @@ class BaseSpectrum_tmpl {
  public:
    const MatrixElements_tmpl<S> &op1, &op2;
    int spin{};                      // -1 or +1, or 0 where irrelevant
-   std::shared_ptr<Algo_tmpl<S>> algo;      // Algo_FDM, Algo_DMNRG,...
-   BaseSpectrum_tmpl(const MatrixElements_tmpl<S> &op1, const MatrixElements_tmpl<S> &op2, const int spin) :
-     op1(op1), op2(op2), spin(spin) {}
+   using spAlgo = std::shared_ptr<Algo_tmpl<S>>;
+   spAlgo algo;      // Algo_FDM, Algo_DMNRG,...
+   BaseSpectrum_tmpl(const MatrixElements_tmpl<S> &op1, const MatrixElements_tmpl<S> &op2, const int spin, spAlgo algo) :
+     op1(op1), op2(op2), spin(spin), algo(algo) {}
 };
 template <typename S>
 using speclist_tmpl = std::list<BaseSpectrum_tmpl<S>>;
@@ -1029,8 +1030,7 @@ template<typename A, typename S, typename M>
 void prepare_spec_algo(speclist_tmpl<S> &sl, M && op1, M && op2, int spin, 
                        std::string name, std::string prefix, const gf_type gt, const Params &P) {
 
-  BaseSpectrum_tmpl<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin); // AAA algo too!
-  spec.algo = std::make_shared<A>(name, prefix, gt, P);
+  BaseSpectrum_tmpl<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin, std::make_shared<A>(name, prefix, gt, P)); // AAA algo too!
   sl.push_back(spec);
 }
 
