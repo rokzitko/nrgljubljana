@@ -507,7 +507,7 @@ class QSrmax : public std::map<Invar, Rmaxvals> {
    template<typename S> QSrmax(const DiagInfo_tmpl<S> &, shared_ptr<Symmetry>);
    // List of invariant subspaces in which diagonalisations need to be performed
    std::vector<Invar> task_list() const {
-     std::vector<pair<size_t, Invar>> tasks_with_sizes;
+     std::vector<std::pair<size_t, Invar>> tasks_with_sizes;
      for (const auto &[I, rm] : *this)
        if (rm.total())
          tasks_with_sizes.emplace_back(rm.total(), I);
@@ -616,7 +616,7 @@ class Step {
    double Teff() const { return energyscale()/P.betabar; }  // effective temperature for thermodynamic calculations
    double TD_factor() const { return P.betabar / unscale(); }
    double scT() const { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
-   pair<size_t, size_t> NM() const {
+   std::pair<size_t, size_t> NM() const {
      const size_t N = ndxN / P.channels;
      const size_t M = ndxN - N*P.channels; // M ranges 0..channels-1
      return {N, M};
@@ -1079,7 +1079,8 @@ class ExpvOutput_tmpl {
        for (const auto &op: fields)
          fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op]));
    }
-   ExpvOutput_tmpl(const string &fn, map<string, t_expv> &m_, const list<string> &fields_, const Params &P_) : m(m_), fields(fields_), P(P_) {
+   ExpvOutput_tmpl(const std::string &fn, std::map<std::string, t_expv> &m_, 
+                   const std::list<std::string> &fields_, const Params &P_) : m(m_), fields(fields_), P(P_) {
      F.open(fn);
      field_numbers();
      field_names();
@@ -1127,8 +1128,9 @@ void prepare_spec_algo(speclist_tmpl<S> &sl, M && op1, M && op2, int spin,
   sl.push_back(spec);
 }
 
-template<typename M>
-void prepare_spec(const RUNTYPE &runtype, speclist &sl, M && op1, M && op2, std::string name, std::string prefix, gf_type gt, int spin, const Params &P) { 
+template<typename S, typename M>
+void prepare_spec(const RUNTYPE &runtype, speclist_tmpl<S> &sl, M && op1, M && op2, 
+                  const std::string name, const std::string prefix, const gf_type gt, const int spin, const Params &P) { 
   if (prefix == "gt") {
     if (runtype == RUNTYPE::NRG) prepare_spec_algo(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, "GT", gt, P);
     return;
@@ -1266,8 +1268,8 @@ class Oprecalc_tmpl {
 
    void loopover(const RUNTYPE &runtype, const Params &P,
                  const CustomOp_tmpl<S> &set1, const CustomOp_tmpl<S> &set2,
-                 const string_token &stringtoken, speclist &spectra, const std::string &prefix,
-                 std::set<std::string> &rec1, std::set<std::string> &rec2, gf_type mt, const int spin) { // XXX:mt -> gt
+                 const string_token &stringtoken, speclist_tmpl<S> &spectra, const std::string &prefix,
+                 std::set<std::string> &rec1, std::set<std::string> &rec2, const gf_type mt, const int spin) { // XXX:mt -> gt
     for (const auto &[name1, op1] : set1) {
       for (const auto &[name2, op2] : set2) {
         if (const auto name = sdname(name1, name2, spin); stringtoken.find(name)) {
@@ -1341,7 +1343,7 @@ class Annotated {
        F.open(filename);
        F << std::setprecision(P.dumpprecision);
      }
-     std::vector<pair<t_eigen, Invar>> seznam;
+     std::vector<std::pair<t_eigen, Invar>> seznam;
      for (const auto &[I, eig] : diag)
        for (const auto e : eig.value_zero)
          seznam.emplace_back(e, I);
