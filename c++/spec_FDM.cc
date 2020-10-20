@@ -203,7 +203,7 @@ class Algo_FDMmats_tmpl : public Algo_tmpl<S> {
          if (gt == gf_type::fermionic || abs(energy) > WEIGHT_TOL)
            cm->add(size_t(0), (weightA + weightB) / (cmpl(0, ww(0, gt, P.T)) - energy));
          else // bosonic w=0 && Ei=Ej case
-           cm->add(size_t(0), (-weightA / P.T));
+           cm->add(size_t(0), (-weightA / (double)P.T));
        }
      }
      if (retj > 0 && alli > 0) {
