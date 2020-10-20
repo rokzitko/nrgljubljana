@@ -1106,11 +1106,11 @@ void prepare_spec_algo(speclist_tmpl<S> &sl, M && op1, M && op2, int spin,
   if (algoname == "FTmats") 
     spec.algo = std::make_shared<Algo_FTmats>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
   if (algoname == "GT")
-    spec.algo = std::make_shared<Algo_GT<0>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_GT_tmpl<S,0>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "I1T")
-    spec.algo = std::make_shared<Algo_GT<1>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_GT_tmpl<S,1>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "I2T")
-    spec.algo = std::make_shared<Algo_GT<2>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_GT_tmpl<S,2>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "CHIT")
     spec.algo = std::make_shared<Algo_CHIT>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "DMNRG")

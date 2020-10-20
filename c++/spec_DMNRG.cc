@@ -1,16 +1,21 @@
 // OPTIMIZATION NOTE: the inner loop should involve the last index.
 
-class Algo_DMNRG : public Algo {
+template<typename S>
+class Algo_DMNRG_tmpl : public Algo_tmpl<S> {
  private:
-   SpectrumRealFreq spec;
+   SpectrumRealFreq_tmpl<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
-   using CB = ChainBinning;
+   using CB = ChainBinning_tmpl<S>;
    std::unique_ptr<CB> cb;
  public:
-   explicit Algo_DMNRG(SpectrumRealFreq spec, gf_type gt, const Params &P) : Algo(P), spec(spec), sign(gf_sign(gt)) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_DMNRG_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P) : 
+     Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements_tmpl<S> &rho, const Stats_tmpl<S> &stats) override
    {
      const double Emin = P.ZBW ? 0 : P.getEmin();
      const double Emax = P.ZBW ? std::numeric_limits<double>::max() : P.getEmax();
@@ -39,22 +44,28 @@ class Algo_DMNRG : public Algo {
      spec.mergeNN2(*cb.get(), step);
      cb.reset();
    }
-   ~Algo_DMNRG() { spec.save(); }
+   ~Algo_DMNRG_tmpl() { spec.save(); }
    std::string rho_type() override { return "rho"; }
 };
+using Algo_DMNRG = Algo_DMNRG_tmpl<scalar>;
 
-class Algo_DMNRGmats : public Algo {
+template<typename S>
+class Algo_DMNRGmats_tmpl : public Algo_tmpl<S> {
  private:
-   GFMatsubara gf;
+   GFMatsubara_tmpl<S> gf;
    const int sign;
-   gf_type gt;
-   using CM = ChainMatsubara;
+   const gf_type gt;
+   using CM = ChainMatsubara_tmpl<S>;
    std::unique_ptr<CM> cm;
  public:
-   explicit Algo_DMNRGmats(GFMatsubara gf, gf_type gt, const Params &P) : Algo(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_DMNRGmats_tmpl(GFMatsubara_tmpl<S> gf, const gf_type gt, const Params &P) : 
+     Algo_tmpl<S>(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements_tmpl<S> &rho, const Stats_tmpl<S> &stats) override
    {
      const Matrix &rhoNIp = rho.at(Ip);
      const Matrix &rhoNI1 = rho.at(I1);
@@ -63,10 +74,10 @@ class Algo_DMNRGmats : public Algo {
          const auto Em = diagIp.value_zero(rm);
          const auto Ej = diagI1.value_zero(rj);
          const auto energy = Ej - Em;
-         t_weight sumA{};
+         typename traits<S>::t_weight sumA{};
          for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
          const auto weightA = sumA * conj_me(op1(rj, rm));
-         t_weight sumB{};
+         typename traits<S>::t_weight sumB{};
          for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
          const auto weightB = sumB * op2(rj, rm);
          const auto weight  = factor * (weightA + (-sign) * weightB);
@@ -82,6 +93,7 @@ class Algo_DMNRGmats : public Algo {
           gf.merge(*cm.get());
           cm.reset();
    }
-   ~Algo_DMNRGmats() { gf.save(); }
+   ~Algo_DMNRGmats_tmpl() { gf.save(); }
    std::string rho_type() override { return "rho"; }
 };
+using Algo_DMNRGmats = Algo_DMNRGmats_tmpl<scalar>;

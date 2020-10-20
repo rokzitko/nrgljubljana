@@ -1,19 +1,23 @@
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 // Based on the implementation by Markus Greger.
 
-class Algo_CFSls : virtual public Algo {
+template<typename S>
+class Algo_CFSls_tmpl : virtual public Algo_tmpl<S> {
  protected:
-   SpectrumRealFreq spec;
+   SpectrumRealFreq_tmpl<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
-   using CB = ChainBinning;
+   using CB = ChainBinning_tmpl<S>;
    std::unique_ptr<CB> cb;
    const bool save;
  public:
-   explicit Algo_CFSls(SpectrumRealFreq spec, gf_type gt, const Params &P, const bool save = true)
-     : Algo(P), spec(spec), sign(gf_sign(gt)), save(save) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_CFSls_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P, const bool save = true)
+     : Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)), save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2,
+             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements_tmpl<S> &rho, const Stats_tmpl<S> &stats) override
    {
      const auto &rhoNIp = rho.at(Ip);
      const auto &rhoNI1 = rho.at(I1);
@@ -49,23 +53,28 @@ class Algo_CFSls : virtual public Algo {
      spec.mergeCFS(*cb.get());
      cb.reset();
    }
-   ~Algo_CFSls() { if (save) spec.save(); }
+   ~Algo_CFSls_tmpl() { if (save) spec.save(); }
    std::string rho_type() override { return "rho"; }
 };
+using Algo_CFSls = Algo_CFSls_tmpl<scalar>;
 
-class Algo_CFSgt : virtual public Algo {
+template<typename S>
+class Algo_CFSgt_tmpl : virtual public Algo_tmpl<S> {
  protected:
-   SpectrumRealFreq spec;
+   SpectrumRealFreq_tmpl<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
-   using CB = ChainBinning;
+   using CB = ChainBinning_tmpl<S>;
    std::unique_ptr<CB> cb;
    const bool save;
  public:
-   explicit Algo_CFSgt(SpectrumRealFreq spec, gf_type gt, const Params &P, const bool save = true)
-     : Algo(P), spec(spec), sign(gf_sign(gt)), save(save) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_CFSgt_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P, const bool save = true)
+     : Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)), save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements_tmpl<S> &rho, const Stats_tmpl<S> &stats) override
    {
      const auto &rhoNIp = rho.at(Ip);
      const auto &rhoNI1 = rho.at(I1);
@@ -104,33 +113,38 @@ class Algo_CFSgt : virtual public Algo {
      spec.mergeCFS(*cb.get());
      cb.reset();
    }
-   ~Algo_CFSgt() { if (save) spec.save(); }
+   ~Algo_CFSgt_tmpl() { if (save) spec.save(); }
    std::string rho_type() override { return "rho"; }
 };
+using Algo_CFSgt = Algo_CFSgt_tmpl<scalar>;
 
-class Algo_CFS : public Algo_CFSls, public Algo_CFSgt {
+template<typename S>
+class Algo_CFS_tmpl : public Algo_CFSls_tmpl<S>, public Algo_CFSgt_tmpl<S> {
  private:
-    SpectrumRealFreq spec_tot;
+    SpectrumRealFreq_tmpl<S> spec_tot;
  public:
-   explicit Algo_CFS(SpectrumRealFreq spec, gf_type gt, const Params &P) :
-     Algo(P), Algo_CFSls(spec, gt, P, false), Algo_CFSgt(spec, gt, P, false), spec_tot(spec) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_CFS_tmpl(SpectrumRealFreq_tmpl<S> spec, gf_type gt, const Params &P) :
+     Algo_tmpl<S>(P), Algo_CFSls_tmpl<S>(spec, gt, P, false), Algo_CFSgt_tmpl<S>(spec, gt, P, false), spec_tot(spec) {}
    void begin(const Step &step) override {
-     Algo_CFSgt::begin(step);
-     Algo_CFSls::begin(step);
+     Algo_CFSgt_tmpl<S>::begin(step);
+     Algo_CFSls_tmpl<S>::begin(step);
    }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements_tmpl<S> &rho, const Stats_tmpl<S> &stats) override
    {
-     Algo_CFSgt::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
-     Algo_CFSls::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
+     Algo_CFSgt_tmpl<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
+     Algo_CFSls_tmpl<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
    }
    void end(const Step &step) override {
-     spec_tot.mergeCFS(*Algo_CFSgt::cb.get());
-     spec_tot.mergeCFS(*Algo_CFSls::cb.get());
-     Algo_CFSgt::cb.reset();
-     Algo_CFSls::cb.reset();
+     spec_tot.mergeCFS(*Algo_CFSgt_tmpl<S>::cb.get());
+     spec_tot.mergeCFS(*Algo_CFSls_tmpl<S>::cb.get());
+     Algo_CFSgt_tmpl<S>::cb.reset();
+     Algo_CFSls_tmpl<S>::cb.reset();
    }
-   ~Algo_CFS() { spec_tot.save(); }
+   ~Algo_CFS_tmpl() { spec_tot.save(); }
    std::string rho_type() override { return "rho"; }
 };
-
+using Algo_CFS = Algo_CFS_tmpl<scalar>;

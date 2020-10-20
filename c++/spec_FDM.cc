@@ -7,23 +7,28 @@
   for (size_t n = 0; n < ret##n; n++) {                                                                                                              \
     const t_eigen E##n = diagI##n.absenergyG(n);
 
-class Algo_FDMls : virtual public Algo {
+template<typename S>
+class Algo_FDMls_tmpl : virtual public Algo_tmpl<S> {
  protected:
-   SpectrumRealFreq spec;
+   SpectrumRealFreq_tmpl<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
-   using CB = ChainBinning;
+   using CB = ChainBinning_tmpl<S>;
    std::unique_ptr<CB> cb;
    const bool save;
  public:
-   explicit Algo_FDMls(SpectrumRealFreq spec, gf_type gt, const Params &P, const bool save = true) 
-     : Algo(P), spec(spec), sign(gf_sign(gt)), save(save) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_FDMls_tmpl(SpectrumRealFreq_tmpl<S> spec, gf_type gt, const Params &P, const bool save = true) 
+     : Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)), save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   void calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIi, const Eigen_tmpl<S> &diagIj, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &Ii, const Invar &Ij, const DensMatElements_tmpl<S> &rhoFDM, 
+             const Stats_tmpl<S> &stats) override
    {
-     const double wnf   = stats.wnfactor[step.ndx()];
-     const Matrix &rhoi = rhoFDM.at(Ii);
-     const Matrix &rhoj = rhoFDM.at(Ij);
+     const auto wnf   = stats.wnfactor[step.ndx()];
+     const auto &rhoi = rhoFDM.at(Ii);
+     const auto &rhoj = rhoFDM.at(Ij);
      const auto reti  = step.last() ? 0 : diagIi.getnrkept();
      const auto retj  = step.last() ? 0 : diagIj.getnrkept();
      const auto alli  = diagIi.getnrstored();
@@ -60,27 +65,33 @@ class Algo_FDMls : virtual public Algo {
      spec.mergeCFS(*cb.get());
      cb.reset();
    }
-   ~Algo_FDMls() { if (save) spec.save(); }
+   ~Algo_FDMls_tmpl() { if (save) spec.save(); }
    std::string rho_type() override { return "rhoFDM"; }
 };
+using Algo_FDMls = Algo_FDMls_tmpl<scalar>;
 
-class Algo_FDMgt : virtual public Algo {
+template<typename S>
+class Algo_FDMgt_tmpl : virtual public Algo_tmpl<S> {
  protected:
-   SpectrumRealFreq spec;
+   SpectrumRealFreq_tmpl<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
-   using CB = ChainBinning;
+   using CB = ChainBinning_tmpl<S>;
    std::unique_ptr<CB> cb;
    const bool save;
  public:
-   explicit Algo_FDMgt(SpectrumRealFreq spec, gf_type gt, const Params &P, const bool save = true) 
-     : Algo(P), spec(spec), sign(gf_sign(gt)), save(save) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_FDMgt_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P, const bool save = true) 
+     : Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)), save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   void calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIi, const Eigen_tmpl<S> &diagIj, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &Ii, const Invar &Ij, const DensMatElements_tmpl<S> &rhoFDM, 
+             const Stats_tmpl<S> &stats) override
    {
-     const double wnf   = stats.wnfactor[step.ndx()];
-     const Matrix &rhoi = rhoFDM.at(Ii);
-     const Matrix &rhoj = rhoFDM.at(Ij);
+     const auto wnf   = stats.wnfactor[step.ndx()];
+     const auto &rhoi = rhoFDM.at(Ii);
+     const auto &rhoj = rhoFDM.at(Ij);
      const auto reti  = step.last() ? 0 : diagIi.getnrkept();
      const auto retj  = step.last() ? 0 : diagIj.getnrkept();
      const auto alli  = diagIi.getnrstored();
@@ -117,53 +128,66 @@ class Algo_FDMgt : virtual public Algo {
      spec.mergeCFS(*cb.get());
      cb.reset();
    }
-   ~Algo_FDMgt() { if (save) spec.save(); }
+   ~Algo_FDMgt_tmpl() { if (save) spec.save(); }
    std::string rho_type() override { return "rhoFDM"; }
 };
+using Algo_FDMgt = Algo_FDMgt_tmpl<scalar>;
 
-class Algo_FDM : public Algo_FDMls, public Algo_FDMgt {
+template<typename S>
+class Algo_FDM_tmpl : public Algo_FDMls_tmpl<S>, public Algo_FDMgt_tmpl<S> {
  private:
-   SpectrumRealFreq spec_tot;
+   SpectrumRealFreq_tmpl<S> spec_tot;
  public:
-   explicit Algo_FDM(SpectrumRealFreq spec, gf_type gt, const Params &P) :
-     Algo(P), Algo_FDMls(spec, gt, P, false), Algo_FDMgt(spec, gt, P, false), spec_tot(spec) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_FDM_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P) :
+     Algo_tmpl<S>(P), Algo_FDMls_tmpl<S>(spec, gt, P, false), Algo_FDMgt_tmpl<S>(spec, gt, P, false), spec_tot(spec) {}
    void begin(const Step &step) override {
-     Algo_FDMgt::begin(step);
-     Algo_FDMls::begin(step);
+     Algo_FDMgt_tmpl<S>::begin(step);
+     Algo_FDMls_tmpl<S>::begin(step);
    }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &Ip, const Invar &I1, const DensMatElements &rho, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements_tmpl<S> &rho, 
+             const Stats_tmpl<S> &stats) override
    {
-     Algo_FDMgt::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
-     Algo_FDMls::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
+     Algo_FDMgt_tmpl<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
+     Algo_FDMls_tmpl<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
    }
    void end(const Step &step) override {
-     spec_tot.mergeCFS(*Algo_FDMgt::cb.get());
-     spec_tot.mergeCFS(*Algo_FDMls::cb.get());
-     Algo_FDMgt::cb.reset();
-     Algo_FDMls::cb.reset();
+     spec_tot.mergeCFS(*Algo_FDMgt_tmpl<S>::cb.get());
+     spec_tot.mergeCFS(*Algo_FDMls_tmpl<S>::cb.get());
+     Algo_FDMgt_tmpl<S>::cb.reset();
+     Algo_FDMls_tmpl<S>::cb.reset();
    }
-   ~Algo_FDM() { spec_tot.save(); }
+   ~Algo_FDM_tmpl() { spec_tot.save(); }
    std::string rho_type() override { return "rhoFDM"; }
 };
+using Algo_FDM = Algo_FDM_tmpl<scalar>;
 
-class Algo_FDMmats : public Algo {
+template<typename S>
+class Algo_FDMmats_tmpl : public Algo_tmpl<S> {
  private:
-   GFMatsubara gf;
+   GFMatsubara_tmpl<S> gf;
    const int sign;
-   gf_type gt;
-   using CM = ChainMatsubara;
+   const gf_type gt;
+   using CM = ChainMatsubara_tmpl<S>;
    std::unique_ptr<CM> cm;
  public:
-   explicit Algo_FDMmats(GFMatsubara gf, gf_type gt, const Params &P) : Algo(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_FDMmats_tmpl(GFMatsubara_tmpl<S> gf, const gf_type gt, const Params &P) : 
+     Algo_tmpl<S>(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
-   void calc(const Step &step, const Eigen &diagIi, const Eigen &diagIj, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &Ii, const Invar &Ij, const DensMatElements &rhoFDM, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIi, const Eigen_tmpl<S> &diagIj, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &Ii, const Invar &Ij, const DensMatElements_tmpl<S> &rhoFDM, 
+             const Stats_tmpl<S> &stats) override
    {
      const size_t cutoff = P.mats;
-     const double wnf   = stats.wnfactor[step.ndx()];
-     const Matrix &rhoi = rhoFDM.at(Ii);
-     const Matrix &rhoj = rhoFDM.at(Ij);
+     const auto wnf   = stats.wnfactor[step.ndx()];
+     const auto &rhoi = rhoFDM.at(Ii);
+     const auto &rhoj = rhoFDM.at(Ij);
      const auto reti  = (step.last() ? 0 : rhoi.size1());
      const auto retj  = (step.last() ? 0 : rhoj.size1());
      const auto alli  = diagIi.getnrstored();
@@ -216,6 +240,7 @@ class Algo_FDMmats : public Algo {
      gf.merge(*cm.get());
      cm.reset();
    }
-   ~Algo_FDMmats() { gf.save(); }
+   ~Algo_FDMmats_tmpl() { gf.save(); }
    std::string rho_type() override { return "rhoFDM"; }
 };
+using Algo_FDMmats = Algo_FDMmats_tmpl<scalar>;

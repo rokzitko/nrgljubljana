@@ -12,7 +12,7 @@ const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 // determined by 'SPIN'. For SPIN=0 both spin direction are equivalent. For QSZ, we need to differentiate the two.
 
 template <typename FactorFnc, typename CheckSpinFnc, typename S>
-void calc_generic(const BaseSpectrum &bs, const Step &step, const DiagInfo_tmpl<S> &diag,
+void calc_generic(const BaseSpectrum_tmpl<S> &bs, const Step &step, const DiagInfo_tmpl<S> &diag,
                   FactorFnc && factorfnc, CheckSpinFnc && checkspinfnc,
                   const DensMatElements_tmpl<S> &rho, const DensMatElements_tmpl<S> &rhoFDM, const Stats &stats) {
   bs.algo->begin(step);

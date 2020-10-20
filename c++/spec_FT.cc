@@ -1,15 +1,20 @@
-class Algo_FT : public Algo {
+template<typename S>
+class Algo_FT_tmpl : public Algo_tmpl<S> {
  private:
-   SpectrumRealFreq spec;
+   SpectrumRealFreq_tmpl<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
-   using CB = ChainBinning;
+   using CB = ChainBinning_tmpl<S>;
    std::unique_ptr<CB> cb;
  public:
-   explicit Algo_FT(SpectrumRealFreq spec, gf_type gt, const Params &P) : Algo(P), spec(spec), sign(gf_sign(gt)) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_FT_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P) : 
+     Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    // The first matrix element is conjugated! This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, const t_coef factor,
-             const Invar &, const Invar &, const DensMatElements &, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             const t_coef factor, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) override
    {
      for (const auto r1: diagI1.kept()) {
        const auto E1 = diagI1.value_zero(r1);
@@ -25,21 +30,27 @@ class Algo_FT : public Algo {
      spec.mergeNN2(*cb.get(), step);
      cb.reset();
    }
-   ~Algo_FT() { spec.save(); }
+   ~Algo_FT_tmpl() { spec.save(); }
 };
+using Algo_FT = Algo_FT_tmpl<scalar>;
 
-class Algo_FTmats : public Algo {
+template<typename S>
+class Algo_FTmats_tmpl : public Algo_tmpl<S> {
  private:
-   GFMatsubara gf;
+   GFMatsubara_tmpl<S> gf;
    const int sign;
-   gf_type gt;
-   using CM = ChainMatsubara;
+   const gf_type gt;
+   using CM = ChainMatsubara_tmpl<S>;
    std::unique_ptr<CM> cm;
  public:
-   explicit Algo_FTmats(GFMatsubara gf, gf_type gt, const Params &P) : Algo(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_FTmats_tmpl(GFMatsubara_tmpl<S> gf, const gf_type gt, const Params &P) : 
+     Algo_tmpl<S>(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor, 
-             const Invar &, const Invar &, const DensMatElements &, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) override
    {
      const size_t cutoff = P.mats;
      for (const auto r1: diagI1.kept()) {
@@ -61,28 +72,32 @@ class Algo_FTmats : public Algo {
      gf.merge(*cm.get());
      cm.reset();
    }
-   ~Algo_FTmats() { gf.save(); }
+   ~Algo_FTmats_tmpl() { gf.save(); }
 };
+using Algo_FTmats = Algo_FTmats_tmpl<scalar>;
 
 // Calculation of the temperature-dependent linear conductrance G(T) using the linear response theory &
 // impurity-level spectral density.  See Yoshida, Seridonio, Oliveira, arxiv:0906.4289, Eq. (8).
-template<int n>
-class Algo_GT : public Algo {
+template<typename S, int n>
+class Algo_GT_tmpl : public Algo_tmpl<S> {
  private:
-   TempDependence td;
-   using CT = ChainTempDependence;
+   TempDependence_tmpl<S> td;
+   using CT = ChainTempDependence_tmpl<S>;
    std::unique_ptr<CT> ct;
  public:
-   explicit Algo_GT(TempDependence td, gf_type gt, const Params &P) : Algo(P), td(td) {
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_GT_tmpl(TempDependence_tmpl<S> td, const gf_type gt, const Params &P) : Algo_tmpl<S>(P), td(td) {
      my_assert(gt == gf_type::fermionic);
    }
    void begin(const Step &) override { ct = std::make_unique<CT>(P); }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor, 
-             const Invar &, const Invar &, const DensMatElements &, const Stats &stats) override 
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) override 
    {
      const double temperature = P.gtp * step.scale(); // in absolute units!
-     const double beta        = 1.0 / temperature;
-     t_weight value{};
+     const auto beta          = 1.0 / temperature;
+     typename traits<S>::t_weight value{};
      for (const auto r1: diagI1.kept()) {
        const auto E1 = diagI1.value_zero(r1);
        for (const auto rp: diagIp.kept()) {
@@ -98,9 +113,8 @@ class Algo_GT : public Algo {
    void end(const Step &) override {
      td.merge(*ct.get());
    }
-   ~Algo_GT() { td.save(); }
+   ~Algo_GT_tmpl() { td.save(); }
 };
-
 
 // weight=(exp(-beta Em)-exp(-beta En))/(beta En-beta Em). NOTE: arguments En, Em are order omega_N, while beta is
 // order 1/omega_N, thus the combinations betaEn and betaEm are order 1. Also En>0, Em>0, since these are excitation
@@ -124,22 +138,26 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
 // elements of global operators. Binning needs to be turned off. Note that Zchit needs to be calculated with the same
 // 'temperature' parameter that we use for the exponential functions in the following equation. The output is
 // chi/beta = k_B T chi, as we prefer.
-class Algo_CHIT : public Algo {
+template<typename S>
+class Algo_CHIT_tmpl : public Algo_tmpl<S> {
  private:
-   TempDependence td;
-   using CT = ChainTempDependence;
+   TempDependence_tmpl<S> td;
+   using CT = ChainTempDependence_tmpl<S>;
    std::unique_ptr<CT> ct;
  public:
-   explicit Algo_CHIT(TempDependence td, gf_type gt, const Params &P) : Algo(P), td(td) {
+   using Matrix = typename traits<S>::Matrix;
+   using t_coef = typename traits<S>::t_coef;
+   using Algo_tmpl<S>::P;
+   explicit Algo_CHIT_tmpl(TempDependence_tmpl<S> td, const gf_type gt, const Params &P) : Algo_tmpl<S>(P), td(td) {
      my_assert(gt == gf_type::bosonic);
    }
    void begin(const Step &) override { ct = std::make_unique<CT>(P); }
-   void calc(const Step &step, const Eigen &diagIp, const Eigen &diagI1, const Matrix &op1, const Matrix &op2, t_coef factor,
-             const Invar &, const Invar &, const DensMatElements &, const Stats &stats) override
+   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) override
    {
      const double temperature = P.chitp * step.scale(); // in absolute units!
-     const double beta        = 1.0 / temperature;
-     t_weight value{};
+     const auto beta          = 1.0 / temperature;
+     typename traits<S>::t_weight value{};
      for (const auto r1: diagI1.kept()) {
        const auto E1 = diagI1.value_zero(r1);
        for (const auto rp: diagIp.kept()) {
@@ -153,5 +171,6 @@ class Algo_CHIT : public Algo {
    void end(const Step &) override {
      td.merge(*ct.get());
    }
-   ~Algo_CHIT() { td.save(); }
+   ~Algo_CHIT_tmpl() { td.save(); }
 };
+using Algo_CHIT = Algo_CHIT_tmpl<scalar>;
