@@ -96,5 +96,3 @@ public:
   auto zetaUPDO(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 2 * P.channels); }
   auto zetaDOUP(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 3 * P.channels); }
 };
-
-using Coef = Coef_tmpl<scalar>;

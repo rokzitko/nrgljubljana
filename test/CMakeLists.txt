@@ -1,21 +1,16 @@
-if(BUILD_REAL)
-  add_subdirectory(c++)
-  add_subdirectory(c++sym_basic)
+add_subdirectory(c++)
+add_subdirectory(c++sym_basic)
 
-  if(SYM_MORE)
-    add_subdirectory(c++sym_more)
-  endif()
-
-  if(SYM_ALL)
-   add_subdirectory(c++sym_all)
-  endif()
+if(SYM_MORE)
+  add_subdirectory(c++sym_more)
 endif()
 
-if(BUILD_COMPLEX AND SYM_ALL)
+if(SYM_ALL)
+  add_subdirectory(c++sym_all)
   add_subdirectory(complex)
 endif()
 
-if(TEST_LONG AND BUILD_COMPLEX AND SYM_ALL)
+if(TEST_LONG AND SYM_ALL)
   add_subdirectory(long)
 endif()
 

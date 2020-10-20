@@ -33,7 +33,6 @@ struct Recalc_f_tmpl {
   size_t ip;
   typename traits<S>::t_coef factor;
 };
-using Recalc_f = Recalc_f_tmpl<scalar>;
 
 // Structure which holds subspace information and factor for each of nonzero irreducible matrix elements. cf.
 // Hofstetter PhD p. 120. <Q+1 S+-1/2 .. i1 ||f^\dag|| Q S .. ip>_N = factor < IN1 .. ||f^\dag|| INp ..>_{N_1}
@@ -45,7 +44,6 @@ struct Recalc_tmpl {
   Invar INp;
   typename traits<S>::t_coef factor{}; // additional multiplicative factor
 };
-using Recalc = Recalc_tmpl<scalar>;
 
 template<typename S>
 class Symmetry_tmpl {
@@ -223,7 +221,6 @@ class Symmetry_tmpl {
    auto TrivialCheckSpinFnc() const   { return [this](const Invar &Ip, const Invar &I1, int SPIN) { return true; }; }
    auto SpecdensCheckSpinFnc() const  { return [this](const Invar &I1, const Invar &Ip, int SPIN) { return this->check_SPIN(I1, Ip, SPIN); }; }
 };
-using Symmetry = Symmetry_tmpl<scalar>;
 
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                 \
@@ -250,7 +247,6 @@ class SymField_tmpl : public Symmetry_tmpl<S> {
    explicit SymField_tmpl(const Params &P) : Symmetry_tmpl<S>(P) {}
    bool isfield() override { return true; }
 };
-using SymField = SymField_tmpl<scalar>;
 
 template<typename S>
 class SymLR_tmpl : public Symmetry_tmpl<S> {

@@ -38,7 +38,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-doubletp.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(-1, 1));
@@ -52,7 +52,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-doubletp.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(-1, 1));
@@ -71,7 +71,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-doubletm.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(+1, 1));
@@ -85,7 +85,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-doubletm.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(+1, 1));
@@ -117,7 +117,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-spinupa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -131,7 +131,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-spinupa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -145,7 +145,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-spinupb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -164,7 +164,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-spindowna.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -178,7 +178,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-spindowna.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -192,7 +192,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-spindownb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -213,7 +213,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-spinupdiffa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -227,7 +227,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-spinupdiffb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -243,7 +243,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-spindowndiffa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -257,7 +257,7 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-spindowndiffb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -286,7 +286,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-triplets.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(0, 1));
@@ -300,7 +300,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-triplets.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(0, 1));
@@ -319,7 +319,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-tripletp.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(-2, 1));
@@ -333,7 +333,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-tripletp.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(-2, 1));
@@ -352,7 +352,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-tripletm.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(+2, 1));
@@ -366,7 +366,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-tripletm.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(+2, 1));

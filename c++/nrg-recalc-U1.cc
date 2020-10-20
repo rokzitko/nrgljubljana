@@ -36,7 +36,7 @@ MatrixElements_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "u1/u1-1ch-doublet.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1));
@@ -50,7 +50,7 @@ MatrixElements_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "u1/u1-2ch-doublet.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1));
@@ -64,7 +64,7 @@ MatrixElements_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc> recalc_table = {
+        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
 #include "u1/u1-3ch-doublet.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1));
@@ -92,7 +92,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-1ch-a-DO.dat"
         };
         opch[0][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -106,7 +106,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-1ch-a-UP.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -120,7 +120,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-2ch-a-DO.dat"
         };
         opch[0][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -134,7 +134,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-2ch-b-DO.dat"
         };
         opch[1][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -148,7 +148,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-2ch-a-UP.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -162,7 +162,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-2ch-b-UP.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -176,7 +176,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-3ch-a-DO.dat"
         };
         opch[0][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -190,7 +190,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-3ch-b-DO.dat"
         };
         opch[1][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -204,7 +204,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-3ch-c-DO.dat"
         };
         opch[2][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -218,7 +218,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-3ch-a-UP.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -232,7 +232,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-3ch-b-UP.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -246,7 +246,7 @@ Opch_tmpl<SC> SymmetryU1_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f> recalc_table = {
+        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
 #include "u1/u1-3ch-c-UP.dat"
         };
         opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);

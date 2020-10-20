@@ -35,15 +35,6 @@
 #include "openmp.h"
 #include "mp.h"
 
-#ifdef NRG_REAL
-using scalar = double;
-#endif
-
-#ifdef NRG_COMPLEX
-using scalar = cmpl;
-#endif
-
-
 template <typename S> struct traits {};
 
 template <> struct traits<double> {
@@ -1933,7 +1924,7 @@ auto diagonalisations(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmp
                       const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
   TIME("diag");
 #ifdef NRG_MPI
-  return diagonalisations_MPI<scalar>(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
+  return diagonalisations_MPI<S>(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
 #else
   return diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
 #endif
@@ -2235,16 +2226,27 @@ public:
     if (P.done) { std::ofstream D("DONE"); } // Indicate completion by creating a flag file
   }
 };
+
+// Returns true if the data file contains complex values
+bool complex_data(const std::string filename = "data") {
+  std::ifstream F(filename);
+  if (!F) throw std::runtime_error("Can't load initial data.");
+  std::string l;
+  std::getline(F, l);
+  std::getline(F, l);
+  std::getline(F, l); // third line
+  const auto pos = l.find("COMPLEX"); 
+  return pos != std::string::npos;
+} 
   
-// Master process does most of the i/o and passes calculations to the slaves.
 void run_nrg_master() {
-#ifdef NRG_REAL
-  NRG_calculation<double> calc;
-#endif
-#ifdef NRG_COMPLEX
-  NRG_calculation<std::complex<double>> calc;
-#endif
-  calc.go();
+  if (complex_data()) {
+    NRG_calculation<std::complex<double>> calc;
+    calc.go();
+  } else {
+    NRG_calculation<double> calc;
+    calc.go();
+  }
 #ifdef NRG_MPI
   for (auto i = 1; i < mpiw->size(); i++) mpiw->send(i, TAG_EXIT, 0);
 #endif

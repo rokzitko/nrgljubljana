@@ -46,7 +46,6 @@ class Bins_tmpl {
    void trim();
    auto total_weight() const { return bins.sum_weights(); }
 };
-using Bins = Bins_tmpl<scalar>;
 
 template<typename S>
 void Bins_tmpl<S>::setlimits() {
@@ -154,7 +153,7 @@ void Bins_tmpl<S>::merge(const Bins_tmpl<S> &b) {
 // Only keep bins which are "heavy" enough.
 template<typename S>
 void Bins_tmpl<S>::trim() {
-  Spikes orig{};
+  Spikes_tmpl<S> orig{};
   orig.swap(bins);
   bucket discarded_weight_abs;
   // nr-1, because we need to compute the energy interval size 'ewidth'
@@ -192,6 +191,5 @@ class Temp_tmpl : public Spikes_tmpl<S> {
      this->emplace_back(energy, weight);
    }
 };
-using Temp = Temp_tmpl<scalar>;
 
 #endif // _bins_h_

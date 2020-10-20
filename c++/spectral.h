@@ -7,7 +7,6 @@
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
 template<typename S>
 using t_delta_peak_tmpl = std::pair<double, typename traits<S>::t_weight>;
-using t_delta_peak = t_delta_peak_tmpl<scalar>;
 
 inline void outputxy(std::ostream &F, const double x, const std::complex<double> z, const bool imagpart, const double clip_tol_imag = 1e-10) {
   const auto [r, i] = reim(z);
@@ -26,7 +25,6 @@ class Spikes_tmpl : public std::vector<t_delta_peak_tmpl<S>> {
      }
    auto sum_weights() const { return sum2(*this); }
 };
-using Spikes = Spikes_tmpl<scalar>;
 
 #ifndef M_SQRTPI
 #define M_SQRTPI 1.7724538509055160273

@@ -41,6 +41,5 @@ class Matsubara_tmpl {
      for (const auto &[e, w] : v) outputxy(F, e, w, true);
    }
 };
-using Matsubara = Matsubara_tmpl<scalar>;
 
 #endif // _matsubara_h_

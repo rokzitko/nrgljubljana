@@ -281,7 +281,7 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP)
   check_is_matrix_upper(m);
   Eigen_tmpl<M> d;
   if constexpr (std::is_same_v<M, double>) {
-    if (DP.diag == "dsyev"s) 
+    if (DP.diag == "dsyev"s || DP.diag == "default"s)
       d = diagonalise_dsyev(m);
     if (DP.diag == "dsyevd"s) {
       d = diagonalise_dsyevd(m);
@@ -294,7 +294,7 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP)
       d = diagonalise_dsyevr(m, DP.diagratio);
   }
   if constexpr (std::is_same_v<M, std::complex<double>>) {
-    if (DP.diag == "zheev"s)  
+    if (DP.diag == "zheev"s || DP.diag == "default"s)  
       d = diagonalise_zheev(m);
     if (DP.diag == "zheevr"s) 
       d = diagonalise_zheevr(m, DP.diagratio);

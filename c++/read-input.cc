@@ -96,7 +96,8 @@ void read_gs_energy(std::ifstream &fdata, Stats_tmpl<S> &stats) {
 
 // Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
 // tridiagonalization routines (if not using the tables computed by initial.m).
-void determine_Nmax(const Coef &coef, Params &P) {
+template<typename S>
+void determine_Nmax(const Coef_tmpl<S> &coef, Params &P) { // Params is non-const !
   const auto length_coef_table = coef.xi.max(0); // all channels have same nr. of coefficients
   std::cout << std::endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << std::endl << std::endl;
   my_assert(length_coef_table == P.Nmax);
@@ -115,9 +116,9 @@ inline void skipline(std::ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
 template<typename S> 
-auto read_data(Params &P, Stats_tmpl<S> &stats) {
+auto read_data(Params &P, Stats_tmpl<S> &stats, std::string filename = "data") {
   skipline();
-  std::ifstream fdata("data");
+  std::ifstream fdata(filename);
   if (!fdata) throw std::runtime_error("Can't load initial data.");
   const auto sym_string = parse_datafile_header(fdata);
   my_assert(sym_string == P.symtype.value());
@@ -137,7 +138,7 @@ auto read_data(Params &P, Stats_tmpl<S> &stats) {
     if (fdata.eof()) break;
     char ch = fdata.get();
     std::string opname;
-    getline(fdata, opname);
+    std::getline(fdata, opname);
     if (ch != '#') debug("Reading <||" << opname << "||> (" << ch << ")");
     switch (ch) {
       case '#':
@@ -172,7 +173,7 @@ auto read_data(Params &P, Stats_tmpl<S> &stats) {
     default: throw std::invalid_argument(fmt::format("Unknown block {} in data file.", ch));
     }
   }
-  if (std::string(P.tri) == "cpp") Tridiag(coef, P); // before calling determine_Nmax()
+  if (std::string(P.tri) == "cpp") Tridiag_tmpl<S>(coef, P); // before calling determine_Nmax()
   determine_Nmax(coef, P);
   return std::make_tuple(diag0, iterinfo0, coef, Sym);
 }

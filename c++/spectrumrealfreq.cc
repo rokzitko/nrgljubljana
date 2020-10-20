@@ -132,7 +132,7 @@ template<typename S>
 void SpectrumRealFreq_tmpl<S>::continuous() {
   const double alpha  = P.alpha;
   const double omega0 = P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0;
-  Spikes densitypos, densityneg;
+  Spikes_tmpl<S> densitypos, densityneg;
   const auto vecE = make_mesh(P); // Energies on the mesh
   for (const auto E : vecE) {
     t_weight valpos{}, valneg{};

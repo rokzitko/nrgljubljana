@@ -6,11 +6,12 @@
 
 #include "mp.h"
 
-class Tridiag {
-   Params &P;
+template<typename S>
+class Tridiag_tmpl {
+   const Params &P;
  public:
-   void tridiag_ch(int alpha, Coef &coef);
-   Tridiag(Coef &coef, Params &P) : P(P) {
+   void tridiag_ch(int alpha, Coef_tmpl<S> &coef);
+   Tridiag_tmpl(Coef_tmpl<S> &coef, const Params &P) : P(P) {
      TIME("tridiag");
      my_assert(P.coefchannels >= 1);
      for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha, coef);
@@ -41,7 +42,8 @@ void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX) {
 }
 
 // Tridiagonalisation of the discretization coefficients. Multiple precision arithmetics library GMP is required.
-void Tridiag::tridiag_ch(int alpha, Coef &coef) {
+template<typename S>
+void Tridiag_tmpl<S>::tridiag_ch(int alpha, Coef_tmpl<S> &coef) {
   std::cout << "Tridiagonalisation, ch=" << alpha << ".";
   std::cout << " Using GMP version " << gmp_version << std::endl;
 
