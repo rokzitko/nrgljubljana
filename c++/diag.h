@@ -305,7 +305,7 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP)
     dump_eigenvalues(d);
   checkdiag(d);
   nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrcomputed() << " [rank " << myrank() << "]");
-  nrglogdp('t', "Elapsed: " << setprecision(3) << t.total_in_seconds() << " [rank " << myrank() << "]");
+  nrglogdp('t', "Elapsed: " << std::setprecision(3) << t.total_in_seconds() << " [rank " << myrank() << "]");
   return d;
 }
 

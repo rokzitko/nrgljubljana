@@ -504,7 +504,7 @@ class Rmaxvals {
 class QSrmax : public std::map<Invar, Rmaxvals> {
  public:
    QSrmax() {}
-   template<typename S> QSrmax(const DiagInfo_tmpl<S> &, shared_ptr<Symmetry_tmpl<S>>);
+   template<typename S> QSrmax(const DiagInfo_tmpl<S> &, std::shared_ptr<Symmetry_tmpl<S>>);
    // List of invariant subspaces in which diagonalisations need to be performed
    std::vector<Invar> task_list() const {
      std::vector<std::pair<size_t, Invar>> tasks_with_sizes;
@@ -857,7 +857,7 @@ using IterInfo = IterInfo_tmpl<scalar>;
 
 // Operator sumrules.
 template<typename S, typename F> 
-double norm(const MatrixElements_tmpl<S> &m, shared_ptr<Symmetry_tmpl<S>> Sym, F factor_fnc, const int SPIN) {
+double norm(const MatrixElements_tmpl<S> &m, std::shared_ptr<Symmetry_tmpl<S>> Sym, F factor_fnc, const int SPIN) {
   weight_bucket sum;
   for (const auto &[II, mat] : m) {
     const auto & [I1, Ip] = II;
@@ -868,7 +868,7 @@ double norm(const MatrixElements_tmpl<S> &m, shared_ptr<Symmetry_tmpl<S>> Sym, F
 }
 
 template<typename S>
-void operator_sumrules(const IterInfo_tmpl<S> &a, shared_ptr<Symmetry_tmpl<S>> Sym) {
+void operator_sumrules(const IterInfo_tmpl<S> &a, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
   // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
   // irrelevant (0).
   const int SPIN = Sym->isfield() ? 1 : 0;
@@ -1189,7 +1189,7 @@ class Oprecalc_tmpl {
 
    // Calculate spectral densities
    void spectral_densities(const Step &step, const DiagInfo_tmpl<S> &diag, DensMatElements_tmpl<S> &rho, DensMatElements_tmpl<S> &rhoFDM, 
-                           const Stats &stats, shared_ptr<Symmetry_tmpl<S>> Sym) {
+                           const Stats_tmpl<S> &stats, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
      TIME("spec");
      for (auto &i : spectraS)    calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
      for (auto &i : spectraCHIT) calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
@@ -1336,13 +1336,15 @@ class Annotated {
  private:
    std::ofstream F;
    // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor)
-   inline t_eigen scaled_energy(t_eigen e, const Step &step, const Stats &stats, bool scaled = true, bool absolute = false) {
+   template<typename S>
+     inline auto scaled_energy(typename traits<S>::t_eigen e, const Step &step, const Stats_tmpl<S> &stats,
+                               bool scaled = true, bool absolute = false) {
      return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0);
    }
    const Params &P;
  public:
    explicit Annotated(const Params &P) : P(P) {}
-   template<typename S> void dump(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats &stats, 
+   template<typename S> void dump(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats_tmpl<S> &stats, 
                                   std::shared_ptr<Symmetry_tmpl<S>> Sym, const std::string filename = "annotated.dat") {
      if (!P.dumpannotated) return;
      if (!F.is_open()) { // open output file
@@ -2087,7 +2089,7 @@ void after_diag(const Step &step, IterInfo_tmpl<S> &iterinfo, Stats_tmpl<S> &sta
 // Perform one iteration step
 template<typename S>
 auto iterate(const Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diagprev,
-             Output_tmpl<S> &output, AllSteps_tmpl<S> &dm, Oprecalc &oprecalc, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+             Output_tmpl<S> &output, AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
   QSrmax qsrmax{diagprev, Sym};
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, Sym, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);

@@ -43,7 +43,7 @@ class Matsubara_tmpl {
      }
    }
    template <typename T> void save(T && F, const int prec) const {
-     F << setprecision(prec); // prec_xy
+     F << std::setprecision(prec); // prec_xy
      for (const auto &[e, w] : v) outputxy(F, e, w, true);
    }
 };

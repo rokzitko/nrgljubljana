@@ -101,7 +101,7 @@ using namespace fmt::literals;
 #define FN_RHO "rho"
 #define FN_RHOFDM "rhofdm"
 
-#define HIGHPREC(val) setprecision(std::numeric_limits<double>::max_digits10) << (val)
+#define HIGHPREC(val) std::setprecision(std::numeric_limits<double>::max_digits10) << (val)
 
 int myrank();
 

@@ -21,7 +21,7 @@ class Spikes_tmpl : public std::vector<t_delta_peak_tmpl<S>> {
  public:
    template<typename T>
      void save(T&& F, const int prec, const bool imagpart) {
-       F << setprecision(prec);
+       F << std::setprecision(prec);
        for (const auto &[e, w] : *this) outputxy(F, e, w, imagpart);
      }
    t_weight sum_weights() const {

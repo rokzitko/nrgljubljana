@@ -564,7 +564,7 @@ struct Params {
 
   void dump() {
     all.sort([](auto a, auto b) { return a->getkeyword() < b->getkeyword(); });
-    std::cout << setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
+    std::cout << std::setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
     for (const auto &i : all) i->dump();
   }
 

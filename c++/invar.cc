@@ -59,8 +59,8 @@ class Invar {
      return os;
    }
    friend ostream &operator<<(ostream &os, const Invar &invar) { return invar.insertor(os); }
-   std::string str() const { ostringstream s; insertor(s); return s.str(); }
-   istream &extractor(istream &is) {
+   std::string str() const { std::ostringstream s; insertor(s); return s.str(); }
+   std::istream &extractor(std::istream &is) {
      for (auto &i : data) {
        int qn;
        if (is >> qn)
@@ -70,7 +70,7 @@ class Invar {
      }
      return is;
    }
-   friend istream &operator>>(istream &is, Invar &invar) { return invar.extractor(is); }
+   friend std::istream &operator>>(std::istream &is, Invar &invar) { return invar.extractor(is); }
    bool operator==(const Invar &invar2) const { return data == invar2.data; }
    bool operator!=(const Invar &invar2) const { return !operator==(invar2); }
    bool operator<(const Invar &invar2) const { return data < invar2.data; }
