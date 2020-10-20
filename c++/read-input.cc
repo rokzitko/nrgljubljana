@@ -5,7 +5,7 @@ template<typename S>
 class Stats_tmpl;
 
 template<typename S>
-std::shared_ptr<Symmetry> set_symmetry(const Params &P, Stats_tmpl<S> &stats);
+std::shared_ptr<Symmetry_tmpl<S>> set_symmetry(const Params &P, Stats_tmpl<S> &stats);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
 auto parse_datafile_header(std::istream &fdata, const int expected_version = 9)
