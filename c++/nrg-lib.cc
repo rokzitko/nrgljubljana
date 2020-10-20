@@ -170,10 +170,10 @@ template <typename T>
 template <typename S> class Eigen_tmpl {
 public:
   using t_eigen = typename traits<S>::t_eigen;
-  using Matrix2 = typename traits<S>::Matrix;
+  using Matrix = typename traits<S>::Matrix;
   using EVEC = ublas::vector<t_eigen>;
   EVEC value_orig;               // eigenvalues as computed
-  Matrix2 matrix; // eigenvectors
+  Matrix matrix; // eigenvectors
   Eigen_tmpl() {}
   Eigen_tmpl(const size_t nr, const size_t dim) {
     my_assert(nr <= dim);
@@ -204,7 +204,7 @@ public:
   // subspace from which they originate. This separation is required for
   // using the efficient BLAS routines when performing recalculations of
   // the matrix elements.
-  std::vector<Matrix2> blocks;
+  std::vector<Matrix> blocks;
   // Truncate to nrpost states.
   void truncate_prepare_subspace(const size_t nrpost_) {
     nrpost = nrpost_;
@@ -253,6 +253,7 @@ using Eigen = Eigen_tmpl<scalar>;
 template<typename S>
 class DiagInfo_tmpl : public std::map<Invar, Eigen_tmpl<S>> {
  public:
+   using Matrix = typename traits<S>::Matrix;
    explicit DiagInfo_tmpl() {}
    DiagInfo_tmpl(std::ifstream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {
@@ -712,29 +713,34 @@ class Stats_tmpl {
 using Stats = Stats_tmpl<scalar>;
 
 // Wrapper class for NRG spectral-function algorithms
-class Algo {
+template<typename S>
+class Algo_tmpl {
  private:
  public:
+   using t_coef = typename traits<S>::t_coef;
+   using Matrix = typename traits<S>::Matrix;
    const Params &P;
-   Algo() = delete;
-   Algo(const Algo&) = delete;
-   explicit Algo(const Params &P) : P(P) {}
-   virtual ~Algo() = default;
-   virtual void begin(const Step &) {}
-   virtual void calc(const Step &, const Eigen &, const Eigen &, const Matrix &, const Matrix &, 
-                     const t_coef, const Invar &, const Invar &, const DensMatElements &, const Stats &stats) {} // XXX: =0 ?
-   virtual void end(const Step &) {}
+   Algo_tmpl() = delete;
+   Algo_tmpl(const Algo_tmpl&) = delete;
+   explicit Algo_tmpl(const Params &P) : P(P) {}
+   virtual ~Algo_tmpl() {}
+   virtual void begin(const Step &) = 0;
+   virtual void calc(const Step &, const Eigen_tmpl<S> &, const Eigen_tmpl<S> &, const Matrix &, const Matrix &, 
+                     const t_coef, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) = 0;
+   virtual void end(const Step &) = 0;
    virtual std::string rho_type() { return ""; } // what rho type is required
 };
+using Algo = Algo_tmpl<scalar>;
 
-template<typename M> void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr, std::ostream &F) {
+template<typename M> 
+inline void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr, std::ostream &F) {
   for (const auto r : range0(std::min(m.size1(), max_nr)))
     F << m(r,r) << ' ';
   F << std::endl;
 }
 
 template<typename S>
-void dump_diagonal_op(const std::string &name, const MatrixElements_tmpl<S> &n, const size_t max_nr, std::ostream &F) {
+inline void dump_diagonal_op(const std::string &name, const MatrixElements_tmpl<S> &n, const size_t max_nr, std::ostream &F) {
   F << "Diagonal matrix elements of operator " << name << std::endl;
   for (const auto &[II, mat] : n) {
     const auto & [I1, I2] = II;
@@ -1758,7 +1764,7 @@ typename traits<S>::Matrix prepare_task_for_diag(const Step &step, const Invar &
                                                  const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry> Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev, Sym};
-  Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
+  typename traits<S>::Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   for (const auto i : Sym->combs())
     for (const auto r : range0(rm.rmax(i)))
       h(rm.offset(i) + r, rm.offset(i) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r);
