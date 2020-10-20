@@ -8,6 +8,7 @@ class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
 
  public:
    using Matrix = typename traits<SC>::Matrix;
+   using t_matel = typename traits<SC>::t_matel;
    SymmetryQS_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
@@ -74,12 +75,12 @@ class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
    }
 
    void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
-     bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
+     auto trSZ = 0.0, trQ = 0.0, trQ2 = 0.0; // Tr[S_z^2], Tr[Q], Tr[Q^2]
      for (const auto &[I, eig]: diag) {
-       const Sspin ss    = I.get("SS");
+       const Sspin ss    = I.get("SS"); // XXX -> auto!
        const Number q    = I.get("Q");
-       const double sumZ = this->calculate_Z(I, eig, factor);
-       trQ += sumZ * q;
+       const auto sumZ = this->calculate_Z(I, eig, factor);
+       trQ  += sumZ * q;
        trQ2 += sumZ * q * q;
        trSZ += sumZ * (ss * ss - 1) / 12.;
      }

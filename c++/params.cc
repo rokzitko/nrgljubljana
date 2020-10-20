@@ -545,10 +545,10 @@ struct Params {
     if (keepenergy > 0.0) my_assert(keepmin <= keep);
     if (dmnrg || cfs_flags()) dm.setvalue(true);
     my_assert(Lambda > 1.0);
-    if constexpr (std::is_same_v<t_matel, double>) {
+    if constexpr (std::is_same_v<scalar, double>) {
       if (diag == "default"s) diag.setvalue("dsyev"s);
       my_assert(diag == "dsyev"s || diag == "dsyevd"s || diag == "dsyevr"s);
-    } else if constexpr (std::is_same_v<t_matel, std::complex<double>>) {
+    } else if constexpr (std::is_same_v<scalar, std::complex<double>>) {
       if (diag == "default"s) diag.setvalue("zheev"s);
       my_assert(diag == "zheev"s || diag == "zheevr"s);
     } else my_assert_not_reached();

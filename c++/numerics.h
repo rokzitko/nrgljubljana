@@ -33,10 +33,7 @@ public:
   inline T operator+=(T x) { return value += x; }
   inline operator T() const { return value; }
 };
-
 using bucket = generic_bucket<double>;
-using weight_bucket = generic_bucket<t_weight>;
-using matel_bucket = generic_bucket<t_matel>;
 
 #define IS_ODD(n) ((n)&1)
 #define IS_EVEN(n) (!(IS_ODD(n)))

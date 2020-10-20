@@ -37,21 +37,19 @@
 
 #ifdef NRG_REAL
 using scalar = double;
-using t_matel = double;                       // type for the matrix elements
-using t_coef = double;                        // type for the Wilson chain coefficients
-using t_coef = double;                        // type for various prefactors in recalculations
-using t_expv = double;                        // type for expectation values of operators
+//AAA using t_matel = double;                       // type for the matrix elements
+//AAA using t_coef = double;                        // type for the Wilson chain coefficients
+//AAA using t_expv = double;                        // type for expectation values of operators
 #endif
 
 #ifdef NRG_COMPLEX
 using scalar = cmpl;
-using t_matel = cmpl;
-using t_coef = cmpl;
-using t_coef = cmpl;
-using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
+//AAA using t_matel = cmpl;
+//AAA using t_coef = cmpl;
+//AAA using t_expv = cmpl; // we allow the calculation of expectation values of non-Hermitian operators!
 #endif
 
-using t_eigen = double;  // type for the eigenvalues (always double)
+//AAA using t_eigen = double;  // type for the eigenvalues (always double)
 using t_weight = cmpl;   // spectral weight accumulators (always complex)
 
 template <typename S> struct traits {};
@@ -253,6 +251,7 @@ public:
 template<typename S>
 class DiagInfo_tmpl : public std::map<Invar, Eigen_tmpl<S>> {
  public:
+  using t_eigen = typename traits<S>::t_eigen;
    using Matrix = typename traits<S>::Matrix;
    explicit DiagInfo_tmpl() {}
    DiagInfo_tmpl(std::ifstream &fdata, const size_t nsubs, const Params &P) {
@@ -855,10 +854,10 @@ template<typename S> class IterInfo_tmpl {
  #endif
 #endif
 
-// Operator sumrules.
+// Operator sumrules
 template<typename S, typename F> 
-double norm(const MatrixElements_tmpl<S> &m, std::shared_ptr<Symmetry_tmpl<S>> Sym, F factor_fnc, const int SPIN) {
-  weight_bucket sum;
+auto norm(const MatrixElements_tmpl<S> &m, std::shared_ptr<Symmetry_tmpl<S>> Sym, F factor_fnc, const int SPIN) {
+  typename traits<S>::t_weight sum{};
   for (const auto &[II, mat] : m) {
     const auto & [I1, Ip] = II;
     if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
@@ -1351,7 +1350,7 @@ class Annotated {
        F.open(filename);
        F << std::setprecision(P.dumpprecision);
      }
-     std::vector<std::pair<t_eigen, Invar>> seznam;
+     std::vector<std::pair<double, Invar>> seznam;
      for (const auto &[I, eig] : diag)
        for (const auto e : eig.value_zero)
          seznam.emplace_back(e, I);
@@ -2021,8 +2020,8 @@ auto do_diag(const Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &c
       stats.Egs = diag.find_groundstate();
       if (step.nrg()) // should be done only once!
         diag.subtract_Egs(stats.Egs);
-      const auto cluster_mapping = find_clusters(diag.sorted_energies(), P.fixeps);
-      fix_splittings(diag, cluster_mapping);
+      Clusters<S> clusters(diag.sorted_energies(), P.fixeps); // XXX: single step
+      clusters.fix(diag);
       truncate_prepare(step, diag, Sym, P);
       break;
     }

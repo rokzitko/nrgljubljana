@@ -7,6 +7,7 @@ class SymmetryP_tmpl : public Symmetry_tmpl<SC> {
 
   public:
    using Matrix = typename traits<SC>::Matrix;
+   using t_matel = typename traits<SC>::t_matel;
    SymmetryP_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P) {
      initInvar({
        {"P", multiplicative} // fermion parity

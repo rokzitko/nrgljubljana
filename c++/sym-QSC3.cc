@@ -8,6 +8,7 @@ class SymmetryQSC3_tmpl : public SymC3_tmpl<SC> {
 
  public:
    using Matrix = typename traits<SC>::Matrix;
+   using t_matel = typename traits<SC>::t_matel;
    SymmetryQSC3_tmpl(const Params &P, Allfields &allfields) : SymC3_tmpl<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({

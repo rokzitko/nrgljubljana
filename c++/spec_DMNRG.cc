@@ -10,6 +10,7 @@ class Algo_DMNRG_tmpl : public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_DMNRG_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P) : 
      Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)) {}
@@ -60,6 +61,7 @@ class Algo_DMNRGmats_tmpl : public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_DMNRGmats_tmpl(GFMatsubara_tmpl<S> gf, const gf_type gt, const Params &P) : 
      Algo_tmpl<S>(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}

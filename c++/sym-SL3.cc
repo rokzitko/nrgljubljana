@@ -7,7 +7,8 @@ class SymmetrySL3_tmpl : public Symmetry_tmpl<SC> {
    using Symmetry_tmpl<SC>::QN;
 
   public:
-    using Matrix = typename traits<SC>::Matrix;
+   using Matrix = typename traits<SC>::Matrix;
+   using t_matel = typename traits<SC>::t_matel;
    SymmetrySL3_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Q1(P, allfields, "<Q1>", 1), Q12(P, allfields, "<Q1^2>", 2), sQ12(P, allfields, "<sQ1^2>", 3),
      Q2(P, allfields, "<Q2>", 4), Q22(P, allfields, "<Q2^2>", 5), sQ22(P, allfields, "<sQ2^2>", 6),

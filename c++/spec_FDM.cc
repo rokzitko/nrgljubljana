@@ -18,6 +18,7 @@ class Algo_FDMls_tmpl : virtual public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_FDMls_tmpl(SpectrumRealFreq_tmpl<S> spec, gf_type gt, const Params &P, const bool save = true) 
      : Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)), save(save) {}
@@ -81,6 +82,7 @@ class Algo_FDMgt_tmpl : virtual public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_FDMgt_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P, const bool save = true) 
      : Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)), save(save) {}
@@ -140,6 +142,7 @@ class Algo_FDM_tmpl : public Algo_FDMls_tmpl<S>, public Algo_FDMgt_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_FDM_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P) :
      Algo_tmpl<S>(P), Algo_FDMls_tmpl<S>(spec, gt, P, false), Algo_FDMgt_tmpl<S>(spec, gt, P, false), spec_tot(spec) {}
@@ -176,6 +179,7 @@ class Algo_FDMmats_tmpl : public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_FDMmats_tmpl(GFMatsubara_tmpl<S> gf, const gf_type gt, const Params &P) : 
      Algo_tmpl<S>(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}

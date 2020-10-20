@@ -8,9 +8,13 @@ class Algo_FT_tmpl : public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_FT_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P) : 
      Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)) {}
+   std::shared_ptr<Algo_tmpl<S>> produce(const std::string &name, const std::string &algoname, const std::string &filename, const gf_type &gt, const Params &P) { // XXX !!!
+     return algoname == "FT" ? std::make_shared<Algo_FT_tmpl<S>>(SpectrumRealFreq_tmpl<S>(name, algoname, filename, P), gt, P) : nullptr;
+   }
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    // The first matrix element is conjugated! This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
    void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
@@ -45,6 +49,7 @@ class Algo_FTmats_tmpl : public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_FTmats_tmpl(GFMatsubara_tmpl<S> gf, const gf_type gt, const Params &P) : 
      Algo_tmpl<S>(P), gf(gf), sign(gf_sign(gt)), gt(gt) {}
@@ -87,6 +92,7 @@ class Algo_GT_tmpl : public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_GT_tmpl(TempDependence_tmpl<S> td, const gf_type gt, const Params &P) : Algo_tmpl<S>(P), td(td) {
      my_assert(gt == gf_type::fermionic);
@@ -147,6 +153,7 @@ class Algo_CHIT_tmpl : public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_CHIT_tmpl(TempDependence_tmpl<S> td, const gf_type gt, const Params &P) : Algo_tmpl<S>(P), td(td) {
      my_assert(gt == gf_type::bosonic);

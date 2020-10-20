@@ -8,6 +8,7 @@ class SymmetryDBLSU2_tmpl : public Symmetry_tmpl<SC> {
 
  public:
    using Matrix = typename traits<SC>::Matrix;
+   using t_matel = typename traits<SC>::t_matel;
    SymmetryDBLSU2_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
      Q12(P, allfields, "<Q1^2>", 1), Q22(P, allfields, "<Q2^2>", 2) {
        initInvar({

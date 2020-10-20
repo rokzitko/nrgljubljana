@@ -1,18 +1,6 @@
 // Code for correcting floating-point roundoff errors
 // Rok Zitko, rok.zitko@ijs.si
 
-using mapdd = std::unordered_map<t_eigen, t_eigen>;
-
-// Fix splittings of eigenvalues. Returns true if any changes had been made.
-template<typename S>
-void fix_splittings(DiagInfo_tmpl<S> &diag, const mapdd &cluster_mapping) {
-  for(auto &[I, eig]: diag) { 
-    for (auto &r : eig.value_zero) 
-      if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
-        r = m->second;
-  }
-}
-
 template<typename T>
   void cluster_show(const T &i0, const T &i1) {
     std::cout << "[";
@@ -31,29 +19,43 @@ template<typename T>
     return false;
   }
 
-// Find clusters of values which differ by at most 'epsilon'
-mapdd find_clusters(const std::vector<t_eigen> &energies, double epsilon) { // AAA: auto ?
-  my_assert(energies.size());
-  mapdd cluster_mapping;
-  auto e0 = energies[0];      // energy of the lower boundary of the cluster, [e0:e1]
-  auto i0 = cbegin(energies); // iterator to the lower boundary of the cluster, [i0:i1] /// AAA
-  int size = 1;                // number of states in the current cluster
-  for (auto i = begin(energies); i != end(energies); ++i) {
-    if ((*i - e0) < epsilon) { // in the cluster
-      size++;
-    } else { // end of cluster detected
-      auto i1 = i;
-      if (size > 1) {            // is this a real cluster?
-        if (cluster_splitting(i0, i1)) { // are the states actually split?
-          auto replace_with = *i0;    // use the lowest eigenvalue of the cluster
-          for (auto j = (i0 + 1); j != i1; ++j) // skip 1st
-            if (*j != *i0) cluster_mapping.insert(make_pair(*j, replace_with));
-        }
-      }
-      e0   = *i;
-      i0   = i;
-      size = 1;
-    }
-  }
-  return cluster_mapping;
-}
+template<typename S>
+class Clusters {
+ public:
+   using t_eigen = typename traits<S>::t_eigen;
+   std::unordered_map<t_eigen, t_eigen> cluster_mapping;
+
+   // Fix splittings of eigenvalues. Returns true if any changes had been made.
+   void fix(DiagInfo_tmpl<S> &diag) {
+     for(auto &[I, eig]: diag) { 
+       for (auto &r : eig.value_zero) 
+         if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
+           r = m->second;
+     }
+   }
+   
+   // Find clusters of values which differ by at most 'epsilon'
+   Clusters(const std::vector<t_eigen> &energies, double epsilon) { // AAA: auto ?
+     my_assert(energies.size());
+     auto e0 = energies[0];      // energy of the lower boundary of the cluster, [e0:e1]
+     auto i0 = energies.cbegin(); // iterator to the lower boundary of the cluster, [i0:i1] /// AAA
+     int size = 1;                // number of states in the current cluster
+     for (auto i = energies.begin(); i != energies.end(); ++i) {
+       if ((*i - e0) < epsilon) { // in the cluster
+         size++;
+       } else { // end of cluster detected
+         auto i1 = i;
+         if (size > 1) {            // is this a real cluster?
+           if (cluster_splitting(i0, i1)) { // are the states actually split?
+             auto replace_with = *i0;    // use the lowest eigenvalue of the cluster
+             for (auto j = (i0 + 1); j != i1; ++j) // skip 1st
+               if (*j != *i0) cluster_mapping.insert(make_pair(*j, replace_with));
+           }
+         }
+         e0   = *i;
+         i0   = i;
+         size = 1;
+       }
+     }
+   }   
+};

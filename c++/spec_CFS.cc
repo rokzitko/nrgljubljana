@@ -12,6 +12,7 @@ class Algo_CFSls_tmpl : virtual public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_CFSls_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P, const bool save = true)
      : Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)), save(save) {}
@@ -69,6 +70,7 @@ class Algo_CFSgt_tmpl : virtual public Algo_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_CFSgt_tmpl(SpectrumRealFreq_tmpl<S> spec, const gf_type gt, const Params &P, const bool save = true)
      : Algo_tmpl<S>(P), spec(spec), sign(gf_sign(gt)), save(save) {}
@@ -92,7 +94,7 @@ class Algo_CFSgt_tmpl : virtual public Algo_tmpl<S> {
        if (rhoNI1.size1() && op1.size2()) {
          const ublas::matrix_range<const Matrix> op1_KT(op1, ublas::range(0, rhoNI1.size1()), ublas::range(0, op1.size2()));
          Matrix op1_m_rho(rhoNI1.size2(), op1_KT.size2());
-         if constexpr (std::is_same_v<t_matel, double>) {
+         if constexpr (std::is_same_v<S, double>) {
            atlas::gemm(CblasTrans, CblasNoTrans, 1.0, rhoNI1, op1_KT, 0.0, op1_m_rho); // rhoNEW <- rhoNEW + factor T U
          } else {
            const ublas::matrix<std::complex<double>> conj_op1_KT = conj(op1_KT);
@@ -125,6 +127,7 @@ class Algo_CFS_tmpl : public Algo_CFSls_tmpl<S>, public Algo_CFSgt_tmpl<S> {
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
+   using t_eigen = typename traits<S>::t_eigen;
    using Algo_tmpl<S>::P;
    explicit Algo_CFS_tmpl(SpectrumRealFreq_tmpl<S> spec, gf_type gt, const Params &P) :
      Algo_tmpl<S>(P), Algo_CFSls_tmpl<S>(spec, gt, P, false), Algo_CFSgt_tmpl<S>(spec, gt, P, false), spec_tot(spec) {}

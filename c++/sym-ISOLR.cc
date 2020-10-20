@@ -74,6 +74,7 @@ class SymmetryISOLR_tmpl : public SymmetryISOLRcommon_tmpl<SC> {
 
  public:
    using Matrix = typename traits<SC>::Matrix;
+   using t_matel = typename traits<SC>::t_matel;
    SymmetryISOLR_tmpl(const Params &P, Allfields &allfields) : SymmetryISOLRcommon_tmpl<SC>(P, allfields) {}
 
   void load() override {
@@ -96,6 +97,7 @@ class SymmetryISO2LR_tmpl : public SymmetryISOLRcommon_tmpl<SC> {
 
  public:
    using Matrix = typename traits<SC>::Matrix;
+   using t_matel = typename traits<SC>::t_matel;
    SymmetryISO2LR_tmpl(const Params &P, Allfields &allfields) : SymmetryISOLRcommon_tmpl<SC>(P, allfields) {}
 
   void load() override {

@@ -39,6 +39,7 @@ void cdmI(const size_t i,        // Subspace index
   my_assert(nromega <= dim1 && offset + dim <= dim2);
   const ublas::matrix_range<const typename traits<S>::Matrix> U(diagI1.matrix, ublas::range(0, nromega), ublas::range(offset, offset + dim));
   typename traits<S>::Matrix T(dim, nromega);
+  using t_coef = typename traits<S>::t_coef;
   atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, rhoN, t_coef(0.0), T);    // T <- U^dag rhoN
   atlas::gemm(CblasNoTrans, CblasNoTrans, factor, T, U, t_coef(1.0), rhoNEW); // rhoNEW <- rhoNEW + factor T U
 }

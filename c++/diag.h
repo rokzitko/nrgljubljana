@@ -41,7 +41,7 @@ template<typename T, typename U, typename S> auto copy_results(T* eigenvalues, U
 Eigen_tmpl<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
   double *ham = bindings::traits::matrix_storage(m);
-  t_eigen eigenvalues[dim]; // eigenvalues on exit
+  double eigenvalues[dim]; // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
   int LDA    = dim;         // the leading dimension of the array a
@@ -63,7 +63,7 @@ Eigen_tmpl<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz 
 {
   const size_t dim = m.size1();
   double *ham = bindings::traits::matrix_storage(m);
-  t_eigen eigenvalues[dim];
+  double eigenvalues[dim];
   char UPLO  = 'L';
   int NN     = dim;
   int LDA    = dim;
@@ -89,7 +89,7 @@ Eigen_tmpl<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz 
     else
       throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   }
-  return copy_results<t_eigen,double,double>(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<double,double,double>(eigenvalues, ham, jobz, dim, dim);
 }
 
 Eigen_tmpl<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V')
@@ -106,7 +106,7 @@ Eigen_tmpl<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double rat
   } else
     RANGE = 'A';
   double *ham = bindings::traits::matrix_storage(m);
-  t_eigen eigenvalues[dim]; // eigenvalues on exit
+  double eigenvalues[dim]; // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix
   int LDA       = dim;      // the leading dimension of the array a
@@ -146,13 +146,13 @@ Eigen_tmpl<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double rat
     M = MM;
     my_assert(M > 0); // at least one
   }
-  return copy_results<t_eigen,double,double>(eigenvalues, Z.get(), jobz, dim, M);
+  return copy_results<double,double,double>(eigenvalues, Z.get(), jobz, dim, M);
 }
 
 Eigen_tmpl<cmpl> diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
   lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
-  t_eigen eigenvalues[dim]; // eigenvalues on exit
+  double eigenvalues[dim]; // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
   int LDA    = dim;         // the leading dimension of the array a
@@ -169,7 +169,7 @@ Eigen_tmpl<cmpl> diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V'
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, RWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  return copy_results<t_eigen,lapack_complex_double,cmpl>(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<double,lapack_complex_double,cmpl>(eigenvalues, ham, jobz, dim, dim);
 }
   
 Eigen_tmpl<cmpl> diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio = 1.0, const char jobz = 'V') {
@@ -185,7 +185,7 @@ Eigen_tmpl<cmpl> diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio =
   } else
     RANGE = 'A';
   lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
-  t_eigen eigenvalues[dim]; // eigenvalues on exit
+  double eigenvalues[dim]; // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix
   int LDA       = dim;      // the leading dimension of the array a
@@ -229,7 +229,7 @@ Eigen_tmpl<cmpl> diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio =
     M = MM;
     my_assert(M > 0); // at least one
   }
-  return copy_results<t_eigen,lapack_complex_double,cmpl>(eigenvalues, Z.get(), jobz, dim, M);
+  return copy_results<double,lapack_complex_double,cmpl>(eigenvalues, Z.get(), jobz, dim, M);
 }
 
 template<typename S>
@@ -264,7 +264,7 @@ template<typename M>
 {
   std::cout << "eig= ";
   std::for_each_n(d.value_orig.cbegin(), min(d.getnrcomputed(), max_nr), 
-                  [](const t_eigen x) { std::cout << x << ' '; });
+                  [](const double x) { std::cout << x << ' '; });
   std::cout << std::endl;
 }
 
