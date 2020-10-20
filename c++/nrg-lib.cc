@@ -39,7 +39,7 @@
 using scalar = double;
 using t_matel = double;                       // type for the matrix elements
 using t_coef = double;                        // type for the Wilson chain coefficients
-using t_coef = double;                      // type for various prefactors in recalculations
+using t_coef = double;                        // type for various prefactors in recalculations
 using t_expv = double;                        // type for expectation values of operators
 #endif
 
@@ -61,16 +61,18 @@ template <> struct traits<double> {
   using t_coef = double;   // type for the Wilson chain coefficients & various prefactors
   using t_expv = double;   // type for expectation values of operators
   using t_eigen = double;  // type for the eigenvalues (always double)
-  using t_weight = cmpl;   // spectral weight accumulators (always complex)
+  using t_temp = t_eigen;  // type for temperatures
+  using t_weight = std::complex<double>;  // spectral weight accumulators (always complex)
   using Matrix = ublas::matrix<t_matel>;
 };
 
 template <> struct traits<cmpl> {
-  using t_matel = cmpl;
-  using t_coef = cmpl;
-  using t_expv = cmpl;     // we allow the calculation of expectation values of non-Hermitian operators!
-  using t_eigen = double;  // type for the eigenvalues (always double)
-  using t_weight = cmpl;   // spectral weight accumulators (always complex)
+  using t_matel = std::complex<double>;
+  using t_coef = std::complex<double>;
+  using t_expv = std::complex<double>;     // we allow the calculation of expectation values of non-Hermitian operators!
+  using t_eigen = double;                  // type for the eigenvalues (always real)
+  using t_temp = t_eigen;
+  using t_weight = std::complex<double>;   // spectral weight accumulators (always complex)
   using Matrix = ublas::matrix<t_matel>;
 };
 
@@ -911,9 +913,6 @@ inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC
 #include "bins.h"
 #include "matsubara.h"
 
-//template<typename S> class SpectrumRealFreq_tmpl;
-//template<typename S> class ChainTempDependence_tmpl;
-
 template<typename S>
 class ChainBinning_tmpl {
  private:
@@ -933,15 +932,18 @@ class ChainBinning_tmpl {
 };
 using ChainBinning = ChainBinning_tmpl<scalar>;
 
-class ChainMatsubara {
+template<typename S>
+class ChainMatsubara_tmpl {
  private:
    const Params &P;
-   Matsubara m;
+   Matsubara_tmpl<S> m;
  public:
-   explicit ChainMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
-   void add(const size_t n, const cmpl w) { m.add(n, w); }
-   friend class GFMatsubara;
+   using t_weight = typename traits<S>::t_weight;
+   explicit ChainMatsubara_tmpl(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
+   void add(const size_t n, const t_weight w) { m.add(n, w); }
+   template<typename T> friend class GFMatsubara_tmpl;
 };
+using ChainMatsubara = ChainMatsubara_tmpl<scalar>;
 
 template<typename S>
 class ChainTempDependence_tmpl {
@@ -958,15 +960,16 @@ using ChainTempDependence = ChainTempDependence_tmpl<scalar>;
 
 #include "spectrumrealfreq.cc"
 
-class GFMatsubara {
+template<typename S>
+class GFMatsubara_tmpl {
  private:
    const std::string name, algoname, filename;
    const Params &P;
-   Matsubara results;
+   Matsubara_tmpl<S> results;
  public:
-   GFMatsubara(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
+   GFMatsubara_tmpl(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
      name(name), algoname(algoname), filename(filename), P(P), results(P.mats, gt, P.T) {}
-   void merge(const ChainMatsubara &cm) {
+   void merge(const ChainMatsubara_tmpl<S> &cm) {
      results.merge(cm.m);
    }
    void save() {
@@ -974,6 +977,7 @@ class GFMatsubara {
      results.save(safe_open(filename + ".dat"), P.prec_xy);
    }
 };
+using GFMatsubara = GFMatsubara_tmpl<scalar>;
 
 template<typename S>
 class TempDependence_tmpl {
@@ -1020,15 +1024,19 @@ inline std::string to_string(std::complex<double> &z) { // XXX: i/o?
 
 // All information about calculating a spectral function: pointers to the operator data, raw spectral data
 // acccumulators, algorithm, etc.
-class BaseSpectrum {
+template <typename S>
+class BaseSpectrum_tmpl {
  public:
-   const MatrixElements &op1, &op2;
+   const MatrixElements_tmpl<S> &op1, &op2;
    int spin{};                      // -1 or +1, or 0 where irrelevant
    std::shared_ptr<Algo> algo;      // Algo_FDM, Algo_DMNRG,...
-   BaseSpectrum(const MatrixElements &op1, const MatrixElements &op2, const int spin) :
+   BaseSpectrum_tmpl(const MatrixElements_tmpl<S> &op1, const MatrixElements_tmpl<S> &op2, const int spin) :
      op1(op1), op2(op2), spin(spin) {}
 };
-using speclist = std::list<BaseSpectrum>;
+using BaseSpectrum = BaseSpectrum_tmpl<scalar>;
+template <typename S>
+using speclist_tmpl = std::list<BaseSpectrum_tmpl<S>>;
+using speclist = speclist_tmpl<scalar>;
 
 #include "spec.cc"
 #include "dmnrg.h"
@@ -1080,41 +1088,42 @@ class ExpvOutput_tmpl {
 using ExpvOutput = ExpvOutput_tmpl<scalar>;
 
 // Establish the data structures for storing spectral information [and prepare output files].
-template<typename M>
-void prepare_spec_algo(speclist &sl, M && op1, M && op2, int spin, std::string name, std::string prefix, std::string algoname, gf_type gt, const Params &P) {
+template<typename S, typename M>
+void prepare_spec_algo(speclist_tmpl<S> &sl, M && op1, M && op2, int spin, 
+                       std::string name, std::string prefix, std::string algoname, const gf_type gt, const Params &P) {
   fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname);
   const auto filename = prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
-  BaseSpectrum spec(std::forward<M>(op1), std::forward<M>(op2), spin);
+  BaseSpectrum_tmpl<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin);
   if (algoname == "FT")
-    spec.algo = std::make_shared<Algo_FT>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_FT>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FTmats") 
-    spec.algo = std::make_shared<Algo_FTmats>(GFMatsubara(name,algoname,filename,gt,P), gt, P);
+    spec.algo = std::make_shared<Algo_FTmats>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
   if (algoname == "GT")
-    spec.algo = std::make_shared<Algo_GT<0>>(TempDependence(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_GT<0>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "I1T")
-    spec.algo = std::make_shared<Algo_GT<1>>(TempDependence(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_GT<1>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "I2T")
-    spec.algo = std::make_shared<Algo_GT<2>>(TempDependence(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_GT<2>>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "CHIT")
-    spec.algo = std::make_shared<Algo_CHIT>(TempDependence(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_CHIT>(TempDependence_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "DMNRG")
-    spec.algo = std::make_shared<Algo_DMNRG>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_DMNRG>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "DMNRGmats") 
-    spec.algo = std::make_shared<Algo_DMNRGmats>(GFMatsubara(name,algoname,filename,gt,P), gt, P);
+    spec.algo = std::make_shared<Algo_DMNRGmats>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
   if (algoname == "CFS")
-    spec.algo = std::make_shared<Algo_CFS>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_CFS>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "CFSls")
-    spec.algo = std::make_shared<Algo_CFSls>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_CFSls>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "CFSgt")
-    spec.algo = std::make_shared<Algo_CFSgt>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_CFSgt>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FDM")
-    spec.algo = std::make_shared<Algo_FDM>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_FDM>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FDMls")
-    spec.algo = std::make_shared<Algo_FDMls>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_FDMls>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FDMgt")
-    spec.algo = std::make_shared<Algo_FDMgt>(SpectrumRealFreq(name,algoname,filename,P), gt, P);
+    spec.algo = std::make_shared<Algo_FDMgt>(SpectrumRealFreq_tmpl<S>(name,algoname,filename,P), gt, P);
   if (algoname == "FDMmats") 
-    spec.algo = std::make_shared<Algo_FDMmats>(GFMatsubara(name,algoname,filename,gt,P), gt, P);
+    spec.algo = std::make_shared<Algo_FDMmats>(GFMatsubara_tmpl<S>(name,algoname,filename,gt,P), gt, P);
   sl.push_back(spec);
 }
 
@@ -1169,7 +1178,7 @@ class Oprecalc_tmpl {
    // calculate the expectation values.
    std::set<std::string> s, p, g, d, v, t, q, ot;
 
-   speclist spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
+   speclist_tmpl<S> spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
 
    // Calculate spectral densities
    void spectral_densities(const Step &step, const DiagInfo_tmpl<S> &diag, DensMatElements_tmpl<S> &rho, DensMatElements_tmpl<S> &rhoFDM, 

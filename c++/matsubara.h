@@ -2,7 +2,7 @@
 #define _matsubara_h_
 
 // Note: range limited to short numbers.
-inline double ww(short n, gf_type mt, const double T)
+inline auto ww(const short n, const gf_type mt, const double T)
 {
   switch (mt) {
     case gf_type::bosonic: return T * M_PI * (2 * n);
@@ -10,37 +10,43 @@ inline double ww(short n, gf_type mt, const double T)
     default: my_assert_not_reached();
   }
 }
-inline double wb(short n, const double T) { return T * M_PI * (2 * n); }
-inline double wf(short n, const double T) { return T * M_PI * (2 * n + 1); }
+inline auto wb(const short n, const double T) { return T * M_PI * (2 * n); }
+inline auto wf(const short n, const double T) { return T * M_PI * (2 * n + 1); }
 
-class Matsubara {
+// XXX: numerics.h ?
+template<typename U, typename V>
+V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs
+  return ranges::accumulate(v, V{}, [](auto sum, const auto el) { return sum+el.second; });
+}
+
+template<typename S>
+class Matsubara_tmpl {
  private:
-   using matsgf = std::vector<pair<double, cmpl>>;
+   using t_temp = typename traits<S>::t_temp;
+   using t_weight = typename traits<S>::t_weight;
+   using matsgf = std::vector<std::pair<t_temp, t_weight>>;
    matsgf v;
    gf_type mt;
-   double T;
+   t_temp T;
  public:
-   Matsubara() = delete;
-   Matsubara(size_t mats, gf_type mt, double T) : mt(mt), T(T) {
+   Matsubara_tmpl() = delete;
+   Matsubara_tmpl(const size_t mats, const gf_type mt, const t_temp T) : mt(mt), T(T) {
      my_assert(mt == gf_type::bosonic || mt == gf_type::fermionic);
      for (const auto n: range0(mats)) v.emplace_back(ww(n, mt, T), 0);
    }
-   void add(size_t n, cmpl w) { v[n].second += w; }
-   void merge(const Matsubara &m2) {
+   void add(const size_t n, const t_weight &w) { v[n].second += w; }
+   void merge(const Matsubara_tmpl &m2) {
      my_assert(v.size() == m2.v.size());
      for (const auto n: range0(v.size())) {
        my_assert(v[n].first == m2.v[n].first);
        v[n].second += m2.v[n].second;
      }
    }
-   template <typename T> void save(T && F, int prec) const {
+   template <typename T> void save(T && F, const int prec) const {
      F << setprecision(prec); // prec_xy
      for (const auto &[e, w] : v) outputxy(F, e, w, true);
    }
-   cmpl total_weight() const {
-     weight_bucket sum(v); // XXX sum function?
-     return sum;
-   }
 };
+using Matsubara = Matsubara_tmpl<scalar>;
 
 #endif // _matsubara_h_
