@@ -243,12 +243,10 @@ Opch_tmpl<SC> SymmetryDBLSU2_tmpl<SC>::recalc_irreduc(const Step &step, const Di
 #undef SPINZ
 #define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
-#ifdef NRG_COMPLEX
 #undef SPINY
 #define SPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
-#endif // NRG_COMPLEX
 
 template<typename SC>
 void SymmetryDBLSU2_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
@@ -266,7 +264,7 @@ void SymmetryDBLSU2_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmp
     return;
   }
 
-#ifdef NRG_COMPLEX
+  if constexpr (std::is_same_v<SC, std::complex<double>>) {
   if (name == "SYtot") {
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
@@ -280,7 +278,7 @@ void SymmetryDBLSU2_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmp
     }
     return;
   }
-#endif // NRG_COMPLEX
+  }
 
   if (name == "SXtot") {
    for(const auto &[I1, eig]: diag) {

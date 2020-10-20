@@ -74,7 +74,7 @@ void SymmetryU1_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC
     return;
   }
 
-#ifdef NRG_COMPLEX
+  if constexpr (std::is_same_v<SC, std::complex<double>>) {
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
   if (name == "SYtot") {
@@ -96,7 +96,7 @@ void SymmetryU1_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC
     }
     return;
   }
-#endif
+  }
 
   if (name == "SXtot") {
     for(const auto &[I1, eig]: diag) {

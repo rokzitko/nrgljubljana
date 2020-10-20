@@ -167,7 +167,6 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
 #define ISOFACTOR 1
 #endif
 
-#ifdef NRG_COMPLEX
 #undef SPINY
 #define SPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
@@ -176,7 +175,6 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
 
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
-#endif // NRG_COMPLEX
 
 #undef CHARGE
 #define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
@@ -209,7 +207,7 @@ void SymmetryPP_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC
     return;
   }
 
-#ifdef NRG_COMPLEX
+  if constexpr (std::is_same_v<SC, std::complex<double>>) {
   if (name == "SYtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
@@ -223,7 +221,7 @@ void SymmetryPP_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC
     }
     return;
   }
-#endif
+  }
 
   if (name == "SXtot") {
     for(const auto &[I1, eig]: diag) {
@@ -281,7 +279,7 @@ void SymmetryPP_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC
     return;
   }
 
-#ifdef NRG_COMPLEX
+  if constexpr (std::is_same_v<SC, std::complex<double>>) {
   if (name == "Iytot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
@@ -295,7 +293,7 @@ void SymmetryPP_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC
     }
     return;
   }
-#endif
+  }
 
   if (name == "Iptot") {
     for(const auto &[I1, eig]: diag) {

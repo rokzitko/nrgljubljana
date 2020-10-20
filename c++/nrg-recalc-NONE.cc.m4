@@ -49,16 +49,14 @@ MatrixElements_tmpl<SC> SymmetryNONE_tmpl<SC>::recalc_doublet(const DiagInfo_tmp
 #define ISOFACTOR 1
 #endif
 
-#ifdef NRG_COMPLEX
 #undef SPINY
 #define SPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 #undef ISOSPINY
-#define ISOSPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *complex<double>(ISOFACTOR))
+#define ISOSPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value * std::complex<double>(ISOFACTOR))
 
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
-#endif // NRG_COMPLEX
 
 #undef CHARGE
 #define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
@@ -94,8 +92,8 @@ void SymmetryNONE_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<
     return;
   }
 
-#ifdef NRG_COMPLEX
-  if (name == "SYtot") {
+ if constexpr (std::is_same_v<SC, std::complex<double>>) {
+ if (name == "SYtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
@@ -111,8 +109,8 @@ void SymmetryNONE_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<
     }
     return;
   }
-#endif
-
+  }
+  
   if (name == "SXtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
@@ -181,7 +179,7 @@ void SymmetryNONE_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<
     return;
   }
 
-#ifdef NRG_COMPLEX
+  if constexpr (std::is_same_v<SC, std::complex<double>>) {
   if (name == "Iytot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};
@@ -198,7 +196,7 @@ void SymmetryNONE_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<
     }
     return;
   }
-#endif
+  }
 
   if (name == "Iptot") {
     for(const auto &[I1, eig]: diag) {

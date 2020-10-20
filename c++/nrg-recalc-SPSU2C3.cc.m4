@@ -11,7 +11,9 @@ include(recalc-macros.m4)
 template<typename SC>
 Opch_tmpl<SC> SymmetrySPSU2C3_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
   Opch_tmpl<SC> opch = newopch<SC>(P);
-#ifdef NRG_COMPLEX
+
+  if constexpr (std::is_same_v<SC, std::complex<double>>) {
+ 
   // CONVENTION: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
@@ -58,6 +60,7 @@ Opch_tmpl<SC> SymmetrySPSU2C3_tmpl<SC>::recalc_irreduc(const Step &step, const D
 #undef sqrt
 #undef Power
   }
-#endif
+  
+  }
   return opch;
 }

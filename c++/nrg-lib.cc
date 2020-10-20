@@ -817,10 +817,8 @@ template<typename S> class IterInfo_tmpl {
 #include "sym-QSZLR.cc"
 #include "sym-QJ.cc"
 #include "sym-U1.cc"
- #ifdef NRG_COMPLEX
- #include "sym-SPSU2C3.cc"
- #include "sym-QSC3.cc"
- #endif
+#include "sym-SPSU2C3.cc"
+#include "sym-QSC3.cc"
 #endif
 
 // Operator sumrules
@@ -2164,10 +2162,10 @@ std::unique_ptr<Symmetry_tmpl<S>> get(const std::string &sym_string, const Param
   if (sym_string == "SPU1LR")    return std::make_unique<SymmetrySPU1LR_tmpl<S>>(P, allfields);
   if (sym_string == "SU2")       return std::make_unique<SymmetrySU2_tmpl<S>>(P, allfields);
   if (sym_string == "U1")        return std::make_unique<SymmetryU1_tmpl<S>>(P, allfields);
- #ifdef NRG_COMPLEX
-  if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3_tmpl<S>>(P, allfields);
-  if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3_tmpl<S>>(P, allfields);
- #endif
+  if constexpr (std::is_same_v<S, std::complex<double>>) {
+    if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3_tmpl<S>>(P, allfields);
+    if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3_tmpl<S>>(P, allfields);
+  }
 #endif 
   throw std::runtime_error("Unknown symmetry " + sym_string);
 }
