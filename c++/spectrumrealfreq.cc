@@ -1,10 +1,11 @@
 // Real-frequency spectral function
-class SpectrumRealFreq {
+template<typename S>
+class SpectrumRealFreq_tmpl {
  private:
    const std::string name, algoname, filename; // e.g. "A_d-A_d", "FT", "spec_A_d-A_d_dens_FT.dat"
    const Params &P;
-   Bins fspos, fsneg; // Full spectral information, separately for positive and negative frequencies
-   void mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step);
+   Bins_tmpl<S> fspos, fsneg; // Full spectral information, separately for positive and negative frequencies
+   void mergeNN2half(Bins_tmpl<S> &fullspec, const Bins_tmpl<S> &cs, const Step &step);
    void weight_report(const double imag_tolerance = 1e-10);
    void trim() {
      fspos.trim();
@@ -13,13 +14,14 @@ class SpectrumRealFreq {
    void savebins();
    void continuous();
  public:
-   SpectrumRealFreq(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
+   using t_weight = typename traits<S>::t_weight;
+   SpectrumRealFreq_tmpl(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
      name(name), algoname(algoname), filename(filename), P(P), fspos(P), fsneg(P) {}
-   void mergeCFS(const ChainBinning &cs) {
+   void mergeCFS(const ChainBinning_tmpl<S> &cs) {
      fspos.merge(cs.spos); // Collect delta peaks
      fsneg.merge(cs.sneg);
    }
-   void mergeNN2(const ChainBinning &cs, const Step &step) {
+   void mergeNN2(const ChainBinning_tmpl<S> &cs, const Step &step) {
      if (!step.N_for_merging()) return;
      mergeNN2half(fspos, cs.spos, step); // Spectrum merging using the N/N+n patching.
      mergeNN2half(fsneg, cs.sneg, step);
@@ -32,6 +34,7 @@ class SpectrumRealFreq {
      weight_report();
    }
 };
+using SpectrumRealFreq = SpectrumRealFreq_tmpl<scalar>;
 
 inline double windowfunction(const double E, const double Emin, const double Ex, const double Emax, const Step &step, const Params &P) {
   if (E <= Ex && step.last()) return 1.0;  // Exception 1
@@ -56,7 +59,8 @@ inline double windowfunction(const double E, const double Emin, const double Ex,
 // Here we perform the actual merging of data using the N/N+2 scheme. Note that we use a windowfunction (see above)
 // to accomplish the smooth combining of data.
 // See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001)
-void SpectrumRealFreq::mergeNN2half(Bins &fullspec, const Bins &cs, const Step &step) {
+template<typename S>
+void SpectrumRealFreq_tmpl<S>::mergeNN2half(Bins_tmpl<S> &fullspec, const Bins_tmpl<S> &cs, const Step &step) {
   auto Emin = step.scale() * P.getEmin(); // p
   auto Ex   = step.scale() * P.getEx();   // p Lambda
   auto Emax = step.scale() * P.getEmax(); // p Lambda^2
@@ -75,8 +79,9 @@ void SpectrumRealFreq::mergeNN2half(Bins &fullspec, const Bins &cs, const Step &
   }
 }
 
-void SpectrumRealFreq::weight_report(const double imag_tolerance) {
-  auto fmt = [imag_tolerance](t_weight x) -> std::string { return abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
+template<typename S>
+void SpectrumRealFreq_tmpl<S>::weight_report(const double imag_tolerance) {
+  auto fmt = [imag_tolerance](const auto x) -> std::string { return abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
   const auto twneg = fsneg.total_weight();
   const auto twpos = fspos.total_weight();
   std::cout << std::endl << "pos=" << fmt(twpos) << " neg=" << fmt(twneg) << " sum= " << fmt(twpos + twneg) << std::endl;
@@ -92,7 +97,8 @@ void SpectrumRealFreq::weight_report(const double imag_tolerance) {
 
 // Save binary raw (binned) spectral function. If using complex numbers and P.reim==true, we save triplets
 // (energy,real part,imag part).
-void SpectrumRealFreq::savebins() {
+template<typename S>
+void SpectrumRealFreq_tmpl<S>::savebins() {
   const auto fn = filename + ".bin";
   std::cout << " " << fn;
   std::ofstream Fbins = safe_open(fn, true); // true=binary!
@@ -123,13 +129,14 @@ std::vector<double> make_mesh(const Params &P) {
   return vecE;
 }
 
-void SpectrumRealFreq::continuous() {
+template<typename S>
+void SpectrumRealFreq_tmpl<S>::continuous() {
   const double alpha  = P.alpha;
   const double omega0 = P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0;
   Spikes densitypos, densityneg;
   const auto vecE = make_mesh(P); // Energies on the mesh
   for (const auto E : vecE) {
-    weight_bucket valpos, valneg;
+    t_weight valpos{}, valneg{};
     for (const auto &[e, w] : fspos.bins) {
       my_assert(e > 0.0);
       valpos += w * BR_NEW(E, e, alpha, omega0);

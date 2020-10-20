@@ -903,31 +903,25 @@ std::string formatted_output(const cmpl z, const Params &P) {
 
 enum class gf_type { bosonic, fermionic };
 
-std::string gf_typestring(gf_type gt) { // XXX: used anywhere?
-  switch (gt) {
-  case gf_type::bosonic: return "bosonic";
-  case gf_type::fermionic: return "fermionic";
-  default: my_assert_not_reached();
-  }
-}
-
-// Sign factor in GFs for bosonic/fermionic operators.
-inline constexpr auto S_BOSONIC   = 1;
+// Sign factor in GFs for bosonic/fermionic operators
+inline constexpr auto S_BOSONIC   = +1;
 inline constexpr auto S_FERMIONIC = -1;
-int gf_sign(const gf_type gt)
-{
-  return gt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC;
-}
+inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC; }
 
 #include "bins.h"
 #include "matsubara.h"
 
-class ChainBinning {
+//template<typename S> class SpectrumRealFreq_tmpl;
+//template<typename S> class ChainTempDependence_tmpl;
+
+template<typename S>
+class ChainBinning_tmpl {
  private:
    const Params &P;
-   Bins spos, sneg;
+   Bins_tmpl<S> spos, sneg;
  public:
-   explicit ChainBinning(const Params &P) : P(P), spos(P), sneg(P) {}
+   using t_weight = typename traits<S>::t_weight;
+   explicit ChainBinning_tmpl(const Params &P) : P(P), spos(P), sneg(P) {}
    void add(const double energy, const t_weight weight) {
      if (energy >= 0.0)
        spos.add(energy, weight);
@@ -935,8 +929,9 @@ class ChainBinning {
        sneg.add(-energy, weight);
    }
    auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
-   friend class SpectrumRealFreq;
+   template<typename T> friend class SpectrumRealFreq_tmpl;
 };
+using ChainBinning = ChainBinning_tmpl<scalar>;
 
 class ChainMatsubara {
  private:
@@ -944,20 +939,22 @@ class ChainMatsubara {
    Matsubara m;
  public:
    explicit ChainMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
-   void add(const size_t n, const t_weight w) { m.add(n, w); }
-   auto total_weight() const { return m.total_weight(); }
+   void add(const size_t n, const cmpl w) { m.add(n, w); }
    friend class GFMatsubara;
 };
 
-class ChainTempDependence {
+template<typename S>
+class ChainTempDependence_tmpl {
  private:
    const Params &P;
-   Temp v;
+   Temp_tmpl<S> v;
  public:
-   explicit ChainTempDependence(const Params &P) : P(P), v(P) {}
+   using t_weight = typename traits<S>::t_weight;
+   explicit ChainTempDependence_tmpl(const Params &P) : P(P), v(P) {}
    void add(const double T, const t_weight value) { v.add_value(T, value); }
-   friend class TempDependence;
+   template<typename T> friend class TempDependence_tmpl;
 };
+using ChainTempDependence = ChainTempDependence_tmpl<scalar>;
 
 #include "spectrumrealfreq.cc"
 
@@ -978,15 +975,16 @@ class GFMatsubara {
    }
 };
 
-class TempDependence {
+template<typename S>
+class TempDependence_tmpl {
  private:
    const std::string name, algoname, filename;
    const Params &P;
-   Spikes results;
+   Spikes_tmpl<S> results;
  public:
-   TempDependence(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
+   TempDependence_tmpl<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
      name(name), algoname(algoname), filename(filename),  P(P) {}
-   void merge(const ChainTempDependence &ctd) {
+   void merge(const ChainTempDependence_tmpl<S> &ctd) {
      std::copy(ctd.v.begin(), ctd.v.end(), std::back_inserter(results));
    }
    void save() {
@@ -995,6 +993,7 @@ class TempDependence {
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }
 };
+using TempDependence = TempDependence_tmpl<scalar>;
 
 
 // Check if the trace of the density matrix equals 'ref_value'.
