@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryQSZTZ_tmpl : public Symmetry_tmpl<SC> {
+class SymmetryQSZTZ : public Symmetry<SC> {
  private:
    outfield Sz, Sz2, Tz, Tz2, Q, Q2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZTZ_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetryQSZTZ(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
      Sz(P, allfields, "<Sz>", 1), Sz2(P, allfields, "<Sz^2>", 2), Tz(P, allfields, "<Tz>", 3), Tz2(P, allfields, "<Tz^2>", 4),
      Q(P, allfields, "<Q>", 5), Q2(P, allfields, "<Q^2>", 6) {
        initInvar({
@@ -37,7 +37,7 @@ class SymmetryQSZTZ_tmpl : public Symmetry_tmpl<SC> {
 #include "qsztz/qsztz-QN.dat"
   } // load
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trSZ2, trTZ, trTZ2, trQ, trQ2;
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
@@ -73,7 +73,7 @@ class SymmetryQSZTZ_tmpl : public Symmetry_tmpl<SC> {
 #define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 template<typename SC>
-void SymmetryQSZTZ_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryQSZTZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   my_assert(!P.substeps);
   my_assert(P.channels == 3);
 #include "qsztz/qsztz-offdiag.dat"

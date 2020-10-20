@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryU1_tmpl : public Symmetry_tmpl<SC> {
+class SymmetryU1 : public Symmetry<SC> {
  private:
    outfield Q, Q2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryU1_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetryU1(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
      Q(P, allfields, "<Q>", 1), Q2(P, allfields, "<Q^2>", 2) {
        initInvar({
          {"Q", additive} // charge
@@ -37,7 +37,7 @@ class SymmetryU1_tmpl : public Symmetry_tmpl<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trQ, trQ2; // Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
@@ -49,9 +49,9 @@ class SymmetryU1_tmpl : public Symmetry_tmpl<SC> {
     Q2 = trQ2 / stats.Z;
   }
 
-  void make_matrix_pol2x2(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef);
-  void make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef);
-  void make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef);
+  void make_matrix_pol2x2(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef);
+  void make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef);
+  void make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef);
 
   DECL;
   HAS_DOUBLET;
@@ -89,7 +89,7 @@ class SymmetryU1_tmpl : public Symmetry_tmpl<SC> {
 #define DIAG_DOUP(i, j, ch, factor) this->diag_offdiag_function(step, i, j, ch, t_matel(factor) * coef.zetaDOUP(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryU1_tmpl<SC>::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryU1<SC>::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   switch (P.channels) {
     case 1:
 #include "u1/u1-1ch-offdiag-UP.dat"
@@ -115,7 +115,7 @@ void SymmetryU1_tmpl<SC>::make_matrix_polarized(Matrix &h, const Step &step, con
 
 // Full 2x2 spin matrix structure. Added 10.9.2012
 template<typename SC>
-void SymmetryU1_tmpl<SC>::make_matrix_pol2x2(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryU1<SC>::make_matrix_pol2x2(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   switch (P.channels) {
     case 1:
 #include "u1/u1-1ch-offdiag-UP.dat"
@@ -155,7 +155,7 @@ void SymmetryU1_tmpl<SC>::make_matrix_pol2x2(Matrix &h, const Step &step, const 
 #define OFFDIAG_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 template<typename SC>
-void SymmetryU1_tmpl<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryU1<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   switch (P.channels) {
     case 1:
 #include "u1/u1-1ch-offdiag-UP.dat"
@@ -177,7 +177,7 @@ void SymmetryU1_tmpl<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, 
 }
 
 template<typename SC>
-void SymmetryU1_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryU1<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   if (P.pol2x2) {
     make_matrix_pol2x2(h, step, qq, I, In, opch, coef);
   } else if (P.polarized) {

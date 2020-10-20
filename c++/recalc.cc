@@ -6,7 +6,7 @@
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
 // completed!
 template<typename S>
-void split_in_blocks_Eigen(const Invar &I, Eigen_tmpl<S> &e, const QSrmax &qsrmax) {
+void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const QSrmax &qsrmax) {
   const auto combs = qsrmax.at(I).combs();
   e.blocks.resize(combs);
   const auto nr = e.getnrstored(); // nr. of eigenpairs
@@ -26,14 +26,14 @@ void split_in_blocks_Eigen(const Invar &I, Eigen_tmpl<S> &e, const QSrmax &qsrma
 }
 
 template<typename S>
-void split_in_blocks(DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax) {
+void split_in_blocks(DiagInfo<S> &diag, const QSrmax &qsrmax) {
   for(auto &[I, eig]: diag)
     split_in_blocks_Eigen(I, eig, qsrmax);
 }
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<typename S> template<typename T>
-auto Symmetry_tmpl<S>::recalc_f(const DiagInfo_tmpl<S> &diag, 
+auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag, 
                                 const QSrmax &qsrmax, 
                                 const Invar &I1,
                                 const Invar &Ip, 
@@ -44,8 +44,8 @@ auto Symmetry_tmpl<S>::recalc_f(const DiagInfo_tmpl<S> &diag,
     nrglog('f', "Does not fulfill the triangle inequalities.");
     return Matrix(0,0);
   }
-  const Eigen_tmpl<S> &diagI1 = diag.at(I1);
-  const Eigen_tmpl<S> &diagIp = diag.at(Ip);
+  const Eigen<S> &diagI1 = diag.at(I1);
+  const Eigen<S> &diagIp = diag.at(Ip);
   // Number of states in Ip and in I1, i.e. the dimension of the <||f||> matrix of irreducible matrix elements.
   const auto dim1 = diagI1.getnrstored();
   const auto dimp = diagIp.getnrstored();
@@ -77,9 +77,9 @@ auto Symmetry_tmpl<S>::recalc_f(const DiagInfo_tmpl<S> &diag,
 // recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
 // one should try to hand optimize.
 template<typename S> template<typename T>
-auto Symmetry_tmpl<S>::recalc_general(const DiagInfo_tmpl<S> &diag,
+auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
                                       const QSrmax &qsrmax,        // information about the matrix structure
-                                      const MatrixElements_tmpl<S> &cold,
+                                      const MatrixElements<S> &cold,
                                       const Invar &I1,             // target subspace (bra)
                                       const Invar &Ip,             // target subspace (ket)
                                       const T &table,
@@ -135,7 +135,7 @@ auto Symmetry_tmpl<S>::recalc_general(const DiagInfo_tmpl<S> &diag,
 
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
 template<typename S>
-void Symmetry_tmpl<S>::recalc1_global(const DiagInfo_tmpl<S> &diag,
+void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
                                       const QSrmax &qsrmax,
                                       const Invar &I, 
                                       Matrix &m, // XXX: return this one
@@ -144,7 +144,7 @@ void Symmetry_tmpl<S>::recalc1_global(const DiagInfo_tmpl<S> &diag,
                                       const t_coef value) const 
 {
   my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
-  const Eigen_tmpl<S> &diagI = diag.at(I);
+  const Eigen<S> &diagI = diag.at(I);
   const auto dim = diagI.getnrstored();
   if (dim == 0) return;
   const auto rmax1 = qsrmax.at(I).rmax(i1-1);

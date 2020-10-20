@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryISOSZ_tmpl : public SymField_tmpl<SC> {
+class SymmetryISOSZ : public SymField<SC> {
   private:
    outfield Sz2, Sz, Q2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISOSZ_tmpl(const Params &P, Allfields &allfields) : SymField_tmpl<SC>(P),
+   SymmetryISOSZ(const Params &P, Allfields &allfields) : SymField<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"II", additive}, // isospin
@@ -61,7 +61,7 @@ class SymmetryISOSZ_tmpl : public SymField_tmpl<SC> {
     return isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trSZ2, trIZ2; // Tr[S_z], Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
@@ -86,7 +86,7 @@ class SymmetryISOSZ_tmpl : public SymField_tmpl<SC> {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 template<typename SC>
-void SymmetryISOSZ_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryISOSZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Ispin ii = I.get("II");
   int NN   = step.getnn();
 

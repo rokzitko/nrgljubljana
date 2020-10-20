@@ -147,15 +147,15 @@ template <typename T>
 #include "numerics.h"
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
-template <typename S> class Eigen_tmpl {
+template <typename S> class Eigen {
 public:
   using t_eigen = typename traits<S>::t_eigen;
   using Matrix = typename traits<S>::Matrix;
   using EVEC = ublas::vector<t_eigen>;
   EVEC value_orig;               // eigenvalues as computed
   Matrix matrix; // eigenvectors
-  Eigen_tmpl() {}
-  Eigen_tmpl(const size_t nr, const size_t dim) {
+  Eigen() {}
+  Eigen(const size_t nr, const size_t dim) {
     my_assert(nr <= dim);
     value_orig.resize(nr);
     matrix.resize(nr, dim);
@@ -230,12 +230,12 @@ public:
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
 template<typename S>
-class DiagInfo_tmpl : public std::map<Invar, Eigen_tmpl<S>> {
+class DiagInfo : public std::map<Invar, Eigen<S>> {
  public:
   using t_eigen = typename traits<S>::t_eigen;
    using Matrix = typename traits<S>::Matrix;
-   explicit DiagInfo_tmpl() {}
-   DiagInfo_tmpl(std::ifstream &fdata, const size_t nsubs, const Params &P) {
+   explicit DiagInfo() {}
+   DiagInfo(std::ifstream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {
        Invar I;
        fdata >> I;
@@ -324,14 +324,14 @@ class DiagInfo_tmpl : public std::map<Invar, Eigen_tmpl<S>> {
      }
      if (remove_files) remove(fn);
    }
-   explicit DiagInfo_tmpl(const size_t N, const bool remove_files = false) { load(N, remove_files); }
+   explicit DiagInfo(const size_t N, const bool remove_files = false) { load(N, remove_files); }
 };
 
 template<typename S>
-class MatrixElements_tmpl : public std::map<Twoinvar, typename traits<S>::Matrix> {
+class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
  public:
-   MatrixElements_tmpl() {}
-   MatrixElements_tmpl(std::ifstream &fdata, const DiagInfo_tmpl<S> &diag) {
+   MatrixElements() {}
+   MatrixElements(std::ifstream &fdata, const DiagInfo<S> &diag) {
      size_t nf; // Number of I1 x I2 combinations
      fdata >> nf;
      for (const auto i : range0(nf)) {
@@ -351,10 +351,10 @@ class MatrixElements_tmpl : public std::map<Twoinvar, typename traits<S>::Matrix
    }
 };
 template<typename S>
-std::ostream &operator<<(std::ostream &os, const MatrixElements_tmpl<S> &m) { return m.insertor(os); }
+std::ostream &operator<<(std::ostream &os, const MatrixElements<S> &m) { return m.insertor(os); }
 
 template<typename S>
-class DensMatElements_tmpl : public std::map<Invar, typename traits<S>::Matrix> {
+class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
  public:
    template <typename MF>
      auto trace(MF mult) const {
@@ -395,28 +395,28 @@ class DensMatElements_tmpl : public std::map<Invar, typename traits<S>::Matrix> 
 
 // Map of operators matrices
 template<typename S>
-using CustomOp_tmpl = std::map<std::string, MatrixElements_tmpl<S>>;
+using CustomOp = std::map<std::string, MatrixElements<S>>;
 
 // Vector containing irreducible matrix elements of f operators.
 template<typename S>
-using OpchChannel_tmpl = std::vector<MatrixElements_tmpl<S>>;
+using OpchChannel = std::vector<MatrixElements<S>>;
 
 // Each channel contains P.perchannel OpchChannel matrices.
 template<typename S>
-class Opch_tmpl : public std::vector<OpchChannel_tmpl<S>> {
+class Opch : public std::vector<OpchChannel<S>> {
  public:
-   Opch_tmpl() {}
-   explicit Opch_tmpl(const size_t nrch) { this->resize(nrch); }
-   Opch_tmpl(std::ifstream &fdata, const DiagInfo_tmpl<S> &diag, const Params &P) {
+   Opch() {}
+   explicit Opch(const size_t nrch) { this->resize(nrch); }
+   Opch(std::ifstream &fdata, const DiagInfo<S> &diag, const Params &P) {
      this->resize(P.channels);
      for (const auto i : range0(size_t(P.channels))) {
-       (*this)[i] = OpchChannel_tmpl<S>(P.perchannel);
+       (*this)[i] = OpchChannel<S>(P.perchannel);
        for (const auto j : range0(size_t(P.perchannel))) {
          char ch;
          size_t iread, jread;
          fdata >> ch >> iread >> jread;
          my_assert(ch == 'f' && i == iread && j == jread);
-         (*this)[i][j] = MatrixElements_tmpl<S>(fdata, diag);
+         (*this)[i][j] = MatrixElements<S>(fdata, diag);
        }
      }
    }
@@ -429,7 +429,7 @@ class Opch_tmpl : public std::vector<OpchChannel_tmpl<S>> {
    }
 };
 
-template<typename S> class Symmetry_tmpl;
+template<typename S> class Symmetry;
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
 // the index "r" which ranges from 1 through rmax.
@@ -440,7 +440,7 @@ class Rmaxvals {
  public:
    Rmaxvals() = default;
    template<typename S>
-     Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry_tmpl<S>> Sym);
+     Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym);
    auto combs() const { return values.size(); }
    auto rmax(const size_t i) const {
      my_assert(i < combs());
@@ -477,7 +477,7 @@ class Rmaxvals {
 class QSrmax : public std::map<Invar, Rmaxvals> {
  public:
    QSrmax() {}
-   template<typename S> QSrmax(const DiagInfo_tmpl<S> &, std::shared_ptr<Symmetry_tmpl<S>>);
+   template<typename S> QSrmax(const DiagInfo<S> &, std::shared_ptr<Symmetry<S>>);
    // List of invariant subspaces in which diagonalisations need to be performed
    std::vector<Invar> task_list() const {
      std::vector<std::pair<size_t, Invar>> tasks_with_sizes;
@@ -503,11 +503,11 @@ class QSrmax : public std::map<Invar, Rmaxvals> {
 
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
 // density-matrix construction.
-template<typename S> struct DimSub_tmpl {
+template<typename S> struct DimSub {
   size_t kept  = 0;
   size_t total = 0;
   Rmaxvals rmax;
-  Eigen_tmpl<S> eig;
+  Eigen<S> eig;
   bool is_last = false;
   auto min() const { return is_last ? 0 : kept; } // min(), max() return the range of D states to be summed over in FDM
   auto max() const { return total; }
@@ -517,13 +517,13 @@ template<typename S> struct DimSub_tmpl {
 // Full information about the number of states and matrix dimensions
 // Example: dm[N].rmax[I] etc.
 template<typename S>
-using Subs = std::map<Invar, DimSub_tmpl<S>>;
+using Subs = std::map<Invar, DimSub<S>>;
 
 template<typename S>
-class AllSteps_tmpl : public std::vector<Subs<S>> {
+class AllSteps : public std::vector<Subs<S>> {
  public:
    const size_t Nbegin, Nend; // range of valid indexes
-   AllSteps_tmpl(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
+   AllSteps(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
    auto Nall() const { return boost::irange(Nbegin, Nend); }
    void dump_absenergyG(std::ostream &F) const {
      for (const auto N : Nall()) {
@@ -552,7 +552,7 @@ class AllSteps_tmpl : public std::vector<Subs<S>> {
        for (auto &ds : this->at(N) | boost::adaptors::map_values)
          ds.eig.subtract_GS_energy(GS_energy);
    }
-   void store(const size_t ndx, const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const bool last) {
+   void store(const size_t ndx, const DiagInfo<S> &diag, const QSrmax &qsrmax, const bool last) {
      my_assert(Nbegin <= ndx && ndx < Nend);
      for (const auto &[I, eig]: diag)
        (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), qsrmax.at_or_null(I), eig, last };
@@ -628,7 +628,7 @@ class Step {
 
 // Namespace for storing various statistical quantities calculated during iteration.
 template<typename S>
-class Stats_tmpl {
+class Stats {
  public:
    using t_eigen = typename traits<S>::t_eigen;
    using t_expv  = typename traits<S>::t_expv;
@@ -676,26 +676,26 @@ class Stats_tmpl {
    
    TD_FDM td_fdm;
 
-   explicit Stats_tmpl(const Params &P, const std::string filename_td = "td"s, const std::string filename_tdfdm = "tdfdm"s) : 
+   explicit Stats(const Params &P, const std::string filename_td = "td"s, const std::string filename_tdfdm = "tdfdm"s) : 
      td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
      ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
 };
 
 // Wrapper class for NRG spectral-function algorithms
 template<typename S>
-class Algo_tmpl {
+class Algo {
  private:
  public:
    using t_coef = typename traits<S>::t_coef;
    using Matrix = typename traits<S>::Matrix;
    const Params &P;
-   Algo_tmpl() = delete;
-   Algo_tmpl(const Algo_tmpl&) = delete;
-   explicit Algo_tmpl(const Params &P) : P(P) {}
-   virtual ~Algo_tmpl() {}
+   Algo() = delete;
+   Algo(const Algo&) = delete;
+   explicit Algo(const Params &P) : P(P) {}
+   virtual ~Algo() {}
    virtual void begin(const Step &) = 0;
-   virtual void calc(const Step &, const Eigen_tmpl<S> &, const Eigen_tmpl<S> &, const Matrix &, const Matrix &, 
-                     const t_coef, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) = 0;
+   virtual void calc(const Step &, const Eigen<S> &, const Eigen<S> &, const Matrix &, const Matrix &, 
+                     const t_coef, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) = 0;
    virtual void end(const Step &) = 0;
    virtual std::string rho_type() { return ""; } // what rho type is required
 };
@@ -713,7 +713,7 @@ inline void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr,
 }
 
 template<typename S>
-inline void dump_diagonal_op(const std::string &name, const MatrixElements_tmpl<S> &n, const size_t max_nr, std::ostream &F) {
+inline void dump_diagonal_op(const std::string &name, const MatrixElements<S> &n, const size_t max_nr, std::ostream &F) {
   F << "Diagonal matrix elements of operator " << name << std::endl;
   for (const auto &[II, mat] : n) {
     const auto & [I1, I2] = II;
@@ -727,7 +727,7 @@ inline void dump_diagonal_op(const std::string &name, const MatrixElements_tmpl<
 // We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
 // required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
 // recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.
-template<typename S> void trim_matel(const DiagInfo_tmpl<S> &diag, MatrixElements_tmpl<S> &op) {
+template<typename S> void trim_matel(const DiagInfo<S> &diag, MatrixElements<S> &op) {
   for (auto &[II, mat] : op) {
     const auto &[I1, I2] = II;
     // Current matrix dimensions
@@ -746,23 +746,23 @@ template<typename S> void trim_matel(const DiagInfo_tmpl<S> &diag, MatrixElement
   }
 }
 
-template<typename S> void trim_op(const DiagInfo_tmpl<S> &diag, CustomOp_tmpl<S> &allops) {
+template<typename S> void trim_op(const DiagInfo<S> &diag, CustomOp<S> &allops) {
   for (auto &[name, op] : allops) 
     trim_matel(diag, op);
 }
 
 // Object of class IterInfo cotains full information about matrix representations when entering stage N of the NRG
 // iteration.
-template<typename S> class IterInfo_tmpl {
+template<typename S> class IterInfo {
  public:
-   Opch_tmpl<S> opch;     // f operators (channels)
-   CustomOp_tmpl<S> ops;  // singlet operators (even parity)
-   CustomOp_tmpl<S> opsp; // singlet operators (odd parity)
-   CustomOp_tmpl<S> opsg; // singlet operators [global op]
-   CustomOp_tmpl<S> opd;  // doublet operators (spectral functions)
-   CustomOp_tmpl<S> opt;  // triplet operators (dynamical spin susceptibility)
-   CustomOp_tmpl<S> opq;  // quadruplet operators (spectral functions for J=3/2)
-   CustomOp_tmpl<S> opot; // orbital triplet operators
+   Opch<S> opch;     // f operators (channels)
+   CustomOp<S> ops;  // singlet operators (even parity)
+   CustomOp<S> opsp; // singlet operators (odd parity)
+   CustomOp<S> opsg; // singlet operators [global op]
+   CustomOp<S> opd;  // doublet operators (spectral functions)
+   CustomOp<S> opt;  // triplet operators (dynamical spin susceptibility)
+   CustomOp<S> opq;  // quadruplet operators (spectral functions for J=3/2)
+   CustomOp<S> opot; // orbital triplet operators
 
    void dump_diagonal(const size_t max_nr, std::ostream &F = std::cout) const {
      if (max_nr) {
@@ -770,7 +770,7 @@ template<typename S> class IterInfo_tmpl {
        for (const auto &[name, m] : opsg) dump_diagonal_op(name, m, max_nr, F);
      }
    }
-   void trim_matrices(const DiagInfo_tmpl<S> &diag) {
+   void trim_matrices(const DiagInfo<S> &diag) {
      trim_op(diag, ops);
      trim_op(diag, opsp);
      trim_op(diag, opsg);
@@ -796,7 +796,7 @@ template<typename S> class IterInfo_tmpl {
 
 // Operator sumrules
 template<typename S, typename F> 
-auto norm(const MatrixElements_tmpl<S> &m, std::shared_ptr<Symmetry_tmpl<S>> Sym, F factor_fnc, const int SPIN) {
+auto norm(const MatrixElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, F factor_fnc, const int SPIN) {
   typename traits<S>::t_weight sum{};
   for (const auto &[II, mat] : m) {
     const auto & [I1, Ip] = II;
@@ -807,7 +807,7 @@ auto norm(const MatrixElements_tmpl<S> &m, std::shared_ptr<Symmetry_tmpl<S>> Sym
 }
 
 template<typename S>
-void operator_sumrules(const IterInfo_tmpl<S> &a, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
+void operator_sumrules(const IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym) {
   // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
   // irrelevant (0).
   const int SPIN = Sym->isfield() ? 1 : 0;
@@ -858,13 +858,13 @@ inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC
 #include "matsubara.h"
 
 template<typename S>
-class ChainBinning_tmpl {
+class ChainBinning {
  private:
    const Params &P;
-   Bins_tmpl<S> spos, sneg;
+   Bins<S> spos, sneg;
  public:
    using t_weight = typename traits<S>::t_weight;
-   explicit ChainBinning_tmpl(const Params &P) : P(P), spos(P), sneg(P) {}
+   explicit ChainBinning(const Params &P) : P(P), spos(P), sneg(P) {}
    void add(const double energy, const t_weight weight) {
      if (energy >= 0.0)
        spos.add(energy, weight);
@@ -872,45 +872,45 @@ class ChainBinning_tmpl {
        sneg.add(-energy, weight);
    }
    auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
-   template<typename T> friend class SpectrumRealFreq_tmpl;
+   template<typename T> friend class SpectrumRealFreq;
 };
 
 template<typename S>
-class ChainMatsubara_tmpl {
+class ChainMatsubara {
  private:
    const Params &P;
-   Matsubara_tmpl<S> m;
+   Matsubara<S> m;
  public:
    using t_weight = typename traits<S>::t_weight;
-   explicit ChainMatsubara_tmpl(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
+   explicit ChainMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
    void add(const size_t n, const t_weight w) { m.add(n, w); }
-   template<typename T> friend class GFMatsubara_tmpl;
+   template<typename T> friend class GFMatsubara;
 };
 
 template<typename S>
-class ChainTempDependence_tmpl {
+class ChainTempDependence {
  private:
    const Params &P;
-   Temp_tmpl<S> v;
+   Temp<S> v;
  public:
    using t_weight = typename traits<S>::t_weight;
-   explicit ChainTempDependence_tmpl(const Params &P) : P(P), v(P) {}
+   explicit ChainTempDependence(const Params &P) : P(P), v(P) {}
    void add(const double T, const t_weight value) { v.add_value(T, value); }
-   template<typename T> friend class TempDependence_tmpl;
+   template<typename T> friend class TempDependence;
 };
 
 #include "spectrumrealfreq.cc"
 
 template<typename S>
-class GFMatsubara_tmpl {
+class GFMatsubara {
  private:
    const std::string name, algoname, filename;
    const Params &P;
-   Matsubara_tmpl<S> results;
+   Matsubara<S> results;
  public:
-   GFMatsubara_tmpl(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
+   GFMatsubara(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
      name(name), algoname(algoname), filename(filename), P(P), results(P.mats, gt, P.T) {}
-   void merge(const ChainMatsubara_tmpl<S> &cm) {
+   void merge(const ChainMatsubara<S> &cm) {
      results.merge(cm.m);
    }
    void save() {
@@ -920,15 +920,15 @@ class GFMatsubara_tmpl {
 };
 
 template<typename S>
-class TempDependence_tmpl {
+class TempDependence {
  private:
    const std::string name, algoname, filename;
    const Params &P;
-   Spikes_tmpl<S> results;
+   Spikes<S> results;
  public:
-   TempDependence_tmpl<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
+   TempDependence<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
      name(name), algoname(algoname), filename(filename),  P(P) {}
-   void merge(const ChainTempDependence_tmpl<S> &ctd) {
+   void merge(const ChainTempDependence<S> &ctd) {
      std::copy(ctd.v.begin(), ctd.v.end(), std::back_inserter(results));
    }
    void save() {
@@ -941,7 +941,7 @@ class TempDependence_tmpl {
 
 // Check if the trace of the density matrix equals 'ref_value'.
 template<typename S>
-void check_trace_rho(const DensMatElements_tmpl<S> &m, std::shared_ptr<Symmetry_tmpl<S>> Sym, const double ref_value = 1.0) {
+void check_trace_rho(const DensMatElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, const double ref_value = 1.0) {
   if (!num_equal(m.trace(Sym->multfnc()), ref_value))
     throw std::runtime_error("check_trace_rho() failed");
 }
@@ -964,17 +964,17 @@ inline std::string to_string(std::complex<double> &z) { // XXX: i/o?
 // All information about calculating a spectral function: pointers to the operator data, raw spectral data
 // acccumulators, algorithm, etc.
 template <typename S>
-class BaseSpectrum_tmpl {
+class BaseSpectrum {
  public:
-   const MatrixElements_tmpl<S> &op1, &op2;
+   const MatrixElements<S> &op1, &op2;
    int spin{};                      // -1 or +1, or 0 where irrelevant
-   using spAlgo = std::shared_ptr<Algo_tmpl<S>>;
+   using spAlgo = std::shared_ptr<Algo<S>>;
    spAlgo algo;      // Algo_FDM, Algo_DMNRG,...
-   BaseSpectrum_tmpl(const MatrixElements_tmpl<S> &op1, const MatrixElements_tmpl<S> &op2, const int spin, spAlgo algo) :
+   BaseSpectrum(const MatrixElements<S> &op1, const MatrixElements<S> &op2, const int spin, spAlgo algo) :
      op1(op1), op2(op2), spin(spin), algo(algo) {}
 };
 template <typename S>
-using speclist_tmpl = std::list<BaseSpectrum_tmpl<S>>;
+using speclist = std::list<BaseSpectrum<S>>;
 
 #include "spec.cc"
 #include "dmnrg.h"
@@ -982,14 +982,14 @@ using speclist_tmpl = std::list<BaseSpectrum_tmpl<S>>;
 
 // Determine the ranges of index r
 template<typename S>
-Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
+Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym) {
   for (const auto &[i, In] : InVec | ranges::views::enumerate)
     values.push_back(Sym->triangle_inequality(I, In, Sym->QN_subspace(i)) ? diagprev.size_subspace(In) : 0);
 }
 
 // Formatted output of the computed expectation values
 template<typename S>
-class ExpvOutput_tmpl {
+class ExpvOutput {
  private:
    using t_expv = typename traits<S>::t_expv;
    std::ofstream F;                     // output stream
@@ -1017,7 +1017,7 @@ class ExpvOutput_tmpl {
        for (const auto &op: fields)
          fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op]));
    }
-   ExpvOutput_tmpl(const std::string &fn, std::map<std::string, t_expv> &m_, 
+   ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m_, 
                    const std::list<std::string> &fields_, const Params &P_) : m(m_), fields(fields_), P(P_) {
      F.open(fn);
      field_numbers();
@@ -1027,48 +1027,48 @@ class ExpvOutput_tmpl {
 
 // Establish the data structures for storing spectral information [and prepare output files].
 template<typename A, typename S, typename M>
-void prepare_spec_algo(speclist_tmpl<S> &sl, M && op1, M && op2, int spin, 
+void prepare_spec_algo(speclist<S> &sl, M && op1, M && op2, int spin, 
                        std::string name, std::string prefix, const gf_type gt, const Params &P) {
 
-  BaseSpectrum_tmpl<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin, std::make_shared<A>(name, prefix, gt, P)); // AAA algo too!
+  BaseSpectrum<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin, std::make_shared<A>(name, prefix, gt, P)); // AAA algo too!
   sl.push_back(spec);
 }
 
 template<typename S, typename M>
-void prepare_spec(const RUNTYPE &runtype, speclist_tmpl<S> &sl, M && op1, M && op2, 
+void prepare_spec(const RUNTYPE &runtype, speclist<S> &sl, M && op1, M && op2, 
                   const std::string name, const std::string prefix, const gf_type gt, const int spin, const Params &P) { 
  if (prefix == "gt") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT_tmpl<S,0>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT<S,0>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   if (prefix == "i1t") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT_tmpl<S,1>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT<S,1>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   if (prefix == "i2t") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT_tmpl<S,2>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_GT<S,2>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   if (prefix == "chit") {
-    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_CHIT_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (runtype == RUNTYPE::NRG) prepare_spec_algo<Algo_CHIT<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
     return;
   }
   // If we did not return from this funciton by this point, what we are computing is the spectral function. There are
   // several possibilities in this case, all of which may be enabled at the same time.
   if (runtype == RUNTYPE::NRG) {
-    if (P.finite)     prepare_spec_algo<Algo_FT_tmpl<S>>    (sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.finitemats) prepare_spec_algo<Algo_FTmats_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.finite)     prepare_spec_algo<Algo_FT<S>>    (sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.finitemats) prepare_spec_algo<Algo_FTmats<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
   }
   if (runtype == RUNTYPE::DMNRG) {
-    if (P.dmnrg)     prepare_spec_algo<Algo_DMNRG_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.dmnrgmats) prepare_spec_algo<Algo_DMNRGmats_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.cfs)       prepare_spec_algo<Algo_CFS_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.cfsgt)     prepare_spec_algo<Algo_CFSgt_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.cfsls)     prepare_spec_algo<Algo_CFSls_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.fdm)       prepare_spec_algo<Algo_FDM_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.fdmgt)     prepare_spec_algo<Algo_FDMgt_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.fdmls)     prepare_spec_algo<Algo_FDMls_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
-    if (P.fdmmats)   prepare_spec_algo<Algo_FDMmats_tmpl<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.dmnrg)     prepare_spec_algo<Algo_DMNRG<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.dmnrgmats) prepare_spec_algo<Algo_DMNRGmats<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.cfs)       prepare_spec_algo<Algo_CFS<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.cfsgt)     prepare_spec_algo<Algo_CFSgt<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.cfsls)     prepare_spec_algo<Algo_CFSls<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdm)       prepare_spec_algo<Algo_FDM<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdmgt)     prepare_spec_algo<Algo_FDMgt<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdmls)     prepare_spec_algo<Algo_FDMls<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
+    if (P.fdmmats)   prepare_spec_algo<Algo_FDMmats<S>>(sl, std::forward<M>(op1), std::forward<M>(op2), spin, name, prefix, gt, P);
   }
 }
 
@@ -1078,7 +1078,7 @@ template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
 }
 
 template<typename S>
-class Oprecalc_tmpl {
+class Oprecalc {
  public:
    // The following lists hold the names of operators which need to be recomputed. The default behavior is to
    // recompute all the operators that are required to calculate the requested spectral densities, see function
@@ -1086,11 +1086,11 @@ class Oprecalc_tmpl {
    // calculate the expectation values.
    std::set<std::string> s, p, g, d, v, t, q, ot;
 
-   speclist_tmpl<S> spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
+   speclist<S> spectraD, spectraS, spectraT, spectraQ, spectraGT, spectraI1T, spectraI2T, spectraK, spectraCHIT, spectraC, spectraOT;
 
    // Calculate spectral densities
-   void spectral_densities(const Step &step, const DiagInfo_tmpl<S> &diag, DensMatElements_tmpl<S> &rho, DensMatElements_tmpl<S> &rhoFDM, 
-                           const Stats_tmpl<S> &stats, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
+   void spectral_densities(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM, 
+                           const Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym) {
      TIME("spec");
      for (auto &i : spectraS)    calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
      for (auto &i : spectraCHIT) calc_generic(i, step, diag, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(),  rho, rhoFDM, stats);
@@ -1133,9 +1133,9 @@ class Oprecalc_tmpl {
    
    // Wrapper routine for recalculations
    template <typename RecalcFnc>
-     MatrixElements_tmpl<S> recalc_common(const MatrixElements_tmpl<S> &mold, RecalcFnc recalc_fnc, const Step &step, 
-                                          const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const std::string name, 
-                                          const std::string &tip, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+     MatrixElements<S> recalc_common(const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const Step &step, 
+                                          const DiagInfo<S> &diag, const QSrmax &qsrmax, const std::string name, 
+                                          const std::string &tip, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
        nrglog('0', "Recalculate " << tip << " " << name);
        auto mnew = recalc_fnc(diag, qsrmax, mold);
        if (tip == "g") Sym->recalc_global(step, diag, qsrmax, name, mnew);
@@ -1143,14 +1143,14 @@ class Oprecalc_tmpl {
      }
    
    template <typename ... Args>
-     MatrixElements_tmpl<S> recalc_or_clear(bool recalc, Args&& ... args) {
-       return recalc ? recalc_common(std::forward<Args>(args)...) : MatrixElements_tmpl<S>();
+     MatrixElements<S> recalc_or_clear(bool recalc, Args&& ... args) {
+       return recalc ? recalc_common(std::forward<Args>(args)...) : MatrixElements<S>();
      }
 
    // Recalculate operator matrix representations
    ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
-     void recalculate_operators(const Step &step, const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, 
-                                IterInfo_tmpl<S> &a, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+     void recalculate_operators(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+                                IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
        for (auto &[name, m] : a.ops)
          m = recalc_or_clear(do_s(name, P, step), m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, step, diag, qsrmax, name, "s", Sym, P);
        for (auto &[name, m] : a.opsp)
@@ -1174,8 +1174,8 @@ class Oprecalc_tmpl {
    }
 
    void loopover(const RUNTYPE &runtype, const Params &P,
-                 const CustomOp_tmpl<S> &set1, const CustomOp_tmpl<S> &set2,
-                 const string_token &stringtoken, speclist_tmpl<S> &spectra, const std::string &prefix,
+                 const CustomOp<S> &set1, const CustomOp<S> &set2,
+                 const string_token &stringtoken, speclist<S> &spectra, const std::string &prefix,
                  std::set<std::string> &rec1, std::set<std::string> &rec2, const gf_type mt, const int spin) { // XXX:mt -> gt
     for (const auto &[name1, op1] : set1) {
       for (const auto &[name2, op2] : set2) {
@@ -1189,7 +1189,7 @@ class Oprecalc_tmpl {
   }
 
   // Reset lists of operators which need to be iterated
-  Oprecalc_tmpl(const RUNTYPE &runtype, const IterInfo_tmpl<S> &a, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+  Oprecalc(const RUNTYPE &runtype, const IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
@@ -1237,15 +1237,15 @@ class Annotated {
    std::ofstream F;
    // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor)
    template<typename S>
-     inline auto scaled_energy(typename traits<S>::t_eigen e, const Step &step, const Stats_tmpl<S> &stats,
+     inline auto scaled_energy(typename traits<S>::t_eigen e, const Step &step, const Stats<S> &stats,
                                bool scaled = true, bool absolute = false) {
      return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0);
    }
    const Params &P;
  public:
    explicit Annotated(const Params &P) : P(P) {}
-   template<typename S> void dump(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats_tmpl<S> &stats, 
-                                  std::shared_ptr<Symmetry_tmpl<S>> Sym, const std::string filename = "annotated.dat") {
+   template<typename S> void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, 
+                                  std::shared_ptr<Symmetry<S>> Sym, const std::string filename = "annotated.dat") {
      if (!P.dumpannotated) return;
      if (!F.is_open()) { // open output file
        F.open(filename);
@@ -1288,14 +1288,14 @@ class Annotated {
 
 // Handle all output
 template<typename S>
-struct Output_tmpl {
+struct Output {
   const RUNTYPE runtype;
   const Params &P;
   Annotated annotated;
   std::ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
-  std::unique_ptr<ExpvOutput_tmpl<S>> custom;
-  std::unique_ptr<ExpvOutput_tmpl<S>> customfdm;
-  Output_tmpl(const RUNTYPE &runtype, const IterInfo_tmpl<S> &iterinfo, Stats_tmpl<S> &stats, const Params &P,
+  std::unique_ptr<ExpvOutput<S>> custom;
+  std::unique_ptr<ExpvOutput<S>> customfdm;
+  Output(const RUNTYPE &runtype, const IterInfo<S> &iterinfo, Stats<S> &stats, const Params &P,
               const std::string filename_energies= "energies.nrg"s,
               const std::string filename_custom = "custom", 
               const std::string filename_customfdm = "customfdm")
@@ -1307,12 +1307,12 @@ struct Output_tmpl {
       for (const auto &name : iterinfo.ops  | boost::adaptors::map_keys) ops.push_back(name);
       for (const auto &name : iterinfo.opsg | boost::adaptors::map_keys) ops.push_back(name);
       if (runtype == RUNTYPE::NRG)
-        custom = std::make_unique<ExpvOutput_tmpl<S>>(filename_custom, stats.expv, ops, P);
+        custom = std::make_unique<ExpvOutput<S>>(filename_custom, stats.expv, ops, P);
       else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
-        customfdm = std::make_unique<ExpvOutput_tmpl<S>>(filename_customfdm, stats.fdmexpv, ops, P);
+        customfdm = std::make_unique<ExpvOutput<S>>(filename_customfdm, stats.fdmexpv, ops, P);
     }
   // Dump all energies in diag to a file
-  void dump_all_energies(const DiagInfo_tmpl<S> &diag, const int N) {
+  void dump_all_energies(const DiagInfo<S> &diag, const int N) {
     if (!Fenergies) return;
     Fenergies << std::endl << "===== Iteration number: " << N << std::endl;
     diag.dump_value_zero(Fenergies);
@@ -1320,8 +1320,8 @@ struct Output_tmpl {
 };
 
 template<typename S>
-CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo_tmpl<S> &diag, 
-                                 const MatrixElements_tmpl<S> &n, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
+CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo<S> &diag, 
+                                 const MatrixElements<S> &n, std::shared_ptr<Symmetry<S>> Sym) {
   typename traits<S>::t_matel tr{};
   for (const auto &[I, eig] : diag) {
     const auto & nI = n.at({I,I});
@@ -1336,8 +1336,8 @@ CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo_tmpl<S> &diag,
 
 // Measure thermodynamic expectation values of singlet operators
 template<typename S>
-void measure_singlet(const Step &step, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diag, const IterInfo_tmpl<S> &a, 
-                     Output_tmpl<S> &output, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a, 
+                     Output<S> &output, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   const auto Z = ranges::accumulate(diag, 0.0, [&Sym, &step](auto total, const auto &d) { const auto &[I, eig] = d;
     return total + Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0,
                                                      [f=step.TD_factor()](auto sum, const auto &x) { return sum + exp(-f*x); }); });
@@ -1357,8 +1357,8 @@ template<typename T>
 }
 
 template<typename S>
-CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements_tmpl<S> &n, const DensMatElements_tmpl<S> &rhoFDM, 
-                                  const AllSteps_tmpl<S> &dm, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
+CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM, 
+                                  const AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym) {
   typename traits<S>::t_matel tr{};
   for (const auto &[I, rhoI] : rhoFDM)
     tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), dm[ndx].at(I).kept); // over kept states ONLY
@@ -1366,9 +1366,9 @@ CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements_tmpl<S>
 }
 
 template<typename S>
-void measure_singlet_fdm(const Step &step, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diag, const IterInfo_tmpl<S> &a, 
-                         Output_tmpl<S> &output,  const DensMatElements_tmpl<S> &rhoFDM, 
-                         const AllSteps_tmpl<S> &dm, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a, 
+                         Output<S> &output,  const DensMatElements<S> &rhoFDM, 
+                         const AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
   for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
   output.customfdm->field_values(P.T);
@@ -1380,7 +1380,7 @@ void measure_singlet_fdm(const Step &step, Stats_tmpl<S> &stats, const DiagInfo_
 // that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for G(T)
 // calculations, stats.Zchit for chi(T) calculations.
 template<typename S>
-auto grand_canonical_Z(const Step &step, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry_tmpl<S>> Sym, const double factor = 1.0) {
+auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym, const double factor = 1.0) {
   double ZN{};
   for (const auto &[I, eig]: diag) 
     for (const auto &i : eig.kept()) // sum over all kept states
@@ -1389,7 +1389,7 @@ auto grand_canonical_Z(const Step &step, const DiagInfo_tmpl<S> &diag, std::shar
   return ZN;
 }
 
-template<typename S> auto diagonal_exp(const Eigen_tmpl<S> &eig, const double factor) {
+template<typename S> auto diagonal_exp(const Eigen<S> &eig, const double factor) {
   const auto dim = eig.getnrstored();
   typename traits<S>::Matrix m(dim, dim, 0);
   for (const auto i: range0(dim)) 
@@ -1405,8 +1405,8 @@ template<typename S> auto diagonal_exp(const Eigen_tmpl<S> &eig, const double fa
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
 template<typename S>
-auto init_rho(const Step &step, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
-  DensMatElements_tmpl<S> rho;
+auto init_rho(const Step &step, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym) {
+  DensMatElements<S> rho;
   for (const auto &[I, eig]: diag)
     rho[I] = diagonal_exp(eig, step.scT()) / grand_canonical_Z(step, diag, Sym);
   check_trace_rho(rho, Sym);
@@ -1415,7 +1415,7 @@ auto init_rho(const Step &step, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Sy
 
 // Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.
 template<typename S>
-auto highest_retained_energy(const Step &step, const DiagInfo_tmpl<S> &diag, const Params &P) {
+auto highest_retained_energy(const Step &step, const DiagInfo<S> &diag, const Params &P) {
   auto energies = diag.sorted_energies();
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
   const auto totalnumber = energies.size();
@@ -1444,7 +1444,7 @@ auto highest_retained_energy(const Step &step, const DiagInfo_tmpl<S> &diag, con
 
 struct truncate_stats {
   size_t nrall, nrallmult, nrkept, nrkeptmult;
-  template<typename S> truncate_stats(const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
+  template<typename S> truncate_stats(const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym) {
     nrall = ranges::accumulate(diag, 0, [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getdim(); });
     nrallmult = ranges::accumulate(diag, 0, [Sym](int n, const auto &d) { const auto &[I, eig] = d; return n+Sym->mult(I)*eig.getdim(); });
     nrkept = ranges::accumulate(diag, 0, [](int n, const auto &d) { const auto &[I, eig] = d; return n+eig.getnrkept(); });
@@ -1460,7 +1460,7 @@ struct NotEnough : public std::exception {};
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
 template<typename S>
-void truncate_prepare(const Step &step, DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+void truncate_prepare(const Step &step, DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnrcomputed() :
@@ -1478,7 +1478,7 @@ void truncate_prepare(const Step &step, DiagInfo_tmpl<S> &diag, std::shared_ptr<
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
 // energies. calc_ZnD() must be called before the second NRG run.
 template<typename S>
-void calc_ZnD(const AllSteps_tmpl<S> &dm, Stats_tmpl<S> &stats, std::shared_ptr<Symmetry_tmpl<S>> Sym, const double T) {
+void calc_ZnD(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
   for (const auto N : dm.Nall()) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
@@ -1522,7 +1522,7 @@ void calc_ZnD(const AllSteps_tmpl<S> &dm, Stats_tmpl<S> &stats, std::shared_ptr<
 }
 
 template<typename S>
-void report_ZnD(Stats_tmpl<S> &stats, const Params &P) {
+void report_ZnD(Stats<S> &stats, const Params &P) {
   for (const auto N : P.Nall())
     std::cout << "ZG[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDG[N])) << std::endl;
   for (const auto N : P.Nall())
@@ -1536,7 +1536,7 @@ void report_ZnD(Stats_tmpl<S> &stats, const Params &P) {
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
 template<typename S>
-void fdm_thermodynamics(const AllSteps_tmpl<S> &dm, Stats_tmpl<S> &stats, std::shared_ptr<Symmetry_tmpl<S>> Sym, const double T)
+void fdm_thermodynamics(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, const double T)
 {
   stats.td_fdm.T = T;
   stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
@@ -1580,7 +1580,7 @@ void fdm_thermodynamics(const AllSteps_tmpl<S> &dm, Stats_tmpl<S> &stats, std::s
 }
 
 template<typename F, typename S>
-auto trace(F fnc, const double rescale_factor, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
+auto trace(F fnc, const double rescale_factor, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym) {
     auto b = 0.0;
     for (const auto &[I, eig] : diag)
       b += Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0, [fnc, rescale_factor](auto acc, const auto x) { 
@@ -1592,8 +1592,8 @@ auto trace(F fnc, const double rescale_factor, const DiagInfo_tmpl<S> &diag, std
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
 // member functions defined in symmetry.cc.
 template<typename S>
-void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, Stats_tmpl<S> &stats, Output_tmpl<S> &output, 
-                  std::shared_ptr<Symmetry_tmpl<S>> Sym, const double additional_factor = 1.0) {
+void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, Output<S> &output, 
+                  std::shared_ptr<Symmetry<S>> Sym, const double additional_factor = 1.0) {
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
   const auto rescale_factor = step.TD_factor() * additional_factor;
@@ -1612,9 +1612,9 @@ void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, Stats_tmpl<S> 
 }
 
 template<typename S>
-void calculate_spectral_and_expv(const Step &step, Stats_tmpl<S> &stats, Output_tmpl<S> &output, Oprecalc_tmpl<S> &oprecalc, 
-                                 const DiagInfo_tmpl<S> &diag, const IterInfo_tmpl<S> &iterinfo, const AllSteps_tmpl<S> &dm, 
-                                 std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc, 
+                                 const DiagInfo<S> &diag, const IterInfo<S> &iterinfo, const AllSteps<S> &dm, 
+                                 std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
   stats.Zft = grand_canonical_Z(step, diag, Sym);
@@ -1622,7 +1622,7 @@ void calculate_spectral_and_expv(const Step &step, Stats_tmpl<S> &stats, Output_
     stats.Zgt = grand_canonical_Z(step, diag, Sym, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
   if (string(P.specchit) != "") 
     stats.Zchit = grand_canonical_Z(step, diag, Sym, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
-  DensMatElements_tmpl<S> rho, rhoFDM;
+  DensMatElements<S> rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
       rho.load(step.ndx(), FN_RHO, P.removefiles);
@@ -1642,8 +1642,8 @@ void calculate_spectral_and_expv(const Step &step, Stats_tmpl<S> &stats, Output_
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
 template<typename S>
-void perform_basic_measurements(const Step &step, const DiagInfo_tmpl<S> &diag, std::shared_ptr<Symmetry_tmpl<S>> Sym,
-                                Stats_tmpl<S> &stats, Output_tmpl<S> &output) {
+void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym,
+                                Stats<S> &stats, Output<S> &output) {
   output.dump_all_energies(diag, step.ndx());
   calculate_TD(step, diag, stats, output, Sym);
   output.annotated.dump(step, diag, stats, Sym);
@@ -1651,7 +1651,7 @@ void perform_basic_measurements(const Step &step, const DiagInfo_tmpl<S> &diag, 
 
 // Subspaces for the new iteration
 template<typename S>
-auto new_subspaces(const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
+auto new_subspaces(const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym) {
   std::set<Invar> subspaces;
   for (const auto &I : diagprev.subspaces()) {
     const auto all = Sym->new_subspaces(I);
@@ -1662,8 +1662,8 @@ auto new_subspaces(const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry_tm
 }
 
 template<typename S>
-typename traits<S>::Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, 
-                                                 const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+typename traits<S>::Matrix prepare_task_for_diag(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
+                                                 const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev, Sym};
   typename traits<S>::Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
@@ -1676,9 +1676,9 @@ typename traits<S>::Matrix prepare_task_for_diag(const Step &step, const Invar &
 }
 
 template<typename S>
-auto diagonalisations_OpenMP(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, const DiagInfo_tmpl<S> &diagprev,
-                             const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
-  DiagInfo_tmpl<S> diagnew;
+auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev,
+                             const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+  DiagInfo<S> diagnew;
   const auto nr = tasks.size();
   size_t itask = 0;
   // cppcheck-suppress unreadVariable symbolName=nth
@@ -1751,7 +1751,7 @@ template<typename S> auto mpi_receive_matrix(const int source) {
   return m;
 }
 
-template<typename S> void mpi_send_eigen(const int dest, const Eigen_tmpl<S> &eig) {
+template<typename S> void mpi_send_eigen(const int dest, const Eigen<S> &eig) {
   mpilog("Sending eigen from " << mpiw->rank() << " to " << dest);
   mpiw->send(dest, TAG_EIGEN_VEC, eig.value_orig);
   mpi_send_matrix<S>(dest, eig.matrix);
@@ -1759,14 +1759,14 @@ template<typename S> void mpi_send_eigen(const int dest, const Eigen_tmpl<S> &ei
 
 template<typename S> auto mpi_receive_eigen(const int source) {
   mpilog("Receiving eigen from " << source << " on " << mpiw->rank());
-  Eigen_tmpl<S> eig;
+  Eigen<S> eig;
   check_status(mpiw->recv(source, TAG_EIGEN_VEC, eig.value_orig));
   eig.matrix = mpi_receive_matrix<S>(source);
   return eig;
 }
 
 // Read results from a slave process.
-template<typename S> std::pair<Invar, Eigen_tmpl<S>> read_from(int source) {
+template<typename S> std::pair<Invar, Eigen<S>> read_from(int source) {
   mpilog("Reading results from " << source);
   const auto eig = mpi_receive_eigen<S>(source);
   Invar Irecv;
@@ -1778,9 +1778,9 @@ template<typename S> std::pair<Invar, Eigen_tmpl<S>> read_from(int source) {
 }
 
 template<typename S>
-DiagInfo_tmpl<S> diagonalisations_MPI(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, const DiagInfo_tmpl<S> &diagprev, 
-                                      const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
-  DiagInfo_tmpl<S> diagnew;
+DiagInfo<S> diagonalisations_MPI(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
+                                      const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+  DiagInfo<S> diagnew;
   mpi_send_params(DP); // Synchronise parameters
   std::list<Invar> todo; // List of all the tasks to handle
   std::copy(tasks.begin(), tasks.end(), std::back_inserter(todo)); // BBB: constr
@@ -1861,8 +1861,8 @@ template<typename S> void slave_diag(const int master, const DiagParams &DP) {
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
 template<typename S>
-auto diagonalisations(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef, const DiagInfo_tmpl<S> &diagprev, 
-                      const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
+                      const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   TIME("diag");
 #ifdef NRG_MPI
   return diagonalisations_MPI<S>(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
@@ -1873,15 +1873,15 @@ auto diagonalisations(const Step &step, const Opch_tmpl<S> &opch, const Coef_tmp
 
 // Determine the structure of matrices in the new NRG shell
 template<typename S>
-QSrmax::QSrmax(const DiagInfo_tmpl<S> &diagprev, std::shared_ptr<Symmetry_tmpl<S>> Sym) {
+QSrmax::QSrmax(const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym) {
   for (const auto &I : new_subspaces(diagprev, Sym))
     (*this)[I] = Rmaxvals{I, Sym->ancestors(I), diagprev, Sym};
 }
 
 // Recalculate irreducible matrix elements for Wilson chains.
 template<typename S>
-void recalc_irreducible(const Step &step, const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, Opch_tmpl<S> &opch, 
-                        std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, Opch<S> &opch, 
+                        std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   TIME("recalc f");
   if (!P.substeps) {
     opch = Sym->recalc_irreduc(step, diag, qsrmax);
@@ -1898,23 +1898,23 @@ void recalc_irreducible(const Step &step, const DiagInfo_tmpl<S> &diag, const QS
 }
 
 template<typename S>
-auto do_diag(const Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diagprev,
-             QSrmax &qsrmax, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
+             QSrmax &qsrmax, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   auto tasks = qsrmax.task_list();
   double diagratio = P.diagratio; // non-const
-  DiagInfo_tmpl<S> diag;
+  DiagInfo<S> diag;
   while (true) {
     try {
       if (step.nrg()) {
         if (!(P.resume && int(step.ndx()) <= P.laststored))
           diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, Sym, P); // compute in first run
         else
-          diag = DiagInfo_tmpl<S>(step.ndx(), false); // or read from disk
+          diag = DiagInfo<S>(step.ndx(), false); // or read from disk
       }
       if (step.dmnrg()) {
-        diag = DiagInfo_tmpl<S>(step.ndx(), P.removefiles); // read from disk in second run
+        diag = DiagInfo<S>(step.ndx(), P.removefiles); // read from disk in second run
         diag.subtract_GS_energy(stats.GS_energy);
       }
       stats.Egs = diag.find_groundstate();
@@ -1938,7 +1938,7 @@ auto do_diag(const Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &c
 // store_transformations(). absenergyG is updated to its correct values (referrenced to absolute 0) in
 // shift_abs_energies().
 template<typename S>
-void calc_abs_energies(const Step &step, DiagInfo_tmpl<S> &diag, const Stats_tmpl<S> &stats) {
+void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stats) {
   for (auto &eig : diag.eigs()) {
     eig.absenergyN = eig.value_zero * step.scale();        // referenced to the lowest energy in current NRG step (not modified later on)
     eig.absenergy = eig.absenergyN;
@@ -1949,8 +1949,8 @@ void calc_abs_energies(const Step &step, DiagInfo_tmpl<S> &diag, const Stats_tmp
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<typename S>
-void after_diag(const Step &step, IterInfo_tmpl<S> &iterinfo, Stats_tmpl<S> &stats, DiagInfo_tmpl<S> &diag, Output_tmpl<S> &output,
-                QSrmax &qsrmax, AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
+                QSrmax &qsrmax, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
@@ -1986,8 +1986,8 @@ void after_diag(const Step &step, IterInfo_tmpl<S> &iterinfo, Stats_tmpl<S> &sta
 
 // Perform one iteration step
 template<typename S>
-auto iterate(const Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diagprev,
-             Output_tmpl<S> &output, AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+auto iterate(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
+             Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   QSrmax qsrmax{diagprev, Sym};
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, Sym, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
@@ -1999,13 +1999,13 @@ auto iterate(const Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &c
 
 // Perform calculations with quantities from 'data' file
 template<typename S>
-void docalc0(Step &step, const IterInfo_tmpl<S> &iterinfo, const DiagInfo_tmpl<S> &diag0, Stats_tmpl<S> &stats, Output_tmpl<S> &output, 
-             Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+void docalc0(Step &step, const IterInfo<S> &iterinfo, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
+             Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output);
-  AllSteps_tmpl<S> empty_dm(0, 0);
+  AllSteps<S> empty_dm(0, 0);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, Sym, P);
   if (P.checksumrules) operator_sumrules(iterinfo, Sym);
 }
@@ -2013,16 +2013,16 @@ void docalc0(Step &step, const IterInfo_tmpl<S> &iterinfo, const DiagInfo_tmpl<S
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
 template<typename S>
-auto nrg_ZBW(Step &step, IterInfo_tmpl<S> &iterinfo, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diag0, Output_tmpl<S> &output, 
-             AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
+             AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
-  DiagInfo_tmpl<S> diag;
+  DiagInfo<S> diag;
   if (step.nrg())
     diag = diag0;
   if (step.dmnrg()) {
-    diag = DiagInfo_tmpl<S>(step.ndx(), P.removefiles);
+    diag = DiagInfo<S>(step.ndx(), P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
   stats.Egs = diag.find_groundstate();
@@ -2038,8 +2038,8 @@ auto nrg_ZBW(Step &step, IterInfo_tmpl<S> &iterinfo, Stats_tmpl<S> &stats, const
 // ****************************  Main NRG loop ****************************
 
 template<typename S>
-auto nrg_loop(Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diag0,
-              Output_tmpl<S> &output, AllSteps_tmpl<S> &dm, Oprecalc_tmpl<S> &oprecalc, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+auto nrg_loop(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
+              Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, Sym, P);
@@ -2048,11 +2048,11 @@ auto nrg_loop(Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, 
 }
 
 template<typename S>
-auto run_nrg(Step &step, IterInfo_tmpl<S> &iterinfo, const Coef_tmpl<S> &coef, Stats_tmpl<S> &stats, const DiagInfo_tmpl<S> &diag0,
-             AllSteps_tmpl<S> &dm, std::shared_ptr<Symmetry_tmpl<S>> Sym, const Params &P) {
+auto run_nrg(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
+             AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   diag0.states_report(Sym->multfnc());
-  auto oprecalc = Oprecalc_tmpl<S>(step.runtype, iterinfo, Sym, P);
-  auto output = Output_tmpl<S>(step.runtype, iterinfo, stats, P);
+  auto oprecalc = Oprecalc<S>(step.runtype, iterinfo, Sym, P);
+  auto output = Output<S>(step.runtype, iterinfo, stats, P);
   // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
   if (step.nrg() && P.calc0 && !P.ZBW)
     docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym, P);
@@ -2072,42 +2072,42 @@ void print_about_message() {
 }
 
 template<typename S>
-std::unique_ptr<Symmetry_tmpl<S>> get(const std::string &sym_string, const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<S>> get(const std::string &sym_string, const Params &P, Allfields &allfields)
 {
-  if (sym_string == "QS")     return std::make_unique<SymmetryQS_tmpl<S>>(P, allfields);
-  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ_tmpl<S>>(P, allfields);
+  if (sym_string == "QS")     return std::make_unique<SymmetryQS<S>>(P, allfields);
+  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ<S>>(P, allfields);
 #ifdef NRG_SYM_MORE
-  if (sym_string == "ISO")    return std::make_unique<SymmetryISO_tmpl<S>>(P, allfields);
-  if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2_tmpl<S>>(P, allfields);
-  if (sym_string == "ISOSZ")  return std::make_unique<SymmetryISOSZ_tmpl<S>>(P, allfields);
-  if (sym_string == "SPSU2")  return std::make_unique<SymmetrySPSU2_tmpl<S>>(P, allfields);
-  if (sym_string == "SPU1")   return std::make_unique<SymmetrySPU1_tmpl<S>>(P, allfields);
+  if (sym_string == "ISO")    return std::make_unique<SymmetryISO<S>>(P, allfields);
+  if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2<S>>(P, allfields);
+  if (sym_string == "ISOSZ")  return std::make_unique<SymmetryISOSZ<S>>(P, allfields);
+  if (sym_string == "SPSU2")  return std::make_unique<SymmetrySPSU2<S>>(P, allfields);
+  if (sym_string == "SPU1")   return std::make_unique<SymmetrySPU1<S>>(P, allfields);
 #endif
 #ifdef NRG_SYM_ALL
-  if (sym_string == "DBLISOSZ")  return std::make_unique<SymmetryDBLISOSZ_tmpl<S>>(P, allfields);
-  if (sym_string == "DBLSU2")    return std::make_unique<SymmetryDBLSU2_tmpl<S>>(P, allfields);
-  if (sym_string == "ISOLR")     return std::make_unique<SymmetryISOLR_tmpl<S>>(P, allfields);
-  if (sym_string == "ISO2LR")    return std::make_unique<SymmetryISO2LR_tmpl<S>>(P, allfields);
-  if (sym_string == "ISOSZLR")   return std::make_unique<SymmetryISOSZLR_tmpl<S>>(P, allfields);
-  if (sym_string == "NONE")      return std::make_unique<SymmetryNONE_tmpl<S>>(P, allfields);
-  if (sym_string == "P")         return std::make_unique<SymmetryP_tmpl<S>>(P, allfields);
-  if (sym_string == "PP")        return std::make_unique<SymmetryPP_tmpl<S>>(P, allfields);
-  if (sym_string == "QJ")        return std::make_unique<SymmetryQJ_tmpl<S>>(P, allfields);
-  if (sym_string == "QSLR")      return std::make_unique<SymmetryQSLR_tmpl<S>>(P, allfields); 
-  if (sym_string == "QST")       return std::make_unique<SymmetryQST_tmpl<S>>(P, allfields);
-  if (sym_string == "QSTZ")      return std::make_unique<SymmetryQSTZ_tmpl<S>>(P, allfields);
-  if (sym_string == "QSZLR")     return std::make_unique<SymmetryQSZLR_tmpl<S>>(P, allfields);
-  if (sym_string == "QSZTZ")     return std::make_unique<SymmetryQSZTZ_tmpl<S>>(P, allfields);
-  if (sym_string == "SL")        return std::make_unique<SymmetrySL_tmpl<S>>(P, allfields);
-  if (sym_string == "SL3")       return std::make_unique<SymmetrySL3_tmpl<S>>(P, allfields);
-  if (sym_string == "SPSU2LR")   return std::make_unique<SymmetrySPSU2LR_tmpl<S>>(P, allfields);
-  if (sym_string == "SPSU2T")    return std::make_unique<SymmetrySPSU2T_tmpl<S>>(P, allfields);
-  if (sym_string == "SPU1LR")    return std::make_unique<SymmetrySPU1LR_tmpl<S>>(P, allfields);
-  if (sym_string == "SU2")       return std::make_unique<SymmetrySU2_tmpl<S>>(P, allfields);
-  if (sym_string == "U1")        return std::make_unique<SymmetryU1_tmpl<S>>(P, allfields);
+  if (sym_string == "DBLISOSZ")  return std::make_unique<SymmetryDBLISOSZ<S>>(P, allfields);
+  if (sym_string == "DBLSU2")    return std::make_unique<SymmetryDBLSU2<S>>(P, allfields);
+  if (sym_string == "ISOLR")     return std::make_unique<SymmetryISOLR<S>>(P, allfields);
+  if (sym_string == "ISO2LR")    return std::make_unique<SymmetryISO2LR<S>>(P, allfields);
+  if (sym_string == "ISOSZLR")   return std::make_unique<SymmetryISOSZLR<S>>(P, allfields);
+  if (sym_string == "NONE")      return std::make_unique<SymmetryNONE<S>>(P, allfields);
+  if (sym_string == "P")         return std::make_unique<SymmetryP<S>>(P, allfields);
+  if (sym_string == "PP")        return std::make_unique<SymmetryPP<S>>(P, allfields);
+  if (sym_string == "QJ")        return std::make_unique<SymmetryQJ<S>>(P, allfields);
+  if (sym_string == "QSLR")      return std::make_unique<SymmetryQSLR<S>>(P, allfields); 
+  if (sym_string == "QST")       return std::make_unique<SymmetryQST<S>>(P, allfields);
+  if (sym_string == "QSTZ")      return std::make_unique<SymmetryQSTZ<S>>(P, allfields);
+  if (sym_string == "QSZLR")     return std::make_unique<SymmetryQSZLR<S>>(P, allfields);
+  if (sym_string == "QSZTZ")     return std::make_unique<SymmetryQSZTZ<S>>(P, allfields);
+  if (sym_string == "SL")        return std::make_unique<SymmetrySL<S>>(P, allfields);
+  if (sym_string == "SL3")       return std::make_unique<SymmetrySL3<S>>(P, allfields);
+  if (sym_string == "SPSU2LR")   return std::make_unique<SymmetrySPSU2LR<S>>(P, allfields);
+  if (sym_string == "SPSU2T")    return std::make_unique<SymmetrySPSU2T<S>>(P, allfields);
+  if (sym_string == "SPU1LR")    return std::make_unique<SymmetrySPU1LR<S>>(P, allfields);
+  if (sym_string == "SU2")       return std::make_unique<SymmetrySU2<S>>(P, allfields);
+  if (sym_string == "U1")        return std::make_unique<SymmetryU1<S>>(P, allfields);
   if constexpr (std::is_same_v<S, std::complex<double>>) {
-    if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3_tmpl<S>>(P, allfields);
-    if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3_tmpl<S>>(P, allfields);
+    if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3<S>>(P, allfields);
+    if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3<S>>(P, allfields);
   }
 #endif 
   throw std::runtime_error("Unknown symmetry " + sym_string);
@@ -2116,7 +2116,7 @@ std::unique_ptr<Symmetry_tmpl<S>> get(const std::string &sym_string, const Param
 // Called immediately after parsing the information about the number of channels from the data file. This ensures
 // that Invar can be parsed correctly.
 template <typename S>
-std::shared_ptr<Symmetry_tmpl<S>> set_symmetry(const Params &P, Stats_tmpl<S> &stats) {
+std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P, Stats<S> &stats) {
   my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
   std::cout << "SYMMETRY TYPE: " << P.symtype.value() << std::endl;
   auto Sym = get<S>(P.symtype.value(), P, stats.td.allfields);
@@ -2129,13 +2129,13 @@ template <typename S> class NRG_calculation {
 private:
   // XXX: Workdir workdir;
   Params P;
-  Stats_tmpl<S> stats;
+  Stats<S> stats;
 public:
   NRG_calculation() : P("param", "param", workdir), stats(P) {}
   void go() {
     auto [diag0, iterinfo, coef, Sym] = read_data<S>(P, stats);
     Step step{P, RUNTYPE::NRG};
-    AllSteps_tmpl<S> dm(P.Ninit, P.Nlen);
+    AllSteps<S> dm(P.Ninit, P.Nlen);
     auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym, P);
     if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
     dm.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump

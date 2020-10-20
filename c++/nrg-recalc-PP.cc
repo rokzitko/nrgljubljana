@@ -24,8 +24,8 @@
 
 
 template<typename SC>
-Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetryPP<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     int pa   = Ip.get("Pa");
     int pb   = Ip.get("Pb");
@@ -38,7 +38,7 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "pp/pp-2ch-a-CR-DO.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -52,7 +52,7 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "pp/pp-2ch-a-CR-UP.dat"
         };
         opch[0][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -66,7 +66,7 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "pp/pp-2ch-a-AN-DO.dat"
         };
         opch[0][2][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -80,7 +80,7 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "pp/pp-2ch-a-AN-UP.dat"
         };
         opch[0][3][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -98,7 +98,7 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "pp/pp-2ch-b-CR-DO.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -112,7 +112,7 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "pp/pp-2ch-b-CR-UP.dat"
         };
         opch[1][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -126,7 +126,7 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "pp/pp-2ch-b-AN-DO.dat"
         };
         opch[1][2][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -140,7 +140,7 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "pp/pp-2ch-b-AN-UP.dat"
         };
         opch[1][3][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -192,7 +192,7 @@ Opch_tmpl<SC> SymmetryPP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
 #define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
 template<typename SC>
-void SymmetryPP_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
+void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements<SC> &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

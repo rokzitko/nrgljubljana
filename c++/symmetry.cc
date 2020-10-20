@@ -18,7 +18,7 @@ bool c3_equality(const int p1, const int p2, const int p3) { return p1 == (p2+p3
 template<typename S>
 auto newopch(const Params &P)
 {
-  Opch_tmpl<S> opch(P.channels);
+  Opch<S> opch(P.channels);
   for (auto &oc: opch) {
     oc.resize(P.perchannel);
     for (auto &o: oc)
@@ -28,7 +28,7 @@ auto newopch(const Params &P)
 }
 
 template<typename S>
-struct Recalc_f_tmpl {
+struct Recalc_f {
   size_t i1; // subspace indexes
   size_t ip;
   typename traits<S>::t_coef factor;
@@ -37,7 +37,7 @@ struct Recalc_f_tmpl {
 // Structure which holds subspace information and factor for each of nonzero irreducible matrix elements. cf.
 // Hofstetter PhD p. 120. <Q+1 S+-1/2 .. i1 ||f^\dag|| Q S .. ip>_N = factor < IN1 .. ||f^\dag|| INp ..>_{N_1}
 template<typename S>
-struct Recalc_tmpl {
+struct Recalc {
   size_t i1{}; // combination of states
   size_t ip{};
   Invar IN1; // subspace in N-1 stage
@@ -46,7 +46,7 @@ struct Recalc_tmpl {
 };
 
 template<typename S>
-class Symmetry_tmpl {
+class Symmetry {
  protected:
    const Params &P;
    // In and QN contain information about how the invariant subspaces at consecutive iteration steps are combined. In
@@ -64,7 +64,7 @@ class Symmetry_tmpl {
    }
    Invar InvarSinglet; // QNs for singlet operator
    Invar Invar_f;      // QNs for f operator
-   explicit Symmetry_tmpl(const Params &P_) : P(P_), In(P.combs+1), QN(P.combs+1) {}
+   explicit Symmetry(const Params &P_) : P(P_), In(P.combs+1), QN(P.combs+1) {}
    auto input_subspaces() const { return In; }
    auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; }
    auto ancestor(const Invar &I, const size_t i) const {
@@ -105,7 +105,7 @@ class Symmetry_tmpl {
    // Multiplicity of the states in the invariant subspace
    virtual size_t mult(const Invar &) const { return 1; };
    auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
-   double calculate_Z(const Invar &I, const Eigen_tmpl<S> &eig, const double rescale_factor) const { // XXX: auto?
+   double calculate_Z(const Invar &I, const Eigen<S> &eig, const double rescale_factor) const { // XXX: auto?
      return mult(I) * ranges::accumulate(eig.value_zero, 0.0, [rf=rescale_factor](auto sum, const auto &x) { return sum+exp(-rf*x); });
    }
    // Does the combination of subspaces I1 and I2 contribute to the spectral function corresponding to spin SPIN?
@@ -120,7 +120,7 @@ class Symmetry_tmpl {
    using t_coef = typename traits<S>::t_coef;
    
    void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_coef factor,
-                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch_tmpl<S> &opch) const;
+                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch<S> &opch) const;
    void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                            Matrix &h, const Rmaxvals &qq, const double f) const;
    void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
@@ -131,7 +131,7 @@ class Symmetry_tmpl {
                               Matrix &h, const Rmaxvals &qq) const;
 
    virtual void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
-                            const Opch_tmpl<S> &opch, const Coef_tmpl<S> &coef) = 0;
+                            const Opch<S> &opch, const Coef<S> &coef) = 0;
 
    // Called from recalc_dynamicsusceptibility().  This is the factor due
    // to the spin degeneracy when calculating the trace of Sz.Sz.
@@ -146,31 +146,31 @@ class Symmetry_tmpl {
    virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
    virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
 
-   virtual void calculate_TD(const Step &step, const DiagInfo_tmpl<S> &diag, const Stats_tmpl<S> &stats, const double factor) = 0;
+   virtual void calculate_TD(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, const double factor) = 0;
 
-   virtual Opch_tmpl<S> recalc_irreduc(const Step &step, const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax) { my_assert_not_reached(); }
-   virtual OpchChannel_tmpl<S> recalc_irreduc_substeps(const Step &step, const DiagInfo_tmpl<S> &diag, 
+   virtual Opch<S> recalc_irreduc(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) { my_assert_not_reached(); }
+   virtual OpchChannel<S> recalc_irreduc_substeps(const Step &step, const DiagInfo<S> &diag, 
                                                        const QSrmax &qsrmax, int M) { my_assert_not_reached(); }
-   virtual MatrixElements_tmpl<S> recalc_doublet(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, 
-                                                 const MatrixElements_tmpl<S> &cold) { my_assert_not_reached(); }
-   virtual MatrixElements_tmpl<S> recalc_triplet(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, 
-                                                 const MatrixElements_tmpl<S> &cold) { my_assert_not_reached(); }
-   virtual MatrixElements_tmpl<S> recalc_orb_triplet(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, 
-                                                     const MatrixElements_tmpl<S> &cold) { my_assert_not_reached(); }
-   virtual MatrixElements_tmpl<S> recalc_quadruplet(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, 
-                                                    const MatrixElements_tmpl<S> &cold) { my_assert_not_reached(); }
-   virtual void recalc_global(const Step &step, const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, std::string name, 
-                              MatrixElements_tmpl<S> &cnew) { my_assert_not_reached(); }
+   virtual MatrixElements<S> recalc_doublet(const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+                                                 const MatrixElements<S> &cold) { my_assert_not_reached(); }
+   virtual MatrixElements<S> recalc_triplet(const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+                                                 const MatrixElements<S> &cold) { my_assert_not_reached(); }
+   virtual MatrixElements<S> recalc_orb_triplet(const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+                                                     const MatrixElements<S> &cold) { my_assert_not_reached(); }
+   virtual MatrixElements<S> recalc_quadruplet(const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+                                                    const MatrixElements<S> &cold) { my_assert_not_reached(); }
+   virtual void recalc_global(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, std::string name, 
+                              MatrixElements<S> &cnew) { my_assert_not_reached(); }
 
    // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
    //  parity -1). Generic implementation, valid for all symmetry types.
-   MatrixElements_tmpl<S> recalc_singlet(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<S> &nold, const int parity) {
-     MatrixElements_tmpl<S> nnew;
+   MatrixElements<S> recalc_singlet(const DiagInfo<S> &diag, const QSrmax &qsrmax, const MatrixElements<S> &nold, const int parity) {
+     MatrixElements<S> nnew;
      my_assert(islr() ? parity == 1 || parity == -1 : parity == 1);
      for (const auto &I : diag.subspaces()) {
        const Invar I1 = I;
        const Invar Ip = parity == -1 ? I.InvertParity() : I;
-       std::vector<Recalc_tmpl<S>> recalc_table;
+       std::vector<Recalc<S>> recalc_table;
        for (const auto i: combs()) {
          const auto anc = ancestor(I, i);
          recalc_table.push_back({i+1, i+1, anc, parity == -1 ? anc.InvertParity() : anc, 1.0});
@@ -181,7 +181,7 @@ class Symmetry_tmpl {
      return nnew;
    }
 
-   virtual void show_coefficients(const Step &step, const Coef_tmpl<S> &coef) {
+   virtual void show_coefficients(const Step &step, const Coef<S> &coef) {
      std::cout << std::setprecision(std::numeric_limits<double>::max_digits10);
      if (!P.substeps) {
        for (size_t i = 0; i < P.coefchannels; i++) {
@@ -203,14 +203,14 @@ class Symmetry_tmpl {
    virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) { return true; } // used in recalc_f()
 
    template<typename T>
-     auto recalc_f(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const Invar &I1,
+     auto recalc_f(const DiagInfo<S> &diag, const QSrmax &qsrmax, const Invar &I1,
                    const Invar &Ip, const T &table);
    
    template<typename T>
-     auto recalc_general(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<S> &cold,
+     auto recalc_general(const DiagInfo<S> &diag, const QSrmax &qsrmax, const MatrixElements<S> &cold,
                          const Invar &I1, const Invar &Ip, const T &table, const Invar &Iop) const;
 
-   void recalc1_global(const DiagInfo_tmpl<S> &diag, const QSrmax &qsrmax, const Invar &I,
+   void recalc1_global(const DiagInfo<S> &diag, const QSrmax &qsrmax, const Invar &I,
                        Matrix &m, const size_t i1, const size_t ip, const t_coef value) const;
 
    auto CorrelatorFactorFnc() const   { return [this](const Invar &Ip, const Invar &I1) { return this->mult(I1); }; }
@@ -225,47 +225,47 @@ class Symmetry_tmpl {
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                 \
   void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In,      \
-     const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) override;                                           \
-  Opch_tmpl<SC> recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) override
+     const Opch<SC> &opch, const Coef<SC> &coef) override;                                           \
+  Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) override
 
 // Optional declaration
-#define HAS_SUBSTEPS OpchChannel_tmpl<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, int M) override
-#define HAS_DOUBLET MatrixElements_tmpl<SC> recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, \
-                                                          const MatrixElements_tmpl<SC> &cold) override
-#define HAS_TRIPLET MatrixElements_tmpl<SC> recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, \
-                                                          const MatrixElements_tmpl<SC> &cold) override
-#define HAS_ORB_TRIPLET MatrixElements_tmpl<SC> recalc_orb_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, \
-                                                                  const MatrixElements_tmpl<SC> &cold) override
-#define HAS_QUADRUPLET MatrixElements_tmpl<SC> recalc_quadruplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, \
-                                                                const MatrixElements_tmpl<SC> &cold) override
-#define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, \
-                                      std::string name, MatrixElements_tmpl<SC> &cnew) override
+#define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, int M) override
+#define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+                                                          const MatrixElements<SC> &cold) override
+#define HAS_TRIPLET MatrixElements<SC> recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+                                                          const MatrixElements<SC> &cold) override
+#define HAS_ORB_TRIPLET MatrixElements<SC> recalc_orb_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+                                                                  const MatrixElements<SC> &cold) override
+#define HAS_QUADRUPLET MatrixElements<SC> recalc_quadruplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+                                                                const MatrixElements<SC> &cold) override
+#define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+                                      std::string name, MatrixElements<SC> &cnew) override
 
 template<typename S>
-class SymField_tmpl : public Symmetry_tmpl<S> {
+class SymField : public Symmetry<S> {
  public:
-   explicit SymField_tmpl(const Params &P) : Symmetry_tmpl<S>(P) {}
+   explicit SymField(const Params &P) : Symmetry<S>(P) {}
    bool isfield() override { return true; }
 };
 
 template<typename S>
-class SymLR_tmpl : public Symmetry_tmpl<S> {
+class SymLR : public Symmetry<S> {
  public:
-   explicit SymLR_tmpl(const Params &P) : Symmetry_tmpl<S>(P) {}
+   explicit SymLR(const Params &P) : Symmetry<S>(P) {}
    bool islr() override { return true; }
 };
 
 template<typename S>
-class SymC3_tmpl : public Symmetry_tmpl<S> {
+class SymC3 : public Symmetry<S> {
  public:
-   explicit SymC3_tmpl(const Params &P) : Symmetry_tmpl<S>(P) {}
+   explicit SymC3(const Params &P) : Symmetry<S>(P) {}
    bool isc3() override { return true; }
 };
 
 template<typename S>
-class SymFieldLR_tmpl : public Symmetry_tmpl<S> {
+class SymFieldLR : public Symmetry<S> {
   public:
-   explicit SymFieldLR_tmpl(const Params &P) : Symmetry_tmpl<S>(P) {}
+   explicit SymFieldLR(const Params &P) : Symmetry<S>(P) {}
    bool isfield() override { return true; }
    bool islr() override { return true; }
 };

@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetrySU2_tmpl : public Symmetry_tmpl<SC> {
+class SymmetrySU2 : public Symmetry<SC> {
  private:
    outfield Q2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySU2_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetrySU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
      Q2(P, allfields, "<Q^2>", 1) {
        initInvar({
          {"II", additive} // isospin
@@ -51,7 +51,7 @@ class SymmetrySU2_tmpl : public Symmetry_tmpl<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trIZ2; // Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Number ii   = I.get("II");
@@ -77,7 +77,7 @@ class SymmetrySU2_tmpl : public Symmetry_tmpl<SC> {
 #define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 template<typename SC>
-void SymmetrySU2_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetrySU2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Ispin ii = I.get("II");
   int NN   = step.getnn();
   switch (P.channels) {

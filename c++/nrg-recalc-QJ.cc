@@ -24,8 +24,8 @@
 
 // Recalculate matrix elements of a doublet tensor operator
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
@@ -38,7 +38,7 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-doubletp.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2));
@@ -54,7 +54,7 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-doubletm.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2));
@@ -71,8 +71,8 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<
 
 // Recalculate matrix elements of a quadruplet tensor operator
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q1 = I1.get("Q");
     Sspin jj1 = I1.get("JJ");
@@ -86,7 +86,7 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tm
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad1.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
@@ -102,7 +102,7 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tm
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad2.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
@@ -118,7 +118,7 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tm
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad3.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
@@ -134,7 +134,7 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tm
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad4.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
@@ -147,8 +147,8 @@ MatrixElements_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_quadruplet(const DiagInfo_tm
 }
 
 template<typename SC>
-Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Number qp = Ip.get("Q");
     Sspin jjp = Ip.get("JJ");
@@ -162,7 +162,7 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j3_2-jz3_2.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -178,7 +178,7 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j1_2-jz1_2.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -192,7 +192,7 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j3_2-jz1_2.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -208,7 +208,7 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j1_2-jz-1_2.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -222,7 +222,7 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j3_2-jz-1_2.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -238,7 +238,7 @@ Opch_tmpl<SC> SymmetryQJ_tmpl<SC>::recalc_irreduc(const Step &step, const DiagIn
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j3_2-jz-3_2.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);

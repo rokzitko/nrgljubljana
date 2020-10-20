@@ -1,22 +1,22 @@
 template<typename S>
-class Algo_FT_tmpl : public Algo_tmpl<S> {
+class Algo_FT : public Algo<S> {
  private:
    inline static const std::string algoname = "FT";
-   SpectrumRealFreq_tmpl<S> spec;
+   SpectrumRealFreq<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
-   using CB = ChainBinning_tmpl<S>;
+   using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
    using t_eigen = typename traits<S>::t_eigen;
-   using Algo_tmpl<S>::P;
-   Algo_FT_tmpl(const std::string &name, const std::string &prefix, const gf_type &gt, const Params &P) :
-     Algo_tmpl<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname), P), sign(gf_sign(gt)) {}
+   using Algo<S>::P;
+   Algo_FT(const std::string &name, const std::string &prefix, const gf_type &gt, const Params &P) :
+     Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname), P), sign(gf_sign(gt)) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    // The first matrix element is conjugated! This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
-   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
-             const t_coef factor, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) override
+   void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             const t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
      for (const auto r1: diagI1.kept()) {
        const auto E1 = diagI1.value_zero(r1);
@@ -32,28 +32,28 @@ class Algo_FT_tmpl : public Algo_tmpl<S> {
      spec.mergeNN2(*cb.get(), step);
      cb.reset();
    }
-   ~Algo_FT_tmpl() { spec.save(); }
+   ~Algo_FT() { spec.save(); }
 };
 
 template<typename S>
-class Algo_FTmats_tmpl : public Algo_tmpl<S> {
+class Algo_FTmats : public Algo<S> {
  private:
    inline static const std::string algoname = "FTmats";
-   GFMatsubara_tmpl<S> gf;
+   GFMatsubara<S> gf;
    const int sign;
    const gf_type gt;
-   using CM = ChainMatsubara_tmpl<S>;
+   using CM = ChainMatsubara<S>;
    std::unique_ptr<CM> cm;
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
    using t_eigen = typename traits<S>::t_eigen;
-   using Algo_tmpl<S>::P;
-   Algo_FTmats_tmpl(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
-     Algo_tmpl<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
+   using Algo<S>::P;
+   Algo_FTmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
+     Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
-   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
-             t_coef factor, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) override
+   void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
      const size_t cutoff = P.mats;
      for (const auto r1: diagI1.kept()) {
@@ -75,31 +75,31 @@ class Algo_FTmats_tmpl : public Algo_tmpl<S> {
      gf.merge(*cm.get());
      cm.reset();
    }
-   ~Algo_FTmats_tmpl() { gf.save(); }
+   ~Algo_FTmats() { gf.save(); }
 };
 
 // Calculation of the temperature-dependent linear conductrance G(T) using the linear response theory &
 // impurity-level spectral density.  See Yoshida, Seridonio, Oliveira, arxiv:0906.4289, Eq. (8).
 template<typename S, int n>
-class Algo_GT_tmpl : public Algo_tmpl<S> {
+class Algo_GT : public Algo<S> {
  private:
    inline static const std::string algoname = n == 0 ? "GT" : (n == 1 ? "I1T" : "I2T");
-   TempDependence_tmpl<S> td;
-   using CT = ChainTempDependence_tmpl<S>;
+   TempDependence<S> td;
+   using CT = ChainTempDependence<S>;
    std::unique_ptr<CT> ct;
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
    using t_eigen = typename traits<S>::t_eigen;
-   using Algo_tmpl<S>::P;
-   Algo_GT_tmpl(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) : 
-     Algo_tmpl<S>(P), td(name, algoname, spec_fn(name, prefix, algoname), P) {
+   using Algo<S>::P;
+   Algo_GT(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) : 
+     Algo<S>(P), td(name, algoname, spec_fn(name, prefix, algoname), P) {
      my_assert(gt == gf_type::fermionic);
      static_assert(n ==0 || n == 1 || n == 2);
    }
    void begin(const Step &) override { ct = std::make_unique<CT>(P); }
-   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2, 
-             t_coef factor, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) override 
+   void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+             t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override 
    {
      const double temperature = P.gtp * step.scale(); // in absolute units!
      const auto beta          = 1.0 / temperature;
@@ -119,7 +119,7 @@ class Algo_GT_tmpl : public Algo_tmpl<S> {
    void end(const Step &) override {
      td.merge(*ct.get());
    }
-   ~Algo_GT_tmpl() { td.save(); }
+   ~Algo_GT() { td.save(); }
 };
 
 // weight=(exp(-beta Em)-exp(-beta En))/(beta En-beta Em). NOTE: arguments En, Em are order omega_N, while beta is
@@ -145,24 +145,24 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
 // 'temperature' parameter that we use for the exponential functions in the following equation. The output is
 // chi/beta = k_B T chi, as we prefer.
 template<typename S>
-class Algo_CHIT_tmpl : public Algo_tmpl<S> {
+class Algo_CHIT : public Algo<S> {
  private:
    inline static const std::string algoname = "CHIT";
-   TempDependence_tmpl<S> td;
-   using CT = ChainTempDependence_tmpl<S>;
+   TempDependence<S> td;
+   using CT = ChainTempDependence<S>;
    std::unique_ptr<CT> ct;
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
    using t_eigen = typename traits<S>::t_eigen;
-   using Algo_tmpl<S>::P;
-   Algo_CHIT_tmpl(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) : 
-     Algo_tmpl<S>(P), td(name, algoname, spec_fn(name, prefix, algoname), P) {
+   using Algo<S>::P;
+   Algo_CHIT(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) : 
+     Algo<S>(P), td(name, algoname, spec_fn(name, prefix, algoname), P) {
      my_assert(gt == gf_type::bosonic);
    }
    void begin(const Step &) override { ct = std::make_unique<CT>(P); }
-   void calc(const Step &step, const Eigen_tmpl<S> &diagIp, const Eigen_tmpl<S> &diagI1, const Matrix &op1, const Matrix &op2,
-             t_coef factor, const Invar &, const Invar &, const DensMatElements_tmpl<S> &, const Stats_tmpl<S> &stats) override
+   void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
+             t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
      const double temperature = P.chitp * step.scale(); // in absolute units!
      const auto beta          = 1.0 / temperature;
@@ -180,5 +180,5 @@ class Algo_CHIT_tmpl : public Algo_tmpl<S> {
    void end(const Step &) override {
      td.merge(*ct.get());
    }
-   ~Algo_CHIT_tmpl() { td.save(); }
+   ~Algo_CHIT() { td.save(); }
 };

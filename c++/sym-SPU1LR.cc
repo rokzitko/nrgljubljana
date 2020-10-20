@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetrySPU1LR_tmpl : public SymFieldLR_tmpl<SC> {
+class SymmetrySPU1LR : public SymFieldLR<SC> {
  private:
    outfield Sz2, Sz;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPU1LR_tmpl(const Params &P, Allfields &allfields) : SymFieldLR_tmpl<SC>(P),
+   SymmetrySPU1LR(const Params &P, Allfields &allfields) : SymFieldLR<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2) {
        initInvar({
          {"SSZ", additive},    // spin projection
@@ -45,7 +45,7 @@ class SymmetrySPU1LR_tmpl : public SymFieldLR_tmpl<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
     for (const auto &[I, eig]: diag) {
       const SZspin ssz  = I.get("SSZ");
@@ -76,7 +76,7 @@ class SymmetrySPU1LR_tmpl : public SymFieldLR_tmpl<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetrySPU1LR_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetrySPU1LR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   switch (P.channels) {
     case 1:
 #include "spu1lr/spu1lr-1ch-offdiag.dat"

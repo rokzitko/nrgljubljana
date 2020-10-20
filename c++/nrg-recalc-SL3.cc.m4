@@ -7,8 +7,8 @@
 include(recalc-macros.m4)
 
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetrySL3_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetrySL3<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Number q11 = I1.get("Q1");
     Number q21 = I1.get("Q2");
@@ -20,8 +20,8 @@ MatrixElements_tmpl<SC> SymmetrySL3_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl
 }
 
 template<typename SC>
-Opch_tmpl<SC> SymmetrySL3_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Number q1p = Ip.get("Q1");
     Number q2p = Ip.get("Q2");
@@ -54,7 +54,7 @@ Opch_tmpl<SC> SymmetrySL3_tmpl<SC>::recalc_irreduc(const Step &step, const DiagI
 #define N3(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
 
 template<typename SC>
-void SymmetrySL3_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
+void SymmetrySL3<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements<SC> &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

@@ -32,8 +32,8 @@ double sign(double x) {
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
 template<typename SC>
-Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -66,7 +66,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isoupa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -80,7 +80,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isoupb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -96,7 +96,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isoupa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -110,7 +110,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isoupb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -126,7 +126,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isodowna.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -140,7 +140,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isodownb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -156,7 +156,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isodowna.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -170,7 +170,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isodownb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -188,7 +188,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isoupdiffa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -202,7 +202,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isoupdiffb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -218,7 +218,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isoupdiffa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -232,7 +232,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isoupdiffb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -248,7 +248,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isodowndiffa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -262,7 +262,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isodowndiffb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -278,7 +278,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isodowndiffa.dat"
         };
         opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -292,7 +292,7 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isodowndiffb.dat"
         };
         opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
@@ -306,8 +306,8 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -321,7 +321,7 @@ MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-doubletmp.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
@@ -337,7 +337,7 @@ MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-doubletmm.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
@@ -353,7 +353,7 @@ MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-doubletpp.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
@@ -369,7 +369,7 @@ MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-doubletpm.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
@@ -383,8 +383,8 @@ MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetryISO2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -398,7 +398,7 @@ MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-triplets.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
@@ -414,7 +414,7 @@ MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-tripletp.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
@@ -430,7 +430,7 @@ MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
       [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_tmpl<SC>> recalc_table = {
+        std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-tripletm.dat"
         };
         cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3, +1));

@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetrySPSU2T_tmpl : public Symmetry_tmpl<SC> {
+class SymmetrySPSU2T : public Symmetry<SC> {
  private:
    outfield Sz2, Tz2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2T_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetrySPSU2T(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Tz2(P, allfields, "<Tz^2>", 2) {
        initInvar({
          {"SS", additive}, // spin
@@ -64,7 +64,7 @@ class SymmetrySPSU2T_tmpl : public Symmetry_tmpl<SC> {
     return spinfactor * angmomfactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ2, trTZ2; // Tr[S_z^2], Tr[T_z^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
@@ -129,7 +129,7 @@ bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I
 #define ANOMALOUS(i, j, factor) offdiag_function(step, i, j, 0, 0, t_matel(factor) * coef.kappa(step.N(), 0), h, qq, In, opch)
 
 template<typename SC>
-void SymmetrySPSU2T_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetrySPSU2T<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Sspin ss  = I.get("SS");
   Tangmom t = I.get("T");
   double T  = t; // crucially important to use floating point!

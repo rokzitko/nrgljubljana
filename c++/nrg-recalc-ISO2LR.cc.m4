@@ -16,8 +16,8 @@ double sign(double x) {
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
 template<typename SC>
-Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -82,8 +82,8 @@ Opch_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");
@@ -107,8 +107,8 @@ MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetryISO2LR_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetryISO2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii1 = I1.get("II");
     Sspin ss1 = I1.get("SS");

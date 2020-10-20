@@ -1,14 +1,14 @@
 template<typename SC>
-class SymmetryPP_tmpl : public Symmetry_tmpl<SC> {
+class SymmetryPP : public Symmetry<SC> {
  private:
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryPP_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P) {
+   SymmetryPP(const Params &P, Allfields &allfields) : Symmetry<SC>(P) {
      initInvar({
        {"Pa", multiplicative}, // fermion parity in channel a
        {"Pb", multiplicative}  // fermion parity in channel b
@@ -26,10 +26,10 @@ class SymmetryPP_tmpl : public Symmetry_tmpl<SC> {
     }
   }
 
-  void make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef);
-  void make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef);
+  void make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef);
+  void make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef);
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {};
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {};
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return z2_equality(I1.get("Pa"), I2.get("Pa"), I3.get("Pa")) && z2_equality(I1.get("Pb"), I2.get("Pb"), I3.get("Pb"));
@@ -56,7 +56,7 @@ class SymmetryPP_tmpl : public Symmetry_tmpl<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryPP_tmpl<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryPP<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   switch (P.channels) {
     case 2:
 #include "pp/pp-2ch-offdiag-CR-UP.dat"
@@ -90,7 +90,7 @@ void SymmetryPP_tmpl<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, 
 #define DIAG_DOWN(i, j, ch, number) this->diag_function(step, i, ch, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryPP_tmpl<SC>::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryPP<SC>::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   switch (P.channels) {
     case 2:
 #include "pp/pp-2ch-offdiag-CR-UP.dat"
@@ -106,7 +106,7 @@ void SymmetryPP_tmpl<SC>::make_matrix_polarized(Matrix &h, const Step &step, con
 }
 
 template<typename SC>
-void SymmetryPP_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryPP<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   if (P.polarized)
     make_matrix_polarized(h, step, qq, I, In, opch, coef);
   else

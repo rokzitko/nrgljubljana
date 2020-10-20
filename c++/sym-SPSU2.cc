@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetrySPSU2_tmpl : public Symmetry_tmpl<SC> {
+class SymmetrySPSU2 : public Symmetry<SC> {
   private:
    outfield Sz2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetrySPSU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
       Sz2(P, allfields, "<Sz^2>", 1) {
         initInvar({
           {"SS", additive} // spin
@@ -66,7 +66,7 @@ class SymmetrySPSU2_tmpl : public Symmetry_tmpl<SC> {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ; // Tr[S_z^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
@@ -100,7 +100,7 @@ class SymmetrySPSU2_tmpl : public Symmetry_tmpl<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetrySPSU2_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Sspin ss = I.get("SS");
 
   if (!P.substeps) {

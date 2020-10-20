@@ -7,8 +7,8 @@
 include(recalc-macros.m4)
 
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetrySPSU2_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
@@ -40,9 +40,9 @@ MatrixElements_tmpl<SC> SymmetrySPSU2_tmpl<SC>::recalc_doublet(const DiagInfo_tm
 }
 
 template<typename SC>
-Opch_tmpl<SC> SymmetrySPSU2_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
+Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   my_assert(!P.substeps);
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     Invar I1;
@@ -75,9 +75,9 @@ Opch_tmpl<SC> SymmetrySPSU2_tmpl<SC>::recalc_irreduc(const Step &step, const Dia
 }
 
 template<typename SC>
-OpchChannel_tmpl<SC> SymmetrySPSU2_tmpl<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, int M) {
+OpchChannel<SC> SymmetrySPSU2<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, int M) {
   my_assert(P.substeps);
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     Invar I1;
@@ -92,8 +92,8 @@ OpchChannel_tmpl<SC> SymmetrySPSU2_tmpl<SC>::recalc_irreduc_substeps(const Step 
 }
 
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetrySPSU2_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
       Sspin ss1 = I1.get("SS");
@@ -147,7 +147,7 @@ MatrixElements_tmpl<SC> SymmetrySPSU2_tmpl<SC>::recalc_triplet(const DiagInfo_tm
 #define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 template<typename SC>
-void SymmetrySPSU2_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
+void SymmetrySPSU2<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements<SC> &cnew) {
   // NOTE: none of these are implemented for substeps==true.
 
   if (name == "Qtot") {

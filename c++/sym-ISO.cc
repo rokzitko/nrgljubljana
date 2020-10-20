@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryISOcommon_tmpl : public Symmetry_tmpl<SC> {
+class SymmetryISOcommon : public Symmetry<SC> {
   private:
    outfield Sz2, Q2;
 
   protected:
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
   public:
-   SymmetryISOcommon_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetryISOcommon(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
        initInvar({
          {"II", additive}, // isospin
@@ -52,7 +52,7 @@ class SymmetryISOcommon_tmpl : public Symmetry_tmpl<SC> {
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
@@ -67,16 +67,16 @@ class SymmetryISOcommon_tmpl : public Symmetry_tmpl<SC> {
 };
 
 template<typename SC>
-class SymmetryISO_tmpl : public SymmetryISOcommon_tmpl<SC> {
+class SymmetryISO : public SymmetryISOcommon<SC> {
   private:
-   using SymmetryISOcommon_tmpl<SC>::P;
-   using SymmetryISOcommon_tmpl<SC>::In;
-   using SymmetryISOcommon_tmpl<SC>::QN;
+   using SymmetryISOcommon<SC>::P;
+   using SymmetryISOcommon<SC>::In;
+   using SymmetryISOcommon<SC>::QN;
 
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISO_tmpl(const Params &P, Allfields &allfields) : SymmetryISOcommon_tmpl<SC>(P, allfields) {}
+   SymmetryISO(const Params &P, Allfields &allfields) : SymmetryISOcommon<SC>(P, allfields) {}
 
   void load() override {
     switch (P.channels) {
@@ -102,16 +102,16 @@ class SymmetryISO_tmpl : public SymmetryISOcommon_tmpl<SC> {
 };
 
 template<typename SC>
-class SymmetryISO2_tmpl : public SymmetryISOcommon_tmpl<SC> {
+class SymmetryISO2 : public SymmetryISOcommon<SC> {
   private:
-   using SymmetryISOcommon_tmpl<SC>::P;
-   using SymmetryISOcommon_tmpl<SC>::In;
-   using SymmetryISOcommon_tmpl<SC>::QN;
+   using SymmetryISOcommon<SC>::P;
+   using SymmetryISOcommon<SC>::In;
+   using SymmetryISOcommon<SC>::QN;
 
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISO2_tmpl(const Params &P, Allfields &allfields) : SymmetryISOcommon_tmpl<SC>(P, allfields) {}
+   SymmetryISO2(const Params &P, Allfields &allfields) : SymmetryISOcommon<SC>(P, allfields) {}
 
   void load() override {
     switch (P.channels) {
@@ -139,7 +139,7 @@ class SymmetryISO2_tmpl : public SymmetryISOcommon_tmpl<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryISO_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryISO<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
   // nn is the index of the last site in the chain, while nn+1 is the
@@ -162,7 +162,7 @@ void SymmetryISO_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxva
 }
 
 template<typename SC>
-void SymmetryISO2_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryISO2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
   int NN   = step.getnn();

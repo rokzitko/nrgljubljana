@@ -10,8 +10,8 @@ include(recalc-macros.m4)
 
 // Driver routine for recalc_f()
 template<typename SC>
-Opch_tmpl<SC> SymmetryQSC3_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
 
   if constexpr (std::is_same_v<SC, std::complex<double>>) {
  

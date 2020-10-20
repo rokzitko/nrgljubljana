@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetrySL_tmpl : public Symmetry_tmpl<SC> {
+class SymmetrySL : public Symmetry<SC> {
  private:
    outfield Q, Q2, sQ2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySL_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetrySL(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
      Q(P, allfields, "<Q>", 1), Q2(P, allfields, "<Q^2>", 2), sQ2(P, allfields, "<sQ^2>", 3) {
        initInvar({
          {"Q", additive} // charge
@@ -38,7 +38,7 @@ class SymmetrySL_tmpl : public Symmetry_tmpl<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trQ, trQ2; // Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Number q    = I.get("Q");
@@ -64,7 +64,7 @@ class SymmetrySL_tmpl : public Symmetry_tmpl<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetrySL_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetrySL<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   switch (P.channels) {
     case 1:
 #include "sl/sl-1ch-offdiag.dat"

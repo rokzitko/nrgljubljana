@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
+class SymmetryQS : public Symmetry<SC> {
  private:
    outfield Sz2, Q, Q2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQS_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetryQS(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"Q", additive}, // charge
@@ -74,7 +74,7 @@ class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
      return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
    }
 
-   void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
      auto trSZ = 0.0, trQ = 0.0, trQ2 = 0.0; // Tr[S_z^2], Tr[Q], Tr[Q^2]
      for (const auto &[I, eig]: diag) {
        const Sspin ss    = I.get("SS"); // XXX -> auto!
@@ -94,7 +94,7 @@ class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
    HAS_TRIPLET;
    HAS_GLOBAL;
    HAS_SUBSTEPS;
-   void show_coefficients(const Step &, const Coef_tmpl<SC> &) override;
+   void show_coefficients(const Step &, const Coef<SC> &) override;
 };
 
 // *** Helper macros for make_matrix() members in matrix.cc
@@ -115,8 +115,8 @@ class SymmetryQS_tmpl : public Symmetry_tmpl<SC> {
 
 template<typename SC>
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives; must appear after template
-void SymmetryQS_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
-                                     const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+                                     const Opch<SC> &opch, const Coef<SC> &coef) {
   Sspin ss = I.get("SS");
 
   if (!P.substeps) {
@@ -161,8 +161,8 @@ void SymmetryQS_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxval
 }
 
 template<typename SC>
-void SymmetryQS_tmpl<SC>::show_coefficients(const Step &step, const Coef_tmpl<SC> &coef) {
-  Symmetry_tmpl<SC>::show_coefficients(step, coef);
+void SymmetryQS<SC>::show_coefficients(const Step &step, const Coef<SC> &coef) {
+  Symmetry<SC>::show_coefficients(step, coef);
   if (P.rungs)
     for (unsigned int i = 0; i < P.channels; i++)
       std::cout << "[" << i + 1 << "]"

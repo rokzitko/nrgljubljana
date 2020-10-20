@@ -7,8 +7,8 @@
 include(recalc-macros.m4)
 
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetrySPSU2LR_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetrySPSU2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Sspin ss1 = I1.get("SS");
     int p1    = I1.get("P");
@@ -24,8 +24,8 @@ MatrixElements_tmpl<SC> SymmetrySPSU2LR_tmpl<SC>::recalc_doublet(const DiagInfo_
 }
 
 template<typename SC>
-Opch_tmpl<SC> SymmetrySPSU2LR_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetrySPSU2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Sspin ssp = Ip.get("SS");
     int pp    = Ip.get("P");
@@ -55,8 +55,8 @@ Opch_tmpl<SC> SymmetrySPSU2LR_tmpl<SC>::recalc_irreduc(const Step &step, const D
 }
 
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetrySPSU2LR_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetrySPSU2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Sspin ss1 = I1.get("SS");
     int p1    = I1.get("P");

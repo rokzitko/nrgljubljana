@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryQSC3_tmpl : public SymC3_tmpl<SC> {
+class SymmetryQSC3 : public SymC3<SC> {
  private:
    outfield Sz2, Q, Q2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSC3_tmpl(const Params &P, Allfields &allfields) : SymC3_tmpl<SC>(P),
+   SymmetryQSC3(const Params &P, Allfields &allfields) : SymC3<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"Q", additive},  // charge
@@ -54,7 +54,7 @@ class SymmetryQSC3_tmpl : public SymC3_tmpl<SC> {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ2, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
@@ -79,7 +79,7 @@ class SymmetryQSC3_tmpl : public SymC3_tmpl<SC> {
 #define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 template<typename SC>
-void SymmetryQSC3_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryQSC3<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   my_assert(P.channels == 3);
   Sspin ss = I.get("SS");
 #undef Complex

@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryISOLRcommon_tmpl : public SymLR_tmpl<SC> {
+class SymmetryISOLRcommon : public SymLR<SC> {
  private:
    outfield Sz2, Q2;
 
  protected:
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
-   SymmetryISOLRcommon_tmpl(const Params &P, Allfields &allfields) : SymLR_tmpl<SC>(P),
+   SymmetryISOLRcommon(const Params &P, Allfields &allfields) : SymLR<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
        initInvar({
          {"II", additive},     // isospin
@@ -51,7 +51,7 @@ class SymmetryISOLRcommon_tmpl : public SymLR_tmpl<SC> {
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const Ispin ii    = I.get("II");
@@ -66,16 +66,16 @@ class SymmetryISOLRcommon_tmpl : public SymLR_tmpl<SC> {
 };
 
 template<typename SC>
-class SymmetryISOLR_tmpl : public SymmetryISOLRcommon_tmpl<SC> {
+class SymmetryISOLR : public SymmetryISOLRcommon<SC> {
  private:
-   using SymmetryISOLRcommon_tmpl<SC>::P;
-   using SymmetryISOLRcommon_tmpl<SC>::In;
-   using SymmetryISOLRcommon_tmpl<SC>::QN;
+   using SymmetryISOLRcommon<SC>::P;
+   using SymmetryISOLRcommon<SC>::In;
+   using SymmetryISOLRcommon<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISOLR_tmpl(const Params &P, Allfields &allfields) : SymmetryISOLRcommon_tmpl<SC>(P, allfields) {}
+   SymmetryISOLR(const Params &P, Allfields &allfields) : SymmetryISOLRcommon<SC>(P, allfields) {}
 
   void load() override {
     my_assert(P.channels == 2);
@@ -89,16 +89,16 @@ class SymmetryISOLR_tmpl : public SymmetryISOLRcommon_tmpl<SC> {
 };
 
 template<typename SC>
-class SymmetryISO2LR_tmpl : public SymmetryISOLRcommon_tmpl<SC> {
+class SymmetryISO2LR : public SymmetryISOLRcommon<SC> {
  private:
-   using SymmetryISOLRcommon_tmpl<SC>::P;
-   using SymmetryISOLRcommon_tmpl<SC>::In;
-   using SymmetryISOLRcommon_tmpl<SC>::QN;
+   using SymmetryISOLRcommon<SC>::P;
+   using SymmetryISOLRcommon<SC>::In;
+   using SymmetryISOLRcommon<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISO2LR_tmpl(const Params &P, Allfields &allfields) : SymmetryISOLRcommon_tmpl<SC>(P, allfields) {}
+   SymmetryISO2LR(const Params &P, Allfields &allfields) : SymmetryISOLRcommon<SC>(P, allfields) {}
 
   void load() override {
     my_assert(P.channels == 2);
@@ -116,14 +116,14 @@ class SymmetryISO2LR_tmpl : public SymmetryISOLRcommon_tmpl<SC> {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 template<typename SC>
-void SymmetryISOLR_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryISOLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
 #include "isolr/isolr-2ch-offdiag.dat"
 }
 
 template<typename SC>
-void SymmetryISO2LR_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryISO2LR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Sspin ss = I.get("SS");
   Ispin ii = I.get("II");
 #include "iso2lr/iso2lr-2ch-offdiag.dat"

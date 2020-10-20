@@ -7,8 +7,8 @@
 include(recalc-macros.m4)
 
 template<typename SC>
-Opch_tmpl<SC> SymmetryP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetryP<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     int p    = Ip.get("P");
 
@@ -32,8 +32,8 @@ Opch_tmpl<SC> SymmetryP_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInf
 }
 
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetryP_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetryP<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int p1   = I1.get("P");
     Invar Ip = Invar(-p1); // always the opposite fermion parity!
@@ -83,7 +83,7 @@ MatrixElements_tmpl<SC> SymmetryP_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<S
 #define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
 
 template<typename SC>
-void SymmetryP_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
+void SymmetryP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements<SC> &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II {I1, I1};

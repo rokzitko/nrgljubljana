@@ -2,10 +2,10 @@
 #define _read_input_cc_
 
 template<typename S>
-class Stats_tmpl;
+class Stats;
 
 template<typename S>
-std::shared_ptr<Symmetry_tmpl<S>> set_symmetry(const Params &P, Stats_tmpl<S> &stats);
+std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P, Stats<S> &stats);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
 auto parse_datafile_header(std::istream &fdata, const int expected_version = 9)
@@ -90,14 +90,14 @@ auto read_nsubs(std::ifstream &fdata)
 
 // Read the ground state energy from data file ('e' flag)
 template<typename S>
-void read_gs_energy(std::ifstream &fdata, Stats_tmpl<S> &stats) {
+void read_gs_energy(std::ifstream &fdata, Stats<S> &stats) {
   fdata >> stats.total_energy;
 }
 
 // Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
 // tridiagonalization routines (if not using the tables computed by initial.m).
 template<typename S>
-void determine_Nmax(const Coef_tmpl<S> &coef, Params &P) { // Params is non-const !
+void determine_Nmax(const Coef<S> &coef, Params &P) { // Params is non-const !
   const auto length_coef_table = coef.xi.max(0); // all channels have same nr. of coefficients
   std::cout << std::endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << std::endl << std::endl;
   my_assert(length_coef_table == P.Nmax);
@@ -116,7 +116,7 @@ inline void skipline(std::ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
 template<typename S> 
-auto read_data(Params &P, Stats_tmpl<S> &stats, std::string filename = "data") {
+auto read_data(Params &P, Stats<S> &stats, std::string filename = "data") {
   skipline();
   std::ifstream fdata(filename);
   if (!fdata) throw std::runtime_error("Can't load initial data.");
@@ -127,11 +127,11 @@ auto read_data(Params &P, Stats_tmpl<S> &stats, std::string filename = "data") {
   read_Nmax(fdata, P);
   const auto nsubs = read_nsubs(fdata);
   skip_comments(fdata);
-  DiagInfo_tmpl<S> diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
+  DiagInfo<S> diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);
-  IterInfo_tmpl<S> iterinfo0;
-  iterinfo0.opch = Opch_tmpl<S>(fdata, diag0, P);
-  Coef_tmpl<S> coef(P);
+  IterInfo<S> iterinfo0;
+  iterinfo0.opch = Opch<S>(fdata, diag0, P);
+  Coef<S> coef(P);
   while (true) {
     /* skip white space */
     while (!fdata.eof() && std::isspace(fdata.peek())) fdata.get();
@@ -145,13 +145,13 @@ auto read_data(Params &P, Stats_tmpl<S> &stats, std::string filename = "data") {
         // ignore embedded comment lines
         break;
       case 'e': read_gs_energy(fdata, stats); break;
-      case 's': iterinfo0.ops[opname]  = MatrixElements_tmpl<S>(fdata, diag0); break;
-      case 'p': iterinfo0.opsp[opname] = MatrixElements_tmpl<S>(fdata, diag0); break;
-      case 'g': iterinfo0.opsg[opname] = MatrixElements_tmpl<S>(fdata, diag0); break;
-      case 'd': iterinfo0.opd[opname]  = MatrixElements_tmpl<S>(fdata, diag0); break;
-      case 't': iterinfo0.opt[opname]  = MatrixElements_tmpl<S>(fdata, diag0); break;
-      case 'o': iterinfo0.opot[opname] = MatrixElements_tmpl<S>(fdata, diag0); break;
-      case 'q': iterinfo0.opq[opname]  = MatrixElements_tmpl<S>(fdata, diag0); break;
+      case 's': iterinfo0.ops[opname]  = MatrixElements<S>(fdata, diag0); break;
+      case 'p': iterinfo0.opsp[opname] = MatrixElements<S>(fdata, diag0); break;
+      case 'g': iterinfo0.opsg[opname] = MatrixElements<S>(fdata, diag0); break;
+      case 'd': iterinfo0.opd[opname]  = MatrixElements<S>(fdata, diag0); break;
+      case 't': iterinfo0.opt[opname]  = MatrixElements<S>(fdata, diag0); break;
+      case 'o': iterinfo0.opot[opname] = MatrixElements<S>(fdata, diag0); break;
+      case 'q': iterinfo0.opq[opname]  = MatrixElements<S>(fdata, diag0); break;
       case 'z':
         coef.xi.read(fdata, P.coefchannels);
         coef.zeta.read(fdata, P.coefchannels);
@@ -173,7 +173,7 @@ auto read_data(Params &P, Stats_tmpl<S> &stats, std::string filename = "data") {
     default: throw std::invalid_argument(fmt::format("Unknown block {} in data file.", ch));
     }
   }
-  if (std::string(P.tri) == "cpp") Tridiag_tmpl<S>(coef, P); // before calling determine_Nmax()
+  if (std::string(P.tri) == "cpp") Tridiag<S>(coef, P); // before calling determine_Nmax()
   determine_Nmax(coef, P);
   return std::make_tuple(diag0, iterinfo0, coef, Sym);
 }

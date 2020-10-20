@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryQSLR_tmpl : public SymLR_tmpl<SC> {
+class SymmetryQSLR : public SymLR<SC> {
  private:
    outfield Sz2, Q, Q2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSLR_tmpl(const Params &P, Allfields &allfields) : SymLR_tmpl<SC>(P),
+   SymmetryQSLR(const Params &P, Allfields &allfields) : SymLR<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"Q", additive},      // charge
@@ -52,7 +52,7 @@ class SymmetryQSLR_tmpl : public SymLR_tmpl<SC> {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Sspin ss    = I.get("SS");
@@ -78,7 +78,7 @@ class SymmetryQSLR_tmpl : public SymLR_tmpl<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryQSLR_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryQSLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Sspin ss = I.get("SS");
 #include "qslr/qslr-2ch-diag.dat"
 #include "qslr/qslr-2ch-offdiag.dat"

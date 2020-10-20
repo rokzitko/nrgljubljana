@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryDBLISOSZ_tmpl : public SymField_tmpl<SC> {
+class SymmetryDBLISOSZ : public SymField<SC> {
  private:
    outfield Sz2, Sz, Q12, Q22;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryDBLISOSZ_tmpl(const Params &P, Allfields &allfields) : SymField_tmpl<SC>(P),
+   SymmetryDBLISOSZ(const Params &P, Allfields &allfields) : SymField<SC>(P),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q12(P, allfields, "<Q1^2>", 3), Q22(P, allfields, "<Q2^2>", 4) {
        initInvar({
          {"II1", additive}, // isospin 1
@@ -76,7 +76,7 @@ class SymmetryDBLISOSZ_tmpl : public SymField_tmpl<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     auto trSZ = 0.0, trSZ2 = 0.0; // Tr[S_z], Tr[S_z^2]
     auto trIZ12 = 0.0;      // Tr[I1_z^2]
     auto trIZ22 = 0.0;      // Tr[I2_z^2]
@@ -105,7 +105,7 @@ class SymmetryDBLISOSZ_tmpl : public SymField_tmpl<SC> {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 template<typename SC>
-void SymmetryDBLISOSZ_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryDBLISOSZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   switch (P.channels) {
     case 2:
 #include "dblisosz/dblisosz-2ch-offdiag.dat"

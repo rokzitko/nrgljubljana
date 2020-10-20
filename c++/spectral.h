@@ -6,7 +6,7 @@
 
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
 template<typename S>
-using t_delta_peak_tmpl = std::pair<double, typename traits<S>::t_weight>;
+using t_delta_peak = std::pair<double, typename traits<S>::t_weight>;
 
 inline void outputxy(std::ostream &F, const double x, const std::complex<double> z, const bool imagpart, const double clip_tol_imag = 1e-10) {
   const auto [r, i] = reim(z);
@@ -16,7 +16,7 @@ inline void outputxy(std::ostream &F, const double x, const std::complex<double>
 }
 
 template<typename S>
-class Spikes_tmpl : public std::vector<t_delta_peak_tmpl<S>> {
+class Spikes : public std::vector<t_delta_peak<S>> {
  public:
    template<typename T>
      void save(T&& F, const int prec, const bool imagpart) {
@@ -63,7 +63,7 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 
 // Calculate "moment"-th spectral moment.
 template<typename S>
-CONSTFNC auto moment(const Spikes_tmpl<S> &s_neg, const Spikes_tmpl<S> &s_pos, const int moment) {
+CONSTFNC auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int moment) {
   using t_weight = typename traits<S>::t_weight;
   auto sumA = ranges::accumulate(s_pos, t_weight{}, [moment](auto s, const auto &x){ const auto &[e,w] = x; return s+w*pow(e,moment); });
   auto sumB = ranges::accumulate(s_neg, t_weight{}, [moment](auto s, const auto &x){ const auto &[e,w] = x; return s+w*pow(-e,moment); });
@@ -80,21 +80,21 @@ CONSTFNC double bose_fnc(const double omega, const double T) {
 }
 
 template<typename F, typename S>
-auto sum(const Spikes_tmpl<S> &s, const bool invert, F && f) {
+auto sum(const Spikes<S> &s, const bool invert, F && f) {
   using t_weight = typename traits<S>::t_weight;
   return ranges::accumulate(s, t_weight{}, [&f,invert](auto s, const auto &x){ const auto &[e,w] = x; return s+w*f(invert ? -e : e); });
 }
 
 // Integrated spectral function with a kernel as in FDT for fermions
 template<typename S>
-CONSTFNC auto fd_fermi(const Spikes_tmpl<S> &s_neg, const Spikes_tmpl<S> &s_pos, double const T) {
+CONSTFNC auto fd_fermi(const Spikes<S> &s_neg, const Spikes<S> &s_pos, double const T) {
   auto fnc = [T](const auto x) { return fermi_fnc(x, T); };
   return sum(s_neg, true, fnc) + sum(s_pos, false, fnc);
 }
 
 // Ditto for bosons
 template<typename S>
-CONSTFNC auto fd_bose(const Spikes_tmpl<S> &s_neg, const Spikes_tmpl<S> &s_pos, double const T) {
+CONSTFNC auto fd_bose(const Spikes<S> &s_neg, const Spikes<S> &s_pos, double const T) {
   auto fnc = [T](const auto x) { return bose_fnc(x, T); };
   return sum(s_neg, true, fnc) + sum(s_pos, false, fnc);
 }

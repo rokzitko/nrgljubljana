@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetrySL3_tmpl : public Symmetry_tmpl<SC> {
+class SymmetrySL3 : public Symmetry<SC> {
   private:
    outfield Q1, Q12, sQ12, Q2, Q22, sQ22, Q3, Q32, sQ32;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySL3_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetrySL3(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
      Q1(P, allfields, "<Q1>", 1), Q12(P, allfields, "<Q1^2>", 2), sQ12(P, allfields, "<sQ1^2>", 3),
      Q2(P, allfields, "<Q2>", 4), Q22(P, allfields, "<Q2^2>", 5), sQ22(P, allfields, "<sQ2^2>", 6),
      Q3(P, allfields, "<Q3>", 7), Q32(P, allfields, "<Q3^2>", 8), sQ32(P, allfields, "<sQ3^2>", 9) {
@@ -31,7 +31,7 @@ class SymmetrySL3_tmpl : public Symmetry_tmpl<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trQ1, trQ12; // Tr[Q], Tr[Q^2]
     bucket trQ2, trQ22;
     bucket trQ3, trQ32;
@@ -73,7 +73,7 @@ class SymmetrySL3_tmpl : public Symmetry_tmpl<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetrySL3_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetrySL3<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   switch (P.channels) {
     case 3:
 #include "sl3/sl3-3ch-offdiag.dat"

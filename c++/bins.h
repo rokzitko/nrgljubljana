@@ -15,7 +15,7 @@
 // other words, what we are doing here is coarse graining rather than binning!
 
 template<typename S>
-class Bins_tmpl {
+class Bins {
  private:
    using t_weight = typename traits<S>::t_weight;
    double emin{}, emax{};
@@ -37,18 +37,18 @@ class Bins_tmpl {
    inline static const double discarded_weight_warn_limit = 1e-8;
 
  public:
-   Spikes_tmpl<S> bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs
-   operator const Spikes_tmpl<S> &() const { return bins; }
-   operator Spikes_tmpl<S> &() { return bins; }
-   explicit Bins_tmpl(const Params &P) : P(P) { loggrid(); } // default: logarithmic grid
+   Spikes<S> bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs
+   operator const Spikes<S> &() const { return bins; }
+   operator Spikes<S> &() { return bins; }
+   explicit Bins(const Params &P) : P(P) { loggrid(); } // default: logarithmic grid
    inline void add(const double energy, const t_weight weight);
-   void merge(const Bins_tmpl<S> &b);
+   void merge(const Bins<S> &b);
    void trim();
    auto total_weight() const { return bins.sum_weights(); }
 };
 
 template<typename S>
-void Bins_tmpl<S>::setlimits() {
+void Bins<S>::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the conduction band!!
   emax = (P.emax > 0 ? P.emax : P.SCALE(0) * pow(base, max_bin_shift));
   emin = (P.emin > 0 ? P.emin : P.last_step_scale() / pow(base, min_bin_shift));
@@ -58,7 +58,7 @@ void Bins_tmpl<S>::setlimits() {
 }
 
 template<typename S>
-void Bins_tmpl<S>::loggrid() {
+void Bins<S>::loggrid() {
   my_assert(P.bins > 0);
   setlimits();
   if (P.accumulation > 0.0)
@@ -68,7 +68,7 @@ void Bins_tmpl<S>::loggrid() {
 }
 
 template<typename S>
-void Bins_tmpl<S>::loggrid_acc() {
+void Bins<S>::loggrid_acc() {
   const double a = P.accumulation;
   my_assert(a > 0.0);
   bins.resize(0);
@@ -82,7 +82,7 @@ void Bins_tmpl<S>::loggrid_acc() {
 }
 
 template<typename S>
-void Bins_tmpl<S>::loggrid_std() {
+void Bins<S>::loggrid_std() {
   const auto nrbins = (size_t)((log10emax - log10emin) * P.bins + 1.0);
   bins.resize(nrbins); // Note: Spikes is a vector type!
   for (const auto i : range0(nrbins)) bins[i] = { pow(base, log10emin + (double)i / P.bins), 0 };
@@ -90,7 +90,7 @@ void Bins_tmpl<S>::loggrid_std() {
 
 // Unbiased assignment of the spectral weight to bins.
 template<typename S>
-inline void Bins_tmpl<S>::add(const double energy, const t_weight weight) {
+inline void Bins<S>::add(const double energy, const t_weight weight) {
   if (abs(weight) < P.discard_immediately * energy) return;
   if (P.accumulation > 0.0)
     add_acc(energy, weight);
@@ -99,7 +99,7 @@ inline void Bins_tmpl<S>::add(const double energy, const t_weight weight) {
 }
 
 template<typename S>
-inline void Bins_tmpl<S>::add_std(const double energy, const t_weight weight) {
+inline void Bins<S>::add_std(const double energy, const t_weight weight) {
   // Important: if 'energy' is lower than the lower limit of the first interval, the weight is assigned to the first
   // bin. This is especially relevant for collecting the omega=0 data in bosonic correlators. (rz, 25 Oct 2012)
   if (energy < zero_epsilon) { // handle this special case separately (for reasons of efficiency)
@@ -121,7 +121,7 @@ inline void Bins_tmpl<S>::add_std(const double energy, const t_weight weight) {
 }
 
 template<typename S>
-inline void Bins_tmpl<S>::add_acc(const double energy, const t_weight weight) {
+inline void Bins<S>::add_acc(const double energy, const t_weight weight) {
   for (const auto i: range0(bins.size()-1)) {
     auto &[e1, w1] = bins[i]; // non-const
     auto &[e2, w2] = bins[i+1]; // non-const
@@ -140,7 +140,7 @@ inline void Bins_tmpl<S>::add_acc(const double energy, const t_weight weight) {
 // Merge two bins. They need to agree in the representative energies
 // (first element of the pairs).
 template<typename S>
-void Bins_tmpl<S>::merge(const Bins_tmpl<S> &b) {
+void Bins<S>::merge(const Bins<S> &b) {
   my_assert(bins.size() == b.bins.size());
   for (const auto i: range0(bins.size())) {
     auto &[e1, w1] = bins[i];
@@ -152,8 +152,8 @@ void Bins_tmpl<S>::merge(const Bins_tmpl<S> &b) {
 
 // Only keep bins which are "heavy" enough.
 template<typename S>
-void Bins_tmpl<S>::trim() {
-  Spikes_tmpl<S> orig{};
+void Bins<S>::trim() {
+  Spikes<S> orig{};
   orig.swap(bins);
   bucket discarded_weight_abs;
   // nr-1, because we need to compute the energy interval size 'ewidth'
@@ -174,12 +174,12 @@ void Bins_tmpl<S>::trim() {
 }
 
 template<typename S>
-class Temp_tmpl : public Spikes_tmpl<S> {
+class Temp : public Spikes<S> {
  private:
    const Params &P;
    using t_weight = typename traits<S>::t_weight;
  public:
-   explicit Temp_tmpl(const Params &P) : P(P) {}
+   explicit Temp(const Params &P) : P(P) {}
    void add_value(const double energy, const t_weight weight) {
      for (auto & [e, w] : *this) {
        if (e == energy) {

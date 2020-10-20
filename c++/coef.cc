@@ -55,12 +55,12 @@ public:
   }
 };
 
-template <typename S> class Coef_tmpl : traits<S> {
+template <typename S> class Coef : traits<S> {
 private:
   const Params &P;
 
 public:
-  explicit Coef_tmpl(const Params &P) : P(P) {}
+  explicit Coef(const Params &P) : P(P) {}
   using t_ndx = typename set_of_coef_tables<S>::t_ndx;
   using t_ch  = typename set_of_coef_tables<S>::t_ch;
 

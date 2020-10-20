@@ -7,8 +7,8 @@
 include(recalc-macros.m4)
 
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -26,8 +26,8 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_doublet(const DiagInfo_t
 }
 
 template<typename SC>
-Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetrySPU1LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     SZspin sszp = Ip.get("SSZ");
     int pp      = Ip.get("P");
@@ -63,8 +63,8 @@ Opch_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_irreduc(const Step &step, const Di
 }
 
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_triplet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     SZspin ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
@@ -105,7 +105,7 @@ MatrixElements_tmpl<SC> SymmetrySPU1LR_tmpl<SC>::recalc_triplet(const DiagInfo_t
 #define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 template<typename SC>
-void SymmetrySPU1LR_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
+void SymmetrySPU1LR<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements<SC> &cnew) {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

@@ -7,8 +7,8 @@
 include(recalc-macros.m4)
 
 template<typename SC>
-MatrixElements_tmpl<SC> SymmetryDBLSU2_tmpl<SC>::recalc_doublet(const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const MatrixElements_tmpl<SC> &cold) {
-  MatrixElements_tmpl<SC> cnew;
+MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+  MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Ispin ii11 = I1.get("II1");
     Ispin ii21 = I1.get("II2");
@@ -30,8 +30,8 @@ MatrixElements_tmpl<SC> SymmetryDBLSU2_tmpl<SC>::recalc_doublet(const DiagInfo_t
 }
 
 template<typename SC>
-Opch_tmpl<SC> SymmetryDBLSU2_tmpl<SC>::recalc_irreduc(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax) {
-  Opch_tmpl<SC> opch = newopch<SC>(P);
+Opch<SC> SymmetryDBLSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+  Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
@@ -77,7 +77,7 @@ Opch_tmpl<SC> SymmetryDBLSU2_tmpl<SC>::recalc_irreduc(const Step &step, const Di
 #define Complex(x, y) cmpl(x, y)
 
 template<typename SC>
-void SymmetryDBLSU2_tmpl<SC>::recalc_global(const Step &step, const DiagInfo_tmpl<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements_tmpl<SC> &cnew) {
+void SymmetryDBLSU2<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements<SC> &cnew) {
   if (name == "SZtot") {
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

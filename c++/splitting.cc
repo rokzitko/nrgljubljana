@@ -25,7 +25,7 @@ class Clusters {
    using t_eigen = typename traits<S>::t_eigen;
    std::unordered_map<t_eigen, t_eigen> cluster_mapping;
    // Fix splittings of eigenvalues. Returns true if any changes had been made.
-   void fix_it(DiagInfo_tmpl<S> &diag) {
+   void fix_it(DiagInfo<S> &diag) {
      for(auto &[I, eig]: diag) { 
        for (auto &r : eig.value_zero) 
          if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
@@ -33,7 +33,7 @@ class Clusters {
      }
    }
    // Find clusters of values which differ by at most 'epsilon'
-   Clusters(DiagInfo_tmpl<S> &diag, const double epsilon, bool fix = true) {
+   Clusters(DiagInfo<S> &diag, const double epsilon, bool fix = true) {
      const auto energies = diag.sorted_energies();
      my_assert(energies.size());
      auto e0 = energies[0];      // energy of the lower boundary of the cluster, [e0:e1]

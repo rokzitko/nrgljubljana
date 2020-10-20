@@ -14,7 +14,7 @@ inline auto wb(const short n, const double T) { return T * M_PI * (2 * n); }
 inline auto wf(const short n, const double T) { return T * M_PI * (2 * n + 1); }
 
 template<typename S>
-class Matsubara_tmpl {
+class Matsubara {
  private:
    using t_temp = typename traits<S>::t_temp;
    using t_weight = typename traits<S>::t_weight;
@@ -23,13 +23,13 @@ class Matsubara_tmpl {
    gf_type mt;
    t_temp T;
  public:
-   Matsubara_tmpl() = delete;
-   Matsubara_tmpl(const size_t mats, const gf_type mt, const t_temp T) : mt(mt), T(T) {
+   Matsubara() = delete;
+   Matsubara(const size_t mats, const gf_type mt, const t_temp T) : mt(mt), T(T) {
      my_assert(mt == gf_type::bosonic || mt == gf_type::fermionic);
      for (const auto n: range0(mats)) v.emplace_back(ww(n, mt, T), 0);
    }
    void add(const size_t n, const t_weight &w) { v[n].second += w; }
-   void merge(const Matsubara_tmpl &m2) {
+   void merge(const Matsubara &m2) {
      my_assert(v.size() == m2.v.size());
      for (const auto n: range0(v.size())) {
        my_assert(v[n].first == m2.v[n].first);

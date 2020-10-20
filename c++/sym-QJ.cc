@@ -1,15 +1,15 @@
 template<typename SC>
-class SymmetryQJ_tmpl : public Symmetry_tmpl<SC> {
+class SymmetryQJ : public Symmetry<SC> {
  private:
    outfield Jz2, Q, Q2;
-   using Symmetry_tmpl<SC>::P;
-   using Symmetry_tmpl<SC>::In;
-   using Symmetry_tmpl<SC>::QN;
+   using Symmetry<SC>::P;
+   using Symmetry<SC>::In;
+   using Symmetry<SC>::QN;
 
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQJ_tmpl(const Params &P, Allfields &allfields) : Symmetry_tmpl<SC>(P),
+   SymmetryQJ(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
      Jz2(P, allfields, "<Jz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"Q", additive}, // charge
@@ -36,7 +36,7 @@ class SymmetryQJ_tmpl : public Symmetry_tmpl<SC> {
 #include "qj/qj-QN.dat"
   }
 
-  void calculate_TD(const Step &step, const DiagInfo_tmpl<SC> &diag, const Stats_tmpl<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trJZ2, trQ, trQ2; // Tr[J_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const Sspin jj    = I.get("JJ");
@@ -84,7 +84,7 @@ class SymmetryQJ_tmpl : public Symmetry_tmpl<SC> {
   }
 
    void offdiag_function_QJ(const Step &step, const unsigned int i, const unsigned int j, const unsigned int ch, const unsigned int fnr, const t_matel factor, Matrix &h, const Rmaxvals &qq,
-                            const InvarVec &In, const Opch_tmpl<SC> &opch)
+                            const InvarVec &In, const Opch<SC> &opch)
    {
      const Invar Iop     = ch == 0 ? Invar(1, 2) : Invar(1, 4);
      const Invar I1      = In[i];
@@ -115,7 +115,7 @@ inline double J(int JJ) {
 }
 
 template<typename SC>
-void SymmetryQJ_tmpl<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch_tmpl<SC> &opch, const Coef_tmpl<SC> &coef) {
+void SymmetryQJ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   Sspin jj = I.get("JJ");
 #include "qj/qj-offdiag.dat"
 #include "qj/qj-diag.dat"
