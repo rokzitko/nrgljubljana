@@ -1,3 +1,6 @@
+#ifndef _algo_DMNRG_h_
+#define _algo_DMNRG_h_
+
 // OPTIMIZATION NOTE: the inner loop should involve the last index.
 
 template<typename S>
@@ -101,3 +104,5 @@ class Algo_DMNRGmats : public Algo<S> {
    ~Algo_DMNRGmats() { gf.save(); }
    std::string rho_type() override { return "rho"; }
 };
+
+#endif

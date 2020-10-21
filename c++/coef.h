@@ -1,3 +1,6 @@
+#ifndef _coef_h_
+#define _coef_h_
+
 // Table of Wilson chain coefficients
 template <typename S> class coef_table : traits<S> {
 private:
@@ -96,3 +99,5 @@ public:
   auto zetaUPDO(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 2 * P.channels); }
   auto zetaDOUP(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 3 * P.channels); }
 };
+
+#endif

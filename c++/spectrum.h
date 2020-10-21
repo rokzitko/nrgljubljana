@@ -1,3 +1,48 @@
+#ifndef _spectrum_h_
+#define _spectrum_h_
+
+template<typename S>
+class ChainBinning {
+ private:
+   const Params &P;
+   Bins<S> spos, sneg;
+ public:
+   using t_weight = typename traits<S>::t_weight;
+   explicit ChainBinning(const Params &P) : P(P), spos(P), sneg(P) {}
+   void add(const double energy, const t_weight weight) {
+     if (energy >= 0.0)
+       spos.add(energy, weight);
+     else
+       sneg.add(-energy, weight);
+   }
+   auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
+   template<typename T> friend class SpectrumRealFreq;
+};
+
+template<typename S>
+class ChainMatsubara {
+ private:
+   const Params &P;
+   Matsubara<S> m;
+ public:
+   using t_weight = typename traits<S>::t_weight;
+   explicit ChainMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
+   void add(const size_t n, const t_weight w) { m.add(n, w); }
+   template<typename T> friend class GFMatsubara;
+};
+
+template<typename S>
+class ChainTempDependence {
+ private:
+   const Params &P;
+   Temp<S> v;
+ public:
+   using t_weight = typename traits<S>::t_weight;
+   explicit ChainTempDependence(const Params &P) : P(P), v(P) {}
+   void add(const double T, const t_weight value) { v.add_value(T, value); }
+   template<typename T> friend class TempDependence;
+};
+
 // Real-frequency spectral function
 template<typename S>
 class SpectrumRealFreq {
@@ -121,7 +166,7 @@ void SpectrumRealFreq<S>::savebins() {
 }
 
 // Energy mesh for spectral functions
-std::vector<double> make_mesh(const Params &P) {
+inline std::vector<double> make_mesh(const Params &P) {
   const double broaden_min = P.get_broaden_min();
   std::vector<double> vecE; // Energies on the mesh
   for (double E = P.broaden_max; E > broaden_min; E /= P.broaden_ratio) vecE.push_back(E);
@@ -157,3 +202,42 @@ void SpectrumRealFreq<S>::continuous() {
   densityneg.save(Fdensity, P.prec_xy, P.reim);
   densitypos.save(Fdensity, P.prec_xy, P.reim);
 }
+
+template<typename S>
+class GFMatsubara {
+ private:
+   const std::string name, algoname, filename;
+   const Params &P;
+   Matsubara<S> results;
+ public:
+   GFMatsubara(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
+     name(name), algoname(algoname), filename(filename), P(P), results(P.mats, gt, P.T) {}
+   void merge(const ChainMatsubara<S> &cm) {
+     results.merge(cm.m);
+   }
+   void save() {
+     fmt::print(fmt::emphasis::bold, "GF Matsubara: {} {} -> {}\n", name, algoname, filename);
+     results.save(safe_open(filename + ".dat"), P.prec_xy);
+   }
+};
+
+template<typename S>
+class TempDependence {
+ private:
+   const std::string name, algoname, filename;
+   const Params &P;
+   Spikes<S> results;
+ public:
+   TempDependence<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
+     name(name), algoname(algoname), filename(filename),  P(P) {}
+   void merge(const ChainTempDependence<S> &ctd) {
+     std::copy(ctd.v.cbegin(), ctd.v.cend(), std::back_inserter(results));
+   }
+   void save() {
+     fmt::print(fmt::emphasis::bold, "Temperature dependence: {} {} -> {}\n", name, algoname, filename);
+     ranges::sort(results, sortfirst());
+     results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
+   }
+};
+
+#endif

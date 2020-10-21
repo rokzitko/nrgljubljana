@@ -1,8 +1,8 @@
 // matrix.cc - Symmetry dependent code for Hamiltonian matrix generation
 // Copyright (C) 2009-2020 Rok Zitko
 
-#ifndef _matrix_cc_
-#define _matrix_cc_
+#ifndef _matrix_h_
+#define _matrix_h_
 
 // +++ Construct an offdiagonal part of the Hamiltonian. +++
 

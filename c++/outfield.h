@@ -1,8 +1,8 @@
 // outfield.cc - Code for flexible formatted output
 // Copyright (C) 2009-2020 Rok Zitko
 
-#ifndef _outfield_cc_
-#define _outfield_cc_
+#ifndef _outfield_h_
+#define _outfield_h_
 
 class outfield;
 using Allfields = std::vector<outfield*>;
@@ -13,7 +13,7 @@ class outfield {
    const std::string desc;
    std::string value{};
  public:
-   explicit outfield(const Params &P_, Allfields &allfields, const string &desc_, int position = -1)
+   explicit outfield(const Params &P_, Allfields &allfields, const std::string &desc_, int position = -1)
      : P(P_), desc(desc_) {
        if (position == -1)
          allfields.push_back(this);
@@ -88,4 +88,4 @@ struct TD_FDM {
     C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") {}
 };
 
-#endif // _outfield_cc_
+#endif

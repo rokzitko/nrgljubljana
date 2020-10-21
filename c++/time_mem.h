@@ -6,13 +6,13 @@
 
 // Returns a string with a floating value in fixed (non-exponential) format with N digits of precision after the
 // decimal point.
-std::string prec(const double x, const int N)
+inline std::string prec(const double x, const int N)
 {
   std::ostringstream s;
   s << std::fixed << std::setprecision(N) << x;
   return s.str();
 }
-std::string prec3(const double x) { return prec(x, 3); }
+inline std::string prec3(const double x) { return prec(x, 3); }
    
 namespace time_mem {
 

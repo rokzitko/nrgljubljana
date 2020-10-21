@@ -1,3 +1,6 @@
+#ifndef _algo_CFS_h_
+#define _algo_CFS_h_
+
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 // Based on the implementation by Markus Greger.
 
@@ -151,3 +154,5 @@ class Algo_CFS : public Algo_CFSls<S>, public Algo_CFSgt<S> {
    ~Algo_CFS() { spec_tot.save(); }
    std::string rho_type() override { return "rho"; }
 };
+
+#endif

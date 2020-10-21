@@ -1,3 +1,6 @@
+#ifndef _algo_FDM_h_
+#define _algo_FDM_h_
+
 // Recall: II=(Ij,Ii) <i|A|j> <j|B|i>. B is d^dag. We conjugate A.
 
 #define LOOP_D(n)                                                                                                                                    \
@@ -248,3 +251,5 @@ class Algo_FDMmats : public Algo<S> {
    ~Algo_FDMmats() { gf.save(); }
    std::string rho_type() override { return "rhoFDM"; }
 };
+
+#endif

@@ -1,22 +1,22 @@
 // symmetry.cc - Classes representing various symmetry types
 // Copyright (C) 2009-2020 Rok Zitko
 
-#ifndef _symmetry_cc_
-#define _symmetry_cc_
+#ifndef _symmetry_h_
+#define _symmetry_h_
 
 // Check if the triangle inequality is satisfied (i.e. if Clebsch-Gordan coefficient can be different from zero).
 // This is important, for example, for triplet operators, which are zero when evaluated between two singlet states.
 // Arguments ss1, ss2, ss3 are spin multiplicities. Returns true if the inequality is satisfied, false otherwise.
-bool su2_triangle_inequality(const int ss1, const int ss2, const int ss3) {
+inline auto su2_triangle_inequality(const int ss1, const int ss2, const int ss3) {
   return (abs(ss1-ss2) <= ss3-1) && (abs(ss2-ss3) <= ss1-1) && (abs(ss3-ss1) <= ss2-1);
 }
 
-bool u1_equality(const int q1, const int q2, const int q3) { return q1 == q2 + q3; }     // Equality for U(1) symmetry
-bool z2_equality(const int p1, const int p2, const int p3) { return p1 == p2 * p3; }
-bool c3_equality(const int p1, const int p2, const int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
+inline auto u1_equality(const int q1, const int q2, const int q3) { return q1 == q2 + q3; }     // Equality for U(1) symmetry
+inline auto z2_equality(const int p1, const int p2, const int p3) { return p1 == p2 * p3; }
+inline auto c3_equality(const int p1, const int p2, const int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
 
 template<typename S>
-auto newopch(const Params &P)
+inline auto newopch(const Params &P)
 {
   Opch<S> opch(P.channels);
   for (auto &oc: opch) {
@@ -118,7 +118,7 @@ class Symmetry {
    using Matrix = typename traits<S>::Matrix;
    using t_matel = typename traits<S>::t_matel;
    using t_coef = typename traits<S>::t_coef;
-   
+
    void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_coef factor,
                               Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch<S> &opch) const;
    void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
@@ -205,7 +205,7 @@ class Symmetry {
    template<typename T>
      auto recalc_f(const DiagInfo<S> &diag, const QSrmax &qsrmax, const Invar &I1,
                    const Invar &Ip, const T &table);
-   
+
    template<typename T>
      auto recalc_general(const DiagInfo<S> &diag, const QSrmax &qsrmax, const MatrixElements<S> &cold,
                          const Invar &I1, const Invar &Ip, const T &table, const Invar &Iop) const;
@@ -225,19 +225,19 @@ class Symmetry {
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                 \
   void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In,      \
-     const Opch<SC> &opch, const Coef<SC> &coef) override;                                           \
+             const Opch<SC> &opch, const Coef<SC> &coef) override;                                           \
   Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) override
 
 // Optional declaration
 #define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, int M) override
 #define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
-                                                          const MatrixElements<SC> &cold) override
+                                                      const MatrixElements<SC> &cold) override
 #define HAS_TRIPLET MatrixElements<SC> recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
-                                                          const MatrixElements<SC> &cold) override
+                                                      const MatrixElements<SC> &cold) override
 #define HAS_ORB_TRIPLET MatrixElements<SC> recalc_orb_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
-                                                                  const MatrixElements<SC> &cold) override
+                                                              const MatrixElements<SC> &cold) override
 #define HAS_QUADRUPLET MatrixElements<SC> recalc_quadruplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
-                                                                const MatrixElements<SC> &cold) override
+                                                            const MatrixElements<SC> &cold) override
 #define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
                                       std::string name, MatrixElements<SC> &cnew) override
 
@@ -271,16 +271,16 @@ class SymFieldLR : public Symmetry<S> {
 };
 
 // Helper functions
-void check_abs_diff(const Invar &Ip, const Invar &I1, const string &what, int diff) {
-  const int a = Ip.get(what);
-  const int b = I1.get(what);
+inline void check_abs_diff(const Invar &Ip, const Invar &I1, const string &what, int diff) {
+  const auto a = Ip.get(what);
+  const auto b = I1.get(what);
   my_assert(abs(b - a) == diff);
 }
 
-void check_diff(const Invar &Ip, const Invar &I1, const string &what, int diff) {
-  const int a = Ip.get(what);
-  const int b = I1.get(what);
+inline void check_diff(const Invar &Ip, const Invar &I1, const string &what, int diff) {
+  const auto a = Ip.get(what);
+  const auto b = I1.get(what);
   my_assert(b - a == diff);
 }
 
-#endif // _symmetry_cc_
+#endif

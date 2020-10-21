@@ -1,3 +1,6 @@
+#ifndef _algo_FT_h_
+#define _algo_FT_h_
+
 template<typename S>
 class Algo_FT : public Algo<S> {
  private:
@@ -181,3 +184,5 @@ class Algo_CHIT : public Algo<S> {
    }
    ~Algo_CHIT() { td.save(); }
 };
+
+#endif

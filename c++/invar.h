@@ -1,8 +1,15 @@
 // Quantum numbers
 // Rok Zitko, rok.zitko@ijs.si, 2006-2020
 
-#ifndef _nrg_invar_
-#define _nrg_invar_
+#ifndef _nrg_invar_h_
+#define _nrg_invar_h_
+
+// Quantum number types
+using Number = int;
+using Ispin = int;
+using Sspin = int;
+using Tangmom = int;
+using SZspin = int;
 
 // Conversion functions: multiplicity (integer) -> quantum number (floating point)
 // WARNING: avoid using S as template variable in places where S() is used!!!
@@ -156,7 +163,7 @@ struct InvarStructure {
   int type;
 };
 
-void initInvar(std::initializer_list<InvarStructure> l) {
+inline void initInvar(std::initializer_list<InvarStructure> l) {
   Invar::invdim = l.size();
   auto i = 0;
   for (const auto & [n, t]: l) {
@@ -170,6 +177,6 @@ void initInvar(std::initializer_list<InvarStructure> l) {
 using InvarVec = std::vector<Invar>; // holds information about ancestor subspaces
 using Twoinvar = pair<Invar, Invar>; // labels subspace bra and subspace ket for matrix elements
 
-ostream &operator<<(ostream &os, const Twoinvar &p) { return os << "(" << p.first << ") (" << p.second << ")"; }
+inline std::ostream &operator<<(std::ostream &os, const Twoinvar &p) { return os << "(" << p.first << ") (" << p.second << ")"; }
 
-#endif // _nrg_invar_
+#endif

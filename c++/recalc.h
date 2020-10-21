@@ -1,12 +1,12 @@
-#ifndef _recalc_cc_
-#define _recalc_cc_
+#ifndef _recalc_h_
+#define _recalc_h_
 
 // We split the matrices of eigenvectors in blocks according to the partition into "ancestor subspaces". At the price
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
 // completed!
 template<typename S>
-void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const QSrmax &qsrmax) {
+inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const QSrmax &qsrmax) {
   const auto combs = qsrmax.at(I).combs();
   e.blocks.resize(combs);
   const auto nr = e.getnrstored(); // nr. of eigenpairs
@@ -26,7 +26,7 @@ void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const QSrmax &qsrmax) {
 }
 
 template<typename S>
-void split_in_blocks(DiagInfo<S> &diag, const QSrmax &qsrmax) {
+inline void split_in_blocks(DiagInfo<S> &diag, const QSrmax &qsrmax) {
   for(auto &[I, eig]: diag)
     split_in_blocks_Eigen(I, eig, qsrmax);
 }
@@ -159,4 +159,4 @@ void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
   atlas::gemm(CblasNoTrans, CblasConjTrans, value, U1, Up, t_coef(1.0), m);
 }
 
-#endif // _recalc_cc_
+#endif

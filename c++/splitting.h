@@ -1,22 +1,25 @@
 // Code for correcting floating-point roundoff errors
 // Rok Zitko, rok.zitko@ijs.si
 
+#ifndef _splitting_h_
+#define _splitting_h_
+
 template<typename T>
-  void cluster_show(const T &i0, const T &i1) {
-    std::cout << "[";
-    for (auto j = i0; j != i1; ++j) { std::cout << HIGHPREC(*j) << " "; }
-    std::cout << "]" << std::endl;
-  }
+inline void cluster_show(const T &i0, const T &i1) {
+  std::cout << "[";
+  for (auto j = i0; j != i1; ++j) { std::cout << HIGHPREC(*j) << " "; }
+  std::cout << "]" << std::endl;
+}
 
 // Returns true if not all the states have the same energy.
 template<typename T>
-  bool cluster_splitting(const T &i0, const T &i1) {
-    my_assert(i0 != i1); // non-empty set
-    // We need to compare all distinct pairs.
-    for (auto i = i0; i != i1; ++i)
-      for (auto j = i + 1; j != i1; ++j)
-        if (*i != *j) return true;
-    return false;
+inline bool cluster_splitting(const T &i0, const T &i1) {
+  my_assert(i0 != i1); // non-empty set
+  // We need to compare all distinct pairs.
+  for (auto i = i0; i != i1; ++i)
+    for (auto j = i + 1; j != i1; ++j)
+      if (*i != *j) return true;
+  return false;
   }
 
 template<typename S>
@@ -59,3 +62,5 @@ class Clusters {
      if (fix) fix_it(diag);
    }
 };
+
+#endif

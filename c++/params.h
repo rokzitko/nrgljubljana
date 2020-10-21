@@ -1,10 +1,10 @@
 // param.cc - Parameter parsing
 // Copyright (C) 2009-2020 Rok Zitko
 
-#ifndef _param_cc_
-#define _param_cc_
+#ifndef _param_h_
+#define _param_h_
 
-const std::string default_workdir{"."s};
+inline const auto default_workdir{"."s};
 
 class Workdir {
  private:
@@ -39,14 +39,14 @@ class Workdir {
 
 Workdir workdir; // XXX
 
-void set_workdir(const string &dir_) {
+inline void set_workdir(const std::string &dir_) {
   std::string dir = default_workdir;
   if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
   if (!dir_.empty()) dir = dir_;
   workdir.create(dir);
 }
 
-void set_workdir(int argc, char **argv) {
+void set_workdir(int argc, char **argv) { // not inline!
   std::string dir = default_workdir;
   if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
   std::vector<string> args(argv+1, argv+argc); // NOLINT

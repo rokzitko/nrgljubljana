@@ -5,19 +5,23 @@
 #define _misc_h_
 
 // Conversion functions
-template <class T> T fromstring(const std::string &str) {
+template <class T> 
+inline T fromstring(const std::string &str) {
   T result;
   try {
     result = boost::lexical_cast<T>(str);
   } catch (boost::bad_lexical_cast &) { throw std::runtime_error(fmt::format("Lexical cast [{}] failed.", str)); }
   return result;
 }
-template <> bool fromstring(const std::string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
+template <> 
+inline bool fromstring(const std::string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
 // for T=int, std::to_string is used
-template <class T> std::string to_string(const T val) { return boost::lexical_cast<std::string>(val); }
+template <class T> 
+inline std::string to_string(const T val) { return boost::lexical_cast<std::string>(val); }
 
 // switch statement with three cases
-template <typename T, typename T1> T switch3(const T1 x0, const T1 x1, const T y1, const T1 x2, const T y2, const T1 x3, const T y3) {
+template <typename T, typename T1> 
+inline T switch3(const T1 x0, const T1 x1, const T y1, const T1 x2, const T y2, const T1 x3, const T y3) {
   if (x0 == x1) return y1;
   if (x0 == x2) return y2;
   if (x0 == x3) return y3;
@@ -25,7 +29,7 @@ template <typename T, typename T1> T switch3(const T1 x0, const T1 x1, const T y
 }
 
 // Get next line from stream F, skipping empty lines and comments.
-std::string getnextline(std::ifstream &F) {
+inline std::string getnextline(std::ifstream &F) {
   std::string line;
   while (F) {
     std::getline(F, line);
@@ -40,7 +44,7 @@ std::string getnextline(std::ifstream &F) {
   return ""; // error
 }
 
-void strip_trailing_whitespace(std::string &s) {
+inline void strip_trailing_whitespace(std::string &s) {
   std::string::reverse_iterator it = s.rbegin();
   while (it != s.rend() && isspace(*it)) {
     s.erase(--it.base());
@@ -49,7 +53,7 @@ void strip_trailing_whitespace(std::string &s) {
 }
 
 // Parse a block of "keyword=value" lines.
-auto parse_block(std::ifstream &F) {
+inline auto parse_block(std::ifstream &F) {
   std::map<std::string, std::string> parsed_params; 
   while (F) {
     std::string line = getnextline(F);
@@ -72,7 +76,7 @@ auto parse_block(std::ifstream &F) {
 }
 
 // Locate block [name] in a file stream. Returns true if succeessful.
-bool find_block(std::ifstream &F, const std::string &s) {
+inline bool find_block(std::ifstream &F, const std::string &s) {
   std::string target = "[" + s + "]";
   F.clear();
   F.seekg(0, std::ios::beg);
@@ -85,7 +89,7 @@ bool find_block(std::ifstream &F, const std::string &s) {
 }
 
 // Parse the [param] block of an input file.
-auto parser(const std::string &filename, const std::string &block) {
+inline auto parser(const std::string &filename, const std::string &block) {
   auto F = safe_open_for_reading(filename);
   if (!find_block(F, block))
     throw std::runtime_error(fmt::format("Block {} not found in input file {}.", block, filename));
@@ -134,7 +138,7 @@ class string_token {
 };
 
 // Skip comment lines in the input stream 'f'.
-void skip_comments(std::istream &f, const bool output = false, std::ostream &OUT = std::cout) {
+inline void skip_comments(std::istream &f, const bool output = false, std::ostream &OUT = std::cout) {
   while (f) {
     char ch = f.peek();
     // skip white space and line breaks

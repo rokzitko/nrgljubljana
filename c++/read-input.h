@@ -1,5 +1,5 @@
-#ifndef _read_input_cc_
-#define _read_input_cc_
+#ifndef _read_input_h_
+#define _read_input_h_
 
 template<typename S>
 class Stats;
@@ -8,7 +8,7 @@ template<typename S>
 std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P, Stats<S> &stats);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
-auto parse_datafile_header(std::istream &fdata, const int expected_version = 9)
+inline auto parse_datafile_header(std::istream &fdata, const int expected_version = 9)
 {
   std::string sym_string = "";
   int dataversion = -1;
@@ -36,7 +36,7 @@ auto parse_datafile_header(std::istream &fdata, const int expected_version = 9)
 
 // Read the number of channels from data file. Also sets P.combs accordingly, depending on the spin of the conduction
 // band electrons.
-void read_nr_channels(std::ifstream &fdata, const std::string &sym_string, Params &P) {
+inline void read_nr_channels(std::ifstream &fdata, const std::string &sym_string, Params &P) {
   size_t channels;
   fdata >> channels;
   my_assert(channels >= 1);
@@ -74,13 +74,13 @@ void read_nr_channels(std::ifstream &fdata, const std::string &sym_string, Param
 }
 
 // Read the length of the Wilson chain
-void read_Nmax(std::ifstream &fdata, Params &P) {
+inline void read_Nmax(std::ifstream &fdata, Params &P) {
   size_t nmax;
   fdata >> nmax;
   P.Nmax = nmax;
 }
 
-auto read_nsubs(std::ifstream &fdata)
+inline auto read_nsubs(std::ifstream &fdata)
 {
   size_t nsubs; // Number of invariant subspaces
   fdata >> nsubs;
@@ -90,14 +90,14 @@ auto read_nsubs(std::ifstream &fdata)
 
 // Read the ground state energy from data file ('e' flag)
 template<typename S>
-void read_gs_energy(std::ifstream &fdata, Stats<S> &stats) {
+inline void read_gs_energy(std::ifstream &fdata, Stats<S> &stats) {
   fdata >> stats.total_energy;
 }
 
 // Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
 // tridiagonalization routines (if not using the tables computed by initial.m).
 template<typename S>
-void determine_Nmax(const Coef<S> &coef, Params &P) { // Params is non-const !
+inline void determine_Nmax(const Coef<S> &coef, Params &P) { // Params is non-const !
   const auto length_coef_table = coef.xi.max(0); // all channels have same nr. of coefficients
   std::cout << std::endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << std::endl << std::endl;
   my_assert(length_coef_table == P.Nmax);
@@ -116,7 +116,7 @@ inline void skipline(std::ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
 template<typename S> 
-auto read_data(Params &P, Stats<S> &stats, std::string filename = "data") {
+inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data") {
   skipline();
   std::ifstream fdata(filename);
   if (!fdata) throw std::runtime_error("Can't load initial data.");

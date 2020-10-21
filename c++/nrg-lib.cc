@@ -63,8 +63,8 @@ inline double conj_me(const double x) { return x; }    // no op
 
 enum class RUNTYPE { NRG, DMNRG };
 
-#include "params.cc"
-#include "outfield.cc"
+#include "params.h"
+#include "outfield.h"
 
 // This is included in the library only. Should not be used if cblas library is available.
 #ifdef CBLAS_WORKAROUND
@@ -99,14 +99,7 @@ int myrank() { return mpiw->rank(); } // used in diag.h, time_mem.h
 int myrank() { return 0; }
 #endif
 
-// Quantum number types
-using Number = int;
-using Ispin = int;
-using Sspin = int;
-using Tangmom = int;
-using SZspin = int;
-
-#include "invar.cc"
+#include "invar.h"
 
 template<typename T> auto range0(const T b) { return boost::irange(T{0}, b); }
 template<typename T> auto range1(const T b) { return boost::irange(T{1}, b+1); }
@@ -657,7 +650,7 @@ class Step {
    bool nrg() const { return runtype == RUNTYPE::NRG; }
    bool dmnrg() const { return runtype == RUNTYPE::DMNRG; }
    // Index 'n' of the last site in the existing chain, f_n (at iteration 'N'). The site being added is f_{n+1}. This
-   // is the value that we use in building the matrix, cf. nrg-make_matrix-ISO.cc
+   // is the value that we use in building the matrix.
    int getnn() const { return ndxN; }
 };
 
@@ -768,12 +761,12 @@ class IterInfo {
 
 #include "spectral.h"
 
-#include "coef.cc"
+#include "coef.h"
 #include "tridiag.h"
 #include "diag.h"
-#include "symmetry.cc"
-#include "matrix.cc"
-#include "recalc.cc"
+#include "symmetry.h"
+#include "matrix.h"
+#include "recalc.h"
 
 #include "sym-basic.h"
 #include "sym-more.h"
@@ -802,7 +795,7 @@ void operator_sumrules(const IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym) {
     std::cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
 }
 
-#include "read-input.cc"
+#include "read-input.h"
 
 template <typename T>
   std::string formatted_output(const T x, const Params &P) {
@@ -841,87 +834,7 @@ inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC
 
 #include "bins.h"
 #include "matsubara.h"
-
-template<typename S>
-class ChainBinning {
- private:
-   const Params &P;
-   Bins<S> spos, sneg;
- public:
-   using t_weight = typename traits<S>::t_weight;
-   explicit ChainBinning(const Params &P) : P(P), spos(P), sneg(P) {}
-   void add(const double energy, const t_weight weight) {
-     if (energy >= 0.0)
-       spos.add(energy, weight);
-     else
-       sneg.add(-energy, weight);
-   }
-   auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
-   template<typename T> friend class SpectrumRealFreq;
-};
-
-template<typename S>
-class ChainMatsubara {
- private:
-   const Params &P;
-   Matsubara<S> m;
- public:
-   using t_weight = typename traits<S>::t_weight;
-   explicit ChainMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
-   void add(const size_t n, const t_weight w) { m.add(n, w); }
-   template<typename T> friend class GFMatsubara;
-};
-
-template<typename S>
-class ChainTempDependence {
- private:
-   const Params &P;
-   Temp<S> v;
- public:
-   using t_weight = typename traits<S>::t_weight;
-   explicit ChainTempDependence(const Params &P) : P(P), v(P) {}
-   void add(const double T, const t_weight value) { v.add_value(T, value); }
-   template<typename T> friend class TempDependence;
-};
-
-#include "spectrumrealfreq.cc"
-
-template<typename S>
-class GFMatsubara {
- private:
-   const std::string name, algoname, filename;
-   const Params &P;
-   Matsubara<S> results;
- public:
-   GFMatsubara(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
-     name(name), algoname(algoname), filename(filename), P(P), results(P.mats, gt, P.T) {}
-   void merge(const ChainMatsubara<S> &cm) {
-     results.merge(cm.m);
-   }
-   void save() {
-     fmt::print(fmt::emphasis::bold, "GF Matsubara: {} {} -> {}\n", name, algoname, filename);
-     results.save(safe_open(filename + ".dat"), P.prec_xy);
-   }
-};
-
-template<typename S>
-class TempDependence {
- private:
-   const std::string name, algoname, filename;
-   const Params &P;
-   Spikes<S> results;
- public:
-   TempDependence<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
-     name(name), algoname(algoname), filename(filename),  P(P) {}
-   void merge(const ChainTempDependence<S> &ctd) {
-     std::copy(ctd.v.cbegin(), ctd.v.cend(), std::back_inserter(results));
-   }
-   void save() {
-     fmt::print(fmt::emphasis::bold, "Temperature dependence: {} {} -> {}\n", name, algoname, filename);
-     ranges::sort(results, sortfirst());
-     results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
-   }
-};
+#include "spectrum.h"
 
 // Check if the trace of the density matrix equals 'ref_value'.
 template<typename S>
@@ -972,13 +885,13 @@ auto spec_fn(const std::string &name, const std::string &prefix, const std::stri
   return prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
 }
 
-#include "spec_FT.cc"
-#include "spec_DMNRG.cc"
-#include "spec_FDM.cc"
-#include "spec_CFS.cc"
+#include "algo_FT.h"
+#include "algo_DMNRG.h"
+#include "algo_FDM.h"
+#include "algo_CFS.h"
 
 #include "dmnrg.h"
-#include "splitting.cc"
+#include "splitting.h"
 
 // Determine the ranges of index r
 template<typename S>
@@ -1547,7 +1460,7 @@ void fdm_thermodynamics(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<
 
 // We calculate thermodynamic quantities before truncation to make better use of the available states. Here we
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
-// member functions defined in symmetry.cc.
+// member functions defined in symmetry.h
 template<typename S>
 void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, Output<S> &output, 
                   std::shared_ptr<Symmetry<S>> Sym, const double additional_factor = 1.0) {
@@ -1736,12 +1649,14 @@ template<typename S> std::pair<Invar, Eigen<S>> read_from(int source) {
 }
 
 template<typename T> auto get_back(T &d) { // usually T is list or deque
+  my_assert(!d.empty());
   auto i = d.back();
   d.pop_back();
   return i;
 }
 
 template<typename T> auto get_front(T &d) {
+  my_assert(!d.empty());
   auto i = d.front();
   d.pop_front();
   return i;

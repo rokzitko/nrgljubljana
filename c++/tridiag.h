@@ -19,7 +19,7 @@ class Tridiag {
 };
    
 // Fix normalization of u_{n,m}, v_{n,m} to 1. IMPORTANT: pass by reference!
-void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX) {
+inline void fix_norm(vmpf &up, vmpf &um, const unsigned int mMAX) {
   // Constants
   my_mpf mpZERO, mpONE;
   mpf_set_str(mpONE, "1.e0", 10);
