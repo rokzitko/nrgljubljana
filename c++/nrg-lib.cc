@@ -107,21 +107,6 @@ using SZspin = int;
 
 #include "invar.cc"
 
-// NOTE: Row major is the C array format: A[0][0], A[0][1], A[0][2], A[1][0], A[1][1], etc. The default in UBLAS is
-// row major, while LAPACK routines expect column major matrices. Of course, this is of no concern for symmetric
-// matrices. Default storage type is unbounded_array<T>.
-//
-// Thus, as always:
-//  first index - row
-//  second index - column
-//
-// when accessing columns - stride=m.size2()
-// when accessing rows - stide=1
-//
-// Optimization rule: use stride 1 sequential access where possible. ublas default matrix storage is row major (i.e.
-// C-like). The rule is "right index the same as inner loop variable".
-
-
 template<typename T> auto range0(const T b) { return boost::irange(T{0}, b); }
 template<typename T> auto range1(const T b) { return boost::irange(T{1}, b+1); }
 
@@ -503,7 +488,8 @@ class QSrmax : public std::map<Invar, Rmaxvals> {
 
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
 // density-matrix construction.
-template<typename S> struct DimSub {
+template<typename S> 
+struct DimSub {
   size_t kept  = 0;
   size_t total = 0;
   Rmaxvals rmax;
@@ -727,7 +713,7 @@ inline void dump_diagonal_op(const std::string &name, const MatrixElements<S> &n
 // We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
 // required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
 // recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.
-template<typename S> void trim_matel(const DiagInfo<S> &diag, MatrixElements<S> &op) {
+template<typename S> void trim_matel(const DiagInfo<S> &diag, MatrixElements<S> &op) { // BBB
   for (auto &[II, mat] : op) {
     const auto &[I1, I2] = II;
     // Current matrix dimensions
@@ -746,14 +732,15 @@ template<typename S> void trim_matel(const DiagInfo<S> &diag, MatrixElements<S> 
   }
 }
 
-template<typename S> void trim_op(const DiagInfo<S> &diag, CustomOp<S> &allops) {
+template<typename S> void trim_op(const DiagInfo<S> &diag, CustomOp<S> &allops) { // BBB: 
   for (auto &[name, op] : allops) 
     trim_matel(diag, op);
 }
 
 // Object of class IterInfo cotains full information about matrix representations when entering stage N of the NRG
 // iteration.
-template<typename S> class IterInfo {
+template<typename S> 
+class IterInfo {
  public:
    Opch<S> opch;     // f operators (channels)
    CustomOp<S> ops;  // singlet operators (even parity)
@@ -929,7 +916,7 @@ class TempDependence {
    TempDependence<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
      name(name), algoname(algoname), filename(filename),  P(P) {}
    void merge(const ChainTempDependence<S> &ctd) {
-     std::copy(ctd.v.begin(), ctd.v.end(), std::back_inserter(results));
+     std::copy(ctd.v.begin(), ctd.v.end(), std::back_inserter(results)); // XXX: ranges
    }
    void save() {
      fmt::print(fmt::emphasis::bold, "Temperature dependence: {} {} -> {}\n", name, algoname, filename);
@@ -937,7 +924,6 @@ class TempDependence {
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }
 };
-
 
 // Check if the trace of the density matrix equals 'ref_value'.
 template<typename S>
@@ -1087,41 +1073,40 @@ template<typename S>
 class Oprecalc {
  public:
    // Operators required to calculate expectation values and spectral densities
-   std::set<std::pair<std::string,std::string>> ops;
+   struct Ops : public std::set<std::pair<std::string,std::string>> {
+     void report(std::ostream &F = std::cout) {
+       F << std::endl << "Computing the following operators:" << std::endl;
+       for (const auto &[type, name]: *this) fmt::print("{} {}\n", name, type);
+     }
+     // Singlet operators are always recomputed in the first NRG run, so that we can calculate the expectation values.
+     bool do_s(const std::string &name, const Params &P, const Step &step) {
+       if (step.nrg()) return true;                                          // for computing <O> 
+       if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
+       return this->count({"s", name});
+     }
+     bool do_g(const std::string &name, const Params &P, const Step &step) {
+       if (step.nrg()) return true;                                          // for computing <O>
+       if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
+       return this->count({"g", name});
+     }
+   };
+   Ops ops;
+
    // Spectral densities
-   speclist<S> spectra;
-
-   // Calculate spectral densities
-   void spectral_densities(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM, 
-                           const Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym) {
-     TIME("spec");
-     for (auto &i : spectra) calc_generic(i, step, diag, rho, rhoFDM, stats);
-   }
-
-   void report(std::ostream &F = std::cout) {
-     F << std::endl << "Computing the following operators:" << std::endl;
-     for (const auto &[type, name]: ops) fmt::print("{} {}\n", name, type);
-   }
-   
-   // Singlet operators are always recomputed in the first NRG run, so that we can calculate the expectation values.
-   bool do_s(const std::string &name, const Params &P, const Step &step) {
-     if (step.nrg()) return true;                                          // for computing <O> 
-     if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
-     return ops.count({"s", name});
-   }
-   
-   
-   bool do_g(const std::string &name, const Params &P, const Step &step) {
-     if (step.nrg()) return true;                                          // for computing <O>
-     if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
-     return ops.count({"g", name});
-   }
+   struct Spectra : public speclist<S> {
+     void calc(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM, 
+               const Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym) {
+       TIME("spec");
+       for (auto &i : *this) calc_generic(i, step, diag, rho, rhoFDM, stats);
+     }
+   };
+   Spectra spectra;
    
    // Wrapper routine for recalculations
    template <typename RecalcFnc>
-     MatrixElements<S> recalc_common(const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const Step &step, 
-                                          const DiagInfo<S> &diag, const QSrmax &qsrmax, const std::string name, 
-                                          const std::string &tip, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+     MatrixElements<S> recalc_common(const std::string &name, const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const std::string &tip, 
+                                     const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+                                     std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
        nrglog('0', "Recalculate " << tip << " " << name);
        auto mnew = recalc_fnc(diag, qsrmax, mold);
        if (tip == "g") Sym->recalc_global(step, diag, qsrmax, name, mnew);
@@ -1134,24 +1119,23 @@ class Oprecalc {
      }
 
    // Recalculate operator matrix representations
-   ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives   // CCC: move string to left, then perfect forwading ?
-     void recalculate_operators(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, 
-                                IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+   ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives  
+     void recalculate_operators(IterInfo<S> &a, const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+                                std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
        for (auto &[name, m] : a.ops)
-         m = recalc_or_clear(do_s(name, P, step), m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, step, diag, qsrmax, name, "s", Sym, P);
+         m = recalc_or_clear(ops.do_s(name, P, step), name, m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, qsrmax, Sym, P);
        for (auto &[name, m] : a.opsp)
-         m = recalc_or_clear(ops.count({"p", name}),       m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, step, diag, qsrmax, name, "p", Sym, P);
+         m = recalc_or_clear(ops.count({"p", name}),  name, m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, "p", step, diag, qsrmax, Sym, P);
        for (auto &[name, m] : a.opsg) 
-         m = recalc_or_clear(do_g(name, P, step), m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, step, diag, qsrmax, name, "g", Sym, P);
+         m = recalc_or_clear(ops.do_g(name, P, step), name, m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag, qsrmax, Sym, P);
        for (auto &[name, m] : a.opd)
-         m = recalc_or_clear(ops.count({"d", name}),       m, [Sym](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, step, diag, qsrmax, name, "d", Sym, P);
+         m = recalc_or_clear(ops.count({"d", name}),  name, m, [Sym](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, "d", step, diag, qsrmax, Sym, P);
        for (auto &[name, m] : a.opt)
-         m = recalc_or_clear(ops.count({"t", name}),       m, [Sym](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, step, diag, qsrmax, name, "t", Sym, P);
+         m = recalc_or_clear(ops.count({"t", name}),  name, m, [Sym](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, "t", step, diag, qsrmax, Sym, P);
        for (auto &[name, m] : a.opot)
-         m = recalc_or_clear(ops.count({"ot", name}),      m, [Sym](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, diag, qsrmax, name, "ot", Sym, P);
+         m = recalc_or_clear(ops.count({"ot", name}), name, m, [Sym](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, "ot", step, diag, qsrmax, Sym, P);
        for (auto &[name, m] : a.opq)
-         m = recalc_or_clear(ops.count({"q", name}),       m, [Sym](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, step, diag, qsrmax, name, "q", Sym, P);
-       // CCC: q.count({"q", name})
+         m = recalc_or_clear(ops.count({"q", name}),  name, m, [Sym](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, "q", step, diag, qsrmax, Sym, P);
      }
 
    // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
@@ -1181,41 +1165,41 @@ class Oprecalc {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
-    loopover(runtype, P, a.ops,  a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "s", "s", gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsp, a.opsp, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "p", "p", gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "g", "g", gf_type::bosonic, 0);
-    loopover(runtype, P, a.ops,  a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "s", "g", gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "g", "s", gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "corr", "s", "s", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsp, a.opsp, sts, spectra, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "corr", "p", "p", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "corr", "g", "g", gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "corr", "s", "g", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "corr", "g", "s", gf_type::bosonic, 0);
     // Global susceptibilities (global singlet operators)
     string_token stchit(P.specchit);
-    loopover(runtype, P, a.ops,  a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", "s", "s", gf_type::bosonic, 0);
-    loopover(runtype, P, a.ops,  a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", "s", "g", gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", "g", "s", gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", "g", "g", gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "chit", "s", "s", gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "chit", "s", "g", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "chit", "g", "s", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "chit", "g", "g", gf_type::bosonic, 0);
     // Dynamic spin susceptibilities (triplet operators)
     string_token stt(P.spect);
-    loopover(runtype, P, a.opt, a.opt, stt, spectra,  Sym->SpinSuscFactorFnc(),     Sym->TrivialCheckSpinFnc(),  "spin", "t", "t", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opt, a.opt, stt, spectra,  Sym->SpinSuscFactorFnc(), Sym->TrivialCheckSpinFnc(),  "spin", "t", "t", gf_type::bosonic, 0);
     string_token stot(P.specot);
-    loopover(runtype, P, a.opot, a.opot, stot, spectra, Sym->OrbSuscFactorFnc(),      Sym->TrivialCheckSpinFnc(), "orbspin", "ot", "ot", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opot, a.opot, stot, spectra, Sym->OrbSuscFactorFnc(), Sym->TrivialCheckSpinFnc(), "orbspin", "ot", "ot", gf_type::bosonic, 0);
     const auto varmin = Sym->isfield() ? -1 : 0;
     const auto varmax = Sym->isfield() ? +1 : 0;
     // Spectral functions (doublet operators)
     string_token std(P.specd);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, std, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "spec", "d", "d", gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, std, spectra,  Sym->SpecdensFactorFnc(), Sym->SpecdensCheckSpinFnc(), "spec", "d", "d", gf_type::fermionic, SPIN);
     string_token stgt(P.specgt);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, stgt, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "gt", "d", "d", gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, stgt, spectra,  Sym->SpecdensFactorFnc(), Sym->SpecdensCheckSpinFnc(), "gt", "d", "d", gf_type::fermionic, SPIN);
     string_token sti1t(P.speci1t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, sti1t, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(),"i1t", "d", "d", gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, sti1t, spectra,  Sym->SpecdensFactorFnc(), Sym->SpecdensCheckSpinFnc(),"i1t", "d", "d", gf_type::fermionic, SPIN);
     string_token sti2t(P.speci2t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, sti2t, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "i2t", "d", "d", gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, sti2t, spectra,  Sym->SpecdensFactorFnc(), Sym->SpecdensCheckSpinFnc(), "i2t", "d", "d", gf_type::fermionic, SPIN);
     // Spectral functions (quadruplet operators)
     string_token stq(P.specq);
     loopover(runtype, P, a.opq, a.opq, stq, spectra,  Sym->SpecdensquadFactorFnc(), Sym->TrivialCheckSpinFnc(),  "specq", "q", "q", gf_type::fermionic, 0);
-    report();
+    ops.report();
   }
 };
 
@@ -1619,7 +1603,7 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
     if (P.need_rhoFDM()) 
       rhoFDM.load(step.ndx(), FN_RHOFDM, P.removefiles);
   }
-  oprecalc.spectral_densities(step, diag, rho, rhoFDM, stats, Sym);
+  oprecalc.spectra.calc(step, diag, rho, rhoFDM, stats, Sym);
   if (step.nrg()) {
     measure_singlet(step, stats, diag, iterinfo, output, Sym, P);
     iterinfo.dump_diagonal(P.dumpdiagonal);
@@ -1644,7 +1628,7 @@ auto new_subspaces(const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym
   for (const auto &I : diagprev.subspaces()) {
     const auto all = Sym->new_subspaces(I);
     const auto non_empty = all | ranges::views::filter([&Sym](const auto &In) { return Sym->Invar_allowed(In); }) | ranges::to<std::vector>();
-    std::copy(non_empty.begin(), non_empty.end(), std::inserter(subspaces, subspaces.end()));
+    std::copy(non_empty.begin(), non_empty.end(), std::inserter(subspaces, subspaces.end())); // XXX: ranges
   }
   return subspaces;
 }
@@ -1953,7 +1937,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
   if (P.do_recalc_all(step.runtype)) { // Either ...
-    oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, Sym, P);
+    oprecalc.recalculate_operators(iterinfo, step, diag, qsrmax, Sym, P);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, P);
   }
   if (!P.ZBW)
@@ -1964,7 +1948,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
     if (P.dump_f) iterinfo.opch.dump();
   }
   if (P.do_recalc_kept(step.runtype)) { // ... or ...
-    oprecalc.recalculate_operators(step, diag, qsrmax, iterinfo, Sym, P);
+    oprecalc.recalculate_operators(iterinfo, step, diag, qsrmax, Sym, P);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, P);
   }
   if (P.do_recalc_none())  // ... or this
