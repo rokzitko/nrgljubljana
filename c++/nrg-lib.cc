@@ -1038,6 +1038,7 @@ void prepare_spec_algo(speclist<S> &sl, FactorFnc ff, CheckFnc cf, M && op1, M &
   sl.push_back(spec);
 }
 
+// CCC: use perfect forwarding for all args.. fix order.
 template<typename S, typename M>
 void prepare_spec(const RUNTYPE &runtype, speclist<S> &sl, FactorFnc ff, CheckFnc cf,
                   M && op1, M && op2, 
@@ -1085,9 +1086,9 @@ template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
 template<typename S>
 class Oprecalc {
  public:
-   // Names of operators which need to be recomputed: those required to calculate the spectral densities.
-   std::set<std::string> s, p, g, d, v, t, q, ot;
-
+   // Operators required to calculate expectation values and spectral densities
+   std::set<std::pair<std::string,std::string>> ops;
+   // Spectral densities
    speclist<S> spectra;
 
    // Calculate spectral densities
@@ -1097,33 +1098,23 @@ class Oprecalc {
      for (auto &i : spectra) calc_generic(i, step, diag, rho, rhoFDM, stats);
    }
 
-   void report(std::ostream &F, const std::string &name, const std::set<std::string> &x) {
-     F << name << "=[" << x << "]" << std::endl;
-   }
-
    void report(std::ostream &F = std::cout) {
      F << std::endl << "Computing the following operators:" << std::endl;
-     report(F, "s", s);
-     report(F, "p", p);
-     report(F, "g", g);
-     report(F, "d", d);
-     report(F, "v", v);
-     report(F, "t", t);
-     report(F, "q", q);
-     report(F, "ot", ot);
+     for (const auto &[type, name]: ops) fmt::print("{} {}\n", name, type);
    }
    
    // Singlet operators are always recomputed in the first NRG run, so that we can calculate the expectation values.
    bool do_s(const std::string &name, const Params &P, const Step &step) {
      if (step.nrg()) return true;                                          // for computing <O> 
      if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
-     return s.count(name);
+     return ops.count({"s", name});
    }
+   
    
    bool do_g(const std::string &name, const Params &P, const Step &step) {
      if (step.nrg()) return true;                                          // for computing <O>
      if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
-     return g.count(name);
+     return ops.count({"g", name});
    }
    
    // Wrapper routine for recalculations
@@ -1143,23 +1134,24 @@ class Oprecalc {
      }
 
    // Recalculate operator matrix representations
-   ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
+   ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives   // CCC: move string to left, then perfect forwading ?
      void recalculate_operators(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, 
                                 IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
        for (auto &[name, m] : a.ops)
          m = recalc_or_clear(do_s(name, P, step), m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, step, diag, qsrmax, name, "s", Sym, P);
        for (auto &[name, m] : a.opsp)
-         m = recalc_or_clear(p.count(name),       m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, step, diag, qsrmax, name, "p", Sym, P);
+         m = recalc_or_clear(ops.count({"p", name}),       m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, step, diag, qsrmax, name, "p", Sym, P);
        for (auto &[name, m] : a.opsg) 
          m = recalc_or_clear(do_g(name, P, step), m, [Sym](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, step, diag, qsrmax, name, "g", Sym, P);
        for (auto &[name, m] : a.opd)
-         m = recalc_or_clear(d.count(name),       m, [Sym](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, step, diag, qsrmax, name, "d", Sym, P);
+         m = recalc_or_clear(ops.count({"d", name}),       m, [Sym](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, step, diag, qsrmax, name, "d", Sym, P);
        for (auto &[name, m] : a.opt)
-         m = recalc_or_clear(t.count(name),       m, [Sym](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, step, diag, qsrmax, name, "t", Sym, P);
+         m = recalc_or_clear(ops.count({"t", name}),       m, [Sym](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, step, diag, qsrmax, name, "t", Sym, P);
        for (auto &[name, m] : a.opot)
-         m = recalc_or_clear(ot.count(name),      m, [Sym](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, diag, qsrmax, name, "ot", Sym, P);
+         m = recalc_or_clear(ops.count({"ot", name}),      m, [Sym](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, step, diag, qsrmax, name, "ot", Sym, P);
        for (auto &[name, m] : a.opq)
-         m = recalc_or_clear(q.count(name),       m, [Sym](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, step, diag, qsrmax, name, "q", Sym, P);
+         m = recalc_or_clear(ops.count({"q", name}),       m, [Sym](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, step, diag, qsrmax, name, "q", Sym, P);
+       // CCC: q.count({"q", name})
      }
 
    // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
@@ -1172,13 +1164,13 @@ class Oprecalc {
                  const CustomOp<S> &set1, const CustomOp<S> &set2,
                  const string_token &stringtoken, speclist<S> &spectra, FactorFnc ff, CheckFnc cf,
                  const std::string &prefix,
-                 std::set<std::string> &rec1, std::set<std::string> &rec2, const gf_type mt, const int spin) { // XXX:mt -> gt
+                 const std::string &type1, const std::string &type2, const gf_type gt, const int spin) {
     for (const auto &[name1, op1] : set1) {
       for (const auto &[name2, op2] : set2) {
         if (const auto name = sdname(name1, name2, spin); stringtoken.find(name)) {
-          prepare_spec(runtype, spectra, ff, cf, op1, op2, name, prefix, mt, spin, P);
-          rec1.insert(name1);
-          rec2.insert(name2);
+          prepare_spec(runtype, spectra, ff, cf, op1, op2, name, prefix, gt, spin, P);
+          ops.insert({type1, name1});
+          ops.insert({type2, name2});
         }
       }
     }
@@ -1189,40 +1181,40 @@ class Oprecalc {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
-    loopover(runtype, P, a.ops,  a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", s, s, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsp, a.opsp, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", p, p, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", g, g, gf_type::bosonic, 0);
-    loopover(runtype, P, a.ops,  a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", s, g, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", g, s, gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "s", "s", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsp, a.opsp, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "p", "p", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "g", "g", gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.opsg, sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "s", "g", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.ops,  sts, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "corr", "g", "s", gf_type::bosonic, 0);
     // Global susceptibilities (global singlet operators)
     string_token stchit(P.specchit);
-    loopover(runtype, P, a.ops,  a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", s, s, gf_type::bosonic, 0);
-    loopover(runtype, P, a.ops,  a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", s, g, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", g, s, gf_type::bosonic, 0);
-    loopover(runtype, P, a.opsg, a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", g, g, gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", "s", "s", gf_type::bosonic, 0);
+    loopover(runtype, P, a.ops,  a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", "s", "g", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.ops,  stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", "g", "s", gf_type::bosonic, 0);
+    loopover(runtype, P, a.opsg, a.opsg, stchit, spectra, Sym->CorrelatorFactorFnc(),   Sym->TrivialCheckSpinFnc(), "chit", "g", "g", gf_type::bosonic, 0);
     // Dynamic spin susceptibilities (triplet operators)
     string_token stt(P.spect);
-    loopover(runtype, P, a.opt, a.opt, stt, spectra,  Sym->SpinSuscFactorFnc(),     Sym->TrivialCheckSpinFnc(),  "spin", t, t, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opt, a.opt, stt, spectra,  Sym->SpinSuscFactorFnc(),     Sym->TrivialCheckSpinFnc(),  "spin", "t", "t", gf_type::bosonic, 0);
     string_token stot(P.specot);
-    loopover(runtype, P, a.opot, a.opot, stot, spectra, Sym->OrbSuscFactorFnc(),      Sym->TrivialCheckSpinFnc(), "orbspin", ot, ot, gf_type::bosonic, 0);
+    loopover(runtype, P, a.opot, a.opot, stot, spectra, Sym->OrbSuscFactorFnc(),      Sym->TrivialCheckSpinFnc(), "orbspin", "ot", "ot", gf_type::bosonic, 0);
     const auto varmin = Sym->isfield() ? -1 : 0;
     const auto varmax = Sym->isfield() ? +1 : 0;
     // Spectral functions (doublet operators)
     string_token std(P.specd);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, std, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "spec", d, d, gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, std, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "spec", "d", "d", gf_type::fermionic, SPIN);
     string_token stgt(P.specgt);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, stgt, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "gt", d, d, gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, stgt, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "gt", "d", "d", gf_type::fermionic, SPIN);
     string_token sti1t(P.speci1t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, sti1t, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(),"i1t", d, d, gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, sti1t, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(),"i1t", "d", "d", gf_type::fermionic, SPIN);
     string_token sti2t(P.speci2t);
     for (int SPIN = varmin; SPIN <= varmax; SPIN += 2)
-      loopover(runtype, P, a.opd, a.opd, sti2t, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "i2t", d, d, gf_type::fermionic, SPIN);
+      loopover(runtype, P, a.opd, a.opd, sti2t, spectra,  Sym->SpecdensFactorFnc(),     Sym->SpecdensCheckSpinFnc(), "i2t", "d", "d", gf_type::fermionic, SPIN);
     // Spectral functions (quadruplet operators)
     string_token stq(P.specq);
-    loopover(runtype, P, a.opq, a.opq, stq, spectra,  Sym->SpecdensquadFactorFnc(), Sym->TrivialCheckSpinFnc(),  "specq", q, q, gf_type::fermionic, 0);
+    loopover(runtype, P, a.opq, a.opq, stq, spectra,  Sym->SpecdensquadFactorFnc(), Sym->TrivialCheckSpinFnc(),  "specq", "q", "q", gf_type::fermionic, 0);
     report();
   }
 };
