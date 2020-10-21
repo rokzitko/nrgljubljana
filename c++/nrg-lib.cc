@@ -198,6 +198,13 @@ public:
     for (auto &x : absenergyG) x -= GS_energy;
     my_assert(absenergyG[0] >= 0);
   }
+  auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements
+    const auto dim = getnrstored();
+    typename traits<S>::Matrix m(dim, dim, 0);
+    for (const auto i: range0(dim)) 
+      m(i, i) = exp(-value_zero(i) * factor);
+    return m;
+  }
   void save(boost::archive::binary_oarchive &oa) const {
     // RawEigen
     oa << value_orig;
@@ -274,6 +281,13 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    }
    auto count_subspaces() const {    // Count non-empty subspaces
      return ranges::count_if(this->eigs(), [](const auto &eig) { return eig.getnrstored()>0; });
+   }
+   template<typename F, typename M> auto trace(F fnc, const double factor, M mult) const { // Tr[fnc exp(-factor*E)]
+     auto b = 0.0;
+     for (const auto &[I, eig] : *this)
+       b += mult(I) * ranges::accumulate(eig.value_zero, 0.0, [fnc, factor](auto acc, const auto x) { 
+         const auto betaE = factor * x; return acc + fnc(betaE) * exp(-betaE); });
+     return b;
    }
    template <typename MF>
      void states_report(MF && mult) const {
@@ -1328,14 +1342,6 @@ auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, std::shared_pt
   return ZN;
 }
 
-template<typename S> auto diagonal_exp(const Eigen<S> &eig, const double factor) {
-  const auto dim = eig.getnrstored();
-  typename traits<S>::Matrix m(dim, dim, 0);
-  for (const auto i: range0(dim)) 
-    m(i, i) = exp(-eig.value_zero(i) * factor);
-  return m;
-}
-
 // Calculate rho_N, the density matrix at the last NRG iteration. It is
 // normalized to 1. Note: in CFS approach, we consider all states in the
 // last iteration to be "discarded".
@@ -1347,7 +1353,7 @@ template<typename S>
 auto init_rho(const Step &step, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym) {
   DensMatElements<S> rho;
   for (const auto &[I, eig]: diag)
-    rho[I] = diagonal_exp(eig, step.scT()) / grand_canonical_Z(step, diag, Sym);
+    rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step, diag, Sym);
   check_trace_rho(rho, Sym);
   return rho;
 }
@@ -1518,15 +1524,6 @@ void fdm_thermodynamics(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<
   stats.td_fdm.save_values();
 }
 
-template<typename F, typename S>
-auto trace(F fnc, const double rescale_factor, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym) {
-    auto b = 0.0;
-    for (const auto &[I, eig] : diag)
-      b += Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0, [fnc, rescale_factor](auto acc, const auto x) { 
-        const auto betaE = rescale_factor * x; return acc + fnc(betaE) * exp(-betaE); });
-    return b;
-  }
-
 // We calculate thermodynamic quantities before truncation to make better use of the available states. Here we
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
 // member functions defined in symmetry.cc.
@@ -1536,9 +1533,10 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, Ou
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
   const auto rescale_factor = step.TD_factor() * additional_factor;
-  const auto Z = trace([](double x) { return 1; }, rescale_factor, diag, Sym); // partition function
-  const auto E = trace([](double x) { return x; }, rescale_factor, diag, Sym); // Tr[beta H]
-  const auto E2 = trace([](double x) { return pow(x,2); }, rescale_factor, diag, Sym); // Tr[(beta H)^2]
+  auto mult = [Sym](const auto &I) { return Sym->mult(I); };
+  const auto Z  = diag.trace([](double x) { return 1; },        rescale_factor, mult); // partition function
+  const auto E  = diag.trace([](double x) { return x; },        rescale_factor, mult); // Tr[beta H]
+  const auto E2 = diag.trace([](double x) { return pow(x,2); }, rescale_factor, mult); // Tr[(beta H)^2]
   stats.Z = Z;
   stats.td.T  = step.Teff();
   stats.td.E  = E/Z;               // beta <H>
@@ -1595,7 +1593,7 @@ auto new_subspaces(const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym
   for (const auto &I : diagprev.subspaces()) {
     const auto all = Sym->new_subspaces(I);
     const auto non_empty = all | ranges::views::filter([&Sym](const auto &In) { return Sym->Invar_allowed(In); }) | ranges::to<std::vector>();
-    std::copy(non_empty.begin(), non_empty.end(), std::inserter(subspaces, subspaces.end())); // XXX: ranges
+    std::copy(non_empty.begin(), non_empty.end(), std::inserter(subspaces, subspaces.end()));
   }
   return subspaces;
 }
