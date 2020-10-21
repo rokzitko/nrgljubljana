@@ -168,11 +168,10 @@ class Algo_CHIT : public Algo<S> {
      const auto beta          = 1.0 / temperature;
      typename traits<S>::t_weight value{};
      for (const auto r1: diagI1.kept()) {
-       const auto E1 = diagI1.value_zero(r1);
        for (const auto rp: diagIp.kept()) {
-         const auto Ep      = diagIp.value_zero(rp);
-         value += (factor / stats.Zchit) * chit_weight(step.scale() * E1, step.scale() * Ep, beta) *
-           op1(r1, rp) * op2(rp, r1); // XXX: WHAT?!
+         const auto E1 = diagI1.value_zero(r1);
+         const auto Ep = diagIp.value_zero(rp);
+         value += (factor/stats.Zchit) * chit_weight(step.scale()*E1, step.scale()*Ep, beta) * conj_me(op1(r1,rp)) * op2(r1,rp);
        }
      }
      ct->add(temperature, value);
