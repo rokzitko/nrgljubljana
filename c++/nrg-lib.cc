@@ -225,8 +225,8 @@ public:
 template<typename S>
 class DiagInfo : public std::map<Invar, Eigen<S>> {
  public:
-  using t_eigen = typename traits<S>::t_eigen;
-   using Matrix = typename traits<S>::Matrix;
+   using t_eigen = typename traits<S>::t_eigen;
+   using Matrix  = typename traits<S>::Matrix;
    explicit DiagInfo() {}
    DiagInfo(std::ifstream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {
@@ -735,11 +735,6 @@ class Algo {
    virtual std::string rho_type() { return ""; } // what rho type is required
 };
 
-auto spec_fn(const std::string &name, const std::string &prefix, const std::string &algoname, const bool save = true) {
-  if (save) fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname); // Don't show if it's not going to be saved
-  return prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
-}
-
 // Object of class IterInfo cotains full information about matrix representations when entering stage N of the NRG
 // iteration.
 template<typename S> 
@@ -972,6 +967,11 @@ using speclist = std::list<BaseSpectrum<S>>;
 
 const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 
+auto spec_fn(const std::string &name, const std::string &prefix, const std::string &algoname, const bool save = true) {
+  if (save) fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname); // Don't show if it's not going to be saved
+  return prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
+}
+
 #include "spec_FT.cc"
 #include "spec_DMNRG.cc"
 #include "spec_FDM.cc"
@@ -1064,8 +1064,8 @@ class Oprecalc {
    
    // Wrapper routine for recalculations
    template <typename RecalcFnc>
-     MatrixElements<S> recalc_common(const std::string &name, const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const std::string &tip, 
-                                     const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
+     MatrixElements<S> recalc(const std::string &name, const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const std::string &tip, 
+                              const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
        nrglog('0', "Recalculate " << tip << " " << name);
        auto mnew = recalc_fnc(diag, qsrmax, mold);
        if (tip == "g") Sym->recalc_global(step, diag, qsrmax, name, mnew);
@@ -1073,8 +1073,8 @@ class Oprecalc {
      }
    
    template <typename ... Args>
-     MatrixElements<S> recalc_or_clear(bool recalc, Args&& ... args) {
-       return recalc ? recalc_common(std::forward<Args>(args)...) : MatrixElements<S>();
+     MatrixElements<S> recalc_or_clear(const bool selected, Args&& ... args) {
+       return selected ? recalc(std::forward<Args>(args)...) : MatrixElements<S>();
      }
 
    // Recalculate operator matrix representations
