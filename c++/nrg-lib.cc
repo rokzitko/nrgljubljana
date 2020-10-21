@@ -34,6 +34,7 @@
 #include "misc.h"
 #include "openmp.h"
 #include "mp.h"
+#include "io.h"
 
 template <typename S> struct traits {};
 
@@ -329,14 +330,44 @@ class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
      }
      my_assert(this->size() == nf);
    }
+   // We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
+   // required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
+   // recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.
+   void trim(const DiagInfo<S> &diag) {
+     for (auto &[II, mat] : *this) {
+       const auto &[I1, I2] = II;
+       // Current matrix dimensions
+       const auto size1 = mat.size1();
+       const auto size2 = mat.size2();
+       if (size1 == 0 || size2 == 0) continue;
+       // Target matrix dimensions
+       const auto nr1 = diag.at(I1).getnrstored();
+       const auto nr2 = diag.at(I2).getnrstored();
+       my_assert(nr1 <= size1 && nr2 <= size2);
+       if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
+         continue;
+       ublas::matrix_range<typename traits<S>::Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
+       typename traits<S>::Matrix m2new = m2;
+       mat.swap(m2new);
+     }
+   }
    std::ostream &insertor(std::ostream &os) const { 
      for (const auto &[II, mat] : *this)
        os << "----" << II << "----" << std::endl << mat << std::endl;
      return os;
    }
+   friend std::ostream &operator<<(std::ostream &os, const MatrixElements<S> &m) { return m.insertor(os); }
+   friend void dump_diagonal_op(const std::string &name, const MatrixElements<S> &m, const size_t max_nr, std::ostream &F) {
+     F << "Diagonal matrix elements of operator " << name << std::endl;
+     for (const auto &[II, mat] : m) {
+       const auto & [I1, I2] = II;
+       if (I1 == I2) {
+         F << I1 << ": ";
+         dump_diagonal_matrix(mat, max_nr, F);
+       }
+     }
+   }
 };
-template<typename S>
-std::ostream &operator<<(std::ostream &os, const MatrixElements<S> &m) { return m.insertor(os); }
 
 template<typename S>
 class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
@@ -378,9 +409,13 @@ class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
    }
 };
 
-// Map of operators matrices
+// Map of operator matrices
 template<typename S>
-using CustomOp = std::map<std::string, MatrixElements<S>>;
+struct CustomOp : public std::map<std::string, MatrixElements<S>> {
+   void trim(const DiagInfo<S> &diag) {
+     for (auto &op : *this | boost::adaptors::map_values) op.trim(diag);
+   }
+};
 
 // Vector containing irreducible matrix elements of f operators.
 template<typename S>
@@ -691,52 +726,6 @@ auto spec_fn(const std::string &name, const std::string &prefix, const std::stri
   return prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
 }
 
-template<typename M> 
-inline void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr, std::ostream &F) {
-  for (const auto r : range0(std::min(m.size1(), max_nr)))
-    F << m(r,r) << ' ';
-  F << std::endl;
-}
-
-template<typename S>
-inline void dump_diagonal_op(const std::string &name, const MatrixElements<S> &n, const size_t max_nr, std::ostream &F) {
-  F << "Diagonal matrix elements of operator " << name << std::endl;
-  for (const auto &[II, mat] : n) {
-    const auto & [I1, I2] = II;
-    if (I1 == I2) {
-      F << I1 << ": ";
-      dump_diagonal_matrix(mat, max_nr, F);
-    }
-  }
-}
-
-// We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
-// required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
-// recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.
-template<typename S> void trim_matel(const DiagInfo<S> &diag, MatrixElements<S> &op) { // BBB
-  for (auto &[II, mat] : op) {
-    const auto &[I1, I2] = II;
-    // Current matrix dimensions
-    const auto size1 = mat.size1();
-    const auto size2 = mat.size2();
-    if (size1 == 0 || size2 == 0) continue;
-    // Target matrix dimensions
-    const auto nr1 = diag.at(I1).getnrstored();
-    const auto nr2 = diag.at(I2).getnrstored();
-    my_assert(nr1 <= size1 && nr2 <= size2);
-    if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
-      continue;
-    ublas::matrix_range<typename traits<S>::Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
-    typename traits<S>::Matrix m2new = m2;
-    mat.swap(m2new);
-  }
-}
-
-template<typename S> void trim_op(const DiagInfo<S> &diag, CustomOp<S> &allops) { // BBB: 
-  for (auto &[name, op] : allops) 
-    trim_matel(diag, op);
-}
-
 // Object of class IterInfo cotains full information about matrix representations when entering stage N of the NRG
 // iteration.
 template<typename S> 
@@ -758,13 +747,13 @@ class IterInfo {
      }
    }
    void trim_matrices(const DiagInfo<S> &diag) {
-     trim_op(diag, ops);
-     trim_op(diag, opsp);
-     trim_op(diag, opsg);
-     trim_op(diag, opd);
-     trim_op(diag, opt);
-     trim_op(diag, opot);
-     trim_op(diag, opq);
+     ops.trim(diag);
+     opsp.trim(diag);
+     opsg.trim(diag);
+     opd.trim(diag);
+     opt.trim(diag);
+     opq.trim(diag);
+     opot.trim(diag);
    }
 };
 
@@ -916,7 +905,7 @@ class TempDependence {
    TempDependence<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
      name(name), algoname(algoname), filename(filename),  P(P) {}
    void merge(const ChainTempDependence<S> &ctd) {
-     std::copy(ctd.v.begin(), ctd.v.end(), std::back_inserter(results)); // XXX: ranges
+     std::copy(ctd.v.cbegin(), ctd.v.cend(), std::back_inserter(results));
    }
    void save() {
      fmt::print(fmt::emphasis::bold, "Temperature dependence: {} {} -> {}\n", name, algoname, filename);
@@ -930,21 +919,6 @@ template<typename S>
 void check_trace_rho(const DensMatElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, const double ref_value = 1.0) {
   if (!num_equal(m.trace(Sym->multfnc()), ref_value))
     throw std::runtime_error("check_trace_rho() failed");
-}
-
-enum class axis { RealFreq, Temp, Matsubara };
-
-std::ostream & operator<<(std::ostream &os, const axis &a) { // XXX: keep this?
-  if (a == axis::RealFreq)  os << "RealFreq";
-  if (a == axis::Temp)      os << "Temp";
-  if (a == axis::Matsubara) os << "Matsubara";
-  return os;
-}
-
-inline std::string to_string(std::complex<double> &z) { // XXX: i/o?
-  std::ostringstream s;
-  s << z;
-  return s.str();
 }
 
 using FactorFnc = std::function<double(const Invar &, const Invar &)>;
@@ -1059,11 +1033,6 @@ template<typename S, typename ... Args>
     if (P.fdmls)     prepare_spec_algo<Algo_FDMls<S>>(prefix, P, std::forward<Args>(args)...);
     if (P.fdmmats)   prepare_spec_algo<Algo_FDMmats<S>>(prefix, P, std::forward<Args>(args)...);
   }
-}
-
-template <typename T> ostream & operator<<(ostream &os, const std::set<T> &x) {
-  std::copy(x.cbegin(), x.cend(), std::ostream_iterator<T>(os, " "));
-  return os;
 }
 
 template<typename S>
