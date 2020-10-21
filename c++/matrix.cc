@@ -28,12 +28,12 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
   my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
   if (!my_isfinite(factor))
     throw std::runtime_error(fmt::format("offdiag_function(): factor not finite {} {} {} {}", i, j, ch, fnr));
-  const auto begin1 = qq.offset(i-1); // AAA: const auto [begin1, size1] = qq.chunk(i);
+  const auto begin1 = qq.offset(i-1);
   const auto begin2 = qq.offset(j-1);
   const auto size1  = qq.rmax(i-1);
   const auto size2  = qq.rmax(j-1);
   // < In[i] r | f^\dag | In[j] r' >
-  if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) { // AAA: Mathematica interface i,j
+  if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) {
     const auto &mat = f->second;
     my_assert(size1 == mat.size1() && size2 == mat.size2());
     const auto factor_scaled = factor / step.scale();

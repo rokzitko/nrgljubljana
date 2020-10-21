@@ -105,7 +105,7 @@ class Symmetry {
    // Multiplicity of the states in the invariant subspace
    virtual size_t mult(const Invar &) const { return 1; };
    auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
-   double calculate_Z(const Invar &I, const Eigen<S> &eig, const double rescale_factor) const { // XXX: auto?
+   auto calculate_Z(const Invar &I, const Eigen<S> &eig, const double rescale_factor) const {
      return mult(I) * ranges::accumulate(eig.value_zero, 0.0, [rf=rescale_factor](auto sum, const auto &x) { return sum+exp(-rf*x); });
    }
    // Does the combination of subspaces I1 and I2 contribute to the spectral function corresponding to spin SPIN?

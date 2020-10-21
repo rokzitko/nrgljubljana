@@ -1714,42 +1714,35 @@ template<typename S> std::pair<Invar, Eigen<S>> read_from(int source) {
   return {Irecv, eig};
 }
 
+template<typename T> auto get_back(T &d) { // usually T is list or deque
+  auto i = d.back();
+  d.pop_back();
+  return i;
+}
+
+template<typename T> auto get_front(T &d) {
+  auto i = d.front();
+  d.pop_front();
+  return i;
+}
+
 template<typename S>
 DiagInfo<S> diagonalisations_MPI(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
                                       const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   DiagInfo<S> diagnew;
-  mpi_send_params(DP); // Synchronise parameters
-  std::list<Invar> todo; // List of all the tasks to handle
-  std::copy(tasks.begin(), tasks.end(), std::back_inserter(todo)); // BBB: constr
-  std::list<Invar> done; // List of finished tasks.
-  // List of the available computation nodes (including the master,
-  // which is always at the very beginnig of the deque).
-  std::deque<int> nodes;
-  for (const auto i: range0(mpiw->size())) nodes.push_back(i); // BBB: iota
-  nrglog('M', "nrtasks=" << tasks.size() << " nrnodes=" << mpiw->size());
+  mpi_send_params(DP);                               // Synchronise parameters
+  std::list<Invar> todo(tasks.begin(), tasks.end()); // List of all the tasks to handle
+  std::list<Invar> done;                             // List of finished tasks.
+  std::deque<int> nodes(mpiw->size());               // Available computation nodes (including the master, which is always at the head of the deque).
+  std::iota(nodes.begin(), nodes.end(), 0);
+  nrglog('M', "nrtasks=" << tasks.size() << " nrnodes=" << nodes.size());
   while (!todo.empty()) {
     my_assert(!nodes.empty());
-    // i is the node to which the next job will be scheduled
-    int i;
-    if (todo.size() == 1) {
-      // If a single task is left undone, do it on the master node
-      // to avoid the unnecessary network copying.
-      i = 0;
-    } else {
-      i = nodes.back();
-      nodes.pop_back();
-    }
-    Invar I;
-    if (i == 0) {
-      // On master, we take short jobs from the end of the list.
-      I = todo.back();
-      todo.pop_back();
-    } else {
-      // On slaves, we take long jobs from the beginning of the
-      // list.
-      I = todo.front();
-      todo.pop_front();
-    }
+    // i is the node to which the next job will be scheduled. (If a single task is left undone, do it on the master
+    // node to avoid the unnecessary network copying.)
+    const auto i = todo.size() != 1 ? get_back(nodes) : 0;
+    // On master, we take short jobs from the end. On slaves, we take long jobs from the beginning.
+    const Invar I = i == 0 ? get_back(todo) : get_front(todo);
     auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, Sym, P); // non-const
     nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
     if (i == 0) {

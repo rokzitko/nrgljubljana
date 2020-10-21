@@ -26,10 +26,7 @@ class SymmetryQS : public Symmetry<SC> {
      return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"));
    }
 
-   bool Invar_allowed(const Invar &I) const override {
-     const bool spin_ok = I.get("SS") > 0;
-     return spin_ok;
-   }
+   bool Invar_allowed(const Invar &I) const override { return I.get("SS") > 0; }
 
    void load() override {
      if (!P.substeps) {
@@ -60,16 +57,16 @@ class SymmetryQS : public Symmetry<SC> {
 
    double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
      check_diff(Ip, I1, "Q", 0);
-     const Sspin ssp = Ip.get("SS");
-     const Sspin ss1 = I1.get("SS");
+     const auto ssp = Ip.get("SS");
+     const auto ss1 = I1.get("SS");
      my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
    }
 
    double specdens_factor(const Invar &Ip, const Invar &I1) const override {
      check_diff(Ip, I1, "Q", 1);
-     const Sspin ssp = Ip.get("SS");
-     const Sspin ss1 = I1.get("SS");
+     const auto ssp = Ip.get("SS");
+     const auto ss1 = I1.get("SS");
      my_assert(abs(ss1 - ssp) == 1);
      return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
    }
@@ -77,8 +74,8 @@ class SymmetryQS : public Symmetry<SC> {
    void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
      auto trSZ = 0.0, trQ = 0.0, trQ2 = 0.0; // Tr[S_z^2], Tr[Q], Tr[Q^2]
      for (const auto &[I, eig]: diag) {
-       const Sspin ss    = I.get("SS"); // XXX -> auto!
-       const Number q    = I.get("Q");
+       const auto ss   = I.get("SS");
+       const auto q    = I.get("Q");
        const auto sumZ = this->calculate_Z(I, eig, factor);
        trQ  += sumZ * q;
        trQ2 += sumZ * q * q;
@@ -117,7 +114,7 @@ template<typename SC>
 ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives; must appear after template
 void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
                                      const Opch<SC> &opch, const Coef<SC> &coef) {
-  Sspin ss = I.get("SS");
+  auto ss = I.get("SS");
 
   if (!P.substeps) {
     switch (P.channels) {
@@ -164,10 +161,11 @@ template<typename SC>
 void SymmetryQS<SC>::show_coefficients(const Step &step, const Coef<SC> &coef) {
   Symmetry<SC>::show_coefficients(step, coef);
   if (P.rungs)
-    for (unsigned int i = 0; i < P.channels; i++)
+    for (auto i = 0; i < P.channels; i++)
       std::cout << "[" << i + 1 << "]"
            << " xi_rung(" << step.N() << ")=" << coef.xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" 
            << coef.zetaR(step.N() + 1, i) << std::endl;
 }
 
 #include "nrg-recalc-QS.cc"
+
