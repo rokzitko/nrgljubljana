@@ -68,7 +68,7 @@ void calc_densitymatrix_iterN(const DiagInfo<S> &diag,
 
 inline bool file_exists(const std::string &fn)
 {
-  ofstream F(fn, ios::binary | ios::out);
+  std::ofstream F(fn, std::ios::binary | std::ios::out);
   return bool(F);
 }
 

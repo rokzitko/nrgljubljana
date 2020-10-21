@@ -121,9 +121,9 @@ class string_token {
    std::string s;
    std::list<std::string> l;
  public:
-   explicit string_token(string _s) : s(std::move(_s)) {
-     string::size_type pos = 0;
-     string::size_type first, last;
+   explicit string_token(std::string _s) : s(std::move(_s)) {
+     std::string::size_type pos = 0;
+     std::string::size_type first, last;
      while ((first = s.find_first_not_of(" ", pos)) != std::string::npos) {
        last              = s.find_first_of(" ", first);
        std::string token = std::string(s, first, last - first);
@@ -158,7 +158,7 @@ inline void skip_comments(std::istream &f, const bool output = false, std::ostre
 // Sort according to the first component of the pair. Second
 // component is ignored (unlike in the default sort function).
 struct sortfirst {
-  template <typename T1, typename T2> bool operator()(const pair<T1, T2> &xy1, const pair<T1, T2> &xy2) { return xy1.first < xy2.first; }
+  template <typename T1, typename T2> bool operator()(const std::pair<T1, T2> &xy1, const std::pair<T1, T2> &xy2) { return xy1.first < xy2.first; }
 };
 
 #endif

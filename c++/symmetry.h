@@ -271,13 +271,13 @@ class SymFieldLR : public Symmetry<S> {
 };
 
 // Helper functions
-inline void check_abs_diff(const Invar &Ip, const Invar &I1, const string &what, int diff) {
+inline void check_abs_diff(const Invar &Ip, const Invar &I1, const std::string &what, int diff) {
   const auto a = Ip.get(what);
   const auto b = I1.get(what);
   my_assert(abs(b - a) == diff);
 }
 
-inline void check_diff(const Invar &Ip, const Invar &I1, const string &what, int diff) {
+inline void check_diff(const Invar &Ip, const Invar &I1, const std::string &what, int diff) {
   const auto a = Ip.get(what);
   const auto b = I1.get(what);
   my_assert(b - a == diff);

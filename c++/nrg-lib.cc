@@ -292,7 +292,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
    void save(const size_t N) const {
      const std::string fn = workdir.unitaryfn(N);
-     ofstream MATRIXF(fn, ios::binary | ios::out);
+     std::ofstream MATRIXF(fn, std::ios::binary | std::ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
      oa << this->size();
@@ -397,7 +397,7 @@ class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
      }
      MATRIXF.close();
    }
-   void load(const size_t N, const string &prefix, const bool remove_files) {
+   void load(const size_t N, const std::string &prefix, const bool remove_files) {
      const auto fn = workdir.rhofn(prefix, N);
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
@@ -1152,7 +1152,7 @@ class Annotated {
        for (size_t i = 0; i < len;) { // i increased in the while loop below
          const auto [e0, I0] = seznam[i];
          F << scale(e0);
-         std::vector<string> QNstrings;
+         std::vector<std::string> QNstrings;
          size_t total_degeneracy = 0; // Total number of levels (incl multiplicity)
          while (i < len && my_fcmp(seznam[i].first, e0, P.grouptol) == 0) {
            const auto [e, I] = seznam[i];
@@ -1489,9 +1489,9 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
   stats.Zft = grand_canonical_Z(step, diag, Sym);
-  if (string(P.specgt) != "" || string(P.speci1t) != "" || string(P.speci2t) != "")
+  if (std::string(P.specgt) != "" || std::string(P.speci1t) != "" || std::string(P.speci2t) != "")
     stats.Zgt = grand_canonical_Z(step, diag, Sym, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
-  if (string(P.specchit) != "") 
+  if (std::string(P.specchit) != "") 
     stats.Zchit = grand_canonical_Z(step, diag, Sym, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
   DensMatElements<S> rho, rhoFDM;
   if (step.dmnrg()) {
@@ -1793,7 +1793,7 @@ auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats
     catch (NotEnough &e) {
       fmt::print(fmt::emphasis::bold | fg(fmt::color::yellow), "Insufficient number of states computed.\n");
       if (!(step.nrg() && P.restart)) break;
-      diagratio = min(diagratio * P.restartfactor, 1.0);
+      diagratio = std::min(diagratio * P.restartfactor, 1.0);
       fmt::print(fmt::emphasis::bold | fg(fmt::color::yellow), "\nRestarting this iteration step. diagratio={}\n\n", diagratio);
     }
   }
@@ -1868,7 +1868,7 @@ template<typename S>
 void docalc0(Step &step, const IterInfo<S> &iterinfo, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
              Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
-  std::cout << endl << "Before NRG iteration";
+  std::cout << std::endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output);
   AllSteps<S> empty_dm(0, 0);
@@ -2003,7 +2003,7 @@ public:
     Step step{P, RUNTYPE::NRG};
     AllSteps<S> dm(P.Ninit, P.Nlen);
     auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym, P);
-    if (string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
+    if (std::string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
     dm.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
     if (P.dumpabsenergies)
       dm.dump_all_absolute_energies();

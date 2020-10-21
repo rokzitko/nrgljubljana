@@ -51,7 +51,7 @@ class Clusters {
            if (cluster_splitting(i0, i1)) { // are the states actually split?
              auto replace_with = *i0;    // use the lowest eigenvalue of the cluster
              for (auto j = (i0 + 1); j != i1; ++j) // skip 1st
-               if (*j != *i0) cluster_mapping.insert(make_pair(*j, replace_with));
+               if (*j != *i0) cluster_mapping.insert({*j, replace_with});
            }
          }
          e0   = *i;

@@ -20,7 +20,7 @@ class Workdir {
      if (remove_at_exit)
        remove();
    }
-   void create(const string &dir) {
+   void create(const std::string &dir) {
      const std::string workdir_template = dir + "/XXXXXX";
      size_t len = workdir_template.length()+1;
      auto x = std::make_unique<char[]>(len); // NOLINT
@@ -29,9 +29,9 @@ class Workdir {
        workdir = w;
      else
        workdir = default_workdir;
-     std::cout << "workdir=" << workdir << endl << std::endl;
+     std::cout << "workdir=" << workdir << std::endl << std::endl;
    }
-   std::string rhofn(const string &fn, int N) const { return workdir + "/" + fn + to_string(N); }
+   std::string rhofn(const std::string &fn, const int N) const { return workdir + "/" + fn + to_string(N); }
    std::string unitaryfn(size_t N, const std::string &filename = "unitary"s) const {
      return workdir + "/" + filename + to_string(N); 
    }
@@ -49,56 +49,56 @@ inline void set_workdir(const std::string &dir_) {
 void set_workdir(int argc, char **argv) { // not inline!
   std::string dir = default_workdir;
   if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
-  std::vector<string> args(argv+1, argv+argc); // NOLINT
+  std::vector<std::string> args(argv+1, argv+argc); // NOLINT
   if (args.size() == 2 && args[0] == "-w") dir = args[1];
   workdir.create(dir);
 }
 
 // Base class for parameter containers.
 class parambase {
-  protected:
-  string _keyword;
-  string _desc;
-  string _value;
-
-  public:
-  parambase(string keyword, string desc, string defaultv) :
+ protected:
+   std::string _keyword;
+   std::string _desc;
+   std::string _value;
+   
+ public:
+   parambase(std::string keyword, std::string desc, std::string defaultv) :
      _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
-  virtual ~parambase() = default;
-  virtual void setvalue_str(string newvalue) = 0;
-  virtual void dump()                        = 0;
-  string getkeyword() const { return _keyword; }
-  string getdesc() const { return _desc; }
+   virtual ~parambase() = default;
+   virtual void setvalue_str(std::string newvalue) = 0;
+   virtual void dump()                        = 0;
+   std::string getkeyword() const { return _keyword; }
+   std::string getdesc() const { return _desc; }
 };
 
 // Templated specialized classes for various storage types (int, double, string, bool)
 template <typename T> 
- class param : public parambase {
-  private:
-  T data;
-  bool defaultval = true;
-
+class param : public parambase {
+ private:
+   T data;
+   bool defaultval = true;
+   
   public:
-  // Constructor: keyword is a CASE SENSITIVE name of the parameter, desc is at this time used as in-line
-  // documentation and defaultv is a string containing a default value which is immediately parsed.
-  param(const string &keyword, const string &desc, const string &defaultv, list<parambase*> &allparams) :
-      parambase(keyword, desc, defaultv) {
-    data = fromstring<T>(_value);
-    for (auto &i : allparams)
-          if (i->getkeyword() == keyword) throw std::runtime_error("param class internal error: keyword conflict.");
-    allparams.push_back((parambase *)this);
-  }
-  void dump() override { std::cout << _keyword << "=" << data << (!defaultval ? " *" : "") << std::endl; }
-  // This line enables to access parameters using an object as a rvalue
-  inline operator const T &() const { return data; }
-  inline T value() const { return data; }
-  void setvalue_str(string newvalue) override {
-    _value     = newvalue;
-    data       = fromstring<T>(newvalue);
-    defaultval = false;
-  }
-  void setvalue(T newdata) { data = newdata; }
-  bool operator == (const T &b) const { return data == b; }
+   // Constructor: keyword is a CASE SENSITIVE name of the parameter, desc is at this time used as in-line
+   // documentation and defaultv is a string containing a default value which is immediately parsed.
+   param(const std::string &keyword, const std::string &desc, const std::string &defaultv, std::list<parambase*> &allparams) :
+     parambase(keyword, desc, defaultv) {
+       data = fromstring<T>(_value);
+       for (auto &i : allparams)
+         if (i->getkeyword() == keyword) throw std::runtime_error("param class internal error: keyword conflict.");
+       allparams.push_back((parambase *)this);
+     }
+   void dump() override { std::cout << _keyword << "=" << data << (!defaultval ? " *" : "") << std::endl; }
+   // This line enables to access parameters using an object as a rvalue
+   inline operator const T &() const { return data; }
+   inline T value() const { return data; }
+   void setvalue_str(std::string newvalue) override {
+     _value     = newvalue;
+     data       = fromstring<T>(newvalue);
+     defaultval = false;
+   }
+   void setvalue(const T newdata) { data = newdata; }
+   bool operator == (const T &b) const { return data == b; }
 };
 
 // CONVENTION: parameters that are user configurable are declared as param<T>, other parameters (set at runtime) are
@@ -109,9 +109,9 @@ template <typename T>
 // //! lines define parameters that are only used in the high-level interface
 
 struct Params {
-  list<parambase *> all; // Container for all parameters
+  std::list<parambase *> all; // Container for all parameters
 
-  param<string> symtype{"symtype", "Symmetry type", "", all}; // S
+  param<std::string> symtype{"symtype", "Symmetry type", "", all}; // S
 
   // *************************************************************
   // Parameters controlling discretization scheme and Wilson chain
@@ -119,7 +119,7 @@ struct Params {
   param<double> Lambda{"Lambda", "Logarithmic discretization parameter", "2.0", all}; // S
 
   // Discretization scheme: Y)oshida-Whitaker-Oliveira, C)ampo-Oliveira, Z)itko-Pruschke
-  param<string> discretization{"discretization", "Discretization scheme", "Z", all}; // N
+  param<std::string> discretization{"discretization", "Discretization scheme", "Z", all}; // N
 
   // Twist parameter for the mesh. See Yoshida, Whitaker, Oliveira PRB 41 9403 1990
   param<double> z{"z", "Parameter z in the logarithmic discretization", "1.0", all}; // N
@@ -157,13 +157,13 @@ struct Params {
 
   // If tri=cpp, we do the tridiagonalisation in the C++ part of the
   // code. In other cases,. we make use of external tools or Mathematica.
-  param<string> tri{"tri", "Tridiagonalisation approach", "old", all};               // N
+  param<std::string> tri{"tri", "Tridiagonalisation approach", "old", all};               // N
   param<size_t> preccpp{"preccpp", "Precision for tridiagonalisation", "2000", all}; // N
 
   // ************************
   // NRG iteration parameters
 
-  param<string> diag{"diag", "Eigensolver routine (dsyev|dsyevd|dsyevr|zheev|zheevr|default)", "default", all}; // N
+  param<std::string> diag{"diag", "Eigensolver routine (dsyev|dsyevd|dsyevr|zheev|zheevr|default)", "default", all}; // N
 
   // For partial diagonalisation routines (dsyevr, zheevr), diagratio controls the fraction
   // of eigenspectrum that we compute.
@@ -213,28 +213,28 @@ struct Params {
   // *************************************************************
   // Parameters controlling the problem and quantities of interest
 
-  //! param<string> problem {"problem", "Model considered (templated)", "SIAM", all}; // C
+  //! param<std::string> problem {"problem", "Model considered (templated)", "SIAM", all}; // C
 
   // List of operators being considered
-  param<string> ops{"ops", "Operators to be calculated", "", all}; // S
+  param<std::string> ops{"ops", "Operators to be calculated", "", all}; // S
 
   // Dynamical quantities of interest
-  param<string> specs{"specs", "Spectral functions (singlet ops) to compute", "", all};           // S
-  param<string> specd{"specd", "Spectral functions (doublet ops) to compute", "", all};           // S
-  param<string> spect{"spect", "Spectral functions (triplet ops) to compute", "", all};           // S
-  param<string> specq{"specq", "Spectral functions (quadruplet ops) to compute", "", all};        // S
-  param<string> specot{"specot", "Spectral functions (orbital triplet ops) to compute", "", all}; // S
+  param<std::string> specs{"specs", "Spectral functions (singlet ops) to compute", "", all};           // S
+  param<std::string> specd{"specd", "Spectral functions (doublet ops) to compute", "", all};           // S
+  param<std::string> spect{"spect", "Spectral functions (triplet ops) to compute", "", all};           // S
+  param<std::string> specq{"specq", "Spectral functions (quadruplet ops) to compute", "", all};        // S
+  param<std::string> specot{"specot", "Spectral functions (orbital triplet ops) to compute", "", all}; // S
 
   // Calculation of the temperature-dependent conductance G(T) &
   // first and second moment of A(w)(-df/dw), which are related to
   // the thermopower and the heat conductance.
-  param<string> specgt{"specgt", "Conductance curves to compute", "", all};  // S
-  param<string> speci1t{"speci1t", "I_1 curves to compute", "", all};        // S
-  param<string> speci2t{"speci2t", "I_2 curves to compute", "", all};        // S
+  param<std::string> specgt{"specgt", "Conductance curves to compute", "", all};  // S
+  param<std::string> speci1t{"speci1t", "I_1 curves to compute", "", all};        // S
+  param<std::string> speci2t{"speci2t", "I_2 curves to compute", "", all};        // S
   param<double> gtp{"gtp", "Parameter p for G(T) calculations", "0.7", all}; // N
 
   // Calculation of the temperature-depenedent susceptibility chi(T)
-  param<string> specchit{"specchit", "Susceptibilities to compute", "", all};      // S
+  param<std::string> specchit{"specchit", "Susceptibilities to compute", "", all};      // S
   param<double> chitp{"chitp", "Parameter p for chi(T) calculations", "1.0", all}; // N
 
   // If chitp_ratio>0, chitp=chitp_ratio/betabar.
@@ -321,7 +321,7 @@ struct Params {
   // exponentially decreasing Boltzmann factors. Note 2: for CFS/FDM
   // calculations, where all eigenpairs need to be recalculated, the
   // strategy is automatically switched to "all"!
-  param<string> strategy{"strategy", "Recalculation strategy", "kept", all}; // N
+  param<std::string> strategy{"strategy", "Recalculation strategy", "kept", all}; // N
 
   // It is possible to include more than the zero-th site in the
   // initial Wilson chain. This is controlled by parameter Ninit,
@@ -456,7 +456,7 @@ struct Params {
     fr - debug recalculation of irreducible matrix elements <||f||>
     ies - debug matrix construction and diagonalization
   */
-  param<string> logstr{"log", "list of tokens to define what to log", "", all}; // N
+  param<std::string> logstr{"log", "list of tokens to define what to log", "", all}; // N
   param<bool> logall{"logall", "Log everything", "false", all};              // N
 
   // ********************************************
@@ -489,7 +489,7 @@ struct Params {
 
   // stopafter=nrg, stops calculation after the first sweep
   // stopafter=rho, stops calculation after computing the density matrix
-  param<string> stopafter{"stopafter", "Stop calculation at some point?", "", all}; // N
+  param<std::string> stopafter{"stopafter", "Stop calculation at some point?", "", all}; // N
 
   // If set to false, the unitary transformation matrix and density
   // matrix files are kept after the calculation.
@@ -531,8 +531,8 @@ struct Params {
     if (resume) {
       laststored = -1;
       for (size_t N = Ninit; N < Nmax; N++) {
-        const string fn = workdir.unitaryfn(N);
-        ifstream F(fn);
+        const std::string fn = workdir.unitaryfn(N);
+        std::ifstream F(fn);
         if (F.good())
           laststored = N;
       }
@@ -551,7 +551,7 @@ struct Params {
     }
     my_assert(!(dumpabs && dumpscaled)); // dumpabs=true and dumpscaled=true is a meaningless combination
     // Take the first character (for backward compatibility)
-    discretization.setvalue(string(discretization, 0, 1));
+    discretization.setvalue(std::string(discretization, 0, 1));
     if (chitp_ratio > 0.0) chitp.setvalue(chitp_ratio / betabar);
   }
 
@@ -561,10 +561,10 @@ struct Params {
     for (const auto &i : all) i->dump();
   }
 
-  Params(const string &filename, const string &block, const Workdir &workdir) {
+  Params(const std::string &filename, const std::string &block, const Workdir &workdir) {
     auto parsed_params = parser(filename, block);
     for (const auto &i : all) {
-      const string keyword = i->getkeyword();
+      const std::string keyword = i->getkeyword();
       if (parsed_params.count(keyword) == 1) {
         i->setvalue_str(parsed_params[keyword]);
         parsed_params.erase(keyword);
@@ -588,7 +588,7 @@ struct Params {
     if (discretization == "Y"s)
       // Yoshida,Whitaker,Oliveira PRB 41 9403 Eq. (39)
       scale = 0.5 * (1. + 1. / Lambda); // NOLINT
-    if (string(discretization) == "C"s || string(discretization) == "Z"s)
+    if (std::string(discretization) == "C"s || std::string(discretization) == "Z"s)
       // Campo, Oliveira PRB 72 104432, Eq. (46) [+ Lanczos]
       scale = (1.0 - 1. / Lambda) / std::log(Lambda); // NOLINT
     if (!substeps)
@@ -636,7 +636,7 @@ struct Params {
   double getEmax() const { return getE0() * pow(getEfactor(),2); }
 
   // Returns true if option 'c' is selected for logging
-  bool logletter(char c) const { return (logall ? true : std::string(logstr).find(c) != string::npos); }
+  bool logletter(char c) const { return (logall ? true : std::string(logstr).find(c) != std::string::npos); }
 
   auto Nall() const { return boost::irange(size_t(Ninit), size_t(Nlen)); }
 };
@@ -652,7 +652,7 @@ class DiagParams {
    explicit DiagParams(const Params &P, const double diagratio_ = -1) :
      diag(P.diag), diagratio(diagratio_ > 0 ? diagratio_ : P.diagratio),
      logall(P.logall), logstr(P.logstr) {}
-   bool logletter(char c) const { return logall ? true : logstr.find(c) != string::npos; }
+   bool logletter(char c) const { return logall ? true : logstr.find(c) != std::string::npos; }
 
  private:
    friend class boost::serialization::access;

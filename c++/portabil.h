@@ -4,8 +4,6 @@
 #ifndef _portabil_h_
 #define _portabil_h_
 
-using namespace std;
-
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 #include <boost/stacktrace.hpp>
 

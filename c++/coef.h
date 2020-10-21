@@ -11,7 +11,7 @@ private:
 public:
   using t_ndx = typename t_storage::size_type;
   // Read values from a stream f
-  void read_values(ifstream &f) {
+  void read_values(std::ifstream &f) {
     table = read_vector<t_coef>(f, true); // len=nr+1
   }
   auto coef(const t_ndx n) const {
@@ -40,7 +40,7 @@ public:
   using t_ndx = typename coef_table<S>::t_ndx;
   using t_ch = typename t_storage::size_type;
   auto nr_tabs() const { return tabs.size(); }
-  void read(ifstream &fdata, const t_ch coefchannels) {
+  void read(std::ifstream &fdata, const t_ch coefchannels) {
     tabs.resize(coefchannels);
     for (auto &i : tabs) i.read_values(fdata);
   }

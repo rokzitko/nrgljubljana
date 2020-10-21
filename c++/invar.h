@@ -60,12 +60,12 @@ class Invar {
    }
    Invar(int i0, int i1, int i2) : data{i0, i1, i2} { // (int,int,int) constructor
      my_assert(invdim == 3);
-  }
-   ostream &insertor(ostream &os) const {
+   }
+   std::ostream &insertor(std::ostream &os) const {
      for (size_t i = 0; i < data.size(); i++) os << data[i] << (i != data.size() - 1 ? " " : "");
      return os;
    }
-   friend ostream &operator<<(ostream &os, const Invar &invar) { return invar.insertor(os); }
+   friend std::ostream &operator<<(std::ostream &os, const Invar &invar) { return invar.insertor(os); }
    std::string str() const { std::ostringstream s; insertor(s); return s.str(); }
    std::istream &extractor(std::istream &is) {
      for (auto &i : data) {
@@ -130,7 +130,7 @@ class Invar {
          break;
        }
    }
-   int get(const string &which) const {
+   int get(const std::string &which) const {
      const auto i = name.find(which);
      if (i == end(name)) throw std::invalid_argument(fmt::format("{} is an unknown quantum number.", which));
      const size_t index = i->second;
@@ -175,7 +175,7 @@ inline void initInvar(std::initializer_list<InvarStructure> l) {
 }
 
 using InvarVec = std::vector<Invar>; // holds information about ancestor subspaces
-using Twoinvar = pair<Invar, Invar>; // labels subspace bra and subspace ket for matrix elements
+using Twoinvar = std::pair<Invar, Invar>; // labels subspace bra and subspace ket for matrix elements
 
 inline std::ostream &operator<<(std::ostream &os, const Twoinvar &p) { return os << "(" << p.first << ") (" << p.second << ")"; }
 

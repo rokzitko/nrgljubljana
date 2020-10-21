@@ -159,7 +159,7 @@ Eigen<cmpl> diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V') {
   int INFO   = 0;           // 0 on successful exit
   int LWORK0 = -1;          // length of the WORK array (-1 == query!)
   lapack_complex_double WORK0[1];
-  int RWORKdim = max(1ul, 3 * dim - 2);
+  int RWORKdim = std::max(1ul, 3 * dim - 2);
   double RWORK[RWORKdim];
   // Step 1: determine optimal LWORK
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK0, &LWORK0, RWORK, &INFO);
@@ -263,7 +263,7 @@ template<typename M>
   void dump_eigenvalues(const Eigen<M> &d, const size_t max_nr = std::numeric_limits<size_t>::max())
 {
   std::cout << "eig= ";
-  std::for_each_n(d.value_orig.cbegin(), min(d.getnrcomputed(), max_nr), 
+  std::for_each_n(d.value_orig.cbegin(), std::min(d.getnrcomputed(), max_nr), 
                   [](const double x) { std::cout << x << ' '; });
   std::cout << std::endl;
 }

@@ -29,8 +29,6 @@ using namespace std::string_literals;
 #include <limits>
 #include <memory>
 
-using namespace std;
-
 // C headers
 #include <cassert>
 #include <cmath>

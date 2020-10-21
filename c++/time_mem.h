@@ -44,7 +44,7 @@ class Timing {
      tp end  = now();
      return end - timer;
    }
-   void add(string timer) {
+   void add(std::string timer) {
      t[timer] += stop();
    }
    dp total() {
@@ -79,7 +79,7 @@ class TimeScope {
    Timing &timer;
    std::string timer_name;
  public:
-   TimeScope(Timing &_timer, string _timer_name) : timer(_timer), timer_name(std::move(_timer_name)) { timer.start(); }
+   TimeScope(Timing &_timer, std::string _timer_name) : timer(_timer), timer_name(std::move(_timer_name)) { timer.start(); }
    ~TimeScope() { timer.add(timer_name); }
 };
 
@@ -99,13 +99,13 @@ class MemoryStats {
    MemoryStats() {}
    auto used() {
      const auto memused = memoryused();
-     peakusage          = max(peakusage, memused);
+     peakusage          = std::max(peakusage, memused);
      return memused;
    }
    // Sample memory usage at an arbitrarily named "breakpoint".
-   [[deprecated]] auto check(string breakpoint) {
+   [[deprecated]] auto check(std::string breakpoint) {
      const auto memused = used();
-     maxvals[breakpoint] = max(maxvals[breakpoint], memused);
+     maxvals[breakpoint] = std::max(maxvals[breakpoint], memused);
      return memused;
    }
    // Usually only the peak memory usage is relevant (e.g. to constrain memory in job submissions).
@@ -117,7 +117,7 @@ class MemoryStats {
        std::cout << "Memory usage report [" << myrank() << "]" << std::endl;
        std::cout << "===================" << std::endl;
        auto topusage = 0; // top usage recorded by check()
-       for (const auto &i : maxvals) topusage = max(topusage, i.second);
+       for (const auto &i : maxvals) topusage = std::max(topusage, i.second);
        if (topusage != 0)
          for (const auto &[name, val] : maxvals) std::cout << std::setw(MS_WIDTH) << name << ": " << val << " kB" << std::endl;
        my_assert(topusage <= peakusage);

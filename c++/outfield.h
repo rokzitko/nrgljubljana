@@ -26,8 +26,8 @@ class outfield {
      value = fmt::format("{x:>{width}.{prec}}", "x"_a=x, "prec"_a=P.prec_td, "width"_a=P.width_td);
    }
    template<typename T> void operator=(T x) { setvalue(x); }
-   void putheader(ostream &F) const { F << std::setw(P.width_td) << desc << " "; }
-   void putvalue(ostream &F) const  { F << std::setw(P.width_td) << value << " "; }
+   void putheader(std::ostream &F) const { F << std::setw(P.width_td) << desc << " "; }
+   void putvalue(std::ostream &F) const  { F << std::setw(P.width_td) << value << " "; }
 };
 
 // Setup output fields that will appear in the file "td".
@@ -64,7 +64,7 @@ struct TD_FDM {
   Allfields allfields;
   const Params &P;
   std::string filename;
-  ofstream O;
+  std::ofstream O;
   outfield T, E, C, F, S;
   bool header_saved = false;
   void save_header() {
