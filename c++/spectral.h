@@ -70,11 +70,11 @@ CONSTFNC auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int m
   return sumA+sumB;
 }
 
-CONSTFNC double fermi_fnc(const double omega, const double T) { 
+inline CONSTFNC double fermi_fnc(const double omega, const double T) { 
   return 1 / (1 + exp(-omega / T)); 
 }
 
-CONSTFNC double bose_fnc(const double omega, const double T) {
+inline CONSTFNC double bose_fnc(const double omega, const double T) {
   const auto d = 1.0 - exp(-omega / T);
   return d != 0.0 ? 1.0/d : std::numeric_limits<double>::quiet_NaN();
 }

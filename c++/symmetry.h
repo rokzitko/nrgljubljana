@@ -4,6 +4,8 @@
 #ifndef _symmetry_h_
 #define _symmetry_h_
 
+#include "nrg-general.h"
+
 // Check if the triangle inequality is satisfied (i.e. if Clebsch-Gordan coefficient can be different from zero).
 // This is important, for example, for triplet operators, which are zero when evaluated between two singlet states.
 // Arguments ss1, ss2, ss3 are spin multiplicities. Returns true if the inequality is satisfied, false otherwise.

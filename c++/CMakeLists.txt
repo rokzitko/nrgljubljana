@@ -3,7 +3,7 @@
 # file(GLOB m4_files "nrg-recalc-*.m4")
 # add_custom_command(OUTPUT .. COMMAND m4 ARGS )
 
-set(sources nrg-lib.cc)
+set(sources nrg-lib.cc sym-QS.cc)
 
 add_library(nrgljubljana_c  SHARED ${sources})
   

@@ -779,10 +779,6 @@ class IterInfo {
 #include "matrix.h"
 #include "recalc.h"
 
-#include "sym-basic.h"
-#include "sym-more.h"
-#include "sym-all.h"
-
 // Operator sumrules
 template<typename S, typename F> 
 auto norm(const MatrixElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, F factor_fnc, const int SPIN) {
@@ -1880,11 +1876,13 @@ auto nrg_loop(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &
   return diag;
 }
 
+#include "sym-QS.h"
+
 template<typename S>
 std::unique_ptr<Symmetry<S>> get(const std::string &sym_string, const Params &P, Allfields &allfields)
 {
-  if (sym_string == "QS")     return std::make_unique<SymmetryQS<S>>(P, allfields);
-  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ<S>>(P, allfields);
+  if (sym_string == "QS")     return mk_QS<S>(P, allfields); // XXX args
+//  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ<S>>(P, allfields);
 #ifdef NRG_SYM_MORE
   if (sym_string == "ISO")    return std::make_unique<SymmetryISO<S>>(P, allfields);
   if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2<S>>(P, allfields);

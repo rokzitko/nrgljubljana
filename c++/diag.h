@@ -15,8 +15,8 @@ template<typename T, typename V> void copy_val(T* eigenvalues, ublas::vector<V>&
 }
 
 // Handle complex-type conversions (used in copy_vec)
-double to_matel(const double x) { return x; }
-std::complex<double> to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
+inline double to_matel(const double x) { return x; }
+inline std::complex<double> to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
 
 template<typename T, typename V>
 void copy_vec(T* eigenvectors, ublas::matrix<V>& diagvectors, const size_t dim, const size_t M)
@@ -38,7 +38,7 @@ template<typename T, typename U, typename S> auto copy_results(T* eigenvalues, U
 }
 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
-Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
+inline Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
   double *ham = bindings::traits::matrix_storage(m);
   double eigenvalues[dim]; // eigenvalues on exit
@@ -59,7 +59,7 @@ Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V')
   return copy_results<double,double,double>(eigenvalues, ham, jobz, dim, dim);
 }
 
-Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
+inline Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
 {
   const size_t dim = m.size1();
   double *ham = bindings::traits::matrix_storage(m);
@@ -92,7 +92,7 @@ Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V'
   return copy_results<double,double,double>(eigenvalues, ham, jobz, dim, dim);
 }
 
-Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V')
+inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V')
 {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
@@ -149,7 +149,7 @@ Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 
   return copy_results<double,double,double>(eigenvalues, Z.get(), jobz, dim, M);
 }
 
-Eigen<cmpl> diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V') {
+inline Eigen<cmpl> diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
   lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   double eigenvalues[dim]; // eigenvalues on exit
@@ -172,7 +172,7 @@ Eigen<cmpl> diagonalise_zheev(ublas::matrix<cmpl> &m, const char jobz = 'V') {
   return copy_results<double,lapack_complex_double,cmpl>(eigenvalues, ham, jobz, dim, dim);
 }
   
-Eigen<cmpl> diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio = 1.0, const char jobz = 'V') {
+inline Eigen<cmpl> diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio = 1.0, const char jobz = 'V') {
   const size_t dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.

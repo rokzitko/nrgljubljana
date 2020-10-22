@@ -43,28 +43,28 @@ using bucket = generic_bucket<double>;
 #define IS_ODD(n) ((n)&1)
 #define IS_EVEN(n) (!(IS_ODD(n)))
 
-CONSTFNC int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
+inline CONSTFNC int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
   if (x == 0.0 && y == 0.0) return 0.0; // evidently equal
   if (std::abs(x) < small_epsilon && std::abs(y) < small_epsilon) return 0; // If both x and y are small, we ASSUME them to be equivalent
   if (std::abs(x-y) < rel_epsilon * (std::abs(x)+std::abs(y))) return 0;
   return boost::math::sign(x-y);
 }
 
-CONSTFNC int my_fcmp(const double x, const double y, const double epsilon) { return my_fcmp(x, y, epsilon, epsilon); }
+inline CONSTFNC int my_fcmp(const double x, const double y, const double epsilon) { return my_fcmp(x, y, epsilon, epsilon); }
 
 // Test if two numbers are equal to within numerical errors. (Use this for comparing values that are expected to be
 // of order 1.)
-CONSTFNC auto num_equal(const double a, const double b, const double check_precision = 1.e-12) { 
+inline CONSTFNC auto num_equal(const double a, const double b, const double check_precision = 1.e-12) { 
   return my_fcmp(a, b, check_precision) == 0; 
 }
 
-CONSTFNC auto num_equal(const cmpl &a, const cmpl &b, const double check_precision = 1.e-12) {
+inline CONSTFNC auto num_equal(const cmpl &a, const cmpl &b, const double check_precision = 1.e-12) {
   return (my_fcmp(a.real(), b.real(), check_precision) == 0) && (my_fcmp(a.imag(), b.imag(), check_precision) == 0);
 }
 
-CONSTFNC auto are_conjugate(const double a, const double b) { return num_equal(a, b); }
+inline CONSTFNC auto are_conjugate(const double a, const double b) { return num_equal(a, b); }
 
-CONSTFNC auto are_conjugate(const cmpl &a, const cmpl &b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
+inline CONSTFNC auto are_conjugate(const cmpl &a, const cmpl &b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
 
 template<typename M> auto frobenius_norm(const ublas::matrix<M> &m) { // Frobenius norm (without taking the final square root!)
   double sum{};
@@ -183,6 +183,6 @@ template <typename M> CONSTFNC auto trace_real(const ublas::matrix<M> &m) {
   return ranges::accumulate(range0(m.size2()), 0.0, [&m](auto sum, const auto i){ return sum+check_real(m(i, i)); });
 }
 
-auto csqrt(const cmpl z) { return std::sqrt(z); }
+inline auto csqrt(const cmpl z) { return std::sqrt(z); }
 
 #endif
