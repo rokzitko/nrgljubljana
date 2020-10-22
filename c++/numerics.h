@@ -110,6 +110,25 @@ template<typename M> inline void dump_diagonal_matrix(const ublas::matrix<M> &m,
   F << std::endl;
 }
 
+template <typename T>
+void save(boost::archive::binary_oarchive &oa, const ublas::matrix<T> &m) {
+  oa << m.size1() << m.size2();
+  for (const auto i : range0(m.size1()))
+    oa << ublas::vector<T>(ublas::matrix_row<const ublas::matrix<T>>(m, i));
+}
+
+template <typename T>
+void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) {
+  size_t size1, size2;
+  ia >> size1 >> size2;
+  m = ublas::matrix<T>(size1, size2);
+  for (const auto i : range0(size1)) {
+    ublas::vector<T> vec;
+    ia >> vec;
+    ublas::matrix_row<ublas::matrix<T>>(m, i) = vec;
+  }
+}
+
 // Chop numerical noise
 template <typename T> CONSTFNC inline T chop(const T x, const double xlimit = 1.e-8) { return std::abs(x) < xlimit ? 0.0 : x; }
 

@@ -460,6 +460,9 @@ class Params {
   param<bool> checksumrules{"checksumrules", "Check operator sumrules", "false", all}; // N
 
   param<bool> absolute{"absolute", "Do NRG without any rescaling", "false", all};
+   
+  // Parallelization strategy: MPI or OpenMP
+  param<std::string> diag_mode{"diag_mode", "Parallelization strategy", "MPI", all};
 
   // **********************************
   // Backwards compatibility parameters

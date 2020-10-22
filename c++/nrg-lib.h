@@ -6,10 +6,15 @@
 #define NRG_COMMON
 
 #include <string>
+
+void print_about_message();
+void run_nrg_master(const std::string &workdir);
+
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
 #include "workdir.h"
 
-void run_nrg_master(const Workdir &workdir, const bool embedded);
-void run_nrg_slave(); // note: only defined if compled using NRG_MPI
-void print_about_message();
+void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, const Workdir &workdir);
+void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw);
 
 #endif

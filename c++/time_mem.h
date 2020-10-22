@@ -44,7 +44,7 @@ class Timing {
    void report() const {
      const auto T_WIDTH  = 12;
      const auto t_all = total();
-     std::cout << std::endl << "Timing report [" << myrank() << "]" << std::endl;
+     std::cout << std::endl << "Timing report" << std::endl;
      std::cout << std::setw(T_WIDTH) << "All"
        << ": " << prec3(t_all.count()) << " s" << std::endl;
      dp t_sum;

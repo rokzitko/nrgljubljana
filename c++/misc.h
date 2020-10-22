@@ -4,6 +4,20 @@
 #ifndef _misc_h_
 #define _misc_h_
 
+template<typename T> auto get_back(T &d) { // usually T is list or deque
+  my_assert(!d.empty());
+  auto i = d.back();
+  d.pop_back();
+  return i;
+}
+
+template<typename T> auto get_front(T &d) {
+  my_assert(!d.empty());
+  auto i = d.front();
+  d.pop_front();
+  return i;
+}
+
 // XXX
 // Conversion functions
 template <class T> 
@@ -161,5 +175,8 @@ inline void skip_comments(std::istream &f, const bool output = false, std::ostre
 struct sortfirst {
   template <typename T1, typename T2> bool operator()(const std::pair<T1, T2> &xy1, const std::pair<T1, T2> &xy2) { return xy1.first < xy2.first; }
 };
+
+template<typename T> auto range0(const T b) { return boost::irange(T{0}, b); }
+template<typename T> auto range1(const T b) { return boost::irange(T{1}, b+1); }
 
 #endif

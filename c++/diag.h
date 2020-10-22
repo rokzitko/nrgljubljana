@@ -275,7 +275,7 @@ template<typename M, typename N>
 
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
-template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP) {
+template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, int myrank) {
   mpilog("diagonalise " << m.size1() << "x" << m.size2() << " " << DP.diag << " " << DP.diagratio);
   Timing timer;
   check_is_matrix_upper(m);
@@ -304,8 +304,9 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP)
   if (DP.logletter('e'))
     dump_eigenvalues(d);
   checkdiag(d);
-  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrcomputed() << " [rank " << myrank() << "]");
-  nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << " [rank " << myrank() << "]");
+  const std::string rank_string = myrank >= 0 ? " [rank=" + std::to_string(myrank) + "]" : "";
+  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrcomputed() << rank_string);
+  nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << rank_string);
   return d;
 }
 

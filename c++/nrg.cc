@@ -6,11 +6,6 @@
 #include "openmp.h"      // report_openMP() called from main()
 #include "workdir.h"
 
-#ifdef NRG_MPI
-mpi::environment *mpienv;
-mpi::communicator *mpiw;
-#endif
-
 inline void help(int argc, char **argv, std::string help_message)
 {
   std::vector<std::string> args(argv+1, argv+argc); // NOLINT
@@ -29,24 +24,16 @@ Workdir set_workdir(int argc, char **argv) { // not inline!
 }
 
 int main(int argc, char **argv) {
-#ifdef NRG_MPI
-  mpi::environment env(argc, argv);
-  mpi::communicator world;
-  mpienv     = &env;
-  mpiw       = &world;
-  if (myrank() == 0) {
-    std::cout << "Parallelization using MPI: Running on " << mpiw->size() << " processors." << std::endl << std::endl;
-#else
-    std::cout << "No MPI: single node calculation." << std::endl << std::endl;
-#endif
-    print_about_message();
+  print_about_message();
+  boost::mpi::environment mpienv(argc, argv);
+  boost::mpi::communicator mpiw;
+  if (mpiw.rank() == 0) {
+    std::cout << "MPI job running on " << mpiw.size() << " processors." << std::endl << std::endl;
     report_openMP();
     help(argc, argv, "Usage: nrg [-h] [-w workdir]");
     auto workdir = set_workdir(argc, argv);
-    const bool embedded = false;
-    run_nrg_master(workdir, embedded);
-#ifdef NRG_MPI
-  } else
-    run_nrg_slave(); // slaves do no disk I/O
-#endif
+    run_nrg_master(mpienv, mpiw, workdir);
+  } else {
+    run_nrg_slave(mpienv, mpiw); // slaves do no disk I/O
+  }
 }

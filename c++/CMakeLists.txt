@@ -15,7 +15,6 @@ target_compile_options(nrgljubljana_c     PRIVATE -fPIC -std=c++17 $<$<CXX_COMPI
 target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++> 
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew> $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>)
 target_compile_definitions(nrgljubljana_c PUBLIC
-  $<$<BOOL:${NRG_MPI}>:NRG_MPI>
   $<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
   NRG_SYM_BASIC
   $<$<BOOL:${SYM_MORE}>:NRG_SYM_MORE>
@@ -24,20 +23,15 @@ target_compile_definitions(nrgljubljana_c PUBLIC
 )
 
 # Link dependencies
-target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl
+target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl mpi
   $<$<BOOL:${ASAN}>:asan>
   $<$<BOOL:${UBSAN}>:ubsan>
-  $<$<BOOL:${NRG_MPI}>:mpi>
 )
 
 # Compile nrg executable
 add_executable(nrg nrg.cc)
-target_link_libraries(nrg PRIVATE nrgljubljana_c
-  $<$<BOOL:${NRG_MPI}>:mpi>
-)
-target_compile_definitions(nrg PUBLIC
-  $<$<BOOL:${NRG_MPI}>:NRG_MPI>
-)
+target_link_libraries(nrg PRIVATE nrgljubljana_c)
+target_compile_options(nrg PRIVATE -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
 
 # Install library and headers
 install(TARGETS nrgljubljana_c EXPORT nrgljubljana-targets DESTINATION lib)

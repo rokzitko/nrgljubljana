@@ -1,3 +1,6 @@
+#ifndef _openmp_h_
+#define _openmp_h_
+
 #include <omp.h>
 
 #ifdef MKL
@@ -29,3 +32,5 @@ inline void report_openMP(std::ostream &s = std::cout) {
 #endif
   s << std::endl;
 }
+
+#endif
