@@ -1,74 +1,15 @@
-template<typename SC>
-class SymmetryQSZLR : public SymFieldLR<SC> {
- private:
-   outfield Sz2, Sz, Q, Q2;
-   using Symmetry<SC>::P;
-   using Symmetry<SC>::In;
-   using Symmetry<SC>::QN;
+#include "nrg-general.h"
+#include "sym-QSZLR-impl.h"
+#include "sym-QSZLR.h" // include for consistency
 
- public:
-   using Matrix = typename traits<SC>::Matrix;
-   using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZLR(const Params &P, Allfields &allfields) : SymFieldLR<SC>(P),
-     Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
-       initInvar({
-         {"Q", additive},      // charge
-         {"SSZ", additive},    // spin projection
-         {"P", multiplicative} // parity
-       });
-       this->InvarSinglet = Invar(0, 0, 1);
-     }
-
-  bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
-    // The spin projection of the operator is defined by the difference
-    // in Sz of both the invariant subspaces.
-    const SZspin ssz1  = I1.get("SSZ");
-    const SZspin sszp  = Ip.get("SSZ");
-    const SZspin sszop = ssz1 - sszp;
-    return sszop == SPIN;
-  }
-
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
-    return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ"))
-       && z2_equality(I1.get("P"), I2.get("P"), I3.get("P"));
-  }
-
-  void load() override {
-    my_assert(P.channels == 2);
-#include "qszlr/qszlr-2ch-In2.dat"
-#include "qszlr/qszlr-2ch-QN.dat"
-  }
-
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
-    bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
-    for (const auto &[I, eig]: diag) {
-      const SZspin ssz  = I.get("SSZ");
-      const Number q    = I.get("Q");
-      const double sumZ = this->calculate_Z(I, eig, factor);
-      trSZ += sumZ * SZ(ssz);
-      trSZ2 += sumZ * pow(SZ(ssz),2);
-      trQ += sumZ * q;
-      trQ2 += sumZ * pow(q,2);
-    }
-    Sz2 = trSZ2 / stats.Z;
-    Sz  = trSZ / stats.Z;
-    Q   = trQ / stats.Z;
-    Q2  = trQ2 / stats.Z;
-  }
-
-  DECL;
-};
-
-#undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
-
-#undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
-
-template<typename SC>
-void SymmetryQSZLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-#include "qszlr/qszlr-2ch-offdiag.dat"
-#include "qszlr/qszlr-2ch-diag.dat"
+template <>
+std::unique_ptr<Symmetry<double>> mk_QSZLR(const Params &P, Allfields &allfields)
+{
+  return std::make_unique<SymmetryQSZLR<double>>(P, allfields);
 }
 
-#include "nrg-recalc-QSZLR.cc"
+template <>
+std::unique_ptr<Symmetry<cmpl>> mk_QSZLR(const Params &P, Allfields &allfields)
+{
+  return std::make_unique<SymmetryQSZLR<cmpl>>(P, allfields);
+}

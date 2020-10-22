@@ -1876,49 +1876,7 @@ auto nrg_loop(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &
   return diag;
 }
 
-#include "sym-QS.h"
-
-template<typename S>
-std::unique_ptr<Symmetry<S>> get(const std::string &sym_string, const Params &P, Allfields &allfields)
-{
-  if (sym_string == "QS")     return mk_QS<S>(P, allfields); // XXX args
-//  if (sym_string == "QSZ")    return std::make_unique<SymmetryQSZ<S>>(P, allfields);
-#ifdef NRG_SYM_MORE
-  if (sym_string == "ISO")    return std::make_unique<SymmetryISO<S>>(P, allfields);
-  if (sym_string == "ISO2")   return std::make_unique<SymmetryISO2<S>>(P, allfields);
-  if (sym_string == "ISOSZ")  return std::make_unique<SymmetryISOSZ<S>>(P, allfields);
-  if (sym_string == "SPSU2")  return std::make_unique<SymmetrySPSU2<S>>(P, allfields);
-  if (sym_string == "SPU1")   return std::make_unique<SymmetrySPU1<S>>(P, allfields);
-#endif
-#ifdef NRG_SYM_ALL
-  if (sym_string == "DBLISOSZ")  return std::make_unique<SymmetryDBLISOSZ<S>>(P, allfields);
-  if (sym_string == "DBLSU2")    return std::make_unique<SymmetryDBLSU2<S>>(P, allfields);
-  if (sym_string == "ISOLR")     return std::make_unique<SymmetryISOLR<S>>(P, allfields);
-  if (sym_string == "ISO2LR")    return std::make_unique<SymmetryISO2LR<S>>(P, allfields);
-  if (sym_string == "ISOSZLR")   return std::make_unique<SymmetryISOSZLR<S>>(P, allfields);
-  if (sym_string == "NONE")      return std::make_unique<SymmetryNONE<S>>(P, allfields);
-  if (sym_string == "P")         return std::make_unique<SymmetryP<S>>(P, allfields);
-  if (sym_string == "PP")        return std::make_unique<SymmetryPP<S>>(P, allfields);
-  if (sym_string == "QJ")        return std::make_unique<SymmetryQJ<S>>(P, allfields);
-  if (sym_string == "QSLR")      return std::make_unique<SymmetryQSLR<S>>(P, allfields); 
-  if (sym_string == "QST")       return std::make_unique<SymmetryQST<S>>(P, allfields);
-  if (sym_string == "QSTZ")      return std::make_unique<SymmetryQSTZ<S>>(P, allfields);
-  if (sym_string == "QSZLR")     return std::make_unique<SymmetryQSZLR<S>>(P, allfields);
-  if (sym_string == "QSZTZ")     return std::make_unique<SymmetryQSZTZ<S>>(P, allfields);
-  if (sym_string == "SL")        return std::make_unique<SymmetrySL<S>>(P, allfields);
-  if (sym_string == "SL3")       return std::make_unique<SymmetrySL3<S>>(P, allfields);
-  if (sym_string == "SPSU2LR")   return std::make_unique<SymmetrySPSU2LR<S>>(P, allfields);
-  if (sym_string == "SPSU2T")    return std::make_unique<SymmetrySPSU2T<S>>(P, allfields);
-  if (sym_string == "SPU1LR")    return std::make_unique<SymmetrySPU1LR<S>>(P, allfields);
-  if (sym_string == "SU2")       return std::make_unique<SymmetrySU2<S>>(P, allfields);
-  if (sym_string == "U1")        return std::make_unique<SymmetryU1<S>>(P, allfields);
-  if constexpr (std::is_same_v<S, std::complex<double>>) {
-    if (sym_string == "QSC3")      return std::make_unique<SymmetryQSC3<S>>(P, allfields);
-    if (sym_string == "SPSU2C3")   return std::make_unique<SymmetrySPSU2C3<S>>(P, allfields);
-  }
-#endif 
-  throw std::runtime_error("Unknown symmetry " + sym_string);
-}
+#include "mk_sym.h"
 
 // Called immediately after parsing the information about the number of channels from the data file. This ensures
 // that Invar can be parsed correctly.

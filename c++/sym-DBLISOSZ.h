@@ -1,0 +1,2 @@
+template <typename S>
+std::unique_ptr<Symmetry<S>> mk_DBLISOSZ(const Params &P, Allfields &allfields);

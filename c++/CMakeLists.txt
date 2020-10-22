@@ -3,7 +3,15 @@
 # file(GLOB m4_files "nrg-recalc-*.m4")
 # add_custom_command(OUTPUT .. COMMAND m4 ARGS )
 
-set(sources nrg-lib.cc sym-QS.cc)
+set(sources nrg-lib.cc sym-QS.cc sym-QSZ.cc)
+if(SYM_MORE)
+  list(APPEND sources sym-ISO.cc sym-ISOSZ.cc sym-SPSU2.cc sym-SPU1.cc)
+endif()
+if(SYM_ALL)
+  list(APPEND sources sym-DBLSU2.cc sym-DBLISOSZ.cc sym-ISOLR.cc sym-ISOSZLR.cc sym-NONE.cc sym-P.cc sym-PP.cc sym-SL.cc sym-SL3.cc sym-SPSU2LR.cc
+  sym-SPSU2T.cc sym-SPU1LR.cc sym-SU2.cc sym-QSLR.cc sym-QST.cc sym-QSTZ.cc sym-QSZTZ.cc sym-QSZLR.cc sym-QJ.cc
+  sym-U1.cc sym-SPSU2C3.cc sym-QSC3.cc)
+endif()
 
 add_library(nrgljubljana_c  SHARED ${sources})
   
