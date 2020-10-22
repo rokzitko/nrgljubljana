@@ -88,12 +88,12 @@ bool already_computed(const std::string &prefix, const Params &P) {
 // calc_densitymatrix() is called prior to starting the NRG procedure for the second time. Here we calculate the
 // shell-N density matrices for all iteration steps.
 template<typename S>
-void calc_densitymatrix(DensMatElements<S> &rho, const AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym, 
-                        const Params &P, const std::string filename = fn_rho) {
+void calc_densitymatrix(DensMatElements<S> &rho, const AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym,
+                        MemTime &mt, const Params &P, const std::string filename = fn_rho) {
   if (P.resume && already_computed(filename, P)) return;
   check_trace_rho(rho, Sym); // Must be 1.
   if (P.ZBW) return;
-  TIME("DM");
+  mt.time_it("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[DM] " << N << std::endl;
     DiagInfo<S> diag_loaded(N, P);
@@ -177,11 +177,11 @@ auto sum_wn(const size_t N, const Stats<S> &stats, const Params &P) {
 }
 
 template<typename S>
-void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const AllSteps<S> &dm, const Stats<S> &stats, 
-                            std::shared_ptr<Symmetry<S>> Sym, const Params &P, const std::string filename = fn_rhoFDM) {
+void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const AllSteps<S> &dm, const Stats<S> &stats,
+                            std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P, const std::string filename = fn_rhoFDM) {
   if (P.resume && already_computed(filename, P)) return;
   if (P.ZBW) return;
-  TIME("FDM");
+  mt.time_it("FDM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[FDM] " << N << std::endl;
     DiagInfo<S> diag_loaded(N, P);

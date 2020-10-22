@@ -52,20 +52,6 @@
 
 inline const size_t MAX_NDX = 1000; // max index number
 
-// Timing of various parts of the code and memory statistics
-namespace time_mem {
- Timing tm;
- MemoryStats ms;
- void timing_report() { tm.report(); }
- void memory_report() { ms.report(); }
- void memory_time_brief_report() {
-#ifdef HAS_MEMORY_USAGE
-   std::cout << "Memory used: " << long(ms.used() / 1024) << " MB "; // NOLINT
-#endif
-   std::cout << "Time elapsed: " << prec3(tm.total_in_seconds()) << " s" << std::endl;
- }
-}
-
 #ifdef NRG_MPI
 mpi::environment *mpienv;
 mpi::communicator *mpiw;
@@ -913,6 +899,7 @@ class Oprecalc {
  private:
    RUNTYPE runtype;
    std::shared_ptr<Symmetry<S>> Sym;
+   MemTime mt;
    const Params &P;
  public:
    // Operators required to calculate expectation values and spectral densities
@@ -938,8 +925,8 @@ class Oprecalc {
    // Spectral densities
    struct SL : public speclist<S> {
      void calc(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM, 
-               const Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym) {
-       TIME("spec");
+               const Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
+       mt.time_it("spec");
        for (auto &i : *this) i.calc(step, diag, rho, rhoFDM, stats);
      }
    };
@@ -962,7 +949,8 @@ class Oprecalc {
 
    // Recalculate operator matrix representations
    ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives  
-     void recalculate_operators(IterInfo<S> &a, const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
+   void recalculate_operators(IterInfo<S> &a, const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
+       mt.time_it("recalc");
        for (auto &[name, m] : a.ops)
          m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, qsrmax);
        for (auto &[name, m] : a.opsp)
@@ -1046,7 +1034,7 @@ class Oprecalc {
   }
 
   // Reset lists of operators which need to be iterated
-  Oprecalc(const RUNTYPE &runtype, const IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym, const Params &P) : runtype(runtype), Sym(Sym), P(P) {
+  Oprecalc(const RUNTYPE &runtype, const IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) : runtype(runtype), Sym(Sym), mt(mt), P(P) {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
     string_token sts(P.specs);
@@ -1455,7 +1443,7 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, Ou
 template<typename S>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc, 
                                  const DiagInfo<S> &diag, const IterInfo<S> &iterinfo, const AllSteps<S> &dm, 
-                                 std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+                                 std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
   stats.Zft = grand_canonical_Z(step, diag, Sym);
@@ -1472,7 +1460,7 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
     if (P.need_rhoFDM()) 
       rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.removefiles);
   }
-  oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, Sym);
+  oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, Sym, mt, P);
   if (step.nrg()) {
     measure_singlet(step, stats, diag, iterinfo, output, Sym, P);
     iterinfo.dump_diagonal(P.dumpdiagonal);
@@ -1698,8 +1686,8 @@ template<typename S> void slave_diag(const int master, const DiagParams &DP) {
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
 template<typename S>
 auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
-                      const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
-  TIME("diag");
+                      const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
+  mt.time_it("diag");
 #ifdef NRG_MPI
   return diagonalisations_MPI<S>(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
 #else
@@ -1717,8 +1705,8 @@ QSrmax::QSrmax(const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym) {
 // Recalculate irreducible matrix elements for Wilson chains.
 template<typename S>
 void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, Opch<S> &opch, 
-                        std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
-  TIME("recalc f");
+                        std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
+  mt.time_it("recalc f");
   if (!P.substeps) {
     opch = Sym->recalc_irreduc(step, diag, qsrmax);
   } else {
@@ -1735,7 +1723,7 @@ void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const QSrmax 
 
 template<typename S>
 auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             QSrmax &qsrmax, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+             QSrmax &qsrmax, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   auto tasks = qsrmax.task_list();
@@ -1745,7 +1733,7 @@ auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats
     try {
       if (step.nrg()) {
         if (!(P.resume && int(step.ndx()) <= P.laststored))
-          diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, Sym, P); // compute in first run
+          diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, Sym, mt, P); // compute in first run
         else
           diag = DiagInfo<S>(step.ndx(), P, false); // or read from disk
       }
@@ -1786,7 +1774,7 @@ void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stat
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<typename S>
 void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
-                QSrmax &qsrmax, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+                QSrmax &qsrmax, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
@@ -1802,47 +1790,47 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
     split_in_blocks(diag, qsrmax);
   if (P.do_recalc_all(step.runtype)) { // Either ...
     oprecalc.recalculate_operators(iterinfo, step, diag, qsrmax);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, mt, P);
   }
   if (!P.ZBW)
     diag.truncate_perform();                        // Actual truncation occurs at this point
   dm.store(step.ndx(), diag, qsrmax, step.last());  // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
-    recalc_irreducible(step, diag, qsrmax, iterinfo.opch, Sym, P);
+    recalc_irreducible(step, diag, qsrmax, iterinfo.opch, Sym, mt, P);
     if (P.dump_f) iterinfo.opch.dump();
   }
   if (P.do_recalc_kept(step.runtype)) { // ... or ...
     oprecalc.recalculate_operators(iterinfo, step, diag, qsrmax);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, mt, P);
   }
   if (P.do_recalc_none())  // ... or this
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, mt, P);
   if (P.checksumrules) operator_sumrules(iterinfo, Sym);
 }
 
 // Perform one iteration step
 template<typename S>
 auto iterate(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+             Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   QSrmax qsrmax{diagprev, Sym};
-  auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, Sym, P);
-  after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
+  auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, Sym, mt, P);
+  after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, mt, P);
   iterinfo.trim_matrices(diag);
   diag.clear_eigenvectors();
-  time_mem::memory_time_brief_report();
+  mt.brief_report();
   return diag;
 }
 
 // Perform calculations with quantities from 'data' file
 template<typename S>
 void docalc0(Step &step, const IterInfo<S> &iterinfo, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
-             Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+             Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << std::endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output);
   AllSteps<S> empty_dm(0, 0);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, Sym, P);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_dm, Sym, mt, P);
   if (P.checksumrules) operator_sumrules(iterinfo, Sym);
 }
 
@@ -1850,7 +1838,7 @@ void docalc0(Step &step, const IterInfo<S> &iterinfo, const DiagInfo<S> &diag0, 
 // It replaces do_diag() and calls after_diag() as the last step.
 template<typename S>
 auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
-             AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+             AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
@@ -1867,7 +1855,7 @@ auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<
   truncate_prepare(step, diag, Sym, P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   QSrmax qsrmax{};
-  after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, P);
+  after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, mt, P);
   return diag;
 }
 
@@ -1875,29 +1863,11 @@ auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<
 
 template<typename S>
 auto nrg_loop(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
-              Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+              Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
-    diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, Sym, P);
+    diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, Sym, mt, P);
   step.set(step.lastndx());
-  return diag;
-}
-
-template<typename S>
-auto run_nrg(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
-             AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
-  diag0.states_report(Sym->multfnc());
-  auto oprecalc = Oprecalc<S>(step.runtype, iterinfo, Sym, P);
-  auto output = Output<S>(step.runtype, iterinfo, stats, P);
-  // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
-  if (step.nrg() && P.calc0 && !P.ZBW)
-    docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym, P);
-  auto diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, Sym, P) 
-    : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, Sym, P);
-  fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
-  stats.GS_energy = stats.total_energy;
-  if (step.nrg() && P.dumpsubspaces) dm.dump_subspaces();
-  fmt::print("\n** Iteration completed.\n\n");
   return diag;
 }
 
@@ -1965,13 +1935,30 @@ template <typename S> class NRG_calculation {
 private:
   Params P;
   Stats<S> stats;
+  MemTime mt; // memory and timing statistics
 public:
-  NRG_calculation(const Workdir &workdir) : P("param", "param", workdir), stats(P) {}
+  NRG_calculation(const Workdir &workdir, const bool embedded) : P("param", "param", workdir, embedded), stats(P) {}
+  auto run_nrg(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
+               AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym) {
+    diag0.states_report(Sym->multfnc());
+    auto oprecalc = Oprecalc<S>(step.runtype, iterinfo, Sym, mt, P);
+    auto output = Output<S>(step.runtype, iterinfo, stats, P);
+    // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
+    if (step.nrg() && P.calc0 && !P.ZBW)
+      docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym, mt, P);
+    auto diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, Sym, mt, P)
+      : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, Sym, mt, P);
+    fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
+    stats.GS_energy = stats.total_energy;
+    if (step.nrg() && P.dumpsubspaces) dm.dump_subspaces();
+    fmt::print("\n** Iteration completed.\n\n");
+    return diag;
+  }
   void go() {
     auto [diag0, iterinfo, coef, Sym] = read_data<S>(P, stats);
     Step step{P, RUNTYPE::NRG};
     AllSteps<S> dm(P.Ninit, P.Nlen);
-    auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym, P);
+    auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym);
     if (std::string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
     dm.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
     if (P.dumpabsenergies)
@@ -1980,7 +1967,7 @@ public:
       if (P.need_rho()) {
         auto rho = init_rho(step, diag, Sym);
         rho.save(step.lastndx(), P, fn_rho);
-        if (!P.ZBW) calc_densitymatrix(rho, dm, Sym, P);
+        if (!P.ZBW) calc_densitymatrix(rho, dm, Sym, mt, P);
       }
       if (P.need_rhoFDM()) {
         calc_ZnD(dm, stats, Sym, P.T);
@@ -1989,16 +1976,17 @@ public:
         fdm_thermodynamics(dm, stats, Sym, P.T);
         auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, Sym, P.T);
         rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-        if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, P);
+        if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, mt, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
       auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data<S>(P, stats);
       Step step_dmnrg{P, RUNTYPE::DMNRG};
-      run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm, P);
+      run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm);
       my_assert(num_equal(stats.GS_energy, stats.total_energy));
     }
   }
   ~NRG_calculation() {
+    if (!P.embedded) mt.report(); // only when running as a stand-alone application
     if (P.done) { std::ofstream D("DONE"); } // Indicate completion by creating a flag file
   }
 };
@@ -2015,12 +2003,12 @@ bool complex_data(const std::string filename = "data") {
   return pos != std::string::npos;
 } 
   
-void run_nrg_master(const Workdir &workdir) {
+void run_nrg_master(const Workdir &workdir, const bool embedded) {
   if (complex_data()) {
-    NRG_calculation<std::complex<double>> calc(workdir);
+    NRG_calculation<std::complex<double>> calc(workdir, embedded);
     calc.go();
   } else {
-    NRG_calculation<double> calc(workdir);
+    NRG_calculation<double> calc(workdir, embedded);
     calc.go();
   }
 #ifdef NRG_MPI

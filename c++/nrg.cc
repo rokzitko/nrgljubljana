@@ -1,7 +1,9 @@
+#define NRG_EXECUTABLE
+
 #include "nrg-general.h" // common
 #include "nrg-lib.h"     // exposed in library
 #include "nrg.h"         // specific to executable
-#include "openmp.h"
+#include "openmp.h"      // report_openMP() called from main()
 #include "workdir.h"
 
 #ifdef NRG_MPI
@@ -19,7 +21,7 @@ inline void help(int argc, char **argv, std::string help_message)
 }
 
 Workdir set_workdir(int argc, char **argv) { // not inline!
-  std::string dir = default_workdir;
+  std::string dir = default_workdir; // defined in workdir.h
   if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
   std::vector<std::string> args(argv+1, argv+argc); // NOLINT
   if (args.size() == 2 && args[0] == "-w") dir = args[1];
@@ -41,9 +43,8 @@ int main(int argc, char **argv) {
     report_openMP();
     help(argc, argv, "Usage: nrg [-h] [-w workdir]");
     auto workdir = set_workdir(argc, argv);
-    run_nrg_master(workdir);
-    time_mem::memory_report();
-    time_mem::timing_report();
+    const bool embedded = false;
+    run_nrg_master(workdir, embedded);
 #ifdef NRG_MPI
   } else
     run_nrg_slave(); // slaves do no disk I/O

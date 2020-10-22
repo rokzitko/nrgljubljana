@@ -12,7 +12,6 @@ class Tridiag {
  public:
    void tridiag_ch(int alpha, Coef<S> &coef);
    Tridiag(Coef<S> &coef, const Params &P) : P(P) {
-     TIME("tridiag");
      my_assert(P.coefchannels >= 1);
      for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha, coef);
    }

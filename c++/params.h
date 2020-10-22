@@ -520,7 +520,9 @@ class Params {
     for (const auto &i : all) i->dump();
   }
 
-  Params(const std::string &filename, const std::string &block, const Workdir &workdir) : workdir(workdir) {
+  bool embedded; // If true, the code is being called as a library from some application, not stand-alone.
+  Params(const std::string &filename, const std::string &block, const Workdir &workdir, const bool embedded) 
+     : workdir(workdir), embedded(embedded) {
     auto parsed_params = parser(filename, block);
     for (const auto &i : all) {
       const std::string keyword = i->getkeyword();

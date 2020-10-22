@@ -277,7 +277,7 @@ template<typename M, typename N>
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
 template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP) {
   mpilog("diagonalise " << m.size1() << "x" << m.size2() << " " << DP.diag << " " << DP.diagratio);
-  time_mem::Timing t;
+  Timing timer;
   check_is_matrix_upper(m);
   Eigen<M> d;
   if constexpr (std::is_same_v<M, double>) {
@@ -305,7 +305,7 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP)
     dump_eigenvalues(d);
   checkdiag(d);
   nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrcomputed() << " [rank " << myrank() << "]");
-  nrglogdp('t', "Elapsed: " << std::setprecision(3) << t.total_in_seconds() << " [rank " << myrank() << "]");
+  nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << " [rank " << myrank() << "]");
   return d;
 }
 
