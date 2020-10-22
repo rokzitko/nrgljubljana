@@ -4,57 +4,10 @@
 #ifndef _param_h_
 #define _param_h_
 
+enum class RUNTYPE { NRG, DMNRG }; // First or second sweep? Used in class Step.
+
 inline const auto fn_rho {"rho"s};
 inline const auto fn_rhoFDM {"rhofdm"s};
-inline const auto default_workdir{"."s};
-
-class Workdir {
- private:
-   std::string workdir {};
-
- public:
-   bool remove_at_exit {true}; // XXX: tie to P.removefiles?
-   void remove() {
-     if (workdir != "")
-       ::remove(workdir);
-   }
-   ~Workdir() {
-     if (remove_at_exit)
-       remove();
-   }
-   void create(const std::string &dir) {
-     const std::string workdir_template = dir + "/XXXXXX";
-     size_t len = workdir_template.length()+1;
-     auto x = std::make_unique<char[]>(len); // NOLINT
-     strncpy(x.get(), workdir_template.c_str(), len);
-     if (char *w = mkdtemp(x.get())) // create a unique directory
-       workdir = w;
-     else
-       workdir = default_workdir;
-     std::cout << "workdir=" << workdir << std::endl << std::endl;
-   }
-   std::string rhofn(const std::string &fn, const int N) const { return workdir + "/" + fn + to_string(N); }
-   std::string unitaryfn(size_t N, const std::string &filename = "unitary"s) const {
-     return workdir + "/" + filename + to_string(N); 
-   }
-};
-
-Workdir workdir; // XXX
-
-inline void set_workdir(const std::string &dir_) {
-  std::string dir = default_workdir;
-  if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
-  if (!dir_.empty()) dir = dir_;
-  workdir.create(dir);
-}
-
-void set_workdir(int argc, char **argv) { // not inline!
-  std::string dir = default_workdir;
-  if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
-  std::vector<std::string> args(argv+1, argv+argc); // NOLINT
-  if (args.size() == 2 && args[0] == "-w") dir = args[1];
-  workdir.create(dir);
-}
 
 // Base class for parameter containers.
 class parambase {
@@ -110,8 +63,12 @@ class param : public parambase {
 // S = solver, C = constructor, L = low-level, * = hide (deprecated & experimental)
 // //! lines define parameters that are only used in the high-level interface
 
-struct Params {
+class Params {
+ private:
   std::list<parambase *> all; // Container for all parameters
+
+ public:
+  const Workdir &workdir;
 
   param<std::string> symtype{"symtype", "Symmetry type", "", all}; // S
 
@@ -563,7 +520,7 @@ struct Params {
     for (const auto &i : all) i->dump();
   }
 
-  Params(const std::string &filename, const std::string &block, const Workdir &workdir) {
+  Params(const std::string &filename, const std::string &block, const Workdir &workdir) : workdir(workdir) {
     auto parsed_params = parser(filename, block);
     for (const auto &i : all) {
       const std::string keyword = i->getkeyword();

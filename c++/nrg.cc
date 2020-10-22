@@ -2,6 +2,7 @@
 #include "nrg-lib.h"     // exposed in library
 #include "nrg.h"         // specific to executable
 #include "openmp.h"
+#include "workdir.h"
 
 #ifdef NRG_MPI
 mpi::environment *mpienv;
@@ -15,6 +16,14 @@ inline void help(int argc, char **argv, std::string help_message)
     std::cout << help_message << std::endl;
     exit(EXIT_SUCCESS);
   }
+}
+
+Workdir set_workdir(int argc, char **argv) { // not inline!
+  std::string dir = default_workdir;
+  if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
+  std::vector<std::string> args(argv+1, argv+argc); // NOLINT
+  if (args.size() == 2 && args[0] == "-w") dir = args[1];
+  return Workdir(dir);
 }
 
 int main(int argc, char **argv) {
@@ -31,12 +40,12 @@ int main(int argc, char **argv) {
     print_about_message();
     report_openMP();
     help(argc, argv, "Usage: nrg [-h] [-w workdir]");
-    set_workdir(argc, argv);
-    run_nrg_master();
+    auto workdir = set_workdir(argc, argv);
+    run_nrg_master(workdir);
     time_mem::memory_report();
     time_mem::timing_report();
 #ifdef NRG_MPI
   } else
-    run_nrg_slave();
+    run_nrg_slave(); // slaves do no disk I/O
 #endif
 }

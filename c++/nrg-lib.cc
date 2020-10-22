@@ -36,37 +36,12 @@
 #include "mp.h"
 #include "io.h"
 
-template <typename S> struct traits {};
-
-template <> struct traits<double> {
-  using t_matel = double;  // type for the matrix elements
-  using t_coef = double;   // type for the Wilson chain coefficients & various prefactors
-  using t_expv = double;   // type for expectation values of operators
-  using t_eigen = double;  // type for the eigenvalues (always double)
-  using t_temp = t_eigen;  // type for temperatures
-  using t_weight = std::complex<double>;  // spectral weight accumulators (always complex)
-  using Matrix = ublas::matrix<t_matel>;
-};
-
-template <> struct traits<cmpl> {
-  using t_matel = std::complex<double>;
-  using t_coef = std::complex<double>;
-  using t_expv = std::complex<double>;     // we allow the calculation of expectation values of non-Hermitian operators!
-  using t_eigen = double;                  // type for the eigenvalues (always real)
-  using t_temp = t_eigen;
-  using t_weight = std::complex<double>;   // spectral weight accumulators (always complex)
-  using Matrix = ublas::matrix<t_matel>;
-};
-
-inline cmpl conj_me(const cmpl &z) { return conj(z); } // conjugation
-inline double conj_me(const double x) { return x; }    // no op
-
-enum class RUNTYPE { NRG, DMNRG };
-
+#include "traits.h"
+#include "workdir.h"
 #include "params.h"
 #include "outfield.h"
 
-// This is included in the library only. Should not be used if cblas library is available.
+// This is included in the library only. Should not be used if a cblas library is available.
 #ifdef CBLAS_WORKAROUND
  #define ADD_
  #include "cblas_globals.c"
@@ -290,8 +265,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
            fmt::print("({}) {} states: {}\n", I.str(), eig.getnrstored(), eig.value_orig);
        fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
-   void save(const size_t N) const {
-     const std::string fn = workdir.unitaryfn(N);
+   void save(const size_t N, const Params &P) const {
+     const std::string fn = P.workdir.unitaryfn(N);
      std::ofstream MATRIXF(fn, std::ios::binary | std::ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
@@ -302,8 +277,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn)); // Check after each write.
      }
    }
-   void load(const size_t N, const bool remove_files = false) {
-     const std::string fn = workdir.unitaryfn(N);
+   void load(const size_t N, const Params &P, const bool remove_files = false) {
+     const std::string fn = P.workdir.unitaryfn(N);
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
@@ -317,7 +292,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      if (remove_files) remove(fn);
    }
-   explicit DiagInfo(const size_t N, const bool remove_files = false) { load(N, remove_files); }
+   explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) { load(N, P, remove_files); } // called from do_diag()
 };
 
 template<typename S>
@@ -384,8 +359,8 @@ class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
        return ranges::accumulate(*this, 0.0, [mult](double acc, const auto z) { const auto &[I, mat] = z; 
          return acc + mult(I) * trace_real(mat); });
      }
-   void save(const size_t N, const std::string &prefix) const {
-     const auto fn = workdir.rhofn(prefix, N);
+   void save(const size_t N, const Params &P, const std::string &prefix) const {
+     const auto fn = P.workdir.rhofn(prefix, N);
      std::ofstream MATRIXF(fn, std::ios::binary | std::ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
@@ -397,8 +372,8 @@ class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
      }
      MATRIXF.close();
    }
-   void load(const size_t N, const std::string &prefix, const bool remove_files) {
-     const auto fn = workdir.rhofn(prefix, N);
+   void load(const size_t N, const Params &P, const std::string &prefix, const bool remove_files) {
+     const auto fn = P.workdir.rhofn(prefix, N);
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
@@ -667,7 +642,6 @@ class Stats {
    double Zft{};   // grand-canonical partition function (at shell n)
    double Zgt{};   // grand-canonical partition function for computing G(T)
    double Zchit{}; // grand-canonical partition function for computing chi(T)
-
    TD td;
    
    //  ** Expectation values
@@ -685,23 +659,19 @@ class Stats {
    std::vector<double> abs_Egs;        // Values of 'Egs' (multiplied by the scale, i.e. in absolute scale) for all NRG steps.
    std::vector<double> energy_offsets; // Values of "total_energy" for all NRG steps.
    
-   // Containers related to the FDM-NRG approach
-   // ==========================================
+   // ** Containers related to the FDM-NRG approach
    // Consult A. Weichselbaum, J. von Delft, PRL 99, 076402 (2007).
    vmpf ZnDG;                    // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n
    vmpf ZnDN;                    // Z'_n^D=Z_n^D exp(beta E^n_0)=\sum_s^D exp[-beta(E^n_s-E^n_0)]
    std::vector<double> ZnDNd;    // 
    std::vector<double> wn;       // Weights w_n. They sum to 1.
    std::vector<double> wnfactor; // wn/ZnDG
-
    double ZZG{};                 // grand-canonical partition function with energies referred to the ground state energy
-
    double Z_fdm{};               // grand-canonical partition function (full-shell) at temperature T
    double F_fdm{};               // free-energy at temperature T
    double E_fdm{};               // energy at temperature T
    double C_fdm{};               // heat capacity at temperature T
    double S_fdm{};               // entropy at temperature T
-   
    TD_FDM td_fdm;
 
    explicit Stats(const Params &P, const std::string filename_td = "td"s, const std::string filename_tdfdm = "tdfdm"s) : 
@@ -1496,11 +1466,11 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
   DensMatElements<S> rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
-      rho.load(step.ndx(), fn_rho, P.removefiles);
+      rho.load(step.ndx(), P, fn_rho, P.removefiles);
       check_trace_rho(rho, Sym); // Check if Tr[rho]=1, i.e. the normalization
     }
     if (P.need_rhoFDM()) 
-      rhoFDM.load(step.ndx(), fn_rhoFDM, P.removefiles);
+      rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.removefiles);
   }
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, Sym);
   if (step.nrg()) {
@@ -1777,10 +1747,10 @@ auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats
         if (!(P.resume && int(step.ndx()) <= P.laststored))
           diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, Sym, P); // compute in first run
         else
-          diag = DiagInfo<S>(step.ndx(), false); // or read from disk
+          diag = DiagInfo<S>(step.ndx(), P, false); // or read from disk
       }
       if (step.dmnrg()) {
-        diag = DiagInfo<S>(step.ndx(), P.removefiles); // read from disk in second run
+        diag = DiagInfo<S>(step.ndx(), P, P.removefiles); // read from disk in second run
         diag.subtract_GS_energy(stats.GS_energy);
       }
       stats.Egs = diag.find_groundstate();
@@ -1825,7 +1795,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
-      diag.save(step.ndx());
+      diag.save(step.ndx(), P);
     perform_basic_measurements(step, diag, Sym, stats, output); // Measurements are performed before the truncation!
   }
   if (!P.ZBW)
@@ -1888,7 +1858,7 @@ auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<
   if (step.nrg())
     diag = diag0;
   if (step.dmnrg()) {
-    diag = DiagInfo<S>(step.ndx(), P.removefiles);
+    diag = DiagInfo<S>(step.ndx(), P, P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
   stats.Egs = diag.find_groundstate();
@@ -1993,11 +1963,10 @@ std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P, Stats<S> &stats) {
 
 template <typename S> class NRG_calculation {
 private:
-  // XXX: Workdir workdir;
   Params P;
   Stats<S> stats;
 public:
-  NRG_calculation() : P("param", "param", workdir), stats(P) {}
+  NRG_calculation(const Workdir &workdir) : P("param", "param", workdir), stats(P) {}
   void go() {
     auto [diag0, iterinfo, coef, Sym] = read_data<S>(P, stats);
     Step step{P, RUNTYPE::NRG};
@@ -2010,7 +1979,7 @@ public:
     if (P.dm) {
       if (P.need_rho()) {
         auto rho = init_rho(step, diag, Sym);
-        rho.save(step.lastndx(), fn_rho);
+        rho.save(step.lastndx(), P, fn_rho);
         if (!P.ZBW) calc_densitymatrix(rho, dm, Sym, P);
       }
       if (P.need_rhoFDM()) {
@@ -2019,7 +1988,7 @@ public:
           report_ZnD(stats, P);
         fdm_thermodynamics(dm, stats, Sym, P.T);
         auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, Sym, P.T);
-        rhoFDM.save(step.lastndx(), fn_rhoFDM);
+        rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
         if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
@@ -2046,12 +2015,12 @@ bool complex_data(const std::string filename = "data") {
   return pos != std::string::npos;
 } 
   
-void run_nrg_master() {
+void run_nrg_master(const Workdir &workdir) {
   if (complex_data()) {
-    NRG_calculation<std::complex<double>> calc;
+    NRG_calculation<std::complex<double>> calc(workdir);
     calc.go();
   } else {
-    NRG_calculation<double> calc;
+    NRG_calculation<double> calc(workdir);
     calc.go();
   }
 #ifdef NRG_MPI

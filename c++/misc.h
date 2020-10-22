@@ -4,6 +4,7 @@
 #ifndef _misc_h_
 #define _misc_h_
 
+// XXX
 // Conversion functions
 template <class T> 
 inline T fromstring(const std::string &str) {

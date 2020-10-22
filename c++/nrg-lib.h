@@ -6,10 +6,10 @@
 #define NRG_COMMON
 
 #include <string>
+#include "workdir.h"
 
-void run_nrg_master();
+void run_nrg_master(const Workdir &workdir);
 void run_nrg_slave(); // note: only defined if compled using NRG_MPI
-void set_workdir(const std::string &workdir);
 void print_about_message();
 
 namespace time_mem {

@@ -33,7 +33,6 @@ using namespace std::string_literals;
 #include <climits>
 #include <cstring>
 #include <unistd.h>
-#include <cstdlib> // mkdtemp
 
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/map.hpp>

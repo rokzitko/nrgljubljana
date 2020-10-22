@@ -147,6 +147,7 @@ inline std::ifstream safe_open_for_reading(const std::string filename, const boo
   return F;
 }
 
+#include <cstdio> // C remove()
 inline int remove(const std::string &filename) { return remove(filename.c_str()); } // C function
 
 #if defined(__clang__) || defined (__GNUC__)

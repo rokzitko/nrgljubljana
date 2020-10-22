@@ -76,7 +76,7 @@ inline bool file_exists(const std::string &fn)
 // saved on the disk.
 bool already_computed(const std::string &prefix, const Params &P) {
   for (auto N = P.Nmax - 1; N > P.Ninit; N--) {
-    const std::string fn = workdir.rhofn(prefix, N - 1); // note the minus 1
+    const std::string fn = P.workdir.rhofn(prefix, N - 1); // note the minus 1
     if (!file_exists(fn)) {
       std::cout << fn << " not found. Computing." << std::endl;
       return false;
@@ -96,11 +96,11 @@ void calc_densitymatrix(DensMatElements<S> &rho, const AllSteps<S> &dm, std::sha
   TIME("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[DM] " << N << std::endl;
-    DiagInfo<S> diag_loaded(N);
+    DiagInfo<S> diag_loaded(N, P);
     DensMatElements<S> rhoPrev;
     calc_densitymatrix_iterN(diag_loaded, rho, rhoPrev, N, dm, Sym, P);
     check_trace_rho(rhoPrev, Sym); // Make sure rho is normalized to 1.
-    rhoPrev.save(N-1, filename);
+    rhoPrev.save(N-1, P, filename);
     rho.swap(rhoPrev);
   }
 }
@@ -184,7 +184,7 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const 
   TIME("FDM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[FDM] " << N << std::endl;
-    DiagInfo<S> diag_loaded(N);
+    DiagInfo<S> diag_loaded(N, P);
     DensMatElements<S> rhoFDMPrev;
     calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, rhoFDMPrev, N, dm, stats, Sym, P);
     const auto tr       = rhoFDMPrev.trace(Sym->multfnc());
@@ -192,7 +192,7 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const 
     const auto diff     = (tr - expected) / expected;
     nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
     my_assert(num_equal(diff, 0.0));
-    rhoFDMPrev.save(N-1, filename);
+    rhoFDMPrev.save(N-1, P, filename);
     rhoFDM.swap(rhoFDMPrev);
   }
 }
