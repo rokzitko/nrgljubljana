@@ -83,4 +83,4 @@ void SymmetrySL3<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &q
   }
 }
 
-#include "nrg-recalc-SL3.cc"
+#include "nrg-recalc-SL3.h"

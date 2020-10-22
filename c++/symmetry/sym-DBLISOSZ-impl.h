@@ -114,4 +114,4 @@ void SymmetryDBLISOSZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxva
   }
 }
 
-#include "nrg-recalc-DBLISOSZ.cc"
+#include "nrg-recalc-DBLISOSZ.h"

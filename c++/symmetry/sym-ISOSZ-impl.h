@@ -101,4 +101,4 @@ void SymmetryISOSZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals 
   }
 }
 
-#include "nrg-recalc-ISOSZ.cc"
+#include "nrg-recalc-ISOSZ.h"

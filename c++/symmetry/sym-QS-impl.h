@@ -167,5 +167,5 @@ void SymmetryQS<SC>::show_coefficients(const Step &step, const Coef<SC> &coef) {
            << coef.zetaR(step.N() + 1, i) << std::endl;
 }
 
-#include "nrg-recalc-QS.cc"
+#include "nrg-recalc-QS.h"
 

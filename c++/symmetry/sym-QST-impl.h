@@ -158,4 +158,4 @@ void SymmetryQST<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &q
 #include "qst/qst-diag.dat"
 }
 
-#include "nrg-recalc-QST.cc"
+#include "nrg-recalc-QST.h"

@@ -85,4 +85,4 @@ void SymmetryDBLSU2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals
   }
 }
 
-#include "nrg-recalc-DBLSU2.cc"
+#include "nrg-recalc-DBLSU2.h"

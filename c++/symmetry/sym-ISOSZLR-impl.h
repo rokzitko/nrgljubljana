@@ -79,4 +79,4 @@ void SymmetryISOSZLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxval
 #include "isoszlr/isoszlr-2ch-offdiag.dat"
 }
 
-#include "nrg-recalc-ISOSZLR.cc"
+#include "nrg-recalc-ISOSZLR.h"

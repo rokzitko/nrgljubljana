@@ -178,4 +178,4 @@ void SymmetrySPU1<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &
   }
 }
 
-#include "nrg-recalc-SPU1.cc"
+#include "nrg-recalc-SPU1.h"

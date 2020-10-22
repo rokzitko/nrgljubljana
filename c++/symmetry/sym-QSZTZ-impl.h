@@ -80,4 +80,4 @@ void SymmetryQSZTZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals 
 #include "qsztz/qsztz-diag.dat"
 }
 
-#include "nrg-recalc-QSZTZ.cc"
+#include "nrg-recalc-QSZTZ.h"

@@ -71,4 +71,4 @@ void SymmetryQSZLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals 
 #include "qszlr/qszlr-2ch-diag.dat"
 }
 
-#include "nrg-recalc-QSZLR.cc"
+#include "nrg-recalc-QSZLR.h"

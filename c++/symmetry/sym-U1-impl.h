@@ -187,4 +187,4 @@ void SymmetryU1<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq
   }
 }
 
-#include "nrg-recalc-U1.cc"
+#include "nrg-recalc-U1.h"

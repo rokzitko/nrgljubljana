@@ -121,4 +121,4 @@ void SymmetryQJ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq
 #include "qj/qj-diag.dat"
 }
 
-#include "nrg-recalc-QJ.cc"
+#include "nrg-recalc-QJ.h"

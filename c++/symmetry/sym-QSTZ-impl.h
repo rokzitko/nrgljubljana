@@ -97,4 +97,4 @@ void SymmetryQSTZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &
 #include "qstz/qstz-diag.dat"
 }
 
-#include "nrg-recalc-QSTZ.cc"
+#include "nrg-recalc-QSTZ.h"

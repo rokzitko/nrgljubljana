@@ -93,4 +93,4 @@ void SymmetrySU2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &q
   }
 }
 
-#include "nrg-recalc-SU2.cc"
+#include "nrg-recalc-SU2.h"

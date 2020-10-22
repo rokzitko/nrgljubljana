@@ -177,5 +177,5 @@ void SymmetryISO2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &
   }
 }
 
-#include "nrg-recalc-ISO.cc"
-#include "nrg-recalc-ISO2.cc"
+#include "nrg-recalc-ISO.h"
+#include "nrg-recalc-ISO2.h"

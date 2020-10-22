@@ -156,4 +156,4 @@ void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals 
   }
 }
 
-#include "nrg-recalc-SPSU2.cc"
+#include "nrg-recalc-SPSU2.h"

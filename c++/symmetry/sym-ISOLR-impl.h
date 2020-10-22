@@ -129,5 +129,5 @@ void SymmetryISO2LR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals
 #include "iso2lr/iso2lr-2ch-offdiag.dat"
 }
 
-#include "nrg-recalc-ISOLR.cc"
-#include "nrg-recalc-ISO2LR.cc"
+#include "nrg-recalc-ISOLR.h"
+#include "nrg-recalc-ISO2LR.h"

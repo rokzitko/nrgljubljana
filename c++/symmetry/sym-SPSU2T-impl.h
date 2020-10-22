@@ -145,4 +145,4 @@ void SymmetrySPSU2T<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals
   }
 }
 
-#include "nrg-recalc-SPSU2T.cc"
+#include "nrg-recalc-SPSU2T.h"

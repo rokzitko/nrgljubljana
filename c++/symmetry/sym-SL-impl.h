@@ -82,4 +82,4 @@ void SymmetrySL<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq
   }
 }
 
-#include "nrg-recalc-SL.cc"
+#include "nrg-recalc-SL.h"

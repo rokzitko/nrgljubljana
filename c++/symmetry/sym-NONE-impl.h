@@ -113,4 +113,4 @@ void SymmetryNONE<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &
     make_matrix_nonpolarized(h, step, qq, I, In, opch, coef);
 }
 
-#include "nrg-recalc-NONE.cc"
+#include "nrg-recalc-NONE.h"

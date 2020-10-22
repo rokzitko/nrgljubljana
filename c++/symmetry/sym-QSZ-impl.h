@@ -206,4 +206,4 @@ void SymmetryQSZ<SC>::show_coefficients(const Step &step, const Coef<SC> &coef) 
     }
 }
 
-#include "nrg-recalc-QSZ.cc"
+#include "nrg-recalc-QSZ.h"
