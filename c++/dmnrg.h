@@ -89,7 +89,7 @@ bool already_computed(const std::string &prefix, const Params &P) {
 // shell-N density matrices for all iteration steps.
 template<typename S>
 void calc_densitymatrix(DensMatElements<S> &rho, const AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym, 
-                        const Params &P, const std::string filename = FN_RHO) {
+                        const Params &P, const std::string filename = fn_rho) {
   if (P.resume && already_computed(filename, P)) return;
   check_trace_rho(rho, Sym); // Must be 1.
   if (P.ZBW) return;
@@ -178,7 +178,7 @@ auto sum_wn(const size_t N, const Stats<S> &stats, const Params &P) {
 
 template<typename S>
 void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const AllSteps<S> &dm, const Stats<S> &stats, 
-                            std::shared_ptr<Symmetry<S>> Sym, const Params &P, const std::string filename = FN_RHOFDM) {
+                            std::shared_ptr<Symmetry<S>> Sym, const Params &P, const std::string filename = fn_rhoFDM) {
   if (P.resume && already_computed(filename, P)) return;
   if (P.ZBW) return;
   TIME("FDM");

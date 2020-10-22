@@ -1496,11 +1496,11 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
   DensMatElements<S> rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
-      rho.load(step.ndx(), FN_RHO, P.removefiles);
+      rho.load(step.ndx(), fn_rho, P.removefiles);
       check_trace_rho(rho, Sym); // Check if Tr[rho]=1, i.e. the normalization
     }
     if (P.need_rhoFDM()) 
-      rhoFDM.load(step.ndx(), FN_RHOFDM, P.removefiles);
+      rhoFDM.load(step.ndx(), fn_rhoFDM, P.removefiles);
   }
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, Sym);
   if (step.nrg()) {
@@ -2010,7 +2010,7 @@ public:
     if (P.dm) {
       if (P.need_rho()) {
         auto rho = init_rho(step, diag, Sym);
-        rho.save(step.lastndx(), FN_RHO);
+        rho.save(step.lastndx(), fn_rho);
         if (!P.ZBW) calc_densitymatrix(rho, dm, Sym, P);
       }
       if (P.need_rhoFDM()) {
@@ -2019,7 +2019,7 @@ public:
           report_ZnD(stats, P);
         fdm_thermodynamics(dm, stats, Sym, P.T);
         auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, Sym, P.T);
-        rhoFDM.save(step.lastndx(), FN_RHOFDM);
+        rhoFDM.save(step.lastndx(), fn_rhoFDM);
         if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");

@@ -4,6 +4,8 @@
 #ifndef _param_h_
 #define _param_h_
 
+inline const auto fn_rho {"rho"s};
+inline const auto fn_rhoFDM {"rhofdm"s};
 inline const auto default_workdir{"."s};
 
 class Workdir {

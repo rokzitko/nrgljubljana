@@ -4,30 +4,27 @@
 #ifndef _nrg_general_h_
 #define _nrg_general_h_
 
+#include <utility>
+#include <functional>
+#include <iterator>
+#include <algorithm>
+#include <complex>
+#include <numeric>
+#include <limits>
+#include <memory>
+#include <string>
+using namespace std::string_literals;
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
-
-#include <string>
-using namespace std::string_literals;
-
-#include <stdexcept>
-#include <complex>
-#include <unordered_map>
+#include <vector>
 #include <map>
+#include <unordered_map>
 #include <list>
 #include <deque>
 #include <set>
-#include <vector>
-
-#include <numeric>
-#include <utility>
-#include <iterator>
-#include <algorithm>
-#include <functional>
-#include <limits>
-#include <memory>
+#include <stdexcept>
 
 // C headers
 #include <cassert>
@@ -35,13 +32,14 @@ using namespace std::string_literals;
 #include <cfloat>
 #include <climits>
 #include <cstring>
-
 #include <unistd.h>
 #include <cstdlib> // mkdtemp
 
-#include <boost/math/special_functions/sign.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/map.hpp>
+#include <boost/math/special_functions/sign.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/io/ios_state.hpp>
 
 // ublas matrix & vector containers
 #include <boost/numeric/ublas/vector.hpp>
@@ -60,9 +58,6 @@ using namespace boost::numeric::ublas;
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 namespace atlas = boost::numeric::bindings::atlas;
 
-#include <boost/lexical_cast.hpp>
-#include <boost/io/ios_state.hpp>
-
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -76,7 +71,7 @@ namespace atlas = boost::numeric::bindings::atlas;
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/collectives.hpp>
 namespace mpi = boost::mpi;
-#endif // NRG_MPI
+#endif
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
@@ -96,11 +91,6 @@ using namespace fmt::literals;
 #define CONSTFNC
 #endif
 
-#define FN_RHO "rho"
-#define FN_RHOFDM "rhofdm"
-
-#define HIGHPREC(val) std::setprecision(std::numeric_limits<double>::max_digits10) << (val)
-
-int myrank();
+int myrank(); // XXX
 
 #endif

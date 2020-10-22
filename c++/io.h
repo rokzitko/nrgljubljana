@@ -1,6 +1,8 @@
 #ifndef _io_h_
 #define _io_h_
 
+#define HIGHPREC(val) std::setprecision(std::numeric_limits<double>::max_digits10) << (val)
+
 inline std::string to_string(const std::complex<double> &z) {
   std::ostringstream s;
   s << z;
