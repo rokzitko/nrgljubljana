@@ -147,8 +147,8 @@ public:
   using t_eigen = typename traits<S>::t_eigen;
   using Matrix = typename traits<S>::Matrix;
   using EVEC = ublas::vector<t_eigen>;
-  EVEC value_orig;               // eigenvalues as computed
-  Matrix matrix; // eigenvectors
+  EVEC value_orig; // eigenvalues as computed
+  Matrix matrix;   // eigenvectors
   Eigen() {}
   Eigen(const size_t nr, const size_t dim) {
     my_assert(nr <= dim);
@@ -157,16 +157,15 @@ public:
   }
   auto getnrcomputed() const { return value_orig.size(); } // number of computed eigenpairs
   auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
-  // Now add information about truncation and block structure of the eigenvectors
  private:
   long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
  public:
-  EVEC value_zero;   // eigenvalues with Egs subtracted
-  auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }
-  auto getnrstored() const  { return value_zero.size(); }                   // number of stored states
-  auto getnrall() const { return getnrcomputed(); }                         // all = all computed
-  auto getnrkept() const { return getnrpost(); }
-  auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }
+  EVEC value_zero;                                                               // eigenvalues with Egs subtracted
+  auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }     // number of states after truncation
+  auto getnrstored() const  { return value_zero.size(); }                        // number of stored states
+  auto getnrall() const { return getnrcomputed(); }                              // all = all computed
+  auto getnrkept() const { return getnrpost(); }                                 // # of kept states
+  auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }            // # of discarded states
   auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
   auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
@@ -175,13 +174,11 @@ public:
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
   EVEC absenergyN;     // absolute energies (referenced to the lowest energy in the N-th step)
-  // 'blocks' contains eigenvectors separated according to the invariant
-  // subspace from which they originate. This separation is required for
-  // using the efficient BLAS routines when performing recalculations of
-  // the matrix elements.
+  // 'blocks' contains eigenvectors separated according to the invariant subspace from which they originate.
+  // Required for using efficient BLAS routines when performing recalculations of the matrix elements.
   std::vector<Matrix> blocks;
   // Truncate to nrpost states.
-  void truncate_prepare_subspace(const size_t nrpost_) {
+  void truncate_prepare(const size_t nrpost_) {
     nrpost = nrpost_;
     my_assert(nrpost <= getnrstored());
   }
@@ -275,9 +272,15 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void truncate_perform() {
      for (auto &[I, eig] : *this) eig.truncate_perform(); // Truncate subspace to appropriate size
    }
-   size_t size_subspace(const Invar &I) const {
+   auto size_subspace(const Invar &I) const {
      const auto f = this->find(I);
      return f != this->cend() ? f->second.getnrstored() : 0;
+   }
+   auto subs(const Invar &I1, const Invar &I2) const {
+     return std::make_pair(this->at(I1), this->at(I2));
+   }
+   auto dims(const Invar &I1, const Invar &I2) const { // Determines matrix sizes for operators (# stored)
+     return std::make_pair(size_subspace(I1), size_subspace(I2));
    }
    void clear_eigenvectors() {
      for (auto &eig : this->eigs())
@@ -363,11 +366,9 @@ class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
        const auto size1 = mat.size1();
        const auto size2 = mat.size2();
        if (size1 == 0 || size2 == 0) continue;
-       // Target matrix dimensions
-       const auto nr1 = diag.at(I1).getnrstored();
-       const auto nr2 = diag.at(I2).getnrstored();
+       const auto &[nr1, nr2] = diag.dims(I1, I2); // Target matrix dimensions
        my_assert(nr1 <= size1 && nr2 <= size2);
-       if (nr1 == size1 && nr2 == size2) // Trimming not necessary!!
+       if (nr1 == size1 && nr2 == size2)           // Trimming not necessary!!
          continue;
        ublas::matrix_range<typename traits<S>::Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
        typename traits<S>::Matrix m2new = m2;
@@ -1323,8 +1324,8 @@ template<typename S>
 void truncate_prepare(const Step &step, DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
-    diag[I].truncate_prepare_subspace(step.last() && P.keep_all_states_in_last_step() ? eig.getnrcomputed() :
-                                      ranges::count_if(eig.value_zero, [Emax](const double e) { return e <= Emax; }));
+    diag[I].truncate_prepare(step.last() && P.keep_all_states_in_last_step() ? eig.getnrcomputed() :
+                             ranges::count_if(eig.value_zero, [Emax](const double e) { return e <= Emax; }));
   std::cout << "Emax=" << Emax/step.unscale() << " ";
   truncate_stats ts(diag, Sym);
   ts.report();

@@ -44,11 +44,8 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
     nrglog('f', "Does not fulfill the triangle inequalities.");
     return Matrix(0,0);
   }
-  const Eigen<S> &diagI1 = diag.at(I1);
-  const Eigen<S> &diagIp = diag.at(Ip);
-  // Number of states in Ip and in I1, i.e. the dimension of the <||f||> matrix of irreducible matrix elements.
-  const auto dim1 = diagI1.getnrstored();
-  const auto dimp = diagIp.getnrstored();
+  const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
+  const auto & [dim1, dimp]     = diag.dims(I1, Ip);   // # of states in Ip and in I1, i.e. the dimension of the <||f||> matrix.
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   const Twoinvar II = {I1, Ip};
   Matrix f = Matrix(dim1, dimp, 0);
@@ -86,10 +83,8 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
                                       const Invar &Iop) const      // quantum numbers of the operator
 {
   if (P.logletter('r')) std::cout << "recalc_general: " << nrgdump3(I1, Ip, Iop) << std::endl;
-  const auto &diagI1 = diag.at(I1);
-  const auto &diagIp = diag.at(Ip);
-  const auto dim1 = diagI1.getnrstored();
-  const auto dimp = diagIp.getnrstored();
+  const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
+  const auto & [dim1, dimp]     = diag.dims(I1, Ip);
   const Twoinvar II = {I1, Ip};
   auto cn = Matrix(dim1, dimp, 0);
   if (dim1 == 0 || dimp == 0) return cn; // return empty matrix
