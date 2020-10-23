@@ -11,8 +11,8 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
-      Number q1 = I1.get("Q");
-      Sspin ss1 = I1.get("SS");
+      int q1 = I1.get("Q");
+      int ss1 = I1.get("SS");
       Invar Ip;
 
       Ip = Invar(q1 - 1, ss1 + 1);
@@ -29,8 +29,8 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
     }
   } else {
     for(const auto &[I1, eig]: diag) {
-      Number q1 = I1.get("Q");
-      Sspin ss1 = I1.get("SS");
+      int q1 = I1.get("Q");
+      int ss1 = I1.get("SS");
       Invar Ip;
 
       Ip = Invar(q1 - 1, ss1 + 1);
@@ -52,8 +52,8 @@ template<typename SC>
 Opch<SC> SymmetryQS<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   auto opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp = Ip.get("Q");
-    Sspin ssp = Ip.get("SS");
+    int qp = Ip.get("Q");
+    int ssp = Ip.get("SS");
     Invar I1;
 
     // NOTE: q,ss only couples to q+1,ss+-1 in general, even for
@@ -97,8 +97,8 @@ template<typename SC>
 OpchChannel<SC> SymmetryQS<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, int M) {
   auto opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp = Ip.get("Q");
-    Sspin ssp = Ip.get("SS");
+    int qp = Ip.get("Q");
+    int ssp = Ip.get("SS");
     Invar I1;
 
     I1 = Invar(qp + 1, ssp + 1);
@@ -116,8 +116,8 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_triplet(const DiagInfo<SC> &diag, cons
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
-      Number q1 = I1.get("Q");
-      Sspin ss1 = I1.get("SS");
+      int q1 = I1.get("Q");
+      int ss1 = I1.get("SS");
       Invar Ip;
 
       Ip = Invar(q1, ss1);

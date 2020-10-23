@@ -28,8 +28,8 @@ Opch<SC> SymmetryISOSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
-    Ispin iip   = Ip.get("II");
-    SZspin sszp = Ip.get("SSZ");
+    int iip   = Ip.get("II");
+    int sszp = Ip.get("SSZ");
     int pp      = Ip.get("P");
 
     // nn is index n of f_n, the last site in the chain prior to adding
@@ -256,8 +256,8 @@ template<typename SC>
 MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Ispin ii1   = I1.get("II");
-    SZspin ssz1 = I1.get("SSZ");
+    int ii1   = I1.get("II");
+    int ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
     Invar Ip;
 
@@ -325,8 +325,8 @@ template<typename SC>
 MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Ispin ii1   = I1.get("II");
-    SZspin ssz1 = I1.get("SSZ");
+    int ii1   = I1.get("II");
+    int ssz1 = I1.get("SSZ");
     int p1      = I1.get("P");
     Invar Ip;
 

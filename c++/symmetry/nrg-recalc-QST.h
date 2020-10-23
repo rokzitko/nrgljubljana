@@ -27,9 +27,9 @@ template<typename SC>
 MatrixElements<SC> SymmetryQST<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1  = I1.get("Q");
-    Sspin ss1  = I1.get("SS");
-    Tangmom t1 = I1.get("T");
+    int q1  = I1.get("Q");
+    int ss1  = I1.get("SS");
+    int t1 = I1.get("T");
     double T   = t1; // trick!
     double S   = (ss1 - 1.) / 2.;
     Invar Ip;
@@ -135,9 +135,9 @@ template<typename SC>
 Opch<SC> SymmetryQST<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp  = Ip.get("Q");
-    Sspin ssp  = Ip.get("SS");
-    Tangmom tp = Ip.get("T");
+    int qp  = Ip.get("Q");
+    int ssp  = Ip.get("SS");
+    int tp = Ip.get("T");
     double T   = tp; // trick!
     Invar I1;
 
@@ -238,9 +238,9 @@ template<typename SC>
 MatrixElements<SC> SymmetryQST<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1  = I1.get("Q");
-    Sspin ss1  = I1.get("SS");
-    Tangmom t1 = I1.get("T");
+    int q1  = I1.get("Q");
+    int ss1  = I1.get("SS");
+    int t1 = I1.get("T");
     double S   = (ss1 - 1.) / 2.;
     double T   = t1; // trick!
     Invar Ip;
@@ -295,9 +295,9 @@ template<typename SC>
 MatrixElements<SC> SymmetryQST<SC>::recalc_orb_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1  = I1.get("Q");
-    Sspin ss1  = I1.get("SS");
-    Tangmom t1 = I1.get("T");
+    int q1  = I1.get("Q");
+    int ss1  = I1.get("SS");
+    int t1 = I1.get("T");
     double S   = (ss1 - 1.) / 2.;
     double T   = t1; // trick!
     Invar Ip;

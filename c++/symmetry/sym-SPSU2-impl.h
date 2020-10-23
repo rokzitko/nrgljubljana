@@ -52,15 +52,15 @@ class SymmetrySPSU2 : public Symmetry<SC> {
   }
 
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
+    const int ssp = Ip.get("SS");
+    const int ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 2 || ss1 == ssp);
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
+    const int ssp = Ip.get("SS");
+    const int ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
@@ -68,7 +68,7 @@ class SymmetrySPSU2 : public Symmetry<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ; // Tr[S_z^2]
     for (const auto &[I, eig]: diag) {
-      const Sspin ss    = I.get("SS");
+      const int ss    = I.get("SS");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * (ss * ss - 1) / 12.;
     }
@@ -100,7 +100,7 @@ class SymmetrySPSU2 : public Symmetry<SC> {
 
 template<typename SC>
 void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-  Sspin ss = I.get("SS");
+  int ss = I.get("SS");
 
   if (!P.substeps) {
     switch (P.channels) {

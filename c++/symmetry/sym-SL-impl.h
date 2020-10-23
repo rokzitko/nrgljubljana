@@ -40,7 +40,7 @@ class SymmetrySL : public Symmetry<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trQ, trQ2; // Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
-      const Number q    = I.get("Q");
+      const int q    = I.get("Q");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;

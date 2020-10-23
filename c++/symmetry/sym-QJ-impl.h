@@ -37,8 +37,8 @@ class SymmetryQJ : public Symmetry<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trJZ2, trQ, trQ2; // Tr[J_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
-      const Sspin jj    = I.get("JJ");
-      const Number q    = I.get("Q");
+      const int jj    = I.get("JJ");
+      const int q    = I.get("Q");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
@@ -52,8 +52,8 @@ class SymmetryQJ : public Symmetry<SC> {
   // ClebschGordan[ket (p), op, bra (1)]
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
-    const Sspin jjp = Ip.get("JJ");
-    const Sspin jj1 = I1.get("JJ");
+    const int jjp = Ip.get("JJ");
+    const int jj1 = I1.get("JJ");
     my_assert(abs(jj1 - jjp) == 1);
     return (jj1 == jjp + 1 ? S(jjp) + 1.0 : S(jjp));
   }
@@ -61,8 +61,8 @@ class SymmetryQJ : public Symmetry<SC> {
   // See cg_factors_doublet_triplet_quadruplet.nb
   double specdensquad_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
-    const Sspin jjp = Ip.get("JJ");
-    const Sspin jj1 = I1.get("JJ");
+    const int jjp = Ip.get("JJ");
+    const int jj1 = I1.get("JJ");
     my_assert(abs(jj1 - jjp) == 1 || abs(jj1 - jjp) == 3);
     if (jj1 == jjp + 3) return S(jjp) / 2.0 + 1.0;
     if (jj1 == jjp + 1) {
@@ -114,7 +114,7 @@ inline double J(int JJ) {
 
 template<typename SC>
 void SymmetryQJ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-  Sspin jj = I.get("JJ");
+  int jj = I.get("JJ");
 #include "qj/qj-offdiag.dat"
 #include "qj/qj-diag.dat"
 }

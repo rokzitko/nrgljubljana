@@ -38,11 +38,11 @@ class SymmetryISOLRcommon : public SymLR<SC> {
   }
 
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
+    const int ssp = Ip.get("SS");
+    const int ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
-    const Ispin iip = Ip.get("II");
-    const Ispin ii1 = I1.get("II");
+    const int iip = Ip.get("II");
+    const int ii1 = I1.get("II");
     my_assert(abs(ii1 - iip) == 1);
     const double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
     const double isofactor  = (ii1 == iip + 1 ? ISO(iip) + 1.0 : ISO(iip));
@@ -52,8 +52,8 @@ class SymmetryISOLRcommon : public SymLR<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
-      const Ispin ii    = I.get("II");
-      const Sspin ss    = I.get("SS");
+      const int ii    = I.get("II");
+      const int ss    = I.get("SS");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * (ss * ss - 1) / 12.; // isospin multiplicity contained in sumZ
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
@@ -115,15 +115,15 @@ class SymmetryISO2LR : public SymmetryISOLRcommon<SC> {
 
 template<typename SC>
 void SymmetryISOLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-  Sspin ss = I.get("SS");
-  Ispin ii = I.get("II");
+  int ss = I.get("SS");
+  int ii = I.get("II");
 #include "isolr/isolr-2ch-offdiag.dat"
 }
 
 template<typename SC>
 void SymmetryISO2LR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-  Sspin ss = I.get("SS");
-  Ispin ii = I.get("II");
+  int ss = I.get("SS");
+  int ii = I.get("II");
 #include "iso2lr/iso2lr-2ch-offdiag.dat"
 }
 

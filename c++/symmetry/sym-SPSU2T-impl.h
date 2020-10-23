@@ -41,20 +41,20 @@ class SymmetrySPSU2T : public Symmetry<SC> {
   // Same as for SYMTYPE=QS, because spin operators are angular momentum singlets.
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "T", 0);
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
+    const int ssp = Ip.get("SS");
+    const int ss1 = I1.get("SS");
     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
+    const int ssp = Ip.get("SS");
+    const int ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
     double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
-    const Tangmom tp = Ip.get("T");
-    const Tangmom t1 = I1.get("T");
+    const int tp = Ip.get("T");
+    const int t1 = I1.get("T");
     const int ttp    = 2 * tp + 1;
     const int tt1    = 2 * t1 + 1;
     my_assert(abs(ttp - tt1) == 2 || ttp == tt1);
@@ -65,8 +65,8 @@ class SymmetrySPSU2T : public Symmetry<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ2, trTZ2; // Tr[S_z^2], Tr[T_z^2]
     for (const auto &[I, eig]: diag) {
-      const Sspin ss    = I.get("SS");
-      const Tangmom t   = I.get("T");
+      const int ss    = I.get("SS");
+      const int t   = I.get("T");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ2 += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
       trTZ2 += sumZ * t * (t + 1) / 3.;
@@ -90,7 +90,7 @@ bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I
   // avoid false positives in error detection assertions.
 
   // see spsu2t_exceptions.nb
-  Tangmom T = I.get("T");
+  int T = I.get("T");
   if (i == 46 && j == 21 && T == 1) return true;
   if (i == 55 && j == 27 && T == 1) return true;
   if (i == 5 && j == 38 && T == 2) return true;
@@ -128,8 +128,8 @@ bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I
 
 template<typename SC>
 void SymmetrySPSU2T<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-  Sspin ss  = I.get("SS");
-  Tangmom t = I.get("T");
+  int ss  = I.get("SS");
+  int t = I.get("T");
   double T  = t; // crucially important to use floating point!
   my_assert(!P.substeps);
   my_assert(P.channels == 3);

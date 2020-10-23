@@ -26,7 +26,7 @@ template<typename SC>
 MatrixElements<SC> SymmetrySU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Ispin ii1 = I1.get("II");
+    int ii1 = I1.get("II");
     Invar Ip;
 
     Ip = Invar(ii1 - 1);
@@ -96,7 +96,7 @@ Opch<SC> SymmetrySU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &d
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
-    Ispin iip = Ip.get("II");
+    int iip = Ip.get("II");
     // NN is index n of f_n, the last site in the chain prior to adding
     // the new site (f_{n+1}).
     int NN = step.getnn();

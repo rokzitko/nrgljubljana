@@ -29,8 +29,8 @@ class SymmetrySU2 : public Symmetry<SC> {
   bool Invar_allowed(const Invar &I) const override { return I.get("II") > 0; }
 
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
-    const Ispin iip = Ip.get("II");
-    const Ispin ii1 = I1.get("II");
+    const int iip = Ip.get("II");
+    const int ii1 = I1.get("II");
     my_assert(abs(ii1 - iip) == 1);
     const double isofactor = (ii1 == iip + 1 ? ISO(iip) + 1.0 : ISO(iip));
     return isofactor;
@@ -53,7 +53,7 @@ class SymmetrySU2 : public Symmetry<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trIZ2; // Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
-      const Number ii   = I.get("II");
+      const int ii   = I.get("II");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trIZ2 += sumZ * (ii * ii - 1) / 12.;
     }
@@ -77,7 +77,7 @@ class SymmetrySU2 : public Symmetry<SC> {
 
 template<typename SC>
 void SymmetrySU2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-  Ispin ii = I.get("II");
+  int ii = I.get("II");
   int NN   = step.getnn();
   switch (P.channels) {
     case 1:

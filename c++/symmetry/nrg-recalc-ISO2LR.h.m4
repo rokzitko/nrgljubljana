@@ -24,8 +24,8 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
     // NOTE: ii,ss only couples to ii+-1,ss+-1 in general, even for
     // several channels.
 
-    Ispin iip = Ip.get("II");
-    Sspin ssp = Ip.get("SS");
+    int iip = Ip.get("II");
+    int ssp = Ip.get("SS");
 
     // IMPORTANT NEW ELEMENT: the parity is important here!!
     int pp = Ip.get("P");
@@ -85,8 +85,8 @@ template<typename SC>
 MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Ispin ii1 = I1.get("II");
-    Sspin ss1 = I1.get("SS");
+    int ii1 = I1.get("II");
+    int ss1 = I1.get("SS");
     int p1    = I1.get("P");
     Invar Ip;
 
@@ -110,8 +110,8 @@ template<typename SC>
 MatrixElements<SC> SymmetryISO2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Ispin ii1 = I1.get("II");
-    Sspin ss1 = I1.get("SS");
+    int ii1 = I1.get("II");
+    int ss1 = I1.get("SS");
     int p1    = I1.get("P");
     Invar Ip;
 

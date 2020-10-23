@@ -71,7 +71,7 @@ void cdmI(const size_t i,        // Subspace index
   if (rmax == 0) return;    // rmax can be zero in the case a subspace has been completely truncated
   my_assert(rmax == dim);   // Otherwise, rmax must equal dim
   // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match?
-  my_assert(nromega == diagI1.getnrstored());
+  my_assert(nromega <= diagI1.getnrstored());
   const ublas::matrix_range<const typename traits<S>::Matrix> U(diagI1.matrix, ublas::range(0, nromega), dm[N].at(I1).rmax.ubview(i));
   typename traits<S>::Matrix T(dim, nromega);
   using t_coef = typename traits<S>::t_coef;

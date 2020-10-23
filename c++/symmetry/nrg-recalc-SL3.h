@@ -26,9 +26,9 @@ template<typename SC>
 MatrixElements<SC> SymmetrySL3<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q11 = I1.get("Q1");
-    Number q21 = I1.get("Q2");
-    Number q31 = I1.get("Q3");
+    int q11 = I1.get("Q1");
+    int q21 = I1.get("Q2");
+    int q31 = I1.get("Q3");
     Invar Ip   = Invar(q11 - 1, q21, q31); // This is a channel 1 operator
     {
   nrglog('f', "RECALC(fn=" << "sl3/sl3-3ch-doublet.dat" << ", Iop=" << Invar(1, 0, 0) << ")");
@@ -50,9 +50,9 @@ template<typename SC>
 Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number q1p = Ip.get("Q1");
-    Number q2p = Ip.get("Q2");
-    Number q3p = Ip.get("Q3");
+    int q1p = Ip.get("Q1");
+    int q2p = Ip.get("Q2");
+    int q3p = Ip.get("Q3");
 
     Invar I1;
 

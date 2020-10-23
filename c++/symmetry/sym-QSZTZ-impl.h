@@ -38,9 +38,9 @@ class SymmetryQSZTZ : public Symmetry<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trSZ2, trTZ, trTZ2, trQ, trQ2;
     for (const auto &[I, eig]: diag) {
-      const Number q    = I.get("Q");
-      const Sspin ssz   = I.get("SZ");
-      const Tangmom tz  = I.get("TZ");
+      const int q    = I.get("Q");
+      const int ssz   = I.get("SZ");
+      const int tz  = I.get("TZ");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;

@@ -26,7 +26,7 @@ template<typename SC>
 MatrixElements<SC> SymmetrySPSU2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Sspin ss1 = I1.get("SS");
+    int ss1 = I1.get("SS");
     int p1    = I1.get("P");
     Invar Ip;
 
@@ -65,7 +65,7 @@ template<typename SC>
 Opch<SC> SymmetrySPSU2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Sspin ssp = Ip.get("SS");
+    int ssp = Ip.get("SS");
     int pp    = Ip.get("P");
     Invar I1;
 
@@ -184,7 +184,7 @@ template<typename SC>
 MatrixElements<SC> SymmetrySPSU2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Sspin ss1 = I1.get("SS");
+    int ss1 = I1.get("SS");
     int p1    = I1.get("P");
     Invar Ip;
 

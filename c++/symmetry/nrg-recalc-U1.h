@@ -27,7 +27,7 @@ template<typename SC>
 MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1 = I1.get("Q");
+    int q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
     switch (P.channels) {
   case 1: { {
@@ -77,7 +77,7 @@ template<typename SC>
 Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp = Ip.get("Q");
+    int qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
     switch (P.channels) {
   case 1: { {

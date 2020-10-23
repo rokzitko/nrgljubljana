@@ -26,9 +26,9 @@ template<typename SC>
 MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1   = I1.get("Q");
-    Sspin ss1   = I1.get("SS");
-    Tangmom tz1 = I1.get("TZ");
+    int q1   = I1.get("Q");
+    int ss1   = I1.get("SS");
+    int tz1 = I1.get("TZ");
     Invar Ip;
 
     // Two different lengths: D_3CH_a and D_3CH_b
@@ -131,9 +131,9 @@ template<typename SC>
 Opch<SC> SymmetryQSTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp   = Ip.get("Q");
-    Sspin ssp   = Ip.get("SS");
-    Tangmom tzp = Ip.get("TZ");
+    int qp   = Ip.get("Q");
+    int ssp   = Ip.get("SS");
+    int tzp = Ip.get("TZ");
     Invar I1;
 
     // The different files just correspond to contributions computed
@@ -232,9 +232,9 @@ template<typename SC>
 MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1   = I1.get("Q");
-    Sspin ss1   = I1.get("SS");
-    Tangmom tz1 = I1.get("TZ");
+    int q1   = I1.get("Q");
+    int ss1   = I1.get("SS");
+    int tz1 = I1.get("TZ");
     Invar Ip;
 
     Ip = Invar(q1, ss1, tz1);

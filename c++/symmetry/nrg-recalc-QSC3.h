@@ -32,8 +32,8 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
   if constexpr (std::is_same_v<SC, std::complex<double>>) {
  
   for(const auto &[Ip, eig]: diag) {
-    Number qp = Ip.get("Q");
-    Sspin ssp = Ip.get("SS");
+    int qp = Ip.get("Q");
+    int ssp = Ip.get("SS");
     int p     = Ip.get("P");
 
     Invar I1;

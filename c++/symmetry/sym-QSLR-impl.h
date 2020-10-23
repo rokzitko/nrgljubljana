@@ -38,24 +38,24 @@ class SymmetryQSLR : public SymLR<SC> {
 
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 0);
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
+    const int ssp = Ip.get("SS");
+    const int ss1 = I1.get("SS");
     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
+    const int ssp = Ip.get("SS");
+    const int ss1 = I1.get("SS");
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
-      const Sspin ss    = I.get("SS");
-      const Number q    = I.get("Q");
+      const int ss    = I.get("SS");
+      const int q    = I.get("Q");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
@@ -78,7 +78,7 @@ class SymmetryQSLR : public SymLR<SC> {
 
 template<typename SC>
 void SymmetryQSLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-  Sspin ss = I.get("SS");
+  int ss = I.get("SS");
 #include "qslr/qslr-2ch-diag.dat"
 #include "qslr/qslr-2ch-offdiag.dat"
 }

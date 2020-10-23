@@ -26,9 +26,9 @@ template<typename SC>
 MatrixElements<SC> SymmetryQSZTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1   = I1.get("Q");
-    Sspin ssz1  = I1.get("SZ");
-    Tangmom tz1 = I1.get("TZ");
+    int q1   = I1.get("Q");
+    int ssz1  = I1.get("SZ");
+    int tz1 = I1.get("TZ");
     Invar Ip;
 
     // Invar(1,2,+-1,0) is correct. 1 = add charge, 2 = doublet,
@@ -129,9 +129,9 @@ template<typename SC>
 Opch<SC> SymmetryQSZTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp   = Ip.get("Q");
-    Sspin sszp  = Ip.get("SZ");
-    Tangmom tzp = Ip.get("TZ");
+    int qp   = Ip.get("Q");
+    int sszp  = Ip.get("SZ");
+    int tzp = Ip.get("TZ");
     Invar I1;
 
     I1 = Invar(qp + 1, sszp + 1, tzp + 1);
@@ -225,9 +225,9 @@ template<typename SC>
 MatrixElements<SC> SymmetryQSZTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1   = I1.get("Q");
-    Sspin ssz1  = I1.get("SZ");
-    Tangmom tz1 = I1.get("TZ");
+    int q1   = I1.get("Q");
+    int ssz1  = I1.get("SZ");
+    int tz1 = I1.get("TZ");
     Invar Ip;
 
     Ip = Invar(q1, ssz1, tz1);

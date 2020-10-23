@@ -10,8 +10,8 @@ template<typename SC>
 MatrixElements<SC> SymmetrySPSU2T<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Sspin ss1  = I1.get("SS");
-    Tangmom t1 = I1.get("T");
+    int ss1  = I1.get("SS");
+    int t1 = I1.get("T");
     double T   = t1; // trick!
     Invar Ip;
 
@@ -46,8 +46,8 @@ template<typename SC>
 Opch<SC> SymmetrySPSU2T<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Sspin ssp  = Ip.get("SS");
-    Tangmom tp = Ip.get("T");
+    int ssp  = Ip.get("SS");
+    int tp = Ip.get("T");
     double T   = tp; // trick!
     Invar I1;
 
@@ -81,8 +81,8 @@ template<typename SC>
 MatrixElements<SC> SymmetrySPSU2T<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Sspin ss1  = I1.get("SS");
-    Tangmom t1 = I1.get("T");
+    int ss1  = I1.get("SS");
+    int t1 = I1.get("T");
     double T   = t1; // trick!
     Invar Ip;
 

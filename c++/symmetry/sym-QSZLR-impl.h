@@ -21,9 +21,9 @@ class SymmetryQSZLR : public SymFieldLR<SC> {
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
-    const SZspin ssz1  = I1.get("SSZ");
-    const SZspin sszp  = Ip.get("SSZ");
-    const SZspin sszop = ssz1 - sszp;
+    const int ssz1  = I1.get("SSZ");
+    const int sszp  = Ip.get("SSZ");
+    const int sszop = ssz1 - sszp;
     return sszop == SPIN;
   }
 
@@ -41,8 +41,8 @@ class SymmetryQSZLR : public SymFieldLR<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
     for (const auto &[I, eig]: diag) {
-      const SZspin ssz  = I.get("SSZ");
-      const Number q    = I.get("Q");
+      const int ssz  = I.get("SSZ");
+      const int q    = I.get("Q");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * pow(SZ(ssz),2);

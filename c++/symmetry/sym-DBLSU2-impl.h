@@ -30,8 +30,8 @@ class SymmetryDBLSU2 : public Symmetry<SC> {
 
   // TO DO: support for the doublets wrt the second quantum number
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
-    const Ispin ii1p = Ip.get("II1");
-    const Ispin ii11 = I1.get("II1");
+    const int ii1p = Ip.get("II1");
+    const int ii11 = I1.get("II1");
     my_assert(abs(ii11 - ii1p) == 1);
     const double isofactor = (ii11 == ii1p + 1 ? ISO(ii1p) + 1.0 : ISO(ii1p));
     return isofactor;
@@ -51,8 +51,8 @@ class SymmetryDBLSU2 : public Symmetry<SC> {
     bucket trIZ12; // Tr[I1_z^2]
     bucket trIZ22; // Tr[I2_z^2]
     for (const auto &[I, eig]: diag) {
-      const Number ii1  = I.get("II1");
-      const Number ii2  = I.get("II2");
+      const int ii1  = I.get("II1");
+      const int ii2  = I.get("II2");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trIZ12 += sumZ * (ii1 * ii1 - 1) / 12.;
       trIZ22 += sumZ * (ii2 * ii2 - 1) / 12.;

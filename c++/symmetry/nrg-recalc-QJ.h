@@ -27,8 +27,8 @@ template<typename SC>
 MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1 = I1.get("Q");
-    Sspin jj1 = I1.get("JJ");
+    int q1 = I1.get("Q");
+    int jj1 = I1.get("JJ");
     Invar Ip;
 
     Ip = Invar(q1 - 1, jj1 + 1);
@@ -70,8 +70,8 @@ template<typename SC>
 MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1 = I1.get("Q");
-    Sspin jj1 = I1.get("JJ");
+    int q1 = I1.get("Q");
+    int jj1 = I1.get("JJ");
     //    double J = (jj1-1.0)/2.0;
     Invar Ip;
 
@@ -138,8 +138,8 @@ template<typename SC>
 Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp = Ip.get("Q");
-    Sspin jjp = Ip.get("JJ");
+    int qp = Ip.get("Q");
+    int jjp = Ip.get("JJ");
     double j  = J(jjp);
     Invar I1;
 

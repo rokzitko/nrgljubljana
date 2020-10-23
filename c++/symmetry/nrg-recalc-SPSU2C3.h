@@ -32,7 +32,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
  
   // CONVENTION: primed indeces are on the right side (ket)
   for(const auto &[Ip, eig]: diag) {
-    Sspin ssp = Ip.get("SS");
+    int ssp = Ip.get("SS");
     int p     = Ip.get("P");
 
     Invar I1;

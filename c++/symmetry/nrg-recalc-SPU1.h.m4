@@ -11,7 +11,7 @@ MatrixElements<SC> SymmetrySPU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
-      SZspin ssz1 = I1.get("SSZ");
+      int ssz1 = I1.get("SSZ");
       Invar Ip;
 
       Ip = Invar(ssz1 + 1);
@@ -24,7 +24,7 @@ MatrixElements<SC> SymmetrySPU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
     }
   } else {
     for(const auto &[I1, eig]: diag) {
-      SZspin ssz1 = I1.get("SSZ");
+      int ssz1 = I1.get("SSZ");
       Invar Ip;
 
       Ip = Invar(ssz1 + 1);
@@ -42,7 +42,7 @@ Opch<SC> SymmetrySPU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
   my_assert(!P.substeps);
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    SZspin sszp = Ip.get("SSZ");
+    int sszp = Ip.get("SSZ");
     Invar I1;
 
     I1 = Invar(sszp + 1);
@@ -65,7 +65,7 @@ OpchChannel<SC> SymmetrySPU1<SC>::recalc_irreduc_substeps(const Step &step, cons
   my_assert(P.substeps);
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    SZspin sszp = Ip.get("SSZ");
+    int sszp = Ip.get("SSZ");
     Invar I1;
 
     I1 = Invar(sszp + 1);
@@ -82,7 +82,7 @@ MatrixElements<SC> SymmetrySPU1<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
-      SZspin ssz1 = I1.get("SSZ");
+      int ssz1 = I1.get("SSZ");
       Invar Ip;
 
       Ip = Invar(ssz1);
@@ -99,7 +99,7 @@ MatrixElements<SC> SymmetrySPU1<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
     }
   } else {
     for(const auto &[I1, eig]: diag) {
-      SZspin ssz1 = I1.get("SSZ");
+      int ssz1 = I1.get("SSZ");
       Invar Ip;
 
       Ip = Invar(ssz1);

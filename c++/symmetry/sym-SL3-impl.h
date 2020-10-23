@@ -35,9 +35,9 @@ class SymmetrySL3 : public Symmetry<SC> {
     bucket trQ2, trQ22;
     bucket trQ3, trQ32;
     for (const auto &[I, eig]: diag) {
-      const Number q1   = I.get("Q1");
-      const Number q2   = I.get("Q2");
-      const Number q3   = I.get("Q3");
+      const int q1   = I.get("Q1");
+      const int q2   = I.get("Q2");
+      const int q3   = I.get("Q3");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trQ1 += sumZ * q1;
       trQ12 += sumZ * q1 * q1;

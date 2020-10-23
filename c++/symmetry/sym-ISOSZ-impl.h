@@ -25,9 +25,9 @@ class SymmetryISOSZ : public SymField<SC> {
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
     // The spin projection of the operator is defined by the difference
     // in Sz of both the invariant subspaces.
-    SZspin ssz1  = I1.get("SSZ");
-    SZspin sszp  = Ip.get("SSZ");
-    SZspin sszop = ssz1 - sszp;
+    int ssz1  = I1.get("SSZ");
+    int sszp  = Ip.get("SSZ");
+    int sszop = ssz1 - sszp;
     return sszop == SPIN;
   }
 
@@ -54,8 +54,8 @@ class SymmetryISOSZ : public SymField<SC> {
 
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_abs_diff(Ip, I1, "SSZ", 1);
-    const Ispin iip = Ip.get("II");
-    const Ispin ii1 = I1.get("II");
+    const int iip = Ip.get("II");
+    const int ii1 = I1.get("II");
     const double isofactor = (ii1 == iip + 1 ? ISO(iip) + 1.0 : ISO(iip));
     return isofactor;
   }
@@ -63,8 +63,8 @@ class SymmetryISOSZ : public SymField<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ, trSZ2, trIZ2; // Tr[S_z], Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
-      const Ispin ii    = I.get("II");
-      const SZspin ssz  = I.get("SSZ");
+      const int ii    = I.get("II");
+      const int ssz  = I.get("SSZ");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * pow(SZ(ssz),2);        // isospin multiplicity contained in sumZ
@@ -86,7 +86,7 @@ class SymmetryISOSZ : public SymField<SC> {
 
 template<typename SC>
 void SymmetryISOSZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-  Ispin ii = I.get("II");
+  int ii = I.get("II");
   int NN   = step.getnn();
 
   switch (P.channels) {

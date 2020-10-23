@@ -18,9 +18,9 @@ class SymmetrySPU1 : public  SymField<SC> {
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
     // The spin projection of the operator is defined by the difference in Sz of both the invariant subspaces.
-    SZspin ssz1  = I1.get("SSZ");
-    SZspin sszp  = Ip.get("SSZ");
-    SZspin sszop = ssz1 - sszp;
+    int ssz1  = I1.get("SSZ");
+    int sszp  = Ip.get("SSZ");
+    int sszop = ssz1 - sszp;
     return sszop == SPIN;
   }
 
@@ -52,7 +52,7 @@ class SymmetrySPU1 : public  SymField<SC> {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
 
     for (const auto &[I, eig]: diag) {
-      const SZspin ssz  = I.get("SSZ");
+      const int ssz  = I.get("SSZ");
       const double sumZ = this->calculate_Z(I, eig, factor);
 
       trSZ += sumZ * SZ(ssz);

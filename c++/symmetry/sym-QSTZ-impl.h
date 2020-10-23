@@ -39,8 +39,8 @@ class SymmetryQSTZ : public Symmetry<SC> {
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "TZ", 0);
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
+    const int ssp = Ip.get("SS");
+    const int ss1 = I1.get("SS");
     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
@@ -48,8 +48,8 @@ class SymmetryQSTZ : public Symmetry<SC> {
   // Creation operator is a spin-doublet, angular-momentum-triplet !
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
-    const Sspin ssp = Ip.get("SS");
-    const Sspin ss1 = I1.get("SS");
+    const int ssp = Ip.get("SS");
+    const int ss1 = I1.get("SS");
     my_assert(abs(ss1 - ssp) == 1);
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
@@ -57,9 +57,9 @@ class SymmetryQSTZ : public Symmetry<SC> {
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
     bucket trSZ2, trTZ2, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
-      const Number q    = I.get("Q");
-      const Sspin ss    = I.get("SS");
-      const Tangmom tz  = I.get("TZ");
+      const int q    = I.get("Q");
+      const int ss    = I.get("SS");
+      const int tz  = I.get("TZ");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trQ += sumZ * q;
       trQ2 += sumZ * q * q;
@@ -88,7 +88,7 @@ class SymmetryQSTZ : public Symmetry<SC> {
 
 template<typename SC>
 void SymmetryQSTZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
-  Sspin ss = I.get("SS");
+  int ss = I.get("SS");
   my_assert(!P.substeps);
   my_assert(P.channels == 3);
 #include "qstz/qstz-offdiag.dat"

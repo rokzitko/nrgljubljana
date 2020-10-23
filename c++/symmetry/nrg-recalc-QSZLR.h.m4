@@ -10,8 +10,8 @@ template<typename SC>
 Opch<SC> SymmetryQSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp   = Ip.get("Q");
-    SZspin sszp = Ip.get("SSZ");
+    int qp   = Ip.get("Q");
+    int sszp = Ip.get("SSZ");
     int pp      = Ip.get("P");
 
     // NOTE: q,ssz only couples to q+1,ssz+-1 in general, even for

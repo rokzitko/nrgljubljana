@@ -29,8 +29,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
-      Number q1   = I1.get("Q");
-      SZspin ssz1 = I1.get("SSZ");
+      int q1   = I1.get("Q");
+      int ssz1 = I1.get("SSZ");
       Invar Ip;
 
       // In the case of (Q,S_z) basis, spin up and spin down are not
@@ -123,8 +123,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
     }      // loop
   } else { // substeps
     for(const auto &[I1, eig]: diag) {
-      Number q1   = I1.get("Q");
-      SZspin ssz1 = I1.get("SSZ");
+      int q1   = I1.get("Q");
+      int ssz1 = I1.get("SSZ");
       Invar Ip;
 
       Ip = Invar(q1 - 1, ssz1 + 1);
@@ -163,8 +163,8 @@ template<typename SC>
 Opch<SC> SymmetryQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp   = Ip.get("Q");
-    SZspin sszp = Ip.get("SSZ");
+    int qp   = Ip.get("Q");
+    int sszp = Ip.get("SSZ");
     Invar I1;
 
     // NOTE: q,ssz only couples to q+1,ssz+-1 in general, even for
@@ -331,8 +331,8 @@ template<typename SC>
 OpchChannel<SC> SymmetryQSZ<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, int M) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp   = Ip.get("Q");
-    SZspin sszp = Ip.get("SSZ");
+    int qp   = Ip.get("Q");
+    int sszp = Ip.get("SSZ");
     Invar I1;
 
     I1 = Invar(qp + 1, sszp + 1);
@@ -371,8 +371,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
-      Number q1   = I1.get("Q");
-      SZspin ssz1 = I1.get("SSZ");
+      int q1   = I1.get("Q");
+      int ssz1 = I1.get("SSZ");
       Invar Ip;
 
       Ip = Invar(q1, ssz1);

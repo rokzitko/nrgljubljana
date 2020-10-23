@@ -21,9 +21,9 @@ class SymmetryDBLISOSZ : public SymField<SC> {
    bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
      // The spin projection of the operator is defined by the difference
      // in Sz of both the invariant subspaces.
-     SZspin ssz1  = I1.get("SSZ");
-     SZspin sszp  = Ip.get("SSZ");
-     SZspin sszop = ssz1 - sszp;
+     int ssz1  = I1.get("SSZ");
+     int sszp  = Ip.get("SSZ");
+     int sszop = ssz1 - sszp;
      return sszop == SPIN;
    }
 
@@ -44,10 +44,10 @@ class SymmetryDBLISOSZ : public SymField<SC> {
   // value!
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_abs_diff(Ip, I1, "SSZ", 1);
-    const Ispin ii1p = Ip.get("II1");
-    const Ispin ii11 = I1.get("II1");
-    const Ispin ii2p = Ip.get("II2");
-    const Ispin ii21 = I1.get("II2");
+    const int ii1p = Ip.get("II1");
+    const int ii11 = I1.get("II1");
+    const int ii2p = Ip.get("II2");
+    const int ii21 = I1.get("II2");
     if (abs(ii11 - ii1p) == 1) {
       const double isofactor1 = (ii11 == ii1p + 1 ? ISO(ii1p) + 1.0 : ISO(ii1p));
       my_assert(ii2p == ii21);
@@ -80,9 +80,9 @@ class SymmetryDBLISOSZ : public SymField<SC> {
     auto trIZ12 = 0.0;      // Tr[I1_z^2]
     auto trIZ22 = 0.0;      // Tr[I2_z^2]
     for (const auto &[I, eig]: diag) {
-      const Number ii1  = I.get("II1");
-      const Number ii2  = I.get("II2");
-      const SZspin ssz  = I.get("SSZ");
+      const int ii1  = I.get("II1");
+      const int ii2  = I.get("II2");
+      const int ssz  = I.get("SSZ");
       const auto sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * pow(SZ(ssz),2); // isospin multiplicity contained in sumZ

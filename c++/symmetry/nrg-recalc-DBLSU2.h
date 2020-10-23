@@ -26,8 +26,8 @@ template<typename SC>
 MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Ispin ii11 = I1.get("II1");
-    Ispin ii21 = I1.get("II2");
+    int ii11 = I1.get("II1");
+    int ii21 = I1.get("II2");
     Invar Ip;
 
     Ip = Invar(ii11 - 1, ii21);
@@ -95,8 +95,8 @@ Opch<SC> SymmetryDBLSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
-    Ispin ii1p = Ip.get("II1");
-    Ispin ii2p = Ip.get("II2");
+    int ii1p = Ip.get("II1");
+    int ii2p = Ip.get("II2");
 
     // NN is index n of f_n, the last site in the chain prior to adding
     // the new site (f_{n+1}).

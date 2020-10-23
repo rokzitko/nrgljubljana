@@ -11,18 +11,11 @@
 #include <iostream>
 #include <stdexcept>
 
-// Quantum number types
-using Number = int;
-using Ispin = int;
-using Sspin = int;
-using Tangmom = int;
-using SZspin = int;
-
 // Conversion functions: multiplicity (integer) -> quantum number (floating point)
 // WARNING: avoid using S as template variable in places where S() is used!!!
-inline double S(const Sspin SS)    { return (SS - 1.0) / 2.0; } // XXX int
-inline double ISO(const Ispin II)  { return (II - 1.0) / 2.0; }
-inline double SZ(const SZspin SSZ) { return (SSZ - 1.0) / 2.0; }
+inline double S(const int SS)    { return (SS - 1.0) / 2.0;  }
+inline double ISO(const int II)  { return (II - 1.0) / 2.0;  }
+inline double SZ(const int SSZ)  { return (SSZ - 1.0) / 2.0; }
 
 using InvType = std::vector<int>;
 
@@ -30,11 +23,11 @@ constexpr int multiplicative = 0;
 constexpr int additive       = 1;
 constexpr int mod3           = 3;
 
-inline std::string typestr(const int t) {
+inline auto typestr(const int t) {
   switch (t) {
     case multiplicative: return "multiplicative";
-    case additive: return "additive";
-    case mod3: return "mod3";
+    case additive:       return "additive";
+    case mod3:           return "mod3";
     default: my_assert_not_reached();
   }
 }
@@ -42,32 +35,22 @@ inline std::string typestr(const int t) {
 class Invar {
  private:
    InvType data;
-
    friend class boost::serialization::access;
    template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &data; }
-
  public:
-   inline static std::vector<int> qntype; // must be defined before calls to Invar::combine() and Invar::invert()
-   inline static std::map<std::string, int> name; //  must be defined before calls to Invar::get()
-
+   inline static std::vector<int> qntype;         // must be defined before calls to Invar::combine() and Invar::invert()
+   inline static std::map<std::string, int> name; // must be defined before calls to Invar::get()
    // invdim holds the number of quantum numbers required to specify the invariant subspaces (representations), i.e. (in
    // more fancy terms) the dimension of the Cartan subalgebra of the full symmetry algebra.
    inline static size_t invdim = 0; // 0 before initialization!
-
    Invar() : data(invdim) {}
    explicit Invar(const InvType &d) {
      my_assert(d.size() == data.size());
      data = d;
    }
-   explicit Invar(int i0) : data{i0} { // (int) constructor
-     my_assert(invdim == 1);
-   }
-   Invar(int i0, int i1) : data{i0, i1} { // (int,int) constructor
-     my_assert(invdim == 2);
-   }
-   Invar(int i0, int i1, int i2) : data{i0, i1, i2} { // (int,int,int) constructor
-     my_assert(invdim == 3);
-   }
+   explicit Invar(const int i0) : data{i0} {} // (int) constructor
+   explicit Invar(const int i0, const int i1) : data{i0, i1} {} // (int,int) constructor
+   explicit Invar(const int i0, const int i1, const int i2) : data{i0, i1, i2} {} // (int,int,int) constructor
    std::ostream &insertor(std::ostream &os) const {
      for (size_t i = 0; i < data.size(); i++) os << data[i] << (i != data.size() - 1 ? " " : "");
      return os;
@@ -87,47 +70,45 @@ class Invar {
    friend std::istream &operator>>(std::istream &is, Invar &invar) { return invar.extractor(is); }
    bool operator==(const Invar &invar2) const { return data == invar2.data; }
    bool operator!=(const Invar &invar2) const { return !operator==(invar2); }
-   bool operator<(const Invar &invar2) const { return data < invar2.data; }
+   bool operator<(const Invar &invar2)  const { return data < invar2.data; }
    // Accessor needed, because data is private.
-   int getqn(size_t i) const {
+   int getqn(const size_t i) const {
      my_assert(i < data.size());
      return data[i];
    }
-
    // Quantum number addition laws for forming tensor products. For SU(2) and U(1) (additive quantum numbers) this is
    // simply addition.
    void combine(const Invar &invar2) {
-     for (size_t i = 0; i < invdim; i++) switch (qntype[i]) {
-     case additive:
-       data[i] += invar2.getqn(i); // Additive
-       break;
-     case multiplicative:
-       my_assert(data[i] == 1 || data[i] == -1);
-       data[i] *= invar2.getqn(i); // Multiplicative
-       break;
-     case mod3:
-       my_assert(0 <= data[i] && data[i] <= 2);
-       data[i] += invar2.getqn(i); // Modulo 3 additive
-       data[i] = data[i] % 3;
-       break;
-     default: my_assert_not_reached();
+     for (size_t i = 0; i < invdim; i++) {
+       switch (qntype[i]) {
+       case additive:
+         data[i] += invar2.getqn(i); // Additive
+         break;
+       case multiplicative:
+         my_assert(data[i] == 1 || data[i] == -1);
+         data[i] *= invar2.getqn(i); // Multiplicative
+         break;
+       case mod3:
+         my_assert(0 <= data[i] && data[i] <= 2);
+         data[i] += invar2.getqn(i); // Modulo 3 additive
+         data[i] = data[i] % 3;
+         break;
+       default: my_assert_not_reached();
+       }
      }
    }
-   // In DMNRG runs, we must perform the "inverse of the quantum
-   // number addition", i.e. find subspaces that an invariant
-   // subspaces contributed *to*.
+   // In DMNRG runs, we must perform the "inverse of the quantum number addition", i.e. find subspaces that an
+   // invariant subspaces contributed *to*.
    void inverse() {
      for (size_t i = 0; i < invdim; i++) 
        switch (qntype[i]) {
        case additive:
-         // For SU(2) and U(1) related quantum numbers, we just flip
-         // the sign.
+         // For SU(2) and U(1) related quantum numbers, we just flip the sign.
          data[i] = -data[i];
          break;
        case multiplicative:
          my_assert(data[i] == 1 || data[i] == -1);
-         // do nothing since multiplication and division are
-         // equivalent! In principle, data[i] = 1/data[i].
+         // do nothing since multiplication and division are equivalent! In principle, data[i] = 1/data[i].
          break;
        case mod3:
          my_assert(0 <= data[i] && data[i] <= 2);
@@ -140,10 +121,10 @@ class Invar {
    int get(const std::string &which) const {
      const auto i = name.find(which);
      if (i == end(name)) throw std::invalid_argument(fmt::format("{} is an unknown quantum number.", which));
-     const size_t index = i->second;
+     const auto index = i->second;
      my_assert(index < invdim);
-     const int type = qntype[index];
-     const int f    = getqn(index);
+     const auto type = qntype[index];
+     const auto f    = getqn(index);
      // Sanity check
      switch (type) {
      case multiplicative: my_assert(f == 1 || f == -1); break;

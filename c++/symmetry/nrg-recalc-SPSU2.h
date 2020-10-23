@@ -27,7 +27,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
-      Sspin ss1 = I1.get("SS");
+      int ss1 = I1.get("SS");
       Invar Ip;
 
       Ip = Invar(ss1 + 1);
@@ -114,7 +114,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
     }
   } else {
     for(const auto &[I1, eig]: diag) {
-      Sspin ss1 = I1.get("SS");
+      int ss1 = I1.get("SS");
       Invar Ip;
 
       Ip = Invar(ss1 + 1);
@@ -154,7 +154,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
   my_assert(!P.substeps);
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Sspin ssp = Ip.get("SS");
+    int ssp = Ip.get("SS");
     Invar I1;
 
     I1 = Invar(ssp + 1);
@@ -323,7 +323,7 @@ OpchChannel<SC> SymmetrySPSU2<SC>::recalc_irreduc_substeps(const Step &step, con
   my_assert(P.substeps);
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Sspin ssp = Ip.get("SS");
+    int ssp = Ip.get("SS");
     Invar I1;
 
     I1 = Invar(ssp + 1);
@@ -362,7 +362,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
-      Sspin ss1 = I1.get("SS");
+      int ss1 = I1.get("SS");
       Invar Ip;
 
       Ip = Invar(ss1);

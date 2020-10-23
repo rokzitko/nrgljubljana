@@ -26,8 +26,8 @@ template<typename SC>
 Opch<SC> SymmetryQSLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
-    Number qp = Ip.get("Q");
-    Sspin ssp = Ip.get("SS");
+    int qp = Ip.get("Q");
+    int ssp = Ip.get("SS");
     Invar I1;
 
     // NOTE: q,ss only couples to q+1,ss+-1 in general, even for
@@ -159,8 +159,8 @@ template<typename SC>
 MatrixElements<SC> SymmetryQSLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1 = I1.get("Q");
-    Sspin ss1 = I1.get("SS");
+    int q1 = I1.get("Q");
+    int ss1 = I1.get("SS");
     int p1    = I1.get("P");
     Invar Ip;
 
@@ -200,8 +200,8 @@ template<typename SC>
 MatrixElements<SC> SymmetryQSLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
-    Number q1 = I1.get("Q");
-    Sspin ss1 = I1.get("SS");
+    int q1 = I1.get("Q");
+    int ss1 = I1.get("SS");
     int p1    = I1.get("P");
     Invar Ip;
 
