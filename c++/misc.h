@@ -4,6 +4,9 @@
 #ifndef _misc_h_
 #define _misc_h_
 
+#include <string>
+#include <optional>
+
 template<typename T> auto get_back(T &d) { // usually T is list or deque
   my_assert(!d.empty());
   auto i = d.back();
@@ -18,7 +21,6 @@ template<typename T> auto get_front(T &d) {
   return i;
 }
 
-// XXX
 // Conversion functions
 template <class T> 
 inline T fromstring(const std::string &str) {
@@ -28,8 +30,10 @@ inline T fromstring(const std::string &str) {
   } catch (boost::bad_lexical_cast &) { throw std::runtime_error(fmt::format("Lexical cast [{}] failed.", str)); }
   return result;
 }
+
 template <> 
 inline bool fromstring(const std::string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
+
 // for T=int, std::to_string is used
 template <class T> 
 inline std::string to_string(const T val) { return boost::lexical_cast<std::string>(val); }
@@ -44,48 +48,46 @@ inline T switch3(const T1 x0, const T1 x1, const T y1, const T1 x2, const T y2, 
 }
 
 // Get next line from stream F, skipping empty lines and comments.
-inline std::string getnextline(std::ifstream &F) {
+inline std::optional<std::string> nextline(std::ifstream &F) {
   std::string line;
   while (F) {
     std::getline(F, line);
-    if (!F) // bail out
-      break;
-    if (line.length() == 0) // skip empty lines
-      continue;
-    if (line[0] == '#') // skip comment lines
-      continue;
+    if (!F) return std::nullopt;       // bail out
+    if (line.length() == 0) continue;  // skip empty lines
+    if (line[0] == '#') continue;      // skip comment lines
     return line;
   }
-  return ""; // error
+  return std::nullopt;                 // error
 }
 
-inline void strip_trailing_whitespace(std::string &s) {
-  std::string::reverse_iterator it = s.rbegin();
+inline std::string strip_trailing_whitespace(std::string in) {
+  auto s(in);
+  auto it = s.rbegin();
   while (it != s.rend() && isspace(*it)) {
     s.erase(--it.base());
     it = s.rbegin();
   }
+  return s;
 }
 
 // Parse a block of "keyword=value" lines.
 inline auto parse_block(std::ifstream &F) {
   std::map<std::string, std::string> parsed_params; 
   while (F) {
-    std::string line = getnextline(F);
-    if (!F) break;
-    if (line[0] == '[') // new block, we're done!
-      break;
-    std::string::size_type pos_eq = line.find_first_of('=');
-    if (pos_eq == std::string::npos) // not found
-      continue;
-    const std::string keyword = line.substr(0, pos_eq);
-    std::string value         = line.substr(pos_eq + 1);
-    // Important: Strip trailing whitespace to avoid hard-to-detect problems!
-    // (Note: INI parsers do this by convention!)
-    strip_trailing_whitespace(value);
-    if (parsed_params.count(keyword))
-      throw std::runtime_error("Duplicate keyword: " + keyword);
-    parsed_params[keyword] = value;
+    if (const auto l = nextline(F)) {
+      const auto line = l.value();
+      if (line[0] == '[') // new block, we're done!
+        break;
+      const auto pos_eq = line.find_first_of('=');
+      if (pos_eq == std::string::npos) // not found
+        continue;
+      const std::string keyword = line.substr(0, pos_eq);
+      // Important: Strip trailing whitespace to avoid hard-to-detect problems!
+      const std::string value   = strip_trailing_whitespace(line.substr(pos_eq+1));
+      if (parsed_params.count(keyword))
+        throw std::runtime_error("Duplicate keyword: " + keyword);
+      parsed_params[keyword] = value;
+    }
   }
   return parsed_params;
 }
@@ -96,11 +98,10 @@ inline bool find_block(std::ifstream &F, const std::string &s) {
   F.clear();
   F.seekg(0, std::ios::beg);
   while (F) {
-    std::string line;
-    std::getline(F, line);
-    if (F && target.compare(line) == 0) { break; }
+    if (auto l = nextline(F))
+      if(target.compare(l.value()) == 0) { return true; }
   }
-  return !F.fail(); // True if found.
+  return false;
 }
 
 // Parse the [param] block of an input file.
