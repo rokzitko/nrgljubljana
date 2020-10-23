@@ -1,6 +1,11 @@
 #ifndef _mk_sym_h_
 #define _mk_sym_h_
 
+#include <memory>
+#include <string>
+#include "params.h"
+#include "symmetry.h"
+
 #include "sym-QS.h"
 #include "sym-QSZ.h"
 
@@ -76,6 +81,18 @@ std::unique_ptr<Symmetry<S>> get(const std::string &sym_string, const Params &P,
   }
 #endif 
   throw std::runtime_error("Unknown symmetry " + sym_string);
+}
+
+// Called immediately after parsing the information about the number of channels from the data file. This ensures
+// that Invar can be parsed correctly.
+template <typename S>
+std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P, Stats<S> &stats) {
+  my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
+  std::cout << "SYMMETRY TYPE: " << P.symtype.value() << std::endl;
+  auto Sym = get<S>(P.symtype.value(), P, stats.td.allfields);
+  Sym->load();
+  Sym->erase_first();
+  return Sym;
 }
 
 #endif

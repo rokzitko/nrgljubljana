@@ -180,4 +180,16 @@ struct sortfirst {
 template<typename T> auto range0(const T b) { return boost::irange(T{0}, b); }
 template<typename T> auto range1(const T b) { return boost::irange(T{1}, b+1); }
 
+// Returns true if the data file contains complex values
+inline bool complex_data(const std::string filename = "data") {
+  std::ifstream F(filename);
+  if (!F) throw std::runtime_error("Can't load initial data.");
+  std::string l;
+  std::getline(F, l);
+  std::getline(F, l);
+  std::getline(F, l); // third line
+  const auto pos = l.find("COMPLEX"); 
+  return pos != std::string::npos;
+} 
+
 #endif

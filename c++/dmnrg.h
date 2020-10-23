@@ -4,6 +4,29 @@
 #ifndef _dmnrg_h_
 #define _dmnrg_h_
 
+// Check if the trace of the density matrix equals 'ref_value'.
+template<typename S>
+void check_trace_rho(const DensMatElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, const double ref_value = 1.0) {
+  if (!num_equal(m.trace(Sym->multfnc()), ref_value))
+    throw std::runtime_error("check_trace_rho() failed");
+}
+
+// Calculate rho_N, the density matrix at the last NRG iteration. It is
+// normalized to 1. Note: in CFS approach, we consider all states in the
+// last iteration to be "discarded".
+// For the details on the full Fock space approach see:
+// F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
+// F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
+// R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
+template<typename S>
+auto init_rho(const Step &step, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym) {
+  DensMatElements<S> rho;
+  for (const auto &[I, eig]: diag)
+    rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step, diag, Sym);
+  check_trace_rho(rho, Sym);
+  return rho;
+}
+
 // Calculation of the contribution from subspace I1 of rhoN (density matrix at iteration N) to rhoNEW (density matrix
 // at iteration N-1)
 template<typename S>
