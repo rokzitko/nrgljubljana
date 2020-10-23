@@ -75,7 +75,7 @@ inline bool file_exists(const std::string &fn)
 // Returns true if all the required density matrices are already saved on the disk.
 inline bool already_computed(const std::string &prefix, const Params &P) {
   for (auto N = P.Nmax - 1; N > P.Ninit; N--) {
-    const std::string fn = P.workdir.rhofn(prefix, N - 1); // note the minus 1
+    const std::string fn = P.workdir.rhofn(N-1, prefix); // note the minus 1
     if (!file_exists(fn)) {
       std::cout << fn << " not found. Computing." << std::endl;
       return false;

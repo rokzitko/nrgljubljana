@@ -4,33 +4,36 @@
 #include <memory>
 #include <string>
 using namespace std::string_literals;
+#include <optional>
 #include <cstring> // strncpy
 #include <cstdlib> // mkdtemp, getenv
 #include "portabil.h" // remove(std::string)
 
 inline const auto default_workdir{"."s};
 
+// create a unique directory
+inline auto dtemp(const std::string &path)
+{
+  const auto workdir_template = path + "/XXXXXX";
+  const auto len = workdir_template.length()+1;
+  auto x = std::make_unique<char[]>(len);
+  strncpy(x.get(), workdir_template.c_str(), len);
+  char *w = mkdtemp(x.get());
+  return w ? std::optional<std::string>(w) : std::nullopt;
+}  
+
 class Workdir {
  private:
-   std::string workdir {};
+   const std::string workdir {};
    bool remove_at_exit {true}; // XXX: tie to P.removefiles?
-
  public:
-   Workdir(const std::string &dir) {
-     const auto workdir_template = dir + "/XXXXXX";
-     const auto len = workdir_template.length()+1;
-     auto x = std::make_unique<char[]>(len);
-     strncpy(x.get(), workdir_template.c_str(), len);
-     if (char *w = mkdtemp(x.get())) // create a unique directory
-       workdir = w;
-     else
-       workdir = default_workdir;
+   Workdir(const std::string &dir) : workdir(dtemp(dir).value_or(default_workdir)) {
      std::cout << "workdir=" << workdir << std::endl << std::endl;
    }
-   std::string rhofn(const std::string &fn, const int N) const {  // density matrix files
-     return workdir + "/" + fn + std::to_string(N); 
+   std::string rhofn(const int N, const std::string &filename) const {  // density matrix files
+     return workdir + "/" + filename + std::to_string(N); 
    }
-   std::string unitaryfn(size_t N, const std::string &filename = "unitary"s) const { // eigenstates files
+   std::string unitaryfn(const int N, const std::string &filename = "unitary"s) const { // eigenstates files
      return workdir + "/" + filename + std::to_string(N); 
    }
    void remove() {
