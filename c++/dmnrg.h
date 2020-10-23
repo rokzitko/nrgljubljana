@@ -28,16 +28,9 @@ void cdmI(const size_t i,        // Subspace index
   const auto rmax = dm[N].at(I1).rmax.rmax(i);
   if (rmax == 0) return;    // rmax can be zero in the case a subspace has been completely truncated
   my_assert(rmax == dim);   // Otherwise, rmax must equal dim
-  // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match? We do this test at
-  // this point, to ensure rmax!=0 and dim!=0 and nromega!=0, otherwise there is no contribution anyway.
-  const auto I1nr = diagI1.getnrstored();
-  my_assert(nromega <= I1nr);
-  // offset gives the offset that is added to r1,rp to find the elements ri in U^N_I1(omega|ri)
-  const auto offset = dm[N].at(I1).rmax.offset(i);
-  const auto dim1   = diagI1.matrix.size1();
-  const auto dim2   = diagI1.matrix.size2();
-  my_assert(nromega <= dim1 && offset + dim <= dim2);
-  const ublas::matrix_range<const typename traits<S>::Matrix> U(diagI1.matrix, ublas::range(0, nromega), ublas::range(offset, offset + dim));
+  // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match?
+  my_assert(nromega == diagI1.getnrstored());
+  const ublas::matrix_range<const typename traits<S>::Matrix> U(diagI1.matrix, ublas::range(0, nromega), dm[N].at(I1).rmax.ubview(i));
   typename traits<S>::Matrix T(dim, nromega);
   using t_coef = typename traits<S>::t_coef;
   atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, rhoN, t_coef(0.0), T);    // T <- U^dag rhoN
