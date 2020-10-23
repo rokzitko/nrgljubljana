@@ -6,7 +6,6 @@
 
 #ifdef MKL
 #include <mkl_service.h>
-#include <mkl_types.h>
 #endif
 
 // Report OpenMP parallelization settings

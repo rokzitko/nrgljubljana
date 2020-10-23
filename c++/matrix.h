@@ -70,14 +70,14 @@ void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const siz
 }
 
 template<typename S>
-void Symmetry<S>::diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
+void Symmetry<S>::diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                                      Matrix &h, const Rmaxvals &qq) const 
 {
   diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 1);
 }
 
 template<typename S>
-void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
+void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                                           Matrix &h, const Rmaxvals &qq) const 
 {
   diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 0.5);
@@ -86,7 +86,7 @@ void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const siz
 // +++ Shift the offdiagonal matrix elements by factor. +++
 
 template<typename S>
-void Symmetry<S>::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor, 
+void Symmetry<S>::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor,
                                              Matrix &h, const Rmaxvals &qq) const 
 {
   my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());

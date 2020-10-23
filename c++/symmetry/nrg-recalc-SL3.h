@@ -35,12 +35,10 @@ MatrixElements<SC> SymmetrySL3<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "sl3/sl3-3ch-doublet.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 0, 0));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 0, 0));
     }
   }
 };
@@ -64,12 +62,10 @@ Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &d
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f<SC>> recalc_table = {
+      std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "sl3/sl3-3ch-a.dat"
-        };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
-      }();
+      };
+      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
     }
   }
 };
@@ -80,12 +76,10 @@ Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &d
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f<SC>> recalc_table = {
+      std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "sl3/sl3-3ch-b.dat"
-        };
-        opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
-      }();
+      };
+      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
     }
   }
 };
@@ -96,12 +90,10 @@ Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &d
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f<SC>> recalc_table = {
+      std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "sl3/sl3-3ch-c.dat"
-        };
-        opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
-      }();
+      };
+      opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
     }
   }
 };

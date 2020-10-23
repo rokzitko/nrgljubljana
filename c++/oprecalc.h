@@ -64,7 +64,6 @@ class Oprecalc {
      }
 
    // Recalculate operator matrix representations
-   ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
    void recalculate_operators(IterInfo<S> &a, const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
        mt.time_it("recalc");
        for (auto &[name, m] : a.ops)

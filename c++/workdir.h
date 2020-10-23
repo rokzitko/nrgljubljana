@@ -21,7 +21,7 @@ inline auto dtemp(const std::string &path)
   strncpy(x.get(), workdir_template.c_str(), len);
   char *w = mkdtemp(x.get());
   return w ? std::optional<std::string>(w) : std::nullopt;
-}  
+}
 
 inline int remove(const std::string &filename) { return remove(filename.c_str()); }
 
@@ -34,10 +34,10 @@ class Workdir {
      std::cout << "workdir=" << workdir << std::endl << std::endl;
    }
    std::string rhofn(const int N, const std::string &filename) const {  // density matrix files
-     return workdir + "/" + filename + std::to_string(N); 
+     return workdir + "/" + filename + std::to_string(N);
    }
    std::string unitaryfn(const int N, const std::string &filename = "unitary"s) const { // eigenstates files
-     return workdir + "/" + filename + std::to_string(N); 
+     return workdir + "/" + filename + std::to_string(N);
    }
    void remove() {
      if (workdir != "")

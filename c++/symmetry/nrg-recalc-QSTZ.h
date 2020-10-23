@@ -42,12 +42,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletp-1.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
     }
   }
 };
@@ -58,12 +56,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletm-1.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
     }
   }
 };
@@ -74,12 +70,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletp0.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
     }
   }
 };
@@ -90,12 +84,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletm0.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
     }
   }
 };
@@ -106,12 +98,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletp+1.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
     }
   }
 };
@@ -122,12 +112,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletm+1.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
     }
   }
 };
@@ -159,12 +147,10 @@ Opch<SC> SymmetryQSTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f<SC>> recalc_table = {
+      std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qstz/qstz-spinup+1.dat"
-        };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
-      }();
+      };
+      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
     }
   }
 };
@@ -175,12 +161,10 @@ Opch<SC> SymmetryQSTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f<SC>> recalc_table = {
+      std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qstz/qstz-spinup0.dat"
-        };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
-      }();
+      };
+      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
     }
   }
 };
@@ -191,12 +175,10 @@ Opch<SC> SymmetryQSTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f<SC>> recalc_table = {
+      std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qstz/qstz-spinup-1.dat"
-        };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
-      }();
+      };
+      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
     }
   }
 };
@@ -207,12 +189,10 @@ Opch<SC> SymmetryQSTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f<SC>> recalc_table = {
+      std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qstz/qstz-spindo+1.dat"
-        };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
-      }();
+      };
+      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
     }
   }
 };
@@ -223,12 +203,10 @@ Opch<SC> SymmetryQSTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f<SC>> recalc_table = {
+      std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qstz/qstz-spindo0.dat"
-        };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
-      }();
+      };
+      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
     }
   }
 };
@@ -239,12 +217,10 @@ Opch<SC> SymmetryQSTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc_f<SC>> recalc_table = {
+      std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qstz/qstz-spindo-1.dat"
-        };
-        opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
-      }();
+      };
+      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
     }
   }
 };
@@ -267,12 +243,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-triplets.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
     }
   }
 };
@@ -283,12 +257,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-tripletp.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
     }
   }
 };
@@ -299,12 +271,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
   auto II = Twoinvar(I1, Ip);
   if (diag.count(I1) && diag.count(Ip)) {
     if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      [&]() ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO { 
-        std::initializer_list<Recalc<SC>> recalc_table = {
+      std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-tripletm.dat"
-        };
-        cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
-      }(); // immediately executed lambda
+      };
+      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
     }
   }
 };
