@@ -206,7 +206,7 @@ public:
   }
   auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements
     const auto dim = getnrstored();
-    typename traits<S>::Matrix m(dim, dim, 0);
+    auto m = Zero_matrix<S>(dim);
     for (const auto i: range0(dim)) 
       m(i, i) = exp(-value_zero(i) * factor);
     return m;
@@ -1531,11 +1531,11 @@ typename traits<S>::Matrix prepare_task_for_diag(const Step &step, const Invar &
                                                  const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev, Sym};
-  typename traits<S>::Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
+  auto h = Zero_matrix<S>(rm.total());
   for (const auto i : Sym->combs()) {
     const auto range = rm.view(i);
     for (const auto & [n, r] : range | ranges::views::enumerate)
-      h(r,r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(n);
+      h(r,r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(n); // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   }
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);

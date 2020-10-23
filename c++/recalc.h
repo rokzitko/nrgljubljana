@@ -13,14 +13,8 @@ inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const QSrmax &qsr
   my_assert(nr > 0);
   my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
   for (const auto block: range0(combs)) {
-    const auto rmax   = qsrmax.at(I).rmax(block);
-    const auto offset = qsrmax.at(I).offset(block);
-    my_assert(e.matrix.size1() >= nr);
-    my_assert(e.matrix.size2() >= offset + rmax);
-    ublas::matrix_range<typename traits<S>::Matrix> Up(e.matrix, ublas::range(0, nr), ublas::range(offset, offset + rmax));
+    ublas::matrix_range<typename traits<S>::Matrix> Up(e.matrix, ublas::range(0, nr), qsrmax.at(I).ubview(block));
     e.blocks[block] = Up;
-    my_assert(e.blocks[block].size1() == nr);
-    my_assert(e.blocks[block].size2() == rmax);
   }
   e.matrix = typename traits<S>::Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!
 }

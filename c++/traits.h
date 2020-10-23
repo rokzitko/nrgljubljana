@@ -28,4 +28,12 @@ template <> struct traits<cmpl> {
 inline cmpl conj_me(const cmpl &z) { return conj(z); } // conjugation
 inline double conj_me(const double x) { return x; }    // no op
 
+template<typename S>
+auto Zero_matrix(const size_t size1, const size_t size2) {
+  return typename traits<S>::Matrix(size1, size2, 0);
+}
+
+template<typename S>
+auto Zero_matrix(const size_t size) { return Zero_matrix<S>(size, size); }
+
 #endif
