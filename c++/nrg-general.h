@@ -1532,9 +1532,11 @@ typename traits<S>::Matrix prepare_task_for_diag(const Step &step, const Invar &
   const auto anc = Sym->ancestors(I);
   const Rmaxvals rm{I, anc, diagprev, Sym};
   typename traits<S>::Matrix h(rm.total(), rm.total(), 0);   // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
-  for (const auto i : Sym->combs())
-    for (const auto r : range0(rm.rmax(i)))
-      h(rm.offset(i) + r, rm.offset(i) + r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(r);
+  for (const auto i : Sym->combs()) {
+    const auto range = rm.view(i);
+    for (const auto & [n, r] : range | ranges::views::enumerate)
+      h(r,r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero(n);
+  }
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
   return h;
