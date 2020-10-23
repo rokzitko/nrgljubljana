@@ -6,7 +6,6 @@ test301_DBLSU2
 test302_DBLISOSZ
 test303_P
 test304_PP
-test304_PP_more
 test305_SPSU2LR
 test306_SPU1LR
 test307_SU2
@@ -30,12 +29,10 @@ legacy_dblsu2_2
 legacy_discretization_dmft_asym_U1-polarized
 legacy_globalop_Q1Q2-QS
 legacy_globalop_Q1Q2-SPSU2
-legacy_globalop_SZtot1
 legacy_iso2
 legacy_iso2_kondo1
 legacy_iso2lr
 legacy_isolr
-legacy_isosz_isosz1
 legacy_isosz_isosz2
 legacy_isoszlr1
 legacy_none_none1
@@ -44,7 +41,6 @@ legacy_p_p1
 legacy_pp_pp5
 legacy_qslr
 legacy_qs_nrg3ch
-legacy_qs_qs4ch-1
 legacy_qszlr
 legacy_sl1
 legacy_sl2

@@ -11,7 +11,7 @@ if(SYM_ALL)
 endif()
 
 if(TEST_LONG AND SYM_ALL)
-  add_subdirectory(long)
+  add_subdirectory(test_long)
 endif()
 
 add_subdirectory(tools)
