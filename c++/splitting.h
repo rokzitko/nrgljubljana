@@ -4,6 +4,9 @@
 #ifndef _splitting_h_
 #define _splitting_h_
 
+#include <unordered_map>
+#include "traits.h"
+
 template<typename T>
 inline void cluster_show(const T &i0, const T &i1) {
   std::cout << "[";
@@ -29,8 +32,8 @@ class Clusters {
    std::unordered_map<t_eigen, t_eigen> cluster_mapping;
    // Fix splittings of eigenvalues. Returns true if any changes had been made.
    void fix_it(DiagInfo<S> &diag) {
-     for(auto &[I, eig]: diag) { 
-       for (auto &r : eig.value_zero) 
+     for(auto &[I, eig]: diag) {
+       for (auto &r : eig.value_zero)
          if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
            r = m->second;
      }

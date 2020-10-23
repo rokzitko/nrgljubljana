@@ -1,6 +1,11 @@
 #ifndef _subspaces_h_
 #define _subspaces_h_
 
+#include <memory>
+#include <vector>
+#include "eigen.h"
+#include <range/v3/all.hpp>
+
 template<typename S> class Symmetry;
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
@@ -20,7 +25,7 @@ class Rmaxvals {
    }
    auto exists(const size_t i) const {
      my_assert(i < combs());
-     return values[i] > 0; 
+     return values[i] > 0;
    }
    auto offset(const size_t i) const {
      my_assert(i < combs());

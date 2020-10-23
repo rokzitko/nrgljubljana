@@ -1,13 +1,15 @@
 #ifndef _step_h_
 #define _step_h_
 
+#include "params.h"
+
 class Step {
  private:
    // N denotes the order of the Hamiltonian. N=0 corresponds to H_0, i.e. the initial Hamiltonian
    int trueN; // "true N", sets the energy scale, it may be negative, trueN <= ndxN
    size_t ndxN; // "index N", iteration step, used as an array index, ndxN >= 0
    const Params &P; // reference to parameters (beta, T)
-   
+
  public:
    const RUNTYPE runtype; // NRG vs. DM-NRG run
    void set(const int newN) {

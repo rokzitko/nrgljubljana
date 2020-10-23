@@ -1,6 +1,35 @@
 #ifndef _core_h_
 #define _core_h_
 
+#include <set>
+#include <algorithm>
+#include "traits.h"
+#include "invar.h"
+#include "eigen.h"
+#include "operators.h"
+#include "subspaces.h"
+#include "store.h"
+#include "step.h"
+#include "stats.h"
+#include "spectral.h"
+#include "coef.h"
+#include "tridiag.h"
+#include "diag.h"
+#include "symmetry.h"
+#include "matrix.h"
+#include "recalc.h"
+#include "read-input.h"
+#include "spectrum.h"
+#include "algo.h"
+#include "dmnrg.h"
+#include "splitting.h"
+#include "output.h"
+#include "oprecalc.h"
+#include "measurements.h"
+#include "truncation.h"
+
+#include <range/v3/all.hpp>
+
 // Determine the ranges of index r
 template<typename S>
 Rmaxvals::Rmaxvals(const Invar &I, const InvarVec &InVec, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym) {

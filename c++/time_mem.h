@@ -5,7 +5,7 @@
 #include <chrono>
 #include "io.h"
 #include "portabil.h"
-   
+
 // Warning: not thread safe!
 class Timing {
  private:
@@ -59,7 +59,7 @@ class Timing {
        << ": " << prec3((t_all-t_sum).count()) << " s" << std::endl;
    }
 };
-   
+
 // Higher-level timing code: time a section for as long as the object is in scope.
 class TimeScope {
  private:

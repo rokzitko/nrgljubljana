@@ -4,6 +4,14 @@
 #ifndef _portabil_h_
 #define _portabil_h_
 
+#include <stdexcept>
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <cmath> // isfinite
+#include <cstdlib> // exit
+#include <complex>
+
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 #include <boost/stacktrace.hpp>
 
@@ -128,27 +136,6 @@ inline int memoryused() {
 #if !defined(HAS_MEMORY_USAGE)
 inline int memoryused() { return 0; }
 #endif
-
-inline std::ofstream safe_open(const std::string filename, const bool binary = false) {
-  my_assert(filename != "");
-  std::ios::openmode flag = std::ios::out;
-  if (binary) flag |= std::ios::binary;
-  std::ofstream F(filename, flag);
-  if (!F) throw std::runtime_error(fmt::format("Can't open {} for writing", filename));
-  return F;
-}
-
-inline std::ifstream safe_open_for_reading(const std::string filename, const bool binary = false) {
-  my_assert(filename != "");
-  std::ios::openmode flag = std::ios::in;
-  if (binary) flag |= std::ios::binary;
-  std::ifstream F(filename, flag);
-  if (!F) throw std::runtime_error(fmt::format("Can't open {} for reading", filename));
-  return F;
-}
-
-#include <cstdio> // C remove()
-inline int remove(const std::string &filename) { return remove(filename.c_str()); } // C function
 
 #if defined(__clang__) || defined (__GNUC__)
 # define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))

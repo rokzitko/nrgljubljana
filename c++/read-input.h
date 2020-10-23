@@ -1,6 +1,12 @@
 #ifndef _read_input_h_
 #define _read_input_h_
 
+#include "symmetry.h"
+#include "params.h"
+#include "eigen.h"
+#include "operators.h"
+#include "coef.h"
+
 template<typename S>
 class Stats;
 

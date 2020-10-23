@@ -1,6 +1,13 @@
 #ifndef _truncation_h_
 #define _truncation_h_
 
+#include <algorithm> // clamp
+#include "step.h"
+#include "eigen.h"
+#include "params.h"
+#include "symmetry.h"
+#include "debug.h" // nrgdump
+
 // Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.
 template<typename S>
 auto highest_retained_energy(const Step &step, const DiagInfo<S> &diag, const Params &P) {
@@ -56,7 +63,7 @@ void truncate_prepare(const Step &step, DiagInfo<S> &diag, std::shared_ptr<Symme
   std::cout << "Emax=" << Emax/step.unscale() << " ";
   truncate_stats ts(diag, Sym);
   ts.report();
-  if (ranges::any_of(diag, [Emax](const auto &d) { const auto &[I, eig] = d; 
+  if (ranges::any_of(diag, [Emax](const auto &d) { const auto &[I, eig] = d;
     return eig.getnrkept() == eig.getnrcomputed() && eig.value_zero(eig.getnrcomputed()-1) != Emax && eig.getnrcomputed() < eig.getdim(); }))
       throw NotEnough();
   const double ratio = double(ts.nrkept) / ts.nrall;

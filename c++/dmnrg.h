@@ -4,6 +4,25 @@
 #ifndef _dmnrg_h_
 #define _dmnrg_h_
 
+#include <fstream>
+#include <iomanip>
+
+#include "operators.h"
+#include "symmetry.h"
+#include "step.h"
+#include "eigen.h"
+#include "params.h"
+#include "invar.h"
+#include "traits.h"
+#include "store.h"
+#include "time_mem.h"
+
+// Numeric bindings to BLAS/LAPACK
+#include <boost/numeric/bindings/traits/ublas_vector.hpp>
+#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
+#include <boost/numeric/bindings/atlas/cblas.hpp>
+namespace atlas = boost::numeric::bindings::atlas;
+
 // Check if the trace of the density matrix equals 'ref_value'.
 template<typename S>
 void check_trace_rho(const DensMatElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, const double ref_value = 1.0) {
@@ -38,7 +57,7 @@ void cdmI(const size_t i,        // Subspace index
           const size_t N,
           const typename traits<S>::t_coef factor, // multiplicative factor that accounts for multiplicity
           const AllSteps<S> &dm,
-          const Params &P) 
+          const Params &P)
 {
   my_assert(i < P.combs);
   nrglog('D', "cdmI i=" << i << " I1=" << I1 << " factor=" << factor);

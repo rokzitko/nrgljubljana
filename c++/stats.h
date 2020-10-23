@@ -13,18 +13,18 @@ class Stats {
    using t_eigen = typename traits<S>::t_eigen;
    using t_expv  = typename traits<S>::t_expv;
    t_eigen Egs{};
-   
+
    // ** Thermodynamic quantities
    double Z{};
    double Zft{};   // grand-canonical partition function (at shell n)
    double Zgt{};   // grand-canonical partition function for computing G(T)
    double Zchit{}; // grand-canonical partition function for computing chi(T)
    TD td;
-   
+
    //  ** Expectation values
    std::map<std::string, t_expv> expv;    // expectation values of custom operators
    std::map<std::string, t_expv> fdmexpv; // Expectation values computed using the FDM algorithm
-   
+
    // ** Energies
    // "total_energy" is the total energy of the ground state at the current iteration. This is the sum of all the 
    // zero state energies (eigenvalue shifts converted to absolute energies) for all the iteration steps so far.
@@ -35,7 +35,7 @@ class Stats {
    std::vector<double> rel_Egs;        // Values of 'Egs' for all NRG steps.
    std::vector<double> abs_Egs;        // Values of 'Egs' (multiplied by the scale, i.e. in absolute scale) for all NRG steps.
    std::vector<double> energy_offsets; // Values of "total_energy" for all NRG steps.
-   
+
    // ** Containers related to the FDM-NRG approach
    // Consult A. Weichselbaum, J. von Delft, PRL 99, 076402 (2007).
    vmpf ZnDG;                    // Z_n^D=\sum_s^D exp(-beta E^n_s), sum over **discarded** states at shell n

@@ -1,6 +1,23 @@
 #ifndef _output_h_
 #define _output_h_
 
+#include <memory>
+#include <ostream>
+#include <iomanip>
+#include <string>
+#include <map>
+#include <list>
+#include <vector>
+#include "traits.h"
+#include "params.h"
+#include "io.h" // formatted_output
+#include "misc.h" // range1
+#include "step.h"
+#include "stats.h"
+#include "symmetry.h"
+#include <range/v3/all.hpp>
+#include <boost/range/adaptor/map.hpp>
+
 // Formatted output of the computed expectation values
 template<typename S>
 class ExpvOutput {
@@ -25,11 +42,11 @@ class ExpvOutput {
    // Output the current values for the label and for all the fields
    void field_values(const double labelvalue, const bool cout_dump = true) {
      F << ' ' << formatted_output(labelvalue, P) << ' ';
-     std::transform(fields.cbegin(), fields.cend(), std::ostream_iterator<std::string>(F, " "), [this](const auto op) { return formatted_output(m[op], P); });
+     std::transform(fields.cbegin(), fields.cend(), std::ostream_iterator<std::string>(F, " "), [this](const auto op) { return formatted_output(m[op], P); }); // NOTE: only real part stored
      F << std::endl;
      if (cout_dump)
        for (const auto &op: fields)
-         fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op]));
+         fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op])); // NOTE: real and imaginary part shown
    }
    ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m_, 
                    const std::list<std::string> &fields_, const Params &P_) : m(m_), fields(fields_), P(P_) {

@@ -4,6 +4,19 @@
 #ifndef _numerics_h_
 #define _numerics_h_
 
+#include <complex>
+#include <vector>
+#include <fstream>
+#include <range/v3/all.hpp>
+#include <boost/io/ios_state.hpp>
+#include <boost/math/special_functions/sign.hpp>
+
+// Serialization support (used for storing to files and for MPI)
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/complex.hpp>
+
 template <typename T>
   using complex_array_ref_t = T(&)[2];
 
@@ -54,8 +67,8 @@ inline CONSTFNC int my_fcmp(const double x, const double y, const double epsilon
 
 // Test if two numbers are equal to within numerical errors. (Use this for comparing values that are expected to be
 // of order 1.)
-inline CONSTFNC auto num_equal(const double a, const double b, const double check_precision = 1.e-12) { 
-  return my_fcmp(a, b, check_precision) == 0; 
+inline CONSTFNC auto num_equal(const double a, const double b, const double check_precision = 1.e-12) {
+  return my_fcmp(a, b, check_precision) == 0;
 }
 
 inline CONSTFNC auto num_equal(const cmpl &a, const cmpl &b, const double check_precision = 1.e-12) {

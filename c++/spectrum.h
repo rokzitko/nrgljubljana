@@ -1,13 +1,16 @@
 #ifndef _spectrum_h_
 #define _spectrum_h_
 
-enum class gf_type { bosonic, fermionic };
+enum class gf_type { bosonic, fermionic }; // req'd in matsubara.h
 
 // Sign factor in GFs for bosonic/fermionic operators
 inline constexpr auto S_BOSONIC   = +1;
 inline constexpr auto S_FERMIONIC = -1;
 inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC; }
 
+#include <algorithm>
+#include "traits.h"
+#include "params.h"
 #include "bins.h"
 #include "matsubara.h"
 

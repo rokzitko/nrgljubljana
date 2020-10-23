@@ -4,8 +4,39 @@
 #ifndef _diag_h_
 #define _diag_h_
 
+#include <type_traits> // is_same_v
+#include <complex>
+#include <vector>
+#include <memory>
+#include <iostream>
+#include <iomanip>
+#include <stdexcept>
+
+#include "traits.h"
+#include "params.h"
+#include "eigen.h"
+#include "time_mem.h"
+#include "numerics.h" // is_matrix_upper
+
 #define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"
+
+// ublas matrix & vector containers
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/symmetric.hpp>
+#include <boost/numeric/ublas/operation.hpp>
+using namespace boost::numeric;
+using namespace boost::numeric::ublas; // keep this!
+
+// Numeric bindings to BLAS/LAPACK
+#include <boost/numeric/bindings/traits/ublas_vector.hpp>
+#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
+#include <boost/numeric/bindings/atlas/cblas.hpp>
+namespace atlas = boost::numeric::bindings::atlas;
 
 template<typename T, typename V> void copy_val(T* eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
   if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)
@@ -233,7 +264,7 @@ inline Eigen<cmpl> diagonalise_zheevr(ublas::matrix<cmpl> &m, const double ratio
 }
 
 template<typename S>
-void checkdiag(const Eigen<S> &d, 
+void checkdiag(const Eigen<S> &d,
                const double NORMALIZATION_EPSILON = 1e-12,
                const double ORTHOGONALITY_EPSILON = 1e-12)
 {
@@ -263,7 +294,7 @@ template<typename M>
   void dump_eigenvalues(const Eigen<M> &d, const size_t max_nr = std::numeric_limits<size_t>::max())
 {
   std::cout << "eig= ";
-  std::for_each_n(d.value_orig.cbegin(), std::min(d.getnrcomputed(), max_nr), 
+  std::for_each_n(d.value_orig.cbegin(), std::min(d.getnrcomputed(), max_nr),
                   [](const double x) { std::cout << x << ' '; });
   std::cout << std::endl;
 }
@@ -294,7 +325,7 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP,
       d = diagonalise_dsyevr(m, DP.diagratio);
   }
   if constexpr (std::is_same_v<M, std::complex<double>>) {
-    if (DP.diag == "zheev"s || DP.diag == "default"s)  
+    if (DP.diag == "zheev"s || DP.diag == "default"s)
       d = diagonalise_zheev(m);
     if (DP.diag == "zheevr"s) 
       d = diagonalise_zheevr(m, DP.diagratio);

@@ -45,14 +45,12 @@ using namespace std::string_literals;
 #include <iomanip>
 #include <vector>
 #include <map>
-#include <unordered_map>
 #include <list>
 #include <deque>
 #include <set>
 #include <stdexcept>
 
 // C headers
-#include <cassert>
 #include <cmath>
 #include <cfloat>
 #include <climits>
@@ -61,9 +59,6 @@ using namespace std::string_literals;
 
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/map.hpp>
-#include <boost/math/special_functions/sign.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/io/ios_state.hpp>
 #include <boost/optional.hpp>
 
 // ublas matrix & vector containers
@@ -86,13 +81,10 @@ namespace atlas = boost::numeric::bindings::atlas;
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/complex.hpp>
 
 // MPI support
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
-#include <boost/mpi/collectives.hpp>
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
@@ -112,18 +104,18 @@ using namespace fmt::literals;
 #define CONSTFNC
 #endif
 
-#include "nrg-general.h"
 #include "nrg-lib.h" // exposed interfaces for wrapping into a library
 #include "portabil.h"
 #include "debug.h"
+#include "basicio.h"
 #include "misc.h"
 #include "openmp.h"
 #include "mp.h"
 #include "traits.h"
 #include "workdir.h"
 #include "params.h"
-#include "numerics.h"
 #include "io.h"
+#include "numerics.h"
 #include "time_mem.h"
 #include "outfield.h"
 
@@ -139,29 +131,6 @@ using namespace fmt::literals;
 inline const size_t MAX_NDX = 1000; // max index number
 inline const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 
-#include "invar.h"
-#include "eigen.h"
-#include "operators.h"
-#include "subspaces.h"
-#include "store.h"
-#include "step.h"
-#include "stats.h"
-#include "spectral.h"
-#include "coef.h"
-#include "tridiag.h"
-#include "diag.h"
-#include "symmetry.h"
-#include "matrix.h"
-#include "recalc.h"
-#include "read-input.h"
-#include "spectrum.h"
-#include "algo.h"
-#include "dmnrg.h"
-#include "splitting.h"
-#include "output.h"
-#include "oprecalc.h"
-#include "measurements.h"
-#include "truncation.h"
 #include "core.h"
 #include "mk_sym.h"
 
@@ -205,7 +174,7 @@ public:
       }
       if (P.need_rhoFDM()) {
         calc_ZnD(dm, stats, Sym, P.T);
-        if (P.logletter('w')) 
+        if (P.logletter('w'))
           report_ZnD(stats, P);
         fdm_thermodynamics(dm, stats, Sym, P.T);
         auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, Sym, P.T);

@@ -4,6 +4,12 @@
 #ifndef _spectral_h_
 #define _spectral_h_
 
+#include <utility>
+#include <vector>
+#include <cmath>
+#include "traits.h"
+#include <range/v3/all.hpp>
+
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
 template<typename S>
 using t_delta_peak = std::pair<double, typename traits<S>::t_weight>;
@@ -63,8 +69,8 @@ CONSTFNC auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int m
   return sumA+sumB;
 }
 
-inline CONSTFNC double fermi_fnc(const double omega, const double T) { 
-  return 1 / (1 + exp(-omega / T)); 
+inline CONSTFNC double fermi_fnc(const double omega, const double T) {
+  return 1 / (1 + exp(-omega / T));
 }
 
 inline CONSTFNC double bose_fnc(const double omega, const double T) {

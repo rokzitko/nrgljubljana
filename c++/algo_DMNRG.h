@@ -1,6 +1,8 @@
 #ifndef _algo_DMNRG_h_
 #define _algo_DMNRG_h_
 
+#include "algo.h"
+
 // OPTIMIZATION NOTE: the inner loop should involve the last index.
 
 template<typename S>

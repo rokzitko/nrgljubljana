@@ -4,6 +4,11 @@
 #ifndef _outfield_h_
 #define _outfield_h_
 
+#include <vector>
+#include <string>
+#include <fstream>
+#include "params.h"
+
 class outfield;
 using Allfields = std::vector<outfield*>;
 
@@ -30,10 +35,9 @@ class outfield {
    void putvalue(std::ostream &F) const  { F << std::setw(P.width_td) << value << " "; }
 };
 
-// Setup output fields that will appear in the file "td".
-// Additional elements are defined in symmetry.cc.
+// Setup output fields that will appear in the file "td". Additional elements are defined in sym* files.
 struct TD {
-  Allfields allfields;
+  Allfields allfields; // thermodynamic quantities
   const Params &P;
   const std::string filename;
   std::ofstream O;

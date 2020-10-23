@@ -4,8 +4,19 @@
 #ifndef _misc_h_
 #define _misc_h_
 
+#include <stdexcept>
 #include <string>
 #include <optional>
+#include <deque>
+#include <list>
+#include <fstream>
+#include <cstring> // stdcasecmp
+
+#include <boost/range/irange.hpp>
+#include <boost/lexical_cast.hpp>
+
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 
 template<typename T> auto get_back(T &d) { // usually T is list or deque
   my_assert(!d.empty());
@@ -22,8 +33,8 @@ template<typename T> auto get_front(T &d) {
 }
 
 // Conversion functions
-template <class T> 
-inline T fromstring(const std::string &str) {
+template <class T>
+inline T from_string(const std::string &str) {
   T result;
   try {
     result = boost::lexical_cast<T>(str);
@@ -31,15 +42,15 @@ inline T fromstring(const std::string &str) {
   return result;
 }
 
-template <> 
-inline bool fromstring(const std::string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
+template <>
+inline bool from_string(const std::string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
 
 // for T=int, std::to_string is used
-template <class T> 
+template <class T>
 inline std::string to_string(const T val) { return boost::lexical_cast<std::string>(val); }
 
 // switch statement with three cases
-template <typename T, typename T1> 
+template <typename T, typename T1>
 inline T switch3(const T1 x0, const T1 x1, const T y1, const T1 x2, const T y2, const T1 x3, const T y3) {
   if (x0 == x1) return y1;
   if (x0 == x2) return y2;
@@ -72,7 +83,7 @@ inline std::string strip_trailing_whitespace(std::string in) {
 
 // Parse a block of "keyword=value" lines.
 inline auto parse_block(std::ifstream &F) {
-  std::map<std::string, std::string> parsed_params; 
+  std::map<std::string, std::string> parsed_params;
   while (F) {
     if (const auto l = nextline(F)) {
       const auto line = l.value();

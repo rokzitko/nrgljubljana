@@ -4,6 +4,9 @@
 #ifndef _debug_h_
 #define _debug_h_
 
+#include <iostream>
+#include <cstdlib> // exit
+
 // Non-recoverable error or explicit request to stop at some calculation stage
 #define exit1(...)                                                                                                                                   \
   {                                                                                                                                                  \

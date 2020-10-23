@@ -1,6 +1,7 @@
 #ifndef _openmp_h_
 #define _openmp_h_
 
+#include <iostream>
 #include <omp.h>
 
 #ifdef MKL

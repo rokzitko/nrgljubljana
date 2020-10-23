@@ -5,6 +5,8 @@
 #define _tridiag_h_
 
 #include "mp.h"
+#include "coef.h"
+#include "params.h"
 
 template<typename S>
 class Tridiag {
@@ -16,7 +18,7 @@ class Tridiag {
      for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha, coef);
    }
 };
-   
+
 // Fix normalization of u_{n,m}, v_{n,m} to 1. IMPORTANT: pass by reference!
 inline void fix_norm(vmpf &up, vmpf &um, const unsigned int mMAX) {
   // Constants

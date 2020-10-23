@@ -4,6 +4,17 @@
 #ifndef _param_h_
 #define _param_h_
 
+#include <utility>
+#include <list>
+#include <string>
+using namespace std::string_literals;
+#include <cmath>
+#include "misc.h" // from_string, parsing code
+#include "workdir.h"
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+
 enum class RUNTYPE { NRG, DMNRG }; // First or second sweep? Used in class Step.
 
 inline const auto fn_rho {"rho"s};
@@ -38,7 +49,7 @@ class param : public parambase {
    // documentation and defaultv is a string containing a default value which is immediately parsed.
    param(const std::string &keyword, const std::string &desc, const std::string &defaultv, std::list<parambase*> &allparams) :
      parambase(keyword, desc, defaultv) {
-       data = fromstring<T>(_value);
+       data = from_string<T>(_value);
        for (auto &i : allparams)
          if (i->getkeyword() == keyword) throw std::runtime_error("param class internal error: keyword conflict.");
        allparams.push_back((parambase *)this);
@@ -49,7 +60,7 @@ class param : public parambase {
    inline T value() const { return data; }
    void setvalue_str(std::string newvalue) override {
      _value     = newvalue;
-     data       = fromstring<T>(newvalue);
+     data       = from_string<T>(newvalue);
      defaultval = false;
    }
    void setvalue(const T newdata) { data = newdata; }

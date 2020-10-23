@@ -1,6 +1,8 @@
 #ifndef _algo_CFS_h_
 #define _algo_CFS_h_
 
+#include "algo.h"
+
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 // Based on the implementation by Markus Greger.
 

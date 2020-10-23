@@ -1,8 +1,14 @@
 #ifndef _measurements_h_
 #define _measurements_h_
 
+#include "step.h"
+#include "eigen.h"
+#include "operators.h"
+#include "symmetry.h"
+#include "traits.h"
+
 template<typename S>
-CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo<S> &diag, 
+CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo<S> &diag,
                                  const MatrixElements<S> &n, std::shared_ptr<Symmetry<S>> Sym) {
   typename traits<S>::t_matel tr{};
   for (const auto &[I, eig] : diag) {
@@ -18,7 +24,7 @@ CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo<S> &diag,
 
 // Measure thermodynamic expectation values of singlet operators
 template<typename S>
-void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a, 
+void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a,
                             Output<S> &output, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   const auto Z = ranges::accumulate(diag, 0.0, [&Sym, &step](auto total, const auto &d) { const auto &[I, eig] = d;
     return total + Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0,
@@ -33,13 +39,13 @@ T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const siz
 {
   T sum{};
   for (const auto i : range0(range))
-       for (const auto j : range0(range)) 
+       for (const auto j : range0(range))
       sum += A(i, j) * B(j, i);
   return sum;
 }
 
 template<typename S>
-CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM, 
+CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
                                   const AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym) {
   typename traits<S>::t_matel tr{};
   for (const auto &[I, rhoI] : rhoFDM)
@@ -48,8 +54,8 @@ CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, 
 }
 
 template<typename S>
-void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a, 
-                         Output<S> &output,  const DensMatElements<S> &rhoFDM, 
+void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a,
+                         Output<S> &output,  const DensMatElements<S> &rhoFDM,
                          const AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
   for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
@@ -143,8 +149,8 @@ void fdm_thermodynamics(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<
   mpf_set_d(E, 0.0);
   mpf_set_d(E2, 0.0);
   for (const auto N : dm.Nall())
-    if (stats.wn[N] > 1e-16) 
-      for (const auto &[I, ds] : dm[N]) 
+    if (stats.wn[N] > 1e-16)
+      for (const auto &[I, ds] : dm[N])
         for (const auto i : ds.all()) {
           my_mpf weight;
           mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.absenergyN[i]/T));
@@ -200,8 +206,8 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, Ou
 }
 
 template<typename S>
-void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc, 
-                                 const DiagInfo<S> &diag, const IterInfo<S> &iterinfo, const AllSteps<S> &dm, 
+void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
+                                 const DiagInfo<S> &diag, const IterInfo<S> &iterinfo, const AllSteps<S> &dm,
                                  std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
@@ -216,7 +222,7 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
       rho.load(step.ndx(), P, fn_rho, P.removefiles);
       check_trace_rho(rho, Sym); // Check if Tr[rho]=1, i.e. the normalization
     }
-    if (P.need_rhoFDM()) 
+    if (P.need_rhoFDM())
       rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.removefiles);
   }
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, Sym, mt, P);

@@ -4,6 +4,13 @@
 #ifndef _nrg_invar_h_
 #define _nrg_invar_h_
 
+#include <utility>
+#include <string>
+#include <vector>
+#include <map>
+#include <iostream>
+#include <stdexcept>
+
 // Quantum number types
 using Number = int;
 using Ispin = int;

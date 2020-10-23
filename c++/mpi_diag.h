@@ -1,14 +1,24 @@
 #ifndef _mpi_diag_h_
 #define _mpi_diag_h_
 
-enum TAG : int { TAG_EXIT = 1, TAG_DIAG_DBL, TAG_DIAG_CMPL, TAG_SYNC, TAG_MATRIX, TAG_INVAR, 
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/collectives.hpp> // broadcast
+
+#include "traits.h"
+#include "step.h"
+#include "operators.h"
+#include "symmetry.h"
+#include "params.h"
+
+enum TAG : int { TAG_EXIT = 1, TAG_DIAG_DBL, TAG_DIAG_CMPL, TAG_SYNC, TAG_MATRIX, TAG_INVAR,
                  TAG_MATRIX_SIZE, TAG_MATRIX_LINE, TAG_EIGEN_INT, TAG_EIGEN_VEC };
 
 class MPI {
  private:
    boost::mpi::environment &mpienv;
    boost::mpi::communicator &mpiw;
-   
+
  public:
    MPI(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) : mpienv(mpienv), mpiw(mpiw) {}
    auto myrank() { return mpiw.rank(); } // used in diag.h, time_mem.h
@@ -79,7 +89,7 @@ class MPI {
      my_assert(eig.value_orig.size() == eig.matrix.size1());
      my_assert(eig.matrix.size1() <= eig.matrix.size2());
      return {Irecv, eig};
-   } 
+   }
    // Handle a diagonalisation request
    template<typename S> void slave_diag(const int master, const DiagParams &DP) {
      // 1. receive the matrix and the subspace identification

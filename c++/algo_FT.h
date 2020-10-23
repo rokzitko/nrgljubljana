@@ -1,6 +1,8 @@
 #ifndef _algo_FT_h_
 #define _algo_FT_h_
 
+#include "algo.h"
+
 template<typename S>
 class Algo_FT : public Algo<S> {
  private:

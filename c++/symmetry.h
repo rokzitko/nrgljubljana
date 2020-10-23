@@ -4,7 +4,22 @@
 #ifndef _symmetry_h_
 #define _symmetry_h_
 
-#include "nrg-general.h"
+#include <string>
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include <limits>
+
+#include "nrg-general.h" // ???
+#include "operators.h"
+#include "params.h"
+#include "traits.h"
+#include "operators.h"
+#include "invar.h"
+#include "step.h"
+#include "eigen.h"
+#include "subspaces.h"
+
 
 // Check if the triangle inequality is satisfied (i.e. if Clebsch-Gordan coefficient can be different from zero).
 // This is important, for example, for triplet operators, which are zero when evaluated between two singlet states.
@@ -66,7 +81,7 @@ class Symmetry {
      In.erase(In.begin());
      QN.erase(QN.begin());
    }
-   explicit Symmetry(const Params &P_, const Invar InvarSinglet = {}, const Invar Invar_f = {}) : 
+   explicit Symmetry(const Params &P_, const Invar InvarSinglet = {}, const Invar Invar_f = {}) :
      P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f) {}
    auto input_subspaces() const { return In; }
    auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; }
@@ -80,7 +95,7 @@ class Symmetry {
    size_t nr_combs() const {
      my_assert(P.combs == In.size());
      my_assert(P.combs == QN.size());
-     return P.combs; 
+     return P.combs;
    }
    auto combs() const { return range0(nr_combs()); }
    auto ancestors(const Invar &I) const {
@@ -126,14 +141,14 @@ class Symmetry {
                               Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch<S> &opch) const;
    void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                            Matrix &h, const Rmaxvals &qq, const double f) const;
-   void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta, 
+   void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                       Matrix &h, const Rmaxvals &qq) const;
    void diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                            Matrix &h, const Rmaxvals &qq) const;
    void diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor,
                               Matrix &h, const Rmaxvals &qq) const;
 
-   virtual void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+   virtual void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In,
                             const Opch<S> &opch, const Coef<S> &coef) = 0;
 
    // Called from recalc_dynamicsusceptibility().  This is the factor due
@@ -152,17 +167,17 @@ class Symmetry {
    virtual void calculate_TD(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, const double factor) = 0;
 
    virtual Opch<S> recalc_irreduc(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) { my_assert_not_reached(); }
-   virtual OpchChannel<S> recalc_irreduc_substeps(const Step &step, const DiagInfo<S> &diag, 
+   virtual OpchChannel<S> recalc_irreduc_substeps(const Step &step, const DiagInfo<S> &diag,
                                                        const QSrmax &qsrmax, int M) { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_doublet(const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+   virtual MatrixElements<S> recalc_doublet(const DiagInfo<S> &diag, const QSrmax &qsrmax,
                                                  const MatrixElements<S> &cold) { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_triplet(const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+   virtual MatrixElements<S> recalc_triplet(const DiagInfo<S> &diag, const QSrmax &qsrmax,
                                                  const MatrixElements<S> &cold) { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_orb_triplet(const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+   virtual MatrixElements<S> recalc_orb_triplet(const DiagInfo<S> &diag, const QSrmax &qsrmax,
                                                      const MatrixElements<S> &cold) { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_quadruplet(const DiagInfo<S> &diag, const QSrmax &qsrmax, 
+   virtual MatrixElements<S> recalc_quadruplet(const DiagInfo<S> &diag, const QSrmax &qsrmax,
                                                     const MatrixElements<S> &cold) { my_assert_not_reached(); }
-   virtual void recalc_global(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, std::string name, 
+   virtual void recalc_global(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, std::string name,
                               MatrixElements<S> &cnew) { my_assert_not_reached(); }
 
    // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for

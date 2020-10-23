@@ -1,6 +1,22 @@
 #ifndef _operators_h_
 #define _operators_h_
 
+#include <map>
+#include <iostream>
+#include <iomanip>
+#include <string>
+
+#include "invar.h"
+#include "traits.h"
+#include "eigen.h"
+#include "numerics.h" // read_matrix
+#include "params.h"
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/range/adaptor/map.hpp>
+#include <range/v3/all.hpp>
+
 template<typename S>
 class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
  public:
@@ -37,7 +53,7 @@ class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
        mat.swap(m2new);
      }
    }
-   std::ostream &insertor(std::ostream &os) const { 
+   std::ostream &insertor(std::ostream &os) const {
      for (const auto &[II, mat] : *this)
        os << "----" << II << "----" << std::endl << mat << std::endl;
      return os;
@@ -137,7 +153,7 @@ class Opch : public std::vector<OpchChannel<S>> {
 
 // Object of class IterInfo cotains full information about matrix representations when entering stage N of the NRG
 // iteration.
-template<typename S> 
+template<typename S>
 class IterInfo {
  public:
    Opch<S> opch;     // f operators (channels)

@@ -8,6 +8,7 @@ using namespace std::string_literals;
 #include <cstring> // strncpy
 #include <cstdlib> // mkdtemp, getenv
 #include "portabil.h" // remove(std::string)
+#include <cstdio> // C remove()
 
 inline const auto default_workdir{"."s};
 
@@ -21,6 +22,8 @@ inline auto dtemp(const std::string &path)
   char *w = mkdtemp(x.get());
   return w ? std::optional<std::string>(w) : std::nullopt;
 }  
+
+inline int remove(const std::string &filename) { return remove(filename.c_str()); }
 
 class Workdir {
  private:

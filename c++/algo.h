@@ -1,6 +1,15 @@
 #ifndef _algo_h_
 #define _algo_h_
 
+#include <string>
+#include "traits.h"
+#include "params.h"
+#include "eigen.h"
+#include "operators.h"
+#include "invar.h"
+#include "step.h"
+#include "stats.h"
+
 // Wrapper class for NRG spectral-function algorithms
 template<typename S>
 class Algo {

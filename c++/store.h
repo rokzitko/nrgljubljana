@@ -1,9 +1,13 @@
 #ifndef _store_h_
 #define _store_h_
 
+#include "invar.h"
+#include "eigen.h"
+#include "subspaces.h"
+
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
 // density-matrix construction.
-template<typename S> 
+template<typename S>
 struct DimSub {
   size_t kept  = 0;
   size_t total = 0;

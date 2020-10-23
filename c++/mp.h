@@ -4,6 +4,7 @@
 #define _mp_h_
 
 #include <gmp.h>
+#include <vector>
 
 // Wrapper class for arbitrary precision numbers
 class my_mpf {

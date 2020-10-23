@@ -1,6 +1,12 @@
 #ifndef _recalc_h_
 #define _recalc_h_
 
+#include "invar.h"
+#include "eigen.h"
+#include "subspaces.h"
+#include "operators.h"
+#include "symmetry.h"
+
 // We split the matrices of eigenvectors in blocks according to the partition into "ancestor subspaces". At the price
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
@@ -27,10 +33,10 @@ inline void split_in_blocks(DiagInfo<S> &diag, const QSrmax &qsrmax) {
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<typename S> template<typename T>
-auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag, 
-                                const QSrmax &qsrmax, 
+auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
+                                const QSrmax &qsrmax,
                                 const Invar &I1,
-                                const Invar &Ip, 
+                                const Invar &Ip,
                                 const T &table)
 {
   nrglog('f', "recalc_f() ** f: I1=(" << I1 << ") Ip=(" << Ip << ")");
@@ -126,11 +132,11 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
 template<typename S>
 void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
                                       const QSrmax &qsrmax,
-                                      const Invar &I, 
+                                      const Invar &I,
                                       Matrix &m, // XXX: return this one
-                                      const size_t i1, 
-                                      const size_t ip, 
-                                      const t_coef value) const 
+                                      const size_t i1,
+                                      const size_t ip,
+                                      const t_coef value) const
 {
   my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
   const Eigen<S> &diagI = diag.at(I);

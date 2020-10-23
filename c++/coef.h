@@ -1,6 +1,11 @@
 #ifndef _coef_h_
 #define _coef_h_
 
+#include <vector>
+#include <fstream>
+#include "traits.h"
+#include "numerics.h" // read_vector
+
 // Table of Wilson chain coefficients
 template <typename S> class coef_table : traits<S> {
 private:

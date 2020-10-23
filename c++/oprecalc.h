@@ -1,9 +1,14 @@
 #ifndef _oprecalc_h_
 #define _oprecalc_h_
 
+#include <string>
+#include <set>
+#include <memory>
 #include "time_mem.h"
 #include "operators.h"
 #include "symmetry.h"
+#include "step.h"
+#include "params.h"
 
 template<typename S>
 class Oprecalc {
@@ -21,7 +26,7 @@ class Oprecalc {
      }
      // Singlet operators are always recomputed in the first NRG run, so that we can calculate the expectation values.
      bool do_s(const std::string &name, const Params &P, const Step &step) {
-       if (step.nrg()) return true;                                          // for computing <O> 
+       if (step.nrg()) return true;                                          // for computing <O>
        if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
        return this->count({"s", name});
      }
@@ -35,38 +40,38 @@ class Oprecalc {
 
    // Spectral densities
    struct SL : public speclist<S> {
-     void calc(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM, 
+     void calc(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM,
                const Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
        mt.time_it("spec");
        for (auto &i : *this) i.calc(step, diag, rho, rhoFDM, stats);
      }
    };
    SL sl;
-   
+ 
    // Wrapper routine for recalculations
    template <typename RecalcFnc>
-     MatrixElements<S> recalc(const std::string &name, const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const std::string &tip, 
+     MatrixElements<S> recalc(const std::string &name, const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const std::string &tip,
                               const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
        nrglog('0', "Recalculate " << tip << " " << name);
        auto mnew = recalc_fnc(diag, qsrmax, mold);
        if (tip == "g") Sym->recalc_global(step, diag, qsrmax, name, mnew);
        return mnew;
      }
-   
+
    template <typename ... Args>
      MatrixElements<S> recalc_or_clear(const bool selected, Args&& ... args) {
        return selected ? recalc(std::forward<Args>(args)...) : MatrixElements<S>();
      }
 
    // Recalculate operator matrix representations
-   ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives  
+   ATTRIBUTE_NO_SANITIZE_DIV_BY_ZERO // avoid false positives
    void recalculate_operators(IterInfo<S> &a, const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
        mt.time_it("recalc");
        for (auto &[name, m] : a.ops)
          m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, qsrmax);
        for (auto &[name, m] : a.opsp)
          m = recalc_or_clear(ops.count({"p", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, "p", step, diag, qsrmax);
-       for (auto &[name, m] : a.opsg) 
+       for (auto &[name, m] : a.opsg)
          m = recalc_or_clear(ops.do_g(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag, qsrmax);
        for (auto &[name, m] : a.opd)
          m = recalc_or_clear(ops.count({"d", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, "d", step, diag, qsrmax);

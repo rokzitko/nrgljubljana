@@ -1,6 +1,9 @@
 #ifndef _traits_h_
 #define _traits_h_
 
+#include <boost/numeric/ublas/matrix.hpp>
+#include <complex>
+
 // We encapsulate the differences between real-value and complex-value versions of the code in class traits.
 
 template <typename S> struct traits {};

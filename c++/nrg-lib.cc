@@ -10,7 +10,7 @@ void print_about_message() {
 void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, const Workdir &workdir) {
   MPI mpi(mpienv, mpiw);
   const bool embedded = false;
-  if (complex_data()) 
+  if (complex_data())
     NRG_calculation<std::complex<double>> calc(mpi, workdir, embedded);
   else
     NRG_calculation<double> calc(mpi, workdir, embedded);
@@ -24,7 +24,7 @@ void run_nrg_master(const std::string &dir) {
   MPI mpi(mpienv, mpiw);
   auto workdir = set_workdir(dir);
   const bool embedded = true;
-  if (complex_data()) 
+  if (complex_data())
     NRG_calculation<std::complex<double>> calc(mpi, workdir, embedded);
   else
     NRG_calculation<double> calc(mpi, workdir, embedded);

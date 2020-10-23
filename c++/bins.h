@@ -4,6 +4,10 @@
 #ifndef _bins_h_
 #define _bins_h_
 
+#include "traits.h"
+#include "spectral.h"
+#include "params.h"
+
 // Binned spectral peaks. P.bins defines the number of bins per energy decade. The lowest and highest energies are
 // defined by the zero-th and last NRG energy scale.
 
