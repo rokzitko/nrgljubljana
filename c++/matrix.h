@@ -28,23 +28,18 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
   my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
   if (!my_isfinite(factor))
     throw std::runtime_error(fmt::format("offdiag_function(): factor not finite {} {} {} {}", i, j, ch, fnr));
-  const auto begin1 = qq.offset(i-1);
-  const auto begin2 = qq.offset(j-1);
-  const auto size1  = qq.rmax(i-1);
-  const auto size2  = qq.rmax(j-1);
-  // < In[i] r | f^\dag | In[j] r' >
-  if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) {
+  if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) {   // < In[i] r | f^\dag | In[j] r' >
     const auto &mat = f->second;
-    my_assert(size1 == mat.size1() && size2 == mat.size2());
+    my_assert(qq.rmax(i-1) == mat.size1() && qq.rmax(j-1) == mat.size2());
     const auto factor_scaled = factor / step.scale();
     // We are building the upper triangular part of the Hermitian Hamiltonian. Thus usually i < j. If not, we must
     // conjugate transpose the contribution!
     const bool conj_transpose = i > j;
     if (conj_transpose) {
-      ublas::matrix_range<Matrix> hsub(h, ublas::range(begin2, begin2 + size2), ublas::range(begin1, begin1 + size1));
+      ublas::matrix_range<Matrix> hsub(h, qq.ubview_mma(j), qq.ubview_mma(i));
       noalias(hsub) += conj_me(factor_scaled) * herm(mat);
     } else {
-      ublas::matrix_range<Matrix> hsub(h, ublas::range(begin1, begin1 + size1), ublas::range(begin2, begin2 + size2));
+      ublas::matrix_range<Matrix> hsub(h, qq.ubview_mma(i), qq.ubview_mma(j));
       noalias(hsub) += factor_scaled * mat;
     }
   } else
@@ -71,7 +66,7 @@ void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const siz
   //  first site of the Wilson chain (indexed as 0), but the second one (indexed as 1). Therefore the appropriate
   //  zeta is not zeta(0), but zeta(1). zeta(0) is the shift applied to the f[0] orbital in initial.m !!!
   const auto shift = sc_zeta * (number - f*avgoccup) / step.scale();
-  for (const auto j: boost::irange(begin1, begin1+size1)) h(j, j) += shift;
+  for (const auto j: qq.view_mma(i)) h(j, j) += shift;
 }
 
 template<typename S>

@@ -498,6 +498,18 @@ class Rmaxvals {
      my_assert(i < combs());
      return ranges::accumulate(std::begin(values), std::begin(values) + i, size_t{0});
    }
+   auto view(const size_t i) const {
+     return boost::irange(offset(i), offset(i)+rmax(i));
+   }
+   auto view_mma(const size_t i) const {
+     return view(i-1); // Mathematica uses 1-based indexing
+   }
+   auto ubview(const size_t i) const {
+     return ublas::range(offset(i), offset(i)+rmax(i));
+   }
+   auto ubview_mma(const size_t i) const {
+     return ubview(i-1); // Mathematica uses 1-based indexing
+   }
    auto operator[](const size_t i) const { return rmax(i); }
    auto total() const { return ranges::accumulate(values, 0); } // total number of states
    // *** Mathematica interfacing: i1,j1 are 1-based

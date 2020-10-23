@@ -81,9 +81,9 @@ inline auto parse_block(std::ifstream &F) {
       const auto pos_eq = line.find_first_of('=');
       if (pos_eq == std::string::npos) // not found
         continue;
-      const std::string keyword = line.substr(0, pos_eq);
+      const auto keyword = line.substr(0, pos_eq);
       // Important: Strip trailing whitespace to avoid hard-to-detect problems!
-      const std::string value   = strip_trailing_whitespace(line.substr(pos_eq+1));
+      const auto value   = strip_trailing_whitespace(line.substr(pos_eq+1));
       if (parsed_params.count(keyword))
         throw std::runtime_error("Duplicate keyword: " + keyword);
       parsed_params[keyword] = value;
