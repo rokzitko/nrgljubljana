@@ -5,7 +5,7 @@ numerical renormalization group (NRG) calculations for quantum
 impurity problems. It is highly extensible without sacrificing
 numerical efficiency.
 
-*Copyright (C) 2006-2019 Rok Zitko*
+*Copyright (C) 2006-2020 Rok Zitko*
 
 The framework "NRG Ljubljana" is a set of interrelated computer codes
 for performing numerical renormalization group (NRG) calculations for
