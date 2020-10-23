@@ -24,7 +24,7 @@ inline std::string prec(const double x, const int N)
   return s.str();
 }
 inline std::string prec3(const double x) { return prec(x, 3); }
-       
+
 template <typename T>
 inline std::string formatted_output(const T x, const Params &P) {
   return fmt::format("{x:>{width}}", "x"_a=x, "width"_a=P.width_custom);
@@ -39,7 +39,6 @@ inline bool negligible_imag_part(const std::complex<T> &z, const double output_i
   return abs(z.imag()) < abs(z.real()) * output_imag_eps;
 }
 
-
 // The output format for complex values is X+IY or X-IY, where X and Y are real and imaginary part, respectively. The
 // imaginary part is only shown where its value relative to the real part is sufficiently large. No space is used in
 // the outputted string in order to simplify parsing.
@@ -49,6 +48,13 @@ inline std::string formatted_output(const cmpl z, const Params &P) {
     fmt::format("{r:.{prec}f}", "r"_a=r, "prec"_a=P.prec_custom) :
     fmt::format("{r:.{prec}f}{s}I{absi:.{prec}f}", "r"_a=r, "s"_a=(i>0 ? "+" : "-"), "absi"_a=abs(i), "prec"_a=P.prec_custom);
   return fmt::format("{str:>{width}}", "str"_a=str, "width"_a=P.width_custom); // the width for the whole X+iY string
+}
+
+inline void outputxy(std::ostream &F, const double x, const std::complex<double> z, const bool imagpart, const double clip_tol_imag = 1e-10) {
+  const auto [r, i] = reim(z);
+  F << x << " " << r;
+  if (imagpart) F << " " << (abs(i)>abs(r)*clip_tol_imag ? i : 0);
+  F << std::endl;
 }
 
 #endif
