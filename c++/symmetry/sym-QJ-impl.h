@@ -9,14 +9,12 @@ class SymmetryQJ : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQJ(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
+   SymmetryQJ(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1), Invar(1,4)),
      Jz2(P, allfields, "<Jz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"Q", additive}, // charge
          {"JJ", additive} // total angular momentum
        });
-       this->InvarSinglet = Invar(0, 1);
-       this->Invar_f      = Invar(1, 4);
      }
 
   // Multiplicity of the (Q,JJ) subspace is 2J+1 = JJ.

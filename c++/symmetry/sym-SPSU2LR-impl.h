@@ -9,13 +9,12 @@ class SymmetrySPSU2LR : public SymLR<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2LR(const Params &P, Allfields &allfields) : SymLR<SC>(P),
+   SymmetrySPSU2LR(const Params &P, Allfields &allfields) : SymLR<SC>(P, Invar(0,1)),
      Sz2(P, allfields, "<Sz^2>", 1) {
        initInvar({
          {"SS", additive},     // spin
          {"P", multiplicative} // parity
        });
-       this->InvarSinglet = Invar(0, 1);
      }
 
   size_t mult(const Invar &I) const override { return I.get("SS"); }

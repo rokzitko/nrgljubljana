@@ -9,14 +9,12 @@ class SymmetryQS : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQS(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
+   SymmetryQS(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1), Invar(1,2)),
      Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"Q", additive}, // charge
          {"SS", additive} // spin
        });
-       this->InvarSinglet = Invar(0, 1);
-       this->Invar_f      = Invar(1, 2);
      }
 
    // Multiplicity of the (Q,SS) subspace is 2S+1 = SS.

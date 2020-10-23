@@ -9,15 +9,13 @@ class SymmetryQST : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQST(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
+   SymmetryQST(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1,0), Invar(1,2,1)),
      Sz2(P, allfields, "<Sz^2>", 1), Tz2(P, allfields, "<Tz^2>", 2),  Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
        initInvar({
          {"Q", additive},  // charge
          {"SS", additive}, // spin
          {"T", additive}   // angular momentum
        });
-       this->InvarSinglet = Invar(0, 1, 0);
-       this->Invar_f      = Invar(1, 2, 1); // (1,2,1) is correct. see triangle_inequality() below!
      }
 
   // Multiplicity of the (Q,SS,T) subspace is (2S+1 = SS) times (2T+1).

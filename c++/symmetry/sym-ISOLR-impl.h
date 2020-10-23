@@ -9,15 +9,13 @@ class SymmetryISOLRcommon : public SymLR<SC> {
    using Symmetry<SC>::QN;
 
  public:
-   SymmetryISOLRcommon(const Params &P, Allfields &allfields) : SymLR<SC>(P),
+   SymmetryISOLRcommon(const Params &P, Allfields &allfields) : SymLR<SC>(P, Invar(1,1,1)),
      Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
        initInvar({
          {"II", additive},     // isospin
          {"SS", additive},     // spin
          {"P", multiplicative} // parity
        });
-       this->InvarSinglet = Invar(1, 1, 1);
-       // this->Invar_f = Invar(?, ?, ?)
      }
 
   // Multiplicity of the I=(II,SS,P) subspace = (2I+1)(2S+1) = II SS.

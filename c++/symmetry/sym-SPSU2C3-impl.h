@@ -9,13 +9,12 @@ class SymmetrySPSU2C3 : public SymC3<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2C3(const Params &P, Allfields &allfields) : SymC3<SC>(P),
+   SymmetrySPSU2C3(const Params &P, Allfields &allfields) : SymC3<SC>(P, Invar(1,0)),
      Sz2(P, allfields, "<Sz^2>", 1) {
        initInvar({
          {"SS", additive}, // spin
          {"P", mod3}       // C_3 rep
        });
-       this->InvarSinglet = Invar(1, 0); // spin-singlet, C_3 P=0
      }
 
   size_t mult(const Invar &I) const override { return I.get("SS"); }

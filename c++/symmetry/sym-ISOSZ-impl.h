@@ -9,13 +9,12 @@ class SymmetryISOSZ : public SymField<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISOSZ(const Params &P, Allfields &allfields) : SymField<SC>(P),
+   SymmetryISOSZ(const Params &P, Allfields &allfields) : SymField<SC>(P, Invar(1,0)),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q2(P, allfields, "<Q^2>", 3) {
        initInvar({
          {"II", additive}, // isospin
          {"SSZ", additive} // spin projection
        });
-       this->InvarSinglet = Invar(1, 0);
      }
 
   // Multiplicity of the I=(II,SSZ) subspace = (2I+1) = II.

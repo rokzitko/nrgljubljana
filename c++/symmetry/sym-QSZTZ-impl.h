@@ -9,7 +9,7 @@ class SymmetryQSZTZ : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZTZ(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
+   SymmetryQSZTZ(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,0,0), Invar(1,2,1)),
      Sz(P, allfields, "<Sz>", 1), Sz2(P, allfields, "<Sz^2>", 2), Tz(P, allfields, "<Tz>", 3), Tz2(P, allfields, "<Tz^2>", 4),
      Q(P, allfields, "<Q>", 5), Q2(P, allfields, "<Q^2>", 6) {
        initInvar({
@@ -17,8 +17,6 @@ class SymmetryQSZTZ : public Symmetry<SC> {
          {"SZ", additive}, // spin
          {"TZ", additive}  // angular momentum
        });
-       this->InvarSinglet = Invar(0, 0, 0);
-       this->Invar_f      = Invar(1, 2, 1);
      }
 
   size_t mult(const Invar &I) const override { return 1; }

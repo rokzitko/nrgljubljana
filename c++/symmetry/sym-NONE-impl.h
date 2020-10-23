@@ -8,11 +8,10 @@ class SymmetryNONE : public Symmetry<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryNONE(const Params &P, Allfields &allfields) : Symmetry<SC>(P) {
+   SymmetryNONE(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0)) {
      initInvar({
        {"x", additive} // dummy quantum number
      });
-     this->InvarSinglet = Invar(0);
    }
 
   void load() override {

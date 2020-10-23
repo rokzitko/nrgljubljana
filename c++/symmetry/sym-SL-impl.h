@@ -9,12 +9,11 @@ class SymmetrySL : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySL(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
+   SymmetrySL(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0)),
      Q(P, allfields, "<Q>", 1), Q2(P, allfields, "<Q^2>", 2), sQ2(P, allfields, "<sQ^2>", 3) {
        initInvar({
          {"Q", additive} // charge
        });
-       this->InvarSinglet = Invar(0);
      }
 
   void load() override {

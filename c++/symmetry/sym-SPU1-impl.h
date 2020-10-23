@@ -9,12 +9,11 @@ class SymmetrySPU1 : public  SymField<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPU1(const Params &P, Allfields &allfields) : SymField<SC>(P),
+   SymmetrySPU1(const Params &P, Allfields &allfields) : SymField<SC>(P, Invar(0)),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2) {
        initInvar({
          {"SSZ", additive} // spin projection
        });
-       this->InvarSinglet = Invar(0);
      }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {

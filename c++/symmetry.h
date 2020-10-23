@@ -58,15 +58,16 @@ class Symmetry {
    // retain in the calculation, while In involves those quantum numbers that "drop out" of the problem due to the
    // symmetry.
    std::vector<Invar> In, QN;
+   const Invar InvarSinglet; // QNs for singlet operator
+   const Invar Invar_f;      // QNs for f operator
  public:
    virtual void load() = 0; // load In, QN
    void erase_first() { // drop the first element in In, QN to convert to 0-based vectors; call after load()
      In.erase(In.begin());
      QN.erase(QN.begin());
    }
-   Invar InvarSinglet; // QNs for singlet operator
-   Invar Invar_f;      // QNs for f operator
-   explicit Symmetry(const Params &P_) : P(P_), In(P.combs+1), QN(P.combs+1) {}
+   explicit Symmetry(const Params &P_, const Invar InvarSinglet = {}, const Invar Invar_f = {}) : 
+     P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f) {}
    auto input_subspaces() const { return In; }
    auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; }
    auto ancestor(const Invar &I, const size_t i) const {
@@ -246,28 +247,28 @@ class Symmetry {
 template<typename S>
 class SymField : public Symmetry<S> {
  public:
-   explicit SymField(const Params &P) : Symmetry<S>(P) {}
+   template<typename ... Args> explicit SymField(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
    bool isfield() override { return true; }
 };
 
 template<typename S>
 class SymLR : public Symmetry<S> {
  public:
-   explicit SymLR(const Params &P) : Symmetry<S>(P) {}
+   template<typename ... Args> explicit SymLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
    bool islr() override { return true; }
 };
 
 template<typename S>
 class SymC3 : public Symmetry<S> {
  public:
-   explicit SymC3(const Params &P) : Symmetry<S>(P) {}
+   template<typename ... Args> explicit SymC3(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
    bool isc3() override { return true; }
 };
 
 template<typename S>
 class SymFieldLR : public Symmetry<S> {
   public:
-   explicit SymFieldLR(const Params &P) : Symmetry<S>(P) {}
+   template<typename ... Args> explicit SymFieldLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
    bool isfield() override { return true; }
    bool islr() override { return true; }
 };

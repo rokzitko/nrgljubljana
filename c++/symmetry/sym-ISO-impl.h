@@ -9,14 +9,12 @@ class SymmetryISOcommon : public Symmetry<SC> {
    using Symmetry<SC>::QN;
 
   public:
-   SymmetryISOcommon(const Params &P, Allfields &allfields) : Symmetry<SC>(P),
+   SymmetryISOcommon(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1,1), Invar(2,2)),
      Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
        initInvar({
          {"II", additive}, // isospin
          {"SS", additive}  // spin
        });
-       this->InvarSinglet = Invar(1, 1);
-       this->Invar_f      = Invar(2, 2);
      }
 
   // Multiplicity of the I=(II,SS) subspace = (2I+1)(2S+1) = II SS.

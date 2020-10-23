@@ -9,14 +9,13 @@ class SymmetryDBLISOSZ : public SymField<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryDBLISOSZ(const Params &P, Allfields &allfields) : SymField<SC>(P),
+   SymmetryDBLISOSZ(const Params &P, Allfields &allfields) : SymField<SC>(P, Invar(1,1,0)),
      Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q12(P, allfields, "<Q1^2>", 3), Q22(P, allfields, "<Q2^2>", 4) {
        initInvar({
          {"II1", additive}, // isospin 1
          {"II2", additive}, // isospin 2
          {"SSZ", additive}  // spin projection
        });
-       this->InvarSinglet = Invar(1, 1, 0);
      }
 
    bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {

@@ -8,11 +8,10 @@ class SymmetryP : public Symmetry<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryP(const Params &P, Allfields &allfields) : Symmetry<SC>(P) {
+   SymmetryP(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1)) {
      initInvar({
        {"P", multiplicative} // fermion parity
      });
-     this->InvarSinglet = Invar(1);
    }
 
   void load() override {
