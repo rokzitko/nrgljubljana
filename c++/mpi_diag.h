@@ -14,13 +14,13 @@
 enum TAG : int { TAG_EXIT = 1, TAG_DIAG_DBL, TAG_DIAG_CMPL, TAG_SYNC, TAG_MATRIX, TAG_INVAR,
                  TAG_MATRIX_SIZE, TAG_MATRIX_LINE, TAG_EIGEN_INT, TAG_EIGEN_VEC };
 
-class MPI {
+class MPI_diag {
  private:
    boost::mpi::environment &mpienv;
    boost::mpi::communicator &mpiw;
 
  public:
-   MPI(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) : mpienv(mpienv), mpiw(mpiw) {}
+   MPI_diag(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) : mpienv(mpienv), mpiw(mpiw) {}
    auto myrank() { return mpiw.rank(); } // used in diag.h, time_mem.h
    void send_params(const DiagParams &DP) {
      mpilog("Sending diag parameters " << DP.diag << " " << DP.diagratio);

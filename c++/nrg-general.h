@@ -136,7 +136,7 @@ inline const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule for
 
 template <typename S> class NRG_calculation {
 private:
-  MPI mpi;
+  MPI_diag mpi;
   Params P;
   Stats<S> stats;
   MemTime mt; // memory and timing statistics
@@ -157,7 +157,7 @@ public:
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
-  NRG_calculation(MPI &mpi, const Workdir &workdir, const bool embedded) : mpi(mpi), P("param", "param", workdir, embedded), stats(P) {
+  NRG_calculation(MPI_diag &mpi, const Workdir &workdir, const bool embedded) : mpi(mpi), P("param", "param", workdir, embedded), stats(P) {
     auto [diag0, iterinfo, coef, Sym] = read_data<S>(P, stats);
     Step step{P, RUNTYPE::NRG};
     AllSteps<S> dm(P.Ninit, P.Nlen);

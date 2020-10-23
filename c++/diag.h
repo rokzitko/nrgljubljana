@@ -294,8 +294,8 @@ template<typename M>
   void dump_eigenvalues(const Eigen<M> &d, const size_t max_nr = std::numeric_limits<size_t>::max())
 {
   std::cout << "eig= ";
-  std::for_each_n(d.value_orig.cbegin(), std::min(d.getnrcomputed(), max_nr),
-                  [](const double x) { std::cout << x << ' '; });
+  ranges::for_each_n(d.value_orig.cbegin(), std::min(d.getnrcomputed(), max_nr),
+                     [](const double x) { std::cout << x << ' '; });
   std::cout << std::endl;
 }
 

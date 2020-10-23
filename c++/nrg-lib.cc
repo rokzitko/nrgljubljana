@@ -8,7 +8,7 @@ void print_about_message() {
 
 // Called from the NRG stand-alone executable
 void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, const Workdir &workdir) {
-  MPI mpi(mpienv, mpiw);
+  MPI_diag mpi(mpienv, mpiw);
   const bool embedded = false;
   if (complex_data())
     NRG_calculation<std::complex<double>> calc(mpi, workdir, embedded);
@@ -21,7 +21,7 @@ void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &m
 void run_nrg_master(const std::string &dir) {
   boost::mpi::environment mpienv;
   boost::mpi::communicator mpiw;
-  MPI mpi(mpienv, mpiw);
+  MPI_diag mpi(mpienv, mpiw);
   auto workdir = set_workdir(dir);
   const bool embedded = true;
   if (complex_data())
@@ -31,7 +31,7 @@ void run_nrg_master(const std::string &dir) {
 }
 
 void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) {
-  MPI mpi(mpienv, mpiw);
+  MPI_diag mpi(mpienv, mpiw);
   constexpr auto master = 0;
   DiagParams DP;
   for (;;) {

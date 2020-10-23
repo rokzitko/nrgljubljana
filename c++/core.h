@@ -99,7 +99,7 @@ auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
 template<typename S>
 auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
-                      const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry<S>> Sym, MPI &mpi, MemTime &mt, const Params &P) {
+                      const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   mt.time_it("diag");
   return P.diag_mode == "MPI" ? mpi.diagonalisations_MPI<S>(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P) 
                               : diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
@@ -107,7 +107,7 @@ auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef
 
 template<typename S>
 auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             QSrmax &qsrmax, std::shared_ptr<Symmetry<S>> Sym, MPI &mpi, MemTime &mt, const Params &P) {
+             QSrmax &qsrmax, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   auto tasks = qsrmax.task_list();
@@ -218,7 +218,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
 // Perform one iteration step
 template<typename S>
 auto iterate(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MPI &mpi, MemTime &mt, const Params &P) {
+             Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   QSrmax qsrmax{diagprev, Sym};
   auto diag = do_diag(step, iterinfo, coef, stats, diagprev, qsrmax, Sym, mpi, mt, P);
   after_diag(step, iterinfo, stats, diag, output, qsrmax, dm, oprecalc, Sym, mt, P);
@@ -268,7 +268,7 @@ auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<
 
 template<typename S>
 auto nrg_loop(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
-              Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MPI &mpi, MemTime &mt, const Params &P) {
+              Output<S> &output, AllSteps<S> &dm, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, iterinfo, coef, stats, diag, output, dm, oprecalc, Sym, mpi, mt, P);
