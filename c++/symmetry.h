@@ -81,7 +81,7 @@ class Symmetry {
      In.erase(In.begin());
      QN.erase(QN.begin());
    }
-   explicit Symmetry(const Params &P_, const Invar InvarSinglet = {}, const Invar Invar_f = {}) :
+   explicit Symmetry(const Params &P_, const Invar & InvarSinglet = {}, const Invar & Invar_f = {}) :
      P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f) {}
    virtual ~Symmetry() {}
    auto input_subspaces() const { return In; }

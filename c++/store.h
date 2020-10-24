@@ -37,12 +37,12 @@ class AllSteps : public std::vector<Subs<S>> {
          F << "Subspace: " << I << std::endl << ds.eig.absenergyG << std::endl;
      }
    }
-   void dump_all_absolute_energies(std::string filename = "absolute_energies.dat"s) {
+   void dump_all_absolute_energies(const std::string &filename = "absolute_energies.dat"s) {
      std::ofstream F(filename);
      this->dump_absenergyG(F);
    }
    // Save a dump of all subspaces, with dimension info, etc.
-   void dump_subspaces(const std::string filename = "subspaces.dat"s) const {
+   void dump_subspaces(const std::string &filename = "subspaces.dat"s) const {
      std::ofstream O(filename);
      for (const auto N : Nall()) {
        O << "Iteration " << N << std::endl;

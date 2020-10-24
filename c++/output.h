@@ -61,16 +61,16 @@ class Annotated {
  private:
    std::ofstream F;
    // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor)
-   template<typename S>
-     inline auto scaled_energy(typename traits<S>::t_eigen e, const Step &step, const Stats<S> &stats,
-                               bool scaled = true, bool absolute = false) {
+   template<typename T, typename S>
+   inline auto scaled_energy(const T e, const Step &step, const Stats<S> &stats,
+			     const bool scaled = true, const bool absolute = false) {
      return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0);
    }
    const Params &P;
  public:
    explicit Annotated(const Params &P) : P(P) {}
    template<typename S> void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, 
-                                  std::shared_ptr<Symmetry<S>> Sym, const std::string filename = "annotated.dat") {
+                                  std::shared_ptr<Symmetry<S>> Sym, const std::string &filename = "annotated.dat") {
      if (!P.dumpannotated) return;
      if (!F.is_open()) { // open output file
        F.open(filename);
