@@ -1,7 +1,10 @@
 #ifndef _algo_DMNRG_h_
 #define _algo_DMNRG_h_
 
+#include <complex>
+using namespace std::complex_literals;
 #include "algo.h"
+#include "spectrum.h"
 
 // OPTIMIZATION NOTE: the inner loop should involve the last index.
 
@@ -91,9 +94,9 @@ class Algo_DMNRGmats : public Algo<S> {
          for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
          const auto weightB = sumB * op2(rj, rm);
          const auto weight  = factor * (weightA + (-sign) * weightB);
-         for (size_t n = 1; n < P.mats; n++) cm->add(n, weight / (cmpl(0, ww(n, gt, P.T)) - step.scale() * energy));
+         for (size_t n = 1; n < P.mats; n++) cm->add(n, weight / (ww(n, gt, P.T)*1i - step.scale() * energy));
          if (abs(energy) > WEIGHT_TOL || gt == gf_type::fermionic)
-           cm->add(size_t(0), weight / (cmpl(0, ww(0, gt, P.T)) - step.scale() * energy));
+           cm->add(size_t(0), weight / (ww(0, gt, P.T)*1i - step.scale() * energy));
          else // bosonic w=0 && E1=Ep case
            cm->add(size_t(0), factor * (-weightA / t_weight(P.T)));
        }

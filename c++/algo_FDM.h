@@ -1,7 +1,10 @@
 #ifndef _algo_FDM_h_
 #define _algo_FDM_h_
 
+#include <complex>
+using namespace std::complex_literals;
 #include "algo.h"
+#include "spectrum.h"
 
 // Recall: II=(Ij,Ii) <i|A|j> <j|B|i>. B is d^dag. We conjugate A.
 
@@ -14,13 +17,14 @@
 
 template<typename S>
 class Algo_FDMls : virtual public Algo<S> {
- protected:
+ private:
    inline static const std::string algoname = "FDMls";
    SpectrumRealFreq<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
+   const bool save;
+ protected:
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
-   const bool save;
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
@@ -78,13 +82,14 @@ class Algo_FDMls : virtual public Algo<S> {
 
 template<typename S>
 class Algo_FDMgt : virtual public Algo<S> {
- protected:
+ private:
    inline static const std::string algoname = "FDMgt";
    SpectrumRealFreq<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
+   const bool save;
+ protected:
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
-   const bool save;
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
@@ -208,9 +213,9 @@ class Algo_FDMmats : public Algo<S> {
          const auto weightA = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T); // a[ij] b[ji] exp(-beta e[i])
          const auto weightB = factor * conj_me(op1(j, i)) * op2(j, i) * (-sign) * wnf * exp(-Ej / P.T); // a[ij] b[ji] sign exp(-beta e[j])
          #pragma omp parallel for schedule(static)
-         for (size_t n = 1; n < cutoff; n++) cm->add(n, (weightA + weightB) / (cmpl(0, ww(n, gt, P.T)) - energy));
+         for (size_t n = 1; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
          if (gt == gf_type::fermionic || abs(energy) > WEIGHT_TOL)
-           cm->add(size_t(0), (weightA + weightB) / (cmpl(0, ww(0, gt, P.T)) - energy));
+           cm->add(size_t(0), (weightA + weightB) / (ww(0, gt, P.T)*1i - energy));
          else // bosonic w=0 && Ei=Ej case
            cm->add(size_t(0), (-weightA / (double)P.T));
        }
@@ -226,7 +231,7 @@ class Algo_FDMmats : public Algo<S> {
            const auto weightA = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T);
            const auto weightB = factor * conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
            #pragma omp parallel for schedule(static)
-           for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (cmpl(0, ww(n, gt, P.T)) - energy));
+           for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
          }
        }
      }
@@ -241,7 +246,7 @@ class Algo_FDMmats : public Algo<S> {
             const auto weightA = factor * conj_me(op1(j, i)) * op2_rho(j, i);
             const auto weightB = factor * (-sign) * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ej / P.T);
             #pragma omp parallel for schedule(static)
-            for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (cmpl(0, ww(n, gt, P.T)) - energy));
+            for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
           }
         }
      }

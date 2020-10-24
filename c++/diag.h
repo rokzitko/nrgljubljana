@@ -53,9 +53,8 @@ template<typename T, typename V>
 void copy_vec(T* eigenvectors, ublas::matrix<V>& diagvectors, const size_t dim, const size_t M)
 {
   diagvectors.resize(M, dim);
-  for (const auto r: range0(M))
-    for (const auto j: range0(dim))
-      diagvectors(r, j) = to_matel(eigenvectors[dim * r + j]);
+  for (const auto r : range0(M))
+    for (const auto j : range0(dim)) diagvectors(r, j) = to_matel(eigenvectors[dim * r + j]);
 }
 
 template<typename T, typename U, typename S> auto copy_results(T* eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
@@ -282,10 +281,10 @@ void checkdiag(const Eigen<S> &d,
     my_assert(num_equal(sumabs, 1.0, NORMALIZATION_EPSILON));
   }
   // Check orthogonality
-  for (const auto r1: range0(M))
-    for (const auto r2: boost::irange(r1+1, M)) {
+  for (const auto r1 : range0(M))
+    for (const auto r2 : boost::irange(r1 + 1, M)) {
       S skpdt{};
-      for (const auto j: range0(dim)) skpdt += conj_me(d.matrix(r1, j)) * d.matrix(r2, j);
+      for (const auto j : range0(dim)) skpdt += conj_me(d.matrix(r1, j)) * d.matrix(r2, j);
       my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
     }
 }
@@ -312,8 +311,7 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP,
   check_is_matrix_upper(m);
   Eigen<M> d;
   if constexpr (std::is_same_v<M, double>) {
-    if (DP.diag == "dsyev"s || DP.diag == "default"s)
-      d = diagonalise_dsyev(m);
+    if (DP.diag == "dsyev"s || DP.diag == "default"s) d = diagonalise_dsyev(m);
     if (DP.diag == "dsyevd"s) {
       d = diagonalise_dsyevd(m);
       if (d.getnrcomputed() == 0) {
@@ -321,14 +319,11 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP,
         d = diagonalise_dsyev(m);
       }
     }
-    if (DP.diag == "dsyevr"s) 
-      d = diagonalise_dsyevr(m, DP.diagratio);
+    if (DP.diag == "dsyevr"s) d = diagonalise_dsyevr(m, DP.diagratio);
   }
   if constexpr (std::is_same_v<M, std::complex<double>>) {
-    if (DP.diag == "zheev"s || DP.diag == "default"s)
-      d = diagonalise_zheev(m);
-    if (DP.diag == "zheevr"s) 
-      d = diagonalise_zheevr(m, DP.diagratio);
+    if (DP.diag == "zheev"s || DP.diag == "default"s) d = diagonalise_zheev(m);
+    if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio);
   }
   my_assert(d.getnrcomputed() > 0);
   my_assert(has_lesseq_rows(d.matrix, m));

@@ -2,19 +2,21 @@
 #define _algo_CFS_h_
 
 #include "algo.h"
+#include "spectrum.h"
 
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 // Based on the implementation by Markus Greger.
 
 template<typename S>
 class Algo_CFSls : virtual public Algo<S> {
- protected:
+ private:
    inline static const std::string algoname = "CFSls";
    SpectrumRealFreq<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
+   const bool save;
+ protected: 
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
-   const bool save;
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;
@@ -66,13 +68,14 @@ class Algo_CFSls : virtual public Algo<S> {
 
 template<typename S>
 class Algo_CFSgt : virtual public Algo<S> {
- protected:
+ private:
    inline static const std::string algoname = "CFSgt";
    SpectrumRealFreq<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
+   const bool save;
+ protected:
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
-   const bool save;
  public:
    using Matrix = typename traits<S>::Matrix;
    using t_coef = typename traits<S>::t_coef;

@@ -1,7 +1,10 @@
 #ifndef _algo_FT_h_
 #define _algo_FT_h_
 
+#include <complex>
+using namespace std::complex_literals;
 #include "algo.h"
+#include "spectrum.h"
 
 template<typename S>
 class Algo_FT : public Algo<S> {
@@ -68,9 +71,9 @@ class Algo_FTmats : public Algo<S> {
          const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
          const auto energy = E1 - Ep;
 #pragma omp parallel for schedule(static)
-         for (size_t n = 1; n < cutoff; n++) cm->add(n, weight / (cmpl(0, ww(n, gt, P.T)) - step.scale() * energy));
+         for (size_t n = 1; n < cutoff; n++) cm->add(n, weight / (ww(n, gt, P.T)*1i - step.scale() * energy));
          if (abs(energy) > WEIGHT_TOL || gt == gf_type::fermionic)
-           cm->add(size_t(0), weight / (cmpl(0, ww(0, gt, P.T)) - step.scale() * energy));
+           cm->add(size_t(0), weight / (ww(0, gt, P.T)*1i - step.scale() * energy));
          else // bosonic w=0 && E1=Ep case
            cm->add(size_t(0), (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * (-exp(-E1 * step.scT()) / P.T));
        }
