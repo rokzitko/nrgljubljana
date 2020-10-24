@@ -6,8 +6,6 @@
 // 9. 6. 2010 - chop small values (parameter CHOP_TOL)
 // 25.6. 2010 - support for binary input files
 
-#define NDEBUG
-
 #include <iostream>
 #include <fstream>
 #include <iomanip>

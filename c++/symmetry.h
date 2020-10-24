@@ -10,7 +10,7 @@
 #include <iomanip>
 #include <limits>
 
-#include "nrg-general.h" // ???
+//#include "nrg-general.h" // ???
 #include "operators.h"
 #include "params.h"
 #include "traits.h"
@@ -83,6 +83,7 @@ class Symmetry {
    }
    explicit Symmetry(const Params &P_, const Invar InvarSinglet = {}, const Invar Invar_f = {}) :
      P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f) {}
+   virtual ~Symmetry() {}
    auto input_subspaces() const { return In; }
    auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; }
    auto ancestor(const Invar &I, const size_t i) const {
