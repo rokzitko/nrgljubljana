@@ -9,6 +9,8 @@
 #include "symmetry.hpp"
 #include "step.hpp"
 #include "params.hpp"
+#include "algo.hpp"
+#include "stats.hpp"
 
 template<typename S>
 class Oprecalc {

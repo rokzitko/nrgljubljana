@@ -30,7 +30,7 @@ class outfield {
    template<typename T> void setvalue(T x) {
      value = fmt::format("{x:>{width}.{prec}}", "x"_a=x, "prec"_a=P.prec_td, "width"_a=P.width_td);
    }
-   template<typename T> void operator=(T x) { setvalue(x); }
+   template<typename T> outfield& operator=(T x) { setvalue(x); return *this; }
    void putheader(std::ostream &F) const { F << std::setw(P.width_td) << desc << " "; }
    void putvalue(std::ostream &F) const  { F << std::setw(P.width_td) << value << " "; }
 };

@@ -5,6 +5,8 @@
 #include <map>
 #include <vector>
 #include "traits.hpp"
+#include "outfield.hpp"
+#include "mp.hpp"
 
 // Namespace for storing various statistical quantities calculated during iteration.
 template<typename S>

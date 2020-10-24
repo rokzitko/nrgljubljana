@@ -3,10 +3,12 @@
 
 #include <vector>
 #include <string>
+#include <boost/range/adaptor/map.hpp>
 #include "portabil.hpp"
 #include "traits.hpp"
 #include "invar.hpp"
 #include "params.hpp"
+#include "numerics.hpp"
 
 // Result of a diagonalisation: eigenvalues and eigenvectorse
 template <typename S> class Eigen {
@@ -14,9 +16,9 @@ public:
   using t_eigen = typename traits<S>::t_eigen;
   using EVEC = ublas::vector<t_eigen>;
   using Matrix = typename traits<S>::Matrix;
-  EVEC value_orig; // eigenvalues as computed
+  EVEC value_orig; // eigenvalues as computed // XXX private, use friend
   Matrix matrix;   // eigenvectors
-  Eigen() {}
+  Eigen() = default;
   Eigen(const size_t nr, const size_t dim) {
     my_assert(nr <= dim);
     value_orig.resize(nr);
@@ -100,7 +102,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
  public:
    using t_eigen = typename traits<S>::t_eigen;
    using Matrix  = typename traits<S>::Matrix;
-   explicit DiagInfo() {}
+   explicit DiagInfo() = default;
    DiagInfo(std::ifstream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {
        Invar I;
@@ -192,7 +194,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
-     size_t nr; // Number of subspaces
+     size_t nr = 0; // Number of subspaces
      ia >> nr;
      for (const auto cnt : range0(nr)) {
        Invar inv;

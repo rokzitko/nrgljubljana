@@ -7,6 +7,7 @@
 #include <string>
 #include <map>
 #include <list>
+#include <utility>
 #include <vector>
 #include "traits.hpp"
 #include "params.hpp"
@@ -48,8 +49,8 @@ class ExpvOutput {
        for (const auto &op: fields)
          fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op])); // NOTE: real and imaginary part shown
    }
-   ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m_, 
-                   const std::list<std::string> &fields_, const Params &P_) : m(m_), fields(fields_), P(P_) {
+   ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m, 
+                   std::list<std::string> fields, const Params &P) : m(m), fields(std::move(fields)), P(P) {
      F.open(fn);
      field_numbers();
      field_names();

@@ -130,8 +130,8 @@ public:
   auto run_nrg(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
                AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym) {
     diag0.states_report(Sym->multfnc());
-    auto oprecalc = Oprecalc<S>(step.runtype, iterinfo, Sym, mt, P);
-    auto output = Output<S>(step.runtype, iterinfo, stats, P);
+    auto oprecalc = Oprecalc<S>(step.get_runtype(), iterinfo, Sym, mt, P);
+    auto output = Output<S>(step.get_runtype(), iterinfo, stats, P);
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
     if (step.nrg() && P.calc0 && !P.ZBW)
       docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym, mt, P);

@@ -199,7 +199,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
   }
   if (!P.ZBW)
     split_in_blocks(diag, qsrmax);
-  if (P.do_recalc_all(step.runtype)) { // Either ...
+  if (P.do_recalc_all(step.get_runtype())) { // Either ...
     oprecalc.recalculate_operators(iterinfo, step, diag, qsrmax);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, mt, P);
   }
@@ -210,7 +210,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
     recalc_irreducible(step, diag, qsrmax, iterinfo.opch, Sym, mt, P);
     if (P.dump_f) iterinfo.opch.dump();
   }
-  if (P.do_recalc_kept(step.runtype)) { // ... or ...
+  if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
     oprecalc.recalculate_operators(iterinfo, step, diag, qsrmax);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, dm, Sym, mt, P);
   }

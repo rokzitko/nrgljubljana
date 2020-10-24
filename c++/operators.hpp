@@ -20,9 +20,9 @@
 template<typename S>
 class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
  public:
-   MatrixElements() {}
+   MatrixElements() = default;
    MatrixElements(std::ifstream &fdata, const DiagInfo<S> &diag) {
-     size_t nf; // Number of I1 x I2 combinations
+     size_t nf = 0; // Number of I1 x I2 combinations
      fdata >> nf;
      for (const auto i : range0(nf)) {
        Invar I1, I2;
@@ -97,7 +97,7 @@ class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
-     size_t nr;
+     size_t nr = 0;
      ia >> nr;
      for (const auto cnt : range0(nr)) {
        Invar inv;
@@ -127,15 +127,15 @@ using OpchChannel = std::vector<MatrixElements<S>>;
 template<typename S>
 class Opch : public std::vector<OpchChannel<S>> {
  public:
-   Opch() {}
+   Opch() = default;
    explicit Opch(const size_t nrch) { this->resize(nrch); }
    Opch(std::ifstream &fdata, const DiagInfo<S> &diag, const Params &P) {
      this->resize(P.channels);
      for (const auto i : range0(size_t(P.channels))) {
        (*this)[i] = OpchChannel<S>(P.perchannel);
        for (const auto j : range0(size_t(P.perchannel))) {
-         char ch;
-         size_t iread, jread;
+         char ch = 0;
+         size_t iread = 0, jread = 0;
          fdata >> ch >> iread >> jread;
          my_assert(ch == 'f' && i == iread && j == jread);
          (*this)[i][j] = MatrixElements<S>(fdata, diag);

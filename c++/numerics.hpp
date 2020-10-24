@@ -4,7 +4,9 @@
 #ifndef _numerics_hpp_
 #define _numerics_hpp_
 
+#include "misc.hpp"
 #include <complex>
+#include <iomanip>
 #include <vector>
 #include <fstream>
 #include <range/v3/all.hpp>
@@ -18,6 +20,7 @@ using namespace boost::numeric;
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/complex.hpp>
+#include <fmt/format.h>
 
 #include "portabil.hpp"
 
@@ -47,7 +50,7 @@ template <typename T> class generic_bucket {
 private:
   T value{};
 public:
-  generic_bucket() {}
+  generic_bucket() = default;
   // Can be constructured from a STL vector of pairs, by summing the second elements.
   template <typename T1> 
   explicit generic_bucket(std::vector<std::pair<T1, T>> v) {
@@ -59,9 +62,9 @@ public:
 using bucket = generic_bucket<double>;
 
 template <typename T>
-inline constexpr auto IS_ODD(const T n) { return n & 1; }
+inline constexpr bool is_odd(const T n) { return n & 1; } // must return bool
 template <typename T>
-inline constexpr auto IS_EVEN(const T n) { return !IS_ODD(n); }
+inline constexpr bool is_even(const T n) { return !is_odd(n); } // must return bool
 
 inline CONSTFNC int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
   if (x == 0.0 && y == 0.0) return 0.0; // evidently equal
@@ -139,7 +142,7 @@ void save(boost::archive::binary_oarchive &oa, const ublas::matrix<T> &m) {
 
 template <typename T>
 void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) {
-  size_t size1, size2;
+  size_t size1 = 0, size2 = 0;
   ia >> size1 >> size2;
   m = ublas::matrix<T>(size1, size2);
   for (const auto i : range0(size1)) {
@@ -161,7 +164,7 @@ CONSTFNC inline double Power(const double i, const double nn) { return std::pow(
 // Read 'len' values of type T into a ublas vector<T>.
 template <typename T> ublas::vector<T> read_vector(std::istream &F, const bool nr_is_max_index = false) {
   my_assert(F);
-  size_t nr;
+  size_t nr = 0;
   F >> nr;
   // nr is either vector dimension or the value of maximum index
   const auto len = nr_is_max_index ? nr+1 : nr;
