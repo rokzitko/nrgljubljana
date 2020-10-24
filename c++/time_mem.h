@@ -1,19 +1,23 @@
 #ifndef _time_mem_h_
 #define _time_mem_h_
 
+#include <algorithm>
 #include <utility>
 #include <chrono>
+#include <map>
+#include <string>
 #include "io.h"
 #include "portabil.h"
+#include "basicio.h"
 
 // Warning: not thread safe!
 class Timing {
  private:
    using tp = std::chrono::steady_clock::time_point;
    using dp = std::chrono::duration<double>;
-   const tp start_time;     // time when Timing object constructed
-   tp timer;                // start time for timing sections
-   bool running;            // currently timing a section
+   const tp start_time;         // time when Timing object constructed
+   tp timer;                    // start time for timing sections
+   bool running;                // currently timing a section
    std::map<std::string, dp> t; // accumulators
  public:
    Timing() : start_time(std::chrono::steady_clock::now()), running(false) {}
@@ -31,14 +35,14 @@ class Timing {
      tp end  = now();
      return end - timer;
    }
-   void add(std::string timer) {
+   void add(const std::string &timer) {
      t[timer] += stop();
    }
    dp total() const {
      const tp end_time = now();
      return end_time - start_time;
    }
-   double total_in_seconds() const {
+   auto total_in_seconds() const {
      return total().count();
    }
    void report() const {
@@ -52,11 +56,10 @@ class Timing {
        // Only show those that contribute more than 1% of the total time!
        if (val/t_all > 0.01) {
          std::cout << std::setw(T_WIDTH) << name << ": " << prec3(val.count()) << " s" << std::endl;
-         if (name[0] != '*') t_sum += val;
+         t_sum += val;
        }
      }
-     std::cout << std::setw(T_WIDTH) << "Other"
-       << ": " << prec3((t_all-t_sum).count()) << " s" << std::endl;
+     std::cout << std::setw(T_WIDTH) << "Other" << ": " << prec3((t_all-t_sum).count()) << " s" << std::endl;
    }
 };
 
@@ -66,7 +69,7 @@ class TimeScope {
    Timing &timer;
    const std::string timer_name;
  public:
-   TimeScope(Timing &_timer, std::string _timer_name) : timer(_timer), timer_name(std::move(_timer_name)) { timer.start(); }
+   TimeScope(Timing &timer, const std::string &timer_name) : timer(timer), timer_name(timer_name) { timer.start(); }
    ~TimeScope() { timer.add(timer_name); }
 };
 
@@ -102,7 +105,7 @@ class MemTime {
      tm.report();
    }
    auto time_it(const std::string &name) {
-     return TimeScope(tm, name); // measures time when this object exists in a given scope
+     return TimeScope(tm, name); // measures time when this object exists in a given scope (assign to variable!)
    }
 };
 

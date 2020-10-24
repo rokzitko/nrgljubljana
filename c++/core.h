@@ -100,7 +100,7 @@ auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S
 template<typename S>
 auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
                       const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
-  mt.time_it("diag");
+  const auto section_timing = mt.time_it("diag");
   return P.diag_mode == "MPI" ? mpi.diagonalisations_MPI<S>(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P) 
                               : diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
 }

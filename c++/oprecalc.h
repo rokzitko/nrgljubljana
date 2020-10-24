@@ -42,7 +42,7 @@ class Oprecalc {
    struct SL : public speclist<S> {
      void calc(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM,
                const Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
-       mt.time_it("spec");
+       const auto section_timing = mt.time_it("spec");
        for (auto &i : *this) i.calc(step, diag, rho, rhoFDM, stats);
      }
    };
@@ -65,7 +65,7 @@ class Oprecalc {
 
    // Recalculate operator matrix representations
    void recalculate_operators(IterInfo<S> &a, const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
-       mt.time_it("recalc");
+       const auto section_timing = mt.time_it("recalc");
        for (auto &[name, m] : a.ops)
          m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, qsrmax);
        for (auto &[name, m] : a.opsp)
@@ -195,7 +195,7 @@ class Oprecalc {
 template<typename S>
 void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, Opch<S> &opch, 
                         std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
-  mt.time_it("recalc f");
+  const auto section_timing = mt.time_it("recalc f");
   if (!P.substeps) {
     opch = Sym->recalc_irreduc(step, diag, qsrmax);
   } else {
