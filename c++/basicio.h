@@ -45,7 +45,7 @@ inline bool negligible_imag_part(const std::complex<T> &z, const double output_i
   return abs(z.imag()) < abs(z.real()) * output_imag_eps;
 }
 
-inline std::ofstream safe_open(const std::string filename, const bool binary = false) {
+inline std::ofstream safe_open(const std::string &filename, const bool binary = false) {
   my_assert(filename != "");
   std::ios::openmode flag = std::ios::out;
   if (binary) flag |= std::ios::binary;
@@ -54,7 +54,7 @@ inline std::ofstream safe_open(const std::string filename, const bool binary = f
   return F;
 }
 
-inline std::ifstream safe_open_for_reading(const std::string filename, const bool binary = false) {
+inline std::ifstream safe_open_for_reading(const std::string &filename, const bool binary = false) {
   my_assert(filename != "");
   std::ios::openmode flag = std::ios::in;
   if (binary) flag |= std::ios::binary;

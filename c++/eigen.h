@@ -152,7 +152,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void clear_eigenvectors() {
      for (auto &eig : this->eigs())
        for (auto &m : eig.blocks) 
-         m = Matrix(0, 0);
+         m = Matrix();
    }
    // Total number of states (symmetry taken into account)
    template <typename MF> auto count_states(MF && mult) const {

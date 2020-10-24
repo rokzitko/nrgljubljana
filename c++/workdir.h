@@ -30,7 +30,7 @@ class Workdir {
    const std::string workdir {};
    bool remove_at_exit {true}; // XXX: tie to P.removefiles?
  public:
-   Workdir(const std::string &dir) : workdir(dtemp(dir).value_or(default_workdir)) {
+   explicit Workdir(const std::string &dir) : workdir(dtemp(dir).value_or(default_workdir)) {
      std::cout << "workdir=" << workdir << std::endl << std::endl;
    }
    std::string rhofn(const int N, const std::string &filename) const {  // density matrix files

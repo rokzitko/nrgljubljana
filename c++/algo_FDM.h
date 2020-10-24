@@ -143,7 +143,7 @@ class Algo_FDMgt : virtual public Algo<S> {
 template<typename S>
 class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
  private:
-   inline static const std::string algoname = "FDM";
+   inline static const std::string algoname2 = "FDM";
    SpectrumRealFreq<S> spec_tot;
  public:
    using Matrix = typename traits<S>::Matrix;
@@ -151,7 +151,7 @@ class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
    using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_FDM(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
-     Algo<S>(P), Algo_FDMls<S>(name, prefix, gt, P, false), Algo_FDMgt<S>(name, prefix, gt, P, false), spec_tot(name, algoname, spec_fn(name, prefix, algoname), P) {}
+     Algo<S>(P), Algo_FDMls<S>(name, prefix, gt, P, false), Algo_FDMgt<S>(name, prefix, gt, P, false), spec_tot(name, algoname2, spec_fn(name, prefix, algoname2), P) {}
    void begin(const Step &step) override {
      Algo_FDMgt<S>::begin(step);
      Algo_FDMls<S>::begin(step);

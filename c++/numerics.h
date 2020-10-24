@@ -45,7 +45,8 @@ private:
 public:
   generic_bucket() {}
   // Can be constructured from a STL vector of pairs, by summing the second elements.
-  template <typename T1> generic_bucket(std::vector<std::pair<T1, T>> v) {
+  template <typename T1> 
+  explicit generic_bucket(std::vector<std::pair<T1, T>> v) {
     for (const auto &i : v) value += i.second;
   }
   inline T operator+=(T x) { return value += x; }

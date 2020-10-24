@@ -58,15 +58,12 @@ void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const siz
                                           Matrix &h, const Rmaxvals &qq, const double f) const 
 {
   my_assert(1 <= i && i <= qq.combs());
-  const auto begin1 = qq.offset(i-1);
-  const auto size1  = qq.rmax(i-1);
   // For convenience we subtract the average site occupancy.
   const auto avgoccup = (double)P.spin / 2; // multiplicity divided by 2
   // Energy shift of the diagonal matrix elements in the NRG Hamiltonian. WARNING: for N=0, we are not adding the
-  //  first site of the Wilson chain (indexed as 0), but the second one (indexed as 1). Therefore the appropriate
-  //  zeta is not zeta(0), but zeta(1). zeta(0) is the shift applied to the f[0] orbital in initial.m !!!
-  const auto shift = sc_zeta * (number - f*avgoccup) / step.scale();
-  for (const auto j: qq.view_mma(i)) h(j, j) += shift;
+  // first site of the Wilson chain (indexed as 0), but the second one (indexed as 1). Therefore the appropriate
+  // zeta is not zeta(0), but zeta(1). zeta(0) is the shift applied to the f[0] orbital in initial.m !!!
+  for (const auto j: qq.view_mma(i)) h(j, j) += sc_zeta * (number - f*avgoccup) / step.scale();
 }
 
 template<typename S>

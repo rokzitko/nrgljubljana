@@ -106,26 +106,26 @@ class MPI_diag {
    DiagInfo<S> diagonalisations_MPI(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev,
                                     const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
        DiagInfo<S> diagnew;
-       send_params(DP);                                   // Synchronise parameters
-       std::list<Invar> todo(tasks.begin(), tasks.end()); // List of all the tasks to handle
-       std::list<Invar> done;                             // List of finished tasks.
-       std::deque<int> nodes(mpiw.size());                // Available computation nodes (including the master, which is always at the head of the deque).
-       std::iota(nodes.begin(), nodes.end(), 0);
-       nrglog('M', "nrtasks=" << tasks.size() << " nrnodes=" << nodes.size());
-       while (!todo.empty()) {
-         my_assert(!nodes.empty());
+       send_params(DP);                                         // Synchronise parameters
+       std::list<Invar> tasks_todo(tasks.begin(), tasks.end());
+       std::list<Invar> tasks_done;
+       std::deque<int> nodes_available(mpiw.size());            // Available nodes including the master, which is always at the head of the deque
+       std::iota(nodes_available.begin(), nodes_available.end(), 0);
+       nrglog('M', "nrtasks=" << tasks_todo.size() << " nrnodes=" << nodes_available.size());
+       while (!tasks_todo.empty()) {
+         my_assert(!nodes_available.empty());
          // i is the node to which the next job will be scheduled. (If a single task is left undone, do it on the master
          // node to avoid the unnecessary network copying.)
-         const auto i = todo.size() != 1 ? get_back(nodes) : 0;
+         const auto i = tasks_todo.size() != 1 ? get_back(nodes_available) : 0;
          // On master, we take short jobs from the end. On slaves, we take long jobs from the beginning.
-         const Invar I = i == 0 ? get_back(todo) : get_front(todo);
+         const Invar I = i == 0 ? get_back(tasks_todo) : get_front(tasks_todo);
          auto h = prepare_task_for_diag(step, I, opch, coef, diagprev, Sym, P); // non-const
          nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
          if (i == 0) {
            // On master, diagonalize immediately.
            diagnew[I] = diagonalise<S>(h, DP, myrank());
-           nodes.push_back(0);
-           done.push_back(I);
+           tasks_done.push_back(I);
+           nodes_available.push_back(0);
          } else {
            mpiw.send(i, std::is_same_v<S, double> ? TAG_DIAG_DBL : TAG_DIAG_CMPL, 0);
            send_matrix<S>(i, h);
@@ -136,17 +136,17 @@ class MPI_diag {
            nrglog('M', "Receiveing results from " << status->source());
            const auto [Irecv, eig] = read_from<S>(status->source());
            diagnew[Irecv] = eig;
-           done.push_back(Irecv);
+           tasks_done.push_back(Irecv);
            // The node is now available for new tasks!
-           nodes.push_back(status->source());
+           nodes_available.push_back(status->source());
          }
        }
        // Keep reading results sent from the slave processes until all tasks have been completed.
-       while (done.size() != tasks.size()) {
+       while (tasks_done.size() != tasks.size()) {
          const auto status = mpiw.probe(boost::mpi::any_source, TAG_EIGEN_VEC);
          const auto [Irecv, eig]  = read_from<S>(status.source());
          diagnew[Irecv] = eig;
-         done.push_back(Irecv);
+         tasks_done.push_back(Irecv);
        }
        return diagnew;
      }

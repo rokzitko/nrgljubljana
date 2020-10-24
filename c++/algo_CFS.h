@@ -128,7 +128,7 @@ class Algo_CFSgt : virtual public Algo<S> {
 template<typename S>
 class Algo_CFS : public Algo_CFSls<S>, public Algo_CFSgt<S> {
  private:
-   inline static const std::string algoname = "CFS";
+   inline static const std::string algoname2 = "CFS";
    SpectrumRealFreq<S> spec_tot;
  public:
    using Matrix = typename traits<S>::Matrix;
@@ -136,7 +136,7 @@ class Algo_CFS : public Algo_CFSls<S>, public Algo_CFSgt<S> {
    using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_CFS(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
-     Algo<S>(P), Algo_CFSls<S>(name, prefix, gt, P, false), Algo_CFSgt<S>(name, prefix, gt, P, false), spec_tot(name, algoname, spec_fn(name, prefix, algoname), P) {}
+     Algo<S>(P), Algo_CFSls<S>(name, prefix, gt, P, false), Algo_CFSgt<S>(name, prefix, gt, P, false), spec_tot(name, algoname2, spec_fn(name, prefix, algoname2), P) {}
    void begin(const Step &step) override {
      Algo_CFSgt<S>::begin(step);
      Algo_CFSls<S>::begin(step);

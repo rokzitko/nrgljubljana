@@ -59,7 +59,7 @@ struct TD {
     for (const auto &i : allfields) i->putvalue(O);
     O << std::endl;
   }
-  TD(const Params &P_, std::string filename) : P(P_), filename(filename),
+  TD(const Params &P_, const std::string &filename) : P(P_), filename(filename),
     T(P, allfields, "T"), E(P, allfields, "<E>"), E2(P, allfields, "<E^2>"),
     C(P, allfields, "C"), F(P, allfields, "F"), S(P, allfields, "S") {}
 };
@@ -87,7 +87,7 @@ struct TD_FDM {
     for (const auto &i : allfields) i->putvalue(O);
     O << std::endl;
   }
-  TD_FDM(const Params &P_, std::string filename) : P(P_), filename(filename),
+  TD_FDM(const Params &P_, const std::string &filename) : P(P_), filename(filename),
     T(P, allfields, "T"), E(P, allfields, "E_fdm"),
     C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") {}
 };
