@@ -166,7 +166,7 @@ auto norm(const MatrixElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, F factor
     if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;
     sum += factor_fnc(Ip, I1) * frobenius_norm(mat);
   }
-  return 2.0 * cmpl(sum).real(); // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
+  return 2.0 * sum.real(); // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
 }
 
 template<typename S>

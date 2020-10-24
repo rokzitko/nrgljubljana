@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip> // set_precision
 #include <iterator> // ostream_iterator
+#include "portabil.h"
 
 #define HIGHPREC(val) std::setprecision(std::numeric_limits<double>::max_digits10) << (val)
 

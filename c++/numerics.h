@@ -10,12 +10,16 @@
 #include <range/v3/all.hpp>
 #include <boost/io/ios_state.hpp>
 #include <boost/math/special_functions/sign.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+using namespace boost::numeric;
 
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/complex.hpp>
+
+#include "portabil.h"
 
 template <typename T>
   using complex_array_ref_t = T(&)[2];
@@ -54,8 +58,10 @@ public:
 };
 using bucket = generic_bucket<double>;
 
-#define IS_ODD(n) ((n)&1)
-#define IS_EVEN(n) (!(IS_ODD(n)))
+template <typename T>
+inline constexpr auto IS_ODD(const T n) { return n & 1; }
+template <typename T>
+inline constexpr auto IS_EVEN(const T n) { return !IS_ODD(n); }
 
 inline CONSTFNC int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
   if (x == 0.0 && y == 0.0) return 0.0; // evidently equal
@@ -72,13 +78,13 @@ inline CONSTFNC auto num_equal(const double a, const double b, const double chec
   return my_fcmp(a, b, check_precision) == 0;
 }
 
-inline CONSTFNC auto num_equal(const cmpl &a, const cmpl &b, const double check_precision = 1.e-12) {
+inline CONSTFNC auto num_equal(const std::complex<double> &a, const std::complex<double> &b, const double check_precision = 1.e-12) {
   return (my_fcmp(a.real(), b.real(), check_precision) == 0) && (my_fcmp(a.imag(), b.imag(), check_precision) == 0);
 }
 
 inline CONSTFNC auto are_conjugate(const double a, const double b) { return num_equal(a, b); }
 
-inline CONSTFNC auto are_conjugate(const cmpl &a, const cmpl &b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
+inline CONSTFNC auto are_conjugate(const std::complex<double> &a, const std::complex<double> &b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
 
 template<typename M> auto frobenius_norm(const ublas::matrix<M> &m) { // Frobenius norm (without taking the final square root!)
   double sum{};
@@ -197,6 +203,6 @@ template <typename M> CONSTFNC auto trace_real(const ublas::matrix<M> &m) {
   return ranges::accumulate(range0(m.size2()), 0.0, [&m](auto sum, const auto i){ return sum+check_real(m(i, i)); });
 }
 
-inline auto csqrt(const cmpl z) { return std::sqrt(z); }
+inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); }
 
 #endif

@@ -2,6 +2,7 @@
 #define _traits_h_
 
 #include <boost/numeric/ublas/matrix.hpp>
+using namespace boost::numeric;
 #include <complex>
 
 // We encapsulate the differences between real-value and complex-value versions of the code in class traits.
@@ -18,7 +19,7 @@ template <> struct traits<double> {
   using Matrix = ublas::matrix<t_matel>;  // matrix type
 };
 
-template <> struct traits<cmpl> {
+template <> struct traits<std::complex<double>> {
   using t_matel = std::complex<double>;
   using t_coef = std::complex<double>;
   using t_expv = std::complex<double>;     // we allow the calculation of expectation values of non-Hermitian operators!
@@ -28,7 +29,7 @@ template <> struct traits<cmpl> {
   using Matrix = ublas::matrix<t_matel>;
 };
 
-inline cmpl conj_me(const cmpl &z) { return conj(z); } // conjugation
+inline std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
 inline double conj_me(const double x) { return x; }    // no op
 
 template<typename S>

@@ -32,12 +32,9 @@ inline void print_trace() {
 #define assert_isfinite(x) finite_test_fnc(x, __FILE__, __LINE__)
 
 inline bool my_isfinite(const double x) { return std::isfinite(x); }
+inline bool my_isfinite(std::complex<double> z) { return std::isfinite(z.real()) && std::isfinite(z.imag()); }
 
-using cmpl = std::complex<double>;
-
-inline bool my_isfinite(cmpl z) { return std::isfinite(z.real()) && std::isfinite(z.imag()); }
-
-inline int isfinite(cmpl z) { return (std::isfinite(z.real()) && std::isfinite(z.imag()) ? 1 : 0); }
+inline int isfinite(std::complex<double> z) { return (std::isfinite(z.real()) && std::isfinite(z.imag()) ? 1 : 0); }
 
 template <typename T> 
 inline T finite_test_fnc(T x, const char *file, const int line) {

@@ -20,6 +20,7 @@
 #include "eigen.h"
 #include "subspaces.h"
 
+using cmpl = std::complex<double>;
 
 // Check if the triangle inequality is satisfied (i.e. if Clebsch-Gordan coefficient can be different from zero).
 // This is important, for example, for triplet operators, which are zero when evaluated between two singlet states.
