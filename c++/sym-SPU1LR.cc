@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-SPU1LR-impl.h"
-#include "sym-SPU1LR.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-SPU1LR-impl.hpp"
+#include "sym-SPU1LR.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_SPU1LR(const Params &P, Allfields &allfields)

@@ -1,4 +1,4 @@
-#include "nrg-general.h"
+#include "nrg-general.hpp"
 
 void print_about_message() {
   fmt::print(fmt::emphasis::bold, "NRG Ljubljana - (c) rok.zitko@ijs.si\n");

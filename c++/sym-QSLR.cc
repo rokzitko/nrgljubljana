@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-QSLR-impl.h"
-#include "sym-QSLR.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-QSLR-impl.hpp"
+#include "sym-QSLR.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_QSLR(const Params &P, Allfields &allfields)

@@ -1,10 +1,10 @@
 #define NRG_EXECUTABLE
 
-#include "nrg-general.h" // common
-#include "nrg-lib.h"     // exposed in library
-#include "nrg.h"         // specific to executable
-#include "openmp.h"      // report_openMP() called from main()
-#include "workdir.h"
+#include "nrg-general.hpp" // common
+#include "nrg-lib.hpp"     // exposed in library
+#include "nrg.hpp"         // specific to executable
+#include "openmp.hpp"      // report_openMP() called from main()
+#include "workdir.hpp"
 
 inline void help(int argc, char **argv, std::string help_message)
 {

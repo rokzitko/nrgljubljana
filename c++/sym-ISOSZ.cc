@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-ISOSZ-impl.h"
-#include "sym-ISOSZ.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-ISOSZ-impl.hpp"
+#include "sym-ISOSZ.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_ISOSZ(const Params &P, Allfields &allfields)

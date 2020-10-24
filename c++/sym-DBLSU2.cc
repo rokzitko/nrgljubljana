@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-DBLSU2-impl.h"
-#include "sym-DBLSU2.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-DBLSU2-impl.hpp"
+#include "sym-DBLSU2.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_DBLSU2(const Params &P, Allfields &allfields)

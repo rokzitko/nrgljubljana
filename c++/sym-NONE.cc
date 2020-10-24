@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-NONE-impl.h"
-#include "sym-NONE.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-NONE-impl.hpp"
+#include "sym-NONE.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_NONE(const Params &P, Allfields &allfields)

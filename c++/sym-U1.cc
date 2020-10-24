@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-U1-impl.h"
-#include "sym-U1.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-U1-impl.hpp"
+#include "sym-U1.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_U1(const Params &P, Allfields &allfields)

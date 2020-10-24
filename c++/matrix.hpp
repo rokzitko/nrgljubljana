@@ -1,0 +1,102 @@
+// matrix.cc - Symmetry dependent code for Hamiltonian matrix generation
+// Copyright (C) 2009-2020 Rok Zitko
+
+#ifndef _matrix_hpp_
+#define _matrix_hpp_
+
+// +++ Construct an offdiagonal part of the Hamiltonian. +++
+
+// We test if the block (i,j) exists at all. If not, factor is not evaluated. This prevents divisions by zero.
+#define offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch) \
+  { if (qq.offdiag_contributes(i, j)) this->offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch); }
+
+// i,j - indexes of the out-of-diagonal matrix block that we are constructing
+// ch,fnr - channel and extra index to locate the correct block of the <||f||> matrix (irreducible matrix elements)
+// h - matrix being built
+// qq - matrix dimensions data (to determine the position in the matrix)
+// In - In[i] and In[j] are the invariant subspaces of required <||f||> matrix elements
+// factor  - the coefficient which multiplies the irreducible matrix elements. This coefficient takes into account
+//           the multiplicities.
+// NOTE: the offdiagonal part depends on xi(N), while zeta(N) affect the diagonal part of the Hamiltonian matrix! 
+template<typename S>
+void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const size_t j,
+                                             const size_t ch,      // channel number
+                                             const size_t fnr,     // extra index for <||f||>, usually 0
+                                             const t_coef factor,  // may be complex (in principle)
+                                             Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch<S> &opch) const 
+{
+  my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
+  if (!my_isfinite(factor))
+    throw std::runtime_error(fmt::format("offdiag_function(): factor not finite {} {} {} {}", i, j, ch, fnr));
+  if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) {   // < In[i] r | f^\dag | In[j] r' >
+    const auto &mat = f->second;
+    my_assert(qq.rmax(i-1) == mat.size1() && qq.rmax(j-1) == mat.size2());
+    const auto factor_scaled = factor / step.scale();
+    // We are building the upper triangular part of the Hermitian Hamiltonian. Thus usually i < j. If not, we must
+    // conjugate transpose the contribution!
+    const bool conj_transpose = i > j;
+    if (conj_transpose) {
+      ublas::matrix_range<Matrix> hsub(h, qq.ubview_mma(j), qq.ubview_mma(i));
+      noalias(hsub) += conj_me(factor_scaled) * herm(mat);
+    } else {
+      ublas::matrix_range<Matrix> hsub(h, qq.ubview_mma(i), qq.ubview_mma(j));
+      noalias(hsub) += factor_scaled * mat;
+    }
+  } else
+    throw std::runtime_error(fmt::format("offdiag_function(): matrix not found {} {} {} {}", i, j, ch, fnr));
+}
+
+// +++ Shift the diagonal matrix elements by the number of electrons multiplied by the required constant(s) zeta. +++
+//
+// 'number' is the number of electrons for channel 'ch' in invariant subspaces indexed by 'i'. Note that 'number' is
+// a floating point number: this is required, for example, in the LR symmetric basis sets.
+//
+// NOTE: for problems where a given invariant subspace does not correspond to a fixed number of added electrons, a
+// generalized routine should be used. 
+template<typename S>
+void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+                                          Matrix &h, const Rmaxvals &qq, const double f) const 
+{
+  my_assert(1 <= i && i <= qq.combs());
+  // For convenience we subtract the average site occupancy.
+  const auto avgoccup = (double)P.spin / 2; // multiplicity divided by 2
+  // Energy shift of the diagonal matrix elements in the NRG Hamiltonian. WARNING: for N=0, we are not adding the
+  // first site of the Wilson chain (indexed as 0), but the second one (indexed as 1). Therefore the appropriate
+  // zeta is not zeta(0), but zeta(1). zeta(0) is the shift applied to the f[0] orbital in initial.m !!!
+  for (const auto j: qq.view_mma(i)) h(j, j) += sc_zeta * (number - f*avgoccup) / step.scale();
+}
+
+template<typename S>
+void Symmetry<S>::diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+                                     Matrix &h, const Rmaxvals &qq) const 
+{
+  diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 1);
+}
+
+template<typename S>
+void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+                                          Matrix &h, const Rmaxvals &qq) const 
+{
+  diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 0.5);
+}
+
+// +++ Shift the offdiagonal matrix elements by factor. +++
+
+template<typename S>
+void Symmetry<S>::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor,
+                                             Matrix &h, const Rmaxvals &qq) const 
+{
+  my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
+  if (i > j) return; // only upper triangular part
+  const auto begin1 = qq.offset(i-1);
+  const auto size1  = qq.rmax(i-1);
+  const auto begin2 = qq.offset(j-1);
+  const auto size2  = qq.rmax(j-1);
+  const auto contributes = (size1 > 0) && (size2 > 0);
+  if (!contributes) return;
+  my_assert(size1 == size2);
+  const auto factor_scaled = factor / step.scale();
+  for (const auto l: range0(size1)) h(begin1 + l, begin2 + l) += factor_scaled;
+}
+
+#endif // _matrix_cc_

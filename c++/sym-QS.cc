@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-QS-impl.h"
-#include "sym-QS.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-QS-impl.hpp"
+#include "sym-QS.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_QS(const Params &P, Allfields &allfields)

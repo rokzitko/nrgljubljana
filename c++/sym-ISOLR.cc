@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-ISOLR-impl.h"
-#include "sym-ISOLR.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-ISOLR-impl.hpp"
+#include "sym-ISOLR.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_ISOLR(const Params &P, Allfields &allfields)

@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-QSC3-impl.h"
-#include "sym-QSC3.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-QSC3-impl.hpp"
+#include "sym-QSC3.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<cmpl>> mk_QSC3(const Params &P, Allfields &allfields)

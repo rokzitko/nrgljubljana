@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-QSZ-impl.h"
-#include "sym-QSZ.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-QSZ-impl.hpp"
+#include "sym-QSZ.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_QSZ(const Params &P, Allfields &allfields)

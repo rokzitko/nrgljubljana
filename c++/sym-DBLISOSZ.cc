@@ -1,6 +1,6 @@
-#include "nrg-general.h"
-#include "sym-DBLISOSZ-impl.h"
-#include "sym-DBLISOSZ.h" // include for consistency
+#include "nrg-general.hpp"
+#include "sym-DBLISOSZ-impl.hpp"
+#include "sym-DBLISOSZ.hpp" // include for consistency
 
 template <>
 std::unique_ptr<Symmetry<double>> mk_DBLISOSZ(const Params &P, Allfields &allfields)
