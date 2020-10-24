@@ -10,6 +10,8 @@
 #include <map>
 #include <iostream>
 #include <stdexcept>
+#include <boost/serialization/vector.hpp> // for InvType = std::vector<int>
+#include "portabil.h"
 
 // Conversion functions: multiplicity (integer) -> quantum number (floating point)
 // WARNING: avoid using S as template variable in places where S() is used!!!
