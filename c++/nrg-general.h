@@ -78,6 +78,15 @@ using namespace boost::numeric::ublas; // keep this!
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 namespace atlas = boost::numeric::bindings::atlas;
 
+// This is included in the library only. Should not be used if a cblas library is available.
+#ifdef CBLAS_WORKAROUND
+ #define ADD_
+ #include "cblas_globals.c"
+ #include "cblas_dgemm.c"
+ #include "cblas_zgemm.c"
+ #include "cblas_xerbla.c"
+#endif
+
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -94,16 +103,6 @@ using namespace fmt::literals;
 
 #include <range/v3/all.hpp>
 
-// Support for compiler dependant optimizations
-
-#ifdef __GNUC__
-#define PUREFNC __attribute__((pure))
-#define CONSTFNC __attribute__((const))
-#else
-#define PUREFNC
-#define CONSTFNC
-#endif
-
 #include "nrg-lib.h" // exposed interfaces for wrapping into a library
 #include "portabil.h"
 #include "debug.h"
@@ -118,19 +117,6 @@ using namespace fmt::literals;
 #include "numerics.h"
 #include "time_mem.h"
 #include "outfield.h"
-
-// This is included in the library only. Should not be used if a cblas library is available.
-#ifdef CBLAS_WORKAROUND
- #define ADD_
- #include "cblas_globals.c"
- #include "cblas_dgemm.c"
- #include "cblas_zgemm.c"
- #include "cblas_xerbla.c"
-#endif
-
-inline const size_t MAX_NDX = 1000; // max index number
-inline const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
-
 #include "core.h"
 #include "mk_sym.h"
 

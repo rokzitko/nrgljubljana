@@ -2,6 +2,8 @@
 #define _algo_h_
 
 #include <string>
+#include <list>
+#include <functional> // std::function
 #include "traits.h"
 #include "params.h"
 #include "eigen.h"
@@ -9,6 +11,8 @@
 #include "invar.h"
 #include "step.h"
 #include "stats.h"
+
+inline const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 
 // Wrapper class for NRG spectral-function algorithms
 template<typename S>

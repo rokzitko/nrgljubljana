@@ -1,6 +1,8 @@
 #ifndef _core_h_
 #define _core_h_
 
+inline const size_t MAX_NDX = 1000; // max index number, req'd in read-input.h & stats.h
+
 #include <set>
 #include <algorithm>
 #include "traits.h"

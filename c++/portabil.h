@@ -19,6 +19,16 @@ inline void print_trace() {
   std::cout << "Backtrace:" << std::endl << boost::stacktrace::stacktrace() << std::endl;
 }
 
+// Support for compiler dependant optimizations
+ 
+#ifdef __GNUC__
+ #define PUREFNC __attribute__((pure))
+ #define CONSTFNC __attribute__((const))
+#else
+ #define PUREFNC
+ #define CONSTFNC
+#endif
+
 #define assert_isfinite(x) finite_test_fnc(x, __FILE__, __LINE__)
 
 inline bool my_isfinite(const double x) { return std::isfinite(x); }
