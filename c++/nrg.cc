@@ -1,5 +1,10 @@
 #define NRG_EXECUTABLE
 
+#include <string>
+#include <vector>
+#include <iostream>
+#include <cstdlib>
+
 #include "nrg-general.hpp" // common
 #include "nrg-lib.hpp"     // exposed in library
 #include "nrg.hpp"         // specific to executable

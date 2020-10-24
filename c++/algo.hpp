@@ -2,8 +2,10 @@
 #define _algo_hpp_
 
 #include <string>
+#include <memory>
 #include <list>
 #include <functional> // std::function
+#include <fmt/format.h>
 #include "traits.hpp"
 #include "params.hpp"
 #include "eigen.hpp"

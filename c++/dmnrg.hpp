@@ -20,6 +20,7 @@
 #include "traits.hpp"
 #include "store.hpp"
 #include "time_mem.hpp"
+#include "stats.hpp"
 
 // Numeric bindings to BLAS/LAPACK
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>

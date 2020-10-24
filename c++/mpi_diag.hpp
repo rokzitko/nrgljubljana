@@ -1,15 +1,25 @@
 #ifndef _mpi_diag_hpp_
 #define _mpi_diag_hpp_
 
+#include <iostream>
+#include <list>
+#include <deque>
+#include <algorithm>
+
+#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/collectives.hpp> // broadcast
 
 #include "traits.hpp"
+#include "invar.hpp"
 #include "step.hpp"
 #include "operators.hpp"
 #include "symmetry.hpp"
 #include "params.hpp"
+#include "diag.hpp"
+#include "misc.hpp"
+#include "core.hpp"
 
 enum TAG : int { TAG_EXIT = 1, TAG_DIAG_DBL, TAG_DIAG_CMPL, TAG_SYNC, TAG_MATRIX, TAG_INVAR,
                  TAG_MATRIX_SIZE, TAG_MATRIX_LINE, TAG_EIGEN_INT, TAG_EIGEN_VEC };

@@ -124,13 +124,12 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
   size_t M = dim;
-  char RANGE; // 'A'=all, 'V'=interval, 'I'=part
+  char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
     M     = static_cast<size_t>(ceil(ratio * M)); // round up
     M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
-  } else
-    RANGE = 'A';
+  }
   double *ham = bindings::traits::matrix_storage(m);
   double eigenvalues[dim]; // eigenvalues on exit
   char UPLO     = 'L';     // lower triangle of a is stored
@@ -144,7 +143,7 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
   double ABSTOL = 0;
   // If ABSTOL=0, EPS*|T| where |T| is the 1-norm of the tridiagonal
   // matrix obtained by reducing m to tridiagonal form.
-  int MM; // total number of eigenvalues found
+  int MM{}; // total number of eigenvalues found
   int LDZ = dim;
   int ISUPPZ[2 * M];
   //  The support of the eigenvectors in Z, i.e., the indices
@@ -177,7 +176,7 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
 
 inline Eigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<double>> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
-  lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
+  auto *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   double eigenvalues[dim]; // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
@@ -203,14 +202,13 @@ inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
   size_t M = dim;
-  char RANGE; // 'A'=all, 'V'=interval, 'I'=part
+  char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
     M     = static_cast<size_t>(ceil(ratio * M)); // round up
     M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
-  } else
-    RANGE = 'A';
-  lapack_complex_double *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
+  }
+  auto *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
   double eigenvalues[dim]; // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix
@@ -223,7 +221,7 @@ inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex
   double ABSTOL = 0;
   // If ABSTOL=0, EPS*|T| where |T| is the 1-norm of the tridiagonal
   // matrix obtained by reducing m to tridiagonal form.
-  int MM; // total number of eigenvalues found
+  int MM = 0; // total number of eigenvalues found
   int LDZ = dim;
   int ISUPPZ[2 * M];
   //  The support of the eigenvectors in Z, i.e., the indices
@@ -332,4 +330,4 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP,
   return d;
 }
 
-#endif // _diag_hpp_
+#endif

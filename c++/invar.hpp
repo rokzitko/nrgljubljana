@@ -11,6 +11,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/serialization/vector.hpp> // for InvType = std::vector<int>
+#include <fmt/format.h>
 #include "portabil.hpp"
 
 // Conversion functions: multiplicity (integer) -> quantum number (floating point)
@@ -58,10 +59,10 @@ class Invar {
      return os;
    }
    friend std::ostream &operator<<(std::ostream &os, const Invar &invar) { return invar.insertor(os); }
-   std::string str() const { std::ostringstream s; insertor(s); return s.str(); }
-   std::istream &extractor(std::istream &is) {
+   [[nodiscard]] auto str() const { std::ostringstream s; insertor(s); return s.str(); }
+   auto & extractor(std::istream &is) {
      for (auto &i : data) {
-       int qn;
+       int qn{};
        if (is >> qn)
          i = qn;
        else
@@ -74,7 +75,7 @@ class Invar {
    bool operator!=(const Invar &invar2) const { return !operator==(invar2); }
    bool operator<(const Invar &invar2)  const { return data < invar2.data; }
    // Accessor needed, because data is private.
-   int getqn(const size_t i) const {
+   [[nodiscard]] auto getqn(const size_t i) const {
      my_assert(i < data.size());
      return data[i];
    }
@@ -120,7 +121,7 @@ class Invar {
          break;
        }
    }
-   int get(const std::string &which) const {
+   [[nodiscard]] auto get(const std::string &which) const {
      const auto i = name.find(which);
      if (i == end(name)) throw std::invalid_argument(fmt::format("{} is an unknown quantum number.", which));
      const auto index = i->second;
@@ -141,7 +142,7 @@ class Invar {
      const auto index = i->second;
      data[index]      = -data[index];
    }
-   Invar InvertParity() const {
+   [[nodiscard]] auto InvertParity() const {
      Invar I(data);
      I.InvertMyParity();
      return I;

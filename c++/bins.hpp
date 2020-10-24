@@ -4,9 +4,13 @@
 #ifndef _bins_hpp_
 #define _bins_hpp_
 
+#include <cmath>
+#include <range/v3/all.hpp>
+#include "portabil.hpp"
 #include "traits.hpp"
 #include "spectral.hpp"
 #include "params.hpp"
+#include "numerics.hpp"
 
 // Binned spectral peaks. P.bins defines the number of bins per energy decade. The lowest and highest energies are
 // defined by the zero-th and last NRG energy scale.
@@ -40,10 +44,12 @@ class Bins {
    inline static const double zero_epsilon = 1e-14;
    inline static const double discarded_weight_warn_limit = 1e-8;
 
+
  public:
-   Spikes<S> bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs
+   Spikes<S> bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs  // XXX
    operator const Spikes<S> &() const { return bins; }
    operator Spikes<S> &() { return bins; }
+   // auto & get() { return bins; }
    explicit Bins(const Params &P) : P(P) { loggrid(); } // default: logarithmic grid
    inline void add(const double energy, const t_weight weight);
    void merge(const Bins<S> &b);

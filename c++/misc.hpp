@@ -9,6 +9,7 @@
 #include <optional>
 #include <deque>
 #include <list>
+#include <map>
 #include <fstream>
 #include <cstring> // stdcasecmp
 
@@ -17,6 +18,9 @@
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
+
+#include "basicio.hpp"
+#include "portabil.hpp"
 
 template<typename T> auto get_back(T &d) { // usually T is list or deque
   my_assert(!d.empty());
@@ -161,7 +165,7 @@ class string_token {
          pos = last + 1;
      }
    }
-   bool find(std::string x) const { return std::find(l.begin(), l.end(), x) != l.end(); }
+   [[nodiscard]] auto find(std::string x) const { return std::find(l.begin(), l.end(), x) != l.end(); }
 };
 
 // Skip comment lines in the input stream 'f'.

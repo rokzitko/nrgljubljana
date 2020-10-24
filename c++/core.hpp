@@ -1,10 +1,12 @@
 #ifndef _core_hpp_
 #define _core_hpp_
 
-inline const size_t MAX_NDX = 1000; // max index number, req'd in read-input.h & stats.h
-
+#include <cstddef>
 #include <set>
 #include <algorithm>
+
+inline const size_t MAX_NDX = 1000; // max index number, req'd in read-input.h & stats.h
+
 #include "traits.hpp"
 #include "invar.hpp"
 #include "eigen.hpp"

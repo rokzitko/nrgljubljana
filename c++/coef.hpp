@@ -5,6 +5,7 @@
 #include <fstream>
 #include "traits.hpp"
 #include "numerics.hpp" // read_vector
+#include "params.hpp"
 
 // Table of Wilson chain coefficients
 template <typename S> class coef_table : traits<S> {

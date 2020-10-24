@@ -18,6 +18,9 @@ class my_mpf {
     mpf_init(val);
     mpf_set(val, x.val);
   }
+  my_mpf(my_mpf && x) = delete;
+  my_mpf & operator=(const my_mpf & x) = delete;
+  my_mpf & operator=(my_mpf && x) = delete;
   ~my_mpf() { mpf_clear(val); }
   inline operator mpf_t &() { return val; }
 };
