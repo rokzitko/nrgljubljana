@@ -174,6 +174,10 @@ public:
       my_assert(num_equal(stats.GS_energy, stats.total_energy));
     }
   }
+  NRG_calculation(const NRG_calculation &) = delete;
+  NRG_calculation(NRG_calculation &&) = delete;
+  NRG_calculation & operator=(const NRG_calculation &) = delete;
+  NRG_calculation & operator=(const NRG_calculation &&) = delete;
   ~NRG_calculation() {
     if (!P.embedded) mt.report(); // only when running as a stand-alone application
     if (P.done) { std::ofstream D("DONE"); } // Indicate completion by creating a flag file

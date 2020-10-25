@@ -1,3 +1,5 @@
+add_subdirectory(unit)
+
 add_subdirectory(c++)
 add_subdirectory(c++sym_basic)
 

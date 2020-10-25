@@ -8,8 +8,10 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <optional>
 #include <cmath> // isfinite
-#include <cstdlib> // exit
+#include <cstdlib> // exit, atol
 #include <complex>
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
@@ -115,26 +117,32 @@ inline int memoryused() {
 #define HAS_MEMORY_USAGE
 #endif
 
-#if defined(__linux)
-#include <string.h>
-#include <stdio.h>
-// Returns the number of kB blocks of memory used by this process (self). 
-inline int memoryused() {
-  int used = 0;
-
-  // See /usr/src/linux/Documentation/filesystems/proc.txt
-  if (FILE *info = fopen("/proc/self/status", "r")) {
-    char buf[512];
-    int val;
-
-    while (fgets(buf, sizeof(buf), info)) {
-//      if (!strncmp(buf, "VmSize:", 7) && sscanf(buf + 7, "%d", &val)) used = val;
-      if (!strncmp(buf, "VmPeak:", 7) && sscanf(buf + 7, "%d", &val)) used = val; // peak usage is more useful information!!
-    }
-    fclose(info);
+// Finds a line containing string 'keyword' in a stream, erases that string, and returns the rest of the line.
+inline std::optional<std::string> parse_string(std::istream &F, const std::string &keyword) {
+  while (F) {
+    std::string line;
+    std::getline(F, line);
+    if (auto found = line.find(keyword); found != std::string::npos)
+       return line.replace(found, keyword.length(), "");
   }
+  return std::nullopt;
+}
 
-  return used;
+inline auto parse_string(const std::string &filename, const std::string &keyword) {
+   std::ifstream F(filename);
+   return parse_string(F, keyword);
+}
+   
+#if defined(__linux)
+// Returns the number of kB blocks of memory used by this process (self). 
+// See /usr/src/linux/Documentation/filesystems/proc.txt
+inline long memoryused() {
+   try {
+      return atol(parse_string("/proc/self/status", "VmPeak:").get_value_or("0"));
+   }
+   catch (...) {
+      return 0;
+   }
 }
 #define HAS_MEMORY_USAGE
 #endif
