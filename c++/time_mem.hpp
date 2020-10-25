@@ -78,7 +78,7 @@ class TimeScope {
 
 class MemoryStats {
  private:
-   mutable int peakusage{};
+   mutable long peakusage{};
  public:
    auto used() const {
      const auto memused = memoryused();

@@ -6,6 +6,7 @@
 
 #include <stdexcept>
 #include <string>
+using namespace std::string_literals;
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -138,7 +139,7 @@ inline auto parse_string(const std::string &filename, const std::string &keyword
 // See /usr/src/linux/Documentation/filesystems/proc.txt
 inline long memoryused() {
    try {
-      return atol(parse_string("/proc/self/status", "VmPeak:").get_value_or("0"));
+      return atol(parse_string("/proc/self/status", "VmPeak:").value_or("0"s).c_str());
    }
    catch (...) {
       return 0;
