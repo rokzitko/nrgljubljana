@@ -4,8 +4,11 @@
 #ifndef _splitting_hpp_
 #define _splitting_hpp_
 
+#include <iostream>
 #include <unordered_map>
+#include "portabil.hpp"
 #include "traits.hpp"
+#include "eigen.hpp"
 
 template<typename T>
 inline void cluster_show(const T &i0, const T &i1) {

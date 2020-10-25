@@ -18,6 +18,7 @@
 #include "step.hpp"
 #include "eigen.hpp"
 #include "subspaces.hpp"
+#include "stats.hpp"
 
 using cmpl = std::complex<double>;
 
@@ -81,8 +82,12 @@ class Symmetry {
      In.erase(In.begin());
      QN.erase(QN.begin());
    }
-   explicit Symmetry(const Params &P_, const Invar & InvarSinglet = {}, const Invar & Invar_f = {}) :
+   Symmetry(const Params &P_, const Invar & InvarSinglet = {}, const Invar & Invar_f = {}) :
      P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f) {}
+   Symmetry(const Symmetry &) = delete;
+   Symmetry(Symmetry &&) = delete;
+   Symmetry &operator=(const Symmetry &) = delete;
+   Symmetry &operator=(Symmetry &&) = delete;
    virtual ~Symmetry() {}
    auto input_subspaces() const { return In; }
    auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; }
@@ -93,7 +98,7 @@ class Symmetry {
      anc.combine(input[i]);
      return anc; // I.combine(input[i]) == input[i].combine(I)
    }
-   size_t nr_combs() const {
+   [[nodiscard]] size_t nr_combs() const {
      my_assert(P.combs == In.size());
      my_assert(P.combs == QN.size());
      return P.combs;
@@ -122,17 +127,17 @@ class Symmetry {
    // spin-down spectral functions).
    virtual bool isfield() { return false; }
    // Multiplicity of the states in the invariant subspace
-   virtual size_t mult(const Invar &) const { return 1; };
+   [[nodiscard]] virtual size_t mult(const Invar &) const { return 1; };
    auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
    auto calculate_Z(const Invar &I, const Eigen<S> &eig, const double rescale_factor) const {
      return mult(I) * ranges::accumulate(eig.value_zero, 0.0, [rf=rescale_factor](auto sum, const auto &x) { return sum+exp(-rf*x); });
    }
    // Does the combination of subspaces I1 and I2 contribute to the spectral function corresponding to spin SPIN?
-   virtual bool check_SPIN(const Invar &I1, const Invar &I2, const int &SPIN) const { return true; }
+   [[nodiscard]] virtual bool check_SPIN(const Invar &I1, const Invar &I2, const int &SPIN) const { return true; }
    // Is the triangle inequality satisfied (i.e. can Clebsch-Gordan coefficient be different from zero)?
-   virtual bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const { return true; }
+   [[nodiscard]] virtual bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const { return true; }
    // Is an invariant subspace with given quantum numbers allowed?
-   virtual bool Invar_allowed(const Invar &I) const { return true; }
+   [[nodiscard]] virtual bool Invar_allowed(const Invar &I) const { return true; }
 
    using Matrix = typename traits<S>::Matrix;
    using t_matel = typename traits<S>::t_matel;
@@ -154,16 +159,16 @@ class Symmetry {
 
    // Called from recalc_dynamicsusceptibility().  This is the factor due
    // to the spin degeneracy when calculating the trace of Sz.Sz.
-   virtual double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
+   [[nodiscard]] virtual double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
 
    // Called from recalc_dynamic_orb_susceptibility().  This is the factor due
    // to the orbital moment degeneracy when calculating the trace of Tz.Tz.
-   virtual double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
+   [[nodiscard]] virtual double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
 
    // Called from calc_specdens().
    // See spectral_density_clebschgordan.nb and DMNRG_clebschgordan.nb.
-   virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
-   virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
+   [[nodiscard]] virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
+   [[nodiscard]] virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
 
    virtual void calculate_TD(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, const double factor) = 0;
 

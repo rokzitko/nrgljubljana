@@ -19,7 +19,7 @@ inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const QSrmax &qsr
   my_assert(nr > 0);
   my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
   for (const auto block: range0(combs)) {
-    ublas::matrix_range<typename traits<S>::Matrix> Up(e.matrix, ublas::range(0, nr), qsrmax.at(I).ubview(block));
+    ublas::matrix_range<typename traits<S>::Matrix> Up(e.matrix, ublas::range(0, nr), qsrmax.at(I).uboost_view(block));
     e.blocks[block] = Up;
   }
   e.matrix = typename traits<S>::Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!

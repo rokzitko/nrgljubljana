@@ -2,5 +2,8 @@
 -Ic++/
 -Ic++/include/
 -Iinclude/
+-Ic++/symmetry/
+-Isymmetry/
 -I/usr/lib/gcc/x86_64-linux-gnu/9/include/
+-I/usr/lib/x86_64-linux-gnu/openmpi/include/
 

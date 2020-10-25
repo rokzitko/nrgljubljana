@@ -33,10 +33,14 @@ class Workdir {
    explicit Workdir(const std::string &dir) : workdir(dtemp(dir).value_or(default_workdir)) {
      std::cout << "workdir=" << workdir << std::endl << std::endl;
    }
-   std::string rhofn(const size_t N, const std::string &filename) const {  // density matrix files
+   Workdir(const Workdir &) = delete;
+   Workdir(Workdir &&) = delete;
+   Workdir & operator=(const Workdir &) = delete;
+   Workdir & operator=(Workdir &&) = delete;
+   [[nodiscard]] std::string rhofn(const size_t N, const std::string &filename) const {  // density matrix files
      return workdir + "/" + filename + std::to_string(N);
    }
-   std::string unitaryfn(const size_t N, const std::string &filename = "unitary"s) const { // eigenstates files
+   [[nodiscard]] std::string unitaryfn(const size_t N, const std::string &filename = "unitary"s) const { // eigenstates files
      return workdir + "/" + filename + std::to_string(N);
    }
    void remove() {

@@ -17,11 +17,11 @@ class Timing {
    using dp = std::chrono::duration<double>;
    const tp start_time;         // time when Timing object constructed
    tp timer;                    // start time for timing sections
-   bool running;                // currently timing a section
+   bool running{};                // currently timing a section
    std::map<std::string, dp> t; // accumulators
  public:
-   Timing() : start_time(std::chrono::steady_clock::now()), running(false) {}
-   tp now() const  {
+   Timing() : start_time(std::chrono::steady_clock::now()) {}
+   [[nodiscard]] tp now() const  {
      return std::chrono::steady_clock::now();
    }
    void start() {
@@ -38,14 +38,14 @@ class Timing {
    void add(const std::string &timer) {
      t[timer] += stop();
    }
-   dp total() const {
+   [[nodiscard]] dp total() const {
      const tp end_time = now();
      return end_time - start_time;
    }
-   auto total_in_seconds() const {
+   [[nodiscard]] auto total_in_seconds() const {
      return total().count();
    }
-   void report() const {
+   void report(const double non_negligible_ratio = 0.01) const {
      const auto T_WIDTH  = 12;
      const auto t_all = total();
      std::cout << std::endl << "Timing report" << std::endl;
@@ -53,8 +53,7 @@ class Timing {
        << ": " << prec3(t_all.count()) << " s" << std::endl;
      dp t_sum;
      for (const auto &[name, val] : t) {
-       // Only show those that contribute more than 1% of the total time!
-       if (val/t_all > 0.01) {
+       if (val/t_all > non_negligible_ratio) {
          std::cout << std::setw(T_WIDTH) << name << ": " << prec3(val.count()) << " s" << std::endl;
          t_sum += val;
        }
@@ -70,6 +69,10 @@ class TimeScope {
    const std::string timer_name;
  public:
    TimeScope(Timing &timer, const std::string &timer_name) : timer(timer), timer_name(timer_name) { timer.start(); }
+   TimeScope(const TimeScope &) = delete;
+   TimeScope(TimeScope &&) = delete;
+   TimeScope & operator=(const TimeScope &) = delete;
+   TimeScope & operator=(TimeScope &&) = delete;
    ~TimeScope() { timer.add(timer_name); }
 };
 

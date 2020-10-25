@@ -18,40 +18,40 @@ class Rmaxvals {
    Rmaxvals() = default;
    template<typename S>
      Rmaxvals(const Invar &I, const InvarVec &In, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym);
-   auto combs() const { return values.size(); }
-   auto rmax(const size_t i) const {
+   [[nodiscard]] auto combs() const { return values.size(); }
+   [[nodiscard]] auto rmax(const size_t i) const {
      my_assert(i < combs());
      return values[i];
    }
-   auto exists(const size_t i) const {
+   [[nodiscard]] auto exists(const size_t i) const {
      my_assert(i < combs());
      return values[i] > 0;
    }
-   auto offset(const size_t i) const {
+   [[nodiscard]] auto offset(const size_t i) const {
      my_assert(i < combs());
      return ranges::accumulate(std::begin(values), std::begin(values) + i, size_t{0});
    }
-   auto view(const size_t i) const {
+   [[nodiscard]] auto view(const size_t i) const {
      return boost::irange(offset(i), offset(i)+rmax(i));
    }
-   auto view_mma(const size_t i) const {
+   [[nodiscard]] auto view_mma(const size_t i) const {
      return view(i-1); // Mathematica uses 1-based indexing
    }
-   auto ubview(const size_t i) const {
+   [[nodiscard]] auto uboost_view(const size_t i) const {
      return ublas::range(offset(i), offset(i)+rmax(i));
    }
-   auto ubview_mma(const size_t i) const {
-     return ubview(i-1); // Mathematica uses 1-based indexing
+   [[nodiscard]] auto uboost_view_mma(const size_t i) const {
+     return uboost_view(i-1); // Mathematica uses 1-based indexing
    }
-   auto operator[](const size_t i) const { return rmax(i); }
-   auto total() const { return ranges::accumulate(values, 0); } // total number of states
+   [[nodiscard]]  auto operator[](const size_t i) const { return rmax(i); }
+   [[nodiscard]] auto total() const { return ranges::accumulate(values, 0); } // total number of states
    // *** Mathematica interfacing: i1,j1 are 1-based
-   bool offdiag_contributes(const size_t i1, const size_t j1) const { // i,j are 1-based (Mathematica interface)
+   [[nodiscard]] bool offdiag_contributes(const size_t i1, const size_t j1) const { // i,j are 1-based (Mathematica interface)
      my_assert(1 <= i1 && i1 <= combs() && 1 <= j1 && j1 <= combs());
      my_assert(i1 != j1);
      return exists(i1-1) && exists(j1-1); // shift by 1
    }
-   auto chunk(const size_t i1) const {
+   [[nodiscard]] auto chunk(const size_t i1) const {
      return std::make_pair(offset(i1-1), rmax(i1-1));
    }
  private:
@@ -65,10 +65,10 @@ class Rmaxvals {
 
 class QSrmax : public std::map<Invar, Rmaxvals> {
  public:
-   QSrmax() {}
+   QSrmax() = default;
    template<typename S> QSrmax(const DiagInfo<S> &, std::shared_ptr<Symmetry<S>>);
    // List of invariant subspaces in which diagonalisations need to be performed
-   std::vector<Invar> task_list() const {
+   [[nodiscard]] std::vector<Invar> task_list() const {
      std::vector<std::pair<size_t, Invar>> tasks_with_sizes;
      for (const auto &[I, rm] : *this)
        if (rm.total())
@@ -84,7 +84,7 @@ class QSrmax : public std::map<Invar, Rmaxvals> {
      for(const auto &[I, rm]: *this)
        std::cout << "rmaxvals(" << I << ")=" << rm << " total=" << rm.total() << std::endl;
    }
-   auto at_or_null(const Invar &I) const {
+   [[nodiscard]] auto at_or_null(const Invar &I) const {
      const auto i = this->find(I);
      return i == this->cend() ? Rmaxvals() : i->second;
    }
