@@ -119,13 +119,14 @@ CONSTFNC inline auto intpow(const int x, const int n) {
 CONSTFNC inline auto psgn(const int n) { return n % 2 == 0 ? 1.0 : -1.0; }
 
 // Dump a matrix with full numerical precision. The columns are aligned for easier inspection. Expect large output!
-template<typename M> inline void dump_matrix(const ublas::matrix<M> &m, std::ostream &F = std::cout) {
+template<typename M> inline void dump_matrix(const ublas::matrix<M> &m, std::ostream &F = std::cout, 
+                                             const int header_width = 7, const int column_width = 23) {
   boost::io::ios_base_all_saver ofs(F);
   F << std::setprecision(std::numeric_limits<double>::max_digits10);
   F << fmt::format("Matrix: {}x{}\n", m.size1(), m.size2());
   for (auto r1 = 0; r1 < m.size1(); r1++) {
-    F << std::setw(6) << r1 << ":";
-    for (auto r2 = 0; r2 < m.size2(); r2++) F << std::setw(23) << m(r1, r2) << " ";
+    F << std::setw(header_width) << r1 << ":";
+    for (auto r2 = 0; r2 < m.size2(); r2++) F << std::setw(column_width) << m(r1, r2) << " ";
     F << std::endl;
   }
 }

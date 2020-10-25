@@ -19,6 +19,7 @@
 #include "eigen.hpp"
 #include "subspaces.hpp"
 #include "stats.hpp"
+#include "coef.hpp"
 
 namespace NRG {
 

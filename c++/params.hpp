@@ -34,9 +34,9 @@ class parambase {
      _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
    virtual ~parambase() = default;
    virtual void setvalue_str(std::string newvalue) = 0;
-   virtual void dump()                        = 0;
-   std::string getkeyword() const { return _keyword; }
-   std::string getdesc() const { return _desc; }
+   virtual void dump()                             = 0;
+   [[nodiscard]] std::string getkeyword() const { return _keyword; }
+   [[nodiscard]] std::string getdesc() const { return _desc; }
 };
 
 // Templated specialized classes for various storage types (int, double, string, bool)
@@ -58,8 +58,8 @@ class param : public parambase {
      }
    void dump() override { std::cout << _keyword << "=" << data << (!defaultval ? " *" : "") << std::endl; }
    // This line enables to access parameters using an object as a rvalue
-   inline operator const T &() const { return data; }
-   inline T value() const { return data; }
+   [[nodiscard]] inline operator const T &() const { return data; }
+   [[nodiscard]] inline T value() const { return data; }
    void setvalue_str(std::string newvalue) override {
      _value     = newvalue;
      data       = from_string<T>(newvalue);
@@ -537,6 +537,7 @@ class Params {
   }
 
   bool embedded; // If true, the code is being called as a library from some application, not stand-alone.
+
   Params(const std::string &filename, const std::string &block, const Workdir &workdir, const bool embedded) 
      : workdir(workdir), embedded(embedded) {
     auto parsed_params = parser(filename, block);

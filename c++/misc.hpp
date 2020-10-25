@@ -19,6 +19,10 @@
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+using namespace boost::numeric;
+
 #include "basicio.hpp"
 #include "portabil.hpp"
 
@@ -156,7 +160,7 @@ class string_token {
  public:
    explicit string_token(std::string _s) : s(std::move(_s)) {
      std::string::size_type pos = 0;
-     std::string::size_type first, last;
+     std::string::size_type first = 0, last = 0;
      while ((first = s.find_first_not_of(" ", pos)) != std::string::npos) {
        last              = s.find_first_of(" ", first);
        std::string token = std::string(s, first, last - first);
