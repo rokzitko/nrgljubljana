@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetrySPSU2 : public Symmetry<SC> {
   private:
@@ -155,4 +157,7 @@ void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals 
   }
 }
 
+}
+
 #include "nrg-recalc-SPSU2.hpp"
+

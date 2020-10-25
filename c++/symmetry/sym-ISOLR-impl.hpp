@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryISOLRcommon : public SymLR<SC> {
  private:
@@ -125,6 +127,8 @@ void SymmetryISO2LR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals
   int ss = I.get("SS");
   int ii = I.get("II");
 #include "iso2lr/iso2lr-2ch-offdiag.dat"
+}
+
 }
 
 #include "nrg-recalc-ISOLR.hpp"

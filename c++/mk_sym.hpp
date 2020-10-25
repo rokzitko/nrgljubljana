@@ -41,6 +41,8 @@
 #include "sym-QSC3.hpp"
 #endif
 
+namespace NRG {
+
 template<typename S>
 std::unique_ptr<Symmetry<S>> get(const std::string &sym_string, const Params &P, Allfields &allfields)
 {
@@ -94,5 +96,7 @@ std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P, Stats<S> &stats) {
   Sym->erase_first();
   return Sym;
 }
+
+} // namespace
 
 #endif

@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryISOcommon : public Symmetry<SC> {
   private:
@@ -173,6 +175,8 @@ void SymmetryISO2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &
       break;
     default: my_assert_not_reached();
   }
+}
+
 }
 
 #include "nrg-recalc-ISO.hpp"

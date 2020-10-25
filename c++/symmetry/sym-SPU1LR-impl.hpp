@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetrySPU1LR : public SymFieldLR<SC> {
  private:
@@ -91,6 +93,8 @@ void SymmetrySPU1LR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals
       break;
     default: my_assert_not_reached();
   }
+}
+
 }
 
 #include "nrg-recalc-SPU1LR.hpp"

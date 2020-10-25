@@ -6,6 +6,8 @@
 #include "eigen.hpp"
 #include <range/v3/all.hpp>
 
+namespace NRG {
+
 template<typename S> class Symmetry;
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. The name "rmax" comes from the maximal value of
@@ -89,5 +91,7 @@ class QSrmax : public std::map<Invar, Rmaxvals> {
      return i == this->cend() ? Rmaxvals() : i->second;
    }
 };
+
+} // namespace
 
 #endif

@@ -7,6 +7,8 @@
 #include "numerics.hpp" // read_vector
 #include "params.hpp"
 
+namespace NRG {
+
 // Table of Wilson chain coefficients
 template <typename S> class coef_table : traits<S> {
 private:
@@ -105,5 +107,7 @@ public:
   auto zetaUPDO(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 2 * P.channels); }
   auto zetaDOUP(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 3 * P.channels); }
 };
+
+} // namespace
 
 #endif

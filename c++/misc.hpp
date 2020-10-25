@@ -22,6 +22,8 @@
 #include "basicio.hpp"
 #include "portabil.hpp"
 
+namespace NRG {
+
 template<typename T> auto get_back(T &d) { // usually T is list or deque
   my_assert(!d.empty());
   auto i = d.back();
@@ -206,5 +208,7 @@ inline bool complex_data(const std::string &filename = "data") {
   const auto pos = l.find("COMPLEX"); 
   return pos != std::string::npos;
 } 
+
+} // namespace
 
 #endif

@@ -15,6 +15,8 @@ using namespace std::string_literals;
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
+namespace NRG {
+
 enum class RUNTYPE { NRG, DMNRG }; // First or second sweep? Used in class Step.
 
 inline const auto fn_rho {"rho"s};
@@ -638,5 +640,7 @@ class DiagParams {
       ar &logstr;
    }
 };
+
+} // namespace
 
 #endif

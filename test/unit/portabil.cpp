@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include <portabil.hpp>
-
 #include <sstream>
+
+using namespace NRG;
 
 TEST(parse_string, stream) {
    std::stringstream ss;

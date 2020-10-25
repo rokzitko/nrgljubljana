@@ -19,6 +19,8 @@
 #include <fmt/ranges.h>
 using namespace fmt::literals;
 
+namespace NRG {
+
 inline std::string to_string(const std::complex<double> &z) {
   std::ostringstream s;
   s << z;
@@ -69,5 +71,7 @@ inline bool file_exists(const std::string &fn)
    std::ofstream F(fn, std::ios::binary | std::ios::out);
    return bool(F);
 }
+
+} // namespace
 
 #endif

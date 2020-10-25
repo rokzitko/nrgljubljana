@@ -12,6 +12,8 @@
 #include "params.hpp"
 #include "numerics.hpp"
 
+namespace NRG {
+
 // Binned spectral peaks. P.bins defines the number of bins per energy decade. The lowest and highest energies are
 // defined by the zero-th and last NRG energy scale.
 
@@ -201,5 +203,7 @@ class Temp : public Spikes<S> {
      this->emplace_back(energy, weight);
    }
 };
+
+} // namespace
 
 #endif // _bins_hpp_

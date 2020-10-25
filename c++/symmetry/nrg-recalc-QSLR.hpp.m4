@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-QSLR.cc.m4, not nrg-recalc-QSLR.cc !!!
 
 // Quantum number dependent recalculation routines
@@ -89,4 +91,6 @@ MatrixElements<SC> SymmetryQSLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
     RECALC_TAB("qslr/qslr-2ch-tripletm.dat", Invar(0, 3, +1));
   }
   return cnew;
+}
+
 }

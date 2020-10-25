@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-SPSU2.cc.m4, not nrg-recalc-SPSU2.cc !!!
 
 // Quantum number dependant recalculation routines
@@ -637,3 +639,5 @@ void SymmetrySPU1<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag,
 #undef Q1
 #undef Q2
 #undef Q3
+
+}

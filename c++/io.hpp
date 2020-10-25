@@ -14,6 +14,8 @@
 #include <fmt/ranges.h>
 using namespace fmt::literals;
 
+namespace NRG {
+
 template <typename T>
 inline std::string formatted_output(const T x, const Params &P) {
   return fmt::format("{x:>{width}}", "x"_a=x, "width"_a=P.width_custom);
@@ -33,5 +35,7 @@ inline void outputxy(std::ostream &F, const double x, const std::complex<double>
   if (imagpart) F << " " << (abs(i)>abs(r)*clip_tol_imag ? i : 0);
   F << std::endl;
 }
+
+} // namespace
 
 #endif

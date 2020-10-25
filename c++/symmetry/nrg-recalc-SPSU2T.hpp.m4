@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-SPSU2T.cc.m4, not nrg-recalc-SPSU2T.cc !!!
 
 // Quantum number dependant recalculation routines
@@ -96,4 +98,6 @@ MatrixElements<SC> SymmetrySPSU2T<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
     RECALC_TAB("spsu2t/spsu2t-tripletm.dat", Invar(3, 0));
   }
   return cnew;
+}
+
 }

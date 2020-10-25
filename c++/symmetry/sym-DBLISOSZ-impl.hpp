@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryDBLISOSZ : public SymField<SC> {
  private:
@@ -111,6 +113,8 @@ void SymmetryDBLISOSZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxva
       break;
     default: my_assert_not_reached();
   }
+}
+
 }
 
 #include "nrg-recalc-DBLISOSZ.hpp"

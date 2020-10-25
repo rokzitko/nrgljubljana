@@ -7,6 +7,8 @@
 #include <iostream>
 #include <cstdlib> // exit
 
+namespace NRG {
+
 // Non-recoverable error or explicit request to stop at some calculation stage
 #define exit1(...)                                                                                                                                   \
   {                                                                                                                                                  \
@@ -36,5 +38,7 @@
 #define nrgdump5(STR1, STR2, STR3, STR4, STR5)                                                                                               \
   #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " " << #STR4 << "=" << (STR4) << " " << #STR5  \
        << "=" << (STR5) << " "
+
+} // namespace
 
 #endif

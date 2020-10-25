@@ -10,6 +10,8 @@
 #include "traits.hpp"
 #include "eigen.hpp"
 
+namespace NRG {
+
 template<typename T>
 inline void cluster_show(const T &i0, const T &i1) {
   std::cout << "[";
@@ -68,5 +70,7 @@ class Clusters {
      if (fix) fix_it(diag);
    }
 };
+
+} // namespace
 
 #endif

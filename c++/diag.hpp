@@ -38,6 +38,8 @@ using namespace boost::numeric::ublas; // keep this!
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 namespace atlas = boost::numeric::bindings::atlas;
 
+namespace NRG {
+
 template<typename T, typename V> void copy_val(T* eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
   if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)
     std::cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << std::endl;
@@ -85,6 +87,11 @@ inline Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
+   
+//  for (int i = 0; i < dim; i++) 
+//     for (int j = 0; j < dim; j++)
+//       fmt::print("h[{},{}]={}\n", i, j, m(i,j)); // XXX
+   
   return copy_results<double,double,double>(eigenvalues, ham, jobz, dim, dim);
 }
 
@@ -264,21 +271,25 @@ void checkdiag(const Eigen<S> &d,
   const auto M = d.getnrcomputed(); // number of eigenpairs
   const auto dim = d.getdim();      // dimension of the eigenvector
   my_assert(d.matrix.size2() == dim);
+   
   // Check normalization
   for (const auto r: range0(M)) {
     assert_isfinite(d.value_orig(r));
-    double sumabs = 0.0;
+    S sumabs{};
     for (const auto j: range0(dim)) {
-      assert_isfinite(d.matrix(r, j));
-      sumabs += pow(abs(d.matrix(r, j)),2);
+       const auto m = d.matrix(r,j);
+//       fmt::print("d[{},{}]={}\n", r, j, abs(m)); // XXX
+       sumabs += conj_me(m)*m;
     }
-    my_assert(num_equal(sumabs, 1.0, NORMALIZATION_EPSILON));
+//    std::cout << "sumabs=" << HIGHPREC(sumabs) << std::endl; // XXX
+    my_assert(num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON));
   }
   // Check orthogonality
   for (const auto r1 : range0(M))
     for (const auto r2 : boost::irange(r1 + 1, M)) {
       S skpdt{};
       for (const auto j : range0(dim)) skpdt += conj_me(d.matrix(r1, j)) * d.matrix(r2, j);
+//      std::cout << "skpdt=" << HIGHPREC(skpdt) << std::endl; // XXX
       my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
     }
 }
@@ -286,7 +297,7 @@ void checkdiag(const Eigen<S> &d,
 template<typename M>
   void dump_eigenvalues(const Eigen<M> &d, const size_t max_nr = std::numeric_limits<size_t>::max())
 {
-  std::cout << "eig= ";
+  std::cout << "eig= " << std::setprecision(std::numeric_limits<double>::max_digits10);
   ranges::for_each_n(d.value_orig.cbegin(), std::min(d.getnrcomputed(), max_nr),
                      [](const double x) { std::cout << x << ' '; });
   std::cout << std::endl;
@@ -323,11 +334,13 @@ template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP,
   my_assert(has_lesseq_rows(d.matrix, m));
   if (DP.logletter('e'))
     dump_eigenvalues(d);
-  checkdiag(d);
   const std::string rank_string = myrank >= 0 ? " [rank=" + std::to_string(myrank) + "]" : "";
   nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrcomputed() << rank_string);
   nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << rank_string);
+  checkdiag(d);
   return d;
 }
+
+} // namespace
 
 #endif

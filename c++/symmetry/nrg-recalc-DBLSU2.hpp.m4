@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-DBLSU2.cc.m4, not nrg-recalc-DBLSU2.cc !!!
 
 // Quantum number dependant recalculation routines
@@ -123,4 +125,6 @@ void SymmetryDBLSU2<SC>::recalc_global(const Step &step, const DiagInfo<SC> &dia
   }
 
   my_assert_not_reached();
+}
+
 }

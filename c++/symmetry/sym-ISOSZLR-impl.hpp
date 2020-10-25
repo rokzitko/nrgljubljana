@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryISOSZLR : public SymFieldLR<SC> {
  private:
@@ -76,6 +78,8 @@ template<typename SC>
 void SymmetryISOSZLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   int ii = I.get("II");
 #include "isoszlr/isoszlr-2ch-offdiag.dat"
+}
+
 }
 
 #include "nrg-recalc-ISOSZLR.hpp"

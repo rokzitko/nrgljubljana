@@ -7,6 +7,8 @@
 #include "operators.hpp"
 #include "coef.hpp"
 
+namespace NRG {
+
 template<typename S>
 class Stats;
 
@@ -71,9 +73,9 @@ inline void read_nr_channels(std::ifstream &fdata, const std::string &sym_string
     P.spin = 1;
   else
     P.spin = 2;
-  const int statespersite = pow(2, P.spin);
+  const int statespersite = intpow(2, P.spin);
   if (!P.substeps)
-    P.combs = pow(statespersite, P.channels);
+    P.combs = intpow(statespersite, P.channels);
   else
     P.combs = statespersite;
   nrglog('!', "combs=" << P.combs);
@@ -183,5 +185,7 @@ inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data")
   determine_Nmax(coef, P);
   return std::make_tuple(diag0, iterinfo0, coef, Sym);
 }
+
+} // namespace
 
 #endif

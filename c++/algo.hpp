@@ -14,6 +14,8 @@
 #include "step.hpp"
 #include "stats.hpp"
 
+namespace NRG {
+
 inline const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 
 // Wrapper class for NRG spectral-function algorithms
@@ -74,6 +76,8 @@ inline auto spec_fn(const std::string &name, const std::string &prefix, const st
   if (save) fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname); // Don't show if it's not going to be saved
   return prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
 }
+
+} // namespace
 
 #include "algo_FT.hpp"
 #include "algo_DMNRG.hpp"

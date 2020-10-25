@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryQST : public Symmetry<SC> {
  private:
@@ -154,6 +156,8 @@ void SymmetryQST<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &q
   my_assert(P.channels == 3);
 #include "qst/qst-offdiag.dat"
 #include "qst/qst-diag.dat"
+}
+
 }
 
 #include "nrg-recalc-QST.hpp"

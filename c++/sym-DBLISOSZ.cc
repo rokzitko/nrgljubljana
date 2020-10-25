@@ -2,6 +2,8 @@
 #include "sym-DBLISOSZ-impl.hpp"
 #include "sym-DBLISOSZ.hpp" // include for consistency
 
+namespace NRG {
+
 template <>
 std::unique_ptr<Symmetry<double>> mk_DBLISOSZ(const Params &P, Allfields &allfields)
 {
@@ -12,4 +14,6 @@ template <>
 std::unique_ptr<Symmetry<cmpl>> mk_DBLISOSZ(const Params &P, Allfields &allfields)
 {
   return std::make_unique<SymmetryDBLISOSZ<cmpl>>(P, allfields);
+}
+
 }

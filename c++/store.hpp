@@ -5,6 +5,8 @@
 #include "eigen.hpp"
 #include "subspaces.hpp"
 
+namespace NRG {
+
 // Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
 // density-matrix construction.
 template<typename S>
@@ -63,5 +65,7 @@ class AllSteps : public std::vector<Subs<S>> {
        (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), qsrmax.at_or_null(I), eig, last };
    }
 };
+
+} // namespace
 
 #endif

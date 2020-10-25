@@ -8,6 +8,8 @@
 #include <mkl_service.h>
 #endif
 
+namespace NRG {
+
 // Report OpenMP parallelization settings
 inline void report_openMP(std::ostream &s = std::cout) {
   s << "[OpenMP] Max. number of threads: " << omp_get_max_threads() << std::endl;
@@ -32,5 +34,7 @@ inline void report_openMP(std::ostream &s = std::cout) {
 #endif
   s << std::endl;
 }
+
+} // namespace
 
 #endif

@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-PP.cc.m4, not nrg-recalc-PP.cc !!!
 
 // Quantum number dependent recalculation routines
@@ -204,4 +206,6 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
   }
   
   my_assert_not_reached();
+}
+
 }

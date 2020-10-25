@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryQSC3 : public SymC3<SC> {
  private:
@@ -87,6 +89,8 @@ void SymmetryQSC3<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &
 #include "qsc3/qsc3-diag.dat"
 #include "qsc3/qsc3-offdiag.dat"
 #undef sqrt
+}
+
 }
 
 #include "nrg-recalc-QSC3.hpp"

@@ -5,6 +5,8 @@
 using namespace boost::numeric;
 #include <complex>
 
+namespace NRG {
+
 // We encapsulate the differences between real-value and complex-value versions of the code in class traits.
 
 template <typename S> struct traits {};
@@ -39,5 +41,7 @@ auto Zero_matrix(const size_t size1, const size_t size2) {
 
 template<typename S>
 auto Zero_matrix(const size_t size) { return Zero_matrix<S>(size, size); }
+
+} // namespace
 
 #endif

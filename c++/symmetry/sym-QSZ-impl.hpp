@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryQSZ : public SymField<SC> {
  private:
@@ -202,6 +204,8 @@ void SymmetryQSZ<SC>::show_coefficients(const Step &step, const Coef<SC> &coef) 
       std::cout << "[" << i + 1 << "]"
         << " xi_rung(" << step.N() << ")=" << coef.xiR(step.N(), i) << " zeta_rung(" << step.N() + 1 << ")=" << coef.zetaR(step.N() + 1, i) << std::endl;
     }
+}
+
 }
 
 #include "nrg-recalc-QSZ.hpp"

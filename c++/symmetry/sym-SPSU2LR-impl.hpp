@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetrySPSU2LR : public SymLR<SC> {
  private:
@@ -81,6 +83,8 @@ void SymmetrySPSU2LR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxval
 #include "spsu2lr/spsu2lr-2ch-offdiag.dat"
 #include "spsu2lr/spsu2lr-2ch-anomalous.dat"
 #include "spsu2lr/spsu2lr-2ch-isospinx.dat"
+}
+
 }
 
 #include "nrg-recalc-SPSU2LR.hpp"

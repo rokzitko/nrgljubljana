@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-QSZ.cc.m4, not nrg-recalc-QSZ.cc !!!
 
 // Quantum number dependant recalculation routines
@@ -188,4 +190,6 @@ void SymmetryQSZ<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, 
   }
 
   my_assert_not_reached();
+}
+
 }

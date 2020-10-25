@@ -120,6 +120,8 @@ using namespace fmt::literals;
 #include "core.hpp"
 #include "mk_sym.hpp"
 
+namespace NRG {
+
 template <typename S> class NRG_calculation {
 private:
   MPI_diag mpi;
@@ -183,5 +185,7 @@ public:
     if (P.done) { std::ofstream D("DONE"); } // Indicate completion by creating a flag file
   }
 };
+
+} // namespace
 
 #endif

@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryQSLR : public SymLR<SC> {
  private:
@@ -81,6 +83,8 @@ void SymmetryQSLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &
   int ss = I.get("SS");
 #include "qslr/qslr-2ch-diag.dat"
 #include "qslr/qslr-2ch-offdiag.dat"
+}
+
 }
 
 #include "nrg-recalc-QSLR.hpp"

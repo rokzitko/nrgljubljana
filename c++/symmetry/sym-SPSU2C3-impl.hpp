@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetrySPSU2C3 : public SymC3<SC> {
  private:
@@ -77,6 +79,8 @@ void SymmetrySPSU2C3<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxval
 #include "spsu2c3/spsu2c3-offdiag.dat"
 #include "spsu2c3/spsu2c3-isospinx.dat"
 #undef sqrt
+}
+
 }
 
 #include "nrg-recalc-SPSU2C3.hpp"

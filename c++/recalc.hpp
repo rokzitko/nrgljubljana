@@ -7,6 +7,8 @@
 #include "operators.hpp"
 #include "symmetry.hpp"
 
+namespace NRG {
+
 // We split the matrices of eigenvectors in blocks according to the partition into "ancestor subspaces". At the price
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
@@ -153,5 +155,7 @@ void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
   // m = m + value * U1 * Up^trans
   atlas::gemm(CblasNoTrans, CblasConjTrans, value, U1, Up, t_coef(1.0), m);
 }
+
+} // namespace
 
 #endif

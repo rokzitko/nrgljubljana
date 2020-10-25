@@ -31,8 +31,11 @@ inline const size_t MAX_NDX = 1000; // max index number, req'd in read-input.h &
 #include "oprecalc.hpp"
 #include "measurements.hpp"
 #include "truncation.hpp"
+#include "mpi_diag.hpp"
 
 #include <range/v3/all.hpp>
+
+namespace NRG {
 
 // Determine the ranges of index r
 template<typename S>
@@ -75,8 +78,6 @@ typename traits<S>::Matrix prepare_task_for_diag(const Step &step, const Invar &
   if (P.logletter('m')) dump_matrix(h);
   return h;
 }
-
-#include "mpi_diag.hpp"
 
 template<typename S>
 auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev,
@@ -279,5 +280,7 @@ auto nrg_loop(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &
   step.set(step.lastndx());
   return diag;
 }
+
+} // namespace
 
 #endif

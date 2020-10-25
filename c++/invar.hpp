@@ -14,6 +14,8 @@
 #include <fmt/format.h>
 #include "portabil.hpp"
 
+namespace NRG {
+
 // Conversion functions: multiplicity (integer) -> quantum number (floating point)
 // WARNING: avoid using S as template variable in places where S() is used!!!
 inline double S(const int SS)    { return (SS - 1.0) / 2.0;  }
@@ -169,5 +171,7 @@ using InvarVec = std::vector<Invar>; // holds information about ancestor subspac
 using Twoinvar = std::pair<Invar, Invar>; // labels subspace bra and subspace ket for matrix elements
 
 inline std::ostream &operator<<(std::ostream &os, const Twoinvar &p) { return os << "(" << p.first << ") (" << p.second << ")"; }
+
+} // namespace
 
 #endif

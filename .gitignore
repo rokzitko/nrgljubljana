@@ -7,4 +7,6 @@ run_tests*
 *.pyc
 nrg
 nrgcmpl
+nrgexec
 TODO*
+.vscode

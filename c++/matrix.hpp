@@ -4,6 +4,15 @@
 #ifndef _matrix_hpp_
 #define _matrix_hpp_
 
+#include "invar.hpp"
+#include "eigen.hpp"
+#include "symmetry.hpp"
+#include "step.hpp"
+#include "operators.hpp"
+#include "subspaces.hpp"
+
+namespace NRG {
+
 // +++ Construct an offdiagonal part of the Hamiltonian. +++
 
 // We test if the block (i,j) exists at all. If not, factor is not evaluated. This prevents divisions by zero.
@@ -98,5 +107,7 @@ void Symmetry<S>::diag_offdiag_function(const Step &step, const size_t i, const 
   const auto factor_scaled = factor / step.scale();
   for (const auto l: range0(size1)) h(begin1 + l, begin2 + l) += factor_scaled;
 }
+
+} // namespace NRG
 
 #endif // _matrix_cc_

@@ -17,6 +17,8 @@
 #include <boost/range/adaptor/map.hpp>
 #include <range/v3/all.hpp>
 
+namespace NRG {
+
 template<typename S>
 class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
  public:
@@ -87,7 +89,7 @@ class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
      oa << this->size();
      for (const auto &[I, mat] : *this) {
        oa << I;
-       ::save(oa, mat);
+       NRG::save(oa, mat);
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));  // Check each time
      }
      MATRIXF.close();
@@ -102,12 +104,12 @@ class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
      for (const auto cnt : range0(nr)) {
        Invar inv;
        ia >> inv;
-       ::load(ia, (*this)[inv]);
+       NRG::load(ia, (*this)[inv]);
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));  // Check each time
      }
      MATRIXF.close();
      if (remove_files)
-       if (remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
+	if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
    }
 };
 
@@ -181,5 +183,7 @@ class IterInfo {
      opot.trim(diag);
    }
 };
+
+} // namespace
 
 #endif

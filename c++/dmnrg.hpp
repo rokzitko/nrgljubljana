@@ -28,6 +28,8 @@
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 namespace atlas = boost::numeric::bindings::atlas;
 
+namespace NRG {
+
 // Check if the trace of the density matrix equals 'ref_value'.
 template<typename S>
 void check_trace_rho(const DensMatElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, const double ref_value = 1.0) {
@@ -220,5 +222,7 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const 
     rhoFDM.swap(rhoFDMPrev);
   }
 }
+
+} // namespace
 
 #endif

@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetrySPU1 : public  SymField<SC> {
  private:
@@ -175,6 +177,8 @@ void SymmetrySPU1<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &
   } else {
     make_matrix_nonpolarized(h, step, qq, I, In, opch, coef);
   }
+}
+
 }
 
 #include "nrg-recalc-SPU1.hpp"

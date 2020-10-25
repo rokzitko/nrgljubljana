@@ -1,3 +1,7 @@
+#include <boost/math/special_functions/factorials.hpp>
+
+namespace NRG {
+
 template<typename SC>
 class SymmetryQJ : public Symmetry<SC> {
  private:
@@ -96,8 +100,6 @@ class SymmetryQJ : public Symmetry<SC> {
   DECL;
 };
 
-#include <boost/math/special_functions/factorials.hpp>
-
 double Factorial(const double x) { return boost::math::factorial<double>(round(x)); }
 
 // *** Helper macros for make_matrix() members in matrix.cc
@@ -117,6 +119,8 @@ void SymmetryQJ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq
   int jj = I.get("JJ");
 #include "qj/qj-offdiag.dat"
 #include "qj/qj-diag.dat"
+}
+
 }
 
 #include "nrg-recalc-QJ.hpp"

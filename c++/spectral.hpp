@@ -10,6 +10,8 @@
 #include "traits.hpp"
 #include <range/v3/all.hpp>
 
+namespace NRG {
+
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
 template<typename S>
 using t_delta_peak = std::pair<double, typename traits<S>::t_weight>;
@@ -97,5 +99,7 @@ CONSTFNC auto fd_bose(const Spikes<S> &s_neg, const Spikes<S> &s_pos, double con
   auto fnc = [T](const auto x) { return bose_fnc(x, T); };
   return sum(s_neg, true, fnc) + sum(s_pos, false, fnc);
 }
+
+} // namespace
 
 #endif // _spectral_hpp_

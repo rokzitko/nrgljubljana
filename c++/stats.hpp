@@ -8,6 +8,8 @@
 #include "outfield.hpp"
 #include "mp.hpp"
 
+namespace NRG {
+
 // Namespace for storing various statistical quantities calculated during iteration.
 template<typename S>
 class Stats {
@@ -57,5 +59,7 @@ class Stats {
      td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
      ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
 };
+
+} // namespace
 
 #endif

@@ -3,6 +3,8 @@
 
 #include "params.hpp"
 
+namespace NRG {
+
 class Step {
  private:
    // N denotes the order of the Hamiltonian. N=0 corresponds to H_0, i.e. the initial Hamiltonian
@@ -69,5 +71,7 @@ class Step {
    [[nodiscard]] auto getnn() const { return ndxN; }
    [[nodiscard]] auto get_runtype() const { return runtype; }
 };
+
+} // namespace
 
 #endif

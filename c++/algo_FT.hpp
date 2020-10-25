@@ -6,6 +6,8 @@ using namespace std::complex_literals;
 #include "algo.hpp"
 #include "spectrum.hpp"
 
+namespace NRG {
+
 template<typename S>
 class Algo_FT : public Algo<S> {
  private:
@@ -189,5 +191,7 @@ class Algo_CHIT : public Algo<S> {
    }
    ~Algo_CHIT() { td.save(); }
 };
+
+} // namespace
 
 #endif

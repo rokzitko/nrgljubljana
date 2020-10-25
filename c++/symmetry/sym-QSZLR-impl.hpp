@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryQSZLR : public SymFieldLR<SC> {
  private:
@@ -68,6 +70,8 @@ template<typename SC>
 void SymmetryQSZLR<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
 #include "qszlr/qszlr-2ch-offdiag.dat"
 #include "qszlr/qszlr-2ch-diag.dat"
+}
+
 }
 
 #include "nrg-recalc-QSZLR.hpp"

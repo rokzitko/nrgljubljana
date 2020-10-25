@@ -1,3 +1,5 @@
+namespace NRG {
+
 #!/bin/sh
 m4 nrg-recalc-QST.h.m4 >nrg-recalc-QST.h
 
@@ -59,3 +61,5 @@ m4 nrg-recalc-P.h.m4 >nrg-recalc-P.h
 
 m4 nrg-recalc-PP.h.m4 >nrg-recalc-PP.h
 
+
+}

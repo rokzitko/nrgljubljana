@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-NONE.cc.m4, not nrg-recalc-NONE.cc !!!
 
 // Quantum number dependent recalculation routines
@@ -233,4 +235,6 @@ void SymmetryNONE<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag,
   }
   
   my_assert_not_reached();
+}
+
 }

@@ -12,6 +12,8 @@
 #include "algo.hpp"
 #include "stats.hpp"
 
+namespace NRG {
+
 template<typename S>
 class Oprecalc {
  private:
@@ -211,5 +213,7 @@ void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const QSrmax 
       }
   }
 }
+
+} // namespace
 
 #endif

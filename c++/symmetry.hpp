@@ -20,6 +20,8 @@
 #include "subspaces.hpp"
 #include "stats.hpp"
 
+namespace NRG {
+
 using cmpl = std::complex<double>;
 
 // Check if the triangle inequality is satisfied (i.e. if Clebsch-Gordan coefficient can be different from zero).
@@ -306,5 +308,7 @@ inline void check_diff(const Invar &Ip, const Invar &I1, const std::string &what
   const auto b = I1.get(what);
   my_assert(b - a == diff);
 }
+
+} // namespace
 
 #endif

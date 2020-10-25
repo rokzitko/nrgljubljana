@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-QSZLR.cc.m4, not nrg-recalc-QSZLR.cc !!!
 
 // Quantum number dependant recalculation routines
@@ -39,4 +41,6 @@ Opch<SC> SymmetryQSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
     RECALC_F_TAB("qszlr/qszlr-2ch-spindowndiffb.dat", 1);
   }
   return opch;
+}
+
 }

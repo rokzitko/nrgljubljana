@@ -9,6 +9,8 @@
 #include <fstream>
 #include "params.hpp"
 
+namespace NRG {
+
 class outfield;
 using Allfields = std::vector<outfield*>;
 
@@ -91,5 +93,7 @@ struct TD_FDM {
     T(P, allfields, "T"), E(P, allfields, "E_fdm"),
     C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") {}
 };
+
+} // namespace
 
 #endif

@@ -10,6 +10,8 @@
 #include "portabil.hpp"
 #include "basicio.hpp"
 
+namespace NRG {
+
 // Warning: not thread safe!
 class Timing {
  private:
@@ -111,5 +113,7 @@ class MemTime {
      return TimeScope(tm, name); // measures time when this object exists in a given scope (assign to variable!)
    }
 };
+
+} // namespace
 
 #endif

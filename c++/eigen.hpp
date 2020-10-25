@@ -10,6 +10,8 @@
 #include "params.hpp"
 #include "numerics.hpp"
 
+namespace NRG {
+
 // Result of a diagonalisation: eigenvalues and eigenvectorse
 template <typename S> class Eigen {
 public:
@@ -83,14 +85,14 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     // RawEigen
     oa << value_orig;
-    ::save(oa, matrix);
+    NRG::save(oa, matrix);
     // Eigen
     oa << value_zero << nrpost << absenergy << absenergyG << absenergyN;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     // RawEigen
     ia >> value_orig;
-    ::load(ia, matrix);
+    NRG::load(ia, matrix);
     // Eigen
     ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergyN;
   } 
@@ -202,9 +204,11 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        (*this)[inv].load(ia);
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
      }
-     if (remove_files) remove(fn);
+     if (remove_files) NRG::remove(fn);
    }
    explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) { load(N, P, remove_files); } // called from do_diag()
 };
+
+} // namespace
 
 #endif

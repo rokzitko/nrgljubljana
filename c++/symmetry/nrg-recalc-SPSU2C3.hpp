@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-SPSU2C3.cc.m4, not nrg-recalc-SPSU2C3.cc !!!
 
 // Quantum number dependant recalculation routines
@@ -277,4 +279,6 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
   
   }
   return opch;
+}
+
 }

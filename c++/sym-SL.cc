@@ -2,6 +2,8 @@
 #include "sym-SL-impl.hpp"
 #include "sym-SL.hpp" // include for consistency
 
+namespace NRG {
+
 template <>
 std::unique_ptr<Symmetry<double>> mk_SL(const Params &P, Allfields &allfields)
 {
@@ -12,4 +14,6 @@ template <>
 std::unique_ptr<Symmetry<cmpl>> mk_SL(const Params &P, Allfields &allfields)
 {
   return std::make_unique<SymmetrySL<cmpl>>(P, allfields);
+}
+
 }

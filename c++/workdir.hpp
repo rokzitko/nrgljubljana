@@ -10,6 +10,8 @@ using namespace std::string_literals;
 #include "portabil.hpp" // remove(std::string)
 #include <cstdio> // C remove()
 
+namespace NRG {
+
 inline const auto default_workdir{"."s};
 
 // create a unique directory
@@ -23,7 +25,7 @@ inline auto dtemp(const std::string &path)
   return w ? std::optional<std::string>(w) : std::nullopt;
 }
 
-inline int remove(const std::string &filename) { return remove(filename.c_str()); }
+inline int remove(const std::string &filename) { return std::remove(filename.c_str()); }
 
 class Workdir {
  private:
@@ -43,13 +45,13 @@ class Workdir {
    [[nodiscard]] std::string unitaryfn(const size_t N, const std::string &filename = "unitary"s) const { // eigenstates files
      return workdir + "/" + filename + std::to_string(N);
    }
-   void remove() {
+   void remove_workdir() {
      if (workdir != "")
-       ::remove(workdir);
+	NRG::remove(workdir);
    }
    ~Workdir() {
      if (remove_at_exit)
-       remove();
+       remove_workdir();
    }
 };
 
@@ -59,5 +61,7 @@ inline auto set_workdir(const std::string &dir_) {
   if (!dir_.empty()) dir = dir_;
   return Workdir(dir);
 }
+
+} // namespace
 
 #endif

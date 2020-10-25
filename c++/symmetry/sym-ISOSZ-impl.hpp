@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryISOSZ : public SymField<SC> {
   private:
@@ -98,6 +100,8 @@ void SymmetryISOSZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals 
       break;
     default: my_assert_not_reached();
   }
+}
+
 }
 
 #include "nrg-recalc-ISOSZ.hpp"

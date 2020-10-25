@@ -18,6 +18,13 @@ using namespace std::string_literals;
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 #include <boost/stacktrace.hpp>
 
+#if defined(__APPLE__) && defined(__MACH__)
+ #include <mach/mach_init.h>
+ #include <mach/task.h>
+#endif
+
+namespace NRG {
+
 inline void print_trace() {
   std::cout << "Backtrace:" << std::endl << boost::stacktrace::stacktrace() << std::endl;
 }
@@ -93,8 +100,6 @@ inline T finite_test_fnc(T x, const char *file, const int line) {
 // *** Memory usage
 
 #if defined(__APPLE__) && defined(__MACH__)
-#include <mach/mach_init.h>
-#include <mach/task.h>
 
 // Source: http://blog.kuriositaet.de/?p=257
 inline int getmem(unsigned int *rss, unsigned int *vs) {
@@ -152,5 +157,7 @@ inline long memoryused() {
 #if !defined(HAS_MEMORY_USAGE)
 inline int memoryused() { return 0; }
 #endif
+
+} // namespace
 
 #endif

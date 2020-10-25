@@ -7,6 +7,8 @@
 #include "symmetry.hpp"
 #include "traits.hpp"
 
+namespace NRG {
+
 template<typename S>
 CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo<S> &diag,
                                  const MatrixElements<S> &n, std::shared_ptr<Symmetry<S>> Sym) {
@@ -114,7 +116,7 @@ void calc_ZnD(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<Symmetry<S
   stats.ZZG = mpf_get_d(ZZG);
   std::cout << "ZZG=" << HIGHPREC(stats.ZZG) << std::endl;
   for (const auto N : dm.Nall()) {
-    const double w  = pow(Sym->nr_combs(), int(dm.Nend - N - 1)) / stats.ZZG;
+    const double w  = std::pow(Sym->nr_combs(), dm.Nend - N - 1) / stats.ZZG; // ZZZ
     stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function.
     stats.wn[N] = w * mpf_get_d(stats.ZnDG[N]); // This is w_n defined after Eq. (8) in the WvD paper.
   }
@@ -242,5 +244,7 @@ void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag, std::
   calculate_TD(step, diag, stats, output, Sym);
   output.annotated.dump(step, diag, stats, Sym);
 }
+
+} // namespace
 
 #endif

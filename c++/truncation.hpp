@@ -8,6 +8,8 @@
 #include "symmetry.hpp"
 #include "debug.hpp" // nrgdump
 
+namespace NRG {
+
 // Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.
 template <typename S> auto highest_retained_energy(const Step &step, const DiagInfo<S> &diag, const Params &P) {
   const auto energies = diag.sorted_energies();
@@ -74,5 +76,7 @@ template <typename S> void truncate_prepare(const Step &step, DiagInfo<S> &diag,
   const double ratio = double(ts.nrkept) / ts.nrall;
   fmt::print(FMT_STRING("Kept: {} out of {}, ratio={:.3}\n"), ts.nrkept, ts.nrall, ratio);
 }
+
+} // namespace
 
 #endif

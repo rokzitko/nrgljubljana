@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-QSTZ.cc.m4, not nrg-recalc-QSTZ.cc !!!
 
 // Quantum number dependant recalculation routines
@@ -99,4 +101,6 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
     RECALC_TAB("qstz/qstz-tripletm.dat", Invar(0, 3, 0));
   }
   return cnew;
+}
+
 }

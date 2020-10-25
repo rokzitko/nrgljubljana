@@ -8,6 +8,8 @@
 #include "coef.hpp"
 #include "params.hpp"
 
+namespace NRG {
+
 template<typename S>
 class Tridiag {
    const Params &P;
@@ -186,5 +188,7 @@ void Tridiag<S>::tridiag_ch(int alpha, Coef<S> &coef) {
     }
   }
 }
+
+} // namespace
 
 #endif // _tridiag_hpp_

@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-SPSU2LR.cc.m4, not nrg-recalc-SPSU2LR.cc !!!
 
 // Quantum number dependant recalculation routines
@@ -231,4 +233,6 @@ MatrixElements<SC> SymmetrySPSU2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag,
 };
   }
   return cnew;
+}
+
 }

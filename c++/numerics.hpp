@@ -24,6 +24,8 @@ using namespace boost::numeric;
 
 #include "portabil.hpp"
 
+namespace NRG {
+
 template <typename T>
   using complex_array_ref_t = T(&)[2];
 
@@ -106,7 +108,7 @@ template<typename M> void check_is_matrix_upper(const ublas::matrix<M> &m) {
 }
 
 // x raised to the power of n
-CONSTFNC inline auto pow(const int x, const int n) {
+CONSTFNC inline auto intpow(const int x, const int n) {
   my_assert(n >= 0);
   auto res = 1;
   for (auto i = 1; i <= n; i++) res *= x;
@@ -207,5 +209,7 @@ template <typename M> CONSTFNC auto trace_real(const ublas::matrix<M> &m) {
 }
 
 inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); }
+
+} // namespace
 
 #endif

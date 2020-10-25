@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-ISOLR.cc.m4, not nrg-recalc-ISOLR.cc !!!
 
 // Quantum number dependent recalculation routines
@@ -125,4 +127,6 @@ MatrixElements<SC> SymmetryISO2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
     RECALC_TAB("iso2lr/iso2lr-2ch-tripletm.dat", Invar(1, 3, +1));
   }
   return cnew;
+}
+
 }

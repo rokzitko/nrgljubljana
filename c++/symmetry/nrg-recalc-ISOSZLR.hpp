@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-ISOSZLR.cc.m4, not nrg-recalc-ISOSZLR.cc !!!
 
 // Quantum number dependent recalculation routines
@@ -373,4 +375,6 @@ MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_triplet(const DiagInfo<SC> &diag,
 };
   }
   return cnew;
+}
+
 }

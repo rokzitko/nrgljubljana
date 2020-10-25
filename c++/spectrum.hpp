@@ -1,18 +1,13 @@
 #ifndef _spectrum_hpp_
 #define _spectrum_hpp_
 
-enum class gf_type { bosonic, fermionic }; // req'd in matsubara.h
-
-// Sign factor in GFs for bosonic/fermionic operators
-inline constexpr auto S_BOSONIC   = +1;
-inline constexpr auto S_FERMIONIC = -1;
-inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC; }
-
 #include <algorithm>
 #include "traits.hpp"
 #include "params.hpp"
 #include "bins.hpp"
 #include "matsubara.hpp"
+
+namespace NRG {
 
 template<typename S>
 class ChainBinning {
@@ -252,5 +247,7 @@ class TempDependence {
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }
 };
+
+} // namespace
 
 #endif

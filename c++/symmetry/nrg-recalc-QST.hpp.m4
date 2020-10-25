@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-QST.cc.m4, not nrg-recalc-QST.cc !!!
 
 // Quantum number dependant recalculation routines
@@ -135,4 +137,6 @@ MatrixElements<SC> SymmetryQST<SC>::recalc_orb_triplet(const DiagInfo<SC> &diag,
     RECALC_TAB("qst/qst-orb-tripletm.dat", Invar(0, 1, 1));
   }
   return cnew;
+}
+
 }

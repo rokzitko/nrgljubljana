@@ -1,3 +1,5 @@
+namespace NRG {
+
 // *** WARNING!!! Modify nrg-recalc-QSC3.cc.m4, not nrg-recalc-QSC3.cc !!!
 
 // Quantum number dependent recalculation routines
@@ -277,4 +279,6 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
   }
   }
   return opch;
+}
+
 }

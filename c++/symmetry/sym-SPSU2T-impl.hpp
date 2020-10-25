@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetrySPSU2T : public Symmetry<SC> {
  private:
@@ -141,6 +143,8 @@ void SymmetrySPSU2T<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals
   if (!num_equal(coef.kappa(step.N(), 0), 0.0)) {
 #include "spsu2t/spsu2t-anomalous.dat"
   }
+}
+
 }
 
 #include "nrg-recalc-SPSU2T.hpp"

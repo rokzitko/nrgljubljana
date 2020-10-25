@@ -21,6 +21,8 @@
 #include "misc.hpp"
 #include "core.hpp"
 
+namespace NRG {
+
 enum TAG : int { TAG_EXIT = 1, TAG_DIAG_DBL, TAG_DIAG_CMPL, TAG_SYNC, TAG_MATRIX, TAG_INVAR,
                  TAG_MATRIX_SIZE, TAG_MATRIX_LINE, TAG_EIGEN_INT, TAG_EIGEN_VEC };
 
@@ -164,5 +166,7 @@ class MPI_diag {
      for (auto i = 1; i < mpiw.size(); i++) mpiw.send(i, TAG_EXIT, 0); // notify slaves we are done
    }
 };
+
+} // namespace
 
 #endif

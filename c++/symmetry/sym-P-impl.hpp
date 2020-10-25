@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryP : public Symmetry<SC> {
   private:
@@ -130,6 +132,8 @@ void SymmetryP<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq,
   } else {
     make_matrix_nonpolarized(h, step, qq, I, In, opch, coef);
   }
+}
+
 }
 
 #include "nrg-recalc-P.hpp"

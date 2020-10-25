@@ -1,3 +1,5 @@
+namespace NRG {
+
 template<typename SC>
 class SymmetryQS : public Symmetry<SC> {
  private:
@@ -164,5 +166,6 @@ void SymmetryQS<SC>::show_coefficients(const Step &step, const Coef<SC> &coef) {
            << coef.zetaR(step.N() + 1, i) << std::endl;
 }
 
-#include "nrg-recalc-QS.hpp"
+}
 
+#include "nrg-recalc-QS.hpp"

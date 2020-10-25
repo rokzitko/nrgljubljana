@@ -11,6 +11,8 @@
 #include "openmp.hpp"      // report_openMP() called from main()
 #include "workdir.hpp"
 
+using namespace NRG;
+
 inline void help(int argc, char **argv, std::string help_message)
 {
   std::vector<std::string> args(argv+1, argv+argc); // NOLINT

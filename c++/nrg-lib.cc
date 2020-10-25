@@ -1,5 +1,7 @@
 #include "nrg-general.hpp"
 
+namespace NRG {
+
 void print_about_message() {
   fmt::print(fmt::emphasis::bold, "NRG Ljubljana - (c) rok.zitko@ijs.si\n");
   fmt::print(fmt::emphasis::bold, "Timestamp: {}\n",  __TIMESTAMP__);
@@ -59,3 +61,5 @@ void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mp
     } else usleep(100); // sleep to reduce the load on the computer. (OpenMPI "feature" workaround)
   }
 }
+
+} // namespace

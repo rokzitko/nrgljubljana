@@ -19,6 +19,8 @@
 #include <range/v3/all.hpp>
 #include <boost/range/adaptor/map.hpp>
 
+namespace NRG {
+
 // Formatted output of the computed expectation values
 template<typename S>
 class ExpvOutput {
@@ -144,5 +146,7 @@ struct Output {
     diag.dump_value_zero(Fenergies);
   }
 };
+
+} // namespace
 
 #endif

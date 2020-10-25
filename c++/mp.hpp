@@ -6,6 +6,8 @@
 #include <gmp.h>
 #include <vector>
 
+namespace NRG {
+
 // Wrapper class for arbitrary precision numbers
 class my_mpf {
   private:
@@ -26,5 +28,7 @@ class my_mpf {
 };
 
 using vmpf = std::vector<my_mpf>;
+
+} // namespace NRG
 
 #endif // _tridiag_hpp_
