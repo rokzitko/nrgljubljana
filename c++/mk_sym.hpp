@@ -5,6 +5,7 @@
 #include <string>
 #include "params.hpp"
 #include "symmetry.hpp"
+#include "outfield.hpp"
 
 #include "sym-QS.hpp"
 #include "sym-QSZ.hpp"

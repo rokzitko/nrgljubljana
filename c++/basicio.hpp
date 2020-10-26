@@ -19,7 +19,27 @@
 #include <fmt/ranges.h>
 using namespace fmt::literals;
 
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+using namespace boost::numeric;
+
 namespace NRG {
+
+template <class T>
+inline T from_string(const std::string &str) {
+  T result;
+  try {
+    result = boost::lexical_cast<T>(str);
+  } catch (boost::bad_lexical_cast &) { throw std::runtime_error(fmt::format("Lexical cast [{}] failed.", str)); }
+  return result;
+}
+
+template <>
+inline bool from_string(const std::string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
+
+// for T=int, std::to_string is used
+template <class T>
+inline std::string to_string(const T val) { return boost::lexical_cast<std::string>(val); }
 
 inline std::string to_string(const std::complex<double> &z) {
   std::ostringstream s;
@@ -33,6 +53,31 @@ std::ostream & operator<<(std::ostream &os, const std::set<T> &x) {
   return os;
 }
 
+template <typename T1, typename T2>
+std::ostream &operator<<(std::ostream &os, const std::pair<T1, T2> &p) {
+  return os << p.first << ' ' << p.second;
+}
+
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
+  for (const auto &x : vec) os << x << " ";
+  return os;
+}
+  
+template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::vector<T> &vec){
+  for (const auto &x : vec) os << x << " ";
+  return os;
+}
+
+template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::matrix<T> &m) {
+  for (auto r1 = 0; r1 < m.size1(); r1++) {
+    for (auto r2 = 0; r2 < m.size2(); r2++)
+      os << m(r1, r2) << ' ';
+    os << std::endl;
+  }
+  return os;
+}
+  
 // Returns a string with a floating value in fixed (non-exponential) format with N digits of precision after the
 // decimal point.
 inline std::string prec(const double x, const int N)
@@ -71,6 +116,7 @@ inline bool file_exists(const std::string &fn)
    std::ofstream F(fn, std::ios::binary | std::ios::out);
    return bool(F);
 }
+
 
 } // namespace
 
