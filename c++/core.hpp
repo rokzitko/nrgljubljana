@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <set>
 #include <algorithm>
+#include <omp.h>
 
 #include "constants.hpp"
 #include "traits.hpp"
