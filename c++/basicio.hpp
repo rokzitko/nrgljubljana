@@ -19,6 +19,8 @@
 #include <fmt/ranges.h>
 using namespace fmt::literals;
 
+#include <boost/lexical_cast.hpp>
+
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 using namespace boost::numeric;
