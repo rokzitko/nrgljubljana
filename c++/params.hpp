@@ -7,7 +7,6 @@
 #include <utility>
 #include <list>
 #include <string>
-using namespace std::string_literals;
 #include <cmath>
 #include "misc.hpp" // from_string, parsing code
 #include "workdir.hpp"
@@ -16,6 +15,8 @@ using namespace std::string_literals;
 #include <boost/archive/binary_oarchive.hpp>
 
 namespace NRG {
+
+using namespace std::string_literals;
 
 enum class RUNTYPE { NRG, DMNRG }; // First or second sweep? Used in class Step.
 

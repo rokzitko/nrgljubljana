@@ -2,11 +2,12 @@
 #define _algo_FT_hpp_
 
 #include <complex>
-using namespace std::complex_literals;
 #include "algo.hpp"
 #include "spectrum.hpp"
 
 namespace NRG {
+
+using namespace std::complex_literals;
 
 template<typename S>
 class Algo_FT : public Algo<S> {

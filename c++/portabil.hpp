@@ -6,7 +6,6 @@
 
 #include <stdexcept>
 #include <string>
-using namespace std::string_literals;
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -24,6 +23,8 @@ using namespace std::string_literals;
 #endif
 
 namespace NRG {
+
+using namespace std::string_literals;
 
 inline void print_trace() {
   std::cout << "Backtrace:" << std::endl << boost::stacktrace::stacktrace() << std::endl;

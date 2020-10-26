@@ -2,11 +2,12 @@
 #define _algo_DMNRG_hpp_
 
 #include <complex>
-using namespace std::complex_literals;
 #include "algo.hpp"
 #include "spectrum.hpp"
 
 namespace NRG {
+
+using namespace std::complex_literals;
 
 // OPTIMIZATION NOTE: the inner loop should involve the last index.
 

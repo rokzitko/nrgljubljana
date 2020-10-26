@@ -12,7 +12,6 @@
 #include <boost/io/ios_state.hpp>
 #include <boost/math/special_functions/sign.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
-using namespace boost::numeric;
 
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
@@ -26,6 +25,8 @@ using namespace boost::numeric;
 #include "traits.hpp"
 
 namespace NRG {
+
+using namespace boost::numeric;
 
 template <typename T>
   using complex_array_ref_t = T(&)[2];

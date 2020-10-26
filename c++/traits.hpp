@@ -4,10 +4,11 @@
 #include <type_traits> // is_same_v
 
 #include <boost/numeric/ublas/matrix.hpp>
-using namespace boost::numeric;
 #include <complex>
 
 namespace NRG {
+
+using namespace boost::numeric;
 
 // We encapsulate the differences between real-value and complex-value versions of the code in class traits.
 

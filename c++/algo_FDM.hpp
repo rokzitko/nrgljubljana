@@ -2,11 +2,12 @@
 #define _algo_FDM_hpp_
 
 #include <complex>
-using namespace std::complex_literals;
 #include "algo.hpp"
 #include "spectrum.hpp"
 
 namespace NRG {
+
+using namespace std::complex_literals;
 
 // Recall: II=(Ij,Ii) <i|A|j> <j|B|i>. B is d^dag. We conjugate A.
 

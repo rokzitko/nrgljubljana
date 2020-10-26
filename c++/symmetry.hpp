@@ -245,7 +245,7 @@ class Symmetry {
    auto SpecdensquadFactorFnc() const { return [this](const Invar &Ip, const Invar &I1) { return this->specdensquad_factor(Ip, I1); }; }
    auto SpinSuscFactorFnc() const     { return [this](const Invar &Ip, const Invar &I1) { return this->dynamicsusceptibility_factor(Ip, I1); }; }
    auto OrbSuscFactorFnc() const      { return [this](const Invar &Ip, const Invar &I1) { return this->dynamic_orb_susceptibility_factor(Ip, I1); }; }
-   auto TrivialCheckSpinFnc() const   { return [this](const Invar &Ip, const Invar &I1, int SPIN) { return true; }; }
+   auto TrivialCheckSpinFnc() const   { return [](const Invar &Ip, const Invar &I1, int SPIN) { return true; }; }
    auto SpecdensCheckSpinFnc() const  { return [this](const Invar &I1, const Invar &Ip, int SPIN) { return this->check_SPIN(I1, Ip, SPIN); }; }
 };
 

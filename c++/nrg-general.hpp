@@ -38,7 +38,6 @@
 #include <limits>
 #include <memory>
 #include <string>
-using namespace std::string_literals;
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -69,14 +68,11 @@ using namespace std::string_literals;
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/numeric/ublas/operation.hpp>
-using namespace boost::numeric;
-using namespace boost::numeric::ublas; // keep this!
 
 // Numeric bindings to BLAS/LAPACK
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
-namespace atlas = boost::numeric::bindings::atlas;
 
 // This is included in the library only. Should not be used if a cblas library is available.
 #ifdef CBLAS_WORKAROUND
@@ -99,7 +95,6 @@ namespace atlas = boost::numeric::bindings::atlas;
 #include <fmt/format.h>
 #include <fmt/color.h>
 #include <fmt/ranges.h>
-using namespace fmt::literals;
 
 #include <range/v3/all.hpp>
 
@@ -121,6 +116,12 @@ using namespace fmt::literals;
 #include "mk_sym.hpp"
 
 namespace NRG {
+
+using namespace std::string_literals;
+using namespace fmt::literals;
+using namespace boost::numeric;
+using namespace boost::numeric::ublas; // keep this!
+namespace atlas = boost::numeric::bindings::atlas;
 
 template <typename S> class NRG_calculation {
 private:

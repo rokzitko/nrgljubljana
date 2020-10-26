@@ -13,30 +13,40 @@ TEST(to_string, basicio) {
   }
 }
 
-TEST(inserters, basicio) {
+TEST(inserters1, basicio) {
   {
-    auto res = to_string(std::make_pair(1,2));
-    EXPECT_EQ(res, "1 2");
+    std::stringstream ss;
+    ss << std::make_pair(1,2);
+    EXPECT_EQ(ss.str(), "1 2");
   }
   {
-    auto res = to_string(std::vector<int>({1,2,3,4}));
-    EXPECT_EQ(res, "1 2 3 4 "); // trailing whitespace
+    std::stringstream ss;
+    ss << std::vector<int>({1,2,3,4});
+    EXPECT_EQ(ss.str(), "1 2 3 4 "); // trailing whitespace
   }
   {
+    std::stringstream ss;
     ublas::vector<int> a(2);
     a(0) = 1;
     a(1) = 2;
-    auto res = to_string(a);
-    EXPECT_EQ(res, "1 2 "); // trailing ws
+    ss << a;
+    EXPECT_EQ(ss.str(), "1 2 "); // trailing ws
   }
   {
+    std::stringstream ss;
     ublas::matrix<int> m(2,2);
     m(0,0) = 1;
     m(0,1) = 2;
     m(1,0) = 3;
     m(1,1) = 4;
-    auto res = to_string(m);
-    EXPECT_EQ(res, "1 2 \n3 4 \n"); // trailing ws
+    ss << m;
+    EXPECT_EQ(ss.str(), "1 2 \n3 4 \n"); // trailing ws
+  }
+  {
+    std::stringstream ss;
+    std::set s = {1, 2, 3};
+    ss << s;
+    EXPECT_EQ(ss.str(), "1 2 3 "); // trailing ws
   }
 }
 
@@ -60,12 +70,6 @@ TEST(from_string, basicio) {
 }
 
 TEST(output, basicio) {
-  {
-    std::set s = {1, 2, 3};
-    std::stringstream ss;
-    ss << s;
-    EXPECT_EQ(ss.str(), "1 2 3 "); // trailing ws
-  }
   {
     auto res = prec(1.23456, 1);
     EXPECT_EQ(res, "1.2");

@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <string>
-using namespace std::string_literals;
 #include <optional>
 #include <cstring> // strncpy
 #include <cstdlib> // mkdtemp, getenv
@@ -11,6 +10,8 @@ using namespace std::string_literals;
 #include <cstdio> // C remove()
 
 namespace NRG {
+
+using namespace std::string_literals;
 
 inline const auto default_workdir{"."s};
 

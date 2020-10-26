@@ -12,9 +12,10 @@
 #include <fmt/format.h>
 #include <fmt/color.h>
 #include <fmt/ranges.h>
-using namespace fmt::literals;
 
 namespace NRG {
+
+using namespace fmt::literals;
 
 template <typename T>
 inline std::string formatted_output(const T x, const Params &P) {

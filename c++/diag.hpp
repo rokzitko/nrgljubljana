@@ -29,16 +29,17 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/numeric/ublas/operation.hpp>
-using namespace boost::numeric;
-using namespace boost::numeric::ublas; // keep this!
 
 // Numeric bindings to BLAS/LAPACK
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
-namespace atlas = boost::numeric::bindings::atlas;
 
 namespace NRG {
+
+using namespace boost::numeric;
+using namespace boost::numeric::ublas; // keep this!
+namespace atlas = boost::numeric::bindings::atlas;
 
 template<typename T, typename V> void copy_val(T* eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
   if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)

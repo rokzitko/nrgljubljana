@@ -84,7 +84,7 @@ class MemoryStats {
  public:
    auto used() const {
      const auto memused = memoryused();
-     peakusage          = std::max(peakusage, memused);
+     peakusage          = std::max<long>(peakusage, memused);
      return memused;
    }
    void report(const bool verbose = false) const {

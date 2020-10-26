@@ -19,15 +19,16 @@
 #include <fmt/format.h>
 #include <fmt/color.h>
 #include <fmt/ranges.h>
-using namespace fmt::literals;
 
 #include <boost/lexical_cast.hpp>
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
-using namespace boost::numeric;
 
 namespace NRG {
+
+using namespace fmt::literals;
+using namespace boost::numeric;
 
 template <class T>
 inline T from_string(const std::string &str) {
@@ -43,7 +44,7 @@ inline bool from_string(const std::string &str) { return (strcasecmp(str.c_str()
 
 // for T=int, std::to_string is used
 template <class T>
-inline std::string to_string(const T val) { return boost::lexical_cast<std::string>(val); }
+inline std::string to_string(const T &val) { return boost::lexical_cast<std::string>(val); }
 
 inline std::string to_string(const std::complex<double> &z) {
   std::ostringstream s;
