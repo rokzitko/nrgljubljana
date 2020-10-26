@@ -1,17 +1,20 @@
 #include <gtest/gtest.h>
+#include <type_traits>
 #include <traits.hpp>
 
 using namespace NRG;
 
 TEST(double, traits) {
   {
-    EXPECT_EQ(std::is_same_v(typename traits<double>::t_matel, double), true);
+    bool t = std::is_same_v<typename traits<double>::t_matel, double>;
+    EXPECT_EQ(t, true);
   }
 }
 
 TEST(complex, traits) {
   {
-    EXPECT_EQ(std::is_same_v(typename traits<std::complex<double>>::t_matel, std::complex<double>), true);
+    bool t = std::is_same_v<typename traits<std::complex<double>>::t_matel, std::complex<double>>;
+    EXPECT_EQ(t, true);
   }
 }
 

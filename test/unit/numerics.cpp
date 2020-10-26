@@ -4,7 +4,7 @@
 using namespace NRG;
 
 TEST(reim, traits) {
-  auto & [r, i] = reim(std::complex(1.0,2.0));
+  const auto [r, i] = reim(std::complex(1.0,2.0));
   EXPECT_EQ(r, 1.0);
   EXPECT_EQ(i, 2.0);
 }

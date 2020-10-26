@@ -6,9 +6,11 @@
 
 #include <stdexcept>
 #include <string>
+#include <iterator>
 #include <optional>
 #include <deque>
-#include <list>
+#include <vector>
+#include <set>
 #include <map>
 #include <fstream>
 #include <cstring> // stdcasecmp
@@ -114,23 +116,12 @@ inline auto parser(const std::string &filename, const std::string &block) {
 // Simple tokenizer class
 class string_token {
  private:
-   const std::string s;
-   std::list<std::string> l;
+   std::istringstream iss;
+   const std::set<std::string> l;
  public:
-   explicit string_token(std::string s) : s(std::move(s)) {
-     std::string::size_type pos = 0;
-     std::string::size_type first = 0, last = 0;
-     while ((first = s.find_first_not_of(" ", pos)) != std::string::npos) {
-       last              = s.find_first_of(" ", first);
-       std::string token = std::string(s, first, last - first);
-       l.push_back(token);
-       if (last == std::string::npos)
-         break;
-       else
-         pos = last + 1;
-     }
-   }
-   [[nodiscard]] auto find(const std::string &x) const { return std::find(l.begin(), l.end(), x) != l.end(); }
+   explicit string_token(std::string s) : iss(s), 
+     l(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>()) {};
+   [[nodiscard]] auto find(const std::string &x) const { return l.count(x) != 0; }
 };
 
 // Skip comment lines in the input stream 'f'.

@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "constants.hpp"
 #include "traits.hpp"
 #include "outfield.hpp"
 #include "mp.hpp"

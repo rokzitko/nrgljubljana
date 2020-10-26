@@ -1,6 +1,8 @@
 #ifndef _traits_hpp_
 #define _traits_hpp_
 
+#include <type_traits> // is_same_v
+
 #include <boost/numeric/ublas/matrix.hpp>
 using namespace boost::numeric;
 #include <complex>

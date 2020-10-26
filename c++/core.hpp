@@ -5,8 +5,7 @@
 #include <set>
 #include <algorithm>
 
-inline const size_t MAX_NDX = 1000; // max index number, req'd in read-input.h & stats.h
-
+#include "constants.hpp"
 #include "traits.hpp"
 #include "invar.hpp"
 #include "eigen.hpp"

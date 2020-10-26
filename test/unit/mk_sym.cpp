@@ -1,12 +1,16 @@
 #include <gtest/gtest.h>
-#include <my_sym.hpp>
+#include <mk_sym.hpp>
+#include <symmetry.hpp>
+#include <params.hpp>
+#include <outfield.hpp>
 
 using namespace NRG;
 
 TEST(QS, mk_sym) {
-  Params P;
-  Allfields allfields;
-  auto get_sym("QS", P, allfields);
+  Workdir workdir("test_workdir");
+  Params P("", "param", workdir, true);
+  TD td(P, "td");
+  auto sym = get<double>("QS", P, td.allfields);
 }
 
 int main(int argc, char **argv) {

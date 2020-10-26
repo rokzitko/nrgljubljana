@@ -1,6 +1,12 @@
 #ifndef _read_input_hpp_
 #define _read_input_hpp_
 
+#include <memory>
+#include <string>
+#include <iostream>
+#include <tuple>
+
+#include "constants.hpp"
 #include "symmetry.hpp"
 #include "params.hpp"
 #include "eigen.hpp"

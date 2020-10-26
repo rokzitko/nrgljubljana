@@ -6,8 +6,10 @@ using namespace NRG;
 
 TEST(to_string, basicio) {
   {
-    auto res = to_string(std::complex(1.0,2.0));
-    EXPECT_EQ(res, "(1.0,2.0)");
+    auto res1 = to_string(std::complex(1.0,2.0));
+    EXPECT_EQ(res1, "(1,2)");
+    auto res2 = to_string(std::complex(1.5,2.5));
+    EXPECT_EQ(res2, "(1.5,2.5)");
   }
 }
 
@@ -18,23 +20,23 @@ TEST(inserters, basicio) {
   }
   {
     auto res = to_string(std::vector<int>({1,2,3,4}));
-    EXPECT_EQ(res, "1 2 3 4");
+    EXPECT_EQ(res, "1 2 3 4 "); // trailing whitespace
   }
   {
     ublas::vector<int> a(2);
     a(0) = 1;
     a(1) = 2;
     auto res = to_string(a);
-    EXPECT_EQ(res, "1 2");
+    EXPECT_EQ(res, "1 2 "); // trailing ws
   }
   {
-    ublas::vector<int> m(2,2);
+    ublas::matrix<int> m(2,2);
     m(0,0) = 1;
     m(0,1) = 2;
     m(1,0) = 3;
     m(1,1) = 4;
     auto res = to_string(m);
-    EXPECT_EQ(res, "1 2\n3 4\n");
+    EXPECT_EQ(res, "1 2 \n3 4 \n"); // trailing ws
   }
 }
 
@@ -59,21 +61,21 @@ TEST(from_string, basicio) {
 
 TEST(output, basicio) {
   {
-    set<> s = {1, 2, 3);
-    stringstream ss;
+    std::set s = {1, 2, 3};
+    std::stringstream ss;
     ss << s;
-    EXPECT_EQ(ss.str(), "1 2 3");
+    EXPECT_EQ(ss.str(), "1 2 3 "); // trailing ws
   }
   {
     auto res = prec(1.23456, 1);
     EXPECT_EQ(res, "1.2");
     auto res3 = prec3(1.23456);
-    EXPECT_EQ(res3, "1.234");
+    EXPECT_EQ(res3, "1.235"); // rounding!
   }
   {
     EXPECT_EQ(negligible_imag_part(std::complex(1.0,0.1)), false);
     EXPECT_EQ(negligible_imag_part(std::complex(1.0,1e-14)), true);
-    EXPECT_EQ(negligible_imag_part(std::complex(1.0,1e-14,1e-16)), false);
+    EXPECT_EQ(negligible_imag_part(std::complex(1.0,1e-14),1e-16), false);
   }
 }
 

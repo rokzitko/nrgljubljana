@@ -4,7 +4,6 @@
 #ifndef _numerics_hpp_
 #define _numerics_hpp_
 
-#include "misc.hpp"
 #include <complex>
 #include <iomanip>
 #include <vector>
@@ -23,6 +22,8 @@ using namespace boost::numeric;
 #include <fmt/format.h>
 
 #include "portabil.hpp"
+#include "misc.hpp"
+#include "traits.hpp"
 
 namespace NRG {
 
@@ -55,7 +56,7 @@ template<typename S>
 auto Zero_matrix(const size_t size1, const size_t size2) {
   return typename traits<S>::Matrix(size1, size2, 0);
 }
-   
+
 template<typename S>
 auto Zero_matrix(const size_t size) { 
   return Zero_matrix<S>(size, size); 
