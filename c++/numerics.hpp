@@ -47,6 +47,20 @@ template<typename U, typename V>
     return ranges::accumulate(v, V{}, [](auto sum, const auto el) { return sum+el.second; });
   }
 
+ 
+inline std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
+inline double conj_me(const double x) { return x; }    // no op
+   
+template<typename S>
+auto Zero_matrix(const size_t size1, const size_t size2) {
+  return typename traits<S>::Matrix(size1, size2, 0);
+}
+   
+template<typename S>
+auto Zero_matrix(const size_t size) { 
+  return Zero_matrix<S>(size, size); 
+}  
+   
 // Accumulator abstraction: automatically initialized to 0, result checked for finiteness.
 template <typename T> class generic_bucket {
 private:
