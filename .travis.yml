@@ -21,4 +21,5 @@ script:
   - cmake .. -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR #-DASAN=ON -DUBSAN=ON
   - export CTEST_OUTPUT_ON_FAILURE=1
   - export OMP_NUM_THREADS=1
+  - export LD_LIBRARY_PATH=/usr/lib/llvm-*/lib:$LD_LIBRARY_PATH
   - make VERBOSE=1 -j2 && make test
