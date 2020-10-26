@@ -6,6 +6,10 @@
 #include "operators.hpp"
 #include "symmetry.hpp"
 #include "traits.hpp"
+#include "output.hpp"
+#include "store.hpp"
+#include "time_mem.hpp"
+#include "oprecalc.hpp"
 
 namespace NRG {
 
