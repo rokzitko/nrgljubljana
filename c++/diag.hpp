@@ -41,11 +41,13 @@ using namespace boost::numeric;
 using namespace boost::numeric::ublas; // keep this!
 namespace atlas = boost::numeric::bindings::atlas;
 
-template<typename T, typename V> void copy_val(T* eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
-  if (std::adjacent_find(eigenvalues, eigenvalues + M, std::greater<T>()) != eigenvalues + M)
+template<typename T, typename V> 
+void copy_val(const std::vector<T> &eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
+  my_assert(eigenvalues.size() >= M);
+  if (std::adjacent_find(eigenvalues.begin(), eigenvalues.begin() + M, std::greater<T>()) != eigenvalues.begin() + M)
     std::cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << std::endl;
   diagvalues.resize(M);
-  std::copy(eigenvalues, eigenvalues + M, std::begin(diagvalues));
+  std::copy(eigenvalues.begin(), eigenvalues.begin() + M, diagvalues.begin());
 }
 
 // Handle complex-type conversions (used in copy_vec)
@@ -60,7 +62,8 @@ void copy_vec(T* eigenvectors, ublas::matrix<V>& diagvectors, const size_t dim, 
     for (const auto j : range0(dim)) diagvectors(r, j) = to_matel(eigenvectors[dim * r + j]);
 }
 
-template<typename T, typename U, typename S> auto copy_results(T* eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
+template<typename T, typename U, typename S> 
+auto copy_results(const std::vector<T> &eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
 {
   Eigen<S> d(M, dim);
   copy_val(eigenvalues, d.value_orig, M);
@@ -73,7 +76,7 @@ template<typename T, typename U, typename S> auto copy_results(T* eigenvalues, U
 inline Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
   double *ham = bindings::traits::matrix_storage(m);
-  double eigenvalues[dim]; // eigenvalues on exit
+  std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
   int LDA    = dim;         // the leading dimension of the array a
@@ -81,12 +84,12 @@ inline Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz
   int LWORK0 = -1;          // length of the WORK array
   double WORK0[1];
   // Step 1: determine optimal LWORK
-  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK0, &LWORK0, &INFO);
+  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK0, &LWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK    = int(WORK0[0]);
   auto WORK = std::make_unique<double[]>(LWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, &INFO);
+  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.get(), &LWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   return copy_results<double,double,double>(eigenvalues, ham, jobz, dim, dim);
 }
@@ -95,7 +98,7 @@ inline Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char job
 {
   const size_t dim = m.size1();
   double *ham      = bindings::traits::matrix_storage(m);
-  double eigenvalues[dim];
+  std::vector<double> eigenvalues(dim);
   char UPLO  = 'L';
   int NN     = dim;
   int LDA    = dim;
@@ -104,13 +107,13 @@ inline Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char job
   int LIWORK = -1;
   double WORK0[1];
   int IWORK0[1];
-  LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK0, &LWORK, IWORK0, &LIWORK, &INFO);
+  LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK0, &LWORK, IWORK0, &LIWORK, &INFO);
   my_assert(INFO == 0);
   LWORK      = int(WORK0[0]);
   LIWORK     = IWORK0[0];
   auto WORK  = std::make_unique<double[]>(LWORK);
   auto IWORK = std::make_unique<int[]>(LIWORK);
-  LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, IWORK.get(), &LIWORK, &INFO);
+  LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.get(), &LWORK, IWORK.get(), &LIWORK, &INFO);
   if (INFO != 0) {
     // dsyevd sometimes fails to converge (INFO>0). In such cases we do not trigger
     // an error but return 0, to permit error recovery.
@@ -134,7 +137,7 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
     RANGE = 'I';
   }
   double *ham = bindings::traits::matrix_storage(m);
-  double eigenvalues[dim]; // eigenvalues on exit
+  std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';     // lower triangle of a is stored
   int NN        = dim;     // the order of the matrix
   int LDA       = dim;     // the leading dimension of the array a
@@ -158,7 +161,7 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
   double WORK0[1];
   int IWORK0[1];
   // Step 1: determine optimal LWORK and LIWORK
-  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK0, &LWORK0,
+  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.get(), &LDZ, ISUPPZ, WORK0, &LWORK0,
                 IWORK0, &LIWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK  = int(WORK0[0]);
@@ -166,7 +169,7 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
   auto WORK  = std::make_unique<double[]>(LWORK);
   auto IWORK = std::make_unique<int[]>(LIWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK.get(),
+  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.get(), &LDZ, ISUPPZ, WORK.get(),
                 &LWORK, IWORK.get(), &LIWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   if (MM != int(M)) {
@@ -180,7 +183,7 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
 inline Eigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<double>> &m, const char jobz = 'V') {
   const size_t dim = m.size1();
   auto *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
-  double eigenvalues[dim]; // eigenvalues on exit
+  std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
   int LDA    = dim;         // the leading dimension of the array a
@@ -190,12 +193,12 @@ inline Eigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<
   int RWORKdim = std::max(1ul, 3 * dim - 2);
   double RWORK[RWORKdim];
   // Step 1: determine optimal LWORK
-  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK0, &LWORK0, RWORK, &INFO);
+  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK0, &LWORK0, RWORK, &INFO);
   my_assert(INFO == 0);
   int LWORK  = int(WORK0[0].real);
   auto WORK = std::make_unique<lapack_complex_double[]>(LWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK.get(), &LWORK, RWORK, &INFO);
+  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.get(), &LWORK, RWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   return copy_results<double,lapack_complex_double,std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
 }
@@ -212,7 +215,7 @@ inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex
     RANGE = 'I';
   }
   auto *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
-  double eigenvalues[dim]; // eigenvalues on exit
+  std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix
   int LDA       = dim;      // the leading dimension of the array a
@@ -238,7 +241,7 @@ inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex
   int LIWORK0 = -1; // query
   int IWORK0[1];
   // Step 1: determine optimal LWORK, LRWORK, and LIWORK
-  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK0, &LWORK0,
+  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.get(), &LDZ, ISUPPZ, WORK0, &LWORK0,
                 RWORK0, &LRWORK0, IWORK0, &LIWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK   = int(WORK0[0].real);
@@ -248,7 +251,7 @@ inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex
   int LIWORK  = IWORK0[0];
   auto IWORK  = std::make_unique<int[]>(LIWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, (double *)eigenvalues, Z.get(), &LDZ, ISUPPZ, WORK.get(), &LWORK,
+  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.get(), &LDZ, ISUPPZ, WORK.get(), &LWORK,
                 RWORK.get(), &LRWORK, IWORK.get(), &LIWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("zheevr failed. INFO={}", INFO));
   if (MM != int(M)) {
@@ -267,7 +270,6 @@ void checkdiag(const Eigen<S> &d,
   const auto M = d.getnrcomputed(); // number of eigenpairs
   const auto dim = d.getdim();      // dimension of the eigenvector
   my_assert(d.matrix.size2() == dim);
-   
   // Check normalization
   for (const auto r: range0(M)) {
     assert_isfinite(d.value_orig(r));
