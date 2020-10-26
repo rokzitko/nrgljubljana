@@ -1,7 +1,11 @@
 #ifndef _step_hpp_
 #define _step_hpp_
 
+#include <algorithm>
 #include "params.hpp"
+#include "numerics.hpp"
+
+#include <fmt/format.h>
 
 namespace NRG {
 

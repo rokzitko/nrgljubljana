@@ -1,6 +1,13 @@
 #ifndef _store_hpp_
 #define _store_hpp_
 
+#include <vector>
+#include <map>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <boost/range/irange.hpp>
+#include <boost/range/adaptor/map.hpp>
 #include "invar.hpp"
 #include "eigen.hpp"
 #include "subspaces.hpp"

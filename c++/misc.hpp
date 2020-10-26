@@ -37,23 +37,6 @@ template<typename T> auto get_front(T &d) {
   return i;
 }
 
-// Conversion functions
-template <class T>
-inline T from_string(const std::string &str) {
-  T result;
-  try {
-    result = boost::lexical_cast<T>(str);
-  } catch (boost::bad_lexical_cast &) { throw std::runtime_error(fmt::format("Lexical cast [{}] failed.", str)); }
-  return result;
-}
-
-template <>
-inline bool from_string(const std::string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
-
-// for T=int, std::to_string is used
-template <class T>
-inline std::string to_string(const T val) { return boost::lexical_cast<std::string>(val); }
-
 // switch statement with three cases
 template <typename T, typename T1>
 inline T switch3(const T1 x0, const T1 x1, const T y1, const T1 x2, const T y2, const T1 x3, const T y3) {
@@ -79,7 +62,7 @@ inline std::optional<std::string> nextline(std::ifstream &F) {
 inline std::string strip_trailing_whitespace(std::string in) {
   auto s(in);
   auto it = s.rbegin();
-  while (it != s.rend() && isspace(*it)) {
+  while (it != s.rend() && std::isspace(*it)) {
     s.erase(--it.base());
     it = s.rbegin();
   }
@@ -128,34 +111,15 @@ inline auto parser(const std::string &filename, const std::string &block) {
   return parse_block(F);
 }
 
-// Input/output
-template <typename T1, typename T2> std::ostream &operator<<(std::ostream &os, const std::pair<T1, T2> &p) { return os << p.first << ' ' << p.second; }
-template <typename T> std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
-  for (const auto &x : vec) os << x << " ";
-  return os;
-}
-template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::vector<T> &vec) {
-  for (const auto &x : vec) os << x << " ";
-  return os;
-}
-template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::matrix<T> &m) {
-  for (auto r1 = 0; r1 < m.size1(); r1++) {
-    for (auto r2 = 0; r2 < m.size2(); r2++)
-      os << m(r1, r2) << ' ';
-    os << std::endl;
-  }
-  return os;
-}
-
 // Simple tokenizer class
 class string_token {
  private:
-   std::string s;
+   const std::string s;
    std::list<std::string> l;
  public:
-   explicit string_token(std::string _s) : s(std::move(_s)) {
+   explicit string_token(std::string s) : s(std::move(s)) {
      std::string::size_type pos = 0;
-     std::string::size_type first, last;
+     std::string::size_type first = 0, last = 0;
      while ((first = s.find_first_not_of(" ", pos)) != std::string::npos) {
        last              = s.find_first_of(" ", first);
        std::string token = std::string(s, first, last - first);
@@ -166,7 +130,7 @@ class string_token {
          pos = last + 1;
      }
    }
-   [[nodiscard]] auto find(std::string x) const { return std::find(l.begin(), l.end(), x) != l.end(); }
+   [[nodiscard]] auto find(const std::string &x) const { return std::find(l.begin(), l.end(), x) != l.end(); }
 };
 
 // Skip comment lines in the input stream 'f'.
@@ -187,8 +151,8 @@ inline void skip_comments(std::istream &f, const bool output = false, std::ostre
   }
 }
 
-// Sort according to the first component of the pair. Second
-// component is ignored (unlike in the default sort function).
+// Sort according to the first component of the pair. Second component is ignored (unlike in the default sort
+// function).
 struct sortfirst {
   template <typename T1, typename T2> bool operator()(const std::pair<T1, T2> &xy1, const std::pair<T1, T2> &xy2) { return xy1.first < xy2.first; }
 };
