@@ -14,7 +14,6 @@
 #include <cstring> // stdcasecmp
 
 #include <boost/range/irange.hpp>
-#include <boost/lexical_cast.hpp>
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>

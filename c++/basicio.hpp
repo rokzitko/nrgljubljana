@@ -13,6 +13,8 @@
 
 #define HIGHPREC(val) std::setprecision(std::numeric_limits<double>::max_digits10) << (val)
 
+#include <boost/lexical_cast.hpp>
+
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include <fmt/color.h>

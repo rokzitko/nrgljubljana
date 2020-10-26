@@ -31,4 +31,4 @@ using vmpf = std::vector<my_mpf>;
 
 } // namespace NRG
 
-#endif // _tridiag_hpp_
+#endif

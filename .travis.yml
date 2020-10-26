@@ -20,5 +20,4 @@ script:
   - mkdir build && cd build
   - cmake .. -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR #-DASAN=ON -DUBSAN=ON
   - export CTEST_OUTPUT_ON_FAILURE=1
-  - make -j2 && make test
-
+  - make VERBOSE=1 -j2 && make test
