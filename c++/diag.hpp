@@ -82,7 +82,7 @@ inline Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz
   int LDA    = dim;         // the leading dimension of the array a
   int INFO   = 0;           // 0 on successful exit
   int LWORK0 = -1;          // length of the WORK array
-  double WORK0;
+  double WORK0 = 0;         // on exit: optimal WORK size
   // Step 1: determine optimal LWORK
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK0, &INFO);
   my_assert(INFO == 0);
@@ -105,8 +105,8 @@ inline Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char job
   int INFO   = 0;
   int LWORK  = -1;
   int LIWORK = -1;
-  double WORK0;
-  int IWORK0;
+  double WORK0 = 0; // on exit: optimal WORK size
+  int IWORK0 = 0;   // on exit: optimal IWORK size
   LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK, &IWORK0, &LIWORK, &INFO);
   my_assert(INFO == 0);
   LWORK      = int(WORK0);
@@ -151,17 +151,17 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
   // matrix obtained by reducing m to tridiagonal form.
   int MM{}; // total number of eigenvalues found
   int LDZ = dim;
-  int ISUPPZ[2 * M];
+  std::vector<int> ISUPPZ(2 * M);
   //  The support of the eigenvectors in Z, i.e., the indices
   //  indicating the nonzero elements in Z.  The i-th eigenvector is
   //  nonzero only in elements ISUPPZ( 2*i-1 ) through ISUPPZ(2*i).
   std::vector<double> Z(LDZ * M); // eigenvectors
   int LWORK0  = -1;
   int LIWORK0 = -1;
-  double WORK0;
-  int IWORK0;
+  double WORK0 = 0; // on exit: optimal WORK size
+  int IWORK0 = 0;   // on exist: optimal IWORK size
   // Step 1: determine optimal LWORK and LIWORK
-  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ, &WORK0, &LWORK0,
+  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), &WORK0, &LWORK0,
                 &IWORK0, &LIWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK  = int(WORK0);
@@ -169,7 +169,7 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
   std::vector<double> WORK(LWORK);
   std::vector<int> IWORK(LIWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ, WORK.data(),
+  LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), WORK.data(),
                 &LWORK, IWORK.data(), &LIWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   if (MM != int(M)) {
@@ -191,14 +191,14 @@ inline Eigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<
   int LWORK0 = -1;          // length of the WORK array (-1 == query!)
   lapack_complex_double WORK0;
   int RWORKdim = std::max(1ul, 3 * dim - 2);
-  double RWORK[RWORKdim];
+  std::vector<double> RWORK(RWORKdim);
   // Step 1: determine optimal LWORK
-  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK0, RWORK, &INFO);
+  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK0, RWORK.data(), &INFO);
   my_assert(INFO == 0);
   int LWORK  = int(WORK0.real);
   std::vector<lapack_complex_double> WORK(LWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK, &INFO);
+  LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   return copy_results<double,lapack_complex_double,std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
 }
@@ -229,18 +229,18 @@ inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex
   // matrix obtained by reducing m to tridiagonal form.
   int MM = 0; // total number of eigenvalues found
   int LDZ = dim;
-  int ISUPPZ[2 * M];
+  std::vector<int> ISUPPZ(2 * M);
   //  The support of the eigenvectors in Z, i.e., the indices indicating the nonzero elements in Z.  The i-th
   //  eigenvector is nonzero only in elements ISUPPZ( 2*i-1 ) through ISUPPZ(2*i).
   std::vector<lapack_complex_double> Z(LDZ * M); // eigenvectors
   int LWORK0 = -1;                 // length of the WORK array (-1 == query!)
   lapack_complex_double WORK0;
-  int LRWORK0 = -1; // query
-  double RWORK0;
-  int LIWORK0 = -1; // query
-  int IWORK0;
+  int LRWORK0 = -1;  // query
+  double RWORK0 = 0; // on exit: optimal RWORK size
+  int LIWORK0 = -1;  // query
+  int IWORK0 = 0;    // on exit: optimal IWORK size
   // Step 1: determine optimal LWORK, LRWORK, and LIWORK
-  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ, &WORK0, &LWORK0,
+  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), &WORK0, &LWORK0,
                 &RWORK0, &LRWORK0, &IWORK0, &LIWORK0, &INFO);
   my_assert(INFO == 0);
   int LWORK   = int(WORK0.real);
@@ -250,7 +250,7 @@ inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex
   int LIWORK  = IWORK0;
   std::vector<int> IWORK(LIWORK);
   // Step 2: perform the diagonalisation
-  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ, WORK.data(), &LWORK,
+  LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), WORK.data(), &LWORK,
                 RWORK.data(), &LRWORK, IWORK.data(), &LIWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("zheevr failed. INFO={}", INFO));
   if (MM != int(M)) {

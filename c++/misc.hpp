@@ -61,7 +61,7 @@ inline std::optional<std::string> nextline(std::ifstream &F) {
   return std::nullopt;                 // error
 }
 
-inline std::string strip_trailing_whitespace(std::string in) {
+inline std::string strip_trailing_whitespace(const std::string &in) {
   auto s(in);
   auto it = s.rbegin();
   while (it != s.rend() && std::isspace(*it)) {
