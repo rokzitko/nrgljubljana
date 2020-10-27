@@ -523,7 +523,7 @@ class Params {
     my_assert(Lambda > 1.0);
     if (diag == "dsyevr"s || diag =="zheevr"s) {
       my_assert(0.0 < diagratio && diagratio <= 1.0);
-      if (cfs_flags() && diagratio != 1.0) std::invalid_argument("CFS/FDM is not compatible with partial diagonalisation.");
+      if (cfs_flags() && diagratio != 1.0) throw std::invalid_argument("CFS/FDM is not compatible with partial diagonalisation.");
     }
     my_assert(!(dumpabs && dumpscaled)); // dumpabs=true and dumpscaled=true is a meaningless combination
     // Take the first character (for backward compatibility)
