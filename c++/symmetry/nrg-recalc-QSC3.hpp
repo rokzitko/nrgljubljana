@@ -28,7 +28,7 @@ namespace NRG {
 
 // Driver routine for recalc_f()
 template<typename SC>
-Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) {
   Opch<SC> opch = newopch<SC>(P);
 
   if constexpr (std::is_same_v<SC, std::complex<double>>) {
@@ -56,7 +56,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spinup0-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -68,7 +68,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spinup0-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -80,7 +80,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spinup0-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -94,7 +94,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spindown0-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -106,7 +106,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spindown0-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -118,7 +118,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spindown0-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -132,7 +132,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spinup1-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -144,7 +144,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spinup1-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -156,7 +156,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spinup1-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -170,7 +170,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spindown1-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -182,7 +182,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spindown1-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -194,7 +194,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spindown1-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -208,7 +208,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spinup2-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -220,7 +220,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spinup2-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -232,7 +232,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spinup2-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -246,7 +246,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spindown2-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -258,7 +258,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spindown2-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -270,7 +270,7 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qsc3/qsc3-spindown2-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };

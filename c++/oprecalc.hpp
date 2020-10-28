@@ -55,10 +55,10 @@ class Oprecalc {
    // Wrapper routine for recalculations
    template <typename RecalcFnc>
      MatrixElements<S> recalc(const std::string &name, const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const std::string &tip,
-                              const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
+                              const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
        nrglog('0', "Recalculate " << tip << " " << name);
-       auto mnew = recalc_fnc(diag, qsrmax, mold);
-       if (tip == "g") Sym->recalc_global(step, diag, qsrmax, name, mnew);
+       auto mnew = recalc_fnc(diag, substruct, mold);
+       if (tip == "g") Sym->recalc_global(step, diag, substruct, name, mnew);
        return mnew;
      }
 
@@ -68,22 +68,22 @@ class Oprecalc {
      }
 
    // Recalculate operator matrix representations
-   void recalculate_operators(IterInfo<S> &a, const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) {
+   void recalculate_operators(IterInfo<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
        const auto section_timing = mt.time_it("recalc");
        for (auto &[name, m] : a.ops)
-         m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, qsrmax);
+         m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
        for (auto &[name, m] : a.opsp)
-         m = recalc_or_clear(ops.count({"p", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, "p", step, diag, qsrmax);
+         m = recalc_or_clear(ops.count({"p", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, "p", step, diag, substruct);
        for (auto &[name, m] : a.opsg)
-         m = recalc_or_clear(ops.do_g(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag, qsrmax);
+         m = recalc_or_clear(ops.do_g(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag, substruct);
        for (auto &[name, m] : a.opd)
-         m = recalc_or_clear(ops.count({"d", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, "d", step, diag, qsrmax);
+         m = recalc_or_clear(ops.count({"d", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, "d", step, diag, substruct);
        for (auto &[name, m] : a.opt)
-         m = recalc_or_clear(ops.count({"t", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, "t", step, diag, qsrmax);
+         m = recalc_or_clear(ops.count({"t", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, "t", step, diag, substruct);
        for (auto &[name, m] : a.opot)
-         m = recalc_or_clear(ops.count({"ot", name}), name, m, [this](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, "ot", step, diag, qsrmax);
+         m = recalc_or_clear(ops.count({"ot", name}), name, m, [this](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, "ot", step, diag, substruct);
        for (auto &[name, m] : a.opq)
-         m = recalc_or_clear(ops.count({"q", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, "q", step, diag, qsrmax);
+         m = recalc_or_clear(ops.count({"q", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, "q", step, diag, substruct);
      }
 
    // Establish the data structures for storing spectral information [and prepare output files].
@@ -197,19 +197,19 @@ class Oprecalc {
 
 // Recalculate irreducible matrix elements for Wilson chains.
 template<typename S>
-void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, Opch<S> &opch, 
+void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, Opch<S> &opch, 
                         std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   const auto section_timing = mt.time_it("recalc f");
   if (!P.substeps) {
-    opch = Sym->recalc_irreduc(step, diag, qsrmax);
+    opch = Sym->recalc_irreduc(step, diag, substruct);
   } else {
     const auto [N, M] = step.NM();
     for (const auto i: range0(size_t(P.channels)))
       if (i == M) {
-        opch[i] = Sym->recalc_irreduc_substeps(step, diag, qsrmax, i);
+        opch[i] = Sym->recalc_irreduc_substeps(step, diag, substruct, i);
       } else {
         for (const auto j: range0(size_t(P.perchannel)))
-          opch[i][j] = Sym->recalc_doublet(diag, qsrmax, opch[i][j]);
+          opch[i][j] = Sym->recalc_doublet(diag, substruct, opch[i][j]);
       }
   }
 }

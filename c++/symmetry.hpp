@@ -147,17 +147,17 @@ class Symmetry {
    using t_coef = typename traits<S>::t_coef;
 
    void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_coef factor,
-                              Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch<S> &opch) const;
+                              Matrix &h, const SubspaceDimensions &qq, const InvarVec &In, const Opch<S> &opch) const;
    void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
-                           Matrix &h, const Rmaxvals &qq, const double f) const;
+                           Matrix &h, const SubspaceDimensions &qq, const double f) const;
    void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
-                      Matrix &h, const Rmaxvals &qq) const;
+                      Matrix &h, const SubspaceDimensions &qq) const;
    void diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
-                           Matrix &h, const Rmaxvals &qq) const;
+                           Matrix &h, const SubspaceDimensions &qq) const;
    void diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor,
-                              Matrix &h, const Rmaxvals &qq) const;
+                              Matrix &h, const SubspaceDimensions &qq) const;
 
-   virtual void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In,
+   virtual void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In,
                             const Opch<S> &opch, const Coef<S> &coef) = 0;
 
    // Called from recalc_dynamicsusceptibility().  This is the factor due
@@ -175,23 +175,23 @@ class Symmetry {
 
    virtual void calculate_TD(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, const double factor) = 0;
 
-   virtual Opch<S> recalc_irreduc(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax) { my_assert_not_reached(); }
+   virtual Opch<S> recalc_irreduc(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) { my_assert_not_reached(); }
    virtual OpchChannel<S> recalc_irreduc_substeps(const Step &step, const DiagInfo<S> &diag,
-                                                       const QSrmax &qsrmax, int M) { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_doublet(const DiagInfo<S> &diag, const QSrmax &qsrmax,
+                                                       const SubspaceStructure &substruct, int M) { my_assert_not_reached(); }
+   virtual MatrixElements<S> recalc_doublet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
                                                  const MatrixElements<S> &cold) { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_triplet(const DiagInfo<S> &diag, const QSrmax &qsrmax,
+   virtual MatrixElements<S> recalc_triplet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
                                                  const MatrixElements<S> &cold) { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_orb_triplet(const DiagInfo<S> &diag, const QSrmax &qsrmax,
+   virtual MatrixElements<S> recalc_orb_triplet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
                                                      const MatrixElements<S> &cold) { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_quadruplet(const DiagInfo<S> &diag, const QSrmax &qsrmax,
+   virtual MatrixElements<S> recalc_quadruplet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
                                                     const MatrixElements<S> &cold) { my_assert_not_reached(); }
-   virtual void recalc_global(const Step &step, const DiagInfo<S> &diag, const QSrmax &qsrmax, std::string name,
+   virtual void recalc_global(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, std::string name,
                               MatrixElements<S> &cnew) { my_assert_not_reached(); }
 
    // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
    //  parity -1). Generic implementation, valid for all symmetry types.
-   MatrixElements<S> recalc_singlet(const DiagInfo<S> &diag, const QSrmax &qsrmax, const MatrixElements<S> &nold, const int parity) {
+   MatrixElements<S> recalc_singlet(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &nold, const int parity) {
      MatrixElements<S> nnew;
      my_assert(islr() ? parity == 1 || parity == -1 : parity == 1);
      for (const auto &I : diag.subspaces()) {
@@ -203,7 +203,7 @@ class Symmetry {
          recalc_table.push_back({i+1, i+1, anc, parity == -1 ? anc.InvertParity() : anc, 1.0});
        }
        const auto Iop = parity == -1 ? InvarSinglet.InvertParity() : InvarSinglet;
-       nnew[Twoinvar(I1,Ip)] = recalc_general(diag, qsrmax, nold, I1, Ip, recalc_table, Iop);
+       nnew[Twoinvar(I1,Ip)] = recalc_general(diag, substruct, nold, I1, Ip, recalc_table, Iop);
      }
      return nnew;
    }
@@ -230,14 +230,14 @@ class Symmetry {
    virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) { return true; } // used in recalc_f()
 
    template<typename T>
-     auto recalc_f(const DiagInfo<S> &diag, const QSrmax &qsrmax, const Invar &I1,
+     auto recalc_f(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Invar &I1,
                    const Invar &Ip, const T &table);
 
    template<typename T>
-     auto recalc_general(const DiagInfo<S> &diag, const QSrmax &qsrmax, const MatrixElements<S> &cold,
+     auto recalc_general(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &cold,
                          const Invar &I1, const Invar &Ip, const T &table, const Invar &Iop) const;
 
-   void recalc1_global(const DiagInfo<S> &diag, const QSrmax &qsrmax, const Invar &I,
+   void recalc1_global(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Invar &I,
                        Matrix &m, const size_t i1, const size_t ip, const t_coef value) const;
 
    auto CorrelatorFactorFnc() const   { return [this](const Invar &Ip, const Invar &I1) { return this->mult(I1); }; }
@@ -251,21 +251,21 @@ class Symmetry {
 
 // Add DECL declaration in each symmetry class
 #define DECL                                                                                                 \
-  void make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In,      \
+  void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In,      \
              const Opch<SC> &opch, const Coef<SC> &coef) override;                                           \
-  Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) override
+  Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) override
 
 // Optional declaration
-#define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, int M) override
-#define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+#define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, int M) override
+#define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
                                                       const MatrixElements<SC> &cold) override
-#define HAS_TRIPLET MatrixElements<SC> recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+#define HAS_TRIPLET MatrixElements<SC> recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
                                                       const MatrixElements<SC> &cold) override
-#define HAS_ORB_TRIPLET MatrixElements<SC> recalc_orb_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+#define HAS_ORB_TRIPLET MatrixElements<SC> recalc_orb_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
                                                               const MatrixElements<SC> &cold) override
-#define HAS_QUADRUPLET MatrixElements<SC> recalc_quadruplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+#define HAS_QUADRUPLET MatrixElements<SC> recalc_quadruplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
                                                             const MatrixElements<SC> &cold) override
-#define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, \
+#define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
                                       std::string name, MatrixElements<SC> &cnew) override
 
 template<typename S>

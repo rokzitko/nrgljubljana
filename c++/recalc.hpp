@@ -14,29 +14,29 @@ namespace NRG {
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
 // completed!
 template<typename S>
-inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const QSrmax &qsrmax) {
-  const auto combs = qsrmax.at(I).combs();
+inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const SubspaceStructure &substruct) {
+  const auto combs = substruct.at(I).combs();
   e.blocks.resize(combs);
   const auto nr = e.getnrstored(); // nr. of eigenpairs
   my_assert(nr > 0);
   my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
   for (const auto block: range0(combs)) {
-    ublas::matrix_range<typename traits<S>::Matrix> Up(e.matrix, ublas::range(0, nr), qsrmax.at(I).uboost_view(block));
+    ublas::matrix_range<typename traits<S>::Matrix> Up(e.matrix, ublas::range(0, nr), substruct.at(I).uboost_view(block));
     e.blocks[block] = Up;
   }
   e.matrix = typename traits<S>::Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!
 }
 
 template<typename S>
-inline void split_in_blocks(DiagInfo<S> &diag, const QSrmax &qsrmax) {
+inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruct) {
   for(auto &[I, eig]: diag)
-    split_in_blocks_Eigen(I, eig, qsrmax);
+    split_in_blocks_Eigen(I, eig, substruct);
 }
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<typename S> template<typename T>
 auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
-                                const QSrmax &qsrmax,
+                                const SubspaceStructure &substruct,
                                 const Invar &I1,
                                 const Invar &Ip,
                                 const T &table)
@@ -55,8 +55,8 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
     // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
     for (const auto &[i1, ip, factor]: table) {
       my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs()); // 1-based input from Mathematica
-      const auto rmax1 = qsrmax.at(I1).rmax(i1-1); // dimensions of the invariant subspaces (0-based args in Rmaxvals!)
-      const auto rmaxp = qsrmax.at(Ip).rmax(ip-1);
+      const auto rmax1 = substruct.at(I1).rmax(i1-1); // dimensions of the invariant subspaces (0-based args in Rmaxvals!)
+      const auto rmaxp = substruct.at(Ip).rmax(ip-1);
       if (!(rmax1 && rmaxp)) continue;
       if (P.logletter('f')) std::cout << nrgdump5(i1, ip, factor, rmax1, rmaxp) << std::endl;
       my_assert(my_isfinite(factor) && rmax1 == rmaxp);
@@ -77,7 +77,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
 // one should try to hand optimize.
 template<typename S> template<typename T>
 auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
-                                      const QSrmax &qsrmax,        // information about the matrix structure
+                                      const SubspaceStructure &substruct,        // information about the matrix structure
                                       const MatrixElements<S> &cold,
                                       const Invar &I1,             // target subspace (bra)
                                       const Invar &Ip,             // target subspace (ket)
@@ -94,8 +94,8 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
     my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
     if (P.logletter('r')) std::cout << nrgdump5(i1, ip, IN1, INp, factor) << std::endl;
     if (!Invar_allowed(IN1) || !Invar_allowed(INp)) continue;
-    const auto rmax1 = qsrmax.at(I1).rmax(i1-1);
-    const auto rmaxp = qsrmax.at(Ip).rmax(ip-1);
+    const auto rmax1 = substruct.at(I1).rmax(i1-1);
+    const auto rmaxp = substruct.at(Ip).rmax(ip-1);
     // Proceed if this combination of i1/ip contributes.
     if (rmax1 == 0 || rmaxp == 0) continue;
     my_assert(IN1 == ancestor(I1, i1-1) && INp == ancestor(Ip, ip-1));
@@ -133,7 +133,7 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
 template<typename S>
 void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
-                                      const QSrmax &qsrmax,
+                                      const SubspaceStructure &substruct,
                                       const Invar &I,
                                       Matrix &m, // XXX: return this one
                                       const size_t i1,
@@ -144,8 +144,8 @@ void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
   const Eigen<S> &diagI = diag.at(I);
   const auto dim = diagI.getnrstored();
   if (dim == 0) return;
-  const auto rmax1 = qsrmax.at(I).rmax(i1-1);
-  const auto rmaxp = qsrmax.at(I).rmax(ip-1);
+  const auto rmax1 = substruct.at(I).rmax(i1-1);
+  const auto rmaxp = substruct.at(I).rmax(ip-1);
   my_assert(rmax1 == rmaxp);
   if (rmax1 == 0 || rmaxp == 0) return;
   const Matrix &U1 = diagI.blocks[i1-1];

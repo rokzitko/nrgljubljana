@@ -139,7 +139,7 @@ class SymmetryISO2 : public SymmetryISOcommon<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryISO<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryISO<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   int ss = I.get("SS");
   int ii = I.get("II");
   // nn is the index of the last site in the chain, while nn+1 is the
@@ -162,7 +162,7 @@ void SymmetryISO<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &q
 }
 
 template<typename SC>
-void SymmetryISO2<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryISO2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   int ss = I.get("SS");
   int ii = I.get("II");
   int NN   = step.getnn();

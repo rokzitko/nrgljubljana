@@ -34,7 +34,7 @@ double sign(double x) {
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!
 
 template<typename SC>
-Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -70,7 +70,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isoupa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -82,7 +82,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isoupb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -96,7 +96,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isoupa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -108,7 +108,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isoupb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -122,7 +122,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isodowna.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -134,7 +134,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isodownb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -148,7 +148,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isodowna.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -160,7 +160,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isodownb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -176,7 +176,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isoupdiffa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -188,7 +188,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isoupdiffb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -202,7 +202,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isoupdiffa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -214,7 +214,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isoupdiffb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -228,7 +228,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isodowndiffa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -240,7 +240,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spinup-isodowndiffb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -254,7 +254,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isodowndiffa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -266,7 +266,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-spindown-isodowndiffb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -276,7 +276,7 @@ Opch<SC> SymmetryISO2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
 template<typename SC>
-MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii1 = I1.get("II");
@@ -293,7 +293,7 @@ MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-doubletmp.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
     }
   }
 };
@@ -307,7 +307,7 @@ MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-doubletmm.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
     }
   }
 };
@@ -321,7 +321,7 @@ MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-doubletpp.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
     }
   }
 };
@@ -335,7 +335,7 @@ MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-doubletpm.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
     }
   }
 };
@@ -345,7 +345,7 @@ MatrixElements<SC> SymmetryISO2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
 template<typename SC>
-MatrixElements<SC> SymmetryISO2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+MatrixElements<SC> SymmetryISO2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii1 = I1.get("II");
@@ -362,7 +362,7 @@ MatrixElements<SC> SymmetryISO2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
     }
   }
 };
@@ -376,7 +376,7 @@ MatrixElements<SC> SymmetryISO2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
     }
   }
 };
@@ -390,7 +390,7 @@ MatrixElements<SC> SymmetryISO2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2lr/iso2lr-2ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
     }
   }
 };

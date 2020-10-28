@@ -26,7 +26,7 @@ namespace NRG {
 
 // Recalculate matrix elements of a doublet tensor operator
 template<typename SC>
-MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1 = I1.get("Q");
@@ -42,7 +42,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
     }
   }
 };
@@ -56,7 +56,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 2));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
     }
   }
 };
@@ -69,7 +69,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
 
 // Recalculate matrix elements of a quadruplet tensor operator
 template<typename SC>
-MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1 = I1.get("Q");
@@ -86,7 +86,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad1.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 4));
     }
   }
 };
@@ -100,7 +100,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad2.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 4));
     }
   }
 };
@@ -114,7 +114,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad3.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 4));
     }
   }
 };
@@ -128,7 +128,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad4.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1, 4));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 4));
     }
   }
 };
@@ -137,7 +137,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, c
 }
 
 template<typename SC>
-Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     int qp = Ip.get("Q");
@@ -154,7 +154,7 @@ Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j3_2-jz3_2.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -168,7 +168,7 @@ Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j1_2-jz1_2.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -180,7 +180,7 @@ Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j3_2-jz1_2.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -194,7 +194,7 @@ Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j1_2-jz-1_2.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -206,7 +206,7 @@ Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j3_2-jz-1_2.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -220,7 +220,7 @@ Opch<SC> SymmetryQJ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qj/qj-spin_j3_2-jz-3_2.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };

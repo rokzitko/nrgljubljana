@@ -25,7 +25,7 @@ namespace NRG {
 
 
 template<typename SC>
-Opch<SC> SymmetryNONE<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+Opch<SC> SymmetryNONE<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1 = Invar();
@@ -39,7 +39,7 @@ Opch<SC> SymmetryNONE<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "none/none-1ch-a-CR-DO.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -51,7 +51,7 @@ Opch<SC> SymmetryNONE<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "none/none-1ch-a-CR-UP.dat"
       };
-      opch[0][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][1][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 }; } break;
@@ -63,7 +63,7 @@ Opch<SC> SymmetryNONE<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "none/none-2ch-a-CR-DO.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -75,7 +75,7 @@ Opch<SC> SymmetryNONE<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "none/none-2ch-b-CR-DO.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -87,7 +87,7 @@ Opch<SC> SymmetryNONE<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "none/none-2ch-a-CR-UP.dat"
       };
-      opch[0][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][1][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -99,7 +99,7 @@ Opch<SC> SymmetryNONE<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "none/none-2ch-b-CR-UP.dat"
       };
-      opch[1][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][1][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -110,7 +110,7 @@ Opch<SC> SymmetryNONE<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
 }
 
 template<typename SC>
-MatrixElements<SC> SymmetryNONE<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+MatrixElements<SC> SymmetryNONE<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     Invar Ip = Invar();
@@ -124,7 +124,7 @@ MatrixElements<SC> SymmetryNONE<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "none/none-1ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar());
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar());
     }
   }
 } } break;
@@ -136,7 +136,7 @@ MatrixElements<SC> SymmetryNONE<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "none/none-2ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar());
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar());
     }
   }
 } } break;
@@ -147,9 +147,9 @@ MatrixElements<SC> SymmetryNONE<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
 }
 
 #undef SPINX
-#define SPINX(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINX(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
 
 // Isospin operator need an appropriate phase factor (bipartite sublattice index) 
 #define USEISOFACTOR
@@ -161,31 +161,31 @@ MatrixElements<SC> SymmetryNONE<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
 #endif
 
 #undef SPINY
-#define SPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINY(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
 
 #undef ISOSPINY
-#define ISOSPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value * std::complex<double>(ISOFACTOR))
+#define ISOSPINY(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value * std::complex<double>(ISOFACTOR))
 
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
 
 #undef CHARGE
-#define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
 
 #undef ISOSPINZ
-#define ISOSPINZ(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define ISOSPINZ(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
 
 #undef ISOSPINX
-#define ISOSPINX(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
+#define ISOSPINX(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value *ISOFACTOR)
 
 #undef ISOSPINP
-#define ISOSPINP(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
+#define ISOSPINP(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value *ISOFACTOR)
 
 #undef ISOSPINM
-#define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value *ISOFACTOR)
+#define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value *ISOFACTOR)
 
 template<typename SC>
-void SymmetryNONE<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements<SC> &cnew) {
+void SymmetryNONE<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

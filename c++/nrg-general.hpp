@@ -131,49 +131,49 @@ private:
   MemTime mt; // memory and timing statistics
 public:
   auto run_nrg(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
-               AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym) {
+               Store<S> &store, std::shared_ptr<Symmetry<S>> Sym) {
     diag0.states_report(Sym->multfnc());
     auto oprecalc = Oprecalc<S>(step.get_runtype(), iterinfo, Sym, mt, P);
     auto output = Output<S>(step.get_runtype(), iterinfo, stats, P);
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
     if (step.nrg() && P.calc0 && !P.ZBW)
       docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym, mt, P);
-    auto diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, dm, oprecalc, Sym, mt, P)
-      : nrg_loop(step, iterinfo, coef, stats, diag0, output, dm, oprecalc, Sym, mpi, mt, P);
+    auto diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, store, oprecalc, Sym, mt, P)
+      : nrg_loop(step, iterinfo, coef, stats, diag0, output, store, oprecalc, Sym, mpi, mt, P);
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
-    if (step.nrg() && P.dumpsubspaces) dm.dump_subspaces();
+    if (step.nrg() && P.dumpsubspaces) store.dump_subspaces();
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
   NRG_calculation(MPI_diag &mpi, const Workdir &workdir, const bool embedded) : mpi(mpi), P("param", "param", workdir, embedded), stats(P) {
     auto [diag0, iterinfo, coef, Sym] = read_data<S>(P, stats);
     Step step{P, RUNTYPE::NRG};
-    AllSteps<S> dm(P.Ninit, P.Nlen);
-    auto diag = run_nrg(step, iterinfo, coef, stats, diag0, dm, Sym);
+    Store<S> store(P.Ninit, P.Nlen);
+    auto diag = run_nrg(step, iterinfo, coef, stats, diag0, store, Sym);
     if (std::string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
-    dm.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
+    store.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
     if (P.dumpabsenergies)
-      dm.dump_all_absolute_energies();
+      store.dump_all_absolute_energies();
     if (P.dm) {
       if (P.need_rho()) {
         auto rho = init_rho(step, diag, Sym);
         rho.save(step.lastndx(), P, fn_rho);
-        if (!P.ZBW) calc_densitymatrix(rho, dm, Sym, mt, P);
+        if (!P.ZBW) calc_densitymatrix(rho, store, Sym, mt, P);
       }
       if (P.need_rhoFDM()) {
-        calc_ZnD(dm, stats, Sym, P.T);
+        calc_ZnD(store, stats, Sym, P.T);
         if (P.logletter('w'))
           report_ZnD(stats, P);
-        fdm_thermodynamics(dm, stats, Sym, P.T);
-        auto rhoFDM = init_rho_FDM(step.lastndx(), dm, stats, Sym, P.T);
+        fdm_thermodynamics(store, stats, Sym, P.T);
+        auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym, P.T);
         rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-        if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, dm, stats, Sym, mt, P);
+        if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym, mt, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
       auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data<S>(P, stats);
       Step step_dmnrg{P, RUNTYPE::DMNRG};
-      run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, dm, Sym_dm);
+      run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, store, Sym_dm);
       my_assert(num_equal(stats.GS_energy, stats.total_energy));
     }
   }

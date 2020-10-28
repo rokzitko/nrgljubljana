@@ -11,7 +11,7 @@ include(recalc-macros.m4)
 #define xRECALC_F_TAB(a, b, c) 0;
 
 template<typename SC>
-Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) {
   Opch<SC> opch = newopch<SC>(P);
 
   if constexpr (std::is_same_v<SC, std::complex<double>>) {

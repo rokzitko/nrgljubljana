@@ -11,7 +11,7 @@ define(`RECALC_TAB', {
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include $1
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, $2);
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, $2);
     }
   }
 })
@@ -24,7 +24,7 @@ define(`RECALC_F_TAB', {
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include $1
       };
-      opch[$2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[$2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 })
@@ -37,7 +37,7 @@ define(`RECALC_F_TAB_N', {
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include $1
       };
-      opch[$2][$3][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[$2][$3][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 })

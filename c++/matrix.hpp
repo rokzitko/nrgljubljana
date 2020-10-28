@@ -32,7 +32,7 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
                                              const size_t ch,      // channel number
                                              const size_t fnr,     // extra index for <||f||>, usually 0
                                              const t_coef factor,  // may be complex (in principle)
-                                             Matrix &h, const Rmaxvals &qq, const InvarVec &In, const Opch<S> &opch) const 
+                                             Matrix &h, const SubspaceDimensions &qq, const InvarVec &In, const Opch<S> &opch) const 
 {
   my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
   if (!my_isfinite(factor))
@@ -64,7 +64,7 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
 // generalized routine should be used. 
 template<typename S>
 void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
-                                          Matrix &h, const Rmaxvals &qq, const double f) const 
+                                          Matrix &h, const SubspaceDimensions &qq, const double f) const 
 {
   my_assert(1 <= i && i <= qq.combs());
   // For convenience we subtract the average site occupancy.
@@ -77,14 +77,14 @@ void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const siz
 
 template<typename S>
 void Symmetry<S>::diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
-                                     Matrix &h, const Rmaxvals &qq) const 
+                                     Matrix &h, const SubspaceDimensions &qq) const 
 {
   diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 1);
 }
 
 template<typename S>
 void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
-                                          Matrix &h, const Rmaxvals &qq) const 
+                                          Matrix &h, const SubspaceDimensions &qq) const 
 {
   diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 0.5);
 }
@@ -93,7 +93,7 @@ void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const siz
 
 template<typename S>
 void Symmetry<S>::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor,
-                                             Matrix &h, const Rmaxvals &qq) const 
+                                             Matrix &h, const SubspaceDimensions &qq) const 
 {
   my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
   if (i > j) return; // only upper triangular part

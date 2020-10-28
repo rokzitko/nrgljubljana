@@ -14,13 +14,13 @@
 
 namespace NRG {
 
-// Information about the number of states, kept and discarded, rmax, and eigenenergies. Required for the
-// density-matrix construction.
+// Container for all information which needs to be gathered in each invariant subspace.
+// Required for the density-matrix construction.
 template<typename S>
-struct DimSub {
+struct Sub {
   size_t kept  = 0;
   size_t total = 0;
-  Rmaxvals rmax;
+  SubspaceDimensions rmax;
   Eigen<S> eig;
   bool is_last = false;
   auto min() const { return is_last ? 0 : kept; } // min(), max() return the range of D states to be summed over in FDM
@@ -28,16 +28,14 @@ struct DimSub {
   auto all() const { return boost::irange(min(), max()); }
 };
 
-// Full information about the number of states and matrix dimensions
-// Example: dm[N].rmax[I] etc.
-template<typename S>
-using Subs = std::map<Invar, DimSub<S>>;
+template<typename S> 
+using Subs = std::map<Invar, Sub<S>>;
 
 template<typename S>
-class AllSteps : public std::vector<Subs<S>> {
+class Store : public std::vector<Subs<S>> {
  public:
    const size_t Nbegin, Nend; // range of valid indexes
-   AllSteps(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
+   Store(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
    auto Nall() const { return boost::irange(Nbegin, Nend); }
    void dump_absenergyG(std::ostream &F) const {
      for (const auto N : Nall()) {
@@ -66,10 +64,10 @@ class AllSteps : public std::vector<Subs<S>> {
        for (auto &ds : this->at(N) | boost::adaptors::map_values)
          ds.eig.subtract_GS_energy(GS_energy);
    }
-   void store(const size_t ndx, const DiagInfo<S> &diag, const QSrmax &qsrmax, const bool last) {
+   void store_it(const size_t ndx, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool last) {
      my_assert(Nbegin <= ndx && ndx < Nend);
      for (const auto &[I, eig]: diag)
-       (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), qsrmax.at_or_null(I), eig, last };
+       (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), substruct.at_or_null(I), eig, last };
    }
 };
 

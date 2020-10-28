@@ -26,7 +26,7 @@ namespace NRG {
 
 // Recalculate matrix elements of a doublet tensor operator
 template<typename SC>
-MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, const QSrmax &qsrmax, const MatrixElements<SC> &cold) {
+MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1 = I1.get("Q");
@@ -40,7 +40,7 @@ MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "u1/u1-1ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
     }
   }
 } } break;
@@ -52,7 +52,7 @@ MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "u1/u1-2ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
     }
   }
 } } break;
@@ -64,7 +64,7 @@ MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "u1/u1-3ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, qsrmax, cold, I1, Ip, recalc_table, Invar(1));
+      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
     }
   }
 } } break;
@@ -76,7 +76,7 @@ MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
 
 // Driver routine for recalc_f()
 template<typename SC>
-Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax) {
+Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     int qp = Ip.get("Q");
@@ -90,7 +90,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-1ch-a-DO.dat"
       };
-      opch[0][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][1][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -102,7 +102,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-1ch-a-UP.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -114,7 +114,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-2ch-a-DO.dat"
       };
-      opch[0][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][1][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -126,7 +126,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-2ch-b-DO.dat"
       };
-      opch[1][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][1][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -138,7 +138,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-2ch-a-UP.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -150,7 +150,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-2ch-b-UP.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -162,7 +162,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-3ch-a-DO.dat"
       };
-      opch[0][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][1][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -174,7 +174,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-3ch-b-DO.dat"
       };
-      opch[1][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][1][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -186,7 +186,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-3ch-c-DO.dat"
       };
-      opch[2][1][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[2][1][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -198,7 +198,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-3ch-a-UP.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -210,7 +210,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-3ch-b-UP.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 };
@@ -222,7 +222,7 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "u1/u1-3ch-c-UP.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, qsrmax, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
     }
   }
 }; } break;
@@ -233,14 +233,14 @@ Opch<SC> SymmetryU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
 }
 
 #undef SPINX
-#define SPINX(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINX(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
 #undef SPINY
-#define SPINY(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINY(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, qsrmax, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
 
 template<typename SC>
-void SymmetryU1<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const QSrmax &qsrmax, const std::string name, MatrixElements<SC> &cnew) {
+void SymmetryU1<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

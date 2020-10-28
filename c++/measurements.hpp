@@ -52,19 +52,19 @@ T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const siz
 
 template<typename S>
 CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
-                                  const AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym) {
+                                  const Store<S> &store, std::shared_ptr<Symmetry<S>> Sym) {
   typename traits<S>::t_matel tr{};
   for (const auto &[I, rhoI] : rhoFDM)
-    tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), dm[ndx].at(I).kept); // over kept states ONLY
+    tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), store[ndx].at(I).kept); // over kept states ONLY
   return tr;
 }
 
 template<typename S>
 void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a,
                          Output<S> &output,  const DensMatElements<S> &rhoFDM,
-                         const AllSteps<S> &dm, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
-  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
-  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, dm, Sym);
+                         const Store<S> &store, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, Sym);
+  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, Sym);
   output.customfdm->field_values(P.T);
 }
 
@@ -86,13 +86,13 @@ auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, std::shared_pt
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
 // energies. calc_ZnD() must be called before the second NRG run.
 template<typename S>
-void calc_ZnD(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, const double T) {
+void calc_ZnD(const Store<S> &store, Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
-  for (const auto N : dm.Nall()) {
+  for (const auto N : store.Nall()) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
     mpf_set_d(ZnDG, 0.0);
     mpf_set_d(ZnDN, 0.0);
-    for (const auto &[I, ds] : dm[N])
+    for (const auto &[I, ds] : store[N])
       for (const auto i : ds.all()) {
         my_mpf g, n;
         mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.absenergyG[i]/T)); // absenergyG >= 0.0
@@ -107,20 +107,20 @@ void calc_ZnD(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<Symmetry<S
   // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
   my_mpf ZZG;
   mpf_set_d(ZZG, 0.0);
-  for (const auto N : dm.Nall()) {
+  for (const auto N : store.Nall()) {
     my_mpf a;
     mpf_set(a, stats.ZnDG[N]);
     my_mpf b;
     mpf_set_d(b, Sym->nr_combs());
-    mpf_pow_ui(b, b, dm.Nend - N - 1);
+    mpf_pow_ui(b, b, store.Nend - N - 1);
     my_mpf c;
     mpf_mul(c, a, b);
     mpf_add(ZZG, ZZG, c);
   }
   stats.ZZG = mpf_get_d(ZZG);
   std::cout << "ZZG=" << HIGHPREC(stats.ZZG) << std::endl;
-  for (const auto N : dm.Nall()) {
-    const double w  = std::pow(Sym->nr_combs(), dm.Nend - N - 1) / stats.ZZG; // ZZZ
+  for (const auto N : store.Nall()) {
+    const double w  = std::pow(Sym->nr_combs(), store.Nend - N - 1) / stats.ZZG; // ZZZ
     stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function.
     stats.wn[N] = w * mpf_get_d(stats.ZnDG[N]); // This is w_n defined after Eq. (8) in the WvD paper.
   }
@@ -144,7 +144,7 @@ void report_ZnD(Stats<S> &stats, const Params &P) {
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
 template<typename S>
-void fdm_thermodynamics(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, const double T)
+void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, const double T)
 {
   stats.td_fdm.T = T;
   stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
@@ -154,9 +154,9 @@ void fdm_thermodynamics(const AllSteps<S> &dm, Stats<S> &stats, std::shared_ptr<
   my_mpf E, E2;
   mpf_set_d(E, 0.0);
   mpf_set_d(E2, 0.0);
-  for (const auto N : dm.Nall())
+  for (const auto N : store.Nall())
     if (stats.wn[N] > 1e-16)
-      for (const auto &[I, ds] : dm[N])
+      for (const auto &[I, ds] : store[N])
         for (const auto i : ds.all()) {
           my_mpf weight;
           mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.absenergyN[i]/T));
@@ -213,7 +213,7 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, Ou
 
 template<typename S>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
-                                 const DiagInfo<S> &diag, const IterInfo<S> &iterinfo, const AllSteps<S> &dm,
+                                 const DiagInfo<S> &diag, const IterInfo<S> &iterinfo, const Store<S> &store,
                                  std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
@@ -236,7 +236,7 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
     measure_singlet(step, stats, diag, iterinfo, output, Sym, P);
     iterinfo.dump_diagonal(P.dumpdiagonal);
   }
-  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, dm, Sym, P);
+  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, store, Sym, P);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG

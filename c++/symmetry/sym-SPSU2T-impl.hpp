@@ -129,7 +129,7 @@ bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I
 #define ANOMALOUS(i, j, factor) offdiag_function(step, i, j, 0, 0, t_matel(factor) * coef.kappa(step.N(), 0), h, qq, In, opch)
 
 template<typename SC>
-void SymmetrySPSU2T<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetrySPSU2T<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   int ss  = I.get("SS");
   int t = I.get("T");
   double T  = t; // crucially important to use floating point!

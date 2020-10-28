@@ -85,7 +85,7 @@ class SymmetryQJ : public Symmetry<SC> {
     return 0;
   }
 
-   void offdiag_function_QJ(const Step &step, const unsigned int i, const unsigned int j, const unsigned int ch, const unsigned int fnr, const t_matel factor, Matrix &h, const Rmaxvals &qq,
+   void offdiag_function_QJ(const Step &step, const unsigned int i, const unsigned int j, const unsigned int ch, const unsigned int fnr, const t_matel factor, Matrix &h, const SubspaceDimensions &qq,
                             const InvarVec &In, const Opch<SC> &opch)
    {
      const Invar Iop     = ch == 0 ? Invar(1, 2) : Invar(1, 4);
@@ -115,7 +115,7 @@ inline double J(int JJ) {
 }
 
 template<typename SC>
-void SymmetryQJ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryQJ<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
   int jj = I.get("JJ");
 #include "qj/qj-offdiag.dat"
 #include "qj/qj-diag.dat"

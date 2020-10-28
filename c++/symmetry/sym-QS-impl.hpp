@@ -111,7 +111,7 @@ class SymmetryQS : public Symmetry<SC> {
 #define RUNGHOP(i, j, factor) this->diag_offdiag_function(step, i, j, 0, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
 
 template<typename SC>
-void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, 
                                      const Opch<SC> &opch, const Coef<SC> &coef) {
   auto ss = I.get("SS");
 

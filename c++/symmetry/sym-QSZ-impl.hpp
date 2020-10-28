@@ -54,9 +54,9 @@ class SymmetryQSZ : public SymField<SC> {
      } // if
    }
 
-   void make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+   void make_matrix_polarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, 
                               const Opch<SC> &opch, const Coef<SC> &coef);
-   void make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+   void make_matrix_nonpolarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, 
                                  const Opch<SC> &opch, const Coef<SC> &coef);
 
    void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
@@ -106,7 +106,7 @@ class SymmetryQSZ : public SymField<SC> {
 // "non-polarized" here means that the coefficients xi do not depend on spin. Note, however, that there is support
 // for a global magnetic field, cf. P.globalB.
 template<typename SC>
-void SymmetryQSZ<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+void SymmetryQSZ<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, 
                                                     const Opch<SC> &opch, const Coef<SC> &coef) {
   if (!P.substeps) {
     switch (P.channels) {
@@ -154,7 +154,7 @@ void SymmetryQSZ<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, cons
 #define DIAG_DOWN(i, j, ch, number) this->diag_function_half(step, i, ch, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryQSZ<SC>::make_matrix_polarized(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In, 
+void SymmetryQSZ<SC>::make_matrix_polarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, 
                                                  const Opch<SC> &opch, const Coef<SC> &coef) {
   my_assert(!P.substeps); // not implemented!
   switch (P.channels) {
@@ -188,7 +188,7 @@ void SymmetryQSZ<SC>::make_matrix_polarized(Matrix &h, const Step &step, const R
 }
 
 template<typename SC>
-void SymmetryQSZ<SC>::make_matrix(Matrix &h, const Step &step, const Rmaxvals &qq, const Invar &I, const InvarVec &In,
+void SymmetryQSZ<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In,
                                        const Opch<SC> &opch, const Coef<SC> &coef) {
   if (P.polarized) 
     make_matrix_polarized(h, step, qq, I, In, opch, coef);
