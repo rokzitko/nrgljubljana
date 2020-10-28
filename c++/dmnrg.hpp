@@ -94,7 +94,7 @@ auto calc_densitymatrix_iterN(const DiagInfo<S> &diag, const DensMatElements<S> 
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   DensMatElements<S> rhoPrev;
   for (const auto &[I, dimsub] : store[N - 1]) { // loop over all subspaces at *previous* iteration
-    const auto dim  = dimsub.kept;
+    const auto dim  = dimsub.kept();
     rhoPrev[I]      = Zero_matrix<S>(dim);
     if (dim == 0) continue;
     const auto ns = Sym->new_subspaces(I);
@@ -181,7 +181,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
     rhoDD = init_rho_FDM(N, store, stats, Sym, P.T);
   for (const auto &[I, ds] : store[N - 1]) { // loop over all subspaces at *previous* iteration
     const auto subs = Sym->new_subspaces(I);
-    const auto dim  = ds.kept;
+    const auto dim  = ds.kept();
     rhoFDMPrev[I]   = Zero_matrix<S>(dim);
     if (!dim) continue;
     for (const auto i : Sym->combs()) {

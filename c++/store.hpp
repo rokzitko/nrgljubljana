@@ -18,18 +18,25 @@ namespace NRG {
 // Required for the density-matrix construction.
 template<typename S>
 struct Sub {
-  size_t kept  = 0;
-  size_t total = 0;
-  SubspaceDimensions rmax;
   Eigen<S> eig;
+  SubspaceDimensions rmax;
   bool is_last = false;
-  auto min() const { return is_last ? 0 : kept; } // min(), max() return the range of D states to be summed over in FDM
-  auto max() const { return total; }
+  auto kept() const { return eig.getnrkept(); }
+  auto total() const { return eig.getdim(); }
+  auto min() const { return is_last ? 0 : kept(); } // min(), max() return the range of D states to be summed over in FDM
+  auto max() const { return total(); }
   auto all() const { return boost::irange(min(), max()); }
 };
 
 template<typename S> 
-using Subs = std::map<Invar, Sub<S>>;
+class Subs : public std::map<Invar, Sub<S>> {
+ public:
+   Subs() = default;
+   Subs(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool last) {
+     for (const auto &[I, eig]: diag)
+       (*this)[I] = { eig, substruct.at_or_null(I), last };
+   }
+};
 
 template<typename S>
 class Store : public std::vector<Subs<S>> {
@@ -54,8 +61,8 @@ class Store : public std::vector<Subs<S>> {
      for (const auto N : Nall()) {
        O << "Iteration " << N << std::endl;
        O << "len_dm=" << this->at(N).size() << std::endl;
-       for (const auto &[I, DS] : this->at(N))
-         O << "I=" << I << " kept=" << DS.kept << " total=" << DS.total << std::endl;
+       for (const auto &[I, sub] : this->at(N))
+         O << "I=" << I << " kept=" << sub.kept() << " total=" << sub.total() << std::endl;
        O << std::endl;
      }
    }
@@ -63,11 +70,6 @@ class Store : public std::vector<Subs<S>> {
      for (const auto N : Nall())
        for (auto &ds : this->at(N) | boost::adaptors::map_values)
          ds.eig.subtract_GS_energy(GS_energy);
-   }
-   void store_it(const size_t ndx, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool last) {
-     my_assert(Nbegin <= ndx && ndx < Nend);
-     for (const auto &[I, eig]: diag)
-       (*this)[ndx][I] = { eig.getnrkept(), eig.getdim(), substruct.at_or_null(I), eig, last };
    }
 };
 

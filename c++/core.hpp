@@ -206,7 +206,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
   }
   if (!P.ZBW)
     diag.truncate_perform();                        // Actual truncation occurs at this point
-  store.store_it(step.ndx(), diag, substruct, step.last());  // Store information about subspaces and states for DM algorithms
+  store[step.ndx()] = Subs(diag, substruct, step.last());  // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
     recalc_irreducible(step, diag, substruct, iterinfo.opch, Sym, mt, P);
     if (P.dump_f) iterinfo.opch.dump();

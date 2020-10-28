@@ -55,7 +55,7 @@ CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, 
                                   const Store<S> &store, std::shared_ptr<Symmetry<S>> Sym) {
   typename traits<S>::t_matel tr{};
   for (const auto &[I, rhoI] : rhoFDM)
-    tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), store[ndx].at(I).kept); // over kept states ONLY
+    tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), store[ndx].at(I).kept()); // over kept states ONLY
   return tr;
 }
 
