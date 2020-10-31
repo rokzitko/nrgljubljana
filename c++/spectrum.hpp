@@ -9,13 +9,12 @@
 
 namespace NRG {
 
-template<typename S>
+template<typename S, typename t_weight = weight_traits<S>>
 class ChainBinning {
  private:
    const Params &P;
    Bins<S> spos, sneg;
  public:
-   using t_weight = typename traits<S>::t_weight;
    explicit ChainBinning(const Params &P) : P(P), spos(P), sneg(P) {}
    void add(const double energy, const t_weight weight) {
      if (energy >= 0.0)
@@ -24,31 +23,29 @@ class ChainBinning {
        sneg.add(-energy, weight);
    }
    auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
-   template<typename T> friend class SpectrumRealFreq;
+   template<typename U> friend class SpectrumRealFreq;
 };
 
-template<typename S>
+template<typename S, typename t_weight = weight_traits<S>>
 class ChainMatsubara {
  private:
    const Params &P;
    Matsubara<S> m;
  public:
-   using t_weight = typename traits<S>::t_weight;
    explicit ChainMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
    void add(const size_t n, const t_weight w) { m.add(n, w); }
-   template<typename T> friend class GFMatsubara;
+   template<typename U> friend class GFMatsubara;
 };
 
-template<typename S>
+template<typename S, typename t_weight = weight_traits<S>>
 class ChainTempDependence {
  private:
    const Params &P;
    Temp<S> v;
  public:
-   using t_weight = typename traits<S>::t_weight;
    explicit ChainTempDependence(const Params &P) : P(P), v(P) {}
    void add(const double T, const t_weight value) { v.add_value(T, value); }
-   template<typename T> friend class TempDependence;
+   template<typename U> friend class TempDependence;
 };
 
 // Real-frequency spectral function
@@ -67,7 +64,6 @@ class SpectrumRealFreq {
    void savebins();
    void continuous();
  public:
-   using t_weight = typename traits<S>::t_weight;
    SpectrumRealFreq(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
      name(name), algoname(algoname), filename(filename), P(P), fspos(P), fsneg(P) {}
    void mergeCFS(const ChainBinning<S> &cs) {
@@ -183,6 +179,7 @@ inline std::vector<double> make_mesh(const Params &P) {
 
 template<typename S>
 void SpectrumRealFreq<S>::continuous() {
+  using t_weight = weight_traits<S>;
   const double alpha  = P.alpha;
   const double omega0 = P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0;
   Spikes<S> densitypos, densityneg;

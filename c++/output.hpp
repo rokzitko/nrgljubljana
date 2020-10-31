@@ -22,10 +22,9 @@
 namespace NRG {
 
 // Formatted output of the computed expectation values
-template<typename S>
+template<typename S, typename t_expv = expv_traits<S>>
 class ExpvOutput {
  private:
-   using t_expv = typename traits<S>::t_expv;
    std::ofstream F;                     // output stream
    std::map<std::string, t_expv> &m;    // reference to the name->value mapping
    const std::list<std::string> fields; // list of fields to be output (may be a subset of the fields actually present in m)

@@ -2,6 +2,7 @@
 #define _algo_DMNRG_hpp_
 
 #include <complex>
+#include "traits.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"
 
@@ -11,7 +12,7 @@ using namespace std::complex_literals;
 
 // OPTIMIZATION NOTE: the inner loop should involve the last index.
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
 class Algo_DMNRG : public Algo<S> {
  private:
    inline static const std::string algoname = "DMNRG";
@@ -20,10 +21,6 @@ class Algo_DMNRG : public Algo<S> {
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
-   using t_weight = typename traits<S>::t_weight;
    using Algo<S>::P;
    Algo_DMNRG(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname), P), sign(gf_sign(gt)) {}
@@ -62,7 +59,7 @@ class Algo_DMNRG : public Algo<S> {
    std::string rho_type() override { return "rho"; }
 };
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
 class Algo_DMNRGmats : public Algo<S> {
  private:
    inline static const std::string algoname = "DMNRGmats";
@@ -72,10 +69,6 @@ class Algo_DMNRGmats : public Algo<S> {
    using CM = ChainMatsubara<S>;
    std::unique_ptr<CM> cm;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
-   using t_weight = typename traits<S>::t_weight;
    using Algo<S>::P;
    Algo_DMNRGmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}

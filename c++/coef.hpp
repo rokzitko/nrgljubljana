@@ -10,9 +10,9 @@
 namespace NRG {
 
 // Table of Wilson chain coefficients
-template <typename S> class coef_table : traits<S> {
+template <typename S, typename t_coef = coef_traits<S>> 
+class coef_table : traits<S> {
 private:
-  using t_coef = typename traits<S>::t_coef;
   using t_storage = ublas::vector<t_coef>;
   t_storage table;
 
@@ -38,9 +38,9 @@ public:
 };
 
 // One table of discretization coefficients for each channel
-template <typename S> class set_of_coef_tables : traits<S> {
+template <typename S, typename t_coef = coef_traits<S>>
+class set_of_coef_tables : traits<S> {
 private:
-  using t_coef = typename traits<S>::t_coef;
   using t_storage = std::vector<coef_table<S>>;
   t_storage tabs;
 

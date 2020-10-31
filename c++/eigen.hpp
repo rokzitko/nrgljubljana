@@ -13,11 +13,10 @@
 namespace NRG {
 
 // Result of a diagonalisation: eigenvalues and eigenvectorse
-template <typename S> class Eigen {
+template <typename S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
+class Eigen {
 public:
-  using t_eigen = typename traits<S>::t_eigen;
   using EVEC = ublas::vector<t_eigen>;
-  using Matrix = typename traits<S>::Matrix;
   EVEC value_orig; // eigenvalues as computed // XXX private, use friend
   Matrix matrix;   // eigenvectors
   Eigen() = default;
@@ -99,11 +98,9 @@ public:
 };
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
-template<typename S>
+template <typename S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
 class DiagInfo : public std::map<Invar, Eigen<S>> {
  public:
-   using t_eigen = typename traits<S>::t_eigen;
-   using Matrix  = typename traits<S>::Matrix;
    explicit DiagInfo() = default;
    DiagInfo(std::ifstream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {

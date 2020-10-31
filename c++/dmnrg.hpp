@@ -55,14 +55,14 @@ auto init_rho(const Step &step, const DiagInfo<S> &diag, std::shared_ptr<Symmetr
 
 // Calculation of the contribution from subspace I1 of rhoN (density matrix at iteration N) to rhoNEW (density matrix
 // at iteration N-1)
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void cdmI(const size_t i,        // Subspace index
           const Invar &I1,       // Quantum numbers corresponding to subspace i
-          const typename traits<S>::Matrix &rhoN,    // rho^N
+          const Matrix &rhoN,    // rho^N
           const Eigen<S> &diagI1,   // contains U_{I1}
-          typename traits<S>::Matrix &rhoNEW,        // rho^{N-1}
+          Matrix &rhoNEW,        // rho^{N-1}
           const size_t N,
-          const typename traits<S>::t_coef factor, // multiplicative factor that accounts for multiplicity
+          const t_coef factor, // multiplicative factor that accounts for multiplicity
           const Store<S> &store,
           const Params &P)
 {
@@ -79,9 +79,8 @@ void cdmI(const size_t i,        // Subspace index
   my_assert(rmax == dim);   // Otherwise, rmax must equal dim
   // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match?
   my_assert(nromega <= diagI1.getnrstored());
-  const ublas::matrix_range<const typename traits<S>::Matrix> U(diagI1.matrix, ublas::range(0, nromega), store[N].at(I1).rmax.uboost_view(i));
-  typename traits<S>::Matrix T(dim, nromega);
-  using t_coef = typename traits<S>::t_coef;
+  const ublas::matrix_range<const Matrix> U(diagI1.matrix, ublas::range(0, nromega), store[N].at(I1).rmax.uboost_view(i));
+  Matrix T(dim, nromega);
   atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, rhoN, t_coef(0.0), T);    // T <- U^dag rhoN
   atlas::gemm(CblasNoTrans, CblasNoTrans, factor, T, U, t_coef(1.0), rhoNEW); // rhoNEW <- rhoNEW + factor T U
 }

@@ -28,11 +28,10 @@ inline auto ww(const short n, const gf_type mt, const double T)
 inline auto wb(const short n, const double T) { return T * M_PI * (2 * n); }
 inline auto wf(const short n, const double T) { return T * M_PI * (2 * n + 1); }
 
-template<typename S>
+template<typename S, typename t_weight = weight_traits<S>>
 class Matsubara {
  private:
    using t_temp = typename traits<S>::t_temp;
-   using t_weight = typename traits<S>::t_weight;
    using matsgf = std::vector<std::pair<t_temp, t_weight>>;
    matsgf v;
    gf_type mt;

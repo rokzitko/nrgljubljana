@@ -13,7 +13,7 @@ namespace NRG {
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
 // completed!
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>>
 inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const SubspaceStructure &substruct) {
   const auto combs = substruct.at(I).combs();
   e.blocks.resize(combs);
@@ -21,10 +21,10 @@ inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const SubspaceStr
   my_assert(nr > 0);
   my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
   for (const auto block: range0(combs)) {
-    ublas::matrix_range<typename traits<S>::Matrix> Up(e.matrix, ublas::range(0, nr), substruct.at(I).uboost_view(block));
+    ublas::matrix_range<Matrix> Up(e.matrix, ublas::range(0, nr), substruct.at(I).uboost_view(block));
     e.blocks[block] = Up;
   }
-  e.matrix = typename traits<S>::Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!
+  e.matrix = Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!
 }
 
 template<typename S>

@@ -2,6 +2,7 @@
 #define _algo_FT_hpp_
 
 #include <complex>
+#include "traits.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"
 
@@ -9,7 +10,7 @@ namespace NRG {
 
 using namespace std::complex_literals;
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FT : public Algo<S> {
  private:
    inline static const std::string algoname = "FT";
@@ -18,9 +19,6 @@ class Algo_FT : public Algo<S> {
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_FT(const std::string &name, const std::string &prefix, const gf_type &gt, const Params &P) :
      Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname), P), sign(gf_sign(gt)) {}
@@ -46,7 +44,7 @@ class Algo_FT : public Algo<S> {
    ~Algo_FT() { spec.save(); }
 };
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FTmats : public Algo<S> {
  private:
    inline static const std::string algoname = "FTmats";
@@ -56,9 +54,6 @@ class Algo_FTmats : public Algo<S> {
    using CM = ChainMatsubara<S>;
    std::unique_ptr<CM> cm;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_FTmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
@@ -91,7 +86,7 @@ class Algo_FTmats : public Algo<S> {
 
 // Calculation of the temperature-dependent linear conductrance G(T) using the linear response theory &
 // impurity-level spectral density.  See Yoshida, Seridonio, Oliveira, arxiv:0906.4289, Eq. (8).
-template<typename S, int n>
+template<typename S, int n, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_GT : public Algo<S> {
  private:
    inline static const std::string algoname = n == 0 ? "GT" : (n == 1 ? "I1T" : "I2T");
@@ -99,9 +94,6 @@ class Algo_GT : public Algo<S> {
    using CT = ChainTempDependence<S>;
    std::unique_ptr<CT> ct;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_GT(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) : 
      Algo<S>(P), td(name, algoname, spec_fn(name, prefix, algoname), P) {
@@ -155,7 +147,7 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
 // elements of global operators. Binning needs to be turned off. Note that Zchit needs to be calculated with the same
 // 'temperature' parameter that we use for the exponential functions in the following equation. The output is
 // chi/beta = k_B T chi, as we prefer.
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_CHIT : public Algo<S> {
  private:
    inline static const std::string algoname = "CHIT";
@@ -163,9 +155,6 @@ class Algo_CHIT : public Algo<S> {
    using CT = ChainTempDependence<S>;
    std::unique_ptr<CT> ct;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_CHIT(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) : 
      Algo<S>(P), td(name, algoname, spec_fn(name, prefix, algoname), P) {

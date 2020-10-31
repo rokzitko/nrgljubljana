@@ -6,6 +6,7 @@
 #include <iostream>
 #include <tuple>
 
+#include "traits.hpp"
 #include "constants.hpp"
 #include "symmetry.hpp"
 #include "params.hpp"

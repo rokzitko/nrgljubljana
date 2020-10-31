@@ -33,6 +33,12 @@ template <> struct traits<std::complex<double>> {
   using t_weight = std::complex<double>;
   using Matrix = ublas::matrix<t_matel>;
 };
+   
+template <typename S> using coef_traits   = typename traits<S>::t_coef;
+template <typename S> using expv_traits   = typename traits<S>::t_expv;
+template <typename S> using eigen_traits  = typename traits<S>::t_eigen;
+template <typename S> using weight_traits = typename traits<S>::t_weight;
+template <typename S> using Matrix_traits = typename traits<S>::Matrix;
 
 } // namespace
 

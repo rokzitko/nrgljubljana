@@ -30,10 +30,9 @@ inline bool cluster_splitting(const T &i0, const T &i1) {
   return false;
   }
 
-template<typename S>
+template<typename S, typename t_eigen = eigen_traits<S>>
 class Clusters {
  public:
-   using t_eigen = typename traits<S>::t_eigen;
    std::unordered_map<t_eigen, t_eigen> cluster_mapping;
    // Fix splittings of eigenvalues. Returns true if any changes had been made.
    void fix_it(DiagInfo<S> &diag) {

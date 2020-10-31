@@ -1,6 +1,7 @@
 #ifndef _algo_CFS_hpp_
 #define _algo_CFS_hpp_
 
+#include "traits.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"
 
@@ -9,20 +10,17 @@ namespace NRG {
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 // Based on the implementation by Markus Greger.
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_CFSls : virtual public Algo<S> {
  private:
    inline static const std::string algoname = "CFSls";
    SpectrumRealFreq<S> spec;
    const int sign; // 1 for bosons, -1 for fermions
-   const bool save;
+   const bool save; // if true, save spectral function to a file in destructor
  protected: 
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_CFSls(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true)
      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
@@ -68,7 +66,7 @@ class Algo_CFSls : virtual public Algo<S> {
    std::string rho_type() override { return "rho"; }
 };
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_CFSgt : virtual public Algo<S> {
  private:
    inline static const std::string algoname = "CFSgt";
@@ -79,9 +77,6 @@ class Algo_CFSgt : virtual public Algo<S> {
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_CFSgt(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true)
      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
@@ -130,15 +125,12 @@ class Algo_CFSgt : virtual public Algo<S> {
    std::string rho_type() override { return "rho"; }
 };
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_CFS : public Algo_CFSls<S>, public Algo_CFSgt<S> {
  private:
    inline static const std::string algoname2 = "CFS";
    SpectrumRealFreq<S> spec_tot;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_CFS(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), Algo_CFSls<S>(name, prefix, gt, P, false), Algo_CFSgt<S>(name, prefix, gt, P, false), spec_tot(name, algoname2, spec_fn(name, prefix, algoname2), P) {}

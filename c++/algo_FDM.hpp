@@ -2,6 +2,7 @@
 #define _algo_FDM_hpp_
 
 #include <complex>
+#include "traits.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"
 
@@ -18,7 +19,7 @@ using namespace std::complex_literals;
   for (size_t n = 0; n < ret##n; n++) {                                                                                                              \
     const t_eigen E##n = diagI##n.absenergyG(n);
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMls : virtual public Algo<S> {
  private:
    inline static const std::string algoname = "FDMls";
@@ -29,10 +30,7 @@ class Algo_FDMls : virtual public Algo<S> {
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
-   using Algo<S>::P;
+    using Algo<S>::P;
    Algo_FDMls(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true)
      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
@@ -83,7 +81,7 @@ class Algo_FDMls : virtual public Algo<S> {
    std::string rho_type() override { return "rhoFDM"; }
 };
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMgt : virtual public Algo<S> {
  private:
    inline static const std::string algoname = "FDMgt";
@@ -94,9 +92,6 @@ class Algo_FDMgt : virtual public Algo<S> {
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_FDMgt(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true) 
      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
@@ -148,15 +143,12 @@ class Algo_FDMgt : virtual public Algo<S> {
    std::string rho_type() override { return "rhoFDM"; }
 };
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
  private:
    inline static const std::string algoname2 = "FDM";
    SpectrumRealFreq<S> spec_tot;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_FDM(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), Algo_FDMls<S>(name, prefix, gt, P, false), Algo_FDMgt<S>(name, prefix, gt, P, false), spec_tot(name, algoname2, spec_fn(name, prefix, algoname2), P) {}
@@ -181,7 +173,7 @@ class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
    std::string rho_type() override { return "rhoFDM"; }
 };
 
-template<typename S>
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMmats : public Algo<S> {
  private:
    inline static const std::string algoname = "FDMmats";
@@ -191,9 +183,6 @@ class Algo_FDMmats : public Algo<S> {
    using CM = ChainMatsubara<S>;
    std::unique_ptr<CM> cm;
  public:
-   using Matrix = typename traits<S>::Matrix;
-   using t_coef = typename traits<S>::t_coef;
-   using t_eigen = typename traits<S>::t_eigen;
    using Algo<S>::P;
    Algo_FDMmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}

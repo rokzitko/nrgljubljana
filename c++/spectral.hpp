@@ -63,9 +63,8 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 }
 
 // Calculate "moment"-th spectral moment.
-template<typename S>
+template<typename S, typename t_weight = weight_traits<S>>
 CONSTFNC auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int moment) {
-  using t_weight = typename traits<S>::t_weight;
   auto sumA = ranges::accumulate(s_pos, t_weight{}, [moment](auto s, const auto &x){ const auto &[e,w] = x; return s+w*pow(e,moment); });
   auto sumB = ranges::accumulate(s_neg, t_weight{}, [moment](auto s, const auto &x){ const auto &[e,w] = x; return s+w*pow(-e,moment); });
   return sumA+sumB;
@@ -80,9 +79,8 @@ inline CONSTFNC double bose_fnc(const double omega, const double T) {
   return d != 0.0 ? 1.0/d : std::numeric_limits<double>::quiet_NaN();
 }
 
-template<typename F, typename S>
+template<typename F, typename S, typename t_weight = weight_traits<S>>
 auto sum(const Spikes<S> &s, const bool invert, F && f) {
-  using t_weight = typename traits<S>::t_weight;
   return ranges::accumulate(s, t_weight{}, [&f,invert](auto s, const auto &x){ const auto &[e,w] = x; return s+w*f(invert ? -e : e); });
 }
 
