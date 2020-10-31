@@ -131,3 +131,5 @@ test208_absolute_minimal
 test209_absolute_truncation
 test210_absolute_substeps
 test211_absolute_fdm
+test220_hdf5
+test221_hdf5_dm

@@ -51,8 +51,8 @@ void copy_val(const std::vector<T> &eigenvalues, ublas::vector<V>& diagvalues, c
 }
 
 // Handle complex-type conversions (used in copy_vec)
-inline double to_matel(const double x) { return x; }
-inline std::complex<double> to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
+[[nodiscard]] inline double to_matel(const double x) { return x; }
+[[nodiscard]] inline std::complex<double> to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
 
 template<typename T, typename V>
 void copy_vec(T* eigenvectors, ublas::matrix<V>& diagvectors, const size_t dim, const size_t M)

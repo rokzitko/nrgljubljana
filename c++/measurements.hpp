@@ -95,8 +95,8 @@ void calc_ZnD(const Store<S> &store, Stats<S> &stats, std::shared_ptr<Symmetry<S
     for (const auto &[I, ds] : store[N])
       for (const auto i : ds.all()) {
         my_mpf g, n;
-        mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.absenergyG[i]/T)); // absenergyG >= 0.0
-        mpf_set_d(n, Sym->mult(I) * exp(-ds.eig.absenergyN[i]/T)); // absenergyN >= 0.0
+        mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.absenergyG[i]/T));     // absenergyG >= 0.0
+        mpf_set_d(n, Sym->mult(I) * exp(-ds.eig.absenergy_zero[i]/T)); // absenergy_zero >= 0.0
         mpf_add(ZnDG, ZnDG, g);
         mpf_add(ZnDN, ZnDN, n);
       }
@@ -159,7 +159,7 @@ void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, std::shared_ptr<
       for (const auto &[I, ds] : store[N])
         for (const auto i : ds.all()) {
           my_mpf weight;
-          mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.absenergyN[i]/T));
+          mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.absenergy_zero[i]/T));
           mpf_div(weight, weight, stats.ZnDN[N]);
           my_mpf e;
           mpf_set_d(e, ds.eig.absenergy[i]);

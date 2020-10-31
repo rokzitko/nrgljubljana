@@ -33,7 +33,7 @@ target_compile_definitions(nrgljubljana_c PUBLIC
 )
 
 # Link dependencies
-target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl mpi
+target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl mpi hdf5
   $<$<BOOL:${ASAN}>:asan>
   $<$<BOOL:${UBSAN}>:ubsan>
 )

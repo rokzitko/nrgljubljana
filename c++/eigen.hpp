@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <boost/range/adaptor/map.hpp>
+#include <h5cpp/all>
 #include "portabil.hpp"
 #include "traits.hpp"
 #include "invar.hpp"
@@ -25,25 +26,25 @@ public:
     value_orig.resize(nr);
     matrix.resize(nr, dim);
   }
-  auto getnrcomputed() const { return value_orig.size(); } // number of computed eigenpairs
-  auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
+  [[nodiscard]] auto getnrcomputed() const { return value_orig.size(); } // number of computed eigenpairs
+  [[nodiscard]] auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
  private:
   long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
  public:
   EVEC value_zero;                                                               // eigenvalues with Egs subtracted
-  auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }     // number of states after truncation
-  auto getnrstored() const  { return value_zero.size(); }                        // number of stored states
-  auto getnrall() const { return getnrcomputed(); }                              // all = all computed
-  auto getnrkept() const { return getnrpost(); }                                 // # of kept states
-  auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }            // # of discarded states
-  auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
-  auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
-  auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
-  auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
+  [[nodiscard]] auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }     // number of states after truncation
+  [[nodiscard]] auto getnrstored() const  { return value_zero.size(); }                        // number of stored states
+  [[nodiscard]] auto getnrall() const { return getnrcomputed(); }                              // all = all computed
+  [[nodiscard]] auto getnrkept() const { return getnrpost(); }                                 // # of kept states
+  [[nodiscard]] auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }            // # of discarded states
+  [[nodiscard]] auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
+  [[nodiscard]] auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
+  [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
+  [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
-  EVEC absenergyN;     // absolute energies (referenced to the lowest energy in the N-th step)
+  EVEC absenergy_zero; // absolute energies (referenced to the lowest energy in the N-th step)
   // 'blocks' contains eigenvectors separated according to the invariant subspace from which they originate.
   // Required for using efficient BLAS routines when performing recalculations of the matrix elements.
   std::vector<Matrix> blocks;
@@ -86,15 +87,24 @@ public:
     oa << value_orig;
     NRG::save(oa, matrix);
     // Eigen
-    oa << value_zero << nrpost << absenergy << absenergyG << absenergyN;
+    oa << value_zero << nrpost << absenergy << absenergyG << absenergy_zero;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     // RawEigen
     ia >> value_orig;
     NRG::load(ia, matrix);
     // Eigen
-    ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergyN;
-  } 
+    ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergy_zero;
+  }
+  void h5save(h5::fd_t &fd, const std::string &name) const {
+    h5::write(fd, name + "/value_orig", value_orig);
+    h5::write(fd, name + "/value_zero", value_zero);
+    h5::write(fd, name + "/absenergy", absenergy);
+    h5::write(fd, name + "/absenergy_zero", absenergy_zero);
+    h5::write(fd, name + "/matrix", matrix);
+    std::vector<unsigned long> nrkept = { getnrkept() };
+    h5::write(fd, name + "/nrkept", nrkept);
+  }
 };
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
@@ -113,10 +123,10 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      my_assert(this->size() == nsubs);
    }
-   auto subspaces() const { return *this | boost::adaptors::map_keys; }
-   auto eigs() const { return *this | boost::adaptors::map_values; }
-   auto eigs() { return *this | boost::adaptors::map_values; }
-   auto find_groundstate() const {
+   [[nodiscard]] auto subspaces() const { return *this | boost::adaptors::map_keys; }
+   [[nodiscard]] auto eigs() const { return *this | boost::adaptors::map_values; }
+   [[nodiscard]] auto eigs() { return *this | boost::adaptors::map_values; }
+   [[nodiscard]] auto find_groundstate() const {
      const auto [Iground, eig] = *ranges::min_element(*this, [](const auto a, const auto b) { return a.second.value_orig(0) < b.second.value_orig(0); });
      const auto Egs = eig.value_orig(0);
      return Egs;
@@ -140,14 +150,14 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void truncate_perform() {
      for (auto &[I, eig] : *this) eig.truncate_perform(); // Truncate subspace to appropriate size
    }
-   auto size_subspace(const Invar &I) const {
+   [[nodiscard]] auto size_subspace(const Invar &I) const {
      const auto f = this->find(I);
      return f != this->cend() ? f->second.getnrstored() : 0;
    }
-   auto subs(const Invar &I1, const Invar &I2) const {
+   [[nodiscard]] auto subs(const Invar &I1, const Invar &I2) const {
      return std::make_pair(this->at(I1), this->at(I2));
    }
-   auto dims(const Invar &I1, const Invar &I2) const { // Determines matrix sizes for operators (# stored)
+   [[nodiscard]] auto dims(const Invar &I1, const Invar &I2) const { // Determines matrix sizes for operators (# stored)
      return std::make_pair(size_subspace(I1), size_subspace(I2));
    }
    void clear_eigenvectors() {
@@ -158,7 +168,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    template <typename MF> auto count_states(MF && mult) const {
      return ranges::accumulate(*this, 0, [mult](auto n, const auto &x) { const auto &[I, eig] = x; return n + mult(I)*eig.getnrstored(); });
    }
-   auto count_subspaces() const {    // Count non-empty subspaces
+   [[nodiscard]] auto count_subspaces() const {    // Count non-empty subspaces
      return ranges::count_if(this->eigs(), [](const auto &eig) { return eig.getnrstored()>0; });
    }
    template<typename F, typename M> auto trace(F fnc, const double factor, M mult) const { // Tr[fnc exp(-factor*E)]
@@ -202,6 +212,10 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
      }
      if (remove_files) NRG::remove(fn);
+   }
+   void h5save(h5::fd_t &fd, const std::string &name) const {
+     for (const auto &[I, eig]: *this)
+       eig.h5save(fd, name + "/" + I.name());
    }
    explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) { load(N, P, remove_files); } // called from do_diag()
 };

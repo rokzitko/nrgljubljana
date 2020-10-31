@@ -478,6 +478,8 @@ class Params {
   // Parallelization strategy: MPI or OpenMP
   param<std::string> diag_mode{"diag_mode", "Parallelization strategy", "MPI", all};
 
+  param<bool> h5raw{"h5raw", "Store raw data during the iteration", "false", all};
+  
   // **********************************
   // Backwards compatibility parameters
   param<bool> data_has_rescaled_energies{"data_has_rescaled_energies", "Rescaled eigenvalues?", "true", all};

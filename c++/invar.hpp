@@ -44,7 +44,7 @@ class Invar {
    template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &data; }
  public:
    inline static std::vector<int> qntype;         // must be defined before calls to Invar::combine() and Invar::invert()
-   inline static std::map<std::string, int> name; // must be defined before calls to Invar::get()
+   inline static std::map<std::string, int> names; // must be defined before calls to Invar::get()
    // invdim holds the number of quantum numbers required to specify the invariant subspaces (representations), i.e. (in
    // more fancy terms) the dimension of the Cartan subalgebra of the full symmetry algebra.
    inline static size_t invdim = 0; // 0 before initialization!
@@ -56,12 +56,13 @@ class Invar {
    explicit Invar(const int i0) : data{i0} {} // (int) constructor
    explicit Invar(const int i0, const int i1) : data{i0, i1} {} // (int,int) constructor
    explicit Invar(const int i0, const int i1, const int i2) : data{i0, i1, i2} {} // (int,int,int) constructor
-   std::ostream &insertor(std::ostream &os) const {
-     for (size_t i = 0; i < data.size(); i++) os << data[i] << (i != data.size() - 1 ? " " : "");
+   std::ostream &insertor(std::ostream &os, const std::string delim = " "s) const {
+     for (size_t i = 0; i < data.size(); i++) os << data[i] << (i != data.size() - 1 ? delim : "");
      return os;
    }
    friend std::ostream &operator<<(std::ostream &os, const Invar &invar) { return invar.insertor(os); }
    [[nodiscard]] auto str() const { std::ostringstream s; insertor(s); return s.str(); }
+   [[nodiscard]] auto name() const { std::ostringstream s; insertor(s, "_"s); return s.str(); }
    auto & extractor(std::istream &is) {
      for (auto &i : data) {
        int qn{};
@@ -124,8 +125,8 @@ class Invar {
        }
    }
    [[nodiscard]] auto get(const std::string &which) const {
-     const auto i = name.find(which);
-     if (i == end(name)) throw std::invalid_argument(fmt::format("{} is an unknown quantum number.", which));
+     const auto i = names.find(which);
+     if (i == end(names)) throw std::invalid_argument(fmt::format("{} is an unknown quantum number.", which));
      const auto index = i->second;
      my_assert(index < invdim);
      const auto type = qntype[index];
@@ -139,8 +140,8 @@ class Invar {
    }
    void InvertMyParity() {
      // By convention (for QSLR, QSZLR, ISOLR, ISOSZLR), parity is the quantum number named "P"
-     const auto i = name.find("P");
-     if (i == end(name)) throw std::invalid_argument("Critical error: no P quantum number");
+     const auto i = names.find("P");
+     if (i == end(names)) throw std::invalid_argument("Critical error: no P quantum number");
      const auto index = i->second;
      data[index]      = -data[index];
    }
@@ -161,7 +162,7 @@ inline void initInvar(std::initializer_list<InvarStructure> l) {
   auto i = 0;
   for (const auto & [n, t]: l) {
     my_assert(t == additive || t == multiplicative || t == mod3);
-    Invar::name[n] = i++;
+    Invar::names[n] = i++;
     Invar::qntype.push_back(t);
     std::cout << fmt::format("{} {} {}\n", i, n, typestr(t));
   }

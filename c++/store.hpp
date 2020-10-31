@@ -21,11 +21,11 @@ struct Sub {
   Eigen<S> eig;
   SubspaceDimensions rmax;
   bool is_last = false;
-  auto kept() const { return eig.getnrkept(); }
-  auto total() const { return eig.getdim(); }
-  auto min() const { return is_last ? 0 : kept(); } // min(), max() return the range of D states to be summed over in FDM
-  auto max() const { return total(); }
-  auto all() const { return boost::irange(min(), max()); }
+  [[nodiscard]] auto kept() const { return eig.getnrkept(); }
+  [[nodiscard]] auto total() const { return eig.getdim(); }
+  [[nodiscard]] auto min() const { return is_last ? 0 : kept(); } // min(), max() return the range of D states to be summed over in FDM
+  [[nodiscard]] auto max() const { return total(); }
+  [[nodiscard]] auto all() const { return boost::irange(min(), max()); }
 };
 
 template<typename S> 

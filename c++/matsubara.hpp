@@ -17,7 +17,7 @@ inline constexpr auto S_FERMIONIC = -1;
 inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC; }
 
 // Note: range limited to short numbers.
-inline auto ww(const short n, const gf_type mt, const double T)
+[[nodiscard]] inline auto ww(const short n, const gf_type mt, const double T)
 {
   switch (mt) {
     case gf_type::bosonic: return T * M_PI * (2 * n);
@@ -25,8 +25,8 @@ inline auto ww(const short n, const gf_type mt, const double T)
     default: my_assert_not_reached();
   }
 }
-inline auto wb(const short n, const double T) { return T * M_PI * (2 * n); }
-inline auto wf(const short n, const double T) { return T * M_PI * (2 * n + 1); }
+[[nodiscard]] inline auto wb(const short n, const double T) { return T * M_PI * (2 * n); }
+[[nodiscard]] inline auto wf(const short n, const double T) { return T * M_PI * (2 * n + 1); }
 
 template<typename S, typename t_weight = weight_traits<S>>
 class Matsubara {

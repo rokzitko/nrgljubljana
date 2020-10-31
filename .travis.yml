@@ -9,7 +9,7 @@ compiler:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y --allow-unauthenticated libblas-dev libboost-all-dev libgmp-dev liblapack-dev libopenmpi-dev libclang-dev libgsl-dev libomp-dev
+  - sudo apt-get install -y --allow-unauthenticated libblas-dev libboost-all-dev libgmp-dev liblapack-dev libopenmpi-dev libclang-dev libgsl-dev libomp-dev libhdf5-dev
 #  - sudo apt-get install -y --allow-unauthenticated clang-format clang-tidy clang-tools clang clangd  libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1  liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev  llvm-runtime llvm python-clang 
 
 install: true

@@ -72,6 +72,12 @@ class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
        }
      }
    }
+   void h5save(h5::fd_t &fd, const std::string &name) const {
+     for (const auto &[II, mat] : *this) {
+       const auto &[I1, I2] = II;
+       h5::write(fd, name + "/" + I1.name() + "/" + I2.name() + "/matrix", mat);
+     }
+   }
 };
 
 template<typename S>
@@ -115,11 +121,14 @@ class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
 };
 
 // Map of operator matrices
-template<typename S>
+template <typename S> 
 struct CustomOp : public std::map<std::string, MatrixElements<S>> {
-   void trim(const DiagInfo<S> &diag) {
-     for (auto &op : *this | boost::adaptors::map_values) op.trim(diag);
-   }
+  void trim(const DiagInfo<S> &diag) {
+    for (auto &op : *this | boost::adaptors::map_values) op.trim(diag);
+  }
+  void h5save(h5::fd_t &fd, const std::string &name) const {
+    for (const auto &[n, op] : *this) op.h5save(fd, name + "/" + n);
+  }
 };
 
 // Vector containing irreducible matrix elements of f operators.
@@ -182,6 +191,15 @@ class IterInfo {
      opt.trim(diag);
      opq.trim(diag);
      opot.trim(diag);
+   }
+   void h5save(h5::fd_t &fd, const std::string &name) {
+     ops.h5save(fd, name + "/s");
+     opsp.h5save(fd, name + "/sp");
+     opsg.h5save(fd, name + "/sg");
+     opd.h5save(fd, name + "/d");
+     opt.h5save(fd, name + "/t");
+     opq.h5save(fd, name + "/q");
+     opot.h5save(fd, name + "/ot");
    }
 };
 

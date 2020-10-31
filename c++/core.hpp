@@ -153,8 +153,8 @@ auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats
 template<typename S>
 void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stats) {
   for (auto &eig : diag.eigs()) {
-    eig.absenergyN = eig.value_zero * step.scale();        // referenced to the lowest energy in current NRG step (not modified later on)
-    eig.absenergy = eig.absenergyN;                        // absolute energies (not modified later on)
+    eig.absenergy_zero = eig.value_zero * step.scale();    // referenced to the lowest energy in current NRG step (not modified later on)
+    eig.absenergy = eig.absenergy_zero;                    // absolute energies (not modified later on)
     std::transform(eig.absenergy.begin(), eig.absenergy.end(), eig.absenergy.begin(), [v = stats.total_energy](auto x) { return x + v; });
     eig.absenergyG = eig.absenergy;                        // referenced to the absolute 0 (updated by shft_abs_energies())
   }
@@ -198,6 +198,8 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
       diag.save(step.ndx(), P);
     perform_basic_measurements(step, diag, Sym, stats, output); // Measurements are performed before the truncation!
   }
+  if (output.h5raw)
+    diag.h5save(output.h5raw.value(), std::to_string(step.ndx()) + "/eigen/");
   if (!P.ZBW)
     split_in_blocks(diag, substruct);
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
@@ -218,6 +220,8 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
   if (P.do_recalc_none())  // ... or this
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym, mt, P);
   if (P.checksumrules) operator_sumrules(iterinfo, Sym);
+  if (output.h5raw)
+    iterinfo.h5save(output.h5raw.value(), std::to_string(step.ndx()));
 }
 
 // Perform one iteration step

@@ -22,12 +22,12 @@ public:
   void read_values(std::ifstream &f) {
     table = read_vector<t_coef>(f, true); // len=nr+1
   }
-  auto coef(const t_ndx n) const {
+  [[nodiscard]] auto coef(const t_ndx n) const {
     my_assert(n < table.size());
     return table[n];
   }
   // Index of the last coefficient still included in the table
-  auto max() const {
+  [[nodiscard]] auto max() const {
     my_assert(table.size() >= 1);
     return table.size()-1;
   }
@@ -47,16 +47,16 @@ private:
 public:
   using t_ndx = typename coef_table<S>::t_ndx;
   using t_ch = typename t_storage::size_type;
-  auto nr_tabs() const { return tabs.size(); }
+  [[nodiscard]] auto nr_tabs() const { return tabs.size(); }
   void read(std::ifstream &fdata, const t_ch coefchannels) {
     tabs.resize(coefchannels);
     for (auto &i : tabs) i.read_values(fdata);
   }
-  auto operator()(const t_ndx N, const t_ch alpha) const {
+  [[nodiscard]] auto operator()(const t_ndx N, const t_ch alpha) const {
     my_assert(alpha < tabs.size());
     return tabs[alpha].coef(N);
   }
-  auto max(const t_ch alpha) const {
+  [[nodiscard]] auto max(const t_ch alpha) const {
     my_assert(alpha < tabs.size());
     return tabs[alpha].max();
   }
@@ -94,18 +94,18 @@ public:
   // doubled, the index runs from 0...2*P.channels-1. Numbers 0...P.channels-1 correspond to spin up, while
   // P.channels...2*P.channels-1 correspond to spin down. Compare P.channels and P.coefchannels (which reflects the
   // same convention in initial.m, i.e. CHANNELS vs. COEFCHANNELS).
-  auto xiUP    (const t_ndx N, const t_ch ch) const { return xi  (N, ch); }
-  auto xiDOWN  (const t_ndx N, const t_ch ch) const { return xi  (N, ch + P.channels); }
-  auto zetaUP  (const t_ndx N, const t_ch ch) const { return zeta(N, ch); }
-  auto zetaDOWN(const t_ndx N, const t_ch ch) const { return zeta(N, ch + P.channels); }
+  [[nodiscard]] auto xiUP    (const t_ndx N, const t_ch ch) const { return xi  (N, ch); }
+  [[nodiscard]] auto xiDOWN  (const t_ndx N, const t_ch ch) const { return xi  (N, ch + P.channels); }
+  [[nodiscard]] auto zetaUP  (const t_ndx N, const t_ch ch) const { return zeta(N, ch); }
+  [[nodiscard]] auto zetaDOWN(const t_ndx N, const t_ch ch) const { return zeta(N, ch + P.channels); }
 
   // Support for conduction bands with full 2x2 matrix structure, a generalization of P.polarized. The total number
   // of "channels" is here multiplied by 4, i.e., the index runs from 0 to 4*P.channels-1. Numbers
   // 2*P.channels...3*P.channels-1 correspond to UP/DO, 3*P.channels...4*P.channels-1 correspond to DO/UP.
-  auto xiUPDO  (const t_ndx N, const t_ch ch) const { return xi  (N, ch + 2 * P.channels); }
-  auto xiDOUP  (const t_ndx N, const t_ch ch) const { return xi  (N, ch + 3 * P.channels); }
-  auto zetaUPDO(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 2 * P.channels); }
-  auto zetaDOUP(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 3 * P.channels); }
+  [[nodiscard]] auto xiUPDO  (const t_ndx N, const t_ch ch) const { return xi  (N, ch + 2 * P.channels); }
+  [[nodiscard]] auto xiDOUP  (const t_ndx N, const t_ch ch) const { return xi  (N, ch + 3 * P.channels); }
+  [[nodiscard]] auto zetaUPDO(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 2 * P.channels); }
+  [[nodiscard]] auto zetaDOUP(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 3 * P.channels); }
 };
 
 } // namespace

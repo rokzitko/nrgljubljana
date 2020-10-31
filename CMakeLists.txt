@@ -124,6 +124,13 @@ install(TARGETS mpi EXPORT nrgljubljana-targets)
 # ############
 # Dependencies
 
+# HDF5
+find_package(HDF5 REQUIRED COMPONENTS C HL)
+add_library(hdf5 INTERFACE)
+target_include_directories(hdf5 SYSTEM INTERFACE ${HDF5_INCLUDE_DIRS})
+target_link_libraries(hdf5 INTERFACE "${HDF5_LIBRARIES}" ${HDF5_HL_LIBRARIES})
+target_compile_options(hdf5 INTERFACE ${HDF5_DEFINITIONS})
+
 # OpenMP
 find_package(OpenMP REQUIRED)
 add_library(openmp INTERFACE)

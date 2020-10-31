@@ -46,7 +46,6 @@ class Bins {
    inline static const double zero_epsilon = 1e-14;
    inline static const double discarded_weight_warn_limit = 1e-8;
 
-
  public:
    Spikes<S> bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs  // XXX
    operator const Spikes<S> &() const { return bins; }

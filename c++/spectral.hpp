@@ -80,7 +80,7 @@ inline CONSTFNC double bose_fnc(const double omega, const double T) {
 }
 
 template<typename F, typename S, typename t_weight = weight_traits<S>>
-auto sum(const Spikes<S> &s, const bool invert, F && f) {
+[[nodiscard]] auto sum(const Spikes<S> &s, const bool invert, F && f) {
   return ranges::accumulate(s, t_weight{}, [&f,invert](auto s, const auto &x){ const auto &[e,w] = x; return s+w*f(invert ? -e : e); });
 }
 

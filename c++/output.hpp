@@ -18,6 +18,7 @@
 #include "symmetry.hpp"
 #include <range/v3/all.hpp>
 #include <boost/range/adaptor/map.hpp>
+#include <h5cpp/all>
 
 namespace NRG {
 
@@ -122,6 +123,7 @@ struct Output {
   std::ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
   std::unique_ptr<ExpvOutput<S>> custom;
   std::unique_ptr<ExpvOutput<S>> customfdm;
+  std::optional<h5::fd_t> h5raw;
   Output(const RUNTYPE &runtype, const IterInfo<S> &iterinfo, Stats<S> &stats, const Params &P,
               const std::string filename_energies= "energies.nrg"s,
               const std::string filename_custom = "custom", 
@@ -137,6 +139,10 @@ struct Output {
         custom = std::make_unique<ExpvOutput<S>>(filename_custom, stats.expv, ops, P);
       else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
         customfdm = std::make_unique<ExpvOutput<S>>(filename_customfdm, stats.fdmexpv, ops, P);
+      if (P.h5raw) {
+        const auto filename_h5 = runtype == RUNTYPE::NRG ? "raw.h5" : "raw-dm.h5";
+        h5raw = h5::create(filename_h5, H5F_ACC_TRUNC);
+      }
     }
   // Dump all energies in diag to a file
   void dump_all_energies(const DiagInfo<S> &diag, const int N) {
