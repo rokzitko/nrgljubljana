@@ -47,6 +47,7 @@ namespace h5{
 				}
 				break;
 			case H5D_VIRTUAL: break;
+      default: break;
 		}
 
 		h5::ds_t ds_{ds};

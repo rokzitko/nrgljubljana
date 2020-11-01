@@ -130,6 +130,7 @@ add_library(hdf5 INTERFACE)
 target_include_directories(hdf5 SYSTEM INTERFACE ${HDF5_INCLUDE_DIRS})
 target_link_libraries(hdf5 INTERFACE "${HDF5_LIBRARIES}" ${HDF5_HL_LIBRARIES})
 target_compile_options(hdf5 INTERFACE ${HDF5_DEFINITIONS})
+install(TARGETS hdf5 EXPORT nrgljubljana-targets)
 
 # OpenMP
 find_package(OpenMP REQUIRED)

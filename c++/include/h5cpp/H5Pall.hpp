@@ -186,7 +186,7 @@ using cache                    = impl::fapl_call< impl::fapl_args<hid_t,int,size
 using libver_bounds            = impl::fapl_call< impl::fapl_args<hid_t,H5F_libver_t,H5F_libver_t>,H5Pset_libver_bounds>;
 
 #if H5_VERSION_GE(1,8,2)
-using driver                   = impl::fapl_call< impl::fapl_args<hid_t,hid_t, const void *>, H5Pset_driver>;;
+using driver                   = impl::fapl_call< impl::fapl_args<hid_t,hid_t, const void *>, H5Pset_driver>;
 #endif
 #if H5_VERSION_GE(1,8,9)
 using file_image               = impl::fapl_call< impl::fapl_args<hid_t,void*,size_t>,H5Pset_file_image>;

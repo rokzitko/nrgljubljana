@@ -66,8 +66,8 @@ namespace h5 {
 		void>::type append( const T& ref );
 
 		impl::pipeline_t<impl::basic_pipeline_t> pipeline;
-		h5::ds_t ds;
 		h5::dxpl_t dxpl;
+		h5::ds_t ds;
 		hsize_t offset[H5CPP_MAX_RANK],
 			current_dims[H5CPP_MAX_RANK],
 			chunk_dims[H5CPP_MAX_RANK],
@@ -224,7 +224,7 @@ namespace h5 {
 	}
 
 	inline void flush( h5::pt_t& pt) try {
-        #pragma message("not implemented: do not call pt_t::flush() ...")
+//        #pragma message("not implemented: do not call pt_t::flush() ...")
 		// for now
 	} catch ( const std::runtime_error& e){
 		throw h5::error::io::dataset::close( e.what() );
