@@ -41,11 +41,11 @@ namespace NRG {
 template<typename S>
 SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
                                        std::shared_ptr<Symmetry<S>> Sym) : ancestors(ancestors) {
-  for (const auto &[i, anc] : ancestors | ranges::views::enumerate) {
-    const auto d = diagprev.size_subspace(anc);
-    if (d) my_assert(Sym->triangle_inequality(I, anc, Sym->QN_subspace(i))); // XXX: drop this?
-    dims.push_back(d);
-  }
+  for (const auto &[i, anc] : ancestors | ranges::views::enumerate)
+    dims.push_back(Sym->triangle_inequality(I, anc, Sym->QN_subspace(i)) ? diagprev.size_subspace(anc) : 0);
+  // The triangle inequality test here is *required*. There are cases where a candidate subspace exists (as generated
+  // from the In vector as one of the "combinations"), but it is actually decoupled, because the triangle inequality
+  // is not satisfied.
 }
 
 // Determine the structure of matrices in the new NRG shell
