@@ -1,5 +1,5 @@
 
-===== Iteration number: 0
+===== Iteration number: 1
 Subspace: -3 1
 2.64791 
 Subspace: -2 2
@@ -21,7 +21,7 @@ Subspace: 2 2
 Subspace: 3 1
 2.84791 
 
-===== Iteration number: 1
+===== Iteration number: 2
 Subspace: -4 1
 2.64791 
 Subspace: -3 2
@@ -53,7 +53,7 @@ Subspace: 3 2
 Subspace: 4 1
 2.84791 
 
-===== Iteration number: 2
+===== Iteration number: 3
 Subspace: -4 2
 1.89658 2.24331 
 Subspace: -3 1
@@ -91,7 +91,7 @@ Subspace: 3 3
 Subspace: 4 2
 2.04375 
 
-===== Iteration number: 3
+===== Iteration number: 4
 Subspace: -4 1
 1.11839 
 Subspace: -3 2

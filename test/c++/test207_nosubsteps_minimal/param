@@ -11,7 +11,7 @@ Lambda=2.0
 Nmax=1
 keep=10000
 
-logall=true
+#logall=true
 
 dumpannotated=1000
 dumpscaled=false

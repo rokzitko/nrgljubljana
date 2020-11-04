@@ -3,8 +3,10 @@
 
 #include <memory>
 #include <vector>
-#include "eigen.hpp"
+#include <h5cpp/all>
 #include <range/v3/all.hpp>
+#include "eigen.hpp"
+#include "invar.hpp"
 
 namespace NRG {
 
@@ -13,25 +15,25 @@ template<typename S> class Symmetry;
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. 
 class SubspaceDimensions {
  private:
-   std::vector<size_t> values;
-   std::vector<Invar> InVec;
+   std::vector<size_t> dims;
+   std::vector<Invar> ancestors;
  public:
    SubspaceDimensions() = default;
    template<typename S>
-     SubspaceDimensions(const Invar &I, const InvarVec &InVec, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym);
-   [[nodiscard]] auto combs() const { return values.size(); } // number of subspaces
+     SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym);
+   [[nodiscard]] auto combs() const { return dims.size(); } // number of subspaces
    [[nodiscard]] auto rmax(const size_t i) const { // subspace dimension
      my_assert(i < combs());
-     return values[i];
+     return dims[i];
    }
    [[nodiscard]] auto operator[](const size_t i) const { return rmax(i); }
    [[nodiscard]] auto exists(const size_t i) const {
      my_assert(i < combs());
-     return values[i] > 0;
+     return dims[i] > 0;
    }
    [[nodiscard]] auto offset(const size_t i) const { // offset in the Hamiltonian matrix
      my_assert(i < combs());
-     return ranges::accumulate(std::begin(values), std::begin(values) + i, size_t{0});
+     return ranges::accumulate(std::begin(dims), std::begin(dims) + i, size_t{0});
    }
    [[nodiscard]] auto chunk(const size_t i1) const {
      return std::make_pair(offset(i1-1), rmax(i1-1));
@@ -48,20 +50,26 @@ class SubspaceDimensions {
    [[nodiscard]] auto uboost_view_mma(const size_t i) const {
      return uboost_view(i-1); // Mathematica uses 1-based indexing
    }
-   [[nodiscard]] auto total() const { return ranges::accumulate(values, 0); } // total number of states
+   [[nodiscard]] auto total() const { return ranges::accumulate(dims, 0); } // total number of states
    // *** Mathematica interfacing: i1,j1 are 1-based
    [[nodiscard]] bool offdiag_contributes(const size_t i1, const size_t j1) const { // i,j are 1-based (Mathematica interface)
      my_assert(1 <= i1 && i1 <= combs() && 1 <= j1 && j1 <= combs());
      my_assert(i1 != j1);
      return exists(i1-1) && exists(j1-1); // shift by 1
    }
-   [[nodiscard]] Invar In(const size_t i) const { return InVec[i]; }
+   [[nodiscard]] Invar ancestor(const size_t i) const { return ancestors[i]; }
+   void h5save(h5::fd_t &fd, const std::string &name) const {
+     h5::write(fd, name + "/dims", dims);
+     std::vector<std::string> ancestor_names;
+     std::transform(ancestors.begin(), ancestors.end(), std::back_inserter(ancestor_names), [](const auto &I){ return I.name(); });
+     h5::write(fd, name + "/ancestors", ancestor_names);
+   }
  private:
    friend std::ostream &operator<<(std::ostream &os, const SubspaceDimensions &rmax) {
-     for (const auto &x : rmax.values) os << x << ' ';
+     for (const auto &x : rmax.dims) os << x << ' ';
      return os;
    }
-   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &values; }
+   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &dims; }
    friend class boost::serialization::access;
 };
 
@@ -89,6 +97,10 @@ class SubspaceStructure : public std::map<Invar, SubspaceDimensions> {
    [[nodiscard]] auto at_or_null(const Invar &I) const {
      const auto i = this->find(I);
      return i == this->cend() ? SubspaceDimensions() : i->second;
+   }
+   void h5save(h5::fd_t &fd, const std::string &name) const {
+     for (const auto &[I, rm]: *this)
+       rm.h5save(fd, name + "/" + I.name());
    }
 };
 

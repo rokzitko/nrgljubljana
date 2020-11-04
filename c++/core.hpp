@@ -5,6 +5,8 @@
 #include <set>
 #include <algorithm>
 #include <omp.h>
+#include <h5cpp/all>
+#include <range/v3/all.hpp>
 
 #include "constants.hpp"
 #include "traits.hpp"
@@ -33,16 +35,17 @@
 #include "truncation.hpp"
 #include "mpi_diag.hpp"
 
-#include <range/v3/all.hpp>
-
 namespace NRG {
 
 // Determine the ranges of index r
 template<typename S>
-SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &InVec, const DiagInfo<S> &diagprev, 
-                                       std::shared_ptr<Symmetry<S>> Sym) : InVec(InVec) {
-  for (const auto &[i, In] : InVec | ranges::views::enumerate)
-    values.push_back(Sym->triangle_inequality(I, In, Sym->QN_subspace(i)) ? diagprev.size_subspace(In) : 0);
+SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
+                                       std::shared_ptr<Symmetry<S>> Sym) : ancestors(ancestors) {
+  for (const auto &[i, anc] : ancestors | ranges::views::enumerate) {
+    const auto d = diagprev.size_subspace(anc);
+    if (d) my_assert(Sym->triangle_inequality(I, anc, Sym->QN_subspace(i))); // XXX: drop this?
+    dims.push_back(d);
+  }
 }
 
 // Determine the structure of matrices in the new NRG shell
@@ -66,7 +69,7 @@ auto new_subspaces(const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym
 
 template<typename S>
 typename traits<S>::Matrix hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
-                                       const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+                                       const DiagInfo<S> &diagprev, const Output<S> &output, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
   auto h = Zero_matrix<S>(rm.total());
@@ -77,11 +80,13 @@ typename traits<S>::Matrix hamiltonian(const Step &step, const Invar &I, const O
   }
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
+  if (output.h5raw)
+    h5::write(output.h5raw.value(), std::to_string(step.ndx()+1) + "/hamiltonian/" + I.name() + "/matrix", h);
   return h;
 }
 
 template<typename S>
-auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev,
+auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
                              const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
   DiagInfo<S> diagnew;
   const auto nr = tasks.size();
@@ -91,7 +96,7 @@ auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S
 #pragma omp parallel for schedule(dynamic) num_threads(nth)
   for (itask = 0; itask < nr; itask++) {
     const Invar I  = tasks[itask];
-    auto h = hamiltonian(step, I, opch, coef, diagprev, Sym, P); // non-const, consumed by diagonalise()
+    auto h = hamiltonian(step, I, opch, coef, diagprev, output, Sym, P); // non-const, consumed by diagonalise()
     const int thid = omp_get_thread_num();
 #pragma omp critical
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
@@ -105,14 +110,15 @@ auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
 template<typename S>
 auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
-                      const std::vector<Invar> &tasks, const double diagratio, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+                      const Output<S> &output, const std::vector<Invar> &tasks, const double diagratio, 
+                      std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   const auto section_timing = mt.time_it("diag");
-  return P.diag_mode == "MPI" ? mpi.diagonalisations_MPI<S>(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P) 
-                              : diagonalisations_OpenMP(step, opch, coef, diagprev, tasks, DiagParams(P, diagratio), Sym, P);
+  return P.diag_mode == "MPI" ? mpi.diagonalisations_MPI<S>(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P) 
+                              : diagonalisations_OpenMP(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P);
 }
 
 template<typename S>
-auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
+auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, const Output<S> &output,
              SubspaceStructure &substruct, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
@@ -123,7 +129,7 @@ auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats
     try {
       if (step.nrg()) {
         if (!(P.resume && int(step.ndx()) <= P.laststored))
-          diag = diagonalisations(step, iterinfo.opch, coef, diagprev, tasks, diagratio, Sym, mpi, mt, P); // compute in first run
+          diag = diagonalisations(step, iterinfo.opch, coef, diagprev, output, tasks, diagratio, Sym, mpi, mt, P); // compute in first run
         else
           diag = DiagInfo<S>(step.ndx(), P, false); // or read from disk
       }
@@ -233,7 +239,9 @@ template<typename S>
 auto iterate(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
-  auto diag = do_diag(step, iterinfo, coef, stats, diagprev, substruct, Sym, mpi, mt, P);
+  if (output.h5raw)
+    substruct.h5save(output.h5raw.value(), std::to_string(step.ndx()+1) + "/structure");
+  auto diag = do_diag(step, iterinfo, coef, stats, diagprev, output, substruct, Sym, mpi, mt, P);
   after_diag(step, iterinfo, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
   iterinfo.trim_matrices(diag);
   diag.clear_eigenvectors();

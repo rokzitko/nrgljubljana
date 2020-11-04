@@ -115,7 +115,7 @@ class MPI_diag {
      mpiw.send(master, TAG_INVAR, I);
    }
    template<typename S>
-   DiagInfo<S> diagonalisations_MPI(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev,
+   DiagInfo<S> diagonalisations_MPI(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
                                     const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
        DiagInfo<S> diagnew;
        send_params(DP);                                         // Synchronise parameters
@@ -131,7 +131,7 @@ class MPI_diag {
          const auto i = tasks_todo.size() != 1 ? get_back(nodes_available) : 0;
          // On master, we take short jobs from the end. On slaves, we take long jobs from the beginning.
          const Invar I = i == 0 ? get_back(tasks_todo) : get_front(tasks_todo);
-         auto h = hamiltonian(step, I, opch, coef, diagprev, Sym, P); // non-const
+         auto h = hamiltonian(step, I, opch, coef, diagprev, output, Sym, P); // non-const
          nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
          if (i == 0) {
            // On master, diagonalize immediately.

@@ -37,7 +37,7 @@ template<typename S>
 inline void h5save_blocks_Eigen(h5::fd_t &fd, const std::string &name, const Eigen<S> &eig, const SubspaceDimensions &sub)
 {
   for (const auto i: range0(sub.combs()))
-    h5::write(fd, name + "/" + sub.In(i).name(), eig.blocks[i]);
+    h5::write(fd, name + "/" + sub.ancestor(i).name(), eig.blocks[i]);
 }
 
 template<typename S>
