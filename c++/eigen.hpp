@@ -96,11 +96,13 @@ public:
     // Eigen
     ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergy_zero;
   }
-  void h5save(h5::fd_t &fd, const std::string &name) const {
+  void h5save(h5::fd_t &fd, const std::string &name, const bool write_absG) const {
     h5::write(fd, name + "/value_orig", value_orig);
     h5::write(fd, name + "/value_zero", value_zero);
     h5::write(fd, name + "/absenergy", absenergy);
     h5::write(fd, name + "/absenergy_zero", absenergy_zero);
+    if (write_absG) 
+      h5::write(fd, name + "/absenergyG", absenergyG);
     h5::write(fd, name + "/matrix", matrix);
     std::vector<unsigned long> nrkept = { getnrkept() };
     h5::write(fd, name + "/nrkept", nrkept);
@@ -213,9 +215,9 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      if (remove_files) NRG::remove(fn);
    }
-   void h5save(h5::fd_t &fd, const std::string &name) const {
+   void h5save(h5::fd_t &fd, const std::string &name, const bool write_absG) const {
      for (const auto &[I, eig]: *this)
-       eig.h5save(fd, name + "/" + I.name());
+       eig.h5save(fd, name + "/" + I.name(), write_absG);
    }
    explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) { load(N, P, remove_files); } // called from do_diag()
 };

@@ -14,14 +14,14 @@ namespace NRG {
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
 // completed!
 template<typename S, typename Matrix = Matrix_traits<S>>
-inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const SubspaceStructure &substruct) {
-  const auto combs = substruct.at(I).combs();
+inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const SubspaceDimensions &sub) {
+  const auto combs = sub.combs();
   e.blocks.resize(combs);
   const auto nr = e.getnrstored(); // nr. of eigenpairs
   my_assert(nr > 0);
   my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
   for (const auto block: range0(combs)) {
-    ublas::matrix_range<Matrix> Up(e.matrix, ublas::range(0, nr), substruct.at(I).uboost_view(block));
+    ublas::matrix_range<Matrix> Up(e.matrix, ublas::range(0, nr), sub.uboost_view(block));
     e.blocks[block] = Up;
   }
   e.matrix = Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!
@@ -30,7 +30,20 @@ inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const SubspaceStr
 template<typename S>
 inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruct) {
   for(auto &[I, eig]: diag)
-    split_in_blocks_Eigen(I, eig, substruct);
+    split_in_blocks_Eigen(I, eig, substruct.at(I));
+}
+
+template<typename S>
+inline void h5save_blocks_Eigen(h5::fd_t &fd, const std::string &name, const Eigen<S> &eig, const SubspaceDimensions &sub)
+{
+  for (const auto i: range0(sub.combs()))
+    h5::write(fd, name + "/" + sub.In(i).name(), eig.blocks[i]);
+}
+
+template<typename S>
+inline void h5save_blocks(h5::fd_t &fd, const std::string &name, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
+  for(const auto &[I, eig]: diag)
+    h5save_blocks_Eigen(fd, name + I.name(), eig, substruct.at(I));
 }
 
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
@@ -102,15 +115,14 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
     const Twoinvar ININ = {IN1, INp};
     const auto cnt      = cold.count(ININ); // Number of (IN1,INp) subspaces.
     my_assert(cnt == 0 || cnt == 1);        // Anything other than 0 or 1 is a bug!
-    // There are exceptions when a subspace might not contribute. Two are known: 1. for triplet operators, two
-    // singlet states give no contribution [SU(2) symmetry]; 2. some subspaces might not exist at low iteration
-    // steps. If triangle inequality is not satisfied and there are indeed no states for the given subspace pair,
+    // If triangle inequality is not satisfied and there are indeed no states for the given subspace pair,
     // this is OK and we just skip this case.
     const bool triangle = triangle_inequality(IN1, Iop, INp);
     if (!triangle && cnt == 0) continue;
-    // All exceptions should be handled by now. If cnt != 1, this is a bug, probably related to symmetry properties
-    // and the coefficient tables for NRG transformations of matrices.
-    my_assert(cnt == 1);
+    // There are further exceptions when a subspace might not contribute. Some subspaces might not exist at low iteration
+    // steps. 
+    if (cnt == 0) continue;
+    // Exceptions handled by now. The contribution should have a final prefactor.
     my_assert(my_isfinite(factor));
     if (P.logletter('r')) std::cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << std::endl;
     // RECALL: rmax1 - dimension of the subspace of invariant subspace I1 spanned by the states originating from the

@@ -39,7 +39,8 @@ namespace NRG {
 
 // Determine the ranges of index r
 template<typename S>
-SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &InVec, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym) {
+SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &InVec, const DiagInfo<S> &diagprev, 
+                                       std::shared_ptr<Symmetry<S>> Sym) : InVec(InVec) {
   for (const auto &[i, In] : InVec | ranges::views::enumerate)
     values.push_back(Sym->triangle_inequality(I, In, Sym->QN_subspace(i)) ? diagprev.size_subspace(In) : 0);
 }
@@ -199,9 +200,12 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
     perform_basic_measurements(step, diag, Sym, stats, output); // Measurements are performed before the truncation!
   }
   if (output.h5raw)
-    diag.h5save(output.h5raw.value(), std::to_string(step.ndx()) + "/eigen/");
-  if (!P.ZBW)
+    diag.h5save(output.h5raw.value(), std::to_string(step.ndx()+1) + "/eigen/", step.dmnrg());
+  if (!P.ZBW) {
     split_in_blocks(diag, substruct);
+    if (output.h5raw)
+      h5save_blocks(output.h5raw.value(), std::to_string(step.ndx()+1) + "/U/", diag, substruct);
+  }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
     oprecalc.recalculate_operators(iterinfo, step, diag, substruct);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym, mt, P);
@@ -221,7 +225,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym, mt, P);
   if (P.checksumrules) operator_sumrules(iterinfo, Sym);
   if (output.h5raw)
-    iterinfo.h5save(output.h5raw.value(), std::to_string(step.ndx()));
+    iterinfo.h5save(output.h5raw.value(), std::to_string(step.ndx()+1));
 }
 
 // Perform one iteration step

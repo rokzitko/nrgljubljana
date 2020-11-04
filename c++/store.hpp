@@ -46,7 +46,7 @@ class Store : public std::vector<Subs<S>> {
    auto Nall() const { return boost::irange(Nbegin, Nend); }
    void dump_absenergyG(std::ostream &F) const {
      for (const auto N : Nall()) {
-       F << std::endl << "===== Iteration number: " << N << std::endl;
+       F << std::endl << "===== Iteration number: " << N+1 << std::endl; // mind the shift by 1
        for (const auto &[I, ds]: this->at(N))
          F << "Subspace: " << I << std::endl << ds.eig.absenergyG << std::endl;
      }

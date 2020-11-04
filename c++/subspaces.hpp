@@ -14,10 +14,11 @@ template<typename S> class Symmetry;
 class SubspaceDimensions {
  private:
    std::vector<size_t> values;
+   std::vector<Invar> InVec;
  public:
    SubspaceDimensions() = default;
    template<typename S>
-     SubspaceDimensions(const Invar &I, const InvarVec &In, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym);
+     SubspaceDimensions(const Invar &I, const InvarVec &InVec, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym);
    [[nodiscard]] auto combs() const { return values.size(); } // number of subspaces
    [[nodiscard]] auto rmax(const size_t i) const { // subspace dimension
      my_assert(i < combs());
@@ -54,7 +55,7 @@ class SubspaceDimensions {
      my_assert(i1 != j1);
      return exists(i1-1) && exists(j1-1); // shift by 1
    }
-
+   [[nodiscard]] Invar In(const size_t i) const { return InVec[i]; }
  private:
    friend std::ostream &operator<<(std::ostream &os, const SubspaceDimensions &rmax) {
      for (const auto &x : rmax.values) os << x << ' ';
