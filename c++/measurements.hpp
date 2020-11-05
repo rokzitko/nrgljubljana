@@ -13,30 +13,34 @@
 
 namespace NRG {
 
-template<typename S>
-CONSTFNC auto calc_trace_singlet(const Step &step, const DiagInfo<S> &diag,
-                                 const MatrixElements<S> &n, std::shared_ptr<Symmetry<S>> Sym) {
-  typename traits<S>::t_matel tr{};
+template<typename S, typename MF, typename t_matel = matel_traits<S>>
+CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
+  t_matel tr{};
   for (const auto &[I, eig] : diag) {
-    const auto & nI = n.at({I,I});
+    const auto & mI = m.at({I,I});
     const auto dim = eig.getnrstored();
-    my_assert(dim == nI.size2());
-    typename traits<S>::t_matel sum{};
-    for (const auto r : range0(dim)) sum += exp(-step.TD_factor() * eig.value_zero(r)) * nI(r, r);
-    tr += Sym->mult(I) * sum;
+    my_assert(dim == mI.size1() && dim == mI.size2());
+    for (const auto r : range0(dim)) tr += mult(I) * exp(-factor * eig.value_zero(r)) * mI(r, r);
   }
   return tr; // note: t_expv = t_matel
 }
 
+template<typename T>
+auto sum_of_exp(T values, const double factor)
+{
+  return ranges::accumulate(values, 0.0, [factor](auto sum, const auto &x){ return sum + exp(-factor*x); });
+}      
+
 // Measure thermodynamic expectation values of singlet operators
 template<typename S>
 void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a,
-                            Output<S> &output, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
-  const auto Z = ranges::accumulate(diag, 0.0, [&Sym, &step](auto total, const auto &d) { const auto &[I, eig] = d;
-    return total + Sym->mult(I) * ranges::accumulate(eig.value_zero, 0.0,
-                                                     [f=step.TD_factor()](auto sum, const auto &x) { return sum + exp(-f*x); }); });
-  for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(step, diag, m, Sym) / Z;
-  for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(step, diag, m, Sym) / Z;
+                     Output<S> &output, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+  auto mult = [&Sym](const Invar &I){ return Sym->mult(I); }; // XXX: Sym->multfnc()
+  const auto factor = step.TD_factor();
+  const auto Z = ranges::accumulate(diag, 0.0, [mult, factor](auto total, const auto &d) { const auto &[I, eig] = d;
+                                    return total + mult(I) * sum_of_exp(eig.value_zero, factor); });
+  for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
+  for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
   output.custom->field_values(step.Teff());
 }
 

@@ -34,6 +34,7 @@ template <> struct traits<std::complex<double>> {
   using Matrix = ublas::matrix<t_matel>;
 };
    
+template <typename S> using matel_traits  = typename traits<S>::t_matel;
 template <typename S> using coef_traits   = typename traits<S>::t_coef;
 template <typename S> using expv_traits   = typename traits<S>::t_expv;
 template <typename S> using eigen_traits  = typename traits<S>::t_eigen;
