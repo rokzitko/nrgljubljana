@@ -59,9 +59,9 @@ class SubspaceDimensions {
    }
    [[nodiscard]] Invar ancestor(const size_t i) const { return ancestors[i]; }
    void h5save(h5::fd_t &fd, const std::string &name) const {
-     h5::write(fd, name + "/dims", dims);
      std::vector<std::string> ancestor_names;
-     std::transform(ancestors.begin(), ancestors.end(), std::back_inserter(ancestor_names), [](const auto &I){ return I.name(); });
+     for (const auto i : range0(combs()))
+       if (dims[i]) ancestor_names.push_back(ancestors[i].name()); // only true ancestors with dim>0
      h5::write(fd, name + "/ancestors", ancestor_names);
    }
  private:
