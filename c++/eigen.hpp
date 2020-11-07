@@ -4,7 +4,10 @@
 #include <vector>
 #include <string>
 #include <boost/range/adaptor/map.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
 #include <h5cpp/all>
+#include <range/v3/all.hpp>
 #include "portabil.hpp"
 #include "traits.hpp"
 #include "invar.hpp"
@@ -164,7 +167,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    }
    void clear_eigenvectors() {
      for (auto &eig : this->eigs())
-	ranges::fill(eig.blocks, Matrix());
+	     ranges::fill(eig.blocks, Matrix());
    }
    // Total number of states (symmetry taken into account)
    template <typename MF> auto count_states(MF && mult) const {

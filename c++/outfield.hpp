@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <optional>
 #include "params.hpp"
 
 namespace NRG {
@@ -64,41 +65,32 @@ class Allfields : std::vector<Outfield> {
     }
 };
 
-// Setup output fields that will appear in the file "td". Additional elements are defined in sym* files.
-struct TD {
-  const Params &P;
-  Allfields allfields; // thermodynamic quantities
+class TD_generic {
+ private:
   const std::string filename;
-  std::ofstream O; // XXX: std:optional?
-  bool header_saved = false; // XXX
+  std::optional<std::ofstream> O;
+ public:
+  Allfields allfields;
+  TD_generic(const Params &P, const std::string &filename, const std::vector<std::string> &fields) : filename(filename), allfields(fields, P.prec_td, P.width_td) {}
+  template<typename T> void set(const std::string &desc, const T &x) { allfields.set(desc,x); }
   void save_values() {
-    if (!O.is_open())
-      O.open(filename);
-    if (!header_saved) {
-      allfields.save_header(O);
-      header_saved = true;
+    if (!O) {
+      O.emplace(filename);
+      allfields.save_header(O.value());
     }
+    allfields.save_values(O.value());
   }
-  TD(const Params &P_, const std::string &filename) 
-    : P(P_), allfields({"T", "<E>", "<E^2>", "C", "F", "S"}, P.prec_td, P.width_td), filename(filename) {}
 };
 
-struct TD_FDM {
-  const Params &P;
-  Allfields allfields;
-  std::string filename;
-  std::ofstream O;
-  bool header_saved = false;
-  void save_values() {
-    if (!O.is_open())
-      O.open(filename);
-    if (!header_saved) {
-      allfields.save_header(O);
-      header_saved = true;
-    }
-  }
-  TD_FDM(const Params &P_, const std::string &filename)
-    : P(P_), allfields({"T", "E_fdm", "C_fdm", "F_fdm", "S_fdm"}, P.prec_td, P.width_td), filename(filename) {}
+// Setup output fields that will appear in the file "td". Additional elements are defined in sym* files.
+class TD : public TD_generic {
+ public:
+  TD(const Params &P, const std::string &filename) : TD_generic(P, filename, {"T", "<E>", "<E^2>", "C", "F", "S"}) {}
+};
+
+class TD_FDM : public TD_generic {
+ public:
+  TD_FDM(const Params &P, const std::string &filename) : TD_generic(P, filename, {"T", "E_fdm", "C_fdm", "F_fdm", "S_fdm"}) {}
 };
 
 } // namespace

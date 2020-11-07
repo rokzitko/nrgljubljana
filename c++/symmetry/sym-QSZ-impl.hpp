@@ -72,10 +72,10 @@ class SymmetryQSZ : public SymField<SC> {
        trQ += sumZ * q;
        trQ2 += sumZ * pow(q,2);
      }
-     stats.td.allfields.set("<Sz^2>", trSZ2 / stats.Z);
-     stats.td.allfields.set("<Sz>" , trSZ  / stats.Z);
-     stats.td.allfields.set("<Q>"   ,trQ   / stats.Z);
-     stats.td.allfields.set("<Q^2>" ,trQ2  / stats.Z);
+     stats.td.set("<Sz^2>", trSZ2 / stats.Z);
+     stats.td.set("<Sz>",   trSZ  / stats.Z);
+     stats.td.set("<Q>",    trQ   / stats.Z);
+     stats.td.set("<Q^2>",  trQ2  / stats.Z);
    }
    DECL;
    HAS_DOUBLET;

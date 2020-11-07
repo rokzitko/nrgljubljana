@@ -82,9 +82,9 @@ class SymmetryQS : public Symmetry<SC> {
        trQ2 += sumZ * q * q;
        trSZ += sumZ * (ss * ss - 1) / 12.;
      }
-     stats.td.allfields.set("<Sz^2>",trSZ / stats.Z);
-     stats.td.allfields.set("<Q>", trQ  / stats.Z);
-     stats.td.allfields.set("<Q^2>",  trQ2 / stats.Z);
+     stats.td.set("<Sz^2>", trSZ / stats.Z);
+     stats.td.set("<Q>",    trQ  / stats.Z);
+     stats.td.set("<Q^2>",  trQ2 / stats.Z);
    }
 
    DECL;

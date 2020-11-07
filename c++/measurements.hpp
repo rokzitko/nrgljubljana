@@ -187,11 +187,11 @@ void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, const Symmetry<S
   std::cout << "C_fdm=" << HIGHPREC(stats.C_fdm) << std::endl;
   std::cout << "S_fdm=" << HIGHPREC(stats.S_fdm) << std::endl;
   std::cout << std::endl;
-  stats.td_fdm.allfields.set("T", T);
-  stats.td_fdm.allfields.set("F_fdm", stats.F_fdm); 
-  stats.td_fdm.allfields.set("E_fdm", stats.E_fdm);
-  stats.td_fdm.allfields.set("C_fdm", stats.C_fdm);
-  stats.td_fdm.allfields.set("S_fdm", stats.S_fdm);
+  stats.td_fdm.set("T", T);
+  stats.td_fdm.set("F_fdm", stats.F_fdm); 
+  stats.td_fdm.set("E_fdm", stats.E_fdm);
+  stats.td_fdm.set("C_fdm", stats.C_fdm);
+  stats.td_fdm.set("S_fdm", stats.S_fdm);
   stats.td_fdm.save_values();
 }
 
@@ -209,12 +209,12 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
   const auto E  = diag.trace([](double x) { return x; },        rescale_factor, mult); // Tr[beta H]
   const auto E2 = diag.trace([](double x) { return pow(x,2); }, rescale_factor, mult); // Tr[(beta H)^2]
   stats.Z = Z;
-  stats.td.allfields.set("T", step.Teff());
-  stats.td.allfields.set("<E>", E/Z);               // beta <H>
-  stats.td.allfields.set("<E^2>",  E2/Z);              // beta^2 <H^2>
-  stats.td.allfields.set("C", E2/Z - pow(E/Z,2)); // C/k_B=beta^2(<H^2>-<H>^2)
-  stats.td.allfields.set("F",     -log(Z));           // F/(k_B T)=-ln(Z)
-  stats.td.allfields.set("S",  E/Z+log(Z));        // S/k_B=beta<H>+ln(Z)
+  stats.td.set("T",     step.Teff());
+  stats.td.set("<E>",   E/Z);               // beta <H>
+  stats.td.set("<E^2>", E2/Z);              // beta^2 <H^2>
+  stats.td.set("C",     E2/Z - pow(E/Z,2)); // C/k_B=beta^2(<H^2>-<H>^2)
+  stats.td.set("F",     -log(Z));           // F/(k_B T)=-ln(Z)
+  stats.td.set("S",     E/Z+log(Z));        // S/k_B=beta<H>+ln(Z)
   Sym->calculate_TD(step, diag, stats, rescale_factor);  // symmetry-specific calculation routine
   stats.td.save_values();
 }
