@@ -173,7 +173,7 @@ class Symmetry {
    [[nodiscard]] virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
    [[nodiscard]] virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
 
-   virtual void calculate_TD(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, const double factor) = 0;
+   virtual void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, const double factor) const = 0;
 
    virtual Opch<S> recalc_irreduc(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) const { my_assert_not_reached(); }
    virtual OpchChannel<S> recalc_irreduc_substeps(const Step &step, const DiagInfo<S> &diag,

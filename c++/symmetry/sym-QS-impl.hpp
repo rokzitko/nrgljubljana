@@ -3,21 +3,22 @@ namespace NRG {
 template<typename SC>
 class SymmetryQS : public Symmetry<SC> {
  private:
-   outfield Sz2, Q, Q2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
 
  public:
-   using Matrix = typename traits<SC>::Matrix;
+   using Matrix = typename traits<SC>::Matrix; // XXX: in template
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQS(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1), Invar(1,2)),
-     Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
-       initInvar({
-         {"Q", additive}, // charge
-         {"SS", additive} // spin
-       });
-     }
+   SymmetryQS(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1), Invar(1,2)) {
+     initInvar({
+       {"Q", additive}, // charge
+       {"SS", additive} // spin
+     });
+     allfields.add("<Sz^2>", 1);
+     allfields.add("<Q>", 2);
+     allfields.add("<Q^2>", 3);
+   }
 
    // Multiplicity of the (Q,SS) subspace is 2S+1 = SS.
    size_t mult(const Invar &I) const override { return I.get("SS"); }
@@ -71,7 +72,7 @@ class SymmetryQS : public Symmetry<SC> {
      return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
    }
 
-   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
      auto trSZ = 0.0, trQ = 0.0, trQ2 = 0.0; // Tr[S_z^2], Tr[Q], Tr[Q^2]
      for (const auto &[I, eig]: diag) {
        const auto ss   = I.get("SS");
@@ -81,9 +82,9 @@ class SymmetryQS : public Symmetry<SC> {
        trQ2 += sumZ * q * q;
        trSZ += sumZ * (ss * ss - 1) / 12.;
      }
-     Sz2 = trSZ / stats.Z;
-     Q   = trQ / stats.Z;
-     Q2  = trQ2 / stats.Z;
+     stats.td.allfields.set("<Sz^2>",trSZ / stats.Z);
+     stats.td.allfields.set("<Q>", trQ  / stats.Z);
+     stats.td.allfields.set("<Q^2>",  trQ2 / stats.Z);
    }
 
    DECL;

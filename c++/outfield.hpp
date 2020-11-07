@@ -11,87 +11,94 @@
 
 namespace NRG {
 
-class outfield;
-using Allfields = std::vector<outfield*>;
-
-class outfield {
+class Outfield {
  private:
-   const Params &P;
-   const std::string desc;
+   std::string desc;
    std::string value{};
+   size_t prec, width;
  public:
-   explicit outfield(const Params &P_, Allfields &allfields, const std::string &desc_, int position = -1)
-     : P(P_), desc(desc_) {
-       if (position == -1)
-         allfields.push_back(this);
-       else {
-         my_assert(position < allfields.size());
-         allfields.insert(begin(allfields) + position, this);
-       }
-     }
-   template<typename T> void setvalue(T x) {
-     value = fmt::format("{x:>{width}.{prec}}", "x"_a=x, "prec"_a=P.prec_td, "width"_a=P.width_td);
+   explicit Outfield(const std::string &desc, const size_t prec, const size_t width) : desc(desc), prec(prec), width(width) {}
+   template<typename T> void set_value(const T x) {
+     value = fmt::format("{x:>{width}.{prec}}", "x"_a = x, "prec"_a = prec, "width"_a = width);
    }
-   template<typename T> outfield& operator=(T x) { setvalue(x); return *this; }
-   void putheader(std::ostream &F) const { F << std::setw(P.width_td) << desc << " "; }
-   void putvalue(std::ostream &F) const  { F << std::setw(P.width_td) << value << " "; }
+  // Outfield& operator=(const Outfield &o) = default;
+  // Outfield& operator=(Outfield &&o) = default;
+  // template<typename T> Outfield& operator=(const T x) { set_value(x); return *this; } // required for elements in std::vector
+   void put_header(std::ostream &F) const { F << std::setw(width) << desc << " "; }
+   void put_value(std::ostream &F) const  { F << std::setw(width) << value << " "; }
+   [[nodiscard]] auto get_desc() const { return desc; }
+};
+
+class Allfields : std::vector<Outfield> {
+  private:
+    const size_t prec, width;
+  public:
+    void add(const std::string &desc, const int position = -1) {
+      if (position == -1) {
+        this->emplace_back(desc, prec, width);
+      } else {
+        my_assert(position < this->size());
+        this->insert(this->begin() + position, Outfield(desc, prec, width));
+      }
+    }
+    Allfields(const std::vector<std::string> &fields, const size_t prec, const size_t width) : prec(prec), width(width) {
+      for(const auto &desc : fields) add(desc);
+    }
+    void save_header(std::ofstream &O) const {
+      O << '#';
+      for (const auto &f : *this) f.put_header(O);
+      O << std::endl;
+    }
+    void save_values(std::ofstream &O) const {
+      O << ' ';
+      for (const auto &f : *this) f.put_value(O);
+      O << std::endl;
+    }
+    template<typename T> void set(const std::string &desc, const T &x) {
+      for(auto &f : *this) 
+        if (f.get_desc() == desc) {
+          f.set_value(x);
+          return;
+        }
+      throw std::runtime_error("Invalid field " + desc);
+    }
 };
 
 // Setup output fields that will appear in the file "td". Additional elements are defined in sym* files.
 struct TD {
-  Allfields allfields; // thermodynamic quantities
   const Params &P;
+  Allfields allfields; // thermodynamic quantities
   const std::string filename;
-  std::ofstream O;
-  outfield T, E, E2, C, F, S;
-  bool header_saved = false;
-  void save_header() {
-    O << '#';
-    for (const auto &i : allfields) i->putheader(O);
-    O << std::endl;
-  }
+  std::ofstream O; // XXX: std:optional?
+  bool header_saved = false; // XXX
   void save_values() {
     if (!O.is_open())
       O.open(filename);
     if (!header_saved) {
-      save_header();
+      allfields.save_header(O);
       header_saved = true;
     }
-    O << ' ';
-    for (const auto &i : allfields) i->putvalue(O);
-    O << std::endl;
   }
-  TD(const Params &P_, const std::string &filename) : P(P_), filename(filename),
-    T(P, allfields, "T"), E(P, allfields, "<E>"), E2(P, allfields, "<E^2>"),
-    C(P, allfields, "C"), F(P, allfields, "F"), S(P, allfields, "S") {}
+  TD(const Params &P_, const std::string &filename) 
+    : P(P_), allfields({"T", "<E>", "<E^2>", "C", "F", "S"}, P.prec_td, P.width_td), filename(filename) {}
 };
 
 struct TD_FDM {
-  Allfields allfields;
   const Params &P;
+  Allfields allfields;
   std::string filename;
   std::ofstream O;
-  outfield T, E, C, F, S;
   bool header_saved = false;
-  void save_header() {
-    O << '#';
-    for (const auto &i : allfields) i->putheader(O);
-    O << std::endl;
-  }
   void save_values() {
     if (!O.is_open())
       O.open(filename);
     if (!header_saved) {
-      save_header();
+      allfields.save_header(O);
       header_saved = true;
     }
-    O << ' ';
-    for (const auto &i : allfields) i->putvalue(O);
-    O << std::endl;
   }
-  TD_FDM(const Params &P_, const std::string &filename) : P(P_), filename(filename),
-    T(P, allfields, "T"), E(P, allfields, "E_fdm"),
-    C(P, allfields, "C_fdm"), F(P, allfields, "F_fdm"), S(P, allfields, "S_fdm") {}
+  TD_FDM(const Params &P_, const std::string &filename)
+    : P(P_), allfields({"T", "E_fdm", "C_fdm", "F_fdm", "S_fdm"}, P.prec_td, P.width_td), filename(filename) {}
 };
 
 } // namespace

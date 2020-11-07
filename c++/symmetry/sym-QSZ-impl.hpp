@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetryQSZ : public SymField<SC> {
  private:
-   outfield Sz2, Sz, Q, Q2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,13 +10,16 @@ class SymmetryQSZ : public SymField<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZ(const Params &P, Allfields &allfields) : SymField<SC>(P, Invar(0,0), Invar(1,2)),
-     Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
-       initInvar({
-         {"Q", additive},  // charge
-         {"SSZ", additive} // spin projection
-       });
-     }
+   SymmetryQSZ(const Params &P, Allfields &allfields) : SymField<SC>(P, Invar(0,0), Invar(1,2)) {
+     initInvar({
+       {"Q", additive},  // charge
+       {"SSZ", additive} // spin projection
+     });
+     allfields.add("<Sz^2>", 1);
+     allfields.add("<Sz>", 2);
+     allfields.add("<Q>", 3);
+     allfields.add("<Q^2>", 4);
+   }
 
    bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
      // The spin projection of the operator is defined by the difference in Sz of both the invariant subspaces.
@@ -59,7 +61,7 @@ class SymmetryQSZ : public SymField<SC> {
    void make_matrix_nonpolarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In,
                                  const Opch<SC> &opch, const Coef<SC> &coef) const;
 
-   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
      bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
      for (const auto &[I, eig]: diag) {
        const int ssz  = I.get("SSZ");
@@ -70,10 +72,10 @@ class SymmetryQSZ : public SymField<SC> {
        trQ += sumZ * q;
        trQ2 += sumZ * pow(q,2);
      }
-     Sz2 = trSZ2 / stats.Z;
-     Sz  = trSZ / stats.Z;
-     Q   = trQ / stats.Z;
-     Q2  = trQ2 / stats.Z;
+     stats.td.allfields.set("<Sz^2>", trSZ2 / stats.Z);
+     stats.td.allfields.set("<Sz>" , trSZ  / stats.Z);
+     stats.td.allfields.set("<Q>"   ,trQ   / stats.Z);
+     stats.td.allfields.set("<Q^2>" ,trQ2  / stats.Z);
    }
    DECL;
    HAS_DOUBLET;
