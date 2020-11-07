@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetryQSLR : public SymLR<SC> {
  private:
-   outfield Sz2, Q, Q2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,14 +10,16 @@ class SymmetryQSLR : public SymLR<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSLR(const Params &P, Allfields &allfields) : SymLR<SC>(P, Invar(0,1,1)),
-     Sz2(P, allfields, "<Sz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
-       initInvar({
-         {"Q", additive},      // charge
-         {"SS", additive},     // spin
-         {"P", multiplicative} // parity
-       });
-     }
+   SymmetryQSLR(const Params &P, Allfields &allfields) : SymLR<SC>(P, Invar(0,1,1)) {
+     initInvar({
+        {"Q", additive},      // charge
+        {"SS", additive},     // spin
+        {"P", multiplicative} // parity
+     });
+     allfields.add("<Sz^2>", 1);
+     allfields.add("<Q>", 2);
+     allfields.add("<Q^2>", 3);
+   }
 
   // Multiplicity of the I=(Q,SS,P) subspace = 2S+1 = SS.
   size_t mult(const Invar &I) const override {
@@ -53,7 +54,7 @@ class SymmetryQSLR : public SymLR<SC> {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trSZ, trQ, trQ2; // Tr[S_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const int ss    = I.get("SS");
@@ -63,9 +64,9 @@ class SymmetryQSLR : public SymLR<SC> {
       trQ2 += sumZ * q * q;
       trSZ += sumZ * (ss * ss - 1) / 12.;
     }
-    Sz2 = trSZ / stats.Z;
-    Q   = trQ / stats.Z;
-    Q2  = trQ2 / stats.Z;
+    stats.td.set("<Sz^2>", trSZ / stats.Z);
+    stats.td.set("<Q>",    trQ / stats.Z);
+    stats.td.set("<Q^2>",  trQ2 / stats.Z);
   }
 
   DECL;
@@ -79,7 +80,7 @@ class SymmetryQSLR : public SymLR<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryQSLR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryQSLR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int ss = I.get("SS");
 #include "qslr/qslr-2ch-diag.dat"
 #include "qslr/qslr-2ch-offdiag.dat"

@@ -2,22 +2,20 @@ namespace NRG {
 
 template<typename SC>
 class SymmetryISOcommon : public Symmetry<SC> {
-  private:
-   outfield Sz2, Q2;
-
   protected:
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
 
   public:
-   SymmetryISOcommon(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1,1), Invar(2,2)),
-     Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
-       initInvar({
-         {"II", additive}, // isospin
-         {"SS", additive}  // spin
-       });
-     }
+  SymmetryISOcommon(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1, 1), Invar(2, 2)) {
+    initInvar({
+       {"II", additive}, // isospin
+       {"SS", additive}  // spin
+    });
+    allfields.add("<Sz^2>", 1);
+    allfields.add("<Q^2>", 2);
+  }
 
   // Multiplicity of the I=(II,SS) subspace = (2I+1)(2S+1) = II SS.
   size_t mult(const Invar &I) const override {
@@ -52,7 +50,7 @@ class SymmetryISOcommon : public Symmetry<SC> {
     return spinfactor * isofactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const int ii    = I.get("II");
@@ -61,8 +59,8 @@ class SymmetryISOcommon : public Symmetry<SC> {
       trSZ += sumZ * (ss * ss - 1) / 12.; // isospin multiplicity contained in sumZ
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
-    Sz2 = trSZ / stats.Z;
-    Q2  = (4 * trIZ) / stats.Z;
+    stats.td.set("<Sz^2>", trSZ / stats.Z);
+    stats.td.set("<Q^2>",  (4 * trIZ) / stats.Z);
   }
 };
 
@@ -139,7 +137,7 @@ class SymmetryISO2 : public SymmetryISOcommon<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryISO<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryISO<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int ss = I.get("SS");
   int ii = I.get("II");
   // nn is the index of the last site in the chain, while nn+1 is the
@@ -162,7 +160,7 @@ void SymmetryISO<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDim
 }
 
 template<typename SC>
-void SymmetryISO2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryISO2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int ss = I.get("SS");
   int ii = I.get("II");
   int NN   = step.getnn();

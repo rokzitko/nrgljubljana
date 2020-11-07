@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetryDBLSU2 : public Symmetry<SC> {
  private:
-   outfield Q12, Q22;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,13 +10,14 @@ class SymmetryDBLSU2 : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryDBLSU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1,1)),
-     Q12(P, allfields, "<Q1^2>", 1), Q22(P, allfields, "<Q2^2>", 2) {
-       initInvar({
-         {"II1", additive}, // isospin 1
-         {"II2", additive}, // isospin 2
-       });
-     }
+   SymmetryDBLSU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1, 1)) {
+     initInvar({
+        {"II1", additive}, // isospin 1
+        {"II2", additive}, // isospin 2
+     });
+     allfields.add("<Q1^2>", 1);
+     allfields.add("<Q2^2>", 2);
+   }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return su2_triangle_inequality(I1.get("II1"), I2.get("II1"), I3.get("II1"))
@@ -49,7 +49,7 @@ class SymmetryDBLSU2 : public Symmetry<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trIZ12; // Tr[I1_z^2]
     bucket trIZ22; // Tr[I2_z^2]
     for (const auto &[I, eig]: diag) {
@@ -59,8 +59,8 @@ class SymmetryDBLSU2 : public Symmetry<SC> {
       trIZ12 += sumZ * (ii1 * ii1 - 1) / 12.;
       trIZ22 += sumZ * (ii2 * ii2 - 1) / 12.;
     }
-    Q12 = (4 * trIZ12) / stats.Z;
-    Q22 = (4 * trIZ22) / stats.Z;
+    stats.td.set("<Q1^2>", (4 * trIZ12) / stats.Z);
+    stats.td.set("<Q2^2>", (4 * trIZ22) / stats.Z);
   }
 
   DECL;
@@ -76,7 +76,7 @@ class SymmetryDBLSU2 : public Symmetry<SC> {
 #define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 template<typename SC>
-void SymmetryDBLSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryDBLSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   switch (P.channels) {
     case 2:
 #include "dblsu2/dblsu2-2ch-offdiag-1.dat"

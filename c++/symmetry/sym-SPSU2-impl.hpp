@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetrySPSU2 : public Symmetry<SC> {
   private:
-   outfield Sz2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,12 +10,12 @@ class SymmetrySPSU2 : public Symmetry<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1)),
-      Sz2(P, allfields, "<Sz^2>", 1) {
-        initInvar({
-          {"SS", additive} // spin
-        });
-      }
+   SymmetrySPSU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1)) {
+     initInvar({
+        {"SS", additive} // spin
+     });
+     allfields.add("<Sz^2>", 1);
+   }
 
   // Multiplicity of the I=(SS) subspace = 2S+1 = SS.
   size_t mult(const Invar &I) const override { return I.get("SS"); }
@@ -67,14 +66,14 @@ class SymmetrySPSU2 : public Symmetry<SC> {
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trSZ; // Tr[S_z^2]
     for (const auto &[I, eig]: diag) {
       const int ss    = I.get("SS");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trSZ += sumZ * (ss * ss - 1) / 12.;
     }
-    Sz2 = trSZ / stats.Z;
+    stats.td.set("<Sz^2>", trSZ / stats.Z);
   }
 
   DECL;
@@ -101,7 +100,7 @@ class SymmetrySPSU2 : public Symmetry<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int ss = I.get("SS");
 
   if (!P.substeps) {

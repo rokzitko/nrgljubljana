@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetryQSZLR : public SymFieldLR<SC> {
  private:
-   outfield Sz2, Sz, Q, Q2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,14 +10,17 @@ class SymmetryQSZLR : public SymFieldLR<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZLR(const Params &P, Allfields &allfields) : SymFieldLR<SC>(P, Invar(0,0,1)),
-     Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2), Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
-       initInvar({
-         {"Q", additive},      // charge
-         {"SSZ", additive},    // spin projection
-         {"P", multiplicative} // parity
-       });
-     }
+   SymmetryQSZLR(const Params &P, Allfields &allfields) : SymFieldLR<SC>(P, Invar(0,0,1)) {
+     initInvar({
+        {"Q", additive},      // charge
+        {"SSZ", additive},    // spin projection
+        {"P", multiplicative} // parity
+     });
+     allfields.add("<Sz^2>", 1);
+     allfields.add("<Sz>", 2);
+     allfields.add("<Q>", 3);
+     allfields.add("<Q^2>", 4);
+   }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
     // The spin projection of the operator is defined by the difference
@@ -40,7 +42,7 @@ class SymmetryQSZLR : public SymFieldLR<SC> {
 #include "qszlr/qszlr-2ch-QN.dat"
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
     for (const auto &[I, eig]: diag) {
       const int ssz  = I.get("SSZ");
@@ -51,10 +53,10 @@ class SymmetryQSZLR : public SymFieldLR<SC> {
       trQ += sumZ * q;
       trQ2 += sumZ * pow(q,2);
     }
-    Sz2 = trSZ2 / stats.Z;
-    Sz  = trSZ / stats.Z;
-    Q   = trQ / stats.Z;
-    Q2  = trQ2 / stats.Z;
+    stats.td.set("<Sz^2>", trSZ2 / stats.Z);
+    stats.td.set("<Sz>",   trSZ / stats.Z);
+    stats.td.set("<Q>",    trQ / stats.Z);
+    stats.td.set("<Q^2>",  trQ2 / stats.Z);
   }
 
   DECL;
@@ -67,7 +69,7 @@ class SymmetryQSZLR : public SymFieldLR<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetryQSZLR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryQSZLR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
 #include "qszlr/qszlr-2ch-offdiag.dat"
 #include "qszlr/qszlr-2ch-diag.dat"
 }

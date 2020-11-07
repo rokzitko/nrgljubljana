@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetrySPU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) {
+MatrixElements<SC> SymmetrySPU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
@@ -132,7 +132,7 @@ MatrixElements<SC> SymmetrySPU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
 }
 
 template<typename SC>
-Opch<SC> SymmetrySPU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) {
+Opch<SC> SymmetrySPU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
   my_assert(!P.substeps);
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
@@ -225,7 +225,7 @@ Opch<SC> SymmetrySPU1<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
 }
 
 template<typename SC>
-OpchChannel<SC> SymmetrySPU1<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, int M) {
+OpchChannel<SC> SymmetrySPU1<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const int M) const {
   my_assert(P.substeps);
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
@@ -264,7 +264,7 @@ OpchChannel<SC> SymmetrySPU1<SC>::recalc_irreduc_substeps(const Step &step, cons
 }
 
 template<typename SC>
-MatrixElements<SC> SymmetrySPU1<SC>::recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) {
+MatrixElements<SC> SymmetrySPU1<SC>::recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
@@ -452,7 +452,7 @@ MatrixElements<SC> SymmetrySPU1<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
 #define Q2DO(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
 
 template<typename SC>
-void SymmetrySPU1<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) {
+void SymmetrySPU1<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) const {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

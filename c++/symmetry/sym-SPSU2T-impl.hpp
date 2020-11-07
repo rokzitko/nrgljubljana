@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetrySPSU2T : public Symmetry<SC> {
  private:
-   outfield Sz2, Tz2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,12 +10,13 @@ class SymmetrySPSU2T : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2T(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1,0), Invar(2,1)),
-     Sz2(P, allfields, "<Sz^2>", 1), Tz2(P, allfields, "<Tz^2>", 2) {
+   SymmetrySPSU2T(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1,0), Invar(2,1)) {
        initInvar({
          {"SS", additive}, // spin
          {"T", additive}   // angular momentum
        });
+       allfields.add("<Sz^2>", 1);
+       allfields.add("<Tz^2>", 2);
      }
 
   // Multiplicity of the (SS,T) subspace is (2S+1 = SS) times (2T+1).
@@ -64,7 +64,7 @@ class SymmetrySPSU2T : public Symmetry<SC> {
     return spinfactor * angmomfactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trSZ2, trTZ2; // Tr[S_z^2], Tr[T_z^2]
     for (const auto &[I, eig]: diag) {
       const int ss    = I.get("SS");
@@ -73,15 +73,15 @@ class SymmetrySPSU2T : public Symmetry<SC> {
       trSZ2 += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
       trTZ2 += sumZ * t * (t + 1) / 3.;
     }
-    Sz2 = trSZ2 / stats.Z;
-    Tz2 = trTZ2 / stats.Z;
+    stats.td.set("<Sz^2>", trSZ2 / stats.Z);
+    stats.td.set("<Tz^2>", trTZ2 / stats.Z);
   }
 
   DECL;
   HAS_DOUBLET;
   HAS_TRIPLET;
 
-  bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) override {
+  bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) const override {
     return triangle_inequality(I1, I2, If);
   }
 };
@@ -129,7 +129,7 @@ bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I
 #define ANOMALOUS(i, j, factor) offdiag_function(step, i, j, 0, 0, t_matel(factor) * coef.kappa(step.N(), 0), h, qq, In, opch)
 
 template<typename SC>
-void SymmetrySPSU2T<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetrySPSU2T<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int ss  = I.get("SS");
   int t = I.get("T");
   double T  = t; // crucially important to use floating point!

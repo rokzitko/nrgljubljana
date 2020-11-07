@@ -2,43 +2,36 @@ namespace NRG {
 
 template<typename SC>
 class SymmetryISOLRcommon : public SymLR<SC> {
- private:
-   outfield Sz2, Q2;
-
  protected:
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
-
  public:
-   SymmetryISOLRcommon(const Params &P, Allfields &allfields) : SymLR<SC>(P, Invar(1,1,1)),
-     Sz2(P, allfields, "<Sz^2>", 1), Q2(P, allfields, "<Q^2>", 2) {
-       initInvar({
-         {"II", additive},     // isospin
-         {"SS", additive},     // spin
-         {"P", multiplicative} // parity
-       });
-     }
-
+   SymmetryISOLRcommon(const Params &P, Allfields &allfields) : SymLR<SC>(P, Invar(1,1,1)) {
+     initInvar({
+        {"II", additive},     // isospin
+        {"SS", additive},     // spin
+        {"P", multiplicative} // parity
+     });
+     allfields.add("<Sz^2>", 1);
+     allfields.add("<Q^2>", 2);
+   }
   // Multiplicity of the I=(II,SS,P) subspace = (2I+1)(2S+1) = II SS.
   size_t mult(const Invar &I) const override {
     int mi = I.get("II"); // isospin multiplicity
     int ms = I.get("SS"); // spin multiplicity
     return mi * ms;
   }
-
   // We always must have S >= 0 and I >= 0.
   bool Invar_allowed(const Invar &I) const override {
     const bool isospin_ok = I.get("II") > 0;
     const bool spin_ok    = I.get("SS") > 0;
     return isospin_ok && spin_ok;
   }
-
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return su2_triangle_inequality(I1.get("II"), I2.get("II"), I3.get("II")) && su2_triangle_inequality(I1.get("SS"), I2.get("SS"), I3.get("SS"))
        && z2_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }
-
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
@@ -50,8 +43,7 @@ class SymmetryISOLRcommon : public SymLR<SC> {
     const double isofactor  = (ii1 == iip + 1 ? ISO(iip) + 1.0 : ISO(iip));
     return spinfactor * isofactor;
   }
-
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const int ii    = I.get("II");
@@ -60,8 +52,8 @@ class SymmetryISOLRcommon : public SymLR<SC> {
       trSZ += sumZ * (ss * ss - 1) / 12.; // isospin multiplicity contained in sumZ
       trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
     }
-    Sz2 = trSZ / stats.Z;
-    Q2  = (4 * trIZ) / stats.Z;
+    stats.td.set("<Sz^2>", trSZ / stats.Z);
+    stats.td.set("<Q^2>",  (4 * trIZ) / stats.Z);
   }
 };
 
@@ -116,14 +108,14 @@ class SymmetryISO2LR : public SymmetryISOLRcommon<SC> {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 template<typename SC>
-void SymmetryISOLR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryISOLR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int ss = I.get("SS");
   int ii = I.get("II");
 #include "isolr/isolr-2ch-offdiag.dat"
 }
 
 template<typename SC>
-void SymmetryISO2LR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryISO2LR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int ss = I.get("SS");
   int ii = I.get("II");
 #include "iso2lr/iso2lr-2ch-offdiag.dat"

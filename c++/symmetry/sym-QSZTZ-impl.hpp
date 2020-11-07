@@ -3,41 +3,38 @@ namespace NRG {
 template<typename SC>
 class SymmetryQSZTZ : public Symmetry<SC> {
  private:
-   outfield Sz, Sz2, Tz, Tz2, Q, Q2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
-
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZTZ(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,0,0), Invar(1,2,1)),
-     Sz(P, allfields, "<Sz>", 1), Sz2(P, allfields, "<Sz^2>", 2), Tz(P, allfields, "<Tz>", 3), Tz2(P, allfields, "<Tz^2>", 4),
-     Q(P, allfields, "<Q>", 5), Q2(P, allfields, "<Q^2>", 6) {
-       initInvar({
-         {"Q", additive},  // charge
-         {"SZ", additive}, // spin
-         {"TZ", additive}  // angular momentum
-       });
-     }
-
+   SymmetryQSZTZ(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,0,0), Invar(1,2,1)) {
+     initInvar({
+        {"Q", additive},  // charge
+        {"SZ", additive}, // spin
+        {"TZ", additive}  // angular momentum
+     });
+     allfields.add("<Sz>", 1);
+     allfields.add("<Sz^2>", 2);
+     allfields.add("<Tz>", 3);
+     allfields.add("<Tz^2>", 4);
+     allfields.add("<Q>", 5);
+     allfields.add("<Q^2>", 6);
+   }
   size_t mult(const Invar &I) const override { return 1; }
-
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SZ"), I2.get("SZ"), I3.get("SZ"))
        && u1_equality(I1.get("TZ"), I2.get("TZ"), I3.get("TZ"));
   }
-
   bool Invar_allowed(const Invar &I) const override { return true; }
-
   void load() override {
     my_assert(!P.substeps);
     my_assert(P.channels == 3);
 #include "qsztz/qsztz-In2.dat"
 #include "qsztz/qsztz-QN.dat"
   } // load
-
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trSZ, trSZ2, trTZ, trTZ2, trQ, trQ2;
     for (const auto &[I, eig]: diag) {
       const int q    = I.get("Q");
@@ -51,14 +48,13 @@ class SymmetryQSZTZ : public Symmetry<SC> {
       trTZ += sumZ * tz;
       trTZ2 += sumZ * tz * tz;
     }
-    Sz  = trSZ / stats.Z;
-    Sz2 = trSZ2 / stats.Z;
-    Tz  = trTZ / stats.Z;
-    Tz2 = trTZ2 / stats.Z;
-    Q   = trQ / stats.Z;
-    Q2  = trQ2 / stats.Z;
+    stats.td.set("<Sz>",   trSZ / stats.Z);
+    stats.td.set("<Sz^2>", trSZ2 / stats.Z);
+    stats.td.set("<Tz>",   trTZ / stats.Z);
+    stats.td.set("<Tz^2>", trTZ2 / stats.Z);
+    stats.td.set("<Q>",    trQ / stats.Z);
+    stats.td.set("<Q^2>",  trQ2 / stats.Z);
   }
-
   DECL;
   HAS_DOUBLET;
   HAS_TRIPLET;
@@ -73,7 +69,7 @@ class SymmetryQSZTZ : public Symmetry<SC> {
 #define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 template<typename SC>
-void SymmetryQSZTZ<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryQSZTZ<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   my_assert(!P.substeps);
   my_assert(P.channels == 3);
 #include "qsztz/qsztz-offdiag.dat"

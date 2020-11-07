@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetrySL3 : public Symmetry<SC> {
   private:
-   outfield Q1, Q12, sQ12, Q2, Q22, sQ22, Q3, Q32, sQ32;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,16 +10,22 @@ class SymmetrySL3 : public Symmetry<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySL3(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,0,0)),
-     Q1(P, allfields, "<Q1>", 1), Q12(P, allfields, "<Q1^2>", 2), sQ12(P, allfields, "<sQ1^2>", 3),
-     Q2(P, allfields, "<Q2>", 4), Q22(P, allfields, "<Q2^2>", 5), sQ22(P, allfields, "<sQ2^2>", 6),
-     Q3(P, allfields, "<Q3>", 7), Q32(P, allfields, "<Q3^2>", 8), sQ32(P, allfields, "<sQ3^2>", 9) {
-       initInvar({
-         {"Q1", additive}, // charge in channel 1
-         {"Q2", additive}, // charge in channel 2
-         {"Q3", additive}  // charge in channel 3
-       });
-     }
+   SymmetrySL3(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,0,0)) {
+     initInvar({
+        {"Q1", additive}, // charge in channel 1
+        {"Q2", additive}, // charge in channel 2
+        {"Q3", additive}  // charge in channel 3
+     });
+     allfields.add("<Q1>", 1);
+     allfields.add("<Q1^2>", 2);
+     allfields.add("<sQ1^2>", 3);
+     allfields.add("<Q2>", 4);
+     allfields.add("<Q2^2>", 5);
+     allfields.add("<sQ2^2>", 6);
+     allfields.add("<Q3>", 7);
+     allfields.add("<Q3^2>", 8);
+     allfields.add("<sQ3^2>", 9);
+   }
 
   void load() override {
     switch (P.channels) {
@@ -32,7 +37,7 @@ class SymmetrySL3 : public Symmetry<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trQ1, trQ12; // Tr[Q], Tr[Q^2]
     bucket trQ2, trQ22;
     bucket trQ3, trQ32;
@@ -48,18 +53,15 @@ class SymmetrySL3 : public Symmetry<SC> {
       trQ3 += sumZ * q3;
       trQ32 += sumZ * q3 * q3;
     }
-    Q1  = trQ1 / stats.Z;
-    Q12 = trQ12 / stats.Z;
-    // charge fluctuations -> susceptibility
-    sQ12 = (trQ12 / stats.Z) - pow(trQ1 / stats.Z, 2);
-    Q2  = trQ2 / stats.Z;
-    Q22 = trQ22 / stats.Z;
-    // charge fluctuations -> susceptibility
-    sQ22 = (trQ22 / stats.Z) - pow(trQ2 / stats.Z, 2);
-    Q3  = trQ3 / stats.Z;
-    Q32 = trQ32 / stats.Z;
-    // charge fluctuations -> susceptibility
-    sQ32 = (trQ32 / stats.Z) - pow(trQ3 / stats.Z, 2);
+    stats.td.set("<Q1>",    trQ1 / stats.Z);
+    stats.td.set("<Q1^2>",  trQ12 / stats.Z);
+    stats.td.set("<sQ1^2>", (trQ12 / stats.Z) - pow(trQ1 / stats.Z, 2));
+    stats.td.set("<Q2>",    trQ2 / stats.Z);
+    stats.td.set("<Q2^2>",  trQ22 / stats.Z);
+    stats.td.set("<sQ2^2>", (trQ22 / stats.Z) - pow(trQ2 / stats.Z, 2));
+    stats.td.set("<Q3>",    trQ3 / stats.Z);
+    stats.td.set("<Q3^2>",  trQ32 / stats.Z);
+    stats.td.set("<sQ3^2>", (trQ32 / stats.Z) - pow(trQ3 / stats.Z, 2));
   }
 
   DECL;
@@ -74,7 +76,7 @@ class SymmetrySL3 : public Symmetry<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetrySL3<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetrySL3<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   switch (P.channels) {
     case 3:
 #include "sl3/sl3-3ch-offdiag.dat"

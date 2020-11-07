@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetrySU2 : public Symmetry<SC> {
  private:
-   outfield Q2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,11 +10,11 @@ class SymmetrySU2 : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1)),
-     Q2(P, allfields, "<Q^2>", 1) {
+   SymmetrySU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1)) {
        initInvar({
          {"II", additive} // isospin
        });
+      allfields.add("<Q^2>", 1);
      }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
@@ -52,14 +51,14 @@ class SymmetrySU2 : public Symmetry<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trIZ2; // Tr[I_z^2]
     for (const auto &[I, eig]: diag) {
       const int ii   = I.get("II");
       const double sumZ = this->calculate_Z(I, eig, factor);
       trIZ2 += sumZ * (ii * ii - 1) / 12.;
     }
-    Q2 = (4 * trIZ2) / stats.Z;
+    stats.td.set("<Q^2>", (4 * trIZ2) / stats.Z);
   }
 
   DECL;
@@ -78,7 +77,7 @@ class SymmetrySU2 : public Symmetry<SC> {
 #define OFFDIAG_2(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 template<typename SC>
-void SymmetrySU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetrySU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int ii = I.get("II");
   int NN   = step.getnn();
   switch (P.channels) {

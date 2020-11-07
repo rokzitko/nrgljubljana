@@ -21,8 +21,8 @@ target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
 # Configure compilation
 target_compile_options(nrgljubljana_c     PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
 target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++> 
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/coefnew> 
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry/coefnew>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>)
 target_compile_definitions(nrgljubljana_c PUBLIC
   $<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>

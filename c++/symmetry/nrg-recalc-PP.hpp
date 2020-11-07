@@ -30,7 +30,7 @@ namespace NRG {
 
 
 template<typename SC>
-Opch<SC> SymmetryPP<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) {
+Opch<SC> SymmetryPP<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     int pa   = Ip.get("Pa");
@@ -182,7 +182,7 @@ Opch<SC> SymmetryPP<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
 #define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value *ISOFACTOR)
 
 template<typename SC>
-void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) {
+void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) const {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

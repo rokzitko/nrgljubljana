@@ -5,7 +5,6 @@ namespace NRG {
 template<typename SC>
 class SymmetryQJ : public Symmetry<SC> {
  private:
-   outfield Jz2, Q, Q2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -13,13 +12,15 @@ class SymmetryQJ : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQJ(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1), Invar(1,4)),
-     Jz2(P, allfields, "<Jz^2>", 1), Q(P, allfields, "<Q>", 2), Q2(P, allfields, "<Q^2>", 3) {
-       initInvar({
-         {"Q", additive}, // charge
-         {"JJ", additive} // total angular momentum
-       });
-     }
+   SymmetryQJ(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1), Invar(1,4)) {
+     initInvar({
+        {"Q", additive}, // charge
+        {"JJ", additive} // total angular momentum
+     });
+     allfields.add("<Jz^2>", 1);
+     allfields.add("<Q>", 2);
+     allfields.add("<Q^2>", 3);
+   }
 
   // Multiplicity of the (Q,JJ) subspace is 2J+1 = JJ.
   size_t mult(const Invar &I) const override { return I.get("JJ"); }
@@ -38,7 +39,7 @@ class SymmetryQJ : public Symmetry<SC> {
 #include "qj/qj-QN.dat"
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trJZ2, trQ, trQ2; // Tr[J_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const int jj    = I.get("JJ");
@@ -48,9 +49,9 @@ class SymmetryQJ : public Symmetry<SC> {
       trQ2 += sumZ * q * q;
       trJZ2 += sumZ * (jj * jj - 1) / 12.;
     }
-    Jz2 = trJZ2 / stats.Z;
-    Q   = trQ / stats.Z;
-    Q2  = trQ2 / stats.Z;
+    stats.td.set("<Jz^2>", trJZ2 / stats.Z);
+    stats.td.set("<Q>",    trQ / stats.Z);
+    stats.td.set("<Q^2>",  trQ2 / stats.Z);
   }
 
   // ClebschGordan[ket (p), op, bra (1)]
@@ -86,7 +87,7 @@ class SymmetryQJ : public Symmetry<SC> {
   }
 
    void offdiag_function_QJ(const Step &step, const unsigned int i, const unsigned int j, const unsigned int ch, const unsigned int fnr, const t_matel factor, Matrix &h, const SubspaceDimensions &qq,
-                            const InvarVec &In, const Opch<SC> &opch)
+                            const InvarVec &In, const Opch<SC> &opch) const
    {
      const Invar Iop     = ch == 0 ? Invar(1, 2) : Invar(1, 4);
      const Invar I1      = In[i];
@@ -115,7 +116,7 @@ inline double J(int JJ) {
 }
 
 template<typename SC>
-void SymmetryQJ<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryQJ<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int jj = I.get("JJ");
 #include "qj/qj-offdiag.dat"
 #include "qj/qj-diag.dat"

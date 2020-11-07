@@ -10,6 +10,20 @@ TEST(QS, mk_sym) {
   Workdir workdir("test_workdir");
   Params P("", "param", workdir, true);
   TD td(P, "td");
+  auto sym = mk_QS<double>(P, td.allfields);
+}
+
+TEST(QSZ, mk_sym) {
+  Workdir workdir("test_workdir");
+  Params P("", "param", workdir, true);
+  TD td(P, "td");
+  auto sym = mk_QSZ<double>(P, td.allfields);
+}
+
+TEST(get, mk_sym) {
+  Workdir workdir("test_workdir");
+  Params P("", "param", workdir, true);
+  TD td(P, "td");
   auto sym = get<double>("QS", P, td.allfields);
 }
 

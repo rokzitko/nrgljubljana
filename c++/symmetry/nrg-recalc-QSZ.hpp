@@ -334,7 +334,7 @@ Opch<SC> SymmetryQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &d
 }
 
 template<typename SC>
-OpchChannel<SC> SymmetryQSZ<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, int M) const {
+OpchChannel<SC> SymmetryQSZ<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const int M) const {
   Opch<SC> opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     int qp   = Ip.get("Q");

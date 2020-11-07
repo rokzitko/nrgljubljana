@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetryQST : public Symmetry<SC> {
  private:
-   outfield Sz2, Tz2, Q, Q2;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,14 +10,17 @@ class SymmetryQST : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQST(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1,0), Invar(1,2,1)),
-     Sz2(P, allfields, "<Sz^2>", 1), Tz2(P, allfields, "<Tz^2>", 2),  Q(P, allfields, "<Q>", 3), Q2(P, allfields, "<Q^2>", 4) {
-       initInvar({
-         {"Q", additive},  // charge
-         {"SS", additive}, // spin
-         {"T", additive}   // angular momentum
-       });
-     }
+   SymmetryQST(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1,0), Invar(1,2,1)) {
+     initInvar({
+        {"Q", additive},  // charge
+        {"SS", additive}, // spin
+        {"T", additive}   // angular momentum
+     });
+     allfields.add("<Sz^2>", 1);
+     allfields.add("<Tz^2>", 2);
+     allfields.add("<Q>", 3);
+     allfields.add("<Q^2>", 4);
+   }
 
   // Multiplicity of the (Q,SS,T) subspace is (2S+1 = SS) times (2T+1).
   size_t mult(const Invar &I) const override { return I.get("SS") * (2 * I.get("T") + 1); }
@@ -84,7 +86,7 @@ class SymmetryQST : public Symmetry<SC> {
     return spinfactor * angmomfactor;
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trSZ, trTZ, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
     for (const auto &[I, eig]: diag) {
       const int q    = I.get("Q");
@@ -96,10 +98,10 @@ class SymmetryQST : public Symmetry<SC> {
       trSZ += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
       trTZ += sumZ * t * (t + 1) / 3.;
     }
-    Sz2 = trSZ / stats.Z;
-    Tz2 = trTZ / stats.Z;
-    Q   = trQ / stats.Z;
-    Q2  = trQ2 / stats.Z;
+    stats.td.set("<Sz^2>", trSZ / stats.Z);
+    stats.td.set("<Tz^2>", trTZ / stats.Z);
+    stats.td.set("<Q>",    trQ / stats.Z);
+    stats.td.set("<Q^2>",  trQ2 / stats.Z);
   }
 
   DECL;
@@ -107,7 +109,7 @@ class SymmetryQST : public Symmetry<SC> {
   HAS_TRIPLET;
   HAS_ORB_TRIPLET;
 
-  bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) override {
+  bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) const override {
     return triangle_inequality(I1, I2, If);
   }
 };
@@ -148,7 +150,7 @@ bool qst_exception(const unsigned int i, const unsigned int j, const Invar &I) {
 #define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 template<typename SC>
-void SymmetryQST<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetryQST<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   int ss  = I.get("SS");
   int t = I.get("T");
   double T  = t; // crucially important to use floating point!

@@ -3,7 +3,6 @@ namespace NRG {
 template<typename SC>
 class SymmetrySPU1LR : public SymFieldLR<SC> {
  private:
-   outfield Sz2, Sz;
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
@@ -11,13 +10,14 @@ class SymmetrySPU1LR : public SymFieldLR<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPU1LR(const Params &P, Allfields &allfields) : SymFieldLR<SC>(P, Invar(0,1)),
-     Sz2(P, allfields, "<Sz^2>", 1), Sz(P, allfields, "<Sz>", 2) {
-       initInvar({
-         {"SSZ", additive},    // spin projection
-         {"P", multiplicative} // parity
-       });
-     }
+   SymmetrySPU1LR(const Params &P, Allfields &allfields) : SymFieldLR<SC>(P, Invar(0,1)) {
+     initInvar({
+        {"SSZ", additive},    // spin projection
+        {"P", multiplicative} // parity
+     });
+     allfields.add("<Sz^2>", 1);
+     allfields.add("<Sz>", 2);
+   }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
     // The spin projection of the operator is defined by the difference
@@ -46,7 +46,7 @@ class SymmetrySPU1LR : public SymFieldLR<SC> {
     }
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, const Stats<SC> &stats, const double factor) override {
+  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
     bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
     for (const auto &[I, eig]: diag) {
       const int ssz  = I.get("SSZ");
@@ -54,8 +54,8 @@ class SymmetrySPU1LR : public SymFieldLR<SC> {
       trSZ += sumZ * SZ(ssz);
       trSZ2 += sumZ * pow(SZ(ssz),2);
     }
-    Sz2 = trSZ2 / stats.Z;
-    Sz  = trSZ / stats.Z;
+    stats.td.set("<Sz^2>", trSZ2 / stats.Z);
+    stats.td.set("<Sz>",   trSZ / stats.Z);
   }
 
   DECL;
@@ -77,7 +77,7 @@ class SymmetrySPU1LR : public SymFieldLR<SC> {
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
-void SymmetrySPU1LR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) {
+void SymmetrySPU1LR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
   switch (P.channels) {
     case 1:
 #include "spu1lr/spu1lr-1ch-offdiag.dat"

@@ -452,7 +452,7 @@ Opch<SC> SymmetryQS<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
  
 // Driver routine for recalc_f() for substeps=true, i.e., chain by chain diagonalisations
 template<typename SC>
-OpchChannel<SC> SymmetryQS<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, int M) const {
+OpchChannel<SC> SymmetryQS<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const int M) const {
   auto opch = newopch<SC>(P);
   for(const auto &[Ip, eig]: diag) {
     int qp = Ip.get("Q");

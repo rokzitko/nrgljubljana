@@ -32,7 +32,7 @@ namespace NRG {
 
 // Driver routine for recalc_f()
 template<typename SC>
-Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) {
+Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
   Opch<SC> opch = newopch<SC>(P);
 
   if constexpr (std::is_same_v<SC, std::complex<double>>) {
