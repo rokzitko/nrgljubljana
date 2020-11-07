@@ -6,17 +6,20 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
-
-#include "invar.hpp"
-#include "traits.hpp"
-#include "eigen.hpp"
-#include "numerics.hpp" // read_matrix
-#include "params.hpp"
+#include <stdexcept>
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <range/v3/all.hpp>
+#include <h5cpp/all>
+
+#include "invar.hpp"
+#include "misc.hpp"
+#include "traits.hpp"
+#include "eigen.hpp"
+#include "numerics.hpp" // read_matrix
+#include "params.hpp"
 
 namespace NRG {
 
@@ -163,10 +166,10 @@ class Opch : public std::vector<OpchChannel<S>> {
    }
 };
 
-// Object of class IterInfo cotains full information about matrix representations when entering stage N of the NRG
+// Object of class Operators cotains full information about matrix representations when entering stage N of the NRG
 // iteration.
 template<typename S>
-class IterInfo {
+class Operators {
  public:
    Opch<S> opch;     // f operators (channels)
    CustomOp<S> ops;  // singlet operators (even parity)

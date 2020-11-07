@@ -124,7 +124,7 @@ struct Output {
   std::unique_ptr<ExpvOutput<S>> custom;
   std::unique_ptr<ExpvOutput<S>> customfdm;
   std::optional<h5::fd_t> h5raw;
-  Output(const RUNTYPE &runtype, const IterInfo<S> &iterinfo, Stats<S> &stats, const Params &P,
+  Output(const RUNTYPE &runtype, const Operators<S> &iterinfo, Stats<S> &stats, const Params &P,
               const std::string filename_energies= "energies.nrg"s,
               const std::string filename_custom = "custom", 
               const std::string filename_customfdm = "customfdm")

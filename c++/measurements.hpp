@@ -33,7 +33,7 @@ auto sum_of_exp(T values, const double factor)
 
 // Measure thermodynamic expectation values of singlet operators
 template<typename S>
-void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a,
+void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const Operators<S> &a,
                      Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
   auto mult = [Sym](const Invar &I){ return Sym->mult(I); }; // XXX: Sym->multfnc()
   const auto factor = step.TD_factor();
@@ -64,7 +64,7 @@ CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, 
 }
 
 template<typename S>
-void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a,
+void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const Operators<S> &a,
                          Output<S> &output,  const DensMatElements<S> &rhoFDM,
                          const Store<S> &store, const Symmetry<S> *Sym, const Params &P) { // XXX: multnfc
   for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, Sym);
@@ -221,7 +221,7 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
 
 template<typename S>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
-                                 const DiagInfo<S> &diag, const IterInfo<S> &iterinfo, const Store<S> &store,
+                                 const DiagInfo<S> &diag, const Operators<S> &iterinfo, const Store<S> &store,
                                  const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.

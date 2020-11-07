@@ -118,7 +118,7 @@ auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef
 }
 
 template<typename S>
-auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, const Output<S> &output,
+auto do_diag(const Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, const Output<S> &output,
              SubspaceStructure &substruct, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
@@ -180,7 +180,7 @@ auto norm(const MatrixElements<S> &m, const Symmetry<S> *Sym, F factor_fnc, cons
 }
 
 template<typename S>
-void operator_sumrules(const IterInfo<S> &a, const Symmetry<S> *Sym) {
+void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
   // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
   // irrelevant (0).
   const int SPIN = Sym->isfield() ? 1 : 0;
@@ -192,7 +192,7 @@ void operator_sumrules(const IterInfo<S> &a, const Symmetry<S> *Sym) {
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<typename S>
-void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
+void after_diag(const Step &step, Operators<S> &iterinfo, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                 SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
@@ -236,7 +236,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
 
 // Perform one iteration step
 template<typename S>
-auto iterate(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
+auto iterate(const Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   if (output.h5raw)
@@ -251,7 +251,7 @@ auto iterate(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats
 
 // Perform calculations with quantities from 'data' file
 template<typename S>
-void docalc0(Step &step, const IterInfo<S> &iterinfo, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
+void docalc0(Step &step, const Operators<S> &iterinfo, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
              Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << std::endl << "Before NRG iteration";
@@ -265,7 +265,7 @@ void docalc0(Step &step, const IterInfo<S> &iterinfo, const DiagInfo<S> &diag0, 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
 template<typename S>
-auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
+auto nrg_ZBW(Step &step, Operators<S> &iterinfo, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
              Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
@@ -288,7 +288,7 @@ auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<
 }
 
 template<typename S>
-auto nrg_loop(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
+auto nrg_loop(Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
               Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())

@@ -68,7 +68,7 @@ class Oprecalc {
      }
 
    // Recalculate operator matrix representations
-   void recalculate_operators(IterInfo<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
+   void recalculate_operators(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
        const auto section_timing = mt.time_it("recalc");
        for (auto &[name, m] : a.ops)
          m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
@@ -157,7 +157,7 @@ class Oprecalc {
   }
 
   // Reset lists of operators which need to be iterated
-  Oprecalc(const RUNTYPE &runtype, const IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) : 
+  Oprecalc(const RUNTYPE &runtype, const Operators<S> &a, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) : 
     runtype(runtype), Sym(Sym), mt(mt), P(P) 
   {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;

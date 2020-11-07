@@ -130,7 +130,7 @@ private:
   Stats<S> stats;
   MemTime mt; // memory and timing statistics
 public:
-  auto run_nrg(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
+  auto run_nrg(Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
                Store<S> &store, std::shared_ptr<Symmetry<S>> Sym) {
     diag0.states_report(Sym->multfnc());
     auto oprecalc = Oprecalc<S>(step.get_runtype(), iterinfo, Sym, mt, P);

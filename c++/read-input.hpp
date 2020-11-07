@@ -144,7 +144,7 @@ inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data")
   skip_comments(fdata);
   DiagInfo<S> diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);
-  IterInfo<S> iterinfo0;
+  Operators<S> iterinfo0;
   iterinfo0.opch = Opch<S>(fdata, diag0, P);
   Coef<S> coef(P);
   while (true) {
