@@ -32,7 +32,7 @@ namespace NRG {
 
 // Check if the trace of the density matrix equals 'ref_value'.
 template<typename S>
-void check_trace_rho(const DensMatElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, const double ref_value = 1.0) {
+void check_trace_rho(const DensMatElements<S> &m, const Symmetry<S> *Sym, const double ref_value = 1.0) { // XXX: MF mult
   if (!num_equal(m.trace(Sym->multfnc()), ref_value))
     throw std::runtime_error("check_trace_rho() failed");
 }
@@ -45,7 +45,7 @@ void check_trace_rho(const DensMatElements<S> &m, std::shared_ptr<Symmetry<S>> S
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
 template<typename S>
-auto init_rho(const Step &step, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym) {
+auto init_rho(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym) { // XXX: MF mult
   DensMatElements<S> rho;
   for (const auto &[I, eig]: diag)
     rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step, diag, Sym);
@@ -89,7 +89,7 @@ void cdmI(const size_t i,        // Subspace index
 // at the current iteration (N, rho)
 template<typename S>
 auto calc_densitymatrix_iterN(const DiagInfo<S> &diag, const DensMatElements<S> &rho,
-                              const size_t N, const Store<S> &store, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+                              const size_t N, const Store<S> &store, const Symmetry<S> *Sym, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   DensMatElements<S> rhoPrev;
   for (const auto &[I, dimsub] : store[N - 1]) { // loop over all subspaces at *previous* iteration
@@ -122,7 +122,7 @@ inline bool already_computed(const std::string &prefix, const Params &P) {
 // calc_densitymatrix() is called prior to starting the NRG procedure for the second time. Here we calculate the
 // shell-N density matrices for all iteration steps.
 template<typename S>
-void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, std::shared_ptr<Symmetry<S>> Sym,
+void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, const Symmetry<S> *Sym,
                         MemTime &mt, const Params &P, const std::string filename = fn_rho) {
   if (P.resume && already_computed(filename, P)) return;
   check_trace_rho(rho, Sym); // Must be 1.
@@ -150,7 +150,7 @@ void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, std::sha
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
 template<typename S>
 DensMatElements<S> init_rho_FDM(const size_t N, const Store<S> &store, const Stats<S> &stats, 
-                                     std::shared_ptr<Symmetry<S>> Sym, const double T) {
+                                const Symmetry<S> *Sym, const double T) {
   DensMatElements<S> rhoFDM;
   for (const auto &[I, ds] : store[N]) {
     rhoFDM[I] = Zero_matrix<S>(ds.max());
@@ -172,7 +172,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
                                   const DiagInfo<S> &diag,
                                   const DensMatElements<S> &rhoFDM, // input
                                   const size_t N, const Store<S> &store, const Stats<S> &stats,
-                                  std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+                                  const Symmetry<S> *Sym, const Params &P) {
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements<S> rhoDD;
   DensMatElements<S> rhoFDMPrev;
@@ -204,7 +204,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
 
 template<typename S>
 void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const Store<S> &store, const Stats<S> &stats,
-                            std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P, const std::string &filename = fn_rhoFDM) {
+                            const Symmetry<S> *Sym, MemTime &mt, const Params &P, const std::string &filename = fn_rhoFDM) { // XXX: MF mult
   if (P.resume && already_computed(filename, P)) return;
   if (P.ZBW) return;
   const auto section_timing = mt.time_it("FDM");

@@ -6,6 +6,8 @@ namespace NRG {
 // Rok Zitko, rok.zitko@ijs.si, June 2006, April 2010
 // This file pertains to the case with no symmetry.
 
+namespace NRG {
+
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
@@ -22,6 +24,8 @@ namespace NRG {
 
 
 
+
+}
 
 
 template<typename SC>

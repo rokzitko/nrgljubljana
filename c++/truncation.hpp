@@ -34,7 +34,7 @@ template <typename S> auto highest_retained_energy(const Step &step, const DiagI
 
 struct truncate_stats {
   size_t nrall, nrallmult, nrkept, nrkeptmult;
-  template <typename S> truncate_stats(const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym) {
+  template <typename S> truncate_stats(const DiagInfo<S> &diag, const Symmetry<S> *Sym) { // XXX : mult
     nrall      = ranges::accumulate(diag, 0, [](int n, const auto &d) {
       const auto &[I, eig] = d;
       return n + eig.getdim();
@@ -59,7 +59,7 @@ struct NotEnough : public std::exception {};
 
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
-template <typename S> void truncate_prepare(const Step &step, DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+template <typename S> void truncate_prepare(const Step &step, DiagInfo<S> &diag, const Symmetry<S> *Sym, const Params &P) { // XXX: mult
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare(step.last() && P.keep_all_states_in_last_step() ?

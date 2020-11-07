@@ -7,6 +7,8 @@ namespace NRG {
 // This file pertains to the case with only fermion number parities
 // (one per channel).
 
+namespace NRG {
+
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
@@ -23,6 +25,8 @@ namespace NRG {
 
 
 
+
+}
 
 
 template<typename SC>

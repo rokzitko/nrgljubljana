@@ -6,6 +6,8 @@ namespace NRG {
 // Rok Zitko, rok.zitko@ijs.si, May 2010
 // This file pertains to (SZ,P) subspaces
 
+namespace NRG {
+
 // m4 macros for nrg-recalc-*.cc files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
@@ -22,6 +24,8 @@ namespace NRG {
 
 
 
+
+}
 
 
 template<typename SC>

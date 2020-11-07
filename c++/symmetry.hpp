@@ -123,12 +123,12 @@ class Symmetry {
    }
    // For some symmetry types with two-channels we distinguish between even and odd parity with respect to the
    // channel-interchange operation.
-   virtual bool islr() { return false; }
+   virtual bool islr() const { return false; }
    // Ditto for 3 channels: C_3 symmetry.
-   virtual bool isc3() { return false; }
+   virtual bool isc3() const { return false; }
    // For some symmetry types, we may distinguish between spin-up and spin-down quantities (in particular spin-up and
    // spin-down spectral functions).
-   virtual bool isfield() { return false; }
+   virtual bool isfield() const { return false; }
    // Multiplicity of the states in the invariant subspace
    [[nodiscard]] virtual size_t mult(const Invar &) const { return 1; };
    auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
@@ -158,7 +158,7 @@ class Symmetry {
                               Matrix &h, const SubspaceDimensions &qq) const;
 
    virtual void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In,
-                            const Opch<S> &opch, const Coef<S> &coef) = 0;
+                            const Opch<S> &opch, const Coef<S> &coef) const = 0;
 
    // Called from recalc_dynamicsusceptibility().  This is the factor due
    // to the spin degeneracy when calculating the trace of Sz.Sz.
@@ -175,23 +175,23 @@ class Symmetry {
 
    virtual void calculate_TD(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, const double factor) = 0;
 
-   virtual Opch<S> recalc_irreduc(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) { my_assert_not_reached(); }
+   virtual Opch<S> recalc_irreduc(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) const { my_assert_not_reached(); }
    virtual OpchChannel<S> recalc_irreduc_substeps(const Step &step, const DiagInfo<S> &diag,
-                                                       const SubspaceStructure &substruct, int M) { my_assert_not_reached(); }
+                                                       const SubspaceStructure &substruct, int M) const { my_assert_not_reached(); }
    virtual MatrixElements<S> recalc_doublet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                 const MatrixElements<S> &cold) { my_assert_not_reached(); }
+                                                 const MatrixElements<S> &cold) const { my_assert_not_reached(); }
    virtual MatrixElements<S> recalc_triplet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                 const MatrixElements<S> &cold) { my_assert_not_reached(); }
+                                                 const MatrixElements<S> &cold) const { my_assert_not_reached(); }
    virtual MatrixElements<S> recalc_orb_triplet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                     const MatrixElements<S> &cold) { my_assert_not_reached(); }
+                                                     const MatrixElements<S> &cold) const { my_assert_not_reached(); }
    virtual MatrixElements<S> recalc_quadruplet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                    const MatrixElements<S> &cold) { my_assert_not_reached(); }
+                                                    const MatrixElements<S> &cold) const { my_assert_not_reached(); }
    virtual void recalc_global(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, std::string name,
-                              MatrixElements<S> &cnew) { my_assert_not_reached(); }
+                              MatrixElements<S> &cnew) const { my_assert_not_reached(); }
 
    // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
    //  parity -1). Generic implementation, valid for all symmetry types.
-   MatrixElements<S> recalc_singlet(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &nold, const int parity) {
+   MatrixElements<S> recalc_singlet(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &nold, const int parity) const {
      MatrixElements<S> nnew;
      my_assert(islr() ? parity == 1 || parity == -1 : parity == 1);
      for (const auto &I : diag.subspaces()) {
@@ -208,7 +208,7 @@ class Symmetry {
      return nnew;
    }
 
-   virtual void show_coefficients(const Step &step, const Coef<S> &coef) {
+   virtual void show_coefficients(const Step &step, const Coef<S> &coef) const {
      std::cout << std::setprecision(std::numeric_limits<double>::max_digits10);
      if (!P.substeps) {
        for (size_t i = 0; i < P.coefchannels; i++) {
@@ -227,11 +227,11 @@ class Symmetry {
      }
    }
 
-   virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) { return true; } // used in recalc_f()
+   virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) const { return true; } // used in recalc_f()
 
    template<typename T>
      auto recalc_f(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Invar &I1,
-                   const Invar &Ip, const T &table);
+                   const Invar &Ip, const T &table) const;
 
    template<typename T>
      auto recalc_general(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &cold,
@@ -250,61 +250,61 @@ class Symmetry {
 };
 
 // Add DECL declaration in each symmetry class
-#define DECL                                                                                                 \
-  void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In,      \
-             const Opch<SC> &opch, const Coef<SC> &coef) override;                                           \
-  Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) override
+#define DECL                                                                                                      \
+  void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, \
+             const Opch<SC> &opch, const Coef<SC> &coef) const override;                                          \
+  Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const override
 
 // Optional declaration
-#define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, int M) override
+#define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, int M) const override
 #define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
-                                                      const MatrixElements<SC> &cold) override
+                                                      const MatrixElements<SC> &cold) const override
 #define HAS_TRIPLET MatrixElements<SC> recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
-                                                      const MatrixElements<SC> &cold) override
+                                                      const MatrixElements<SC> &cold) const override
 #define HAS_ORB_TRIPLET MatrixElements<SC> recalc_orb_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
-                                                              const MatrixElements<SC> &cold) override
+                                                              const MatrixElements<SC> &cold) const override
 #define HAS_QUADRUPLET MatrixElements<SC> recalc_quadruplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
-                                                            const MatrixElements<SC> &cold) override
+                                                            const MatrixElements<SC> &cold) const override
 #define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
-                                      std::string name, MatrixElements<SC> &cnew) override
+                                      std::string name, MatrixElements<SC> &cnew) const override
 
 template<typename S>
 class SymField : public Symmetry<S> {
  public:
    template<typename ... Args> explicit SymField(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
-   bool isfield() override { return true; }
+   bool isfield() const override { return true; }
 };
 
 template<typename S>
 class SymLR : public Symmetry<S> {
  public:
    template<typename ... Args> explicit SymLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
-   bool islr() override { return true; }
+   bool islr() const override { return true; }
 };
 
 template<typename S>
 class SymC3 : public Symmetry<S> {
  public:
    template<typename ... Args> explicit SymC3(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
-   bool isc3() override { return true; }
+   bool isc3() const override { return true; }
 };
 
 template<typename S>
 class SymFieldLR : public Symmetry<S> {
   public:
    template<typename ... Args> explicit SymFieldLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
-   bool isfield() override { return true; }
-   bool islr() override { return true; }
+   bool isfield() const override { return true; }
+   bool islr() const override { return true; }
 };
 
 // Helper functions
-inline void check_abs_diff(const Invar &Ip, const Invar &I1, const std::string &what, int diff) {
+inline void check_abs_diff(const Invar &Ip, const Invar &I1, const std::string &what, const int diff) {
   const auto a = Ip.get(what);
   const auto b = I1.get(what);
   my_assert(abs(b - a) == diff);
 }
 
-inline void check_diff(const Invar &Ip, const Invar &I1, const std::string &what, int diff) {
+inline void check_diff(const Invar &Ip, const Invar &I1, const std::string &what, const int diff) {
   const auto a = Ip.get(what);
   const auto b = I1.get(what);
   my_assert(b - a == diff);

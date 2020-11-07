@@ -116,7 +116,7 @@ class MPI_diag {
    }
    template<typename S>
    DiagInfo<S> diagonalisations_MPI(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
-                                    const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+                                    const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
        DiagInfo<S> diagnew;
        send_params(DP);                                         // Synchronise parameters
        std::list<Invar> tasks_todo(tasks.begin(), tasks.end());

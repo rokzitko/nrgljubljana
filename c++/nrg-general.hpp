@@ -141,9 +141,9 @@ public:
     }
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
     if (step.nrg() && P.calc0 && !P.ZBW)
-      docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym, mt, P);
-    auto diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, store, oprecalc, Sym, mt, P)
-                      : nrg_loop(step, iterinfo, coef, stats, diag0, output, store, oprecalc, Sym, mpi, mt, P);
+      docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym.get(), mt, P);
+    auto diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, store, oprecalc, Sym.get(), mt, P)
+                      : nrg_loop(step, iterinfo, coef, stats, diag0, output, store, oprecalc, Sym.get(), mpi, mt, P);
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
     if (step.nrg() && P.dumpsubspaces) store.dump_subspaces();
@@ -161,18 +161,18 @@ public:
       store.dump_all_absolute_energies();
     if (P.dm) {
       if (P.need_rho()) {
-        auto rho = init_rho(step, diag, Sym);
+        auto rho = init_rho(step, diag, Sym.get());
         rho.save(step.lastndx(), P, fn_rho);
-        if (!P.ZBW) calc_densitymatrix(rho, store, Sym, mt, P);
+        if (!P.ZBW) calc_densitymatrix(rho, store, Sym.get(), mt, P);
       }
       if (P.need_rhoFDM()) {
-        calc_ZnD(store, stats, Sym, P.T);
+        calc_ZnD(store, stats, Sym.get(), P.T);
         if (P.logletter('w'))
           report_ZnD(stats, P);
-        fdm_thermodynamics(store, stats, Sym, P.T);
-        auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym, P.T);
+        fdm_thermodynamics(store, stats, Sym.get(), P.T);
+        auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym.get(), P.T);
         rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-        if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym, mt, P);
+        if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
       auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data<S>(P, stats);

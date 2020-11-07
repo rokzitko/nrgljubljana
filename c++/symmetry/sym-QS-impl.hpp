@@ -91,7 +91,7 @@ class SymmetryQS : public Symmetry<SC> {
    HAS_TRIPLET;
    HAS_GLOBAL;
    HAS_SUBSTEPS;
-   void show_coefficients(const Step &, const Coef<SC> &) override;
+   void show_coefficients(const Step &, const Coef<SC> &) const override;
 };
 
 // *** Helper macros for make_matrix() members in matrix.cc
@@ -112,7 +112,7 @@ class SymmetryQS : public Symmetry<SC> {
 
 template<typename SC>
 void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, 
-                                     const Opch<SC> &opch, const Coef<SC> &coef) {
+                                     const Opch<SC> &opch, const Coef<SC> &coef) const {
   auto ss = I.get("SS");
 
   if (!P.substeps) {
@@ -157,7 +157,7 @@ void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDime
 }
 
 template<typename SC>
-void SymmetryQS<SC>::show_coefficients(const Step &step, const Coef<SC> &coef) {
+void SymmetryQS<SC>::show_coefficients(const Step &step, const Coef<SC> &coef) const {
   Symmetry<SC>::show_coefficients(step, coef);
   if (P.rungs)
     for (auto i = 0; i < P.channels; i++)

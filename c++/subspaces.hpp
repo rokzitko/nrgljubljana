@@ -20,7 +20,7 @@ class SubspaceDimensions {
  public:
    SubspaceDimensions() = default;
    template<typename S>
-     SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym);
+     SubspaceDimensions(const Invar &, const InvarVec &, const DiagInfo<S> &, const Symmetry<S> *);
    [[nodiscard]] auto combs() const { return dims.size(); } // number of subspaces
    [[nodiscard]] auto rmax(const size_t i) const { // subspace dimension
      my_assert(i < combs());
@@ -76,7 +76,7 @@ class SubspaceDimensions {
 class SubspaceStructure : public std::map<Invar, SubspaceDimensions> {
  public:
    SubspaceStructure() = default;
-   template<typename S> SubspaceStructure(const DiagInfo<S> &, std::shared_ptr<Symmetry<S>>);
+   template<typename S> SubspaceStructure(const DiagInfo<S> &, const Symmetry<S> *);
    // List of invariant subspaces in which diagonalisations need to be performed
    [[nodiscard]] std::vector<Invar> task_list() const {
      std::vector<std::pair<size_t, Invar>> tasks_with_sizes;

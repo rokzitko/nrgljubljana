@@ -1,65 +1,61 @@
-namespace NRG {
-
 #!/bin/sh
-m4 nrg-recalc-QST.h.m4 >nrg-recalc-QST.h
+m4 nrg-recalc-QST.hpp.m4 >nrg-recalc-QST.hpp
 
-m4 nrg-recalc-ISO.h.m4 >nrg-recalc-ISO.h
+m4 nrg-recalc-ISO.hpp.m4 >nrg-recalc-ISO.hpp
 
-m4 nrg-recalc-ISO2.h.m4 >nrg-recalc-ISO2.h
+m4 nrg-recalc-ISO2.hpp.m4 >nrg-recalc-ISO2.hpp
 
-m4 nrg-recalc-ISO2LR.h.m4 >nrg-recalc-ISO2LR.h
+m4 nrg-recalc-ISO2LR.hpp.m4 >nrg-recalc-ISO2LR.hpp
 
-m4 nrg-recalc-ISOLR.h.m4 >nrg-recalc-ISOLR.h
+m4 nrg-recalc-ISOLR.hpp.m4 >nrg-recalc-ISOLR.hpp
 
-m4 nrg-recalc-ISOSZ.h.m4 >nrg-recalc-ISOSZ.h
+m4 nrg-recalc-ISOSZ.hpp.m4 >nrg-recalc-ISOSZ.hpp
 
-m4 nrg-recalc-ISOSZLR.h.m4 >nrg-recalc-ISOSZLR.h
+m4 nrg-recalc-ISOSZLR.hpp.m4 >nrg-recalc-ISOSZLR.hpp
 
-m4 nrg-recalc-NONE.h.m4 >nrg-recalc-NONE.h
+m4 nrg-recalc-NONE.hpp.m4 >nrg-recalc-NONE.hpp
 
-m4 nrg-recalc-QS.h.m4 >nrg-recalc-QS.h
+m4 nrg-recalc-QS.hpp.m4 >nrg-recalc-QS.hpp
 
-m4 nrg-recalc-QSLR.h.m4 >nrg-recalc-QSLR.h
+m4 nrg-recalc-QSLR.hpp.m4 >nrg-recalc-QSLR.hpp
 
-m4 nrg-recalc-QSC3.h.m4 >nrg-recalc-QSC3.h
+m4 nrg-recalc-QSC3.hpp.m4 >nrg-recalc-QSC3.hpp
 
-m4 nrg-recalc-QSZ.h.m4 >nrg-recalc-QSZ.h
+m4 nrg-recalc-QSZ.hpp.m4 >nrg-recalc-QSZ.hpp
 
-m4 nrg-recalc-QSZLR.h.m4 >nrg-recalc-QSZLR.h
+m4 nrg-recalc-QSZLR.hpp.m4 >nrg-recalc-QSZLR.hpp
 
-m4 nrg-recalc-SL.h.m4 >nrg-recalc-SL.h
+m4 nrg-recalc-SL.hpp.m4 >nrg-recalc-SL.hpp
 
-m4 nrg-recalc-SL3.h.m4 >nrg-recalc-SL3.h
+m4 nrg-recalc-SL3.hpp.m4 >nrg-recalc-SL3.hpp
 
-m4 nrg-recalc-SPSU2.h.m4 >nrg-recalc-SPSU2.h
+m4 nrg-recalc-SPSU2.hpp.m4 >nrg-recalc-SPSU2.hpp
 
-m4 nrg-recalc-SPU1.h.m4 >nrg-recalc-SPU1.h
+m4 nrg-recalc-SPU1.hpp.m4 >nrg-recalc-SPU1.hpp
 
-m4 nrg-recalc-SPU1LR.h.m4 >nrg-recalc-SPU1LR.h
+m4 nrg-recalc-SPU1LR.hpp.m4 >nrg-recalc-SPU1LR.hpp
 
-m4 nrg-recalc-SU2.h.m4 >nrg-recalc-SU2.h
+m4 nrg-recalc-SU2.hpp.m4 >nrg-recalc-SU2.hpp
 
-m4 nrg-recalc-DBLSU2.h.m4 >nrg-recalc-DBLSU2.h
+m4 nrg-recalc-DBLSU2.hpp.m4 >nrg-recalc-DBLSU2.hpp
 
-m4 nrg-recalc-DBLISOSZ.h.m4 >nrg-recalc-DBLISOSZ.h
+m4 nrg-recalc-DBLISOSZ.hpp.m4 >nrg-recalc-DBLISOSZ.hpp
 
-m4 nrg-recalc-U1.h.m4 >nrg-recalc-U1.h
+m4 nrg-recalc-U1.hpp.m4 >nrg-recalc-U1.hpp
 
-m4 nrg-recalc-SPSU2LR.h.m4 >nrg-recalc-SPSU2LR.h
+m4 nrg-recalc-SPSU2LR.hpp.m4 >nrg-recalc-SPSU2LR.hpp
 
-m4 nrg-recalc-SPSU2T.h.m4 >nrg-recalc-SPSU2T.h
+m4 nrg-recalc-SPSU2T.hpp.m4 >nrg-recalc-SPSU2T.hpp
 
-m4 nrg-recalc-SPSU2C3.h.m4 >nrg-recalc-SPSU2C3.h
+m4 nrg-recalc-SPSU2C3.hpp.m4 >nrg-recalc-SPSU2C3.hpp
 
-m4 nrg-recalc-QSTZ.h.m4 >nrg-recalc-QSTZ.h
+m4 nrg-recalc-QSTZ.hpp.m4 >nrg-recalc-QSTZ.hpp
 
-m4 nrg-recalc-QSZTZ.h.m4 >nrg-recalc-QSZTZ.h
+m4 nrg-recalc-QSZTZ.hpp.m4 >nrg-recalc-QSZTZ.hpp
 
-m4 nrg-recalc-QJ.h.m4 >nrg-recalc-QJ.h
+m4 nrg-recalc-QJ.hpp.m4 >nrg-recalc-QJ.hpp
 
-m4 nrg-recalc-P.h.m4 >nrg-recalc-P.h
+m4 nrg-recalc-P.hpp.m4 >nrg-recalc-P.hpp
 
-m4 nrg-recalc-PP.h.m4 >nrg-recalc-PP.h
+m4 nrg-recalc-PP.hpp.m4 >nrg-recalc-PP.hpp
 
-
-}

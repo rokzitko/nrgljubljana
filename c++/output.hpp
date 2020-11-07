@@ -73,7 +73,7 @@ class Annotated {
  public:
    explicit Annotated(const Params &P) : P(P) {}
    template<typename S> void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, 
-                                  std::shared_ptr<Symmetry<S>> Sym, const std::string &filename = "annotated.dat") {
+                                  const Symmetry<S> *Sym, const std::string &filename = "annotated.dat") { // XXX: mult
      if (!P.dumpannotated) return;
      if (!F.is_open()) { // open output file
        F.open(filename);

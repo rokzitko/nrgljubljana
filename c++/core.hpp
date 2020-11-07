@@ -40,7 +40,7 @@ namespace NRG {
 // Determine the ranges of index r
 template<typename S>
 SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
-                                       std::shared_ptr<Symmetry<S>> Sym) : ancestors(ancestors) {
+                                       const Symmetry<S> *Sym) : ancestors(ancestors) {
   for (const auto &[i, anc] : ancestors | ranges::views::enumerate)
     dims.push_back(Sym->triangle_inequality(I, anc, Sym->QN_subspace(i)) ? diagprev.size_subspace(anc) : 0);
   // The triangle inequality test here is *required*. There are cases where a candidate subspace exists (as generated
@@ -50,18 +50,18 @@ SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors
 
 // Determine the structure of matrices in the new NRG shell
 template<typename S>
-SubspaceStructure::SubspaceStructure(const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym) {
+SubspaceStructure::SubspaceStructure(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
   for (const auto &I : new_subspaces(diagprev, Sym))
     (*this)[I] = SubspaceDimensions{I, Sym->ancestors(I), diagprev, Sym};
 }
 
 // Subspaces for the new iteration
 template<typename S>
-auto new_subspaces(const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym) {
+auto new_subspaces(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
   std::set<Invar> subspaces;
   for (const auto &I : diagprev.subspaces()) {
     const auto all = Sym->new_subspaces(I);
-    const auto non_empty = all | ranges::views::filter([&Sym](const auto &In) { return Sym->Invar_allowed(In); }) | ranges::to<std::vector>();
+    const auto non_empty = all | ranges::views::filter([Sym](const auto &In) { return Sym->Invar_allowed(In); }) | ranges::to<std::vector>();
     std::copy(non_empty.begin(), non_empty.end(), std::inserter(subspaces, subspaces.end()));
   }
   return subspaces;
@@ -69,8 +69,8 @@ auto new_subspaces(const DiagInfo<S> &diagprev, std::shared_ptr<Symmetry<S>> Sym
 
 template<typename S>
 typename traits<S>::Matrix hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
-                                       const DiagInfo<S> &diagprev, const Output<S> &output, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
-  const auto anc = Sym->ancestors(I);
+                                       const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
+  const auto anc = Sym->ancestors(I); // XXX: move this to class Symmetry (parent)
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
   auto h = Zero_matrix<S>(rm.total());
   for (const auto i : Sym->combs()) {
@@ -87,7 +87,7 @@ typename traits<S>::Matrix hamiltonian(const Step &step, const Invar &I, const O
 
 template<typename S>
 auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
-                             const std::vector<Invar> &tasks, const DiagParams &DP, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+                             const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
   DiagInfo<S> diagnew;
   const auto nr = tasks.size();
   size_t itask = 0;
@@ -111,7 +111,7 @@ auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S
 template<typename S>
 auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
                       const Output<S> &output, const std::vector<Invar> &tasks, const double diagratio, 
-                      std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+                      const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   const auto section_timing = mt.time_it("diag");
   return P.diag_mode == "MPI" ? mpi.diagonalisations_MPI<S>(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P) 
                               : diagonalisations_OpenMP(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P);
@@ -119,7 +119,7 @@ auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef
 
 template<typename S>
 auto do_diag(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, const Output<S> &output,
-             SubspaceStructure &substruct, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+             SubspaceStructure &substruct, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   auto tasks = substruct.task_list();
@@ -169,7 +169,7 @@ void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stat
 
 // Operator sumrules
 template<typename S, typename F> 
-auto norm(const MatrixElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, F factor_fnc, const int SPIN) {
+auto norm(const MatrixElements<S> &m, const Symmetry<S> *Sym, F factor_fnc, const int SPIN) {
   typename traits<S>::t_weight sum{};
   for (const auto &[II, mat] : m) {
     const auto & [I1, Ip] = II;
@@ -180,7 +180,7 @@ auto norm(const MatrixElements<S> &m, std::shared_ptr<Symmetry<S>> Sym, F factor
 }
 
 template<typename S>
-void operator_sumrules(const IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym) {
+void operator_sumrules(const IterInfo<S> &a, const Symmetry<S> *Sym) {
   // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
   // irrelevant (0).
   const int SPIN = Sym->isfield() ? 1 : 0;
@@ -193,7 +193,7 @@ void operator_sumrules(const IterInfo<S> &a, std::shared_ptr<Symmetry<S>> Sym) {
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<typename S>
 void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
-                SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
+                SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
   stats.rel_Egs[step.ndx()] = stats.Egs;
@@ -237,7 +237,7 @@ void after_diag(const Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, DiagIn
 // Perform one iteration step
 template<typename S>
 auto iterate(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+             Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   if (output.h5raw)
     substruct.h5save(output.h5raw.value(), std::to_string(step.ndx()+1) + "/structure");
@@ -252,7 +252,7 @@ auto iterate(const Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats
 // Perform calculations with quantities from 'data' file
 template<typename S>
 void docalc0(Step &step, const IterInfo<S> &iterinfo, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
-             Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
+             Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << std::endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
@@ -266,7 +266,7 @@ void docalc0(Step &step, const IterInfo<S> &iterinfo, const DiagInfo<S> &diag0, 
 // It replaces do_diag() and calls after_diag() as the last step.
 template<typename S>
 auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
-             Store<S> &store, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
+             Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
@@ -289,7 +289,7 @@ auto nrg_ZBW(Step &step, IterInfo<S> &iterinfo, Stats<S> &stats, const DiagInfo<
 
 template<typename S>
 auto nrg_loop(Step &step, IterInfo<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
-              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, std::shared_ptr<Symmetry<S>> Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, iterinfo, coef, stats, diag, output, store, oprecalc, Sym, mpi, mt, P);

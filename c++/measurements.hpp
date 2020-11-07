@@ -34,8 +34,8 @@ auto sum_of_exp(T values, const double factor)
 // Measure thermodynamic expectation values of singlet operators
 template<typename S>
 void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a,
-                     Output<S> &output, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
-  auto mult = [&Sym](const Invar &I){ return Sym->mult(I); }; // XXX: Sym->multfnc()
+                     Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
+  auto mult = [Sym](const Invar &I){ return Sym->mult(I); }; // XXX: Sym->multfnc()
   const auto factor = step.TD_factor();
   const auto Z = ranges::accumulate(diag, 0.0, [mult, factor](auto total, const auto &d) { const auto &[I, eig] = d;
                                     return total + mult(I) * sum_of_exp(eig.value_zero, factor); });
@@ -56,7 +56,7 @@ T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const siz
 
 template<typename S>
 CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
-                                  const Store<S> &store, std::shared_ptr<Symmetry<S>> Sym) {
+                                  const Store<S> &store, const Symmetry<S> *Sym) { // XXX :multfnc
   typename traits<S>::t_matel tr{};
   for (const auto &[I, rhoI] : rhoFDM)
     tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), store[ndx].at(I).kept()); // over kept states ONLY
@@ -66,7 +66,7 @@ CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, 
 template<typename S>
 void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const IterInfo<S> &a,
                          Output<S> &output,  const DensMatElements<S> &rhoFDM,
-                         const Store<S> &store, std::shared_ptr<Symmetry<S>> Sym, const Params &P) {
+                         const Store<S> &store, const Symmetry<S> *Sym, const Params &P) { // XXX: multnfc
   for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, Sym);
   for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, Sym);
   output.customfdm->field_values(P.T);
@@ -78,7 +78,7 @@ void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &d
 // that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for G(T)
 // calculations, stats.Zchit for chi(T) calculations.
 template<typename S>
-auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym, const double factor = 1.0) {
+auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym, const double factor = 1.0) { // XXX : mult
   double ZN{};
   for (const auto &[I, eig]: diag) 
     for (const auto &i : eig.kept()) // sum over all kept states
@@ -90,7 +90,7 @@ auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, std::shared_pt
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
 // energies. calc_ZnD() must be called before the second NRG run.
 template<typename S>
-void calc_ZnD(const Store<S> &store, Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, const double T) {
+void calc_ZnD(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
   for (const auto N : store.Nall()) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
@@ -148,7 +148,7 @@ void report_ZnD(Stats<S> &stats, const Params &P) {
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
 template<typename S>
-void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, std::shared_ptr<Symmetry<S>> Sym, const double T)
+void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T)
 {
   stats.td_fdm.T = T;
   stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
@@ -196,7 +196,7 @@ void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, std::shared_ptr<
 // member functions defined in symmetry.h
 template<typename S>
 void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, Output<S> &output, 
-                  std::shared_ptr<Symmetry<S>> Sym, const double additional_factor = 1.0) {
+                  const Symmetry<S> *Sym, const double additional_factor = 1.0) {
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
   const auto rescale_factor = step.TD_factor() * additional_factor;
@@ -211,14 +211,15 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, Ou
   stats.td.C  = E2/Z - pow(E/Z,2); // C/k_B=beta^2(<H^2>-<H>^2)
   stats.td.F  = -log(Z);           // F/(k_B T)=-ln(Z)
   stats.td.S  = E/Z+log(Z);        // S/k_B=beta<H>+ln(Z)
-  Sym->calculate_TD(step, diag, stats, rescale_factor);  // symmetry-specific calculation routine
+  auto Sym2 = const_cast<Symmetry<S>*>(Sym); // XXX: FIXME!!!
+  Sym2->calculate_TD(step, diag, stats, rescale_factor);  // symmetry-specific calculation routine
   stats.td.save_values();
 }
 
 template<typename S>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                  const DiagInfo<S> &diag, const IterInfo<S> &iterinfo, const Store<S> &store,
-                                 std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) {
+                                 const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
   stats.Zft = grand_canonical_Z(step, diag, Sym);
@@ -235,7 +236,7 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
     if (P.need_rhoFDM())
       rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.removefiles);
   }
-  oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, Sym, mt, P);
+  oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, P);
   if (step.nrg()) {
     measure_singlet(step, stats, diag, iterinfo, output, Sym, P);
     iterinfo.dump_diagonal(P.dumpdiagonal);
@@ -246,7 +247,7 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
 template<typename S>
-void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag, std::shared_ptr<Symmetry<S>> Sym,
+void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym,
                                 Stats<S> &stats, Output<S> &output) {
   output.dump_all_energies(diag, step.ndx());
   calculate_TD(step, diag, stats, output, Sym);

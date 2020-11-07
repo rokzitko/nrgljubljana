@@ -49,10 +49,10 @@ inline void h5save_blocks(h5::fd_t &fd, const std::string &name, const DiagInfo<
 // Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<typename S> template<typename T>
 auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
-                                const SubspaceStructure &substruct,
-                                const Invar &I1,
-                                const Invar &Ip,
-                                const T &table)
+                           const SubspaceStructure &substruct,
+                           const Invar &I1,
+                           const Invar &Ip,
+                           const T &table) const
 {
   nrglog('f', "recalc_f() ** f: I1=(" << I1 << ") Ip=(" << Ip << ")");
   if (!recalc_f_coupled(I1, Ip, this->Invar_f)) {
@@ -90,12 +90,12 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
 // one should try to hand optimize.
 template<typename S> template<typename T>
 auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
-                                      const SubspaceStructure &substruct,        // information about the matrix structure
-                                      const MatrixElements<S> &cold,
-                                      const Invar &I1,             // target subspace (bra)
-                                      const Invar &Ip,             // target subspace (ket)
-                                      const T &table,
-                                      const Invar &Iop) const      // quantum numbers of the operator
+                                 const SubspaceStructure &substruct,        // information about the matrix structure
+                                 const MatrixElements<S> &cold,
+                                 const Invar &I1,             // target subspace (bra)
+                                 const Invar &Ip,             // target subspace (ket)
+                                 const T &table,
+                                 const Invar &Iop) const      // quantum numbers of the operator
 {
   if (P.logletter('r')) std::cout << "recalc_general: " << nrgdump3(I1, Ip, Iop) << std::endl;
   const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
@@ -145,12 +145,12 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
 template<typename S>
 void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
-                                      const SubspaceStructure &substruct,
-                                      const Invar &I,
-                                      Matrix &m, // XXX: return this one
-                                      const size_t i1,
-                                      const size_t ip,
-                                      const t_coef value) const
+                                 const SubspaceStructure &substruct,
+                                 const Invar &I,
+                                 Matrix &m, // XXX: return this one
+                                 const size_t i1,
+                                 const size_t ip,
+                                 const t_coef value) const
 {
   my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
   const Eigen<S> &diagI = diag.at(I);
