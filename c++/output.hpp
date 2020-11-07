@@ -72,8 +72,9 @@ class Annotated {
    const Params &P;
  public:
    explicit Annotated(const Params &P) : P(P) {}
-   template<typename S> void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, 
-                                  const Symmetry<S> *Sym, const std::string &filename = "annotated.dat") { // XXX: mult
+   template<typename S, typename MF> 
+   void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, 
+             MF mult, const std::string &filename = "annotated.dat") {
      if (!P.dumpannotated) return;
      if (!F.is_open()) { // open output file
        F.open(filename);
@@ -98,7 +99,7 @@ class Annotated {
          while (i < len && my_fcmp(seznam[i].first, e0, P.grouptol) == 0) {
            const auto [e, I] = seznam[i];
            QNstrings.push_back(to_string(I));
-           total_degeneracy += Sym->mult(I);
+           total_degeneracy += mult(I);
            i++;
          }
          ranges::sort(QNstrings);
@@ -145,7 +146,7 @@ struct Output {
       }
     }
   // Dump all energies in diag to a file
-  void dump_all_energies(const DiagInfo<S> &diag, const int N) {
+  void dump_all_energies(const int N, const DiagInfo<S> &diag) {
     if (!Fenergies) return;
     Fenergies << std::endl << "===== Iteration number: " << N << std::endl;
     diag.dump_value_zero(Fenergies);

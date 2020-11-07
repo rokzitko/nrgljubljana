@@ -70,7 +70,7 @@ auto new_subspaces(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
 template<typename S>
 typename traits<S>::Matrix hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
                                        const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
-  const auto anc = Sym->ancestors(I); // XXX: move this to class Symmetry (parent)
+  const auto anc = Sym->ancestors(I);
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
   auto h = Zero_matrix<S>(rm.total());
   for (const auto i : Sym->combs()) {
@@ -141,7 +141,7 @@ auto do_diag(const Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stat
       if (step.nrg()) // should be done only once!
         diag.subtract_Egs(stats.Egs);
       Clusters<S> clusters(diag, P.fixeps);
-      truncate_prepare(step, diag, Sym, P);
+      truncate_prepare(step, diag, Sym->multfnc(), P);
       break;
     }
     catch (NotEnough &e) {
@@ -214,7 +214,7 @@ void after_diag(const Step &step, Operators<S> &iterinfo, Stats<S> &stats, DiagI
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
     oprecalc.recalculate_operators(iterinfo, step, diag, substruct);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym, mt, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym->multfnc(), mt, P);
   }
   if (!P.ZBW)
     diag.truncate_perform();                        // Actual truncation occurs at this point
@@ -225,10 +225,10 @@ void after_diag(const Step &step, Operators<S> &iterinfo, Stats<S> &stats, DiagI
   }
   if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
     oprecalc.recalculate_operators(iterinfo, step, diag, substruct);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym, mt, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym->multfnc(), mt, P);
   }
   if (P.do_recalc_none())  // ... or this
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym, mt, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym->multfnc(), mt, P);
   if (P.checksumrules) operator_sumrules(iterinfo, Sym);
   if (output.h5raw)
     iterinfo.h5save(output.h5raw.value(), std::to_string(step.ndx()+1));
@@ -258,7 +258,7 @@ void docalc0(Step &step, const Operators<S> &iterinfo, const DiagInfo<S> &diag0,
   std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output);
   Store<S> empty_st(0, 0);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_st, Sym, mt, P);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_st, Sym->multfnc(), mt, P);
   if (P.checksumrules) operator_sumrules(iterinfo, Sym);
 }
 
@@ -280,7 +280,7 @@ auto nrg_ZBW(Step &step, Operators<S> &iterinfo, Stats<S> &stats, const DiagInfo
   stats.Egs = diag.find_groundstate();
   if (step.nrg())      
     diag.subtract_Egs(stats.Egs);
-  truncate_prepare(step, diag, Sym, P); // determine # of kept and discarded states
+  truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   SubspaceStructure substruct{};
   after_diag(step, iterinfo, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);

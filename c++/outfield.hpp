@@ -22,9 +22,6 @@ class Outfield {
    template<typename T> void set_value(const T x) {
      value = fmt::format("{x:>{width}.{prec}}", "x"_a = x, "prec"_a = prec, "width"_a = width);
    }
-  // Outfield& operator=(const Outfield &o) = default;
-  // Outfield& operator=(Outfield &&o) = default;
-  // template<typename T> Outfield& operator=(const T x) { set_value(x); return *this; } // required for elements in std::vector
    void put_header(std::ostream &F) const { F << std::setw(width) << desc << " "; }
    void put_value(std::ostream &F) const  { F << std::setw(width) << value << " "; }
    [[nodiscard]] auto get_desc() const { return desc; }

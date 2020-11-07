@@ -31,9 +31,9 @@ namespace atlas = boost::numeric::bindings::atlas;
 namespace NRG {
 
 // Check if the trace of the density matrix equals 'ref_value'.
-template<typename S>
-void check_trace_rho(const DensMatElements<S> &m, const Symmetry<S> *Sym, const double ref_value = 1.0) { // XXX: MF mult
-  if (!num_equal(m.trace(Sym->multfnc()), ref_value))
+template<typename S, typename MF>
+void check_trace_rho(const DensMatElements<S> &m, MF mult, const double ref_value = 1.0) {
+  if (!num_equal(m.trace(mult), ref_value))
     throw std::runtime_error("check_trace_rho() failed");
 }
 
@@ -44,12 +44,12 @@ void check_trace_rho(const DensMatElements<S> &m, const Symmetry<S> *Sym, const 
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-template<typename S>
-auto init_rho(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym) { // XXX: MF mult
+template<typename S, typename MF>
+auto init_rho(const Step &step, const DiagInfo<S> &diag, MF mult) {
   DensMatElements<S> rho;
   for (const auto &[I, eig]: diag)
-    rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step, diag, Sym);
-  check_trace_rho(rho, Sym);
+    rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step, diag, mult);
+  check_trace_rho(rho, mult);
   return rho;
 }
 
@@ -125,14 +125,14 @@ template<typename S>
 void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, const Symmetry<S> *Sym,
                         MemTime &mt, const Params &P, const std::string filename = fn_rho) {
   if (P.resume && already_computed(filename, P)) return;
-  check_trace_rho(rho, Sym); // Must be 1.
+  check_trace_rho(rho, Sym->multfnc()); // Must be 1.
   if (P.ZBW) return;
   const auto section_timing = mt.time_it("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[DM] " << N << std::endl;
     DiagInfo<S> diag_loaded(N, P);
     auto rhoPrev = calc_densitymatrix_iterN(diag_loaded, rho, N, store, Sym, P);
-    check_trace_rho(rhoPrev, Sym); // Make sure rho is normalized to 1.
+    check_trace_rho(rhoPrev, Sym->multfnc()); // Make sure rho is normalized to 1.
     rhoPrev.save(N-1, P, filename);
     rho.swap(rhoPrev);
   }
@@ -148,9 +148,9 @@ void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, const Sy
 // A. Weichselbaum, J. von Delft, Phys. Rev. Lett. 99, 076402 (2007)
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
-template<typename S>
+template<typename S, typename MF>
 DensMatElements<S> init_rho_FDM(const size_t N, const Store<S> &store, const Stats<S> &stats, 
-                                const Symmetry<S> *Sym, const double T) {
+                                MF mult, const double T) {
   DensMatElements<S> rhoFDM;
   for (const auto &[I, ds] : store[N]) {
     rhoFDM[I] = Zero_matrix<S>(ds.max());
@@ -160,7 +160,7 @@ DensMatElements<S> init_rho_FDM(const size_t N, const Store<S> &store, const Sta
   }
   if (stats.wn[N] != 0.0) { // note: wn \propto ZnDNd, so this is the same condition as above
     // Trace should be equal to the total weight of the shell-N contribution to the FDM.
-    const auto tr = rhoFDM.trace(Sym->multfnc());
+    const auto tr = rhoFDM.trace(mult);
     const auto diff = (tr - stats.wn[N]) / stats.wn[N]; // relative error
     if (!num_equal(diff, 0.0, 1e-8)) my_assert(stats.wn[N] < 1e-12); // OK if small enough overall
   }
@@ -177,7 +177,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   DensMatElements<S> rhoDD;
   DensMatElements<S> rhoFDMPrev;
   if (!step.last(N))
-    rhoDD = init_rho_FDM(N, store, stats, Sym, P.T);
+    rhoDD = init_rho_FDM(N, store, stats, Sym->multfnc(), P.T);
   for (const auto &[I, ds] : store[N - 1]) { // loop over all subspaces at *previous* iteration
     const auto subs = Sym->new_subspaces(I);
     const auto dim  = ds.kept();
@@ -204,7 +204,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
 
 template<typename S>
 void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const Store<S> &store, const Stats<S> &stats,
-                            const Symmetry<S> *Sym, MemTime &mt, const Params &P, const std::string &filename = fn_rhoFDM) { // XXX: MF mult
+                            const Symmetry<S> *Sym, MemTime &mt, const Params &P, const std::string &filename = fn_rhoFDM) {
   if (P.resume && already_computed(filename, P)) return;
   if (P.ZBW) return;
   const auto section_timing = mt.time_it("FDM");

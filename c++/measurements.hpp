@@ -32,10 +32,9 @@ auto sum_of_exp(T values, const double factor)
 }      
 
 // Measure thermodynamic expectation values of singlet operators
-template<typename S>
+template<typename S, typename MF>
 void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const Operators<S> &a,
-                     Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
-  auto mult = [Sym](const Invar &I){ return Sym->mult(I); }; // XXX: Sym->multfnc()
+                     Output<S> &output, MF mult, const Params &P) {
   const auto factor = step.TD_factor();
   const auto Z = ranges::accumulate(diag, 0.0, [mult, factor](auto total, const auto &d) { const auto &[I, eig] = d;
                                     return total + mult(I) * sum_of_exp(eig.value_zero, factor); });
@@ -54,21 +53,21 @@ T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const siz
   return sum;
 }
 
-template<typename S>
+template<typename S, typename MF>
 CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
-                                  const Store<S> &store, const Symmetry<S> *Sym) { // XXX :multfnc
+                                  const Store<S> &store, MF mult) {
   typename traits<S>::t_matel tr{};
   for (const auto &[I, rhoI] : rhoFDM)
-    tr += Sym->mult(I) * trace_contract(rhoI, n.at({I,I}), store[ndx].at(I).kept()); // over kept states ONLY
+    tr += mult(I) * trace_contract(rhoI, n.at({I,I}), store[ndx].at(I).kept()); // over kept states ONLY
   return tr;
 }
 
-template<typename S>
+template<typename S, typename MF>
 void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const Operators<S> &a,
                          Output<S> &output,  const DensMatElements<S> &rhoFDM,
-                         const Store<S> &store, const Symmetry<S> *Sym, const Params &P) { // XXX: multnfc
-  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, Sym);
-  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, Sym);
+                         const Store<S> &store, MF mult, const Params &P) {
+  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, mult);
+  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, mult);
   output.customfdm->field_values(P.T);
 }
 
@@ -77,12 +76,12 @@ void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &d
 // i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N> <l;N|.  grand_canonical_Z() is also used to calculate stats.Zft,
 // that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for G(T)
 // calculations, stats.Zchit for chi(T) calculations.
-template<typename S>
-auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym, const double factor = 1.0) { // XXX : mult
+template<typename S, typename MF>
+auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, MF mult, const double factor = 1.0) {
   double ZN{};
   for (const auto &[I, eig]: diag) 
     for (const auto &i : eig.kept()) // sum over all kept states
-      ZN += Sym->mult(I) * exp(-eig.value_zero(i) * step.scT() * factor);
+      ZN += mult(I) * exp(-eig.value_zero(i) * step.scT() * factor);
   my_assert(ZN >= 1.0);
   return ZN;
 }
@@ -204,10 +203,9 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
   const auto rescale_factor = step.TD_factor() * additional_factor;
-  auto mult = [Sym](const auto &I) { return Sym->mult(I); };
-  const auto Z  = diag.trace([](double x) { return 1; },        rescale_factor, mult); // partition function
-  const auto E  = diag.trace([](double x) { return x; },        rescale_factor, mult); // Tr[beta H]
-  const auto E2 = diag.trace([](double x) { return pow(x,2); }, rescale_factor, mult); // Tr[(beta H)^2]
+  const auto Z  = diag.trace([](double x) { return 1; },        rescale_factor, Sym->multfnc()); // partition function
+  const auto E  = diag.trace([](double x) { return x; },        rescale_factor, Sym->multfnc()); // Tr[beta H]
+  const auto E2 = diag.trace([](double x) { return pow(x,2); }, rescale_factor, Sym->multfnc()); // Tr[(beta H)^2]
   stats.Z = Z;
   stats.td.set("T",     step.Teff());
   stats.td.set("<E>",   E/Z);               // beta <H>
@@ -219,32 +217,32 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
   stats.td.save_values();
 }
 
-template<typename S>
+template<typename S, typename MF>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                  const DiagInfo<S> &diag, const Operators<S> &iterinfo, const Store<S> &store,
-                                 const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
+                                 MF mult, MemTime &mt, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
-  stats.Zft = grand_canonical_Z(step, diag, Sym);
+  stats.Zft = grand_canonical_Z(step, diag, mult);
   if (std::string(P.specgt) != "" || std::string(P.speci1t) != "" || std::string(P.speci2t) != "")
-    stats.Zgt = grand_canonical_Z(step, diag, Sym, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
+    stats.Zgt = grand_canonical_Z(step, diag, mult, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
   if (std::string(P.specchit) != "") 
-    stats.Zchit = grand_canonical_Z(step, diag, Sym, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
+    stats.Zchit = grand_canonical_Z(step, diag, mult, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
   DensMatElements<S> rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
       rho.load(step.ndx(), P, fn_rho, P.removefiles);
-      check_trace_rho(rho, Sym); // Check if Tr[rho]=1, i.e. the normalization
+      check_trace_rho(rho, mult); // Check if Tr[rho]=1, i.e. the normalization
     }
     if (P.need_rhoFDM())
       rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.removefiles);
   }
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, P);
   if (step.nrg()) {
-    measure_singlet(step, stats, diag, iterinfo, output, Sym, P);
+    measure_singlet(step, stats, diag, iterinfo, output, mult, P);
     iterinfo.dump_diagonal(P.dumpdiagonal);
   }
-  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, store, Sym, P);
+  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, store, mult, P);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
@@ -252,8 +250,8 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
 template<typename S>
 void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym,
                                 Stats<S> &stats, Output<S> &output) {
-  output.dump_all_energies(diag, step.ndx()); // XXX: arg order
-  output.annotated.dump(step, diag, stats, Sym);
+  output.dump_all_energies(step.ndx(), diag);
+  output.annotated.dump(step, diag, stats, Sym->multfnc());
   calculate_TD(step, diag, stats, Sym);
 }
 

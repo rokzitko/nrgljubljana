@@ -161,7 +161,7 @@ public:
       store.dump_all_absolute_energies();
     if (P.dm) {
       if (P.need_rho()) {
-        auto rho = init_rho(step, diag, Sym.get());
+        auto rho = init_rho(step, diag, Sym->multfnc());
         rho.save(step.lastndx(), P, fn_rho);
         if (!P.ZBW) calc_densitymatrix(rho, store, Sym.get(), mt, P);
       }
@@ -170,7 +170,7 @@ public:
         if (P.logletter('w'))
           report_ZnD(stats, P);
         fdm_thermodynamics(store, stats, Sym.get(), P.T);
-        auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym.get(), P.T);
+        auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
         rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
         if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
       }

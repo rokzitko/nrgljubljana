@@ -34,22 +34,23 @@ template <typename S> auto highest_retained_energy(const Step &step, const DiagI
 
 struct truncate_stats {
   size_t nrall, nrallmult, nrkept, nrkeptmult;
-  template <typename S> truncate_stats(const DiagInfo<S> &diag, const Symmetry<S> *Sym) { // XXX : mult
+  template <typename S, typename MF> 
+  truncate_stats(const DiagInfo<S> &diag, MF mult) {
     nrall      = ranges::accumulate(diag, 0, [](int n, const auto &d) {
       const auto &[I, eig] = d;
       return n + eig.getdim();
     });
-    nrallmult  = ranges::accumulate(diag, 0, [Sym](int n, const auto &d) {
+    nrallmult  = ranges::accumulate(diag, 0, [mult](int n, const auto &d) {
       const auto &[I, eig] = d;
-      return n + Sym->mult(I) * eig.getdim();
+      return n + mult(I) * eig.getdim();
     });
     nrkept     = ranges::accumulate(diag, 0, [](int n, const auto &d) {
       const auto &[I, eig] = d;
       return n + eig.getnrkept();
     });
-    nrkeptmult = ranges::accumulate(diag, 0, [Sym](int n, const auto &d) {
+    nrkeptmult = ranges::accumulate(diag, 0, [mult](int n, const auto &d) {
       const auto &[I, eig] = d;
-      return n + Sym->mult(I) * eig.getnrkept();
+      return n + mult(I) * eig.getnrkept();
     });
   }
   void report() { std::cout << nrgdump4(nrkept, nrkeptmult, nrall, nrallmult) << std::endl; }
@@ -59,14 +60,15 @@ struct NotEnough : public std::exception {};
 
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
-template <typename S> void truncate_prepare(const Step &step, DiagInfo<S> &diag, const Symmetry<S> *Sym, const Params &P) { // XXX: mult
+template <typename S, typename MF> 
+void truncate_prepare(const Step &step, DiagInfo<S> &diag, MF mult, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare(step.last() && P.keep_all_states_in_last_step() ?
                                 eig.getnrcomputed() :
                                 ranges::count_if(eig.value_zero, [Emax](const double e) { return e <= Emax; }));
   std::cout << "Emax=" << Emax / step.unscale() << " ";
-  truncate_stats ts(diag, Sym);
+  truncate_stats ts(diag, mult);
   ts.report();
   if (ranges::any_of(diag, [Emax](const auto &d) {
         const auto &[I, eig] = d;

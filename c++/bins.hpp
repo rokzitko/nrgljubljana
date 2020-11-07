@@ -47,7 +47,7 @@ class Bins {
    inline static const double discarded_weight_warn_limit = 1e-8;
 
  public:
-   Spikes<S> bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs  // XXX
+   Spikes<S> bins; // Note: Spikes is vector of (t_eigen,t_weight) pairs  // XXX: make private
    operator const Spikes<S> &() const { return bins; }
    operator Spikes<S> &() { return bins; }
    // auto & get() { return bins; }
