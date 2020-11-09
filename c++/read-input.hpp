@@ -144,8 +144,8 @@ inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data")
   skip_comments(fdata);
   DiagInfo<S> diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);
-  Operators<S> iterinfo0;
-  iterinfo0.opch = Opch<S>(fdata, diag0, P);
+  Operators<S> operators0;
+  operators0.opch = Opch<S>(fdata, diag0, P);
   Coef<S> coef(P);
   while (true) {
     /* skip white space */
@@ -160,13 +160,13 @@ inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data")
         // ignore embedded comment lines
         break;
       case 'e': read_gs_energy(fdata, stats); break;
-      case 's': iterinfo0.ops[opname]  = MatrixElements<S>(fdata, diag0); break;
-      case 'p': iterinfo0.opsp[opname] = MatrixElements<S>(fdata, diag0); break;
-      case 'g': iterinfo0.opsg[opname] = MatrixElements<S>(fdata, diag0); break;
-      case 'd': iterinfo0.opd[opname]  = MatrixElements<S>(fdata, diag0); break;
-      case 't': iterinfo0.opt[opname]  = MatrixElements<S>(fdata, diag0); break;
-      case 'o': iterinfo0.opot[opname] = MatrixElements<S>(fdata, diag0); break;
-      case 'q': iterinfo0.opq[opname]  = MatrixElements<S>(fdata, diag0); break;
+      case 's': operators0.ops[opname]  = MatrixElements<S>(fdata, diag0); break;
+      case 'p': operators0.opsp[opname] = MatrixElements<S>(fdata, diag0); break;
+      case 'g': operators0.opsg[opname] = MatrixElements<S>(fdata, diag0); break;
+      case 'd': operators0.opd[opname]  = MatrixElements<S>(fdata, diag0); break;
+      case 't': operators0.opt[opname]  = MatrixElements<S>(fdata, diag0); break;
+      case 'o': operators0.opot[opname] = MatrixElements<S>(fdata, diag0); break;
+      case 'q': operators0.opq[opname]  = MatrixElements<S>(fdata, diag0); break;
       case 'z':
         coef.xi.read(fdata, P.coefchannels);
         coef.zeta.read(fdata, P.coefchannels);
@@ -190,7 +190,7 @@ inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data")
   }
   if (std::string(P.tri) == "cpp") Tridiag<S>(coef, P); // before calling determine_Nmax()
   determine_Nmax(coef, P);
-  return std::make_tuple(diag0, iterinfo0, coef, Sym);
+  return std::make_tuple(diag0, operators0, coef, Sym);
 }
 
 } // namespace

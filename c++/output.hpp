@@ -125,7 +125,7 @@ struct Output {
   std::unique_ptr<ExpvOutput<S>> custom;
   std::unique_ptr<ExpvOutput<S>> customfdm;
   std::optional<h5::fd_t> h5raw;
-  Output(const RUNTYPE &runtype, const Operators<S> &iterinfo, Stats<S> &stats, const Params &P,
+  Output(const RUNTYPE &runtype, const Operators<S> &operators, Stats<S> &stats, const Params &P,
               const std::string filename_energies= "energies.nrg"s,
               const std::string filename_custom = "custom", 
               const std::string filename_customfdm = "customfdm")
@@ -134,8 +134,8 @@ struct Output {
       // runs produce the same results.
       if (P.dumpenergies && runtype == RUNTYPE::NRG) Fenergies.open(filename_energies);
       std::list<std::string> ops;
-      for (const auto &name : iterinfo.ops  | boost::adaptors::map_keys) ops.push_back(name);
-      for (const auto &name : iterinfo.opsg | boost::adaptors::map_keys) ops.push_back(name);
+      for (const auto &name : operators.ops  | boost::adaptors::map_keys) ops.push_back(name);
+      for (const auto &name : operators.opsg | boost::adaptors::map_keys) ops.push_back(name);
       if (runtype == RUNTYPE::NRG)
         custom = std::make_unique<ExpvOutput<S>>(filename_custom, stats.expv, ops, P);
       else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 

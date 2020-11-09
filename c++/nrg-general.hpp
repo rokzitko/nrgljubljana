@@ -130,20 +130,20 @@ private:
   Stats<S> stats;
   MemTime mt; // memory and timing statistics
 public:
-  auto run_nrg(Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
+  auto run_nrg(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
                Store<S> &store, std::shared_ptr<Symmetry<S>> Sym) {
     diag0.states_report(Sym->multfnc());
-    auto oprecalc = Oprecalc<S>(step.get_runtype(), iterinfo, Sym, mt, P);
-    auto output = Output<S>(step.get_runtype(), iterinfo, stats, P);
+    auto oprecalc = Oprecalc<S>(step.get_runtype(), operators, Sym, mt, P);
+    auto output = Output<S>(step.get_runtype(), operators, stats, P);
     if (output.h5raw) {
        diag0.h5save(output.h5raw.value(), std::to_string(step.ndx()) + "/eigen/", step.dmnrg());
-       iterinfo.h5save(output.h5raw.value(), std::to_string(step.ndx()));
+       operators.h5save(output.h5raw.value(), std::to_string(step.ndx()));
     }
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
     if (step.nrg() && P.calc0 && !P.ZBW)
-      docalc0(step, iterinfo, diag0, stats, output, oprecalc, Sym.get(), mt, P);
-    auto diag = P.ZBW ? nrg_ZBW(step, iterinfo, stats, diag0, output, store, oprecalc, Sym.get(), mt, P)
-                      : nrg_loop(step, iterinfo, coef, stats, diag0, output, store, oprecalc, Sym.get(), mpi, mt, P);
+      docalc0(step, operators, diag0, stats, output, oprecalc, Sym.get(), mt, P);
+    auto diag = P.ZBW ? nrg_ZBW(step, operators, stats, diag0, output, store, oprecalc, Sym.get(), mt, P)
+                      : nrg_loop(step, operators, coef, stats, diag0, output, store, oprecalc, Sym.get(), mpi, mt, P);
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
     if (step.nrg() && P.dumpsubspaces) store.dump_subspaces();
@@ -152,10 +152,10 @@ public:
     return diag;
   }
   NRG_calculation(MPI_diag &mpi, const Workdir &workdir, const bool embedded) : mpi(mpi), P("param", "param", workdir, embedded), stats(P) {
-    auto [diag0, iterinfo, coef, Sym] = read_data<S>(P, stats);
+    auto [diag0, operators, coef, Sym] = read_data<S>(P, stats);
     Step step{P, RUNTYPE::NRG};
     Store<S> store(P.Ninit, P.Nlen);
-    auto diag = run_nrg(step, iterinfo, coef, stats, diag0, store, Sym);
+    auto diag = run_nrg(step, operators, coef, stats, diag0, store, Sym);
     if (std::string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
     store.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
     if (P.dumpabsenergies)
@@ -176,9 +176,9 @@ public:
         if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-      auto [diag0_dm, iterinfo_dm, coef_dm, Sym_dm] = read_data<S>(P, stats);
+      auto [diag0_dm, operators_dm, coef_dm, Sym_dm] = read_data<S>(P, stats);
       Step step_dmnrg{P, RUNTYPE::DMNRG};
-      run_nrg(step_dmnrg, iterinfo_dm, coef_dm, stats, diag0_dm, store, Sym_dm);
+      run_nrg(step_dmnrg, operators_dm, coef_dm, stats, diag0_dm, store, Sym_dm);
       my_assert(num_equal(stats.GS_energy, stats.total_energy));
     }
   }

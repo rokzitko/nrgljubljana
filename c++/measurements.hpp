@@ -219,7 +219,7 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
 
 template<typename S, typename MF>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
-                                 const DiagInfo<S> &diag, const Operators<S> &iterinfo, const Store<S> &store,
+                                 const DiagInfo<S> &diag, const Operators<S> &operators, const Store<S> &store,
                                  MF mult, MemTime &mt, const Params &P) {
   // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
   // order to avoid recalculations later on.
@@ -239,10 +239,10 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
   }
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, P);
   if (step.nrg()) {
-    measure_singlet(step, stats, diag, iterinfo, output, mult, P);
-    iterinfo.dump_diagonal(P.dumpdiagonal);
+    measure_singlet(step, stats, diag, operators, output, mult, P);
+    operators.dump_diagonal(P.dumpdiagonal);
   }
-  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, iterinfo, output, rhoFDM, store, mult, P);
+  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, operators, output, rhoFDM, store, mult, P);
 }
 
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG

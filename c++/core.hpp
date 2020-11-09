@@ -118,7 +118,7 @@ auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef
 }
 
 template<typename S>
-auto do_diag(const Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, const Output<S> &output,
+auto do_diag(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, const Output<S> &output,
              SubspaceStructure &substruct, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
@@ -129,7 +129,7 @@ auto do_diag(const Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stat
     try {
       if (step.nrg()) {
         if (!(P.resume && int(step.ndx()) <= P.laststored))
-          diag = diagonalisations(step, iterinfo.opch, coef, diagprev, output, tasks, diagratio, Sym, mpi, mt, P); // compute in first run
+          diag = diagonalisations(step, operators.opch, coef, diagprev, output, tasks, diagratio, Sym, mpi, mt, P); // compute in first run
         else
           diag = DiagInfo<S>(step.ndx(), P, false); // or read from disk
       }
@@ -192,7 +192,7 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<typename S>
-void after_diag(const Step &step, Operators<S> &iterinfo, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
+void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                 SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
   std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
@@ -213,37 +213,37 @@ void after_diag(const Step &step, Operators<S> &iterinfo, Stats<S> &stats, DiagI
       h5save_blocks(output.h5raw.value(), std::to_string(step.ndx()+1) + "/U/", diag, substruct);
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
-    oprecalc.recalculate_operators(iterinfo, step, diag, substruct);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym->multfnc(), mt, P);
+    oprecalc.recalculate_operators(operators, step, diag, substruct);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
   }
   if (!P.ZBW)
     diag.truncate_perform();                        // Actual truncation occurs at this point
   store[step.ndx()] = Subs(diag, substruct, step.last());  // Store information about subspaces and states for DM algorithms
   if (!step.last()) {
-    recalc_irreducible(step, diag, substruct, iterinfo.opch, Sym, mt, P);
-    if (P.dump_f) iterinfo.opch.dump();
+    recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
+    if (P.dump_f) operators.opch.dump();
   }
   if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
-    oprecalc.recalculate_operators(iterinfo, step, diag, substruct);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym->multfnc(), mt, P);
+    oprecalc.recalculate_operators(operators, step, diag, substruct);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
   }
   if (P.do_recalc_none())  // ... or this
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, iterinfo, store, Sym->multfnc(), mt, P);
-  if (P.checksumrules) operator_sumrules(iterinfo, Sym);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
+  if (P.checksumrules) operator_sumrules(operators, Sym);
   if (output.h5raw)
-    iterinfo.h5save(output.h5raw.value(), std::to_string(step.ndx()+1));
+    operators.h5save(output.h5raw.value(), std::to_string(step.ndx()+1));
 }
 
 // Perform one iteration step
 template<typename S>
-auto iterate(const Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
+auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   if (output.h5raw)
     substruct.h5save(output.h5raw.value(), std::to_string(step.ndx()+1) + "/structure");
-  auto diag = do_diag(step, iterinfo, coef, stats, diagprev, output, substruct, Sym, mpi, mt, P);
-  after_diag(step, iterinfo, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
-  iterinfo.trim_matrices(diag);
+  auto diag = do_diag(step, operators, coef, stats, diagprev, output, substruct, Sym, mpi, mt, P);
+  after_diag(step, operators, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
+  operators.trim_matrices(diag);
   diag.clear_eigenvectors();
   mt.brief_report();
   return diag;
@@ -251,21 +251,21 @@ auto iterate(const Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stat
 
 // Perform calculations with quantities from 'data' file
 template<typename S>
-void docalc0(Step &step, const Operators<S> &iterinfo, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
+void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
              Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << std::endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output);
   Store<S> empty_st(0, 0);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, iterinfo, empty_st, Sym->multfnc(), mt, P);
-  if (P.checksumrules) operator_sumrules(iterinfo, Sym);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, operators, empty_st, Sym->multfnc(), mt, P);
+  if (P.checksumrules) operator_sumrules(operators, Sym);
 }
 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
 template<typename S>
-auto nrg_ZBW(Step &step, Operators<S> &iterinfo, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
+auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
              Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
@@ -283,16 +283,16 @@ auto nrg_ZBW(Step &step, Operators<S> &iterinfo, Stats<S> &stats, const DiagInfo
   truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   SubspaceStructure substruct{};
-  after_diag(step, iterinfo, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
+  after_diag(step, operators, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
   return diag;
 }
 
 template<typename S>
-auto nrg_loop(Step &step, Operators<S> &iterinfo, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
+auto nrg_loop(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
               Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
-    diag = iterate(step, iterinfo, coef, stats, diag, output, store, oprecalc, Sym, mpi, mt, P);
+    diag = iterate(step, operators, coef, stats, diag, output, store, oprecalc, Sym, mpi, mt, P);
   step.set(step.lastndx());
   return diag;
 }
