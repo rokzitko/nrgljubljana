@@ -483,9 +483,10 @@ Module[{t = {}},
     t = Join[t, mtSingletOp["n_an_f", nc[number[a[]], number[f[0]]] ] ];
   
     t = Join[t, mtDoubletOp["A_a", a[] ]];
+(*
     t = Join[t, mtDoubletOp["A_even", {{1, d[]}, {1, a[]}} ]];
     t = Join[t, mtDoubletOp["A_odd", {{1, d[]}, {-1, a[]}} ]];
-      
+*)     
     t = Join[t, mtTripletOp["sigma_a", a[] ]]; (* Spin operator *)
 
     t = Join[t, mtSingletOp["pair_a", nc[a[CR,UP], a[CR, DO]] ] ];

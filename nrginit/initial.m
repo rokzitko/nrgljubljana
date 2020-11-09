@@ -2458,6 +2458,7 @@ the doublet irreducible matrix elements for an orbital described by a linear
 combinations of "atomic" orbitals. The appropriate normalization is
 automatically computed. *)
 
+(* XXX: OBSOLETE: TO BE REMOVED !!!
 ireducTable[ops_List] := Module[{norm, t, cp, i, mat},
   MyPrint[ops];
   norm = Norm @ ops[[All,1]];
@@ -2473,6 +2474,7 @@ ireducTable[ops_List] := Module[{norm, t, cp, i, mat},
   ];
   t (* Return *)
 ];
+*)  
 
 
 (*                     --- TRIPLET OPERATORS ---               *)
