@@ -19,7 +19,7 @@ inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const SubspaceDim
   e.blocks.resize(combs);
   const auto nr = e.getnrstored(); // nr. of eigenpairs
   my_assert(nr > 0);
-  my_assert(nr <= e.getdim()); // rmax = length of eigenvectors
+  my_assert(nr <= e.getdim()); // getdim -> length of eigenvectors
   for (const auto block: range0(combs)) {
     ublas::matrix_range<Matrix> Up(e.matrix, ublas::range(0, nr), sub.uboost_view(block));
     e.blocks[block] = Up;

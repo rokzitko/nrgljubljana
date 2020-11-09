@@ -16,6 +16,7 @@
 #include <cstring> // stdcasecmp
 
 #include <boost/range/irange.hpp>
+#include <boost/range/adaptor/map.hpp>
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
@@ -162,6 +163,15 @@ inline bool complex_data(const std::string &filename = "data") {
   const auto pos = l.find("COMPLEX"); 
   return pos != std::string::npos;
 } 
+
+template<typename K, typename V>
+auto vector_of_keys(const std::map<K,V> &container)
+{
+  std::vector<K> keys;
+  for (const auto &k: container | boost::adaptors::map_keys)
+    keys.push_back(k);
+  return keys;
+}
 
 } // namespace
 

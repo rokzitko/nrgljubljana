@@ -147,6 +147,7 @@ public:
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
     if (step.nrg() && P.dumpsubspaces) store.dump_subspaces();
+    if (output.h5raw) store.h5save(output.h5raw.value(), "/store");
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }

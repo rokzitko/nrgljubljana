@@ -63,7 +63,7 @@ CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, 
 }
 
 template<typename S, typename MF>
-void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const Operators<S> &a,
+void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const Operators<S> &a, // XXX: pass step.N only, diag not used
                          Output<S> &output,  const DensMatElements<S> &rhoFDM,
                          const Store<S> &store, MF mult, const Params &P) {
   for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, mult);
@@ -77,7 +77,7 @@ void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &d
 // that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for G(T)
 // calculations, stats.Zchit for chi(T) calculations.
 template<typename S, typename MF>
-auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, MF mult, const double factor = 1.0) {
+auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, MF mult, const double factor = 1.0) { // XXX: pass scT only
   double ZN{};
   for (const auto &[I, eig]: diag) 
     for (const auto &i : eig.kept()) // sum over all kept states
