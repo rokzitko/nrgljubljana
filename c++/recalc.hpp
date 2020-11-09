@@ -1,6 +1,7 @@
 #ifndef _recalc_hpp_
 #define _recalc_hpp_
 
+#include "traits.hpp"
 #include "invar.hpp"
 #include "eigen.hpp"
 #include "subspaces.hpp"
@@ -46,12 +47,12 @@ inline void h5save_blocks(h5::fd_t &fd, const std::string &name, const DiagInfo<
     h5save_blocks_Eigen(fd, name + I.name(), eig, substruct.at(I));
 }
 
-// Recalculates irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
+// Recalculates the irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<typename S> template<typename T>
 auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
                            const SubspaceStructure &substruct,
-                           const Invar &I1,
-                           const Invar &Ip,
+                           const Invar &I1, // bra
+                           const Invar &Ip, // ket
                            const T &table) const
 {
   nrglog('f', "recalc_f() ** f: I1=(" << I1 << ") Ip=(" << Ip << ")");

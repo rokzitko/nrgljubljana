@@ -227,6 +227,7 @@ class Symmetry {
      }
    }
 
+   // only overriden for symtypes QST and SPSU2T
    virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) const { return true; } // used in recalc_f()
 
    template<typename T>

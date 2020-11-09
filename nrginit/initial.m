@@ -1562,7 +1562,7 @@ bz =.; (* Safety measure! *)
 
 (********************** EXACT DIAGONALIZATION ************************)
 
-(* At this point the basis had been generated (or it had been read
+(* At this point the basis has been generated (or it has been read
 from a file) and we are ready to perform all the necessary
 calculations: diagonalization of the Hamiltonian and unitary
 transformations of all other operators that we want to evaluate during
@@ -1813,6 +1813,7 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
 
 (* coupledQ? Are two subspaces coupled by creation operator? *)
 (* spincoupledQ? Are two subspaces coupled by spin (triplet) operator? *)
+(* WARNING: <i| op |j>; q1,s1 correspond to j, q2,s2 correspond to i *)
 
 coupledQ["QS" | "QSLR", {{q1_, ss1_, i1___}, {q2_, ss2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ss1-ss2] == 1, True, False, MyError["oops"]];
