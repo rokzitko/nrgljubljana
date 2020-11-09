@@ -2452,31 +2452,6 @@ Module[{t, cp, i, mat, opfnsub},
   t (* Return *)
 ];
 
-
-(* Second version: ops is now a list of pairs {weight, op} and we calculate
-the doublet irreducible matrix elements for an orbital described by a linear
-combinations of "atomic" orbitals. The appropriate normalization is
-automatically computed. *)
-
-(* XXX: OBSOLETE: TO BE REMOVED !!!
-ireducTable[ops_List] := Module[{norm, t, cp, i, mat},
-  MyPrint[ops];
-  norm = Norm @ ops[[All,1]];
-  t = {};
-  AppendTo[t, {nrcp}];
-  For[i = 1, i <= nrcp, i++,
-    cp = coupledpairs[[i]];
-    mat = Plus @@ Map[#[[1]]/norm * ireducMatrixSpeedy[SYMTYPE, #[[2]], cp] &, ops];
-    mat = Expand[mat];
-    AppendTo[t, Flatten[cp]];
-    t = Join[t, mat];
-    AppendTo[opdata, {cp, mat}];
-  ];
-  t (* Return *)
-];
-*)  
-
-
 (*                     --- TRIPLET OPERATORS ---               *)
 
 (* Irreducible matrix elements of triplet tenzor operator op *)

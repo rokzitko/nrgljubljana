@@ -49,6 +49,8 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
 // for each channel.
 // See Krishna-Murthy p. 1034, equation (B10).
 
+// <I1 | f^dag | Ip>, hence q1=qp+1
+
 // Driver routine for recalc_f()
 template<typename SC>
 Opch<SC> SymmetryQS<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {

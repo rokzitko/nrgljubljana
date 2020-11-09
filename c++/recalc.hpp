@@ -56,10 +56,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
                            const T &table) const
 {
   nrglog('f', "recalc_f() ** f: I1=(" << I1 << ") Ip=(" << Ip << ")");
-  if (!recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    nrglog('f', "Does not fulfill the triangle inequalities.");
-    return Matrix(0,0);
-  }
+  if (!recalc_f_coupled(I1, Ip, this->Invar_f)) return Matrix(0,0); // exception for QST and SPSU2T
   const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
   const auto & [dim1, dimp]     = diag.dims(I1, Ip);   // # of states in Ip and in I1, i.e. the dimension of the <||f||> matrix.
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
