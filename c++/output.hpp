@@ -9,6 +9,10 @@
 #include <list>
 #include <utility>
 #include <vector>
+
+#include <range/v3/all.hpp>
+#include <boost/range/adaptor/map.hpp>
+
 #include "traits.hpp"
 #include "params.hpp"
 #include "io.hpp" // formatted_output
@@ -16,9 +20,7 @@
 #include "step.hpp"
 #include "stats.hpp"
 #include "symmetry.hpp"
-#include <range/v3/all.hpp>
-#include <boost/range/adaptor/map.hpp>
-#include <h5cpp/all>
+#include "h5.hpp"
 
 namespace NRG {
 
@@ -124,12 +126,13 @@ struct Output {
   std::ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
   std::unique_ptr<ExpvOutput<S>> custom;
   std::unique_ptr<ExpvOutput<S>> customfdm;
-  std::optional<h5::fd_t> h5raw;
+  std::unique_ptr<H5Easy::File> h5raw;
   Output(const RUNTYPE &runtype, const Operators<S> &operators, Stats<S> &stats, const Params &P,
-              const std::string filename_energies= "energies.nrg"s,
-              const std::string filename_custom = "custom", 
-              const std::string filename_customfdm = "customfdm")
-    : runtype(runtype), P(P), annotated(P) {
+         const std::string filename_energies= "energies.nrg"s,
+         const std::string filename_custom = "custom", 
+         const std::string filename_customfdm = "customfdm")
+    : runtype(runtype), P(P), annotated(P) 
+    {
       // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
       // runs produce the same results.
       if (P.dumpenergies && runtype == RUNTYPE::NRG) Fenergies.open(filename_energies);
@@ -142,7 +145,7 @@ struct Output {
         customfdm = std::make_unique<ExpvOutput<S>>(filename_customfdm, stats.fdmexpv, ops, P);
       if (P.h5raw) {
         const auto filename_h5 = runtype == RUNTYPE::NRG ? "raw.h5" : "raw-dm.h5";
-        h5raw = h5::create(filename_h5, H5F_ACC_TRUNC);
+        h5raw = std::make_unique<H5Easy::File>(filename_h5, H5Easy::File::Overwrite);
       }
     }
   // Dump all energies in diag to a file

@@ -12,7 +12,6 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <range/v3/all.hpp>
-#include <h5cpp/all>
 
 #include "invar.hpp"
 #include "misc.hpp"
@@ -20,6 +19,7 @@
 #include "eigen.hpp"
 #include "numerics.hpp" // read_matrix
 #include "params.hpp"
+#include "h5.hpp"
 
 namespace NRG {
 
@@ -75,10 +75,10 @@ class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
        }
      }
    }
-   void h5save(h5::fd_t &fd, const std::string &name) const {
+   void h5save(H5Easy::File &fd, const std::string &name) const {
      for (const auto &[II, mat] : *this) {
        const auto &[I1, I2] = II;
-       h5::write(fd, name + "/" + I1.name() + "/" + I2.name() + "/matrix", mat);
+       h5_dump_matrix(fd, name + "/" + I1.name() + "/" + I2.name() + "/matrix", mat);
      }
    }
 };
@@ -129,7 +129,7 @@ struct CustomOp : public std::map<std::string, MatrixElements<S>> {
   void trim(const DiagInfo<S> &diag) {
     for (auto &op : *this | boost::adaptors::map_values) op.trim(diag);
   }
-  void h5save(h5::fd_t &fd, const std::string &name) const {
+  void h5save(H5Easy::File &fd, const std::string &name) const {
     for (const auto &[n, op] : *this) op.h5save(fd, name + "/" + n);
   }
 };
@@ -195,7 +195,7 @@ class Operators {
      opq.trim(diag);
      opot.trim(diag);
    }
-   void h5save(h5::fd_t &fd, const std::string &name) {
+   void h5save(H5Easy::File &fd, const std::string &name) {
      ops.h5save(fd, name + "/s");
      opsp.h5save(fd, name + "/sp");
      opsg.h5save(fd, name + "/sg");

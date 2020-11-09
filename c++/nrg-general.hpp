@@ -135,9 +135,9 @@ public:
     diag0.states_report(Sym->multfnc());
     auto oprecalc = Oprecalc<S>(step.get_runtype(), operators, Sym, mt, P);
     auto output = Output<S>(step.get_runtype(), operators, stats, P);
-    if (output.h5raw) {
-       diag0.h5save(output.h5raw.value(), std::to_string(step.ndx()) + "/eigen/", step.dmnrg());
-       operators.h5save(output.h5raw.value(), std::to_string(step.ndx()));
+    if (P.h5raw) {
+       diag0.h5save(*output.h5raw, std::to_string(step.ndx()) + "/eigen/", step.dmnrg());
+       operators.h5save(*output.h5raw, std::to_string(step.ndx()));
     }
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
     if (step.nrg() && P.calc0 && !P.ZBW)
@@ -147,7 +147,7 @@ public:
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
     if (step.nrg() && P.dumpsubspaces) store.dump_subspaces();
-    if (output.h5raw) store.h5save(output.h5raw.value(), "/store");
+    if (P.h5raw) store.h5save(*output.h5raw, "/store");
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }

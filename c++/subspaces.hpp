@@ -3,10 +3,12 @@
 
 #include <memory>
 #include <vector>
-#include <h5cpp/all>
+
 #include <range/v3/all.hpp>
+
 #include "eigen.hpp"
 #include "invar.hpp"
+#include "h5.hpp"
 
 namespace NRG {
 
@@ -58,11 +60,11 @@ class SubspaceDimensions {
      return exists(i1-1) && exists(j1-1); // shift by 1
    }
    [[nodiscard]] Invar ancestor(const size_t i) const { return ancestors[i]; }
-   void h5save(h5::fd_t &fd, const std::string &name) const {
+   void h5save(H5Easy::File &fd, const std::string &name) const {
      std::vector<std::string> ancestor_names;
      for (const auto i : range0(combs()))
        if (dims[i]) ancestor_names.push_back(ancestors[i].name()); // only true ancestors with dim>0
-     h5::write(fd, name + "/ancestors", ancestor_names);
+     H5Easy::dump(fd, name + "/ancestors", ancestor_names);
    }
  private:
    friend std::ostream &operator<<(std::ostream &os, const SubspaceDimensions &rmax) {
@@ -98,7 +100,7 @@ class SubspaceStructure : public std::map<Invar, SubspaceDimensions> {
      const auto i = this->find(I);
      return i == this->cend() ? SubspaceDimensions() : i->second;
    }
-   void h5save(h5::fd_t &fd, const std::string &name) const {
+   void h5save(H5Easy::File &fd, const std::string &name) const {
      for (const auto &[I, rm]: *this)
        rm.h5save(fd, name + "/" + I.name());
    }

@@ -5,7 +5,6 @@
 #include <set>
 #include <algorithm>
 #include <omp.h>
-#include <h5cpp/all>
 #include <range/v3/all.hpp>
 
 #include "constants.hpp"
@@ -34,6 +33,7 @@
 #include "measurements.hpp"
 #include "truncation.hpp"
 #include "mpi_diag.hpp"
+#include "h5.hpp"
 
 namespace NRG {
 
@@ -80,8 +80,8 @@ typename traits<S>::Matrix hamiltonian(const Step &step, const Invar &I, const O
   }
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
-  if (output.h5raw)
-    h5::write(output.h5raw.value(), std::to_string(step.ndx()+1) + "/hamiltonian/" + I.name() + "/matrix", h);
+  if (P.h5raw)
+    h5_dump_matrix(*output.h5raw, std::to_string(step.ndx()+1) + "/hamiltonian/" + I.name() + "/matrix", h);
   return h;
 }
 
@@ -205,12 +205,12 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
       diag.save(step.ndx(), P);
     perform_basic_measurements(step, diag, Sym, stats, output); // Measurements are performed before the truncation!
   }
-  if (output.h5raw)
-    diag.h5save(output.h5raw.value(), std::to_string(step.ndx()+1) + "/eigen/", step.dmnrg());
+  if (P.h5raw)
+    diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/", step.dmnrg());
   if (!P.ZBW) {
     split_in_blocks(diag, substruct);
-    if (output.h5raw)
-      h5save_blocks(output.h5raw.value(), std::to_string(step.ndx()+1) + "/U/", diag, substruct);
+    if (P.h5raw)
+      h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct);
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
     oprecalc.recalculate_operators(operators, step, diag, substruct);
@@ -230,8 +230,8 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   if (P.do_recalc_none())  // ... or this
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
-  if (output.h5raw)
-    operators.h5save(output.h5raw.value(), std::to_string(step.ndx()+1));
+  if (P.h5raw)
+    operators.h5save(*output.h5raw, std::to_string(step.ndx()+1));
 }
 
 // Perform one iteration step
@@ -239,8 +239,8 @@ template<typename S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
-  if (output.h5raw)
-    substruct.h5save(output.h5raw.value(), std::to_string(step.ndx()+1) + "/structure");
+  if (P.h5raw)
+    substruct.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/structure");
   auto diag = do_diag(step, operators, coef, stats, diagprev, output, substruct, Sym, mpi, mt, P);
   after_diag(step, operators, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
   operators.trim_matrices(diag);

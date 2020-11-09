@@ -1,0 +1,4 @@
+#!/bin/sh
+math <<EOF
+<<"unit_tests.m";
+EOF

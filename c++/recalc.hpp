@@ -35,14 +35,14 @@ inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruc
 }
 
 template<typename S>
-inline void h5save_blocks_Eigen(h5::fd_t &fd, const std::string &name, const Eigen<S> &eig, const SubspaceDimensions &sub)
+inline void h5save_blocks_Eigen(H5Easy::File &fd, const std::string &name, const Eigen<S> &eig, const SubspaceDimensions &sub)
 {
   for (const auto i: range0(sub.combs()))
-    h5::write(fd, name + "/" + sub.ancestor(i).name(), eig.blocks[i]);
+    h5_dump_matrix(fd, name + "/" + sub.ancestor(i).name(), eig.blocks[i]);
 }
 
 template<typename S>
-inline void h5save_blocks(h5::fd_t &fd, const std::string &name, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
+inline void h5save_blocks(H5Easy::File &fd, const std::string &name, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
   for(const auto &[I, eig]: diag)
     h5save_blocks_Eigen(fd, name + I.name(), eig, substruct.at(I));
 }

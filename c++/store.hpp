@@ -6,20 +6,16 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/map.hpp>
-#include <h5cpp/all>
+
 #include "invar.hpp"
 #include "eigen.hpp"
 #include "subspaces.hpp"
+#include "h5.hpp"
 
 namespace NRG {
-
-template<typename T>
-void h5write_scalar(h5::fd_t &fd, const std::string &name, const T x) {
-  std::vector<T> vec = {x};
-  h5::write(fd, name, vec);
-}
 
 // Container for all information which needs to be gathered in each invariant subspace.
 // Required for the density-matrix construction.
@@ -33,11 +29,11 @@ struct Sub {
   [[nodiscard]] auto min() const { return is_last ? 0 : kept(); } // min(), max() return the range of D states to be summed over in FDM
   [[nodiscard]] auto max() const { return total(); }
   [[nodiscard]] auto all() const { return boost::irange(min(), max()); }
-  void h5save(h5::fd_t &fd, const std::string &name) const {
-    h5write_scalar(fd, name + "/kept", kept());
-    h5write_scalar(fd, name + "/total", total());
-    h5write_scalar(fd, name + "/min", min());
-    h5write_scalar(fd, name + "/max", max()); 
+  void h5save(H5Easy::File &fd, const std::string &name) const {
+    h5_dump_scalar(fd, name + "/kept", kept());
+    h5_dump_scalar(fd, name + "/total", total());
+    h5_dump_scalar(fd, name + "/min", min());
+    h5_dump_scalar(fd, name + "/max", max()); 
   }
 };
 
@@ -49,10 +45,10 @@ class Subs : public std::map<Invar, Sub<S>> {
      for (const auto &[I, eig]: diag)
        (*this)[I] = { eig, substruct.at_or_null(I), last };
    }
-   void h5save(h5::fd_t &fd, const std::string &name) const {
+   void h5save(H5Easy::File &fd, const std::string &name) const {
      const std::vector<int> dummy = {1};
      for (const auto &I : *this | boost::adaptors::map_keys)
-       h5::write(fd, name+"/list/" + I.name(), dummy);
+       H5Easy::dump(fd, name+"/list/" + I.name(), dummy);
      for (const auto &[I, sub]: *this)
        sub.h5save(fd, name + "/data/" + I.name());
    }
@@ -91,9 +87,9 @@ class Store : public std::vector<Subs<S>> {
        for (auto &ds : this->at(N) | boost::adaptors::map_values)
          ds.eig.subtract_GS_energy(GS_energy);
    }
-   void h5save(h5::fd_t &fd, const std::string &name) const {
+   void h5save(H5Easy::File &fd, const std::string &name) const {
      const std::vector range = {Nbegin, Nend};
-     h5::write(fd, name + "/range", range);
+     H5Easy::dump(fd, name + "/range", range);
      for (const auto N : Nall())
        this->at(N).h5save(fd, name + "/" + std::to_string(N+1)); // note the shift by 1
    }
