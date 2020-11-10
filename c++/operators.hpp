@@ -119,7 +119,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
      }
      MATRIXF.close();
      if (remove_files)
-	if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
+       if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
    }
 };
 
