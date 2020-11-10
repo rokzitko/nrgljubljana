@@ -145,7 +145,7 @@ template<typename S>
 void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
                                  const SubspaceStructure &substruct,
                                  const Invar &I,
-                                 Matrix &m, // XXX: return this one
+                                 Matrix &m, // modified, not produced!
                                  const size_t i1,
                                  const size_t ip,
                                  const t_coef value) const
