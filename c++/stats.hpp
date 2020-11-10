@@ -15,8 +15,8 @@ namespace NRG {
 template<typename S>
 class Stats {
  public:
-   using t_eigen = typename traits<S>::t_eigen;
-   using t_expv  = typename traits<S>::t_expv;
+   using t_eigen = eigen_traits<S>;
+   using t_expv  = expv_traits<S>;
    t_eigen Egs{};
 
    // ** Thermodynamic quantities

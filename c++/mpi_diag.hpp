@@ -60,7 +60,7 @@ class MPI_diag {
      mpiw.send(dest, TAG_MATRIX_SIZE, size2);
      mpilog("Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
      for (const auto i: range0(size1)) {
-       ublas::vector<typename traits<S>::t_matel> vec = ublas::matrix_row<const ublas::matrix<S>>(m, i); // YYY
+       ublas::vector<matel_traits<S>> vec = ublas::matrix_row<const ublas::matrix<S>>(m, i); // YYY
        mpiw.send(dest, TAG_MATRIX_LINE, vec);
      }
    }
@@ -69,13 +69,13 @@ class MPI_diag {
      check_status(mpiw.recv(source, TAG_MATRIX_SIZE, size1));
      size_t size2;
      check_status(mpiw.recv(source, TAG_MATRIX_SIZE, size2));
-     typename traits<S>::Matrix m(size1, size2);
+     Matrix_traits<S> m(size1, size2);
      mpilog("Receiving matrix of size " << size1 << " x " << size2 << " line by line from " << source);
      for (const auto i: range0(size1)) {
-       ublas::vector<typename traits<S>::t_matel> vec;
+       ublas::vector<matel_traits<S>> vec;
        check_status(mpiw.recv(source, TAG_MATRIX_LINE, vec));
        my_assert(vec.size() == size2);
-       ublas::matrix_row<typename traits<S>::Matrix>(m, i) = vec;
+       ublas::matrix_row<Matrix_traits<S>>(m, i) = vec;
      }
      return m;
    }

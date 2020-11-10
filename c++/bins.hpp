@@ -27,7 +27,7 @@ namespace NRG {
 template<typename S>
 class Bins {
  private:
-   using t_weight = typename traits<S>::t_weight;
+   using t_weight = weight_traits<S>;
    double emin{}, emax{};
    double log10emin{}, log10emax{}; // base-10 log of the limits
    void setlimits();

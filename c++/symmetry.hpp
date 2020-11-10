@@ -52,7 +52,7 @@ template<typename S>
 struct Recalc_f {
   size_t i1; // subspace indexes
   size_t ip;
-  typename traits<S>::t_coef factor;
+  coef_traits<S> factor;
 };
 
 // Structure which holds subspace information and factor for each of nonzero irreducible matrix elements. cf.
@@ -63,7 +63,7 @@ struct Recalc {
   size_t ip{};
   Invar IN1; // subspace in N-1 stage
   Invar INp;
-  typename traits<S>::t_coef factor{}; // additional multiplicative factor
+  coef_traits<S> factor{}; // additional multiplicative factor
 };
 
 template<typename S>
@@ -142,9 +142,9 @@ class Symmetry {
    // Is an invariant subspace with given quantum numbers allowed?
    [[nodiscard]] virtual bool Invar_allowed(const Invar &I) const { return true; }
 
-   using Matrix = typename traits<S>::Matrix;
-   using t_matel = typename traits<S>::t_matel;
-   using t_coef = typename traits<S>::t_coef;
+   using Matrix  = Matrix_traits<S>;
+   using t_matel = matel_traits<S>;
+   using t_coef  = coef_traits<S>;
 
    void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_coef factor,
                               Matrix &h, const SubspaceDimensions &qq, const InvarVec &In, const Opch<S> &opch) const;

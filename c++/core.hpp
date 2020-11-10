@@ -68,7 +68,7 @@ auto new_subspaces(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
 }
 
 template<typename S>
-typename traits<S>::Matrix hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
+Matrix_traits<S> hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
                                        const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
@@ -170,7 +170,7 @@ void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stat
 // Operator sumrules
 template<typename S, typename F> 
 auto norm(const MatrixElements<S> &m, const Symmetry<S> *Sym, F factor_fnc, const int SPIN) {
-  typename traits<S>::t_weight sum{};
+  weight_traits<S> sum{};
   for (const auto &[II, mat] : m) {
     const auto & [I1, Ip] = II;
     if (!Sym->check_SPIN(I1, Ip, SPIN)) continue;

@@ -106,7 +106,7 @@ class Algo_GT : public Algo<S> {
    {
      const double temperature = P.gtp * step.scale(); // in absolute units!
      const auto beta          = 1.0 / temperature;
-     typename traits<S>::t_weight value{};
+     weight_traits<S> value{};
      for (const auto r1: diagI1.kept()) {
        const auto E1 = diagI1.value_zero(r1);
        for (const auto rp: diagIp.kept()) {
@@ -166,7 +166,7 @@ class Algo_CHIT : public Algo<S> {
    {
      const double temperature = P.chitp * step.scale(); // in absolute units!
      const auto beta          = 1.0 / temperature;
-     typename traits<S>::t_weight value{};
+     weight_traits<S> value{};
      for (const auto r1: diagI1.kept()) {
        for (const auto rp: diagIp.kept()) {
          const auto E1 = diagI1.value_zero(r1);

@@ -14,7 +14,7 @@ namespace NRG {
 
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
 template<typename S>
-using t_delta_peak = std::pair<double, typename traits<S>::t_weight>;
+using t_delta_peak = std::pair<double, weight_traits<S>>;
 
 template<typename S>
 class Spikes : public std::vector<t_delta_peak<S>> {

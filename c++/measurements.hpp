@@ -53,10 +53,10 @@ T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const siz
   return sum;
 }
 
-template<typename S, typename MF>
+template<typename S, typename MF, typename t_matel = matel_traits<S>>
 CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
                                   const Store<S> &store, MF mult) {
-  typename traits<S>::t_matel tr{};
+  t_matel tr{};
   for (const auto &[I, rhoI] : rhoFDM)
     tr += mult(I) * trace_contract(rhoI, n.at({I,I}), store[ndx].at(I).kept()); // over kept states ONLY
   return tr;
