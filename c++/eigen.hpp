@@ -87,17 +87,13 @@ public:
     return m;
   }
   void save(boost::archive::binary_oarchive &oa) const {
-    // RawEigen
     oa << value_orig;
     NRG::save(oa, matrix);
-    // Eigen
     oa << value_zero << nrpost << absenergy << absenergyG << absenergy_zero;
   }  
   void load(boost::archive::binary_iarchive &ia) {
-    // RawEigen
     ia >> value_orig;
     NRG::load(ia, matrix);
-    // Eigen
     ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergy_zero;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
