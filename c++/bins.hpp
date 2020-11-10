@@ -184,14 +184,13 @@ void Bins<S>::trim() {
   if (discarded_weight_abs > discarded_weight_warn_limit) std::cout << "WARNING: we are probably discarding too much weight!" << std::endl;
 }
 
-template<typename S>
+template<typename S, typename t_weight = weight_traits<S>>
 class Temp : public Spikes<S> {
  private:
    const Params &P;
-   using t_weight = typename traits<S>::t_weight;
  public:
    explicit Temp(const Params &P) : P(P) {}
-   void add_value(const double energy, const t_weight weight) {
+   void add_value(const double energy, const t_weight &weight) {
      for (auto & [e, w] : *this) {
        if (e == energy) {
          w += weight;
