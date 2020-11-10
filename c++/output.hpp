@@ -29,7 +29,7 @@ template<typename S, typename t_expv = expv_traits<S>>
 class ExpvOutput {
  private:
    std::ofstream F;                     // output stream
-   std::map<std::string, t_expv> &m;    // reference to the name->value mapping
+   std::map<std::string, t_expv> &m;    // reference to the name->value mapping (e.g. from class Stats)
    const std::list<std::string> fields; // list of fields to be output (may be a subset of the fields actually present in m)
    const Params &P;
    void field_numbers() {     // Consecutive numbers for the columns
@@ -54,7 +54,7 @@ class ExpvOutput {
          fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op])); // NOTE: real and imaginary part shown
    }
    ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m, 
-                   std::list<std::string> fields, const Params &P) : m(m), fields(std::move(fields)), P(P) {
+              std::list<std::string> fields, const Params &P) : m(m), fields(std::move(fields)), P(P) {
      F.open(fn);
      field_numbers();
      field_names();
