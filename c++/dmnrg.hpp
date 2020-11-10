@@ -48,7 +48,7 @@ template<typename S, typename MF>
 auto init_rho(const Step &step, const DiagInfo<S> &diag, MF mult) {
   DensMatElements<S> rho;
   for (const auto &[I, eig]: diag)
-    rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step, diag, mult);
+    rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step.scT(), diag, mult);
   check_trace_rho(rho, mult);
   return rho;
 }

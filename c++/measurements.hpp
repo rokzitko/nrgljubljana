@@ -72,11 +72,11 @@ void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &
 // that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for G(T)
 // calculations, stats.Zchit for chi(T) calculations.
 template<typename S, typename MF>
-auto grand_canonical_Z(const Step &step, const DiagInfo<S> &diag, MF mult, const double factor = 1.0) { // XXX: pass scT only
+auto grand_canonical_Z(const double factor, const DiagInfo<S> &diag, MF mult) {
   double ZN{};
   for (const auto &[I, eig]: diag) 
     for (const auto &i : eig.kept()) // sum over all kept states
-      ZN += mult(I) * exp(-eig.value_zero(i) * step.scT() * factor);
+      ZN += mult(I) * exp(-factor * eig.value_zero(i));
   my_assert(ZN >= 1.0);
   return ZN;
 }
@@ -213,16 +213,19 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
 }
 
 template<typename S, typename MF>
+void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult, const Params &P) {
+  stats.Zft = grand_canonical_Z(step.scT(), diag, mult);
+  if (std::string(P.specgt) != "" || std::string(P.speci1t) != "" || std::string(P.speci2t) != "")
+    stats.Zgt = grand_canonical_Z(1.0/P.gtp, diag, mult); // exp(-x*gtp)
+  if (std::string(P.specchit) != "") 
+    stats.Zchit = grand_canonical_Z(1.0/P.chitp, diag, mult); // exp(-x*chitp)
+}
+
+template<typename S, typename MF>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                  const DiagInfo<S> &diag, const Operators<S> &operators, const Store<S> &store,
                                  MF mult, MemTime &mt, const Params &P) {
-  // Zft is used in the spectral function calculations using the conventional approach. We calculate it here, in
-  // order to avoid recalculations later on.
-  stats.Zft = grand_canonical_Z(step, diag, mult);
-  if (std::string(P.specgt) != "" || std::string(P.speci1t) != "" || std::string(P.speci2t) != "")
-    stats.Zgt = grand_canonical_Z(step, diag, mult, 1.0/(P.gtp*step.scT()) ); // exp(-x*gtp)
-  if (std::string(P.specchit) != "") 
-    stats.Zchit = grand_canonical_Z(step, diag, mult, 1.0/(P.chitp*step.scT()) ); // exp(-x*chitp)
+  // Calculate the density matrices
   DensMatElements<S> rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
@@ -232,7 +235,10 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
     if (P.need_rhoFDM())
       rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.removefiles);
   }
+  // Calculate all spectral functions
+  calc_Z(step, stats, diag, mult, P); // required for FT and CFS approaches
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, P);
+  // Calculate all expectation values
   if (step.nrg()) {
     measure_singlet(step.TD_factor(), stats, operators, mult, diag);
     output.custom->field_values(step.Teff());
