@@ -104,8 +104,7 @@ public:
     if (write_absG) 
       H5Easy::dump(fd, name + "/absenergyG",   absenergyG);
     h5_dump_matrix(fd, name + "/matrix", matrix);
-    std::vector<unsigned long> nrkept = { getnrkept() }; // XXX
-    H5Easy::dump(fd, name + "/nrkept", nrkept);
+    h5_dump_scalar(fd, name + "/nrkept", getnrkept());
   }
 };
 
