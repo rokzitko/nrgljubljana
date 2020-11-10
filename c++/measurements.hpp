@@ -34,13 +34,12 @@ auto sum_of_exp(T values, const double factor)
 // Measure thermodynamic expectation values of singlet operators
 template<typename S, typename MF>
 void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const Operators<S> &a,
-                     Output<S> &output, MF mult, const Params &P) {
+                     MF mult, const Params &P) {
   const auto factor = step.TD_factor();
   const auto Z = ranges::accumulate(diag, 0.0, [mult, factor](auto total, const auto &d) { const auto &[I, eig] = d;
                                     return total + mult(I) * sum_of_exp(eig.value_zero, factor); });
   for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
   for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
-  output.custom->field_values(step.Teff());
 }
 
 template<typename T>
@@ -63,12 +62,10 @@ CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, 
 }
 
 template<typename S, typename MF>
-void measure_singlet_fdm(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const Operators<S> &a, // XXX: pass step.N only, diag not used
-                         Output<S> &output,  const DensMatElements<S> &rhoFDM,
-                         const Store<S> &store, MF mult, const Params &P) {
-  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, mult);
-  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(step.N(), m, rhoFDM, store, mult);
-  output.customfdm->field_values(P.T);
+void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &a,
+                         const DensMatElements<S> &rhoFDM, const Store<S> &store, MF mult) {
+  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store, mult);
+  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store, mult);
 }
 
 // Calculate grand canonical partition function at current NRG energy shell. This is not the same as the true
@@ -239,10 +236,14 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
   }
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, P);
   if (step.nrg()) {
-    measure_singlet(step, stats, diag, operators, output, mult, P);
+    measure_singlet(step, stats, diag, operators, mult, P);
+    output.custom->field_values(step.Teff());
     operators.dump_diagonal(P.dumpdiagonal);
   }
-  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) measure_singlet_fdm(step, stats, diag, operators, output, rhoFDM, store, mult, P);
+  if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) {
+    measure_singlet_fdm(step.N(), stats, operators, rhoFDM, store, mult);
+    output.customfdm->field_values(P.T);
+  }
 }
 
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
