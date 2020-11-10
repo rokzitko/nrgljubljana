@@ -33,9 +33,7 @@ auto sum_of_exp(T values, const double factor)
 
 // Measure thermodynamic expectation values of singlet operators
 template<typename S, typename MF>
-void measure_singlet(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, const Operators<S> &a,
-                     MF mult, const Params &P) {
-  const auto factor = step.TD_factor();
+void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag) {
   const auto Z = ranges::accumulate(diag, 0.0, [mult, factor](auto total, const auto &d) { const auto &[I, eig] = d;
                                     return total + mult(I) * sum_of_exp(eig.value_zero, factor); });
   for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
@@ -62,8 +60,8 @@ CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, 
 }
 
 template<typename S, typename MF>
-void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &a,
-                         const DensMatElements<S> &rhoFDM, const Store<S> &store, MF mult) {
+void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &a, MF mult,
+                         const DensMatElements<S> &rhoFDM, const Store<S> &store) {
   for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store, mult);
   for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store, mult);
 }
@@ -236,12 +234,12 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
   }
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, P);
   if (step.nrg()) {
-    measure_singlet(step, stats, diag, operators, mult, P);
+    measure_singlet(step.TD_factor(), stats, operators, mult, diag);
     output.custom->field_values(step.Teff());
     operators.dump_diagonal(P.dumpdiagonal);
   }
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) {
-    measure_singlet_fdm(step.N(), stats, operators, rhoFDM, store, mult);
+    measure_singlet_fdm(step.N(), stats, operators, mult, rhoFDM, store);
     output.customfdm->field_values(P.T);
   }
 }
