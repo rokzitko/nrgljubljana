@@ -23,8 +23,8 @@
 
 namespace NRG {
 
-template<typename S>
-class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
+template<typename S, typename Matrix = Matrix_traits<S>>
+class MatrixElements : public std::map<Twoinvar, Matrix> {
  public:
    MatrixElements() = default;
    MatrixElements(std::ifstream &fdata, const DiagInfo<S> &diag) {
@@ -54,8 +54,8 @@ class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
        my_assert(nr1 <= size1 && nr2 <= size2);
        if (nr1 == size1 && nr2 == size2)           // Trimming not necessary!!
          continue;
-       ublas::matrix_range<typename traits<S>::Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
-       typename traits<S>::Matrix m2new = m2;
+       ublas::matrix_range<Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
+       Matrix m2new = m2;
        mat.swap(m2new);
      }
    }
@@ -83,8 +83,8 @@ class MatrixElements : public std::map<Twoinvar, typename traits<S>::Matrix> {
    }
 };
 
-template<typename S>
-class DensMatElements : public std::map<Invar, typename traits<S>::Matrix> {
+template<typename S, typename Matrix = Matrix_traits<S>>
+class DensMatElements : public std::map<Invar, Matrix> {
  public:
    template <typename MF>
      auto trace(MF mult) const {
