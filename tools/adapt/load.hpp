@@ -8,6 +8,8 @@
 #include <sstream>
 #include <stdexcept>
 
+enum class Sign { POS, NEG }; // positive vs. negative energies
+
 // Split a string 's' into substrings. Leading spaces are ignored.
 std::vector<std::string> split_string(const std::string &s, unsigned int atleast = 0) {
   const int len   = s.length();
@@ -68,11 +70,8 @@ void minmaxvec(const Vec &vec, const std::string name) {
   std::cout << " max[" << name << "]=" << maxy << std::endl;
 }
 
-enum SIGN { POS, NEG }; // positive vs. negative energies
-
-// Load positive (sign=POS) or negative (sogn=NEG) part of the
-// hybridisation function into a vector.
-Vec load_rho(const std::string &filename, const SIGN sign) {
+// Load positive (sign=POS) or negative (sogn=NEG) part of the hybridisation function into a vector.
+Vec load_rho(const std::string &filename, const Sign sign) {
   std::ifstream F;
   safe_open(F, filename);
   Vec vecrho;
@@ -82,7 +81,7 @@ Vec load_rho(const std::string &filename, const SIGN sign) {
     const auto columns = split_string(line, 2);
     const auto  x = atof(columns[0]);
     const auto  y = atof(columns[1]);
-    if ((sign == POS && x > 0) || (sign == NEG && x < 0)) {
+    if ((sign == Sign::POS && x > 0) || (sign == Sign::NEG && x < 0)) {
       // y must be positive (or zero)
       if (y < 0.0) 
         throw std::runtime_error("Negative y found.");
@@ -94,7 +93,7 @@ Vec load_rho(const std::string &filename, const SIGN sign) {
     throw std::runtime_error("No data found.");
   std::sort(vecrho.begin(), vecrho.end());
   std::cout << "# " << filename << " ";
-  std::cout << "- " << (sign == POS ? "POS" : "NEG") << " ";
+  std::cout << "- " << (sign == Sign::POS ? "POS" : "NEG") << " ";
   std::cout << "- interval [ " << vecrho.front().first << " : ";
   std::cout << vecrho.back().first << " ]" << std::endl;
   return vecrho;

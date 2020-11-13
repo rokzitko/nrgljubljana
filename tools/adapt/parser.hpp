@@ -20,7 +20,7 @@ inline bool find_block(std::ifstream &F, const std::string &s) {
   return bool(F); // True if found.
 }
 
-class params : public std::map<std::string, std::string> {
+class Params : public std::map<std::string, std::string> {
  private:
    // Parse a block of "keyword=value" lines.
    void parse_block(std::ifstream &F) {
@@ -43,7 +43,7 @@ class params : public std::map<std::string, std::string> {
      }
    }
  public:
-   params(const std::string &filename) {
+   Params(const std::string &filename) {
      std::ifstream F;
      safe_open(F, filename);
      if (find_block(F, "param")) { parse_block(F); }
