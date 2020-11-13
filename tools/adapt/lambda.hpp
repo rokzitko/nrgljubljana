@@ -1,7 +1,12 @@
 // Discretization ODE solver for NRG
 // ** LAMBDA class
 
+#ifndef _adapt_lambda_hpp_
+#define _adapt_lambda_hpp_
+
 #include <cmath>
+
+namespace NRG::Adapt {
 
 // All things Lambda (stored to avoid recomputing).
 class LAMBDA {
@@ -19,3 +24,7 @@ class LAMBDA {
   inline double factor() const { return factorLambda; }
   inline double power(double x) const { return pow(Lambda, x); }
 };
+
+} // namespace
+
+#endif

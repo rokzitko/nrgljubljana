@@ -1,9 +1,14 @@
 // Discretization ODE solver for NRG
 // ** Integration code
 
+#ifndef _adapt_calc_hpp_
+#define _adapt_calc_hpp_
+
 #include <vector>
 #include <algorithm>
 #include <cassert>
+
+namespace NRG::Adapt {
 
 // Integrate a vector using the trapezoidal rule (this is consistent with
 // linear interpolation between the tabulated function values). Returns the
@@ -52,3 +57,7 @@ auto integrate_ab(const Vec &vec, const double a, const double b) {
   }
   return sum;
 }
+
+} // namespace
+   
+#endif

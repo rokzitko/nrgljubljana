@@ -1,11 +1,16 @@
 // Discretization ODE solver for NRG
 // ** Parsing of the parameter file
 
+#ifndef _adapt_parser_hpp_
+#define _adapt_parser_hpp_
+
 #include <map>
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+
+namespace NRG::Adapt {
 
 // Locate block [name] in a file stream. Returns true if succeessful.
 inline bool find_block(std::ifstream &F, const std::string &s) {
@@ -66,3 +71,7 @@ class Params : public std::map<std::string, std::string> {
      return this->at(keyword) == "true";     
    }
 };
+
+} // namespace
+
+#endif

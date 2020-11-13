@@ -1,18 +1,25 @@
 // Discretization ODE solver for NRG
 // ** Loading (and parsing) of tabulated data
 
+#ifndef _adapt_load_hpp_
+#define _adapt_load_hpp_
+
 #include <vector>
 #include <string>
 #include <algorithm>
 #include <iterator>
 #include <sstream>
 #include <stdexcept>
+#include <cctype>
+#include <cstdlib>
+
+namespace NRG::Adapt {
 
 enum class Sign { POS, NEG }; // positive vs. negative energies
 
 // Split a string 's' into substrings. Leading spaces are ignored.
-std::vector<std::string> split_string(const std::string &s, unsigned int atleast = 0) {
-  const int len   = s.length();
+inline auto split_string(const std::string &s, unsigned int atleast = 0) {
+  const int len = s.length();
   int index = 0;
   while (index < len && isspace(s[index])) { index++; }
   std::vector<std::string> substrings;
@@ -32,7 +39,7 @@ std::vector<std::string> split_string(const std::string &s, unsigned int atleast
   return substrings;
 }
 
-Vec load_g(const std::string &filename) {
+inline auto load_g(const std::string &filename) {
   std::ifstream F;
   safe_open(F, filename);
   Vec vecg;
@@ -47,31 +54,28 @@ Vec load_g(const std::string &filename) {
   return vecg;
 }
 
-void rescalevecxy(Vec &vec, const double factorx, const double factory) {
-  const int len = vec.size();
-  for (int i = 0; i < len; i++) {
-    vec[i].first *= factorx;
+inline void rescalevecxy(Vec &vec, const double factorx, const double factory) {
+  for (int i = 0; i < vec.size(); i++) {
+    vec[i].first  *= factorx;
     vec[i].second *= factory;
   }
   std::cout << "Rescaled to the interval [ " << vec.front().first << " : " << vec.back().first << " ]" << std::endl;
 }
 
 // Show minimal and maximal y in a table.
-void minmaxvec(const Vec &vec, const std::string name) {
+inline void minmaxvec(const Vec &vec, const std::string name) {
   auto miny   = DBL_MAX;
   auto maxy   = 0;
-  const int len = vec.size();
-  for (int i = 0; i < len; i++) {
-    double y = vec[i].second;
+  for (int i = 0; i < vec.size(); i++) {
+    const auto y = vec[i].second;
     if (y > maxy) { maxy = y; }
     if (y < miny) { miny = y; }
   }
-  std::cout << "# min[" << name << "]=" << miny;
-  std::cout << " max[" << name << "]=" << maxy << std::endl;
+  std::cout << "# min[" << name << "]=" << miny << " max[" << name << "]=" << maxy << std::endl;
 }
 
 // Load positive (sign=POS) or negative (sogn=NEG) part of the hybridisation function into a vector.
-Vec load_rho(const std::string &filename, const Sign sign) {
+inline Vec load_rho(const std::string &filename, const Sign sign) {
   std::ifstream F;
   safe_open(F, filename);
   Vec vecrho;
@@ -99,20 +103,20 @@ Vec load_rho(const std::string &filename, const Sign sign) {
   return vecrho;
 }
 
-std::string tostring(const Pair &p) {
+inline std::string tostring(const Pair &p) {
   std::ostringstream str;
   str << p.first << " " << p.second;
   return str.str();
 }
 
-void save(const std::string &fn, const Vec &v) {
+inline void save(const std::string &fn, const Vec &v) {
   std::ofstream F(fn.c_str());
   if (!F) 
     throw std::runtime_error("Failed to open " + fn + " for writing.");
   std::transform(v.begin(), v.end(), std::ostream_iterator<std::string>(F, "\n"), tostring);
 }
 
-void save(const std::string &fn, const std::vector<double> &v) {
+inline void save(const std::string &fn, const std::vector<double> &v) {
   std::ofstream F(fn.c_str());
   if (!F) 
     throw std::runtime_error("Failed to open " + fn + " for writing.");
@@ -120,7 +124,7 @@ void save(const std::string &fn, const std::vector<double> &v) {
   std::copy(v.begin(), v.end(), std::ostream_iterator<double>(F, "\n"));
 }
 
-void load(const std::string &fn, std::vector<double> &v) {
+inline void load(const std::string &fn, std::vector<double> &v) {
   std::ifstream F;
   safe_open(F, fn);
   v.clear();
@@ -131,3 +135,7 @@ void load(const std::string &fn, std::vector<double> &v) {
     v.push_back(x);
   }
 }
+
+} // namespace
+
+#endif

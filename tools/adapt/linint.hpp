@@ -1,9 +1,14 @@
 // Discretization ODE solver for NRG
 // ** Interpolation code
 
+#ifndef _adapt_linint_hpp_
+#define _adapt_linint_hpp_
+
 #include <utility>
 #include <vector>
 #include <stdexcept>
+
+namespace NRG::Adapt {
 
 // Structures for storing tabulated data, such as rho(omega).
 using Pair = std::pair<double, double>;
@@ -127,3 +132,7 @@ double IntLinInt::operator()(const double x) {
   const auto int_from_0 = intvec[index].second;
   return int_from_0 + dx * f0 + dx * dx * deriv / 2.0;
 }
+
+} // namespace
+
+#endif

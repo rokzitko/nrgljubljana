@@ -24,7 +24,7 @@ using namespace std::string_literals;
 #include "load.hpp"
 #include "calc.hpp"
 
-//using namespace nrg::adapt {
+namespace NRG::Adapt {
 
 inline void add_zero_point(Vec &v, const double small = 1e-99)
 {
@@ -355,5 +355,7 @@ class Adapt {
      report();
    }
 };
+
+} // namespace
 
 #endif

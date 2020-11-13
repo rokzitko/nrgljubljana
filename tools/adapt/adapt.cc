@@ -16,6 +16,7 @@
 using namespace std::string_literals;
 
 #include "adapt.hpp"
+using namespace NRG::Adapt;
 
 void about(std::ostream &F = std::cout) {
   F << "# Discretization ODE solver" << std::endl;
