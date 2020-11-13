@@ -273,7 +273,7 @@ struct data_converter<boost::numeric::ublas::matrix<T>, void>
     }
 
     inline const value_type* transform_write(const Matrix& array) const noexcept {
-        return &(array(0, 0));
+       return array.size1() && array.size2() ? &(array(0, 0)) : nullptr;
     }
 };
 #endif

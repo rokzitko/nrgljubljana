@@ -196,8 +196,12 @@ struct inspector<boost::numeric::ublas::matrix<T>> {
     static std::array<size_t, recursive_ndim> getDimensions(const type& val) {
         std::array<size_t, recursive_ndim> sizes{val.size1(), val.size2()};
         size_t index = ndim;
-        for (const auto& s: inspector<value_type>::getDimensions(val(0, 0))) {
-            sizes[index++] = s;
+        if (val.size1() && val.size2()) {
+          for (const auto& s: inspector<value_type>::getDimensions(val(0, 0))) {
+              sizes[index++] = s;
+          }
+        } else {
+          // TO DO
         }
         return sizes;
     }
