@@ -14,16 +14,17 @@ if(SYM_ALL)
 endif()
 
 add_library(nrgljubljana_c  SHARED ${sources})
-  
+
 # Enable warnings
 target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
 
 # Configure compilation
 target_compile_options(nrgljubljana_c     PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
-target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++> 
+target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry/coefnew>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>)
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tools>)
 target_compile_definitions(nrgljubljana_c PUBLIC
   $<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
   NRG_SYM_BASIC
