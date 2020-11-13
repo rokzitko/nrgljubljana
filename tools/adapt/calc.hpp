@@ -3,13 +3,14 @@
 
 #include <vector>
 #include <algorithm>
+#include <cassert>
 
 // Integrate a vector using the trapezoidal rule (this is consistent with
 // linear interpolation between the tabulated function values). Returns the
 // value of the integral over all data points.
-double integrate(Vec &vec) {
+auto integrate(Vec &vec) {
   Vec temp(vec);
-  const auto len = vec.size();
+  const int len = vec.size();
   assert(len >= 2);
   auto sum = 0.0;
   for (int i = 1; i < len; i++) {
@@ -29,11 +30,11 @@ double integrate(Vec &vec) {
 // interval of tabulation, while the lower boundary 'a' is below it
 // (typically a=0); to obtain the contribution from 'a' to the beginning of
 // the tabulation interval, an extrapolation is performed.
-double integrate_ab(const Vec &vec, const double a, const double b) {
+auto integrate_ab(const Vec &vec, const double a, const double b) {
   assert(a < b);
   Vec temp(vec); // We need to make a copy to sort the table.
   std::sort(temp.begin(), temp.end());
-  const auto len = temp.size();
+  const int len = temp.size();
   auto sum = 0.0;
   for (int i = 1; i < len; i++) {
     const auto [x0, y0] = temp[i-1];

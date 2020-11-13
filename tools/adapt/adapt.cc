@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <ctime>
 
+using namespace std;
+
 #include "lambda.hpp"
 #include "linint.hpp"
 #include "io.hpp"
