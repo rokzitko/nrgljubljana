@@ -13,8 +13,10 @@ double integrate(Vec &vec) {
   assert(len >= 2);
   auto sum = 0.0;
   for (int i = 1; i < len; i++) {
-    const auto dx   = vec[i].first - vec[i-1].first;
-    const auto yavg = (temp[i].second + temp[i-1].second) / 2.0;
+    const auto [x0, y0] = temp[i-1];
+    const auto [x1, y1] = temp[i];
+    const auto dx   = x1-x0;
+    const auto yavg = (y1+y0) / 2.0;
     sum += dx * yavg;
     vec[i].second = sum; // total so far
   }
@@ -34,9 +36,9 @@ double integrate_ab(const Vec &vec, const double a, const double b) {
   const auto len = temp.size();
   auto sum = 0.0;
   for (int i = 1; i < len; i++) {
-    const auto x0   = temp[i - 1].first;
-    const auto x1   = temp[i].first;
-    const auto yavg = (temp[i].second + temp[i - 1].second) / 2.0;
+    const auto [x0, y0] = temp[i-1];
+    const auto [x1, y1] = temp[i];
+    const auto yavg = (y1+y0) / 2.0;
     double dx;
     if (x0 < b && x1 <= b) {
       dx = x1 - x0;
