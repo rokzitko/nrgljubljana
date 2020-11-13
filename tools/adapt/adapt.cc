@@ -29,16 +29,14 @@
 #include <algorithm>
 #include <ctime>
 
-using namespace std;
+#include "lambda.hpp"
+#include "linint.hpp"
+#include "io.hpp"
+#include "parser.hpp"
+#include "load.hpp"
+#include "calc.hpp"
 
-#include "lambda.h"
-#include "linint.h"
-#include "io.h"
-#include "parser.h"
-#include "load.h"
-#include "calc.h"
-
-string param_fn = "param"; // file with input parameters
+std::string param_fn = "param"; // file with input parameters
 SIGN sign       = POS;
 LAMBDA Lambda; // discretization parameter
 
@@ -74,22 +72,20 @@ double A;    // parameter in the shooting method. Initially A=intA.
              // Equal to intA if adapt=false.
 
 // Right-hand-side of the differential equation. y=g !
-double rhs_G(double x, double y) {
+double rhs_G(const double x, const double y) {
   double powL = Lambda.power(2.0 - x);
   return Lambda.logL() * (y - A / rho(y * powL));
 }
 
-void save(ostream &OUT) { OUT << x << " " << y << endl; }
+void save(std::ostream &OUT) { OUT << x << " " << y << std::endl; }
 
 bool check2 = false;
 
 // Perform a step of length (at most) try_dx. Returns actual dx used.
-double timestep(double try_dx, double (*rhs)(double, double)) {
+double timestep(const double try_dx, double (*rhs)(double, double)) {
   double dx = try_dx; // Current step length
   double dy, error;
-
   int subdivision = 0;
-
   // Approach: we attempt Runge-Kutta steps, reducing dx if necessary so
   // as to avoid crossing the tabulation data interval boundaries (with
   // too large steps) and to avoid too large errors.
@@ -97,15 +93,11 @@ double timestep(double try_dx, double (*rhs)(double, double)) {
   const int max_cnt = 2 * max_subdiv;
   while (true) {
     assert(isfinite(dx));
-
     rho.clear_flag();
-
-    double k1, k2, k3, k4; // Runge-Kutta intermediate results
-    k1 = dx * rhs(x, y);
-    k2 = dx * rhs(x + dx / 2.0, y + k1 / 2.0);
-    k3 = dx * rhs(x + dx / 2.0, y + k2 / 2.0);
-    k4 = dx * rhs(x + dx, y + k3);
-
+    const auto k1 = dx * rhs(x, y);
+    const auto k2 = dx * rhs(x + dx / 2.0, y + k1 / 2.0);
+    const auto k3 = dx * rhs(x + dx / 2.0, y + k2 / 2.0);
+    const auto k4 = dx * rhs(x + dx, y + k3);
     // Have we crossed the interval boundary ?
     if (rho.flag()) {
       if (subdivision < max_subdiv) {
@@ -114,16 +106,13 @@ double timestep(double try_dx, double (*rhs)(double, double)) {
         continue;
       }
     }
-
     dy = (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
-
     // Calculate a second-order result using Heun's formula and estimate
     // the error in y.
-    double k2_heun = dx * rhs(x + dx, y + k1);
-    double dy_heun = (k1 + k2_heun) / 2.0;
+    const auto k2_heun = dx * rhs(x + dx, y + k1);
+    const auto dy_heun = (k1 + k2_heun) / 2.0;
     error          = abs(dy_heun - dy);
-    max_error      = max(max_error, error); // update max_error
-
+    max_error      = std::max(max_error, error); // update max_error
     // Check the flags for k2_heun evaluation.
     if (rho.flag()) {
       if (subdivision < max_subdiv) {
@@ -132,7 +121,6 @@ double timestep(double try_dx, double (*rhs)(double, double)) {
         continue;
       }
     }
-
     // Error too large? Then try again!
     if (error > allowed_error) {
       if (subdivision < max_subdiv) {
@@ -143,124 +131,92 @@ double timestep(double try_dx, double (*rhs)(double, double)) {
       // If we cannot subdivide, we need to give up and break from the loop!
       break;
     }
-
     cnt++;
-    if (cnt > max_cnt) {
-      // Paranoid: we should never see this!
-      cerr << "WARNING: cnt=" << cnt << " in timestep()" << endl;
-    }
-
+    if (cnt > max_cnt) 
+      throw std::runtime_error("Number of subdivisions exceeded.");
     break; // exit loop here: the RK step is appropriate
   }
-
   if (check2) {
     // Sanity checks
-    const double dEdx      = dy / dx - y * Lambda.logL();
+    const double dEdx      = dy/dx - y*Lambda.logL();
     const double tolerance = 1e-5;
     if (dEdx >= 0.0) { // E(x) must be monotonously decreasing!
-      cerr << "WARNING: dE/dx is not negative." << endl;
-      cerr << " x=" << x << " y=" << y << " dEdx=" << dEdx << " dy/dx=" << dy / dx << " y*log(Lambda)=" << y * Lambda.logL() << endl;
+      std::cerr << "WARNING: dE/dx is not negative." << std::endl;
+      std::cerr << " x=" << x << " y=" << y << " dEdx=" << dEdx << " dy/dx=" << dy/dx << " y*log(Lambda)=" << y*Lambda.logL() << std::endl;
     }
-    if (dEdx > tolerance) {
-      cerr << "Aborting!" << endl;
-      exit(1);
-    }
+    if (dEdx > tolerance)
+      throw std::runtime_error("Tolerance criterium not satisfied.");
   }
-
   x += dx;
   y += dy;
-
   return dx;
 }
 
 // Integrate with step dx up to xf.
-void int_with_to(double dx, double xf, double (*rhs)(double, double)) {
+void int_with_to(const double dx, const double xf, double (*rhs)(double, double)) {
   // Maximum discrepancies in x when approaching mesh points.
   const double max_diff_x = 1e-10;
-
   int cnt           = 0;
   const int max_cnt = 1000000;
   do {
     // If dx is too long, steplength should be decreased to xf-x.
-    const double steplength = (x + dx < xf ? dx : xf - x);
-
+    const double steplength = x + dx < xf ? dx : xf - x;
     timestep(steplength, rhs);
-
     cnt++;
-    if (cnt > max_cnt) {
-      // Paranoid: we should never see this!
-      cerr << "WARNING: cnt=" << cnt << " in int_with_to()" << endl;
-      cerr << "Try decreasing max_subdiv!" << endl;
-    }
+    if (cnt > max_cnt) 
+      std::runtime_error("Number of subdivisions exceeded. max_subdiv should be increased.");
   } while (abs(x - xf) > max_diff_x); // x is a global variable, updated in timestep()
 }
 
-// returns the g(xmax)/[A/rho(0)] ratio
-double shoot_g(Vec &vecg) {
-  string filename_g = "GSOL" + string(sign == POS ? "" : "NEG") + ".dat";
-  ofstream OUTG;
+// returns the g(xmax)/[A/rho(0)] ratio and vecg
+auto shoot_g() {
+  std::string filename_g = "GSOL" + std::string(sign == POS ? "" : "NEG") + ".dat";
+  std::ofstream OUTG;
   safe_open(OUTG, filename_g);
-
-  cout << "#  A=" << A << endl;
-  vecg.clear();
-
+  std::cout << "#  A=" << A << std::endl;
+  Vec vecg;
   rho(1); // NECESSARY!
-
   double dx = dx_fine; // initial step size
-
   // Initial conditions
   x         = 2.0;
   y         = 1.0; // y=g here!
   max_error = 0.0;
-
   save(OUTG); // save x=2 data point
-  vecg.push_back(make_pair(x, y));
-
+  vecg.emplace_back(std::make_pair(x, y));
   double x_st = x; // Target x for next output line
   do {
     x_st += output_step;
     int_with_to(dx, x_st, rhs_G); // rhs_G !!
     save(OUTG);
-    vecg.push_back(make_pair(x, y));
+    vecg.emplace_back(std::make_pair(x, y));
     if (x > xfine) { dx = dx_fast; }
   } while (x < xmax);
-
-  double factor = A / rho(0);
-  double ratio  = y / factor;
-  cout << "#  x_last=" << x << " "
-       << "g_last/factor=" << ratio << endl;
-  cout << "#  eps_last=" << y * Lambda.power(2 - x) << " max_error=" << max_error << endl;
-  return ratio;
+  const auto factor = A / rho(0);
+  const auto ratio  = y / factor;
+  std::cout << "#  x_last=" << x << " " << "g_last/factor=" << ratio << std::endl;
+  std::cout << "#  eps_last=" << y * Lambda.power(2 - x) << " max_error=" << max_error << std::endl;
+  return std::make_pair(ratio, vecg);
 }
 
 void init_A() {
   intA = integrate_ab(vecrho, 0.0, 1.0);
-  cout << "# intA=" << intA << endl;
-
+  std::cout << "# intA=" << intA << std::endl;
   A = intA;
 }
 
 Vec calc_g(const Vec &vecrho) {
-  Vec vecg;
-
-  double ratio1 = shoot_g(vecg);
-  if (abs(ratio1 - 1.0) < convergence_eps) { // We're done
-    return vecg;
-  }
-
+  const auto [ratio1, vecg1] = shoot_g();
+  if (abs(ratio1 - 1.0) < convergence_eps)  // We're done
+    return vecg1;
   // Otherwise more effort is required...
-
   if (ratio1 > 1.0) { // intA too small
     A = A * factor0;
   } else { // intA too large
     A = A / factor0;
   }
-
-  double ratio2 = shoot_g(vecg);
-  if (abs(ratio2 - 1.0) < convergence_eps) { // We're done
-    return vecg;
-  }
-
+  const auto [ratio2, vecg2] = shoot_g();
+  if (abs(ratio2 - 1.0) < convergence_eps)  // We're done
+    return vecg2;
   // Refine using secant method
   double x0 = intA;
   double x1 = A;
@@ -269,26 +225,20 @@ Vec calc_g(const Vec &vecrho) {
   int iter  = 0;
   double ynew;
   do {
-    double xnew     = x1 - (x1 - x0) / (y1 - y0) * y1;
-    A               = xnew;
-    double rationew = shoot_g(vecg);
-    ynew            = rationew - 1.0;
+    const auto xnew            = x1 - (x1 - x0) / (y1 - y0) * y1;
+    A                          = xnew;
+    const auto [rationew,vecg] = shoot_g();
+    ynew                       = rationew - 1.0;
+    if (abs(rationew-1) < convergence_eps)
+      return vecg;
     // Shift
     x0 = x1;
     y0 = y1;
     x1 = xnew;
     y1 = ynew;
     iter++;
-  } while (abs(ynew) > convergence_eps && iter < max_iter);
-
-  if (abs(ynew) > convergence_eps) {
-    cerr << "Secant method failed to converge in " << max_iter << " steps." << endl;
-    exit(1);
-  } else {
-    cout << "# Converged!" << endl;
-  }
-
-  return vecg;
+  } while (iter < max_iter);
+  throw std::runtime_error("Secant method failed to converge in " + std::to_string(max_iter) + " steps.");
 }
 
 // Rescaling of for excluding finite intervals around omega=0. The
@@ -305,45 +255,38 @@ double eps(double x) {
 }
 
 // Eps(x) = D f(x) Lambda^(2-x)
-inline double Eps(double x, double f) {
+inline auto Eps(const double x, const double f) {
   assert(x >= 1 && f > 0);
   return f * Lambda.power(2.0 - x);
 }
 
 // Right-hand-side of the differential equation. y=f !
-double rhs_F(double x, double y) {
+double rhs_F(const double x, const double y) {
   assert(isfinite(x));
   assert(isfinite(y));
-
   const double term1 = Lambda.logL() * y;
-
   const double integral = intrho2(eps(x)) - intrho1(eps(x + 1));
   const double powL     = Lambda.power(2.0 - x);
   const double denom    = powL * rho(y * powL);
-
   double term2 = integral / denom;
-
   if (denom == 0.0) {
-    cout << "# Warning: denom=0 with integral=" << integral << " at x=" << x << endl;
-    cout << "# (denom=0 may arise from zeros in the hybridisation function)" << endl;
+    std::cout << "# Warning: denom=0 with integral=" << integral << " at x=" << x << std::endl;
+    std::cout << "# (denom=0 may arise from zeros in the hybridisation function)" << std::endl;
     term2 = 0.0;
   }
-
   assert(isfinite(term2));
-
   const double result = term1 - term2;
-
   return result;
 }
 
-void about(ostream &F = cout) {
-  F << "# Discretization ODE solver" << endl;
-  F << "# Rok Zitko, rok.zitko@ijs.si, 2008-2020" << endl;
+void about(std::ostream &F = std::cout) {
+  F << "# Discretization ODE solver" << std::endl;
+  F << "# Rok Zitko, rok.zitko@ijs.si, 2008-2020" << std::endl;
 }
 
 const std::string usage{"Usage: adapt [-h] [P|N] [param_filename]"};
 
-inline void help(int argc, char **argv, std::string help_message)
+inline void help(int argc, char **argv, const std::string &help_message)
 {
   std::vector<std::string> args(argv+1, argv+argc); // NOLINT
   if (args.size() >= 1 && args[0] == "-h") {
@@ -358,119 +301,100 @@ void cmd_line(int argc, char *argv[]) {
     switch (first) {
       case 'P': sign = POS; break;
       case 'N': sign = NEG; break;
-      default: cerr << usage << endl; exit(1);
+    default: std::cerr << usage << std::endl; exit(1);
     }
   }
-
-  if (argc == 3) { param_fn = string(argv[2]); }
-
-  cout << "# ++ " << (sign == POS ? "POSITIVE" : "NEGATIVE") << endl;
+  if (argc == 3) { param_fn = std::string(argv[2]); }
+  std::cout << "# ++ " << (sign == POS ? "POSITIVE" : "NEGATIVE") << std::endl;
 }
 
 void add_zero_point (Vec &vecrho)
 {
-  double x0 = vecrho.front().first;
-  double y0 = vecrho.front().second;
+  const double x0 = vecrho.front().first;
+  const double y0 = vecrho.front().second;
   const double SMALL = 1e-99;
   if (x0 > SMALL)
-    vecrho.push_back(make_pair(SMALL, y0));
-  sort(begin(vecrho), end(vecrho));
+    vecrho.emplace_back(std::make_pair(SMALL, y0));
+  std::sort(begin(vecrho), end(vecrho));
 }
 
-void load_init_rho() {
-  string rhofn = Pstr("dos", "Delta.dat");
+void load_init_rho(const params &P) {
+  std::string rhofn = P.Pstr("dos", "Delta.dat");
   vecrho       = load_rho(rhofn, sign);
   add_zero_point(vecrho);
-
   rescalevecxy(vecrho, 1.0 / bandrescale, bandrescale);
   minmaxvec(vecrho, "rho");
   rho = LinInt(vecrho);
-  cout << "# rho(0)=" << rho(0) << " rho(1)=" << rho(1) << endl;
-
+  std::cout << "# rho(0)=" << rho(0) << " rho(1)=" << rho(1) << std::endl;
   Vec vecintrho(vecrho);
   integrate(vecintrho);
-
   intrho1 = IntLinInt(vecrho, vecintrho);
   intrho2 = intrho1;
 }
 
-void set_parameters() {
-  cout << setprecision(PREC);
-
-  Lambda = LAMBDA(P("Lambda", 2.0));
+void set_parameters(const params &P, const int PREC = 16) {
+  std::cout << std::setprecision(PREC);
+  Lambda = LAMBDA(P.P("Lambda", 2.0));
   assert(Lambda > 1.0);
-
-  adapt = Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
-
-  hardgap  = Pbool("hardgap", false); // Exclude an interval around omega=0 ?
-  boundary = P("boundary", 0.0);      // The boundary of the exclusion interval.
-
-  bandrescale = P("bandrescale", 1.0); // band rescaling parameter
-
-  xmax = P("xmax", 30); // Integrate over [1..xmax]
+  adapt = P.Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
+  hardgap  = P.Pbool("hardgap", false); // Exclude an interval around omega=0 ?
+  boundary = P.P("boundary", 0.0);      // The boundary of the exclusion interval.
+  bandrescale = P.P("bandrescale", 1.0); // band rescaling parameter
+  xmax = P.P("xmax", 30); // Integrate over [1..xmax]
   assert(xmax > 1);
-  xfine = P("xfine", 5); // Fine stepsize integral [1..xfine]
+  xfine = P.P("xfine", 5); // Fine stepsize integral [1..xfine]
   assert(xfine > 1);
-  output_step = P("outputstep", 1.0 / 64.0); // Stepsize for output file
+  output_step = P.P("outputstep", 1.0 / 64.0); // Stepsize for output file
   assert(output_step <= 1.0);
-  dx_fine       = P("dx_fine", 1e-5);        // Integration stepsize in [1..xfine]
-  dx_fast       = P("dx_fast", 1e-4);        // Integration stepsize in [xfine..xmax]
-  allowed_error = P("allowed_error", 1e-10); // error control for adaptable stepsize
-  max_subdiv    = Pint("max_subdiv", 10);    // maximum nr of integ. step subdivisions
+  dx_fine       = P.P("dx_fine", 1e-5);        // Integration stepsize in [1..xfine]
+  dx_fast       = P.P("dx_fast", 1e-4);        // Integration stepsize in [xfine..xmax]
+  allowed_error = P.P("allowed_error", 1e-10); // error control for adaptable stepsize
+  max_subdiv    = P.Pint("max_subdiv", 10);    // maximum nr of integ. step subdivisions
   assert(dx_fine * pow(0.5, max_subdiv) > DBL_EPSILON);
-  max_abs = P("max_abs", 100.0); // Maximal |f(x)|
+  max_abs = P.P("max_abs", 100.0); // Maximal |f(x)|
   assert(max_abs > 0.0);
-
-  convergence_eps = P("secant_eps", 1e-4);
-  factor0         = 1.0 + P("secant_factor", 1e-7);
-  max_iter        = Pint("secant_max_iter", 10);
-
-  cout << "# ++ " << (adapt ? "ADAPTIVE" : "FIXED-GRID") << endl;
-  cout << "# Lambda=" << Lambda;
-  cout << " bandrescale=" << bandrescale;
-  cout << " xmax=" << xmax;
-  cout << " xfine=" << xfine;
-  cout << " output_step=" << output_step;
-  cout << " dx_fine=" << dx_fine << " dx_fast=" << dx_fast;
-  cout << endl;
-  cout << "# allowed_error=" << allowed_error;
-  cout << " max_subdiv=" << max_subdiv;
-  cout << " max_abs=" << max_abs;
-  cout << endl;
+  convergence_eps = P.P("secant_eps", 1e-4);
+  factor0         = 1.0 + P.P("secant_factor", 1e-7);
+  max_iter        = P.Pint("secant_max_iter", 10);
+  std::cout << "# ++ " << (adapt ? "ADAPTIVE" : "FIXED-GRID") << std::endl;
+  std::cout << "# Lambda=" << Lambda;
+  std::cout << " bandrescale=" << bandrescale;
+  std::cout << " xmax=" << xmax;
+  std::cout << " xfine=" << xfine;
+  std::cout << " output_step=" << output_step;
+  std::cout << " dx_fine=" << dx_fine << " dx_fast=" << dx_fast;
+  std::cout << std::endl;
+  std::cout << "# allowed_error=" << allowed_error;
+  std::cout << " max_subdiv=" << max_subdiv;
+  std::cout << " max_abs=" << max_abs;
+  std::cout << std::endl;
 }
 
-void load_or_calc_g() {
+void load_or_calc_g(const params &P) {
   Vec vecg;
-  const bool loadg = Pbool("loadg", false);
+  const bool loadg = P.Pbool("loadg", false);
   if (loadg) {
-    string gfn = "GSOL" + string(sign == POS ? "" : "NEG") + ".dat";
+    std::string gfn = "GSOL" + std::string(sign == POS ? "" : "NEG") + ".dat";
     vecg       = load_g(gfn);
   } else {
     vecg = calc_g(vecrho);
   }
-
   minmaxvec(vecg, "g");
   g = LinInt(vecg);
 }
 
 void calc_f() {
-  string filename_f = "FSOL" + string(sign == POS ? "" : "NEG") + ".dat";
-  ofstream OUTF;
+  std::string filename_f = "FSOL" + std::string(sign == POS ? "" : "NEG") + ".dat";
+  std::ofstream OUTF;
   safe_open(OUTF, filename_f);
-
   check2 = true; // Ensure that Eps(x) is strictly decreasing
-
   rho(1); // NECESSARY!
-
   double dx = dx_fine; // initial step size
-
   // Initial conditions
   x         = 1.0;
   y         = 1.0 / Lambda; // y=f here!
   max_error = 0.0;
-
   save(OUTF); // save x=1 data point
-
   double x_st = x; // Target x for next output line
   do {
     x_st += output_step;
@@ -478,35 +402,31 @@ void calc_f() {
     save(OUTF);
     if (x > xfine) { dx = dx_fast; }
     if (abs(y) > max_abs) {
-      cout << "***** y=" << y << " |y|>max_abs=" << max_abs << endl;
-      cout << "***** Terminating!" << endl;
+      std::cout<< "***** y=" << y << " |y|>max_abs=" << max_abs << std::endl;
+      std::cout<< "***** Terminating!" << std::endl;
     }
   } while (x < xmax && abs(y) <= max_abs);
-
-  double factor = Lambda.factor() * A / rho(0);
-  cout << "# x_last=" << x << endl;
-  cout << "# f_last=" << y << " [f_last/factor=" << y / factor << "]" << endl;
-  cout << "# eps_last=" << eps(x) << " (smallest energy point considered [input])" << endl;
-  cout << "# Eps_last=" << y * Lambda.power(2 - x) << " (smallest energy scale obtained [output])" << endl;
-  cout << "# max_error=" << max_error << " (maximum integration error)" << endl;
+  const double factor = Lambda.factor() * A / rho(0);
+  std::cout << "# x_last=" << x << std::endl;
+  std::cout << "# f_last=" << y << " [f_last/factor=" << y / factor << "]" << std::endl;
+  std::cout << "# eps_last=" << eps(x) << " (smallest energy point considered [input])" << std::endl;
+  std::cout << "# Eps_last=" << y * Lambda.power(2 - x) << " (smallest energy scale obtained [output])" << std::endl;
+  std::cout << "# max_error=" << max_error << " (maximum integration error)" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
   clock_t start_clock = clock();
-
   about();
   help(argc, argv, usage);
   cmd_line(argc, argv);
-  parser(param_fn);
-  set_parameters();
 
-  load_init_rho();
+  params P(param_fn);
+  set_parameters(P);
+  load_init_rho(P);
   init_A();
-
-  if (adapt) { load_or_calc_g(); }
-
+  if (adapt) { load_or_calc_g(P); }
   calc_f();
 
   clock_t end_clock = clock();
-  cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << endl;
+  std::cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << std::endl;
 }
