@@ -9,7 +9,7 @@ class LAMBDA {
   double Lambda, logLambda{}, factorLambda{};
  public:
   LAMBDA() { Lambda = -1; };
-  LAMBDA(double in_Lambda) {
+  LAMBDA(const double in_Lambda) {
     Lambda       = in_Lambda;
     logLambda    = log(Lambda);
     factorLambda = (1.0 - 1.0 / Lambda) / log(Lambda);

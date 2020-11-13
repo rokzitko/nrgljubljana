@@ -74,7 +74,7 @@ double A;    // parameter in the shooting method. Initially A=intA.
              // Equal to intA if adapt=false.
 
 // Right-hand-side of the differential equation. y=g !
-double rhs_G(const double x, const double y) {
+auto rhs_G(const double x, const double y, const LAMBDA &Lambda) {
   double powL = Lambda.power(2.0 - x);
   return Lambda.logL() * (y - A / rho(y * powL));
 }
@@ -83,23 +83,38 @@ void save(std::ostream &OUT) { OUT << x << " " << y << std::endl; }
 
 bool check2 = false;
 
+template<typename FNC>
+auto rk_step(const double dx, FNC rhs)
+{
+  const auto k1 = dx * rhs(x, y);
+  const auto k2 = dx * rhs(x + dx / 2.0, y + k1 / 2.0);
+  const auto k3 = dx * rhs(x + dx / 2.0, y + k2 / 2.0);
+  const auto k4 = dx * rhs(x + dx, y + k3);
+  return (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
+}
+
+template<typename FNC>
+auto heun_step(const double dx, FNC rhs)
+{
+  const auto k1 = dx * rhs(x, y);
+  const auto k2 = dx * rhs(x + dx, y + k1);
+  return (k1 + k2) / 2.0;
+}
+
 // Perform a step of length (at most) try_dx. Returns actual dx used.
-double timestep(const double try_dx, double (*rhs)(double, double)) {
+template<typename FNC>
+double timestep(const double try_dx, FNC rhs) {
   double dx = try_dx; // Current step length
   double dy, error;
   int subdivision = 0;
-  // Approach: we attempt Runge-Kutta steps, reducing dx if necessary so
-  // as to avoid crossing the tabulation data interval boundaries (with
-  // too large steps) and to avoid too large errors.
+  // Approach: we attempt Runge-Kutta steps, reducing dx if necessary so as to avoid crossing the tabulation data
+  // interval boundaries (with too large steps) and to avoid too large errors.
   int cnt           = 0;
   const int max_cnt = 2 * max_subdiv;
   while (true) {
     assert(isfinite(dx));
     rho.clear_flag();
-    const auto k1 = dx * rhs(x, y);
-    const auto k2 = dx * rhs(x + dx / 2.0, y + k1 / 2.0);
-    const auto k3 = dx * rhs(x + dx / 2.0, y + k2 / 2.0);
-    const auto k4 = dx * rhs(x + dx, y + k3);
+    dy = rk_step(dx, rhs);
     // Have we crossed the interval boundary ?
     if (rho.flag()) {
       if (subdivision < max_subdiv) {
@@ -108,11 +123,8 @@ double timestep(const double try_dx, double (*rhs)(double, double)) {
         continue;
       }
     }
-    dy = (k1 + 2 * k2 + 2 * k3 + k4) / 6.0;
-    // Calculate a second-order result using Heun's formula and estimate
-    // the error in y.
-    const auto k2_heun = dx * rhs(x + dx, y + k1);
-    const auto dy_heun = (k1 + k2_heun) / 2.0;
+    // Calculate a second-order result using Heun's formula and estimate the error in y.
+    const auto dy_heun = heun_step(dx, rhs);
     error          = abs(dy_heun - dy);
     max_error      = std::max(max_error, error); // update max_error
     // Check the flags for k2_heun evaluation.
@@ -154,20 +166,17 @@ double timestep(const double try_dx, double (*rhs)(double, double)) {
   return dx;
 }
 
-// Integrate with step dx up to xf.
-void int_with_to(const double dx, const double xf, double (*rhs)(double, double)) {
-  // Maximum discrepancies in x when approaching mesh points.
-  const double max_diff_x = 1e-10;
-  int cnt           = 0;
-  const int max_cnt = 1000000;
+// Integrate with step dx up to xf. max_diff_x = maximum discrepancy in x when approaching mesh points.
+template<typename FNC>
+void int_with_to(const double dx, const double xf, FNC rhs, const double max_diff_x = 1e-10, const int max_cnt = 1000000) {
+  int cnt = 0;
   do {
-    // If dx is too long, steplength should be decreased to xf-x.
-    const double steplength = x + dx < xf ? dx : xf - x;
+    const double steplength = x+dx < xf ? dx : xf-x; // If dx is too long, steplength should be decreased to xf-x.
     timestep(steplength, rhs);
     cnt++;
     if (cnt > max_cnt) 
       std::runtime_error("Number of subdivisions exceeded. max_subdiv should be increased.");
-  } while (abs(x - xf) > max_diff_x); // x is a global variable, updated in timestep()
+  } while (abs(x-xf) > max_diff_x); // x is a global variable, updated in timestep()
 }
 
 // returns the g(xmax)/[A/rho(0)] ratio and vecg
@@ -188,7 +197,7 @@ auto shoot_g() {
   double x_st = x; // Target x for next output line
   do {
     x_st += output_step;
-    int_with_to(dx, x_st, rhs_G); // rhs_G !!
+    int_with_to(dx, x_st, [&Lambda](const auto x, const auto y) { return rhs_G(x, y, Lambda); }); // rhs_G !!
     save(OUTG);
     vecg.emplace_back(std::make_pair(x, y));
     if (x > xfine) { dx = dx_fast; }
@@ -211,11 +220,7 @@ Vec calc_g(const Vec &vecrho) {
   if (abs(ratio1 - 1.0) < convergence_eps)  // We're done
     return vecg1;
   // Otherwise more effort is required...
-  if (ratio1 > 1.0) { // intA too small
-    A = A * factor0;
-  } else { // intA too large
-    A = A / factor0;
-  }
+  A = ratio1 > 1.0 ? A * factor0 : A / factor0;
   const auto [ratio2, vecg2] = shoot_g();
   if (abs(ratio2 - 1.0) < convergence_eps)  // We're done
     return vecg2;
@@ -246,12 +251,12 @@ Vec calc_g(const Vec &vecrho) {
 // Rescaling of for excluding finite intervals around omega=0. The
 // new accumulation point is determined by the global variable
 // 'boundary'.
-double rescale(double omega) { return (1.0 - boundary) * omega + boundary; }
+auto rescale(const double omega) { return (1.0 - boundary) * omega + boundary; }
 
 // eps(x) = D g(x) Lambda^(2-x) for x>2.
-double eps(double x) {
-  const double gx = (adapt ? g(x) : 1.0);
-  double epsilon  = (x <= 2.0 ? 1.0 : gx * Lambda.power(2.0 - x));
+auto eps(const double x) {
+  const double gx = adapt ? g(x) : 1.0;
+  double epsilon  = x <= 2.0 ? 1.0 : gx * Lambda.power(2.0-x);
   if (hardgap) { epsilon = rescale(epsilon); }
   return epsilon;
 }
@@ -259,11 +264,11 @@ double eps(double x) {
 // Eps(x) = D f(x) Lambda^(2-x)
 inline auto Eps(const double x, const double f) {
   assert(x >= 1 && f > 0);
-  return f * Lambda.power(2.0 - x);
+  return f * Lambda.power(2.0-x);
 }
 
 // Right-hand-side of the differential equation. y=f !
-double rhs_F(const double x, const double y) {
+auto rhs_F(const double x, const double y, const LAMBDA &Lambda) {
   assert(isfinite(x));
   assert(isfinite(y));
   const double term1 = Lambda.logL() * y;
@@ -277,8 +282,7 @@ double rhs_F(const double x, const double y) {
     term2 = 0.0;
   }
   assert(isfinite(term2));
-  const double result = term1 - term2;
-  return result;
+  return term1 - term2;
 }
 
 void about(std::ostream &F = std::cout) {
@@ -324,7 +328,7 @@ void load_init_rho(const params &P) {
   std::string rhofn = P.Pstr("dos", "Delta.dat");
   vecrho       = load_rho(rhofn, sign);
   add_zero_point(vecrho);
-  rescalevecxy(vecrho, 1.0 / bandrescale, bandrescale);
+  rescalevecxy(vecrho, 1.0/bandrescale, bandrescale);
   minmaxvec(vecrho, "rho");
   rho = LinInt(vecrho);
   std::cout << "# rho(0)=" << rho(0) << " rho(1)=" << rho(1) << std::endl;
@@ -400,7 +404,7 @@ void calc_f() {
   double x_st = x; // Target x for next output line
   do {
     x_st += output_step;
-    int_with_to(dx, x_st, rhs_F); // rhs_F !!
+    int_with_to(dx, x_st, [&Lambda](const auto x, const auto y){ return rhs_F(x, y, Lambda); }); // rhs_F !!
     save(OUTF);
     if (x > xfine) { dx = dx_fast; }
     if (abs(y) > max_abs) {
