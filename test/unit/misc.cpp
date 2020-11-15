@@ -4,6 +4,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+using namespace std::string_literals;
 #include <fstream>
 
 #include <misc.hpp>
@@ -22,15 +23,15 @@ TEST(containers, misc) {
 
 TEST(strings, misc) {
   {
-    auto str = "123  ";
+    auto str = "123  "s;
     auto res = strip_trailing_whitespace(str);
-    EXPECT_EQ(res, "123");
+    EXPECT_EQ(res, "123"s);
   }
 }
 
 TEST(tokenizer, misc) {
   {
-    auto str = "1 2 3 4";
+    auto str = "1 2 3 4"s;
     string_token st(str);
     EXPECT_EQ(st.find("1"), true);
     EXPECT_EQ(st.find("2"), true);
@@ -86,11 +87,11 @@ TEST(misc, strip_trailing_whitespace) {
 	EXPECT_EQ(strip_trailing_whitespace(a), " test");
 }
 
-template<class T1, class T2>
-void compare_maps(std::map<T1,T2> a, std::map<T1,T2> b) {
+template<typename T1, typename T2, typename S1, typename S2>
+void compare_maps(const std::map<T1,T2> &a, const std::map<S1,S2> &b) {
   ASSERT_EQ(a.size(), b.size());
   for(auto const& [key, value] : a)
-    EXPECT_EQ(b[key], value);
+    EXPECT_EQ(b.at(key), value);
 }
 
 TEST(misc, block) {
@@ -98,9 +99,9 @@ TEST(misc, block) {
   const auto nekaj_drugega = parser("block.txt", "nekaj drugega");
   const auto nekaj_tretjega = parser("block.txt", "nekaj tretjega");
 	
-  std::map nekaj_map = {std::pair<std::string,std::string>("a", "2"), std::pair<std::string,std::string>("b", "3"), std::pair<std::string,std::string>("c", "4")};
-  std::map nekaj_drugega_map = {std::pair<std::string,std::string>("d", "5"), std::pair<std::string,std::string>("c", "6"), std::pair<std::string,std::string>("e", "10")};
-  std::map nekaj_tretjega_map = {std::pair<std::string,std::string>("abs", "79")};
+  const std::map nekaj_map = {std::pair("a"s, "2"s), std::pair("b"s, "3"s), std::pair("c"s, "4"s)};
+  const std::map nekaj_drugega_map = {std::pair("d"s, "5"s), std::pair("c"s, "6"s), std::pair("e"s, "10"s)};
+  const std::map nekaj_tretjega_map = {std::pair("abs"s, "79"s)};
 
 	compare_maps(nekaj, nekaj_map);
   compare_maps(nekaj_drugega, nekaj_drugega_map);
@@ -109,7 +110,7 @@ TEST(misc, block) {
 
 TEST(misc, skip_comments){
   auto file = safe_open_for_reading("nextline.txt");
-  const std::vector<std::string> result = {"zdravo", "nekaj", "adijo"};
+  const std::vector result = {"zdravo"s, "nekaj"s, "adijo"s};
 	std::string line;
   for(int i = 0; i < 3; i++){
 		skip_comments(file);
@@ -121,27 +122,24 @@ TEST(misc, skip_comments){
   EXPECT_EQ(nextline(file),std::nullopt);
 }
 
-/*TEST(misc, sortfirst){
-
-	std::map<int,int> sortf = {std::pair<int,int>(12,5), std::pair<int,int>(99, 122), std::pair<int,int>(-10, 41), std::pair<int,int>(42, 21)};
-	sortf.value_compare = sortfirst;
-	int mpkey[4] = {-10, 12, 42, 99};
-	int mpval[4] = {41, 5, 21, 122};
-	int i = 0;
-	for (const auto& [key, val]: sortf) {
+TEST(misc, sortfirst){
+	std::vector a = {std::pair(12,5), std::pair(12,4), std::pair(99, 122), std::pair(-10, 41), std::pair(42, 21)};
+  std::sort(a.begin(), a.end(), sortfirst());
+	const std::vector mpkey = {-10, 12, 12, 42, 99};
+	const std::vector mpval = {41,  5,  4,  21, 122};
+	auto i = 0;
+	for (const auto& [key, val]: a) {
 		EXPECT_EQ(mpkey[i], key);
 		EXPECT_EQ(mpval[i], val);
 		i++;
 	}
-}*/
+}
 
 TEST(misc, vector_of_keys){
-	std::map<int,int> a = {std::pair<int,int>(12,5), std::pair<int,int>(99, 122), std::pair<int,int>(-10, 41), std::pair<int,int>(42, 21)};
-	std::vector<int> b = vector_of_keys(a);
-	std::vector<int> test = {-10,12,42,99};
-	ASSERT_EQ(b.size(), test.size());
-	for(int i = 0; i < b.size(); i++)
-		EXPECT_EQ(b[i], test[i]);
+	const std::map a = {std::pair(12,5), std::pair(99, 122), std::pair(-10, 41), std::pair(42, 21)};
+	const auto b = vector_of_keys(a);
+	const std::vector expected = {-10,12,42,99};
+  ASSERT_EQ(b, expected);
 }
 
 int main(int argc, char **argv) {
