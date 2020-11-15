@@ -102,6 +102,22 @@ template<typename T> T trapez(const std::vector<T> &x, const std::vector<T> &y) 
   return weight;
 }
 
+// Create a mesh on which the output spectral function will be computed. a is the accumulation point of the mesh.
+auto make_mesh(const double min, const double max, const double ratio, 
+               const auto a, const bool add_positive = true, const bool add_negative = false) {
+  assert(min < max);
+  assert(ratio > 1.0);
+  const auto rescale_factor = (max-a)/max;
+  std::vector<double> mesh;
+  for (double z = max; z > min; z /= ratio) {
+    const auto x = a + z * rescale_factor;
+    if (add_positive) mesh.push_back(x);
+    if (add_negative) mesh.push_back(-x);
+  }
+  std::sort(mesh.begin(), mesh.end());
+  return mesh;
+}
+   
 class Broaden {
  private:
    bool verbose         = false; // output verbosity level
@@ -373,21 +389,6 @@ class Broaden {
      std::cout << "Integral with bosonic kernel (omega -> -omega)=" << sumboseinv << std::endl;
    }
 
-   // Create a mesh on which the output spectral function will be computed.
-   auto make_mesh() {
-     vec mesh;
-     assert(broaden_min < broaden_max);
-     assert(broaden_ratio > 1.0);
-     const auto a = accumulation; // accumulation point for the mesh
-     for (double z = broaden_max; z > broaden_min; z /= broaden_ratio) {
-       const auto x = z * (broaden_max - a) / broaden_max + a;
-       if (meshpositive) mesh.push_back(x);
-       if (meshnegative) mesh.push_back(-x);
-     }
-     std::sort(mesh.begin(), mesh.end());
-     return mesh;
-   }
-
    // Modified log-Gaussian broadening kernel. For gamma=alpha/4, the kernel is symmetric in both arguments. e is the
    // energy of the spectral function point being computed. ept is the energy of point.
    inline auto BR_L_orig(const double e, const double ept) {
@@ -447,9 +448,9 @@ class Broaden {
      if (gaussian) {
        return BR_G_alpha(e, ept);
      } else {
-       const double part_l = BR_L(e, ept);
-       const double part_g = BR_G(e, ept);
-       const double h      = BR_h(e, ept);
+       const auto part_l = BR_L(e, ept);
+       const auto part_g = BR_G(e, ept);
+       const auto h      = BR_h(e, ept);
        assert(h >= 0.0 && h <= 1.0);
        return part_l * h + part_g * (1.0 - h);
      }
@@ -501,7 +502,7 @@ class Broaden {
      merge();
      filter();
      if (sumrules) integrals_for_sumrules();
-     mesh = make_mesh();
+     mesh = make_mesh(broaden_min, broaden_max, broaden_ratio, accumulation, meshpositive, meshnegative);
      if (verbose) check_normalizations(mesh);
      a = broaden(mesh);
      if (finalgaussian) convolve(mesh, a, ggamma * T, gaussian_kernel);
