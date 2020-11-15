@@ -17,7 +17,6 @@
 #include <map>
 #include <string>
 #include <algorithm>
-#include <memory>
 #include <stdexcept>
 #include <numeric>
 
@@ -117,7 +116,45 @@ auto make_mesh(const double min, const double max, const double ratio,
   std::sort(mesh.begin(), mesh.end());
   return mesh;
 }
+
+auto file_size(std::ifstream &f) {
+  f.seekg(0, std::ios::beg);
+  const auto begin_pos = f.tellg();
+  f.seekg(0, std::ios::end);
+  const auto end_pos   = f.tellg();
+  return end_pos - begin_pos;
+}
    
+auto nr_doubles(std::ifstream &f) {
+  const auto len = file_size(f);
+  assert(len % sizeof(double) == 0);
+  return len/sizeof(double);
+}
+  
+auto nr_rows(std::ifstream &f, const int cols) {
+  const auto d = nr_doubles(f);
+  assert(d % cols == 0);
+  return d / cols;
+}
+   
+// Load a file containing binary representation of raw spectral density. The grid is not assumed to be uniform.
+auto load(const std::string &filename, const int nrcol, const bool verbose) {
+  std::ifstream f(filename.c_str(), std::ios::in | std::ios::binary);
+  if (!f.good() || f.eof() || !f.is_open()) 
+    throw std::runtime_error("Error opening file " + filename + " for reading.");
+  if (verbose) { std::cout << "Reading " << filename << std::endl; }
+  const auto len = file_size(f); // in bytes
+  const auto cols = 1 + nrcol;
+  const auto rows = nr_rows(f, cols);
+  if (verbose) { std::cout << "len=" << len << ", " << rows << " data points" << std::endl; }
+  auto buffer = std::vector<double>(cols*rows);
+  f.seekg(0, std::ios::beg); // Return to the beginning of the file.
+  f.read((char *)buffer.data(), len);
+  if (f.fail()) throw std::runtime_error("Error reading " + filename);
+  f.close();
+  return buffer;
+}
+
 class Broaden {
  private:
    bool verbose         = false; // output verbosity level
@@ -149,8 +186,7 @@ class Broaden {
    int Nz;      // Number of spectra (1..Nz)
    const std::string output_filename     = "spec.dat";
    const std::string cumulative_filename = "cumulative.dat";
-   std::vector<std::unique_ptr<double[]>> buffers; // binary data buffers
-   std::vector<int> sizes;       // sizes of buffers
+   std::vector<std::vector<double>> buffers; // binary data buffers
    using mapdd = std::map<double, double>;
    using vec = std::vector<double>;
    mapdd spec;           // Spectrum
@@ -274,59 +310,30 @@ class Broaden {
      std::cout << "Processing: " << name << std::endl;
      if (verbose) { std::cout << "Nz=" << Nz << " alpha=" << alpha << " T=" << T << " omega0_ratio=" << omega0_ratio << std::endl; }
    }
-
-   // Load a file containing binary representation of raw spectral density. The grid is not assumed to be uniform.
-   void load(int i) {
-     // i-th z-value defines the name of the directory where the results of the NRG calculation are contained.
-     const auto filename = one && Nz == 1 ? name : tostring(i) + "/" + name;
-     std::ifstream f(filename.c_str(), std::ios::in | std::ios::binary);
-     if (!f.good() || f.eof() || !f.is_open()) 
-       throw std::runtime_error("Error opening file " + filename + " for reading.");
-     if (verbose) { std::cout << "Reading " << filename << std::endl; }
-     const auto rows = 1 + nrcol; // number of elements in a line
-     // Determine the number of records
-     f.seekg(0, std::ios::beg);
-     const auto begin_pos = f.tellg();
-     f.seekg(0, std::ios::end);
-     const auto end_pos   = f.tellg();
-     const auto len       = end_pos - begin_pos;
-     assert(len % (rows * sizeof(double)) == 0);
-     const auto nr = len / (rows * sizeof(double)); // number of lines
-     if (verbose) { std::cout << "len=" << len << " nr=" << nr << " data points" << std::endl; }
-     sizes[i]   = nr;
-     // Allocate the read buffer. The data will be kept in memory for the duration of the calculation!
-     buffers[i] = std::make_unique<double[]>(rows * nr);
-     f.seekg(0, std::ios::beg); // Return to the beginning of the file.
-     f.read((char *)buffers[i].get(), len);
-     if (f.fail()) throw std::runtime_error("Error reading " + filename);
-     f.close();
-     if (verbose) {
-       // Check normalization.
-       auto sum = 0.0;
-       for (auto j = 0; j < nr; j++) sum += buffers[i][rows * j + col];
-       std::cout << "Weight=" << sum << std::endl;
-     }
+   void check_buffer_normalisation(const std::vector<double> &buffer, const int col) {
+     const auto cols = 1 + nrcol;
+     const auto rows = buffer.size()/cols;
+     auto sum = 0.0;
+     for (auto j = 0; j < rows; j++) sum += buffer[cols * j + col];
+     std::cout << "Weight=" << sum << std::endl;
    }
    // Load all the input data.
    void read_files() {
      buffers.resize(Nz+1);
-     sizes.resize(Nz+1);
-     for (auto i = 1; i <= Nz; i++) { load(i); }
+     for (auto i = 1; i <= Nz; i++) {
+       buffers[i] = load(one && Nz == 1 ? name : tostring(i) + "/" + name, nrcol, verbose);
+       if (verbose) check_buffer_normalisation(buffers[i], col);
+     }
    }
    // Combine data from all NRG runs (z-averaging).
    void merge() {
-     const auto rows = 1 + nrcol; // number of elements in a line
+     const auto cols = 1 + nrcol; // number of elements in a line
      // Sum weight corresponding to equal frequencies.  Map of (frequency,weight) pairs is used for this purpose.
      for (auto i = 1; i <= Nz; i++) {
-       for (auto l = 0; l < sizes[i]; l++) {
-         double &freq      = buffers[i][rows * l];
-         double &value     = buffers[i][rows * l + col];
-         auto I = spec.find(freq);
-         if (I == spec.end()) {
-           spec[freq] = value;
-         } else {
-           I->second += value;
-         }
+       for (auto l = 0; l < buffers[i].size()/cols; l++) {
+         auto freq  = buffers[i][cols * l];
+         auto value = buffers[i][cols * l + col];
+         spec[freq] += value;
        }
      }
      nr_spec = spec.size();
