@@ -455,15 +455,14 @@ class Broaden {
      }
    }
 
-   // Do the broadening
-   void broaden(const vec &mesh, vec &a) {
-     const auto nr_mesh = mesh.size();
-     if (verbose) { std::cout << "Broadening. nr_mesh=" << nr_mesh << std::endl; }
-     a.resize(nr_mesh);
-     for (auto i = 0; i < nr_mesh; i++)
-       a[i] = std::transform_reduce(vspec.begin(), vspec.end(), vfreq.begin(), 0.0, std::plus<>(), 
-                                    [this,m = mesh[i]](const auto weight, const auto freq) {
-                                      return weight * bfnc(m, freq); });
+   vec broaden(const vec &mesh) {
+     if (verbose) { std::cout << "Broadening. Number of mesh points = " << mesh.size() << std::endl; }
+     vec result(mesh.size());
+     std::transform(mesh.begin(), mesh.end(), result.begin(), [this](const auto m) {
+       return std::transform_reduce(vspec.begin(), vspec.end(), vfreq.begin(), 0.0, std::plus<>(), 
+                                    [this,m](const auto weight, const auto freq) {
+                                      return weight * bfnc(m, freq); }); });
+     return result;
    }
    
    // Cumulative spectrum
@@ -504,7 +503,7 @@ class Broaden {
      if (sumrules) integrals_for_sumrules();
      mesh = make_mesh();
      if (verbose) check_normalizations(mesh);
-     broaden(mesh, a);
+     a = broaden(mesh);
      if (finalgaussian) convolve(mesh, a, ggamma * T, gaussian_kernel);
      if (finalderfd) convolve(mesh, a, dgamma * T, derfd_kernel);
      std::cout << "Estimated weight (trapezoidal rule)=" << trapez(mesh, a) << std::endl;
