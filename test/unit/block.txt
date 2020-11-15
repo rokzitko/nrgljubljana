@@ -1,0 +1,10 @@
+[nekaj]
+a=2
+b=3
+c=4
+[nekaj drugega]
+d=5
+c=6
+e=10
+[nekaj tretjega]
+abs=79
