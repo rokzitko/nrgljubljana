@@ -2,6 +2,9 @@ add_subdirectory(gtest EXCLUDE_FROM_ALL)
 
 file(GLOB_RECURSE all_tests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
+configure_file(nextline.txt nextline.txt COPYONLY)
+configure_file(block.txt block.txt COPYONLY)
+
 foreach(test ${all_tests})
   get_filename_component(test_name ${test} NAME_WE)
   get_filename_component(test_dir ${test} DIRECTORY)
