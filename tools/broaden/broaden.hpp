@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <memory>
 #include <stdexcept>
+#include <numeric>
 
 #include <unistd.h>
 #include <getopt.h>
@@ -459,10 +460,10 @@ class Broaden {
      const auto nr_mesh = mesh.size();
      if (verbose) { std::cout << "Broadening. nr_mesh=" << nr_mesh << std::endl; }
      a.resize(nr_mesh);
-     for (auto i = 0; i < nr_mesh; i++) {
-       a[i]                  = 0.0; // clear!
-       for (auto j = 0; j < nr_spec; j++) { a[i] += vspec[j] * bfnc(mesh[i], vfreq[j]); }
-     }
+     for (auto i = 0; i < nr_mesh; i++)
+       a[i] = std::transform_reduce(vspec.begin(), vspec.end(), vfreq.begin(), 0.0, std::plus<>(), 
+                                    [this,m = mesh[i]](const auto weight, const auto freq) {
+                                      return weight * bfnc(m, freq); });
    }
    
    // Cumulative spectrum
