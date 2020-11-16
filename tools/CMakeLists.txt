@@ -6,7 +6,7 @@ macro(add_tool exec_name)
 
   # Configure compilation
   target_compile_options(${exec_name} PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
-  target_include_directories(${exec_name} PRIVATE $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}>)
+  target_include_directories(${exec_name} PRIVATE $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}> $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>)
   target_compile_definitions(${exec_name} PRIVATE
 # (not used)				NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
 				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
