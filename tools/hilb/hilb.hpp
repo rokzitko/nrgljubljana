@@ -32,6 +32,7 @@
 #include <gsl/gsl_errno.h> // GNU scientific library
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_spline.h>
+namespace NRG::Hilb {
 
 inline double atof(const std::string &s) { return ::atof(s.c_str()); }
 
@@ -69,7 +70,7 @@ class integrator {
   }
   integrator &operator=(const integrator &X) {
     if (this == &X) return *this;
-    limit         = X.limit;
+    limit          = X.limit;
     throw_on_error = X.throw_on_error;
     // keep the same workspace
     initF();
@@ -77,10 +78,10 @@ class integrator {
   }
   integrator &operator=(integrator &&X) {
     if (this == &X) return *this;
-    limit         = X.limit;
+    limit          = X.limit;
     throw_on_error = X.throw_on_error;
-    work          = X.work; // steal workspace
-    X.work        = nullptr;
+    work           = X.work; // steal workspace
+    X.work         = nullptr;
     initF();
     return *this;
   }
@@ -174,16 +175,16 @@ class interpolator {
 };
 
 // Square of x
-inline double sqr(double x) { return x * x; }
+inline double sqr(const double x) { return x * x; }
 
 // Result of Integrate[(-y/(y^2 + (x - omega)^2)), {omega, -B, B}] (atg -> imQ).
-inline double imQ(double x, double y, double B) { return atan((-B + x) / y) - atan((B + x) / y); }
+inline double imQ(const double x, const double y, const double B) { return atan((-B + x) / y) - atan((B + x) / y); }
 
 // Result of Integrate[((x - omega)/(y^2 + (x - omega)^2)), {omega, -B, B}] (logs -> reQ).
-inline double reQ(double x, double y, double B) { return (-log(sqr(B - x) + sqr(y)) + log(sqr(B + x) + sqr(y))) / 2.0; }
+inline double reQ(const double x, const double y, const double B) { return (-log(sqr(B - x) + sqr(y)) + log(sqr(B + x) + sqr(y))) / 2.0; }
 
 // Calculate the (half)bandwidth, i.e., the size B of the enclosing interval [-B:B].
-inline double bandwidth(std::vector<double> X) {
+inline double bandwidth(const std::vector<double> &X) {
   Expects(std::is_sorted(X.begin(), X.end()));
   size_t len  = X.size();
   double Xmin = X[0];
@@ -281,7 +282,7 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
 template <typename T> auto hilbert_transform(const T &Xpts, const T &Rpts, const T &Ipts, const std::complex<double> z, const double lim_direct = 1e-3) {
   interpolator rhor(Xpts, Rpts);
   interpolator rhoi(Xpts, Ipts);
-  double B = bandwidth(Xpts);
+  const double B = bandwidth(Xpts);
   return hilbert_transform(rhor, rhoi, B, z, lim_direct);
 }
 
@@ -448,10 +449,10 @@ class Hilb {
           Xmax  = +B;
           if (verbose) { std::cout << "scale=" << scale << " B=" << B << std::endl; }
           break;
-        case 'o': {
+        case 'o':
           OUTFILE = safe_open_wr(std::string(optarg));
           if (verbose) { std::cout << "Output file: " << optarg << std::endl; }
-        } break;
+          break;
         default: abort();
       }
     }
@@ -500,5 +501,7 @@ class Hilb {
     parse_param_run(argc, argv);
   }
 };
+
+} // namespace
 
 #endif

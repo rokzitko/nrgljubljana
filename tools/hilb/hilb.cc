@@ -1,5 +1,5 @@
 #include "hilb.hpp"
 
 int main(int argc, char *argv[]) {
-  Hilb hilb(argc, argv);
+  NRG::Hilb::Hilb hilb(argc, argv);
 }
