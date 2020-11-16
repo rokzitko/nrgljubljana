@@ -34,11 +34,11 @@
 #include <gsl/gsl_spline.h>
 namespace NRG::Hilb {
 
-inline double atof(const std::string &s) { return ::atof(s.c_str()); }
+inline auto atof(const std::string &s) { return ::atof(s.c_str()); }
 
 // Unwrap a lambda expression and evaluate it at x
 // https://martin-ueding.de/articles/cpp-lambda-into-gsl/index.html
-inline double unwrap(double x, void *p) {
+inline auto unwrap(const double x, void *p) {
   auto fp = static_cast<std::function<double(double)> *>(p);
   return (*fp)(x);
 }
@@ -98,11 +98,11 @@ class integrator {
      * @param epsabs numeric integration epsilon (absolute)
      * @param epsrel numeric integration epsilon (relative)
      */
-  double operator()(std::function<double(double)> f, double a, double b, double epsabs = 1e-14, double epsrel = 1e-10) {
+  auto operator()(std::function<double(double)> f, const double a, const double b, const double epsabs = 1e-14, const double epsrel = 1e-10) {
     F.params = &f;
     double result, error;
-    int status = gsl_integration_qag(&F, a, b, epsabs, epsrel, limit, GSL_INTEG_GAUSS15, work, &result, &error);
-    if (status && abs(result) > epsabs && throw_on_error) throw std::runtime_error("qag error: " + std::to_string(status) + " -- " + gsl_strerror(status));
+    const auto status = gsl_integration_qag(&F, a, b, epsabs, epsrel, limit, GSL_INTEG_GAUSS15, work, &result, &error);
+    if (status && std::abs(result) > epsabs && throw_on_error) throw std::runtime_error("qag error: " + std::to_string(status) + " -- " + gsl_strerror(status));
     return result;
   }
 };
@@ -123,15 +123,15 @@ class interpolator {
     acc    = gsl_interp_accel_alloc();
     len    = X.size();
     spline = gsl_spline_alloc(gsl_interp_cspline, len);
-    gsl_spline_init(spline, &X[0], &Y[0], len);
-    Xmin = X[0];
-    Xmax = X[len - 1];
+    gsl_spline_init(spline, X.data(), Y.data(), len);
+    Xmin = X.front();
+    Xmax = X.back();
   }
   interpolator(const interpolator &I) : len{I.len}, X{I.X}, Y{I.Y}, Xmin{I.Xmin}, Xmax{I.Xmax}, oob_value{I.oob_value} {
     // keep the same accelerator workspace
     if (spline) { gsl_spline_free(spline); } // we need new spline data object
     spline = gsl_spline_alloc(gsl_interp_cspline, len);
-    gsl_spline_init(spline, &X[0], &Y[0], len);
+    gsl_spline_init(spline, X.data(), Y.data(), len);
   }
   interpolator(interpolator &&I) : len{I.len}, X{I.X}, Y{I.Y}, Xmin{I.Xmin}, Xmax{I.Xmax}, oob_value{I.oob_value} {
     acc      = I.acc; // steal workspace
@@ -150,7 +150,7 @@ class interpolator {
     // keep the same accelerator workspace
     if (spline) { gsl_spline_free(spline); } // we need new spline data object
     spline = gsl_spline_alloc(gsl_interp_cspline, len);
-    gsl_spline_init(spline, &X[0], &Y[0], len);
+    gsl_spline_init(spline, X.data(), Y.data(), len);
     return *this;
   }
   interpolator &operator=(interpolator &&I) {
@@ -171,24 +171,23 @@ class interpolator {
     if (spline) { gsl_spline_free(spline); }
     if (acc) { gsl_interp_accel_free(acc); }
   }
-  double operator()(double x) { return (Xmin <= x && x <= Xmax ? gsl_spline_eval(spline, x, acc) : oob_value); }
+  auto operator()(const double x) { return (Xmin <= x && x <= Xmax ? gsl_spline_eval(spline, x, acc) : oob_value); }
 };
 
 // Square of x
-inline double sqr(const double x) { return x * x; }
+inline auto sqr(const double x) { return x * x; }
 
 // Result of Integrate[(-y/(y^2 + (x - omega)^2)), {omega, -B, B}] (atg -> imQ).
-inline double imQ(const double x, const double y, const double B) { return atan((-B + x) / y) - atan((B + x) / y); }
+inline auto imQ(const double x, const double y, const double B) { return atan((-B + x) / y) - atan((B + x) / y); }
 
 // Result of Integrate[((x - omega)/(y^2 + (x - omega)^2)), {omega, -B, B}] (logs -> reQ).
-inline double reQ(const double x, const double y, const double B) { return (-log(sqr(B - x) + sqr(y)) + log(sqr(B + x) + sqr(y))) / 2.0; }
+inline auto reQ(const double x, const double y, const double B) { return (-log(sqr(B - x) + sqr(y)) + log(sqr(B + x) + sqr(y))) / 2.0; }
 
 // Calculate the (half)bandwidth, i.e., the size B of the enclosing interval [-B:B].
-inline double bandwidth(const std::vector<double> &X) {
+inline auto bandwidth(const std::vector<double> &X) {
   Expects(std::is_sorted(X.begin(), X.end()));
-  size_t len  = X.size();
-  double Xmin = X[0];
-  double Xmax = X[len - 1];
+  const auto Xmin = X.front();
+  const auto Xmax = X.back();
   return std::max(abs(Xmin), abs(Xmax));
 }
 
@@ -208,8 +207,8 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
   // Initialize GSL and set up the interpolation
   gsl_set_error_handler_off();
   integrator integr;
-  double x = real(z);
-  double y = imag(z);
+  const auto x = real(z);
+  const auto y = imag(z);
   // Low-level Hilbert-transform routines. calcA routine handles the case with removed singularity and
   // perform the integration after a change of variables. calcB routine directly evaluates the defining
   // integral of the Hilbert transform. Real and imaginary parts are determined in separate steps.
@@ -238,9 +237,9 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
     } else { // special case: boundary points
       inside = true;
     }
-    auto result1 = (lim1down < lim1up ? integr(f3p, lim1down, lim1up) : 0.0);
-    auto result2 = (lim2down < lim2up ? integr(f3m, lim2down, lim2up) : 0.0);
-    auto result3 = (inside ? d : 0.0);
+    const auto result1 = (lim1down < lim1up ? integr(f3p, lim1down, lim1up) : 0.0);
+    const auto result2 = (lim2down < lim2up ? integr(f3m, lim2down, lim2up) : 0.0);
+    const auto result3 = (inside ? d : 0.0);
     return result1 + result2 + result3;
   };
 
@@ -305,7 +304,7 @@ class Hilb {
     return tabulated ? hilbert_transform(Xpts, Ypts, Ipts, z) : hilbert_transform(Bethe_fnc, zero_fnc, B, z);
   }
 
-  void do_one(const double x, const double y, std::ostream &OUT = std::cout) {
+  void do_one(const double x, const double y, std::ostream &OUT) {
     if (verbose)std::cout << "z=" << std::complex(x, y) << std::endl;
     const auto res = hilbert(x, y);
     if (!G)
@@ -314,7 +313,7 @@ class Hilb {
       OUT << res << std::endl;
   }
 
-  void do_stream(std::istream &F, std::ostream &OUT = std::cout) {
+  void do_stream(std::istream &F, std::ostream &OUT) {
     while (F.good()) {
       double label, x, y;
       F >> label >> x >> y;
@@ -344,9 +343,11 @@ class Hilb {
         const auto res = hilbert(x, y);
         double resre   = res.real();
         double resim   = res.imag();
-        // We include the conventional -1/pi factor here
-        resre /= -M_PI;
-        resim /= -M_PI;
+        if (!G) {
+          // We include the -1/pi factor here
+          resre /= -M_PI;
+          resim /= -M_PI;
+        } // Otherwise we are saving the Green's function G itself and no factor is required!
         Or << label1 << " " << resre << std::endl;
         Oi << label2 << " " << resim << std::endl;
       }
@@ -355,13 +356,13 @@ class Hilb {
 
   auto safe_open_rd(const std::string &filename) {
     std::ifstream F(filename);
-    if (!F) throw std::runtime_error("Error opening file " + std::string(filename) + " for reading.");
+    if (!F) throw std::runtime_error("Error opening file " + filename + " for reading.");
     return F;
   }
 
   auto safe_open_wr(const std::string &filename) {
     std::ofstream F(filename);
-    if (!F) throw std::runtime_error("Error opening file " + std::string(filename) + " for writing.");
+    if (!F) throw std::runtime_error("Error opening file " + filename + " for writing.");
     F << std::setprecision(OUTPUT_PREC);
     return F;
   }
@@ -419,7 +420,7 @@ class Hilb {
     std::cout << "-s        Rescale factor 'scale' for the DOS." << std::endl;
     std::cout << "-B        Half-bandwidth 'B' of the Bethe lattice DOS." << std::endl;
     std::cout << "          Use either -s or -B. Default is scale=B=1." << std::endl;
-    std::cout << "-G        Compute the Green's function. hilb then returns Re[G(z)] Im[G(z)] (mode 1 and 2)" << std::endl;
+    std::cout << "-G        Compute the Green's function. hilb then returns Re[G(z)] Im[G(z)]" << std::endl;
   }
 
   void parse_param_run(int argc, char *argv[]) {
@@ -431,7 +432,7 @@ class Hilb {
         case 'G': G = true; break;
         case 'd': 
           tabulated = true;
-          load_dos(std::string(optarg));
+          load_dos(optarg);
           report_dos();
           break;
         case 'v': verbose = true; break;
@@ -450,43 +451,37 @@ class Hilb {
           if (verbose) { std::cout << "scale=" << scale << " B=" << B << std::endl; }
           break;
         case 'o':
-          OUTFILE = safe_open_wr(std::string(optarg));
+          OUTFILE = safe_open_wr(optarg);
           if (verbose) { std::cout << "Output file: " << optarg << std::endl; }
           break;
         default: abort();
       }
     }
-    int remaining = argc - optind; // arguments left
-    std::vector<std::string> args(argv+optind, argv+argc); // NOLINT
-    assert(args.size() == remaining);
+    const auto remaining = argc - optind; // arguments left
+    const std::vector<std::string> args(argv+optind, argv+argc); // NOLINT
     // Usage case 1: real (x,y) pairs from an input file.
     if (remaining == 1) {
       about();
       if (verbose) info();
       auto F = safe_open_rd(args[0]);
-      if (OUTFILE)
-        do_stream(F, OUTFILE.value());
-      else
-        do_stream(F);
+      do_stream(F, OUTFILE ? OUTFILE.value() : std::cout);
       return;
     }
     // Usage case 2: real a single (x,y) pair from the command line.
     if (remaining == 2) {
       const auto x = atof(args[0]);
       const auto y = atof(args[1]);
-      if (OUTFILE)
-        do_one(x, y, OUTFILE.value());
-      else 
-        do_one(x, y);
+      do_one(x, y, OUTFILE ? OUTFILE.value() : std::cout);
       return;
     }
+    // Usage case 3: convert self-energy to a spectral function
     if (remaining == 4) {
       about();
       if (verbose) info();
       auto Frs = safe_open_rd(args[0]); // Re[Sigma]
       auto Fis = safe_open_rd(args[1]); // Im[Sigma]
-      auto Fra = safe_open_wr(args[2]); // Re[Aw] = -1/Pi Re[G]
-      auto Fia = safe_open_wr(args[3]); // Im[Aw] = -1/pi Im[G]
+      auto Fra = safe_open_wr(args[2]); // Re[G] or Re[Aw] = -1/pi Re[G]
+      auto Fia = safe_open_wr(args[3]); // Im[G] or Im[Aw] = -1/pi Im[G]
       do_hilb(Frs, Fis, Fra, Fia);
       return;
     }
