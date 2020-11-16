@@ -32,6 +32,8 @@
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_spline.h>
 
+inline double atof(const std::string &s) { return ::atof(s.c_str()); }
+
 // Unwrap a lambda expression and evaluate it at x
 // https://martin-ueding.de/articles/cpp-lambda-into-gsl/index.html
 inline double unwrap(double x, void *p) {
@@ -170,11 +172,6 @@ class interpolator {
   double operator()(double x) { return (Xmin <= x && x <= Xmax ? gsl_spline_eval(spline, x, acc) : oob_value); }
 };
 
-using namespace std;
-
-using cplx = std::complex<double>;
-using DVEC = std::vector<double>;
-
 // Square of x
 inline double sqr(double x) { return x * x; }
 
@@ -298,25 +295,23 @@ class Hilb {
   bool verbose     = false;
   bool veryverbose = false;
   bool G           = false; // G(z). Reports real and imaginary part.
-  DVEC Xpts, Ypts, Ipts;
+  std::vector<double> Xpts, Ypts, Ipts;
   bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
 
   auto hilbert(double x, double y) {
     auto Bethe_fnc = [this](const auto x) { return abs(x*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(x * scale)) : 0.0; };
     auto zero_fnc = [](const auto x) { return 0.0; };
     const auto z = std::complex(x,y);
-//    return hilbert_transform(Xpts, Ypts, Ipts, z);
-//    return hilbert_transform(Bethe_fnc, zero_fnc, B, z);
     return tabulated ? hilbert_transform(Xpts, Ypts, Ipts, z) : hilbert_transform(Bethe_fnc, zero_fnc, B, z);
   }
 
   void do_one(std::ostream &OUT = std::cout) {
-    if (verbose) cout << "z=" << cplx(x, y) << endl;
+    if (verbose)std::cout << "z=" << std::complex(x, y) << std::endl;
     const auto res = hilbert(x, y);
     if (!G)
-      OUT << res.imag() << endl;
+      OUT << res.imag() << std::endl;
     else
-      OUT << res << endl;
+      OUT << res << std::endl;
   }
 
   void do_stream(std::istream &F, std::ostream &OUT = std::cout) {
@@ -326,9 +321,9 @@ class Hilb {
       if (!F.fail()) {
         const auto res = hilbert(x, y);
         if (!G)
-          OUT << label << " " << res.imag() << endl;
+          OUT << label << " " << res.imag() << std::endl;
         else
-          OUT << label << " " << res.real() << " " << res.imag() << endl;      
+          OUT << label << " " << res.real() << " " << res.imag() << std::endl;      
       }
     }
   }
@@ -342,7 +337,7 @@ class Hilb {
         if (abs(label1 - label2) > 1e-6) throw std::runtime_error("Frequency mismatch in do_hilb()");
         // Ensure ImSigma is negative
         const double CLIPPING = 1e-8;
-        y                     = min(y, -CLIPPING);
+        y                     = std::min(y, -CLIPPING);
         // The argument to calcre/im() is actually omega-Sigma(omega)
         x              = label1 - x;
         y              = -y;
@@ -352,16 +347,28 @@ class Hilb {
         // We include the conventional -1/pi factor here
         resre /= -M_PI;
         resim /= -M_PI;
-        Or << label1 << " " << resre << endl;
-        Oi << label2 << " " << resim << endl;
+        Or << label1 << " " << resre << std::endl;
+        Oi << label2 << " " << resim << std::endl;
       }
     }
   }
 
-  void load_dos(char *filename) {
-    if (verbose) { std::cout << "Density of states filename: " << filename << endl; }
+  auto safe_open_rd(const std::string &filename) {
     std::ifstream F(filename);
-    if (!F) throw std::runtime_error("Can't open " + std::string(filename) + " for reading.");
+    if (!F) throw std::runtime_error("Error opening file " + std::string(filename) + " for reading.");
+    return F;
+  }
+
+  auto safe_open_wr(const std::string &filename) {
+    std::ofstream F(filename);
+    if (!F) throw std::runtime_error("Error opening file " + std::string(filename) + " for writing.");
+    F << std::setprecision(OUTPUT_PREC);
+    return F;
+  }
+
+  void load_dos(const std::string &filename) {
+    if (verbose) { std::cout << "Density of states filename: " << filename << std::endl; }
+    auto F = safe_open_rd(filename);
     while (F) {
       F >> x >> y;
       if (!F.fail()) {
@@ -371,71 +378,63 @@ class Hilb {
         Ipts.push_back(0);
       }
     }
-    F.close();
+  }
+
+  void report_dos() {
     Xmin = Xpts.front();
     Xmax = Xpts.back();
     assert(Xmin < Xmax);
-    B = max(abs(Xmin), abs(Xmax));
+    B = std::max(std::abs(Xmin), std::abs(Xmax));
     interpolator rho(Xpts, Ypts);
     integrator integr;
     const auto sum = integr(rho, -B, B);
-    if (!isfinite(sum)) {
-      cerr << "Error: Integral is not a finite number." << endl;
-      exit(1);
-    }
-    if (verbose) cout << "Sum=" << sum << endl;
-    tabulated = true;
+    if (!isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
+    if (verbose)std::cout << "Sum=" << sum << std::endl;
   }
 
   void info() {
     if (tabulated)
-      cout << "Xmin=" << Xmin << " Xmax=" << Xmax << endl;
+      std::cout << "Xmin=" << Xmin << " Xmax=" << Xmax << std::endl;
     else
-      cout << "Semicircular DOS. scale=" << scale << endl;
-    cout << "B=" << B << endl;
-  }
-
-  void safeopen(std::ifstream &F, char *filename) {
-    F.open(filename);
-    if (!F) throw std::runtime_error("Error opening file " + std::string(filename) + " for reading.");
-  }
-
-  void safeopen(std::ofstream &F, char *filename) {
-    F.open(filename);
-    if (!F) throw std::runtime_error("Error opening file " + std::string(filename) + " for writing.");
+      std::cout << "Semicircular DOS. scale=" << scale << std::endl;
+    std::cout << "B=" << B << std::endl;
   }
 
   void about() {
-    cout << "# hilb -- Hilbert transformer for arbitrary density of states." << endl;
-    cout << "# Rok Zitko, rok.zitko@ijs.si, 2009-2020" << endl;
+    std::cout << "# hilb -- Hilbert transformer for arbitrary density of states." << std::endl;
+    std::cout << "# Rok Zitko, rok.zitko@ijs.si, 2009-2020" << std::endl;
   }
 
   void usage() {
-    cout << "Usage (1): hilb [options] <x> <y>" << endl;
-    cout << "Usage (2): hilb [options] <inputfile>" << endl;
-    cout << "Usage (3): hilb [options] <resigma.dat> <imsigma.dat> <reaw.dat> <imaw.dat>" << endl;
-    cout << endl;
-    cout << "Options:" << endl;
-    cout << "-h        show help" << endl;
-    cout << "-d <dos>  Load the density of state data from file 'dos'" << endl;
-    cout << "          If this option is not used, the Bethe lattice DOS is assumed." << endl;
-    cout << "-v        Increase verbosity" << endl;
-    cout << "-V        Increase verbosity even further" << endl;
-    cout << "-s        Rescale factor 'scale' for the DOS." << endl;
-    cout << "-B        Half-bandwidth 'B' of the Bethe lattice DOS." << endl;
-    cout << "          Use either -s or -B. Default is scale=B=1." << endl;
-    cout << "-G        Compute the Green's function. hilb then returns Re[G(z)] Im[G(z)] (mode 1 and 2)" << endl;
+    std::cout << "Usage (1): hilb [options] <x> <y>" << std::endl;
+    std::cout << "Usage (2): hilb [options] <inputfile>" << std::endl;
+    std::cout << "Usage (3): hilb [options] <resigma.dat> <imsigma.dat> <reaw.dat> <imaw.dat>" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Options:" << std::endl;
+    std::cout << "-h        show help" << std::endl;
+    std::cout << "-d <dos>  Load the density of state data from file 'dos'" << std::endl;
+    std::cout << "          If this option is not used, the Bethe lattice DOS is assumed." << std::endl;
+    std::cout << "-v        Increase verbosity" << std::endl;
+    std::cout << "-V        Increase verbosity even further" << std::endl;
+    std::cout << "-s        Rescale factor 'scale' for the DOS." << std::endl;
+    std::cout << "-B        Half-bandwidth 'B' of the Bethe lattice DOS." << std::endl;
+    std::cout << "          Use either -s or -B. Default is scale=B=1." << std::endl;
+    std::cout << "-G        Compute the Green's function. hilb then returns Re[G(z)] Im[G(z)] (mode 1 and 2)" << std::endl;
   }
 
   void parse_param_run(int argc, char *argv[]) {
-    ostream *OUT = &cout;
-    ofstream OUTFILE;
+    std::ostream *OUT = &std::cout;
+    std::ofstream OUTFILE;
     char c;
     while (c = getopt(argc, argv, "hGd:vVs:B:o:"), c != -1) {
       switch (c) {
         case 'h': usage(); exit(EXIT_SUCCESS);
         case 'G': G = true; break;
-        case 'd': load_dos(optarg); break;
+        case 'd': 
+          tabulated = true;
+          load_dos(std::string(optarg));
+          report_dos();
+          break;
         case 'v': verbose = true; break;
         case 'V': veryverbose = true; break;
         case 's':
@@ -443,62 +442,50 @@ class Hilb {
           B     = 1 / scale;
           Xmin  = -B;
           Xmax  = +B;
-          if (verbose) { cout << "scale=" << scale << " B=" << B << endl; }
+          if (verbose) { std::cout << "scale=" << scale << " B=" << B << std::endl; }
           break;
         case 'B':
           B     = atof(optarg);
           scale = 1 / B;
           Xmin  = -B;
           Xmax  = +B;
-          if (verbose) { cout << "scale=" << scale << " B=" << B << endl; }
+          if (verbose) { std::cout << "scale=" << scale << " B=" << B << std::endl; }
           break;
         case 'o': {
           OUTFILE.open(optarg);
-          if (!OUTFILE) {
-            cerr << "Can't open " << optarg << " for writing." << endl;
-            exit(1);
-          }
+          if (!OUTFILE) throw std::runtime_error("Can't open " + std::string(optarg) + " for writing.");
           OUT = &OUTFILE;
-          OUTFILE << setprecision(OUTPUT_PREC);
-          if (verbose) { cout << "Output file: " << optarg << endl; }
+          OUTFILE << std::setprecision(OUTPUT_PREC);
+          if (verbose) { std::cout << "Output file: " << optarg << std::endl; }
         } break;
         default: abort();
       }
     }
     int remaining = argc - optind; // arguments left
+    std::vector<std::string> args(argv+optind, argv+argc); // NOLINT
+    assert(args.size() == remaining);
     // Usage case 1: real (x,y) pairs from an input file.
     if (remaining == 1) {
       about();
       if (verbose) info();
-      char *filename = argv[optind];
-      ifstream F;
-      safeopen(F, filename);
+      auto F = safe_open_rd(args[0]);
       do_stream(F, *OUT);
-      F.close();
       return;
     }
     // Usage case 2: real a single (x,y) pair from the command line.
     if (remaining == 2) {
-      x = atof(argv[optind]);
-      y = atof(argv[optind + 1]);
+      x = atof(args[0]);
+      y = atof(args[1]);
       do_one(*OUT);
       return;
     }
     if (remaining == 4) {
       about();
       if (verbose) info();
-      char *fnresigma = argv[optind];
-      char *fnimsigma = argv[optind + 1];
-      char *fnreaw    = argv[optind + 2];
-      char *fnimaw    = argv[optind + 3];
-      ifstream Frs, Fis;
-      ofstream Fra, Fia;
-      safeopen(Frs, fnresigma);
-      safeopen(Fis, fnimsigma);
-      safeopen(Fra, fnreaw);
-      safeopen(Fia, fnimaw);
-      Fra << setprecision(OUTPUT_PREC);
-      Fia << setprecision(OUTPUT_PREC);
+      auto Frs = safe_open_rd(args[0]); // Re[Sigma]
+      auto Fis = safe_open_rd(args[1]); // Im[Sigma]
+      auto Fra = safe_open_wr(args[2]); // Re[Aw] = -1/Pi Re[G]
+      auto Fia = safe_open_wr(args[3]); // Im[Aw] = -1/pi Im[G]
       do_hilb(Frs, Fis, Fra, Fia);
       return;
     }
@@ -508,7 +495,7 @@ class Hilb {
 
   public:
   Hilb(int argc, char *argv[]) {
-    std::cout << setprecision(OUTPUT_PREC);
+    std::cout << std::setprecision(OUTPUT_PREC);
     gsl_set_error_handler_off();
     parse_param_run(argc, argv);
   }
