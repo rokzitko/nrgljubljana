@@ -13,18 +13,19 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <cmath>
-#include <cstdlib>
-#include <cassert>
-#include <cfloat>
+#include <complex>
 #include <utility>
 #include <functional>
 #include <vector>
 #include <string>
 #include <map>
+#include <optional>
 #include <ctime>
+#include <cmath>
+#include <cstdlib>
+#include <cassert>
+#include <cfloat>
 #include <unistd.h>
-#include <complex>
 
 #include <gsl/assert> // Guideline's support library
 
@@ -249,7 +250,7 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
   auto ref0 = [x, y, &rhor, &rhoi](double omega) -> double { return (rhor(omega) * (x - omega) + rhoi(omega) * y) / (sqr(y) + sqr(x - omega)); };
 
   // Im part of rho(omega)/(z-omega)
-  auto imf0 = [x, y, &rhor, &rhoi](double omega) -> double { return (rhor(omega) * (-y) + rhoi(omega) * (x - omega)) / (sqr(y) + sqr(x - omega)); };
+  auto imf0 = [x,y,&rhor,&rhoi](double omega) -> double { return (rhor(omega)*(-y) + rhoi(omega)*(x-omega) )/(sqr(y)+sqr(x-omega)); };
 
   // Re part of rho(omega)/(z-omega) with the singularity subtracted out.
   auto ref1 = [x, y, &rhor, &rhoi](double omega) -> double {
@@ -286,26 +287,24 @@ template <typename T> auto hilbert_transform(const T &Xpts, const T &Rpts, const
 
 class Hilb {
   private:
-  double x, y; // argument z=x+Iy. Global variable for simplicity.
   double scale = 1.0;         // scale factor
   double B     = 1.0 / scale; // half-bandwidth
   double Xmin = -B;
   double Xmax = +B;
   const int OUTPUT_PREC = 16;     // digits of output precision
   bool verbose     = false;
-  bool veryverbose = false;
   bool G           = false; // G(z). Reports real and imaginary part.
   std::vector<double> Xpts, Ypts, Ipts;
   bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
 
-  auto hilbert(double x, double y) {
+  auto hilbert(const double x, const double y) {
     auto Bethe_fnc = [this](const auto x) { return abs(x*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(x * scale)) : 0.0; };
     auto zero_fnc = [](const auto x) { return 0.0; };
     const auto z = std::complex(x,y);
     return tabulated ? hilbert_transform(Xpts, Ypts, Ipts, z) : hilbert_transform(Bethe_fnc, zero_fnc, B, z);
   }
 
-  void do_one(std::ostream &OUT = std::cout) {
+  void do_one(const double x, const double y, std::ostream &OUT = std::cout) {
     if (verbose)std::cout << "z=" << std::complex(x, y) << std::endl;
     const auto res = hilbert(x, y);
     if (!G)
@@ -316,7 +315,7 @@ class Hilb {
 
   void do_stream(std::istream &F, std::ostream &OUT = std::cout) {
     while (F.good()) {
-      double label;
+      double label, x, y;
       F >> label >> x >> y;
       if (!F.fail()) {
         const auto res = hilbert(x, y);
@@ -330,7 +329,7 @@ class Hilb {
 
   void do_hilb(std::istream &Fr, std::istream &Fi, std::ostream &Or, std::ostream &Oi) {
     while (Fr.good()) {
-      double label1, label2;
+      double label1, label2, x, y;
       Fr >> label1 >> x;
       Fi >> label2 >> y;
       if (!Fr.fail() && !Fi.fail()) {
@@ -370,6 +369,7 @@ class Hilb {
     if (verbose) { std::cout << "Density of states filename: " << filename << std::endl; }
     auto F = safe_open_rd(filename);
     while (F) {
+      double x, y;
       F >> x >> y;
       if (!F.fail()) {
         assert(isfinite(x) && isfinite(y));
@@ -415,7 +415,6 @@ class Hilb {
     std::cout << "-d <dos>  Load the density of state data from file 'dos'" << std::endl;
     std::cout << "          If this option is not used, the Bethe lattice DOS is assumed." << std::endl;
     std::cout << "-v        Increase verbosity" << std::endl;
-    std::cout << "-V        Increase verbosity even further" << std::endl;
     std::cout << "-s        Rescale factor 'scale' for the DOS." << std::endl;
     std::cout << "-B        Half-bandwidth 'B' of the Bethe lattice DOS." << std::endl;
     std::cout << "          Use either -s or -B. Default is scale=B=1." << std::endl;
@@ -423,8 +422,7 @@ class Hilb {
   }
 
   void parse_param_run(int argc, char *argv[]) {
-    std::ostream *OUT = &std::cout;
-    std::ofstream OUTFILE;
+    std::optional<std::ofstream> OUTFILE;
     char c;
     while (c = getopt(argc, argv, "hGd:vVs:B:o:"), c != -1) {
       switch (c) {
@@ -436,7 +434,6 @@ class Hilb {
           report_dos();
           break;
         case 'v': verbose = true; break;
-        case 'V': veryverbose = true; break;
         case 's':
           scale = atof(optarg);
           B     = 1 / scale;
@@ -452,10 +449,7 @@ class Hilb {
           if (verbose) { std::cout << "scale=" << scale << " B=" << B << std::endl; }
           break;
         case 'o': {
-          OUTFILE.open(optarg);
-          if (!OUTFILE) throw std::runtime_error("Can't open " + std::string(optarg) + " for writing.");
-          OUT = &OUTFILE;
-          OUTFILE << std::setprecision(OUTPUT_PREC);
+          OUTFILE = safe_open_wr(std::string(optarg));
           if (verbose) { std::cout << "Output file: " << optarg << std::endl; }
         } break;
         default: abort();
@@ -469,14 +463,20 @@ class Hilb {
       about();
       if (verbose) info();
       auto F = safe_open_rd(args[0]);
-      do_stream(F, *OUT);
+      if (OUTFILE)
+        do_stream(F, OUTFILE.value());
+      else
+        do_stream(F);
       return;
     }
     // Usage case 2: real a single (x,y) pair from the command line.
     if (remaining == 2) {
-      x = atof(args[0]);
-      y = atof(args[1]);
-      do_one(*OUT);
+      const auto x = atof(args[0]);
+      const auto y = atof(args[1]);
+      if (OUTFILE)
+        do_one(x, y, OUTFILE.value());
+      else 
+        do_one(x, y);
       return;
     }
     if (remaining == 4) {
