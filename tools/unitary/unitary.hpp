@@ -113,9 +113,8 @@ inline void save_matrix(const std::string &filename, const MAT &M, const bool ve
   const auto dim2 = M.size2();
   for (auto i = 0; i < dim1; i++) {
     for (auto j = 0; j < dim2; j++) {
-      double val = M(i, j);
-      if (abs(val) < chop_tol) val = 0.0;
-      F << val << (j != dim2 - 1 ? " " : "");
+      const auto val = M(i, j);
+      F << (std::abs(val) > chop_tol ? val : 0.0) << (j != dim2 - 1 ? " " : "");
     }
     F << std::endl;
   }
