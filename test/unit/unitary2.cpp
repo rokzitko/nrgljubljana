@@ -121,20 +121,20 @@ class unitaryProdTest : public ::testing::Test {
 };
 
 TEST_F(unitaryProdTest, noTrans_noScale){
-    auto out = exec("../../tools/unitary -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
+    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
     std::cout << out << std::endl;
     Compare();
 }
 
 TEST_F(unitaryProdTest, Trans_noScale){
-    auto out = exec("../../tools/unitary -t -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
+    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -t -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
     std::cout << out << std::endl;
     A = ublas::trans(A);
     Compare();
 }
 
 TEST_F(unitaryProdTest, Trans_Scale){
-    auto out = exec("../../tools/unitary -s 2 -t -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
+    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -s 2 -t -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
     std::cout << out << std::endl;
     A = 2 * ublas::trans(A);
     Compare();
