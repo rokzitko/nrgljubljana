@@ -16,7 +16,7 @@ macro(add_tool exec_name)
 			  )
 
   # Link dependencies
-  target_link_libraries(${exec_name} PRIVATE openmp boost blas_lapack gmp gsl dl
+  target_link_libraries(${exec_name} PRIVATE openmp boost blas_lapack gmp gsl dl hdf5
         $<$<BOOL:${ASAN}>:asan>
         $<$<BOOL:${UBSAN}>:ubsan>
   )
@@ -25,7 +25,7 @@ macro(add_tool exec_name)
   install(TARGETS ${exec_name} EXPORT nrgljubljana-targets DESTINATION bin)
 endmacro()
 
-set(all_executables adapt binavg broaden bw diag hilb intavg integ kk matrix mats nrgchain resample specmoments tdavg unitary)
+set(all_executables adapt binavg broaden bw diag h5write hilb intavg integ kk matrix mats nrgchain resample specmoments tdavg unitary)
 foreach(exec ${all_executables})
   add_tool(${exec})
 endforeach()
