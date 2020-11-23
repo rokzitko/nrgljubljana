@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "unitary/unitary.hpp"
 #include <string>
+#include <cmake_configure.hpp>
 
 #include <cstdio>
 #include <iostream>
@@ -86,8 +87,7 @@ std::string exec(const char* cmd) {
 }
 
 TEST(unitary, unitary_help){
-    
-    auto out = exec("../../tools/unitary -h");
+    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -h");
     std::string  expected = "Usage: unitary [-h] [-b | -B] [-qvV] [-tl] [-s scale] [-o output_fn] [-c chop_tol] <A> <B> <C>\n";
     EXPECT_EQ(out, expected);
 
@@ -104,13 +104,15 @@ class unitaryProdTest : public ::testing::Test {
         }
 
         void TearDown() override{
-            MAT D = ublas::prod(B,C);
-            my_result = ublas::prod(A, D);
-            func_result = read_matrix("temp_result_matrix.txt");
-            compare_matrices(my_result, func_result);
             std::remove("temp_result_matrix.txt");
         }
 
+    void Compare() {
+        MAT D = ublas::prod(B,C);
+        my_result = ublas::prod(A, D);
+        func_result = read_matrix("temp_result_matrix.txt");
+        compare_matrices(my_result, func_result);
+    }
     MAT A;
     MAT B;
     MAT C;
@@ -121,16 +123,19 @@ class unitaryProdTest : public ::testing::Test {
 TEST_F(unitaryProdTest, noTrans_noScale){
     auto out = exec("../../tools/unitary -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
     std::cout << out << std::endl;
+    Compare();
 }
 
 TEST_F(unitaryProdTest, Trans_noScale){
     auto out = exec("../../tools/unitary -t -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
     std::cout << out << std::endl;
     A = ublas::trans(A);
+    Compare();
 }
 
 TEST_F(unitaryProdTest, Trans_Scale){
     auto out = exec("../../tools/unitary -s 2 -t -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
     std::cout << out << std::endl;
     A = 2 * ublas::trans(A);
+    Compare();
 }

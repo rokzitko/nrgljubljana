@@ -7,7 +7,7 @@ set(copyfiles nextline.txt block.txt empty.txt matrix.txt matrix_err.txt matrix_
 foreach(file ${copyfiles})
   configure_file(${file} ${file} COPYONLY)
 endforeach()
-
+configure_file(cmake_configure.hpp.in cmake_configure.hpp)
 
 foreach(test ${all_tests})
   get_filename_component(test_name ${test} NAME_WE)
@@ -16,5 +16,6 @@ foreach(test ${all_tests})
   target_compile_options(${test_name} PRIVATE -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
   set_property(TARGET ${test_name} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
   target_link_libraries(${test_name} nrgljubljana_c gtest_main project_warnings)
+  target_include_directories(${test_name} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
   add_test(NAME ${test_name} COMMAND ${test_name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
 endforeach()
