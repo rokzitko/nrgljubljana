@@ -2,8 +2,12 @@ add_subdirectory(gtest EXCLUDE_FROM_ALL)
 
 file(GLOB_RECURSE all_tests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
-configure_file(nextline.txt nextline.txt COPYONLY)
-configure_file(block.txt block.txt COPYONLY)
+set(copyfiles nextline.txt block.txt empty.txt matrix.txt matrix_err.txt matrix_A.txt matrix_B.txt matrix_C.txt) 
+
+foreach(file ${copyfiles})
+  configure_file(${file} ${file} COPYONLY)
+endforeach()
+
 
 foreach(test ${all_tests})
   get_filename_component(test_name ${test} NAME_WE)

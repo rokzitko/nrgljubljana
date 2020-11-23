@@ -3,7 +3,7 @@
 
 using namespace NRG;
 
-TEST(parser, params) {
+TEST(params, parser) {
   {
     std::list<parambase *> all;
     param<double> p{"p", "Testing paraemter", "1.0", all};

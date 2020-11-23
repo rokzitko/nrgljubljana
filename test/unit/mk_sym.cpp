@@ -6,21 +6,21 @@
 
 using namespace NRG;
 
-TEST(QS, mk_sym) {
+TEST(mk_sym, QS) {
   Workdir workdir("test_workdir");
   Params P("", "param", workdir, true);
   TD td(P, "td");
   auto sym = mk_QS<double>(P, td.allfields);
 }
 
-TEST(QSZ, mk_sym) {
+TEST(mk_sym, QSZ) {
   Workdir workdir("test_workdir");
   Params P("", "param", workdir, true);
   TD td(P, "td");
   auto sym = mk_QSZ<double>(P, td.allfields);
 }
 
-TEST(get, mk_sym) {
+TEST(mk_sym, get) {
   Workdir workdir("test_workdir");
   Params P("", "param", workdir, true);
   TD td(P, "td");

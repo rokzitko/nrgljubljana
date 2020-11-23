@@ -2,7 +2,7 @@
 #include <nrg-general.hpp> // common
 #include <nrg-lib.hpp>     // exposed in library
 
-TEST(int, Add) { // NOLINT
+TEST(Add, int) { // NOLINT
    int a{0};
    int b{2};
    auto c = a + b;
