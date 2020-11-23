@@ -4,7 +4,7 @@
 
 using namespace NRG;
 
-TEST(to_string, basicio) {
+TEST(basicio, to_string) {
   {
     auto res1 = to_string(std::complex(1.0,2.0));
     EXPECT_EQ(res1, "(1,2)");
@@ -13,7 +13,7 @@ TEST(to_string, basicio) {
   }
 }
 
-TEST(inserters1, basicio) {
+TEST(basicio, inserters1) {
   {
     std::stringstream ss;
     ss << std::make_pair(1,2);
@@ -50,7 +50,7 @@ TEST(inserters1, basicio) {
   }
 }
 
-TEST(from_string, basicio) {
+TEST(basicio, from_string) {
   {
     auto str = "12.3";
     auto res = from_string<double>(str);
@@ -69,7 +69,7 @@ TEST(from_string, basicio) {
   }
 }
 
-TEST(output, basicio) {
+TEST(basicio, output) {
   {
     auto res = prec(1.23456, 1);
     EXPECT_EQ(res, "1.2");

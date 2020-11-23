@@ -3,7 +3,7 @@
 
 using namespace NRG;
 
-TEST(report, openMP) {
+TEST(openMP, report) {
   report_openMP();
 }
 

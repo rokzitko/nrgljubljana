@@ -8,6 +8,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <optional>
 #include <cmath> // isfinite
@@ -27,7 +28,7 @@ namespace NRG {
 using namespace std::string_literals;
 
 inline void print_trace() {
-  std::cout << "Backtrace:" << std::endl << boost::stacktrace::stacktrace() << std::endl;
+  std::cerr << "Backtrace:" << std::endl << boost::stacktrace::stacktrace() << std::endl;
 }
 
 // Support for compiler dependant optimizations
@@ -61,14 +62,15 @@ inline T finite_test_fnc(T x, const char *file, const int line) {
 
 #define my_assert(x)                                                                                                                                 \
   do {                                                                                                                                               \
-    if (!(x)) {                                                                                                                                      \
-      std::cout << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                                       \
-      std::cout << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                           \
-      std::cout << #x << std::endl;                                                                                                                            \
-      print_trace();                                                                                                                                 \
-      exit(1);                                                                                                                                       \
+    if (!(x)) {                                                                                                                                       \
+		std::stringstream o;                                                                                                                                     \
+      o << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                                       \
+      o << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                           \
+      o << #x << std::endl;                                                                                                                            \
+      print_trace();                                                                                                                               \
+      throw std::runtime_error(o.str());                                                                                                                                       \
     }                                                                                                                                                \
-  } while (0)
+  } while(0)
 
 // Assert a==b
 #define my_assert_equal(a, b)                                                                                                                        \

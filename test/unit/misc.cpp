@@ -6,12 +6,12 @@
 #include <string>
 using namespace std::string_literals;
 #include <fstream>
-
+#include <exception>
 #include <misc.hpp>
 
 using namespace NRG;
 
-TEST(containers, misc) {
+TEST(misc, containers) {
   {
     std::list l = {1, 2, 3, 4};
     auto b = get_back(l);
@@ -21,7 +21,7 @@ TEST(containers, misc) {
   }
 }
 
-TEST(strings, misc) {
+TEST(misc, strings) {
   {
     auto str = "123  "s;
     auto res = strip_trailing_whitespace(str);
@@ -29,7 +29,7 @@ TEST(strings, misc) {
   }
 }
 
-TEST(tokenizer, misc) {
+TEST(misc, tokenizer) {
   {
     auto str = "1 2 3 4"s;
     string_token st(str);
@@ -56,6 +56,10 @@ TEST(misc, get_back) {
   EXPECT_EQ(b, 82);          
   EXPECT_EQ(a.back(), 71);
   EXPECT_EQ(a.front(), 31);
+
+	std::list<int> empty_list;
+ 	EXPECT_THROW(get_back(empty_list), std::runtime_error);
+
 }
 
 TEST(misc, get_front) {
@@ -71,6 +75,7 @@ TEST(misc, switch3) {
 	EXPECT_EQ(switch3(2,3,10,4,15,2,88),88);
   EXPECT_EQ(switch3(3,3,10,4,15,2,88),10);
   EXPECT_EQ(switch3(4,3,10,4,15,2,88),15);
+  EXPECT_THROW(switch3(1,3,10,4,15,2,88), std::runtime_error);
 }
 
 TEST(misc, nextline) {
@@ -80,11 +85,16 @@ TEST(misc, nextline) {
 		EXPECT_EQ(nextline(file),result[i]);
 	}
 	EXPECT_EQ(nextline(file), std::nullopt);	
+
+	auto empty_file = safe_open_for_reading("empty.txt");
+	EXPECT_EQ(nextline(empty_file), std::nullopt);
 }
 
 TEST(misc, strip_trailing_whitespace) {
 	const auto a = " test  \t \n  ";
 	EXPECT_EQ(strip_trailing_whitespace(a), " test");
+
+	EXPECT_EQ(strip_trailing_whitespace("  \t   \n  "s), ""s);
 }
 
 template<typename T1, typename T2, typename S1, typename S2>
@@ -106,6 +116,7 @@ TEST(misc, block) {
 	compare_maps(nekaj, nekaj_map);
   compare_maps(nekaj_drugega, nekaj_drugega_map);
   compare_maps(nekaj_tretjega, nekaj_tretjega_map);
+	EXPECT_THROW(parser("block.txt", "zadeva"), std::runtime_error); 
 }
 
 TEST(misc, skip_comments){

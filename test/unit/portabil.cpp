@@ -4,7 +4,7 @@
 
 using namespace NRG;
 
-TEST(parse_string, stream) {
+TEST(stream, parse_string) {
    std::stringstream ss;
    ss << "keyword: value\n" << "keyword2: value2\n";
    ss << "Xkeyword3:Xvalue3Y\n";

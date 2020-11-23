@@ -4,14 +4,14 @@
 
 using namespace NRG;
 
-TEST(double, traits) {
+TEST(traits, double) {
   {
     bool t = std::is_same_v<typename traits<double>::t_matel, double>;
     EXPECT_EQ(t, true);
   }
 }
 
-TEST(complex, traits) {
+TEST(traits, complex) {
   {
     bool t = std::is_same_v<typename traits<std::complex<double>>::t_matel, std::complex<double>>;
     EXPECT_EQ(t, true);

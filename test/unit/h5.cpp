@@ -13,7 +13,7 @@
 
 using namespace boost::numeric;
 
-TEST(is_same_v, traits) { // NOLINT
+TEST(traits, is_same_v) { // NOLINT
   {
     auto res = std::is_same_v<int,  int>; 
     EXPECT_TRUE(res);
@@ -45,26 +45,26 @@ struct is_ublas_complex_matrix<ublas::matrix<std::complex<T>>> : std::true_type 
 
 // TO DO: is_ublas_real_matrix
 
-TEST(is_ublas_vector, traits) { // NOLINT
+TEST(traits, is_ublas_vector) { // NOLINT
   EXPECT_FALSE(is_ublas_vector<int>::value);
   EXPECT_TRUE(is_ublas_vector<ublas::vector<int>>::value);
   EXPECT_TRUE(is_ublas_vector<ublas::vector<double>>::value);
 }
 
-TEST(is_ublas_matrix, traits) { // NOLINT
+TEST(traits, is_ublas_matrix) { // NOLINT
   EXPECT_FALSE(is_ublas_matrix<int>::value);
   EXPECT_TRUE(is_ublas_matrix<ublas::matrix<int>>::value);
   EXPECT_TRUE(is_ublas_matrix<ublas::matrix<double>>::value);
 }
 
-TEST(is_ublas_complex_matrix, traits) { // NOLINT
+TEST(traits, is_ublas_complex_matrix) { // NOLINT
   EXPECT_FALSE(is_ublas_complex_matrix<int>::value);
   EXPECT_FALSE(is_ublas_complex_matrix<ublas::matrix<int>>::value);
   EXPECT_FALSE(is_ublas_complex_matrix<ublas::matrix<double>>::value);
   EXPECT_TRUE (is_ublas_complex_matrix<ublas::matrix<std::complex<double>>>::value);
 }
 
-TEST(long_path, h5dump) { // NOLINT
+TEST(h5dump, long_path) { // NOLINT
   H5Easy::File file("long_path.h5", H5Easy::File::Overwrite);
   const int w = 42;
   const std::string path = "/this/is/a/long/path";
@@ -73,7 +73,7 @@ TEST(long_path, h5dump) { // NOLINT
   EXPECT_EQ(w, r);
 }
 
-TEST(scalar_int, h5dump) { // NOLINT
+TEST(h5dump, scalar_int) { // NOLINT
   H5Easy::File file("scalar_int.h5", H5Easy::File::Overwrite);
   int w = 42;
   H5Easy::dump(file, "/path", w);
@@ -81,7 +81,7 @@ TEST(scalar_int, h5dump) { // NOLINT
   EXPECT_EQ(w, r);
 }
 
-TEST(scalar_size_t, h5dump) { // NOLINT
+TEST(h5dump, scalar_size_t) { // NOLINT
   H5Easy::File file("scalar_size_t.h5", H5Easy::File::Overwrite);
   size_t w = 42;
   H5Easy::dump(file, "/path", w);
@@ -89,7 +89,7 @@ TEST(scalar_size_t, h5dump) { // NOLINT
   EXPECT_EQ(w, r);
 }
 
-TEST(scalar_double, h5dump) { // NOLINT
+TEST(h5dump, scalar_double) { // NOLINT
   H5Easy::File file("scalar_double.h5", H5Easy::File::Overwrite);
   double w = 42.0;
   H5Easy::dump(file, "/path", w);
@@ -98,7 +98,7 @@ TEST(scalar_double, h5dump) { // NOLINT
 }
 
 #ifdef H5_COMPLEX_IMPLEMENTED
-TEST(scalar_complex_double, h5dump) { // NOLINT
+TEST(h5dump, scalar_complex_double) { // NOLINT
   H5Easy::File file("scalar_complex_double.h5", H5Easy::File::Overwrite);
   std::complex<double> w = 42.0;
   H5Easy::dump(file, "/path", w);
@@ -107,7 +107,7 @@ TEST(scalar_complex_double, h5dump) { // NOLINT
 }
 #endif
 
-TEST(std_vector_double, h5dump) { // NOLINT
+TEST(h5dump, std_vector_double) { // NOLINT
   H5Easy::File file("std_vector_double.h5", H5Easy::File::Overwrite);
   std::vector w = {1.0, 2.0, 3.0};
   H5Easy::dump(file, "/path", w);
@@ -115,7 +115,7 @@ TEST(std_vector_double, h5dump) { // NOLINT
   EXPECT_EQ(w, r);
 }
 
-TEST(ublas_vector_double, h5dump) { // NOLINT
+TEST(h5dump, ublas_vector_double) { // NOLINT
   H5Easy::File file("ublas_vector_double.h5", H5Easy::File::Overwrite);
   ublas::vector<double> w(3);
   w[0] = 1.0;
@@ -127,7 +127,7 @@ TEST(ublas_vector_double, h5dump) { // NOLINT
   EXPECT_EQ(w[2], r[2]);
 }
 
-TEST(ublas_matrix_double2, h5dump) { // NOLINT
+TEST(h5dump, ublas_matrix_double2) { // NOLINT
   HighFive::File file("ublas_matrix_double2.h5", HighFive::File::Overwrite);
   ublas::matrix<double> w(2,2);
   w(0,0) = 1.0;
@@ -141,7 +141,7 @@ TEST(ublas_matrix_double2, h5dump) { // NOLINT
   EXPECT_EQ(w(1,1), r(1,1));
 }
 
-TEST(ublas_matrix_double2_rect, h5dump) { // NOLINT
+TEST(h5dump, ublas_matrix_double2_rect) { // NOLINT
   HighFive::File file("ublas_matrix_double2_rect.h5", HighFive::File::Overwrite);
   const auto nx = 2;
   const auto ny = 3;
@@ -165,7 +165,7 @@ TEST(ublas_matrix_double2_rect, h5dump) { // NOLINT
 }
 
 #ifdef H5_COMPLEX_IMPLEMENTED
-TEST(ublas_matrix_complex2_rect, h5dump) { // NOLINT
+TEST(h5dump, ublas_matrix_complex2_rect) { // NOLINT
   HighFive::File file("ublas_matrix_complex2_rect.h5", HighFive::File::Overwrite);
   const auto nx = 2;
   const auto ny = 3;
@@ -189,7 +189,7 @@ TEST(ublas_matrix_complex2_rect, h5dump) { // NOLINT
 }
 #endif
 
-TEST(ublas_matrix_double_rect, h5dump) { // NOLINT
+TEST(h5dump, ublas_matrix_double_rect) { // NOLINT
   H5Easy::File file("ublas_matrix_double_rect.h5", HighFive::File::Overwrite);
   const auto nx = 2;
   const auto ny = 3;
@@ -214,7 +214,7 @@ TEST(ublas_matrix_double_rect, h5dump) { // NOLINT
   }
 }
 
-TEST(ublas_matrix_real_part_rect, h5dump) { // NOLINT
+TEST(h5dump, ublas_matrix_real_part_rect) { // NOLINT
   H5Easy::File file("ublas_matrix_real_part_rect.h5", HighFive::File::Overwrite);
   const auto nx = 2;
   const auto ny = 3;

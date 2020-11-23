@@ -14,6 +14,7 @@
 #include <map>
 #include <fstream>
 #include <cstring> // stdcasecmp
+#include <exception>
 
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/map.hpp>
@@ -27,14 +28,14 @@
 namespace NRG {
 
 template<typename T> auto get_back(T &d) { // usually T is list or deque
-  my_assert(!d.empty());
+  if (d.empty()) throw std::runtime_error("Error: List empty! File: "s + (std::string)__FILE__ + " Line: "s +  std::to_string(__LINE__));
   auto i = d.back();
   d.pop_back();
   return i;
 }
 
 template<typename T> auto get_front(T &d) {
-  my_assert(!d.empty());
+  if (d.empty()) throw std::runtime_error("Error: List empty! File: "s + (std::string)__FILE__ + " Line: "s +  std::to_string(__LINE__));
   auto i = d.front();
   d.pop_front();
   return i;
@@ -46,7 +47,7 @@ inline T switch3(const T1 x0, const T1 x1, const T y1, const T1 x2, const T y2, 
   if (x0 == x1) return y1;
   if (x0 == x2) return y2;
   if (x0 == x3) return y3;
-  my_assert_not_reached();
+  throw std::runtime_error("Error: No match! File: "s + (std::string)__FILE__ + " Line: "s +  std::to_string(__LINE__));
 }
 
 // Get next line from stream F, skipping empty lines and comments.
