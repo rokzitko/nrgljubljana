@@ -174,6 +174,9 @@ auto vector_of_keys(const std::map<K,V> &container)
   return keys;
 }
 
+inline double atof(const std::string &s) { return std::atof(s.c_str()); }
+inline int atoi(const std::string &s) { return std::atoi(s.c_str()); }
+
 } // namespace
 
 #endif

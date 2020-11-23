@@ -1,6 +1,6 @@
 // Unitary transformation tool
 // Rotates matrices by performing unitary transformations
-// Rok Zitko, rok.zitko@ijs.si, May 2009, June 2010
+// Rok Zitko, rok.zitko@ijs.si, 2009-2020
 
 #ifndef _unitary_unitary_hpp_
 #define _unitary_unitary_hpp_
@@ -23,103 +23,18 @@
 #include <unistd.h>
 
 #include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_proxy.hpp>
+//#include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/symmetric.hpp>
+//#include <boost/numeric/ublas/matrix_proxy.hpp>
+//#include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/numeric/ublas/operation.hpp>
 
 #include <basicio.hpp>
 
 namespace NRG::Unitary {
 
-using namespace std;
 using namespace boost::numeric;
-
-inline auto count_words_in_string(const std::string &s) {
-  std::stringstream stream(s);
-  return std::distance(std::istream_iterator<std::string>(stream), std::istream_iterator<std::string>());
-}
-
-// Determine the matrix dimensions from a stream of rows of white-space-separated tabulated values
-inline auto get_dims(std::ifstream &F) {
-  auto dim1 = 0; // number of rows
-  auto dim2 = 0; // number of columns
-  while (F.good()) {
-    std::string s;
-    std::getline(F, s);
-    if (!F.fail()) {
-      auto n = count_words_in_string(s);
-      if (dim2 > 0 && dim2 != n) throw std::runtime_error("All matrix rows must be equally long");
-      dim2 = n;
-      dim1++;
-    }
-  }
-  return std::make_pair(dim1, dim2);
-}
-
-using MAT = ublas::matrix<double>;
-
-// Read dim1 x dim2 matrix from stream. Use function next_value to extract consecutive values.
-template<typename FNC>
-auto read_matrix_data(std::ifstream &F, FNC next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
-  MAT M(dim1, dim2);
-  for (auto i = 0; i < dim1; i++) {
-    for (auto j = 0; j < dim2; j++) {
-      const auto x = next_value(F);
-      if (check_is_finite && !finite(x)) throw std::runtime_error("Non-finite number detected.");      
-      M(i, j) = x;
-    }
-  }
-  if (F.fail()) throw std::runtime_error("read_matrix_text() failed. Input corrupted?");
-  return M;
-}
-
-// Read a matrix from stream (text)
-inline auto read_matrix_text(const std::string &filename, const bool verbose) {
-  auto F = safe_open_for_reading(filename, false);
-  const auto [dim1, dim2] = get_dims(F);
-  if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
-  F.clear();
-  F.seekg (0, ios::beg);
-  return read_matrix_data(F, [](auto &F) { double x; F >> x; return x; }, dim1, dim2);
-}
-
-// Read a matrix from stream (binary). Format: two unit32_t for matrix size, followed by
-// dim1 x dim2 double values;
-inline auto read_matrix_bin(const std::string &filename, const bool verbose) {
-  auto F = safe_open_for_reading(filename, true);
-  uint32_t dim1, dim2;
-  F.read((char *)&dim1, sizeof(uint32_t));
-  F.read((char *)&dim2, sizeof(uint32_t));
-  if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
-  return read_matrix_data(F, [](auto &F) { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
-}
-
-inline auto read_matrix(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
-  auto M = bin ? read_matrix_bin(filename, verbose) : read_matrix_text(filename, verbose);
-  if (veryverbose) std::cout << M << std::endl;
-  return M;
-}
-
-inline void save_matrix(const std::string &filename, const MAT &M, const bool verbose = false,
-                        const double chop_tol = 1e-14, const int output_prec = 18)
-{
-  if (verbose) std::cout << "Saving result to " << filename << std::endl;
-  auto F = safe_open(filename);
-  F << std::setprecision(output_prec);
-  const auto dim1 = M.size1();
-  const auto dim2 = M.size2();
-  for (auto i = 0; i < dim1; i++) {
-    for (auto j = 0; j < dim2; j++) {
-      const auto val = M(i, j);
-      F << (std::abs(val) > chop_tol ? val : 0.0) << (j != dim2 - 1 ? " " : "");
-    }
-    F << std::endl;
-  }
-  F.close();
-}
 
 class Unitary {
  private:
@@ -167,13 +82,13 @@ class Unitary {
    }
 
  public:
-   void run(MAT &A, const MAT &B, MAT &C) { // A and B may be transposed
+   void run(ublas::matrix<double> &A, const ublas::matrix<double> &B, ublas::matrix<double> &C) { // A and B may be transposed
      if (transpose_first) A = ublas::trans(A);
      if (transpose_last) C = ublas::trans(C);
      assert(A.size2() == B.size1());
      assert(B.size2() == C.size1());
-     MAT N = ublas::prod(B, C);
-     MAT M = ublas::prod(A, N);
+     ublas::matrix<double> N = ublas::prod(B, C);
+     ublas::matrix<double> M = ublas::prod(A, N);
      if (scale_factor != 1.0) M = scale_factor * M;
      if (veryverbose) std::cout << "M=" << M << std::endl;
      if (output_filename) save_matrix(output_filename.value(), M, verbose, chop_tol);
