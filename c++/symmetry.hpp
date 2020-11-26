@@ -86,9 +86,9 @@ class Symmetry {
      In.erase(In.begin());
      QN.erase(QN.begin());
    }
-   Symmetry(const Params &P_, const Invar & InvarSinglet = {}, const Invar & Invar_f = {}, 
-            const std::vector<std::string> & td_fields_ = {}) :
-     P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f), td_fields(td_fields_) {}
+   template<typename T>
+   Symmetry(const Params &P_, const Invar & InvarSinglet, const Invar & Invar_f, const T td_fields_) :
+     P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f), td_fields(td_fields_.begin(), td_fields_.end()) {}
    Symmetry(const Symmetry &) = delete;
    Symmetry(Symmetry &&) = delete;
    Symmetry &operator=(const Symmetry &) = delete;
