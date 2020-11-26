@@ -45,7 +45,7 @@
 namespace NRG {
 
 template<typename S>
-std::unique_ptr<Symmetry<S>> get(const std::string &sym_string, const Params &P)
+auto get(const std::string &sym_string, const Params &P)
 {
   if (sym_string == "QS") return mk_QS<S>(P);
   if (sym_string == "QSZ") return mk_QSZ<S>(P);
