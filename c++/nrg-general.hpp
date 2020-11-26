@@ -127,7 +127,6 @@ template <typename S> class NRG_calculation {
 private:
   MPI_diag mpi;
   Params P;
-  Stats<S> stats;
   MemTime mt; // memory and timing statistics
 public:
   auto run_nrg(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
@@ -151,8 +150,11 @@ public:
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
-  NRG_calculation(MPI_diag &mpi, const Workdir &workdir, const bool embedded) : mpi(mpi), P("param", "param", workdir, embedded), stats(P) {
-    auto [diag0, operators, coef, Sym] = read_data<S>(P, stats);
+  NRG_calculation(MPI_diag &mpi, const Workdir &workdir, const bool embedded) : mpi(mpi), P("param", "param", workdir, embedded) {
+    auto [Sym, diag0, operators, coef, GS_energy] = read_data<S>(P);
+    Stats<S> stats(P);
+    stats.td.allfields.add(Sym->get_td_fields(), 1);
+    stats.total_energy = GS_energy;
     Step step{P, RUNTYPE::NRG};
     Store<S> store(P.Ninit, P.Nlen);
     auto diag = run_nrg(step, operators, coef, stats, diag0, store, Sym);
@@ -176,7 +178,8 @@ public:
         if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-      auto [diag0_dm, operators_dm, coef_dm, Sym_dm] = read_data<S>(P, stats);
+      auto [Sym_dm, diag0_dm, operators_dm, coef_dm, GS_energy_dm] = read_data<S>(P);
+      stats.total_energy = GS_energy_dm;
       Step step_dmnrg{P, RUNTYPE::DMNRG};
       run_nrg(step_dmnrg, operators_dm, coef_dm, stats, diag0_dm, store, Sym_dm);
       my_assert(num_equal(stats.GS_energy, stats.total_energy));

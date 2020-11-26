@@ -13,14 +13,9 @@
 #include "eigen.hpp"
 #include "operators.hpp"
 #include "coef.hpp"
+#include "mk_sym.hpp"
 
 namespace NRG {
-
-template<typename S>
-class Stats;
-
-template<typename S>
-std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P, Stats<S> &stats);
 
 // Parse the header of the data file, check the version, determine the symmetry type.
 inline auto parse_datafile_header(std::istream &fdata, const int expected_version = 9)
@@ -76,15 +71,9 @@ inline void read_nr_channels(std::ifstream &fdata, const std::string &sym_string
   }
   nrglog('!', "perchannel=" << P.perchannel);
   my_assert(P.perchannel >= 1);
-  if (sym_string == "SL" || sym_string == "SL3")
-    P.spin = 1;
-  else
-    P.spin = 2;
+  P. spin = sym_string == "SL" || sym_string == "SL3" ? 1 : 2;
   const int statespersite = intpow(2, P.spin);
-  if (!P.substeps)
-    P.combs = intpow(statespersite, P.channels);
-  else
-    P.combs = statespersite;
+  P.combs = !P.substeps ? intpow(statespersite, P.channels) : statespersite;
   nrglog('!', "combs=" << P.combs);
 }
 
@@ -103,12 +92,13 @@ inline auto read_nsubs(std::ifstream &fdata)
   return nsubs;
 }
 
-// Read the ground state energy from data file ('e' flag)
 template<typename S>
-inline void read_gs_energy(std::ifstream &fdata, Stats<S> &stats) {
-  fdata >> stats.total_energy;
+inline auto read_one(std::istream &F) {
+  S value;
+  F >> value;
+  return value;
 }
-
+   
 // Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
 // tridiagonalization routines (if not using the tables computed by initial.m).
 template<typename S>
@@ -131,14 +121,14 @@ inline void skipline(std::ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
 template<typename S> 
-inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data") {
+inline auto read_data(Params &P, std::string filename = "data") {
   skipline();
   std::ifstream fdata(filename);
   if (!fdata) throw std::runtime_error("Can't load initial data.");
   const auto sym_string = parse_datafile_header(fdata);
   my_assert(sym_string == P.symtype.value());
   read_nr_channels(fdata, sym_string, P);
-  auto Sym = set_symmetry(P, stats);
+  auto Sym = set_symmetry<S>(P);
   read_Nmax(fdata, P);
   const auto nsubs = read_nsubs(fdata);
   skip_comments(fdata);
@@ -147,6 +137,7 @@ inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data")
   Operators<S> operators0;
   operators0.opch = Opch<S>(fdata, diag0, P);
   Coef<S> coef(P);
+  double GS_energy = 0.0;
   while (true) {
     /* skip white space */
     while (!fdata.eof() && std::isspace(fdata.peek())) fdata.get();
@@ -159,7 +150,7 @@ inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data")
       case '#':
         // ignore embedded comment lines
         break;
-      case 'e': read_gs_energy(fdata, stats); break;
+      case 'e': GS_energy = read_one<double>(fdata); break;
       case 's': operators0.ops[opname]  = MatrixElements<S>(fdata, diag0); break;
       case 'p': operators0.opsp[opname] = MatrixElements<S>(fdata, diag0); break;
       case 'g': operators0.opsg[opname] = MatrixElements<S>(fdata, diag0); break;
@@ -190,7 +181,7 @@ inline auto read_data(Params &P, Stats<S> &stats, std::string filename = "data")
   }
   if (std::string(P.tri) == "cpp") Tridiag<S>(coef, P); // before calling determine_Nmax()
   determine_Nmax(coef, P);
-  return std::make_tuple(diag0, operators0, coef, Sym);
+  return std::make_tuple(Sym, diag0, operators0, coef, GS_energy);
 }
 
 } // namespace

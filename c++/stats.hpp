@@ -11,12 +11,10 @@
 
 namespace NRG {
 
-// Namespace for storing various statistical quantities calculated during iteration.
-template<typename S>
-class Stats {
+// Structure for storing various statistical quantities calculated during the iteration
+template<typename S, typename t_eigen = eigen_traits<S>, typename t_expv  = expv_traits<S>>
+struct Stats {
  public:
-   using t_eigen = eigen_traits<S>;
-   using t_expv  = expv_traits<S>;
    t_eigen Egs{};
 
    // ** Thermodynamic quantities
