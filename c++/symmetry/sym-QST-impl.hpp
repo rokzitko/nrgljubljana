@@ -10,16 +10,12 @@ class SymmetryQST : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQST(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1,0), Invar(1,2,1)) {
+   SymmetryQST(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz^2>", "<Tz^2>", "<Q>", "<Q^2>"}, Invar(0,1,0), Invar(1,2,1)) {
      initInvar({
         {"Q", additive},  // charge
         {"SS", additive}, // spin
         {"T", additive}   // angular momentum
      });
-     allfields.add("<Sz^2>", 1);
-     allfields.add("<Tz^2>", 2);
-     allfields.add("<Q>", 3);
-     allfields.add("<Q^2>", 4);
    }
 
   // Multiplicity of the (Q,SS,T) subspace is (2S+1 = SS) times (2T+1).

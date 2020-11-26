@@ -10,7 +10,7 @@ class SymmetryP : public Symmetry<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryP(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1)) {
+   SymmetryP(const Params &P) : Symmetry<SC>(P, std::vector<std::string>{}, Invar(1)) {
      initInvar({
        {"P", multiplicative} // fermion parity
      });

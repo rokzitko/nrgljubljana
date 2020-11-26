@@ -7,14 +7,12 @@ class SymmetryISOLRcommon : public SymLR<SC> {
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
  public:
-   SymmetryISOLRcommon(const Params &P, Allfields &allfields) : SymLR<SC>(P, Invar(1,1,1)) {
+   SymmetryISOLRcommon(const Params &P) : SymLR<SC>(P, std::vector{"<Sz^2>", "<Q^2>"}, Invar(1,1,1)) {
      initInvar({
         {"II", additive},     // isospin
         {"SS", additive},     // spin
         {"P", multiplicative} // parity
      });
-     allfields.add("<Sz^2>", 1);
-     allfields.add("<Q^2>", 2);
    }
   // Multiplicity of the I=(II,SS,P) subspace = (2I+1)(2S+1) = II SS.
   size_t mult(const Invar &I) const override {
@@ -67,7 +65,7 @@ class SymmetryISOLR : public SymmetryISOLRcommon<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISOLR(const Params &P, Allfields &allfields) : SymmetryISOLRcommon<SC>(P, allfields) {}
+   SymmetryISOLR(const Params &P) : SymmetryISOLRcommon<SC>(P) {}
 
   void load() override {
     my_assert(P.channels == 2);
@@ -90,7 +88,7 @@ class SymmetryISO2LR : public SymmetryISOLRcommon<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISO2LR(const Params &P, Allfields &allfields) : SymmetryISOLRcommon<SC>(P, allfields) {}
+   SymmetryISO2LR(const Params &P) : SymmetryISOLRcommon<SC>(P) {}
 
   void load() override {
     my_assert(P.channels == 2);

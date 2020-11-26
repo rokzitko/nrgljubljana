@@ -10,15 +10,12 @@ class SymmetryQSLR : public SymLR<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSLR(const Params &P, Allfields &allfields) : SymLR<SC>(P, Invar(0,1,1)) {
+   SymmetryQSLR(const Params &P) : SymLR<SC>(P, std::vector{"<Sz^2>", "<Q>", "<Q^2>"}, Invar(0,1,1)) {
      initInvar({
         {"Q", additive},      // charge
         {"SS", additive},     // spin
         {"P", multiplicative} // parity
      });
-     allfields.add("<Sz^2>", 1);
-     allfields.add("<Q>", 2);
-     allfields.add("<Q^2>", 3);
    }
 
   // Multiplicity of the I=(Q,SS,P) subspace = 2S+1 = SS.

@@ -10,16 +10,12 @@ class SymmetryQSZLR : public SymFieldLR<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZLR(const Params &P, Allfields &allfields) : SymFieldLR<SC>(P, Invar(0,0,1)) {
+   SymmetryQSZLR(const Params &P) : SymFieldLR<SC>(P, std::vector{"<Sz^2>", "<Sz>", "<Q>", "<Q^2>"}, Invar(0,0,1)) {
      initInvar({
         {"Q", additive},      // charge
         {"SSZ", additive},    // spin projection
         {"P", multiplicative} // parity
      });
-     allfields.add("<Sz^2>", 1);
-     allfields.add("<Sz>", 2);
-     allfields.add("<Q>", 3);
-     allfields.add("<Q^2>", 4);
    }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {

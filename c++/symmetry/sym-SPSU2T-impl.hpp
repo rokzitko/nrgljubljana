@@ -10,13 +10,11 @@ class SymmetrySPSU2T : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2T(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1,0), Invar(2,1)) {
+   SymmetrySPSU2T(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz^2>", "<Tz^2>"}, Invar(1,0), Invar(2,1)) {
        initInvar({
          {"SS", additive}, // spin
          {"T", additive}   // angular momentum
        });
-       allfields.add("<Sz^2>", 1);
-       allfields.add("<Tz^2>", 2);
      }
 
   // Multiplicity of the (SS,T) subspace is (2S+1 = SS) times (2T+1).

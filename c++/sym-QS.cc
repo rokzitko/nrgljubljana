@@ -5,7 +5,7 @@
 namespace NRG {
 
 template <>
-std::unique_ptr<Symmetry<double>> mk_QS(const Params &P) // XXX: auto?
+std::unique_ptr<Symmetry<double>> mk_QS(const Params &P)
 {
   return std::make_unique<SymmetryQS<double>>(P);
 }

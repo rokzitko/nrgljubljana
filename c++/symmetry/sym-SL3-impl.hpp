@@ -10,21 +10,12 @@ class SymmetrySL3 : public Symmetry<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySL3(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,0,0)) {
+   SymmetrySL3(const Params &P) : Symmetry<SC>(P, std::vector{"<Q1>", "<Q1^2>", "<sQ1^2>", "<Q2>", "<Q2^2>", "<sQ2^2>", "<Q3>", "<Q3^2>", "<sQ3^2>"}, Invar(0,0,0)) {
      initInvar({
         {"Q1", additive}, // charge in channel 1
         {"Q2", additive}, // charge in channel 2
         {"Q3", additive}  // charge in channel 3
      });
-     allfields.add("<Q1>", 1);
-     allfields.add("<Q1^2>", 2);
-     allfields.add("<sQ1^2>", 3);
-     allfields.add("<Q2>", 4);
-     allfields.add("<Q2^2>", 5);
-     allfields.add("<sQ2^2>", 6);
-     allfields.add("<Q3>", 7);
-     allfields.add("<Q3^2>", 8);
-     allfields.add("<sQ3^2>", 9);
    }
 
   void load() override {

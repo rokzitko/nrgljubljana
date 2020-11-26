@@ -5,15 +5,15 @@
 namespace NRG {
 
 template <>
-std::unique_ptr<Symmetry<double>> mk_ISOSZLR(const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<double>> mk_ISOSZLR(const Params &P)
 {
-  return std::make_unique<SymmetryISOSZLR<double>>(P, allfields);
+  return std::make_unique<SymmetryISOSZLR<double>>(P);
 }
 
 template <>
-std::unique_ptr<Symmetry<cmpl>> mk_ISOSZLR(const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<cmpl>> mk_ISOSZLR(const Params &P)
 {
-  return std::make_unique<SymmetryISOSZLR<cmpl>>(P, allfields);
+  return std::make_unique<SymmetryISOSZLR<cmpl>>(P);
 }
 
 }

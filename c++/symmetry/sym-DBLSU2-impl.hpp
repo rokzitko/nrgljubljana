@@ -10,13 +10,11 @@ class SymmetryDBLSU2 : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryDBLSU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1, 1)) {
+   SymmetryDBLSU2(const Params &P) : Symmetry<SC>(P, std::vector{"<Q1^2>", "<Q2^2>"}, Invar(1, 1)) {
      initInvar({
         {"II1", additive}, // isospin 1
         {"II2", additive}, // isospin 2
      });
-     allfields.add("<Q1^2>", 1);
-     allfields.add("<Q2^2>", 2);
    }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {

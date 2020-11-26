@@ -10,13 +10,11 @@ class SymmetrySPU1LR : public SymFieldLR<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPU1LR(const Params &P, Allfields &allfields) : SymFieldLR<SC>(P, Invar(0,1)) {
+   SymmetrySPU1LR(const Params &P) : SymFieldLR<SC>(P, std::vector{"<Sz^2>", "<Sz>"}, Invar(0,1)) {
      initInvar({
         {"SSZ", additive},    // spin projection
         {"P", multiplicative} // parity
      });
-     allfields.add("<Sz^2>", 1);
-     allfields.add("<Sz>", 2);
    }
 
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {

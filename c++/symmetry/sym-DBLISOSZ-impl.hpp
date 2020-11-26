@@ -10,16 +10,12 @@ class SymmetryDBLISOSZ : public SymField<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryDBLISOSZ(const Params &P, Allfields &allfields) : SymField<SC>(P, Invar(1, 1, 0)) {
+   SymmetryDBLISOSZ(const Params &P) : SymField<SC>(P, std::vector{"<Sz^2>", "<Sz>", "<Q1^2>", "<Q2^2>"}, Invar(1, 1, 0)) {
      initInvar({
         {"II1", additive}, // isospin 1
         {"II2", additive}, // isospin 2
         {"SSZ", additive}  // spin projection
      });
-     allfields.add("<Sz^2>", 1);
-     allfields.add("<Sz>", 2);
-     allfields.add("<Q1^2>", 3);
-     allfields.add("<Q2^2>", 4);
    }
 
    bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {

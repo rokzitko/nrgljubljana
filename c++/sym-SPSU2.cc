@@ -5,15 +5,15 @@
 namespace NRG {
 
 template <>
-std::unique_ptr<Symmetry<double>> mk_SPSU2(const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<double>> mk_SPSU2(const Params &P)
 {
-  return std::make_unique<SymmetrySPSU2<double>>(P, allfields);
+  return std::make_unique<SymmetrySPSU2<double>>(P);
 }
 
 template <>
-std::unique_ptr<Symmetry<cmpl>> mk_SPSU2(const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<cmpl>> mk_SPSU2(const Params &P)
 {
-  return std::make_unique<SymmetrySPSU2<cmpl>>(P, allfields);
+  return std::make_unique<SymmetrySPSU2<cmpl>>(P);
 }
 
 }

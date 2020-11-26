@@ -10,12 +10,11 @@ class SymmetrySPSU2C3 : public SymC3<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2C3(const Params &P, Allfields &allfields) : SymC3<SC>(P, Invar(1,0)) {
+   SymmetrySPSU2C3(const Params &P) : SymC3<SC>(P, std::vector{"<Sz^2>"}, Invar(1,0)) {
      initInvar({
         {"SS", additive}, // spin
         {"P", mod3}       // C_3 rep
      });
-     allfields.add("<Sz^2>", 1);
    }
 
   size_t mult(const Invar &I) const override { return I.get("SS"); }

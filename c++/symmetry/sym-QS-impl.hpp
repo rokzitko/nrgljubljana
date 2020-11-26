@@ -10,7 +10,7 @@ class SymmetryQS : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQS(const Params &P) : Symmetry<SC>(P, Invar(0,1), Invar(1,2), std::vector{"<Sz^2>", "<Q>", "<Q^2>"}) {
+   SymmetryQS(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz^2>", "<Q>", "<Q^2>"}, Invar(0,1), Invar(1,2)) {
      initInvar({
        {"Q", additive}, // charge
        {"SS", additive} // spin

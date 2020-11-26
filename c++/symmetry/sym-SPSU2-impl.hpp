@@ -10,11 +10,10 @@ class SymmetrySPSU2 : public Symmetry<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1)) {
+   SymmetrySPSU2(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz^2>"}, Invar(1)) {
      initInvar({
         {"SS", additive} // spin
      });
-     allfields.add("<Sz^2>", 1);
    }
 
   // Multiplicity of the I=(SS) subspace = 2S+1 = SS.

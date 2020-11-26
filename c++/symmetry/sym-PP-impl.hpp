@@ -9,7 +9,7 @@ class SymmetryPP : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryPP(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1,1)) {
+   SymmetryPP(const Params &P) : Symmetry<SC>(P, std::vector<std::string>{}, Invar(1,1)) {
      initInvar({
        {"Pa", multiplicative}, // fermion parity in channel a
        {"Pb", multiplicative}  // fermion parity in channel b

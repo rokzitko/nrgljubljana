@@ -9,18 +9,12 @@ class SymmetryQSZTZ : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZTZ(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,0,0), Invar(1,2,1)) {
+   SymmetryQSZTZ(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz>", "<Sz^2>", "<Tz>", "<Tz^2>", "<Q>", "<Q^2>"}, Invar(0,0,0), Invar(1,2,1)) {
      initInvar({
         {"Q", additive},  // charge
         {"SZ", additive}, // spin
         {"TZ", additive}  // angular momentum
      });
-     allfields.add("<Sz>", 1);
-     allfields.add("<Sz^2>", 2);
-     allfields.add("<Tz>", 3);
-     allfields.add("<Tz^2>", 4);
-     allfields.add("<Q>", 5);
-     allfields.add("<Q^2>", 6);
    }
   size_t mult(const Invar &I) const override { return 1; }
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {

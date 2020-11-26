@@ -5,9 +5,9 @@
 namespace NRG {
 
 template <>
-std::unique_ptr<Symmetry<cmpl>> mk_QSC3(const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<cmpl>> mk_QSC3(const Params &P)
 {
-  return std::make_unique<SymmetryQSC3<cmpl>>(P, allfields);
+  return std::make_unique<SymmetryQSC3<cmpl>>(P);
 }
 
 }

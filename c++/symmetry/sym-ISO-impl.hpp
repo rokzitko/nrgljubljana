@@ -8,13 +8,11 @@ class SymmetryISOcommon : public Symmetry<SC> {
    using Symmetry<SC>::QN;
 
   public:
-  SymmetryISOcommon(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1, 1), Invar(2, 2)) {
+  SymmetryISOcommon(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz^2>", "<Q^2>"}, Invar(1, 1), Invar(2, 2)) {
     initInvar({
        {"II", additive}, // isospin
        {"SS", additive}  // spin
     });
-    allfields.add("<Sz^2>", 1);
-    allfields.add("<Q^2>", 2);
   }
 
   // Multiplicity of the I=(II,SS) subspace = (2I+1)(2S+1) = II SS.
@@ -74,7 +72,7 @@ class SymmetryISO : public SymmetryISOcommon<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISO(const Params &P, Allfields &allfields) : SymmetryISOcommon<SC>(P, allfields) {}
+   SymmetryISO(const Params &P) : SymmetryISOcommon<SC>(P) {}
 
   void load() override {
     switch (P.channels) {
@@ -109,7 +107,7 @@ class SymmetryISO2 : public SymmetryISOcommon<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISO2(const Params &P, Allfields &allfields) : SymmetryISOcommon<SC>(P, allfields) {}
+   SymmetryISO2(const Params &P) : SymmetryISOcommon<SC>(P) {}
 
   void load() override {
     switch (P.channels) {

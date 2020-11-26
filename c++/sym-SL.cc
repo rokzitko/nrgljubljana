@@ -5,15 +5,15 @@
 namespace NRG {
 
 template <>
-std::unique_ptr<Symmetry<double>> mk_SL(const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<double>> mk_SL(const Params &P)
 {
-  return std::make_unique<SymmetrySL<double>>(P, allfields);
+  return std::make_unique<SymmetrySL<double>>(P);
 }
 
 template <>
-std::unique_ptr<Symmetry<cmpl>> mk_SL(const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<cmpl>> mk_SL(const Params &P)
 {
-  return std::make_unique<SymmetrySL<cmpl>>(P, allfields);
+  return std::make_unique<SymmetrySL<cmpl>>(P);
 }
 
 }

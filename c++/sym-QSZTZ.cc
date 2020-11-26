@@ -5,15 +5,15 @@
 namespace NRG {
 
 template <>
-std::unique_ptr<Symmetry<double>> mk_QSZTZ(const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<double>> mk_QSZTZ(const Params &P)
 {
-  return std::make_unique<SymmetryQSZTZ<double>>(P, allfields);
+  return std::make_unique<SymmetryQSZTZ<double>>(P);
 }
 
 template <>
-std::unique_ptr<Symmetry<cmpl>> mk_QSZTZ(const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<cmpl>> mk_QSZTZ(const Params &P)
 {
-  return std::make_unique<SymmetryQSZTZ<cmpl>>(P, allfields);
+  return std::make_unique<SymmetryQSZTZ<cmpl>>(P);
 }
 
 }

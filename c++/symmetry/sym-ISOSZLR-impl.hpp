@@ -9,15 +9,12 @@ class SymmetryISOSZLR : public SymFieldLR<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryISOSZLR(const Params &P, Allfields &allfields) : SymFieldLR<SC>(P, Invar(1,0,1)) {
+   SymmetryISOSZLR(const Params &P) : SymFieldLR<SC>(P, std::vector{"<Sz^2>", "<Sz>", "<Q^2>"}, Invar(1,0,1)) {
      initInvar({
         {"II", additive},     // isospin
         {"SSZ", additive},    // spin projection
         {"P", multiplicative} // parity
      });
-     allfields.add("<Sz^2>", 1);
-     allfields.add("<Sz>", 2);
-     allfields.add("<Q^2>", 3);
    }
   // Multiplicity of the I=(II,SSZ) subspace = (2I+1) = II.
   size_t mult(const Invar &I) const override { return I.get("II"); }

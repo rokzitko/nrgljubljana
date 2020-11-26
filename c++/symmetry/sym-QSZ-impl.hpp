@@ -10,7 +10,7 @@ class SymmetryQSZ : public SymField<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZ(const Params &P) : SymField<SC>(P, Invar(0,0), Invar(1,2), std::vector{"<Sz^2>", "<Sz>", "<Q>", "<Q^2>"}) {
+   SymmetryQSZ(const Params &P) : SymField<SC>(P, std::vector{"<Sz^2>", "<Sz>", "<Q>", "<Q^2>"}, Invar(0,0), Invar(1,2)) {
      initInvar({
        {"Q", additive},  // charge
        {"SSZ", additive} // spin projection

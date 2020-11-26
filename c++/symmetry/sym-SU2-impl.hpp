@@ -10,11 +10,10 @@ class SymmetrySU2 : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySU2(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(1)) {
+   SymmetrySU2(const Params &P) : Symmetry<SC>(P, std::vector{"<Q^2>"}, Invar(1)) {
        initInvar({
          {"II", additive} // isospin
        });
-      allfields.add("<Q^2>", 1);
      }
 
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {

@@ -10,15 +10,12 @@ class SymmetryQSC3 : public SymC3<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSC3(const Params &P, Allfields &allfields) : SymC3<SC>(P, Invar(0,1,0)) {
+   SymmetryQSC3(const Params &P) : SymC3<SC>(P, std::vector{"<Sz^2>", "<Q>", "<Q^2>"}, Invar(0,1,0)) {
      initInvar({
         {"Q", additive},  // charge
         {"SS", additive}, // spin
         {"P", mod3}       // C_3 rep
      });
-     allfields.add("<Sz^2>", 1);
-     allfields.add("<Q>", 2);
-     allfields.add("<Q^2>", 3);
    }
 
   // Multiplicity of the I=(Q,SS,P) subspace = 2S+1 = SS.

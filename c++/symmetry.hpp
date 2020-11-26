@@ -76,10 +76,10 @@ class Symmetry {
    // will include S_z, while QN will include S. In other words, QN involves those quantum numbers that we need to
    // retain in the calculation, while In involves those quantum numbers that "drop out" of the problem due to the
    // symmetry.
+   const std::vector<std::string> td_fields;
    std::vector<Invar> In, QN;
    const Invar InvarSinglet; // QNs for singlet operator
    const Invar Invar_f;      // QNs for f operator
-   const std::vector<std::string> td_fields;
  public:
    virtual void load() = 0; // load In, QN
    void erase_first() { // drop the first element in In, QN to convert to 0-based vectors; call after load()
@@ -87,8 +87,8 @@ class Symmetry {
      QN.erase(QN.begin());
    }
    template<typename T>
-   Symmetry(const Params &P_, const Invar & InvarSinglet, const Invar & Invar_f, const T td_fields_) :
-     P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f), td_fields(td_fields_.begin(), td_fields_.end()) {}
+   Symmetry(const Params &P_, const T td_fields_, const Invar & InvarSinglet = {}, const Invar & Invar_f = {}) :
+     P(P_), td_fields(td_fields_.begin(), td_fields_.end()), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f) {}
    Symmetry(const Symmetry &) = delete;
    Symmetry(Symmetry &&) = delete;
    Symmetry &operator=(const Symmetry &) = delete;
