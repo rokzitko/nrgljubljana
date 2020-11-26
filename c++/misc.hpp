@@ -179,25 +179,29 @@ inline int atoi(const std::string &s) { return std::atoi(s.c_str()); }
 
 // Read data from stream F.
 template <typename T1, typename T2>
-void readtable(std::istream &F, std::vector<std::pair<T1, T2>> &v, bool verbose = false) 
+std::vector<std::pair<T1, T2>> readtable(std::string filename, const bool verbose = false) 
 {
-    while (F) 
-    {
-        skip_comments(F);
-        T1 x;
-        T2 y;
-        F >> x >> y;
-        if (F.fail()) break;
-        assert(isfinite(x) && isfinite(y));
-        v.push_back(std::make_pair(x, y));
-    }
-    if (verbose) std::cout << v.size() << " lines read." << std::endl;
+  auto F = safe_open_for_reading(filename);
+  std::vector<std::pair<T1, T2>> v;
+  while (F) 
+  {
+      skip_comments(F);
+      T1 x;
+      T2 y;
+      F >> x >> y;
+      if (F.fail()) break;
+      assert(isfinite(x) && isfinite(y));
+      v.push_back(std::make_pair(x, y));
+  }
+  if (verbose) std::cout << v.size() << " lines read." << std::endl;
+  return v;
 }
 
 template <typename T1, typename T2>
-void writetable(std::vector<std::pair<T1, T2>> &re, std::ostream &F, int output_precision = 16) {
+void writetable(const std::vector<std::pair<T1, T2>> &re, std::string filename, const int output_precision = 16) {
+  auto F = safe_open(filename);
   F << std::setprecision(output_precision);
-  for (auto & i : re) F << i.first << " " << i.second << std::endl;
+  for (const auto & [x, y] : re) F << x << " " << y << std::endl;
 }
 
 } // namespace

@@ -204,8 +204,6 @@ inline void save_matrix(const std::string &filename, const ublas::matrix<double>
   F.close();
 }
 
-
-
 } // namespace
 
 #endif

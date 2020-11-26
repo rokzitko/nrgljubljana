@@ -16,6 +16,8 @@
 #include <string>
 #include <cstring>
 #include <algorithm>
+#include <optional>
+#include <memory> 
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
@@ -31,30 +33,33 @@ using namespace NRG;
 
 namespace NRG::Resample{
 
+struct gsl_acc_del{ 
+    void operator()(gsl_interp_accel* acc) {
+        if (acc) gsl_interp_accel_free(acc);
+    }
+};
+struct gsl_spline_del{ 
+    void operator()(gsl_spline* spline){
+        if(spline) gsl_spline_free(spline);
+    }  
+};
+
 template <typename T>
 class Resample
 {
     private:
     
         // Dump additional information to stdout?
-        bool verbose = false; // enable with -v
         std::string inputfn;  // Filename for input data
         std::string gridfn;   // Filename for a new X grid
-        std::string outputfn; // Filename for resampled data. May be the same as gridfn.
+        std::optional<std::string> outputfn; // Filename for resampled data. May be the same as gridfn.
+        bool verbose = false; // enable with -v
         int output_precision = 16; // number of digits of precision in the output
-        // const size_t limit = 1000;
-        // const T EPSABS = 1e-12; // numeric integration epsilon (absolute)
-        // const T EPSREL = 1e-8;  // numeric integration epsilon (relative)
 
-        int len;           // number of data points
-        T Xmin, Xmax; // the interval boundaries
-        std::vector<T>  Xpts, Ypts;
-        
-        gsl_interp_accel *acc;
-        gsl_spline *spline;
-        // gsl_integration_workspace *w;
+        std::unique_ptr<gsl_interp_accel, gsl_acc_del> acc;
+        std::unique_ptr<gsl_spline, gsl_spline_del> spline;
 
-
+        std::vector<std::pair<T, T>> grid;
 
         void usage() 
         {
@@ -103,67 +108,63 @@ class Resample
         {
             parse_param(argv, argc);
             if (verbose) about();
-        }
-
-        Resample(std::string inputfn, std::string gridfn, std::string outputfn, bool verbose = false, int output_precision = 16){
-            this->inputfn = inputfn;
-            this->gridfn = gridfn;
-            this->outputfn = outputfn;
-            this->verbose = verbose;
-            this->output_precision = output_precision;
-            if (verbose) about();
-        }
-        
-        ~Resample() 
-        {
-            gsl_spline_free(spline);
-            gsl_interp_accel_free(acc);
-        }
-
-        void run()
-        {
-            auto Fin = safe_open_for_reading(inputfn);
-            std::vector<std::pair<double, double>> f;
-            readtable(Fin, f, verbose);
+            std::vector<std::pair<T, T>> f = readtable<T,T>(inputfn, verbose);
+            grid = readtable<T,T>(gridfn, verbose);
             init(f);
+        }
 
-            auto Fgrid = safe_open_for_reading(gridfn);
-            std::vector<std::pair<double, double>> grid;
-            readtable(Fgrid, grid, verbose);
+        Resample(std::string inputfn, std::string gridfn, std::optional<std::string> outputfn = std::nullopt, bool verbose = false, int output_precision = 16):
+        inputfn(inputfn), gridfn(gridfn), outputfn(outputfn), verbose(verbose), output_precision(output_precision)
+        {
+            std::vector<std::pair<T, T>> f = readtable<T,T>(inputfn, verbose);
+            grid = readtable<T,T>(gridfn, verbose);
+            init(f);
+        }
+
+        Resample(std::vector<std::pair<T, T>> f, std::vector<std::pair<T, T>> grid, std::optional<std::string> outputfn = std::nullopt, bool verbose = false, int output_precision = 16):
+        grid(grid), outputfn(outputfn), verbose(verbose), output_precision(output_precision)
+        {
+            init(f);
+        }
+
+        std::optional<std::vector<std::pair<T, T>>> run()
+        {
             resample(grid);
 
-            auto Fout = safe_open(outputfn);
-            writetable(grid, Fout, output_precision);
+            if (outputfn)
+            {
+                writetable(grid, *outputfn, output_precision); 
+                return std::nullopt;
+            } 
+            else return grid;
         }
 
         void init(std::vector<std::pair<T, T>> &im) 
         {
+            int len;      // number of data points
+            T Xmin, Xmax; // the interval boundaries
+            std::vector<T>  Xpts, Ypts;
+            
             std::sort(im.begin(), im.end());
             len  = im.size();
-            Xmin = im[0].first;
-            Xmax = im[len - 1].first;
+            Xmin = im.front().first;
+            Xmax = im.back().first;
             if (verbose) std::cout << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
-            // Xpts are increasing
-            Xpts = std::vector<T> (len);
-            Ypts = std::vector<T> (len);
-            for (int i = 0; i < len; i++) 
-            {
-                Xpts[i] = im[i].first;
-                Ypts[i] = im[i].second;
-            }
-            acc = gsl_interp_accel_alloc();
+
+            std::transform(im.begin(), im.end(), std::back_inserter(Xpts), [] (const auto& pair){return pair.first;});
+            std::transform(im.begin(), im.end(), std::back_inserter(Ypts), [] (const auto& pair){return pair.second;});
+
+            acc.reset(gsl_interp_accel_alloc());
             const gsl_interp_type *Interp_type = gsl_interp_akima;
-            spline = gsl_spline_alloc(Interp_type, len);
-            gsl_spline_init(spline, &Xpts[0], &Ypts[0], len);
-            // w = gsl_integration_workspace_alloc(limit);
+            spline.reset(gsl_spline_alloc(Interp_type, len));
+            gsl_spline_init(spline.get(), Xpts.data(), Ypts.data(), len);
             gsl_set_error_handler_off();
         }
 
         void resample(std::vector<std::pair<T, T>> &grid) 
         {
-            for (auto & i : grid) i.second = gsl_spline_eval(spline, i.first, acc);
+            for (auto & i : grid) i.second = gsl_spline_eval(spline.get(), i.first, acc.get());
         }  
-
 
 };
 
