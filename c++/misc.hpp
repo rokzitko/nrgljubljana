@@ -177,6 +177,33 @@ auto vector_of_keys(const std::map<K,V> &container)
 inline double atof(const std::string &s) { return std::atof(s.c_str()); }
 inline int atoi(const std::string &s) { return std::atoi(s.c_str()); }
 
+// Read data from stream F.
+template <typename T1, typename T2>
+std::vector<std::pair<T1, T2>> readtable(std::string filename, const bool verbose = false) 
+{
+  auto F = safe_open_for_reading(filename);
+  std::vector<std::pair<T1, T2>> v;
+  while (F) 
+  {
+      skip_comments(F);
+      T1 x;
+      T2 y;
+      F >> x >> y;
+      if (F.fail()) break;
+      assert(isfinite(x) && isfinite(y));
+      v.push_back(std::make_pair(x, y));
+  }
+  if (verbose) std::cout << v.size() << " lines read." << std::endl;
+  return v;
+}
+
+template <typename T1, typename T2>
+void writetable(const std::vector<std::pair<T1, T2>> &re, std::string filename, const int output_precision = 16) {
+  auto F = safe_open(filename);
+  F << std::setprecision(output_precision);
+  for (const auto & [x, y] : re) F << x << " " << y << std::endl;
+}
+
 } // namespace
 
 #endif

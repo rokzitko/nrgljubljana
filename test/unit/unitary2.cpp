@@ -14,17 +14,17 @@ using namespace NRG::Unitary;
 using namespace NRG;
 using namespace std::string_literals;
 
-TEST(unitary, count_words_in_string) {
+TEST(basicio, count_words_in_string) {
     EXPECT_EQ(count_words_in_string("one two three four a"s), 5);
     EXPECT_EQ(count_words_in_string(""s), 0);
 }
 
-TEST(unitary, get_dims) {
-    auto file = safe_open_for_reading("matrix.txt");
+TEST(basicio, get_dims) {
+    auto file = safe_open_for_reading("txt/matrix.txt");
     auto const [dim1, dim2] = get_dims(file);
     EXPECT_EQ(dim1, 3);
     EXPECT_EQ(dim2, 4);
-    auto file_err = safe_open_for_reading("matrix_err.txt");
+    auto file_err = safe_open_for_reading("txt/matrix_err.txt");
     EXPECT_THROW(get_dims(file_err), std::runtime_error);
 }
 
@@ -47,18 +47,18 @@ void compare_matrices(const std::vector<std::vector<T>> m1, const MAT &m2){
             EXPECT_EQ(m2(i, j), m1[i][j]);
 }
 
-TEST(unitary, read_matrix_text){
+TEST(basicio, read_matrix_text){
     std::vector<std::vector<int>> const ref_matrix = {{31,41,53,46},{12,5,1,41},{5,2,4,7}};
-    auto matrix = read_matrix("matrix.txt");
+    auto matrix = read_matrix("txt/matrix.txt");
     compare_matrices(ref_matrix, matrix);
 }
 
-TEST(unitary, save_matrix){
-    auto matrix = read_matrix("matrix.txt");
-    save_matrix("matrix_temp.txt", matrix);
-    auto matrix_temp = read_matrix("matrix_temp.txt");
+TEST(basicio, save_matrix){
+    auto matrix = read_matrix("txt/matrix.txt");
+    save_matrix("txt/matrix_temp.txt", matrix);
+    auto matrix_temp = read_matrix("txt/matrix_temp.txt");
     compare_matrices(matrix, matrix_temp);
-    std::remove("matrix_temp.txt");
+    std::remove("txt/matrix_temp.txt");
 }
 
 std::string exec(const char* cmd) {
@@ -81,19 +81,19 @@ TEST(unitary, unitary_help){
 class unitaryProdTest : public ::testing::Test {
     protected:
         void SetUp() override{
-            A = read_matrix("matrix_A.txt");
-            B = read_matrix("matrix_B.txt");
-            C = read_matrix("matrix_C.txt");
+            A = read_matrix("txt/matrix_A.txt");
+            B = read_matrix("txt/matrix_B.txt");
+            C = read_matrix("txt/matrix_C.txt");
         }
 
         void TearDown() override{
-            std::remove("temp_result_matrix.txt");
+            std::remove("txt/temp_result_matrix.txt");
         }
 
     void Compare() {
         MAT D = ublas::prod(B,C);
         my_result = ublas::prod(A, D);
-        func_result = read_matrix("temp_result_matrix.txt");
+        func_result = read_matrix("txt/temp_result_matrix.txt");
         compare_matrices(my_result, func_result);
     }
     MAT A;
@@ -104,20 +104,20 @@ class unitaryProdTest : public ::testing::Test {
 };
 
 TEST_F(unitaryProdTest, noTrans_noScale){
-    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
+    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -q -o txt/temp_result_matrix.txt txt/matrix_A.txt txt/matrix_B.txt txt/matrix_C.txt");
     std::cout << out << std::endl;
     Compare();
 }
 
 TEST_F(unitaryProdTest, Trans_noScale){
-    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -t -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
+    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -t -q -o txt/temp_result_matrix.txt txt/matrix_A.txt txt/matrix_B.txt txt/matrix_C.txt");
     std::cout << out << std::endl;
     A = ublas::trans(A);
     Compare();
 }
 
 TEST_F(unitaryProdTest, Trans_Scale){
-    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -s 2 -t -q -o temp_result_matrix.txt matrix_A.txt matrix_B.txt matrix_C.txt");
+    auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -s 2 -t -q -o txt/temp_result_matrix.txt txt/matrix_A.txt txt/matrix_B.txt txt/matrix_C.txt");
     std::cout << out << std::endl;
     A = 2 * ublas::trans(A);
     Compare();

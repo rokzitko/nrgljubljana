@@ -79,14 +79,14 @@ TEST(misc, switch3) {
 }
 
 TEST(misc, nextline) {
-	auto file = safe_open_for_reading("nextline.txt");
+	auto file = safe_open_for_reading("txt/nextline.txt");
   const std::vector<std::string> result = {"zdravo", "nekaj", "adijo"};
 	for(int i = 0; i < 3; i++){
 		EXPECT_EQ(nextline(file),result[i]);
 	}
 	EXPECT_EQ(nextline(file), std::nullopt);	
 
-	auto empty_file = safe_open_for_reading("empty.txt");
+	auto empty_file = safe_open_for_reading("txt/empty.txt");
 	EXPECT_EQ(nextline(empty_file), std::nullopt);
 }
 
@@ -105,9 +105,9 @@ void compare_maps(const std::map<T1,T2> &a, const std::map<S1,S2> &b) {
 }
 
 TEST(misc, block) {
-	const auto nekaj = parser("block.txt", "nekaj");
-  const auto nekaj_drugega = parser("block.txt", "nekaj drugega");
-  const auto nekaj_tretjega = parser("block.txt", "nekaj tretjega");
+	const auto nekaj = parser("txt/block.txt", "nekaj");
+  const auto nekaj_drugega = parser("txt/block.txt", "nekaj drugega");
+  const auto nekaj_tretjega = parser("txt/block.txt", "nekaj tretjega");
 	
   const std::map nekaj_map = {std::pair("a"s, "2"s), std::pair("b"s, "3"s), std::pair("c"s, "4"s)};
   const std::map nekaj_drugega_map = {std::pair("d"s, "5"s), std::pair("c"s, "6"s), std::pair("e"s, "10"s)};
@@ -116,11 +116,11 @@ TEST(misc, block) {
 	compare_maps(nekaj, nekaj_map);
   compare_maps(nekaj_drugega, nekaj_drugega_map);
   compare_maps(nekaj_tretjega, nekaj_tretjega_map);
-	EXPECT_THROW(parser("block.txt", "zadeva"), std::runtime_error); 
+	EXPECT_THROW(parser("txt/block.txt", "zadeva"), std::runtime_error); 
 }
 
 TEST(misc, skip_comments){
-  auto file = safe_open_for_reading("nextline.txt");
+  auto file = safe_open_for_reading("txt/nextline.txt");
   const std::vector result = {"zdravo"s, "nekaj"s, "adijo"s};
 	std::string line;
   for(int i = 0; i < 3; i++){
