@@ -40,20 +40,18 @@ class Workdir {
    Workdir(Workdir &&) = delete;
    Workdir & operator=(const Workdir &) = delete;
    Workdir & operator=(Workdir &&) = delete;
-   [[nodiscard]] std::string rhofn(const size_t N, const std::string &filename) const {  // density matrix files
+   [[nodiscard]] auto rhofn(const size_t N, const std::string &filename) const {  // density matrix files
      return workdir + "/" + filename + std::to_string(N);
    }
-   [[nodiscard]] std::string unitaryfn(const size_t N, const std::string &filename = "unitary"s) const { // eigenstates files
+   [[nodiscard]] auto unitaryfn(const size_t N, const std::string &filename = "unitary"s) const { // eigenstates files
      return workdir + "/" + filename + std::to_string(N);
    }
    void remove_workdir() {
-     if (workdir != "")
-	NRG::remove(workdir);
+     if (workdir != "") NRG::remove(workdir);
    }
-   ~Workdir() {
-     if (remove_at_exit)
-       remove_workdir();
-   }
+  ~Workdir() {
+    if (remove_at_exit) remove_workdir();
+  }
 };
 
 inline auto set_workdir(const std::string &dir_) {
