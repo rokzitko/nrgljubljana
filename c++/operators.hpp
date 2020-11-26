@@ -140,26 +140,34 @@ template<typename S>
 class Opch : public std::vector<OpchChannel<S>> {
  public:
    Opch() = default;
-   explicit Opch(const size_t nrch) { this->resize(nrch); }
+   explicit Opch(const size_t nrch) { this->resize(nrch); } // XXX remove
+   explicit Opch(const Params &P) {
+      this->resize(P.channels);
+      for (auto &oc: *this) {
+        oc.resize(P.perchannel);
+        for (auto &o: oc)
+          o.clear(); // set all ublas matrix elements to zero
+      }
+   }
    Opch(std::istream &fdata, const DiagInfo<S> &diag, const Params &P) {
      this->resize(P.channels);
-     for (const auto i : range0(size_t(P.channels))) {
-       (*this)[i] = OpchChannel<S>(P.perchannel);
-       for (const auto j : range0(size_t(P.perchannel))) {
-         const auto ch = read_one<char>(fdata);
-         const auto iread = read_one<size_t>(fdata);
-         const auto jread = read_one<size_t>(fdata);
-         my_assert(ch == 'f' && i == iread && j == jread);
-         (*this)[i][j] = MatrixElements<S>(fdata, diag);
+     for (auto &oc : *this) {
+       oc.resize(P.perchannel);
+       for (auto &o : oc) {
+         [[maybe_unused]] const auto ch = read_one<char>(fdata);
+         [[maybe_unused]] const auto iread = read_one<size_t>(fdata);
+         [[maybe_unused]] const auto jread = read_one<size_t>(fdata);
+         my_assert(ch == 'f');
+         o = MatrixElements<S>(fdata, diag);
        }
      }
    }
-   void dump() {
-     std::cout << std::endl;
+   void dump(std::ostream &F = std::cout) {
+     F << std::endl;
      for (const auto &&[i, ch] : *this | ranges::views::enumerate)
        for (const auto &&[j, mat] : ch | ranges::views::enumerate)
-         std::cout << fmt::format("<f> dump, i={} j={}\n", i, j) << mat << std::endl;
-     std::cout << std::endl;
+         F << fmt::format("<f> dump, i={} j={}\n", i, j) << mat << std::endl;
+     F << std::endl;
    }
 };
 

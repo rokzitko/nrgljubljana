@@ -97,7 +97,7 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 
 template<typename SC>
 Opch<SC> SymmetryDBLSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
-  Opch<SC> opch = newopch<SC>(P);
+  Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 

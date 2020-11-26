@@ -32,7 +32,7 @@ namespace NRG {
 
 template<typename SC>
 Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
-  Opch<SC> opch = newopch<SC>(P);
+  Opch<SC> opch(P);
 
   if constexpr (std::is_same_v<SC, std::complex<double>>) {
  

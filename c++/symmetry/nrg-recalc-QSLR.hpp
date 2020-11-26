@@ -30,7 +30,7 @@ namespace NRG {
 
 template<typename SC>
 Opch<SC> SymmetryQSLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
-  Opch<SC> opch = newopch<SC>(P);
+  Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     int qp = Ip.get("Q");
     int ssp = Ip.get("SS");

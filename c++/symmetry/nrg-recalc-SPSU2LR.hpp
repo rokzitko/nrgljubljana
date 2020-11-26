@@ -69,7 +69,7 @@ MatrixElements<SC> SymmetrySPSU2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag,
 
 template<typename SC>
 Opch<SC> SymmetrySPSU2LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
-  Opch<SC> opch = newopch<SC>(P);
+  Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     int ssp = Ip.get("SS");
     int pp    = Ip.get("P");

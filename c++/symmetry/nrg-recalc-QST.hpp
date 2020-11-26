@@ -139,7 +139,7 @@ MatrixElements<SC> SymmetryQST<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 // Driver routine for recalc_f()
 template<typename SC>
 Opch<SC> SymmetryQST<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
-  Opch<SC> opch = newopch<SC>(P);
+  Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     int qp  = Ip.get("Q");
     int ssp  = Ip.get("SS");

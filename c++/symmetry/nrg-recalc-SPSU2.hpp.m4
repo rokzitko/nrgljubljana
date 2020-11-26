@@ -44,7 +44,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
 template<typename SC>
 Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
   my_assert(!P.substeps);
-  Opch<SC> opch = newopch<SC>(P);
+  Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     int ssp = Ip.get("SS");
     Invar I1;
@@ -79,7 +79,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
 template<typename SC>
 OpchChannel<SC> SymmetrySPSU2<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const int M) const {
   my_assert(P.substeps);
-  Opch<SC> opch = newopch<SC>(P);
+  Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     int ssp = Ip.get("SS");
     Invar I1;

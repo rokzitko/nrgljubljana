@@ -54,7 +54,7 @@ MatrixElements<SC> SymmetrySL3<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 
 template<typename SC>
 Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
-  Opch<SC> opch = newopch<SC>(P);
+  Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     int q1p = Ip.get("Q1");
     int q2p = Ip.get("Q2");

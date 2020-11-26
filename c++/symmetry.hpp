@@ -37,18 +37,6 @@ inline auto z2_equality(const int p1, const int p2, const int p3) { return p1 ==
 inline auto c3_equality(const int p1, const int p2, const int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
 
 template<typename S>
-inline auto newopch(const Params &P)
-{
-  Opch<S> opch(P.channels);
-  for (auto &oc: opch) {
-    oc.resize(P.perchannel);
-    for (auto &o: oc)
-      o.clear(); // set all ublas matrix elements to zero
-  }
-  return opch;
-}
-
-template<typename S>
 struct Recalc_f {
   size_t i1; // subspace indexes
   size_t ip;

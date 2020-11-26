@@ -32,7 +32,7 @@ namespace NRG {
 
 template<typename SC>
 Opch<SC> SymmetryISOLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
-  Opch<SC> opch = newopch<SC>(P);
+  Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
 
