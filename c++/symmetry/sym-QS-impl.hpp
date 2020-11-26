@@ -10,14 +10,11 @@ class SymmetryQS : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix; // XXX: in template
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQS(const Params &P, Allfields &allfields) : Symmetry<SC>(P, Invar(0,1), Invar(1,2)) {
+   SymmetryQS(const Params &P) : Symmetry<SC>(P, Invar(0,1), Invar(1,2), std::vector<std::string>{"<Sz^2>", "<Q>", "<Q^2>"}) {
      initInvar({
        {"Q", additive}, // charge
        {"SS", additive} // spin
      });
-     allfields.add("<Sz^2>", 1);
-     allfields.add("<Q>", 2);
-     allfields.add("<Q^2>", 3);
    }
 
    // Multiplicity of the (Q,SS) subspace is 2S+1 = SS.

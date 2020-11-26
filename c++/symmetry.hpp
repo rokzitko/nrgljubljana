@@ -79,14 +79,16 @@ class Symmetry {
    std::vector<Invar> In, QN;
    const Invar InvarSinglet; // QNs for singlet operator
    const Invar Invar_f;      // QNs for f operator
+   const std::vector<std::string> td_fields;
  public:
    virtual void load() = 0; // load In, QN
    void erase_first() { // drop the first element in In, QN to convert to 0-based vectors; call after load()
      In.erase(In.begin());
      QN.erase(QN.begin());
    }
-   Symmetry(const Params &P_, const Invar & InvarSinglet = {}, const Invar & Invar_f = {}) :
-     P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f) {}
+   Symmetry(const Params &P_, const Invar & InvarSinglet = {}, const Invar & Invar_f = {}, 
+            const std::vector<std::string> & td_fields_ = {}) :
+     P(P_), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f), td_fields(td_fields_) {}
    Symmetry(const Symmetry &) = delete;
    Symmetry(Symmetry &&) = delete;
    Symmetry &operator=(const Symmetry &) = delete;
@@ -121,6 +123,7 @@ class Symmetry {
      }
      return input;
    }
+   auto get_td_fields() const { return td_fields; }
    // For some symmetry types with two-channels we distinguish between even and odd parity with respect to the
    // channel-interchange operation.
    virtual bool islr() const { return false; }
@@ -273,29 +276,29 @@ template<typename S>
 class SymField : public Symmetry<S> {
  public:
    template<typename ... Args> explicit SymField(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
-   bool isfield() const override { return true; }
+   bool isfield() const final override { return true; }
 };
 
 template<typename S>
 class SymLR : public Symmetry<S> {
  public:
    template<typename ... Args> explicit SymLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
-   bool islr() const override { return true; }
+   bool islr() const final override { return true; }
 };
 
 template<typename S>
 class SymC3 : public Symmetry<S> {
  public:
    template<typename ... Args> explicit SymC3(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
-   bool isc3() const override { return true; }
+   bool isc3() const final override { return true; }
 };
 
 template<typename S>
 class SymFieldLR : public Symmetry<S> {
   public:
    template<typename ... Args> explicit SymFieldLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
-   bool isfield() const override { return true; }
-   bool islr() const override { return true; }
+   bool isfield() const final override { return true; }
+   bool islr() const final override { return true; }
 };
 
 // Helper functions

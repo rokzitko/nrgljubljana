@@ -49,6 +49,10 @@ class Allfields : std::vector<Outfield> {
     Allfields(const std::vector<std::string> &fields, const size_t prec, const size_t width) : prec(prec), width(width) {
       for(const auto &desc : fields) add(desc);
     }
+    void add(const std::vector<std::string> &more, const int position = -1) {
+      Allfields more_fields(more, prec, width);
+      this->add(more_fields, position);
+    }
     void save_header(std::ostream &O) const {
       O << '#';
       for (const auto &f : *this) f.put_header(O);

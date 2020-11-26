@@ -45,42 +45,42 @@
 namespace NRG {
 
 template<typename S>
-std::unique_ptr<Symmetry<S>> get(const std::string &sym_string, const Params &P, Allfields &allfields)
+std::unique_ptr<Symmetry<S>> get(const std::string &sym_string, const Params &P)
 {
-  if (sym_string == "QS") return mk_QS<S>(P, allfields);
-  if (sym_string == "QSZ") return mk_QSZ<S>(P, allfields);
+  if (sym_string == "QS") return mk_QS<S>(P);
+  if (sym_string == "QSZ") return mk_QSZ<S>(P);
 #ifdef NRG_SYM_MORE
-  if (sym_string == "ISO") return mk_ISO<S>(P, allfields);
-  if (sym_string == "ISO2") return mk_ISO2<S>(P, allfields);
-  if (sym_string == "ISOSZ") return mk_ISOSZ<S>(P, allfields);
-  if (sym_string == "SPSU2") return mk_SPSU2<S>(P, allfields);
-  if (sym_string == "SPU1") return mk_SPU1<S>(P, allfields);
+  if (sym_string == "ISO") return mk_ISO<S>(P);
+  if (sym_string == "ISO2") return mk_ISO2<S>(P);
+  if (sym_string == "ISOSZ") return mk_ISOSZ<S>(P);
+  if (sym_string == "SPSU2") return mk_SPSU2<S>(P);
+  if (sym_string == "SPU1") return mk_SPU1<S>(P);
 #endif
 #ifdef NRG_SYM_ALL
-  if (sym_string == "DBLSU2") return mk_DBLSU2<S>(P, allfields);
-  if (sym_string == "DBLISOSZ") return mk_DBLISOSZ<S>(P, allfields);
-  if (sym_string == "ISOLR") return mk_ISOLR<S>(P, allfields);
-  if (sym_string == "ISO2LR") return mk_ISO2LR<S>(P, allfields);
-  if (sym_string == "ISOSZLR") return mk_ISOSZLR<S>(P, allfields);
-  if (sym_string == "NONE") return mk_NONE<S>(P, allfields);
-  if (sym_string == "P") return mk_P<S>(P, allfields);
-  if (sym_string == "PP") return mk_PP<S>(P, allfields);
-  if (sym_string == "SL") return mk_SL<S>(P, allfields);
-  if (sym_string == "SL3") return mk_SL3<S>(P, allfields);
-  if (sym_string == "SPSU2LR") return mk_SPSU2LR<S>(P, allfields);
-  if (sym_string == "SPSU2T") return mk_SPSU2T<S>(P, allfields);
-  if (sym_string == "SPU1LR") return mk_SPU1LR<S>(P, allfields);
-  if (sym_string == "SU2") return mk_SU2<S>(P, allfields);
-  if (sym_string == "QSLR") return mk_QSLR<S>(P, allfields);
-  if (sym_string == "QST") return mk_QST<S>(P, allfields);
-  if (sym_string == "QSTZ") return mk_QSTZ<S>(P, allfields);
-  if (sym_string == "QSZTZ") return mk_QSZTZ<S>(P, allfields);
-  if (sym_string == "QSZLR") return mk_QSZLR<S>(P, allfields);
-  if (sym_string == "QJ") return mk_QJ<S>(P, allfields);
-  if (sym_string == "U1") return mk_U1<S>(P, allfields);
+  if (sym_string == "DBLSU2") return mk_DBLSU2<S>(P);
+  if (sym_string == "DBLISOSZ") return mk_DBLISOSZ<S>(P);
+  if (sym_string == "ISOLR") return mk_ISOLR<S>(P);
+  if (sym_string == "ISO2LR") return mk_ISO2LR<S>(P);
+  if (sym_string == "ISOSZLR") return mk_ISOSZLR<S>(P);
+  if (sym_string == "NONE") return mk_NONE<S>(P);
+  if (sym_string == "P") return mk_P<S>(P);
+  if (sym_string == "PP") return mk_PP<S>(P);
+  if (sym_string == "SL") return mk_SL<S>(P);
+  if (sym_string == "SL3") return mk_SL3<S>(P);
+  if (sym_string == "SPSU2LR") return mk_SPSU2LR<S>(P);
+  if (sym_string == "SPSU2T") return mk_SPSU2T<S>(P);
+  if (sym_string == "SPU1LR") return mk_SPU1LR<S>(P);
+  if (sym_string == "SU2") return mk_SU2<S>(P);
+  if (sym_string == "QSLR") return mk_QSLR<S>(P);
+  if (sym_string == "QST") return mk_QST<S>(P);
+  if (sym_string == "QSTZ") return mk_QSTZ<S>(P);
+  if (sym_string == "QSZTZ") return mk_QSZTZ<S>(P);
+  if (sym_string == "QSZLR") return mk_QSZLR<S>(P);
+  if (sym_string == "QJ") return mk_QJ<S>(P);
+  if (sym_string == "U1") return mk_U1<S>(P);
   if constexpr (std::is_same_v<S, std::complex<double>>) {
-    if (sym_string == "SPSU2C3") return mk_SPSU2C3<S>(P, allfields);
-    if (sym_string == "QSC3") return mk_QSC3<S>(P, allfields);
+    if (sym_string == "SPSU2C3") return mk_SPSU2C3<S>(P);
+    if (sym_string == "QSC3") return mk_QSC3<S>(P);
   }
 #endif 
   throw std::runtime_error("Unknown symmetry " + sym_string);
@@ -92,9 +92,10 @@ template <typename S>
 std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P, Stats<S> &stats) {
   my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
   std::cout << "SYMMETRY TYPE: " << P.symtype.value() << std::endl;
-  auto Sym = get<S>(P.symtype.value(), P, stats.td.allfields);
+  auto Sym = get<S>(P.symtype.value(), P);
   Sym->load();
   Sym->erase_first();
+  stats.td.allfields.add(Sym->get_td_fields(), 1);
   return Sym;
 }
 
