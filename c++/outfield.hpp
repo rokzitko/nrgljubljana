@@ -8,6 +8,9 @@
 #include <string>
 #include <fstream>
 #include <optional>
+
+#include <fmt/format.h>
+
 #include "params.hpp"
 
 namespace NRG {
@@ -39,15 +42,19 @@ class Allfields : std::vector<Outfield> {
         this->insert(this->begin() + position, Outfield(desc, prec, width));
       }
     }
+    void add(const Allfields &more, const int position = -1) {
+      if (position != -1) my_assert(position < this->size());
+      this->insert(position == -1 ? this->end() : this->begin() + position, more.begin(), more.end());
+    }
     Allfields(const std::vector<std::string> &fields, const size_t prec, const size_t width) : prec(prec), width(width) {
       for(const auto &desc : fields) add(desc);
     }
-    void save_header(std::ofstream &O) const {
+    void save_header(std::ostream &O) const {
       O << '#';
       for (const auto &f : *this) f.put_header(O);
       O << std::endl;
     }
-    void save_values(std::ofstream &O) const {
+    void save_values(std::ostream &O) const {
       O << ' ';
       for (const auto &f : *this) f.put_value(O);
       O << std::endl;
