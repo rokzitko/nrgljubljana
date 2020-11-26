@@ -127,8 +127,16 @@ inline auto count_words_in_string(const std::string &s) {
   return std::distance(std::istream_iterator<std::string>(stream), std::istream_iterator<std::string>());
 }
 
+// Read one object of type S from an object F which has an extractor operator. Use as read_one<S>(F).
+template<typename S, typename T>
+inline auto read_one(T &F) {
+  S value;
+  F >> value;
+  return value;
+}
+  
 // Determine the matrix dimensions from a stream of rows of white-space-separated tabulated values
-inline auto get_dims(std::ifstream &F) {
+inline auto get_dims(std::istream &F) {
   auto dim1 = 0; // number of rows
   auto dim2 = 0; // number of columns
   while (F.good()) {
@@ -146,7 +154,7 @@ inline auto get_dims(std::ifstream &F) {
 
 // Read dim1 x dim2 matrix from stream. Use function next_value to extract consecutive values.
 template<typename FNC>
-auto read_matrix_data(std::ifstream &F, FNC next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
+auto read_matrix_data(std::istream &F, FNC next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
   ublas::matrix<double> M(dim1, dim2);
   for (auto i = 0; i < dim1; i++) {
     for (auto j = 0; j < dim2; j++) {
@@ -166,7 +174,7 @@ inline auto read_matrix_text(const std::string &filename, const bool verbose = f
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
   F.clear();
   F.seekg (0, std::ios::beg);
-  return read_matrix_data(F, [](auto &F) { double x; F >> x; return x; }, dim1, dim2);
+  return read_matrix_data(F, [](auto &F) { return read_one<double>(F); }, dim1, dim2);
 }
 
 // Read a matrix from stream (binary). Format: two unit32_t for matrix size, followed by

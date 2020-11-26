@@ -46,9 +46,8 @@ inline auto parse_datafile_header(std::istream &fdata, const int expected_versio
 
 // Read the number of channels from data file. Also sets P.combs accordingly, depending on the spin of the conduction
 // band electrons.
-inline void read_nr_channels(std::ifstream &fdata, const std::string &sym_string, Params &P) {
-  size_t channels;
-  fdata >> channels;
+inline void read_nr_channels(std::istream &fdata, const std::string &sym_string, Params &P) {
+  const auto channels = read_one<size_t>(fdata);
   my_assert(channels >= 1);
   P.channels = channels;
   // Number of tables of coefficients. It is doubled in the case of spin-polarized conduction bands. The first half
@@ -77,28 +76,6 @@ inline void read_nr_channels(std::ifstream &fdata, const std::string &sym_string
   nrglog('!', "combs=" << P.combs);
 }
 
-// Read the length of the Wilson chain
-inline void read_Nmax(std::ifstream &fdata, Params &P) {
-  size_t nmax;
-  fdata >> nmax;
-  P.Nmax = nmax;
-}
-
-inline auto read_nsubs(std::ifstream &fdata)
-{
-  size_t nsubs; // Number of invariant subspaces
-  fdata >> nsubs;
-  my_assert(nsubs > 0);
-  return nsubs;
-}
-
-template<typename S>
-inline auto read_one(std::istream &F) {
-  S value;
-  F >> value;
-  return value;
-}
-   
 // Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
 // tridiagonalization routines (if not using the tables computed by initial.m).
 template<typename S>
@@ -129,8 +106,8 @@ inline auto read_data(Params &P, std::string filename = "data") {
   my_assert(sym_string == P.symtype.value());
   read_nr_channels(fdata, sym_string, P);
   auto Sym = set_symmetry<S>(P);
-  read_Nmax(fdata, P);
-  const auto nsubs = read_nsubs(fdata);
+  P.Nmax = read_one<size_t>(fdata); // Length of the Wilson chain
+  const auto nsubs = read_one<size_t>(fdata); // Number of invariant subspaces
   skip_comments(fdata);
   DiagInfo<S> diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);

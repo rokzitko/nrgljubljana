@@ -8,6 +8,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <range/v3/all.hpp>
 
+#include "basicio.hpp"
 #include "portabil.hpp"
 #include "traits.hpp"
 #include "invar.hpp"
@@ -113,10 +114,9 @@ template <typename S, typename Matrix = Matrix_traits<S>, typename t_eigen = eig
 class DiagInfo : public std::map<Invar, Eigen<S>> {
  public:
    explicit DiagInfo() = default;
-   DiagInfo(std::ifstream &fdata, const size_t nsubs, const Params &P) {
+   DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {
-       Invar I;
-       fdata >> I;
+       const auto I = read_one<Invar>(fdata);
        auto energies = read_vector<double>(fdata);
        if (!P.data_has_rescaled_energies && !P.absolute)
          energies /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
@@ -204,11 +204,9 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
-     size_t nr = 0; // Number of subspaces
-     ia >> nr;
+     const auto nr = read_one<size_t>(ia); // Number of subspaces
      for (const auto cnt : range0(nr)) {
-       Invar inv;
-       ia >> inv;
+       const auto inv = read_one<Invar>(ia);
        (*this)[inv].load(ia);
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
      }

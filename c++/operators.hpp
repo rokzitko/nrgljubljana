@@ -27,12 +27,11 @@ template<typename S, typename Matrix = Matrix_traits<S>>
 class MatrixElements : public std::map<Twoinvar, Matrix> {
  public:
    MatrixElements() = default;
-   MatrixElements(std::ifstream &fdata, const DiagInfo<S> &diag) {
-     size_t nf = 0; // Number of I1 x I2 combinations
-     fdata >> nf;
+   MatrixElements(std::istream &fdata, const DiagInfo<S> &diag) {
+     const auto nf = read_one<size_t>(fdata); // Number of I1 x I2 combinations
      for (const auto i : range0(nf)) {
-       Invar I1, I2;
-       fdata >> I1 >> I2;
+       const auto I1 = read_one<Invar>(fdata);
+       const auto I2 = read_one<Invar>(fdata);
        if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
          read_matrix(fdata, (*this)[{I1, I2}], it1->second.getnrstored(), it2->second.getnrstored());
        else
@@ -109,11 +108,9 @@ class DensMatElements : public std::map<Invar, Matrix> {
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
-     size_t nr = 0;
-     ia >> nr;
+     const auto nr = read_one<size_t>(ia);
      for (const auto cnt : range0(nr)) {
-       Invar inv;
-       ia >> inv;
+       const auto inv = read_one<Invar>(ia);
        NRG::load(ia, (*this)[inv]);
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));  // Check each time
      }
@@ -144,14 +141,14 @@ class Opch : public std::vector<OpchChannel<S>> {
  public:
    Opch() = default;
    explicit Opch(const size_t nrch) { this->resize(nrch); }
-   Opch(std::ifstream &fdata, const DiagInfo<S> &diag, const Params &P) {
+   Opch(std::istream &fdata, const DiagInfo<S> &diag, const Params &P) {
      this->resize(P.channels);
      for (const auto i : range0(size_t(P.channels))) {
        (*this)[i] = OpchChannel<S>(P.perchannel);
        for (const auto j : range0(size_t(P.perchannel))) {
-         char ch = 0;
-         size_t iread = 0, jread = 0;
-         fdata >> ch >> iread >> jread;
+         const auto ch = read_one<char>(fdata);
+         const auto iread = read_one<size_t>(fdata);
+         const auto jread = read_one<size_t>(fdata);
          my_assert(ch == 'f' && i == iread && j == jread);
          (*this)[i][j] = MatrixElements<S>(fdata, diag);
        }

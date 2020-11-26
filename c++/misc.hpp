@@ -51,7 +51,7 @@ inline T switch3(const T1 x0, const T1 x1, const T y1, const T1 x2, const T y2, 
 }
 
 // Get next line from stream F, skipping empty lines and comments.
-inline std::optional<std::string> nextline(std::ifstream &F) {
+inline std::optional<std::string> nextline(std::istream &F) {
   std::string line;
   while (F) {
     std::getline(F, line);
@@ -74,7 +74,7 @@ inline std::string strip_trailing_whitespace(const std::string &in) {
 }
 
 // Parse a block of "keyword=value" lines.
-inline auto parse_block(std::ifstream &F) {
+inline auto parse_block(std::istream &F) {
   std::map<std::string, std::string> parsed_params;
   while (F) {
     if (const auto l = nextline(F)) {
@@ -96,7 +96,7 @@ inline auto parse_block(std::ifstream &F) {
 }
 
 // Locate block [name] in a file stream. Returns true if succeessful.
-inline bool find_block(std::ifstream &F, const std::string &s) {
+inline bool find_block(std::istream &F, const std::string &s) {
   std::string target = "[" + s + "]";
   F.clear();
   F.seekg(0, std::ios::beg);
@@ -186,9 +186,8 @@ std::vector<std::pair<T1, T2>> readtable(std::string filename, const bool verbos
   while (F) 
   {
       skip_comments(F);
-      T1 x;
-      T2 y;
-      F >> x >> y;
+      const auto x = read_one<T1>(F);
+      const auto y = read_one<T2>(F);
       if (F.fail()) break;
       assert(isfinite(x) && isfinite(y));
       v.push_back(std::make_pair(x, y));

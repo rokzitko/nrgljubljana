@@ -160,15 +160,12 @@ void save(boost::archive::binary_oarchive &oa, const ublas::matrix<T> &m) {
 }
 
 template <typename T>
-void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) {
-  size_t size1 = 0, size2 = 0;
-  ia >> size1 >> size2;
+void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) { // XXX
+  const auto size1 = read_one<size_t>(ia);
+  const auto size2 = read_one<size_t>(ia);
   m = ublas::matrix<T>(size1, size2);
-  for (const auto i : range0(size1)) {
-    ublas::vector<T> vec;
-    ia >> vec;
-    ublas::matrix_row<ublas::matrix<T>>(m, i) = vec;
-  }
+  for (const auto i : range0(size1))
+    ublas::matrix_row<ublas::matrix<T>>(m, i) = read_one<ublas::vector<T>>(ia);
 }
 
 // Chop numerical noise
@@ -182,14 +179,12 @@ CONSTFNC inline double Power(const double i, const double nn) { return std::pow(
 
 // Read 'len' values of type T into a ublas vector<T>.
 template <typename T> ublas::vector<T> read_vector(std::istream &F, const bool nr_is_max_index = false) {
-  my_assert(F);
-  size_t nr = 0;
-  F >> nr;
+  const auto nr = read_one<size_t>(F);
   // nr is either vector dimension or the value of maximum index
   const auto len = nr_is_max_index ? nr+1 : nr;
   ublas::vector<T> vec(len);
   for (auto j = 0; j < len; j++)
-    F >> vec[j];
+    vec[j] = read_one<T>(F);
   if (F.fail()) throw std::runtime_error("read_vector() error. Input file is corrupted.");
   return vec;
 }
@@ -199,11 +194,8 @@ template <typename T> void read_matrix(std::istream &F, ublas::matrix<T> &m, con
   my_assert(F);
   m = ublas::matrix<T>(size1, size2);
   for (auto j1 = 0; j1 < size1; j1++)
-    for (auto j2 = 0; j2 < size2; j2++) {
-      T x;
-      F >> x;
-      m(j1, j2) = assert_isfinite(x);
-    }
+    for (auto j2 = 0; j2 < size2; j2++)
+      m(j1, j2) = assert_isfinite( read_one<T>(F) );
   if (F.fail()) std::runtime_error("read_matrix() error. Input file is corrupted.");
 }
 

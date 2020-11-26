@@ -73,7 +73,7 @@ class Invar {
      }
      return is;
    }
-   friend std::istream &operator>>(std::istream &is, Invar &invar) { return invar.extractor(is); }
+   friend auto &operator>>(std::istream &is, Invar &invar) { return invar.extractor(is); }
    bool operator==(const Invar &invar2) const { return data == invar2.data; }
    bool operator!=(const Invar &invar2) const { return !operator==(invar2); }
    bool operator<(const Invar &invar2)  const { return data < invar2.data; }
