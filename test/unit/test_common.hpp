@@ -9,11 +9,18 @@
 
 using namespace NRG;
 
+// Minimal working instantiations of increasing complexity
+
+auto test_setup_P()
+{
+  Workdir workdir(".");
+  Params P("", "", workdir, true);
+  return P;
+}
+
 auto test_setup_basic()
 {
-  // Minimal working instantiation
-  Workdir workdir("test_workdir");
-  Params P("", "", workdir, true);
+  auto P = test_setup_P();
   P.symtype.setvalue("QS");
   P.set_channels(1);
   auto sym = set_symmetry<double>(P);
