@@ -64,9 +64,9 @@ template <typename S, typename MF>
 void truncate_prepare(const Step &step, DiagInfo<S> &diag, MF mult, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)
-    diag[I].truncate_prepare(step.last() && P.keep_all_states_in_last_step() ?
-                                eig.getnrcomputed() :
-                                ranges::count_if(eig.value_zero, [Emax](const double e) { return e <= Emax; }));
+    diag[I].truncate_prepare(step.last() && P.keep_all_states_in_last_step()
+                             ? eig.getnrcomputed()
+                             : ranges::count_if(eig.value_zero, [Emax](const double e) { return e <= Emax; }));
   std::cout << "Emax=" << Emax / step.unscale() << " ";
   truncate_stats ts(diag, mult);
   ts.report();

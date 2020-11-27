@@ -58,13 +58,13 @@ template<typename S>
 class Symmetry {
  protected:
    const Params &P;
+   const std::vector<std::string> td_fields;
    // In and QN contain information about how the invariant subspaces at consecutive iteration steps are combined. In
    // is the array of quantum number DIFFERENCES used in the construction of the basis. QN is the array of the
    // conserved quantum numbers corresponding to the states being added. For example, in case of SU(2) symmetry, In
    // will include S_z, while QN will include S. In other words, QN involves those quantum numbers that we need to
    // retain in the calculation, while In involves those quantum numbers that "drop out" of the problem due to the
    // symmetry.
-   const std::vector<std::string> td_fields;
    std::vector<Invar> In, QN;
    const Invar InvarSinglet; // QNs for singlet operator
    const Invar Invar_f;      // QNs for f operator
