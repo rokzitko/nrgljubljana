@@ -1,3 +1,5 @@
+#include <string>
+#include <sstream>
 #include <gtest/gtest.h>
 
 #include <eigen.hpp>
@@ -50,6 +52,47 @@ TEST(Eigen, diagonal) { // NOLINT
   EXPECT_EQ(e.matrix(2,2), 1.0);
   e.subtract_Egs(1.0);
   EXPECT_EQ(e.value_zero[0], 0.0);
+}
+
+template<typename T>
+void VECTOR_EQ(const ublas::vector<T> &A, const ublas::vector<T> &B)
+{
+  EXPECT_EQ(A.size(), B.size());
+  for(int i = 0; i < A.size(); i++) EXPECT_EQ(A[i], B[i]);
+}
+
+template<typename T>
+void MATRIX_EQ(const ublas::matrix<T> &A, const ublas::matrix<T> &B)
+{
+  EXPECT_EQ(A.size1(), B.size1());
+  EXPECT_EQ(A.size2(), B.size2());
+  for(int i = 0; i < A.size1(); i++) 
+    for(int j = 0; j < A.size2(); j++) 
+      EXPECT_EQ(A(i,j), B(i,j));
+}
+
+TEST(io, read_vector) { // NOLINT
+  std::string data = "5 1 2 3 4 5";
+  std::istringstream ss(data);
+  auto vec = read_vector<double>(ss);
+  EVEC ref(5);
+  ref[0] = 1; ref[1] = 2; ref[2] = 3; ref[3] = 4; ref[4] = 5;
+  VECTOR_EQ(vec, ref);
+}
+
+TEST(io, read_matrix) { // NOLINT
+  std::string data = "1 2 3\n 4 5 6\n";
+  std::istringstream ss(data);
+  auto mat = read_matrix<double>(ss, 2, 3);
+  ublas::matrix<double> ref(2,3);
+  ref(0,0) = 1; ref(0,1) = 2; ref(0,2) = 3; ref(1,0) = 4; ref(1,1) = 5; ref(1,2) = 6;
+  MATRIX_EQ(mat, ref);
+}
+
+TEST(Diag, constructor) { // NOLINT
+  std::string data = 
+    "0 1\n"
+    "2\n";
 }
 
 int main(int argc, char **argv) {
