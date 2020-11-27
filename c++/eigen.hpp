@@ -22,13 +22,15 @@ namespace NRG {
 template <typename S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
 class Eigen {
 public:
-  using EVEC = ublas::vector<t_eigen>;
-  EVEC value_orig; // eigenvalues as computed // XXX private, use friend
+  using EVEC = ublas::vector<t_eigen>; // XXX: move to traits!
+  EVEC value_orig; // eigenvalues as computed
+  EVEC value_zero; // eigenvalues with Egs subtracted
   Matrix matrix;   // eigenvectors
   Eigen() = default;
   Eigen(const size_t nr, const size_t dim) {
     my_assert(nr <= dim);
     value_orig.resize(nr);
+    value_zero.resize(nr);
     matrix.resize(nr, dim);
   }
   [[nodiscard]] auto getnrcomputed() const { return value_orig.size(); } // number of computed eigenpairs
@@ -36,15 +38,14 @@ public:
  private:
   long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
  public:
-  EVEC value_zero;                                                               // eigenvalues with Egs subtracted
   [[nodiscard]] auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }     // number of states after truncation
-  [[nodiscard]] auto getnrstored() const  { return value_zero.size(); }                        // number of stored states
   [[nodiscard]] auto getnrall() const { return getnrcomputed(); }                              // all = all computed
   [[nodiscard]] auto getnrkept() const { return getnrpost(); }                                 // # of kept states
   [[nodiscard]] auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }            // # of discarded states
   [[nodiscard]] auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
   [[nodiscard]] auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
+  [[nodiscard]] auto getnrstored() const  { return value_zero.size(); }                        // number of stored states
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
@@ -71,12 +72,12 @@ public:
     value_orig = value_zero = v;
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
   }
-  void subtract_Egs(const double Egs) {
+  void subtract_Egs(const t_eigen Egs) {
     value_zero = value_orig;
     for (auto &x : value_zero) x -= Egs;
     my_assert(value_zero[0] >= 0);
   }
-  void subtract_GS_energy(const double GS_energy) {
+  void subtract_GS_energy(const t_eigen GS_energy) {
     for (auto &x : absenergyG) x -= GS_energy;
     my_assert(absenergyG[0] >= 0);
   }
