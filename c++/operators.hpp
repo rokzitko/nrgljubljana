@@ -23,7 +23,7 @@
 
 namespace NRG {
 
-template<typename S, typename Matrix = Matrix_traits<S>>
+template<typename S, typename t_matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
 class MatrixElements : public std::map<Twoinvar, Matrix> {
  public:
    MatrixElements() = default;
@@ -33,7 +33,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
        const auto I1 = read_one<Invar>(fdata);
        const auto I2 = read_one<Invar>(fdata);
        if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
-         read_matrix(fdata, (*this)[{I1, I2}], it1->second.getnrstored(), it2->second.getnrstored());
+         (*this)[{I1, I2}] = read_matrix<t_matel>(fdata, it1->second.getnrstored(), it2->second.getnrstored());
        else
          throw std::runtime_error("Corrupted input file.");
      }

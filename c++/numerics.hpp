@@ -188,26 +188,30 @@ void assert_issquare(const ublas::matrix<T> &m) { my_assert(m.size1() == m.size2
 // Powers, such as (-1)^n, appear in the coupling coefficients.
 CONSTFNC inline double Power(const double i, const double nn) { return std::pow(i, nn); }
 
-// Read 'len' values of type T into a ublas vector<T>.
-template <typename T> ublas::vector<T> read_vector(std::istream &F, const bool nr_is_max_index = false) {
-  const auto nr = read_one<size_t>(F);
-  // nr is either vector dimension or the value of maximum index
-  const auto len = nr_is_max_index ? nr+1 : nr;
-  ublas::vector<T> vec(len);
-  for (auto j = 0; j < len; j++)
+// Read 'size' values of type T into a ublas vector<T>.
+template <typename T> ublas::vector<T> read_vector(std::istream &F, const size_t size) {
+  ublas::vector<T> vec(size);
+  for (auto j = 0; j < size; j++)
     vec[j] = read_one<T>(F);
   if (F.fail()) throw std::runtime_error("read_vector() error. Input file is corrupted.");
   return vec;
 }
 
+// Read values of type T into a ublas vector<T>. 'nr' is either vector dimension or the value of maximum index
+template <typename T> ublas::vector<T> read_vector(std::istream &F, const bool nr_is_max_index = false) {
+  const auto nr = read_one<size_t>(F);
+  const auto len = nr_is_max_index ? nr+1 : nr;
+  return read_vector<T>(F, len);
+}
+
 // Read 'size1' x 'size2' ublas matrix of type T.
-template <typename T> void read_matrix(std::istream &F, ublas::matrix<T> &m, const size_t size1, const size_t size2) {
-  my_assert(F);
-  m = ublas::matrix<T>(size1, size2);
+template <typename T> ublas::matrix<T> read_matrix(std::istream &F, const size_t size1, const size_t size2) {
+  ublas::matrix<T> m(size1, size2);
   for (auto j1 = 0; j1 < size1; j1++)
     for (auto j2 = 0; j2 < size2; j2++)
       m(j1, j2) = assert_isfinite( read_one<T>(F) );
   if (F.fail()) std::runtime_error("read_matrix() error. Input file is corrupted.");
+  return m;
 }
 
 // Check if the value x is real [for complex number calculations].
