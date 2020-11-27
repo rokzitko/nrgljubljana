@@ -9,6 +9,7 @@
 #include <fstream>
 #include <optional>
 
+#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include "params.hpp"

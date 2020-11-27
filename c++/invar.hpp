@@ -11,6 +11,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/serialization/vector.hpp> // for InvType = std::vector<int>
+#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include "portabil.hpp"
 

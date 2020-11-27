@@ -44,38 +44,6 @@ inline auto parse_datafile_header(std::istream &fdata, const int expected_versio
   return sym_string;
 }
 
-// Read the number of channels from data file. Also sets P.combs accordingly, depending on the spin of the conduction
-// band electrons.
-inline void read_nr_channels(std::istream &fdata, const std::string &sym_string, Params &P) {
-  const auto channels = read_one<size_t>(fdata);
-  my_assert(channels >= 1);
-  P.channels = channels;
-  // Number of tables of coefficients. It is doubled in the case of spin-polarized conduction bands. The first half
-  // corresponds to spin-up, the second half to spin-down. It is quadrupled in the case of full 2x2 matrix structure
-  // in the spin space.
-  if (P.pol2x2)
-    P.coeffactor = 4;
-  else if (P.polarized)
-    P.coeffactor = 2;
-  else
-    P.coeffactor = 1;
-  P.coefchannels = P.coeffactor * P.channels;
-  nrglog('!', "coefchannels=" << P.coefchannels);
-  if (sym_string == "U1" || sym_string == "SU2" || sym_string == "DBLSU2") {
-    P.perchannel = 2; // We distinguish spin-up and spin-down operators.
-  } else if (sym_string == "NONE" || sym_string == "P" || sym_string == "PP") {
-    P.perchannel = 4; // We distinguish CR/AN and spin UP/DO.
-  } else {
-    P.perchannel = 1;
-  }
-  nrglog('!', "perchannel=" << P.perchannel);
-  my_assert(P.perchannel >= 1);
-  P. spin = sym_string == "SL" || sym_string == "SL3" ? 1 : 2;
-  const int statespersite = intpow(2, P.spin);
-  P.combs = !P.substeps ? intpow(statespersite, P.channels) : statespersite;
-  nrglog('!', "combs=" << P.combs);
-}
-
 // Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
 // tridiagonalization routines (if not using the tables computed by initial.m).
 template<typename S>
@@ -104,7 +72,8 @@ inline auto read_data(Params &P, std::string filename = "data") {
   if (!fdata) throw std::runtime_error("Can't load initial data.");
   const auto sym_string = parse_datafile_header(fdata);
   my_assert(sym_string == P.symtype.value());
-  read_nr_channels(fdata, sym_string, P);
+  const auto channels = read_one<size_t>(fdata);
+  P.set_channels(channels);
   auto Sym = set_symmetry<S>(P);
   P.Nmax = read_one<size_t>(fdata); // Length of the Wilson chain
   const auto nsubs = read_one<size_t>(fdata); // Number of invariant subspaces
@@ -122,7 +91,7 @@ inline auto read_data(Params &P, std::string filename = "data") {
     char ch = fdata.get();
     std::string opname;
     std::getline(fdata, opname);
-    if (ch != '#') debug("Reading <||" << opname << "||> (" << ch << ")");
+    if (ch != '#') std::cout << "Reading <||" << opname << "||> (" << ch << ")" << std::endl;
     switch (ch) {
       case '#':
         // ignore embedded comment lines

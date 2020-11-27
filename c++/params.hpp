@@ -8,11 +8,15 @@
 #include <list>
 #include <string>
 #include <cmath>
-#include "misc.hpp" // from_string, parsing code
-#include "workdir.hpp"
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
+#include "misc.hpp" // contains, from_string, parsing code
+#include "workdir.hpp"
 
 namespace NRG {
 
@@ -432,6 +436,9 @@ class Params {
   param<std::string> logstr{"log", "list of tokens to define what to log", "", all}; // N
   param<bool> logall{"logall", "Log everything", "false", all};              // N
 
+  // Returns true if option 'c' is selected for logging
+  auto logletter(const char c) const { return logall ? true : contains(logstr, c); }
+
   // ********************************************
   // Parameters where overrides are rarely needed
 
@@ -498,6 +505,36 @@ class Params {
   // Spin expressed in terms of the spin multiplicity, 2S+1. For SL & SL 3 symmetry types, P.spin is 1. Default value
   // of 2 is valid for all other symmetry types.
   size_t spin = 2;
+
+  // Sets 'channels', then sets 'combs' and related parameters accordingly, depending on the spin of the conduction
+  // band electrons. Called from read_data() in read-input.hpp
+  void set_channels(const int channels_) {
+    my_assert(channels_ >= 1);
+    channels = channels_;
+    // Number of tables of coefficients. It is doubled in the case of spin-polarized conduction bands. The first half
+    // corresponds to spin-up, the second half to spin-down. It is quadrupled in the case of full 2x2 matrix structure
+    // in the spin space.
+    if (pol2x2)
+      coeffactor = 4;
+    else if (polarized)
+      coeffactor = 2;
+    else
+      coeffactor = 1;
+    coefchannels = coeffactor * channels;
+    if (symtype == "U1" || symtype == "SU2" || symtype == "DBLSU2") {
+      perchannel = 2; // We distinguish spin-up and spin-down operators.
+    } else if (symtype == "NONE" || symtype == "P" || symtype == "PP") {
+      perchannel = 4; // We distinguish CR/AN and spin UP/DO.
+    } else {
+      perchannel = 1;
+    }
+    my_assert(perchannel >= 1);
+    spin                    = symtype == "SL" || symtype == "SL3" ? 1 : 2;
+    const int statespersite = intpow(2, spin);
+    combs                   = !substeps ? intpow(statespersite, channels) : statespersite;
+    if (logletter('!'))
+      fmt::print("coefchannels={} perchannel={} combs={}", coefchannels, perchannel, combs);
+  }
 
   // Returns true if any of the CFS or related spectral function calculations are requested.
   bool cfs_flags() const { return cfs || fdm; }
@@ -618,9 +655,6 @@ class Params {
   double getEmin() const { return getE0(); }
   double getEx()   const { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
   double getEmax() const { return getE0() * pow(getEfactor(),2); }
-
-  // Returns true if option 'c' is selected for logging
-  bool logletter(char c) const { return (logall ? true : std::string(logstr).find(c) != std::string::npos); }
 
   auto Nall() const { return boost::irange(size_t(Ninit), size_t(Nlen)); }
 };

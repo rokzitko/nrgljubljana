@@ -27,6 +27,18 @@
 
 namespace NRG {
 
+inline auto contains(const std::string &str, const char c) {
+  return str.find(c) != std::string::npos;
+}
+
+// x raised to the power of n
+CONSTFNC inline auto intpow(const int x, const int n) {
+  my_assert(n >= 0);
+  auto res = 1;
+  for (auto i = 1; i <= n; i++) res *= x;
+  return res;
+}
+   
 template<typename T> auto get_back(T &d) { // usually T is list or deque
   if (d.empty()) throw std::runtime_error("Error: List empty! File: "s + (std::string)__FILE__ + " Line: "s +  std::to_string(__LINE__));
   auto i = d.back();

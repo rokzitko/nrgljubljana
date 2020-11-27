@@ -60,20 +60,6 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/optional.hpp>
 
-// ublas matrix & vector containers
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/symmetric.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-
-// Numeric bindings to BLAS/LAPACK
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
-
 // This is included in the library only. Should not be used if a cblas library is available.
 #ifdef CBLAS_WORKAROUND
  #define ADD_
@@ -119,9 +105,12 @@ namespace NRG {
 
 using namespace std::string_literals;
 using namespace fmt::literals;
-using namespace boost::numeric;
-using namespace boost::numeric::ublas; // keep this!
-namespace atlas = boost::numeric::bindings::atlas;
+
+// Explicit request to stop at some calculation stage
+inline void exit1(const std::string &message) {
+  std::cout << std::endl << message << std::endl;
+  exit(1);
+}
 
 template <typename S> class NRG_calculation {
 private:

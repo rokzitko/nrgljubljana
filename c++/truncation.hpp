@@ -26,7 +26,7 @@ template <typename S> auto highest_retained_energy(const Step &step, const DiagI
       nrkeep++;
       cnt_extra++;
     }
-    if (cnt_extra) debug("Safeguard: keep additional " << cnt_extra << " states");
+    if (cnt_extra) std::cout << "Safeguard: keep additional " << cnt_extra << " states" << std::endl;
   }
   nrkeep = std::clamp<size_t>(nrkeep, 1, totalnumber);
   return energies[nrkeep - 1];

@@ -9,15 +9,6 @@
 
 namespace NRG {
 
-// Non-recoverable error or explicit request to stop at some calculation stage
-#define exit1(...)                                                                                                                                   \
-  {                                                                                                                                                  \
-    std::cout << std::endl << __VA_ARGS__ << std::endl;                                                                                              \
-    exit(1);                                                                                                                                         \
-  }
-
-#define debug(...) std::cout << __VA_ARGS__ << std::endl;
-
 // character c defines what to log
 #define nrglog(c, ...)   if (P.logletter(c)) { std::cout << __VA_ARGS__ << std::endl; }
 #define nrglogdp(c, ...) if (DP.logletter(c)) { std::cout << __VA_ARGS__ << std::endl; }

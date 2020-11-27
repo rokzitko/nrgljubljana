@@ -1,6 +1,9 @@
 // numerics.h - Miscelaneous numerical routines
 // Copyright (C) 2005-2020 Rok Zitko
 
+// This header should be included in all other headers where vector/matrix
+// objects are manipulated.
+
 #ifndef _numerics_hpp_
 #define _numerics_hpp_
 
@@ -11,13 +14,28 @@
 #include <range/v3/all.hpp>
 #include <boost/io/ios_state.hpp>
 #include <boost/math/special_functions/sign.hpp>
+
+// ublas matrix & vector containers
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/symmetric.hpp>
+#include <boost/numeric/ublas/operation.hpp>
+
+// Numeric bindings to BLAS/LAPACK
+#include <boost/numeric/bindings/traits/ublas_vector.hpp>
+#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
+#include <boost/numeric/bindings/atlas/cblas.hpp>
 
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/complex.hpp>
+
+#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include "portabil.hpp"
@@ -27,6 +45,8 @@
 namespace NRG {
 
 using namespace boost::numeric;
+using namespace boost::numeric::ublas; // keep this!
+namespace atlas = boost::numeric::bindings::atlas;
 
 template <typename T>
   using complex_array_ref_t = T(&)[2];
@@ -48,7 +68,6 @@ template<typename U, typename V>
   V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs
     return ranges::accumulate(v, V{}, [](auto sum, const auto el) { return sum+el.second; });
   }
-
  
 [[nodiscard]] inline std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
 [[nodiscard]] inline double conj_me(const double x) { return x; }    // no op
@@ -121,14 +140,6 @@ template<typename M> void check_is_matrix_upper(const ublas::matrix<M> &m) {
   for (auto i = 1; i < m.size1(); i++)
     for (auto j = 0; j < i; j++) // j < i
       my_assert(m(i, j) == 0.);
-}
-
-// x raised to the power of n
-CONSTFNC inline auto intpow(const int x, const int n) {
-  my_assert(n >= 0);
-  auto res = 1;
-  for (auto i = 1; i <= n; i++) res *= x;
-  return res;
 }
 
 // (-1)^n

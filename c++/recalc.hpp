@@ -1,12 +1,14 @@
 #ifndef _recalc_hpp_
 #define _recalc_hpp_
 
+#include "debug.hpp"
 #include "traits.hpp"
 #include "invar.hpp"
 #include "eigen.hpp"
 #include "subspaces.hpp"
 #include "operators.hpp"
 #include "symmetry.hpp"
+#include "numerics.hpp"
 
 namespace NRG {
 
