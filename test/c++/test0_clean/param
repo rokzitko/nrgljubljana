@@ -15,6 +15,7 @@ specs=n_f-n_f
 finite=true
 dmnrg=true
 fdm=true
+cfs=true
 finitemats=true
 dmnrgmats=true
 fdmmats=true
