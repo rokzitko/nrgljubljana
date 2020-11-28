@@ -31,9 +31,7 @@ TEST(Clean, H) { // NOLINT
 
   auto SymSP = setup_Sym<double>(P); // get the shared pointer
   auto Sym = SymSP.get(); // get the raw pointer
-  Stats<double> stats(P);
-  stats.td.allfields.add(Sym->get_td_fields(), 1); // XXX 
-  stats.total_energy = 0.0; // cf. data file for this case // XXX
+  Stats<double> stats(P, Sym->get_td_fields(), 0.0);
   Step step{P, RUNTYPE::NRG};
   EXPECT_EQ(step.ndx(), 0);
   Store<double> store(P.Ninit,P.Nlen);

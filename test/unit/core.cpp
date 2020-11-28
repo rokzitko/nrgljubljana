@@ -15,9 +15,7 @@ TEST(Core, H1) { // NOLINT
   EXPECT_EQ(SymSP->nr_combs(), 4);
   auto Sym = SymSP.get(); // get the raw pointer
 
-  Stats<double> stats(P);
-  stats.td.allfields.add(Sym->get_td_fields(), 1);
-  stats.total_energy = 0.0;
+  Stats<double> stats(P, Sym->get_td_fields(), 0.0);
   Step step{P, RUNTYPE::NRG};
   Store<double> store(0,1);
 
@@ -38,9 +36,7 @@ TEST(Core, H2) { // NOLINT
   Params P;
   auto SymSP = setup_Sym<double>(P);
   auto Sym = SymSP.get(); // get the raw pointer
-  Stats<double> stats(P);
-  stats.td.allfields.add(Sym->get_td_fields(), 1);
-  stats.total_energy = 0.0;
+  Stats<double> stats(P, Sym->get_td_fields(), 0.0);
   Step step{P, RUNTYPE::NRG};
   Store<double> store(0,1);
 

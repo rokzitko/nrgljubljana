@@ -141,13 +141,11 @@ public:
   }
   NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) : 
     mpi(mpi), P("param", "param", std::move(workdir), embedded) {
-    auto [Sym, diag0, operators, coef, GS_energy] = read_data<S>(P);
-    Stats<S> stats(P);
-    stats.td.allfields.add(Sym->get_td_fields(), 1);
-    stats.total_energy = GS_energy;
+    auto [Sym, diag_0, operators, coef, GS_energy_0] = read_data<S>(P);
+    Stats<S> stats(P, Sym->get_td_fields(), GS_energy_0);
     Step step{P, RUNTYPE::NRG};
     Store<S> store(P.Ninit, P.Nlen);
-    auto diag = run_nrg(step, operators, coef, stats, diag0, store, Sym);
+    auto diag = run_nrg(step, operators, coef, stats, diag_0, store, Sym);
     if (std::string(P.stopafter) == "nrg") exit1("*** Stopped after the first sweep.");
     store.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
     if (P.dumpabsenergies)
@@ -168,10 +166,10 @@ public:
         if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
-      auto [Sym_dm, diag0_dm, operators_dm, coef_dm, GS_energy_dm] = read_data<S>(P);
+      auto [Sym_dm, diag_0_dm, operators_dm, coef_dm, GS_energy_dm] = read_data<S>(P);
       stats.total_energy = GS_energy_dm;
       Step step_dmnrg{P, RUNTYPE::DMNRG};
-      run_nrg(step_dmnrg, operators_dm, coef_dm, stats, diag0_dm, store, Sym_dm);
+      run_nrg(step_dmnrg, operators_dm, coef_dm, stats, diag_0_dm, store, Sym_dm);
       my_assert(num_equal(stats.GS_energy, stats.total_energy));
     }
   }

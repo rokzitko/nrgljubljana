@@ -55,9 +55,12 @@ struct Stats {
    double S_fdm{};               // entropy at temperature T
    TD_FDM td_fdm;
 
-   explicit Stats(const Params &P, const std::string filename_td = "td"s, const std::string filename_tdfdm = "tdfdm"s) : 
-     td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
-     ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
+  explicit Stats(const Params &P, const std::vector<std::string> &td_fields, const double GS_energy_0,
+                 const std::string filename_td = "td"s, const std::string filename_tdfdm = "tdfdm"s) : 
+     td(P, filename_td), total_energy(GS_energy_0), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
+     ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {
+       td.allfields.add(td_fields, 1);
+     }
 
    void update(const Step &step) {
      total_energy += Egs * step.scale(); // stats.Egs has already been initialized
