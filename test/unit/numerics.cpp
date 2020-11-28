@@ -47,39 +47,27 @@ TEST(numerics, Zero_matrix){
 }
 
 TEST(numerics, bucket){
-
   std::vector v = {std::pair{4.0,12.0}, std::pair{51.0,123.0}, std::pair{412.0,441.0}};
-
   bucket sum(v);
-
   EXPECT_EQ(sum, 576);
-
   sum += 10;
-
   EXPECT_EQ(sum, 586);
-
 }
 
 TEST(numerics, is_even_is_odd){
-
   const int odd = 3;
   const int even = 4;
-
   EXPECT_TRUE(is_even(even));
   EXPECT_FALSE(is_odd(even));
-
   EXPECT_TRUE(is_odd(odd));
   EXPECT_FALSE(is_even(odd));
 }
 
 TEST(numerics, my_fcmp){
-
   const double a = 1.0;
   const double b = 1.0001;
-
   EXPECT_EQ(my_fcmp(a, b, 0.1, 0.00015), 0);
   EXPECT_EQ(my_fcmp(a, b, 0.1, 0.00001), -1);
-
 }
 
 int main(int argc, char **argv) {

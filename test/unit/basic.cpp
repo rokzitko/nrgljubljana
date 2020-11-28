@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
+
 #include <nrg-general.hpp> // common
 #include <nrg-lib.hpp>     // exposed in library
+
+// Test inclusion of exposed headers: does this compile?
 
 TEST(Add, int) { // NOLINT
    int a{0};

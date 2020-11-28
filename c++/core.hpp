@@ -40,12 +40,14 @@ namespace NRG {
 // Determine the ranges of index r
 template<typename S>
 SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
-                                       const Symmetry<S> *Sym) : ancestors(ancestors) {
-  for (const auto &[i, anc] : ancestors | ranges::views::enumerate)
-    dims.push_back(Sym->triangle_inequality(I, anc, Sym->QN_subspace(i)) ? diagprev.size_subspace(anc) : 0);
+                                       const Symmetry<S> *Sym, const bool ignore_inequality) : ancestors(ancestors) {
+  for (const auto &[i, anc] : ancestors | ranges::views::enumerate) {
+    const bool coupled = Sym->triangle_inequality(I, anc, Sym->QN_subspace(i));
+    dims.push_back(coupled || ignore_inequality? diagprev.size_subspace(anc) : 0);
+  }
   // The triangle inequality test here is *required*. There are cases where a candidate subspace exists (as generated
-  // from the In vector as one of the "combinations"), but it is actually decoupled, because the triangle inequality
-  // is not satisfied.
+  // from the In vector as one of the "combinations"), but it is actually decoupled from space I, because the
+  // triangle inequality is not satisfied. [Set ignore_inequality=true to disable the check for testing purposes.]
 }
 
 // Determine the structure of matrices in the new NRG shell

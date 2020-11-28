@@ -4,10 +4,12 @@
 #include "test_common.hpp"
 
 TEST(recalc, split_in_blocks_Eigen) { // NOLINT
-   int a{0};
-   int b{2};
-   auto c = a + b;
-   EXPECT_EQ(c, b); // NOLINT
+  Params P;
+  auto SymSP = setup_Sym<double>(P);
+  auto Sym = SymSP.get();
+  auto diag = setup_diag(P, Sym);
+  SubspaceStructure substruct{diag, Sym};
+  substruct.dump();
 }
 
 int main(int argc, char **argv) {
