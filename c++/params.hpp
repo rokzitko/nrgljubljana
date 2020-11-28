@@ -588,7 +588,7 @@ class Params {
     for (const auto &i : all) i->dump();
   }
 
-  Params(const std::string &filename, const std::string &block, 
+  explicit Params(const std::string &filename, const std::string &block, 
          std::unique_ptr<Workdir> workdir_, 
          const bool embedded,
          const bool quiet = false )
@@ -614,7 +614,7 @@ class Params {
     init_laststored();
     if (!quiet) dump();
   }
-  Params() { Params("", "", std::make_unique<Workdir>(), true, true); } // defaulted version (for testing purposes)
+  explicit Params() : Params("", "", std::make_unique<Workdir>(), true, true) {} // defaulted version (for testing purposes)
   Params(const Params &) = delete;
   Params(Params &&) = delete;
   Params &operator=(const Params &) = delete;

@@ -37,7 +37,7 @@ class Workdir {
    explicit Workdir(const std::string &dir, const bool quiet = false) : workdir(dtemp(dir).value_or(default_workdir)) {
      if (!quiet) std::cout << "workdir=" << workdir << std::endl << std::endl;
    }
-   Workdir() { Workdir(default_workdir, true); } // defaulted version (for testing purposes)
+   explicit Workdir() : Workdir(default_workdir, true) {} // defaulted version (for testing purposes)
    Workdir(const Workdir &) = delete;
    Workdir(Workdir &&) = delete;
    Workdir & operator=(const Workdir &) = delete;
