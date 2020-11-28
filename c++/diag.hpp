@@ -9,7 +9,7 @@
 #include <vector>
 #include <memory>
 #include <iostream>
-#include <iomanip>
+#include <iomanip> // std::setprecision
 #include <stdexcept>
 
 #include "traits.hpp"
@@ -17,6 +17,7 @@
 #include "eigen.hpp"
 #include "time_mem.hpp"
 #include "numerics.hpp" // is_matrix_upper
+#include "debug.hpp" // nrglogdp
 
 #define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"

@@ -578,7 +578,8 @@ class Params {
 
   bool embedded; // If true, the code is being called as a library from some application, not stand-alone.
 
-  Params(const std::string &filename, const std::string &block, const Workdir &workdir, const bool embedded) 
+  Params(const std::string &filename, const std::string &block, const Workdir &workdir, const bool embedded,
+         const bool quiet = false )
      : workdir(workdir), embedded(embedded) 
   {
     if (filename != "") { 
@@ -599,7 +600,7 @@ class Params {
     }
     validate();
     init_laststored(workdir);
-    dump();
+    if (!quiet) dump();
   }
 
   // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the

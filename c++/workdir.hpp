@@ -34,8 +34,8 @@ class Workdir {
    const std::string workdir {};
    bool remove_at_exit {true}; // XXX: tie to P.removefiles?
  public:
-   explicit Workdir(const std::string &dir) : workdir(dtemp(dir).value_or(default_workdir)) {
-     std::cout << "workdir=" << workdir << std::endl << std::endl;
+   explicit Workdir(const std::string &dir, const bool quiet = false) : workdir(dtemp(dir).value_or(default_workdir)) {
+     if (!quiet) std::cout << "workdir=" << workdir << std::endl << std::endl;
    }
    Workdir(const Workdir &) = delete;
    Workdir(Workdir &&) = delete;
