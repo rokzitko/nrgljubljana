@@ -2,7 +2,7 @@
 #include <sstream>
 #include <gtest/gtest.h>
 
-// Reproduce test0_clean calculation
+// Reproduce test/c++/test0_clean calculation
 
 #include "test_common.hpp"
 #include <basicio.hpp>
@@ -80,7 +80,7 @@ TEST(Clean, H) { // NOLINT
   mt.brief_report();
   EXPECT_EQ(step.ndx(), step.lastndx());
   stats.GS_energy = stats.total_energy;
-  store.shift_abs_energies(stats.GS_energy);
+  store.shift_abs_energies(stats.GS_energy); // A
 
   auto rho = init_rho(step, diag, Sym->multfnc());
   rho.save(step.lastndx(), P, fn_rho);
@@ -92,7 +92,9 @@ TEST(Clean, H) { // NOLINT
   rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
   calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym, mt, P);
 
-  // single-step calculation: no need to recalculate diag & operators
+  // single-step calculation: no need to recalculate diag & operators, but we need to run
+  // subtract_GS_energy()
+  diag.subtract_GS_energy(stats.GS_energy); // B
   
   Step step_dmnrg{P, RUNTYPE::DMNRG};
   auto oprecalc_dmnrg = Oprecalc<double>(step_dmnrg.get_runtype(), operators, SymSP, mt, P); // XXX
