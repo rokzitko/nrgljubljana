@@ -9,8 +9,7 @@
 using namespace NRG;
 
 TEST(Symmetry, Symmetry) { // NOLINT
-  Workdir workdir(".", true); // true=quiet
-  Params P("", "", workdir, true, true); // true=embedded, true=quiet
+  Params P;
   P.symtype.setvalue("QS");
   P.set_channels(1);
   auto Sym = set_symmetry<double>(P);

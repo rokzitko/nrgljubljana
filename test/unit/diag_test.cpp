@@ -9,7 +9,7 @@
 using namespace NRG;
 
 TEST(Diag, diagonalise) { // NOLINT
-  auto P = test_setup_P();
+  Params P;
   auto DP = DiagParams(P, 0.5);
 }
 

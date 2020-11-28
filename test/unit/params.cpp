@@ -14,7 +14,7 @@ TEST(params, parser) {
 }
 
 TEST(params, DiagParams) { // NOLINT
-  auto P = test_setup_P();
+  Params P;
   auto DP = DiagParams(P, 0.5);
 }
 

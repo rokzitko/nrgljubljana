@@ -91,7 +91,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
          return acc + mult(I) * trace_real(mat); });
      }
    void save(const size_t N, const Params &P, const std::string &prefix) const {
-     const auto fn = P.workdir.rhofn(N, prefix);
+     const auto fn = P.workdir->rhofn(N, prefix);
      std::ofstream MATRIXF(fn, std::ios::binary | std::ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
@@ -104,7 +104,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
      MATRIXF.close();
    }
    void load(const size_t N, const Params &P, const std::string &prefix, const bool remove_files) {
-     const auto fn = P.workdir.rhofn(N, prefix);
+     const auto fn = P.workdir->rhofn(N, prefix);
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);

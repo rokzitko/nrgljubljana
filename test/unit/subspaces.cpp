@@ -10,9 +10,10 @@
 using namespace NRG;
 
 TEST(Core, H) { // NOLINT
-  auto [P, SymSP] = test_setup_basic<double>();
+  Params P;
+  auto Sym = setup_Sym<double>(P);
   EXPECT_EQ(P.combs, 4);
-  EXPECT_EQ(SymSP->input_subspaces().size(), 4); // In
+  EXPECT_EQ(Sym->input_subspaces().size(), 4); // In
 //  EXPECT_EQ(SymSP->nr_combs(), 4);
 /*  
   auto Sym = SymSP.get();

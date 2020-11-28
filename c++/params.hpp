@@ -86,7 +86,7 @@ class Params {
   std::list<parambase *> all; // Container for all parameters
 
  public:
-  const Workdir &workdir;
+  std::unique_ptr<Workdir> workdir;
 
   param<std::string> symtype{"symtype", "Symmetry type", "", all}; // S
 
@@ -491,8 +491,8 @@ class Params {
   // Backwards compatibility parameters
   param<bool> data_has_rescaled_energies{"data_has_rescaled_energies", "Rescaled eigenvalues?", "true", all};
 
-  // *******************************************
-  // Internal parameters, not under user control
+  // **************************************************
+  // Internal parameters, not under direct user control
 
   size_t channels = 0;     // Number of channels
   size_t coeffactor = 0;   // coefchannels = coeffactor * channels (typically coeffactor=1)
@@ -542,11 +542,11 @@ class Params {
   bool keep_all_states_in_last_step() const { return lastall || (cfs_flags() && !lastalloverride); }
 
   // What is the last iteration completed in the previous NRG runs?
-  void init_laststored(const Workdir &workdir) {
+  void init_laststored() {
     if (resume) {
       laststored = -1;
       for (size_t N = Ninit; N < Nmax; N++) {
-        const std::string fn = workdir.unitaryfn(N);
+        const std::string fn = workdir->unitaryfn(N);
         std::ifstream F(fn);
         if (F.good())
           laststored = N;
@@ -578,9 +578,11 @@ class Params {
 
   bool embedded; // If true, the code is being called as a library from some application, not stand-alone.
 
-  Params(const std::string &filename, const std::string &block, const Workdir &workdir, const bool embedded,
+  Params(const std::string &filename, const std::string &block, 
+         std::unique_ptr<Workdir> workdir_, 
+         const bool embedded,
          const bool quiet = false )
-     : workdir(workdir), embedded(embedded) 
+     : workdir(std::move(workdir_)), embedded(embedded) 
   {
     if (filename != "") { 
       auto parsed_params = parser(filename, block);
@@ -599,9 +601,14 @@ class Params {
       }
     }
     validate();
-    init_laststored(workdir);
+    init_laststored();
     if (!quiet) dump();
   }
+  Params() { Params("", "", std::make_unique<Workdir>(), true, true); } // defaulted version (for testing purposes)
+  Params(const Params &) = delete;
+  Params(Params &&) = delete;
+  Params &operator=(const Params &) = delete;
+  Params &operator=(Params &&) = delete;
 
   // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the
   // energies on the original scale. Also named the "reduced bandwidth".

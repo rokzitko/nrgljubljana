@@ -189,7 +189,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
    void save(const size_t N, const Params &P) const {
-     const std::string fn = P.workdir.unitaryfn(N);
+     const std::string fn = P.workdir->unitaryfn(N);
      std::ofstream MATRIXF(fn, std::ios::binary | std::ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
@@ -201,7 +201,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
    }
    void load(const size_t N, const Params &P, const bool remove_files = false) {
-     const std::string fn = P.workdir.unitaryfn(N);
+     const std::string fn = P.workdir->unitaryfn(N);
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);

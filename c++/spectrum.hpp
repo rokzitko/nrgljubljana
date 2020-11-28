@@ -98,7 +98,7 @@ inline double windowfunction(const double E, const double Emin, const double Ex,
     const auto f1 = fnc_tanh_0(1, NNtanh);
     return (fx - f0) / (f1 - f0);
   };
-  auto fnc = [P, fnc_linear, fnc_tanh](const auto x) { return P.NNtanh > 0 ? fnc_tanh(x, P.NNtanh) : fnc_linear(x); };
+  auto fnc = [&P, fnc_linear, fnc_tanh](const auto x) { return P.NNtanh > 0 ? fnc_tanh(x, P.NNtanh) : fnc_linear(x); };
   if (Emin < E && E <= Ex) return fnc((E - Emin) / (Ex - Emin));
   if (Ex < E && E < Emax) return 1.0 - fnc((E - Ex) / (Emax - Ex));
   my_assert_not_reached();

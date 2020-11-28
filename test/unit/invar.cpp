@@ -5,7 +5,8 @@
 #include "test_common.hpp"
 
 TEST(Invar, initInvar) { // NOLINT
-  auto [P, sym] = test_setup_basic<double>();
+  Params P;
+  auto Sym = setup_Sym<double>(P);
   // should have Q and SS degrees of freedom
   EXPECT_EQ(Invar::invdim, 2);
   EXPECT_EQ(Invar::qntype.size(), 2);
@@ -17,7 +18,8 @@ TEST(Invar, initInvar) { // NOLINT
 }
 
 TEST(Invar, InvarQS) { // NOLINT
-  auto [P, sym] = test_setup_basic<double>();
+  Params P;
+  auto Sym = setup_Sym<double>(P);
   {
     Invar I(1,2);
   }

@@ -37,6 +37,7 @@ class Workdir {
    explicit Workdir(const std::string &dir, const bool quiet = false) : workdir(dtemp(dir).value_or(default_workdir)) {
      if (!quiet) std::cout << "workdir=" << workdir << std::endl << std::endl;
    }
+   Workdir() { Workdir(default_workdir, true); } // defaulted version (for testing purposes)
    Workdir(const Workdir &) = delete;
    Workdir(Workdir &&) = delete;
    Workdir & operator=(const Workdir &) = delete;
@@ -60,7 +61,7 @@ inline auto set_workdir(const std::string &dir_) {
   std::string dir = default_workdir;
   if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
   if (!dir_.empty()) dir = dir_;
-  return Workdir(dir);
+  return std::make_unique<Workdir>(dir);
 }
 
 } // namespace

@@ -139,7 +139,8 @@ public:
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
-  NRG_calculation(MPI_diag &mpi, const Workdir &workdir, const bool embedded) : mpi(mpi), P("param", "param", workdir, embedded) {
+  NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) : 
+    mpi(mpi), P("param", "param", std::move(workdir), embedded) {
     auto [Sym, diag0, operators, coef, GS_energy] = read_data<S>(P);
     Stats<S> stats(P);
     stats.td.allfields.add(Sym->get_td_fields(), 1);
