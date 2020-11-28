@@ -494,6 +494,7 @@ class Params {
   // **************************************************
   // Internal parameters, not under direct user control
 
+  bool embedded;           // If true, the code is being called as a library from some application, not stand-alone.
   size_t channels = 0;     // Number of channels
   size_t coeffactor = 0;   // coefchannels = coeffactor * channels (typically coeffactor=1)
   size_t coefchannels = 0; // Number of coefficient sets (typically coefchannels=channels)
@@ -536,12 +537,23 @@ class Params {
       fmt::print("coefchannels={} perchannel={} combs={}", coefchannels, perchannel, combs);
   }
 
-  // Returns true if any of the CFS or related spectral function calculations are requested.
-  bool cfs_flags() const { return cfs || fdm; }
+  bool cfs_flags() const { return cfs || cfsgt || cfsls; }
+  bool fdm_flags() const { return fdm || fdmgt || fdmls || fdmmats || fdmexpv; }
+  bool dmnrg_flags() const { return dmnrg || dmnrgmats; }
+  bool cfs_or_fdm_flags() const { return cfs_flags() || fdm_flags(); }
+  bool dm_flags() const { return cfs_flags() || fdm_flags() || dmnrg_flags(); }
+  bool keep_all_states_in_last_step() const { return lastall || (cfs_or_fdm_flags() && !lastalloverride); }
+  bool need_rho() const { return cfs_flags() || dmnrg_flags(); }
+  bool need_rhoFDM() const { return fdm_flags(); }
+  bool do_recalc_kept(const RUNTYPE &runtype) const {   // kept: Recalculate using vectors kept after truncation
+    return strategy == "kept" && !(cfs_or_fdm_flags() && runtype == RUNTYPE::DMNRG) && !ZBW; 
+  }
+  bool do_recalc_all(const RUNTYPE &runtype) const {    // all: Recalculate using all vectors
+    return !do_recalc_kept(runtype) && !ZBW; 
+  }
+  bool do_recalc_none() const { return ZBW; }
 
-  bool keep_all_states_in_last_step() const { return lastall || (cfs_flags() && !lastalloverride); }
-
-  // What is the last iteration completed in the previous NRG runs?
+   // What is the last iteration completed in the previous NRG runs?
   void init_laststored() {
     if (resume) {
       laststored = -1;
@@ -558,7 +570,7 @@ class Params {
   void validate() {
     my_assert(keep > 1);
     if (keepenergy > 0.0) my_assert(keepmin <= keep);
-    if (dmnrg || cfs_flags()) dm.setvalue(true);
+    if (dm_flags()) dm.setvalue(true);
     my_assert(Lambda > 1.0);
     if (diag == "dsyevr"s || diag =="zheevr"s) {
       my_assert(0.0 < diagratio && diagratio <= 1.0);
@@ -575,8 +587,6 @@ class Params {
     std::cout << std::setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
     for (const auto &i : all) i->dump();
   }
-
-  bool embedded; // If true, the code is being called as a library from some application, not stand-alone.
 
   Params(const std::string &filename, const std::string &block, 
          std::unique_ptr<Workdir> workdir_, 
@@ -636,18 +646,6 @@ class Params {
     return absolute ? 1 : (!substeps ? sqrt(Lambda) : pow(Lambda, 0.5/channels)); // NOLINT
   }
   
-  bool need_rho() const { return cfs || dmnrg; }
-  bool need_rhoFDM() const { return fdm; }
-
-  // Define recalculation strategy
-  bool do_recalc_kept(const RUNTYPE &runtype) const {   // kept: Recalculate using vectors kept after truncation
-    return strategy == "kept" && !(cfs_flags() && runtype == RUNTYPE::DMNRG) && !ZBW; 
-  }
-  bool do_recalc_all(const RUNTYPE &runtype) const {    // all: Recalculate using all vectors
-    return !do_recalc_kept(runtype) && !ZBW; 
-  }
-  bool do_recalc_none() const { return ZBW; }
-
   // Here we set the lowest frequency at which we will evaluate the spectral density. If the value is not predefined
   // in the parameters file, use the smallest scale from the calculation multiplied by P.broaden_min_ratio.
   double get_broaden_min() const { return broaden_min <= 0.0 ? broaden_min_ratio * last_step_scale() : broaden_min; }
