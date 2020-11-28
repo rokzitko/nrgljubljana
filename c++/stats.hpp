@@ -8,6 +8,7 @@
 #include "traits.hpp"
 #include "outfield.hpp"
 #include "mp.hpp"
+#include "step.hpp"
 
 namespace NRG {
 
@@ -57,6 +58,14 @@ struct Stats {
    explicit Stats(const Params &P, const std::string filename_td = "td"s, const std::string filename_tdfdm = "tdfdm"s) : 
      td(P, filename_td), rel_Egs(MAX_NDX), abs_Egs(MAX_NDX), energy_offsets(MAX_NDX), 
      ZnDG(MAX_NDX), ZnDN(MAX_NDX), ZnDNd(MAX_NDX), wn(MAX_NDX), wnfactor(MAX_NDX), td_fdm(P, filename_tdfdm) {}
+
+   void update(const Step &step) {
+     total_energy += Egs * step.scale(); // stats.Egs has already been initialized
+     std::cout << "Total energy=" << HIGHPREC(total_energy) << "  Egs=" << HIGHPREC(Egs) << std::endl;
+     rel_Egs[step.ndx()] = Egs;
+     abs_Egs[step.ndx()] = Egs * step.scale();
+     energy_offsets[step.ndx()] = total_energy;
+   }
 };
 
 } // namespace

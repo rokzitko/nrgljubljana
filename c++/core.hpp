@@ -196,11 +196,7 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
 template<typename S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                 SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
-  stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
-  std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
-  stats.rel_Egs[step.ndx()] = stats.Egs;
-  stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
-  stats.energy_offsets[step.ndx()] = stats.total_energy;
+  stats.update(step);
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
