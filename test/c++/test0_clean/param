@@ -1,0 +1,10 @@
+[param]
+symtype=QS
+model=CLEAN
+
+band=flat
+discretization=Z
+Lambda=2.0
+
+Nmax=1
+keep=100
