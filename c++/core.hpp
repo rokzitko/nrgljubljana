@@ -121,17 +121,16 @@ auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef
 
 template<typename S>
 auto do_diag(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, const Output<S> &output,
-             SubspaceStructure &substruct, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+             TaskList &tasklist, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
-  auto tasks = substruct.task_list();
   double diagratio = P.diagratio; // non-const
   DiagInfo<S> diag;
   while (true) {
     try {
       if (step.nrg()) {
         if (!(P.resume && int(step.ndx()) <= P.laststored))
-          diag = diagonalisations(step, operators.opch, coef, diagprev, output, tasks, diagratio, Sym, mpi, mt, P); // compute in first run
+          diag = diagonalisations(step, operators.opch, coef, diagprev, output, tasklist.get(), diagratio, Sym, mpi, mt, P); // compute in first run
         else
           diag = DiagInfo<S>(step.ndx(), P, false); // or read from disk
       }
@@ -237,9 +236,10 @@ template<typename S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
+  TaskList tasklist{substruct};
   if (P.h5raw)
     substruct.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/structure");
-  auto diag = do_diag(step, operators, coef, stats, diagprev, output, substruct, Sym, mpi, mt, P);
+  auto diag = do_diag(step, operators, coef, stats, diagprev, output, tasklist, Sym, mpi, mt, P);
   after_diag(step, operators, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
   operators.trim_matrices(diag);
   diag.clear_eigenvectors();

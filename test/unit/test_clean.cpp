@@ -44,11 +44,10 @@ TEST(Clean, H) { // NOLINT
   EXPECT_EQ(coef.xi.max(0), P.Nmax);
   auto output = Output(step.get_runtype(), operators, stats, P);
 
-  auto n = new_subspaces(diagprev, Sym);
   SubspaceStructure substruct{diagprev, Sym};
-  auto tasks = substruct.task_list(); // XXX: class TaskList
+  TaskList tasklist{substruct};
   DiagInfo<double> diag;
-  for(const auto &I : tasks) {
+  for(const auto &I : tasklist.get()) {
     auto h = hamiltonian<double>(step, I, operators.opch, coef, diagprev, output, Sym, P);
     dump_matrix(h);
     auto e = diagonalise(h, DiagParams(P, 1.0), -1); // -1 = not using MPI
