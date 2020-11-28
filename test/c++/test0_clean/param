@@ -8,3 +8,18 @@ Lambda=2.0
 
 Nmax=1
 keep=100
+
+ops=n_f n_f^2
+specs=n_f-n_f
+
+finite=true
+dmnrg=true
+fdm=true
+finitemats=true
+dmnrgmats=true
+fdmmats=true
+mats=10
+
+T=0.1
+
+logall=true

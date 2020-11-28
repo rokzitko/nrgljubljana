@@ -26,6 +26,22 @@ f 0 0
 e
 0.
 # Irreducible matrix elements for other operators:
+sn_f
+3
+-1	1	-1	1
+0.
+0	2	0	2
+1.
+1	1	1	1
+2.
+sn_f^2
+3
+-1	1	-1	1
+0.
+0	2	0	2
+1.
+1	1	1	1
+4.
 # Discretization tables:
 z
 1
