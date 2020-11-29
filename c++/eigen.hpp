@@ -73,12 +73,12 @@ public:
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
-    value_zero = value_orig;
-    for (auto &x : value_zero) x -= Egs;
+    value_zero = value_orig; // XXX
+    for (auto &x : value_zero) x -= Egs; // XXX: subtract a scalar [fix after moving to Eigen]
     my_assert(value_zero[0] >= 0);
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
-    for (auto &x : absenergyG) x -= GS_energy;
+    for (auto &x : absenergyG) x -= GS_energy; // XXX
     my_assert(absenergyG[0] >= 0);
   }
   auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements

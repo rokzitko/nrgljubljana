@@ -75,8 +75,8 @@ auto copy_results(const std::vector<T> &eigenvalues, U* eigenvectors, const char
 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
 inline Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
-  const size_t dim = m.size1();
-  double *ham = bindings::traits::matrix_storage(m);
+  const auto dim = m.size1();
+  auto ham = bindings::traits::matrix_storage(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
@@ -97,8 +97,8 @@ inline Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz
 
 inline Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
 {
-  const size_t dim = m.size1();
-  double *ham      = bindings::traits::matrix_storage(m);
+  const auto dim = m.size1();
+  auto ham       = bindings::traits::matrix_storage(m);
   std::vector<double> eigenvalues(dim);
   char UPLO  = 'L';
   int NN     = dim;
@@ -127,17 +127,17 @@ inline Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char job
 }
 
 inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V') {
-  const size_t dim = m.size1();
+  const auto dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
-  size_t M = dim;
+  auto M = dim;
   char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
     M     = static_cast<size_t>(ceil(ratio * M)); // round up
     M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
-  double *ham = bindings::traits::matrix_storage(m);
+  auto ham = bindings::traits::matrix_storage(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';     // lower triangle of a is stored
   int NN        = dim;     // the order of the matrix
@@ -182,8 +182,8 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
 }
 
 inline Eigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<double>> &m, const char jobz = 'V') {
-  const size_t dim = m.size1();
-  auto *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
+  const auto dim = m.size1();
+  auto ham       = reinterpret_cast<lapack_complex_double*>(bindings::traits::matrix_storage(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
@@ -205,17 +205,17 @@ inline Eigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<
 }
   
 inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex<double>> &m, const double ratio = 1.0, const char jobz = 'V') {
-  const size_t dim = m.size1();
+  const auto dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
-  size_t M = dim;
+  auto M = dim;
   char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
     M     = static_cast<size_t>(ceil(ratio * M)); // round up
     M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
-  auto *ham = (lapack_complex_double*)bindings::traits::matrix_storage(m);
+  auto ham = reinterpret_cast<lapack_complex_double*>(bindings::traits::matrix_storage(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix

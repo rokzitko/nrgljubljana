@@ -133,7 +133,7 @@ class string_token {
    std::istringstream iss;
    const std::set<std::string> l;
  public:
-   explicit string_token(std::string s) : iss(s), 
+   explicit string_token(const std::string &s) : iss(s),
      l(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>()) {};
    [[nodiscard]] auto find(const std::string &x) const { return l.count(x) != 0; }
 };
@@ -191,7 +191,7 @@ inline int atoi(const std::string &s) { return std::atoi(s.c_str()); }
 
 // Read data from stream F.
 template <typename T1, typename T2>
-std::vector<std::pair<T1, T2>> readtable(std::string filename, const bool verbose = false) 
+std::vector<std::pair<T1, T2>> readtable(const std::string &filename, const bool verbose = false) 
 {
   auto F = safe_open_for_reading(filename);
   std::vector<std::pair<T1, T2>> v;

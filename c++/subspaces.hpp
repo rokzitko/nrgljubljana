@@ -111,7 +111,7 @@ class TaskList {
      auto max_size = tasks_with_sizes.front().first;
      F << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << std::endl;
    }
-   TaskList(const SubspaceStructure &structure, std::ostream &F = std::cout) {
+   explicit TaskList(const SubspaceStructure &structure, std::ostream &F = std::cout) {
      for (const auto &[I, rm] : structure)
        if (rm.total())
          tasks_with_sizes.emplace_back(rm.total(), I);
