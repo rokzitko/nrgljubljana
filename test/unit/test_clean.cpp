@@ -55,8 +55,7 @@ TEST(Clean, H) { // NOLINT
     diag[I] = e;
   }
 
-  stats.Egs = diag.find_groundstate();
-  diag.subtract_Egs(stats.Egs);
+  stats.Egs = diag.Egs_subtraction();
   truncate_prepare(step, diag, Sym->multfnc(), P);
   stats.update(step);
   calc_abs_energies(step, diag, stats);

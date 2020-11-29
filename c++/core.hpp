@@ -138,9 +138,7 @@ auto do_diag(const Step &step, Operators<S> &operators, const Coef<S> &coef, Sta
         diag = DiagInfo<S>(step.ndx(), P, P.removefiles); // read from disk in second run
         diag.subtract_GS_energy(stats.GS_energy);
       }
-      stats.Egs = diag.find_groundstate();
-      if (step.nrg()) // should be done only once!
-        diag.subtract_Egs(stats.Egs);
+      stats.Egs = diag.Egs_subtraction();
       Clusters<S> clusters(diag, P.fixeps);
       truncate_prepare(step, diag, Sym->multfnc(), P);
       break;
@@ -275,9 +273,7 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
     diag = DiagInfo<S>(step.ndx(), P, P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
-  stats.Egs = diag.find_groundstate();
-  if (step.nrg())      
-    diag.subtract_Egs(stats.Egs);
+  stats.Egs = diag.Egs_subtraction();
   truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   SubspaceStructure substruct{};
