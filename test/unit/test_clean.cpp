@@ -5,6 +5,7 @@
 // Reproduce test/c++/test0_clean calculation
 
 #include "test_common.hpp"
+#include "test_clean.hpp"
 #include <basicio.hpp>
 #include <core.hpp>
 
@@ -12,22 +13,7 @@ using namespace NRG;
 
 TEST(Clean, H) { // NOLINT
   Params P;
-  EXPECT_EQ(P.Lambda.value(), 2.0); // defaults
-  EXPECT_EQ(P.discretization.value(), "Z"s);
-  EXPECT_EQ(P.Ninit.value(), 0);
-  P.Nmax = P.Nlen = 1;
-  P.keep.setvalue(100);
-  P.ops.setvalue("n_f n_f^2");
-  P.specs.setvalue("n_f-n_f");
-  P.finite.setvalue(true);
-  P.cfs.setvalue(true);
-  P.fdm.setvalue(true);
-  P.dmnrg.setvalue(true);
-  P.finitemats.setvalue(true);
-  P.fdmmats.setvalue(true);
-  P.dmnrgmats.setvalue(true);
-  P.mats.setvalue(10);
-  P.T.setvalue(0.1); // temperature
+  setup_P_clean(P);
 
   auto SymSP = setup_Sym<double>(P); // get the shared pointer
   auto Sym = SymSP.get(); // get the raw pointer
@@ -35,10 +21,8 @@ TEST(Clean, H) { // NOLINT
   Step step{P, RUNTYPE::NRG};
   EXPECT_EQ(step.ndx(), 0);
   Store<double> store(P.Ninit,P.Nlen);
-
   auto diagprev = setup_diag_clean(P, Sym);
-  auto operators = Operators<double>();
-  setup_operators_clean(operators, diagprev);
+  auto operators = setup_operators_clean<double>(operators, diagprev);
   operators.opch = setup_opch_clean(P, Sym, diagprev);
   auto coef = setup_coef_clean<double>(P);
   EXPECT_EQ(coef.xi.max(0), P.Nmax);
@@ -56,19 +40,19 @@ TEST(Clean, H) { // NOLINT
   }
 
   stats.Egs = diag.Egs_subtraction();
-  truncate_prepare(step, diag, Sym->multfnc(), P);
   stats.update(step);
+  truncate_prepare(step, diag, Sym->multfnc(), P);
   calc_abs_energies(step, diag, stats);
   calculate_TD(step, diag, stats, Sym);
   split_in_blocks(diag, substruct);
   MemTime mt;
-  auto oprecalc = Oprecalc<double>(step.get_runtype(), operators, SymSP, mt, P); // XXX: mt
+  auto oprecalc = Oprecalc<double>(step.get_runtype(), operators, SymSP, mt, P);
   oprecalc.recalculate_operators(operators, step, diag, substruct);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P); // XXX: mt
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
   diag.truncate_perform();
   EXPECT_EQ(step.last(), true);
   store[step.ndx()] = Subs(diag, substruct, step.last());
-  recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P); // XXX: mt
+  recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
   operators.opch.dump();
 //X  operators.trim_matrices(diag);
 //X  diag.clear_eigenvectors();
@@ -91,9 +75,9 @@ TEST(Clean, H) { // NOLINT
   // single-step calculation: no need to recalculate diag & operators, but we need to run
   // subtract_GS_energy()
   diag.subtract_GS_energy(stats.GS_energy); // B
-  
+
   Step step_dmnrg{P, RUNTYPE::DMNRG};
-  auto oprecalc_dmnrg = Oprecalc<double>(step_dmnrg.get_runtype(), operators, SymSP, mt, P); // XXX
+  auto oprecalc_dmnrg = Oprecalc<double>(step_dmnrg.get_runtype(), operators, SymSP, mt, P);
   auto output_dmnrg = Output(step_dmnrg.get_runtype(), operators, stats, P);
   calculate_spectral_and_expv(step_dmnrg, stats, output_dmnrg, oprecalc_dmnrg, diag, operators, store, Sym->multfnc(), mt, P);
 }
