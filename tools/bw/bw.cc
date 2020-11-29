@@ -462,7 +462,7 @@ void save(const string filename0, const vec &mesh, const vec &data, int iter = 0
     const double x = mesh[i];
     const double y = data[i];
     if (trim != 0.0 && abs(x) < trim) { continue; }
-    if (isfinite(data[i])) {
+    if (std::isfinite(data[i])) {
       F << x << " " << y << endl;
     } else {
       if (veryverbose) { cout << "Warning: " << i << " not finite." << endl; }
@@ -501,16 +501,16 @@ void calc_deriv(const vec &inta, vec &deriv) {
     const double &f1 = inta[i];
     assert(w1 > w0);
     const double log1 = log(f1 / f0);
-    if (!isfinite(log1)) {
+    if (!std::isfinite(log1)) {
       if (veryverbose) { cout << "Warning: log1 not finite at w0=" << w0 << endl; }
     }
 
     const double log2 = log(abs(w1 / w0));
-    assert(isfinite(log2));
+    assert(std::isfinite(log2));
 
     const double d = log1 / log2;
 
-    if (isfinite(d)) {
+    if (std::isfinite(d)) {
       deriv[i] = d;
     } else {
       deriv[i] = 0.0;

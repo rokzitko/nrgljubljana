@@ -65,7 +65,7 @@ void convolve(const std::vector<S> &mesh, std::vector<T> &a, const double sigma,
         const auto y     = mesh[j];
         const auto width = (mesh[j + 1] + mesh[j]) / 2.0 - (mesh[j - 1] + mesh[j]) / 2.0;
         const auto kw    = kernel(x, y, sigma) * width;
-        assert(isfinite(kw));
+        assert(std::isfinite(kw));
         sum += b[j] * kw;
         sum_kernel += kw;
       }
