@@ -19,7 +19,7 @@ class Oprecalc {
  private:
    RUNTYPE runtype;
    std::shared_ptr<Symmetry<S>> Sym;
-   MemTime mt;
+   MemTime &mt; // ref!
    const Params &P;
  public:
    // Operators required to calculate expectation values and spectral densities
