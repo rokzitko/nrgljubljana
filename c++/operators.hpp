@@ -140,7 +140,6 @@ template<typename S>
 class Opch : public std::vector<OpchChannel<S>> {
  public:
    Opch() = default;
-   explicit Opch(const size_t nrch) { this->resize(nrch); } // XXX remove
    explicit Opch(const Params &P) {
       this->resize(P.channels);
       for (auto &oc: *this) {
