@@ -89,7 +89,7 @@ class Adapt {
      int cnt           = 0;
      const int max_cnt = 2 * max_subdiv;
      while (true) {
-       assert(isfinite(dx));
+       assert(std::isfinite(dx));
        rho.clear_flag();
        dy = rk_step(dx, rhs);
        // Have we crossed the interval boundary ?
@@ -238,8 +238,8 @@ class Adapt {
    }
    // Right-hand-side of the differential equation. y=f !
    auto rhs_F(const double x, const double y) {
-     assert(isfinite(x));
-     assert(isfinite(y));
+     assert(std::isfinite(x));
+     assert(std::isfinite(y));
      const double term1 = Lambda.logL() * y;
      const double integral = intrho2(eps(x)) - intrho1(eps(x + 1));
      const double powL     = Lambda.power(2.0 - x);
@@ -250,7 +250,7 @@ class Adapt {
        std::cout << "# (denom=0 may arise from zeros in the hybridisation function)" << std::endl;
        term2 = 0.0;
      }
-     assert(isfinite(term2));
+     assert(std::isfinite(term2));
      return term1 - term2;
    }
    void load_init_rho() {

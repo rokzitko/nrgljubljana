@@ -97,7 +97,7 @@ Vec load(int i) {
 
       if (f.fail()) break;
 
-      assert(isfinite(x) && isfinite(y));
+      assert(std::isfinite(x) && std::isfinite(y));
       data.push_back(make_pair(x, y));
     }
   }

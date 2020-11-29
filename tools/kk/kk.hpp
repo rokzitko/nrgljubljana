@@ -54,7 +54,7 @@ inline auto read(std::istream &F) {
       double x, y;
       F >> x >> y;
       if (F.fail()) break;
-      assert(isfinite(x) && isfinite(y));
+      assert(std::isfinite(x) && std::isfinite(y));
       v.push_back({x, y});
     }
   }
@@ -133,7 +133,7 @@ class KK {
      spline                 = gsl_spline_alloc(Interp_type, len);
      gsl_spline_init(spline, Xpts.data(), Ypts.data(), len);
      const auto sum = gsl_spline_eval_integ(spline, Xmin, Xmax, acc);
-     if (!isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
+     if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
      if (mode == MODE::FILES) std::cout << "Sum=" << sum << std::endl;
      const auto nr = Xpts.size()/2;
      for (auto i = nr; i < len; i++)
