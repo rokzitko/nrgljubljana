@@ -103,7 +103,6 @@ class KK {
    MODE mode = MODE::LIBRARY;
    
    int len;           // number of data points
-   int nr;            // =len/2
    DVEC Xpts, Ypts;
    DVEC Xpos;         // Only positive X points [grid]
    double Xmin, Xmax; // Interval boundaries for the frequency grid

@@ -159,7 +159,7 @@ auto read_matrix_data(std::istream &F, FNC next_value, const size_t dim1, const 
   for (auto i = 0; i < dim1; i++) {
     for (auto j = 0; j < dim2; j++) {
       const auto x = next_value(F);
-      if (check_is_finite && !finite(x)) throw std::runtime_error("Non-finite number detected.");      
+      if (check_is_finite && !std::isfinite(x)) throw std::runtime_error("Non-finite number detected.");
       M(i, j) = x;
     }
   }

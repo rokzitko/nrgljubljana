@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 #include <string>
+using namespace std::string_literals;
 #include <map>
 
 #include <ctime>
@@ -23,11 +24,8 @@
 #include <unistd.h>
 
 #include <boost/numeric/ublas/vector.hpp>
-//#include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
-//#include <boost/numeric/ublas/matrix_proxy.hpp>
-//#include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/numeric/ublas/operation.hpp>
 
 #include <basicio.hpp>
@@ -69,7 +67,7 @@ class Unitary {
        case 's': scale_factor = atof(optarg); break;
        case 'o': output_filename = std::string(optarg); break;
        case 'c': chop_tol = atof(optarg); break;
-       default: throw std::runtime_error("Unknown argument " + c);
+       default: throw std::runtime_error("Unknown argument "s + c);
        }
      }
    }

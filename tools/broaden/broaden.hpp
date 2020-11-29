@@ -26,7 +26,7 @@
 namespace NRG::Broaden {
 
 constexpr double m_SQRTPI = 1.7724538509055160273;
-constexpr double R_1_SQRT2PI = 1.0 / sqrt(2.0 * M_PI);
+const double R_1_SQRT2PI = 1.0 / sqrt(2.0 * M_PI); // sqrt not constexpr on all platforms (yet)
 
 using std::abs; // important!!
 
@@ -103,7 +103,7 @@ template<typename T> T trapez(const std::vector<T> &x, const std::vector<T> &y) 
 
 // Create a mesh on which the output spectral function will be computed. a is the accumulation point of the mesh.
 auto make_mesh(const double min, const double max, const double ratio, 
-               const auto a, const bool add_positive = true, const bool add_negative = false) {
+               const double a, const bool add_positive = true, const bool add_negative = false) {
   assert(min < max);
   assert(ratio > 1.0);
   const auto rescale_factor = (max-a)/max;
