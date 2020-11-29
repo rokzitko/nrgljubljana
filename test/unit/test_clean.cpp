@@ -22,7 +22,7 @@ TEST(Clean, H) { // NOLINT
   EXPECT_EQ(step.ndx(), 0);
   Store<double> store(P.Ninit,P.Nlen);
   auto diagprev = setup_diag_clean(P, Sym);
-  auto operators = setup_operators_clean<double>(operators, diagprev);
+  auto operators = setup_operators_clean<double>(diagprev);
   operators.opch = setup_opch_clean(P, Sym, diagprev);
   auto coef = setup_coef_clean<double>(P);
   EXPECT_EQ(coef.xi.max(0), P.Nmax);

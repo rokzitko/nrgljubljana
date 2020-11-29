@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "test_common.hpp"
+#include "test_clean.hpp"
 #include <coef.hpp>
 
 using namespace NRG;

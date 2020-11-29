@@ -54,9 +54,9 @@ auto setup_opch_clean(const Params &P, Symmetry<S> *Sym, const DiagInfo<S> &diag
 }
 
 template<typename S>
-void setup_operators_clean(const DiagInfo<S> &diag)
+auto setup_operators_clean(const DiagInfo<S> &diag)
 {
-  auto operators = Operators<S>();
+  auto op = Operators<S>();
   std::string str_f = 
     "3\n"
     "-1 1 -1 1\n"
@@ -67,7 +67,7 @@ void setup_operators_clean(const DiagInfo<S> &diag)
     "2.";
   std::istringstream ss_f(str_f);
   op.ops["n_f"] = MatrixElements<double>(ss_f, diag);
-  
+
   std::string str_f2 =
     "3\n"
     "-1 1 -1 1\n"
@@ -79,7 +79,7 @@ void setup_operators_clean(const DiagInfo<S> &diag)
   std::istringstream ss_f2(str_f2);
   op.ops["n_f^2"] = MatrixElements<double>(ss_f2, diag);
 
-  return operators;
+  return op;
 }
 
 template<typename S>

@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "test_common.hpp"
+#include "test_clean.hpp"
 #include <operators.hpp>
 
 using namespace NRG;
