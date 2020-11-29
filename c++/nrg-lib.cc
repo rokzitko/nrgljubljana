@@ -38,7 +38,7 @@ void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mp
   DiagParams DP;
   for (;;) {
     if (mpiw.iprobe(master, boost::mpi::any_tag)) { // message can be received.
-      int task;
+      int task = 0;
       const auto status = mpiw.recv(master, boost::mpi::any_tag, task);
       mpilog("Slave " << mpiw.rank() << " received message with tag " << status.tag());
       mpi.check_status(status);
