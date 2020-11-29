@@ -71,7 +71,7 @@ auto new_subspaces(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
 
 template<typename S>
 Matrix_traits<S> hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
-                                       const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
+                             const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
   auto h = Zero_matrix<S>(rm.total());
@@ -120,8 +120,8 @@ auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef
 }
 
 template<typename S>
-auto do_diag(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, const Output<S> &output,
-             TaskList &tasklist, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, 
+             const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   double diagratio = P.diagratio; // non-const
@@ -192,7 +192,8 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<typename S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
-                SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
+                const SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, 
+                MemTime &mt, const Params &P) {
   stats.update(step);
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
