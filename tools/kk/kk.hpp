@@ -24,6 +24,7 @@
 #include <string>
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
