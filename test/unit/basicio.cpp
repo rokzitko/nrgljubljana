@@ -48,21 +48,6 @@ TEST(basicio, inserters1) {
     ss << s;
     EXPECT_EQ(ss.str(), "1 2 3 "); // trailing ws
   }
-  {
-    std::stringstream ss;
-    Eigen::Vector3i v(5,2,1);
-    ss << v;
-    EXPECT_EQ(ss.str(), "5 \n2 \n1 \n");
-  }
-  {
-    std::stringstream ss;
-    Eigen::Matrix3i m;
-    m << 3,5,7,
-         1,6,1,
-         7,9,3;
-    ss << m;
-    EXPECT_EQ(ss.str(), "3 5 7 \n1 6 1 \n7 9 3 \n");
-  }
 }
 
 TEST(basicio, from_string) {

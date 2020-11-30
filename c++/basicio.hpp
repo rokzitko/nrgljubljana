@@ -85,15 +85,6 @@ template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::ma
   return os;
 }
 
-template <typename T, int N, int M> std::ostream &operator<<(std::ostream &os, const Eigen::Matrix<T,N,M> &m){
-  for (const auto row : m.rowwise()){
-    for (const auto x : row)
-      os << x << " ";
-    os << std::endl;
-  }
-  return os;
-}
-
 // Returns a string with a floating value in fixed (non-exponential) format with N digits of precision after the
 // decimal point.
 inline std::string prec(const double x, const int N)
