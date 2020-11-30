@@ -27,21 +27,18 @@ enum class RUNTYPE { NRG, DMNRG }; // First or second sweep? Used in class Step.
 inline const auto fn_rho {"rho"s};
 inline const auto fn_rhoFDM {"rhofdm"s};
 
-// Base class for parameter containers.
+// Base class for parameter containers
 class parambase {
  protected:
-   std::string _keyword;
-   std::string _desc;
-   std::string _value;
-   
+   const std::string keyword;
+   const std::string desc;
  public:
-   parambase(std::string keyword, std::string desc, std::string defaultv) :
-     _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
+   parambase(const std::string &keyword, const std::string &desc) : keyword(keyword), desc(desc) {};
    virtual ~parambase() = default;
-   virtual void setvalue_str(std::string newvalue) = 0;
-   virtual void dump()                             = 0;
-   [[nodiscard]] std::string getkeyword() const { return _keyword; }
-   [[nodiscard]] std::string getdesc() const { return _desc; }
+   virtual void setvalue_str(const std::string &new_value) = 0;
+   virtual void dump(std::ostream &F = std::cout)  = 0;
+   [[nodiscard]] std::string getkeyword() const { return keyword; }
+   [[nodiscard]] std::string getdesc() const { return desc; }
 };
 
 // Templated specialized classes for various storage types (int, double, string, bool)
@@ -49,26 +46,27 @@ template <typename T>
 class param : public parambase {
  private:
    T data;
-   bool defaultval = true;
-   
+   bool is_default = true;
   public:
    // Constructor: keyword is a CASE SENSITIVE name of the parameter, desc is at this time used as in-line
-   // documentation and defaultv is a string containing a default value which is immediately parsed.
-   param(const std::string &keyword, const std::string &desc, const std::string &defaultv, std::list<parambase*> &allparams) :
-     parambase(keyword, desc, defaultv) {
-       data = from_string<T>(_value);
-       for (auto &i : allparams)
+   // documentation and default_value is a string containing a default value which is immediately parsed.
+   // allparams is the list of all parameters.
+   param(const std::string &keyword, const std::string &desc, const std::string &default_value, std::list<parambase*> &allparams) :
+     parambase(keyword, desc) {
+       data = from_string<T>(default_value);
+       for (const auto &i : allparams)
          if (i->getkeyword() == keyword) throw std::runtime_error("param class internal error: keyword conflict.");
-       allparams.push_back((parambase *)this);
+       allparams.push_back(this);
      }
-   void dump() override { std::cout << _keyword << "=" << data << (!defaultval ? " *" : "") << std::endl; }
+   void dump(std::ostream &F = std::cout) override { 
+     F << keyword << "=" << data << (!is_default ? " *" : "") << std::endl;
+   }
    // This line enables to access parameters using an object as a rvalue
    [[nodiscard]] inline operator const T &() const { return data; }
    [[nodiscard]] inline T value() const { return data; }
-   void setvalue_str(std::string newvalue) override {
-     _value     = newvalue;
-     data       = from_string<T>(newvalue);
-     defaultval = false;
+   void setvalue_str(const std::string &new_value) override { // used in parser
+     data       = from_string<T>(new_value);
+     is_default = false;
    }
    void setvalue(const T newdata) { data = newdata; }
    bool operator == (const T &b) const { return data == b; }
@@ -365,9 +363,6 @@ class Params {
   // if peak's weight is lower than energy*DISCARD_IMMEDIATELY.
   param<double> discard_immediately{"discard_immediately", "Peak clipping on the fly", "1e-16", all}; // N
 
-  // Optimization in 3-pt vertex calculations: drop small terms.
-  param<double> v3mmcutoff{"v3mmcutoff", "Cutoff for small terms", "1e-16", all}; // *
-
   // ********
   // Patching
 
@@ -582,10 +577,10 @@ class Params {
     if (chitp_ratio > 0.0) chitp.setvalue(chitp_ratio / betabar);
   }
 
-  void dump() {
+  void dump(std::ostream &F = std::cout) {
     all.sort([](auto a, auto b) { return a->getkeyword() < b->getkeyword(); });
-    std::cout << std::setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
-    for (const auto &i : all) i->dump();
+    F << std::setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
+    for (const auto &i : all) i->dump(F);
   }
 
   explicit Params(const std::string &filename, const std::string &block, 
