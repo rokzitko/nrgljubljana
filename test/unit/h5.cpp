@@ -7,6 +7,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 
 #define H5_USE_BOOST
+#define H5_USE_EIGEN
 #include <highfive/H5File.hpp>
 
 #include <h5.hpp>
@@ -231,6 +232,59 @@ TEST(h5dump, ublas_matrix_real_part_rect) { // NOLINT
   // read-in as ublas::matrix but using the general HighFive interface
   auto dataset = file.getDataSet("/path");
   ublas::matrix<double> r;
+  dataset.read(r);
+  for (int x = 0; x < nx; x++) {
+    for (int y = 0; y < ny; y++) {
+      EXPECT_EQ(w(x,y).real(), r(x,y));
+    }
+  }
+}
+
+template <typename T1, typename T2, int N, int M, int K, int L>
+void compare_matrices(Eigen::Matrix<T1,N,M> a, Eigen::Matrix<T2,K,L> b){
+    ASSERT_EQ(a.rows(), b.rows());
+    ASSERT_EQ(a.cols(), b.cols());
+    for(int i = 0; i < a.rows(); i++)
+        for(int j = 0; j < a.cols(); j++)
+            EXPECT_EQ(a(i,j), b(i,j));
+}
+
+TEST(h5dump, _eigen_dump_matrix) { // NOLINT
+  H5Easy::File file("_eigen_ublas_matrix.h5", HighFive::File::Overwrite);
+  const auto nx = 2;
+  const auto ny = 3;
+  Eigen::MatrixXd w(nx,ny);
+  double cnt = 1.0;
+  for (int x = 0; x < nx; x++) {
+    for (int y = 0; y < ny; y++) {
+      w(x,y) = cnt;
+      cnt = cnt + 1.0;
+    }
+  }
+  NRG::_eigen_h5_dump_matrix(file, "/path", w);
+
+  auto dataset = file.getDataSet("/path");
+  Eigen::MatrixXd r;
+  dataset.read(r);
+  compare_matrices(w,r);
+}
+
+TEST(h5dump, eigen_matrix_real_part_rect) { // NOLINT
+  H5Easy::File file("ublas_matrix_real_part_rect.h5", HighFive::File::Overwrite);
+  const auto nx = 2;
+  const auto ny = 3;
+  Eigen::MatrixXcd w(nx,ny);
+  auto cnt = std::complex<double>(1.0,1.0);
+  for (int x = 0; x < nx; x++) {
+    for (int y = 0; y < ny; y++) {
+      w(x,y) = cnt;
+      cnt = cnt + 1.0;
+    }
+  }
+  NRG::_eigen_h5_dump_matrix(file, "/path", w);
+
+  auto dataset = file.getDataSet("/path");
+  Eigen::MatrixXd r;
   dataset.read(r);
   for (int x = 0; x < nx; x++) {
     for (int y = 0; y < ny; y++) {

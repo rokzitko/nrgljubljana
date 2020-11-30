@@ -153,6 +153,70 @@ TEST(misc, vector_of_keys){
   ASSERT_EQ(b, expected);
 }
 
+template <typename T1, typename T2, int N, int M>
+void compare_matrices(Eigen::Matrix<T1,N,M> a, ublas::matrix<T2> b){
+  ASSERT_EQ(a.rows(), b.size1());
+  ASSERT_EQ(a.cols(), b.size2());
+  for(int i = 0; i < a.rows(); i++)
+      for(int j = 0; j < a.cols(); j++)
+          EXPECT_EQ(a(i,j), b(i,j));
+}
+
+template <typename T1, typename T2, int N>
+void compare_vectors(Eigen::Matrix<T1,N,1> a, ublas::vector<T2> b){
+  ASSERT_EQ(a.size(), b.size());
+  for(int i = 0; i < a.size(); i++)
+    EXPECT_EQ(a(i), b(i));
+}
+
+
+TEST(misc, ublas_to_eigen){
+  auto ublas_matrix = read_matrix("txt/matrix.txt");
+  auto eigen_matrix = ublas_to_eigen(ublas_matrix);
+  compare_matrices(eigen_matrix, ublas_matrix);
+
+  ublas::vector<int> ublas_vector(5);
+  for(int i = 0; i < 5; i++) ublas_vector(i) = i;
+  auto eigen_vector = ublas_to_eigen(ublas_vector);
+  compare_vectors(eigen_vector, ublas_vector);
+}
+
+template<typename T, int N, int M>
+auto eigen_to_ublas_matrix(Eigen::Matrix<T,N,M> m){
+  ublas::matrix<T> m_ublas(m.rows(),m.cols());
+  auto m1 = !m.IsRowMajor ? m.transpose() : m;
+  std::copy(m1.data(), m1.data() + m1.size(),m_ublas.data().begin());
+  return m_ublas;
+}
+
+template<typename T, int N>
+auto eigen_to_ublas_vector(Eigen::Matrix<T,N,1> m){
+  ublas::vector<T> m_ublas(m.size());
+  std::copy(m.data(), m.data() + m.size(),m_ublas.data().begin());
+  return m_ublas;
+}
+
+TEST(misc, eigen_to_ublas){
+  Eigen::Vector4i eigen_vector(3,5,8,14);
+  auto ublas_vector = eigen_to_ublas_vector(eigen_vector);
+  compare_vectors(eigen_vector, ublas_vector);
+  {
+    Eigen::Matrix3i eigen_matrix;
+    for (int i = 0; i < eigen_matrix.size(); i++) eigen_matrix(i) = i;
+    auto ublas_matrix = eigen_to_ublas_matrix(eigen_matrix);
+    compare_matrices(eigen_matrix, ublas_matrix);
+  }
+  
+  {
+    Eigen::Matrix<int, 3, 3, Eigen::RowMajor> eigen_matrix;
+    for (int i = 0; i < eigen_matrix.size(); i++) eigen_matrix(i) = i;
+    auto ublas_matrix = eigen_to_ublas_matrix(eigen_matrix);
+    compare_matrices(eigen_matrix, ublas_matrix);
+  }
+}
+
+
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS();

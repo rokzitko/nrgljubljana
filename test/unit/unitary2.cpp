@@ -14,23 +14,7 @@ using namespace NRG::Unitary;
 using namespace NRG;
 using namespace std::string_literals;
 
-TEST(basicio, count_words_in_string) {
-    EXPECT_EQ(count_words_in_string("one two three four a"s), 5);
-    EXPECT_EQ(count_words_in_string(""s), 0);
-}
-
-TEST(basicio, get_dims) {
-    auto file = safe_open_for_reading("txt/matrix.txt");
-    auto const [dim1, dim2] = get_dims(file);
-    EXPECT_EQ(dim1, 3);
-    EXPECT_EQ(dim2, 4);
-    auto file_err = safe_open_for_reading("txt/matrix_err.txt");
-    EXPECT_THROW(get_dims(file_err), std::runtime_error);
-}
-
-using MAT = ublas::matrix<double>;
-
-void compare_matrices(const MAT &m1, const MAT &m2) {
+void compare_matrices(const ublas::matrix<double> &m1, const ublas::matrix<double> &m2) {
     ASSERT_EQ(m1.size1(), m2.size1());
     ASSERT_EQ(m1.size2(), m2.size2());
     for(int i = 0; i < m1.size1(); i++)
@@ -39,26 +23,12 @@ void compare_matrices(const MAT &m1, const MAT &m2) {
 }
 
 template<typename T>
-void compare_matrices(const std::vector<std::vector<T>> m1, const MAT &m2){
+void compare_matrices(const std::vector<std::vector<T>> m1, const ublas::matrix<double> &m2){
     ASSERT_EQ(m2.size1(), m1.size());
     ASSERT_EQ(m2.size2(), m1[0].size());
     for(int i = 0; i < m2.size1(); i++)
         for(int j = 0; j < m2.size2(); j++)
             EXPECT_EQ(m2(i, j), m1[i][j]);
-}
-
-TEST(basicio, read_matrix_text){
-    std::vector<std::vector<int>> const ref_matrix = {{31,41,53,46},{12,5,1,41},{5,2,4,7}};
-    auto matrix = read_matrix("txt/matrix.txt");
-    compare_matrices(ref_matrix, matrix);
-}
-
-TEST(basicio, save_matrix){
-    auto matrix = read_matrix("txt/matrix.txt");
-    save_matrix("txt/matrix_temp.txt", matrix);
-    auto matrix_temp = read_matrix("txt/matrix_temp.txt");
-    compare_matrices(matrix, matrix_temp);
-    std::remove("txt/matrix_temp.txt");
 }
 
 std::string exec(const char* cmd) {
@@ -91,16 +61,16 @@ class unitaryProdTest : public ::testing::Test {
         }
 
     void Compare() {
-        MAT D = ublas::prod(B,C);
+        ublas::matrix<double> D = ublas::prod(B,C);
         my_result = ublas::prod(A, D);
         func_result = read_matrix("txt/temp_result_matrix.txt");
         compare_matrices(my_result, func_result);
     }
-    MAT A;
-    MAT B;
-    MAT C;
-    MAT my_result;
-    MAT func_result;
+    ublas::matrix<double> A;
+    ublas::matrix<double> B;
+    ublas::matrix<double> C;
+    ublas::matrix<double> my_result;
+    ublas::matrix<double> func_result;
 };
 
 TEST_F(unitaryProdTest, noTrans_noScale){

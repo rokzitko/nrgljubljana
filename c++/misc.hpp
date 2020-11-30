@@ -25,6 +25,8 @@
 #include "basicio.hpp"
 #include "portabil.hpp"
 
+#include <Eigen/Dense>
+
 namespace NRG {
 
 template<typename T> auto get_back(T &d) { // usually T is list or deque
@@ -202,6 +204,30 @@ void writetable(const std::vector<std::pair<T1, T2>> &re, std::string filename, 
   F << std::setprecision(output_precision);
   for (const auto & [x, y] : re) F << x << " " << y << std::endl;
 }
+
+template <typename T>
+Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> ublas_to_eigen(ublas::matrix<T> m){
+  Eigen::Map<Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>> m_eigen(m.data().begin(),m.size1(),m.size2());
+  return m_eigen;
+}
+
+template <typename T>
+Eigen::Matrix<T,Eigen::Dynamic,1> ublas_to_eigen(ublas::vector<T> m){
+  Eigen::Map<Eigen::Matrix<T,Eigen::Dynamic,1>> m_eigen(m.data().begin(),m.size(),1);
+  return m_eigen;
+}
+
+// template<typename T, int N, int M>
+// auto eigen_to_ublas_matrix(Eigen::Matrix<T,N,M> m){
+//   ublas::matrix<T> m_ublas(m.data());
+//   return m_ublas;
+// }
+
+// template<typename T, int N>
+// auto eigen_to_ublas_vector(Eigen::Matrix<T,N,1> m){
+//   ublas::vector<T> m_ublas(m.data());
+//   return m_ublas;
+// }
 
 } // namespace
 
