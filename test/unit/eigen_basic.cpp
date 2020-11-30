@@ -26,13 +26,4 @@ TEST(eigen, basic_vector){
     Eigen::Vector3i c;
     c << 5,7,9;
     compare_vectors(c,b);
-
-    Eigen::Vector3i d;
-    d << 5;
-    d << 7;
-    d << 9;
-    compare_vectors(d,b);
-    // std::cout << c << std::endl;
-    // std::cout << d << std::endl;
-    // compare_matrices(c,d);
 }

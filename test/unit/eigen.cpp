@@ -9,19 +9,19 @@ using namespace NRG;
 
 TEST(Eigen, constructor) { // NOLINT
   {
-    Eigen<double> e;
+    NRG::Eigen<double> e;
     EXPECT_EQ(e.getnrcomputed(), 0);
     EXPECT_EQ(e.getdim(), 0);
   }
   {
-    Eigen<double> e(2,3);
+    NRG::Eigen<double> e(2,3);
     EXPECT_EQ(e.getnrcomputed(), 2);
     EXPECT_EQ(e.getdim(), 3);
   }
 }
 
 TEST(Eigen, get) { // NOLINT
-  Eigen<double> e(5,8);
+  NRG::Eigen<double> e(5,8);
   e.truncate_prepare(2);
   EXPECT_EQ(e.getnrcomputed(), 5);
   EXPECT_EQ(e.getdim(), 8);
@@ -39,7 +39,7 @@ TEST(Eigen, get) { // NOLINT
 using EVEC = ublas::vector<double>;
 
 TEST(Eigen, diagonal) { // NOLINT
-  Eigen<double> e(3,3);
+  NRG::Eigen<double> e(3,3);
   EVEC v(3);
   v[0] = 1.0;
   v[1] = 2.0;
@@ -56,7 +56,7 @@ TEST(Eigen, diagonal) { // NOLINT
 }
 
 TEST(Eigen, io) { // NOLINT
-  Eigen<double> e(2,2);
+  NRG::Eigen<double> e(2,2);
   std::ostringstream oss;
   boost::archive::binary_oarchive oa(oss);
   e.value_orig[0] = 1;
@@ -69,7 +69,7 @@ TEST(Eigen, io) { // NOLINT
 }
 
 TEST(Eigen, hdf5io) { // NOLINT
-  Eigen<double> e(2,2);
+  NRG::Eigen<double> e(2,2);
   e.value_orig[0] = 1;
   auto h5 = H5Easy::File("Eigen.h5", H5Easy::File::Overwrite);
   e.h5save(h5, "test", false);
