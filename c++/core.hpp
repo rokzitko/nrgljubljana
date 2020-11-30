@@ -40,12 +40,14 @@ namespace NRG {
 // Determine the ranges of index r
 template<typename S>
 SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
-                                       const Symmetry<S> *Sym) : ancestors(ancestors) {
-  for (const auto &[i, anc] : ancestors | ranges::views::enumerate)
-    dims.push_back(Sym->triangle_inequality(I, anc, Sym->QN_subspace(i)) ? diagprev.size_subspace(anc) : 0);
+                                       const Symmetry<S> *Sym, const bool ignore_inequality) : ancestors(ancestors) {
+  for (const auto &[i, anc] : ancestors | ranges::views::enumerate) {
+    const bool coupled = Sym->triangle_inequality(I, anc, Sym->QN_subspace(i));
+    dims.push_back(coupled || ignore_inequality? diagprev.size_subspace(anc) : 0);
+  }
   // The triangle inequality test here is *required*. There are cases where a candidate subspace exists (as generated
-  // from the In vector as one of the "combinations"), but it is actually decoupled, because the triangle inequality
-  // is not satisfied.
+  // from the In vector as one of the "combinations"), but it is actually decoupled from space I, because the
+  // triangle inequality is not satisfied. [Set ignore_inequality=true to disable the check for testing purposes.]
 }
 
 // Determine the structure of matrices in the new NRG shell
@@ -69,7 +71,7 @@ auto new_subspaces(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
 
 template<typename S>
 Matrix_traits<S> hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
-                                       const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
+                             const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
   auto h = Zero_matrix<S>(rm.total());
@@ -118,18 +120,17 @@ auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef
 }
 
 template<typename S>
-auto do_diag(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, const Output<S> &output,
-             SubspaceStructure &substruct, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, 
+             const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
-  auto tasks = substruct.task_list();
   double diagratio = P.diagratio; // non-const
   DiagInfo<S> diag;
   while (true) {
     try {
       if (step.nrg()) {
         if (!(P.resume && int(step.ndx()) <= P.laststored))
-          diag = diagonalisations(step, operators.opch, coef, diagprev, output, tasks, diagratio, Sym, mpi, mt, P); // compute in first run
+          diag = diagonalisations(step, operators.opch, coef, diagprev, output, tasklist.get(), diagratio, Sym, mpi, mt, P); // compute in first run
         else
           diag = DiagInfo<S>(step.ndx(), P, false); // or read from disk
       }
@@ -137,9 +138,7 @@ auto do_diag(const Step &step, Operators<S> &operators, const Coef<S> &coef, Sta
         diag = DiagInfo<S>(step.ndx(), P, P.removefiles); // read from disk in second run
         diag.subtract_GS_energy(stats.GS_energy);
       }
-      stats.Egs = diag.find_groundstate();
-      if (step.nrg()) // should be done only once!
-        diag.subtract_Egs(stats.Egs);
+      stats.Egs = diag.Egs_subtraction();
       Clusters<S> clusters(diag, P.fixeps);
       truncate_prepare(step, diag, Sym->multfnc(), P);
       break;
@@ -193,12 +192,9 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<typename S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
-                SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
-  stats.total_energy += stats.Egs * step.scale(); // stats.Egs has already been initialized
-  std::cout << "Total energy=" << HIGHPREC(stats.total_energy) << "  Egs=" << HIGHPREC(stats.Egs) << std::endl;
-  stats.rel_Egs[step.ndx()] = stats.Egs;
-  stats.abs_Egs[step.ndx()] = stats.Egs * step.scale();
-  stats.energy_offsets[step.ndx()] = stats.total_energy;
+                const SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, 
+                MemTime &mt, const Params &P) {
+  stats.update(step);
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
@@ -239,9 +235,10 @@ template<typename S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
+  TaskList tasklist{substruct};
   if (P.h5raw)
     substruct.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/structure");
-  auto diag = do_diag(step, operators, coef, stats, diagprev, output, substruct, Sym, mpi, mt, P);
+  auto diag = do_diag(step, operators, coef, stats, diagprev, output, tasklist, Sym, mpi, mt, P);
   after_diag(step, operators, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
   operators.trim_matrices(diag);
   diag.clear_eigenvectors();
@@ -277,9 +274,7 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
     diag = DiagInfo<S>(step.ndx(), P, P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
-  stats.Egs = diag.find_groundstate();
-  if (step.nrg())      
-    diag.subtract_Egs(stats.Egs);
+  stats.Egs = diag.Egs_subtraction();
   truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   SubspaceStructure substruct{};

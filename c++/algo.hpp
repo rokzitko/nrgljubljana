@@ -5,6 +5,7 @@
 #include <memory>
 #include <list>
 #include <functional> // std::function
+#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include "traits.hpp"
 #include "params.hpp"

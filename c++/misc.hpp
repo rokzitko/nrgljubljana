@@ -29,6 +29,18 @@
 
 namespace NRG {
 
+inline auto contains(const std::string &str, const char c) {
+  return str.find(c) != std::string::npos;
+}
+
+// x raised to the power of n
+CONSTFNC inline auto intpow(const int x, const int n) {
+  my_assert(n >= 0);
+  auto res = 1;
+  for (auto i = 1; i <= n; i++) res *= x;
+  return res;
+}
+   
 template<typename T> auto get_back(T &d) { // usually T is list or deque
   if (d.empty()) throw std::runtime_error("Error: List empty! File: "s + (std::string)__FILE__ + " Line: "s +  std::to_string(__LINE__));
   auto i = d.back();
@@ -123,7 +135,7 @@ class string_token {
    std::istringstream iss;
    const std::set<std::string> l;
  public:
-   explicit string_token(std::string s) : iss(s), 
+   explicit string_token(const std::string &s) : iss(s),
      l(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>()) {};
    [[nodiscard]] auto find(const std::string &x) const { return l.count(x) != 0; }
 };
@@ -181,7 +193,7 @@ inline int atoi(const std::string &s) { return std::atoi(s.c_str()); }
 
 // Read data from stream F.
 template <typename T1, typename T2>
-std::vector<std::pair<T1, T2>> readtable(std::string filename, const bool verbose = false) 
+std::vector<std::pair<T1, T2>> readtable(const std::string &filename, const bool verbose = false) 
 {
   auto F = safe_open_for_reading(filename);
   std::vector<std::pair<T1, T2>> v;

@@ -14,6 +14,7 @@
 #include <utility>
 #include <cassert>
 #include <string>
+using namespace std::string_literals;
 #include <cstring>
 #include <algorithm>
 #include <optional>
@@ -79,7 +80,7 @@ class Resample
                     exit(EXIT_SUCCESS);
                 case 'v': verbose = true; break;
                 case 'p': output_precision = atoi(optarg); break;
-                default: throw std::runtime_error("Unknown argument " + c);
+                default: throw std::runtime_error("Unknown argument "s + c);
                 }
             }
             int remaining = argc - optind;

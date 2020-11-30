@@ -26,7 +26,7 @@
 namespace NRG::Broaden {
 
 constexpr double m_SQRTPI = 1.7724538509055160273;
-constexpr double R_1_SQRT2PI = 1.0 / sqrt(2.0 * M_PI);
+const double R_1_SQRT2PI = 1.0 / sqrt(2.0 * M_PI); // sqrt not constexpr on all platforms (yet)
 
 using std::abs; // important!!
 
@@ -65,7 +65,7 @@ void convolve(const std::vector<S> &mesh, std::vector<T> &a, const double sigma,
         const auto y     = mesh[j];
         const auto width = (mesh[j + 1] + mesh[j]) / 2.0 - (mesh[j - 1] + mesh[j]) / 2.0;
         const auto kw    = kernel(x, y, sigma) * width;
-        assert(isfinite(kw));
+        assert(std::isfinite(kw));
         sum += b[j] * kw;
         sum_kernel += kw;
       }
@@ -103,7 +103,7 @@ template<typename T> T trapez(const std::vector<T> &x, const std::vector<T> &y) 
 
 // Create a mesh on which the output spectral function will be computed. a is the accumulation point of the mesh.
 auto make_mesh(const double min, const double max, const double ratio, 
-               const auto a, const bool add_positive = true, const bool add_negative = false) {
+               const double a, const bool add_positive = true, const bool add_negative = false) {
   assert(min < max);
   assert(ratio > 1.0);
   const auto rescale_factor = (max-a)/max;

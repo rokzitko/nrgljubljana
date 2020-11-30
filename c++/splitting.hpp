@@ -34,7 +34,7 @@ template<typename S, typename t_eigen = eigen_traits<S>>
 class Clusters {
  public:
    std::unordered_map<t_eigen, t_eigen> cluster_mapping;
-   // Fix splittings of eigenvalues. Returns true if any changes had been made.
+   // Fix splittings of eigenvalues.
    void fix_it(DiagInfo<S> &diag) {
      for(auto &[I, eig]: diag) {
        for (auto &r : eig.value_zero)

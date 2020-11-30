@@ -18,6 +18,7 @@
 #include <string>
 #include <cstring>
 #include <algorithm>
+#include <cmath>
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
@@ -123,7 +124,7 @@ void readtable(istream &F, XYFUNC &v) {
 
       if (F.fail()) break;
 
-      assert(isfinite(x) && isfinite(y));
+      assert(std::isfinite(x) && std::isfinite(y));
       v.push_back(make_pair(x, y));
     }
   }
@@ -173,7 +174,7 @@ void init(XYFUNC &im) {
 
   sum = gsl_spline_eval_integ(spline, Xmin, Xmax, acc);
 
-  if (!isfinite(sum)) {
+  if (!std::isfinite(sum)) {
     cerr << "Error: Integral is not a finite number." << endl;
     exit(1);
   }

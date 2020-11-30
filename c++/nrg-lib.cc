@@ -9,13 +9,13 @@ void print_about_message() {
 }
 
 // Called from the NRG stand-alone executable
-void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, const Workdir &workdir) {
+void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, std::unique_ptr<Workdir> workdir) {
   MPI_diag mpi(mpienv, mpiw);
   const bool embedded = false;
   if (complex_data())
-    NRG_calculation<std::complex<double>> calc(mpi, workdir, embedded);
+    NRG_calculation<std::complex<double>> calc(mpi, std::move(workdir), embedded);
   else
-    NRG_calculation<double> calc(mpi, workdir, embedded);
+    NRG_calculation<double> calc(mpi, std::move(workdir), embedded);
   mpi.done();
 }
 
@@ -27,9 +27,9 @@ void run_nrg_master(const std::string &dir) {
   auto workdir = set_workdir(dir);
   const bool embedded = true;
   if (complex_data())
-    NRG_calculation<std::complex<double>> calc(mpi, workdir, embedded);
+    NRG_calculation<std::complex<double>> calc(mpi, std::move(workdir), embedded);
   else
-    NRG_calculation<double> calc(mpi, workdir, embedded);
+    NRG_calculation<double> calc(mpi, std::move(workdir), embedded);
 }
 
 void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) {
@@ -38,7 +38,7 @@ void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mp
   DiagParams DP;
   for (;;) {
     if (mpiw.iprobe(master, boost::mpi::any_tag)) { // message can be received.
-      int task;
+      int task = 0;
       const auto status = mpiw.recv(master, boost::mpi::any_tag, task);
       mpilog("Slave " << mpiw.rank() << " received message with tag " << status.tag());
       mpi.check_status(status);

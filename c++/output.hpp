@@ -38,7 +38,7 @@ class ExpvOutput {
      F << std::endl;
    }
    // Label and field names. Label is the first column (typically the temperature).
-   void field_names(const std::string labelname = "T") {
+   void field_names(const std::string &labelname = "T") {
      F << '#' << formatted_output(labelname, P) << ' ';
      std::transform(fields.cbegin(), fields.cend(), std::ostream_iterator<std::string>(F, " "), [this](const auto op) { return formatted_output(op, P); });
      F << std::endl;

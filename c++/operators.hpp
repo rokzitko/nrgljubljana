@@ -23,7 +23,7 @@
 
 namespace NRG {
 
-template<typename S, typename Matrix = Matrix_traits<S>>
+template<typename S, typename t_matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
 class MatrixElements : public std::map<Twoinvar, Matrix> {
  public:
    MatrixElements() = default;
@@ -33,7 +33,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
        const auto I1 = read_one<Invar>(fdata);
        const auto I2 = read_one<Invar>(fdata);
        if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
-         read_matrix(fdata, (*this)[{I1, I2}], it1->second.getnrstored(), it2->second.getnrstored());
+         (*this)[{I1, I2}] = read_matrix<t_matel>(fdata, it1->second.getnrstored(), it2->second.getnrstored());
        else
          throw std::runtime_error("Corrupted input file.");
      }
@@ -91,7 +91,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
          return acc + mult(I) * trace_real(mat); });
      }
    void save(const size_t N, const Params &P, const std::string &prefix) const {
-     const auto fn = P.workdir.rhofn(N, prefix);
+     const auto fn = P.workdir->rhofn(N, prefix);
      std::ofstream MATRIXF(fn, std::ios::binary | std::ios::out);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
      boost::archive::binary_oarchive oa(MATRIXF);
@@ -104,7 +104,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
      MATRIXF.close();
    }
    void load(const size_t N, const Params &P, const std::string &prefix, const bool remove_files) {
-     const auto fn = P.workdir.rhofn(N, prefix);
+     const auto fn = P.workdir->rhofn(N, prefix);
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
@@ -140,7 +140,6 @@ template<typename S>
 class Opch : public std::vector<OpchChannel<S>> {
  public:
    Opch() = default;
-   explicit Opch(const size_t nrch) { this->resize(nrch); } // XXX remove
    explicit Opch(const Params &P) {
       this->resize(P.channels);
       for (auto &oc: *this) {
@@ -149,7 +148,7 @@ class Opch : public std::vector<OpchChannel<S>> {
           o.clear(); // set all ublas matrix elements to zero
       }
    }
-   Opch(std::istream &fdata, const DiagInfo<S> &diag, const Params &P) {
+   explicit Opch(std::istream &fdata, const DiagInfo<S> &diag, const Params &P) {
      this->resize(P.channels);
      for (auto &oc : *this) {
        oc.resize(P.perchannel);

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/serialization/vector.hpp> // for InvType = std::vector<int>
+#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include "portabil.hpp"
 
@@ -56,7 +57,7 @@ class Invar {
    explicit Invar(const int i0) : data{i0} {} // (int) constructor
    explicit Invar(const int i0, const int i1) : data{i0, i1} {} // (int,int) constructor
    explicit Invar(const int i0, const int i1, const int i2) : data{i0, i1, i2} {} // (int,int,int) constructor
-   std::ostream &insertor(std::ostream &os, const std::string delim = " "s) const {
+   std::ostream &insertor(std::ostream &os, const std::string &delim = " "s) const {
      for (size_t i = 0; i < data.size(); i++) os << data[i] << (i != data.size() - 1 ? delim : "");
      return os;
    }

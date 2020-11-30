@@ -8,11 +8,15 @@
 #include <list>
 #include <string>
 #include <cmath>
-#include "misc.hpp" // from_string, parsing code
-#include "workdir.hpp"
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
+#include "misc.hpp" // contains, from_string, parsing code
+#include "workdir.hpp"
 
 namespace NRG {
 
@@ -23,21 +27,18 @@ enum class RUNTYPE { NRG, DMNRG }; // First or second sweep? Used in class Step.
 inline const auto fn_rho {"rho"s};
 inline const auto fn_rhoFDM {"rhofdm"s};
 
-// Base class for parameter containers.
+// Base class for parameter containers
 class parambase {
  protected:
-   std::string _keyword;
-   std::string _desc;
-   std::string _value;
-   
+   const std::string keyword;
+   const std::string desc;
  public:
-   parambase(std::string keyword, std::string desc, std::string defaultv) :
-     _keyword(std::move(keyword)), _desc(std::move(desc)), _value(std::move(defaultv)){};
+   parambase(const std::string &keyword, const std::string &desc) : keyword(keyword), desc(desc) {};
    virtual ~parambase() = default;
-   virtual void setvalue_str(std::string newvalue) = 0;
-   virtual void dump()                             = 0;
-   [[nodiscard]] std::string getkeyword() const { return _keyword; }
-   [[nodiscard]] std::string getdesc() const { return _desc; }
+   virtual void setvalue_str(const std::string &new_value) = 0;
+   virtual void dump(std::ostream &F = std::cout)  = 0;
+   [[nodiscard]] std::string getkeyword() const { return keyword; }
+   [[nodiscard]] std::string getdesc() const { return desc; }
 };
 
 // Templated specialized classes for various storage types (int, double, string, bool)
@@ -45,26 +46,27 @@ template <typename T>
 class param : public parambase {
  private:
    T data;
-   bool defaultval = true;
-   
+   bool is_default = true;
   public:
    // Constructor: keyword is a CASE SENSITIVE name of the parameter, desc is at this time used as in-line
-   // documentation and defaultv is a string containing a default value which is immediately parsed.
-   param(const std::string &keyword, const std::string &desc, const std::string &defaultv, std::list<parambase*> &allparams) :
-     parambase(keyword, desc, defaultv) {
-       data = from_string<T>(_value);
-       for (auto &i : allparams)
+   // documentation and default_value is a string containing a default value which is immediately parsed.
+   // allparams is the list of all parameters.
+   param(const std::string &keyword, const std::string &desc, const std::string &default_value, std::list<parambase*> &allparams) :
+     parambase(keyword, desc) {
+       data = from_string<T>(default_value);
+       for (const auto &i : allparams)
          if (i->getkeyword() == keyword) throw std::runtime_error("param class internal error: keyword conflict.");
-       allparams.push_back((parambase *)this);
+       allparams.push_back(this);
      }
-   void dump() override { std::cout << _keyword << "=" << data << (!defaultval ? " *" : "") << std::endl; }
+   void dump(std::ostream &F = std::cout) override { 
+     F << keyword << "=" << data << (!is_default ? " *" : "") << std::endl;
+   }
    // This line enables to access parameters using an object as a rvalue
    [[nodiscard]] inline operator const T &() const { return data; }
    [[nodiscard]] inline T value() const { return data; }
-   void setvalue_str(std::string newvalue) override {
-     _value     = newvalue;
-     data       = from_string<T>(newvalue);
-     defaultval = false;
+   void setvalue_str(const std::string &new_value) override { // used in parser
+     data       = from_string<T>(new_value);
+     is_default = false;
    }
    void setvalue(const T newdata) { data = newdata; }
    bool operator == (const T &b) const { return data == b; }
@@ -82,7 +84,7 @@ class Params {
   std::list<parambase *> all; // Container for all parameters
 
  public:
-  const Workdir &workdir;
+  std::unique_ptr<Workdir> workdir;
 
   param<std::string> symtype{"symtype", "Symmetry type", "", all}; // S
 
@@ -361,9 +363,6 @@ class Params {
   // if peak's weight is lower than energy*DISCARD_IMMEDIATELY.
   param<double> discard_immediately{"discard_immediately", "Peak clipping on the fly", "1e-16", all}; // N
 
-  // Optimization in 3-pt vertex calculations: drop small terms.
-  param<double> v3mmcutoff{"v3mmcutoff", "Cutoff for small terms", "1e-16", all}; // *
-
   // ********
   // Patching
 
@@ -432,6 +431,9 @@ class Params {
   param<std::string> logstr{"log", "list of tokens to define what to log", "", all}; // N
   param<bool> logall{"logall", "Log everything", "false", all};              // N
 
+  // Returns true if option 'c' is selected for logging
+  auto logletter(const char c) const { return logall ? true : contains(logstr, c); }
+
   // ********************************************
   // Parameters where overrides are rarely needed
 
@@ -484,9 +486,10 @@ class Params {
   // Backwards compatibility parameters
   param<bool> data_has_rescaled_energies{"data_has_rescaled_energies", "Rescaled eigenvalues?", "true", all};
 
-  // *******************************************
-  // Internal parameters, not under user control
+  // **************************************************
+  // Internal parameters, not under direct user control
 
+  bool embedded;           // If true, the code is being called as a library from some application, not stand-alone.
   size_t channels = 0;     // Number of channels
   size_t coeffactor = 0;   // coefchannels = coeffactor * channels (typically coeffactor=1)
   size_t coefchannels = 0; // Number of coefficient sets (typically coefchannels=channels)
@@ -499,17 +502,58 @@ class Params {
   // of 2 is valid for all other symmetry types.
   size_t spin = 2;
 
-  // Returns true if any of the CFS or related spectral function calculations are requested.
-  bool cfs_flags() const { return cfs || fdm; }
+  // Sets 'channels', then sets 'combs' and related parameters accordingly, depending on the spin of the conduction
+  // band electrons. Called from read_data() in read-input.hpp
+  void set_channels(const int channels_) {
+    my_assert(channels_ >= 1);
+    channels = channels_;
+    // Number of tables of coefficients. It is doubled in the case of spin-polarized conduction bands. The first half
+    // corresponds to spin-up, the second half to spin-down. It is quadrupled in the case of full 2x2 matrix structure
+    // in the spin space.
+    if (pol2x2)
+      coeffactor = 4;
+    else if (polarized)
+      coeffactor = 2;
+    else
+      coeffactor = 1;
+    coefchannels = coeffactor * channels;
+    if (symtype == "U1" || symtype == "SU2" || symtype == "DBLSU2") {
+      perchannel = 2; // We distinguish spin-up and spin-down operators.
+    } else if (symtype == "NONE" || symtype == "P" || symtype == "PP") {
+      perchannel = 4; // We distinguish CR/AN and spin UP/DO.
+    } else {
+      perchannel = 1;
+    }
+    my_assert(perchannel >= 1);
+    spin                    = symtype == "SL" || symtype == "SL3" ? 1 : 2;
+    const int statespersite = intpow(2, spin);
+    combs                   = !substeps ? intpow(statespersite, channels) : statespersite;
+    if (logletter('!'))
+      fmt::print("coefchannels={} perchannel={} combs={}", coefchannels, perchannel, combs);
+  }
 
-  bool keep_all_states_in_last_step() const { return lastall || (cfs_flags() && !lastalloverride); }
+  bool cfs_flags() const { return cfs || cfsgt || cfsls; }
+  bool fdm_flags() const { return fdm || fdmgt || fdmls || fdmmats || fdmexpv; }
+  bool dmnrg_flags() const { return dmnrg || dmnrgmats; }
+  bool cfs_or_fdm_flags() const { return cfs_flags() || fdm_flags(); }
+  bool dm_flags() const { return cfs_flags() || fdm_flags() || dmnrg_flags(); }
+  bool keep_all_states_in_last_step() const { return lastall || (cfs_or_fdm_flags() && !lastalloverride); }
+  bool need_rho() const { return cfs_flags() || dmnrg_flags(); }
+  bool need_rhoFDM() const { return fdm_flags(); }
+  bool do_recalc_kept(const RUNTYPE &runtype) const {   // kept: Recalculate using vectors kept after truncation
+    return strategy == "kept" && !(cfs_or_fdm_flags() && runtype == RUNTYPE::DMNRG) && !ZBW; 
+  }
+  bool do_recalc_all(const RUNTYPE &runtype) const {    // all: Recalculate using all vectors
+    return !do_recalc_kept(runtype) && !ZBW; 
+  }
+  bool do_recalc_none() const { return ZBW; }
 
-  // What is the last iteration completed in the previous NRG runs?
-  void init_laststored(const Workdir &workdir) {
+   // What is the last iteration completed in the previous NRG runs?
+  void init_laststored() {
     if (resume) {
       laststored = -1;
       for (size_t N = Ninit; N < Nmax; N++) {
-        const std::string fn = workdir.unitaryfn(N);
+        const std::string fn = workdir->unitaryfn(N);
         std::ifstream F(fn);
         if (F.good())
           laststored = N;
@@ -521,7 +565,7 @@ class Params {
   void validate() {
     my_assert(keep > 1);
     if (keepenergy > 0.0) my_assert(keepmin <= keep);
-    if (dmnrg || cfs_flags()) dm.setvalue(true);
+    if (dm_flags()) dm.setvalue(true);
     my_assert(Lambda > 1.0);
     if (diag == "dsyevr"s || diag =="zheevr"s) {
       my_assert(0.0 < diagratio && diagratio <= 1.0);
@@ -533,16 +577,17 @@ class Params {
     if (chitp_ratio > 0.0) chitp.setvalue(chitp_ratio / betabar);
   }
 
-  void dump() {
+  void dump(std::ostream &F = std::cout) {
     all.sort([](auto a, auto b) { return a->getkeyword() < b->getkeyword(); });
-    std::cout << std::setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
-    for (const auto &i : all) i->dump();
+    F << std::setprecision(std::numeric_limits<double>::max_digits10); // ensure no precision is lost
+    for (const auto &i : all) i->dump(F);
   }
 
-  bool embedded; // If true, the code is being called as a library from some application, not stand-alone.
-
-  Params(const std::string &filename, const std::string &block, const Workdir &workdir, const bool embedded) 
-     : workdir(workdir), embedded(embedded) 
+  explicit Params(const std::string &filename, const std::string &block, 
+         std::unique_ptr<Workdir> workdir_, 
+         const bool embedded,
+         const bool quiet = false )
+     : workdir(std::move(workdir_)), embedded(embedded) 
   {
     if (filename != "") { 
       auto parsed_params = parser(filename, block);
@@ -561,9 +606,14 @@ class Params {
       }
     }
     validate();
-    init_laststored(workdir);
-    dump();
+    init_laststored();
+    if (!quiet) dump();
   }
+  explicit Params() : Params("", "", std::make_unique<Workdir>(), true, true) {} // defaulted version (for testing purposes)
+  Params(const Params &) = delete;
+  Params(Params &&) = delete;
+  Params &operator=(const Params &) = delete;
+  Params &operator=(Params &&) = delete;
 
   // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the
   // energies on the original scale. Also named the "reduced bandwidth".
@@ -591,18 +641,6 @@ class Params {
     return absolute ? 1 : (!substeps ? sqrt(Lambda) : pow(Lambda, 0.5/channels)); // NOLINT
   }
   
-  bool need_rho() const { return cfs || dmnrg; }
-  bool need_rhoFDM() const { return fdm; }
-
-  // Define recalculation strategy
-  bool do_recalc_kept(const RUNTYPE &runtype) const {   // kept: Recalculate using vectors kept after truncation
-    return strategy == "kept" && !(cfs_flags() && runtype == RUNTYPE::DMNRG) && !ZBW; 
-  }
-  bool do_recalc_all(const RUNTYPE &runtype) const {    // all: Recalculate using all vectors
-    return !do_recalc_kept(runtype) && !ZBW; 
-  }
-  bool do_recalc_none() const { return ZBW; }
-
   // Here we set the lowest frequency at which we will evaluate the spectral density. If the value is not predefined
   // in the parameters file, use the smallest scale from the calculation multiplied by P.broaden_min_ratio.
   double get_broaden_min() const { return broaden_min <= 0.0 ? broaden_min_ratio * last_step_scale() : broaden_min; }
@@ -618,9 +656,6 @@ class Params {
   double getEmin() const { return getE0(); }
   double getEx()   const { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
   double getEmax() const { return getE0() * pow(getEfactor(),2); }
-
-  // Returns true if option 'c' is selected for logging
-  bool logletter(char c) const { return (logall ? true : std::string(logstr).find(c) != std::string::npos); }
 
   auto Nall() const { return boost::irange(size_t(Ninit), size_t(Nlen)); }
 };

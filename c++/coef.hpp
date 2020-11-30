@@ -60,7 +60,7 @@ public:
     my_assert(alpha < tabs.size());
     return tabs[alpha].max();
   }
-  void setvalue(const t_ndx N, const t_ch alpha, const t_coef val) {
+  void setvalue(const t_ndx N, const t_ch alpha, const t_coef val) { // used in tridiag.hpp
     my_assert(alpha < tabs.size());
     tabs[alpha].setvalue(N, val);
   }

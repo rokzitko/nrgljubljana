@@ -1,5 +1,6 @@
 #define NRG_EXECUTABLE
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -22,12 +23,12 @@ inline void help(int argc, char **argv, std::string help_message)
   }
 }
 
-Workdir set_workdir(int argc, char **argv) { // not inline!
+auto set_workdir(int argc, char **argv) { // not inline!
   std::string dir = default_workdir; // defined in workdir.h
   if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
   std::vector<std::string> args(argv+1, argv+argc); // NOLINT
   if (args.size() == 2 && args[0] == "-w") dir = args[1];
-  return Workdir(dir);
+  return std::make_unique<Workdir>(dir);
 }
 
 int main(int argc, char **argv) {
@@ -39,7 +40,7 @@ int main(int argc, char **argv) {
     report_openMP();
     help(argc, argv, "Usage: nrg [-h] [-w workdir]");
     auto workdir = set_workdir(argc, argv);
-    run_nrg_master(mpienv, mpiw, workdir);
+    run_nrg_master(mpienv, mpiw, std::move(workdir));
   } else {
     run_nrg_slave(mpienv, mpiw); // slaves do no disk I/O
   }

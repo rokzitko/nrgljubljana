@@ -26,6 +26,7 @@ inline auto dtemp(const std::string &path)
   return w ? std::optional<std::string>(w) : std::nullopt;
 }
 
+// Note: This will remove a directory only if it is empty!
 inline int remove(const std::string &filename) { return std::remove(filename.c_str()); }
 
 class Workdir {
@@ -33,13 +34,15 @@ class Workdir {
    const std::string workdir {};
    bool remove_at_exit {true}; // XXX: tie to P.removefiles?
  public:
-   explicit Workdir(const std::string &dir) : workdir(dtemp(dir).value_or(default_workdir)) {
-     std::cout << "workdir=" << workdir << std::endl << std::endl;
+   explicit Workdir(const std::string &dir, const bool quiet = false) : workdir(dtemp(dir).value_or(default_workdir)) {
+     if (!quiet) std::cout << "workdir=" << workdir << std::endl << std::endl;
    }
+   explicit Workdir() : Workdir(default_workdir, true) {} // defaulted version (for testing purposes)
    Workdir(const Workdir &) = delete;
    Workdir(Workdir &&) = delete;
    Workdir & operator=(const Workdir &) = delete;
    Workdir & operator=(Workdir &&) = delete;
+   [[nodiscard]] auto get() const { return workdir; }
    [[nodiscard]] auto rhofn(const size_t N, const std::string &filename) const {  // density matrix files
      return workdir + "/" + filename + std::to_string(N);
    }
@@ -58,7 +61,7 @@ inline auto set_workdir(const std::string &dir_) {
   std::string dir = default_workdir;
   if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
   if (!dir_.empty()) dir = dir_;
-  return Workdir(dir);
+  return std::make_unique<Workdir>(dir);
 }
 
 } // namespace

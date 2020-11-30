@@ -7,8 +7,11 @@
 #include <utility>
 #include <vector>
 #include <cmath>
-#include "traits.hpp"
+
 #include <range/v3/all.hpp>
+
+#include "traits.hpp"
+#include "io.hpp"
 
 namespace NRG {
 
@@ -16,7 +19,7 @@ namespace NRG {
 template<typename S>
 using t_delta_peak = std::pair<double, weight_traits<S>>;
 
-template<typename S>
+template<typename S, typename t_weight = weight_traits<S>>
 class Spikes : public std::vector<t_delta_peak<S>> {
  public:
    template<typename T>
@@ -24,7 +27,11 @@ class Spikes : public std::vector<t_delta_peak<S>> {
        F << std::setprecision(prec);
        for (const auto &[e, w] : *this) outputxy(F, e, w, imagpart);
      }
-   auto sum_weights() const { return sum2(*this); }
+   [[nodiscard]] auto sum_weights() const { return sum2(*this); }
+   template<typename F>
+     [[nodiscard]] auto sum(const bool invert, F && f) const {
+       return ranges::accumulate(*this, t_weight{}, [&f,invert](auto s, const auto &x){ const auto &[e,w] = x; return s+w*f(invert ? -e : e); });
+     }
 };
 
 #ifndef M_SQRTPI
@@ -79,23 +86,18 @@ inline CONSTFNC double bose_fnc(const double omega, const double T) {
   return d != 0.0 ? 1.0/d : std::numeric_limits<double>::quiet_NaN();
 }
 
-template<typename F, typename S, typename t_weight = weight_traits<S>>
-[[nodiscard]] auto sum(const Spikes<S> &s, const bool invert, F && f) {
-  return ranges::accumulate(s, t_weight{}, [&f,invert](auto s, const auto &x){ const auto &[e,w] = x; return s+w*f(invert ? -e : e); });
-}
-
 // Integrated spectral function with a kernel as in FDT for fermions
 template<typename S>
 CONSTFNC auto fd_fermi(const Spikes<S> &s_neg, const Spikes<S> &s_pos, double const T) {
   auto fnc = [T](const auto x) { return fermi_fnc(x, T); };
-  return sum(s_neg, true, fnc) + sum(s_pos, false, fnc);
+  return s_neg.sum(true, fnc) + s_pos.sum(false, fnc);
 }
 
 // Ditto for bosons
 template<typename S>
 CONSTFNC auto fd_bose(const Spikes<S> &s_neg, const Spikes<S> &s_pos, double const T) {
   auto fnc = [T](const auto x) { return bose_fnc(x, T); };
-  return sum(s_neg, true, fnc) + sum(s_pos, false, fnc);
+  return s_neg.sum(true, fnc) + s_pos.sum(false, fnc);
 }
 
 } // namespace

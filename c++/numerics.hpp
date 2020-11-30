@@ -1,6 +1,9 @@
 // numerics.h - Miscelaneous numerical routines
 // Copyright (C) 2005-2020 Rok Zitko
 
+// This header should be included in all other headers where vector/matrix
+// objects are manipulated.
+
 #ifndef _numerics_hpp_
 #define _numerics_hpp_
 
@@ -11,13 +14,28 @@
 #include <range/v3/all.hpp>
 #include <boost/io/ios_state.hpp>
 #include <boost/math/special_functions/sign.hpp>
+
+// ublas matrix & vector containers
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/symmetric.hpp>
+#include <boost/numeric/ublas/operation.hpp>
+
+// Numeric bindings to BLAS/LAPACK
+#include <boost/numeric/bindings/traits/ublas_vector.hpp>
+#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
+#include <boost/numeric/bindings/atlas/cblas.hpp>
 
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/complex.hpp>
+
+#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include "portabil.hpp"
@@ -27,6 +45,8 @@
 namespace NRG {
 
 using namespace boost::numeric;
+using namespace boost::numeric::ublas; // keep this!
+namespace atlas = boost::numeric::bindings::atlas;
 
 template <typename T>
   using complex_array_ref_t = T(&)[2];
@@ -48,7 +68,6 @@ template<typename U, typename V>
   V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs
     return ranges::accumulate(v, V{}, [](auto sum, const auto el) { return sum+el.second; });
   }
-
  
 [[nodiscard]] inline std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
 [[nodiscard]] inline double conj_me(const double x) { return x; }    // no op
@@ -123,14 +142,6 @@ template<typename M> void check_is_matrix_upper(const ublas::matrix<M> &m) {
       my_assert(m(i, j) == 0.);
 }
 
-// x raised to the power of n
-CONSTFNC inline auto intpow(const int x, const int n) {
-  my_assert(n >= 0);
-  auto res = 1;
-  for (auto i = 1; i <= n; i++) res *= x;
-  return res;
-}
-
 // (-1)^n
 CONSTFNC inline auto psgn(const int n) { return n % 2 == 0 ? 1.0 : -1.0; }
 
@@ -177,26 +188,30 @@ void assert_issquare(const ublas::matrix<T> &m) { my_assert(m.size1() == m.size2
 // Powers, such as (-1)^n, appear in the coupling coefficients.
 CONSTFNC inline double Power(const double i, const double nn) { return std::pow(i, nn); }
 
-// Read 'len' values of type T into a ublas vector<T>.
-template <typename T> ublas::vector<T> read_vector(std::istream &F, const bool nr_is_max_index = false) {
-  const auto nr = read_one<size_t>(F);
-  // nr is either vector dimension or the value of maximum index
-  const auto len = nr_is_max_index ? nr+1 : nr;
-  ublas::vector<T> vec(len);
-  for (auto j = 0; j < len; j++)
+// Read 'size' values of type T into a ublas vector<T>.
+template <typename T> ublas::vector<T> read_vector(std::istream &F, const size_t size) {
+  ublas::vector<T> vec(size);
+  for (auto j = 0; j < size; j++)
     vec[j] = read_one<T>(F);
   if (F.fail()) throw std::runtime_error("read_vector() error. Input file is corrupted.");
   return vec;
 }
 
+// Read values of type T into a ublas vector<T>. 'nr' is either vector dimension or the value of maximum index
+template <typename T> ublas::vector<T> read_vector(std::istream &F, const bool nr_is_max_index = false) {
+  const auto nr = read_one<size_t>(F);
+  const auto len = nr_is_max_index ? nr+1 : nr;
+  return read_vector<T>(F, len);
+}
+
 // Read 'size1' x 'size2' ublas matrix of type T.
-template <typename T> void read_matrix(std::istream &F, ublas::matrix<T> &m, const size_t size1, const size_t size2) {
-  my_assert(F);
-  m = ublas::matrix<T>(size1, size2);
+template <typename T> ublas::matrix<T> read_matrix(std::istream &F, const size_t size1, const size_t size2) {
+  ublas::matrix<T> m(size1, size2);
   for (auto j1 = 0; j1 < size1; j1++)
     for (auto j2 = 0; j2 < size2; j2++)
       m(j1, j2) = assert_isfinite( read_one<T>(F) );
   if (F.fail()) std::runtime_error("read_matrix() error. Input file is corrupted.");
+  return m;
 }
 
 // Check if the value x is real [for complex number calculations].

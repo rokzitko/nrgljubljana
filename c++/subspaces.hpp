@@ -22,7 +22,8 @@ class SubspaceDimensions {
  public:
    SubspaceDimensions() = default;
    template<typename S>
-     SubspaceDimensions(const Invar &, const InvarVec &, const DiagInfo<S> &, const Symmetry<S> *);
+     SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
+                        const Symmetry<S> *Sym, const bool ignore_inequality = false);
    [[nodiscard]] auto combs() const { return dims.size(); } // number of subspaces
    [[nodiscard]] auto rmax(const size_t i) const { // subspace dimension
      my_assert(i < combs());
@@ -60,6 +61,11 @@ class SubspaceDimensions {
      return exists(i1-1) && exists(j1-1); // shift by 1
    }
    [[nodiscard]] Invar ancestor(const size_t i) const { return ancestors[i]; }
+   void dump(std::ostream &F = std::cout) const {
+     my_assert(dims.size() == ancestors.size());
+     for (int i = 0; i < dims.size(); i++)
+       F << "[" << ancestors[i] << "] total=" << dims[i] << std::endl;
+   }
    void h5save(H5Easy::File &fd, const std::string &name) const {
      std::vector<std::string> ancestor_names;
      for (const auto i : range0(combs()))
@@ -79,22 +85,9 @@ class SubspaceStructure : public std::map<Invar, SubspaceDimensions> {
  public:
    SubspaceStructure() = default;
    template<typename S> SubspaceStructure(const DiagInfo<S> &, const Symmetry<S> *);
-   // List of invariant subspaces in which diagonalisations need to be performed
-   [[nodiscard]] std::vector<Invar> task_list() const {
-     std::vector<std::pair<size_t, Invar>> tasks_with_sizes;
-     for (const auto &[I, rm] : *this)
-       if (rm.total())
-         tasks_with_sizes.emplace_back(rm.total(), I);
-     ranges::sort(tasks_with_sizes, std::greater<>()); // sort in the *decreasing* order!
-     auto nr       = tasks_with_sizes.size();
-     auto min_size = tasks_with_sizes.back().first;
-     auto max_size = tasks_with_sizes.front().first;
-     std::cout << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << std::endl;
-     return tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
-   }
-   void dump() const {
+   void dump(std::ostream &F = std::cout) const {
      for(const auto &[I, rm]: *this)
-       std::cout << "rmaxvals(" << I << ")=" << rm << " total=" << rm.total() << std::endl;
+       F << "rmaxvals(" << I << ")=" << rm << " total=" << rm.total() << std::endl;
    }
    [[nodiscard]] auto at_or_null(const Invar &I) const {
      const auto i = this->find(I);
@@ -104,6 +97,29 @@ class SubspaceStructure : public std::map<Invar, SubspaceDimensions> {
      for (const auto &[I, rm]: *this)
        rm.h5save(fd, name + "/" + I.name());
    }
+};
+
+// List of invariant subspaces in which diagonalisations need to be performed
+class TaskList {
+ private:
+   std::vector<std::pair<size_t, Invar>> tasks_with_sizes;
+   std::vector<Invar> tasks;
+ public:
+   void stats(std::ostream &F) {
+     auto nr       = tasks_with_sizes.size();
+     auto min_size = tasks_with_sizes.back().first;
+     auto max_size = tasks_with_sizes.front().first;
+     F << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << std::endl;
+   }
+   explicit TaskList(const SubspaceStructure &structure, std::ostream &F = std::cout) {
+     for (const auto &[I, rm] : structure)
+       if (rm.total())
+         tasks_with_sizes.emplace_back(rm.total(), I);
+     ranges::sort(tasks_with_sizes, std::greater<>()); // sort in the *decreasing* order!
+     stats(F);
+     tasks = tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
+   }
+   [[nodiscard]] std::vector<Invar> get() const { return tasks; }
 };
 
 } // namespace

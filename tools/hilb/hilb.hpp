@@ -374,7 +374,7 @@ class Hilb {
       double x, y;
       F >> x >> y;
       if (!F.fail()) {
-        assert(isfinite(x) && isfinite(y));
+        assert(std::isfinite(x) && std::isfinite(y));
         Xpts.push_back(x);
         Ypts.push_back(y);
         Ipts.push_back(0);
@@ -390,7 +390,7 @@ class Hilb {
     interpolator rho(Xpts, Ypts);
     integrator integr;
     const auto sum = integr(rho, -B, B);
-    if (!isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
+    if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
     if (verbose)std::cout << "Sum=" << sum << std::endl;
   }
 

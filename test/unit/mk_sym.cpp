@@ -8,38 +8,32 @@
 using namespace NRG;
 
 TEST(mk_sym, QS) {
-  Workdir workdir("test_workdir");
-  Params P("", "", workdir, true);
+  Params P;
   auto sym = mk_QS<double>(P);
 }
 
 TEST(mk_sym, QSZ) {
-  Workdir workdir("test_workdir");
-  Params P("", "", workdir, true);
+  Params P;
   auto sym = mk_QSZ<double>(P);
 }
 
 TEST(mk_sym, get) {
-  Workdir workdir("test_workdir");
-  Params P("", "", workdir, true);
+  Params P;
   auto sym = get<double>("QS", P);
 }
 
 TEST(mk_sym, QS_complex) {
-  Workdir workdir("test_workdir");
-  Params P("", "", workdir, true);
+  Params P;
   auto sym = mk_QS<std::complex<double>>(P);
 }
 
 TEST(mk_sym, QSZ_complex) {
-  Workdir workdir("test_workdir");
-  Params P("", "", workdir, true);
+  Params P;
   auto sym = mk_QSZ<std::complex<double>>(P);
 }
 
 TEST(mk_sym, get_complex) {
-  Workdir workdir("test_workdir");
-  Params P("", "param", workdir, true);
+  Params P;
   auto sym = get<std::complex<double>>("QS", P);
 }
 
