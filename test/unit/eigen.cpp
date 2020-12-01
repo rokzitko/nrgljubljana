@@ -25,7 +25,6 @@ TEST(Eigen, get) { // NOLINT
   e.truncate_prepare(2);
   EXPECT_EQ(e.getnrcomputed(), 5);
   EXPECT_EQ(e.getdim(), 8);
-  EXPECT_EQ(e.getnrpost(), 2);
   EXPECT_EQ(e.getnrall(), 5);
   EXPECT_EQ(e.getnrkept(), 2);
   EXPECT_EQ(e.getnrdiscarded(), 3);

@@ -36,16 +36,17 @@ public:
   [[nodiscard]] auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
  private:
   long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
- public:
   [[nodiscard]] auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }     // number of states after truncation
+ public:
   [[nodiscard]] auto getnrall() const { return getnrcomputed(); }                              // all = all computed
   [[nodiscard]] auto getnrkept() const { return getnrpost(); }                                 // # of kept states
   [[nodiscard]] auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }            // # of discarded states
+  [[nodiscard]] auto getnrstored() const  { return value_zero.size(); }                        // number of stored states
   [[nodiscard]] auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
   [[nodiscard]] auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
-  [[nodiscard]] auto getnrstored() const  { return value_zero.size(); }                        // number of stored states
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
+  auto value_zero_kept() const { return ranges::subrange(value_zero.begin(), value_zero.begin() + getnrkept()); }
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
