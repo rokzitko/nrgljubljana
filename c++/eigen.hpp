@@ -19,10 +19,9 @@
 namespace NRG {
 
 // Result of a diagonalisation: eigenvalues and eigenvectorse
-template <typename S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
+template <typename S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
 class Eigen {
 public:
-  using EVEC = ublas::vector<t_eigen>; // XXX: move to traits!
   EVEC value_orig; // eigenvalues as computed
   EVEC value_zero; // eigenvalues with Egs subtracted
   Matrix matrix;   // eigenvectors
