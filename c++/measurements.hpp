@@ -28,14 +28,14 @@ CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S
 template<typename T>
 auto sum_of_exp(T values, const double factor)
 {
-  return ranges::accumulate(values, 0.0, [factor](auto sum, const auto &x){ return sum + exp(-factor*x); });
+  return ranges::accumulate(values, 0.0, {}, [factor](const auto &x){ return exp(-factor*x); });
 }      
 
 // Measure thermodynamic expectation values of singlet operators
 template<typename S, typename MF>
 void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag) {
-  const auto Z = ranges::accumulate(diag, 0.0, [mult, factor](auto total, const auto &d) { const auto &[I, eig] = d;
-                                    return total + mult(I) * sum_of_exp(eig.value_zero, factor); });
+  const auto Z = ranges::accumulate(diag, 0.0, {}, [mult, factor](const auto &d) { const auto &[I, eig] = d;
+                                                   return mult(I) * sum_of_exp(eig.value_zero, factor); });
   for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
   for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
 }

@@ -66,7 +66,7 @@ template<typename T>
 
 template<typename U, typename V>
   V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs
-    return ranges::accumulate(v, V{}, [](auto sum, const auto el) { return sum+el.second; });
+    return ranges::accumulate(v, V{}, {}, [](const auto el) { return el.second; }); // XXX
   }
  
 [[nodiscard]] inline std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
@@ -229,7 +229,7 @@ CONSTFNC inline auto check_real(std::complex<double> z) {
 
 template <typename M> CONSTFNC auto trace_real(const ublas::matrix<M> &m) {
   assert_issquare(m);
-  return ranges::accumulate(range0(m.size2()), 0.0, [&m](auto sum, const auto i){ return sum+check_real(m(i, i)); });
+  return ranges::accumulate(range0(m.size2()), 0.0, {}, [&m](const auto i){ return check_real(m(i, i)); });
 }
 
 inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); }

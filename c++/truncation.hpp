@@ -36,22 +36,10 @@ struct truncate_stats {
   size_t nrall, nrallmult, nrkept, nrkeptmult;
   template <typename S, typename MF> 
   truncate_stats(const DiagInfo<S> &diag, MF mult) {
-    nrall      = ranges::accumulate(diag, 0, [](int n, const auto &d) {
-      const auto &[I, eig] = d;
-      return n + eig.getdim();
-    });
-    nrallmult  = ranges::accumulate(diag, 0, [mult](int n, const auto &d) {
-      const auto &[I, eig] = d;
-      return n + mult(I) * eig.getdim();
-    });
-    nrkept     = ranges::accumulate(diag, 0, [](int n, const auto &d) {
-      const auto &[I, eig] = d;
-      return n + eig.getnrkept();
-    });
-    nrkeptmult = ranges::accumulate(diag, 0, [mult](int n, const auto &d) {
-      const auto &[I, eig] = d;
-      return n + mult(I) * eig.getnrkept();
-    });
+    nrall      = ranges::accumulate(diag, 0, {}, [](const auto &d)     { const auto &[I, eig] = d; return eig.getdim(); });
+    nrallmult  = ranges::accumulate(diag, 0, {}, [mult](const auto &d) { const auto &[I, eig] = d; return mult(I) * eig.getdim(); });
+    nrkept     = ranges::accumulate(diag, 0, {}, [](const auto &d)     { const auto &[I, eig] = d; return eig.getnrkept(); });
+    nrkeptmult = ranges::accumulate(diag, 0, {}, [mult](const auto &d) { const auto &[I, eig] = d; return mult(I) * eig.getnrkept(); });
   }
   void report() { std::cout << nrgdump4(nrkept, nrkeptmult, nrall, nrallmult) << std::endl; }
 };

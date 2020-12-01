@@ -30,7 +30,7 @@ class Spikes : public std::vector<t_delta_peak<S>> {
    [[nodiscard]] auto sum_weights() const { return sum2(*this); }
    template<typename F>
      [[nodiscard]] auto sum(const bool invert, F && f) const {
-       return ranges::accumulate(*this, t_weight{}, [&f,invert](auto s, const auto &x){ const auto &[e,w] = x; return s+w*f(invert ? -e : e); });
+       return ranges::accumulate(*this, t_weight{}, {}, [&f,invert](const auto &x){ const auto &[e,w] = x; return w*f(invert ? -e : e); });
      }
 };
 
@@ -72,8 +72,8 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 // Calculate "moment"-th spectral moment.
 template<typename S, typename t_weight = weight_traits<S>>
 CONSTFNC auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int moment) {
-  auto sumA = ranges::accumulate(s_pos, t_weight{}, [moment](auto s, const auto &x){ const auto &[e,w] = x; return s+w*pow(e,moment); });
-  auto sumB = ranges::accumulate(s_neg, t_weight{}, [moment](auto s, const auto &x){ const auto &[e,w] = x; return s+w*pow(-e,moment); });
+  auto sumA = ranges::accumulate(s_pos, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*pow(e,moment); });
+  auto sumB = ranges::accumulate(s_neg, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*pow(-e,moment); });
   return sumA+sumB;
 }
 
