@@ -26,6 +26,7 @@ CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S
     const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_zero, m.at({I,I}), factor); });
 }
 
+// 'values' is any range we can iterate over
 template<typename T>
 auto sum_of_exp(T values, const double factor)
 {
@@ -72,12 +73,8 @@ void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &
 // calculations, stats.Zchit for chi(T) calculations.
 template<typename S, typename MF>
 auto grand_canonical_Z(const double factor, const DiagInfo<S> &diag, MF mult) {
-  double ZN{};
-  for (const auto &[I, eig]: diag) 
-    for (const auto &i : eig.kept()) // sum over all kept states
-      ZN += mult(I) * exp(-factor * eig.value_zero(i));
-  my_assert(ZN >= 1.0);
-  return ZN;
+  return ranges::accumulate(diag, 0.0, {}, [factor,mult](const auto &x) { const auto &[I, eig] = x; 
+    return mult(I) * sum_of_exp(eig.value_zero_kept(), factor); }); // over kept states ONLY
 }
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
