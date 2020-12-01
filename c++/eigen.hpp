@@ -88,6 +88,9 @@ public:
       m(i, i) = exp(-value_zero(i) * factor);
     return m;
   }
+  template<typename F> auto trace(F fnc, const double factor) const { // Tr[fnc(factor*E) exp(-factor*E)]
+    return ranges::accumulate(value_zero, 0.0, {}, [fnc, factor](const auto x) { return fnc(factor*x) * exp(-factor*x); });
+  }
   void save(boost::archive::binary_oarchive &oa) const {
     oa << value_orig;
     NRG::save(oa, matrix);
@@ -129,12 +132,12 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    [[nodiscard]] auto eigs() const { return *this | boost::adaptors::map_values; }
    [[nodiscard]] auto eigs() { return *this | boost::adaptors::map_values; }
    [[nodiscard]] auto find_groundstate() const {
-     const auto [Iground, eig] = *ranges::min_element(*this, [](const auto a, const auto b) { return a.second.value_orig(0) < b.second.value_orig(0); });
+     const auto [Iground, eig] = *ranges::min_element(*this, {}, [](const auto &a) { return a.second.value_orig(0); });
      const auto Egs = eig.value_orig(0);
      return Egs;
    }
    void subtract_Egs(const t_eigen Egs) {
-     ranges::for_each(this->eigs(), [Egs](auto &eig)       { eig.subtract_Egs(Egs); });
+     ranges::for_each(eigs(), [Egs](auto &eig)       { eig.subtract_Egs(Egs); });
    }
    t_eigen Egs_subtraction() {
      const auto Egs = find_groundstate();
@@ -142,11 +145,11 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      return Egs;
    }
    void subtract_GS_energy(const t_eigen GS_energy) {
-     ranges::for_each(this->eigs(), [GS_energy](auto &eig) { eig.subtract_GS_energy(GS_energy); });
+     ranges::for_each(eigs(), [GS_energy](auto &eig) { eig.subtract_GS_energy(GS_energy); });
    }
    std::vector<t_eigen> sorted_energies() const {
      std::vector<t_eigen> energies;
-     for (const auto &eig: this->eigs())
+     for (const auto &eig: eigs())
        energies.insert(energies.end(), eig.value_zero.begin(), eig.value_zero.end());
      return energies | ranges::move | ranges::actions::sort;
    }
@@ -155,7 +158,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        F << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
    }
    void truncate_perform() {
-     for (auto &[I, eig] : *this) eig.truncate_perform(); // Truncate subspace to appropriate size
+     ranges::for_each(eigs(), [](auto &eig){ eig.truncate_perform(); }); // Truncate subspace to appropriate size
    }
    [[nodiscard]] auto size_subspace(const Invar &I) const {
      const auto f = this->find(I);
@@ -168,22 +171,17 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      return std::make_pair(size_subspace(I1), size_subspace(I2));
    }
    void clear_eigenvectors() {
-     for (auto &eig : this->eigs())
-	     ranges::fill(eig.blocks, Matrix());
+     ranges::for_each(eigs(), [](auto &eig){ ranges::fill(eig.blocks, Matrix()); });
    }
    // Total number of states (symmetry taken into account)
    template <typename MF> auto count_states(MF && mult) const {
-     return ranges::accumulate(*this, 0, [mult](auto n, const auto &x) { const auto &[I, eig] = x; return n + mult(I)*eig.getnrstored(); });
+     return ranges::accumulate(*this, 0, {}, [mult](const auto &x) { const auto &[I, eig] = x; return mult(I)*eig.getnrstored(); });
    }
    [[nodiscard]] auto count_subspaces() const {    // Count non-empty subspaces
-     return ranges::count_if(this->eigs(), [](const auto &eig) { return eig.getnrstored()>0; });
+     return ranges::count_if(eigs(), [](const auto &eig) { return eig.getnrstored()>0; });
    }
-   template<typename F, typename M> auto trace(F fnc, const double factor, M mult) const { // Tr[fnc exp(-factor*E)]
-     auto b = 0.0;
-     for (const auto &[I, eig] : *this)
-       b += mult(I) * ranges::accumulate(eig.value_zero, 0.0, [fnc, factor](auto acc, const auto x) { 
-         const auto betaE = factor * x; return acc + fnc(betaE) * exp(-betaE); });
-     return b;
+   template<typename F, typename M> auto trace(F fnc, const double factor, M mult) const { // Tr[fnc(factor*E) exp(-factor*E)]
+     return ranges::accumulate(*this, 0.0, {}, [fnc, factor, mult](const auto &x) { const auto &[I, eig] = x; return mult(I) * eig.trace(fnc, factor); });
    }
    template <typename MF>
      void states_report(MF && mult) const {
