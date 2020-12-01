@@ -13,15 +13,18 @@
 
 namespace NRG {
 
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_matel = matel_traits<S>>
+auto trace_exp(const Eigen<S> &eig, const Matrix &m, const double factor) { // Tr[exp(-factor*E) m]
+  const auto dim = eig.getnrstored();
+  my_assert(dim == m.size1() && dim == m.size2());
+  return ranges::accumulate(range0(dim), t_matel{}, {}, [&eig, &m, factor](const auto r){ return exp(-factor * eig.value_zero(r)) * m(r, r); });
+}
+   
 template<typename S, typename MF, typename t_matel = matel_traits<S>>
 CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
   t_matel tr{};
-  for (const auto &[I, eig] : diag) {
-    const auto & mI = m.at({I,I});
-    const auto dim = eig.getnrstored();
-    my_assert(dim == mI.size1() && dim == mI.size2());
-    for (const auto r : range0(dim)) tr += mult(I) * exp(-factor * eig.value_zero(r)) * mI(r, r);
-  }
+  for (const auto &[I, eig] : diag)
+    tr += mult(I) * trace_exp(eig, m.at({I,I}), factor);
   return tr; // note: t_expv = t_matel
 }
 
