@@ -19,12 +19,11 @@ auto trace_exp(const ublas::vector<T> &e, const ublas::matrix<S> &m, const doubl
   return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e(r)) * m(r, r); });
 }
    
+// note: t_expv = t_matel, thus the return type is OK
 template<typename S, typename MF, typename t_matel = matel_traits<S>>
 CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
-  t_matel tr{};
-  for (const auto &[I, eig] : diag)
-    tr += mult(I) * trace_exp(eig.value_zero, m.at({I,I}), factor);
-  return tr; // note: t_expv = t_matel
+  return ranges::accumulate(diag, S{}, {}, [&m, &mult, factor](const auto &x){
+    const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_zero, m.at({I,I}), factor); });
 }
 
 template<typename T>
