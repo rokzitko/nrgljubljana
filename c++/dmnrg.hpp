@@ -21,12 +21,7 @@
 #include "store.hpp"
 #include "time_mem.hpp"
 #include "stats.hpp"
-
-// Numeric bindings to BLAS/LAPACK
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
-namespace atlas = boost::numeric::bindings::atlas;
+#include "numerics.hpp"
 
 namespace NRG {
 

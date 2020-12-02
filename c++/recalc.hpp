@@ -49,33 +49,6 @@ inline void h5save_blocks(H5Easy::File &fd, const std::string &name, const DiagI
     h5save_blocks_Eigen(fd, name + I.name(), eig, substruct.at(I));
 }
 
-template<typename S>
-auto finite_size(const ublas::matrix<S> &M) {
-  return M.size1() && M.size2();
-}
-   
-// M += factor * A * B^\dag
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
-  if (finite_size(A) && finite_size(B)) { // if this contributes at all...
-    my_assert(M.size1() == A.size1() && A.size2() == B.size2() && B.size1() == M.size2());
-    my_assert(my_isfinite(factor));
-    atlas::gemm(CblasNoTrans, CblasConjTrans, factor, A, B, t_coef(1.0), M);
-  }
-}
-   
-// M += factor * A * O * B^\dag
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void rotate(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
-  if (finite_size(A) && finite_size(B)) {
-    my_assert(M.size1() == A.size1() && A.size2() == O.size1() && O.size2() == B.size2() && B.size1() == M.size2());
-    my_assert(my_isfinite(factor));
-    Matrix T(O.size1(), B.size1());
-    atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = M*B^\dag
-    atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
-  }
-}
-
 // Recalculates the irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<typename S> template<typename T>
 auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
