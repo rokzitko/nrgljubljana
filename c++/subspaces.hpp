@@ -41,17 +41,23 @@ class SubspaceDimensions {
    [[nodiscard]] auto chunk(const size_t i1) const {
      return std::make_pair(offset(i1-1), rmax(i1-1));
    }
-   [[nodiscard]] auto view(const size_t i) const { // index range in the Hamiltonian matrix
+   [[nodiscard]] auto view(const size_t i) const { // index range in the Hamiltonian matrix // XXX: rename to range
      return boost::irange(offset(i), offset(i)+rmax(i));
    }
    [[nodiscard]] auto view_mma(const size_t i) const {
      return view(i-1); // Mathematica uses 1-based indexing
    }
-   [[nodiscard]] auto uboost_view(const size_t i) const {
+   [[nodiscard]] auto uboost_view(const size_t i) const { // XXX: to be removed
      return ublas::range(offset(i), offset(i)+rmax(i));
    }
-   [[nodiscard]] auto uboost_view_mma(const size_t i) const {
-     return uboost_view(i-1); // Mathematica uses 1-based indexing
+   [[nodiscard]] auto uboost_view_mma(const size_t i1) const {
+     return uboost_view(i1-1); // Mathematica uses 1-based indexing
+   }
+   [[nodiscard]] auto part(const size_t i) const {
+     return std::make_pair(offset(i), offset(i)+rmax(i));
+   }
+   [[nodiscard]] auto part_mma(const size_t i1) const {
+     return part(i1-1); // Mathematica uses 1-based indexing
    }
    [[nodiscard]] auto total() const { return ranges::accumulate(dims, 0); } // total number of states
    // *** Mathematica interfacing: i1,j1 are 1-based

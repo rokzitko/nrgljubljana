@@ -74,7 +74,7 @@ void cdmI(const size_t i,        // Subspace index
   my_assert(rmax == dim);   // Otherwise, rmax must equal dim
   // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match?
   my_assert(nromega <= diagI1.getnrstored());
-  const ublas::matrix_range<const Matrix> U(diagI1.matrix, ublas::range(0, nromega), store[N].at(I1).rmax.uboost_view(i));
+  const auto U = submatrix(diagI1.matrix, {0, nromega}, store[N].at(I1).rmax.part(i));
   rotateU<S>(rhoNEW, factor, U, rhoN);
 }
 

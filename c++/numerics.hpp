@@ -274,6 +274,14 @@ void rotateU(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
   }
 }
 
+inline auto to_ublas_range(const std::pair<size_t,size_t> &p) { return ublas::range(p.first, p.second); }
+
+template<typename S>
+auto submatrix(const ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+{
+  return ublas::matrix_range<const ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
+}
+
 } // namespace
 
 #endif
