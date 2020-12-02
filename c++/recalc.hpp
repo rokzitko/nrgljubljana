@@ -103,7 +103,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
 // one should try to hand optimize.
 template<typename S> template<typename T>
 auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
-                                 const SubspaceStructure &substruct,        // information about the matrix structure
+                                 const SubspaceStructure &substruct, // XXX: drop
                                  const MatrixElements<S> &cold,
                                  const Invar &I1,             // target subspace (bra)
                                  const Invar &Ip,             // target subspace (ket)
@@ -120,16 +120,9 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
     my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
     if (P.logletter('r')) std::cout << nrgdump5(i1, ip, IN1, INp, factor) << std::endl;
     if (!Invar_allowed(IN1) || !Invar_allowed(INp)) continue;
-//    const auto rmax1 = substruct.at(I1).rmax(i1-1);
-//    const auto rmaxp = substruct.at(Ip).rmax(ip-1);
-//    // Proceed if this combination of i1/ip contributes.
-//    if (rmax1 == 0 || rmaxp == 0) continue;
     my_assert(IN1 == ancestor(I1, i1-1) && INp == ancestor(Ip, ip-1));
     const Twoinvar ININ = {IN1, INp};
-    const auto cnt      = cold.count(ININ); // Number of (IN1,INp) subspaces.
-//    my_assert(cnt == 0 || cnt == 1);        // Anything other than 0 or 1 is a bug!
-    if (cnt == 0) continue;
-//    if (P.logletter('r')) std::cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << std::endl;
+    if (cold.count(ININ) == 0) continue;
     rotate<S>(cn, factor, diagI1.Ublock(i1), cold.at(ININ), diagIp.Ublock(ip));
   } // over table
   if (P.logletter('R')) dump_matrix(cn);
