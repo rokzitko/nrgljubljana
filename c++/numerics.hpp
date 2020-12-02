@@ -234,8 +234,8 @@ template <typename M> CONSTFNC auto trace_real(const ublas::matrix<M> &m) {
 
 inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); }
 
-template<typename S>
-auto finite_size(const ublas::matrix<S> &M) {
+template<typename T>
+auto finite_size(const T &M) {
   return M.size1() && M.size2();
 }
    
@@ -256,8 +256,21 @@ void rotate(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, co
     my_assert(M.size1() == A.size1() && A.size2() == O.size1() && O.size2() == B.size2() && B.size1() == M.size2());
     my_assert(my_isfinite(factor));
     Matrix T(O.size1(), B.size1());
-    atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = M*B^\dag
+    atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = O * B^\dag
     atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
+  }
+}
+
+// void rotateU(Matrix &M, const t_coef factor, const Matrix &U, const Matrix &O) {
+// M += factor * U^\dag * O * U
+template<typename S, typename U_type, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
+void rotateU(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
+  if (finite_size(U)) {
+    my_assert(M.size1() == U.size2() && U.size1() == O.size1() && O.size2() == U.size1() && U.size2() == M.size2());
+    my_assert(my_isfinite(factor));
+    Matrix T(U.size2(), O.size2());
+    atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, O, t_coef(0.0), T); // T = U^\dag * O
+    atlas::gemm(CblasNoTrans, CblasNoTrans, factor, T, U, t_coef(1.0), M); // M += factor * T * U
   }
 }
 
