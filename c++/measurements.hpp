@@ -12,12 +12,6 @@
 #include "oprecalc.hpp"
 
 namespace NRG {
-
-template<typename T, typename S>
-auto trace_exp(const ublas::vector<T> &e, const ublas::matrix<S> &m, const double factor) { // Tr[exp(-factor*e) m]
-  my_assert(e.size() == m.size1() && e.size() == m.size2());
-  return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e(r)) * m(r, r); });
-}
    
 // note: t_expv = t_matel, thus the return type is OK
 template<typename S, typename MF, typename t_matel = matel_traits<S>>
@@ -26,13 +20,6 @@ CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S
     const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_zero, m.at({I,I}), factor); });
 }
 
-// 'values' is any range we can iterate over
-template<typename T>
-auto sum_of_exp(T values, const double factor)
-{
-  return ranges::accumulate(values, 0.0, {}, [factor](const auto &x){ return exp(-factor*x); });
-}      
-
 // Measure thermodynamic expectation values of singlet operators
 template<typename S, typename MF>
 void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag) {
@@ -40,16 +27,6 @@ void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a
                                                    return mult(I) * sum_of_exp(eig.value_zero, factor); });
   for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
   for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
-}
-
-template<typename T>
-T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const size_t range)
-{
-  T sum{};
-  for (const auto i : range0(range))
-       for (const auto j : range0(range))
-      sum += A(i, j) * B(j, i);
-  return sum;
 }
 
 template<typename S, typename MF, typename t_matel = matel_traits<S>>

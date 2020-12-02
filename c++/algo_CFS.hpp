@@ -103,7 +103,7 @@ class Algo_CFSgt : virtual public Algo<S> {
          if constexpr (std::is_same_v<S, double>) {
            atlas::gemm(CblasTrans, CblasNoTrans, 1.0, rhoNI1, op1_KT, 0.0, op1_m_rho); // rhoNEW <- rhoNEW + factor T U
          } else {
-           const ublas::matrix<std::complex<double>> conj_op1_KT = conj(op1_KT);
+           const ublas::matrix<std::complex<double>> conj_op1_KT = conj(op1_KT); // XXX: makes a copy!?
            atlas::gemm(CblasTrans, CblasNoTrans, 1.0, rhoNI1, conj_op1_KT, 0.0, op1_m_rho); // rhoNEW <- rhoNEW + factor T U
          }
          for (const auto rk: diagI1.kept()) {                                          // ii-term, Eq. (15), negative frequency excitations

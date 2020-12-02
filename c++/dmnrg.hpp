@@ -75,7 +75,7 @@ void cdmI(const size_t i,        // Subspace index
   // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match?
   my_assert(nromega <= diagI1.getnrstored());
   const auto U = submatrix(diagI1.matrix, {0, nromega}, store[N].at(I1).rmax.part(i));
-  rotateU<S>(rhoNEW, factor, U, rhoN);
+  rotate<S>(rhoNEW, factor, U, rhoN);
 }
 
 // Calculation of the shell-N REDUCED DENSITY MATRICES: Calculate rho at previous iteration (N-1) from rho

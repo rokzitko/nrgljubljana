@@ -95,7 +95,7 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
     my_assert(IN1 == ancestor(I1, i1-1) && INp == ancestor(Ip, ip-1));
     const Twoinvar ININ = {IN1, INp};
     if (cold.count(ININ) == 0) continue;
-    rotate<S>(cn, factor, diagI1.Ublock(i1), cold.at(ININ), diagIp.Ublock(ip));
+    transform<S>(cn, factor, diagI1.Ublock(i1), cold.at(ININ), diagIp.Ublock(ip));
   } // over table
   if (P.logletter('R')) dump_matrix(cn);
   return cn;

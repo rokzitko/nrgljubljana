@@ -251,7 +251,7 @@ void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
    
 // M += factor * A * O * B^\dag
 template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void rotate(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
+void transform(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
   if (finite_size(A) && finite_size(B)) {
     my_assert(M.size1() == A.size1() && A.size2() == O.size1() && O.size2() == B.size2() && B.size1() == M.size2());
     my_assert(my_isfinite(factor));
@@ -260,11 +260,9 @@ void rotate(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, co
     atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
   }
 }
-
-// void rotateU(Matrix &M, const t_coef factor, const Matrix &U, const Matrix &O) {
 // M += factor * U^\dag * O * U
 template<typename S, typename U_type, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void rotateU(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
+void rotate(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
   if (finite_size(U)) {
     my_assert(M.size1() == U.size2() && U.size1() == O.size1() && O.size2() == U.size1() && U.size2() == M.size2());
     my_assert(my_isfinite(factor));
@@ -286,6 +284,29 @@ template<typename S>
 auto submatrix(ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
   return ublas::matrix_range<ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
+}
+
+template<typename T, typename S>
+auto trace_exp(const ublas::vector<T> &e, const ublas::matrix<S> &m, const double factor) { // Tr[exp(-factor*e) m]
+  my_assert(e.size() == m.size1() && e.size() == m.size2());
+  return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e(r)) * m(r, r); });
+}
+
+// 'values' is any range we can iterate over
+template<typename T>
+auto sum_of_exp(T values, const double factor) // sum exp(-factor*x)
+{
+  return ranges::accumulate(values, 0.0, {}, [factor](const auto &x){ return exp(-factor*x); });
+}      
+
+template<typename T>
+T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const size_t range) // Tr[AB]
+{
+  T sum{};
+  for (const auto i : range0(range))
+       for (const auto j : range0(range))
+      sum += A(i, j) * B(j, i);
+  return sum;
 }
 
 } // namespace
