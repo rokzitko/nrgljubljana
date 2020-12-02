@@ -56,7 +56,7 @@ auto finite_size(const ublas::matrix<S> &M) {
    
 // M += factor * A * B^\dag
 template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void ABdag(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
+void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
   if (finite_size(A) && finite_size(B)) { // if this contributes at all...
     my_assert(M.size1() == A.size1() && A.size2() == B.size2() && B.size1() == M.size2());
     my_assert(my_isfinite(factor));
@@ -67,11 +67,13 @@ void ABdag(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
 // M += factor * A * O * B^\dag
 template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void rotate(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
-  my_assert(M.size1() == A.size1() && A.size2() == O.size1() && O.size2() == B.size2() && B.size1() == M.size2());
-  my_assert(my_isfinite(factor));
-  Matrix T(O.size1(), B.size1());
-  atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = M*B^\dag
-  atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
+  if (finite_size(A) && finite_size(B)) {
+    my_assert(M.size1() == A.size1() && A.size2() == O.size1() && O.size2() == B.size2() && B.size1() == M.size2());
+    my_assert(my_isfinite(factor));
+    Matrix T(O.size1(), B.size1());
+    atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = M*B^\dag
+    atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
+  }
 }
 
 // Recalculates the irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
@@ -90,7 +92,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
   Matrix f = Matrix(dim1, dimp, 0);
   // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
   for (const auto &[i1, ip, factor]: table)
-    ABdag<S>(f, factor, diagI1.Ublock(i1), diagIp.Ublock(ip));
+    product<S>(f, factor, diagI1.Ublock(i1), diagIp.Ublock(ip));
   if (P.logletter('F')) dump_matrix(f);
   return f;
 }
@@ -118,33 +120,17 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
     my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
     if (P.logletter('r')) std::cout << nrgdump5(i1, ip, IN1, INp, factor) << std::endl;
     if (!Invar_allowed(IN1) || !Invar_allowed(INp)) continue;
-    const auto rmax1 = substruct.at(I1).rmax(i1-1);
-    const auto rmaxp = substruct.at(Ip).rmax(ip-1);
-    // Proceed if this combination of i1/ip contributes.
-    if (rmax1 == 0 || rmaxp == 0) continue;
+//    const auto rmax1 = substruct.at(I1).rmax(i1-1);
+//    const auto rmaxp = substruct.at(Ip).rmax(ip-1);
+//    // Proceed if this combination of i1/ip contributes.
+//    if (rmax1 == 0 || rmaxp == 0) continue;
     my_assert(IN1 == ancestor(I1, i1-1) && INp == ancestor(Ip, ip-1));
     const Twoinvar ININ = {IN1, INp};
     const auto cnt      = cold.count(ININ); // Number of (IN1,INp) subspaces.
-    my_assert(cnt == 0 || cnt == 1);        // Anything other than 0 or 1 is a bug!
-    // If triangle inequality is not satisfied and there are indeed no states for the given subspace pair,
-    // this is OK and we just skip this case.
-    const bool triangle = triangle_inequality(IN1, Iop, INp);
-    if (!triangle && cnt == 0) continue;
-    // There are further exceptions when a subspace might not contribute. Some subspaces might not exist at low iteration
-    // steps. 
+//    my_assert(cnt == 0 || cnt == 1);        // Anything other than 0 or 1 is a bug!
     if (cnt == 0) continue;
-    // Exceptions handled by now. The contribution should have a final prefactor.
-    my_assert(my_isfinite(factor));
-    if (P.logletter('r')) std::cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << std::endl;
-    // RECALL: rmax1 - dimension of the subspace of invariant subspace I1 spanned by the states originating from the
-    //  combination |I1>_i1, where i1=1...P.combs. It is clearly equal to the dimension of the invariant subspace IN1
-    //  from the previous (N-th) iteration.
-    const Matrix &m = cold.at(ININ);     // m: irreducible elements at previous stage
-    my_assert(rmax1 == m.size1() && rmaxp == m.size2());
-    const Matrix &U1 = diagI1.blocks[i1-1]; // offset 1.. argh!
-    const Matrix &Up = diagIp.blocks[ip-1];
-    // &&&& Performace hot-spot. Ensure that you're using highly optimised BLAS library.
-    rotate<S>(cn, factor, U1, m, Up);
+//    if (P.logletter('r')) std::cout << "Contributes: rmax1=" << rmax1 << " rmaxp=" << rmaxp << std::endl;
+    rotate<S>(cn, factor, diagI1.Ublock(i1), cold.at(ININ), diagIp.Ublock(ip));
   } // over table
   if (P.logletter('R')) dump_matrix(cn);
   return cn;
@@ -161,7 +147,7 @@ void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag, // XXX: pass Eigen ins
                                  const t_coef value) const
 {
   const auto &diagI = diag.at(I);
-  ABdag<S>(m, value, diagI.Ublock(i1), diagI.Ublock(ip));
+  product<S>(m, value, diagI.Ublock(i1), diagI.Ublock(ip));
 }
 
 } // namespace
