@@ -23,6 +23,18 @@
 
 namespace NRG {
 
+template<typename S>
+auto trim_matrix(ublas::matrix<S> &mat, const size_t new_size1, const size_t new_size2) {
+  const auto old_size1 = mat.size1();
+  const auto old_size2 = mat.size2();
+  if (old_size1 == 0 || old_size2 == 0) return;
+  my_assert(new_size1 <= old_size1 && new_size2 <= old_size2);
+  if (new_size1 == old_size1 && new_size2 == old_size2) return; // Trimming not necessary!!
+  const auto sub = submatrix(mat, {0, new_size1}, {0, new_size2});
+  ublas::matrix<S> mat2 = sub;
+  mat.swap(mat2);
+} 
+
 template<typename S, typename t_matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
 class MatrixElements : public std::map<Twoinvar, Matrix> {
  public:
@@ -45,17 +57,8 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
    void trim(const DiagInfo<S> &diag) {
      for (auto &[II, mat] : *this) {
        const auto &[I1, I2] = II;
-       // Current matrix dimensions
-       const auto size1 = mat.size1();
-       const auto size2 = mat.size2();
-       if (size1 == 0 || size2 == 0) continue;
-       const auto &[nr1, nr2] = diag.dims(I1, I2); // Target matrix dimensions
-       my_assert(nr1 <= size1 && nr2 <= size2);
-       if (nr1 == size1 && nr2 == size2)           // Trimming not necessary!!
-         continue;
-       auto m2 = submatrix(mat, {0, nr1}, {0, nr2});
-       Matrix m2new = m2;
-       mat.swap(m2new);
+       const auto &[dim1, dim2] = diag.dims(I1, I2); // Target matrix dimensions
+       trim_matrix(mat, dim1, dim2);
      }
    }
    std::ostream &insertor(std::ostream &os) const {
