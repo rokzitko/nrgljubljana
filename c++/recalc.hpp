@@ -21,10 +21,9 @@ inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
   const auto combs = sub.combs();
   e.blocks.resize(combs);
   const auto nr = e.getnrstored(); // nr. of eigenpairs
-  my_assert(nr > 0);
-  my_assert(nr <= e.getdim()); // getdim -> length of eigenvectors
+  my_assert(0 < nr && nr <= e.getdim()); // dim = length of eigenvectors
   for (const auto block: range0(combs)) {
-    ublas::matrix_range<Matrix> Up(e.matrix, ublas::range(0, nr), sub.uboost_view(block));
+    const auto Up = submatrix(e.matrix, {0, nr}, sub.part(block));
     e.blocks[block] = Up;
   }
   e.matrix = Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!

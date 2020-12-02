@@ -47,12 +47,6 @@ class SubspaceDimensions {
    [[nodiscard]] auto view_mma(const size_t i) const {
      return view(i-1); // Mathematica uses 1-based indexing
    }
-   [[nodiscard]] auto uboost_view(const size_t i) const { // XXX: to be removed
-     return ublas::range(offset(i), offset(i)+rmax(i));
-   }
-   [[nodiscard]] auto uboost_view_mma(const size_t i1) const {
-     return uboost_view(i1-1); // Mathematica uses 1-based indexing
-   }
    [[nodiscard]] auto part(const size_t i) const {
      return std::make_pair(offset(i), offset(i)+rmax(i));
    }

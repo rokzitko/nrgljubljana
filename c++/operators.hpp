@@ -53,7 +53,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
        my_assert(nr1 <= size1 && nr2 <= size2);
        if (nr1 == size1 && nr2 == size2)           // Trimming not necessary!!
          continue;
-       ublas::matrix_range<Matrix> m2(mat, ublas::range(0, nr1), ublas::range(0, nr2));
+       auto m2 = submatrix(mat, {0, nr1}, {0, nr2});
        Matrix m2new = m2;
        mat.swap(m2new);
      }
