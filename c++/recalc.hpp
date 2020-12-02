@@ -88,10 +88,9 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
   const auto & [dim1, dimp]     = diag.dims(I1, Ip);   // # of states in Ip and in I1, i.e. the dimension of the <||f||> matrix.
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   Matrix f = Matrix(dim1, dimp, 0);
-  if (dim1 && dimp)
-    // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
-    for (const auto &[i1, ip, factor]: table)
-      ABdag<S>(f, factor, diagI1.Ublock(i1), diagIp.Ublock(ip));
+  // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
+  for (const auto &[i1, ip, factor]: table)
+    ABdag<S>(f, factor, diagI1.Ublock(i1), diagIp.Ublock(ip));
   if (P.logletter('F')) dump_matrix(f);
   return f;
 }
@@ -162,8 +161,6 @@ void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag, // XXX: pass Eigen ins
                                  const t_coef value) const
 {
   const auto &diagI = diag.at(I);
-//  const auto dim = diagI.getnrstored();
-//  if (dim == 0) return; // XXX: required?
   ABdag<S>(m, value, diagI.Ublock(i1), diagI.Ublock(ip));
 }
 
