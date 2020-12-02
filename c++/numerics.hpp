@@ -282,6 +282,12 @@ auto submatrix(const ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, co
   return ublas::matrix_range<const ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
 }
 
+template<typename S>
+auto submatrix(ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+{
+  return ublas::matrix_range<ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
+}
+
 } // namespace
 
 #endif

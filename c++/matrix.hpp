@@ -45,10 +45,10 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
     // conjugate transpose the contribution!
     const bool conj_transpose = i > j;
     if (conj_transpose) {
-      ublas::matrix_range<Matrix> hsub(h, qq.uboost_view_mma(j), qq.uboost_view_mma(i));
+      auto hsub = submatrix(h, qq.part_mma(j), qq.part_mma(i));
       noalias(hsub) += conj_me(factor_scaled) * herm(mat);
     } else {
-      ublas::matrix_range<Matrix> hsub(h, qq.uboost_view_mma(i), qq.uboost_view_mma(j));
+      auto hsub = submatrix(h, qq.part_mma(i), qq.part_mma(j));
       noalias(hsub) += factor_scaled * mat;
     }
   } else
