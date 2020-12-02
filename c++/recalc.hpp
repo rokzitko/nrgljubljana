@@ -49,10 +49,15 @@ inline void h5save_blocks(H5Easy::File &fd, const std::string &name, const DiagI
     h5save_blocks_Eigen(fd, name + I.name(), eig, substruct.at(I));
 }
 
+template<typename S>
+auto finite_size(const ublas::matrix<S> &M) {
+  return M.size1() && M.size2();
+}
+   
 // M += factor * A * B^\dag
 template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void ABdag(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
-  if (A.size2() && B.size2()) { // if this contributes at all...
+  if (finite_size(A) && finite_size(B)) { // if this contributes at all...
     my_assert(M.size1() == A.size1() && A.size2() == B.size2() && B.size1() == M.size2());
     my_assert(my_isfinite(factor));
     atlas::gemm(CblasNoTrans, CblasConjTrans, factor, A, B, t_coef(1.0), M);
@@ -148,8 +153,8 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
    
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
 template<typename S>
-void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
-                                 const SubspaceStructure &substruct,
+void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag, // XXX: pass Eigen instead
+                                 const SubspaceStructure &substruct, // XXX: drop
                                  const Invar &I,
                                  Matrix &m, // modified, not produced!
                                  const size_t i1,
@@ -157,8 +162,8 @@ void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
                                  const t_coef value) const
 {
   const auto &diagI = diag.at(I);
-  const auto dim = diagI.getnrstored();
-  if (dim == 0) return;
+//  const auto dim = diagI.getnrstored();
+//  if (dim == 0) return; // XXX: required?
   ABdag<S>(m, value, diagI.Ublock(i1), diagI.Ublock(ip));
 }
 
