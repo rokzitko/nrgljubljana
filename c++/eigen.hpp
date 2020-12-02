@@ -54,6 +54,10 @@ public:
   // 'blocks' contains eigenvectors separated according to the invariant subspace from which they originate.
   // Required for using efficient BLAS routines when performing recalculations of the matrix elements.
   std::vector<Matrix> blocks;
+  const Matrix & Ublock(const size_t i) const { // 1-based MMA index, called from recalc_f()
+    my_assert(1 <= i && i <= blocks.size());
+    return blocks[i-1];
+  }
   // Truncate to nrpost states.
   void truncate_prepare(const size_t nrpost_) {
     nrpost = nrpost_;

@@ -17,7 +17,7 @@ namespace NRG {
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
 // completed!
 template<typename S, typename Matrix = Matrix_traits<S>>
-inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const SubspaceDimensions &sub) {
+inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
   const auto combs = sub.combs();
   e.blocks.resize(combs);
   const auto nr = e.getnrstored(); // nr. of eigenpairs
@@ -33,7 +33,7 @@ inline void split_in_blocks_Eigen(const Invar &I, Eigen<S> &e, const SubspaceDim
 template<typename S>
 inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruct) {
   for(auto &[I, eig]: diag)
-    split_in_blocks_Eigen(I, eig, substruct.at(I));
+    split_in_blocks_Eigen(eig, substruct.at(I));
 }
 
 template<typename S>
@@ -49,6 +49,16 @@ inline void h5save_blocks(H5Easy::File &fd, const std::string &name, const DiagI
     h5save_blocks_Eigen(fd, name + I.name(), eig, substruct.at(I));
 }
 
+// M += factor * A * B^\dag
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
+void ABdag(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
+  if (A.size2() && B.size2()) { // if this contributes at all...
+    my_assert(M.size1() == A.size1() && A.size2() == B.size2() && B.size1() == M.size2());
+    my_assert(my_isfinite(factor));
+    atlas::gemm(CblasNoTrans, CblasConjTrans, factor, A, B, t_coef(1.0), M);
+  }
+}
+
 // Recalculates the irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<typename S> template<typename T>
 auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
@@ -62,24 +72,11 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
   const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
   const auto & [dim1, dimp]     = diag.dims(I1, Ip);   // # of states in Ip and in I1, i.e. the dimension of the <||f||> matrix.
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
-  const Twoinvar II = {I1, Ip};
   Matrix f = Matrix(dim1, dimp, 0);
-  if (dim1 && dimp) {
+  if (dim1 && dimp)
     // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
-    for (const auto &[i1, ip, factor]: table) {
-      my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs()); // 1-based input from Mathematica
-      const auto rmax1 = substruct.at(I1).rmax(i1-1); // dimensions of the invariant subspaces (0-based args in Rmaxvals!)
-      const auto rmaxp = substruct.at(Ip).rmax(ip-1);
-      if (!(rmax1 && rmaxp)) continue;
-      if (P.logletter('f')) std::cout << nrgdump5(i1, ip, factor, rmax1, rmaxp) << std::endl;
-      my_assert(my_isfinite(factor) && rmax1 == rmaxp);
-      const Matrix &U1 = diagI1.blocks[i1-1];
-      const Matrix &Up = diagIp.blocks[ip-1];
-      my_assert(U1.size1() == dim1 && Up.size1() == dimp && U1.size2() == Up.size2());
-      my_assert(rmax1 == U1.size2() && rmaxp == Up.size2());
-      atlas::gemm(CblasNoTrans, CblasConjTrans, factor, U1, Up, t_coef(1.0), f);
-    }
-  }
+    for (const auto &[i1, ip, factor]: table)
+      ABdag<S>(f, factor, diagI1.Ublock(i1), diagIp.Ublock(ip));
   if (P.logletter('F')) dump_matrix(f);
   return f;
 }
