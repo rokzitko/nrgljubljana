@@ -54,7 +54,7 @@ class Algo_FDMls : virtual public Algo<S> {
      }
      if (retj > 0 && alli > 0) {
        // rho [retj, retj] x B [K=retj, D=alli]
-       const ublas::matrix_range<const Matrix> op2cut(op2, ublas::range(0, retj), ublas::range(0, alli));
+       const auto op2cut = submatrix(op2, {0, retj}, {0, alli});
        Matrix rho_op2(retj, alli);
        atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
        LOOP_D(i)
@@ -123,7 +123,7 @@ class Algo_FDMgt : virtual public Algo<S> {
      }
      if (allj > 0 && reti > 0) {
        // B [D=allj,K=reti] x rho [reti,reti]
-       const ublas::matrix_range<const Matrix> op2cut(op2, ublas::range(0, allj), ublas::range(0, reti));
+       const auto op2cut = submatrix(op2, {0, allj}, {0, reti});
        Matrix op2_rho(allj, reti);
        atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2cut, rhoi, 0.0, op2_rho);
        LOOP_K(i)
@@ -214,7 +214,7 @@ class Algo_FDMmats : public Algo<S> {
      }
      if (retj > 0 && alli > 0) {
        // rho [retj, retj] x B [retj, alli]
-       const ublas::matrix_range<const Matrix> op2cut(op2, ublas::range(0, retj), ublas::range(0, alli));
+       const auto op2cut = submatrix(op2, {0, retj}, {0, alli});
        Matrix rho_op2(retj, alli);
        atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, rhoj, op2cut, 0.0, rho_op2);
        LOOP_D(i)
@@ -229,7 +229,7 @@ class Algo_FDMmats : public Algo<S> {
      }
      if (allj > 0 && reti > 0) {
         // B [allj,reti] x rho [reti,reti]
-        const ublas::matrix_range<const Matrix> op2cut(op2, ublas::range(0, allj), ublas::range(0, reti));
+        const auto op2cut = submatrix(op2, {0, allj}, {0, reti});
         Matrix op2_rho(allj, reti);
         atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2cut, rhoi, 0.0, op2_rho);
         LOOP_K(i)

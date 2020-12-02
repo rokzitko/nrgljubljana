@@ -44,7 +44,7 @@ class Algo_CFSls : virtual public Algo<S> {
        // iii-term, Eq. (16), positive frequency excitations
        if (op2.size1() && rhoNIp.size1()) {
          Matrix op2_m_rho;
-         const ublas::matrix_range<const Matrix> op2_TK(op2, ublas::range(0, op2.size1()), ublas::range(0, rhoNIp.size1()));
+         const auto op2_TK = submatrix(op2, {0, op2.size1()}, {0, rhoNIp.size1()});
          op2_m_rho = Matrix(op2_TK.size1(), rhoNIp.size2());
          atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2_TK, rhoNIp, 0.0, op2_m_rho); // rhoNEW <- rhoNEW + factor T U
          for (const auto rl: diagI1.discarded()) {
@@ -98,7 +98,7 @@ class Algo_CFSgt : virtual public Algo<S> {
        }
      } else {
        if (rhoNI1.size1() && op1.size2()) {
-         const ublas::matrix_range<const Matrix> op1_KT(op1, ublas::range(0, rhoNI1.size1()), ublas::range(0, op1.size2()));
+         const auto op1_KT = submatrix(op1, {0, rhoNI1.size1()}, {0, op1.size2()});
          Matrix op1_m_rho(rhoNI1.size2(), op1_KT.size2());
          if constexpr (std::is_same_v<S, double>) {
            atlas::gemm(CblasTrans, CblasNoTrans, 1.0, rhoNI1, op1_KT, 0.0, op1_m_rho); // rhoNEW <- rhoNEW + factor T U
