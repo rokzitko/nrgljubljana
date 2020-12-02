@@ -58,6 +58,16 @@ void ABdag(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
     atlas::gemm(CblasNoTrans, CblasConjTrans, factor, A, B, t_coef(1.0), M);
   }
 }
+   
+// M += factor * A * O * B^\dag
+template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
+void rotate(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
+  my_assert(M.size1() == A.size1() && A.size2() == O.size1() && O.size2() == B.size2() && B.size1() == M.size2());
+  my_assert(my_isfinite(factor));
+  Matrix T(O.size1(), B.size1());
+  atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = M*B^\dag
+  atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
+}
 
 // Recalculates the irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<typename S> template<typename T>
@@ -129,16 +139,13 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
     my_assert(rmax1 == m.size1() && rmaxp == m.size2());
     const Matrix &U1 = diagI1.blocks[i1-1]; // offset 1.. argh!
     const Matrix &Up = diagIp.blocks[ip-1];
-    my_assert(U1.size1() == dim1 && U1.size2() == rmax1 && Up.size1() == dimp && Up.size2() == rmaxp);
     // &&&& Performace hot-spot. Ensure that you're using highly optimised BLAS library.
-    Matrix temp(rmax1, dimp);
-    atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), m, Up, t_coef(0.0), temp);
-    atlas::gemm(CblasNoTrans, CblasNoTrans, factor, U1, temp, t_coef(1.0), cn);
+    rotate<S>(cn, factor, U1, m, Up);
   } // over table
   if (P.logletter('R')) dump_matrix(cn);
   return cn;
 }
-
+   
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
 template<typename S>
 void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
@@ -149,20 +156,10 @@ void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag,
                                  const size_t ip,
                                  const t_coef value) const
 {
-  my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
-  const Eigen<S> &diagI = diag.at(I);
+  const auto &diagI = diag.at(I);
   const auto dim = diagI.getnrstored();
   if (dim == 0) return;
-  const auto rmax1 = substruct.at(I).rmax(i1-1);
-  const auto rmaxp = substruct.at(I).rmax(ip-1);
-  my_assert(rmax1 == rmaxp);
-  if (rmax1 == 0 || rmaxp == 0) return;
-  const Matrix &U1 = diagI.blocks[i1-1];
-  const Matrix &Up = diagI.blocks[ip-1];
-  my_assert(U1.size1() == dim && U1.size2() == rmax1);
-  my_assert(Up.size1() == dim && Up.size2() == rmaxp);
-  // m = m + value * U1 * Up^trans
-  atlas::gemm(CblasNoTrans, CblasConjTrans, value, U1, Up, t_coef(1.0), m);
+  ABdag<S>(m, value, diagI.Ublock(i1), diagI.Ublock(ip));
 }
 
 } // namespace
