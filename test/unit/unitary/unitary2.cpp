@@ -10,26 +10,11 @@
 #include <array>
 #include <vector>
 
+#include "compare.hpp"
 using namespace NRG::Unitary;
 using namespace NRG;
 using namespace std::string_literals;
 
-void compare_matrices(const ublas::matrix<double> &m1, const ublas::matrix<double> &m2) {
-    ASSERT_EQ(m1.size1(), m2.size1());
-    ASSERT_EQ(m1.size2(), m2.size2());
-    for(int i = 0; i < m1.size1(); i++)
-        for(int j = 0; j < m1.size2(); j++)
-            EXPECT_EQ(m1(i, j), m2(i, j));
-}
-
-template<typename T>
-void compare_matrices(const std::vector<std::vector<T>> m1, const ublas::matrix<double> &m2){
-    ASSERT_EQ(m2.size1(), m1.size());
-    ASSERT_EQ(m2.size2(), m1[0].size());
-    for(int i = 0; i < m2.size1(); i++)
-        for(int j = 0; j < m2.size2(); j++)
-            EXPECT_EQ(m2(i, j), m1[i][j]);
-}
 
 std::string exec(const char* cmd) {
     std::array<char, 128> buffer;
@@ -64,7 +49,7 @@ class unitaryProdTest : public ::testing::Test {
         ublas::matrix<double> D = ublas::prod(B,C);
         my_result = ublas::prod(A, D);
         func_result = read_matrix("txt/temp_result_matrix.txt");
-        compare_matrices(my_result, func_result);
+        compare(my_result, func_result);
     }
     ublas::matrix<double> A;
     ublas::matrix<double> B;

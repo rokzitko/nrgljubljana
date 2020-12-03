@@ -156,31 +156,31 @@ inline auto get_dims(std::istream &F) {
 
 // Read dim1 x dim2 matrix from stream. Use function next_value to extract consecutive values.
 template<typename FNC>
-auto read_matrix_data(std::istream &F, FNC next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
+auto read_matrix_data(FNC next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
   ublas::matrix<double> M(dim1, dim2);
   for (auto i = 0; i < dim1; i++) {
     for (auto j = 0; j < dim2; j++) {
-      const auto x = next_value(F);
+      const auto x = next_value();
       if (check_is_finite && !std::isfinite(x)) throw std::runtime_error("Non-finite number detected.");
       M(i, j) = x;
     }
   }
-  if (F.fail()) throw std::runtime_error("read_matrix_text() failed. Input corrupted?");
+  // if (F.fail()) throw std::runtime_error("read_matrix_text() failed. Input corrupted?");
   return M;
 }
 
 // Read dim1 x dim2 matrix from stream. Use function next_value to extract consecutive values.
 template<typename FNC>
-auto _eigen_read_matrix_data(std::istream &F, FNC next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
+auto _eigen_read_matrix_data(FNC next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
   Eigen::MatrixXd M(dim1, dim2);
   for (auto i = 0; i < dim1; i++) {
     for (auto j = 0; j < dim2; j++) {
-      const auto x = next_value(F);
+      const auto x = next_value();
       if (check_is_finite && !finite(x)) throw std::runtime_error("Non-finite number detected.");      
       M(i, j) = x;
     }
   }
-  if (F.fail()) throw std::runtime_error("read_matrix_text() failed. Input corrupted?");
+  // if (F.fail()) throw std::runtime_error("read_matrix_text() failed. Input corrupted?");
   return M;
 }
 
@@ -192,7 +192,7 @@ inline auto read_matrix_text(const std::string &filename, const bool verbose = f
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
   F.clear();
   F.seekg (0, std::ios::beg);
-  return read_matrix_data(F, [](auto &F) { return read_one<double>(F); }, dim1, dim2);
+  return read_matrix_data([&F]() { return read_one<double>(F); }, dim1, dim2);
 }
 
 // Read a matrix from stream (text)
@@ -202,7 +202,7 @@ inline auto _eigen_read_matrix_text(const std::string &filename, const bool verb
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
   F.clear();
   F.seekg (0, std::ios::beg);
-  return _eigen_read_matrix_data(F, [](auto &F) { return read_one<double>(F); }, dim1, dim2);
+  return _eigen_read_matrix_data([&F]() { return read_one<double>(F); }, dim1, dim2);
 }
 
 // Read a matrix from stream (binary). Format: two unit32_t for matrix size, followed by
@@ -213,7 +213,7 @@ inline auto read_matrix_bin(const std::string &filename, const bool verbose = fa
   F.read((char *)&dim1, sizeof(uint32_t));
   F.read((char *)&dim2, sizeof(uint32_t));
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
-  return read_matrix_data(F, [](auto &F) { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
+  return read_matrix_data([&F]() { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
 }
 
 // Read a matrix from stream (binary). Format: two unit32_t for matrix size, followed by
@@ -224,7 +224,7 @@ inline auto _eigen_read_matrix_bin(const std::string &filename, const bool verbo
   F.read((char *)&dim1, sizeof(uint32_t));
   F.read((char *)&dim2, sizeof(uint32_t));
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
-  return _eigen_read_matrix_data(F, [](auto &F) { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
+  return _eigen_read_matrix_data([&F]() { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
 }
 
 inline auto read_matrix(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {

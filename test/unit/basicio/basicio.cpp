@@ -2,6 +2,8 @@
 #include <basicio.hpp>
 #include <sstream>
 
+#include "compare.hpp"
+
 using namespace NRG;
 
 TEST(basicio, to_string) {
@@ -47,7 +49,7 @@ TEST(basicio, inserters1) {
     std::set s = {1, 2, 3};
     ss << s;
     EXPECT_EQ(ss.str(), "1 2 3 "); // trailing ws
-  }
+  } 
 }
 
 TEST(basicio, from_string) {
@@ -97,36 +99,10 @@ TEST(basicio, get_dims) {
     EXPECT_THROW(get_dims(file_err), std::runtime_error);
 }
 
-void compare_matrices(const ublas::matrix<double> &m1, const ublas::matrix<double> &m2) {
-    ASSERT_EQ(m1.size1(), m2.size1());
-    ASSERT_EQ(m1.size2(), m2.size2());
-    for(int i = 0; i < m1.size1(); i++)
-        for(int j = 0; j < m1.size2(); j++)
-            EXPECT_EQ(m1(i, j), m2(i, j));
-}
-
-template<typename T>
-void compare_matrices(const std::vector<std::vector<T>> m1, const ublas::matrix<double> &m2){
-    ASSERT_EQ(m2.size1(), m1.size());
-    ASSERT_EQ(m2.size2(), m1[0].size());
-    for(int i = 0; i < m2.size1(); i++)
-        for(int j = 0; j < m2.size2(); j++)
-            EXPECT_EQ(m2(i, j), m1[i][j]);
-}
-
-template <typename T1, typename T2, int N, int M, int K, int L>
-void compare_matrices(Eigen::Matrix<T1,N,M> a, Eigen::Matrix<T2,K,L> b){
-    ASSERT_EQ(a.rows(), b.rows());
-    ASSERT_EQ(a.cols(), b.cols());
-    for(int i = 0; i < a.rows(); i++)
-        for(int j = 0; j < a.cols(); j++)
-            EXPECT_EQ(a(i,j), b(i,j));
-}
-
 TEST(basicio, read_matrix){
     std::vector<std::vector<int>> const ref_matrix = {{31,41,53,46},{12,5,1,41},{5,2,4,7}};
     auto matrix = read_matrix("txt/matrix.txt");
-    compare_matrices(ref_matrix, matrix);
+    compare(ref_matrix, matrix);
 }
 
 TEST(basicio, _eigen_read_matrix){
@@ -135,14 +111,14 @@ TEST(basicio, _eigen_read_matrix){
                   12,5,1,41,
                   5,2,4,7;
     auto matrix = _eigen_read_matrix("txt/matrix.txt");
-    compare_matrices(ref_matrix, matrix);
+    compare(ref_matrix, matrix);
 }
 
 TEST(basicio, save_matrix){
     auto matrix = read_matrix("txt/matrix.txt");
     save_matrix("txt/matrix_temp.txt", matrix);
     auto matrix_temp = read_matrix("txt/matrix_temp.txt");
-    compare_matrices(matrix, matrix_temp);
+    compare(matrix, matrix_temp);
     std::remove("txt/matrix_temp.txt");
 }
 
@@ -150,7 +126,7 @@ TEST(basicio, _eigen_save_matrix){
     auto matrix = _eigen_read_matrix("txt/matrix.txt");
     _eigen_save_matrix("txt/matrix_temp.txt", matrix);
     auto matrix_temp = _eigen_read_matrix("txt/matrix_temp.txt");
-    compare_matrices(matrix, matrix_temp);
+    compare(matrix, matrix_temp);
     std::remove("txt/matrix_temp.txt");
 }
 

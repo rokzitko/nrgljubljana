@@ -12,6 +12,8 @@
 
 #include <h5.hpp>
 
+#include "compare.hpp"
+
 using namespace boost::numeric;
 
 TEST(traits, is_same_v) { // NOLINT
@@ -240,14 +242,7 @@ TEST(h5dump, ublas_matrix_real_part_rect) { // NOLINT
   }
 }
 
-template <typename T1, typename T2, int N, int M, int K, int L>
-void compare_matrices(Eigen::Matrix<T1,N,M> a, Eigen::Matrix<T2,K,L> b){
-    ASSERT_EQ(a.rows(), b.rows());
-    ASSERT_EQ(a.cols(), b.cols());
-    for(int i = 0; i < a.rows(); i++)
-        for(int j = 0; j < a.cols(); j++)
-            EXPECT_EQ(a(i,j), b(i,j));
-}
+
 
 TEST(h5dump, _eigen_dump_matrix) { // NOLINT
   H5Easy::File file("_eigen_ublas_matrix.h5", HighFive::File::Overwrite);
@@ -266,7 +261,7 @@ TEST(h5dump, _eigen_dump_matrix) { // NOLINT
   auto dataset = file.getDataSet("/path");
   Eigen::MatrixXd r;
   dataset.read(r);
-  compare_matrices(w,r);
+  compare(w,r);
 }
 
 TEST(h5dump, eigen_matrix_real_part_rect) { // NOLINT
