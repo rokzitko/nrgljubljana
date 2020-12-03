@@ -23,7 +23,7 @@ class ChainBinning {
        sneg.add(-energy, weight);
    }
    auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
-   template<typename U> friend class SpectrumRealFreq;
+   template<scalar U> friend class SpectrumRealFreq;
 };
 
 template<scalar S, typename t_weight = weight_traits<S>>
@@ -34,7 +34,7 @@ class ChainMatsubara {
  public:
    explicit ChainMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
    void add(const size_t n, const t_weight w) { m.add(n, w); }
-   template<typename U> friend class GFMatsubara;
+   template<scalar U> friend class GFMatsubara;
 };
 
 template<scalar S, typename t_weight = weight_traits<S>>
@@ -45,7 +45,7 @@ class ChainTempDependence {
  public:
    explicit ChainTempDependence(const Params &P) : P(P), v(P) {}
    void add(const double T, const t_weight value) { v.add_value(T, value); }
-   template<typename U> friend class TempDependence;
+   template<scalar U> friend class TempDependence;
 };
 
 // Real-frequency spectral function
