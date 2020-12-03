@@ -1,18 +1,31 @@
 #ifndef _traits_hpp_
 #define _traits_hpp_
 
-#include <type_traits> // is_same_v
+//#include <concepts> // C++20
+#include <complex>
+#include <type_traits> // is_same_v, is_floating_point_v
 
 #include <boost/numeric/ublas/matrix.hpp>
-#include <complex>
 
 namespace NRG {
 
 using namespace boost::numeric;
 
+template <typename T>
+     concept floating_point = std::is_floating_point_v<T>;
+
+template <typename T>
+     struct is_complex : std::false_type {};
+
+template <floating_point T>
+     struct is_complex<std::complex<T>> : std::true_type {};
+
+template <typename T>
+     concept scalar = floating_point<T> || is_complex<T>::value;
+
 // We encapsulate the differences between real-value and complex-value versions of the code in class traits.
 
-template <typename S> struct traits {};
+template <scalar S> struct traits {};
 
 template <> struct traits<double> {
   using t_matel = double;  // type for the matrix elements
@@ -36,13 +49,13 @@ template <> struct traits<std::complex<double>> {
   using Matrix = ublas::matrix<t_matel>;
 };
 
-template <typename S> using matel_traits  = typename traits<S>::t_matel;
-template <typename S> using coef_traits   = typename traits<S>::t_coef;
-template <typename S> using expv_traits   = typename traits<S>::t_expv;
-template <typename S> using eigen_traits  = typename traits<S>::t_eigen;
-template <typename S> using weight_traits = typename traits<S>::t_weight;
-template <typename S> using evec_traits   = typename traits<S>::evec;
-template <typename S> using Matrix_traits = typename traits<S>::Matrix;
+template <scalar S> using matel_traits  = typename traits<S>::t_matel;
+template <scalar S> using coef_traits   = typename traits<S>::t_coef;
+template <scalar S> using expv_traits   = typename traits<S>::t_expv;
+template <scalar S> using eigen_traits  = typename traits<S>::t_eigen;
+template <scalar S> using weight_traits = typename traits<S>::t_weight;
+template <scalar S> using evec_traits   = typename traits<S>::evec;
+template <scalar S> using Matrix_traits = typename traits<S>::Matrix;
 
 } // namespace
 
