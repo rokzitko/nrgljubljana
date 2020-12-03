@@ -38,7 +38,7 @@
 namespace NRG {
 
 // Determine the ranges of index r
-template<typename S>
+template<scalar S>
 SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
                                        const Symmetry<S> *Sym, const bool ignore_inequality) : ancestors(ancestors) {
   for (const auto &[i, anc] : ancestors | ranges::views::enumerate) {
@@ -51,14 +51,14 @@ SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors
 }
 
 // Determine the structure of matrices in the new NRG shell
-template<typename S>
+template<scalar S>
 SubspaceStructure::SubspaceStructure(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
   for (const auto &I : new_subspaces(diagprev, Sym))
     (*this)[I] = SubspaceDimensions{I, Sym->ancestors(I), diagprev, Sym};
 }
 
 // Subspaces for the new iteration
-template<typename S>
+template<scalar S>
 auto new_subspaces(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
   std::set<Invar> subspaces;
   for (const auto &I : diagprev.subspaces()) {
@@ -69,7 +69,7 @@ auto new_subspaces(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
   return subspaces;
 }
 
-template<typename S>
+template<scalar S>
 Matrix_traits<S> hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
                              const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
@@ -87,7 +87,7 @@ Matrix_traits<S> hamiltonian(const Step &step, const Invar &I, const Opch<S> &op
   return h;
 }
 
-template<typename S>
+template<scalar S>
 auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
                              const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
   DiagInfo<S> diagnew;
@@ -110,7 +110,7 @@ auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S
 }
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
-template<typename S>
+template<scalar S>
 auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
                       const Output<S> &output, const std::vector<Invar> &tasks, const double diagratio, 
                       const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
@@ -119,7 +119,7 @@ auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef
                               : diagonalisations_OpenMP(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P);
 }
 
-template<typename S>
+template<scalar S>
 auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, 
              const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
@@ -156,7 +156,7 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
 // Absolute energies. Must be called in the first NRG run after stats.total_energy has been updated, but before
 // store_transformations(). absenergyG is updated to its correct values (referrenced to absolute 0) in
 // shift_abs_energies().
-template<typename S>
+template<scalar S>
 void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stats) {
   for (auto &eig : diag.eigs()) {
     eig.absenergy_zero = eig.value_zero * step.scale();    // referenced to the lowest energy in current NRG step (not modified later on)
@@ -167,7 +167,7 @@ void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stat
 }
 
 // Operator sumrules
-template<typename S, typename F> 
+template<scalar S, typename F> 
 auto norm(const MatrixElements<S> &m, const Symmetry<S> *Sym, F factor_fnc, const int SPIN) {
   weight_traits<S> sum{};
   for (const auto &[II, mat] : m) {
@@ -178,7 +178,7 @@ auto norm(const MatrixElements<S> &m, const Symmetry<S> *Sym, F factor_fnc, cons
   return 2.0 * sum.real(); // Factor 2: Tr[d d^\dag + d^\dag d] = 2 \sum_{i,j} A_{i,j}^2 !!
 }
 
-template<typename S>
+template<scalar S>
 void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
   // We check sum rules wrt some given spin (+1/2, by convention). For non-spin-polarized calculations, this is
   // irrelevant (0).
@@ -190,7 +190,7 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
 }
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
-template<typename S>
+template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                 const SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, 
                 MemTime &mt, const Params &P) {
@@ -231,7 +231,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
 }
 
 // Perform one iteration step
-template<typename S>
+template<scalar S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
@@ -247,7 +247,7 @@ auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Sta
 }
 
 // Perform calculations with quantities from 'data' file
-template<typename S>
+template<scalar S>
 void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
              Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
@@ -261,7 +261,7 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
 
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
-template<typename S>
+template<scalar S>
 auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
              Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
@@ -282,7 +282,7 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
   return diag;
 }
 
-template<typename S>
+template<scalar S>
 auto nrg_loop(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
               Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   auto diag = diag0;

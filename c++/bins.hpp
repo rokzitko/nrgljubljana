@@ -24,7 +24,7 @@ namespace NRG {
 // during broadening, we may consider "bins" as delta peaks, rather than as interval representations (true bins). In
 // other words, what we are doing here is coarse graining rather than binning!
 
-template<typename S>
+template<scalar S>
 class Bins {
  private:
    using t_weight = weight_traits<S>;
@@ -58,7 +58,7 @@ class Bins {
    auto total_weight() const { return bins.sum_weights(); }
 };
 
-template<typename S>
+template<scalar S>
 void Bins<S>::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the conduction band!!
   emax = (P.emax > 0 ? P.emax : P.SCALE(0) * pow(base, max_bin_shift));
@@ -68,7 +68,7 @@ void Bins<S>::setlimits() {
   log10emax = ceil(log10(emax));
 }
 
-template<typename S>
+template<scalar S>
 void Bins<S>::loggrid() {
   my_assert(P.bins > 0);
   setlimits();
@@ -78,7 +78,7 @@ void Bins<S>::loggrid() {
     loggrid_std();
 }
 
-template<typename S>
+template<scalar S>
 void Bins<S>::loggrid_acc() {
   const double a = P.accumulation;
   my_assert(a > 0.0);
@@ -92,7 +92,7 @@ void Bins<S>::loggrid_acc() {
   my_assert(bins.size() >= 2);
 }
 
-template<typename S>
+template<scalar S>
 void Bins<S>::loggrid_std() {
   const auto nrbins = (size_t)((log10emax - log10emin) * P.bins + 1.0);
   bins.resize(nrbins); // Note: Spikes is a vector type!
@@ -100,7 +100,7 @@ void Bins<S>::loggrid_std() {
 }
 
 // Unbiased assignment of the spectral weight to bins.
-template<typename S>
+template<scalar S>
 inline void Bins<S>::add(const double energy, const t_weight weight) {
   if (abs(weight) < P.discard_immediately * energy) return;
   if (P.accumulation > 0.0)
@@ -109,7 +109,7 @@ inline void Bins<S>::add(const double energy, const t_weight weight) {
     add_std(energy, weight);
 }
 
-template<typename S>
+template<scalar S>
 inline void Bins<S>::add_std(const double energy, const t_weight weight) {
   // Important: if 'energy' is lower than the lower limit of the first interval, the weight is assigned to the first
   // bin. This is especially relevant for collecting the omega=0 data in bosonic correlators. (rz, 25 Oct 2012)
@@ -131,7 +131,7 @@ inline void Bins<S>::add_std(const double energy, const t_weight weight) {
   }
 }
 
-template<typename S>
+template<scalar S>
 inline void Bins<S>::add_acc(const double energy, const t_weight weight) {
   for (const auto i: range0(bins.size()-1)) {
     auto &[e1, w1] = bins[i]; // non-const
@@ -150,7 +150,7 @@ inline void Bins<S>::add_acc(const double energy, const t_weight weight) {
 
 // Merge two bins. They need to agree in the representative energies
 // (first element of the pairs).
-template<typename S>
+template<scalar S>
 void Bins<S>::merge(const Bins<S> &b) {
   my_assert(bins.size() == b.bins.size());
   for (const auto i: range0(bins.size())) {
@@ -162,7 +162,7 @@ void Bins<S>::merge(const Bins<S> &b) {
 }
 
 // Only keep bins which are "heavy" enough.
-template<typename S>
+template<scalar S>
 void Bins<S>::trim() {
   Spikes<S> orig{};
   orig.swap(bins);
@@ -184,7 +184,7 @@ void Bins<S>::trim() {
   if (discarded_weight_abs > discarded_weight_warn_limit) std::cout << "WARNING: we are probably discarding too much weight!" << std::endl;
 }
 
-template<typename S, typename t_weight = weight_traits<S>>
+template<scalar S, typename t_weight = weight_traits<S>>
 class Temp : public Spikes<S> {
  private:
    const Params &P;

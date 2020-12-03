@@ -112,7 +112,7 @@ inline void exit1(const std::string &message) {
   exit(1);
 }
 
-template <typename S> class NRG_calculation {
+template <scalar S> class NRG_calculation {
 private:
   MPI_diag mpi;
   Params P;

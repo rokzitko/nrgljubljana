@@ -14,7 +14,7 @@
 
 namespace NRG {
 
-template<typename S>
+template<scalar S>
 class Oprecalc {
  private:
    RUNTYPE runtype;
@@ -202,7 +202,7 @@ class Oprecalc {
 };
 
 // Recalculate irreducible matrix elements for Wilson chains.
-template<typename S>
+template<scalar S>
 void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, Opch<S> &opch, 
                         const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   const auto section_timing = mt.time_it("recalc f");

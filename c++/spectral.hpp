@@ -16,10 +16,10 @@
 namespace NRG {
 
 // Container for holding spectral information represented by delta peaks. "Weight" is of type t_weight (complex).
-template<typename S>
+template<scalar S>
 using t_delta_peak = std::pair<double, weight_traits<S>>;
 
-template<typename S, typename t_weight = weight_traits<S>>
+template<scalar S, typename t_weight = weight_traits<S>>
 class Spikes : public std::vector<t_delta_peak<S>> {
  public:
    template<typename T>
@@ -70,7 +70,7 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 }
 
 // Calculate "moment"-th spectral moment.
-template<typename S, typename t_weight = weight_traits<S>>
+template<scalar S, typename t_weight = weight_traits<S>>
 CONSTFNC auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int moment) {
   auto sumA = ranges::accumulate(s_pos, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*pow(e,moment); });
   auto sumB = ranges::accumulate(s_neg, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*pow(-e,moment); });
@@ -87,14 +87,14 @@ inline CONSTFNC double bose_fnc(const double omega, const double T) {
 }
 
 // Integrated spectral function with a kernel as in FDT for fermions
-template<typename S>
+template<scalar S>
 CONSTFNC auto fd_fermi(const Spikes<S> &s_neg, const Spikes<S> &s_pos, double const T) {
   auto fnc = [T](const auto x) { return fermi_fnc(x, T); };
   return s_neg.sum(true, fnc) + s_pos.sum(false, fnc);
 }
 
 // Ditto for bosons
-template<typename S>
+template<scalar S>
 CONSTFNC auto fd_bose(const Spikes<S> &s_neg, const Spikes<S> &s_pos, double const T) {
   auto fnc = [T](const auto x) { return bose_fnc(x, T); };
   return s_neg.sum(true, fnc) + s_pos.sum(false, fnc);

@@ -10,7 +10,7 @@ namespace NRG {
 
 using namespace std::complex_literals;
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FT : public Algo<S> {
  private:
    inline static const std::string algoname = "FT";
@@ -44,7 +44,7 @@ class Algo_FT : public Algo<S> {
    ~Algo_FT() { spec.save(); }
 };
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FTmats : public Algo<S> {
  private:
    inline static const std::string algoname = "FTmats";
@@ -86,7 +86,7 @@ class Algo_FTmats : public Algo<S> {
 
 // Calculation of the temperature-dependent linear conductrance G(T) using the linear response theory &
 // impurity-level spectral density.  See Yoshida, Seridonio, Oliveira, arxiv:0906.4289, Eq. (8).
-template<typename S, int n, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, int n, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_GT : public Algo<S> {
  private:
    inline static const std::string algoname = n == 0 ? "GT" : (n == 1 ? "I1T" : "I2T");
@@ -147,7 +147,7 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
 // elements of global operators. Binning needs to be turned off. Note that Zchit needs to be calculated with the same
 // 'temperature' parameter that we use for the exponential functions in the following equation. The output is
 // chi/beta = k_B T chi, as we prefer.
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_CHIT : public Algo<S> {
  private:
    inline static const std::string algoname = "CHIT";

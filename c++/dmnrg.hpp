@@ -26,7 +26,7 @@
 namespace NRG {
 
 // Check if the trace of the density matrix equals 'ref_value'.
-template<typename S, typename MF>
+template<scalar S, typename MF>
 void check_trace_rho(const DensMatElements<S> &m, MF mult, const double ref_value = 1.0) {
   if (!num_equal(m.trace(mult), ref_value))
     throw std::runtime_error("check_trace_rho() failed");
@@ -39,7 +39,7 @@ void check_trace_rho(const DensMatElements<S> &m, MF mult, const double ref_valu
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-template<typename S, typename MF>
+template<scalar S, typename MF>
 auto init_rho(const Step &step, const DiagInfo<S> &diag, MF mult) {
   DensMatElements<S> rho;
   for (const auto &[I, eig]: diag)
@@ -50,7 +50,7 @@ auto init_rho(const Step &step, const DiagInfo<S> &diag, MF mult) {
 
 // Calculation of the contribution from subspace I1 of rhoN (density matrix at iteration N) to rhoNEW (density matrix
 // at iteration N-1)
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void cdmI(const size_t i,        // Subspace index
           const Invar &I1,       // Quantum numbers corresponding to subspace i
           const Matrix &rhoN,    // rho^N
@@ -80,7 +80,7 @@ void cdmI(const size_t i,        // Subspace index
 
 // Calculation of the shell-N REDUCED DENSITY MATRICES: Calculate rho at previous iteration (N-1) from rho
 // at the current iteration (N, rho)
-template<typename S>
+template<scalar S>
 auto calc_densitymatrix_iterN(const DiagInfo<S> &diag, const DensMatElements<S> &rho,
                               const size_t N, const Store<S> &store, const Symmetry<S> *Sym, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
@@ -114,7 +114,7 @@ inline bool already_computed(const std::string &prefix, const Params &P) {
 
 // calc_densitymatrix() is called prior to starting the NRG procedure for the second time. Here we calculate the
 // shell-N density matrices for all iteration steps.
-template<typename S>
+template<scalar S>
 void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, const Symmetry<S> *Sym,
                         MemTime &mt, const Params &P, const std::string filename = fn_rho) {
   if (P.resume && already_computed(filename, P)) return;
@@ -141,7 +141,7 @@ void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, const Sy
 // A. Weichselbaum, J. von Delft, Phys. Rev. Lett. 99, 076402 (2007)
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
-template<typename S, typename MF>
+template<scalar S, typename MF>
 DensMatElements<S> init_rho_FDM(const size_t N, const Store<S> &store, const Stats<S> &stats, 
                                 MF mult, const double T) {
   DensMatElements<S> rhoFDM;
@@ -160,7 +160,7 @@ DensMatElements<S> init_rho_FDM(const size_t N, const Store<S> &store, const Sta
   return rhoFDM;
 }
 
-template<typename S>
+template<scalar S>
 auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::last()
                                   const DiagInfo<S> &diag,
                                   const DensMatElements<S> &rhoFDM, // input
@@ -195,7 +195,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   return rhoFDMPrev;
 }
 
-template<typename S>
+template<scalar S>
 void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const Store<S> &store, const Stats<S> &stats,
                             const Symmetry<S> *Sym, MemTime &mt, const Params &P, const std::string &filename = fn_rhoFDM) {
   if (P.resume && already_computed(filename, P)) return;

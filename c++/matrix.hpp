@@ -27,7 +27,7 @@ namespace NRG {
 // factor  - the coefficient which multiplies the irreducible matrix elements. This coefficient takes into account
 //           the multiplicities.
 // NOTE: the offdiagonal part depends on xi(N), while zeta(N) affect the diagonal part of the Hamiltonian matrix! 
-template<typename S>
+template<scalar S>
 void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const size_t j,
                                              const size_t ch,      // channel number
                                              const size_t fnr,     // extra index for <||f||>, usually 0
@@ -62,7 +62,7 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
 //
 // NOTE: for problems where a given invariant subspace does not correspond to a fixed number of added electrons, a
 // generalized routine should be used. 
-template<typename S>
+template<scalar S>
 void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                                           Matrix &h, const SubspaceDimensions &qq, const double f) const 
 {
@@ -75,14 +75,14 @@ void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const siz
   for (const auto j: qq.view_mma(i)) h(j, j) += sc_zeta * (number - f*avgoccup) / step.scale();
 }
 
-template<typename S>
+template<scalar S>
 void Symmetry<S>::diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                                      Matrix &h, const SubspaceDimensions &qq) const 
 {
   diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 1);
 }
 
-template<typename S>
+template<scalar S>
 void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                                           Matrix &h, const SubspaceDimensions &qq) const 
 {
@@ -91,7 +91,7 @@ void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const siz
 
 // +++ Shift the offdiagonal matrix elements by factor. +++
 
-template<typename S>
+template<scalar S>
 void Symmetry<S>::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor,
                                              Matrix &h, const SubspaceDimensions &qq) const 
 {

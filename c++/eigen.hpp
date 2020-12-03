@@ -19,7 +19,7 @@
 namespace NRG {
 
 // Result of a diagonalisation: eigenvalues and eigenvectorse
-template <typename S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
+template <scalar S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
 class Eigen {
 public:
   EVEC value_orig; // eigenvalues as computed
@@ -118,7 +118,7 @@ public:
 };
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
-template <typename S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
+template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
 class DiagInfo : public std::map<Invar, Eigen<S>> {
  public:
    explicit DiagInfo() = default;

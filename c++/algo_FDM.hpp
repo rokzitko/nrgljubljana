@@ -19,7 +19,7 @@ using namespace std::complex_literals;
   for (size_t n = 0; n < ret##n; n++) {                                                                                                              \
     const t_eigen E##n = diagI##n.absenergyG(n);
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMls : virtual public Algo<S> {
  private:
    inline static const std::string algoname = "FDMls";
@@ -81,7 +81,7 @@ class Algo_FDMls : virtual public Algo<S> {
    std::string rho_type() override { return "rhoFDM"; }
 };
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMgt : virtual public Algo<S> {
  private:
    inline static const std::string algoname = "FDMgt";
@@ -143,7 +143,7 @@ class Algo_FDMgt : virtual public Algo<S> {
    std::string rho_type() override { return "rhoFDM"; }
 };
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
  private:
    inline static const std::string algoname2 = "FDM";
@@ -173,7 +173,7 @@ class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
    std::string rho_type() override { return "rhoFDM"; }
 };
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMmats : public Algo<S> {
  private:
    inline static const std::string algoname = "FDMmats";

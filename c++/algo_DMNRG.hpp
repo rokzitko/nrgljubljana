@@ -12,7 +12,7 @@ using namespace std::complex_literals;
 
 // OPTIMIZATION NOTE: the inner loop should involve the last index.
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
 class Algo_DMNRG : public Algo<S> {
  private:
    inline static const std::string algoname = "DMNRG";
@@ -59,7 +59,7 @@ class Algo_DMNRG : public Algo<S> {
    std::string rho_type() override { return "rho"; }
 };
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
 class Algo_DMNRGmats : public Algo<S> {
  private:
    inline static const std::string algoname = "DMNRGmats";

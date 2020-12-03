@@ -14,14 +14,14 @@
 namespace NRG {
    
 // note: t_expv = t_matel, thus the return type is OK
-template<typename S, typename MF, typename t_matel = matel_traits<S>>
+template<scalar S, typename MF, typename t_matel = matel_traits<S>>
 CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
   return ranges::accumulate(diag, S{}, {}, [&m, &mult, factor](const auto &x){
     const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_zero, m.at({I,I}), factor); });
 }
 
 // Measure thermodynamic expectation values of singlet operators
-template<typename S, typename MF>
+template<scalar S, typename MF>
 void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag) {
   const auto Z = ranges::accumulate(diag, 0.0, {}, [mult, factor](const auto &d) { const auto &[I, eig] = d;
                                                    return mult(I) * sum_of_exp(eig.value_zero, factor); });
@@ -29,14 +29,14 @@ void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a
   for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
 }
 
-template<typename S, typename MF, typename t_matel = matel_traits<S>>
+template<scalar S, typename MF, typename t_matel = matel_traits<S>>
 CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
                                   const Store<S> &store, MF mult) {
   return ranges::accumulate(rhoFDM, t_matel{}, {}, [&n, &s = store[ndx], mult](const auto &x) { const auto [I, rhoI] = x;
     return mult(I) * trace_contract(rhoI, n.at({I,I}), s.at(I).kept()); }); // over kept states ONLY
 }
 
-template<typename S, typename MF>
+template<scalar S, typename MF>
 void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &a, MF mult,
                          const DensMatElements<S> &rhoFDM, const Store<S> &store) {
   for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store, mult);
@@ -48,7 +48,7 @@ void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &
 // i.e. rho = 1/Z_N \sum_{l} exp{-beta E_l} |l;N> <l;N|.  grand_canonical_Z() is also used to calculate stats.Zft,
 // that is used to compute the spectral function with the conventional approach, as well as stats.Zgt for G(T)
 // calculations, stats.Zchit for chi(T) calculations.
-template<typename S, typename MF>
+template<scalar S, typename MF>
 auto grand_canonical_Z(const double factor, const DiagInfo<S> &diag, MF mult) {
   return ranges::accumulate(diag, 0.0, {}, [factor,mult](const auto &x) { const auto &[I, eig] = x; 
     return mult(I) * sum_of_exp(eig.value_zero_kept(), factor); }); // over kept states ONLY
@@ -56,7 +56,7 @@ auto grand_canonical_Z(const double factor, const DiagInfo<S> &diag, MF mult) {
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
 // energies. calc_ZnD() must be called before the second NRG run.
-template<typename S>
+template<scalar S>
 void calc_ZnD(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T) {
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
   for (const auto N : store.Nall()) {
@@ -100,7 +100,7 @@ void calc_ZnD(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, co
   my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
 }
 
-template<typename S>
+template<scalar S>
 void report_ZnD(Stats<S> &stats, const Params &P) {
   for (const auto N : P.Nall())
     std::cout << "ZG[" << N << "]=" << HIGHPREC(mpf_get_d(stats.ZnDG[N])) << std::endl;
@@ -114,7 +114,7 @@ void report_ZnD(Stats<S> &stats, const Params &P) {
 
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
-template<typename S>
+template<scalar S>
 void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T)
 {
   stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
@@ -165,7 +165,7 @@ void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, const Symmetry<S
 // We calculate thermodynamic quantities before truncation to make better use of the available states. Here we
 // compute quantities which are defined for all symmetry types. Other calculations are performed by calculate_TD
 // member functions defined in symmetry.h
-template<typename S>
+template<scalar S>
 void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
                   const Symmetry<S> *Sym, const double additional_factor = 1.0) {
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
@@ -185,7 +185,7 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
   stats.td.save_values();
 }
 
-template<typename S, typename MF>
+template<scalar S, typename MF>
 void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult, const Params &P) {
   stats.Zft = grand_canonical_Z(step.scT(), diag, mult);
   if (std::string(P.specgt) != "" || std::string(P.speci1t) != "" || std::string(P.speci2t) != "")
@@ -194,7 +194,7 @@ void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult,
     stats.Zchit = grand_canonical_Z(1.0/P.chitp, diag, mult); // exp(-x*chitp)
 }
 
-template<typename S, typename MF>
+template<scalar S, typename MF>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                  const DiagInfo<S> &diag, const Operators<S> &operators, const Store<S> &store,
                                  MF mult, MemTime &mt, const Params &P) {
@@ -225,7 +225,7 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
 
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
-template<typename S>
+template<scalar S>
 void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym,
                                 Stats<S> &stats, Output<S> &output) {
   output.dump_all_energies(step.ndx(), diag);

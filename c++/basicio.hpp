@@ -9,11 +9,6 @@
 #include <iostream>
 #include <iomanip> // set_precision
 #include <iterator> // ostream_iterator
-#include "portabil.hpp"
-
-#define HIGHPREC(val) std::setprecision(std::numeric_limits<double>::max_digits10) << (val)
-
-#include <boost/lexical_cast.hpp>
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
@@ -21,9 +16,13 @@
 #include <fmt/ranges.h>
 
 #include <boost/lexical_cast.hpp>
-
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
+
+#include "portabil.hpp"
+#include "traits.hpp"
+
+#define HIGHPREC(val) std::setprecision(std::numeric_limits<double>::max_digits10) << (val)
 
 namespace NRG {
 
@@ -68,7 +67,7 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
   for (const auto &x : vec) os << x << " ";
   return os;
 }
-  
+
 template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::vector<T> &vec){
   for (const auto &x : vec) os << x << " ";
   return os;
@@ -82,7 +81,7 @@ template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::ma
   }
   return os;
 }
-  
+
 // Returns a string with a floating value in fixed (non-exponential) format with N digits of precision after the
 // decimal point.
 inline std::string prec(const double x, const int N)

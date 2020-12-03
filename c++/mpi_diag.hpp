@@ -53,7 +53,7 @@ class MPI_diag {
      }
    }
    // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
-   template<typename S> void send_matrix(const int dest, const ublas::matrix<S> &m) {
+   template<scalar S> void send_matrix(const int dest, const ublas::matrix<S> &m) {
      const auto size1 = m.size1();
      mpiw.send(dest, TAG_MATRIX_SIZE, size1);
      const auto size2 = m.size2();
@@ -64,7 +64,7 @@ class MPI_diag {
        mpiw.send(dest, TAG_MATRIX_LINE, vec);
      }
    }
-   template<typename S> auto receive_matrix(const int source) {
+   template<scalar S> auto receive_matrix(const int source) {
      size_t size1;
      check_status(mpiw.recv(source, TAG_MATRIX_SIZE, size1));
      size_t size2;
@@ -79,12 +79,12 @@ class MPI_diag {
      }
      return m;
    }
-   template<typename S> void send_eigen(const int dest, const Eigen<S> &eig) {
+   template<scalar S> void send_eigen(const int dest, const Eigen<S> &eig) {
      mpilog("Sending eigen from " << mpiw.rank() << " to " << dest);
      mpiw.send(dest, TAG_EIGEN_VEC, eig.value_orig);
      send_matrix<S>(dest, eig.matrix);
    }
-   template<typename S> auto receive_eigen(const int source) {
+   template<scalar S> auto receive_eigen(const int source) {
      mpilog("Receiving eigen from " << source << " on " << mpiw.rank());
      Eigen<S> eig;
      check_status(mpiw.recv(source, TAG_EIGEN_VEC, eig.value_orig));
@@ -92,7 +92,7 @@ class MPI_diag {
      return eig;
    } 
    // Read results from a slave process.
-   template<typename S> std::pair<Invar, Eigen<S>> read_from(const int source) {
+   template<scalar S> std::pair<Invar, Eigen<S>> read_from(const int source) {
      mpilog("Reading results from " << source);
      const auto eig = receive_eigen<S>(source);
      Invar Irecv;
@@ -103,7 +103,7 @@ class MPI_diag {
      return {Irecv, eig};
    }
    // Handle a diagonalisation request
-   template<typename S> void slave_diag(const int master, const DiagParams &DP) {
+   template<scalar S> void slave_diag(const int master, const DiagParams &DP) {
      // 1. receive the matrix and the subspace identification
      auto m = receive_matrix<S>(master);
      Invar I;
@@ -114,7 +114,7 @@ class MPI_diag {
      send_eigen<S>(master, eig);
      mpiw.send(master, TAG_INVAR, I);
    }
-   template<typename S>
+   template<scalar S>
    DiagInfo<S> diagonalisations_MPI(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
                                     const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
        DiagInfo<S> diagnew;

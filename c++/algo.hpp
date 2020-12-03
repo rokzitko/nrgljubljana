@@ -20,7 +20,7 @@ namespace NRG {
 inline const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 
 // Wrapper class for NRG spectral-function algorithms
-template<typename S, typename t_coef = coef_traits<S>, typename Matrix = Matrix_traits<S>>
+template<scalar S, typename t_coef = coef_traits<S>, typename Matrix = Matrix_traits<S>>
 class Algo {
  private:
  public:
@@ -41,7 +41,7 @@ using CheckFnc = std::function<bool(const Invar &, const Invar &, int)>;
 
 // All information about calculating a spectral function: pointers to the operator data, raw spectral data
 // acccumulators, algorithm, etc.
-template <typename S>
+template <scalar S>
 class BaseSpectrum {
  public:
    const MatrixElements<S> &op1, &op2;
@@ -68,8 +68,7 @@ class BaseSpectrum {
      algo->end(step);
    }
 };
-template <typename S>
-using speclist = std::list<BaseSpectrum<S>>;
+template <scalar S> using speclist = std::list<BaseSpectrum<S>>;
 
 inline auto spec_fn(const std::string &name, const std::string &prefix, const std::string &algoname, const bool save = true) {
   if (save) fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname); // Don't show if it's not going to be saved

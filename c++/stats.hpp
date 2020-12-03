@@ -13,7 +13,7 @@
 namespace NRG {
 
 // Structure for storing various statistical quantities calculated during the iteration
-template<typename S, typename t_eigen = eigen_traits<S>, typename t_expv  = expv_traits<S>>
+template<scalar S, typename t_eigen = eigen_traits<S>, typename t_expv  = expv_traits<S>>
 struct Stats {
  public:
    t_eigen Egs{};

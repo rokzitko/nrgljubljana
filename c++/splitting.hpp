@@ -30,7 +30,7 @@ inline bool cluster_splitting(const T &i0, const T &i1) {
   return false;
   }
 
-template<typename S, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename t_eigen = eigen_traits<S>>
 class Clusters {
  public:
    std::unordered_map<t_eigen, t_eigen> cluster_mapping;

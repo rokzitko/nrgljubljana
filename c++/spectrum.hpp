@@ -9,7 +9,7 @@
 
 namespace NRG {
 
-template<typename S, typename t_weight = weight_traits<S>>
+template<scalar S, typename t_weight = weight_traits<S>>
 class ChainBinning {
  private:
    const Params &P;
@@ -26,7 +26,7 @@ class ChainBinning {
    template<typename U> friend class SpectrumRealFreq;
 };
 
-template<typename S, typename t_weight = weight_traits<S>>
+template<scalar S, typename t_weight = weight_traits<S>>
 class ChainMatsubara {
  private:
    const Params &P;
@@ -37,7 +37,7 @@ class ChainMatsubara {
    template<typename U> friend class GFMatsubara;
 };
 
-template<typename S, typename t_weight = weight_traits<S>>
+template<scalar S, typename t_weight = weight_traits<S>>
 class ChainTempDependence {
  private:
    const Params &P;
@@ -49,7 +49,7 @@ class ChainTempDependence {
 };
 
 // Real-frequency spectral function
-template<typename S>
+template<scalar S>
 class SpectrumRealFreq {
  private:
    const std::string name, algoname, filename; // e.g. "A_d-A_d", "FT", "spec_A_d-A_d_dens_FT.dat"
@@ -107,7 +107,7 @@ inline double windowfunction(const double E, const double Emin, const double Ex,
 // Here we perform the actual merging of data using the N/N+2 scheme. Note that we use a windowfunction (see above)
 // to accomplish the smooth combining of data.
 // See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001)
-template<typename S>
+template<scalar S>
 void SpectrumRealFreq<S>::mergeNN2half(Bins<S> &fullspec, const Bins<S> &cs, const Step &step) {
   auto Emin = step.scale() * P.getEmin(); // p
   auto Ex   = step.scale() * P.getEx();   // p Lambda
@@ -127,7 +127,7 @@ void SpectrumRealFreq<S>::mergeNN2half(Bins<S> &fullspec, const Bins<S> &cs, con
   }
 }
 
-template<typename S>
+template<scalar S>
 void SpectrumRealFreq<S>::weight_report(const double imag_tolerance) {
   auto fmt = [imag_tolerance](const auto x) -> std::string { return abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
   const auto twneg = fsneg.total_weight();
@@ -145,7 +145,7 @@ void SpectrumRealFreq<S>::weight_report(const double imag_tolerance) {
 
 // Save binary raw (binned) spectral function. If using complex numbers and P.reim==true, we save triplets
 // (energy,real part,imag part).
-template<typename S>
+template<scalar S>
 void SpectrumRealFreq<S>::savebins() {
   const auto fn = filename + ".bin";
   std::cout << " " << fn;
@@ -177,7 +177,7 @@ inline std::vector<double> make_mesh(const Params &P) {
   return vecE;
 }
 
-template<typename S>
+template<scalar S>
 void SpectrumRealFreq<S>::continuous() {
   using t_weight = weight_traits<S>;
   const double alpha  = P.alpha;
@@ -208,7 +208,7 @@ void SpectrumRealFreq<S>::continuous() {
   densitypos.save(Fdensity, P.prec_xy, P.reim);
 }
 
-template<typename S>
+template<scalar S>
 class GFMatsubara {
  private:
    const std::string name, algoname, filename;
@@ -226,7 +226,7 @@ class GFMatsubara {
    }
 };
 
-template<typename S>
+template<scalar S>
 class TempDependence {
  private:
    const std::string name, algoname, filename;

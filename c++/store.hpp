@@ -19,7 +19,7 @@ namespace NRG {
 
 // Container for all information which needs to be gathered in each invariant subspace.
 // Required for the density-matrix construction.
-template<typename S>
+template<scalar S>
 struct Sub {
   Eigen<S> eig;
   SubspaceDimensions rmax;
@@ -37,7 +37,7 @@ struct Sub {
   }
 };
 
-template<typename S> 
+template<scalar S> 
 class Subs : public std::map<Invar, Sub<S>> {
  public:
    Subs() = default;
@@ -54,7 +54,7 @@ class Subs : public std::map<Invar, Sub<S>> {
    }
 };
 
-template<typename S>
+template<scalar S>
 class Store : public std::vector<Subs<S>> {
  public:
    const size_t Nbegin, Nend; // range of valid indexes

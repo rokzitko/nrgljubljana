@@ -42,7 +42,7 @@ using namespace boost::numeric;
 using namespace boost::numeric::ublas; // keep this!
 namespace atlas = boost::numeric::bindings::atlas;
 
-template<typename T, typename V> 
+template<scalar T, scalar V> 
 void copy_val(const std::vector<T> &eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
   my_assert(eigenvalues.size() >= M);
   if (std::adjacent_find(eigenvalues.begin(), eigenvalues.begin() + M, std::greater<T>()) != eigenvalues.begin() + M)
@@ -55,15 +55,15 @@ void copy_val(const std::vector<T> &eigenvalues, ublas::vector<V>& diagvalues, c
 [[nodiscard]] inline double to_matel(const double x) { return x; }
 [[nodiscard]] inline std::complex<double> to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
 
-template<typename T, typename V>
-void copy_vec(T* eigenvectors, ublas::matrix<V>& diagvectors, const size_t dim, const size_t M)
+template<typename U, scalar S> // U may be _lapack_complex_double
+void copy_vec(U* eigenvectors, ublas::matrix<S>& diagvectors, const size_t dim, const size_t M)
 {
   diagvectors.resize(M, dim);
   for (const auto r : range0(M))
     for (const auto j : range0(dim)) diagvectors(r, j) = to_matel(eigenvectors[dim * r + j]);
 }
 
-template<typename T, typename U, typename S> 
+template<scalar T, typename U, scalar S>
 auto copy_results(const std::vector<T> &eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
 {
   Eigen<S> d(M, dim);
@@ -262,7 +262,7 @@ inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex
   return copy_results<double,lapack_complex_double,std::complex<double>>(eigenvalues, Z.data(), jobz, dim, M);
 }
 
-template<typename S>
+template<scalar S>
 void checkdiag(const Eigen<S> &d,
                const double NORMALIZATION_EPSILON = 1e-12,
                const double ORTHOGONALITY_EPSILON = 1e-12)
@@ -287,7 +287,7 @@ void checkdiag(const Eigen<S> &d,
     }
 }
 
-template<typename M>
+template<scalar M>
   void dump_eigenvalues(const Eigen<M> &d, const size_t max_nr = std::numeric_limits<size_t>::max())
 {
   std::cout << "eig= " << std::setprecision(std::numeric_limits<double>::max_digits10);
@@ -296,14 +296,14 @@ template<typename M>
   std::cout << std::endl;
 }
 
-template<typename M, typename N>
+template<scalar M, scalar N>
   bool has_lesseq_rows(const ublas::matrix<M> &A, const ublas::matrix<N> &B) {
     return A.size1() <= B.size1() && A.size2() == B.size2();
   }
 
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
-template<typename M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, int myrank) {
+template<scalar M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, int myrank) {
   mpilog("diagonalise " << m.size1() << "x" << m.size2() << " " << DP.diag << " " << DP.diagratio);
   Timing timer;
   check_is_matrix_upper(m);

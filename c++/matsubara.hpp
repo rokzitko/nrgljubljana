@@ -28,7 +28,7 @@ inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC
 [[nodiscard]] inline auto wb(const short n, const double T) { return T * M_PI * (2 * n); }
 [[nodiscard]] inline auto wf(const short n, const double T) { return T * M_PI * (2 * n + 1); }
 
-template<typename S, typename t_weight = weight_traits<S>>
+template<scalar S, typename t_weight = weight_traits<S>>
 class Matsubara {
  private:
    using t_temp = typename traits<S>::t_temp;

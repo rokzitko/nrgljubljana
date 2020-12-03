@@ -46,7 +46,7 @@ inline auto parse_datafile_header(std::istream &fdata, const int expected_versio
 
 // Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
 // tridiagonalization routines (if not using the tables computed by initial.m).
-template<typename S>
+template<scalar S>
 inline void determine_Nmax(const Coef<S> &coef, Params &P) { // Params is non-const !
   const auto length_coef_table = coef.xi.max(0); // all channels have same nr. of coefficients
   std::cout << std::endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << std::endl << std::endl;
@@ -65,7 +65,7 @@ inline void determine_Nmax(const Coef<S> &coef, Params &P) { // Params is non-co
 inline void skipline(std::ostream &F = std::cout) { F << std::endl; }
 
 // Read all initial energies and matrix elements
-template<typename S> 
+template<scalar S> 
 inline auto read_data(Params &P, std::string filename = "data") {
   skipline();
   std::ifstream fdata(filename);

@@ -36,7 +36,7 @@ inline auto u1_equality(const int q1, const int q2, const int q3) { return q1 ==
 inline auto z2_equality(const int p1, const int p2, const int p3) { return p1 == p2 * p3; }
 inline auto c3_equality(const int p1, const int p2, const int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
 
-template<typename S>
+template<scalar S>
 struct Recalc_f {
   size_t i1; // subspace indexes
   size_t ip;
@@ -45,7 +45,7 @@ struct Recalc_f {
 
 // Structure which holds subspace information and factor for each of nonzero irreducible matrix elements. cf.
 // Hofstetter PhD p. 120. <Q+1 S+-1/2 .. i1 ||f^\dag|| Q S .. ip>_N = factor < IN1 .. ||f^\dag|| INp ..>_{N_1}
-template<typename S>
+template<scalar S>
 struct Recalc {
   size_t i1{}; // combination of states
   size_t ip{};
@@ -54,7 +54,7 @@ struct Recalc {
   coef_traits<S> factor{}; // additional multiplicative factor
 };
 
-template<typename S>
+template<scalar S>
 class Symmetry {
  protected:
    const Params &P;
@@ -260,28 +260,28 @@ class Symmetry {
 #define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
                                       std::string name, MatrixElements<SC> &cnew) const override
 
-template<typename S>
+template<scalar S>
 class SymField : public Symmetry<S> {
  public:
    template<typename ... Args> explicit SymField(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
    bool isfield() const final override { return true; }
 };
 
-template<typename S>
+template<scalar S>
 class SymLR : public Symmetry<S> {
  public:
    template<typename ... Args> explicit SymLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
    bool islr() const final override { return true; }
 };
 
-template<typename S>
+template<scalar S>
 class SymC3 : public Symmetry<S> {
  public:
    template<typename ... Args> explicit SymC3(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
    bool isc3() const final override { return true; }
 };
 
-template<typename S>
+template<scalar S>
 class SymFieldLR : public Symmetry<S> {
   public:
    template<typename ... Args> explicit SymFieldLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}

@@ -44,7 +44,7 @@
 
 namespace NRG {
 
-template<typename S>
+template<scalar S>
 auto get(const std::string &sym_string, const Params &P)
 {
   if (sym_string == "QS") return mk_QS<S>(P);
@@ -88,7 +88,7 @@ auto get(const std::string &sym_string, const Params &P)
 
 // Called immediately after parsing the information about the number of channels from the data file. This ensures
 // that Invar can be parsed correctly.
-template <typename S>
+template <scalar S>
 std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P) {
   my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
   std::cout << "SYMMETRY TYPE: " << P.symtype.value() << std::endl;

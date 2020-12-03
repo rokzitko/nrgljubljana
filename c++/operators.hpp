@@ -23,19 +23,7 @@
 
 namespace NRG {
 
-template<typename S>
-auto trim_matrix(ublas::matrix<S> &mat, const size_t new_size1, const size_t new_size2) {
-  const auto old_size1 = mat.size1();
-  const auto old_size2 = mat.size2();
-  if (old_size1 == 0 || old_size2 == 0) return;
-  my_assert(new_size1 <= old_size1 && new_size2 <= old_size2);
-  if (new_size1 == old_size1 && new_size2 == old_size2) return; // Trimming not necessary!!
-  const auto sub = submatrix(mat, {0, new_size1}, {0, new_size2});
-  ublas::matrix<S> mat2 = sub;
-  mat.swap(mat2);
-} 
-
-template<typename S, typename t_matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
+template<scalar S, typename t_matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
 class MatrixElements : public std::map<Twoinvar, Matrix> {
  public:
    MatrixElements() = default;
@@ -85,7 +73,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
    }
 };
 
-template<typename S, typename Matrix = Matrix_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>>
 class DensMatElements : public std::map<Invar, Matrix> {
  public:
    template <typename MF>
@@ -124,7 +112,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
 };
 
 // Map of operator matrices
-template <typename S> 
+template <scalar S> 
 struct CustomOp : public std::map<std::string, MatrixElements<S>> {
   void trim(const DiagInfo<S> &diag) {
     for (auto &op : *this | boost::adaptors::map_values) op.trim(diag);
@@ -135,11 +123,11 @@ struct CustomOp : public std::map<std::string, MatrixElements<S>> {
 };
 
 // Vector containing irreducible matrix elements of f operators.
-template<typename S>
+template<scalar S>
 using OpchChannel = std::vector<MatrixElements<S>>;
 
 // Each channel contains P.perchannel OpchChannel matrices.
-template<typename S>
+template<scalar S>
 class Opch : public std::vector<OpchChannel<S>> {
  public:
    Opch() = default;
@@ -175,7 +163,7 @@ class Opch : public std::vector<OpchChannel<S>> {
 
 // Object of class Operators cotains full information about matrix representations when entering stage N of the NRG
 // iteration.
-template<typename S>
+template<scalar S>
 class Operators {
  public:
    Opch<S> opch;     // f operators (channels)

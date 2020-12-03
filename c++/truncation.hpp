@@ -11,7 +11,7 @@
 namespace NRG {
 
 // Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.
-template <typename S> auto highest_retained_energy(const Step &step, const DiagInfo<S> &diag, const Params &P) {
+template <scalar S> auto highest_retained_energy(const Step &step, const DiagInfo<S> &diag, const Params &P) {
   const auto energies = diag.sorted_energies();
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
   const auto totalnumber = energies.size();
@@ -34,7 +34,7 @@ template <typename S> auto highest_retained_energy(const Step &step, const DiagI
 
 struct truncate_stats {
   size_t nrall, nrallmult, nrkept, nrkeptmult;
-  template <typename S, typename MF> 
+  template <scalar S, typename MF> 
   truncate_stats(const DiagInfo<S> &diag, MF mult) {
     nrall      = ranges::accumulate(diag, 0, {}, [](const auto &d)     { const auto &[I, eig] = d; return eig.getdim(); });
     nrallmult  = ranges::accumulate(diag, 0, {}, [mult](const auto &d) { const auto &[I, eig] = d; return mult(I) * eig.getdim(); });
@@ -48,7 +48,7 @@ struct NotEnough : public std::exception {};
 
 // Compute the number of states to keep in each subspace. Returns true if an insufficient number of states has been
 // obtained in the diagonalization and we need to compute more states.
-template <typename S, typename MF> 
+template <scalar S, typename MF> 
 void truncate_prepare(const Step &step, DiagInfo<S> &diag, MF mult, const Params &P) {
   const auto Emax = highest_retained_energy(step, diag, P);
   for (auto &[I, eig] : diag)

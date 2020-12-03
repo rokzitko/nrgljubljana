@@ -12,7 +12,7 @@
 
 namespace NRG {
 
-template<typename S> class Symmetry;
+template<scalar S> class Symmetry;
 
 // Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. 
 class SubspaceDimensions {
@@ -21,7 +21,7 @@ class SubspaceDimensions {
    std::vector<Invar> ancestors;
  public:
    SubspaceDimensions() = default;
-   template<typename S>
+   template<scalar S>
      SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
                         const Symmetry<S> *Sym, const bool ignore_inequality = false);
    [[nodiscard]] auto combs() const { return dims.size(); } // number of subspaces
@@ -84,7 +84,7 @@ class SubspaceDimensions {
 class SubspaceStructure : public std::map<Invar, SubspaceDimensions> {
  public:
    SubspaceStructure() = default;
-   template<typename S> SubspaceStructure(const DiagInfo<S> &, const Symmetry<S> *);
+   template<scalar S> SubspaceStructure(const DiagInfo<S> &, const Symmetry<S> *);
    void dump(std::ostream &F = std::cout) const {
      for(const auto &[I, rm]: *this)
        F << "rmaxvals(" << I << ")=" << rm << " total=" << rm.total() << std::endl;

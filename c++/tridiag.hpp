@@ -10,7 +10,7 @@
 
 namespace NRG {
 
-template<typename S>
+template<scalar S>
 class Tridiag {
    const Params &P;
  public:
@@ -45,7 +45,7 @@ inline void fix_norm(vmpf &up, vmpf &um, const unsigned int mMAX) {
 }
 
 // Tridiagonalisation of the discretization coefficients. Multiple precision arithmetics library GMP is required.
-template<typename S>
+template<scalar S>
 void Tridiag<S>::tridiag_ch(int alpha, Coef<S> &coef) {
   std::cout << "Tridiagonalisation, ch=" << alpha << ".";
   std::cout << " Using GMP version " << gmp_version << std::endl;

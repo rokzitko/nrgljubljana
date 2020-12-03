@@ -16,7 +16,7 @@ namespace NRG {
 // of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
 // completed!
-template<typename S, typename Matrix = Matrix_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>>
 inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
   const auto combs = sub.combs();
   e.blocks.resize(combs);
@@ -29,27 +29,27 @@ inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
   e.matrix = Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!
 }
 
-template<typename S>
+template<scalar S>
 inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruct) {
   for(auto &[I, eig]: diag)
     split_in_blocks_Eigen(eig, substruct.at(I));
 }
 
-template<typename S>
+template<scalar S>
 inline void h5save_blocks_Eigen(H5Easy::File &fd, const std::string &name, const Eigen<S> &eig, const SubspaceDimensions &sub)
 {
   for (const auto i: range0(sub.combs()))
     h5_dump_matrix(fd, name + "/" + sub.ancestor(i).name(), eig.blocks[i]);
 }
 
-template<typename S>
+template<scalar S>
 inline void h5save_blocks(H5Easy::File &fd, const std::string &name, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
   for(const auto &[I, eig]: diag)
     h5save_blocks_Eigen(fd, name + I.name(), eig, substruct.at(I));
 }
 
 // Recalculates the irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
-template<typename S> template<typename T>
+template<scalar S> template<typename T>
 auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
                            const SubspaceStructure &substruct,
                            const Invar &I1, // bra
@@ -73,7 +73,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
 // program, so it is heavily instrumentalized for debugging purposes. It is called from recalc_doublet(),
 // recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
 // one should try to hand optimize.
-template<typename S> template<typename T>
+template<scalar S> template<typename T>
 auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
                                  const SubspaceStructure &substruct, // XXX: drop
                                  const MatrixElements<S> &cold,
@@ -102,7 +102,7 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
 }
    
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
-template<typename S>
+template<scalar S>
 void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag, // XXX: pass Eigen instead
                                  const SubspaceStructure &substruct, // XXX: drop
                                  const Invar &I,

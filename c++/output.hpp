@@ -25,7 +25,7 @@
 namespace NRG {
 
 // Formatted output of the computed expectation values
-template<typename S, typename t_expv = expv_traits<S>>
+template<scalar S, typename t_expv = expv_traits<S>>
 class ExpvOutput {
  private:
    std::ofstream F;                     // output stream
@@ -66,7 +66,7 @@ class Annotated {
  private:
    std::ofstream F;
    // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor)
-   template<typename T, typename S>
+   template<typename T, scalar S>
    inline auto scaled_energy(const T e, const Step &step, const Stats<S> &stats,
 			     const bool scaled = true, const bool absolute = false) {
      return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0);
@@ -74,7 +74,7 @@ class Annotated {
    const Params &P;
  public:
    explicit Annotated(const Params &P) : P(P) {}
-   template<typename S, typename MF> 
+   template<scalar S, typename MF> 
    void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, 
              MF mult, const std::string &filename = "annotated.dat") {
      if (!P.dumpannotated) return;
@@ -118,7 +118,7 @@ class Annotated {
 };
 
 // Handle all output
-template<typename S>
+template<scalar S>
 struct Output {
   const RUNTYPE runtype;
   const Params &P;

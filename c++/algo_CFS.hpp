@@ -10,7 +10,7 @@ namespace NRG {
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 // Based on the implementation by Markus Greger.
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_CFSls : virtual public Algo<S> {
  private:
    inline static const std::string algoname = "CFSls";
@@ -66,7 +66,7 @@ class Algo_CFSls : virtual public Algo<S> {
    std::string rho_type() override { return "rho"; }
 };
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_CFSgt : virtual public Algo<S> {
  private:
    inline static const std::string algoname = "CFSgt";
@@ -125,7 +125,7 @@ class Algo_CFSgt : virtual public Algo<S> {
    std::string rho_type() override { return "rho"; }
 };
 
-template<typename S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_CFS : public Algo_CFSls<S>, public Algo_CFSgt<S> {
  private:
    inline static const std::string algoname2 = "CFS";
