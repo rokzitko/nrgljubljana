@@ -19,7 +19,7 @@ add_library(nrgljubljana_c  SHARED ${sources})
 target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
 
 # Configure compilation
-target_compile_options(nrgljubljana_c     PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
+target_compile_options(nrgljubljana_c     PRIVATE ${NRG_CXX_OPT})
 target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry/coefnew>
@@ -42,7 +42,7 @@ target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl 
 # Compile nrg executable
 add_executable(nrg nrg.cc)
 target_link_libraries(nrg PRIVATE nrgljubljana_c)
-target_compile_options(nrg PRIVATE -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
+target_compile_options(nrg PRIVATE ${NRG_CXX_OPT})
 
 # Install library and headers
 install(TARGETS nrgljubljana_c EXPORT nrgljubljana-targets DESTINATION lib)

@@ -87,6 +87,16 @@ target_compile_options(project_warnings
 )
 
 # ###########
+# C++ options
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++20" HAS_CPP20)
+if(HAS_CPP20)
+  set(NRG_CXX_OPT -std=c++20)
+else()
+  set(NRG_CXX_OPT -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
+endif()
+
+# ###########
 # MPI support
 
 message(STATUS "-------- MPI detection -------------")

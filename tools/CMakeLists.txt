@@ -5,7 +5,7 @@ macro(add_tool exec_name)
   target_link_libraries(${exec_name} PRIVATE project_warnings)
 
   # Configure compilation
-  target_compile_options(${exec_name} PRIVATE -fPIC -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
+  target_compile_options(${exec_name} PRIVATE -fPIC ${NRG_CXX_OPT})
   target_include_directories(${exec_name} PRIVATE 
                      $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
