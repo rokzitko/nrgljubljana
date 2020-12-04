@@ -10,17 +10,16 @@
 namespace NRG {
 
 // Table of Wilson chain coefficients
-template <scalar S, typename t_coef = coef_traits<S>> 
-class coef_table : traits<S> {
+template <scalar S, typename t_coef = coef_traits<S>>
+class coef_table {
 private:
-  using t_storage = ublas::vector<t_coef>;
-  t_storage table;
-
+  using t_coef_v = std::vector<t_coef>;
+  t_coef_v table;
 public:
-  using t_ndx = typename t_storage::size_type;
+  using t_ndx = typename t_coef_v::size_type;
   // Read values from a stream f
   void read_values(std::istream &f) {
-    table = read_vector<t_coef>(f, true); // len=nr+1
+    table = read_std_vector<t_coef>(f, true); // len=nr+1
   }
   [[nodiscard]] auto coef(const t_ndx n) const {
     my_assert(n < table.size());
@@ -39,14 +38,13 @@ public:
 
 // One table of discretization coefficients for each channel
 template <scalar S, typename t_coef = coef_traits<S>>
-class set_of_coef_tables : traits<S> {
+class set_of_coef_tables {
 private:
-  using t_storage = std::vector<coef_table<S>>;
-  t_storage tabs;
-
+  using t_coef_vv = std::vector<coef_table<S>>;
+  t_coef_vv tabs;
 public:
   using t_ndx = typename coef_table<S>::t_ndx;
-  using t_ch = typename t_storage::size_type;
+  using t_ch = typename t_coef_vv::size_type;
   [[nodiscard]] auto nr_tabs() const { return tabs.size(); }
   void read(std::istream &fdata, const t_ch coefchannels) {
     tabs.resize(coefchannels);
@@ -66,7 +64,8 @@ public:
   }
 };
 
-template <scalar S> class Coef : traits<S> {
+template <scalar S> 
+class Coef {
 private:
   const Params &P;
 

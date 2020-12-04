@@ -189,7 +189,7 @@ void assert_issquare(const ublas::matrix<T> &m) { my_assert(m.size1() == m.size2
 CONSTFNC inline double Power(const double i, const double nn) { return std::pow(i, nn); }
 
 // Read 'size' values of type T into a ublas vector<T>.
-template <scalar T> ublas::vector<T> read_vector(std::istream &F, const size_t size) {
+template <scalar T> auto read_vector(std::istream &F, const size_t size) {
   ublas::vector<T> vec(size);
   for (auto j = 0; j < size; j++)
     vec[j] = read_one<T>(F);
@@ -198,7 +198,7 @@ template <scalar T> ublas::vector<T> read_vector(std::istream &F, const size_t s
 }
 
 // Read values of type T into a ublas vector<T>. 'nr' is either vector dimension or the value of maximum index
-template <scalar T> ublas::vector<T> read_vector(std::istream &F, const bool nr_is_max_index = false) {
+template <scalar T> auto read_vector(std::istream &F, const bool nr_is_max_index = false) {
   const auto nr = read_one<size_t>(F);
   const auto len = nr_is_max_index ? nr+1 : nr;
   return read_vector<T>(F, len);

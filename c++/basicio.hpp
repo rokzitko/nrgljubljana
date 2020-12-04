@@ -164,7 +164,6 @@ auto read_matrix_data(FNC next_value, const size_t dim1, const size_t dim2, cons
       M(i, j) = x;
     }
   }
-  // if (F.fail()) throw std::runtime_error("read_matrix_text() failed. Input corrupted?");
   return M;
 }
 
@@ -179,10 +178,8 @@ auto _eigen_read_matrix_data(FNC next_value, const size_t dim1, const size_t dim
       M(i, j) = x;
     }
   }
-  // if (F.fail()) throw std::runtime_error("read_matrix_text() failed. Input corrupted?");
   return M;
 }
-
 
 // Read a matrix from stream (text)
 inline auto read_matrix_text(const std::string &filename, const bool verbose = false) {
@@ -263,6 +260,23 @@ inline void _eigen_save_matrix(const std::string &filename, const Eigen::MatrixX
   auto F = safe_open(filename);
   F << std::setprecision(output_prec) << M;
   F.close();
+}
+
+// Read 'size' values of type T into a std::vector<T>.
+template <scalar T> auto read_std_vector(std::istream &F, const size_t size) {
+  std::vector<T> vec(size);
+  for (auto j = 0; j < size; j++)
+    vec[j] = read_one<T>(F);
+  if (F.fail()) throw std::runtime_error("read_std_vector() error. Input file is corrupted.");
+  return vec;
+}
+
+// Read values of type T into a std::vector<T>. First value to be read, 'nr', is either vector dimension or 
+// the value of maximum index.
+template <scalar T> auto read_std_vector(std::istream &F, const bool nr_is_max_index = false) {
+  const auto nr = read_one<size_t>(F);
+  const auto len = nr_is_max_index ? nr+1 : nr;
+  return read_std_vector<T>(F, len);
 }
 
 } // namespace

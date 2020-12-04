@@ -125,7 +125,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {
        const auto I = read_one<Invar>(fdata);
-       auto energies = read_vector<double>(fdata);
+       auto energies = read_vector<t_eigen>(fdata);
        if (!P.data_has_rescaled_energies && !P.absolute)
          energies /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
        (*this)[I].diagonal(energies);
