@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "test_common.hpp"
+#include <traits.hpp>
 #include <eigen.hpp>
 
 using namespace NRG;
@@ -35,7 +36,7 @@ TEST(Eigen, get) { // NOLINT
   EXPECT_EQ(e.stored(), range0(5));
 }
 
-using EVEC = ublas::vector<double>;
+using EVEC = evec_traits<double>;
 
 TEST(Eigen, diagonal) { // NOLINT
   NRG::Eigen<double> e(3,3);
@@ -74,15 +75,15 @@ TEST(Eigen, hdf5io) { // NOLINT
   e.h5save(h5, "test", false);
 }
 
-template<typename T>
-void VECTOR_EQ(const ublas::vector<T> &A, const ublas::vector<T> &B)
+template<typename U, typename V> // XXX: concept vector: .size, [] accessor
+void VECTOR_EQ(const U &A, const V &B)
 {
   EXPECT_EQ(A.size(), B.size());
   for(int i = 0; i < A.size(); i++) EXPECT_EQ(A[i], B[i]);
 }
 
-template<typename T>
-void MATRIX_EQ(const ublas::matrix<T> &A, const ublas::matrix<T> &B)
+template<typename U, typename V> // XXX: concept matrix: size1(), size2(), (i,j) accessor
+void MATRIX_EQ(const U &A, const V &B)
 {
   EXPECT_EQ(A.size1(), B.size1());
   EXPECT_EQ(A.size2(), B.size2());

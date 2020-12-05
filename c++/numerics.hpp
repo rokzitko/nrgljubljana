@@ -292,6 +292,12 @@ auto trace_exp(const ublas::vector<T> &e, const ublas::matrix<S> &m, const doubl
   return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e(r)) * m(r, r); });
 }
 
+template<scalar T, scalar S>
+auto trace_exp(const std::vector<T> &e, const ublas::matrix<S> &m, const double factor) { // Tr[exp(-factor*e) m]
+  my_assert(e.size() == m.size1() && e.size() == m.size2());
+  return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e[r]) * m(r, r); });
+}
+
 // 'values' is any range we can iterate over
 template<typename R>
 auto sum_of_exp(R values, const double factor) // sum exp(-factor*x)

@@ -89,7 +89,7 @@ public:
     const auto dim = getnrstored();
     auto m = Zero_matrix<S>(dim);
     for (const auto i: range0(dim)) 
-      m(i, i) = exp(-value_zero(i) * factor);
+      m(i, i) = exp(-value_zero[i] * factor);
     return m;
   }
   template<typename F> auto trace(F fnc, const double factor) const { // Tr[fnc(factor*E) exp(-factor*E)]
@@ -125,9 +125,9 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) {
      for (const auto i : range1(nsubs)) {
        const auto I = read_one<Invar>(fdata);
-       auto energies = read_vector<t_eigen>(fdata);
+       auto energies = read_std_vector<t_eigen>(fdata);
        if (!P.data_has_rescaled_energies && !P.absolute)
-         energies /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
+         for (auto &x : energies) x /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
        (*this)[I].diagonal(energies);
      }
      my_assert(this->size() == nsubs);
@@ -136,8 +136,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    [[nodiscard]] auto eigs() const { return *this | boost::adaptors::map_values; }
    [[nodiscard]] auto eigs() { return *this | boost::adaptors::map_values; }
    [[nodiscard]] auto find_groundstate() const {
-     const auto [Iground, eig] = *ranges::min_element(*this, {}, [](const auto &a) { return a.second.value_orig(0); });
-     const auto Egs = eig.value_orig(0);
+     const auto [Iground, eig] = *ranges::min_element(*this, {}, [](const auto &a) { return a.second.value_orig.front(); });
+     const auto Egs = eig.value_orig.front();
      return Egs;
    }
    void subtract_Egs(const t_eigen Egs) {

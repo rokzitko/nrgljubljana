@@ -43,7 +43,7 @@ using namespace boost::numeric::ublas; // keep this!
 namespace atlas = boost::numeric::bindings::atlas;
 
 template<scalar T, scalar V> 
-void copy_val(const std::vector<T> &eigenvalues, ublas::vector<V>& diagvalues, const size_t M) {
+void copy_val(const std::vector<T> &eigenvalues, std::vector<V>& diagvalues, const size_t M) {
   my_assert(eigenvalues.size() >= M);
   if (std::adjacent_find(eigenvalues.begin(), eigenvalues.begin() + M, std::greater<T>()) != eigenvalues.begin() + M)
     std::cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << std::endl;
@@ -272,7 +272,7 @@ void checkdiag(const Eigen<S> &d,
   my_assert(d.matrix.size2() == dim);
   // Check normalization
   for (const auto r: range0(M)) {
-    assert_isfinite(d.value_orig(r));
+    assert_isfinite(d.value_orig[r]);
     S sumabs{};
     for (const auto j: range0(dim))
        sumabs += conj_me(d.matrix(r,j)) * d.matrix(r,j);

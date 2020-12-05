@@ -28,9 +28,9 @@ class Algo_FT : public Algo<S> {
              const t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
      for (const auto r1: diagI1.kept()) {
-       const auto E1 = diagI1.value_zero(r1);
+       const auto E1 = diagI1.value_zero[r1];
        for (const auto rp: diagIp.kept()) {
-         const auto Ep = diagIp.value_zero(rp);
+         const auto Ep = diagIp.value_zero[rp];
          const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
          const auto energy = E1 - Ep;
          cb->add(step.scale() * energy, weight);
@@ -63,9 +63,9 @@ class Algo_FTmats : public Algo<S> {
    {
      const size_t cutoff = P.mats;
      for (const auto r1: diagI1.kept()) {
-       const auto E1 = diagI1.value_zero(r1);
+       const auto E1 = diagI1.value_zero[r1];
        for (const auto rp: diagIp.kept()) {
-         const auto Ep = diagIp.value_zero(rp);
+         const auto Ep = diagIp.value_zero[rp];
          const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
          const auto energy = E1 - Ep;
 #pragma omp parallel for schedule(static)
@@ -108,9 +108,9 @@ class Algo_GT : public Algo<S> {
      const auto beta          = 1.0 / temperature;
      weight_traits<S> value{};
      for (const auto r1: diagI1.kept()) {
-       const auto E1 = diagI1.value_zero(r1);
+       const auto E1 = diagI1.value_zero[r1];
        for (const auto rp: diagIp.kept()) {
-         const auto Ep = diagIp.value_zero(rp);
+         const auto Ep = diagIp.value_zero[rp];
          // Note that Zgt needs to be calculated with the same 'temperature' parameter that we use for the
          // exponential functions in the following equation.
          value += beta * (factor / stats.Zgt) * conj_me(op1(r1, rp)) * op2(r1, rp)
@@ -169,8 +169,8 @@ class Algo_CHIT : public Algo<S> {
      weight_traits<S> value{};
      for (const auto r1: diagI1.kept()) {
        for (const auto rp: diagIp.kept()) {
-         const auto E1 = diagI1.value_zero(r1);
-         const auto Ep = diagIp.value_zero(rp);
+         const auto E1 = diagI1.value_zero[r1];
+         const auto Ep = diagIp.value_zero[rp];
          value += (factor/stats.Zchit) * chit_weight(step.scale()*E1, step.scale()*Ep, beta) * conj_me(op1(r1,rp)) * op2(r1,rp);
        }
      }

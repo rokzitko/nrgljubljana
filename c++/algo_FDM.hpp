@@ -14,10 +14,10 @@ using namespace std::complex_literals;
 
 #define LOOP_D(n)                                                                                                                                    \
   for (size_t n = ret##n; n < all##n; n++) {                                                                                                         \
-    const t_eigen E##n = diagI##n.absenergyG(n);
+    const t_eigen E##n = diagI##n.absenergyG[n];
 #define LOOP_K(n)                                                                                                                                    \
   for (size_t n = 0; n < ret##n; n++) {                                                                                                              \
-    const t_eigen E##n = diagI##n.absenergyG(n);
+    const t_eigen E##n = diagI##n.absenergyG[n];
 
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMls : virtual public Algo<S> {

@@ -34,7 +34,7 @@ template <> struct traits<double> {
   using t_eigen = double;  // type for the eigenvalues (always real)
   using t_temp = t_eigen;  // type for temperatures
   using t_weight = std::complex<double>;  // spectral weight accumulators (always complex)
-  using evec = ublas::vector<double>;     // vector of eigenvalues type (always real)
+  using evec = std::vector<double>;     // vector of eigenvalues type (always real)
   using Matrix = ublas::matrix<t_matel>;  // matrix type
 };
 
@@ -45,7 +45,7 @@ template <> struct traits<std::complex<double>> {
   using t_eigen = double;
   using t_temp = t_eigen;
   using t_weight = std::complex<double>;
-  using evec = ublas::vector<double>;
+  using evec = std::vector<double>;
   using Matrix = ublas::matrix<t_matel>;
 };
 

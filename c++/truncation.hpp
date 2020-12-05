@@ -60,7 +60,7 @@ void truncate_prepare(const Step &step, DiagInfo<S> &diag, MF mult, const Params
   ts.report();
   if (ranges::any_of(diag, [Emax](const auto &d) {
         const auto &[I, eig] = d;
-        return eig.getnrkept() == eig.getnrcomputed() && eig.value_zero(eig.getnrcomputed() - 1) != Emax && eig.getnrcomputed() < eig.getdim();
+        return eig.getnrkept() == eig.getnrcomputed() && eig.value_zero[eig.getnrcomputed()-1] != Emax && eig.getnrcomputed() < eig.getdim(); // XXX: .back() ?
       }))
     throw NotEnough();
   const double ratio = double(ts.nrkept) / ts.nrall;
