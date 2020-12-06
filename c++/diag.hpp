@@ -66,16 +66,15 @@ void copy_vec(U* eigenvectors, ublas::matrix<S>& diagvectors, const size_t dim, 
 template<scalar T, typename U, scalar S>
 auto copy_results(const std::vector<T> &eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
 {
-  Eigen<S> d(M, dim);
-  copy_val(eigenvalues, d.value_orig, M); // YYY: to be removed
-  d.values.copy(eigenvalues, M);
-  if (jobz == 'V') copy_vec(eigenvectors, d.matrix, dim, M);
-  my_assert(d.value_orig.size() == d.matrix.size1()); // YYY
+  RawEigen<S> d(M, dim);
+  copy_val(eigenvalues, d.val, M);
+  if (jobz == 'V') copy_vec(eigenvectors, d.vec, dim, M);
+  my_assert(d.val.size() == d.vec.size1());
   return d;
 }
 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
-inline Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
+inline RawEigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
   const auto dim = m.size1();
   auto ham = bindings::traits::matrix_storage(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
@@ -96,7 +95,7 @@ inline Eigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz
   return copy_results<double,double,double>(eigenvalues, ham, jobz, dim, dim);
 }
 
-inline Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
+inline RawEigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
 {
   const auto dim = m.size1();
   auto ham       = bindings::traits::matrix_storage(m);
@@ -120,14 +119,14 @@ inline Eigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char job
     // dsyevd sometimes fails to converge (INFO>0). In such cases we do not trigger
     // an error but return 0, to permit error recovery.
     if (INFO > 0)
-      return Eigen<double>();
+      return RawEigen<double>();
     else
       throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   }
   return copy_results<double, double, double>(eigenvalues, ham, jobz, dim, dim);
 }
 
-inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V') {
+inline RawEigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V') {
   const auto dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
@@ -182,7 +181,7 @@ inline Eigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double r
   return copy_results<double, double, double>(eigenvalues, Z.data(), jobz, dim, M);
 }
 
-inline Eigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<double>> &m, const char jobz = 'V') {
+inline RawEigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<double>> &m, const char jobz = 'V') {
   const auto dim = m.size1();
   auto ham       = reinterpret_cast<lapack_complex_double*>(bindings::traits::matrix_storage(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
@@ -205,7 +204,7 @@ inline Eigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<
   return copy_results<double,lapack_complex_double,std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
 }
   
-inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex<double>> &m, const double ratio = 1.0, const char jobz = 'V') {
+inline RawEigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex<double>> &m, const double ratio = 1.0, const char jobz = 'V') {
   const auto dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
@@ -269,7 +268,7 @@ template<scalar M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, i
   mpilog("diagonalise " << m.size1() << "x" << m.size2() << " " << DP.diag << " " << DP.diagratio);
   Timing timer;
   check_is_matrix_upper(m);
-  Eigen<M> d;
+  RawEigen<M> d;
   if constexpr (std::is_same_v<M, double>) {
     if (DP.diag == "dsyev"s || DP.diag == "default"s) d = diagonalise_dsyev(m);
     if (DP.diag == "dsyevd"s) {
@@ -285,15 +284,17 @@ template<scalar M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, i
     if (DP.diag == "zheev"s || DP.diag == "default"s) d = diagonalise_zheev(m);
     if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio);
   }
-  my_assert(d.getnrcomputed() > 0);
-  my_assert(has_lesseq_rows(d.matrix, m));
+  const auto nr_computed = d.getnrcomputed();
+  my_assert(nr_computed > 0); // zero computed eigenvalues signals serious failure
+  my_assert(has_lesseq_rows(d.vec, m)); // sanity check
   if (DP.logletter('e'))
     d.dump_eigenvalues();
   const std::string rank_string = myrank >= 0 ? " [rank=" + std::to_string(myrank) + "]" : "";
-  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrcomputed() << rank_string);
+  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << nr_computed << rank_string);
   nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << rank_string);
-  d.checkdiag();
-  return d;
+  d.check_diag();
+  Eigen<M> result(std::move(d));
+  return result;
 }
 
 } // namespace

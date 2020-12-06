@@ -58,6 +58,44 @@ class Values : public std::vector<t_eigen> {
 };
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
+template <scalar S, typename RVector = RVector_traits<S>, typename Matrix = Matrix_traits<S>> 
+struct RawEigen {
+public:
+  RVector val;
+  Matrix vec;
+  RawEigen() = default;
+  RawEigen(const size_t M, const size_t dim) {
+    my_assert(M <= dim);
+    val.resize(M);
+    vec.resize(M, dim);
+  }
+  auto getnrcomputed() const { my_assert(val.size() == vec.size1()); return val.size(); } // nr eigenvalue/eigenvector pairs
+  auto getdim() const { return vec.size2(); } // matrix dimension (length of eigenvectors)
+  void dump_eigenvalues(const size_t max_nr = std::numeric_limits<size_t>::max(), std::ostream &F = std::cout) const {
+    F << "eig= " << std::setprecision(std::numeric_limits<double>::max_digits10);
+    ranges::for_each_n(val.begin(), std::min(val.size(), max_nr), [&F](const double x) { F << x << ' '; });
+    F << std::endl;
+  }
+  void check_diag(const double NORMALIZATION_EPSILON = 1e-12, const double ORTHOGONALITY_EPSILON = 1e-12) const { // XXX: throw exception instead?
+    const auto M   = getnrcomputed();
+    const auto dim = getdim();
+    // Check normalization
+    for (const auto r : range0(M)) {
+      assert_isfinite(val[r]);
+      S sumabs{};
+      for (const auto j : range0(dim)) sumabs += conj_me(vec(r, j)) * vec(r, j);
+      my_assert(num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON));
+    }
+    // Check orthogonality
+    for (const auto r1 : range0(M))
+      for (const auto r2 : boost::irange(r1 + 1, M)) {
+        S skpdt{};
+        for (const auto j : range0(dim)) skpdt += conj_me(vec(r1, j)) * vec(r2, j);
+        my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
+      }
+  }};
+
+// High-level representation of eigenvalues/eigenvectors
 template <scalar S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
 class Eigen {
 public:
@@ -66,12 +104,18 @@ public:
   EVEC value_zero;  // eigenvalues with Egs subtracted
   Matrix matrix;    // eigenvectors
   Eigen() = default;
-  Eigen(const size_t nr, const size_t dim) {
-    my_assert(nr <= dim);
-    values.resize(nr); // YYY
-    value_orig.resize(nr);
-    value_zero.resize(nr);
-    matrix.resize(nr, dim);
+  explicit Eigen(const size_t M, const size_t dim) { // for testing only
+    my_assert(M <= dim);
+    values.resize(M);
+    value_orig.resize(M);
+    value_zero.resize(M);
+    matrix.resize(M, dim);
+  }
+  explicit Eigen(RawEigen<S> && raw) {
+    value_orig = std::move(raw.val);
+    value_zero.resize(value_orig.size()); // XXX: required?
+    values.copy(value_orig);
+    matrix = std::move(raw.vec);
   }
   [[nodiscard]] auto getnrcomputed() const { return value_orig.size(); } // number of computed eigenpairs
   [[nodiscard]] auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
@@ -158,30 +202,6 @@ public:
       H5Easy::dump(fd, name + "/absenergyG",   absenergyG);
     h5_dump_matrix(fd, name + "/matrix", matrix);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
-  }
-  void dump_eigenvalues(const size_t max_nr = std::numeric_limits<size_t>::max(), std::ostream &F = std::cout) const {
-    F << "eig= " << std::setprecision(std::numeric_limits<double>::max_digits10);
-    ranges::for_each_n(values.begin(), std::min(getnrcomputed(), max_nr),
-                     [&F](const double x) { F << x << ' '; });
-    F << std::endl;
-  }
-  void checkdiag(const double NORMALIZATION_EPSILON = 1e-12, const double ORTHOGONALITY_EPSILON = 1e-12) {
-    const auto M   = getnrcomputed(); // number of eigenpairs
-    const auto dim = getdim();        // dimension of the eigenvector
-    // Check normalization
-    for (const auto r : range0(M)) { // ZZZ
-      assert_isfinite(values[r]);
-      S sumabs{};
-      for (const auto j : range0(dim)) sumabs += conj_me(matrix(r, j)) * matrix(r, j);
-      my_assert(num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON));
-    }
-    // Check orthogonality
-    for (const auto r1 : range0(M))
-      for (const auto r2 : boost::irange(r1 + 1, M)) {
-        S skpdt{};
-        for (const auto j : range0(dim)) skpdt += conj_me(matrix(r1, j)) * matrix(r2, j);
-        my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
-      }
   }
 };
 

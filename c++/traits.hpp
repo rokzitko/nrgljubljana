@@ -34,7 +34,8 @@ template <> struct traits<double> {
   using t_eigen = double;  // type for the eigenvalues (always real)
   using t_temp = t_eigen;  // type for temperatures
   using t_weight = std::complex<double>;  // spectral weight accumulators (always complex)
-  using evec = std::vector<double>;     // vector of eigenvalues type (always real)
+  using evec = std::vector<double>;     // vector of eigenvalues type (always real) // YYY
+  using RVector = std::vector<double>;    // vector of eigenvalues type (always real)
   using Matrix = ublas::matrix<t_matel>;  // matrix type
 };
 
@@ -46,16 +47,18 @@ template <> struct traits<std::complex<double>> {
   using t_temp = t_eigen;
   using t_weight = std::complex<double>;
   using evec = std::vector<double>;
+  using RVector = std::vector<double>;
   using Matrix = ublas::matrix<t_matel>;
 };
 
-template <scalar S> using matel_traits  = typename traits<S>::t_matel;
-template <scalar S> using coef_traits   = typename traits<S>::t_coef;
-template <scalar S> using expv_traits   = typename traits<S>::t_expv;
-template <scalar S> using eigen_traits  = typename traits<S>::t_eigen;
-template <scalar S> using weight_traits = typename traits<S>::t_weight;
-template <scalar S> using evec_traits   = typename traits<S>::evec;
-template <scalar S> using Matrix_traits = typename traits<S>::Matrix;
+template <scalar S> using matel_traits   = typename traits<S>::t_matel;
+template <scalar S> using coef_traits    = typename traits<S>::t_coef;
+template <scalar S> using expv_traits    = typename traits<S>::t_expv;
+template <scalar S> using eigen_traits   = typename traits<S>::t_eigen;
+template <scalar S> using weight_traits  = typename traits<S>::t_weight;
+template <scalar S> using evec_traits    = typename traits<S>::evec;
+template <scalar S> using RVector_traits = typename traits<S>::RVector;
+template <scalar S> using Matrix_traits  = typename traits<S>::Matrix;
 
 } // namespace
 

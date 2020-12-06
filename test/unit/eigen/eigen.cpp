@@ -8,14 +8,14 @@
 
 using namespace NRG;
 
-TEST(Eigen, constructor) { // NOLINT
+TEST(RawEigen, constructor) { // NOLINT
   {
-    NRG::Eigen<double> e;
+    NRG::RawEigen<double> e;
     EXPECT_EQ(e.getnrcomputed(), 0);
     EXPECT_EQ(e.getdim(), 0);
   }
   {
-    NRG::Eigen<double> e(2,3);
+    NRG::RawEigen<double> e(2,3);
     EXPECT_EQ(e.getnrcomputed(), 2);
     EXPECT_EQ(e.getdim(), 3);
   }
