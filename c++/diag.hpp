@@ -293,8 +293,9 @@ template<scalar M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, i
   nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << nr_computed << rank_string);
   nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << rank_string);
   d.check_diag();
-  Eigen<M> result(std::move(d));
-  return result;
+  return d;
+//  Eigen<M> result(std::move(d));
+//  return result;
 }
 
 } // namespace

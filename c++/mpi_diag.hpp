@@ -109,7 +109,8 @@ class MPI_diag {
      Invar I;
      check_status(mpiw.recv(master, TAG_INVAR, I));
      // 2. preform the diagonalisation
-     const auto eig = diagonalise<S>(m, DP, myrank());
+     auto e = diagonalise<S>(m, DP, myrank());
+     Eigen eig(std::move(e)); // YYY: TEMP
      // 3. send back the results
      send_eigen<S>(master, eig);
      mpiw.send(master, TAG_INVAR, I);
@@ -135,7 +136,8 @@ class MPI_diag {
          nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
          if (i == 0) {
            // On master, diagonalize immediately.
-           diagnew[I] = diagonalise<S>(h, DP, myrank());
+           auto e = diagonalise<S>(h, DP, myrank());
+           diagnew[I] = Eigen(std::move(e));
            tasks_done.push_back(I);
            nodes_available.push_back(0);
          } else {
