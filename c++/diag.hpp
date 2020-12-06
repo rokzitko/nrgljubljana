@@ -263,45 +263,6 @@ inline Eigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex
   return copy_results<double,lapack_complex_double,std::complex<double>>(eigenvalues, Z.data(), jobz, dim, M);
 }
 
-template<scalar S>
-void checkdiag(const Eigen<S> &d,
-               const double NORMALIZATION_EPSILON = 1e-12,
-               const double ORTHOGONALITY_EPSILON = 1e-12)
-{
-  const auto M = d.getnrcomputed(); // number of eigenpairs
-  const auto dim = d.getdim();      // dimension of the eigenvector
-  my_assert(d.matrix.size2() == dim);
-  // Check normalization
-  for (const auto r: range0(M)) {
-    assert_isfinite(d.value_orig[r]);
-    S sumabs{};
-    for (const auto j: range0(dim))
-       sumabs += conj_me(d.matrix(r,j)) * d.matrix(r,j);
-    my_assert(num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON));
-  }
-  // Check orthogonality
-  for (const auto r1 : range0(M))
-    for (const auto r2 : boost::irange(r1 + 1, M)) {
-      S skpdt{};
-      for (const auto j : range0(dim)) skpdt += conj_me(d.matrix(r1, j)) * d.matrix(r2, j);
-      my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
-    }
-}
-
-template<scalar M>
-  void dump_eigenvalues(const Eigen<M> &d, const size_t max_nr = std::numeric_limits<size_t>::max())
-{
-  std::cout << "eig= " << std::setprecision(std::numeric_limits<double>::max_digits10);
-  ranges::for_each_n(d.value_orig.cbegin(), std::min(d.getnrcomputed(), max_nr),
-                     [](const double x) { std::cout << x << ' '; });
-  std::cout << std::endl;
-}
-
-template<scalar M, scalar N>
-  bool has_lesseq_rows(const ublas::matrix<M> &A, const ublas::matrix<N> &B) {
-    return A.size1() <= B.size1() && A.size2() == B.size2();
-  }
-
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
 template<scalar M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, int myrank) {
@@ -327,11 +288,11 @@ template<scalar M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, i
   my_assert(d.getnrcomputed() > 0);
   my_assert(has_lesseq_rows(d.matrix, m));
   if (DP.logletter('e'))
-    dump_eigenvalues(d);
+    d.dump_eigenvalues();
   const std::string rank_string = myrank >= 0 ? " [rank=" + std::to_string(myrank) + "]" : "";
   nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << d.getnrcomputed() << rank_string);
   nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << rank_string);
-  checkdiag(d);
+  d.checkdiag();
   return d;
 }
 

@@ -287,12 +287,6 @@ auto submatrix(ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const st
 }
 
 template<scalar T, scalar S>
-auto trace_exp(const ublas::vector<T> &e, const ublas::matrix<S> &m, const double factor) { // Tr[exp(-factor*e) m]
-  my_assert(e.size() == m.size1() && e.size() == m.size2());
-  return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e(r)) * m(r, r); });
-}
-
-template<scalar T, scalar S>
 auto trace_exp(const std::vector<T> &e, const ublas::matrix<S> &m, const double factor) { // Tr[exp(-factor*e) m]
   my_assert(e.size() == m.size1() && e.size() == m.size2());
   return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e[r]) * m(r, r); });
@@ -326,6 +320,11 @@ auto trim_matrix(ublas::matrix<S> &mat, const size_t new_size1, const size_t new
   ublas::matrix<S> mat2 = sub;
   mat.swap(mat2);
 } 
+
+template<scalar M, scalar N>
+  bool has_lesseq_rows(const ublas::matrix<M> &A, const ublas::matrix<N> &B) {
+    return A.size1() <= B.size1() && A.size2() == B.size2();
+  }
 
 } // namespace
 

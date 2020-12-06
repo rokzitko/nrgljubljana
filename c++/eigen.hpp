@@ -28,13 +28,14 @@ class Values : public std::vector<t_eigen> {
    double shift = std::numeric_limits<double>::quiet_NaN();
    double GS_energy = std::numeric_limits<double>::quiet_NaN();
   public:
-   Values() {}
-   explicit Values(const double scale) : scale(scale) {}
+ //  Values() {}
+ //  explicit Values(const double scale) : scale(scale) {}
    auto rel(const size_t i) const { return (*this)[i]; }
    auto abs(const size_t i) const { return rel(i) * scale; }
    auto rel_zero(const size_t i) const { return rel(i)-shift; }
    auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
    auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
+   auto lowest_rel() const { return this->front(); }
    auto getnrcomputed() const { return this->size(); }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
@@ -53,6 +54,7 @@ class Values : public std::vector<t_eigen> {
      this->resize(M);
      std::copy(v.begin(), v.begin() + M, this->begin());
    }
+   void copy(const std::vector<t_eigen> &v) { this->copy(v, v.size()); }
 };
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
@@ -60,7 +62,7 @@ template <scalar S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_tra
 class Eigen {
 public:
   Values<S> values; // eigenvalues
-  EVEC value_orig;  // eigenvalues as computed
+  EVEC value_orig;  // eigenvalues as computed YYY
   EVEC value_zero;  // eigenvalues with Egs subtracted
   Matrix matrix;    // eigenvectors
   Eigen() = default;
@@ -112,7 +114,8 @@ public:
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
   void diagonal(const EVEC &v) {
-    value_orig = value_zero = v;
+    value_orig = value_zero = v; // YYY
+    values.copy(v);
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
@@ -156,6 +159,30 @@ public:
     h5_dump_matrix(fd, name + "/matrix", matrix);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
   }
+  void dump_eigenvalues(const size_t max_nr = std::numeric_limits<size_t>::max(), std::ostream &F = std::cout) const {
+    F << "eig= " << std::setprecision(std::numeric_limits<double>::max_digits10);
+    ranges::for_each_n(values.begin(), std::min(getnrcomputed(), max_nr),
+                     [&F](const double x) { F << x << ' '; });
+    F << std::endl;
+  }
+  void checkdiag(const double NORMALIZATION_EPSILON = 1e-12, const double ORTHOGONALITY_EPSILON = 1e-12) {
+    const auto M   = getnrcomputed(); // number of eigenpairs
+    const auto dim = getdim();        // dimension of the eigenvector
+    // Check normalization
+    for (const auto r : range0(M)) { // ZZZ
+      assert_isfinite(values[r]);
+      S sumabs{};
+      for (const auto j : range0(dim)) sumabs += conj_me(matrix(r, j)) * matrix(r, j);
+      my_assert(num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON));
+    }
+    // Check orthogonality
+    for (const auto r1 : range0(M))
+      for (const auto r2 : boost::irange(r1 + 1, M)) {
+        S skpdt{};
+        for (const auto j : range0(dim)) skpdt += conj_me(matrix(r1, j)) * matrix(r2, j);
+        my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
+      }
+  }
 };
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
@@ -177,8 +204,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    [[nodiscard]] auto eigs() const { return *this | boost::adaptors::map_values; }
    [[nodiscard]] auto eigs() { return *this | boost::adaptors::map_values; }
    [[nodiscard]] auto find_groundstate() const {
-     const auto [Iground, eig] = *ranges::min_element(*this, {}, [](const auto &a) { return a.second.value_orig.front(); });
-     const auto Egs = eig.value_orig.front();
+     const auto [Iground, eig] = *ranges::min_element(*this, {}, [](const auto &a) { return a.second.values.lowest_rel(); });
+     const auto Egs = eig.values.lowest_rel();
      return Egs;
    }
    void subtract_Egs(const t_eigen Egs) {
