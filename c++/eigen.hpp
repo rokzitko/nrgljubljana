@@ -22,45 +22,49 @@
 namespace NRG {
 
 template<scalar S, typename t_eigen = eigen_traits<S>>
-class Values : public std::vector<t_eigen> {
+class Values {
   private:
+   std::vector<t_eigen> v;
    double scale = std::numeric_limits<double>::quiet_NaN();
    double shift = std::numeric_limits<double>::quiet_NaN();
    double GS_energy = std::numeric_limits<double>::quiet_NaN();
   public:
- //  Values() {}
+ //  Values() = default;
  //  explicit Values(const double scale) : scale(scale) {}
-   auto rel(const size_t i) const { return (*this)[i]; }
+   void resize(const size_t size) { v.resize(size); } // XXX for testing purposes
+   auto rel(const size_t i) const { return v[i]; }
    auto abs(const size_t i) const { return rel(i) * scale; }
    auto rel_zero(const size_t i) const { return rel(i)-shift; }
    auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
    auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
-   auto getnrcomputed() const { return this->size(); }
-   auto lowest_rel() const { return this->front(); }
+   auto getnrcomputed() const { return v.size(); }
+   auto lowest_rel() const { return v.front(); }
    template<typename FNC> auto all(FNC && f) const {
      std::vector<t_eigen> v(getnrcomputed());
      for (auto &&[i, x] : v | ranges::views::enumerate) x = f(i);
      return v;
    }
-   auto all_rel() const { return all([this](const auto i){ return rel(i); }); }
+ //  auto all_rel() const { return all([this](const auto i){ return rel(i); }); }
+   auto all_rel() const { return v; }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_GS_energy(const double GS_energy_) { GS_energy = GS_energy_; }
    void save(boost::archive::binary_oarchive &oa) const {
-     std::vector<t_eigen> tmp(this->begin(), this->end());
-     oa << tmp << scale << shift << GS_energy;
+     oa << v << scale << shift << GS_energy;
    }
    void load(boost::archive::binary_iarchive &ia) {
-     std::vector<t_eigen> tmp;
-     ia >> tmp >> scale >> shift >> GS_energy;
-     this->resize(tmp.size());
-     std::copy(tmp.begin(), tmp.end(), this->begin());
+     ia >> v >> scale >> shift >> GS_energy;
    }
-   void copy(const std::vector<t_eigen> &v, const size_t M) {
-     this->resize(M);
-     std::copy(v.begin(), v.begin() + M, this->begin());
+   void copy(const std::vector<t_eigen> &in, const size_t M) {
+     v.resize(M);
+     std::copy(in.begin(), in.begin() + M, v.begin());
    }
-   void copy(const std::vector<t_eigen> &v) { this->copy(v, v.size()); }
+   void copy(const std::vector<t_eigen> &in) { 
+     v = in;
+   }
+  void move(const std::vector<t_eigen> &&in) { 
+     v = std::move(in);
+  }
 };
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
@@ -109,7 +113,7 @@ public:
   EVEC value_zero;  // eigenvalues with Egs subtracted
   Matrix matrix;    // eigenvectors
   Eigen() = default;
-  explicit Eigen(const size_t M, const size_t dim) { // for testing only
+  explicit Eigen(const size_t M, const size_t dim) { // XXX for testing only
     my_assert(M <= dim);
     values.resize(M);
     value_zero.resize(M);
@@ -117,7 +121,7 @@ public:
   }
   explicit Eigen(RawEigen<S> && raw) {
     value_zero.resize(raw.val.size()); // XXX: required?
-    values.copy(raw.val); // XXX: move?
+    values.move(std::move(raw.val));
     matrix = std::move(raw.vec);
   }
   [[nodiscard]] auto getnrcomputed() const { return values.getnrcomputed(); } // number of computed eigenpairs
