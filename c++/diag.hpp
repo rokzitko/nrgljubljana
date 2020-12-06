@@ -67,9 +67,10 @@ template<scalar T, typename U, scalar S>
 auto copy_results(const std::vector<T> &eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
 {
   Eigen<S> d(M, dim);
-  copy_val(eigenvalues, d.value_orig, M);
+  copy_val(eigenvalues, d.value_orig, M); // YYY: to be removed
+  d.values.copy(eigenvalues, M);
   if (jobz == 'V') copy_vec(eigenvectors, d.matrix, dim, M);
-  my_assert(d.value_orig.size() == d.matrix.size1());
+  my_assert(d.value_orig.size() == d.matrix.size1()); // YYY
   return d;
 }
 

@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include <cmath>
+#include <limits> // quiet_NaN
 
 #include <range/v3/all.hpp>
 

@@ -3,9 +3,12 @@
 
 #include <vector>
 #include <string>
+#include <limits> // quiet_NaN
+
 #include <boost/range/adaptor/map.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
+
 #include <range/v3/all.hpp>
 
 #include "basicio.hpp"
@@ -18,16 +21,52 @@
 
 namespace NRG {
 
-// Result of a diagonalisation: eigenvalues and eigenvectorse
+template<scalar S, typename t_eigen = eigen_traits<S>>
+class Values : public std::vector<t_eigen> {
+  private:
+   double scale = std::numeric_limits<double>::quiet_NaN();
+   double shift = std::numeric_limits<double>::quiet_NaN();
+   double GS_energy = std::numeric_limits<double>::quiet_NaN();
+  public:
+   Values() {}
+   explicit Values(const double scale) : scale(scale) {}
+   auto rel(const size_t i) const { return (*this)[i]; }
+   auto abs(const size_t i) const { return rel(i) * scale; }
+   auto rel_zero(const size_t i) const { return rel(i)-shift; }
+   auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
+   auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
+   auto getnrcomputed() const { return this->size(); }
+   void set_scale(const double scale_) { scale = scale_; }
+   void set_shift(const double shift_) { shift = shift_; }
+   void set_GS_energy(const double GS_energy_) { GS_energy = GS_energy_; }
+   void save(boost::archive::binary_oarchive &oa) const {
+     std::vector<t_eigen> tmp(this->begin(), this->end());
+     oa << tmp << scale << shift << GS_energy;
+   }
+   void load(boost::archive::binary_iarchive &ia) {
+     std::vector<t_eigen> tmp;
+     ia >> tmp >> scale >> shift >> GS_energy;
+     this->resize(tmp.size());
+     std::copy(tmp.begin(), tmp.end(), this->begin());
+   }
+   void copy(const std::vector<t_eigen> &v, const size_t M) {
+     this->resize(M);
+     std::copy(v.begin(), v.begin() + M, this->begin());
+   }
+};
+
+// Result of a diagonalisation: eigenvalues and eigenvectors
 template <scalar S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
 class Eigen {
 public:
-  EVEC value_orig; // eigenvalues as computed
-  EVEC value_zero; // eigenvalues with Egs subtracted
-  Matrix matrix;   // eigenvectors
+  Values<S> values; // eigenvalues
+  EVEC value_orig;  // eigenvalues as computed
+  EVEC value_zero;  // eigenvalues with Egs subtracted
+  Matrix matrix;    // eigenvectors
   Eigen() = default;
   Eigen(const size_t nr, const size_t dim) {
     my_assert(nr <= dim);
+    values.resize(nr); // YYY
     value_orig.resize(nr);
     value_zero.resize(nr);
     matrix.resize(nr, dim);
@@ -97,11 +136,13 @@ public:
   }
   void save(boost::archive::binary_oarchive &oa) const {
     oa << value_orig;
+    values.save(oa);
     NRG::save(oa, matrix);
     oa << value_zero << nrpost << absenergy << absenergyG << absenergy_zero;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     ia >> value_orig;
+    values.load(ia);
     NRG::load(ia, matrix);
     ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergy_zero;
   }
