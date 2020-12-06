@@ -79,27 +79,25 @@ class MPI_diag {
      }
      return m;
    }
-   template<scalar S> void send_eigen(const int dest, const Eigen<S> &eig) {
+   template<scalar S> void send_raweigen(const int dest, const RawEigen<S> &eig) {
      mpilog("Sending eigen from " << mpiw.rank() << " to " << dest);
-     mpiw.send(dest, TAG_EIGEN_VEC, eig.value_orig);
-     send_matrix<S>(dest, eig.matrix);
+     mpiw.send(dest, TAG_EIGEN_VEC, eig.val);
+     send_matrix<S>(dest, eig.vec);
    }
-   template<scalar S> auto receive_eigen(const int source) {
+   template<scalar S> auto receive_raweigen(const int source) {
      mpilog("Receiving eigen from " << source << " on " << mpiw.rank());
-     Eigen<S> eig;
-     check_status(mpiw.recv(source, TAG_EIGEN_VEC, eig.value_orig));
-     eig.matrix = receive_matrix<S>(source);
+     RawEigen<S> eig;
+     check_status(mpiw.recv(source, TAG_EIGEN_VEC, eig.val));
+     eig.vec = receive_matrix<S>(source);
      return eig;
    } 
    // Read results from a slave process.
-   template<scalar S> std::pair<Invar, Eigen<S>> read_from(const int source) {
+   template<scalar S> std::pair<Invar, RawEigen<S>> read_from(const int source) {
      mpilog("Reading results from " << source);
-     const auto eig = receive_eigen<S>(source);
+     const auto eig = receive_raweigen<S>(source);
      Invar Irecv;
      check_status(mpiw.recv(source, TAG_INVAR, Irecv));
      mpilog("Received results for subspace " << Irecv << " [nr=" << eig.getnrstored() << ", dim=" << eig.getdim() << "]");
-     my_assert(eig.value_orig.size() == eig.matrix.size1());
-     my_assert(eig.matrix.size1() <= eig.matrix.size2());
      return {Irecv, eig};
    }
    // Handle a diagonalisation request
@@ -109,10 +107,9 @@ class MPI_diag {
      Invar I;
      check_status(mpiw.recv(master, TAG_INVAR, I));
      // 2. preform the diagonalisation
-     auto e = diagonalise<S>(m, DP, myrank());
-     Eigen eig(std::move(e)); // YYY: TEMP
+     const auto eig = diagonalise<S>(m, DP, myrank());
      // 3. send back the results
-     send_eigen<S>(master, eig);
+     send_raweigen<S>(master, eig);
      mpiw.send(master, TAG_INVAR, I);
    }
    template<scalar S>
@@ -137,7 +134,7 @@ class MPI_diag {
          if (i == 0) {
            // On master, diagonalize immediately.
            auto e = diagonalise<S>(h, DP, myrank());
-           diagnew[I] = Eigen(std::move(e));
+           diagnew[I] = Eigen<S>(std::move(e));
            tasks_done.push_back(I);
            nodes_available.push_back(0);
          } else {
@@ -148,8 +145,8 @@ class MPI_diag {
          // Check for terminated jobs
          while (auto status = mpiw.iprobe(boost::mpi::any_source, TAG_EIGEN_VEC)) {
            nrglog('M', "Receiveing results from " << status->source());
-           const auto [Irecv, eig] = read_from<S>(status->source());
-           diagnew[Irecv] = eig;
+           auto [Irecv, eig] = read_from<S>(status->source());
+           diagnew[Irecv] = Eigen<S>(std::move(eig));
            tasks_done.push_back(Irecv);
            // The node is now available for new tasks!
            nodes_available.push_back(status->source());
@@ -158,8 +155,8 @@ class MPI_diag {
        // Keep reading results sent from the slave processes until all tasks have been completed.
        while (tasks_done.size() != tasks.size()) {
          const auto status = mpiw.probe(boost::mpi::any_source, TAG_EIGEN_VEC);
-         const auto [Irecv, eig]  = read_from<S>(status.source());
-         diagnew[Irecv] = eig;
+         auto [Irecv, eig]  = read_from<S>(status.source());
+         diagnew[Irecv] = Eigen<S>(std::move(eig));
          tasks_done.push_back(Irecv);
        }
        return diagnew;
