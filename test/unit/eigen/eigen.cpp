@@ -40,12 +40,9 @@ using EVEC = evec_traits<double>;
 
 TEST(Eigen, diagonal) { // NOLINT
   NRG::Eigen<double> e(3,3);
-  EVEC v(3);
-  v[0] = 1.0;
-  v[1] = 2.0;
-  v[2] = 3.0;
+  EVEC v = { 1.0, 2.0, 3.0 };
   e.diagonal(v);
-  EXPECT_EQ(e.value_orig[0], 1.0);
+  EXPECT_EQ(e.values.rel(0), 1.0);
   EXPECT_EQ(e.value_zero[0], 1.0);
   EXPECT_EQ(e.matrix(0,0), 1.0); // identity matrix
   EXPECT_EQ(e.matrix(0,1), 0.0);
@@ -57,20 +54,25 @@ TEST(Eigen, diagonal) { // NOLINT
 
 TEST(Eigen, io) { // NOLINT
   NRG::Eigen<double> e(2,2);
+  EVEC v1 = { 1.0, 2.0 };
+  EVEC v2 = { 3.0, 4.0 };
+  e.diagonal(v1);
+  EXPECT_EQ(e.values.rel(0), 1.0);
   std::ostringstream oss;
   boost::archive::binary_oarchive oa(oss);
-  e.value_orig[0] = 1;
   e.save(oa);
-  e.value_orig[0] = 2; // overwrite
+  e.diagonal(v2);
+  EXPECT_EQ(e.values.rel(0), 3.0);
   std::istringstream iss(oss.str());
   boost::archive::binary_iarchive ia(iss);
   e.load(ia);
-  EXPECT_EQ(e.value_orig[0], 1); // original value
+  EXPECT_EQ(e.values.rel(0), 1.0); // original value
 }
 
 TEST(Eigen, hdf5io) { // NOLINT
   NRG::Eigen<double> e(2,2);
-  e.value_orig[0] = 1;
+  EVEC v1 = { 1.0, 2.0 };
+  e.diagonal(v1);
   auto h5 = H5Easy::File("Eigen.h5", H5Easy::File::Overwrite);
   e.h5save(h5, "test", false);
 }

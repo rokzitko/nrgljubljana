@@ -35,8 +35,14 @@ class Values : public std::vector<t_eigen> {
    auto rel_zero(const size_t i) const { return rel(i)-shift; }
    auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
    auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
-   auto lowest_rel() const { return this->front(); }
    auto getnrcomputed() const { return this->size(); }
+   auto lowest_rel() const { return this->front(); }
+   template<typename FNC> auto all(FNC && f) const {
+     std::vector<t_eigen> v(getnrcomputed());
+     for (auto &&[i, x] : v | ranges::views::enumerate) x = f(i);
+     return v;
+   }
+   auto all_rel() const { return all([this](const auto i){ return rel(i); }); }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_GS_energy(const double GS_energy_) { GS_energy = GS_energy_; }
@@ -100,24 +106,21 @@ template <scalar S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_tra
 class Eigen {
 public:
   Values<S> values; // eigenvalues
-  EVEC value_orig;  // eigenvalues as computed YYY
   EVEC value_zero;  // eigenvalues with Egs subtracted
   Matrix matrix;    // eigenvectors
   Eigen() = default;
   explicit Eigen(const size_t M, const size_t dim) { // for testing only
     my_assert(M <= dim);
     values.resize(M);
-    value_orig.resize(M);
     value_zero.resize(M);
     matrix.resize(M, dim);
   }
   explicit Eigen(RawEigen<S> && raw) {
-    value_orig = std::move(raw.val);
-    value_zero.resize(value_orig.size()); // XXX: required?
-    values.copy(value_orig);
+    value_zero.resize(raw.val.size()); // XXX: required?
+    values.copy(raw.val); // XXX: move?
     matrix = std::move(raw.vec);
   }
-  [[nodiscard]] auto getnrcomputed() const { return value_orig.size(); } // number of computed eigenpairs
+  [[nodiscard]] auto getnrcomputed() const { return values.getnrcomputed(); } // number of computed eigenpairs
   [[nodiscard]] auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
  private:
   long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
@@ -158,12 +161,12 @@ public:
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
   void diagonal(const EVEC &v) {
-    value_orig = value_zero = v; // YYY
+    value_zero = v; // YYY
     values.copy(v);
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
-    value_zero = value_orig; // XXX
+    value_zero = values.all_rel(); // XXX
     for (auto &x : value_zero) x -= Egs; // XXX: subtract a scalar [fix after moving to Eigen]
     my_assert(value_zero[0] >= 0);
   }
@@ -182,19 +185,17 @@ public:
     return ranges::accumulate(value_zero, 0.0, {}, [fnc, factor](const auto x) { return fnc(factor*x) * exp(-factor*x); });
   }
   void save(boost::archive::binary_oarchive &oa) const {
-    oa << value_orig;
     values.save(oa);
     NRG::save(oa, matrix);
     oa << value_zero << nrpost << absenergy << absenergyG << absenergy_zero;
   }  
   void load(boost::archive::binary_iarchive &ia) {
-    ia >> value_orig;
     values.load(ia);
     NRG::load(ia, matrix);
     ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergy_zero;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
-    H5Easy::dump(fd, name + "/value_orig",     value_orig);
+    H5Easy::dump(fd, name + "/value_orig",     values.all_rel());
     H5Easy::dump(fd, name + "/value_zero",     value_zero);
     H5Easy::dump(fd, name + "/absenergy",      absenergy);
     H5Easy::dump(fd, name + "/absenergy_zero", absenergy_zero);
@@ -280,7 +281,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        fmt::print("Number of invariant subspaces: {}\n", count_subspaces());
        for (const auto &[I, eig]: *this) 
          if (eig.getnrstored()) 
-           fmt::print("({}) {} states: {}\n", I.str(), eig.getnrstored(), eig.value_orig);
+           fmt::print("({}) {} states: {}\n", I.str(), eig.getnrstored(), eig.values.all_rel());
        fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
    void save(const size_t N, const Params &P) const {
