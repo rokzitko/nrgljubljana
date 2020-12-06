@@ -34,8 +34,8 @@ class Algo_DMNRG : public Algo<S> {
      const Matrix &rhoNI1 = rho.at(I1);
      for (const auto rm: diagIp.kept()) {
        for (const auto rj: diagI1.kept()) {
-         const auto Em = diagIp.value_zero[rm];
-         const auto Ej = diagI1.value_zero[rj];
+         const auto Em = diagIp.values.rel_zero(rm);
+         const auto Ej = diagI1.values.rel_zero(rj);
          const auto energy = Ej - Em;
          const auto absE = abs(energy);
          if (absE < Emin || absE > Emax) // does not contribute
@@ -80,8 +80,8 @@ class Algo_DMNRGmats : public Algo<S> {
      const Matrix &rhoNI1 = rho.at(I1);
      for (const auto rm: diagIp.kept()) {
        for (const auto rj: diagI1.kept()) {
-         const auto Em = diagIp.value_zero[rm];
-         const auto Ej = diagI1.value_zero[rj];
+         const auto Em = diagIp.values.rel_zero(rm);
+         const auto Ej = diagI1.values.rel_zero(rj);
          const auto energy = Ej - Em;
          t_weight sumA{};
          for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric

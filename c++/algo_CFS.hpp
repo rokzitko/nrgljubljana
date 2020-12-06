@@ -34,8 +34,8 @@ class Algo_CFSls : virtual public Algo<S> {
      if (step.last()) {
        for (const auto r1: diagI1.kept()) {
          for (const auto rp: diagIp.kept()) {
-           const auto E1 = diagI1.value_zero[r1];
-           const auto Ep = diagIp.value_zero[rp];
+           const auto E1 = diagI1.values.rel_zero(r1); // XXX: rel_zero -> rel, or abs (since we multiply by scale!)
+           const auto Ep = diagIp.values.rel_zero(rp);
            const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-E1 * step.scT()) * (-sign);
            cb->add(step.scale() * (E1-Ep), weight);
          }
@@ -49,8 +49,8 @@ class Algo_CFSls : virtual public Algo<S> {
          atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2_TK, rhoNIp, 0.0, op2_m_rho); // rhoNEW <- rhoNEW + factor T U
          for (const auto rl: diagI1.discarded()) {
            for (const auto rk: diagIp.kept()) {
-             const auto El       = diagI1.value_zero[rl];
-             const auto Ek       = diagIp.value_zero[rk];
+             const auto El       = diagI1.values.rel_zero(rl);
+             const auto Ek       = diagIp.values.rel_zero(rk);
              const auto weight = factor * conj_me(op1(rl, rk)) * op2_m_rho(rl, rk) * (-sign);
              cb->add(step.scale() * (El-Ek), weight);
            }
@@ -90,8 +90,8 @@ class Algo_CFSgt : virtual public Algo<S> {
      if (step.last()) {
        for (const auto r1: diagI1.kept()) {
          for (const auto rp: diagIp.kept()) {
-           const auto E1 = diagI1.value_zero[r1];
-           const auto Ep = diagIp.value_zero[rp];
+           const auto E1 = diagI1.values.rel_zero(r1);
+           const auto Ep = diagIp.values.rel_zero(rp);
            const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-Ep * step.scT());
            cb->add(step.scale() * (E1-Ep), weight);
          }
@@ -108,8 +108,8 @@ class Algo_CFSgt : virtual public Algo<S> {
          }
          for (const auto rk: diagI1.kept()) {                                          // ii-term, Eq. (15), negative frequency excitations
            for (const auto rl: diagIp.discarded()) {
-             const auto Ek       = diagI1.value_zero[rk];
-             const auto El       = diagIp.value_zero[rl];
+             const auto Ek       = diagI1.values.rel_zero(rk);
+             const auto El       = diagIp.values.rel_zero(rl);
              const auto weight = factor * op1_m_rho(rk, rl) * op2(rk, rl);
              cb->add(step.scale() * (Ek-El), weight);
            }
