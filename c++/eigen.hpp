@@ -120,7 +120,6 @@ public:
     matrix.resize(M, dim);
   }
   explicit Eigen(RawEigen<S> && raw) {
-    value_zero.resize(raw.val.size()); // XXX: required?
     values.move(std::move(raw.val));
     matrix = std::move(raw.vec);
   }
