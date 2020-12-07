@@ -30,6 +30,12 @@ TEST(Values, access) { // NOLINT
   EXPECT_DOUBLE_EQ(values.absG(4), 9.5);
   const auto vv = values.all_rel();
   VECTOR_DOUBLE_EQ(v, vv);
+  const auto vz = values.all_rel_zero();
+  EXPECT_DOUBLE_EQ(vz[0], 0.0);
+  EXPECT_DOUBLE_EQ(vz[1], 1.0);
+  EXPECT_DOUBLE_EQ(vz[2], 2.0);
+  EXPECT_DOUBLE_EQ(vz[3], 3.0);
+  EXPECT_DOUBLE_EQ(vz[4], 4.0);
 }
 
 int main(int argc, char **argv) {

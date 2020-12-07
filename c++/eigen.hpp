@@ -29,8 +29,6 @@ class Values {
    double shift = std::numeric_limits<double>::quiet_NaN();
    double GS_energy = std::numeric_limits<double>::quiet_NaN();
   public:
- //  Values() = default;
- //  explicit Values(const double scale) : scale(scale) {}
    void resize(const size_t size) { v.resize(size); } // XXX for testing purposes
    auto rel(const size_t i) const { return v[i]; }
    auto abs(const size_t i) const { my_assert(std::isfinite(scale)); return rel(i) * scale; }
@@ -40,6 +38,10 @@ class Values {
    auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
    auto all_rel() const { return v; }
+   auto all_rel_zero() const {
+     my_assert(std::isfinite(scale));
+     return ranges::views::transform(v, [this](const auto x){ return x-shift; });
+   }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_GS_energy(const double GS_energy_) { GS_energy = GS_energy_; }
@@ -192,7 +194,7 @@ public:
     const auto dim = getnrstored();
     auto m = Zero_matrix<S>(dim);
     for (const auto i: range0(dim)) 
-      m(i, i) = exp(-value_zero[i] * factor);
+      m(i, i) = exp(-values.rel_zero(i) * factor);
     return m;
   }
   template<typename F> auto trace(F fnc, const double factor) const { // Tr[fnc(factor*E) exp(-factor*E)]
