@@ -54,13 +54,13 @@ void truncate_prepare(const Step &step, DiagInfo<S> &diag, MF mult, const Params
   for (auto &[I, eig] : diag)
     diag[I].truncate_prepare(step.last() && P.keep_all_states_in_last_step()
                              ? eig.getnrcomputed()
-                             : ranges::count_if(eig.value_zero, [Emax](const double e) { return e <= Emax; }));
+                             : ranges::count_if(eig.value_corr, [Emax](const double e) { return e <= Emax; }));
   std::cout << "Emax=" << Emax / step.unscale() << " ";
   truncate_stats ts(diag, mult);
   ts.report();
   if (ranges::any_of(diag, [Emax](const auto &d) {
         const auto &[I, eig] = d;
-        return eig.getnrkept() == eig.getnrcomputed() && eig.value_zero.back() != Emax && eig.getnrcomputed() < eig.getdim();
+        return eig.getnrkept() == eig.getnrcomputed() && eig.value_corr.back() != Emax && eig.getnrcomputed() < eig.getdim();
       }))
     throw NotEnough();
   const double ratio = double(ts.nrkept) / ts.nrall;

@@ -175,10 +175,12 @@ public:
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
+    values.set_shift(Egs);
+    
     value_zero = values.all_rel(); // XXX
     for (auto &x : value_zero) x -= Egs; // XXX: subtract a scalar [fix after moving to Eigen]
     my_assert(value_zero[0] >= 0); // XXX
-    values.set_shift(Egs);
+    value_corr = value_zero; // YYY
     my_assert(values.rel_zero(0) == value_zero[0]); // XXX
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
