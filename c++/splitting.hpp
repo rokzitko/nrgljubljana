@@ -44,9 +44,9 @@ class Clusters {
    }
    // Find clusters of values which differ by at most 'epsilon'
    Clusters(DiagInfo<S> &diag, const double epsilon, bool fix = true) {
-     const auto energies = diag.sorted_energies();
+     const auto energies = diag.sorted_energies_rel_zero();
      my_assert(energies.size());
-     auto e0 = energies[0];      // energy of the lower boundary of the cluster, [e0:e1]
+     auto e0 = energies.front();  // energy of the lower boundary of the cluster, [e0:e1]
      auto i0 = energies.cbegin(); // iterator to the lower boundary of the cluster, [i0:i1]
      int size = 1;                // number of states in the current cluster
      for (auto i = energies.begin(); i != energies.end(); ++i) {

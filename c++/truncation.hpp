@@ -12,7 +12,7 @@ namespace NRG {
 
 // Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.
 template <scalar S> auto highest_retained_energy(const Step &step, const DiagInfo<S> &diag, const Params &P) {
-  const auto energies = diag.sorted_energies();
+  const auto energies = diag.sorted_energies_rel_zero();
   my_assert(energies.front() == 0.0); // check for the subtraction of Egs
   const auto totalnumber = energies.size();
   // We add 1 for historical reasons. We thus keep states with E<=Emax, and one additional state which has E>Emax.

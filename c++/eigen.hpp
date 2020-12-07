@@ -159,7 +159,7 @@ public:
       my_assert(nrpost <= i.size1());
       i.resize(nrpost, i.size2());
     }
-    value_zero.resize(nrpost);
+    value_zero.resize(nrpost); // ZZZ: necessary??
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
@@ -171,7 +171,7 @@ public:
   void subtract_Egs(const t_eigen Egs) {
     value_zero = values.all_rel(); // XXX
     for (auto &x : value_zero) x -= Egs; // XXX: subtract a scalar [fix after moving to Eigen]
-    my_assert(value_zero[0] >= 0);
+    my_assert(value_zero[0] >= 0); // XXX
     values.set_shift(Egs);
     my_assert(values.rel_zero(0) == value_zero[0]);
   }
@@ -245,10 +245,18 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void subtract_GS_energy(const t_eigen GS_energy) {
      ranges::for_each(eigs(), [GS_energy](auto &eig) { eig.subtract_GS_energy(GS_energy); });
    }
-   std::vector<t_eigen> sorted_energies() const {
+   std::vector<t_eigen> sorted_energies_rel_zero() const { // YYY
      std::vector<t_eigen> energies;
      for (const auto &eig: eigs())
        energies.insert(energies.end(), eig.value_zero.begin(), eig.value_zero.end());
+     return energies | ranges::move | ranges::actions::sort;
+   }
+   std::vector<t_eigen> sorted_energies_rel() const { // YYY
+     std::vector<t_eigen> energies;
+     for (const auto &eig: eigs()) {
+       const auto &all = eig.values.all_rel();
+       energies.insert(energies.end(), all.begin(), all.end());
+     }
      return energies | ranges::move | ranges::actions::sort;
    }
    void dump_value_zero(std::ostream &F) const {
