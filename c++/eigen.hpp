@@ -126,13 +126,14 @@ public:
   [[nodiscard]] auto getnrcomputed() const { return values.size(); }     // number of computed eigenpairs
   [[nodiscard]] auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
  private:
-  long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
+  long nrpost = -1;   // number of eigenpairs after truncation (-1: keep all)
+  long nrstored = -1; // number of eigenpairs currently held in store 
   [[nodiscard]] auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }     // number of states after truncation
  public:
   [[nodiscard]] auto getnrall() const { return getnrcomputed(); }                              // all = all computed
   [[nodiscard]] auto getnrkept() const { return getnrpost(); }                                 // # of kept states
   [[nodiscard]] auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }            // # of discarded states
-  [[nodiscard]] auto getnrstored() const  { return value_zero.size(); }                        // number of stored states
+  [[nodiscard]] auto getnrstored() const  { return nrstored == -1 ? value_zero.size() : nrstored; }  // number of stored states
   [[nodiscard]] auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
   [[nodiscard]] auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
@@ -159,6 +160,7 @@ public:
       my_assert(nrpost <= i.size1());
       i.resize(nrpost, i.size2());
     }
+    nrstored = nrpost;
     value_zero.resize(nrpost); // ZZZ: necessary?? YES!
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
@@ -174,11 +176,12 @@ public:
     for (auto &x : value_zero) x -= Egs; // XXX: subtract a scalar [fix after moving to Eigen]
     my_assert(value_zero[0] >= 0); // XXX
     values.set_shift(Egs);
-    my_assert(values.rel_zero(0) == value_zero[0]);
+    my_assert(values.rel_zero(0) == value_zero[0]); // XXX
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
     for (auto &x : absenergyG) x -= GS_energy; // XXX
-    my_assert(absenergyG[0] >= 0);
+    my_assert(absenergyG[0] >= 0); // XXX
+    values.set_GS_energy(GS_energy);
   }
   auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements
     const auto dim = getnrstored();
@@ -193,12 +196,12 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     NRG::save(oa, matrix);
-    oa << value_zero << nrpost << absenergy << absenergyG << absenergy_zero;
+    oa << value_zero << nrpost << nrstored << absenergy << absenergyG << absenergy_zero;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     NRG::load(ia, matrix);
-    ia >> value_zero >> nrpost >> absenergy >> absenergyG >> absenergy_zero;
+    ia >> value_zero >> nrpost >> nrstored >> absenergy >> absenergyG >> absenergy_zero;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
     H5Easy::dump(fd, name + "/value_orig",     values.all_rel());
@@ -209,6 +212,7 @@ public:
       H5Easy::dump(fd, name + "/absenergyG",   absenergyG);
     h5_dump_matrix(fd, name + "/matrix", matrix);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
+    h5_dump_scalar(fd, name + "/nrstored", getnrstored()); // XXX: do we need this?
   }
 };
 
