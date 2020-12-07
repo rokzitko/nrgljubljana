@@ -111,6 +111,7 @@ class Eigen {
 public:
   Values<S> values; // eigenvalues
   EVEC value_zero;  // eigenvalues with Egs subtracted
+  EVEC value_corr;  // eigenvalues corrected for floating-point round-off errors
   Matrix matrix;    // eigenvectors
   Eigen() = default;
   explicit Eigen(const size_t M, const size_t dim) { // XXX for testing only
