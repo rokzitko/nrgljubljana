@@ -163,11 +163,13 @@ public:
     }
     nrstored = nrpost;
     value_zero.resize(nrpost); // ZZZ: necessary?? YES!
+    value_corr.resize(nrpost); // YYY: necessary??
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
   void diagonal(const EVEC &v) {
     value_zero = v; // YYY
+    value_corr = v;
     values.copy(v);
     values.set_shift(0.0);
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
@@ -197,16 +199,17 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     NRG::save(oa, matrix);
-    oa << value_zero << nrpost << nrstored << absenergy << absenergyG << absenergy_zero;
+    oa << value_zero << value_corr << nrpost << nrstored << absenergy << absenergyG << absenergy_zero;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     NRG::load(ia, matrix);
-    ia >> value_zero >> nrpost >> nrstored >> absenergy >> absenergyG >> absenergy_zero;
+    ia >> value_zero >> value_corr >> nrpost >> nrstored >> absenergy >> absenergyG >> absenergy_zero;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
     H5Easy::dump(fd, name + "/value_orig",     values.all_rel());
     H5Easy::dump(fd, name + "/value_zero",     value_zero);
+    H5Easy::dump(fd, name + "/value_corr",     value_corr);
     H5Easy::dump(fd, name + "/absenergy",      absenergy);
     H5Easy::dump(fd, name + "/absenergy_zero", absenergy_zero);
     if (write_absG) 

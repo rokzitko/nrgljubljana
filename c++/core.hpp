@@ -78,7 +78,7 @@ Matrix_traits<S> hamiltonian(const Step &step, const Invar &I, const Opch<S> &op
   for (const auto i : Sym->combs()) {
     const auto range = rm.view(i);
     for (const auto & [n, r] : range | ranges::views::enumerate)
-      h(r,r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_zero[n]; // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
+      h(r,r) = P.nrg_step_scale_factor() * diagprev.at(anc[i]).value_corr[n]; // H_{N+1}=\lambda^{1/2} H_N+\xi_N (hopping terms)
   }
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
@@ -159,7 +159,8 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
 template<scalar S>
 void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stats) {
   for (auto &eig : diag.eigs()) {
-    eig.absenergy_zero = eig.value_zero;
+    eig.absenergy_zero = eig.value_zero; // YYY
+//    eig.absenergy_zero = eig.value_corr;
     for(auto &x: eig.absenergy_zero) x *= step.scale();    // referenced to the lowest energy in current NRG step (not modified later on)
     eig.absenergy = eig.absenergy_zero;                    // absolute energies (not modified later on)
     std::transform(eig.absenergy.begin(), eig.absenergy.end(), eig.absenergy.begin(), [v = stats.total_energy](auto x) { return x + v; });
