@@ -2,6 +2,7 @@
 #include <sstream>
 #include <gtest/gtest.h>
 
+#include "compare.hpp"
 #include "test_common.hpp"
 #include <traits.hpp>
 #include <eigen.hpp>
@@ -75,23 +76,6 @@ TEST(Eigen, hdf5io) { // NOLINT
   e.diagonal(v1);
   auto h5 = H5Easy::File("Eigen.h5", H5Easy::File::Overwrite);
   e.h5save(h5, "test", false);
-}
-
-template<typename U, typename V> // XXX: concept vector: .size, [] accessor
-void VECTOR_EQ(const U &A, const V &B)
-{
-  EXPECT_EQ(A.size(), B.size());
-  for(int i = 0; i < A.size(); i++) EXPECT_EQ(A[i], B[i]);
-}
-
-template<typename U, typename V> // XXX: concept matrix: size1(), size2(), (i,j) accessor
-void MATRIX_EQ(const U &A, const V &B)
-{
-  EXPECT_EQ(A.size1(), B.size1());
-  EXPECT_EQ(A.size2(), B.size2());
-  for(int i = 0; i < A.size1(); i++) 
-    for(int j = 0; j < A.size2(); j++) 
-      EXPECT_EQ(A(i,j), B(i,j));
 }
 
 TEST(io, read_vector) { // NOLINT

@@ -37,14 +37,8 @@ class Values {
    auto rel_zero(const size_t i) const { return rel(i)-shift; }
    auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
    auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
-   auto getnrcomputed() const { return v.size(); }
+   auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
-   template<typename FNC> auto all(FNC && f) const {
-     std::vector<t_eigen> v(getnrcomputed());
-     for (auto &&[i, x] : v | ranges::views::enumerate) x = f(i);
-     return v;
-   }
- //  auto all_rel() const { return all([this](const auto i){ return rel(i); }); }
    auto all_rel() const { return v; }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
@@ -123,7 +117,7 @@ public:
     values.move(std::move(raw.val));
     matrix = std::move(raw.vec);
   }
-  [[nodiscard]] auto getnrcomputed() const { return values.getnrcomputed(); } // number of computed eigenpairs
+  [[nodiscard]] auto getnrcomputed() const { return values.size(); }     // number of computed eigenpairs
   [[nodiscard]] auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
  private:
   long nrpost = -1;  // number of eigenpairs after truncation (-1: keep all)
@@ -159,7 +153,7 @@ public:
       my_assert(nrpost <= i.size1());
       i.resize(nrpost, i.size2());
     }
-    value_zero.resize(nrpost); // ZZZ: necessary??
+    value_zero.resize(nrpost); // ZZZ: necessary?? YES!
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself.
