@@ -63,11 +63,9 @@ class Algo_FTmats : public Algo<S> {
    {
      const size_t cutoff = P.mats;
      for (const auto r1: diagI1.kept()) {
-//       const auto E1 = diagI1.values.rel_zero(r1);
-       const auto E1 = diagI1.value_zero[r1];
+       const auto E1 = diagI1.values.rel_zero(r1);
        for (const auto rp: diagIp.kept()) {
-//         const auto Ep = diagIp.values.rel_zero(rp);
-         const auto Ep = diagIp.value_zero[rp];
+         const auto Ep = diagIp.values.rel_zero(rp);
          const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
          const auto energy = E1 - Ep;
 #pragma omp parallel for schedule(static)

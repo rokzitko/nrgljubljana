@@ -33,8 +33,8 @@ class Values {
  //  explicit Values(const double scale) : scale(scale) {}
    void resize(const size_t size) { v.resize(size); } // XXX for testing purposes
    auto rel(const size_t i) const { return v[i]; }
-   auto abs(const size_t i) const { return rel(i) * scale; }
-   auto rel_zero(const size_t i) const { return rel(i)-shift; }
+   auto abs(const size_t i) const { my_assert(std::isfinite(scale)); return rel(i) * scale; }
+   auto rel_zero(const size_t i) const { my_assert(std::isfinite(shift)); return rel(i)-shift; }
    auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
    auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
    auto size() const { return v.size(); }
@@ -58,6 +58,12 @@ class Values {
    }
   void move(const std::vector<t_eigen> &&in) { 
      v = std::move(in);
+  }
+  auto begin() {
+    return v.begin();
+  }
+  auto end() {
+    return v.end();
   }
 };
 
@@ -156,10 +162,11 @@ public:
     value_zero.resize(nrpost); // ZZZ: necessary?? YES!
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
-  // represent the spectral decomposition in the eigenbasis itself.
+  // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
   void diagonal(const EVEC &v) {
     value_zero = v; // YYY
     values.copy(v);
+    values.set_shift(0.0);
     matrix   = ublas::identity_matrix<t_eigen>(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
@@ -320,7 +327,9 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      for (const auto &[I, eig]: *this)
        eig.h5save(fd, name + "/" + I.name(), write_absG);
    }
-   explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) { load(N, P, remove_files); } // called from do_diag()
+   explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) { 
+     load(N, P, remove_files); 
+   } // called from do_diag()
 };
 
 } // namespace
