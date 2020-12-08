@@ -249,6 +249,12 @@ void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
   }
 }
    
+template<scalar S, typename T, typename t_coef = coef_traits<S>>
+Eigen::MatrixX<T> product(const t_coef factor, const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B) {
+  my_assert(my_isfinite(factor));
+  return factor * A * B.adjoint();
+}
+
 // M += factor * A * O * B^\dag
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void transform(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
@@ -260,6 +266,13 @@ void transform(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O,
     atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
   }
 }
+
+template<scalar S, typename t_coef = coef_traits<S>, typename T>
+Eigen::MatrixX<T> transform(const t_coef factor, const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &O, const Eigen::MatrixX<T> &B) {
+  my_assert(my_isfinite(factor));
+  return factor * A * O * B.adjoint();
+}
+
 // M += factor * U^\dag * O * U
 template<scalar S, typename U_type, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void rotate(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
@@ -270,6 +283,12 @@ void rotate(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
     atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, O, t_coef(0.0), T); // T = U^\dag * O
     atlas::gemm(CblasNoTrans, CblasNoTrans, factor, T, U, t_coef(1.0), M); // M += factor * T * U
   }
+}
+
+template<scalar S, typename t_coef = coef_traits<S>, typename T, typename T1>
+Eigen::MatrixX<T> rotate(const t_coef factor, const Eigen::MatrixX<T1> &U, const Eigen::MatrixX<T> &O) {
+  my_assert(my_isfinite(factor));
+  return factor * U.adjoint() * O * U;
 }
 
 inline auto to_ublas_range(const std::pair<size_t,size_t> &p) { return ublas::range(p.first, p.second); }
@@ -286,10 +305,29 @@ auto submatrix(ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const st
   return ublas::matrix_range<ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
 }
 
+template<scalar S>
+auto submatrix(const Eigen::MatrixX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+{
+  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
+}
+
+template<scalar S>
+auto submatrix(Eigen::ArrayX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+{
+  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
+}
+
 template<scalar T, scalar S>
 auto trace_exp(const std::vector<T> &e, const ublas::matrix<S> &m, const double factor) { // Tr[exp(-factor*e) m]
   my_assert(e.size() == m.size1() && e.size() == m.size2());
   return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e[r]) * m(r, r); });
+}
+
+template<scalar T, scalar S>
+auto trace_exp(const Eigen::VectorX<T> &e, const Eigen::MatrixX<S> &m, const double factor) { // Tr[exp(-factor*e) m]
+  my_assert(e.size() == m.rows() && e.size() == m.cols());
+  // return (exp(-factor * e) * m).trace();
+  return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e(r)) * m(r, r); });
 }
 
 // 'values' is any range we can iterate over
@@ -299,8 +337,30 @@ auto sum_of_exp(R values, const double factor) // sum exp(-factor*x)
   return ranges::accumulate(values, 0.0, {}, [factor](const auto &x){ return exp(-factor*x); });
 }      
 
+template<typename T>
+auto sum_of_exp(Eigen::ArrayX<T> A, const double factor) // sum exp(-factor*x)
+{
+  return exp(-factor * A).sum();
+}
+
+template<typename T>
+auto sum_of_exp(Eigen::MatrixX<T> A, const double factor) // sum exp(-factor*x)
+{
+  return exp(-factor * A.array()).sum();
+}
+
 template<scalar T>
 T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const size_t range) // Tr[AB]
+{
+  T sum{};
+  for (const auto i : range0(range))
+       for (const auto j : range0(range))
+      sum += A(i, j) * B(j, i);
+  return sum;
+}
+
+template<scalar T>
+T trace_contract(const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B, const size_t range) // Tr[AB]
 {
   T sum{};
   for (const auto i : range0(range))
