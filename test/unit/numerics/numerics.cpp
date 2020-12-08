@@ -73,11 +73,11 @@ TEST(numerics, my_fcmp){
   EXPECT_EQ(my_fcmp(a, b, 0.1, 0.00001), -1);
 }
 
-TEST(numerics, ublas_trace_exp_real){
+TEST(numerics, std_trace_exp_real){
   const int N = 3;
-  ublas::vector<double> v(N);
+  std::vector<double> v(N);
   for(int i = 0; i < N ; i++)
-    v(i) = i + 1;
+    v[i] = i + 1;
   
   ublas::matrix<double> m(N, N);
   for(int i = 0; i < N*N; i++)
@@ -85,17 +85,17 @@ TEST(numerics, ublas_trace_exp_real){
   
   double expected = 0;
   for(int i = 0; i < N; i++){
-    expected += exp(- 2.5 * v(i)) * m(i, i);
+    expected += exp(- 2.5 * v[i]) * m(i, i);
   }
 
   EXPECT_DOUBLE_EQ(expected, trace_exp(v, m , 2.5));
 }
 
-TEST(numerics, ublas_trace_exp_complex){
+TEST(numerics, std_trace_exp_complex){
   const int N = 3;
-  ublas::vector<std::complex<double>> v(N);
+  std::vector<std::complex<double>> v(N);
   for(int j = 0; j < N ; j++)
-    v(j) = j + 1 + 3i * j;
+    v[j] = j + 1 + 3i * j;
   
   ublas::matrix<std::complex<double>> m(N, N);
   for(int j = 0; j < N*N; j++)
@@ -103,7 +103,7 @@ TEST(numerics, ublas_trace_exp_complex){
   
   std::complex<double> expected = 0;
   for(int i = 0; i < N; i++){
-    expected += exp(- 2.5 * v(i)) * m(i, i);
+    expected += exp(- 2.5 * v[i]) * m(i, i);
   }
 
   compare(expected, trace_exp(v, m , 2.5));
