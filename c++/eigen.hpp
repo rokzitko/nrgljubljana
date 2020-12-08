@@ -141,7 +141,7 @@ public:
   [[nodiscard]] auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
-  auto value_zero_kept() const { return ranges::subrange(value_zero.begin(), value_zero.begin() + getnrkept()); }
+  auto value_corr_kept() const { return ranges::subrange(value_corr.begin(), value_corr.begin() + getnrkept()); }
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
@@ -190,11 +190,11 @@ public:
     my_assert(absenergyG[0] >= 0); // XXX
     values.set_GS_energy(GS_energy);
   }
-  auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements
+  auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements, used in init_rho()
     const auto dim = getnrstored();
     auto m = Zero_matrix<S>(dim);
     for (const auto i: range0(dim)) 
-      m(i, i) = exp(-values.rel_zero(i) * factor);
+      m(i, i) = exp(-value_corr[i] * factor); // corrected eigenvalues!
     return m;
   }
   template<typename F> auto trace(F fnc, const double factor) const { // Tr[fnc(factor*E) exp(-factor*E)]

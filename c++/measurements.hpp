@@ -17,14 +17,14 @@ namespace NRG {
 template<scalar S, typename MF, typename t_matel = matel_traits<S>>
 CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
   return ranges::accumulate(diag, S{}, {}, [&m, &mult, factor](const auto &x){
-    const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_zero, m.at({I,I}), factor); });
+    const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_corr, m.at({I,I}), factor); });
 }
 
 // Measure thermodynamic expectation values of singlet operators
 template<scalar S, typename MF>
 void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag) {
   const auto Z = ranges::accumulate(diag, 0.0, {}, [mult, factor](const auto &d) { const auto &[I, eig] = d;
-                                                   return mult(I) * sum_of_exp(eig.value_zero, factor); });
+                                                   return mult(I) * sum_of_exp(eig.value_corr, factor); });
   for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
   for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
 }
@@ -51,7 +51,7 @@ void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &
 template<scalar S, typename MF>
 auto grand_canonical_Z(const double factor, const DiagInfo<S> &diag, MF mult) {
   return ranges::accumulate(diag, 0.0, {}, [factor,mult](const auto &x) { const auto &[I, eig] = x; 
-    return mult(I) * sum_of_exp(eig.value_zero_kept(), factor); }); // over kept states ONLY
+    return mult(I) * sum_of_exp(eig.value_corr_kept(), factor); }); // over kept states ONLY
 }
 
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
