@@ -39,7 +39,7 @@ class Values {
    auto lowest_rel() const { return v.front(); }
    auto all_rel() const { return v; }
    auto all_rel_zero() const {
-     my_assert(std::isfinite(scale));
+     my_assert(std::isfinite(shift));
      return ranges::views::transform(v, [this](const auto x){ return x-shift; });
    }
    void set_scale(const double scale_) { scale = scale_; }

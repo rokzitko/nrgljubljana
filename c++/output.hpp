@@ -84,7 +84,7 @@ class Annotated {
      }
      std::vector<std::pair<double, Invar>> seznam;
      for (const auto &[I, eig] : diag)
-       for (const auto e : eig.value_zero)
+       for (const auto e : eig.values.all_rel_zero())
          seznam.emplace_back(e, I);
      ranges::sort(seznam);
      size_t len = std::min<size_t>(seznam.size(), P.dumpannotated); // non-const
