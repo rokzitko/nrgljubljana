@@ -260,10 +260,11 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    }
    std::vector<t_eigen> sorted_energies_rel_zero() const { // YYY
      std::vector<t_eigen> energies;
-     for (const auto &eig: eigs())
-       energies.insert(energies.end(), eig.value_zero.begin(), eig.value_zero.end());
+     for (const auto &eig: eigs()) 
+       energies.insert(energies.end(), eig.value_corr.begin(), eig.value_corr.end());
      return energies | ranges::move | ranges::actions::sort;
    }
+ /*
    std::vector<t_eigen> sorted_energies_rel() const { // YYY
      std::vector<t_eigen> energies;
      for (const auto &eig: eigs()) {
@@ -272,6 +273,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      return energies | ranges::move | ranges::actions::sort;
    }
+ */
    void dump_value_zero(std::ostream &F) const {
      for (const auto &[I, eig]: *this)
        F << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
