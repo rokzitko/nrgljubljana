@@ -228,7 +228,7 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
 template<scalar S>
 void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym,
                                 Stats<S> &stats, Output<S> &output) {
-  output.dump_all_energies(step.ndx(), diag);
+  output.dump_energies(step.ndx(), diag);
   output.annotated.dump(step, diag, stats, Sym->multfnc());
   calculate_TD(step, diag, stats, Sym);
 }

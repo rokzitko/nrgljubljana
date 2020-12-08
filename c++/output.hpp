@@ -117,6 +117,15 @@ class Annotated {
    }
 };
 
+template<scalar S>
+auto singlet_operators_for_expv_evaluation(const Operators<S> &operators)
+{
+  std::list<std::string> ops;
+  for (const auto &name : operators.ops  | boost::adaptors::map_keys) ops.push_back(name);
+  for (const auto &name : operators.opsg | boost::adaptors::map_keys) ops.push_back(name);
+  return ops;
+}
+
 // Handle all output
 template<scalar S>
 struct Output {
@@ -133,12 +142,8 @@ struct Output {
          const std::string filename_customfdm = "customfdm")
     : runtype(runtype), P(P), annotated(P) 
     {
-      // We dump all energies to separate files for NRG and DM-NRG runs. This is a very convenient way to check if both
-      // runs produce the same results.
       if (P.dumpenergies && runtype == RUNTYPE::NRG) Fenergies.open(filename_energies);
-      std::list<std::string> ops;
-      for (const auto &name : operators.ops  | boost::adaptors::map_keys) ops.push_back(name);
-      for (const auto &name : operators.opsg | boost::adaptors::map_keys) ops.push_back(name);
+      const auto ops = singlet_operators_for_expv_evaluation(operators);
       if (runtype == RUNTYPE::NRG)
         custom = std::make_unique<ExpvOutput<S>>(filename_custom, stats.expv, ops, P);
       else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
@@ -148,11 +153,11 @@ struct Output {
         h5raw = std::make_unique<H5Easy::File>(filename_h5, H5Easy::File::Overwrite);
       }
     }
-  // Dump all energies in diag to a file
-  void dump_all_energies(const int N, const DiagInfo<S> &diag) {
+  // Dump eigenvalues from the diagonalisation to a file.
+  void dump_energies(const int N, const DiagInfo<S> &diag) {
     if (!Fenergies) return;
     Fenergies << std::endl << "===== Iteration number: " << N << std::endl;
-    diag.dump_value_zero(Fenergies);
+    diag.dump_energies(Fenergies);
   }
 };
 

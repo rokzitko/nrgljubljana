@@ -174,7 +174,7 @@ public:
     value_corr = v;
     values.copy(v);
     values.set_shift(0.0);
-    matrix   = ublas::identity_matrix<t_eigen>(v.size());
+    matrix = ublas::identity_matrix<t_eigen>(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
     values.set_shift(Egs);
@@ -264,19 +264,9 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        energies.insert(energies.end(), eig.value_corr.begin(), eig.value_corr.end());
      return energies | ranges::move | ranges::actions::sort;
    }
- /*
-   std::vector<t_eigen> sorted_energies_rel() const { // YYY
-     std::vector<t_eigen> energies;
-     for (const auto &eig: eigs()) {
-       const auto &all = eig.values.all_rel();
-       energies.insert(energies.end(), all.begin(), all.end());
-     }
-     return energies | ranges::move | ranges::actions::sort;
-   }
- */
-   void dump_value_zero(std::ostream &F) const {
+   void dump_energies(std::ostream &F) const {
      for (const auto &[I, eig]: *this)
-       F << "Subspace: " << I << std::endl << eig.value_zero << std::endl;
+       F << "Subspace: " << I << std::endl << eig.values.all_rel() << std::endl;
    }
    void truncate_perform() {
      ranges::for_each(eigs(), [](auto &eig){ eig.truncate_perform(); }); // Truncate subspace to appropriate size
