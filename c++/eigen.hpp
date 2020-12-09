@@ -211,7 +211,6 @@ public:
       h5_dump_vector(fd, name + "/absenergyG",   absenergyG);
     h5_dump_matrix(fd, name + "/matrix", matrix);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
-    h5_dump_scalar(fd, name + "/nrstored", getnrstored()); // XXX: do we need this?
   }
 };
 
