@@ -132,7 +132,7 @@ void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, const Symmetry<S
           mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.values.abs_zero(i)/T));
           mpf_div(weight, weight, stats.ZnDN[N]);
           my_mpf e;
-          mpf_set_d(e, ds.eig.absenergy[i]);
+          mpf_set_d(e, ds.eig.values.abs_T(i));
           my_mpf e2;
           mpf_mul(e2, e, e);
           mpf_mul(e, e, weight);

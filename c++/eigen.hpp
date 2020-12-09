@@ -53,6 +53,10 @@ class Values {
      my_assert(v.size() == 0 || (std::isfinite(shift) && std::isfinite(scale)));
      return ranges::views::transform(v, [this](const auto x){ return (x-shift) * scale; });
    }
+   auto all_abs_T() const {
+     my_assert(v.size() == 0 || (std::isfinite(shift) && std::isfinite(scale) && std::isfinite(T_shift)));
+     return ranges::views::transform(v, [this](const auto x){ return (x-shift) * scale + T_shift; });
+   }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
@@ -214,6 +218,7 @@ public:
     NRG::load(ia, matrix);
     ia >> value_corr >> nrpost >> nrstored >> absenergy >> absenergyG;
   }
+  // XXX: rename to be consistent with class Values
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
     h5_dump_vector(fd, name + "/value_orig",     values.all_rel());
     if (values.has_zero())
@@ -223,7 +228,7 @@ public:
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
     if (values.has_abs()) {
       h5_dump_vector(fd, name + "/absenergy_zero", values.all_abs_zero() | ranges::to_vector);
-      h5_dump_vector(fd, name + "/absenergy",      absenergy);
+      h5_dump_vector(fd, name + "/absenergy",      values.all_abs_T() | ranges::to_vector);
       if (write_absG) 
         h5_dump_vector(fd, name + "/absenergyG",   absenergyG);
     }
