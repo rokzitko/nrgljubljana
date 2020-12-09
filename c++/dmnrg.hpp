@@ -44,8 +44,7 @@ auto init_rho(const Step &step, const DiagInfo<S> &diag, MF mult) {
   DensMatElements<S> rho;
   for (const auto &[I, eig]: diag)
     rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step.scT(), diag, mult);
-// NOTE: diagonal_exp() and grand_canonical_Z() both use "value_corr", 
-// i.e. the round-off-error corrected eigenvalues.
+    // NOTE: diagonal_exp() and grand_canonical_Z() both use the round-off-error corrected eigenvalues.
   check_trace_rho(rho, mult);
   return rho;
 }

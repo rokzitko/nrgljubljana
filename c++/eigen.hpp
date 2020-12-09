@@ -47,7 +47,7 @@ class Values {
    auto corr(const size_t i) const { return corrected[i]; }
    auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
-   auto all_rel() const { return v; }
+   const auto & all_rel() const { return v; }
    auto all_rel_zero() const {
      my_assert(v.size() == 0 || std::isfinite(shift));
      return ranges::views::transform(v, [this](const auto x){ return x-shift; });
@@ -64,7 +64,7 @@ class Values {
      my_assert(v.size() == 0 || (std::isfinite(shift) && std::isfinite(scale) && std::isfinite(T_shift) && std::isfinite(abs_GS_energy)));
      return ranges::views::transform(v, [this](const auto x){ return (x-shift) * scale + T_shift - abs_GS_energy; });
    }
-   auto all_corr() const {
+   const auto & all_corr() const {
      return corrected;
    }
    void set(std::vector<t_eigen> in) { v = std::move(in); }
