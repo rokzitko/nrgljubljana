@@ -198,7 +198,7 @@ public:
     return m;
   }
   template<typename F> auto trace(F fnc, const double factor) const { // Tr[fnc(factor*E) exp(-factor*E)]
-    return ranges::accumulate(value_zero, 0.0, {}, [fnc, factor](const auto x) { return fnc(factor*x) * exp(-factor*x); });
+    return ranges::accumulate(values.all_rel_zero(), 0.0, {}, [fnc, factor](const auto x) { return fnc(factor*x) * exp(-factor*x); });
   }
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
@@ -211,13 +211,13 @@ public:
     ia >> value_zero >> value_corr >> nrpost >> nrstored >> absenergy >> absenergyG >> absenergy_zero;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
-    H5Easy::dump(fd, name + "/value_orig",     values.all_rel());
-    H5Easy::dump(fd, name + "/value_zero",     value_zero);
-    H5Easy::dump(fd, name + "/value_corr",     value_corr);
-    H5Easy::dump(fd, name + "/absenergy",      absenergy);
-    H5Easy::dump(fd, name + "/absenergy_zero", absenergy_zero);
+    h5_dump_vector(fd, name + "/value_orig",     values.all_rel());
+    h5_dump_vector(fd, name + "/value_zero",     values.all_rel_zero() | ranges::to_vector);
+    h5_dump_vector(fd, name + "/value_corr",     value_corr);
+    h5_dump_vector(fd, name + "/absenergy",      absenergy);
+    h5_dump_vector(fd, name + "/absenergy_zero", absenergy_zero);
     if (write_absG) 
-      H5Easy::dump(fd, name + "/absenergyG",   absenergyG);
+      h5_dump_vector(fd, name + "/absenergyG",   absenergyG);
     h5_dump_matrix(fd, name + "/matrix", matrix);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
     h5_dump_scalar(fd, name + "/nrstored", getnrstored()); // XXX: do we need this?
