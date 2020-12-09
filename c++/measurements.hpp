@@ -24,7 +24,7 @@ CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S
 template<scalar S, typename MF>
 void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag) {
   const auto Z = ranges::accumulate(diag, 0.0, {}, [mult, factor](const auto &d) { const auto &[I, eig] = d;
-                                                   return mult(I) * sum_of_exp(eig.value_corr, factor); });
+                                                   return mult(I) * sum_of_exp(eig.value_corr_msr(), factor); });
   for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
   for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
 }

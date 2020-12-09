@@ -332,7 +332,7 @@ auto trace_exp(const Eigen::VectorX<T> &e, const Eigen::MatrixX<S> &m, const dou
 
 // 'values' is any range we can iterate over
 template<typename R>
-auto sum_of_exp(R values, const double factor) // sum exp(-factor*x)
+auto sum_of_exp(R && values, const double factor) // sum exp(-factor*x)
 {
   return ranges::accumulate(values, 0.0, {}, [factor](const auto &x){ return exp(-factor*x); });
 }      
