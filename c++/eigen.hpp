@@ -41,7 +41,7 @@ class Values {
    auto rel_zero(const size_t i) const { my_assert(std::isfinite(shift)); return rel(i)-shift; } // subtracted
    auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; } // absolute energies (referenced to the lowest energy in the N-th step)
    auto abs_T(const size_t i) const { my_assert(std::isfinite(T_shift)); return abs_zero(i) + T_shift; } // added
-   //auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
+   auto abs_G(const size_t i) const { my_assert(std::isfinite(abs_GS_energy)); return abs_T(i) - abs_GS_energy; }
    auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
    auto all_rel() const { return v; }
@@ -196,6 +196,7 @@ public:
     for (auto &x : absenergyG) x -= GS_energy; // XXX
     my_assert(absenergyG[0] >= 0); // XXX
     values.set_abs_GS_energy(GS_energy);
+    my_assert(absenergyG[0] == values.abs_G(0) );
   }
   auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements, used in init_rho()
     const auto dim = getnrstored();
