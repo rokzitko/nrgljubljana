@@ -12,7 +12,7 @@ using namespace NRG;
 TEST(Values, access) { // NOLINT
   Values<double> values;
   std::vector v = {1.0, 2.0, 3.0, 4.0, 5.0};
-  values.copy(v);
+  values.set(v);
   EXPECT_EQ(values.size(), 5);
   EXPECT_DOUBLE_EQ(values.lowest_rel(), 1.0);
   EXPECT_DOUBLE_EQ(values.rel(0), 1.0);

@@ -67,10 +67,12 @@ class Values {
    auto all_corr() const {
      return corrected;
    }
+   void set(std::vector<t_eigen> in) { v = std::move(in); }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
    void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }  
+   void set_corr(std::vector<t_eigen> in) { corrected = std::move(in); }
    auto has_abs() const { return std::isfinite(scale); }
    auto has_zero() const { return std::isfinite(shift); }
    void save(boost::archive::binary_oarchive &oa) const {
@@ -79,29 +81,10 @@ class Values {
    void load(boost::archive::binary_iarchive &ia) {
      ia >> v >> scale >> shift >> T_shift >> abs_GS_energy >> corrected;
    }
-   void copy(const std::vector<t_eigen> &in, const size_t M) {
-     v.resize(M);
-     std::copy(in.begin(), in.begin() + M, v.begin());
-   }
-   void copy(const std::vector<t_eigen> &in) { 
-     v = in;
-   }
-  void move(std::vector<t_eigen> &&in) { 
-     v = std::move(in);
-  }
-  void set_corr(std::vector<t_eigen> in) {
-    corrected = std::move(in);
-  }
-  auto begin() {
-    return v.begin();
-  }
-  auto end() {
-    return v.end();
-  }
-  void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
+   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const { // XXX: write_absG
     h5_dump_vector(fd, name + "/value_orig", all_rel());
+    h5_dump_vector(fd, name + "/value_corr", all_corr());
     if (has_zero()) h5_dump_vector(fd, name + "/value_zero", all_rel_zero() | ranges::to_vector);
-    // h5_dump_vector(fd, name + "/value_corr", value_corr);
     if (has_abs()) {
       h5_dump_vector(fd, name + "/absenergy_zero", all_abs_zero() | ranges::to_vector);
       h5_dump_vector(fd, name + "/absenergy", all_abs_T() | ranges::to_vector);
@@ -163,7 +146,7 @@ public:
     matrix.resize(M, dim);
   }
   explicit Eigen(RawEigen<S> && raw) {
-    values.move(std::move(raw.val));
+    values.set(std::move(raw.val));
     matrix = std::move(raw.vec);
   }
   [[nodiscard]] auto getnrcomputed() const { return values.size(); }     // number of computed eigenpairs
@@ -206,7 +189,8 @@ public:
   // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
   void diagonal(const EVEC &v) {
     value_corr = v;
-    values.copy(v);
+    values.set(v);
+    values.set_corr(v);
     values.set_shift(0.0);
     matrix = ublas::identity_matrix<t_eigen>(v.size());
   }
