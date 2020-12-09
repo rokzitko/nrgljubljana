@@ -74,6 +74,7 @@ TEST(Eigen, hdf5io) { // NOLINT
   NRG::Eigen<double> e(2,2);
   EVEC v1 = { 1.0, 2.0 };
   e.diagonal(v1);
+ // e.values.set_scale(1.0);
   auto h5 = H5Easy::File("Eigen.h5", H5Easy::File::Overwrite);
   e.h5save(h5, "test", false);
 }

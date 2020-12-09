@@ -21,6 +21,10 @@
 
 namespace NRG {
 
+// Storage container for eigenvalues. Vector v contains the raw eigenvalues as computed in the Hamiltonian
+// diagonalisation. If scale, shift and/or GS_energy parameters are defined, then one has also access to various
+// derived quantities. Relative means in the units of the current NRG shell. Absolute means in the units of
+// half-bandwidth (or some other general scale). 
 template<scalar S, typename t_eigen = eigen_traits<S>>
 class Values {
   private:
@@ -30,21 +34,28 @@ class Values {
    double GS_energy = std::numeric_limits<double>::quiet_NaN();
   public:
    void resize(const size_t size) { v.resize(size); } // XXX for testing purposes
+   auto raw(const size_t i) const { return v[i]; }
    auto rel(const size_t i) const { return v[i]; }
    auto abs(const size_t i) const { my_assert(std::isfinite(scale)); return rel(i) * scale; }
    auto rel_zero(const size_t i) const { my_assert(std::isfinite(shift)); return rel(i)-shift; }
-   auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
+   auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; } // absolute energies (referenced to the lowest energy in the N-th step)
    auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
    auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
    auto all_rel() const { return v; }
    auto all_rel_zero() const {
-     my_assert(std::isfinite(shift));
+     my_assert(v.size() == 0 || std::isfinite(shift));
      return ranges::views::transform(v, [this](const auto x){ return x-shift; });
+   }
+   auto all_abs_zero() const {
+     my_assert(v.size() == 0 || (std::isfinite(shift) && std::isfinite(scale)));
+     return ranges::views::transform(v, [this](const auto x){ return (x-shift) * scale; });
    }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_GS_energy(const double GS_energy_) { GS_energy = GS_energy_; }
+   auto has_abs() const { return std::isfinite(scale); }
+   auto has_zero() const { return std::isfinite(shift); }
    void save(boost::archive::binary_oarchive &oa) const {
      oa << v << scale << shift << GS_energy;
    }
@@ -143,7 +154,6 @@ public:
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
   EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
-  EVEC absenergy_zero; // absolute energies (referenced to the lowest energy in the N-th step)
   // 'blocks' contains eigenvectors separated according to the invariant subspace from which they originate.
   // Required for using efficient BLAS routines when performing recalculations of the matrix elements.
   std::vector<Matrix> blocks;
@@ -194,23 +204,26 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     NRG::save(oa, matrix);
-    oa << value_corr << nrpost << nrstored << absenergy << absenergyG << absenergy_zero;
+    oa << value_corr << nrpost << nrstored << absenergy << absenergyG;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     NRG::load(ia, matrix);
-    ia >> value_corr >> nrpost >> nrstored >> absenergy >> absenergyG >> absenergy_zero;
+    ia >> value_corr >> nrpost >> nrstored >> absenergy >> absenergyG;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
     h5_dump_vector(fd, name + "/value_orig",     values.all_rel());
-    h5_dump_vector(fd, name + "/value_zero",     values.all_rel_zero() | ranges::to_vector);
+    if (values.has_zero())
+      h5_dump_vector(fd, name + "/value_zero",   values.all_rel_zero() | ranges::to_vector);
     h5_dump_vector(fd, name + "/value_corr",     value_corr);
-    h5_dump_vector(fd, name + "/absenergy",      absenergy);
-    h5_dump_vector(fd, name + "/absenergy_zero", absenergy_zero);
-    if (write_absG) 
-      h5_dump_vector(fd, name + "/absenergyG",   absenergyG);
     h5_dump_matrix(fd, name + "/matrix", matrix);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
+    if (values.has_abs()) {
+      h5_dump_vector(fd, name + "/absenergy_zero", values.all_abs_zero() | ranges::to_vector);
+      h5_dump_vector(fd, name + "/absenergy",      absenergy);
+      if (write_absG) 
+        h5_dump_vector(fd, name + "/absenergyG",   absenergyG);
+    }
   }
 };
 
