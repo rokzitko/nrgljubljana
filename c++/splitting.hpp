@@ -37,11 +37,11 @@ class Clusters {
    // Fix splittings of eigenvalues.
    void fix_it(DiagInfo<S> &diag) {
      for(auto &[I, eig]: diag) {
-       eig.value_corr = eig.values.all_rel_zero() | ranges::to_vector;
-       for (auto &r : eig.value_corr)
+       auto v = eig.values.all_rel_zero() | ranges::to_vector;
+       for (auto &r : v)
          if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
            r = m->second;
-        eig.values.set_corr(eig.value_corr); // XXX: move
+        eig.values.set_corr(std::move(v));
      }
    }
    // Find clusters of values which differ by at most 'epsilon'

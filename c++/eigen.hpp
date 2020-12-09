@@ -138,7 +138,6 @@ template <scalar S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_tra
 class Eigen {
 public:
   Values<S> values; // eigenvalues
-  EVEC value_corr;  // eigenvalues corrected for floating-point round-off errors (use for Hamiltonian construction, truncation cutoff calculation)
   Matrix matrix;    // eigenvectors
   Eigen() = default;
   explicit Eigen(const size_t M, const size_t dim) { // XXX for testing only
@@ -189,16 +188,14 @@ public:
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
   void diagonal(const EVEC &v) {
-    value_corr = v;
     values.set(v);
-    values.set_corr(v);
-    values.set_shift(0.0);
+    values.set_corr(v); // required!
+    values.set_shift(0.0); // required!
     matrix = ublas::identity_matrix<t_eigen>(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
     values.set_shift(Egs); 
-    value_corr = values.all_rel_zero() | ranges::to_vector; // XXX
-    values.set_corr(value_corr); // YYY
+    values.set_corr(values.all_rel_zero() | ranges::to_vector); // YYY: required??
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
     values.set_abs_GS_energy(GS_energy);
@@ -216,12 +213,12 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     NRG::save(oa, matrix);
-    oa << value_corr << nrpost << nrstored;
+    oa << nrpost << nrstored;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     NRG::load(ia, matrix);
-    ia >> value_corr >> nrpost >> nrstored;
+    ia >> nrpost >> nrstored;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
     values.h5save(fd, name, write_absG);
