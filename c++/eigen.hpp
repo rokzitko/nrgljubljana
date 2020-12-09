@@ -47,6 +47,7 @@ class Values {
    auto corr(const size_t i) const { return corrected[i]; }
    auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
+   auto highest_corr() const { return corrected.back(); }
    const auto & all_rel() const { return v; }
    auto all_rel_zero() const {
      my_assert(v.size() == 0 || std::isfinite(shift));
@@ -164,8 +165,8 @@ public:
   [[nodiscard]] auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
-  auto value_corr_kept() const { return ranges::subrange(value_corr.begin(), value_corr.begin() + getnrkept()); }
-  auto value_corr_msr() const { return ranges::subrange(value_corr.begin(), value_corr.begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
+  auto value_corr_kept() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrkept()); }
+  auto value_corr_msr() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
   // 'blocks' contains eigenvectors separated according to the invariant subspace from which they originate.
   // Required for using efficient BLAS routines when performing recalculations of the matrix elements.
   std::vector<Matrix> blocks;
@@ -197,6 +198,7 @@ public:
   void subtract_Egs(const t_eigen Egs) {
     values.set_shift(Egs); 
     value_corr = values.all_rel_zero() | ranges::to_vector; // XXX
+    values.set_corr(value_corr); // YYY
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
     values.set_abs_GS_energy(GS_energy);
@@ -205,7 +207,7 @@ public:
     const auto dim = getnrstored();
     auto m = Zero_matrix<S>(dim);
     for (const auto i: range0(dim)) 
-      m(i, i) = exp(-value_corr[i] * factor); // corrected eigenvalues!
+      m(i, i) = exp(-values.corr(i) * factor); // corrected eigenvalues!
     return m;
   }
   template<typename F> auto trace(F fnc, const double factor) const { // Tr[fnc(factor*E) exp(-factor*E)]
@@ -265,7 +267,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    std::vector<t_eigen> sorted_energies_rel_zero() const { // YYY
      std::vector<t_eigen> energies;
      for (const auto &eig: eigs()) 
-       energies.insert(energies.end(), eig.value_corr.begin(), eig.value_corr.end());
+       energies.insert(energies.end(), eig.values.all_corr().begin(), eig.values.all_corr().end());
      return energies | ranges::move | ranges::actions::sort;
    }
    void dump_energies(std::ostream &F) const {
