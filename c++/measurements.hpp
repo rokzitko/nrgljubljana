@@ -17,7 +17,7 @@ namespace NRG {
 template<scalar S, typename MF, typename t_matel = matel_traits<S>>
 CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
   return ranges::accumulate(diag, S{}, {}, [&m, &mult, factor](const auto &x){
-    const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_corr, m.at({I,I}), factor); });
+    const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_corr_msr(), m.at({I,I}), factor); });
 }
 
 // Measure thermodynamic expectation values of singlet operators

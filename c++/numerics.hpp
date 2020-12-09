@@ -317,8 +317,8 @@ auto submatrix(Eigen::ArrayX<S> &M, const std::pair<size_t,size_t> &r1, const st
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
-template<scalar T, scalar S>
-auto trace_exp(const std::vector<T> &e, const ublas::matrix<S> &m, const double factor) { // Tr[exp(-factor*e) m]
+template<typename R, scalar S>
+auto trace_exp(R && e, const ublas::matrix<S> &m, const double factor) { // Tr[exp(-factor*e) m]
   my_assert(e.size() == m.size1() && e.size() == m.size2());
   return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e[r]) * m(r, r); });
 }

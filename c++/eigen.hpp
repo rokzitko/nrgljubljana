@@ -163,6 +163,7 @@ public:
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
   auto value_corr_kept() const { return ranges::subrange(value_corr.begin(), value_corr.begin() + getnrkept()); }
+  auto value_corr_msr() const { return ranges::subrange(value_corr.begin(), value_corr.begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
   // 'blocks' contains eigenvectors separated according to the invariant subspace from which they originate.
   // Required for using efficient BLAS routines when performing recalculations of the matrix elements.
   std::vector<Matrix> blocks;
