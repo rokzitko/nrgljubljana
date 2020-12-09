@@ -22,8 +22,8 @@
 namespace NRG {
 
 // Storage container for eigenvalues. Vector v contains the raw eigenvalues as computed in the Hamiltonian
-// diagonalisation. If scale, shift and/or GS_energy parameters are defined, then one has also access to various
-// derived quantities. Relative means in the units of the current NRG shell. Absolute means in the units of
+// diagonalisation. If scale, shift, T_shift and/or GS_energy parameters are defined, then one has also access to various
+// derived quantities. 'Relative' means in the units of the current NRG shell. 'Absolute' means in the units of
 // half-bandwidth (or some other general scale). abs_T is the total energy of the state. abs_G is the total energy
 // of the state referenced to the absolute many-body ground state of the whole system.
 template<scalar S, typename t_eigen = eigen_traits<S>>
@@ -34,6 +34,7 @@ class Values {
    double shift = std::numeric_limits<double>::quiet_NaN();
    double T_shift = std::numeric_limits<double>::quiet_NaN();
    double abs_GS_energy = std::numeric_limits<double>::quiet_NaN();
+   std::vector<t_eigen> corrected;
   public:
    void resize(const size_t size) { v.resize(size); } // XXX for testing purposes
    auto raw(const size_t i) const { return v[i]; }
@@ -43,6 +44,7 @@ class Values {
    auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
    auto abs_T(const size_t i) const { my_assert(std::isfinite(T_shift)); return abs_zero(i) + T_shift; } // T_shift added
    auto abs_G(const size_t i) const { my_assert(std::isfinite(abs_GS_energy)); return abs_T(i) - abs_GS_energy; }
+   auto corr(const size_t i) const { return corrected[i]; }
    auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
    auto all_rel() const { return v; }
@@ -62,6 +64,9 @@ class Values {
      my_assert(v.size() == 0 || (std::isfinite(shift) && std::isfinite(scale) && std::isfinite(T_shift) && std::isfinite(abs_GS_energy)));
      return ranges::views::transform(v, [this](const auto x){ return (x-shift) * scale + T_shift - abs_GS_energy; });
    }
+   auto all_corr() const {
+     return corrected;
+   }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
@@ -69,10 +74,10 @@ class Values {
    auto has_abs() const { return std::isfinite(scale); }
    auto has_zero() const { return std::isfinite(shift); }
    void save(boost::archive::binary_oarchive &oa) const {
-     oa << v << scale << shift << T_shift << abs_GS_energy;
+     oa << v << scale << shift << T_shift << abs_GS_energy << corrected;
    }
    void load(boost::archive::binary_iarchive &ia) {
-     ia >> v >> scale >> shift >> T_shift >> abs_GS_energy;
+     ia >> v >> scale >> shift >> T_shift >> abs_GS_energy >> corrected;
    }
    void copy(const std::vector<t_eigen> &in, const size_t M) {
      v.resize(M);
@@ -81,8 +86,11 @@ class Values {
    void copy(const std::vector<t_eigen> &in) { 
      v = in;
    }
-  void move(const std::vector<t_eigen> &&in) { 
+  void move(std::vector<t_eigen> &&in) { 
      v = std::move(in);
+  }
+  void set_corr(std::vector<t_eigen> in) {
+    corrected = std::move(in);
   }
   auto begin() {
     return v.begin();

@@ -41,6 +41,7 @@ class Clusters {
        for (auto &r : eig.value_corr)
          if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
            r = m->second;
+        eig.values.set_corr(eig.value_corr); // XXX: move
      }
    }
    // Find clusters of values which differ by at most 'epsilon'
