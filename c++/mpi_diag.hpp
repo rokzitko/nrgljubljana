@@ -97,7 +97,7 @@ class MPI_diag {
      const auto eig = receive_raweigen<S>(source);
      Invar Irecv;
      check_status(mpiw.recv(source, TAG_INVAR, Irecv));
-     mpilog("Received results for subspace " << Irecv << " [nr=" << eig.getnrstored() << ", dim=" << eig.getdim() << "]");
+     mpilog("Received results for subspace " << Irecv << " [nr=" << eig.getnrcomputed() << ", dim=" << eig.getdim() << "]");
      return {Irecv, eig};
    }
    // Handle a diagonalisation request

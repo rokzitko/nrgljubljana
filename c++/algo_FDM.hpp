@@ -43,8 +43,8 @@ class Algo_FDMls : virtual public Algo<S> {
      const auto &rhoj = rhoFDM.at(Ij);
      const auto reti  = step.last() ? 0 : diagIi.getnrkept();
      const auto retj  = step.last() ? 0 : diagIj.getnrkept();
-     const auto alli  = diagIi.getnrstored();
-     const auto allj  = diagIj.getnrstored();
+     const auto alli  = diagIi.getnrall();
+     const auto allj  = diagIj.getnrall();
      LOOP_D(i)
        LOOP_D(j) // B3
          const auto energy = Ej - Ei;
@@ -105,8 +105,8 @@ class Algo_FDMgt : virtual public Algo<S> {
      const auto &rhoj = rhoFDM.at(Ij);
      const auto reti  = step.last() ? 0 : diagIi.getnrkept();
      const auto retj  = step.last() ? 0 : diagIj.getnrkept();
-     const auto alli  = diagIi.getnrstored();
-     const auto allj  = diagIj.getnrstored();
+     const auto alli  = diagIi.getnrall();
+     const auto allj  = diagIj.getnrall();
      LOOP_D(i)
        LOOP_D(j)
          const auto energy = Ej - Ei;
@@ -197,8 +197,8 @@ class Algo_FDMmats : public Algo<S> {
      const auto &rhoj = rhoFDM.at(Ij);
      const auto reti  = (step.last() ? 0 : rhoi.size1());
      const auto retj  = (step.last() ? 0 : rhoj.size1());
-     const auto alli  = diagIi.getnrstored();
-     const auto allj  = diagIj.getnrstored();
+     const auto alli  = diagIi.getnrall();
+     const auto allj  = diagIj.getnrall();
      LOOP_D(i)
        LOOP_D(j)
          const auto energy = Ej - Ei;

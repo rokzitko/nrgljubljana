@@ -159,7 +159,6 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
 template<scalar S>
 void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stats) {
   for (auto &eig : diag.eigs()) {
-//    eig.absenergy_zero = eig.value_zero; // YYY
     eig.absenergy_zero = eig.value_corr;
     for(auto &x: eig.absenergy_zero) x *= step.scale();    // referenced to the lowest energy in current NRG step (not modified later on)
     eig.absenergy = eig.absenergy_zero;                    // absolute energies (not modified later on)

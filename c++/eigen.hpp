@@ -112,14 +112,12 @@ template <scalar S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_tra
 class Eigen {
 public:
   Values<S> values; // eigenvalues
-  EVEC value_zero;  // eigenvalues with Egs subtracted
   EVEC value_corr;  // eigenvalues corrected for floating-point round-off errors
   Matrix matrix;    // eigenvectors
   Eigen() = default;
   explicit Eigen(const size_t M, const size_t dim) { // XXX for testing only
     my_assert(M <= dim);
     values.resize(M);
-    value_zero.resize(M);
     matrix.resize(M, dim);
   }
   explicit Eigen(RawEigen<S> && raw) {
@@ -136,7 +134,7 @@ public:
   [[nodiscard]] auto getnrall() const { return getnrcomputed(); }                              // all = all computed
   [[nodiscard]] auto getnrkept() const { return getnrpost(); }                                 // # of kept states
   [[nodiscard]] auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }            // # of discarded states
-  [[nodiscard]] auto getnrstored() const  { return nrstored == -1 ? value_corr.size() : nrstored; }  // number of stored states
+  [[nodiscard]] auto getnrstored() const  { return nrstored == -1 ? values.size() : nrstored; }  // number of stored states
   [[nodiscard]] auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
   [[nodiscard]] auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
@@ -164,26 +162,19 @@ public:
       i.resize(nrpost, i.size2());
     }
     nrstored = nrpost;
-    value_zero.resize(nrpost); // ZZZ: necessary?? YES!
     value_corr.resize(nrpost); // YYY: necessary??
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
   void diagonal(const EVEC &v) {
-    value_zero = v; // YYY
     value_corr = v;
     values.copy(v);
     values.set_shift(0.0);
     matrix = ublas::identity_matrix<t_eigen>(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
-    values.set_shift(Egs);
-    
-    value_zero = values.all_rel(); // XXX
-    for (auto &x : value_zero) x -= Egs; // XXX: subtract a scalar [fix after moving to Eigen]
-    my_assert(value_zero[0] >= 0); // XXX
-    value_corr = value_zero; // YYY
-    my_assert(values.rel_zero(0) == value_zero[0]); // XXX
+    values.set_shift(Egs); 
+    value_corr = values.all_rel_zero() | ranges::to_vector; // XXX
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
     for (auto &x : absenergyG) x -= GS_energy; // XXX
@@ -203,12 +194,12 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     NRG::save(oa, matrix);
-    oa << value_zero << value_corr << nrpost << nrstored << absenergy << absenergyG << absenergy_zero;
+    oa << value_corr << nrpost << nrstored << absenergy << absenergyG << absenergy_zero;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     NRG::load(ia, matrix);
-    ia >> value_zero >> value_corr >> nrpost >> nrstored >> absenergy >> absenergyG >> absenergy_zero;
+    ia >> value_corr >> nrpost >> nrstored >> absenergy >> absenergyG >> absenergy_zero;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
     h5_dump_vector(fd, name + "/value_orig",     values.all_rel());
