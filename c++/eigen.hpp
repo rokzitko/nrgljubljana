@@ -136,7 +136,7 @@ public:
   [[nodiscard]] auto getnrall() const { return getnrcomputed(); }                              // all = all computed
   [[nodiscard]] auto getnrkept() const { return getnrpost(); }                                 // # of kept states
   [[nodiscard]] auto getnrdiscarded() const { return getnrcomputed()-getnrpost(); }            // # of discarded states
-  [[nodiscard]] auto getnrstored() const  { return nrstored == -1 ? value_zero.size() : nrstored; }  // number of stored states
+  [[nodiscard]] auto getnrstored() const  { return nrstored == -1 ? value_corr.size() : nrstored; }  // number of stored states
   [[nodiscard]] auto all() const { return range0(getnrcomputed()); }                           // iterator over all states
   [[nodiscard]] auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
@@ -156,7 +156,7 @@ public:
   // Truncate to nrpost states.
   void truncate_prepare(const size_t nrpost_) {
     nrpost = nrpost_;
-    my_assert(nrpost <= getnrstored());
+    my_assert(nrpost <= getnrcomputed());
   }
   void truncate_perform() {
     for (auto &i : blocks) {
