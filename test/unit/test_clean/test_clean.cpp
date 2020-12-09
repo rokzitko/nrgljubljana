@@ -40,6 +40,7 @@ TEST(Clean, H) { // NOLINT
 
   stats.Egs = diag.Egs_subtraction();
   stats.update(step);
+  Clusters<double> clusters(diag, P.fixeps);
   truncate_prepare(step, diag, Sym->multfnc(), P);
   calc_abs_energies(step, diag, stats);
   calculate_TD(step, diag, stats, Sym);

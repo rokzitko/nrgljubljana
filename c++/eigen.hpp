@@ -25,7 +25,8 @@ namespace NRG {
 // diagonalisation. If scale, shift, T_shift and/or GS_energy parameters are defined, then one has also access to various
 // derived quantities. 'Relative' means in the units of the current NRG shell. 'Absolute' means in the units of
 // half-bandwidth (or some other general scale). abs_T is the total energy of the state. abs_G is the total energy
-// of the state referenced to the absolute many-body ground state of the whole system.
+// of the state referenced to the absolute many-body ground state of the whole system. 'Corrected' means the eigenvalue
+// corrected for the floating-point round-off errors by fixing the small splittings.
 template<scalar S, typename t_eigen = eigen_traits<S>>
 class Values {
   private:
@@ -76,6 +77,7 @@ class Values {
    void set_corr(std::vector<t_eigen> in) { corrected = std::move(in); }
    auto has_abs() const { return std::isfinite(scale); }
    auto has_zero() const { return std::isfinite(shift); }
+   auto has_corr() const { return corrected.size() > 0; }
    void save(boost::archive::binary_oarchive &oa) const {
      oa << v << scale << shift << T_shift << abs_GS_energy << corrected;
    }
@@ -195,7 +197,6 @@ public:
   }
   void subtract_Egs(const t_eigen Egs) {
     values.set_shift(Egs); 
-    values.set_corr(values.all_rel_zero() | ranges::to_vector); // YYY: required??
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
     values.set_abs_GS_energy(GS_energy);
@@ -261,7 +262,13 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void subtract_GS_energy(const t_eigen GS_energy) {
      ranges::for_each(eigs(), [GS_energy](auto &eig) { eig.subtract_GS_energy(GS_energy); });
    }
-   std::vector<t_eigen> sorted_energies_rel_zero() const { // YYY
+   std::vector<t_eigen> sorted_energies_rel_zero() const {
+     std::vector<t_eigen> energies;
+     for (const auto &eig: eigs()) 
+       energies.insert(energies.end(), eig.values.all_rel_zero().begin(), eig.values.all_rel_zero().end());
+     return energies | ranges::move | ranges::actions::sort;
+   }
+   std::vector<t_eigen> sorted_energies_corr() const {
      std::vector<t_eigen> energies;
      for (const auto &eig: eigs()) 
        energies.insert(energies.end(), eig.values.all_corr().begin(), eig.values.all_corr().end());
