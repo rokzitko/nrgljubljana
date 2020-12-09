@@ -57,10 +57,14 @@ class Values {
      my_assert(v.size() == 0 || (std::isfinite(shift) && std::isfinite(scale) && std::isfinite(T_shift)));
      return ranges::views::transform(v, [this](const auto x){ return (x-shift) * scale + T_shift; });
    }
+   auto all_abs_G() const {
+     my_assert(v.size() == 0 || (std::isfinite(shift) && std::isfinite(scale) && std::isfinite(T_shift) && std::isfinite(abs_GS_energy)));
+     return ranges::views::transform(v, [this](const auto x){ return (x-shift) * scale + T_shift - abs_GS_energy; });
+   }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
-   void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
+   void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }  
    auto has_abs() const { return std::isfinite(scale); }
    auto has_zero() const { return std::isfinite(shift); }
    void save(boost::archive::binary_oarchive &oa) const {
@@ -230,7 +234,7 @@ public:
       h5_dump_vector(fd, name + "/absenergy_zero", values.all_abs_zero() | ranges::to_vector);
       h5_dump_vector(fd, name + "/absenergy",      values.all_abs_T() | ranges::to_vector);
       if (write_absG) 
-        h5_dump_vector(fd, name + "/absenergyG",   absenergyG);
+        h5_dump_vector(fd, name + "/absenergyG",   values.all_abs_G() | ranges::to_vector);
     }
   }
 };

@@ -66,7 +66,7 @@ void calc_ZnD(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, co
     for (const auto &[I, ds] : store[N])
       for (const auto i : ds.all()) {
         my_mpf g, n;
-        mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.absenergyG[i]/T));     // absenergyG >= 0.0
+        mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.values.abs_G(i)/T));     // abs_G >= 0.0
         mpf_set_d(n, Sym->mult(I) * exp(-ds.eig.values.abs_zero(i)/T)); // abs_zero >= 0.0
         mpf_add(ZnDG, ZnDG, g);
         mpf_add(ZnDN, ZnDN, n);

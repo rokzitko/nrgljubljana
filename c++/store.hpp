@@ -60,16 +60,16 @@ class Store : public std::vector<Subs<S>> {
    const size_t Nbegin, Nend; // range of valid indexes
    Store(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
    auto Nall() const { return boost::irange(Nbegin, Nend); }
-   void dump_absenergyG(std::ostream &F) const {
+   void dump_abs_G(std::ostream &F) const {
      for (const auto N : Nall()) {
        F << std::endl << "===== Iteration number: " << N+1 << std::endl; // mind the shift by 1
        for (const auto &[I, ds]: this->at(N))
-         F << "Subspace: " << I << std::endl << ds.eig.absenergyG << std::endl;
+         F << "Subspace: " << I << std::endl << (ds.eig.values.all_abs_G() | ranges::to_vector) << std::endl;
      }
    }
    void dump_all_absolute_energies(const std::string &filename = "absolute_energies.dat"s) {
      std::ofstream F(filename);
-     this->dump_absenergyG(F);
+     this->dump_abs_G(F);
    }
    // Save a dump of all subspaces, with dimension info, etc.
    void dump_subspaces(const std::string &filename = "subspaces.dat"s) const {
