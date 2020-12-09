@@ -159,7 +159,6 @@ public:
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
   auto value_corr_kept() const { return ranges::subrange(value_corr.begin(), value_corr.begin() + getnrkept()); }
   // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
-  EVEC absenergy;      // absolute energies
   EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
   // 'blocks' contains eigenvectors separated according to the invariant subspace from which they originate.
   // Required for using efficient BLAS routines when performing recalculations of the matrix elements.
@@ -211,12 +210,12 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     NRG::save(oa, matrix);
-    oa << value_corr << nrpost << nrstored << absenergy << absenergyG;
+    oa << value_corr << nrpost << nrstored << absenergyG;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     NRG::load(ia, matrix);
-    ia >> value_corr >> nrpost >> nrstored >> absenergy >> absenergyG;
+    ia >> value_corr >> nrpost >> nrstored >> absenergyG;
   }
   // XXX: rename to be consistent with class Values
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {

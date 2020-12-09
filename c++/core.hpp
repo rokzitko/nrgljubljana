@@ -161,18 +161,7 @@ void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stat
   for (auto &eig : diag.eigs()) {
     eig.values.set_scale(step.scale());
     eig.values.set_T_shift(stats.total_energy);
-
-    std::vector<double> absenergy_zero = eig.values.all_rel_zero() | ranges::to_vector; // XXX
-    for(auto &x: absenergy_zero) x *= step.scale();    // referenced to the lowest energy in current NRG step (not modified later on) // XXX
-
-    my_assert(absenergy_zero[0] == eig.values.abs_zero(0));   
-
-    eig.absenergy = absenergy_zero;                    // absolute energies (not modified later on)
-    std::transform(eig.absenergy.begin(), eig.absenergy.end(), eig.absenergy.begin(), [v = stats.total_energy](auto x) { return x + v; });
-
-    my_assert(eig.absenergy[0] == eig.values.abs_T(0));
-
-    eig.absenergyG = eig.absenergy;                        // referenced to the absolute 0 (updated by shft_abs_energies())
+    eig.absenergyG = eig.values.all_abs_T() | ranges::to_vector;                        // referenced to the absolute 0 (updated by shft_abs_energies())
   }
 }
 
