@@ -23,11 +23,18 @@ TEST(Values, access) { // NOLINT
   values.set_scale(2.0);
   EXPECT_DOUBLE_EQ(values.abs(0), 2.0);
   EXPECT_DOUBLE_EQ(values.abs(4), 10.0);
-  EXPECT_DOUBLE_EQ(values.abs_zero(0),  0.0);
+  EXPECT_DOUBLE_EQ(values.abs_zero(0), 0.0);
+  EXPECT_DOUBLE_EQ(values.abs_zero(1), 2.0);
+  EXPECT_DOUBLE_EQ(values.abs_zero(2), 4.0);
+  EXPECT_DOUBLE_EQ(values.abs_zero(3), 6.0);
   EXPECT_DOUBLE_EQ(values.abs_zero(4), 8.0);
-  values.set_GS_energy(0.5);
-  EXPECT_DOUBLE_EQ(values.absG(0), 1.5);
-  EXPECT_DOUBLE_EQ(values.absG(4), 9.5);
+  values.set_T_shift(1.0);
+  EXPECT_DOUBLE_EQ(values.abs_T(0), 1.0);
+  EXPECT_DOUBLE_EQ(values.abs_T(1), 3.0);
+  
+//  values.set_GS_energy(0.5);
+//  EXPECT_DOUBLE_EQ(values.absG(0), 1.5);
+//  EXPECT_DOUBLE_EQ(values.absG(4), 9.5);
   const auto vv = values.all_rel();
   VECTOR_DOUBLE_EQ(v, vv);
   const auto vz = values.all_rel_zero();

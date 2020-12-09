@@ -31,15 +31,17 @@ class Values {
    std::vector<t_eigen> v;
    double scale = std::numeric_limits<double>::quiet_NaN();
    double shift = std::numeric_limits<double>::quiet_NaN();
-   double GS_energy = std::numeric_limits<double>::quiet_NaN();
+   double T_shift = std::numeric_limits<double>::quiet_NaN();
+   double abs_GS_energy = std::numeric_limits<double>::quiet_NaN();
   public:
    void resize(const size_t size) { v.resize(size); } // XXX for testing purposes
    auto raw(const size_t i) const { return v[i]; }
    auto rel(const size_t i) const { return v[i]; }
    auto abs(const size_t i) const { my_assert(std::isfinite(scale)); return rel(i) * scale; }
-   auto rel_zero(const size_t i) const { my_assert(std::isfinite(shift)); return rel(i)-shift; }
+   auto rel_zero(const size_t i) const { my_assert(std::isfinite(shift)); return rel(i)-shift; } // subtracted
    auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; } // absolute energies (referenced to the lowest energy in the N-th step)
-   auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
+   auto abs_T(const size_t i) const { my_assert(std::isfinite(T_shift)); return abs_zero(i) + T_shift; } // added
+   //auto absG(const size_t i) const { return rel(i)*scale - GS_energy; }
    auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
    auto all_rel() const { return v; }
@@ -53,14 +55,15 @@ class Values {
    }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
-   void set_GS_energy(const double GS_energy_) { GS_energy = GS_energy_; }
+   void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
+   void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
    auto has_abs() const { return std::isfinite(scale); }
    auto has_zero() const { return std::isfinite(shift); }
    void save(boost::archive::binary_oarchive &oa) const {
-     oa << v << scale << shift << GS_energy;
+     oa << v << scale << shift << T_shift << abs_GS_energy;
    }
    void load(boost::archive::binary_iarchive &ia) {
-     ia >> v >> scale >> shift >> GS_energy;
+     ia >> v >> scale >> shift >> T_shift >> abs_GS_energy;
    }
    void copy(const std::vector<t_eigen> &in, const size_t M) {
      v.resize(M);
@@ -189,7 +192,7 @@ public:
   void subtract_GS_energy(const t_eigen GS_energy) {
     for (auto &x : absenergyG) x -= GS_energy; // XXX
     my_assert(absenergyG[0] >= 0); // XXX
-    values.set_GS_energy(GS_energy);
+    values.set_abs_GS_energy(GS_energy);
   }
   auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements, used in init_rho()
     const auto dim = getnrstored();
