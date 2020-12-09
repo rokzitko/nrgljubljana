@@ -154,14 +154,12 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
 }
 
 // Absolute energies. Must be called in the first NRG run after stats.total_energy has been updated, but before
-// store_transformations(). absenergyG is updated to its correct values (referrenced to absolute 0) in
-// shift_abs_energies().
+// store_transformations().
 template<scalar S>
 void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stats) {
   for (auto &eig : diag.eigs()) {
     eig.values.set_scale(step.scale());
     eig.values.set_T_shift(stats.total_energy);
-    eig.absenergyG = eig.values.all_abs_T() | ranges::to_vector;                        // referenced to the absolute 0 (updated by shft_abs_energies())
   }
 }
 

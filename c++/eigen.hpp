@@ -24,7 +24,8 @@ namespace NRG {
 // Storage container for eigenvalues. Vector v contains the raw eigenvalues as computed in the Hamiltonian
 // diagonalisation. If scale, shift and/or GS_energy parameters are defined, then one has also access to various
 // derived quantities. Relative means in the units of the current NRG shell. Absolute means in the units of
-// half-bandwidth (or some other general scale). 
+// half-bandwidth (or some other general scale). abs_T is the total energy of the state. abs_G is the total energy
+// of the state referenced to the absolute many-body ground state of the whole system.
 template<scalar S, typename t_eigen = eigen_traits<S>>
 class Values {
   private:
@@ -38,9 +39,9 @@ class Values {
    auto raw(const size_t i) const { return v[i]; }
    auto rel(const size_t i) const { return v[i]; }
    auto abs(const size_t i) const { my_assert(std::isfinite(scale)); return rel(i) * scale; }
-   auto rel_zero(const size_t i) const { my_assert(std::isfinite(shift)); return rel(i)-shift; } // subtracted
-   auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; } // absolute energies (referenced to the lowest energy in the N-th step)
-   auto abs_T(const size_t i) const { my_assert(std::isfinite(T_shift)); return abs_zero(i) + T_shift; } // added
+   auto rel_zero(const size_t i) const { my_assert(std::isfinite(shift)); return rel(i)-shift; } // shift subtracted
+   auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
+   auto abs_T(const size_t i) const { my_assert(std::isfinite(T_shift)); return abs_zero(i) + T_shift; } // T_shift added
    auto abs_G(const size_t i) const { my_assert(std::isfinite(abs_GS_energy)); return abs_T(i) - abs_GS_energy; }
    auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
@@ -162,8 +163,6 @@ public:
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
   auto value_corr_kept() const { return ranges::subrange(value_corr.begin(), value_corr.begin() + getnrkept()); }
-  // NOTE: "absolute" energy means that it is expressed in the absolute energy scale rather than SCALE(N).
-  EVEC absenergyG;     // absolute energies (0 is the absolute ground state of the system) [SAVED TO FILE]
   // 'blocks' contains eigenvectors separated according to the invariant subspace from which they originate.
   // Required for using efficient BLAS routines when performing recalculations of the matrix elements.
   std::vector<Matrix> blocks;
@@ -197,10 +196,7 @@ public:
     value_corr = values.all_rel_zero() | ranges::to_vector; // XXX
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
-    for (auto &x : absenergyG) x -= GS_energy; // XXX
-    my_assert(absenergyG[0] >= 0); // XXX
     values.set_abs_GS_energy(GS_energy);
-    my_assert(absenergyG[0] == values.abs_G(0) );
   }
   auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements, used in init_rho()
     const auto dim = getnrstored();
@@ -215,12 +211,12 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     NRG::save(oa, matrix);
-    oa << value_corr << nrpost << nrstored << absenergyG;
+    oa << value_corr << nrpost << nrstored;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     NRG::load(ia, matrix);
-    ia >> value_corr >> nrpost >> nrstored >> absenergyG;
+    ia >> value_corr >> nrpost >> nrstored;
   }
   // XXX: rename to be consistent with class Values
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
