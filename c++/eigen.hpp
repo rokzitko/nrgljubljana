@@ -112,7 +112,7 @@ template <scalar S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_tra
 class Eigen {
 public:
   Values<S> values; // eigenvalues
-  EVEC value_corr;  // eigenvalues corrected for floating-point round-off errors
+  EVEC value_corr;  // eigenvalues corrected for floating-point round-off errors (use for Hamiltonian construction, truncation cutoff calculation)
   Matrix matrix;    // eigenvectors
   Eigen() = default;
   explicit Eigen(const size_t M, const size_t dim) { // XXX for testing only
