@@ -90,6 +90,17 @@ class Values {
   auto end() {
     return v.end();
   }
+  void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
+    h5_dump_vector(fd, name + "/value_orig", all_rel());
+    if (has_zero()) h5_dump_vector(fd, name + "/value_zero", all_rel_zero() | ranges::to_vector);
+    // h5_dump_vector(fd, name + "/value_corr", value_corr);
+    if (has_abs()) {
+      h5_dump_vector(fd, name + "/absenergy_zero", all_abs_zero() | ranges::to_vector);
+      h5_dump_vector(fd, name + "/absenergy", all_abs_T() | ranges::to_vector);
+      if (write_absG) 
+        h5_dump_vector(fd, name + "/absenergyG", all_abs_G() | ranges::to_vector);
+    }
+  }
 };
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
@@ -182,7 +193,6 @@ public:
       i.resize(nrpost, i.size2());
     }
     nrstored = nrpost;
-    value_corr.resize(nrpost); // YYY: necessary??
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
@@ -219,20 +229,10 @@ public:
     NRG::load(ia, matrix);
     ia >> value_corr >> nrpost >> nrstored;
   }
-  // XXX: rename to be consistent with class Values
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
-    h5_dump_vector(fd, name + "/value_orig",     values.all_rel());
-    if (values.has_zero())
-      h5_dump_vector(fd, name + "/value_zero",   values.all_rel_zero() | ranges::to_vector);
-    h5_dump_vector(fd, name + "/value_corr",     value_corr);
+    values.h5save(fd, name, write_absG);
     h5_dump_matrix(fd, name + "/matrix", matrix);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
-    if (values.has_abs()) {
-      h5_dump_vector(fd, name + "/absenergy_zero", values.all_abs_zero() | ranges::to_vector);
-      h5_dump_vector(fd, name + "/absenergy",      values.all_abs_T() | ranges::to_vector);
-      if (write_absG) 
-        h5_dump_vector(fd, name + "/absenergyG",   values.all_abs_G() | ranges::to_vector);
-    }
   }
 };
 
@@ -260,7 +260,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      return Egs;
    }
    void subtract_Egs(const t_eigen Egs) {
-     ranges::for_each(eigs(), [Egs](auto &eig)       { eig.subtract_Egs(Egs); });
+     ranges::for_each(eigs(), [Egs](auto &eig) { eig.subtract_Egs(Egs); });
    }
    t_eigen Egs_subtraction() {
      const auto Egs = find_groundstate();
