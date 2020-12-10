@@ -71,17 +71,15 @@ auto calc_densitymatrix_iterN(const DiagInfo<S> &diag, const DensMatElements<S> 
                               const size_t N, const Store<S> &store, const Symmetry<S> *Sym, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   DensMatElements<S> rhoPrev;
-  for (const auto &[I, dimsub] : store[N - 1]) { // loop over all subspaces at *previous* iteration
+  for (const auto &[I, dimsub] : store[N-1]) { // loop over all subspaces at *previous* iteration
     const auto dim  = dimsub.kept();
     rhoPrev[I]      = Zero_matrix<S>(dim);
     if (dim == 0) continue;
     const auto ns = Sym->new_subspaces(I);
-    for (const auto &[i, sub] : ns | ranges::views::enumerate) {
-      const auto x = rho.find(sub);
-      const auto y = diag.find(sub);
-      if (x != rho.end() && y != diag.end())
-        cdmI(i, x->second, y->second, rhoPrev[I], double(Sym->mult(sub)) / double(Sym->mult(I)), P);
-    }
+    for (const auto &[i, sub] : ns | ranges::views::enumerate)
+      if (const auto x = rho.find(sub); x != rho.end())
+        if (const auto y = diag.find(sub); y != diag.end())
+          cdmI(i, x->second, y->second, rhoPrev[I], double(Sym->mult(sub)) / double(Sym->mult(I)), P);
   }
   return rhoPrev;
 }
@@ -157,7 +155,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   DensMatElements<S> rhoFDMPrev;
   if (!step.last(N))
     rhoDD = init_rho_FDM(N, store, stats, Sym->multfnc(), P.T);
-  for (const auto &[I, ds] : store[N - 1]) { // loop over all subspaces at *previous* iteration
+  for (const auto &[I, ds] : store[N-1]) { // loop over all subspaces at *previous* iteration
     const auto subs = Sym->new_subspaces(I);
     const auto dim  = ds.kept();
     rhoFDMPrev[I]   = Zero_matrix<S>(dim);
@@ -166,16 +164,15 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
       const auto sub = subs[i];
       // DM construction for non-Abelian symmetries: must include the ratio of multiplicities as a coefficient.
       const auto coef = double(Sym->mult(sub)) / double(Sym->mult(I));
-      // Contribution from the KK sector.
-      const auto x1 = rhoFDM.find(sub);
-      const auto y = diag.find(sub);
-      if (x1 != rhoFDM.end() && y != diag.end())
-        cdmI(i, x1->second, y->second, rhoFDMPrev[I], coef, P);
-      // Contribution from the DD sector. rhoDD -> rhoFDMPrev
-      if (!step.last(N))
-        if (const auto x2 = rhoDD.find(sub); x2 !=rhoDD.end() && y != diag.end())
-          cdmI(i, x2->second, y->second, rhoFDMPrev[I], coef, P);
-      // (Exception: for the N-1 iteration, the rhoPrev is already initialized with the DD sector of the last iteration.) }
+      if (const auto y = diag.find(sub); y != diag.end()) {
+        // Contribution from the KK sector.
+        if (const auto x1 = rhoFDM.find(sub); x1 != rhoFDM.end())
+          cdmI(i, x1->second, y->second, rhoFDMPrev[I], coef, P);
+        // Contribution from the DD sector. rhoDD -> rhoFDMPrev
+        if (!step.last(N))
+          if (const auto x2 = rhoDD.find(sub); x2 != rhoDD.end())
+            cdmI(i, x2->second, y->second, rhoFDMPrev[I], coef, P);
+      }
     } // over combinations
   } // over subspaces
   return rhoFDMPrev;
@@ -191,9 +188,9 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const 
     std::cout << "[FDM] " << N << std::endl;
     DiagInfo<S> diag_loaded(N, P);
     auto rhoFDMPrev = calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, N, store, stats, Sym, P);
-    const auto tr         = rhoFDMPrev.trace(Sym->multfnc());
-    const auto expected   = std::accumulate(stats.wn.begin() + N, stats.wn.begin() + P.Nmax, 0.0);
-    const auto diff       = (tr - expected) / expected;
+    const auto tr       = rhoFDMPrev.trace(Sym->multfnc());
+    const auto expected = std::accumulate(stats.wn.begin() + N, stats.wn.begin() + P.Nmax, 0.0);
+    const auto diff     = (tr - expected) / expected;
     nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
     my_assert(num_equal(diff, 0.0));
     rhoFDMPrev.save(N-1, P, filename);
