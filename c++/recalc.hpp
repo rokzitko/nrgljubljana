@@ -19,12 +19,12 @@ namespace NRG {
 template<scalar S, typename Matrix = Matrix_traits<S>>
 inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
   const auto combs = sub.combs();
-  e.blocks.resize(combs);
+  e.U.resize(combs);
   const auto nr = e.getnrstored(); // nr. of eigenpairs
   my_assert(0 < nr && nr <= e.getdim()); // dim = length of eigenvectors
   for (const auto block: range0(combs)) {
     auto Up = e.vectors.submatrix({0, nr}, sub.part(block));
-    e.blocks[block] = std::move(Up);
+    e.U.set(block, std::move(Up));
   }
   e.vectors.shrink();
 }
@@ -39,7 +39,7 @@ template<scalar S>
 inline void h5save_blocks_Eigen(H5Easy::File &fd, const std::string &name, const Eigen<S> &eig, const SubspaceDimensions &sub)
 {
   for (const auto i: range0(sub.combs()))
-    h5_dump_matrix(fd, name + "/" + sub.ancestor(i).name(), eig.blocks[i]);
+    h5_dump_matrix(fd, name + "/" + sub.ancestor(i).name(), eig.U.get(i));
 }
 
 template<scalar S>
@@ -64,7 +64,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
   Matrix f = Matrix(dim1, dimp, 0);
   // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
   for (const auto &[i1, ip, factor]: table)
-    product<S>(f, factor, diagI1.Ublock(i1), diagIp.Ublock(ip));
+    product<S>(f, factor, diagI1.U(i1), diagIp.U(ip));
   if (P.logletter('F')) dump_matrix(f);
   return f;
 }
@@ -95,7 +95,7 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
     my_assert(IN1 == ancestor(I1, i1-1) && INp == ancestor(Ip, ip-1));
     const Twoinvar ININ = {IN1, INp};
     if (cold.count(ININ) == 0) continue;
-    transform<S>(cn, factor, diagI1.Ublock(i1), cold.at(ININ), diagIp.Ublock(ip));
+    transform<S>(cn, factor, diagI1.U(i1), cold.at(ININ), diagIp.U(ip));
   } // over table
   if (P.logletter('R')) dump_matrix(cn);
   return cn;
@@ -112,7 +112,7 @@ void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag, // XXX: pass Eigen ins
                                  const t_coef value) const
 {
   const auto &diagI = diag.at(I);
-  product<S>(m, value, diagI.Ublock(i1), diagI.Ublock(ip));
+  product<S>(m, value, diagI.U(i1), diagI.U(ip));
 }
 
 } // namespace

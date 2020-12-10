@@ -130,6 +130,37 @@ class Vectors {
     }
 };
 
+// Eigenvectors separated according to the invariant subspace from which they originate.
+// Required for using efficient BLAS routines when performing recalculations of the matrix elements.
+template <scalar S, typename Matrix = Matrix_traits<S>>
+class Blocks {
+private:
+  std::vector<Matrix> blocks;
+public:
+  void resize(const size_t nr) {
+    blocks.resize(nr);
+  }
+  void set(const size_t i, Matrix m) {
+    my_assert(i < blocks.size());
+    blocks[i] = std::move(m);
+  }
+  const Matrix & get(const size_t i) const {
+    my_assert(i < blocks.size());
+    return blocks[i];
+  }
+  const Matrix & operator()(const size_t i) const { // 1-based MMA index, called from recalc_f()
+    my_assert(1 <= i && i <= blocks.size());
+    return blocks[i-1];
+  }
+  void truncate(const size_t nr) {
+    for (auto &i : blocks) {
+      my_assert(nr <= i.size1());
+      i.resize(nr, i.size2());
+    }
+  }
+  void clear() { ranges::fill(blocks, Matrix()); }
+};
+
 // Result of a diagonalisation: eigenvalues and eigenvectors
 template <scalar S, typename RVector = RVector_traits<S>, typename Matrix = Matrix_traits<S>> 
 struct RawEigen {
@@ -174,8 +205,9 @@ public:
 template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
 class Eigen {
 public:
-  Values<S> values; // eigenvalues
+  Values<S> values;   // eigenvalues
   Vectors<S> vectors; // eigenvectors
+  Blocks<S> U;        // eigenvectors in blocks
   Eigen() = default;
   explicit Eigen(const size_t M, const size_t dim) {
     my_assert(M <= dim);
@@ -203,24 +235,14 @@ public:
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
   auto value_corr_kept() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrkept()); }
   auto value_corr_msr() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
-  // 'blocks' contains eigenvectors separated according to the invariant subspace from which they originate.
-  // Required for using efficient BLAS routines when performing recalculations of the matrix elements.
-  std::vector<Matrix> blocks;
-  const Matrix & Ublock(const size_t i) const { // 1-based MMA index, called from recalc_f()
-    my_assert(1 <= i && i <= blocks.size());
-    return blocks[i-1];
-  }
   // Truncate to nrpost states.
   void truncate_prepare(const size_t nrpost_) {
     nrpost = nrpost_;
     my_assert(nrpost <= getnrcomputed());
   }
   void truncate_perform() {
-    for (auto &i : blocks) {
-      my_assert(nrpost <= i.size1());
-      i.resize(nrpost, i.size2());
-    }
     nrstored = nrpost;
+    U.truncate(nrpost);
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
@@ -327,7 +349,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      return std::make_pair(size_subspace(I1), size_subspace(I2));
    }
    void clear_eigenvectors() {
-     ranges::for_each(eigs(), [](auto &eig){ ranges::fill(eig.blocks, Matrix()); });
+     ranges::for_each(eigs(), [](auto &eig){ eig.U.clear(); });
    }
    // Total number of states (symmetry taken into account)
    template <typename MF> auto count_states(MF && mult) const {
