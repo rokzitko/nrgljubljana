@@ -87,7 +87,7 @@ class Values {
    void load(boost::archive::binary_iarchive &ia) {
      ia >> v >> scale >> shift >> T_shift >> abs_GS_energy >> corrected;
    }
-   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const { // XXX: write_absG
+   void h5save(H5Easy::File &fd, const std::string &name) const {
     h5_dump_vector(fd, name + "/value_orig", all_rel());
     if (has_zero())     h5_dump_vector(fd, name + "/value_zero",     all_rel_zero() | ranges::to_vector);
     if (has_abs_zero()) h5_dump_vector(fd, name + "/absenergy_zero", all_abs_zero() | ranges::to_vector);
@@ -97,7 +97,7 @@ class Values {
   }
 };
 
-template <scalar S, typename matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
+template <scalar S, typename t_matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
 class Vectors {
   private:
     Matrix m;
@@ -105,8 +105,20 @@ class Vectors {
     auto M() const { return m.size1(); }
     auto dim() const { return m.size2(); }
     void set(Matrix m_) { m = std::move(m_); my_assert(M() <= dim()); }
-    void resize(const size_t size1, const size_t size2) { m.resize(size1,size2); } // XXX: for testing
-    const Matrix & operator()() { return m; }
+    const auto & get() { return m; }
+    void resize(const size_t size1, const size_t size2) { m.resize(size1, size2); }
+    const Matrix & operator()() const { return m; }
+    void standard_basis(const size_t size) {
+      m = ublas::identity_matrix<t_matel>(size);
+    }
+    auto submatrix(const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2) const {
+      return NRG::submatrix(m, r1, r2);
+    }
+    void shrink() {
+      const auto d = dim();
+      resize(0, d); // We keep the information about the dimensionality!!
+      my_assert(M() == 0 && dim() == d);
+    }
     void save(boost::archive::binary_oarchive &oa) const {
       NRG::save(oa, m);
     }
@@ -164,21 +176,18 @@ class Eigen {
 public:
   Values<S> values; // eigenvalues
   Vectors<S> vectors; // eigenvectors
-  Matrix matrix;    // eigenvectors
   Eigen() = default;
-  explicit Eigen(const size_t M, const size_t dim) { // XXX for testing only
+  explicit Eigen(const size_t M, const size_t dim) {
     my_assert(M <= dim);
     values.resize(M);
     vectors.resize(M, dim);
-    matrix.resize(M, dim);
   }
   explicit Eigen(RawEigen<S> && raw) {
     values.set(std::move(raw.val));
-    vectors.set(raw.vec); // YYY -> move
-    matrix = std::move(raw.vec);
+    vectors.set(std::move(raw.vec));
   }
-  [[nodiscard]] auto getnrcomputed() const { return values.size(); }     // number of computed eigenpairs
-  [[nodiscard]] auto getdim() const { return matrix.size2(); }           // valid also after the split_in_blocks_Eigen() call
+  [[nodiscard]] auto getnrcomputed() const { return values.size(); } // number of computed eigenpairs
+  [[nodiscard]] auto getdim() const { return vectors.dim(); }        // valid also after the split_in_blocks_Eigen() call
  private:
   long nrpost = -1;   // number of eigenpairs after truncation (-1: keep all)
   long nrstored = -1; // number of eigenpairs currently held in store 
@@ -217,9 +226,9 @@ public:
   // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
   void diagonal(const std::vector<t_eigen> &v) {
     values.set(v);
-    values.set_corr(v); // required!
-    values.set_shift(0.0); // required!
-    matrix = ublas::identity_matrix<t_eigen>(v.size());
+    values.set_corr(v); // required, for matrix construction in the first step!
+    values.set_shift(0.0); // required in the first step!
+    vectors.standard_basis(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
     values.set_shift(Egs); 
@@ -240,17 +249,15 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     vectors.save(oa);
-    NRG::save(oa, matrix);
     oa << nrpost << nrstored;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     vectors.load(ia);
-    NRG::load(ia, matrix);
     ia >> nrpost >> nrstored;
   }
-  void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
-    values.h5save(fd, name, write_absG);
+  void h5save(H5Easy::File &fd, const std::string &name) const {
+    values.h5save(fd, name);
     vectors.h5save(fd, name);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
   }
@@ -365,9 +372,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      if (remove_files) NRG::remove(fn);
    }
-   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
-     for (const auto &[I, eig]: *this)
-       eig.h5save(fd, name + "/" + I.name(), write_absG);
+   void h5save(H5Easy::File &fd, const std::string &name) const {
+     for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name());
    }
    explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) { 
      load(N, P, remove_files); 

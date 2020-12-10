@@ -199,7 +199,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     perform_basic_measurements(step, diag, Sym, stats, output); // Measurements are performed before the truncation!
   }
   if (P.h5raw)
-    diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/", step.dmnrg());
+    diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/");
   if (!P.ZBW) {
     split_in_blocks(diag, substruct);
     if (P.h5raw)

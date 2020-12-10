@@ -23,10 +23,10 @@ inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
   const auto nr = e.getnrstored(); // nr. of eigenpairs
   my_assert(0 < nr && nr <= e.getdim()); // dim = length of eigenvectors
   for (const auto block: range0(combs)) {
-    const auto Up = submatrix(e.matrix, {0, nr}, sub.part(block));
-    e.blocks[block] = Up;
+    auto Up = e.vectors.submatrix({0, nr}, sub.part(block));
+    e.blocks[block] = std::move(Up);
   }
-  e.matrix = Matrix(0, e.getdim()); // We don't need the matrix anymore, but we keep the information about the dimensionality!!
+  e.vectors.shrink();
 }
 
 template<scalar S>

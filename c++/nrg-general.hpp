@@ -124,7 +124,7 @@ public:
     auto oprecalc = Oprecalc<S>(step.get_runtype(), operators, Sym, mt, P);
     auto output = Output<S>(step.get_runtype(), operators, stats, P);
     if (P.h5raw) {
-       diag0.h5save(*output.h5raw, std::to_string(step.ndx()) + "/eigen/", step.dmnrg());
+       diag0.h5save(*output.h5raw, std::to_string(step.ndx()) + "/eigen/");
        operators.h5save(*output.h5raw, std::to_string(step.ndx()));
     }
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.

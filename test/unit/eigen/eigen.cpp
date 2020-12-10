@@ -45,10 +45,11 @@ TEST(Eigen, diagonal) { // NOLINT
   e.diagonal(v);
   EXPECT_DOUBLE_EQ(e.values.rel(0), 1.0);
   EXPECT_DOUBLE_EQ(e.values.rel_zero(0), 1.0);
-  EXPECT_DOUBLE_EQ(e.matrix(0,0), 1.0); // identity matrix
-  EXPECT_DOUBLE_EQ(e.matrix(0,1), 0.0);
-  EXPECT_DOUBLE_EQ(e.matrix(1,1), 1.0);
-  EXPECT_DOUBLE_EQ(e.matrix(2,2), 1.0);
+  const auto m = e.vectors.get();
+  EXPECT_DOUBLE_EQ(m(0,0), 1.0); // identity matrix
+  EXPECT_DOUBLE_EQ(m(0,1), 0.0);
+  EXPECT_DOUBLE_EQ(m(1,1), 1.0);
+  EXPECT_DOUBLE_EQ(m(2,2), 1.0);
   e.subtract_Egs(1.0);
   EXPECT_DOUBLE_EQ(e.values.rel_zero(0), 0.0);
 }
@@ -76,7 +77,7 @@ TEST(Eigen, hdf5io) { // NOLINT
   e.diagonal(v1);
  // e.values.set_scale(1.0);
   auto h5 = H5Easy::File("Eigen.h5", H5Easy::File::Overwrite);
-  e.h5save(h5, "test", false);
+  e.h5save(h5, "test");
 }
 
 TEST(io, read_vector) { // NOLINT
