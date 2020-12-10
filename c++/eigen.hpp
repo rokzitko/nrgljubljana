@@ -37,7 +37,7 @@ class Values {
    double abs_GS_energy = std::numeric_limits<double>::quiet_NaN();
    std::vector<t_eigen> corrected;
   public:
-   void resize(const size_t size) { v.resize(size); } // XXX for testing purposes
+   void resize(const size_t size) { v.resize(size); }
    auto raw(const size_t i) const { return v[i]; }
    auto rel(const size_t i) const { return v[i]; }
    auto abs(const size_t i) const { my_assert(std::isfinite(scale)); return rel(i) * scale; }
@@ -268,6 +268,10 @@ public:
   template<typename F> auto trace(F fnc, const double factor) const { // Tr[fnc(factor*E) exp(-factor*E)]
     return ranges::accumulate(values.all_rel_zero(), 0.0, {}, [fnc, factor](const auto x) { return fnc(factor*x) * exp(-factor*x); });
   }
+  void clear_eigenvectors() {
+    vectors.shrink();
+    U.clear();
+  }
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     vectors.save(oa);
@@ -336,7 +340,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        F << "Subspace: " << I << std::endl << eig.values.all_rel() << std::endl;
    }
    void truncate_perform() {
-     ranges::for_each(eigs(), [](auto &eig){ eig.truncate_perform(); }); // Truncate subspace to appropriate size
+     ranges::for_each(eigs(), &Eigen<S>::truncate_perform); // Truncate subspace to appropriate size
    }
    [[nodiscard]] auto size_subspace(const Invar &I) const {
      const auto f = this->find(I);
@@ -349,7 +353,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      return std::make_pair(size_subspace(I1), size_subspace(I2));
    }
    void clear_eigenvectors() {
-     ranges::for_each(eigs(), [](auto &eig){ eig.U.clear(); });
+     ranges::for_each(eigs(), &Eigen<S>::clear_eigenvectors);
    }
    // Total number of states (symmetry taken into account)
    template <typename MF> auto count_states(MF && mult) const {
