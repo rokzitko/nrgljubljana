@@ -52,15 +52,30 @@ auto init_rho(const Step &step, const DiagInfo<S> &diag, MF mult) {
 // Calculation of the contribution from subspace I1 of rhoN (density matrix at iteration N) to rhoNEW (density matrix
 // at iteration N-1)
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void cdmI(const size_t i,          // Subspace index
-          const Matrix &rhoN,      // rho^N
-          const Eigen<S> &diagI1,  // contains U_{I1}
-          Matrix &rhoNEW,          // rho^{N-1}
-          const t_coef factor,     // multiplicative factor that accounts for multiplicity
+void cdmI(const size_t i,        // Subspace index
+          const Invar &I1,       // Quantum numbers corresponding to subspace i
+          const Matrix &rhoN,    // rho^N
+          const Eigen<S> &diagI1,   // contains U_{I1}
+          Matrix &rhoNEW,        // rho^{N-1}
+          const size_t N,
+          const t_coef factor, // multiplicative factor that accounts for multiplicity
+          const Store<S> &store,
           const Params &P)
 {
-  nrglog('D', "cdmI i=" << i << " factor=" << factor);
-  const auto U = diagI1.U.get(i);
+  my_assert(i < P.combs);
+  nrglog('D', "cdmI i=" << i << " I1=" << I1 << " factor=" << factor);
+  // Range of indexes r and r' in matrix C^{QS,N}_{r,r'}, cf. Eq. (3.55) in my dissertation.
+  const auto dim = rhoNEW.size2();
+  // number of states taken into account in the density-matrix at *current* (Nth) stage (in subspace I1)
+  const auto nromega = rhoN.size2();
+  if (nromega == 0 || dim == 0) return;   // continue only if connection exists
+  // rmax (info[I1].rmax[i]) is the range of r in U^N_I1(omega|ri), only those states that we actually kept..
+  const auto rmax = store[N].at(I1).rmax.rmax(i);
+  if (rmax == 0) return;    // rmax can be zero in the case a subspace has been completely truncated
+  my_assert(rmax == dim);   // Otherwise, rmax must equal dim
+  // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match?
+  my_assert(nromega <= diagI1.getnrstored());
+  const auto U = diagI1.vectors.submatrix({0, nromega}, store[N].at(I1).rmax.part(i)); // YYY: Ublock ??
   rotate<S>(rhoNEW, factor, U, rhoN);
 }
 
@@ -71,15 +86,17 @@ auto calc_densitymatrix_iterN(const DiagInfo<S> &diag, const DensMatElements<S> 
                               const size_t N, const Store<S> &store, const Symmetry<S> *Sym, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   DensMatElements<S> rhoPrev;
-  for (const auto &[I, dimsub] : store[N-1]) { // loop over all subspaces at *previous* iteration
+  for (const auto &[I, dimsub] : store[N - 1]) { // loop over all subspaces at *previous* iteration
     const auto dim  = dimsub.kept();
     rhoPrev[I]      = Zero_matrix<S>(dim);
     if (dim == 0) continue;
     const auto ns = Sym->new_subspaces(I);
-    for (const auto &[i, sub] : ns | ranges::views::enumerate)
-      if (const auto x = rho.find(sub); x != rho.end())
-        if (const auto y = diag.find(sub); y != diag.end())
-          cdmI(i, x->second, y->second, rhoPrev[I], double(Sym->mult(sub)) / double(Sym->mult(I)), P);
+    for (const auto &[i, sub] : ns | ranges::views::enumerate) {
+      const auto x = rho.find(sub);
+      const auto y = diag.find(sub);
+      if (x != rho.end() && y != diag.end())
+        cdmI(i, sub, x->second, y->second, rhoPrev[I], N, double(Sym->mult(sub)) / double(Sym->mult(I)), store, P);
+    }
   }
   return rhoPrev;
 }
@@ -155,7 +172,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   DensMatElements<S> rhoFDMPrev;
   if (!step.last(N))
     rhoDD = init_rho_FDM(N, store, stats, Sym->multfnc(), P.T);
-  for (const auto &[I, ds] : store[N-1]) { // loop over all subspaces at *previous* iteration
+  for (const auto &[I, ds] : store[N - 1]) { // loop over all subspaces at *previous* iteration
     const auto subs = Sym->new_subspaces(I);
     const auto dim  = ds.kept();
     rhoFDMPrev[I]   = Zero_matrix<S>(dim);
@@ -164,15 +181,16 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
       const auto sub = subs[i];
       // DM construction for non-Abelian symmetries: must include the ratio of multiplicities as a coefficient.
       const auto coef = double(Sym->mult(sub)) / double(Sym->mult(I));
-      if (const auto y = diag.find(sub); y != diag.end()) {
-        // Contribution from the KK sector.
-        if (const auto x1 = rhoFDM.find(sub); x1 != rhoFDM.end())
-          cdmI(i, x1->second, y->second, rhoFDMPrev[I], coef, P);
-        // Contribution from the DD sector. rhoDD -> rhoFDMPrev
-        if (!step.last(N))
-          if (const auto x2 = rhoDD.find(sub); x2 != rhoDD.end())
-            cdmI(i, x2->second, y->second, rhoFDMPrev[I], coef, P);
-      }
+      // Contribution from the KK sector.
+      const auto x1 = rhoFDM.find(sub);
+      const auto y = diag.find(sub);
+      if (x1 != rhoFDM.end() && y != diag.end())
+        cdmI(i, sub, x1->second, y->second, rhoFDMPrev[I], N, coef, store, P);
+      // Contribution from the DD sector. rhoDD -> rhoFDMPrev
+      if (!step.last(N))
+        if (const auto x2 = rhoDD.find(sub); x2 !=rhoDD.end() && y != diag.end())
+          cdmI(i, sub, x2->second, y->second, rhoFDMPrev[I], N, coef, store, P);
+      // (Exception: for the N-1 iteration, the rhoPrev is already initialized with the DD sector of the last iteration.) }
     } // over combinations
   } // over subspaces
   return rhoFDMPrev;
@@ -188,9 +206,9 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const 
     std::cout << "[FDM] " << N << std::endl;
     DiagInfo<S> diag_loaded(N, P);
     auto rhoFDMPrev = calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, N, store, stats, Sym, P);
-    const auto tr       = rhoFDMPrev.trace(Sym->multfnc());
-    const auto expected = std::accumulate(stats.wn.begin() + N, stats.wn.begin() + P.Nmax, 0.0);
-    const auto diff     = (tr - expected) / expected;
+    const auto tr         = rhoFDMPrev.trace(Sym->multfnc());
+    const auto expected   = std::accumulate(stats.wn.begin() + N, stats.wn.begin() + P.Nmax, 0.0);
+    const auto diff       = (tr - expected) / expected;
     nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
     my_assert(num_equal(diff, 0.0));
     rhoFDMPrev.save(N-1, P, filename);

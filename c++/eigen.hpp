@@ -282,12 +282,12 @@ public:
   }
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
-    U.save(oa);
+    vectors.save(oa);
     oa << nrpost << nrstored;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
-    U.load(ia);
+    vectors.load(ia);
     ia >> nrpost >> nrstored;
   }
   void h5save(H5Easy::File &fd, const std::string &name) const {
