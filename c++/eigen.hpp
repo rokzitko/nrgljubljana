@@ -77,6 +77,9 @@ class Values {
    void set_corr(std::vector<t_eigen> in) { corrected = std::move(in); }
    auto has_abs() const { return std::isfinite(scale); }
    auto has_zero() const { return std::isfinite(shift); }
+   auto has_abs_zero() const { return has_abs() && has_zero(); }
+   auto has_abs_T() const { return has_abs_zero() && std::isfinite(T_shift); }
+   auto has_abs_G() const { return has_abs_T() && std::isfinite(abs_GS_energy); }
    auto has_corr() const { return corrected.size() > 0; }
    void save(boost::archive::binary_oarchive &oa) const {
      oa << v << scale << shift << T_shift << abs_GS_energy << corrected;
@@ -86,15 +89,33 @@ class Values {
    }
    void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const { // XXX: write_absG
     h5_dump_vector(fd, name + "/value_orig", all_rel());
-    h5_dump_vector(fd, name + "/value_corr", all_corr());
-    if (has_zero()) h5_dump_vector(fd, name + "/value_zero", all_rel_zero() | ranges::to_vector);
-    if (has_abs()) {
-      h5_dump_vector(fd, name + "/absenergy_zero", all_abs_zero() | ranges::to_vector);
-      h5_dump_vector(fd, name + "/absenergy", all_abs_T() | ranges::to_vector);
-      if (write_absG) 
-        h5_dump_vector(fd, name + "/absenergyG", all_abs_G() | ranges::to_vector);
-    }
+    if (has_zero())     h5_dump_vector(fd, name + "/value_zero",     all_rel_zero() | ranges::to_vector);
+    if (has_abs_zero()) h5_dump_vector(fd, name + "/absenergy_zero", all_abs_zero() | ranges::to_vector);
+    if (has_abs_T())    h5_dump_vector(fd, name + "/absenergy",      all_abs_T()    | ranges::to_vector);
+    if (has_abs_G())    h5_dump_vector(fd, name + "/absenergyG",     all_abs_G()    | ranges::to_vector);
+    if (has_corr())     h5_dump_vector(fd, name + "/value_corr",     all_corr());
   }
+};
+
+template <scalar S, typename matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
+class Vectors {
+  private:
+    Matrix m;
+  public:
+    auto M() const { return m.size1(); }
+    auto dim() const { return m.size2(); }
+    void set(Matrix m_) { m = std::move(m_); my_assert(M() <= dim()); }
+    void resize(const size_t size1, const size_t size2) { m.resize(size1,size2); } // XXX: for testing
+    const Matrix & operator()() { return m; }
+    void save(boost::archive::binary_oarchive &oa) const {
+      NRG::save(oa, m);
+    }
+    void load(boost::archive::binary_iarchive &ia) {
+      NRG::load(ia, m);
+    }
+    void h5save(H5Easy::File &fd, const std::string &name) const {
+      h5_dump_matrix(fd, name + "/matrix", m);
+    }
 };
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
@@ -127,28 +148,33 @@ public:
       my_assert(num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON));
     }
     // Check orthogonality
-    for (const auto r1 : range0(M))
+    for (const auto r1 : range0(M)) {
       for (const auto r2 : boost::irange(r1 + 1, M)) {
         S skpdt{};
         for (const auto j : range0(dim)) skpdt += conj_me(vec(r1, j)) * vec(r2, j);
         my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
       }
-  }};
+    }
+  }
+};
 
 // High-level representation of eigenvalues/eigenvectors
-template <scalar S, typename EVEC = evec_traits<S>, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
+template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
 class Eigen {
 public:
   Values<S> values; // eigenvalues
+  Vectors<S> vectors; // eigenvectors
   Matrix matrix;    // eigenvectors
   Eigen() = default;
   explicit Eigen(const size_t M, const size_t dim) { // XXX for testing only
     my_assert(M <= dim);
     values.resize(M);
+    vectors.resize(M, dim);
     matrix.resize(M, dim);
   }
   explicit Eigen(RawEigen<S> && raw) {
     values.set(std::move(raw.val));
+    vectors.set(raw.vec); // YYY -> move
     matrix = std::move(raw.vec);
   }
   [[nodiscard]] auto getnrcomputed() const { return values.size(); }     // number of computed eigenpairs
@@ -189,7 +215,7 @@ public:
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
-  void diagonal(const EVEC &v) {
+  void diagonal(const std::vector<t_eigen> &v) {
     values.set(v);
     values.set_corr(v); // required!
     values.set_shift(0.0); // required!
@@ -213,17 +239,19 @@ public:
   }
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
+    vectors.save(oa);
     NRG::save(oa, matrix);
     oa << nrpost << nrstored;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
+    vectors.load(ia);
     NRG::load(ia, matrix);
     ia >> nrpost >> nrstored;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool write_absG) const {
     values.h5save(fd, name, write_absG);
-    h5_dump_matrix(fd, name + "/matrix", matrix);
+    vectors.h5save(fd, name);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
   }
 };
