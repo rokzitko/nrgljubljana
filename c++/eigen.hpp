@@ -158,6 +158,14 @@ public:
       i.resize(nr, i.size2());
     }
   }
+  void save(boost::archive::binary_oarchive &oa) const {
+    oa << blocks.size();
+    for (const auto &b: blocks) NRG::save(oa, b);
+  }
+  void load(boost::archive::binary_iarchive &ia) {
+    resize(read_one<size_t>(ia));
+    for (auto &b: blocks) NRG::load(ia, b);
+  }
   void clear() { ranges::fill(blocks, Matrix()); }
 };
 
@@ -274,12 +282,12 @@ public:
   }
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
-    vectors.save(oa);
+    U.save(oa);
     oa << nrpost << nrstored;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
-    vectors.load(ia);
+    U.load(ia);
     ia >> nrpost >> nrstored;
   }
   void h5save(H5Easy::File &fd, const std::string &name) const {
