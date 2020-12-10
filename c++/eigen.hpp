@@ -44,7 +44,7 @@ class Values {
    auto rel_zero(const size_t i) const { my_assert(std::isfinite(shift)); return rel(i)-shift; } // shift subtracted
    auto abs_zero(const size_t i) const { return (rel(i)-shift) * scale; }
    auto abs_T(const size_t i) const { my_assert(std::isfinite(T_shift)); return abs_zero(i) + T_shift; } // T_shift added
-   auto abs_G(const size_t i) const { my_assert(std::isfinite(abs_GS_energy)); return abs_T(i) - abs_GS_energy; }
+   auto abs_G(const size_t i) const { my_assert(std::isfinite(abs_GS_energy)); return abs_T(i) - abs_GS_energy; } // abs_GS_energy subtracted
    auto corr(const size_t i) const { return corrected[i]; }
    auto size() const { return v.size(); }
    auto lowest_rel() const { return v.front(); }
@@ -105,9 +105,9 @@ class Vectors {
     auto M() const { return m.size1(); }
     auto dim() const { return m.size2(); }
     void set(Matrix m_) { m = std::move(m_); my_assert(M() <= dim()); }
-    const auto & get() { return m; }
+    const auto & get() const { return m; }
     void resize(const size_t size1, const size_t size2) { m.resize(size1, size2); }
-    const Matrix & operator()() const { return m; }
+    const auto & operator()() const { return m; }
     void standard_basis(const size_t size) {
       m = ublas::identity_matrix<t_matel>(size);
     }
