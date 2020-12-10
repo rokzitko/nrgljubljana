@@ -52,17 +52,14 @@ auto init_rho(const Step &step, const DiagInfo<S> &diag, MF mult) {
 // Calculation of the contribution from subspace I1 of rhoN (density matrix at iteration N) to rhoNEW (density matrix
 // at iteration N-1)
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void cdmI(const size_t i,        // Subspace index
-          const Invar &I1,       // Quantum numbers corresponding to subspace i
-          const Matrix &rhoN,    // rho^N
-          const Eigen<S> &diagI1,   // contains U_{I1}
-          Matrix &rhoNEW,        // rho^{N-1}
-          const size_t N,
-          const t_coef factor, // multiplicative factor that accounts for multiplicity
-          const Store<S> &store,
+void cdmI(const size_t i,          // Subspace index
+          const Matrix &rhoN,      // rho^N
+          const Eigen<S> &diagI1,  // contains U_{I1}
+          Matrix &rhoNEW,          // rho^{N-1}
+          const t_coef factor,     // multiplicative factor that accounts for multiplicity
           const Params &P)
 {
-  nrglog('D', "cdmI i=" << i << " I1=" << I1 << " factor=" << factor);
+  nrglog('D', "cdmI i=" << i << " factor=" << factor);
   const auto U = diagI1.U.get(i);
   rotate<S>(rhoNEW, factor, U, rhoN);
 }
@@ -83,7 +80,7 @@ auto calc_densitymatrix_iterN(const DiagInfo<S> &diag, const DensMatElements<S> 
       const auto x = rho.find(sub);
       const auto y = diag.find(sub);
       if (x != rho.end() && y != diag.end())
-        cdmI(i, sub, x->second, y->second, rhoPrev[I], N, double(Sym->mult(sub)) / double(Sym->mult(I)), store, P);
+        cdmI(i, x->second, y->second, rhoPrev[I], double(Sym->mult(sub)) / double(Sym->mult(I)), P);
     }
   }
   return rhoPrev;
@@ -173,11 +170,11 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
       const auto x1 = rhoFDM.find(sub);
       const auto y = diag.find(sub);
       if (x1 != rhoFDM.end() && y != diag.end())
-        cdmI(i, sub, x1->second, y->second, rhoFDMPrev[I], N, coef, store, P);
+        cdmI(i, x1->second, y->second, rhoFDMPrev[I], coef, P);
       // Contribution from the DD sector. rhoDD -> rhoFDMPrev
       if (!step.last(N))
         if (const auto x2 = rhoDD.find(sub); x2 !=rhoDD.end() && y != diag.end())
-          cdmI(i, sub, x2->second, y->second, rhoFDMPrev[I], N, coef, store, P);
+          cdmI(i, x2->second, y->second, rhoFDMPrev[I], coef, P);
       // (Exception: for the N-1 iteration, the rhoPrev is already initialized with the DD sector of the last iteration.) }
     } // over combinations
   } // over subspaces
