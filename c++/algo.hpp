@@ -17,8 +17,6 @@
 
 namespace NRG {
 
-inline const double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
-
 // Wrapper class for NRG spectral-function algorithms
 template<scalar S, typename t_coef = coef_traits<S>, typename Matrix = Matrix_traits<S>>
 class Algo {

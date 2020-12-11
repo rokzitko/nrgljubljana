@@ -386,6 +386,26 @@ template<scalar M, scalar N>
     return A.size1() <= B.size1() && A.size2() == B.size2();
   }
 
+inline constexpr double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
+
+// weight=(exp(-beta Em)-exp(-beta En))/(beta En-beta Em). NOTE: arguments En, Em are order omega_N, while beta is
+// order 1/omega_N, thus the combinations betaEn and betaEm are order 1. Also En>0, Em>0, since these are excitation
+// energies !
+inline auto chit_weight(const double En, const double Em, const double beta) {
+  const auto betaEn = beta * En;
+  const auto betaEm = beta * Em;
+  const auto x      = betaEn - betaEm;
+  if (abs(x) > WEIGHT_TOL) {
+    // If one of {betaEm,betaEn} is small, one of exp() will have a value around 1, the other around 0, thus the
+    // overall result will be approximately +-1/x.
+    return (exp(-betaEm) - exp(-betaEn)) / x;
+  } else {
+    // Special case for Em~En. In this case, we are integrating a constant over tau\in{0,\beta}, and dividing this by
+    // beta we get 1. What remains is the Boltzmann weight exp(-betaEm).
+    return exp(-betaEm);
+  }
+}
+
 } // namespace
 
 #endif

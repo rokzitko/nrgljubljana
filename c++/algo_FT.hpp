@@ -6,6 +6,8 @@
 #include "algo.hpp"
 #include "spectrum.hpp"
 
+// The first matrix element is conjugated! This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
+
 namespace NRG {
 
 using namespace std::complex_literals;
@@ -23,17 +25,21 @@ class Algo_FT : public Algo<S> {
    Algo_FT(const std::string &name, const std::string &prefix, const gf_type &gt, const Params &P) :
      Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname), P), sign(gf_sign(gt)) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   // The first matrix element is conjugated! This is <rp|OP1^dag|r1> <r1|OP2|rp> (wp - s*w1)/(z+Ep-E1)
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
              const t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
-     for (const auto r1: diagI1.kept()) {
+     auto stat_factor = [beta = step.scT(), Z = stats.Zft, this](const auto E1, const auto Ep) {
+       return ((-sign) * exp(-beta*E1) + exp(-beta*Ep))/Z;
+     };
+     auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp) {
        const auto E1 = diagI1.values.rel_zero(r1);
+       const auto Ep = diagIp.values.rel_zero(rp);
+       return std::make_pair(E1 - Ep, conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep));
+     };
+     for (const auto r1: diagI1.kept()) {
        for (const auto rp: diagIp.kept()) {
-         const auto Ep = diagIp.values.rel_zero(rp);
-         const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
-         const auto energy = E1 - Ep;
-         cb->add(step.scale() * energy, weight);
+         const auto [energy, weight] = term(r1, rp);
+         cb->add(step.scale() * energy, factor * weight);
        }
      }
    }
@@ -61,19 +67,26 @@ class Algo_FTmats : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
              t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
+     auto stat_factor = [beta = step.scT(), scale = step.scale(), Z = stats.Zft, T = P.T, this](const auto E1, const auto Ep, const auto n) -> weight_traits<S> {
+       const auto energy = E1-Ep;
+       if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
+         return ((-sign) * exp(-beta*E1) + exp(-beta*Ep)) / (Z * (ww(n, gt, T)*1i - scale*energy));
+       else // bosonic w=0 && E1=Ep case
+         return -exp(-beta*E1) / (Z * T);
+     };
+     auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp, const auto n) {
+       const auto E1 = diagI1.values.rel_zero(r1);
+       const auto Ep = diagIp.values.rel_zero(rp);
+       return conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep,n);
+     };
      const size_t cutoff = P.mats;
      for (const auto r1: diagI1.kept()) {
-       const auto E1 = diagI1.values.rel_zero(r1);
        for (const auto rp: diagIp.kept()) {
-         const auto Ep = diagIp.values.rel_zero(rp);
-         const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * ((-sign) * exp(-E1 * step.scT()) + exp(-Ep * step.scT()));
-         const auto energy = E1 - Ep;
 #pragma omp parallel for schedule(static)
-         for (size_t n = 1; n < cutoff; n++) cm->add(n, weight / (ww(n, gt, P.T)*1i - step.scale() * energy));
-         if (abs(energy) > WEIGHT_TOL || gt == gf_type::fermionic)
-           cm->add(size_t(0), weight / (ww(0, gt, P.T)*1i - step.scale() * energy));
-         else // bosonic w=0 && E1=Ep case
-           cm->add(size_t(0), (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * (-exp(-E1 * step.scT()) / P.T));
+         for (size_t n = 0; n < cutoff; n++) {
+           const auto weight = term(r1, rp, n);
+           cm->add(n, factor * weight);
+         }
        }
      }
    }
@@ -104,44 +117,26 @@ class Algo_GT : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
              t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override 
    {
-     const double temperature = P.gtp * step.scale(); // in absolute units!
-     const auto beta          = 1.0 / temperature;
-     weight_traits<S> value{};
-     for (const auto r1: diagI1.kept()) {
+     const double temperature = P.gtp * step.scale(); // in absolute units! stats.Zgt is evaluated for this temperature.
+     auto stat_factor = [beta = 1.0/P.gtp, scale = step.scale(), Z = stats.Zgt](const auto E1, const auto Ep) {
+       return (beta/scale) / (exp(+beta*E1) + exp(+beta*Ep)) * pow((E1 - Ep) * scale, n)/Z; // n is template parameter
+     };
+     auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp) {
        const auto E1 = diagI1.values.rel_zero(r1);
-       for (const auto rp: diagIp.kept()) {
-         const auto Ep = diagIp.values.rel_zero(rp);
-         // Note that Zgt needs to be calculated with the same 'temperature' parameter that we use for the
-         // exponential functions in the following equation.
-         value += beta * (factor / stats.Zgt) * conj_me(op1(r1, rp)) * op2(r1, rp)
-           / (exp(+E1 * step.scale() * beta) + exp(+Ep * step.scale() * beta)) * pow((E1 - Ep) * step.scale(), n);
-       } // loop over r1
-     }   // loop over rp
-     ct->add(temperature, value);
+       const auto Ep = diagIp.values.rel_zero(rp);
+       return conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep);
+     };
+     weight_traits<S> value{};
+     for (const auto r1: diagI1.kept())
+       for (const auto rp: diagIp.kept())
+         value += term(r1, rp); 
+     ct->add(temperature, factor * value);
    }
    void end(const Step &) override {
      td.merge(*ct.get());
    }
    ~Algo_GT() { td.save(); }
 };
-
-// weight=(exp(-beta Em)-exp(-beta En))/(beta En-beta Em). NOTE: arguments En, Em are order omega_N, while beta is
-// order 1/omega_N, thus the combinations betaEn and betaEm are order 1. Also En>0, Em>0, since these are excitation
-// energies !
-inline auto chit_weight(const double En, const double Em, const double beta) {
-  const auto betaEn = beta * En;
-  const auto betaEm = beta * Em;
-  const auto x      = betaEn - betaEm;
-  if (abs(x) > WEIGHT_TOL) {
-    // If one of {betaEm,betaEn} is small, one of exp() will have a value around 1, the other around 0, thus the
-    // overall result will be approximately +-1/x.
-    return (exp(-betaEm) - exp(-betaEn)) / x;
-  } else {
-    // Special case for Em~En. In this case, we are integrating a constant over tau\in{0,\beta}, and dividing this by
-    // beta we get 1. What remains is the Boltzmann weight exp(-betaEm).
-    return exp(-betaEm);
-  }
-}
 
 // Calculation of the temperature-dependent susceptibility chi_AB(T) using the linear response theory and the matrix
 // elements of global operators. Binning needs to be turned off. Note that Zchit needs to be calculated with the same
@@ -164,17 +159,20 @@ class Algo_CHIT : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
-     const double temperature = P.chitp * step.scale(); // in absolute units!
-     const auto beta          = 1.0 / temperature;
+     const double temperature = P.chitp * step.scale(); // in absolute units! stats.Zchit is evaluated for this temperature.
+     auto stat_factor = [temperature, beta = 1.0/P.chitp, scale = step.scale(), Z = stats.Zchit](const auto E1, const auto Ep) {
+       return chit_weight(scale*E1, scale*Ep, 1.0/temperature)/Z;
+     };
+     auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp) {
+       const auto E1 = diagI1.values.rel_zero(r1);
+       const auto Ep = diagIp.values.rel_zero(rp);
+       return conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep);
+     };
      weight_traits<S> value{};
-     for (const auto r1: diagI1.kept()) {
-       for (const auto rp: diagIp.kept()) {
-         const auto E1 = diagI1.values.rel_zero(r1);
-         const auto Ep = diagIp.values.rel_zero(rp);
-         value += (factor/stats.Zchit) * chit_weight(step.scale()*E1, step.scale()*Ep, beta) * conj_me(op1(r1,rp)) * op2(r1,rp);
-       }
-     }
-     ct->add(temperature, value);
+     for (const auto r1: diagI1.kept())
+       for (const auto rp: diagIp.kept())
+         value += term(r1, rp);
+     ct->add(temperature, factor * value);
    }
    void end(const Step &) override {
      td.merge(*ct.get());
