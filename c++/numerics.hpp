@@ -386,6 +386,28 @@ template<scalar M, scalar N>
     return A.size1() <= B.size1() && A.size2() == B.size2();
   }
 
+// M = A*B, size of A is adapted to the size of B
+template<typename T>
+inline auto prod_fit_left(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
+  my_assert(B.size1() <= A.size2());
+  if (A.size1() == 0 || B.size2() == 0) return ublas::matrix<T>();
+  const auto Asub = submatrix(A, {0, A.size1()}, {0, B.size1()});
+  auto M = ublas::matrix<T>(A.size1(), B.size2());
+  atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, Asub, B, 0.0, M);
+  return M;
+}
+
+// M = A^\dag*B, size of A is adapted to the size of B
+template<typename T>
+inline auto prod_adj_fit_left(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
+  my_assert(B.size1() <= A.size1());
+  if (A.size2() == 0 || B.size2() == 0) return ublas::matrix<T>();
+  const auto Asub = submatrix(A, {0, B.size1()}, {0, A.size2()});
+  auto M = ublas::matrix<T>(A.size2(), B.size2());
+  atlas::gemm(CblasConjTrans, CblasNoTrans, 1.0, Asub, B, 0.0, M);
+  return M;
+}
+
 inline constexpr double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 
 // weight=(exp(-beta Em)-exp(-beta En))/(beta En-beta Em). NOTE: arguments En, Em are order omega_N, while beta is
