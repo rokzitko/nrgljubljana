@@ -29,18 +29,18 @@ class Algo_DMNRG : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-     auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2, this](const auto rm, const auto rj) { 
-         const auto Em = diagIp.values.rel_zero(rm);
-         const auto Ej = diagI1.values.rel_zero(rj);
-         const auto energy = Ej-Em;
-         if (abs(energy) < P.getEmin() || abs(energy) > P.getEmax()) return std::make_tuple(energy, t_weight{}, t_weight{}); // does not contribute
-         t_weight sumA{};
-         for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
-         const auto weightA = sumA * conj_me(op1(rj, rm));
-         t_weight sumB{};
-         for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
-         const auto weightB = sumB * op2(rj, rm);
-         return std::make_tuple(energy, weightA, weightB);
+     auto weights = [Emin = step.scale() * P.getEmin(), Emax = step.scale() * P.getEmax(), &rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) { 
+       const auto Em = diagIp.values.abs_zero(rm);
+       const auto Ej = diagI1.values.abs_zero(rj);
+       const auto energy = Ej-Em;
+       if (abs(energy) < Emin || abs(energy) > Emax) return std::make_tuple(energy, t_weight{}, t_weight{}); // does not contribute
+       t_weight sumA{};
+       for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
+       const auto weightA = sumA * conj_me(op1(rj, rm));
+       t_weight sumB{};
+       for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
+       const auto weightB = sumB * op2(rj, rm);
+       return std::make_tuple(energy, weightA, weightB);
      };
      auto term = [&weights, this](const auto rm, const auto rj) {
        const auto [energy, weightA, weightB] = weights(rm, rj);
@@ -49,7 +49,7 @@ class Algo_DMNRG : public Algo<S> {
      for (const auto rm: diagIp.kept()) {
        for (const auto rj: diagI1.kept()) {
          const auto [energy, weight] = term(rm, rj);
-         cb->add(step.scale() * energy, factor * weight);
+         cb->add(energy, factor * weight);
        }
      }
    }
@@ -79,8 +79,8 @@ class Algo_DMNRGmats : public Algo<S> {
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
       auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2, this](const auto rm, const auto rj) { 
-         const auto Em = diagIp.values.rel_zero(rm);
-         const auto Ej = diagI1.values.rel_zero(rj);
+         const auto Em = diagIp.values.abs_zero(rm);
+         const auto Ej = diagI1.values.abs_zero(rj);
          t_weight sumA{};
          for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
          const auto weightA = sumA * conj_me(op1(rj, rm));
@@ -89,10 +89,10 @@ class Algo_DMNRGmats : public Algo<S> {
          const auto weightB = sumB * op2(rj, rm);
          return std::make_tuple(Ej-Em, weightA, weightB);
      };
-     auto term = [&weights, &step, this](const auto rm, const auto rj, const auto n) {
+     auto term = [&weights, this](const auto rm, const auto rj, const auto n) {
        const auto [energy, weightA, weightB] = weights(rm, rj);
        if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
-         return (weightA + (-sign) * weightB) / (ww(n, gt, P.T)*1i - step.scale() * energy);
+         return (weightA + (-sign) * weightB) / (ww(n, gt, P.T)*1i - energy);
        else // bosonic w=0 && Em=Ej case
          return -weightA / t_weight(P.T);
      };

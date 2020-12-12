@@ -254,10 +254,11 @@ public:
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
   // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
-  void diagonal(const std::vector<t_eigen> &v) {
+  void diagonal(const std::vector<t_eigen> &v, const double scale = 1.0) {
     values.set(v);
     values.set_corr(v); // required, for matrix construction in the first step!
     values.set_shift(0.0); // required in the first step!
+    values.set_scale(scale);
     vectors.standard_basis(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
@@ -306,10 +307,11 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      for (const auto i : range1(nsubs)) {
        const auto I = read_one<Invar>(fdata);
        auto energies = read_std_vector<t_eigen>(fdata);
-       if (!P.data_has_rescaled_energies && !P.absolute)
+       if (!(P.data_has_rescaled_energies || P.absolute))
          for (auto &x : energies) x /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
-       (*this)[I].diagonal(energies);
+       (*this)[I].diagonal(energies, P.absolute ? 1.0 : P.SCALE(P.Ninit));
      }
+     std::cout << "AAA:" << P.SCALE(P.Ninit) << std::endl; // VVV
      my_assert(this->size() == nsubs);
    }
    [[nodiscard]] auto subspaces() const { return *this | boost::adaptors::map_keys; }

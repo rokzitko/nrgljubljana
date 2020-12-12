@@ -28,18 +28,18 @@ class Algo_FT : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
              const t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
-     auto stat_factor = [beta = step.scT(), Z = stats.Zft, this](const auto E1, const auto Ep) {
+     auto stat_factor = [beta = 1/P.T, Z = stats.Zft, this](const auto E1, const auto Ep) {
        return ((-sign) * exp(-beta*E1) + exp(-beta*Ep))/Z;
      };
-     auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp) {
-       const auto E1 = diagI1.values.rel_zero(r1);
-       const auto Ep = diagIp.values.rel_zero(rp);
+     auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor, &step](const auto r1, const auto rp) {
+       const auto E1 = diagI1.values.abs_zero(r1);
+       const auto Ep = diagIp.values.abs_zero(rp);
        return std::make_pair(E1 - Ep, conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep));
      };
      for (const auto r1: diagI1.kept()) {
        for (const auto rp: diagIp.kept()) {
          const auto [energy, weight] = term(r1, rp);
-         cb->add(step.scale() * energy, factor * weight);
+         cb->add(energy, factor * weight);
        }
      }
    }
@@ -67,16 +67,16 @@ class Algo_FTmats : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
              t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
-     auto stat_factor = [beta = step.scT(), scale = step.scale(), Z = stats.Zft, T = P.T, this](const auto E1, const auto Ep, const auto n) -> t_weight {
+     auto stat_factor = [beta = 1/P.T, Z = stats.Zft, T = P.T, this](const auto E1, const auto Ep, const auto n) -> t_weight {
        const auto energy = E1-Ep;
        if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
-         return ((-sign) * exp(-beta*E1) + exp(-beta*Ep)) / (Z * (ww(n, gt, T)*1i - scale*energy));
+         return ((-sign) * exp(-beta*E1) + exp(-beta*Ep)) / (Z * (ww(n, gt, T)*1i - energy));
        else // bosonic w=0 && E1=Ep case
          return -exp(-beta*E1) / (Z * T);
      };
      auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp, const auto n) {
-       const auto E1 = diagI1.values.rel_zero(r1);
-       const auto Ep = diagIp.values.rel_zero(rp);
+       const auto E1 = diagI1.values.abs_zero(r1);
+       const auto Ep = diagIp.values.abs_zero(rp);
        return conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep,n);
      };
      const size_t cutoff = P.mats;
@@ -118,12 +118,12 @@ class Algo_GT : public Algo<S> {
              t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override 
    {
      const double temperature = P.gtp * step.scale(); // in absolute units! stats.Zgt is evaluated for this temperature.
-     auto stat_factor = [beta = 1.0/P.gtp, scale = step.scale(), Z = stats.Zgt](const auto E1, const auto Ep) {
-       return (beta/scale) / (exp(+beta*E1) + exp(+beta*Ep)) * pow((E1 - Ep) * scale, n)/Z; // n is template parameter
+     auto stat_factor = [beta = 1.0/temperature, Z = stats.Zgt](const auto E1, const auto Ep) {
+       return beta / (exp(+beta*E1) + exp(+beta*Ep)) * pow(E1 - Ep, n)/Z; // n is template parameter
      };
      auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp) {
-       const auto E1 = diagI1.values.rel_zero(r1);
-       const auto Ep = diagIp.values.rel_zero(rp);
+       const auto E1 = diagI1.values.abs_zero(r1);
+       const auto Ep = diagIp.values.abs_zero(rp);
        return conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep);
      };
      weight_traits<S> value{};
@@ -160,12 +160,12 @@ class Algo_CHIT : public Algo<S> {
              t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
      const double temperature = P.chitp * step.scale(); // in absolute units! stats.Zchit is evaluated for this temperature.
-     auto stat_factor = [temperature, beta = 1.0/P.chitp, scale = step.scale(), Z = stats.Zchit](const auto E1, const auto Ep) {
-       return chit_weight(scale*E1, scale*Ep, 1.0/temperature)/Z;
+     auto stat_factor = [temperature, Z = stats.Zchit](const auto E1, const auto Ep) {
+       return chit_weight(E1, Ep, 1.0/temperature)/Z;
      };
      auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp) {
-       const auto E1 = diagI1.values.rel_zero(r1);
-       const auto Ep = diagIp.values.rel_zero(rp);
+       const auto E1 = diagI1.values.abs_zero(r1);
+       const auto Ep = diagIp.values.abs_zero(rp);
        return conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep);
      };
      weight_traits<S> value{};
