@@ -28,8 +28,6 @@ class Algo_DMNRG : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-     const double Emin = P.getEmin();
-     const double Emax = P.getEmax();
      const Matrix &rhoNIp = rho.at(Ip);
      const Matrix &rhoNI1 = rho.at(I1);
      for (const auto rm: diagIp.kept()) {
@@ -38,7 +36,7 @@ class Algo_DMNRG : public Algo<S> {
          const auto Ej = diagI1.values.rel_zero(rj);
          const auto energy = Ej - Em;
          const auto absE = abs(energy);
-         if (absE < Emin || absE > Emax) // does not contribute
+         if (abs(energy) < P.getEmin() || abs(energy) > P.getEmax()) // does not contribute
            continue;
          t_weight sumA{};
          for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
