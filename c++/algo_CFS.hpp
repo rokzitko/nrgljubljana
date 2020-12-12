@@ -7,6 +7,32 @@
 
 namespace NRG {
 
+// M = A*B, size of A is adapted to the size of B
+template<typename T>
+inline auto prod_fit_left(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
+  my_assert(B.size1() <= A.size2());
+  const auto Asub = submatrix(A, {0, A.size1()}, {0, B.size1()});
+  auto M = ublas::matrix<T>(Asub.size1(), B.size2());
+  atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, Asub, B, 0.0, M);
+  return M;
+}
+
+// XXX: compute the transpose instead: N = M^T = B^\dag * A ??
+// M = A^T conj(B), size of B is adapted to the size of A
+template <typename T> 
+inline auto prod_adj_fit_right(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
+  my_assert(A.size1() <= B.size1());
+  auto Bsub = submatrix(B, {0, A.size1()}, {0, B.size2()});
+  auto M = ublas::matrix<T>(A.size2(), Bsub.size2());
+  if constexpr (std::is_same_v<T, std::complex<double>>) {
+    const ublas::matrix<T> Bsubconj = conj(Bsub);
+    atlas::gemm(CblasTrans, CblasNoTrans, 1.0, A, Bsubconj, 0.0, M);
+  } else {
+    atlas::gemm(CblasTrans, CblasNoTrans, 1.0, A, Bsub, 0.0, M);
+  }
+  return M;
+}
+
 // Cf. Peters, Pruschke, Anders, Phys. Rev. B 74, 245113 (2006).
 // Based on the implementation by Markus Greger.
 
@@ -43,14 +69,11 @@ class Algo_CFSls : virtual public Algo<S> {
      } else {
        // iii-term, Eq. (16), positive frequency excitations
        if (op2.size1() && rhoNIp.size1()) {
-         Matrix op2_m_rho;
-         const auto op2_TK = submatrix(op2, {0, op2.size1()}, {0, rhoNIp.size1()});
-         op2_m_rho = Matrix(op2_TK.size1(), rhoNIp.size2());
-         atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, op2_TK, rhoNIp, 0.0, op2_m_rho); // rhoNEW <- rhoNEW + factor T U
+         const auto op2_m_rho = prod_fit_left(op2, rhoNIp);
          for (const auto rl: diagI1.discarded()) {
            for (const auto rk: diagIp.kept()) {
-             const auto El       = diagI1.values.rel_zero(rl);
-             const auto Ek       = diagIp.values.rel_zero(rk);
+             const auto El     = diagI1.values.rel_zero(rl);
+             const auto Ek     = diagIp.values.rel_zero(rk);
              const auto weight = factor * conj_me(op1(rl, rk)) * op2_m_rho(rl, rk) * (-sign);
              cb->add(step.scale() * (El-Ek), weight);
            }
@@ -98,18 +121,11 @@ class Algo_CFSgt : virtual public Algo<S> {
        }
      } else {
        if (rhoNI1.size1() && op1.size2()) {
-         const auto op1_KT = submatrix(op1, {0, rhoNI1.size1()}, {0, op1.size2()});
-         Matrix op1_m_rho(rhoNI1.size2(), op1_KT.size2());
-         if constexpr (std::is_same_v<S, double>) {
-           atlas::gemm(CblasTrans, CblasNoTrans, 1.0, rhoNI1, op1_KT, 0.0, op1_m_rho); // rhoNEW <- rhoNEW + factor T U
-         } else {
-           const ublas::matrix<std::complex<double>> conj_op1_KT = conj(op1_KT); // XXX: makes a copy!?
-           atlas::gemm(CblasTrans, CblasNoTrans, 1.0, rhoNI1, conj_op1_KT, 0.0, op1_m_rho); // rhoNEW <- rhoNEW + factor T U
-         }
-         for (const auto rk: diagI1.kept()) {                                          // ii-term, Eq. (15), negative frequency excitations
+         const auto op1_m_rho = prod_adj_fit_right(rhoNI1, op1);
+         for (const auto rk: diagI1.kept()) {             // ii-term, Eq. (15), negative frequency excitations
            for (const auto rl: diagIp.discarded()) {
-             const auto Ek       = diagI1.values.rel_zero(rk);
-             const auto El       = diagIp.values.rel_zero(rl);
+             const auto Ek     = diagI1.values.rel_zero(rk);
+             const auto El     = diagIp.values.rel_zero(rl);
              const auto weight = factor * op1_m_rho(rk, rl) * op2(rk, rl);
              cb->add(step.scale() * (Ek-El), weight);
            }

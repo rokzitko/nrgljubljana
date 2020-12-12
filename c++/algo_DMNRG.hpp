@@ -2,6 +2,7 @@
 #define _algo_DMNRG_hpp_
 
 #include <complex>
+#include <tuple>
 #include "traits.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"
@@ -28,24 +29,27 @@ class Algo_DMNRG : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-     const Matrix &rhoNIp = rho.at(Ip);
-     const Matrix &rhoNI1 = rho.at(I1);
-     for (const auto rm: diagIp.kept()) {
-       for (const auto rj: diagI1.kept()) {
+     auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2, this](const auto rm, const auto rj) { 
          const auto Em = diagIp.values.rel_zero(rm);
          const auto Ej = diagI1.values.rel_zero(rj);
-         const auto energy = Ej - Em;
-         const auto absE = abs(energy);
-         if (abs(energy) < P.getEmin() || abs(energy) > P.getEmax()) // does not contribute
-           continue;
+         const auto energy = Ej-Em;
+         if (abs(energy) < P.getEmin() || abs(energy) > P.getEmax()) return std::make_tuple(energy, t_weight{}, t_weight{}); // does not contribute
          t_weight sumA{};
          for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
          const auto weightA = sumA * conj_me(op1(rj, rm));
          t_weight sumB{};
          for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
          const auto weightB = sumB * op2(rj, rm);
-         const auto weight  = factor * (weightA + (-sign) * weightB);
-         cb->add(step.scale() * energy, weight);
+         return std::make_tuple(energy, weightA, weightB);
+     };
+     auto term = [&weights, this](const auto rm, const auto rj) {
+       const auto [energy, weightA, weightB] = weights(rm, rj);
+       return std::make_pair(energy, weightA + (-sign) * weightB);
+     };
+     for (const auto rm: diagIp.kept()) {
+       for (const auto rj: diagI1.kept()) {
+         const auto [energy, weight] = term(rm, rj);
+         cb->add(step.scale() * energy, factor * weight);
        }
      }
    }
@@ -74,27 +78,30 @@ class Algo_DMNRGmats : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-     const Matrix &rhoNIp = rho.at(Ip);
-     const Matrix &rhoNI1 = rho.at(I1);
-     for (const auto rm: diagIp.kept()) {
-       for (const auto rj: diagI1.kept()) {
+      auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2, this](const auto rm, const auto rj) { 
          const auto Em = diagIp.values.rel_zero(rm);
          const auto Ej = diagI1.values.rel_zero(rj);
-         const auto energy = Ej - Em;
          t_weight sumA{};
          for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
          const auto weightA = sumA * conj_me(op1(rj, rm));
          t_weight sumB{};
          for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
          const auto weightB = sumB * op2(rj, rm);
-         const auto weight  = factor * (weightA + (-sign) * weightB);
-         for (size_t n = 1; n < P.mats; n++) cm->add(n, weight / (ww(n, gt, P.T)*1i - step.scale() * energy));
-         if (abs(energy) > WEIGHT_TOL || gt == gf_type::fermionic)
-           cm->add(size_t(0), weight / (ww(0, gt, P.T)*1i - step.scale() * energy));
-         else // bosonic w=0 && E1=Ep case
-           cm->add(size_t(0), factor * (-weightA / t_weight(P.T)));
-       }
-     }
+         return std::make_tuple(Ej-Em, weightA, weightB);
+     };
+     auto term = [&weights, &step, this](const auto rm, const auto rj, const auto n) {
+       const auto [energy, weightA, weightB] = weights(rm, rj);
+       if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
+         return (weightA + (-sign) * weightB) / (ww(n, gt, P.T)*1i - step.scale() * energy);
+       else // bosonic w=0 && Em=Ej case
+         return -weightA / t_weight(P.T);
+     };
+     for (const auto rm: diagIp.kept())
+       for (const auto rj: diagI1.kept())
+         for (size_t n = 0; n < P.mats; n++) {
+           const auto weight = term(rm, rj, n);
+           cm->add(n, factor * weight); 
+         }
    }
    void end(const Step &step) override {
           gf.merge(*cm.get());
