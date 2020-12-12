@@ -109,13 +109,9 @@ inline double windowfunction(const double E, const double Emin, const double Ex,
 // See R. Bulla, T. A. Costi, D. Vollhardt, Phys. Rev. B 64, 045103 (2001)
 template<scalar S>
 void SpectrumRealFreq<S>::mergeNN2half(Bins<S> &fullspec, const Bins<S> &cs, const Step &step) {
-  auto Emin = step.scale() * P.getEmin(); // p
-  auto Ex   = step.scale() * P.getEx();   // p Lambda
-  auto Emax = step.scale() * P.getEmax(); // p Lambda^2
-  if (P.ZBW) {                              // override for zero bandwidth calculation
-    Emin = 0;
-    Emax = std::numeric_limits<double>::max(); // infinity
-  }
+  const auto Emin = step.scale() * P.getEmin(); // p
+  const auto Ex   = step.scale() * P.getEx();   // p Lambda
+  const auto Emax = step.scale() * P.getEmax(); // p Lambda^2
   const auto len = fullspec.bins.size();
   my_assert(len == cs.bins.size()); // We require equivalent bin sets!!
   for (const auto i: range0(len)) {

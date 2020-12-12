@@ -28,8 +28,8 @@ class Algo_DMNRG : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-     const double Emin = P.ZBW ? 0 : P.getEmin();
-     const double Emax = P.ZBW ? std::numeric_limits<double>::max() : P.getEmax();
+     const double Emin = P.getEmin();
+     const double Emax = P.getEmax();
      const Matrix &rhoNIp = rho.at(Ip);
      const Matrix &rhoNI1 = rho.at(I1);
      for (const auto rm: diagIp.kept()) {

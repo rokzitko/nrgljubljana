@@ -652,10 +652,12 @@ class Params {
     return (channels == 1 && !NN1) ? Lambda : std::sqrt(Lambda);
   }
 
+  // Energy window for the patching procedure [FT and DMNRG algorithms]. In ZBW calculations the window is extended to [0:infty]
+  // to get all spectral contributions.
   double getE0()   const { return goodE; }
-  double getEmin() const { return getE0(); }
+  double getEmin() const { return !ZBW ? getE0() : 0.0; }
   double getEx()   const { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
-  double getEmax() const { return getE0() * pow(getEfactor(),2); }
+  double getEmax() const { return !ZBW ? getE0() * pow(getEfactor(),2) : std::numeric_limits<double>::max(); }
 
   auto Nall() const { return boost::irange(size_t(Ninit), size_t(Nlen)); }
 };
