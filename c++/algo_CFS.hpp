@@ -28,27 +28,34 @@ class Algo_CFSls : virtual public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-     const auto &rhoNIp = rho.at(Ip);
-     const auto &rhoNI1 = rho.at(I1);
-     // Convention: k-loops over retained states, l-loop over discarded states. i-term, Eq. (11).
+     // Convention: k-loops over retained states, l-loop over discarded states.
      if (step.last()) {
+       //  i-term, Eq. (11).
+       auto term1 = [&diagI1, &diagIp, Z=stats.Zft, &op1, &op2, this](const auto r1, const auto rp) {
+         const auto E1     = diagI1.values.abs_zero(r1);
+         const auto Ep     = diagIp.values.abs_zero(rp);
+         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-E1/P.T) * (-sign)/Z;
+         return std::make_pair(E1-Ep, weight);
+       };
        for (const auto r1: diagI1.kept()) {
          for (const auto rp: diagIp.kept()) {
-           const auto E1     = diagI1.values.rel_zero(r1); // XXX: rel_zero -> rel, or abs (since we multiply by scale!)
-           const auto Ep     = diagIp.values.rel_zero(rp);
-           const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-E1 * step.scT()) * (-sign);
-           cb->add(step.scale() * (E1-Ep), weight);
+           const auto [energy, weight] = term1(r1, rp);
+           cb->add(energy, factor * weight);
          }
        }
      } else {
        // iii-term, Eq. (16), positive frequency excitations
-       const auto op2_m_rho = prod_fit_left(op2, rhoNIp);
+       const auto op2_rho = prod_fit_left(op2, rho.at(Ip));
+       auto term3 = [&diagI1, &diagIp, &op1, &op2_rho, this](const auto rl, const auto rk) {
+         const auto El     = diagI1.values.abs_zero(rl);
+         const auto Ek     = diagIp.values.abs_zero(rk);
+         const auto weight = conj_me(op1(rl, rk)) * op2_rho(rl, rk) * (-sign);
+         return std::make_pair(El-Ek, weight);
+       };
        for (const auto rl: diagI1.discarded()) {
          for (const auto rk: diagIp.kept()) {
-           const auto El     = diagI1.values.rel_zero(rl);
-           const auto Ek     = diagIp.values.rel_zero(rk);
-           const auto weight = factor * conj_me(op1(rl, rk)) * op2_m_rho(rl, rk) * (-sign);
-           cb->add(step.scale() * (El-Ek), weight);
+           const auto [energy, weight] = term3(rl, rk);
+           cb->add(energy, factor * weight);
          }
        }
      }
@@ -79,26 +86,34 @@ class Algo_CFSgt : virtual public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-     const auto &rhoNIp = rho.at(Ip);
-     const auto &rhoNI1 = rho.at(I1);
-     // Convention: k-loops over retained states, l-loop over discarded states. i-term, Eq. (11).
+     // Convention: k-loops over retained states, l-loop over discarded states.
      if (step.last()) {
+        // i-term, Eq. (11).
+        auto term1 = [&diagI1, &diagIp, Z=stats.Zft, &op1, &op2, this](const auto r1, const auto rp) {
+         const auto E1     = diagI1.values.abs_zero(r1);
+         const auto Ep     = diagIp.values.abs_zero(rp);
+         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-Ep/P.T)/Z;
+         return std::make_pair(E1-Ep, weight);
+       };
        for (const auto r1: diagI1.kept()) {
          for (const auto rp: diagIp.kept()) {
-           const auto E1     = diagI1.values.rel_zero(r1);
-           const auto Ep     = diagIp.values.rel_zero(rp);
-           const auto weight = (factor / stats.Zft) * conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-Ep * step.scT());
-           cb->add(step.scale() * (E1-Ep), weight);
+           const auto [energy, weight] = term1(r1, rp);
+           cb->add(energy, factor * weight);
          }
        }
      } else {
-       const auto op1_m_rho = prod_adj_fit_left(op1, rhoNI1);
-       for (const auto rk: diagI1.kept()) {             // ii-term, Eq. (15), negative frequency excitations
+       // ii-term, Eq. (15), negative frequency excitations
+       const auto op1_rho = prod_adj_fit_left(op1, rho.at(I1));
+       auto term2 = [&diagI1, &diagIp, &op1_rho, &op2, this](const auto rk, const auto rl) {
+         const auto Ek     = diagI1.values.abs_zero(rk);
+         const auto El     = diagIp.values.abs_zero(rl);
+         const auto weight = op1_rho(rl, rk) * op2(rk, rl);
+         return std::make_pair(Ek-El, weight);
+       };
+       for (const auto rk: diagI1.kept()) {
          for (const auto rl: diagIp.discarded()) {
-           const auto Ek     = diagI1.values.rel_zero(rk);
-           const auto El     = diagIp.values.rel_zero(rl);
-           const auto weight = factor * op1_m_rho(rl, rk) * op2(rk, rl);
-           cb->add(step.scale() * (Ek-El), weight);
+           const auto [energy, weight] = term2(rk, rl);
+           cb->add(energy, factor * weight);
          }
        }
      }
