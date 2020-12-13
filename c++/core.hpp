@@ -104,7 +104,7 @@ auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S
     { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
     auto e = diagonalise<S>(h, DP, -1); // -1 = not using MPI
 #pragma omp critical
-    { diagnew[I] = Eigen(std::move(e)); }
+    { diagnew[I] = Eigen(std::move(e), step.last()); }
   }
   return diagnew;
 }

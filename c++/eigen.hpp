@@ -222,7 +222,7 @@ public:
     values.resize(M);
     vectors.resize(M, dim);
   }
-  explicit Eigen(RawEigen<S> && raw) {
+  explicit Eigen(RawEigen<S> && raw, const bool last = false) : last(last) {
     values.set(std::move(raw.val));
     vectors.set(std::move(raw.vec));
   }
@@ -230,8 +230,10 @@ public:
   [[nodiscard]] auto getdim() const { return vectors.dim(); }        // valid also after the split_in_blocks_Eigen() call
  private:
   long nrpost = -1;   // number of eigenpairs after truncation (-1: keep all)
-  long nrstored = -1; // number of eigenpairs currently held in store 
+  long nrstored = -1; // number of eigenpairs currently held in store
+  bool last = false; // eigenspectrum from the last step of the NRG iteration
   [[nodiscard]] auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }     // number of states after truncation
+  [[nodiscard]] auto boundary() const { return last ? 0 : getnrkept(); } // for FDM
  public:
   [[nodiscard]] auto getnrall() const { return getnrcomputed(); }                              // all = all computed
   [[nodiscard]] auto getnrkept() const { return getnrpost(); }                                 // # of kept states
@@ -241,6 +243,9 @@ public:
   [[nodiscard]] auto kept() const { return range0(getnrpost()); }                              // iterator over kept states
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
+  // Ranges for FDM algorithm with different semantics of D/K states for the last step
+  [[nodiscard]] auto Drange() const { return boost::irange(boundary(), getnrkept()); }
+  [[nodiscard]] auto Krange() const { return boost::irange(0, boundary()); }
   auto value_corr_kept() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrkept()); }
   auto value_corr_msr() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
   // Truncate to nrpost states.
@@ -260,6 +265,7 @@ public:
     values.set_shift(0.0); // required in the first step!
     values.set_scale(scale);
     vectors.standard_basis(v.size());
+    last = false; // XXX: ZBW?
   }
   void subtract_Egs(const t_eigen Egs) {
     values.set_shift(Egs); 
@@ -284,12 +290,12 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     vectors.save(oa);
-    oa << nrpost << nrstored;
+    oa << nrpost << nrstored << last;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     vectors.load(ia);
-    ia >> nrpost >> nrstored;
+    ia >> nrpost >> nrstored >> last;
   }
   void h5save(H5Easy::File &fd, const std::string &name) const {
     values.h5save(fd, name);
