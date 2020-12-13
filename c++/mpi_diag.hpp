@@ -134,7 +134,7 @@ class MPI_diag {
          if (i == 0) {
            // On master, diagonalize immediately.
            auto e = diagonalise<S>(h, DP, myrank());
-           diagnew[I] = Eigen<S>(std::move(e));
+           diagnew[I] = Eigen<S>(std::move(e), step);
            tasks_done.push_back(I);
            nodes_available.push_back(0);
          } else {
@@ -146,7 +146,7 @@ class MPI_diag {
          while (auto status = mpiw.iprobe(boost::mpi::any_source, TAG_EIGEN_VEC)) {
            nrglog('M', "Receiveing results from " << status->source());
            auto [Irecv, eig] = read_from<S>(status->source());
-           diagnew[Irecv] = Eigen<S>(std::move(eig));
+           diagnew[Irecv] = Eigen<S>(std::move(eig), step);
            tasks_done.push_back(Irecv);
            // The node is now available for new tasks!
            nodes_available.push_back(status->source());
@@ -156,7 +156,7 @@ class MPI_diag {
        while (tasks_done.size() != tasks.size()) {
          const auto status = mpiw.probe(boost::mpi::any_source, TAG_EIGEN_VEC);
          auto [Irecv, eig]  = read_from<S>(status.source());
-         diagnew[Irecv] = Eigen<S>(std::move(eig));
+         diagnew[Irecv] = Eigen<S>(std::move(eig), step);
          tasks_done.push_back(Irecv);
        }
        return diagnew;

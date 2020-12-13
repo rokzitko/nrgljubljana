@@ -35,7 +35,7 @@ TEST(Clean, H) { // NOLINT
     auto h = hamiltonian<double>(step, I, operators.opch, coef, diagprev, output, Sym, P);
     dump_matrix(h);
     auto e = diagonalise(h, DiagParams(P, 1.0), -1); // -1 = not using MPI
-    diag[I] = NRG::Eigen<double>(std::move(e));
+    diag[I] = NRG::Eigen<double>(std::move(e), step);
   }
 
   stats.Egs = diag.Egs_subtraction();
