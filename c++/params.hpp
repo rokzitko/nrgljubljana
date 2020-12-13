@@ -495,8 +495,9 @@ class Params {
   size_t coefchannels = 0; // Number of coefficient sets (typically coefchannels=channels)
   size_t perchannel = 0;   // f-matrices per channel (typically 1)
   size_t combs = 0;        // dimension of new shell Hilbert space, 4 for single-channel, 16 for two-channel, etc.
-  bool ZBW = false;        // Zero-bandwidth calculation if Nmax=Ninit.
   size_t Nlen = 0;         // Nlen=Nmax for regular calculations. Nlen=1 for ZBW. Length of wn, wnfactor, ZnD and dm vectors.
+
+  [[nodiscard]] bool ZBW() const { return Nmax == Ninit; } // Zero-bandwidth calculation
 
   // Spin expressed in terms of the spin multiplicity, 2S+1. For SL & SL 3 symmetry types, P.spin is 1. Default value
   // of 2 is valid for all other symmetry types.
@@ -541,12 +542,12 @@ class Params {
   bool need_rho() const { return cfs_flags() || dmnrg_flags(); }
   bool need_rhoFDM() const { return fdm_flags(); }
   bool do_recalc_kept(const RUNTYPE &runtype) const {   // kept: Recalculate using vectors kept after truncation
-    return strategy == "kept" && !(cfs_or_fdm_flags() && runtype == RUNTYPE::DMNRG) && !ZBW; 
+    return strategy == "kept" && !(cfs_or_fdm_flags() && runtype == RUNTYPE::DMNRG) && !ZBW(); 
   }
   bool do_recalc_all(const RUNTYPE &runtype) const {    // all: Recalculate using all vectors
-    return !do_recalc_kept(runtype) && !ZBW; 
+    return !do_recalc_kept(runtype) && !ZBW(); 
   }
-  bool do_recalc_none() const { return ZBW; }
+  bool do_recalc_none() const { return ZBW(); }
 
    // What is the last iteration completed in the previous NRG runs?
   void init_laststored() {
@@ -655,9 +656,9 @@ class Params {
   // Energy window for the patching procedure [FT and DMNRG algorithms]. In ZBW calculations the window is extended to [0:infty]
   // to get all spectral contributions.
   double getE0()   const { return goodE; }
-  double getEmin() const { return !ZBW ? getE0() : 0.0; }
+  double getEmin() const { return !ZBW() ? getE0() : 0.0; }
   double getEx()   const { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
-  double getEmax() const { return !ZBW ? getE0() * pow(getEfactor(),2) : std::numeric_limits<double>::max(); }
+  double getEmax() const { return !ZBW() ? getE0() * pow(getEfactor(),2) : std::numeric_limits<double>::max(); }
 
   auto Nall() const { return boost::irange(size_t(Ninit), size_t(Nlen)); }
 };

@@ -228,6 +228,14 @@ public:
     vectors.set(std::move(raw.vec));
     last = step.last();
   }
+  // Called when building DiagInfo from 'data' file.
+  explicit Eigen(const std::vector<t_eigen> &v, const double scale, const bool last_step) {
+    diagonal(v);
+    values.set_corr(v); // required for matrix construction in the first step!
+    values.set_shift(0.0); // required in the first step!
+    values.set_scale(scale);
+    last = last_step;
+  }
   [[nodiscard]] auto getnrcomputed() const { return values.size(); } // number of computed eigenpairs
   [[nodiscard]] auto getdim() const { return vectors.dim(); }        // valid also after the split_in_blocks_Eigen() call
  private:
@@ -235,7 +243,7 @@ public:
   long nrstored = -1; // number of eigenpairs currently held in store
   bool last = false; // eigenspectrum from the last step of the NRG iteration
   [[nodiscard]] auto getnrpost() const { return nrpost == -1 ? getnrcomputed() : nrpost; }     // number of states after truncation
-  [[nodiscard]] auto boundary() const { return last ? 0 : getnrkept(); } // for FDM
+  [[nodiscard]] auto boundary() const { return last ? 0ul : getnrkept(); } // for FDM
  public:
   [[nodiscard]] auto getnrall() const { return getnrcomputed(); }                              // all = all computed
   [[nodiscard]] auto getnrkept() const { return getnrpost(); }                                 // # of kept states
@@ -247,7 +255,7 @@ public:
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
   // Ranges for FDM algorithm with different semantics of D/K states for the last step
   [[nodiscard]] auto Drange() const { return boost::irange(boundary(), getnrall()); }
-  [[nodiscard]] auto Krange() const { return boost::irange(0, boundary()); }
+  [[nodiscard]] auto Krange() const { return boost::irange(0ul, boundary()); }
   auto value_corr_kept() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrkept()); }
   auto value_corr_msr() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
   // Truncate to nrpost states.
@@ -260,14 +268,10 @@ public:
     U.truncate(nrpost);
   }
   // Initialize the data structures with eigenvalues 'v'. The eigenvectors form an identity matrix. This is used to
-  // represent the spectral decomposition in the eigenbasis itself. Called when building DiagInfo from 'data' file.
-  void diagonal(const std::vector<t_eigen> &v, const double scale = 1.0) {
+  // represent the spectral decomposition in the eigenbasis itself.
+  void diagonal(const std::vector<t_eigen> &v) {
     values.set(v);
-    values.set_corr(v); // required, for matrix construction in the first step!
-    values.set_shift(0.0); // required in the first step!
-    values.set_scale(scale);
     vectors.standard_basis(v.size());
-    last = false; // XXX: ZBW?
   }
   void subtract_Egs(const t_eigen Egs) {
     values.set_shift(Egs); 
@@ -317,9 +321,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        auto energies = read_std_vector<t_eigen>(fdata);
        if (!(P.data_has_rescaled_energies || P.absolute))
          for (auto &x : energies) x /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
-       (*this)[I].diagonal(energies, P.absolute ? 1.0 : P.SCALE(P.Ninit));
+       (*this)[I] = Eigen<S>(energies, P.absolute ? 1.0 : P.SCALE(P.Ninit), P.ZBW());
      }
-     std::cout << "AAA:" << P.SCALE(P.Ninit) << std::endl; // VVV
      my_assert(this->size() == nsubs);
    }
    [[nodiscard]] auto subspaces() const { return *this | boost::adaptors::map_keys; }

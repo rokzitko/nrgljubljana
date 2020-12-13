@@ -44,19 +44,19 @@ inline auto parse_datafile_header(std::istream &fdata, const int expected_versio
   return sym_string;
 }
 
-// Determine Nmax from the length of the coefficient tables! Modify it for substeps==true. Call after
-// tridiagonalization routines (if not using the tables computed by initial.m).
+// Determine Nmax & Nlen, taking into account P.substeps. Must be called after the
+// tridiagonalization routines if not using the tables in the data file.
 template<scalar S>
-inline void determine_Nmax(const Coef<S> &coef, Params &P) { // Params is non-const !
-  const auto length_coef_table = coef.xi.max(0); // all channels have same nr. of coefficients
+inline void determine_Nmax_Nlen(const Coef<S> &coef, Params &P) { // Params is non-const !
+  const auto length_coef_table = coef.xi.max(0); // all channels have the same nr. of coefficients
   std::cout << std::endl << "length_coef_table=" << length_coef_table << " Nmax(0)=" << P.Nmax << std::endl << std::endl;
   my_assert(length_coef_table == P.Nmax);
-  if (P.substeps) P.Nmax = P.channels * P.Nmax;
+  if (P.ZBW()) my_assert(P.substeps == false);
+  if (P.substeps) P.Nmax = P.channels * P.Nmax; // XXX: P.Nmax_steps
   P.Nlen = P.Nmax;       // this is the usual situation
-  if (P.Nmax == P.Ninit) {
+  if (P.ZBW()) {
     std::cout << std::endl << "ZBW=true -> zero-bandwidth calculation" << std::endl;
-    P.ZBW  = true;
-    P.Nlen = P.Nmax + 1; // an additional element in the tables for ZBW=true
+    P.Nlen = P.Nmax + 1; // an additional element in the tables for ZBW
   }
   my_assert(P.Nlen < MAX_NDX);
   std::cout << std::endl << "length_coef_table=" << length_coef_table << " Nmax=" << P.Nmax << std::endl << std::endl;
@@ -126,7 +126,7 @@ inline auto read_data(Params &P, std::string filename = "data") {
     }
   }
   if (std::string(P.tri) == "cpp") Tridiag<S>(coef, P); // before calling determine_Nmax()
-  determine_Nmax(coef, P);
+  determine_Nmax_Nlen(coef, P);
   return std::make_tuple(Sym, diag0, operators0, coef, GS_energy);
 }
 

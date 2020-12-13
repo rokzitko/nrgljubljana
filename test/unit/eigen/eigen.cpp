@@ -44,14 +44,26 @@ TEST(Eigen, diagonal) { // NOLINT
   EVEC v = { 1.0, 2.0, 3.0 };
   e.diagonal(v);
   EXPECT_DOUBLE_EQ(e.values.rel(0), 1.0);
-  EXPECT_DOUBLE_EQ(e.values.rel_zero(0), 1.0);
   const auto m = e.vectors.get();
   EXPECT_DOUBLE_EQ(m(0,0), 1.0); // identity matrix
   EXPECT_DOUBLE_EQ(m(0,1), 0.0);
   EXPECT_DOUBLE_EQ(m(1,1), 1.0);
   EXPECT_DOUBLE_EQ(m(2,2), 1.0);
+}
+
+TEST(Eigen, constructor_diagonal) { // NOLINT
+  EVEC v = { 1.0, 2.0, 3.0 };
+  NRG::Eigen<double> e(v, 1.0, false);
+  EXPECT_DOUBLE_EQ(e.values.rel(0), 1.0);
+  const auto m = e.vectors.get();
+  EXPECT_DOUBLE_EQ(m(0,0), 1.0); // identity matrix
+  EXPECT_DOUBLE_EQ(m(0,1), 0.0);
+  EXPECT_DOUBLE_EQ(m(1,1), 1.0);
+  EXPECT_DOUBLE_EQ(m(2,2), 1.0);
+  EXPECT_DOUBLE_EQ(e.values.rel_zero(0), 1.0);
   e.subtract_Egs(1.0);
   EXPECT_DOUBLE_EQ(e.values.rel_zero(0), 0.0);
+  // todo: check scales, etc.
 }
 
 TEST(Eigen, io) { // NOLINT

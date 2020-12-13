@@ -200,7 +200,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   }
   if (P.h5raw)
     diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/");
-  if (!P.ZBW) {
+  if (!P.ZBW()) {
     split_in_blocks(diag, substruct);
     if (P.h5raw)
       h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct);
@@ -209,7 +209,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     oprecalc.recalculate_operators(operators, step, diag, substruct);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
   }
-  if (!P.ZBW)
+  if (!P.ZBW())
     diag.truncate_perform();                        // Actual truncation occurs at this point
   store[step.ndx()] = Subs(diag, substruct, step.last());  // Store information about subspaces and states for DM algorithms
   if (!step.last()) {

@@ -12,13 +12,6 @@ using namespace std::complex_literals;
 
 // Recall: II=(Ij,Ii) <i|A|j> <j|B|i>. B is d^dag. We conjugate A.
 
-#define LOOP_D(n)                                                                                                                                    \
-  for (size_t n = ret##n; n < all##n; n++) {                                                                                                         \
-    const t_eigen E##n = diagI##n.values.abs_G(n);
-#define LOOP_K(n)                                                                                                                                    \
-  for (size_t n = 0; n < ret##n; n++) {                                                                                                              \
-    const t_eigen E##n = diagI##n.values.abs_G(n);
-
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMls : virtual public Algo<S> {
  private:
@@ -45,8 +38,10 @@ class Algo_FDMls : virtual public Algo<S> {
      const auto retj  = step.last() ? 0 : diagIj.getnrkept();
      const auto alli  = diagIi.getnrall();
      const auto allj  = diagIj.getnrall();
-     LOOP_D(i)
-       LOOP_D(j) // B3
+     for (const auto i : diagIi.Drange()) {
+       for (const auto j : diagIj.Drange()) {
+         const auto Ei = diagIi.values.abs_G(i);
+         const auto Ej = diagIj.values.abs_G(j);
          const auto energy = Ej - Ei;
          const auto weight = factor * conj_me(op1(j, i)) * op2(j, i) * (-sign) * wnf * exp(-Ej / P.T);
          cb->add(energy, weight);
@@ -55,16 +50,20 @@ class Algo_FDMls : virtual public Algo<S> {
      if (retj > 0 && alli > 0) {
        // rho [retj, retj] x B [K=retj, D=alli]
        const auto rho_op2 = prod_fit(rhoj, op2);
-       LOOP_D(i)
-         LOOP_K(j)
+       for (const auto i : diagIi.Drange()) {
+         for (const auto j : diagIj.Krange()) {
+           const auto Ei = diagIi.values.abs_G(i);
+           const auto Ej = diagIj.values.abs_G(j);
            const auto energy = Ej - Ei;
            const auto weight = factor * conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
            cb->add(energy, weight);
          }
        }
      }
-     LOOP_K(i)
-       LOOP_D(j)
+     for (const auto i : diagIi.Krange()) {
+       for (const auto j : diagIj.Drange()) {
+         const auto Ei = diagIi.values.abs_G(i);
+         const auto Ej = diagIj.values.abs_G(j);
          const auto energy = Ej - Ei;
          const auto weight = factor * conj_me(op1(j, i)) * op2(j, i) * (-sign) * wnf * exp(-Ej / P.T);
          cb->add(energy, weight);
@@ -105,15 +104,19 @@ class Algo_FDMgt : virtual public Algo<S> {
      const auto retj  = step.last() ? 0 : diagIj.getnrkept();
      const auto alli  = diagIi.getnrall();
      const auto allj  = diagIj.getnrall();
-     LOOP_D(i)
-       LOOP_D(j)
+     for (const auto i : diagIi.Drange()) {
+       for (const auto j : diagIj.Drange()) {
+         const auto Ei = diagIi.values.abs_G(i);
+         const auto Ej = diagIj.values.abs_G(j);
          const auto energy = Ej - Ei;
          const auto weight = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T);
          cb->add(energy, weight);
        }
      }
-     LOOP_D(i)
-       LOOP_K(j)
+     for (const auto i : diagIi.Drange()) {
+       for (const auto j : diagIj.Krange()) {
+         const auto Ei = diagIi.values.abs_G(i);
+         const auto Ej = diagIj.values.abs_G(j);
          const auto energy = Ej - Ei;
          const auto weight = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T);
          cb->add(energy, weight);
@@ -122,8 +125,10 @@ class Algo_FDMgt : virtual public Algo<S> {
      if (allj > 0 && reti > 0) {
        // B [D=allj,K=reti] x rho [reti,reti]
        const auto op2_rho = prod_fit(op2, rhoi);
-       LOOP_K(i)
-         LOOP_D(j)
+       for (const auto i : diagIi.Krange()) {
+         for (const auto j : diagIj.Drange()) {
+           const auto Ei = diagIi.values.abs_G(i);
+          const auto Ej = diagIj.values.abs_G(j);
            const auto energy = Ej - Ei;
            const auto weight = factor * conj_me(op1(j, i)) * op2_rho(j, i);
            cb->add(energy, weight);
@@ -195,8 +200,10 @@ class Algo_FDMmats : public Algo<S> {
      const auto retj  = (step.last() ? 0 : rhoj.size1());
      const auto alli  = diagIi.getnrall();
      const auto allj  = diagIj.getnrall();
-     LOOP_D(i)
-       LOOP_D(j)
+     for (const auto i : diagIi.Drange()) {
+       for (const auto j : diagIj.Drange()) {
+         const auto Ei = diagIi.values.abs_G(i);
+         const auto Ej = diagIj.values.abs_G(j);
          const auto energy = Ej - Ei;
          const auto weightA = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T); // a[ij] b[ji] exp(-beta e[i])
          const auto weightB = factor * conj_me(op1(j, i)) * op2(j, i) * (-sign) * wnf * exp(-Ej / P.T); // a[ij] b[ji] sign exp(-beta e[j])
@@ -211,8 +218,10 @@ class Algo_FDMmats : public Algo<S> {
      if (retj > 0 && alli > 0) {
        // rho [retj, retj] x B [retj, alli]
        const auto rho_op2 = prod_fit(rhoj, op2);
-       LOOP_D(i)
-         LOOP_K(j)
+       for (const auto i : diagIi.Drange()) {
+         for (const auto j : diagIj.Krange()) {
+           const auto Ei = diagIi.values.abs_G(i);
+           const auto Ej = diagIj.values.abs_G(j);
            const auto energy = Ej - Ei;
            const auto weightA = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T);
            const auto weightB = factor * conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
@@ -224,8 +233,10 @@ class Algo_FDMmats : public Algo<S> {
      if (allj > 0 && reti > 0) {
         // B [allj,reti] x rho [reti,reti]
         const auto op2_rho = prod_fit(op2, rhoi);
-        LOOP_K(i)
-          LOOP_D(j)
+        for (const auto i : diagIi.Krange()) {
+          for (const auto j : diagIj.Drange()) {
+            const auto Ei = diagIi.values.abs_G(i);
+            const auto Ej = diagIj.values.abs_G(j);
             const auto energy = Ej - Ei;
             const auto weightA = factor * conj_me(op1(j, i)) * op2_rho(j, i);
             const auto weightB = factor * (-sign) * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ej / P.T);

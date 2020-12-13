@@ -59,16 +59,16 @@ class Step {
      return P.NN2even ? is_even(ndxN) : is_odd(ndxN);
    }
    [[nodiscard]] size_t firstndx() const { return P.Ninit; }
-   [[nodiscard]] size_t lastndx() const { return P.ZBW ? P.Ninit : P.Nmax-1; }
+   [[nodiscard]] size_t lastndx() const { return P.ZBW() ? P.Ninit : P.Nmax-1; }
    // Return true if this is the first step of the NRG iteration
    [[nodiscard]] auto first() const { return ndxN == firstndx(); }
    // Return true if N is the last step of the NRG iteration
    [[nodiscard]] auto last(int N) const {
-     return N == lastndx() || (P.ZBW && N == firstndx()); // special case!
+     return N == lastndx() || (P.ZBW() && N == firstndx()); // special case!
    }
    [[nodiscard]] auto last() const { return last(ndxN); }
    [[nodiscard]] auto end() const { return ndxN >= P.Nmax; } // ndxN is outside the allowed range
-   // NOTE: for ZBWcalculations, Ninit=0 and Nmax=0, so that first() == true and last() == true for ndxN=0.
+   // NOTE: for ZBW calculations, Ninit=0 and Nmax=0, so that first() == true and last() == true for ndxN=0.
    [[nodiscard]] auto nrg() const { return runtype == RUNTYPE::NRG; }
    [[nodiscard]] auto dmnrg() const { return runtype == RUNTYPE::DMNRG; }
    // Index 'n' of the last site in the existing chain, f_n (at iteration 'N'). The site being added is f_{n+1}. This

@@ -128,10 +128,10 @@ public:
        operators.h5save(*output.h5raw, std::to_string(step.ndx()));
     }
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
-    if (step.nrg() && P.calc0 && !P.ZBW)
+    if (step.nrg() && P.calc0 && !P.ZBW())
       docalc0(step, operators, diag0, stats, output, oprecalc, Sym.get(), mt, P);
-    auto diag = P.ZBW ? nrg_ZBW(step, operators, stats, diag0, output, store, oprecalc, Sym.get(), mt, P)
-                      : nrg_loop(step, operators, coef, stats, diag0, output, store, oprecalc, Sym.get(), mpi, mt, P);
+    auto diag = P.ZBW() ? nrg_ZBW(step, operators, stats, diag0, output, store, oprecalc, Sym.get(), mt, P)
+                        : nrg_loop(step, operators, coef, stats, diag0, output, store, oprecalc, Sym.get(), mpi, mt, P);
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
     if (step.nrg() && P.dumpsubspaces) store.dump_subspaces();
@@ -154,7 +154,7 @@ public:
       if (P.need_rho()) {
         auto rho = init_rho(step, diag, Sym->multfnc());
         rho.save(step.lastndx(), P, fn_rho);
-        if (!P.ZBW) calc_densitymatrix(rho, store, Sym.get(), mt, P);
+        if (!P.ZBW()) calc_densitymatrix(rho, store, Sym.get(), mt, P);
       }
       if (P.need_rhoFDM()) {
         calc_ZnD(store, stats, Sym.get(), P.T);
@@ -163,7 +163,7 @@ public:
         fdm_thermodynamics(store, stats, Sym.get(), P.T);
         auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
         rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-        if (!P.ZBW) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
+        if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
       }
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
       auto [Sym_dm, diag_0_dm, operators_dm, coef_dm, GS_energy_dm] = read_data<S>(P);

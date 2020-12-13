@@ -68,6 +68,10 @@ TEST(params, Defaults) {
   EXPECT_EQ(P.calc0, true);
   EXPECT_EQ(P.lastall, false);
   EXPECT_EQ(P.lastalloverride, false);
+
+  EXPECT_EQ(P.Ninit, 0ul);
+  EXPECT_EQ(P.Nmax, 0ul);
+  EXPECT_EQ(P.ZBW(), true);
 }
 
 TEST(params, set_channels) {
@@ -108,6 +112,7 @@ void check_recalc(const Params &P)
 
 TEST(params, flags_none) {
   Params P;
+  P.Nmax = 1;
   EXPECT_EQ(P.cfs_flags(), false);
   EXPECT_EQ(P.fdm_flags(), false);
   EXPECT_EQ(P.dmnrg_flags(), false);
@@ -123,6 +128,7 @@ TEST(params, flags_none) {
 
 TEST(params, flags_cfs) {
   Params P;
+  P.Nmax = 1;
   P.cfs.setvalue(true);
   EXPECT_EQ(P.cfs_flags(), true);
   EXPECT_EQ(P.fdm_flags(), false);
@@ -139,6 +145,7 @@ TEST(params, flags_cfs) {
 
 TEST(params, flags_fdm) {
   Params P;
+  P.Nmax = 1;
   P.fdm.setvalue(true);
   EXPECT_EQ(P.cfs_flags(), false);
   EXPECT_EQ(P.fdm_flags(), true);
@@ -155,6 +162,7 @@ TEST(params, flags_fdm) {
 
 TEST(params, flags_fdmexpv) {
   Params P;
+  P.Nmax = 1;
   P.fdmexpv.setvalue(true);
   EXPECT_EQ(P.cfs_flags(), false);
   EXPECT_EQ(P.fdm_flags(), true);
@@ -171,6 +179,7 @@ TEST(params, flags_fdmexpv) {
 
 TEST(params, flags_dmnrg) {
   Params P;
+  P.Nmax = 1;
   P.dmnrg.setvalue(true);
   EXPECT_EQ(P.cfs_flags(), false);
   EXPECT_EQ(P.fdm_flags(), false);
@@ -205,6 +214,7 @@ TEST(params, scale) {
 
 TEST(params, E) {
   Params P;
+  P.Nmax = 1;
   EXPECT_EQ(P.getEfactor(), sqrt(2.0));
   EXPECT_EQ(P.getE0(), 2.0);
   EXPECT_EQ(P.getEmin(), 2.0);

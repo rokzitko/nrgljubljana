@@ -91,7 +91,7 @@ class SpectrumRealFreq {
 inline double windowfunction(const double E, const double Emin, const double Ex, const double Emax, const Step &step, const Params &P) {
   if (E <= Ex && step.last()) return 1.0;  // Exception 1
   if (E >= Ex && step.first()) return 1.0; // Exception 2
-  if (P.ZBW) return 1.0;                   // Exception 3
+  if (P.ZBW()) return 1.0;                   // Exception 3
   if (E <= Emin || E >= Emax) return 0.0;  // Optimization
   // Window functions: f(0)=0, f(1)=1.
   auto fnc_linear = [](const auto x) { return x ; };
