@@ -31,10 +31,10 @@ class Algo_CFSls : virtual public Algo<S> {
      // Convention: k-loops over retained states, l-loop over discarded states.
      if (step.last()) {
        //  i-term, Eq. (11).
-       auto term1 = [&diagI1, &diagIp, Z=stats.Zft, &op1, &op2, this](const auto r1, const auto rp) {
+       auto term1 = [&diagI1, &diagIp, Z=stats.Zft, &op1, &op2, T = P.T.value(), this](const auto r1, const auto rp) {
          const auto E1     = diagI1.values.abs_zero(r1);
          const auto Ep     = diagIp.values.abs_zero(rp);
-         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-E1/P.T) * (-sign)/Z;
+         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-E1/T) * (-sign)/Z;
          return std::make_pair(E1-Ep, weight);
        };
        for (const auto r1: diagI1.kept())
@@ -83,10 +83,10 @@ class Algo_CFSgt : virtual public Algo<S> {
      // Convention: k-loops over retained states, l-loop over discarded states.
      if (step.last()) {
         // i-term, Eq. (11).
-        auto term1 = [&diagI1, &diagIp, Z=stats.Zft, &op1, &op2, this](const auto r1, const auto rp) {
+        auto term1 = [&diagI1, &diagIp, Z=stats.Zft, &op1, &op2, T = P.T.value(), this](const auto r1, const auto rp) {
          const auto E1     = diagI1.values.abs_zero(r1);
          const auto Ep     = diagIp.values.abs_zero(rp);
-         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-Ep/P.T)/Z;
+         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-Ep/T)/Z;
          return std::make_pair(E1-Ep, weight);
        };
        for (const auto r1: diagI1.kept())

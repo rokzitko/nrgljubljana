@@ -28,7 +28,7 @@ class Algo_FT : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
              const t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
-     auto stat_factor = [beta = 1/P.T, Z = stats.Zft, this](const auto E1, const auto Ep) {
+     auto stat_factor = [beta = 1.0/P.T, Z = stats.Zft, this](const auto E1, const auto Ep) {
        return ((-sign) * exp(-beta*E1) + exp(-beta*Ep))/Z;
      };
      auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor, &step](const auto r1, const auto rp) {
@@ -64,7 +64,7 @@ class Algo_FTmats : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
              t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
-     auto stat_factor = [beta = 1/P.T, Z = stats.Zft, T = P.T, this](const auto E1, const auto Ep, const auto n) -> t_weight {
+     auto stat_factor = [beta = 1.0/P.T, Z = stats.Zft, T = P.T.value(), this](const auto E1, const auto Ep, const auto n) -> t_weight {
        const auto energy = E1-Ep;
        if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
          return ((-sign) * exp(-beta*E1) + exp(-beta*Ep)) / (Z * (ww(n, gt, T)*1i - energy));

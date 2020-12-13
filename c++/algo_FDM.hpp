@@ -32,37 +32,31 @@ class Algo_FDMls : virtual public Algo<S> {
              const Stats<S> &stats) override
    {
      const auto wnf   = stats.wnfactor[step.ndx()];
-     const auto &rhoi = rhoFDM.at(Ii);
-     const auto &rhoj = rhoFDM.at(Ij);
-     for (const auto i : diagIi.Drange()) {
-       for (const auto j : diagIj.Drange()) {
-         const auto Ei = diagIi.values.abs_G(i);
-         const auto Ej = diagIj.values.abs_G(j);
-         const auto energy = Ej - Ei;
-         const auto weight = factor * conj_me(op1(j, i)) * op2(j, i) * (-sign) * wnf * exp(-Ej / P.T);
-         cb->add(energy, weight);
-       }
-     }
-     // rho [retj, retj] x B [K=retj, D=alli]
-     const auto rho_op2 = prod_fit(rhoj, op2);
-     for (const auto i : diagIi.Drange()) {
-       for (const auto j : diagIj.Krange()) {
-         const auto Ei = diagIi.values.abs_G(i);
-         const auto Ej = diagIj.values.abs_G(j);
-         const auto energy = Ej - Ei;
-         const auto weight = factor * conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
-         cb->add(energy, weight);
-         }
-     }
-     for (const auto i : diagIi.Krange()) {
-       for (const auto j : diagIj.Drange()) {
-         const auto Ei = diagIi.values.abs_G(i);
-         const auto Ej = diagIj.values.abs_G(j);
-         const auto energy = Ej - Ei;
-         const auto weight = factor * conj_me(op1(j, i)) * op2(j, i) * (-sign) * wnf * exp(-Ej / P.T);
-         cb->add(energy, weight);
-       }
-     }
+     const auto rho_op2 = prod_fit(rhoFDM.at(Ij), op2);
+     auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
+       return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
+     };
+     auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+       const auto [Ei, Ej] = energies(i, j);
+       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * (-sign) * exp(-Ej/T) * wnf);
+     };
+     auto term2 = [&energies, &op1, &rho_op2, this](const auto i, const auto j) {
+       const auto [Ei, Ej] = energies(i, j);
+       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * rho_op2(j, i) * (-sign));
+     };
+     auto term3 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+       const auto [Ei, Ej] = energies(i, j);
+       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * (-sign) * exp(-Ej/T) * wnf);
+     };
+     for (const auto i : diagIi.Drange()) // XXX: change order for sequential memory access!
+       for (const auto j : diagIj.Drange())
+         cb->add(term1(i,j), factor);
+     for (const auto i : diagIi.Drange())
+       for (const auto j : diagIj.Krange())
+         cb->add(term2(i,j), factor);
+     for (const auto i : diagIi.Krange())
+       for (const auto j : diagIj.Drange())
+         cb->add(term3(i,j), factor);
    }
    void end(const Step &step) override {
      spec.mergeCFS(*cb.get());
@@ -92,37 +86,31 @@ class Algo_FDMgt : virtual public Algo<S> {
              const Stats<S> &stats) override
    {
      const auto wnf   = stats.wnfactor[step.ndx()];
-     const auto &rhoi = rhoFDM.at(Ii);
-     const auto &rhoj = rhoFDM.at(Ij);
-     for (const auto i : diagIi.Drange()) {
-       for (const auto j : diagIj.Drange()) {
-         const auto Ei = diagIi.values.abs_G(i);
-         const auto Ej = diagIj.values.abs_G(j);
-         const auto energy = Ej - Ei;
-         const auto weight = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T);
-         cb->add(energy, weight);
-       }
-     }
-     for (const auto i : diagIi.Drange()) {
-       for (const auto j : diagIj.Krange()) {
-         const auto Ei = diagIi.values.abs_G(i);
-         const auto Ej = diagIj.values.abs_G(j);
-         const auto energy = Ej - Ei;
-         const auto weight = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T);
-         cb->add(energy, weight);
-       }
-     }
-     // B [D=allj,K=reti] x rho [reti,reti]
-     const auto op2_rho = prod_fit(op2, rhoi);
-     for (const auto i : diagIi.Krange()) {
-       for (const auto j : diagIj.Drange()) {
-         const auto Ei = diagIi.values.abs_G(i);
-         const auto Ej = diagIj.values.abs_G(j);
-         const auto energy = Ej - Ei;
-         const auto weight = factor * conj_me(op1(j, i)) * op2_rho(j, i);
-         cb->add(energy, weight);
-       }
-     }
+     const auto op2_rho = prod_fit(op2, rhoFDM.at(Ii));
+     auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
+       return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
+     };
+     auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+       const auto [Ei, Ej] = energies(i, j);
+       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * exp(-Ei/T) * wnf);
+     };
+     auto term2 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+       const auto [Ei, Ej] = energies(i, j);
+       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * exp(-Ei/T) * wnf);
+     };
+     auto term3 = [&energies, &op1, &op2_rho, this](const auto i, const auto j) {
+       const auto [Ei, Ej] = energies(i, j);
+       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2_rho(j, i));
+     };
+     for (const auto i : diagIi.Drange())
+       for (const auto j : diagIj.Drange())
+         cb->add(term1(i,j), factor);
+     for (const auto i : diagIi.Drange())
+       for (const auto j : diagIj.Krange())
+         cb->add(term2(i,j), factor);
+     for (const auto i : diagIi.Krange())
+       for (const auto j : diagIj.Drange())
+         cb->add(term3(i,j), factor);
    }
    void end(const Step &step) override {
      spec.mergeCFS(*cb.get());
@@ -162,7 +150,7 @@ class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
    std::string rho_type() override { return "rhoFDM"; }
 };
 
-template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
+template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
 class Algo_FDMmats : public Algo<S> {
  private:
    inline static const std::string algoname = "FDMmats";
@@ -181,50 +169,51 @@ class Algo_FDMmats : public Algo<S> {
              const Stats<S> &stats) override
    {
      const size_t cutoff = P.mats;
-     const auto wnf   = stats.wnfactor[step.ndx()];
-     const auto &rhoi = rhoFDM.at(Ii);
-     const auto &rhoj = rhoFDM.at(Ij);
-     for (const auto i : diagIi.Drange()) {
-       for (const auto j : diagIj.Drange()) {
-         const auto Ei = diagIi.values.abs_G(i);
-         const auto Ej = diagIj.values.abs_G(j);
+     const auto wnf      = stats.wnfactor[step.ndx()];
+     const auto rho_op2  = prod_fit(rhoFDM.at(Ij), op2);
+     const auto op2_rho  = prod_fit(op2, rhoFDM.at(Ii));
+     auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
+       return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
+     };
+     auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j, const auto n) -> t_weight {
+       const auto [Ei, Ej] = energies(i, j);
+       const auto energy = Ej - Ei;
+       const auto weightA = conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei/T); // a[ij] b[ji] exp(-beta e[i])
+       const auto weightB = conj_me(op1(j, i)) * op2(j, i) * (-sign) * wnf * exp(-Ej/T); // a[ij] b[ji] sign exp(-beta e[j])
+       if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL)
+          return (weightA + weightB) / (ww(n, gt, T)*1i - energy);
+       else // bosonic w=0 && Ei=Ej case
+          return -weightA/T;
+     };
+     auto term2 = [&energies, &op1, &op2, &rho_op2, T = P.T.value(), wnf, this](const auto i, const auto j, const auto n) {
+       const auto [Ei, Ej] = energies(i, j);
          const auto energy = Ej - Ei;
-         const auto weightA = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T); // a[ij] b[ji] exp(-beta e[i])
-         const auto weightB = factor * conj_me(op1(j, i)) * op2(j, i) * (-sign) * wnf * exp(-Ej / P.T); // a[ij] b[ji] sign exp(-beta e[j])
+         const auto weightA = conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei/T);
+         const auto weightB = conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
+         return (weightA + weightB) / (ww(n, gt, T)*1i - energy);
+     };
+     auto term3 = [&energies, &op1, &op2, &op2_rho, T = P.T.value(), wnf, this](const auto i, const auto j, const auto n) {
+       const auto [Ei, Ej] = energies(i, j);
+       const auto energy = Ej - Ei;
+       const auto weightA = conj_me(op1(j, i)) * op2_rho(j, i);
+       const auto weightB = (-sign) * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ej/T);
+       return (weightA + weightB) / (ww(n, gt, T)*1i - energy);
+     };
+     for (const auto i : diagIi.Drange())
+       for (const auto j : diagIj.Drange())
          #pragma omp parallel for schedule(static)
-         for (size_t n = 1; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
-         if (gt == gf_type::fermionic || abs(energy) > WEIGHT_TOL)
-           cm->add(size_t(0), (weightA + weightB) / (ww(0, gt, P.T)*1i - energy));
-         else // bosonic w=0 && Ei=Ej case
-           cm->add(size_t(0), (-weightA / (double)P.T));
-       }
-     }
-     // rho [retj, retj] x B [retj, alli]
-     const auto rho_op2 = prod_fit(rhoj, op2);
-     for (const auto i : diagIi.Drange()) {
-       for (const auto j : diagIj.Krange()) {
-         const auto Ei = diagIi.values.abs_G(i);
-         const auto Ej = diagIj.values.abs_G(j);
-         const auto energy = Ej - Ei;
-         const auto weightA = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T);
-         const auto weightB = factor * conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
+         for (size_t n = 0; n < cutoff; n++)
+           cm->add(n, term1(i,j,n) * factor);
+     for (const auto i : diagIi.Drange())
+       for (const auto j : diagIj.Krange())
          #pragma omp parallel for schedule(static)
-         for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
-       }
-     }
-     // B [allj,reti] x rho [reti,reti]
-     const auto op2_rho = prod_fit(op2, rhoi);
-     for (const auto i : diagIi.Krange()) {
-       for (const auto j : diagIj.Drange()) {
-         const auto Ei = diagIi.values.abs_G(i);
-         const auto Ej = diagIj.values.abs_G(j);
-         const auto energy = Ej - Ei;
-         const auto weightA = factor * conj_me(op1(j, i)) * op2_rho(j, i);
-         const auto weightB = factor * (-sign) * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ej / P.T);
+         for (size_t n = 0; n < cutoff; n++) 
+           cm->add(n, term2(i,j,n) * factor);
+     for (const auto i : diagIi.Krange())
+       for (const auto j : diagIj.Drange())
          #pragma omp parallel for schedule(static)
-         for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
-        }
-     }
+         for (size_t n = 0; n < cutoff; n++)
+           cm->add(n, term3(i,j,n) * factor);
    }
    void end(const Step &step) override {
      gf.merge(*cm.get());
