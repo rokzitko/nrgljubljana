@@ -17,6 +17,7 @@
 #include "invar.hpp"
 #include "params.hpp"
 #include "numerics.hpp"
+#include "step.hpp"
 #include "h5.hpp"
 
 namespace NRG {
@@ -222,9 +223,10 @@ public:
     values.resize(M);
     vectors.resize(M, dim);
   }
-  explicit Eigen(RawEigen<S> && raw, const bool last = false) : last(last) {
+  explicit Eigen(RawEigen<S> && raw, const Step &step) {
     values.set(std::move(raw.val));
     vectors.set(std::move(raw.vec));
+    last = step.last();
   }
   [[nodiscard]] auto getnrcomputed() const { return values.size(); } // number of computed eigenpairs
   [[nodiscard]] auto getdim() const { return vectors.dim(); }        // valid also after the split_in_blocks_Eigen() call
@@ -244,7 +246,7 @@ public:
   [[nodiscard]] auto discarded() const { return boost::irange(getnrpost(), getnrcomputed()); } // iterator over discarded states
   [[nodiscard]] auto stored() const { return range0(getnrstored()); }                          // iterator over all stored states
   // Ranges for FDM algorithm with different semantics of D/K states for the last step
-  [[nodiscard]] auto Drange() const { return boost::irange(boundary(), getnrkept()); }
+  [[nodiscard]] auto Drange() const { return boost::irange(boundary(), getnrall()); }
   [[nodiscard]] auto Krange() const { return boost::irange(0, boundary()); }
   auto value_corr_kept() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrkept()); }
   auto value_corr_msr() const { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
