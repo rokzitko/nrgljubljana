@@ -46,12 +46,9 @@ class Algo_DMNRG : public Algo<S> {
        const auto [energy, weightA, weightB] = weights(rm, rj);
        return std::make_pair(energy, weightA + (-sign) * weightB);
      };
-     for (const auto rm: diagIp.kept()) {
-       for (const auto rj: diagI1.kept()) {
-         const auto [energy, weight] = term(rm, rj);
-         cb->add(energy, factor * weight);
-       }
-     }
+     for (const auto rm: diagIp.kept())
+       for (const auto rj: diagI1.kept())
+         cb->add(term(rm, rj), factor);
    }
    void end(const Step &step) override {
      spec.mergeNN2(*cb.get(), step);
@@ -98,10 +95,8 @@ class Algo_DMNRGmats : public Algo<S> {
      };
      for (const auto rm: diagIp.kept())
        for (const auto rj: diagI1.kept())
-         for (size_t n = 0; n < P.mats; n++) {
-           const auto weight = term(rm, rj, n);
-           cm->add(n, factor * weight); 
-         }
+         for (size_t n = 0; n < P.mats; n++)
+           cm->add(n, factor * term(rm, rj, n)); 
    }
    void end(const Step &step) override {
           gf.merge(*cm.get());

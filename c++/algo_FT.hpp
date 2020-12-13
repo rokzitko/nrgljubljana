@@ -36,12 +36,9 @@ class Algo_FT : public Algo<S> {
        const auto Ep = diagIp.values.abs_zero(rp);
        return std::make_pair(E1 - Ep, conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep));
      };
-     for (const auto r1: diagI1.kept()) {
-       for (const auto rp: diagIp.kept()) {
-         const auto [energy, weight] = term(r1, rp);
-         cb->add(energy, factor * weight);
-       }
-     }
+     for (const auto r1: diagI1.kept())
+       for (const auto rp: diagIp.kept())
+         cb->add(term(r1, rp), factor);
    }
    void end(const Step &step) override {
      spec.mergeNN2(*cb.get(), step);
@@ -83,10 +80,8 @@ class Algo_FTmats : public Algo<S> {
      for (const auto r1: diagI1.kept()) {
        for (const auto rp: diagIp.kept()) {
 #pragma omp parallel for schedule(static)
-         for (size_t n = 0; n < cutoff; n++) {
-           const auto weight = term(r1, rp, n);
-           cm->add(n, factor * weight);
-         }
+         for (size_t n = 0; n < cutoff; n++)
+           cm->add(n, factor * term(r1, rp, n));
        }
      }
    }

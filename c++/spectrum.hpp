@@ -22,6 +22,10 @@ class ChainBinning {
      else
        sneg.add(-energy, weight);
    }
+   void add(const std::pair<double, t_weight> &p, const t_weight factor) {
+      const auto & [energy, weight] = p;
+      this->add(energy, factor * weight);
+   }
    auto total_weight() const { return spos.total_weight() + sneg.total_weight(); }
    template<scalar U> friend class SpectrumRealFreq;
 };
