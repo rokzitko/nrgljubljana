@@ -54,7 +54,7 @@ class Algo_FDMls : virtual public Algo<S> {
      }
      if (retj > 0 && alli > 0) {
        // rho [retj, retj] x B [K=retj, D=alli]
-       const auto rho_op2 = prod_fit_right(rhoj, op2);
+       const auto rho_op2 = prod_fit(rhoj, op2);
        LOOP_D(i)
          LOOP_K(j)
            const auto energy = Ej - Ei;
@@ -121,7 +121,7 @@ class Algo_FDMgt : virtual public Algo<S> {
      }
      if (allj > 0 && reti > 0) {
        // B [D=allj,K=reti] x rho [reti,reti]
-       const auto op2_rho = prod_fit_left(op2, rhoi);
+       const auto op2_rho = prod_fit(op2, rhoi);
        LOOP_K(i)
          LOOP_D(j)
            const auto energy = Ej - Ei;
@@ -210,7 +210,7 @@ class Algo_FDMmats : public Algo<S> {
      }
      if (retj > 0 && alli > 0) {
        // rho [retj, retj] x B [retj, alli]
-       const auto rho_op2 = prod_fit_right(rhoj, op2);
+       const auto rho_op2 = prod_fit(rhoj, op2);
        LOOP_D(i)
          LOOP_K(j)
            const auto energy = Ej - Ei;
@@ -223,7 +223,7 @@ class Algo_FDMmats : public Algo<S> {
      }
      if (allj > 0 && reti > 0) {
         // B [allj,reti] x rho [reti,reti]
-        const auto op2_rho = prod_fit_left(op2, rhoi);
+        const auto op2_rho = prod_fit(op2, rhoi);
         LOOP_K(i)
           LOOP_D(j)
             const auto energy = Ej - Ei;
