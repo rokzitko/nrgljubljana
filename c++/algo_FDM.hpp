@@ -34,10 +34,6 @@ class Algo_FDMls : virtual public Algo<S> {
      const auto wnf   = stats.wnfactor[step.ndx()];
      const auto &rhoi = rhoFDM.at(Ii);
      const auto &rhoj = rhoFDM.at(Ij);
-     const auto reti  = step.last() ? 0 : diagIi.getnrkept();
-     const auto retj  = step.last() ? 0 : diagIj.getnrkept();
-     const auto alli  = diagIi.getnrall();
-     const auto allj  = diagIj.getnrall();
      for (const auto i : diagIi.Drange()) {
        for (const auto j : diagIj.Drange()) {
          const auto Ei = diagIi.values.abs_G(i);
@@ -47,18 +43,16 @@ class Algo_FDMls : virtual public Algo<S> {
          cb->add(energy, weight);
        }
      }
-     if (retj > 0 && alli > 0) {
-       // rho [retj, retj] x B [K=retj, D=alli]
-       const auto rho_op2 = prod_fit(rhoj, op2);
-       for (const auto i : diagIi.Drange()) {
-         for (const auto j : diagIj.Krange()) {
-           const auto Ei = diagIi.values.abs_G(i);
-           const auto Ej = diagIj.values.abs_G(j);
-           const auto energy = Ej - Ei;
-           const auto weight = factor * conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
-           cb->add(energy, weight);
+     // rho [retj, retj] x B [K=retj, D=alli]
+     const auto rho_op2 = prod_fit(rhoj, op2);
+     for (const auto i : diagIi.Drange()) {
+       for (const auto j : diagIj.Krange()) {
+         const auto Ei = diagIi.values.abs_G(i);
+         const auto Ej = diagIj.values.abs_G(j);
+         const auto energy = Ej - Ei;
+         const auto weight = factor * conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
+         cb->add(energy, weight);
          }
-       }
      }
      for (const auto i : diagIi.Krange()) {
        for (const auto j : diagIj.Drange()) {
@@ -100,10 +94,6 @@ class Algo_FDMgt : virtual public Algo<S> {
      const auto wnf   = stats.wnfactor[step.ndx()];
      const auto &rhoi = rhoFDM.at(Ii);
      const auto &rhoj = rhoFDM.at(Ij);
-     const auto reti  = step.last() ? 0 : diagIi.getnrkept();
-     const auto retj  = step.last() ? 0 : diagIj.getnrkept();
-     const auto alli  = diagIi.getnrall();
-     const auto allj  = diagIj.getnrall();
      for (const auto i : diagIi.Drange()) {
        for (const auto j : diagIj.Drange()) {
          const auto Ei = diagIi.values.abs_G(i);
@@ -122,17 +112,15 @@ class Algo_FDMgt : virtual public Algo<S> {
          cb->add(energy, weight);
        }
      }
-     if (allj > 0 && reti > 0) {
-       // B [D=allj,K=reti] x rho [reti,reti]
-       const auto op2_rho = prod_fit(op2, rhoi);
-       for (const auto i : diagIi.Krange()) {
-         for (const auto j : diagIj.Drange()) {
-           const auto Ei = diagIi.values.abs_G(i);
-          const auto Ej = diagIj.values.abs_G(j);
-           const auto energy = Ej - Ei;
-           const auto weight = factor * conj_me(op1(j, i)) * op2_rho(j, i);
-           cb->add(energy, weight);
-         }
+     // B [D=allj,K=reti] x rho [reti,reti]
+     const auto op2_rho = prod_fit(op2, rhoi);
+     for (const auto i : diagIi.Krange()) {
+       for (const auto j : diagIj.Drange()) {
+         const auto Ei = diagIi.values.abs_G(i);
+         const auto Ej = diagIj.values.abs_G(j);
+         const auto energy = Ej - Ei;
+         const auto weight = factor * conj_me(op1(j, i)) * op2_rho(j, i);
+         cb->add(energy, weight);
        }
      }
    }
@@ -196,10 +184,6 @@ class Algo_FDMmats : public Algo<S> {
      const auto wnf   = stats.wnfactor[step.ndx()];
      const auto &rhoi = rhoFDM.at(Ii);
      const auto &rhoj = rhoFDM.at(Ij);
-     const auto reti  = (step.last() ? 0 : rhoi.size1());
-     const auto retj  = (step.last() ? 0 : rhoj.size1());
-     const auto alli  = diagIi.getnrall();
-     const auto allj  = diagIj.getnrall();
      for (const auto i : diagIi.Drange()) {
        for (const auto j : diagIj.Drange()) {
          const auto Ei = diagIi.values.abs_G(i);
@@ -215,34 +199,30 @@ class Algo_FDMmats : public Algo<S> {
            cm->add(size_t(0), (-weightA / (double)P.T));
        }
      }
-     if (retj > 0 && alli > 0) {
-       // rho [retj, retj] x B [retj, alli]
-       const auto rho_op2 = prod_fit(rhoj, op2);
-       for (const auto i : diagIi.Drange()) {
-         for (const auto j : diagIj.Krange()) {
-           const auto Ei = diagIi.values.abs_G(i);
-           const auto Ej = diagIj.values.abs_G(j);
-           const auto energy = Ej - Ei;
-           const auto weightA = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T);
-           const auto weightB = factor * conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
-           #pragma omp parallel for schedule(static)
-           for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
-         }
+     // rho [retj, retj] x B [retj, alli]
+     const auto rho_op2 = prod_fit(rhoj, op2);
+     for (const auto i : diagIi.Drange()) {
+       for (const auto j : diagIj.Krange()) {
+         const auto Ei = diagIi.values.abs_G(i);
+         const auto Ej = diagIj.values.abs_G(j);
+         const auto energy = Ej - Ei;
+         const auto weightA = factor * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei / P.T);
+         const auto weightB = factor * conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
+         #pragma omp parallel for schedule(static)
+         for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
        }
      }
-     if (allj > 0 && reti > 0) {
-        // B [allj,reti] x rho [reti,reti]
-        const auto op2_rho = prod_fit(op2, rhoi);
-        for (const auto i : diagIi.Krange()) {
-          for (const auto j : diagIj.Drange()) {
-            const auto Ei = diagIi.values.abs_G(i);
-            const auto Ej = diagIj.values.abs_G(j);
-            const auto energy = Ej - Ei;
-            const auto weightA = factor * conj_me(op1(j, i)) * op2_rho(j, i);
-            const auto weightB = factor * (-sign) * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ej / P.T);
-            #pragma omp parallel for schedule(static)
-            for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
-          }
+     // B [allj,reti] x rho [reti,reti]
+     const auto op2_rho = prod_fit(op2, rhoi);
+     for (const auto i : diagIi.Krange()) {
+       for (const auto j : diagIj.Drange()) {
+         const auto Ei = diagIi.values.abs_G(i);
+         const auto Ej = diagIj.values.abs_G(j);
+         const auto energy = Ej - Ei;
+         const auto weightA = factor * conj_me(op1(j, i)) * op2_rho(j, i);
+         const auto weightB = factor * (-sign) * conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ej / P.T);
+         #pragma omp parallel for schedule(static)
+         for (size_t n = 0; n < cutoff; n++) cm->add(n, (weightA + weightB) / (ww(n, gt, P.T)*1i - energy));
         }
      }
    }
