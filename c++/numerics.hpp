@@ -386,8 +386,8 @@ template<scalar M, scalar N>
     return A.size1() <= B.size1() && A.size2() == B.size2();
   }
 
-template<typename T>
-auto prod(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
+template<typename T, typename U, typename V>
+auto prod(const U &A, const V &B) {
   auto M = ublas::matrix<T>(A.size1(), B.size2());
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
   return M;
@@ -399,9 +399,7 @@ auto prod_fit_left(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
   my_assert(B.size1() <= A.size2());
   if (A.size1() == 0 || B.size2() == 0) return ublas::matrix<T>();
   const auto Asub = submatrix(A, {0, A.size1()}, {0, B.size1()});
-  auto M = ublas::matrix<T>(A.size1(), B.size2());
-  atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, Asub, B, 0.0, M);
-  return M;
+  return NRG::prod<T>(Asub, B);
 }
 
 // M = A*B, size of B is adapted to the size of A
@@ -410,9 +408,7 @@ auto prod_fit_right(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
   my_assert(B.size1() >= A.size2());
   if (A.size1() == 0 || B.size2() == 0) return ublas::matrix<T>();
   const auto Bsub = submatrix(B, {0, A.size2()}, {0, B.size2()});
-  auto M = ublas::matrix<T>(A.size1(), B.size2());
-  atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, A, Bsub, 0.0, M);
-  return M;
+  return NRG::prod<T>(A, Bsub);
 }
 
 template<typename T>
