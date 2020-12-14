@@ -30,7 +30,15 @@ template <typename T>
      { a(i,j) };
      { a = b };
      { a.swap(b) };
-//     { typename T::value_type };
+     { a.data() };
+     typename T::value_type;
+  };
+
+template <typename T>
+  concept vector = requires(T a, size_t i) {
+     { a.size() };
+     { a[i] };
+     typename T::value_type;
   };
 
 // We encapsulate the differences between real-value and complex-value versions of the code in class traits.

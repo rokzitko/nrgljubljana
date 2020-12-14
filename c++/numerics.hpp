@@ -29,6 +29,8 @@
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
 
+#include <Eigen/Dense>
+
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -73,15 +75,18 @@ template<typename U, typename V>
 [[nodiscard]] inline double conj_me(const double x) { return x; }    // no op
    
 template<scalar S, typename Matrix = Matrix_traits<S>>
-[[nodiscard]] auto Zero_matrix(const size_t size1, const size_t size2) {
+[[nodiscard]] auto zero_matrix(const size_t size1, const size_t size2) {
   return Matrix(size1, size2, 0);
 }
 
 template<scalar S>
-[[nodiscard]] auto Zero_matrix(const size_t size) { 
-  return Zero_matrix<S>(size, size); 
-}  
-   
+[[nodiscard]] auto zero_matrix(const size_t size) { 
+  return NRG::zero_matrix<S>(size, size); 
+}
+
+template<scalar S, typename Matrix = Matrix_traits<S>>
+auto empty_matrix() { return Matrix(); }
+
 // Accumulator abstraction: automatically initialized to 0, result checked for finiteness.
 template <scalar T> class generic_bucket {
 private:
@@ -251,7 +256,7 @@ void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
     atlas::gemm(CblasNoTrans, CblasConjTrans, factor, A, B, t_coef(1.0), M);
   }
 }
-   
+
 template<scalar S, typename T, typename t_coef = coef_traits<S>>
 Eigen::MatrixX<T> product(const t_coef factor, const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B) {
   my_assert(my_isfinite(factor));
@@ -320,13 +325,14 @@ auto submatrix(Eigen::ArrayX<S> &M, const std::pair<size_t,size_t> &r1, const st
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
+// 'v' is any 1D range we can iterate over
 template<typename R, matrix M>
-auto trace_exp(R && e, const M &m, const double factor) { // Tr[exp(-factor*e) m]
-  my_assert(e.size() == m.size1() && e.size() == m.size2());
-  return ranges::accumulate(range0(e.size()), typename M::value_type{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e[r]) * m(r, r); });
+auto trace_exp(R && v, const M &m, const double factor) { // Tr[exp(-factor*v) m]
+  my_assert(v.size() == m.size1() && v.size() == m.size2());
+  return ranges::accumulate(range0(v.size()), typename M::value_type{}, {}, [&v, &m, factor](const auto i){ return exp(-factor * v[i]) * m(i, i); });
 }
 
-// 'values' is any range we can iterate over
+// 'values' is any 1D range we can iterate over
 template<typename R>
 auto sum_of_exp(R && values, const double factor) // sum exp(-factor*x)
 {
@@ -334,31 +340,15 @@ auto sum_of_exp(R && values, const double factor) // sum exp(-factor*x)
 }      
 
 template<typename T>
-auto sum_of_exp(Eigen::ArrayX<T> A, const double factor) // sum exp(-factor*x)
-{
-  return exp(-factor * A).sum();
-}
-
-template<typename T>
 auto sum_of_exp(Eigen::MatrixX<T> A, const double factor) // sum exp(-factor*x)
 {
   return exp(-factor * A.array()).sum();
 }
 
-template<scalar T>
-T trace_contract(const ublas::matrix<T> &A, const ublas::matrix<T> &B, const size_t range) // Tr[AB]
+template<matrix M>
+auto trace_contract(const M &A, const M &B, const size_t range) // Tr[AB]
 {
-  T sum{};
-  for (const auto i : range0(range))
-       for (const auto j : range0(range))
-      sum += A(i, j) * B(j, i);
-  return sum;
-}
-
-template<scalar T>
-T trace_contract(const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B, const size_t range) // Tr[AB]
-{
-  T sum{};
+  typename M::value_type sum{};
   for (const auto i : range0(range))
        for (const auto j : range0(range))
       sum += A(i, j) * B(j, i);
@@ -383,28 +373,37 @@ template<matrix M>
   }
 
 template<typename T, typename U, typename V> // U and/or V may be matrix views
-auto prod(const U &A, const V &B) {
+auto matrix_prod(const U &A, const V &B) {
   auto M = ublas::matrix<T>(A.size1(), B.size2());
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
   return M;
 }
 
+template<typename T, typename U, typename V> // U and/or V may be matrix views
+auto matrix_adj_prod(const U &A, const V &B) {
+  auto M = ublas::matrix<T>(A.size2(), B.size2());
+  atlas::gemm(CblasConjTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
+  return M;
+}
+
 // M = A*B, size of A is adapted to the size of B
-template<typename T>
-auto prod_fit_left(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
+template<matrix M>
+auto prod_fit_left(const M &A, const M &B) {
+  using T = typename M::value_type;
   my_assert(B.size1() <= A.size2());
-  if (A.size1() == 0 || B.size2() == 0) return ublas::matrix<T>();
+  if (A.size1() == 0 || B.size2() == 0) return empty_matrix<T>();
   const auto Asub = submatrix(A, {0, A.size1()}, {0, B.size1()});
-  return NRG::prod<T>(Asub, B);
+  return matrix_prod<T>(Asub, B);
 }
 
 // M = A*B, size of B is adapted to the size of A
-template<typename T>
-auto prod_fit_right(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
+template<matrix M>
+auto prod_fit_right(const M &A, const M &B) {
+  using T = typename M::value_type;
   my_assert(B.size1() >= A.size2());
-  if (A.size1() == 0 || B.size2() == 0) return ublas::matrix<T>();
+  if (A.size1() == 0 || B.size2() == 0) return empty_matrix<T>();
   const auto Bsub = submatrix(B, {0, A.size2()}, {0, B.size2()});
-  return NRG::prod<T>(A, Bsub);
+  return matrix_prod<T>(A, Bsub);
 }
 
 template<matrix M>
@@ -413,14 +412,13 @@ auto prod_fit(const M &A, const M &B) {
 }
 
 // M = A^\dag*B, size of A is adapted to the size of B
-template<typename T>
-inline auto prod_adj_fit_left(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
+template<matrix M>
+inline auto prod_adj_fit_left(const M &A, const M &B) {
+  using T = typename M::value_type;
   my_assert(B.size1() <= A.size1());
-  if (A.size2() == 0 || B.size2() == 0) return ublas::matrix<T>();
+  if (A.size2() == 0 || B.size2() == 0) return empty_matrix<T>();
   const auto Asub = submatrix(A, {0, B.size1()}, {0, A.size2()});
-  auto M = ublas::matrix<T>(A.size2(), B.size2());
-  atlas::gemm(CblasConjTrans, CblasNoTrans, 1.0, Asub, B, 0.0, M);
-  return M;
+  return matrix_adj_prod<T>(Asub, B);
 }
 
 inline constexpr double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form

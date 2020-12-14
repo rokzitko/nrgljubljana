@@ -23,12 +23,12 @@ TEST(numerics, sum2){
 TEST(numerics, conj_me){
   EXPECT_EQ(conj_me(std::complex(5.0,8.0)), std::complex(5.0,-8.0));
 }
-TEST(numerics, Zero_matrix){
+TEST(numerics, zero_matrix){
   const size_t dim1 = 4;
   const size_t dim2 = 2;
   const size_t dim3 = 3;
-  auto zero_m1 = Zero_matrix<double>(dim1,dim2);
-  auto zero_m2 = Zero_matrix<double>(dim3);
+  auto zero_m1 = NRG::zero_matrix<double>(dim1,dim2);
+  auto zero_m2 = NRG::zero_matrix<double>(dim3);
 
   ASSERT_EQ(zero_m1.size1(), dim1);
   ASSERT_EQ(zero_m1.size2(), dim2);

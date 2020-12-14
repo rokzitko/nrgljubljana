@@ -88,7 +88,7 @@ auto calc_densitymatrix_iterN(const DiagInfo<S> &diag, const DensMatElements<S> 
   DensMatElements<S> rhoPrev;
   for (const auto &[I, dimsub] : store[N - 1]) { // loop over all subspaces at *previous* iteration
     const auto dim  = dimsub.kept();
-    rhoPrev[I]      = Zero_matrix<S>(dim);
+    rhoPrev[I]      = zero_matrix<S>(dim);
     if (dim == 0) continue;
     const auto ns = Sym->new_subspaces(I);
     for (const auto &[i, sub] : ns | ranges::views::enumerate) {
@@ -147,7 +147,7 @@ DensMatElements<S> init_rho_FDM(const size_t N, const Store<S> &store, const Sta
                                 MF mult, const double T) {
   DensMatElements<S> rhoFDM;
   for (const auto &[I, ds] : store[N]) {
-    rhoFDM[I] = Zero_matrix<S>(ds.max());
+    rhoFDM[I] = zero_matrix<S>(ds.max());
     if (stats.ZnDNd[N] != 0.0)
       for (const auto i: ds.all())
         rhoFDM[I](i, i) = exp(-ds.eig.values.abs_zero(i) / T) * stats.wn[N] / stats.ZnDNd[N];
@@ -175,7 +175,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   for (const auto &[I, ds] : store[N - 1]) { // loop over all subspaces at *previous* iteration
     const auto subs = Sym->new_subspaces(I);
     const auto dim  = ds.kept();
-    rhoFDMPrev[I]   = Zero_matrix<S>(dim);
+    rhoFDMPrev[I]   = zero_matrix<S>(dim);
     if (!dim) continue;
     for (const auto i : Sym->combs()) {
       const auto sub = subs[i];

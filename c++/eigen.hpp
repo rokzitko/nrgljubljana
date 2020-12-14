@@ -281,7 +281,7 @@ public:
   }
   auto diagonal_exp(const double factor) const { // produce a diagonal matrix with exp(-factor*E) diagonal elements, used in init_rho()
     const auto dim = getnrstored();
-    auto m = Zero_matrix<S>(dim);
+    auto m = zero_matrix<S>(dim);
     for (const auto i: range0(dim)) 
       m(i, i) = exp(-values.corr(i) * factor); // corrected eigenvalues!
     return m;

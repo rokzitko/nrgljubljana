@@ -74,7 +74,7 @@ Matrix_traits<S> hamiltonian(const Step &step, const Invar &I, const Opch<S> &op
                              const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
-  auto h = Zero_matrix<S>(rm.total());
+  auto h = zero_matrix<S>(rm.total());
   for (const auto i : Sym->combs()) {
     const auto range = rm.view(i);
     for (const auto & [n, r] : range | ranges::views::enumerate)

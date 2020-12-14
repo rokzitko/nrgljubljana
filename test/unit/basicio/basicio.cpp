@@ -122,13 +122,15 @@ TEST(basicio, save_matrix){
     std::remove("txt/matrix_temp.txt");
 }
 
+/*
 TEST(basicio, _eigen_save_matrix){
     auto matrix = _eigen_read_matrix("txt/matrix.txt");
-    _eigen_save_matrix("txt/matrix_temp.txt", matrix);
+    save_matrix("txt/matrix_temp.txt", matrix); // generic function!
     auto matrix_temp = _eigen_read_matrix("txt/matrix_temp.txt");
     compare(matrix, matrix_temp);
     std::remove("txt/matrix_temp.txt");
 }
+*/
 
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);

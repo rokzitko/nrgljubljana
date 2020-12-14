@@ -235,30 +235,22 @@ inline auto _eigen_read_matrix(const std::string &filename, const bool bin = fal
   return M;
 }
 
-inline void save_matrix(const std::string &filename, const ublas::matrix<double> &M, const bool verbose = false,
+template<matrix M>
+inline void save_matrix(const std::string &filename, const M &m, const bool verbose = false,
                         const double chop_tol = 1e-14, const int output_prec = 18)
 {
   if (verbose) std::cout << "Saving result to " << filename << std::endl;
   auto F = safe_open(filename);
   F << std::setprecision(output_prec);
-  const auto dim1 = M.size1();
-  const auto dim2 = M.size2();
+  const auto dim1 = m.size1();
+  const auto dim2 = m.size2();
   for (auto i = 0; i < dim1; i++) {
     for (auto j = 0; j < dim2; j++) {
-      const auto val = M(i, j);
+      const auto val = m(i, j);
       F << (std::abs(val) > chop_tol ? val : 0.0) << (j != dim2 - 1 ? " " : "");
     }
     F << std::endl;
   }
-  F.close();
-}
-
-inline void _eigen_save_matrix(const std::string &filename, const Eigen::MatrixXd &M, const bool verbose = false,
-                        const double chop_tol = 1e-14, const int output_prec = 18)
-{
-  if (verbose) std::cout << "Saving result to " << filename << std::endl;
-  auto F = safe_open(filename);
-  F << std::setprecision(output_prec) << M;
   F.close();
 }
 
