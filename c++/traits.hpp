@@ -30,14 +30,20 @@ template <typename T>
      { a(i,j) };
      { a = b };
      { a.swap(b) };
-     { a.data() };
      typename T::value_type;
   };
+
+template <typename T>
+  concept real_matrix = matrix<T> && floating_point<typename T::value_type>;
+
+template <typename T>
+  concept complex_matrix = matrix<T> && is_complex<typename T::value_type>::value;
 
 template <typename T>
   concept vector = requires(T a, size_t i) {
      { a.size() };
      { a[i] };
+     { a.data() }
      typename T::value_type;
   };
 

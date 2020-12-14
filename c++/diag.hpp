@@ -22,25 +22,7 @@
 #define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"
 
-// ublas matrix & vector containers
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/symmetric.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-
-// Numeric bindings to BLAS/LAPACK
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
-
 namespace NRG {
-
-using namespace boost::numeric;
-using namespace boost::numeric::ublas; // keep this!
-namespace atlas = boost::numeric::bindings::atlas;
 
 template<scalar T, scalar V> 
 void copy_val(const std::vector<T> &eigenvalues, std::vector<V>& diagvalues, const size_t M) {
@@ -55,8 +37,8 @@ void copy_val(const std::vector<T> &eigenvalues, std::vector<V>& diagvalues, con
 [[nodiscard]] inline double to_matel(const double x) { return x; }
 [[nodiscard]] inline std::complex<double> to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
 
-template<typename U, scalar S> // U may be _lapack_complex_double
-void copy_vec(U* eigenvectors, ublas::matrix<S>& diagvectors, const size_t dim, const size_t M)
+template<typename U, matrix MM> // U may be _lapack_complex_double
+void copy_vec(U* eigenvectors, MM & diagvectors, const size_t dim, const size_t M)
 {
   diagvectors.resize(M, dim);
   for (const auto r : range0(M))
@@ -74,9 +56,10 @@ auto copy_results(const std::vector<T> &eigenvalues, U* eigenvectors, const char
 }
 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
-inline RawEigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char jobz = 'V') {
+template<real_matrix RM>
+RawEigen<double> diagonalise_dsyev(RM &m, const char jobz = 'V') { // XXXXX: auto
   const auto dim = m.size1();
-  auto ham = bindings::traits::matrix_storage(m);
+  auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
@@ -95,10 +78,11 @@ inline RawEigen<double> diagonalise_dsyev(ublas::matrix<double> &m, const char j
   return copy_results<double,double,double>(eigenvalues, ham, jobz, dim, dim);
 }
 
-inline RawEigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char jobz = 'V')
+template<real_matrix RM>
+RawEigen<double> diagonalise_dsyevd(RM &m, const char jobz = 'V')
 {
   const auto dim = m.size1();
-  auto ham       = bindings::traits::matrix_storage(m);
+  auto ham       = data(m);
   std::vector<double> eigenvalues(dim);
   char UPLO  = 'L';
   int NN     = dim;
@@ -126,7 +110,8 @@ inline RawEigen<double> diagonalise_dsyevd(ublas::matrix<double> &m, const char 
   return copy_results<double, double, double>(eigenvalues, ham, jobz, dim, dim);
 }
 
-inline RawEigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const double ratio = 1.0, const char jobz = 'V') {
+template<real_matrix RM>
+RawEigen<double> diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') {
   const auto dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
@@ -137,7 +122,7 @@ inline RawEigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const doubl
     M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
-  auto ham = bindings::traits::matrix_storage(m);
+  auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';     // lower triangle of a is stored
   int NN        = dim;     // the order of the matrix
@@ -181,9 +166,10 @@ inline RawEigen<double> diagonalise_dsyevr(ublas::matrix<double> &m, const doubl
   return copy_results<double, double, double>(eigenvalues, Z.data(), jobz, dim, M);
 }
 
-inline RawEigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::complex<double>> &m, const char jobz = 'V') {
+template<complex_matrix CM>
+RawEigen<std::complex<double>> diagonalise_zheev(CM &m, const char jobz = 'V') {
   const auto dim = m.size1();
-  auto ham       = reinterpret_cast<lapack_complex_double*>(bindings::traits::matrix_storage(m));
+  auto ham       = reinterpret_cast<lapack_complex_double*>(data(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
@@ -203,8 +189,9 @@ inline RawEigen<std::complex<double>> diagonalise_zheev(ublas::matrix<std::compl
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   return copy_results<double,lapack_complex_double,std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
 }
-  
-inline RawEigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::complex<double>> &m, const double ratio = 1.0, const char jobz = 'V') {
+
+template<complex_matrix CM>
+RawEigen<std::complex<double>> diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
   const auto dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
@@ -215,7 +202,7 @@ inline RawEigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::comp
     M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
-  auto ham = reinterpret_cast<lapack_complex_double*>(bindings::traits::matrix_storage(m));
+  auto ham = reinterpret_cast<lapack_complex_double*>(data(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix
@@ -263,13 +250,14 @@ inline RawEigen<std::complex<double>> diagonalise_zheevr(ublas::matrix<std::comp
 }
 
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
-// equal to the dimension of the matrix h. m is destroyed in the process, thus no const attribute!
-template<scalar M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, int myrank) {
+// equal to the dimension of the matrix h. Matrix m is destroyed in the process, thus no const attribute!
+template<matrix M> auto diagonalise(M &m, const DiagParams &DP, int myrank) {
+  using S = typename M::value_type;
   mpilog("diagonalise " << m.size1() << "x" << m.size2() << " " << DP.diag << " " << DP.diagratio);
   Timing timer;
   check_is_matrix_upper(m);
-  RawEigen<M> d;
-  if constexpr (std::is_same_v<M, double>) {
+  RawEigen<S> d;
+  if constexpr (std::is_same_v<S, double>) {
     if (DP.diag == "dsyev"s || DP.diag == "default"s) d = diagonalise_dsyev(m);
     if (DP.diag == "dsyevd"s) {
       d = diagonalise_dsyevd(m);
@@ -280,7 +268,7 @@ template<scalar M> auto diagonalise(ublas::matrix<M> &m, const DiagParams &DP, i
     }
     if (DP.diag == "dsyevr"s) d = diagonalise_dsyevr(m, DP.diagratio);
   }
-  if constexpr (std::is_same_v<M, std::complex<double>>) {
+  if constexpr (std::is_same_v<S, std::complex<double>>) {
     if (DP.diag == "zheev"s || DP.diag == "default"s) d = diagonalise_zheev(m);
     if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio);
   }

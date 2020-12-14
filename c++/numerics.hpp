@@ -87,6 +87,9 @@ template<scalar S>
 template<scalar S, typename Matrix = Matrix_traits<S>>
 auto empty_matrix() { return Matrix(); }
 
+// Access the low-level data storage in the matrix (used in diag.hpp)
+template<scalar S> S * data(ublas::matrix<S> &m) { return bindings::traits::matrix_storage(m); }
+
 // Accumulator abstraction: automatically initialized to 0, result checked for finiteness.
 template <scalar T> class generic_bucket {
 private:
