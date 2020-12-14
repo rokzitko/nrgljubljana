@@ -43,7 +43,10 @@ template <typename T>
   concept vector = requires(T a, size_t i) {
      { a.size() };
      { a[i] };
-     { a.data() }
+     { a.data() };
+     { a.begin() };
+     { a.end() };
+     { a.resize(i) };
      typename T::value_type;
   };
 

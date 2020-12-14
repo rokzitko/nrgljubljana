@@ -24,18 +24,19 @@
 
 namespace NRG {
 
-template<scalar T, scalar V> 
-void copy_val(const std::vector<T> &eigenvalues, std::vector<V>& diagvalues, const size_t M) {
-  my_assert(eigenvalues.size() >= M);
-  if (std::adjacent_find(eigenvalues.begin(), eigenvalues.begin() + M, std::greater<T>()) != eigenvalues.begin() + M)
-    std::cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << std::endl;
-  diagvalues.resize(M);
-  std::copy(eigenvalues.begin(), eigenvalues.begin() + M, diagvalues.begin());
-}
-
 // Handle complex-type conversions (used in copy_vec)
-[[nodiscard]] inline double to_matel(const double x) { return x; }
-[[nodiscard]] inline std::complex<double> to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
+[[nodiscard]] inline auto to_matel(const double x) { return x; }
+[[nodiscard]] inline auto to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
+
+template<vector SV, vector DV> requires std::is_convertible_v<typename SV::value_type, typename DV::value_type>
+void copy_val(const SV &source, DV &dest, const size_t M) {
+  using S = typename SV::value_type;
+  my_assert(source.size() >= M);
+  if (std::adjacent_find(source.begin(), source.begin() + M, std::greater<S>()) != source.begin() + M)
+    std::cout << "WARNING: Values are not in ascending order. Bug in LAPACK dsyev* routines." << std::endl;
+  dest.resize(M);
+  std::copy_n(source.begin(), M, dest.begin());
+}
 
 template<typename U, matrix MM> // U may be _lapack_complex_double
 void copy_vec(U* eigenvectors, MM & diagvectors, const size_t dim, const size_t M)
@@ -45,8 +46,8 @@ void copy_vec(U* eigenvectors, MM & diagvectors, const size_t dim, const size_t 
     for (const auto j : range0(dim)) diagvectors(r, j) = to_matel(eigenvectors[dim * r + j]);
 }
 
-template<scalar T, typename U, scalar S>
-auto copy_results(const std::vector<T> &eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
+template<scalar S, vector V, typename U>
+auto copy_results(const V &eigenvalues, U* eigenvectors, const char jobz, const size_t dim, const size_t M)
 {
   RawEigen<S> d(M, dim);
   copy_val(eigenvalues, d.val, M);
@@ -57,7 +58,7 @@ auto copy_results(const std::vector<T> &eigenvalues, U* eigenvectors, const char
 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
 template<real_matrix RM>
-RawEigen<double> diagonalise_dsyev(RM &m, const char jobz = 'V') { // XXXXX: auto
+auto diagonalise_dsyev(RM &m, const char jobz = 'V') { // XXXXX: auto
   const auto dim = m.size1();
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
@@ -75,11 +76,11 @@ RawEigen<double> diagonalise_dsyev(RM &m, const char jobz = 'V') { // XXXXX: aut
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  return copy_results<double,double,double>(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
 }
 
 template<real_matrix RM>
-RawEigen<double> diagonalise_dsyevd(RM &m, const char jobz = 'V')
+auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 {
   const auto dim = m.size1();
   auto ham       = data(m);
@@ -107,11 +108,11 @@ RawEigen<double> diagonalise_dsyevd(RM &m, const char jobz = 'V')
     else
       throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
   }
-  return copy_results<double, double, double>(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
 }
 
 template<real_matrix RM>
-RawEigen<double> diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') {
+auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') {
   const auto dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
@@ -163,11 +164,11 @@ RawEigen<double> diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char 
     M = MM;
     my_assert(M > 0); // at least one
   }
-  return copy_results<double, double, double>(eigenvalues, Z.data(), jobz, dim, M);
+  return copy_results<double>(eigenvalues, Z.data(), jobz, dim, M);
 }
 
 template<complex_matrix CM>
-RawEigen<std::complex<double>> diagonalise_zheev(CM &m, const char jobz = 'V') {
+auto diagonalise_zheev(CM &m, const char jobz = 'V') {
   const auto dim = m.size1();
   auto ham       = reinterpret_cast<lapack_complex_double*>(data(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
@@ -187,11 +188,11 @@ RawEigen<std::complex<double>> diagonalise_zheev(CM &m, const char jobz = 'V') {
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  return copy_results<double,lapack_complex_double,std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
+  return copy_results<std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
 }
 
 template<complex_matrix CM>
-RawEigen<std::complex<double>> diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
+auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
   const auto dim = m.size1();
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
@@ -246,12 +247,12 @@ RawEigen<std::complex<double>> diagonalise_zheevr(CM &m, const double ratio = 1.
     M = MM;
     my_assert(M > 0); // at least one
   }
-  return copy_results<double,lapack_complex_double,std::complex<double>>(eigenvalues, Z.data(), jobz, dim, M);
+  return copy_results<std::complex<double>>(eigenvalues, Z.data(), jobz, dim, M);
 }
 
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. Matrix m is destroyed in the process, thus no const attribute!
-template<matrix M> auto diagonalise(M &m, const DiagParams &DP, int myrank) {
+template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank) {
   using S = typename M::value_type;
   mpilog("diagonalise " << m.size1() << "x" << m.size2() << " " << DP.diag << " " << DP.diagratio);
   Timing timer;
