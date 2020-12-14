@@ -109,6 +109,7 @@ TEST(numerics, std_trace_exp_complex){
   compare(expected, trace_exp(v, m , 2.5));
 }
 
+/*
 TEST(numerics, Eigen_trace_exp_real){
   const int N = 3;
   Eigen::VectorXd v(N);
@@ -144,6 +145,7 @@ TEST(numerics, Eigen_trace_exp_complex){
 
   compare(expected, trace_exp(v, m , 2.5));
 }
+*/
 
 class numericsMatrixOperationsTest_complex : public ::testing::Test {
 protected:

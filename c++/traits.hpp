@@ -23,6 +23,16 @@ template <floating_point T>
 template <typename T>
      concept scalar = floating_point<T> || is_complex<T>::value;
 
+template <typename T>
+  concept matrix = requires(T a, T b, size_t i, size_t j) {
+     { a.size1() }; // -> std::convertible_to<std::size_t>;
+     { a.size2() }; // -> std::convertible_to<std::size_t>;
+     { a(i,j) };
+     { a = b };
+     { a.swap(b) };
+//     { typename T::value_type };
+  };
+
 // We encapsulate the differences between real-value and complex-value versions of the code in class traits.
 
 template <scalar S> struct traits {};

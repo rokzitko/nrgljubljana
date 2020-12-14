@@ -92,11 +92,11 @@ TEST(Eigen, hdf5io) { // NOLINT
   e.h5save(h5, "test");
 }
 
-TEST(io, read_vector) { // NOLINT
+TEST(io, read_std_vector) { // NOLINT
   std::string data = "5 1 2 3 4 5";
   std::istringstream ss(data);
-  auto vec = read_vector<double>(ss);
-  EVEC ref(5);
+  auto vec = read_std_vector<double>(ss);
+  std::vector<double> ref(5);
   ref[0] = 1; ref[1] = 2; ref[2] = 3; ref[3] = 4; ref[4] = 5;
   VECTOR_EQ(vec, ref);
 }

@@ -126,16 +126,15 @@ inline CONSTFNC auto are_conjugate(const double a, const double b) { return num_
 
 inline CONSTFNC auto are_conjugate(const std::complex<double> &a, const std::complex<double> &b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
 
-template<scalar M> auto frobenius_norm(const ublas::matrix<M> &m) { // Frobenius norm (without taking the final square root!)
+template<matrix M> auto frobenius_norm(const M &m) { // Frobenius norm (without taking the final square root!)
   double sum{};
   for (auto i = 0; i < m.size1(); i++)
     for (auto j = 0; j < m.size2(); j++) sum += pow(abs(m(i, j)),2);
   return sum;
 }
 
-// Check if matrix m is upper triangular. In the lower triangle, all elements must be 0. NOTE: we store the upper
-// triangular part of the symmetric Hamiltonian matrix. In FORTRAN convention, this is the lower part !!
-template<scalar M> void check_is_matrix_upper(const ublas::matrix<M> &m) {
+// Check if m is upper triangular. In the lower triangle, all elements must be 0.
+template<matrix M> void check_is_matrix_upper(const M &m) {
   my_assert(m.size1() == m.size2() && m.size1() >= 1);
   for (auto i = 1; i < m.size1(); i++)
     for (auto j = 0; j < i; j++) // j < i
@@ -146,8 +145,8 @@ template<scalar M> void check_is_matrix_upper(const ublas::matrix<M> &m) {
 CONSTFNC inline auto psgn(const int n) { return n % 2 == 0 ? 1.0 : -1.0; }
 
 // Dump a matrix with full numerical precision. The columns are aligned for easier inspection. Expect large output!
-template<scalar M> inline void dump_matrix(const ublas::matrix<M> &m, std::ostream &F = std::cout, 
-                                             const int header_width = 7, const int column_width = 23) {
+template<matrix M> inline void dump_matrix(const M &m, std::ostream &F = std::cout, 
+                                           const int header_width = 7, const int column_width = 23) {
   boost::io::ios_base_all_saver ofs(F);
   F << std::setprecision(std::numeric_limits<double>::max_digits10);
   F << fmt::format("Matrix: {}x{}\n", m.size1(), m.size2());
@@ -158,7 +157,7 @@ template<scalar M> inline void dump_matrix(const ublas::matrix<M> &m, std::ostre
   }
 }
 
-template<scalar M> inline void dump_diagonal_matrix(const ublas::matrix<M> &m, const size_t max_nr, std::ostream &F = std::cout) {
+template<matrix M> inline void dump_diagonal_matrix(const M &m, const size_t max_nr, std::ostream &F = std::cout) {
   for (const auto r : range0(std::min(m.size1(), max_nr))) F << m(r,r) << ' ';
   F << std::endl;
 }
@@ -182,14 +181,14 @@ void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) { // XXX
 // Chop numerical noise
 template <scalar T> CONSTFNC inline T chop(const T x, const double xlimit = 1.e-8) { return std::abs(x) < xlimit ? 0.0 : x; }
 
-template<scalar T>
-void assert_issquare(const ublas::matrix<T> &m) { my_assert(m.size1() == m.size2()); }
+template<matrix M>
+void assert_issquare(const M &m) { my_assert(m.size1() == m.size2()); }
 
 // Powers, such as (-1)^n, appear in the coupling coefficients.
 CONSTFNC inline double Power(const double i, const double nn) { return std::pow(i, nn); }
 
 // Read 'size' values of type T into a ublas vector<T>.
-template <scalar T> auto read_vector(std::istream &F, const size_t size) {
+template <scalar T> auto read_ublas_vector(std::istream &F, const size_t size) {
   ublas::vector<T> vec(size);
   for (auto j = 0; j < size; j++)
     vec[j] = read_one<T>(F);
@@ -198,20 +197,24 @@ template <scalar T> auto read_vector(std::istream &F, const size_t size) {
 }
 
 // Read values of type T into a ublas vector<T>. 'nr' is either vector dimension or the value of maximum index
-template <scalar T> auto read_vector(std::istream &F, const bool nr_is_max_index = false) {
+template <scalar T> auto read_ublas_vector(std::istream &F, const bool nr_is_max_index = false) {
   const auto nr = read_one<size_t>(F);
   const auto len = nr_is_max_index ? nr+1 : nr;
-  return read_vector<T>(F, len);
+  return read_ublas_vector<T>(F, len);
 }
 
 // Read 'size1' x 'size2' ublas matrix of type T.
-template <scalar T> ublas::matrix<T> read_matrix(std::istream &F, const size_t size1, const size_t size2) {
+template <scalar T> auto read_ublas_matrix(std::istream &F, const size_t size1, const size_t size2) {
   ublas::matrix<T> m(size1, size2);
   for (auto j1 = 0; j1 < size1; j1++)
     for (auto j2 = 0; j2 < size2; j2++)
       m(j1, j2) = assert_isfinite( read_one<T>(F) );
   if (F.fail()) std::runtime_error("read_matrix() error. Input file is corrupted.");
   return m;
+}
+
+template <scalar T> auto read_matrix(std::istream &F, const size_t size1, const size_t size2) {
+  return read_ublas_matrix<T>(F, size1, size2);
 }
 
 // Check if the value x is real [for complex number calculations].
@@ -227,14 +230,14 @@ CONSTFNC inline auto check_real(std::complex<double> z) {
   return z.real();
 }
 
-template <scalar M> CONSTFNC auto trace_real(const ublas::matrix<M> &m) {
+template <matrix M> CONSTFNC auto trace_real(const M &m) {
   assert_issquare(m);
   return ranges::accumulate(range0(m.size2()), 0.0, {}, [&m](const auto i){ return check_real(m(i, i)); });
 }
 
 inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); }
 
-template<typename R> // 2D matrix or matrix view
+template<matrix R> // 2D matrix or matrix view
 auto finite_size(const R &M) {
   return M.size1() && M.size2();
 }
@@ -317,17 +320,10 @@ auto submatrix(Eigen::ArrayX<S> &M, const std::pair<size_t,size_t> &r1, const st
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
-template<typename R, scalar S>
-auto trace_exp(R && e, const ublas::matrix<S> &m, const double factor) { // Tr[exp(-factor*e) m]
+template<typename R, matrix M>
+auto trace_exp(R && e, const M &m, const double factor) { // Tr[exp(-factor*e) m]
   my_assert(e.size() == m.size1() && e.size() == m.size2());
-  return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e[r]) * m(r, r); });
-}
-
-template<scalar T, scalar S>
-auto trace_exp(const Eigen::VectorX<T> &e, const Eigen::MatrixX<S> &m, const double factor) { // Tr[exp(-factor*e) m]
-  my_assert(e.size() == m.rows() && e.size() == m.cols());
-  // return (exp(-factor * e) * m).trace();
-  return ranges::accumulate(range0(e.size()), S{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e(r)) * m(r, r); });
+  return ranges::accumulate(range0(e.size()), typename M::value_type{}, {}, [&e, &m, factor](const auto r){ return exp(-factor * e[r]) * m(r, r); });
 }
 
 // 'values' is any range we can iterate over
@@ -369,24 +365,24 @@ T trace_contract(const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B, const s
   return sum;
 }
 
-template<scalar S>
-auto trim_matrix(ublas::matrix<S> &mat, const size_t new_size1, const size_t new_size2) {
+template<matrix M>
+auto trim_matrix(M &mat, const size_t new_size1, const size_t new_size2) {
   const auto old_size1 = mat.size1();
   const auto old_size2 = mat.size2();
   if (old_size1 == 0 || old_size2 == 0) return;
   my_assert(new_size1 <= old_size1 && new_size2 <= old_size2);
   if (new_size1 == old_size1 && new_size2 == old_size2) return; // Trimming not necessary!!
   const auto sub = submatrix(mat, {0, new_size1}, {0, new_size2});
-  ublas::matrix<S> mat2 = sub;
+  M mat2 = sub;
   mat.swap(mat2);
 } 
 
-template<scalar M, scalar N>
-  bool has_lesseq_rows(const ublas::matrix<M> &A, const ublas::matrix<N> &B) {
+template<matrix M>
+  bool has_lesseq_rows(const M &A, const M &B) {
     return A.size1() <= B.size1() && A.size2() == B.size2();
   }
 
-template<typename T, typename U, typename V>
+template<typename T, typename U, typename V> // U and/or V may be matrix views
 auto prod(const U &A, const V &B) {
   auto M = ublas::matrix<T>(A.size1(), B.size2());
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
@@ -411,8 +407,8 @@ auto prod_fit_right(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
   return NRG::prod<T>(A, Bsub);
 }
 
-template<typename T>
-auto prod_fit(const ublas::matrix<T> &A, const ublas::matrix<T> &B) {
+template<matrix M>
+auto prod_fit(const M &A, const M &B) {
   return B.size1() <= A.size2() ? prod_fit_left(A, B) : prod_fit_right(A, B);
 }
 
