@@ -1,0 +1,10 @@
+#!/bin/bash
+if [[ $# < 1 ]]; then
+	echo "Usage: CMAKE_SOURCE_PATH"
+	exit 1
+fi
+find .. -name *.gcno -type f -print0 | xargs -0 -I % mv % .
+find .. -name *.gcda -type f -print0 | xargs -0 -I % mv % .
+mkdir lcov
+$1/test/unit/lcov/bin/lcov --capture --directory . --output-file lcov/main_coverage.info
+$1/test/unit/lcov/bin/genhtml lcov/main_coverage.info --output-directory lcov
