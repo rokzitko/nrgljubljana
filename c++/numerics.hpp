@@ -73,7 +73,7 @@ template<typename U, typename V>
  
 [[nodiscard]] inline std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
 [[nodiscard]] inline double conj_me(const double x) { return x; }    // no op
-   
+
 template<scalar S, typename Matrix = Matrix_traits<S>>
 [[nodiscard]] auto zero_matrix(const size_t size1, const size_t size2) {
   return Matrix(size1, size2, 0);

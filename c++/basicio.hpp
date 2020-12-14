@@ -70,12 +70,7 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
   return os;
 }
 
-template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::vector<T> &vec){
-  for (const auto &x : vec) os << x << " ";
-  return os;
-}
-
-template <typename T> std::ostream &operator<<(std::ostream &os, const ublas::matrix<T> &m) {
+template <matrix M> std::ostream &operator<<(std::ostream &os, const M &m) {
   for (auto r1 = 0; r1 < m.size1(); r1++) {
     for (auto r2 = 0; r2 < m.size2(); r2++)
       os << m(r1, r2) << ' ';
@@ -153,10 +148,10 @@ inline auto get_dims(std::istream &F) {
   return std::make_pair(dim1, dim2);
 }
 
-// Read dim1 x dim2 matrix from stream. Use function next_value to extract consecutive values.
-template<typename FNC>
-auto read_matrix_data(FNC next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
-  ublas::matrix<double> M(dim1, dim2);
+// Read dim1 x dim2 matrix from stream. Use function next_value to extract consecutive values. 'gen' generates the matrix.
+template<typename GEN, typename FNC>
+auto read_matrix_data(GEN && generate_matrix, FNC && next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
+  auto M = generate_matrix(dim1, dim2);
   for (auto i = 0; i < dim1; i++) {
     for (auto j = 0; j < dim2; j++) {
       const auto x = next_value();
@@ -167,70 +162,43 @@ auto read_matrix_data(FNC next_value, const size_t dim1, const size_t dim2, cons
   return M;
 }
 
-// Read dim1 x dim2 matrix from stream. Use function next_value to extract consecutive values.
-template<typename FNC>
-auto _eigen_read_matrix_data(FNC next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
-  Eigen::MatrixXd M(dim1, dim2);
-  for (auto i = 0; i < dim1; i++) {
-    for (auto j = 0; j < dim2; j++) {
-      const auto x = next_value();
-      if (check_is_finite && !finite(x)) throw std::runtime_error("Non-finite number detected.");      
-      M(i, j) = x;
-    }
-  }
-  return M;
-}
-
 // Read a matrix from stream (text)
-inline auto read_matrix_text(const std::string &filename, const bool verbose = false) {
+template<typename GEN>
+auto read_matrix_text(GEN && generate_matrix, const std::string &filename, const bool verbose = false) {
   auto F = safe_open_for_reading(filename, false);
   const auto [dim1, dim2] = get_dims(F);
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
   F.clear();
   F.seekg (0, std::ios::beg);
-  return read_matrix_data([&F]() { return read_one<double>(F); }, dim1, dim2);
-}
-
-// Read a matrix from stream (text)
-inline auto _eigen_read_matrix_text(const std::string &filename, const bool verbose = false) {
-  auto F = safe_open_for_reading(filename, false);
-  const auto [dim1, dim2] = get_dims(F);
-  if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
-  F.clear();
-  F.seekg (0, std::ios::beg);
-  return _eigen_read_matrix_data([&F]() { return read_one<double>(F); }, dim1, dim2);
+  return read_matrix_data(generate_matrix, [&F]() { return read_one<double>(F); }, dim1, dim2);
 }
 
 // Read a matrix from stream (binary). Format: two unit32_t for matrix size, followed by
-// dim1 x dim2 double values;
-inline auto read_matrix_bin(const std::string &filename, const bool verbose = false) {
+// dim1 x dim2 double values.
+template<typename GEN>
+auto read_matrix_bin(GEN && generate_matrix, const std::string &filename, const bool verbose = false) {
   auto F = safe_open_for_reading(filename, true);
   uint32_t dim1, dim2;
   F.read((char *)&dim1, sizeof(uint32_t));
   F.read((char *)&dim2, sizeof(uint32_t));
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
-  return read_matrix_data([&F]() { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
+  return read_matrix_data(generate_matrix, [&F]() { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
 }
 
-// Read a matrix from stream (binary). Format: two unit32_t for matrix size, followed by
-// dim1 x dim2 double values;
-inline auto _eigen_read_matrix_bin(const std::string &filename, const bool verbose = false) {
-  auto F = safe_open_for_reading(filename, true);
-  uint32_t dim1, dim2;
-  F.read((char *)&dim1, sizeof(uint32_t));
-  F.read((char *)&dim2, sizeof(uint32_t));
-  if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
-  return _eigen_read_matrix_data([&F]() { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
-}
-
-inline auto read_matrix(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
-  auto M = bin ? read_matrix_bin(filename, verbose) : read_matrix_text(filename, verbose);
+inline auto read_matrix_ublas(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
+  auto M = bin ? read_matrix_bin(generate_ublas, filename, verbose) : read_matrix_text(generate_ublas, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;
 }
 
-inline auto _eigen_read_matrix(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
-  auto M = bin ? _eigen_read_matrix_bin(filename, verbose) : _eigen_read_matrix_text(filename, verbose);
+inline auto read_matrix_Eigen(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
+  auto M = bin ? read_matrix_bin(generate_Eigen, filename, verbose) : read_matrix_text(generate_Eigen, filename, verbose);
+  if (veryverbose) std::cout << M << std::endl;
+  return M;
+}
+
+inline auto read_matrix(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
+  auto M = bin ? read_matrix_bin(generate_matrix, filename, verbose) : read_matrix_text(generate_matrix, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;
 }

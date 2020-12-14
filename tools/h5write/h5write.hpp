@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include <traits.hpp>
 #include <basicio.hpp>
 #include <misc.hpp>
 #include <h5.hpp>
@@ -12,7 +13,7 @@ namespace NRG::H5Write {
 using namespace NRG;
 
 void h5_copy_matrix_from_file(H5Easy::File &file, const std::string &path, const std::string &input_filename) {
-  const auto M = read_matrix_text(input_filename);
+  const auto M = read_matrix_text(generate_matrix, input_filename);
   h5_dump_matrix(file, path, M);
 }
 

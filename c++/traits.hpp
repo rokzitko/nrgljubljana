@@ -6,6 +6,7 @@
 #include <type_traits> // is_same_v, is_floating_point_v
 
 #include <boost/numeric/ublas/matrix.hpp>
+#include <Eigen/Dense>
 
 namespace NRG {
 
@@ -86,6 +87,10 @@ template <scalar S> using weight_traits  = typename traits<S>::t_weight;
 template <scalar S> using evec_traits    = typename traits<S>::evec;
 template <scalar S> using RVector_traits = typename traits<S>::RVector;
 template <scalar S> using Matrix_traits  = typename traits<S>::Matrix;
+
+auto generate_ublas = [](const size_t dim1, const size_t dim2) { return ublas::matrix<double>(dim1, dim2); };
+auto generate_Eigen = [](const size_t dim1, const size_t dim2) { return Eigen::MatrixXd(dim1, dim2); };
+auto generate_matrix = generate_ublas;
 
 } // namespace
 

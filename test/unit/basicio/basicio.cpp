@@ -28,14 +28,6 @@ TEST(basicio, inserters1) {
   }
   {
     std::stringstream ss;
-    ublas::vector<int> a(2);
-    a(0) = 1;
-    a(1) = 2;
-    ss << a;
-    EXPECT_EQ(ss.str(), "1 2 "); // trailing ws
-  }
-  {
-    std::stringstream ss;
     ublas::matrix<int> m(2,2);
     m(0,0) = 1;
     m(0,1) = 2;
@@ -105,12 +97,12 @@ TEST(basicio, read_matrix){
     compare(ref_matrix, matrix);
 }
 
-TEST(basicio, _eigen_read_matrix){
+TEST(basicio, read_matrix_Eigen){
     Eigen::Matrix<double, 3,4> ref_matrix;
     ref_matrix << 31,41,53,46,
                   12,5,1,41,
                   5,2,4,7;
-    auto matrix = _eigen_read_matrix("txt/matrix.txt");
+    auto matrix = read_matrix_Eigen("txt/matrix.txt");
     compare(ref_matrix, matrix);
 }
 
@@ -122,11 +114,19 @@ TEST(basicio, save_matrix){
     std::remove("txt/matrix_temp.txt");
 }
 
+TEST(basicio, save_matrix_ublas){
+    auto matrix = read_matrix_ublas("txt/matrix.txt");
+    save_matrix("txt/matrix_temp.txt", matrix);
+    auto matrix_temp = read_matrix_ublas("txt/matrix_temp.txt");
+    compare(matrix, matrix_temp);
+    std::remove("txt/matrix_temp.txt");
+}
+
 /*
-TEST(basicio, _eigen_save_matrix){
-    auto matrix = _eigen_read_matrix("txt/matrix.txt");
+ TEST(basicio, save_matrix_Eigen){
+    auto matrix = read_matrix_Eigen("txt/matrix.txt");
     save_matrix("txt/matrix_temp.txt", matrix); // generic function!
-    auto matrix_temp = _eigen_read_matrix("txt/matrix_temp.txt");
+    auto matrix_temp = read_matrix_Eigen("txt/matrix_temp.txt");
     compare(matrix, matrix_temp);
     std::remove("txt/matrix_temp.txt");
 }
