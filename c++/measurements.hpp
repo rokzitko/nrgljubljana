@@ -15,7 +15,7 @@ namespace NRG {
    
 // note: t_expv = t_matel, thus the return type is OK
 template<scalar S, typename MF, typename t_matel = matel_traits<S>>
-CONSTFNC auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
+auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
   return ranges::accumulate(diag, S{}, {}, [&m, &mult, factor](const auto &x){
     const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_corr_msr(), m.at({I,I}), factor); });
 }
@@ -30,7 +30,7 @@ void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a
 }
 
 template<scalar S, typename MF, typename t_matel = matel_traits<S>>
-CONSTFNC auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
+auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
                                   const Store<S> &store, MF mult) {
   return ranges::accumulate(rhoFDM, t_matel{}, {}, [&n, &s = store[ndx], mult](const auto &x) { const auto [I, rhoI] = x;
     return mult(I) * trace_contract(rhoI, n.at({I,I}), s.at(I).kept()); }); // over kept states ONLY

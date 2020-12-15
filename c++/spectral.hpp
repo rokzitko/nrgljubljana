@@ -72,31 +72,31 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 
 // Calculate "moment"-th spectral moment.
 template<scalar S, typename t_weight = weight_traits<S>>
-CONSTFNC auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int moment) {
+auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int moment) {
   auto sumA = ranges::accumulate(s_pos, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*pow(e,moment); });
   auto sumB = ranges::accumulate(s_neg, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*pow(-e,moment); });
   return sumA+sumB;
 }
 
-inline CONSTFNC double fermi_fnc(const double omega, const double T) {
+inline constexpr double fermi_fnc(const double omega, const double T) {
   return 1 / (1 + exp(-omega / T));
 }
 
-inline CONSTFNC double bose_fnc(const double omega, const double T) {
+inline constexpr double bose_fnc(const double omega, const double T) {
   const auto d = 1.0 - exp(-omega / T);
   return d != 0.0 ? 1.0/d : std::numeric_limits<double>::quiet_NaN();
 }
 
 // Integrated spectral function with a kernel as in FDT for fermions
 template<scalar S>
-CONSTFNC auto fd_fermi(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const double T) {
+auto fd_fermi(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const double T) {
   const auto fnc = [T](const auto x) { return fermi_fnc(x, T); };
   return s_neg.sum(true, fnc) + s_pos.sum(false, fnc);
 }
 
 // Ditto for bosons
 template<scalar S>
-CONSTFNC auto fd_bose(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const double T) {
+auto fd_bose(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const double T) {
   const auto fnc = [T](const auto x) { return bose_fnc(x, T); };
   return s_neg.sum(true, fnc) + s_pos.sum(false, fnc);
 }
