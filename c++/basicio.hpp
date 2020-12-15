@@ -71,8 +71,8 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
 }
 
 template <matrix M> std::ostream &operator<<(std::ostream &os, const M &m) {
-  for (auto r1 = 0; r1 < m.size1(); r1++) {
-    for (auto r2 = 0; r2 < m.size2(); r2++)
+  for (auto r1 = 0; r1 < size1(m); r1++) {
+    for (auto r2 = 0; r2 < size2(m); r2++)
       os << m(r1, r2) << ' ';
     os << std::endl;
   }
@@ -186,19 +186,22 @@ auto read_matrix_bin(GEN && generate_matrix, const std::string &filename, const 
 }
 
 inline auto read_matrix_ublas(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
-  auto M = bin ? read_matrix_bin(generate_ublas, filename, verbose) : read_matrix_text(generate_ublas, filename, verbose);
+  auto M = bin ? read_matrix_bin(generate_ublas<double>, filename, verbose) 
+               : read_matrix_text(generate_ublas<double>, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;
 }
 
 inline auto read_matrix_Eigen(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
-  auto M = bin ? read_matrix_bin(generate_Eigen, filename, verbose) : read_matrix_text(generate_Eigen, filename, verbose);
+  auto M = bin ? read_matrix_bin(generate_Eigen<double>, filename, verbose) 
+               : read_matrix_text(generate_Eigen<double>, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;
 }
 
 inline auto read_matrix(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
-  auto M = bin ? read_matrix_bin(generate_matrix, filename, verbose) : read_matrix_text(generate_matrix, filename, verbose);
+  auto M = bin ? read_matrix_bin(generate_matrix<double>, filename, verbose) 
+               : read_matrix_text(generate_matrix<double>, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;
 }
@@ -210,12 +213,10 @@ inline void save_matrix(const std::string &filename, const M &m, const bool verb
   if (verbose) std::cout << "Saving result to " << filename << std::endl;
   auto F = safe_open(filename);
   F << std::setprecision(output_prec);
-  const auto dim1 = m.size1();
-  const auto dim2 = m.size2();
-  for (auto i = 0; i < dim1; i++) {
-    for (auto j = 0; j < dim2; j++) {
+  for (auto i = 0; i < size1(m); i++) {
+    for (auto j = 0; j < size2(m); j++) {
       const auto val = m(i, j);
-      F << (std::abs(val) > chop_tol ? val : 0.0) << (j != dim2 - 1 ? " " : "");
+      F << (std::abs(val) > chop_tol ? val : 0.0) << (j != size2(m) - 1 ? " " : "");
     }
     F << std::endl;
   }

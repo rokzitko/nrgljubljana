@@ -90,7 +90,7 @@ class Annotated {
      size_t len = std::min<size_t>(seznam.size(), P.dumpannotated); // non-const
      // If states are clustered, we dump the full cluster
      while (len < seznam.size()-1 && my_fcmp(seznam[len].first, seznam[len-1].first, P.grouptol) == 0) len++;
-     auto scale = [&step, &stats, this](auto x) { return scaled_energy(x, step, stats, P.dumpscaled, P.dumpabs); };
+     const auto scale = [&step, &stats, this](auto x) { return scaled_energy(x, step, stats, P.dumpscaled, P.dumpabs); };
      if (P.dumpgroups) {
        // Group by degeneracies
        for (size_t i = 0; i < len;) { // i increased in the while loop below

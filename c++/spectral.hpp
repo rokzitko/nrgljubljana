@@ -89,15 +89,15 @@ inline CONSTFNC double bose_fnc(const double omega, const double T) {
 
 // Integrated spectral function with a kernel as in FDT for fermions
 template<scalar S>
-CONSTFNC auto fd_fermi(const Spikes<S> &s_neg, const Spikes<S> &s_pos, double const T) {
-  auto fnc = [T](const auto x) { return fermi_fnc(x, T); };
+CONSTFNC auto fd_fermi(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const double T) {
+  const auto fnc = [T](const auto x) { return fermi_fnc(x, T); };
   return s_neg.sum(true, fnc) + s_pos.sum(false, fnc);
 }
 
 // Ditto for bosons
 template<scalar S>
-CONSTFNC auto fd_bose(const Spikes<S> &s_neg, const Spikes<S> &s_pos, double const T) {
-  auto fnc = [T](const auto x) { return bose_fnc(x, T); };
+CONSTFNC auto fd_bose(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const double T) {
+  const auto fnc = [T](const auto x) { return bose_fnc(x, T); };
   return s_neg.sum(true, fnc) + s_pos.sum(false, fnc);
 }
 

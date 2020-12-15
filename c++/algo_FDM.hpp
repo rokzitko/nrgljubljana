@@ -33,18 +33,18 @@ class Algo_FDMls : virtual public Algo<S> {
    {
      const auto wnf   = stats.wnfactor[step.ndx()];
      const auto rho_op2 = prod_fit(rhoFDM.at(Ij), op2);
-     auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
+     const auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
        return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
      };
-     auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+     const auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * (-sign) * exp(-Ej/T) * wnf);
      };
-     auto term2 = [&energies, &op1, &rho_op2, this](const auto i, const auto j) {
+     const auto term2 = [&energies, &op1, &rho_op2, this](const auto i, const auto j) {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * rho_op2(j, i) * (-sign));
      };
-     auto term3 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+     const auto term3 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * (-sign) * exp(-Ej/T) * wnf);
      };
@@ -87,18 +87,18 @@ class Algo_FDMgt : virtual public Algo<S> {
    {
      const auto wnf   = stats.wnfactor[step.ndx()];
      const auto op2_rho = prod_fit(op2, rhoFDM.at(Ii));
-     auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
+     const auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
        return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
      };
-     auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+     const auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * exp(-Ei/T) * wnf);
      };
-     auto term2 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+     const auto term2 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * exp(-Ei/T) * wnf);
      };
-     auto term3 = [&energies, &op1, &op2_rho, this](const auto i, const auto j) {
+     const auto term3 = [&energies, &op1, &op2_rho, this](const auto i, const auto j) {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2_rho(j, i));
      };
@@ -172,10 +172,10 @@ class Algo_FDMmats : public Algo<S> {
      const auto wnf      = stats.wnfactor[step.ndx()];
      const auto rho_op2  = prod_fit(rhoFDM.at(Ij), op2);
      const auto op2_rho  = prod_fit(op2, rhoFDM.at(Ii));
-     auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
+     const auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
        return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
      };
-     auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j, const auto n) -> t_weight {
+     const auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j, const auto n) -> t_weight {
        const auto [Ei, Ej] = energies(i, j);
        const auto energy = Ej - Ei;
        const auto weightA = conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei/T); // a[ij] b[ji] exp(-beta e[i])
@@ -185,14 +185,14 @@ class Algo_FDMmats : public Algo<S> {
        else // bosonic w=0 && Ei=Ej case
           return -weightA/T;
      };
-     auto term2 = [&energies, &op1, &op2, &rho_op2, T = P.T.value(), wnf, this](const auto i, const auto j, const auto n) {
+     const auto term2 = [&energies, &op1, &op2, &rho_op2, T = P.T.value(), wnf, this](const auto i, const auto j, const auto n) {
        const auto [Ei, Ej] = energies(i, j);
          const auto energy = Ej - Ei;
          const auto weightA = conj_me(op1(j, i)) * op2(j, i) * wnf * exp(-Ei/T);
          const auto weightB = conj_me(op1(j, i)) * rho_op2(j, i) * (-sign);
          return (weightA + weightB) / (ww(n, gt, T)*1i - energy);
      };
-     auto term3 = [&energies, &op1, &op2, &op2_rho, T = P.T.value(), wnf, this](const auto i, const auto j, const auto n) {
+     const auto term3 = [&energies, &op1, &op2, &op2_rho, T = P.T.value(), wnf, this](const auto i, const auto j, const auto n) {
        const auto [Ei, Ej] = energies(i, j);
        const auto energy = Ej - Ei;
        const auto weightA = conj_me(op1(j, i)) * op2_rho(j, i);

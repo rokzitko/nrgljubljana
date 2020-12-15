@@ -136,17 +136,19 @@ inline CONSTFNC auto are_conjugate(const std::complex<double> &a, const std::com
 
 template<matrix M> auto frobenius_norm(const M &m) { // Frobenius norm (without taking the final square root!)
   double sum{};
-  for (auto i = 0; i < m.size1(); i++)
-    for (auto j = 0; j < m.size2(); j++) sum += pow(abs(m(i, j)),2);
+  for (auto i = 0; i < size1(m); i++)
+    for (auto j = 0; j < size2(m); j++) sum += pow(abs(m(i, j)),2);
   return sum;
 }
 
+template<matrix M> bool is_square(const M &m) { return size1(m) == size2(m); }
+
 // Check if m is upper triangular. In the lower triangle, all elements must be 0.
 template<matrix M> void check_is_matrix_upper(const M &m) {
-  my_assert(m.size1() == m.size2() && m.size1() >= 1);
-  for (auto i = 1; i < m.size1(); i++)
+  my_assert(is_square(m));
+  for (auto i = 1; i < size1(m); i++)
     for (auto j = 0; j < i; j++) // j < i
-      my_assert(m(i, j) == 0.);
+      my_assert(num_equal(m(i, j), 0));
 }
 
 // (-1)^n
@@ -157,23 +159,23 @@ template<matrix M> inline void dump_matrix(const M &m, std::ostream &F = std::co
                                            const int header_width = 7, const int column_width = 23) {
   boost::io::ios_base_all_saver ofs(F);
   F << std::setprecision(std::numeric_limits<double>::max_digits10);
-  F << fmt::format("Matrix: {}x{}\n", m.size1(), m.size2());
-  for (auto r1 = 0; r1 < m.size1(); r1++) {
+  F << fmt::format("Matrix: {}x{}\n", size1(m), size2(m));
+  for (auto r1 = 0; r1 < size1(m); r1++) {
     F << std::setw(header_width) << r1 << ":";
-    for (auto r2 = 0; r2 < m.size2(); r2++) F << std::setw(column_width) << m(r1, r2) << " ";
+    for (auto r2 = 0; r2 < size2(m); r2++) F << std::setw(column_width) << m(r1, r2) << " ";
     F << std::endl;
   }
 }
 
 template<matrix M> inline void dump_diagonal_matrix(const M &m, const size_t max_nr, std::ostream &F = std::cout) {
-  for (const auto r : range0(std::min(m.size1(), max_nr))) F << m(r,r) << ' ';
+  for (const auto r : range0(std::min(size1(m), max_nr))) F << m(r,r) << ' ';
   F << std::endl;
 }
 
 template <scalar T>
 void save(boost::archive::binary_oarchive &oa, const ublas::matrix<T> &m) {
-  oa << m.size1() << m.size2();
-  for (const auto i : range0(m.size1()))
+  oa << size1(m) << size2(m);
+  for (const auto i : range0(size1(m)))
     oa << ublas::vector<T>(ublas::matrix_row<const ublas::matrix<T>>(m, i));
 }
 
@@ -188,9 +190,6 @@ void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) { // XXX
 
 // Chop numerical noise
 template <scalar T> CONSTFNC inline T chop(const T x, const double xlimit = 1.e-8) { return std::abs(x) < xlimit ? 0.0 : x; }
-
-template<matrix M>
-void assert_issquare(const M &m) { my_assert(m.size1() == m.size2()); }
 
 // Powers, such as (-1)^n, appear in the coupling coefficients.
 CONSTFNC inline double Power(const double i, const double nn) { return std::pow(i, nn); }
@@ -239,22 +238,20 @@ CONSTFNC inline auto check_real(std::complex<double> z) {
 }
 
 template <matrix M> CONSTFNC auto trace_real(const M &m) {
-  assert_issquare(m);
-  return ranges::accumulate(range0(m.size2()), 0.0, {}, [&m](const auto i){ return check_real(m(i, i)); });
+  my_assert(is_square(m));
+  return ranges::accumulate(range0(size1(m)), 0.0, {}, [&m](const auto i){ return check_real(m(i, i)); });
 }
 
 inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); }
 
 template<matrix R> // 2D matrix or matrix view
-auto finite_size(const R &M) {
-  return M.size1() && M.size2();
-}
+auto finite_size(const R &m) { return size1(m) && size2(m); }
    
 // M += factor * A * B^\dag
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
   if (finite_size(A) && finite_size(B)) { // if this contributes at all...
-    my_assert(M.size1() == A.size1() && A.size2() == B.size2() && B.size1() == M.size2());
+    my_assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));
     my_assert(my_isfinite(factor));
     atlas::gemm(CblasNoTrans, CblasConjTrans, factor, A, B, t_coef(1.0), M);
   }
@@ -270,9 +267,9 @@ Eigen::MatrixX<T> product(const t_coef factor, const Eigen::MatrixX<T> &A, const
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void transform(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
   if (finite_size(A) && finite_size(B)) {
-    my_assert(M.size1() == A.size1() && A.size2() == O.size1() && O.size2() == B.size2() && B.size1() == M.size2());
+    my_assert(size1(M) == size1(A) && size2(A) == size1(O) && size2(O) == size2(B) && size1(B) == size2(M));
     my_assert(my_isfinite(factor));
-    Matrix T(O.size1(), B.size1());
+    Matrix T(size1(O), size1(B));
     atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = O * B^\dag
     atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
   }
@@ -288,9 +285,9 @@ Eigen::MatrixX<T> transform(const t_coef factor, const Eigen::MatrixX<T> &A, con
 template<scalar S, typename U_type, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void rotate(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
   if (finite_size(U)) {
-    my_assert(M.size1() == U.size2() && U.size1() == O.size1() && O.size2() == U.size1() && U.size2() == M.size2());
+    my_assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
     my_assert(my_isfinite(factor));
-    Matrix T(U.size2(), O.size2());
+    Matrix T(size2(U), size2(O));
     atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, O, t_coef(0.0), T); // T = U^\dag * O
     atlas::gemm(CblasNoTrans, CblasNoTrans, factor, T, U, t_coef(1.0), M); // M += factor * T * U
   }
@@ -331,7 +328,7 @@ auto submatrix(Eigen::ArrayX<S> &M, const std::pair<size_t,size_t> &r1, const st
 // 'v' is any 1D range we can iterate over
 template<typename R, matrix M>
 auto trace_exp(R && v, const M &m, const double factor) { // Tr[exp(-factor*v) m]
-  my_assert(v.size() == m.size1() && v.size() == m.size2());
+  my_assert(v.size() == size1(m) && v.size() == size2(m));
   return ranges::accumulate(range0(v.size()), typename M::value_type{}, {}, [&v, &m, factor](const auto i){ return exp(-factor * v[i]) * m(i, i); });
 }
 
@@ -360,8 +357,8 @@ auto trace_contract(const M &A, const M &B, const size_t range) // Tr[AB]
 
 template<matrix M>
 auto trim_matrix(M &mat, const size_t new_size1, const size_t new_size2) {
-  const auto old_size1 = mat.size1();
-  const auto old_size2 = mat.size2();
+  const auto old_size1 = size1(mat);
+  const auto old_size2 = size2(mat);
   if (old_size1 == 0 || old_size2 == 0) return;
   my_assert(new_size1 <= old_size1 && new_size2 <= old_size2);
   if (new_size1 == old_size1 && new_size2 == old_size2) return; // Trimming not necessary!!
@@ -372,19 +369,19 @@ auto trim_matrix(M &mat, const size_t new_size1, const size_t new_size2) {
 
 template<matrix M>
   bool has_lesseq_rows(const M &A, const M &B) {
-    return A.size1() <= B.size1() && A.size2() == B.size2();
+    return size1(A) <= size1(B) && size2(A) == size2(B);
   }
 
 template<typename T, typename U, typename V> // U and/or V may be matrix views
 auto matrix_prod(const U &A, const V &B) {
-  auto M = ublas::matrix<T>(A.size1(), B.size2());
+  auto M = ublas::matrix<T>(size1(A), size2(B));
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
   return M;
 }
 
 template<typename T, typename U, typename V> // U and/or V may be matrix views
 auto matrix_adj_prod(const U &A, const V &B) {
-  auto M = ublas::matrix<T>(A.size2(), B.size2());
+  auto M = ublas::matrix<T>(size2(A), size2(B));
   atlas::gemm(CblasConjTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
   return M;
 }
@@ -393,9 +390,9 @@ auto matrix_adj_prod(const U &A, const V &B) {
 template<matrix M>
 auto prod_fit_left(const M &A, const M &B) {
   using T = typename M::value_type;
-  my_assert(B.size1() <= A.size2());
-  if (A.size1() == 0 || B.size2() == 0) return empty_matrix<T>();
-  const auto Asub = submatrix(A, {0, A.size1()}, {0, B.size1()});
+  my_assert(size1(B) <= size2(A));
+  if (size1(A) == 0 || size2(B) == 0) return empty_matrix<T>();
+  const auto Asub = submatrix(A, {0, size1(A)}, {0, size1(B)});
   return matrix_prod<T>(Asub, B);
 }
 
@@ -403,24 +400,24 @@ auto prod_fit_left(const M &A, const M &B) {
 template<matrix M>
 auto prod_fit_right(const M &A, const M &B) {
   using T = typename M::value_type;
-  my_assert(B.size1() >= A.size2());
-  if (A.size1() == 0 || B.size2() == 0) return empty_matrix<T>();
-  const auto Bsub = submatrix(B, {0, A.size2()}, {0, B.size2()});
+  my_assert(size1(B) >= size2(A));
+  if (size1(A) == 0 || size2(B) == 0) return empty_matrix<T>();
+  const auto Bsub = submatrix(B, {0, size2(A)}, {0, size2(B)});
   return matrix_prod<T>(A, Bsub);
 }
 
 template<matrix M>
 auto prod_fit(const M &A, const M &B) {
-  return B.size1() <= A.size2() ? prod_fit_left(A, B) : prod_fit_right(A, B);
+  return size1(B) <= size2(A) ? prod_fit_left(A, B) : prod_fit_right(A, B);
 }
 
 // M = A^\dag*B, size of A is adapted to the size of B
 template<matrix M>
 inline auto prod_adj_fit_left(const M &A, const M &B) {
   using T = typename M::value_type;
-  my_assert(B.size1() <= A.size1());
-  if (A.size2() == 0 || B.size2() == 0) return empty_matrix<T>();
-  const auto Asub = submatrix(A, {0, B.size1()}, {0, A.size2()});
+  my_assert(size1(B) <= size1(A));
+  if (size2(A) == 0 || size2(B) == 0) return empty_matrix<T>();
+  const auto Asub = submatrix(A, {0, size1(B)}, {0, size2(A)});
   return matrix_adj_prod<T>(Asub, B);
 }
 

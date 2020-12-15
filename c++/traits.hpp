@@ -1,16 +1,27 @@
 #ifndef _traits_hpp_
 #define _traits_hpp_
 
+#define INCL_UBLAS
+#define INCL_EIGEN
+#define USE_UBLAS
+
 //#include <concepts> // C++20
 #include <complex>
 #include <type_traits> // is_same_v, is_floating_point_v
 
+#ifdef INCL_UBLAS
 #include <boost/numeric/ublas/matrix.hpp>
+#endif
+
+#ifdef INCL_EIGEN
 #include <Eigen/Dense>
+#endif
 
 namespace NRG {
 
+#ifdef INCL_UBLAS
 using namespace boost::numeric;
+#endif
 
 template <typename T>
      concept floating_point = std::is_floating_point_v<T>;
@@ -24,10 +35,24 @@ template <floating_point T>
 template <typename T>
      concept scalar = floating_point<T> || is_complex<T>::value;
 
+#ifdef INCL_UBLAS
+template <typename S> const auto generate_ublas = [](const size_t dim1, const size_t dim2) { return ublas::matrix<S>(dim1, dim2); };
+template <typename S> auto size1(const ublas::matrix<S> &m) { return m.size1(); }
+template <typename S> auto size2(const ublas::matrix<S> &m) { return m.size2(); }
+template <typename S> auto size1(const ublas::matrix_range<const ublas::matrix<S>> &m) { return m.size1(); }
+template <typename S> auto size2(const ublas::matrix_range<const ublas::matrix<S>> &m) { return m.size2(); }
+#endif
+
+#ifdef INCL_EIGEN
+template <typename S> const auto generate_Eigen = [](const size_t dim1, const size_t dim2) { return Eigen::MatrixX<S>(dim1, dim2); };
+template <typename S> auto size1(const Eigen::MatrixX<S> &m) { return m.rows(); }
+template <typename S> auto size2(const Eigen::MatrixX<S> &m) { return m.cols(); }
+#endif
+
 template <typename T>
   concept matrix = requires(T a, T b, size_t i, size_t j) {
-     { a.size1() }; // -> std::convertible_to<std::size_t>;
-     { a.size2() }; // -> std::convertible_to<std::size_t>;
+//     { size1(a) }; // -> std::convertible_to<std::size_t>;
+//     { size2(a) }; // -> std::convertible_to<std::size_t>;
      { a(i,j) };
      { a = b };
      { a.swap(b) };
@@ -64,7 +89,9 @@ template <> struct traits<double> {
   using t_weight = std::complex<double>;  // spectral weight accumulators (always complex)
   using evec = std::vector<double>;     // vector of eigenvalues type (always real) // YYY
   using RVector = std::vector<double>;    // vector of eigenvalues type (always real)
+#ifdef USE_UBLAS
   using Matrix = ublas::matrix<t_matel>;  // matrix type
+#endif
 };
 
 template <> struct traits<std::complex<double>> {
@@ -76,7 +103,9 @@ template <> struct traits<std::complex<double>> {
   using t_weight = std::complex<double>;
   using evec = std::vector<double>;
   using RVector = std::vector<double>;
+#ifdef USE_UBLAS
   using Matrix = ublas::matrix<t_matel>;
+#endif
 };
 
 template <scalar S> using matel_traits   = typename traits<S>::t_matel;
@@ -88,9 +117,12 @@ template <scalar S> using evec_traits    = typename traits<S>::evec;
 template <scalar S> using RVector_traits = typename traits<S>::RVector;
 template <scalar S> using Matrix_traits  = typename traits<S>::Matrix;
 
-auto generate_ublas = [](const size_t dim1, const size_t dim2) { return ublas::matrix<double>(dim1, dim2); };
-auto generate_Eigen = [](const size_t dim1, const size_t dim2) { return Eigen::MatrixXd(dim1, dim2); };
-auto generate_matrix = generate_ublas;
+#ifdef USE_UBLAS
+template <scalar S> const auto generate_matrix = generate_ublas<S>;
+#endif
+
+template <matrix M> auto nrvec(const M &m) { return size1(m); }
+template <matrix M> auto dim(const M &m) { return size2(m); }
 
 } // namespace
 
