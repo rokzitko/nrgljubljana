@@ -7,6 +7,7 @@
 #include <utility>
 #include <list>
 #include <string>
+#include <stdexcept>
 #include <cmath>
 
 #include <boost/archive/binary_iarchive.hpp>
@@ -28,17 +29,18 @@ inline const auto fn_rho {"rho"s};
 inline const auto fn_rhoFDM {"rhofdm"s};
 
 // Base class for parameter containers
+// XXX C++20: std::string may be constexpr
 class parambase {
  protected:
-   const std::string keyword;
-   const std::string desc;
+   std::string keyword;
+   std::string desc;
  public:
    parambase(const std::string &keyword, const std::string &desc) : keyword(keyword), desc(desc) {};
    virtual ~parambase() = default;
    virtual void setvalue_str(const std::string &new_value) = 0;
-   virtual void dump(std::ostream &F = std::cout)  = 0;
-   [[nodiscard]] std::string getkeyword() const { return keyword; }
-   [[nodiscard]] std::string getdesc() const { return desc; }
+   virtual void dump(std::ostream &F = std::cout) = 0;
+   [[nodiscard]] auto getkeyword() const noexcept { return keyword; }
+   [[nodiscard]] auto getdesc() const noexcept { return desc; }
 };
 
 // Templated specialized classes for various storage types (int, double, string, bool)
@@ -62,14 +64,14 @@ class param : public parambase {
      F << keyword << "=" << data << (!is_default ? " *" : "") << std::endl;
    }
    // This line enables to access parameters using an object as a rvalue
-   [[nodiscard]] inline operator const T &() const { return data; }
-   [[nodiscard]] inline T value() const { return data; }
+   [[nodiscard]] inline operator const T &() const noexcept { return data; }
+   [[nodiscard]] inline T value() const noexcept { return data; }
    void setvalue_str(const std::string &new_value) override { // used in parser
      data       = from_string<T>(new_value);
      is_default = false;
    }
-   void setvalue(const T newdata) { data = newdata; }
-   bool operator == (const T &b) const { return data == b; }
+   void setvalue(const T newdata) noexcept { data = newdata; }
+   bool operator == (const T &b) const noexcept { return data == b; }
 };
 
 // CONVENTION: parameters that are user configurable are declared as param<T>, other parameters (set at runtime) are
@@ -387,17 +389,17 @@ class Params {
 
   // **************************
   // Formatting of output files
-  param<size_t> width_td{"width_td", "Widht of columns in 'td'", "16", all};               // N
-  param<size_t> width_custom{"width_custom", "Width of columns in 'custom'", "16", all};   // N
-  param<size_t> prec_td{"prec_td", "Precision of columns in 'td'", "10", all};             // N
-  param<size_t> prec_custom{"prec_custom", "Precision of columns in 'custom'", "10", all}; // N
-  param<size_t> prec_xy{"prec_xy", "Precision of spectral function output", "10", all};    // N
+  param<int> width_td{"width_td", "Widht of columns in 'td'", "16", all};               // N
+  param<int> width_custom{"width_custom", "Width of columns in 'custom'", "16", all};   // N
+  param<int> prec_td{"prec_td", "Precision of columns in 'td'", "10", all};             // N
+  param<int> prec_custom{"prec_custom", "Precision of columns in 'custom'", "10", all}; // N
+  param<int> prec_xy{"prec_xy", "Precision of spectral function output", "10", all};    // N
 
   // Checkpoint-restart functionality. Attempt to restart calculation
   // by reading the "unitary*" files from a previous calculation.
   // Automatically determines the number of files.
   param<bool> resume{"resume", "Attempt restart?", "false", all}; // N
-  int laststored;                                            // int, because -1 indicates that no stored data was found
+  int laststored = -1;                                            // int, because -1 indicates that no stored data was found
 
   /* Fine-grained control over data logging with the following tokens:
    i - iteration (subspaces list)
@@ -526,9 +528,9 @@ class Params {
       perchannel = 1;
     }
     my_assert(perchannel >= 1);
-    spin                    = symtype == "SL" || symtype == "SL3" ? 1 : 2;
-    const int statespersite = intpow(2, spin);
-    combs                   = !substeps ? intpow(statespersite, channels) : statespersite;
+    spin                     = symtype == "SL" || symtype == "SL3" ? 1 : 2;
+    const auto statespersite = intpow(2, spin);
+    combs                    = !substeps ? intpow(statespersite, channels) : statespersite;
     if (logletter('!'))
       fmt::print("coefchannels={} perchannel={} combs={}", coefchannels, perchannel, combs);
   }
@@ -618,7 +620,7 @@ class Params {
 
   // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the
   // energies on the original scale. Also named the "reduced bandwidth".
-  double SCALE(int N) const {
+  auto SCALE(int N) const {
     double scale = 0.0;
     if (discretization == "Y"s)
       // Yoshida,Whitaker,Oliveira PRB 41 9403 Eq. (39)
@@ -630,7 +632,7 @@ class Params {
       scale *= pow(Lambda, -(N - 1) / 2. + 1 - z); // NOLINT
     else
       scale *= pow(Lambda, -N / (2. * channels) + 3 / 2. - z); // NOLINT
-    my_assert(scale != 0.0);        // yes, != is intentional here.
+    my_assert(scale != 0.0);     // yes, != is intentional here.
     scale = scale * bandrescale; // RESCALE   // XXX: is this the appropriate place for rescaling? compatible with P.absolute==true?
     return scale;
   }

@@ -11,10 +11,14 @@
 #include <iomanip>
 #include <vector>
 #include <fstream>
+#include <stdexcept>
 #include <range/v3/all.hpp>
 #include <boost/io/ios_state.hpp>
 #include <boost/math/special_functions/sign.hpp>
 
+#include "traits.hpp" // defines INCL_UBLAS and/or INCL_EIGEN
+
+#ifdef INCL_UBLAS
 // ublas matrix & vector containers
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -28,8 +32,11 @@
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
+#endif
 
+#ifdef INCL_EIGEN
 #include <Eigen/Dense>
+#endif
 
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
@@ -42,13 +49,14 @@
 
 #include "portabil.hpp"
 #include "misc.hpp"
-#include "traits.hpp"
 
 namespace NRG {
 
+#ifdef INCL_UBLAS
 using namespace boost::numeric;
 using namespace boost::numeric::ublas; // keep this!
 namespace atlas = boost::numeric::bindings::atlas;
+#endif
 
 template <typename T>
   using complex_array_ref_t = T(&)[2];
@@ -67,10 +75,11 @@ template<typename T>
   }
 
 template<typename U, typename V>
-  V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs
+V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs
     return ranges::accumulate(v, V{}, {}, [](const auto el) { return el.second; }); // XXX
-  }
+}
  
+// XXX: conj() is constexpr in C++20
 [[nodiscard]] inline std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
 [[nodiscard]] inline double conj_me(const double x) { return x; }    // no op
 
@@ -101,8 +110,8 @@ public:
   explicit generic_bucket(std::vector<std::pair<T1, T>> v) {
     for (const auto &i : v) value += i.second;
   }
-  inline T operator+=(T x) { return value += x; }
-  inline operator T() const { return value; }
+  inline constexpr T operator+=(T x) { return value += x; }
+  [[nodiscard]] inline constexpr operator T() const { return value; }
 };
 using bucket = generic_bucket<double>;
 
@@ -111,28 +120,28 @@ inline constexpr bool is_odd(const T n) { return n & 1; } // must return bool
 template <typename T>
 inline constexpr bool is_even(const T n) { return !is_odd(n); } // must return bool
 
-inline CONSTFNC int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
+inline constexpr int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
   if (x == 0.0 && y == 0.0) return 0.0; // evidently equal
   if (std::abs(x) < small_epsilon && std::abs(y) < small_epsilon) return 0; // If both x and y are small, we ASSUME them to be equivalent
   if (std::abs(x-y) < rel_epsilon * (std::abs(x)+std::abs(y))) return 0;
   return boost::math::sign(x-y);
 }
 
-inline CONSTFNC int my_fcmp(const double x, const double y, const double epsilon) { return my_fcmp(x, y, epsilon, epsilon); }
+inline constexpr int my_fcmp(const double x, const double y, const double epsilon) { return my_fcmp(x, y, epsilon, epsilon); }
 
 // Test if two numbers are equal to within numerical errors. (Use this for comparing values that are expected to be
 // of order 1.)
-inline CONSTFNC auto num_equal(const double a, const double b, const double check_precision = 1.e-12) {
+inline constexpr auto num_equal(const double a, const double b, const double check_precision = 1.e-12) {
   return my_fcmp(a, b, check_precision) == 0;
 }
 
-inline CONSTFNC auto num_equal(const std::complex<double> &a, const std::complex<double> &b, const double check_precision = 1.e-12) {
+inline constexpr auto num_equal(const std::complex<double> &a, const std::complex<double> &b, const double check_precision = 1.e-12) {
   return (my_fcmp(a.real(), b.real(), check_precision) == 0) && (my_fcmp(a.imag(), b.imag(), check_precision) == 0);
 }
 
-inline CONSTFNC auto are_conjugate(const double a, const double b) { return num_equal(a, b); }
+inline constexpr auto are_conjugate(const double a, const double b) { return num_equal(a, b); }
 
-inline CONSTFNC auto are_conjugate(const std::complex<double> &a, const std::complex<double> &b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
+inline constexpr auto are_conjugate(const std::complex<double> &a, const std::complex<double> &b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
 
 template<matrix M> auto frobenius_norm(const M &m) { // Frobenius norm (without taking the final square root!)
   double sum{};
@@ -152,7 +161,7 @@ template<matrix M> void check_is_matrix_upper(const M &m) {
 }
 
 // (-1)^n
-CONSTFNC inline auto psgn(const int n) { return n % 2 == 0 ? 1.0 : -1.0; }
+inline constexpr auto psgn(const int n) { return n % 2 == 0 ? 1.0 : -1.0; }
 
 // Dump a matrix with full numerical precision. The columns are aligned for easier inspection. Expect large output!
 template<matrix M> inline void dump_matrix(const M &m, std::ostream &F = std::cout, 
@@ -189,10 +198,10 @@ void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) { // XXX
 }
 
 // Chop numerical noise
-template <scalar T> CONSTFNC inline T chop(const T x, const double xlimit = 1.e-8) { return std::abs(x) < xlimit ? 0.0 : x; }
+template <scalar T> inline constexpr T chop(const T x, const double xlimit = 1.e-8) { return std::abs(x) < xlimit ? 0.0 : x; }
 
 // Powers, such as (-1)^n, appear in the coupling coefficients.
-CONSTFNC inline double Power(const double i, const double nn) { return std::pow(i, nn); }
+inline constexpr double Power(const double i, const double nn) { return std::pow(i, nn); }
 
 // Read 'size' values of type T into a ublas vector<T>.
 template <scalar T> auto read_ublas_vector(std::istream &F, const size_t size) {
@@ -225,24 +234,24 @@ template <scalar T> auto read_matrix(std::istream &F, const size_t size1, const 
 }
 
 // Check if the value x is real [for complex number calculations].
-CONSTFNC inline auto is_real(const double x) { return x; }
-CONSTFNC inline auto is_real(const std::complex<double> z, const double check_real_tolerance = 1e-8) {
+constexpr inline auto is_real(const double x) { return true; }
+constexpr inline auto is_real(const std::complex<double> z, const double check_real_tolerance = 1e-8) {
   return abs(z.imag()) <= check_real_tolerance;
 }
 
 // Check if x is real and return the real part, i.e. x.real().
-CONSTFNC inline auto check_real(double x) { return x; }
-CONSTFNC inline auto check_real(std::complex<double> z) {
+constexpr inline auto check_real(double x) { return x; }
+constexpr inline auto check_real(std::complex<double> z) {
   if (!is_real(z)) std::cout << "Warning: expected real number, but got " << z << std::endl;
   return z.real();
 }
 
-template <matrix M> CONSTFNC auto trace_real(const M &m) {
+template <matrix M> auto trace_real(const M &m) {
   my_assert(is_square(m));
   return ranges::accumulate(range0(size1(m)), 0.0, {}, [&m](const auto i){ return check_real(m(i, i)); });
 }
 
-inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); }
+inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); } // sqrt() not constexpr for complex
 
 template<matrix R> // 2D matrix or matrix view
 auto finite_size(const R &m) { return size1(m) && size2(m); }

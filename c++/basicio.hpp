@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip> // set_precision
 #include <iterator> // ostream_iterator
+#include <stdexcept>
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
@@ -16,10 +17,6 @@
 #include <fmt/ranges.h>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-
-#include <Eigen/Dense>
 
 #include "portabil.hpp"
 #include "traits.hpp"
@@ -118,7 +115,7 @@ inline bool file_exists(const std::string &fn)
    return bool(F);
 }
 
-inline auto count_words_in_string(const std::string &s) {
+inline size_t count_words_in_string(const std::string &s) { // size_t because it should be unsigned
   std::stringstream stream(s);
   return std::distance(std::istream_iterator<std::string>(stream), std::istream_iterator<std::string>());
 }
@@ -133,8 +130,8 @@ inline auto read_one(T &F) {
   
 // Determine the matrix dimensions from a stream of rows of white-space-separated tabulated values
 inline auto get_dims(std::istream &F) {
-  auto dim1 = 0; // number of rows
-  auto dim2 = 0; // number of columns
+  size_t dim1 = 0; // number of rows
+  size_t dim2 = 0; // number of columns
   while (F.good()) {
     std::string s;
     std::getline(F, s);
@@ -185,19 +182,23 @@ auto read_matrix_bin(GEN && generate_matrix, const std::string &filename, const 
   return read_matrix_data(generate_matrix, [&F]() { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
 }
 
+#ifdef INCL_UBLAS
 inline auto read_matrix_ublas(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
   auto M = bin ? read_matrix_bin(generate_ublas<double>, filename, verbose) 
                : read_matrix_text(generate_ublas<double>, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;
 }
+#endif
 
+#ifdef INCL_EIGEN
 inline auto read_matrix_Eigen(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
   auto M = bin ? read_matrix_bin(generate_Eigen<double>, filename, verbose) 
                : read_matrix_text(generate_Eigen<double>, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;
 }
+#endif
 
 inline auto read_matrix(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
   auto M = bin ? read_matrix_bin(generate_matrix<double>, filename, verbose) 

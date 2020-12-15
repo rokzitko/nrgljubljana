@@ -101,7 +101,7 @@ auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S
     auto h = hamiltonian(step, I, opch, coef, diagprev, output, Sym, P); // non-const, consumed by diagonalise()
     const int thid = omp_get_thread_num();
 #pragma omp critical
-    { nrglog('(', "Diagonalizing " << I << " size=" << h.size1() << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
+    { nrglog('(', "Diagonalizing " << I << " dim=" << dim(h) << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
     auto e = diagonalise(h, DP, -1); // -1 = not using MPI
 #pragma omp critical
     { diagnew[I] = Eigen(std::move(e), step); }

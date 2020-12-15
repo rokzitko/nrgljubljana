@@ -34,10 +34,11 @@ inline auto contains(const std::string &str, const char c) {
 }
 
 // x raised to the power of n
-CONSTFNC inline auto intpow(const int x, const int n) {
+template<typename T, typename N>
+constexpr inline auto intpow(const T x, const N n) {
   my_assert(n >= 0);
-  auto res = 1;
-  for (auto i = 1; i <= n; i++) res *= x;
+  T res = 1;
+  for (N i = 1; i <= n; i++) res *= x;
   return res;
 }
    
@@ -133,7 +134,7 @@ inline auto parser(const std::string &filename, const std::string &block) {
 class string_token {
  private:
    std::istringstream iss;
-   const std::set<std::string> l;
+   std::set<std::string> l;
  public:
    explicit string_token(const std::string &s) : iss(s),
      l(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>()) {};
@@ -143,7 +144,7 @@ class string_token {
 // Skip comment lines in the input stream 'f'.
 inline void skip_comments(std::istream &f, const bool output = false, std::ostream &OUT = std::cout) {
   while (f) {
-    char ch = f.peek();
+    const auto ch = f.peek();
     // skip white space and line breaks
     if (ch == ' ' || ch == '\t' || ch == '\n') {
       f.ignore();
@@ -161,7 +162,7 @@ inline void skip_comments(std::istream &f, const bool output = false, std::ostre
 // Sort according to the first component of the pair. Second component is ignored (unlike in the default sort
 // function).
 struct sortfirst {
-  template <typename T1, typename T2> bool operator()(const std::pair<T1, T2> &xy1, const std::pair<T1, T2> &xy2) { return xy1.first < xy2.first; }
+  template <typename T1, typename T2> constexpr bool operator()(const std::pair<T1, T2> &xy1, const std::pair<T1, T2> &xy2) { return xy1.first < xy2.first; }
 };
 
 template<typename T> auto range0(const T b) { return boost::irange(T{0}, b); }
@@ -217,6 +218,7 @@ void writetable(const std::vector<std::pair<T1, T2>> &re, std::string filename, 
   for (const auto & [x, y] : re) F << x << " " << y << std::endl;
 }
 
+// these should be moved to numerics.hpp !
 template <typename T>
 Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> ublas_to_eigen(ublas::matrix<T> m){
   Eigen::Map<Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>> m_eigen(m.data().begin(),m.size1(),m.size2());

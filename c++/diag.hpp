@@ -52,14 +52,14 @@ auto copy_results(const V &eigenvalues, U* eigenvectors, const char jobz, const 
   RawEigen<S> d(M, dim);
   copy_val(eigenvalues, d.val, M);
   if (jobz == 'V') copy_vec(eigenvectors, d.vec, dim, M);
-  my_assert(d.val.size() == d.vec.size1());
+  my_assert(d.val.size() == nrvec(d.vec));
   return d;
 }
 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
 template<real_matrix RM>
-auto diagonalise_dsyev(RM &m, const char jobz = 'V') { // XXXXX: auto
-  const auto dim = m.size1();
+auto diagonalise_dsyev(RM &m, const char jobz = 'V') {
+  const auto dim = size1(m);
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
@@ -82,7 +82,7 @@ auto diagonalise_dsyev(RM &m, const char jobz = 'V') { // XXXXX: auto
 template<real_matrix RM>
 auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 {
-  const auto dim = m.size1();
+  const auto dim = size1(m);
   auto ham       = data(m);
   std::vector<double> eigenvalues(dim);
   char UPLO  = 'L';
@@ -113,7 +113,7 @@ auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 
 template<real_matrix RM>
 auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') {
-  const auto dim = m.size1();
+  const auto dim = size1(m);
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
   auto M = dim;
@@ -169,7 +169,7 @@ auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') 
 
 template<complex_matrix CM>
 auto diagonalise_zheev(CM &m, const char jobz = 'V') {
-  const auto dim = m.size1();
+  const auto dim = size1(m);
   auto ham       = reinterpret_cast<lapack_complex_double*>(data(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
@@ -193,7 +193,7 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V') {
 
 template<complex_matrix CM>
 auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
-  const auto dim = m.size1();
+  const auto dim = size1(m);
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
   auto M = dim;
@@ -254,7 +254,7 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') 
 // equal to the dimension of the matrix h. Matrix m is destroyed in the process, thus no const attribute!
 template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank) {
   using S = typename M::value_type;
-  mpilog("diagonalise " << m.size1() << "x" << m.size2() << " " << DP.diag << " " << DP.diagratio);
+  mpilog("diagonalise " << size1(m) << "x" << size2(m) << " " << DP.diag << " " << DP.diagratio);
   Timing timer;
   check_is_matrix_upper(m);
   RawEigen<S> d;
@@ -279,7 +279,7 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
   if (DP.logletter('e'))
     d.dump_eigenvalues();
   const std::string rank_string = myrank >= 0 ? " [rank=" + std::to_string(myrank) + "]" : "";
-  nrglogdp('A', "LAPACK, dim=" << m.size1() << " M=" << nr_computed << rank_string);
+  nrglogdp('A', "LAPACK, dim=" << dim(m) << " M=" << nr_computed << rank_string);
   nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << rank_string);
   d.check_diag();
   return d;

@@ -4,14 +4,18 @@
 #include <iostream>
 #include <string>
 #include <complex>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <Eigen/Dense>
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
-#define H5_USE_BOOST
-#define H5_USE_EIGEN
+#include "traits.hpp"
+
+#ifdef INCL_UBLAS
+#define H5_USE_BOOST // for H5Easy
+#endif
+#ifdef INCL_EIGEN
+#define H5_USE_EIGEN // for H5Easy
+#endif
 #include <highfive/H5Easy.hpp>
 
 namespace NRG {
@@ -27,7 +31,8 @@ namespace NRG {
    void h5_dump_vector(H5Easy::File &file, const std::string &path, const std::vector<T> &vec) {
      H5Easy::dump(file, path, vec);
    }
-   
+
+#ifdef INCL_UBLAS
    inline void h5_dump_matrix(H5Easy::File &file, const std::string &path, const ublas::matrix<double> &m) {
      H5Easy::detail::createGroupsToDataSet(file, path);
      HighFive::DataSet dataset = file.createDataSet<double>(path, HighFive::DataSpace::From(m));
@@ -38,7 +43,9 @@ namespace NRG {
      ublas::matrix<double> mr = ublas::real(m);
      h5_dump_matrix(file, path, mr);
    }
+#endif
 
+#ifdef INCL_EIGEN
    inline void _eigen_h5_dump_matrix(H5Easy::File &file, const std::string &path, const Eigen::MatrixXd &m) {
       H5Easy::detail::createGroupsToDataSet(file, path);
       HighFive::DataSet dataset = file.createDataSet<double>(path, HighFive::DataSpace::From(m));
@@ -49,6 +56,7 @@ namespace NRG {
      Eigen::MatrixXd mr = m.real();
      _eigen_h5_dump_matrix(file, path, mr);
    }
+#endif
 }
 
 #endif

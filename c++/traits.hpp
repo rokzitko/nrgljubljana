@@ -51,8 +51,8 @@ template <typename S> auto size2(const Eigen::MatrixX<S> &m) { return m.cols(); 
 
 template <typename T>
   concept matrix = requires(T a, T b, size_t i, size_t j) {
-//     { size1(a) }; // -> std::convertible_to<std::size_t>;
-//     { size2(a) }; // -> std::convertible_to<std::size_t>;
+     { size1(a) }; // -> std::convertible_to<std::size_t>;
+     { size2(a) }; // -> std::convertible_to<std::size_t>;
      { a(i,j) };
      { a = b };
      { a.swap(b) };
@@ -92,6 +92,9 @@ template <> struct traits<double> {
 #ifdef USE_UBLAS
   using Matrix = ublas::matrix<t_matel>;  // matrix type
 #endif
+#ifdef USE_EIGEN
+  using Matrix = Eigen::MatrixX<t_matel>; // matrix type
+#endif
 };
 
 template <> struct traits<std::complex<double>> {
@@ -106,6 +109,9 @@ template <> struct traits<std::complex<double>> {
 #ifdef USE_UBLAS
   using Matrix = ublas::matrix<t_matel>;
 #endif
+#ifdef USE_EIGEN
+  using Matrix = Eigen::MatrixX<t_matel>; // matrix type
+#endif
 };
 
 template <scalar S> using matel_traits   = typename traits<S>::t_matel;
@@ -119,6 +125,9 @@ template <scalar S> using Matrix_traits  = typename traits<S>::Matrix;
 
 #ifdef USE_UBLAS
 template <scalar S> const auto generate_matrix = generate_ublas<S>;
+#endif
+#ifdef USE_EIGEN
+template <scalar S> const auto generate_matrix = generate_Eigen<S>;
 #endif
 
 template <matrix M> auto nrvec(const M &m) { return size1(m); }

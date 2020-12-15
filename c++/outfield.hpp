@@ -8,6 +8,7 @@
 #include <string>
 #include <fstream>
 #include <optional>
+#include <stdexcept>
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
@@ -20,9 +21,9 @@ class Outfield {
  private:
    std::string desc;
    std::string value{};
-   size_t prec, width;
+   int prec, width;
  public:
-   explicit Outfield(const std::string &desc, const size_t prec, const size_t width) : desc(desc), prec(prec), width(width) {}
+   explicit Outfield(const std::string &desc, const int prec, const int width) : desc(desc), prec(prec), width(width) {}
    template<typename T> void set_value(const T x) {
      value = fmt::format("{x:>{width}.{prec}}", "x"_a = x, "prec"_a = prec, "width"_a = width);
    }
@@ -33,7 +34,7 @@ class Outfield {
 
 class Allfields : std::vector<Outfield> {
   private:
-    const size_t prec, width;
+    int prec, width;
   public:
     void add(const std::string &desc, const int position = -1) {
       if (position == -1) {
@@ -76,7 +77,7 @@ class Allfields : std::vector<Outfield> {
 
 class TD_generic {
  private:
-  const std::string filename;
+  std::string filename;
   std::optional<std::ofstream> O;
  public:
   Allfields allfields;

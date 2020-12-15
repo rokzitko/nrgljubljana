@@ -136,7 +136,7 @@ class Opch : public std::vector<OpchChannel<S>> {
       for (auto &oc: *this) {
         oc.resize(P.perchannel);
         for (auto &o: oc)
-          o.clear(); // set all ublas matrix elements to zero
+          o.clear(); // set all matrix elements to zero
       }
    }
    explicit Opch(std::istream &fdata, const DiagInfo<S> &diag, const Params &P) {

@@ -4,10 +4,9 @@
 #include <vector>
 #include <string>
 #include <limits> // quiet_NaN
+#include <stdexcept>
 
 #include <boost/range/adaptor/map.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
 
 #include <range/v3/all.hpp>
 
@@ -103,14 +102,14 @@ class Vectors {
   private:
     Matrix m;
   public:
-    auto M() const { return m.size1(); }
-    auto dim() const { return m.size2(); }
+    auto M() const { return size1(m); }
+    auto dim() const { return size2(m); }
     void set(Matrix m_) { m = std::move(m_); my_assert(M() <= dim()); }
     const auto & get() const { return m; }
     void resize(const size_t size1, const size_t size2) { m.resize(size1, size2); }
     const auto & operator()() const { return m; }
     void standard_basis(const size_t size) {
-      m = ublas::identity_matrix<t_matel>(size);
+      m = ublas::identity_matrix<t_matel>(size); // XXX: Eigen version? => generic function in numerics.hpp
     }
     auto submatrix(const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2) const {
       return NRG::submatrix(m, r1, r2);
@@ -155,8 +154,8 @@ public:
   }
   void truncate(const size_t nr) {
     for (auto &i : blocks) {
-      my_assert(nr <= i.size1());
-      i.resize(nr, i.size2());
+      my_assert(nr <= nrvec(i));
+      i.resize(nr, dim(i));
     }
   }
   void save(boost::archive::binary_oarchive &oa) const {
@@ -182,8 +181,8 @@ public:
     val.resize(M);
     vec.resize(M, dim);
   }
-  auto getnrcomputed() const { my_assert(val.size() == vec.size1()); return val.size(); } // nr eigenvalue/eigenvector pairs
-  auto getdim() const { return vec.size2(); } // matrix dimension (length of eigenvectors)
+  auto getnrcomputed() const { my_assert(val.size() == nrvec(vec)); return val.size(); } // nr eigenvalue/eigenvector pairs
+  auto getdim() const { return dim(vec); } // matrix dimension (length of eigenvectors)
   void dump_eigenvalues(const size_t max_nr = std::numeric_limits<size_t>::max(), std::ostream &F = std::cout) const {
     F << "eig= " << std::setprecision(std::numeric_limits<double>::max_digits10);
     ranges::for_each_n(val.begin(), std::min(val.size(), max_nr), [&F](const double x) { F << x << ' '; });

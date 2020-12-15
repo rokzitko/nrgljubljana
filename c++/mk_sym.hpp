@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <string>
+#include <stdexcept>
+
 #include "params.hpp"
 #include "symmetry.hpp"
 #include "outfield.hpp"

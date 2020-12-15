@@ -57,19 +57,18 @@ TEST(params, Defaults) {
   EXPECT_EQ(P.fixeps, 1e-15);
   EXPECT_EQ(P.dm, false);
   EXPECT_EQ(P.strategy, "kept");
-  EXPECT_EQ(P.Ninit, 0ul);
   EXPECT_EQ(P.bins, 1000ul);
   EXPECT_EQ(P.discard_trim, 1e-16);
   EXPECT_EQ(P.discard_immediately, 1e-16);
-  EXPECT_EQ(P.prec_td, 10ul);
-  EXPECT_EQ(P.prec_custom, 10ul);
-  EXPECT_EQ(P.prec_xy, 10ul);
+  EXPECT_EQ(P.prec_td, 10);
+  EXPECT_EQ(P.prec_custom, 10);
+  EXPECT_EQ(P.prec_xy, 10);
   EXPECT_EQ(P.done, true);
   EXPECT_EQ(P.calc0, true);
   EXPECT_EQ(P.lastall, false);
   EXPECT_EQ(P.lastalloverride, false);
 
-  EXPECT_EQ(P.Ninit, 0ul);
+  EXPECT_EQ(P.Ninit.value(), 0);
   EXPECT_EQ(P.Nmax, 0ul);
   EXPECT_EQ(P.ZBW(), true);
 }

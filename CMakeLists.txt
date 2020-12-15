@@ -74,7 +74,21 @@ target_compile_options(project_warnings
   INTERFACE
     -Wall
     -Wextra
+#    -Wshadow  # because constructors
+    -Wnon-virtual-dtor
+#    -Wold-style-cast  # because Eigen
+    -Wcast-align
+    -Wunused
+    -Woverloaded-virtual
     -Wpedantic
+#    -Wconversion ### USEFUL!
+#    -Wsign-conversion # because {fmt}, Eigen
+    -Wdouble-promotion
+    -Wduplicated-cond
+#    -Wduplicated-branches  # because Eigen
+    -Wlogical-op
+#    -Wuseless-cast  # because Ranges
+#    -Wlifetime # clang only
     -Wno-sign-compare
     -Wno-extra-semi
     -Wno-unused-parameter

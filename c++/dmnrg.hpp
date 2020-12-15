@@ -65,9 +65,9 @@ void cdmI(const size_t i,        // Subspace index
   my_assert(i < P.combs);
   nrglog('D', "cdmI i=" << i << " I1=" << I1 << " factor=" << factor);
   // Range of indexes r and r' in matrix C^{QS,N}_{r,r'}, cf. Eq. (3.55) in my dissertation.
-  const auto dim = rhoNEW.size2();
+  const auto dim = size2(rhoNEW);
   // number of states taken into account in the density-matrix at *current* (Nth) stage (in subspace I1)
-  const auto nromega = rhoN.size2();
+  const auto nromega = size2(rhoN);
   if (nromega == 0 || dim == 0) return;   // continue only if connection exists
   // rmax (info[I1].rmax[i]) is the range of r in U^N_I1(omega|ri), only those states that we actually kept..
   const auto rmax = store[N].at(I1).rmax.rmax(i);

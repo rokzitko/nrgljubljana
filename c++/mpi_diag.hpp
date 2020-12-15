@@ -6,7 +6,6 @@
 #include <deque>
 #include <algorithm>
 
-#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/collectives.hpp> // broadcast
@@ -52,11 +51,12 @@ class MPI_diag {
        mpienv.abort(1);
      }
    }
+#ifdef INCL_UBLAS
    // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
    template<scalar S> void send_matrix(const int dest, const ublas::matrix<S> &m) {
-     const auto size1 = m.size1();
+     const auto size1 = NRG::size1(m);
      mpiw.send(dest, TAG_MATRIX_SIZE, size1);
-     const auto size2 = m.size2();
+     const auto size2 = NRG::size2(m);
      mpiw.send(dest, TAG_MATRIX_SIZE, size2);
      mpilog("Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
      for (const auto i: range0(size1)) {
@@ -79,6 +79,7 @@ class MPI_diag {
      }
      return m;
    }
+#endif
    template<scalar S> void send_raweigen(const int dest, const RawEigen<S> &eig) {
      mpilog("Sending eigen from " << mpiw.rank() << " to " << dest);
      mpiw.send(dest, TAG_EIGEN_VEC, eig.val);
@@ -130,7 +131,7 @@ class MPI_diag {
          // On master, we take short jobs from the end. On slaves, we take long jobs from the beginning.
          const Invar I = i == 0 ? get_back(tasks_todo) : get_front(tasks_todo);
          auto h = hamiltonian(step, I, opch, coef, diagprev, output, Sym, P); // non-const
-         nrglog('M', "Scheduler: job " << I << " (dim=" << h.size1() << ")" << " on node " << i);
+         nrglog('M', "Scheduler: job " << I << " (dim=" << dim(h) << ")" << " on node " << i);
          if (i == 0) {
            // On master, diagonalize immediately.
            auto e = diagonalise(h, DP, myrank());
