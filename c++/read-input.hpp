@@ -67,13 +67,12 @@ inline void determine_Nmax_Nlen(const Coef<S> &coef, Params &P) { // Params is n
 template<scalar S>
 struct initial_data {
 public:
-//  std::string sym_string;
-//  size_t channels;
-//  size_t Nmax;
-//  size_t nsub;
-  std::shared_ptr<Symmetry<S>> Sym;
-  DiagInfo<S> diag0;
-  Operators<S> operators0;
+  std::string sym_string;
+  size_t channels;
+  size_t Nmax;
+  size_t nsubs;
+  DiagInfo<S> diag;
+  Operators<S> operators;
   Coef<S> coef;
   double GS_energy = 0.0;
   initial_data(Params &P) : coef(P) {};
@@ -81,21 +80,21 @@ public:
    
 // Read all initial energies and matrix elements
 template<scalar S> 
-inline auto read_data(Params &P, std::string filename = "data") {
+auto read_data(Params &P, const std::string &filename = "data") {
   initial_data<S> init(P);
   std::ifstream fdata(filename);
   if (!fdata) throw std::runtime_error("Can't load initial data.");
-  auto sym_string = parse_datafile_header(fdata);
-  auto channels   = read_one<size_t>(fdata); // Number of channels in the bath
-  auto Nmax       = read_one<size_t>(fdata); // Length of the Wilson chain
-  auto nsubs      = read_one<size_t>(fdata); // Number of invariant subspaces
-  my_assert(sym_string == P.symtype.value());
-  P.set_channels(channels);
-  init.Sym = set_symmetry<S>(P);
-  P.Nmax = Nmax;
-  init.diag0 = DiagInfo<S>(fdata, nsubs, P); // 0-th step of the NRG iteration
-  init.operators0.opch = Opch<S>(fdata, init.diag0, P);
+  init.sym_string = parse_datafile_header(fdata);
+  init.channels   = read_one<size_t>(fdata); // Number of channels in the bath
+  init.Nmax       = read_one<size_t>(fdata); // Length of the Wilson chain
+  init.nsubs      = read_one<size_t>(fdata); // Number of invariant subspaces
+  my_assert(init.sym_string == P.symtype.value());
+  P.set_channels(init.channels);
+  std::shared_ptr<Symmetry<S>> Sym = set_symmetry<S>(P);
+  P.Nmax = init.Nmax;
+  init.diag = DiagInfo<S>(fdata, init.nsubs, P); // 0-th step of the NRG iteration
   skip_comments(fdata);
+  init.operators.opch = Opch<S>(fdata, init.diag, P);
   while (true) {
     /* skip white space */
     while (!fdata.eof() && std::isspace(fdata.peek())) fdata.get();
@@ -109,13 +108,13 @@ inline auto read_data(Params &P, std::string filename = "data") {
         // ignore embedded comment lines
         break;
       case 'e': init.GS_energy = read_one<double>(fdata); break;
-      case 's': init.operators0.ops[opname]  = MatrixElements<S>(fdata, init.diag0); break;
-      case 'p': init.operators0.opsp[opname] = MatrixElements<S>(fdata, init.diag0); break;
-      case 'g': init.operators0.opsg[opname] = MatrixElements<S>(fdata, init.diag0); break;
-      case 'd': init.operators0.opd[opname]  = MatrixElements<S>(fdata, init.diag0); break;
-      case 't': init.operators0.opt[opname]  = MatrixElements<S>(fdata, init.diag0); break;
-      case 'o': init.operators0.opot[opname] = MatrixElements<S>(fdata, init.diag0); break;
-      case 'q': init.operators0.opq[opname]  = MatrixElements<S>(fdata, init.diag0); break;
+      case 's': init.operators.ops[opname]  = MatrixElements<S>(fdata, init.diag); break;
+      case 'p': init.operators.opsp[opname] = MatrixElements<S>(fdata, init.diag); break;
+      case 'g': init.operators.opsg[opname] = MatrixElements<S>(fdata, init.diag); break;
+      case 'd': init.operators.opd[opname]  = MatrixElements<S>(fdata, init.diag); break;
+      case 't': init.operators.opt[opname]  = MatrixElements<S>(fdata, init.diag); break;
+      case 'o': init.operators.opot[opname] = MatrixElements<S>(fdata, init.diag); break;
+      case 'q': init.operators.opq[opname]  = MatrixElements<S>(fdata, init.diag); break;
       case 'z':
         init.coef.xi.read(fdata, P.coefchannels);
         init.coef.zeta.read(fdata, P.coefchannels);
@@ -139,7 +138,7 @@ inline auto read_data(Params &P, std::string filename = "data") {
   }
   if (std::string(P.tri) == "cpp") Tridiag<S>(init.coef, P); // before calling determine_Nmax()
   determine_Nmax_Nlen(init.coef, P);
-  return init;
+  return std::make_pair(Sym, init);
 }
 
 } // namespace

@@ -190,7 +190,7 @@ class Operators {
      opq.trim(diag);
      opot.trim(diag);
    }
-   void h5save(H5Easy::File &fd, const std::string &name) {
+   void h5save(H5Easy::File &fd, const std::string &name) const {
      ops.h5save(fd, name + "/s");
      opsp.h5save(fd, name + "/sp");
      opsg.h5save(fd, name + "/sg");

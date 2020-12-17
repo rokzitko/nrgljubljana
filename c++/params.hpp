@@ -464,10 +464,6 @@ class Params {
   param<bool> dumpenergies{"dumpenergies", "Dump (all) energies to file?", "false", all};  // N
   param<bool> dumpabsenergies{"dumpabsenergies", "Dump (all) absolute energies to file?", "false", all};  // N - new
 
-  // stopafter=nrg, stops calculation after the first sweep
-  // stopafter=rho, stops calculation after computing the density matrix
-  param<std::string> stopafter{"stopafter", "Stop calculation at some point?", "", all}; // N
-
   // If set to false, the unitary transformation matrix and density
   // matrix files are kept after the calculation.
   param<bool> removefiles{"removefiles", "Remove temporary data files?", "true", all}; // N
