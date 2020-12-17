@@ -42,6 +42,7 @@ inline auto parse_datafile_header(std::istream &fdata, const int expected_versio
     if (fdata.peek() == '\n') fdata.ignore();
   }
   my_assert(dataversion == expected_version);
+  std::cout << "\nSymmetry: " << sym_string << std::endl;
   return sym_string;
 }
 
@@ -63,28 +64,38 @@ inline void determine_Nmax_Nlen(const Coef<S> &coef, Params &P) { // Params is n
   std::cout << std::endl << "length_coef_table=" << length_coef_table << " Nmax=" << P.Nmax << std::endl << std::endl;
 }
 
-inline void skipline(std::ostream &F = std::cout) { F << std::endl; }
-
+template<scalar S>
+struct initial_data {
+public:
+//  std::string sym_string;
+//  size_t channels;
+//  size_t Nmax;
+//  size_t nsub;
+  std::shared_ptr<Symmetry<S>> Sym;
+  DiagInfo<S> diag0;
+  Operators<S> operators0;
+  Coef<S> coef;
+  double GS_energy = 0.0;
+  initial_data(Params &P) : coef(P) {};
+};
+   
 // Read all initial energies and matrix elements
 template<scalar S> 
 inline auto read_data(Params &P, std::string filename = "data") {
-  skipline();
+  initial_data<S> init(P);
   std::ifstream fdata(filename);
   if (!fdata) throw std::runtime_error("Can't load initial data.");
-  const auto sym_string = parse_datafile_header(fdata);
+  auto sym_string = parse_datafile_header(fdata);
+  auto channels   = read_one<size_t>(fdata); // Number of channels in the bath
+  auto Nmax       = read_one<size_t>(fdata); // Length of the Wilson chain
+  auto nsubs      = read_one<size_t>(fdata); // Number of invariant subspaces
   my_assert(sym_string == P.symtype.value());
-  const auto channels = read_one<size_t>(fdata);
   P.set_channels(channels);
-  auto Sym = set_symmetry<S>(P);
-  P.Nmax = read_one<size_t>(fdata); // Length of the Wilson chain
-  const auto nsubs = read_one<size_t>(fdata); // Number of invariant subspaces
+  init.Sym = set_symmetry<S>(P);
+  P.Nmax = Nmax;
+  init.diag0 = DiagInfo<S>(fdata, nsubs, P); // 0-th step of the NRG iteration
+  init.operators0.opch = Opch<S>(fdata, init.diag0, P);
   skip_comments(fdata);
-  DiagInfo<S> diag0(fdata, nsubs, P); // 0-th step of the NRG iteration
-  skip_comments(fdata);
-  Operators<S> operators0;
-  operators0.opch = Opch<S>(fdata, diag0, P);
-  Coef<S> coef(P);
-  double GS_energy = 0.0;
   while (true) {
     /* skip white space */
     while (!fdata.eof() && std::isspace(fdata.peek())) fdata.get();
@@ -97,38 +108,38 @@ inline auto read_data(Params &P, std::string filename = "data") {
       case '#':
         // ignore embedded comment lines
         break;
-      case 'e': GS_energy = read_one<double>(fdata); break;
-      case 's': operators0.ops[opname]  = MatrixElements<S>(fdata, diag0); break;
-      case 'p': operators0.opsp[opname] = MatrixElements<S>(fdata, diag0); break;
-      case 'g': operators0.opsg[opname] = MatrixElements<S>(fdata, diag0); break;
-      case 'd': operators0.opd[opname]  = MatrixElements<S>(fdata, diag0); break;
-      case 't': operators0.opt[opname]  = MatrixElements<S>(fdata, diag0); break;
-      case 'o': operators0.opot[opname] = MatrixElements<S>(fdata, diag0); break;
-      case 'q': operators0.opq[opname]  = MatrixElements<S>(fdata, diag0); break;
+      case 'e': init.GS_energy = read_one<double>(fdata); break;
+      case 's': init.operators0.ops[opname]  = MatrixElements<S>(fdata, init.diag0); break;
+      case 'p': init.operators0.opsp[opname] = MatrixElements<S>(fdata, init.diag0); break;
+      case 'g': init.operators0.opsg[opname] = MatrixElements<S>(fdata, init.diag0); break;
+      case 'd': init.operators0.opd[opname]  = MatrixElements<S>(fdata, init.diag0); break;
+      case 't': init.operators0.opt[opname]  = MatrixElements<S>(fdata, init.diag0); break;
+      case 'o': init.operators0.opot[opname] = MatrixElements<S>(fdata, init.diag0); break;
+      case 'q': init.operators0.opq[opname]  = MatrixElements<S>(fdata, init.diag0); break;
       case 'z':
-        coef.xi.read(fdata, P.coefchannels);
-        coef.zeta.read(fdata, P.coefchannels);
+        init.coef.xi.read(fdata, P.coefchannels);
+        init.coef.zeta.read(fdata, P.coefchannels);
         break;
       case 'Z':
-        coef.delta.read(fdata, P.coefchannels);
-        coef.kappa.read(fdata, P.coefchannels);
+        init.coef.delta.read(fdata, P.coefchannels);
+        init.coef.kappa.read(fdata, P.coefchannels);
         break;
       case 'X':
-        coef.xiR.read(fdata, P.coefchannels);
-        coef.zetaR.read(fdata, P.coefchannels);
+        init.coef.xiR.read(fdata, P.coefchannels);
+        init.coef.zetaR.read(fdata, P.coefchannels);
         break;
       case 'T':
-        coef.ep.read(fdata, P.coefchannels);
-        coef.em.read(fdata, P.coefchannels);
-        coef.u0p.read(fdata, P.coefchannels);
-        coef.u0m.read(fdata, P.coefchannels);
+        init.coef.ep.read(fdata, P.coefchannels);
+        init.coef.em.read(fdata, P.coefchannels);
+        init.coef.u0p.read(fdata, P.coefchannels);
+        init.coef.u0m.read(fdata, P.coefchannels);
         break;
     default: throw std::invalid_argument(fmt::format("Unknown block {} in data file.", ch));
     }
   }
-  if (std::string(P.tri) == "cpp") Tridiag<S>(coef, P); // before calling determine_Nmax()
-  determine_Nmax_Nlen(coef, P);
-  return std::make_tuple(Sym, diag0, operators0, coef, GS_energy);
+  if (std::string(P.tri) == "cpp") Tridiag<S>(init.coef, P); // before calling determine_Nmax()
+  determine_Nmax_Nlen(init.coef, P);
+  return init;
 }
 
 } // namespace

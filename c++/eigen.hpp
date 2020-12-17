@@ -315,6 +315,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
  public:
    explicit DiagInfo() = default;
    DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) {
+     skip_comments(fdata);
      for (const auto i : range1(nsubs)) {
        const auto I = read_one<Invar>(fdata);
        auto energies = read_std_vector<t_eigen>(fdata);
