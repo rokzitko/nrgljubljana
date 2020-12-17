@@ -16,9 +16,9 @@ using namespace std::string_literals;
 inline const auto default_workdir{"."s};
 
 // create a unique directory
-inline auto dtemp(const std::string &path)
+inline auto dtemp(const std::string &path, const std::string &pattern = "/XXXXXX"s)
 {
-  const auto workdir_template = path + "/XXXXXX";
+  const auto workdir_template = path + pattern;
   const auto len = workdir_template.length()+1;
   auto x = std::make_unique<char[]>(len);
   strncpy(x.get(), workdir_template.c_str(), len);

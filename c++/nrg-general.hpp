@@ -139,6 +139,20 @@ public:
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
+  void calc_rho(const Step &step, const DiagInfo<S> &diag, Symmetry<S> *Sym, const Store<S> &store) {
+    auto rho = init_rho(step, diag, Sym->multfnc());
+    rho.save(step.lastndx(), P, fn_rho);
+    if (!P.ZBW()) calc_densitymatrix(rho, store, Sym, mt, P);
+  }
+  void calc_rhoFDM(const Step &step, Symmetry<S> *Sym, const Store<S> &store, Stats<S> &stats ) {
+    calc_ZnD(store, stats, Sym, P.T);
+    if (P.logletter('w'))
+      report_ZnD(stats, P);
+    fdm_thermodynamics(store, stats, Sym, P.T);
+    auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
+    rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
+    if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym, mt, P);
+  }
   NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) : 
     mpi(mpi), P("param", "param", std::move(workdir), embedded) {
     auto [Sym, diag_0, operators, coef, GS_energy_0] = read_data<S>(P);
@@ -151,20 +165,8 @@ public:
     if (P.dumpabsenergies)
       store.dump_all_absolute_energies();
     if (P.dm) {
-      if (P.need_rho()) {
-        auto rho = init_rho(step, diag, Sym->multfnc());
-        rho.save(step.lastndx(), P, fn_rho);
-        if (!P.ZBW()) calc_densitymatrix(rho, store, Sym.get(), mt, P);
-      }
-      if (P.need_rhoFDM()) {
-        calc_ZnD(store, stats, Sym.get(), P.T);
-        if (P.logletter('w'))
-          report_ZnD(stats, P);
-        fdm_thermodynamics(store, stats, Sym.get(), P.T);
-        auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
-        rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-        if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
-      }
+      if (P.need_rho()) calc_rho(step, diag, Sym.get(), store);
+      if (P.need_rhoFDM()) calc_rhoFDM(step, Sym.get(), store, stats);
       if (std::string(P.stopafter) == "rho") exit1("*** Stopped after the DM calculation.");
       auto [Sym_dm, diag_0_dm, operators_dm, coef_dm, GS_energy_dm] = read_data<S>(P);
       stats.total_energy = GS_energy_dm;
