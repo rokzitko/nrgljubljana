@@ -106,12 +106,6 @@ namespace NRG {
 using namespace std::string_literals;
 using namespace fmt::literals;
 
-// Explicit request to stop at some calculation stage
-inline void exit1(const std::string &message) {
-  std::cout << std::endl << message << std::endl;
-  exit(1);
-}
-
 template <scalar S> class NRG_calculation {
 private:
   MPI_diag mpi;
@@ -123,14 +117,13 @@ private:
   MemTime mt; // memory and timing statistics
 public:
   auto run_nrg(const RUNTYPE runtype, Operators<S> operators, const Coef<S> &coef, DiagInfo<S> diag0) {
-    Step step{P, runtype};
-    diag0.states_report(Sym->multfnc());
-    auto oprecalc = Oprecalc<S>(step.get_runtype(), operators, Sym, mt, P);
-    auto output = Output<S>(step.get_runtype(), operators, stats, P);
+    auto oprecalc = Oprecalc<S>(runtype, operators, Sym, mt, P);
+    auto output = Output<S>(runtype, operators, stats, P);
     if (P.h5raw) {
-       diag0.h5save(*output.h5raw, std::to_string(step.ndx()) + "/eigen/");
-       operators.h5save(*output.h5raw, std::to_string(step.ndx()));
+       diag0.h5save(*output.h5raw, std::to_string(P.Ninit) + "/eigen/");
+       operators.h5save(*output.h5raw, std::to_string(P.Ninit));
     }
+    Step step{P, runtype};
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
     if (step.nrg() && P.calc0 && !P.ZBW())
       docalc0(step, operators, diag0, stats, output, oprecalc, Sym.get(), mt, P);
@@ -171,7 +164,7 @@ public:
   {
     auto diag = run_nrg(RUNTYPE::NRG, input.operators, input.coef, input.diag);
     if (P.dm) {
-      if (P.need_rho()) calc_rho(diag);
+      if (P.need_rho()) calc_rho(diag); // XXX: diag required here?
       if (P.need_rhoFDM()) calc_rhoFDM();
       run_nrg(RUNTYPE::DMNRG, input.operators, input.coef, input.diag);
     }

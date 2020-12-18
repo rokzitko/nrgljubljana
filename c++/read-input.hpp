@@ -91,6 +91,7 @@ public:
     my_assert(sym_string == P.symtype.value()); // Check consistency between 'param' and 'data' file
     Sym = set_symmetry<S>(P, sym_string, channels);
     diag = DiagInfo<S>(fdata, nsubs, P); // 0-th step of the NRG iteration
+    diag.states_report(Sym->multfnc());
     operators.opch = Opch<S>(fdata, diag, P);
     while (true) {
       const auto [ch, opname] = get_next_block(fdata);
