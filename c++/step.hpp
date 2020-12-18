@@ -23,7 +23,7 @@ class Step {
      ndxN = std::max(newN, 0);
    }
    void init() noexcept { set(P.Ninit); }
-   constexpr Step(const Params &P_, const RUNTYPE runtype_) : P(P_), runtype(runtype_) { init(); }
+   constexpr Step(const Params &P_, const RUNTYPE runtype_) noexcept : P(P_), runtype(runtype_) { init(); }
    constexpr void next() noexcept { trueN++; ndxN++; }
    [[nodiscard]] constexpr auto N() const noexcept { return ndxN; }
    [[nodiscard]] constexpr auto ndx() const noexcept { return ndxN; }
@@ -36,7 +36,7 @@ class Step {
    }
    [[nodiscard]] auto Teff() const noexcept { return energyscale()/P.betabar; }  // effective temperature for thermodynamic calculations
    [[nodiscard]] auto TD_factor() const noexcept { return P.betabar / unscale(); }
-   [[nodiscard]] auto scT() const { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
+   [[nodiscard]] auto scT() const noexcept { return scale()/P.T; } // scT = scale*P.T, scaled physical temperature that appears in the exponents in spectral function calculations (Boltzmann weights)
    [[nodiscard]] std::pair<size_t, size_t> NM() const noexcept {
      const size_t N = ndxN / P.channels;
      const size_t M = ndxN - N*P.channels; // M ranges 0..channels-1
@@ -68,13 +68,22 @@ class Step {
    }
    [[nodiscard]] auto last() const noexcept { return last(ndxN); }
    [[nodiscard]] auto end() const noexcept { return ndxN >= P.Nmax; } // ndxN is outside the allowed range
+   void set_last() noexcept { 
+     set(lastndx()); 
+     if (P.ZBW()) set_ZBW(); 
+   }
    // NOTE: for ZBW calculations, Ninit=0 and Nmax=0, so that first() == true and last() == true for ndxN=0.
    [[nodiscard]] constexpr auto nrg() const noexcept { return runtype == RUNTYPE::NRG; }
    [[nodiscard]] constexpr auto dmnrg() const noexcept { return runtype == RUNTYPE::DMNRG; }
    // Index 'n' of the last site in the existing chain, f_n (at iteration 'N'). The site being added is f_{n+1}. This
    // is the value that we use in building the matrix.
    [[nodiscard]] constexpr auto getnn() const noexcept { return ndxN; }
+   [[nodiscard]] constexpr auto get_trueN() const noexcept { return trueN; }
+   [[nodiscard]] constexpr auto get_ndxN() const noexcept { return ndxN; }
    [[nodiscard]] constexpr auto get_runtype() const noexcept { return runtype; }
+   [[nodiscard]] constexpr bool operator==(const Step &other) const noexcept { 
+     return trueN == other.get_trueN() && ndxN == other.get_ndxN() && runtype == other.get_runtype(); 
+   }
 };
 
 } // namespace

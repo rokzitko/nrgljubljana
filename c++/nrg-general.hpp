@@ -166,6 +166,12 @@ public:
     Step step{P, RUNTYPE::NRG};
     Store<S> store(P.Ninit, P.Nlen);
     auto diag = run_nrg(step, input.operators, input.coef, input.diag, stats, store, Sym);
+
+    my_assert(step.last());
+    Step x{P, RUNTYPE::NRG};
+    x.set_last();
+    my_assert(step == x);
+
     if (P.dm) {
       if (P.need_rho()) calc_rho(step, diag, Sym.get(), store);
       if (P.need_rhoFDM()) calc_rhoFDM(step, Sym.get(), store, stats);
