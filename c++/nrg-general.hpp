@@ -143,12 +143,16 @@ public:
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
-  void calc_rho(const Step &step, const DiagInfo<S> &diag, Symmetry<S> *Sym, const Store<S> &store) {
+  void calc_rho(Symmetry<S> *Sym, const Store<S> &store, const DiagInfo<S> &diag) {
+    Step step{P, RUNTYPE::NRG};
+    step.set_last();
     auto rho = init_rho(step, diag, Sym->multfnc());
     rho.save(step.lastndx(), P, fn_rho);
     if (!P.ZBW()) calc_densitymatrix(rho, store, Sym, mt, P);
   }
-  void calc_rhoFDM(const Step &step, Symmetry<S> *Sym, const Store<S> &store, Stats<S> &stats ) {
+  void calc_rhoFDM(Symmetry<S> *Sym, const Store<S> &store, Stats<S> &stats ) {
+    Step step{P, RUNTYPE::NRG};
+    step.set_last();
     calc_ZnD(store, stats, Sym, P.T);
     if (P.logletter('w'))
       report_ZnD(stats, P);
@@ -173,8 +177,8 @@ public:
     my_assert(step == x);
 
     if (P.dm) {
-      if (P.need_rho()) calc_rho(step, diag, Sym.get(), store);
-      if (P.need_rhoFDM()) calc_rhoFDM(step, Sym.get(), store, stats);
+      if (P.need_rho()) calc_rho(Sym.get(), store, diag);
+      if (P.need_rhoFDM()) calc_rhoFDM(Sym.get(), store, stats);
       Step step_dmnrg{P, RUNTYPE::DMNRG};
       run_nrg(step_dmnrg, input.operators, input.coef, input.diag, stats, store, Sym);
     }
