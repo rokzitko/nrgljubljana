@@ -117,10 +117,12 @@ private:
   MPI_diag mpi;
   Params P;
   InputData<S> input;
+  std::shared_ptr<Symmetry<S>> Sym;
+  Stats<S> stats;
+  Store<S> store;
   MemTime mt; // memory and timing statistics
 public:
-  auto run_nrg(const RUNTYPE runtype, Operators<S> operators, const Coef<S> &coef, DiagInfo<S> diag0, Stats<S> &stats,
-               Store<S> &store, std::shared_ptr<Symmetry<S>> Sym) {
+  auto run_nrg(const RUNTYPE runtype, Operators<S> operators, const Coef<S> &coef, DiagInfo<S> diag0) {
     Step step{P, runtype};
     diag0.states_report(Sym->multfnc());
     auto oprecalc = Oprecalc<S>(step.get_runtype(), operators, Sym, mt, P);
@@ -145,35 +147,33 @@ public:
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
-  void calc_rho(Symmetry<S> *Sym, const Store<S> &store, const DiagInfo<S> &diag) {
+  void calc_rho(const DiagInfo<S> &diag) {
     Step step{P, RUNTYPE::NRG};
     step.set_last();
     auto rho = init_rho(step, diag, Sym->multfnc());
     rho.save(step.lastndx(), P, fn_rho);
-    if (!P.ZBW()) calc_densitymatrix(rho, store, Sym, mt, P);
+    if (!P.ZBW()) calc_densitymatrix(rho, store, Sym.get(), mt, P);
   }
-  void calc_rhoFDM(Symmetry<S> *Sym, const Store<S> &store, Stats<S> &stats ) {
+  void calc_rhoFDM() {
     Step step{P, RUNTYPE::NRG};
     step.set_last();
-    calc_ZnD(store, stats, Sym, P.T);
+    calc_ZnD(store, stats, Sym.get(), P.T);
     if (P.logletter('w'))
       report_ZnD(stats, P);
-    fdm_thermodynamics(store, stats, Sym, P.T);
+    fdm_thermodynamics(store, stats, Sym.get(), P.T);
     auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
     rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-    if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym, mt, P);
+    if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
   }
   NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) : 
-    mpi(mpi), P("param", "param", std::move(workdir), embedded), input(P, "data")
+    mpi(mpi), P("param", "param", std::move(workdir), embedded), input(P, "data"), Sym(input.Sym),
+    stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen)
   {
-    const auto Sym = input.Sym;
-    Stats<S> stats(P, Sym->get_td_fields(), input.GS_energy);
-    Store<S> store(P.Ninit, P.Nlen);
-    auto diag = run_nrg(RUNTYPE::NRG, input.operators, input.coef, input.diag, stats, store, Sym);
+    auto diag = run_nrg(RUNTYPE::NRG, input.operators, input.coef, input.diag);
     if (P.dm) {
-      if (P.need_rho()) calc_rho(Sym.get(), store, diag);
-      if (P.need_rhoFDM()) calc_rhoFDM(Sym.get(), store, stats);
-      run_nrg(RUNTYPE::DMNRG, input.operators, input.coef, input.diag, stats, store, Sym);
+      if (P.need_rho()) calc_rho(diag);
+      if (P.need_rhoFDM()) calc_rhoFDM();
+      run_nrg(RUNTYPE::DMNRG, input.operators, input.coef, input.diag);
     }
   }
   NRG_calculation(const NRG_calculation &) = delete;
