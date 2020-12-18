@@ -36,7 +36,7 @@ TEST(Coef, parse) { // NOLINT
   EXPECT_EQ(coef.zeta(0,0), 0);
   EXPECT_EQ(coef.zeta(1,0), 0);
   
-  coef.xi.setvalue(0, 0, 42.);
+  coef.xi.set(0, 0, 42.);
   EXPECT_EQ(coef.xi(0,0), 42.);
 }
 

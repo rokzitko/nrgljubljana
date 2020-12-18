@@ -127,7 +127,7 @@ TEST(Diag, constructor) { // NOLINT
   std::istringstream ss(data);
   Params P;
   auto Sym = setup_Sym<double>(P); // need working Invar
-  P.absolute.setvalue(true); // disable any energy rescaling
+  P.absolute = true; // disable any energy rescaling
   DiagInfo<double> diag(ss, 2, P);
   EXPECT_EQ(diag.size(), 2);
   EXPECT_EQ(range_size(diag.subspaces()), 2);

@@ -30,7 +30,7 @@ public:
     my_assert(table.size() >= 1);
     return table.size()-1;
   }
-  void setvalue(const t_ndx n, const t_coef val) {
+  void set(const t_ndx n, const t_coef val) {
     if (n+1 > table.size()) table.resize(n+1);
     table[n] = val;
   }
@@ -58,9 +58,9 @@ public:
     my_assert(alpha < tabs.size());
     return tabs[alpha].max();
   }
-  void setvalue(const t_ndx N, const t_ch alpha, const t_coef val) { // used in tridiag.hpp
+  void set(const t_ndx N, const t_ch alpha, const t_coef val) { // used in tridiag.hpp
     my_assert(alpha < tabs.size());
-    tabs[alpha].setvalue(N, val);
+    tabs[alpha].set(N, val);
   }
 };
 

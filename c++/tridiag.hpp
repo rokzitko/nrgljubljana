@@ -12,13 +12,15 @@ namespace NRG {
 
 template<scalar S>
 class Tridiag {
-   const Params &P;
  public:
-   void tridiag_ch(int alpha, Coef<S> &coef);
-   Tridiag(Coef<S> &coef, const Params &P) : P(P) {
+   Tridiag(Coef<S> &coef, const size_t Nmax, const Params &P) : Nmax(Nmax), P(P) {
      my_assert(P.coefchannels >= 1);
      for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha, coef);
    }
+ private:
+   size_t Nmax;
+   const Params &P;
+   void tridiag_ch(const size_t alpha, Coef<S> &coef);
 };
 
 // Fix normalization of u_{n,m}, v_{n,m} to 1. IMPORTANT: pass by reference!
@@ -46,7 +48,7 @@ inline void fix_norm(vmpf &up, vmpf &um, const unsigned int mMAX) {
 
 // Tridiagonalisation of the discretization coefficients. Multiple precision arithmetics library GMP is required.
 template<scalar S>
-void Tridiag<S>::tridiag_ch(int alpha, Coef<S> &coef) {
+void Tridiag<S>::tridiag_ch(const size_t alpha, Coef<S> &coef) {
   std::cout << "Tridiagonalisation, ch=" << alpha << ".";
   std::cout << " Using GMP version " << gmp_version << std::endl;
 
@@ -98,7 +100,7 @@ void Tridiag<S>::tridiag_ch(int alpha, Coef<S> &coef) {
 
   fix_norm(up_prev, um_prev, mMAX);
 
-  for (unsigned int n = 0; n <= P.Nmax; n++) {
+  for (unsigned int n = 0; n <= Nmax; n++) {
     // Calculate zeta_n, xi2_n and xi_n
     mpf_set(mpzeta, mpZERO);
     mpf_set(xi2, mpZERO);
@@ -170,8 +172,8 @@ void Tridiag<S>::tridiag_ch(int alpha, Coef<S> &coef) {
     double coef_xi   = dxi * P.bandrescale;
     double coef_zeta = dzeta * P.bandrescale;
 
-    coef.xi.setvalue(n, alpha, coef_xi);
-    coef.zeta.setvalue(n, alpha, coef_zeta);
+    coef.xi.set(n, alpha, coef_xi);
+    coef.zeta.set(n, alpha, coef_zeta);
 
     std::cout << "  xi(" << n << ")=" << HIGHPREC(dxi) << std::endl;
     std::cout << "zeta(" << n << ")=" << HIGHPREC(dzeta) << std::endl;

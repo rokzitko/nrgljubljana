@@ -11,10 +11,8 @@ using namespace NRG;
 
 TEST(test_common, basic) {
   Params P;
-  P.symtype.setvalue("QS");
-  P.set_channels(1);
+  auto Sym = set_symmetry<double>(P, "QS", 1);
   EXPECT_EQ(P.combs, 4);
-  auto Sym = set_symmetry<double>(P);
   EXPECT_EQ(Sym->nr_combs(), 4);
 }
 

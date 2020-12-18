@@ -140,6 +140,7 @@ class Opch : public std::vector<OpchChannel<S>> {
       }
    }
    explicit Opch(std::istream &fdata, const DiagInfo<S> &diag, const Params &P) {
+     skip_comments(fdata);
      this->resize(P.channels);
      for (auto &oc : *this) {
        oc.resize(P.perchannel);

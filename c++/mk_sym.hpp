@@ -91,10 +91,11 @@ auto get(const std::string &sym_string, const Params &P)
 // Called immediately after parsing the information about the number of channels from the data file. This ensures
 // that Invar can be parsed correctly.
 template <scalar S>
-std::shared_ptr<Symmetry<S>> set_symmetry(const Params &P) {
-  my_assert(P.channels > 0 && P.combs > 0); // must be set at this point
-  std::cout << "SYMMETRY TYPE: " << P.symtype.value() << std::endl;
-  auto Sym = get<S>(P.symtype.value(), P);
+std::shared_ptr<Symmetry<S>> set_symmetry(Params &P, const std::string &sym_string, const size_t channels) {
+  P.symtype = sym_string;
+  P.set_channels_and_combs(channels);
+  std::cout << "\nSYMMETRY TYPE: " << sym_string << std::endl;
+  auto Sym = get<S>(sym_string, P);
   Sym->load();
   Sym->erase_first();
   return Sym;

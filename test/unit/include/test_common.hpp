@@ -13,9 +13,7 @@ using namespace NRG;
 template<typename S>
 auto setup_Sym(Params &P)
 {
-  P.symtype.setvalue("QS");
-  P.set_channels(1);
-  return set_symmetry<S>(P);
+  return set_symmetry<S>(P, "QS", 1);
 }
 
 template<typename S>
@@ -27,7 +25,7 @@ auto setup_diag(Params &P, Symmetry<S> *Sym)
       "1 2\n"
       "3 4 5 6\n";
   std::istringstream ss(data);
-  P.absolute.setvalue(true); // disable any energy rescaling
+  P.absolute = true; // disable any energy rescaling
   DiagInfo<S> diag(ss, 2, P);
   return diag;
 }
@@ -43,7 +41,7 @@ auto setup_diag3(Params &P, Symmetry<S> *Sym)
       "2 1\n"
       "4 1 2 3 4\n";
   std::istringstream ss(data);
-  P.absolute.setvalue(true);
+  P.absolute = true;
   DiagInfo<S> diag(ss, 3, P);
   return diag;
 }

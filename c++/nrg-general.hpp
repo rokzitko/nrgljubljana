@@ -118,7 +118,7 @@ private:
   Params P;
   MemTime mt; // memory and timing statistics
 public:
-  auto run_nrg(Step &step, Operators<S> operators, const Coef<S> &coef, Stats<S> &stats, DiagInfo<S> diag0,
+  auto run_nrg(Step &step, Operators<S> operators, const Coef<S> &coef, DiagInfo<S> diag0, Stats<S> &stats,
                Store<S> &store, std::shared_ptr<Symmetry<S>> Sym) {
     diag0.states_report(Sym->multfnc());
     auto oprecalc = Oprecalc<S>(step.get_runtype(), operators, Sym, mt, P);
@@ -134,7 +134,11 @@ public:
                         : nrg_loop(step, operators, coef, stats, diag0, output, store, oprecalc, Sym.get(), mpi, mt, P);
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
-    if (step.nrg() && P.dumpsubspaces) store.dump_subspaces();
+    if (step.nrg()) {
+      store.shift_abs_energies(stats.GS_energy);
+      if (P.dumpabsenergies) store.dump_all_absolute_energies();
+      if (P.dumpsubspaces) store.dump_subspaces();
+    }
     if (P.h5raw) store.h5save(*output.h5raw, "/store");
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
@@ -154,21 +158,19 @@ public:
     if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym, mt, P);
   }
   NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) : 
-    mpi(mpi), P("param", "param", std::move(workdir), embedded) {
-    const auto [Sym, init_data] = read_data<S>(P);
-    Stats<S> stats(P, Sym->get_td_fields(), init_data.GS_energy);
+    mpi(mpi), P("param", "param", std::move(workdir), embedded) 
+  {
+    const auto input = InputData<S>(P);
+    const auto Sym = input.Sym;
+    Stats<S> stats(P, Sym->get_td_fields(), input.GS_energy);
     Step step{P, RUNTYPE::NRG};
     Store<S> store(P.Ninit, P.Nlen);
-    auto diag = run_nrg(step, init_data.operators, init_data.coef, stats, init_data.diag, store, Sym);
-    store.shift_abs_energies(stats.GS_energy); // we call this here, to enable a file dump
-    if (P.dumpabsenergies)
-      store.dump_all_absolute_energies();
+    auto diag = run_nrg(step, input.operators, input.coef, input.diag, stats, store, Sym);
     if (P.dm) {
       if (P.need_rho()) calc_rho(step, diag, Sym.get(), store);
       if (P.need_rhoFDM()) calc_rhoFDM(step, Sym.get(), store, stats);
       Step step_dmnrg{P, RUNTYPE::DMNRG};
-      run_nrg(step_dmnrg, init_data.operators, init_data.coef, stats, init_data.diag, store, Sym);
-      my_assert(num_equal(stats.GS_energy, stats.total_energy));
+      run_nrg(step_dmnrg, input.operators, input.coef, input.diag, stats, store, Sym);
     }
   }
   NRG_calculation(const NRG_calculation &) = delete;

@@ -37,7 +37,7 @@ class parambase {
  public:
    parambase(const std::string &keyword, const std::string &desc) : keyword(keyword), desc(desc) {};
    virtual ~parambase() = default;
-   virtual void setvalue_str(const std::string &new_value) = 0;
+   virtual void set_str(const std::string &new_value) = 0;
    virtual void dump(std::ostream &F = std::cout) = 0;
    [[nodiscard]] auto getkeyword() const noexcept { return keyword; }
    [[nodiscard]] auto getdesc() const noexcept { return desc; }
@@ -66,12 +66,12 @@ class param : public parambase {
    // This line enables to access parameters using an object as a rvalue
    [[nodiscard]] inline operator const T &() const noexcept { return data; }
    [[nodiscard]] inline T value() const noexcept { return data; }
-   void setvalue_str(const std::string &new_value) override { // used in parser
+   void set_str(const std::string &new_value) override { // used in parser
      data       = from_string<T>(new_value);
      is_default = false;
    }
-   void setvalue(const T newdata) noexcept { data = newdata; }
-   bool operator == (const T &b) const noexcept { return data == b; }
+   param & operator= (const T newdata) noexcept { data = newdata; return *this; }
+   [[nodiscard]] bool operator== (const T &b) const noexcept { return data == b; }
 };
 
 // CONVENTION: parameters that are user configurable are declared as param<T>, other parameters (set at runtime) are
@@ -503,7 +503,7 @@ class Params {
 
   // Sets 'channels', then sets 'combs' and related parameters accordingly, depending on the spin of the conduction
   // band electrons. Called from read_data() in read-input.hpp
-  void set_channels(const int channels_) {
+  void set_channels_and_combs(const int channels_) {
     my_assert(channels_ >= 1);
     channels = channels_;
     // Number of tables of coefficients. It is doubled in the case of spin-polarized conduction bands. The first half
@@ -564,7 +564,7 @@ class Params {
   void validate() {
     my_assert(keep > 1);
     if (keepenergy > 0.0) my_assert(keepmin <= keep);
-    if (dm_flags()) dm.setvalue(true);
+    if (dm_flags()) dm = true;
     my_assert(Lambda > 1.0);
     if (diag == "dsyevr"s || diag =="zheevr"s) {
       my_assert(0.0 < diagratio && diagratio <= 1.0);
@@ -572,8 +572,8 @@ class Params {
     }
     my_assert(!(dumpabs && dumpscaled)); // dumpabs=true and dumpscaled=true is a meaningless combination
     // Take the first character (for backward compatibility)
-    discretization.setvalue(std::string(discretization, 0, 1));
-    if (chitp_ratio > 0.0) chitp.setvalue(chitp_ratio / betabar);
+    discretization = std::string(discretization, 0, 1);
+    if (chitp_ratio > 0.0) chitp = chitp_ratio / betabar;
   }
 
   void dump(std::ostream &F = std::cout) {
@@ -593,7 +593,7 @@ class Params {
       for (const auto &i : all) {
         const std::string keyword = i->getkeyword();
         if (parsed_params.count(keyword) == 1) {
-          i->setvalue_str(parsed_params[keyword]);
+          i->set_str(parsed_params[keyword]);
           parsed_params.erase(keyword);
         }
       }

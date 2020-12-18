@@ -21,14 +21,14 @@ TEST(params, parser) {
     EXPECT_EQ(p, 1.0);
     EXPECT_EQ(p.value(), 1.0);
 
-    p.setvalue_str("2.0");
+    p.set_str("2.0");
     std::ostringstream ss2;
     p.dump(ss2);
     EXPECT_EQ(ss2.str(), "p=2 *\n"s);
     EXPECT_EQ(p, 2.0);
     EXPECT_EQ(p.value(), 2.0);
 
-    p.setvalue(3.0);
+    p = 3.0;
     EXPECT_EQ(p, 3.0);
     EXPECT_EQ(p.value(), 3.0);
 
@@ -73,10 +73,10 @@ TEST(params, Defaults) {
   EXPECT_EQ(P.ZBW(), true);
 }
 
-TEST(params, set_channels) {
+TEST(params, set_channels_and_combs) {
   Params P;
   EXPECT_EQ(P.symtype, ""s);
-  P.set_channels(1);
+  P.set_channels_and_combs(1);
   EXPECT_EQ(P.channels, 1);
   EXPECT_EQ(P.coeffactor, 1);
   EXPECT_EQ(P.coefchannels, 1);
@@ -128,7 +128,7 @@ TEST(params, flags_none) {
 TEST(params, flags_cfs) {
   Params P;
   P.Nmax = 1;
-  P.cfs.setvalue(true);
+  P.cfs = true;
   EXPECT_EQ(P.cfs_flags(), true);
   EXPECT_EQ(P.fdm_flags(), false);
   EXPECT_EQ(P.dmnrg_flags(), false);
@@ -145,7 +145,7 @@ TEST(params, flags_cfs) {
 TEST(params, flags_fdm) {
   Params P;
   P.Nmax = 1;
-  P.fdm.setvalue(true);
+  P.fdm = true;
   EXPECT_EQ(P.cfs_flags(), false);
   EXPECT_EQ(P.fdm_flags(), true);
   EXPECT_EQ(P.dmnrg_flags(), false);
@@ -162,7 +162,7 @@ TEST(params, flags_fdm) {
 TEST(params, flags_fdmexpv) {
   Params P;
   P.Nmax = 1;
-  P.fdmexpv.setvalue(true);
+  P.fdmexpv = true;
   EXPECT_EQ(P.cfs_flags(), false);
   EXPECT_EQ(P.fdm_flags(), true);
   EXPECT_EQ(P.dmnrg_flags(), false);
@@ -179,7 +179,7 @@ TEST(params, flags_fdmexpv) {
 TEST(params, flags_dmnrg) {
   Params P;
   P.Nmax = 1;
-  P.dmnrg.setvalue(true);
+  P.dmnrg = true;
   EXPECT_EQ(P.cfs_flags(), false);
   EXPECT_EQ(P.fdm_flags(), false);
   EXPECT_EQ(P.dmnrg_flags(), true);
@@ -207,7 +207,7 @@ TEST(params, scale) {
   P.Nmax = 1;
   EXPECT_LT(std::abs(P.last_step_scale() - s1), 1e-10);
 
-  P.absolute.setvalue(true);
+  P.absolute = true;
   EXPECT_EQ(P.nrg_step_scale_factor(), 1.0);
 }
 

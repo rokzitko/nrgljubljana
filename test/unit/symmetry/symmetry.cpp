@@ -10,9 +10,7 @@ using namespace NRG;
 
 TEST(Symmetry, Symmetry) { // NOLINT
   Params P;
-  P.symtype.setvalue("QS");
-  P.set_channels(1);
-  auto Sym = set_symmetry<double>(P);
+  auto Sym = set_symmetry<double>(P, "QS", 1);
   EXPECT_EQ(P.combs, 4);
   EXPECT_EQ(Sym->nr_combs(), 4);
   const auto In = Sym->input_subspaces();

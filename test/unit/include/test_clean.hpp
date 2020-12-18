@@ -7,18 +7,18 @@ auto setup_P_clean(Params &P) {
   EXPECT_EQ(P.discretization.value(), "Z"s);
   EXPECT_EQ(P.Ninit.value(), 0);
   P.Nmax = P.Nlen = 1;
-  P.keep.setvalue(100);
-  P.ops.setvalue("n_f n_f^2");
-  P.specs.setvalue("n_f-n_f");
-  P.finite.setvalue(true);
-  P.cfs.setvalue(true);
-  P.fdm.setvalue(true);
-  P.dmnrg.setvalue(true);
-  P.finitemats.setvalue(true);
-  P.fdmmats.setvalue(true);
-  P.dmnrgmats.setvalue(true);
-  P.mats.setvalue(10);
-  P.T.setvalue(0.1); // temperature
+  P.keep = 100;
+  P.ops = "n_f n_f^2";
+  P.specs = "n_f-n_f";
+  P.finite = true;
+  P.cfs = true;
+  P.fdm = true;
+  P.dmnrg = true;
+  P.finitemats = true;
+  P.fdmmats = true;
+  P.dmnrgmats = true;
+  P.mats = 10;
+  P.T = 0.1; // temperature
 }
 
 template<typename S>
@@ -35,7 +35,7 @@ auto setup_diag_clean(Params &P, Symmetry<S> *Sym)
       "1\n"
       "0.\n";
   std::istringstream ss(data);
-  P.absolute.setvalue(false); // NOTE!!
+  P.absolute = false; // NOTE!!
   DiagInfo<S> diag(ss, 3, P);
   return diag;
 }
