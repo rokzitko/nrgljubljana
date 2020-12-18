@@ -116,10 +116,12 @@ template <scalar S> class NRG_calculation {
 private:
   MPI_diag mpi;
   Params P;
+  InputData<S> input;
   MemTime mt; // memory and timing statistics
 public:
-  auto run_nrg(Step &step, Operators<S> operators, const Coef<S> &coef, DiagInfo<S> diag0, Stats<S> &stats,
+  auto run_nrg(const RUNTYPE runtype, Operators<S> operators, const Coef<S> &coef, DiagInfo<S> diag0, Stats<S> &stats,
                Store<S> &store, std::shared_ptr<Symmetry<S>> Sym) {
+    Step step{P, runtype};
     diag0.states_report(Sym->multfnc());
     auto oprecalc = Oprecalc<S>(step.get_runtype(), operators, Sym, mt, P);
     auto output = Output<S>(step.get_runtype(), operators, stats, P);
@@ -162,25 +164,16 @@ public:
     if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym, mt, P);
   }
   NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) : 
-    mpi(mpi), P("param", "param", std::move(workdir), embedded) 
+    mpi(mpi), P("param", "param", std::move(workdir), embedded), input(P, "data")
   {
-    const auto input = InputData<S>(P);
     const auto Sym = input.Sym;
     Stats<S> stats(P, Sym->get_td_fields(), input.GS_energy);
-    Step step{P, RUNTYPE::NRG};
     Store<S> store(P.Ninit, P.Nlen);
-    auto diag = run_nrg(step, input.operators, input.coef, input.diag, stats, store, Sym);
-
-    my_assert(step.last());
-    Step x{P, RUNTYPE::NRG};
-    x.set_last();
-    my_assert(step == x);
-
+    auto diag = run_nrg(RUNTYPE::NRG, input.operators, input.coef, input.diag, stats, store, Sym);
     if (P.dm) {
       if (P.need_rho()) calc_rho(Sym.get(), store, diag);
       if (P.need_rhoFDM()) calc_rhoFDM(Sym.get(), store, stats);
-      Step step_dmnrg{P, RUNTYPE::DMNRG};
-      run_nrg(step_dmnrg, input.operators, input.coef, input.diag, stats, store, Sym);
+      run_nrg(RUNTYPE::DMNRG, input.operators, input.coef, input.diag, stats, store, Sym);
     }
   }
   NRG_calculation(const NRG_calculation &) = delete;
