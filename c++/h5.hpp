@@ -33,28 +33,32 @@ namespace NRG {
    }
 
 #ifdef INCL_UBLAS
-   inline void h5_dump_matrix(H5Easy::File &file, const std::string &path, const ublas::matrix<double> &m) {
+   template<real_ublas_matrix RUM>
+   void h5_dump_matrix(H5Easy::File &file, const std::string &path, const RUM &m) {
      H5Easy::detail::createGroupsToDataSet(file, path);
      HighFive::DataSet dataset = file.createDataSet<double>(path, HighFive::DataSpace::From(m));
      dataset.write(m);
    }
 
-   inline void h5_dump_matrix(H5Easy::File &file, const std::string &path, const ublas::matrix<std::complex<double>> &m) {
+   template<complex_ublas_matrix CUM>
+   void h5_dump_matrix(H5Easy::File &file, const std::string &path, const CUM &m) {
      ublas::matrix<double> mr = ublas::real(m);
      h5_dump_matrix(file, path, mr);
    }
 #endif
 
 #ifdef INCL_EIGEN
-   inline void _eigen_h5_dump_matrix(H5Easy::File &file, const std::string &path, const Eigen::MatrixXd &m) {
+   template <real_Eigen_matrix REM>
+   void h5_dump_matrix(H5Easy::File &file, const std::string &path, const REM &m) {
       H5Easy::detail::createGroupsToDataSet(file, path);
       HighFive::DataSet dataset = file.createDataSet<double>(path, HighFive::DataSpace::From(m));
       dataset.write(m);
     }
 
-  inline void _eigen_h5_dump_matrix(H5Easy::File &file, const std::string &path, const Eigen::MatrixXcd &m) {
+  template <complex_Eigen_matrix CEM>
+  void h5_dump_matrix(H5Easy::File &file, const std::string &path, const CEM &m) {
      Eigen::MatrixXd mr = m.real();
-     _eigen_h5_dump_matrix(file, path, mr);
+     h5_dump_matrix(file, path, mr);
    }
 #endif
 }

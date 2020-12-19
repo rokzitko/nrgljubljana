@@ -242,10 +242,8 @@ TEST(h5dump, ublas_matrix_real_part_rect) { // NOLINT
   }
 }
 
-
-
-TEST(h5dump, _eigen_dump_matrix) { // NOLINT
-  H5Easy::File file("_eigen_ublas_matrix.h5", HighFive::File::Overwrite);
+TEST(h5dump, eigen_dump_matrix) { // NOLINT
+  H5Easy::File file("eigen_matrix.h5", HighFive::File::Overwrite);
   const auto nx = 2;
   const auto ny = 3;
   Eigen::MatrixXd w(nx,ny);
@@ -256,7 +254,7 @@ TEST(h5dump, _eigen_dump_matrix) { // NOLINT
       cnt = cnt + 1.0;
     }
   }
-  NRG::_eigen_h5_dump_matrix(file, "/path", w);
+  NRG::h5_dump_matrix(file, "/path", w);
 
   auto dataset = file.getDataSet("/path");
   Eigen::MatrixXd r;
@@ -265,7 +263,7 @@ TEST(h5dump, _eigen_dump_matrix) { // NOLINT
 }
 
 TEST(h5dump, eigen_matrix_real_part_rect) { // NOLINT
-  H5Easy::File file("ublas_matrix_real_part_rect.h5", HighFive::File::Overwrite);
+  H5Easy::File file("eigen_matrix_real_part_rect.h5", HighFive::File::Overwrite);
   const auto nx = 2;
   const auto ny = 3;
   Eigen::MatrixXcd w(nx,ny);
@@ -276,7 +274,7 @@ TEST(h5dump, eigen_matrix_real_part_rect) { // NOLINT
       cnt = cnt + 1.0;
     }
   }
-  NRG::_eigen_h5_dump_matrix(file, "/path", w);
+  NRG::h5_dump_matrix(file, "/path", w);
 
   auto dataset = file.getDataSet("/path");
   Eigen::MatrixXd r;

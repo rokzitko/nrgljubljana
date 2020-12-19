@@ -23,17 +23,10 @@ namespace NRG {
 using namespace boost::numeric;
 #endif
 
-template <typename T>
-     concept floating_point = std::is_floating_point_v<T>;
-
-template <typename T>
-     struct is_complex : std::false_type {};
-
-template <floating_point T>
-     struct is_complex<std::complex<T>> : std::true_type {};
-
-template <typename T>
-     concept scalar = floating_point<T> || is_complex<T>::value;
+template <typename T> concept floating_point = std::is_floating_point_v<T>;
+template <typename T> struct is_complex : std::false_type {};
+template <floating_point T> struct is_complex<std::complex<T>> : std::true_type {};
+template <typename T> concept scalar = floating_point<T> || is_complex<T>::value;
 
 #ifdef INCL_UBLAS
 template <typename S> const auto generate_ublas = [](const size_t dim1, const size_t dim2) { return ublas::matrix<S>(dim1, dim2); };
@@ -59,11 +52,24 @@ template <typename T>
      typename T::value_type;
   };
 
-template <typename T>
-  concept real_matrix = matrix<T> && floating_point<typename T::value_type>;
+// XXX: real, imag, conj for complex matrix?
 
-template <typename T>
-  concept complex_matrix = matrix<T> && is_complex<typename T::value_type>::value;
+template <typename T> concept real_matrix = matrix<T> && floating_point<typename T::value_type>;
+template <typename T> concept complex_matrix = matrix<T> && is_complex<typename T::value_type>::value;
+
+template <typename T> struct is_ublas_object : std::false_type {};
+template <scalar S> struct is_ublas_object<ublas::matrix<S>> : std::true_type {};
+template <scalar S> struct is_ublas_object<ublas::matrix_range<const ublas::matrix<S>>> : std::true_type {};
+
+template <typename T> struct is_Eigen_object : std::false_type {};
+template <scalar S> struct is_Eigen_object<Eigen::MatrixX<S>> : std::true_type {};
+
+template <typename T> concept ublas_matrix = matrix<T> && is_ublas_object<T>::value;
+template <typename T> concept Eigen_matrix = matrix<T> && is_Eigen_object<T>::value;
+template <typename T> concept real_ublas_matrix = real_matrix<T> && is_ublas_object<T>::value;
+template <typename T> concept real_Eigen_matrix = real_matrix<T> && is_Eigen_object<T>::value;
+template <typename T> concept complex_ublas_matrix = complex_matrix<T> && is_ublas_object<T>::value;
+template <typename T> concept complex_Eigen_matrix = complex_matrix<T> && is_Eigen_object<T>::value;
 
 template <typename T>
   concept vector = requires(T a, size_t i) {
