@@ -10,7 +10,13 @@
 #include "traits.hpp"
 #include "spectral.hpp"
 #include "params.hpp"
-#include "numerics.hpp"
+
+
+#ifdef USE_UBLAS
+#include "numerics_ublas.hpp"
+#else
+#include "numerics_Eigen.hpp"
+#endif
 
 namespace NRG {
 

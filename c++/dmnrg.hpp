@@ -21,7 +21,12 @@
 #include "store.hpp"
 #include "time_mem.hpp"
 #include "stats.hpp"
-#include "numerics.hpp"
+
+#ifdef USE_UBLAS
+#include "numerics_ublas.hpp"
+#else
+#include "numerics_Eigen.hpp"
+#endif
 
 namespace NRG {
 

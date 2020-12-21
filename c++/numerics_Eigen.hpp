@@ -4,8 +4,8 @@
 // This header should be included in all other headers where vector/matrix
 // objects are manipulated.
 
-#ifndef _numerics_hpp_
-#define _numerics_hpp_
+#ifndef _numerics_Eigen_hpp_
+#define _numerics_Eigen_hpp_
 
 #include <complex>
 #include <iomanip>
@@ -18,6 +18,8 @@
 
 #include "traits.hpp" // defines INCL_UBLAS and/or INCL_EIGEN
 
+#include <Eigen/Dense>
+
 #ifdef INCL_UBLAS
 // ublas matrix & vector containers
 #include <boost/numeric/ublas/vector.hpp>
@@ -27,15 +29,6 @@
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/numeric/ublas/operation.hpp>
-
-// Numeric bindings to BLAS/LAPACK
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
-#endif
-
-#ifdef INCL_EIGEN
-#include <Eigen/Dense>
 #endif
 
 // Serialization support (used for storing to files and for MPI)
@@ -51,12 +44,6 @@
 #include "misc.hpp"
 
 namespace NRG {
-
-#ifdef INCL_UBLAS
-using namespace boost::numeric;
-using namespace boost::numeric::ublas; // keep this!
-namespace atlas = boost::numeric::bindings::atlas;
-#endif
 
 template <typename T>
   using complex_array_ref_t = T(&)[2];
@@ -83,9 +70,9 @@ V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vecto
 [[nodiscard]] inline std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
 [[nodiscard]] inline double conj_me(const double x) { return x; }    // no op
 
-template<scalar S, typename Matrix = Matrix_traits<S>>
+template<scalar S>
 [[nodiscard]] auto zero_matrix(const size_t size1, const size_t size2) {
-  return Matrix(size1, size2, 0);
+  return Eigen::MatrixX<S>::Zero(size1, size2);
 }
 
 template<scalar S>
@@ -93,11 +80,16 @@ template<scalar S>
   return NRG::zero_matrix<S>(size, size); 
 }
 
+template<scalar S>
+[[nodiscard]] auto id_matrix(const size_t size) { 
+  return Eigen::MatrixX<S>::Identity(size); 
+}
+
 template<scalar S, typename Matrix = Matrix_traits<S>>
 auto empty_matrix() { return Matrix(); }
 
 // Access the low-level data storage in the matrix (used in diag.hpp)
-template<scalar S> S * data(ublas::matrix<S> &m) { return bindings::traits::matrix_storage(m); }
+template<scalar S> S * data(Eigen::MatrixX<S> &m) { return m.data(); }
 
 // Accumulator abstraction: automatically initialized to 0, result checked for finiteness.
 template <scalar T> class generic_bucket {
@@ -182,19 +174,20 @@ template<matrix M> inline void dump_diagonal_matrix(const M &m, const size_t max
 }
 
 template <scalar T>
-void save(boost::archive::binary_oarchive &oa, const ublas::matrix<T> &m) {
+void save(boost::archive::binary_oarchive &oa, const Eigen::MatrixX<T> &m) {
   oa << size1(m) << size2(m);
-  for (const auto i : range0(size1(m)))
-    oa << ublas::vector<T>(ublas::matrix_row<const ublas::matrix<T>>(m, i));
+  for (const auto row : m.rowwise())
+    oa << row;
 }
 
+
 template <scalar T>
-void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) { // XXX
+void load(boost::archive::binary_iarchive &ia, Eigen::MatrixX<T> &m) { // XXX
   const auto size1 = read_one<size_t>(ia);
   const auto size2 = read_one<size_t>(ia);
-  m = ublas::matrix<T>(size1, size2);
-  for (const auto i : range0(size1))
-    ublas::matrix_row<ublas::matrix<T>>(m, i) = read_one<ublas::vector<T>>(ia);
+  m = Eigen::MatrixX<T>(size1, size2);
+  for (const auto& row : m.rowwise())
+    row = read_one<Eigen::MatrixX<T>>(ia);
 }
 
 // Chop numerical noise
@@ -203,25 +196,25 @@ template <scalar T> inline constexpr T chop(const T x, const double xlimit = 1.e
 // Powers, such as (-1)^n, appear in the coupling coefficients.
 inline constexpr double Power(const double i, const double nn) { return std::pow(i, nn); }
 
-// Read 'size' values of type T into a ublas vector<T>.
-template <scalar T> auto read_ublas_vector(std::istream &F, const size_t size) {
-  ublas::vector<T> vec(size);
+// Read 'size' values of type T into an Eigen vector<T>.
+template <scalar T> auto read_Eigen_vector(std::istream &F, const size_t size) {
+  Eigen::VectorX<T> vec(size);
   for (auto j = 0; j < size; j++)
     vec[j] = read_one<T>(F);
   if (F.fail()) throw std::runtime_error("read_vector() error. Input file is corrupted.");
   return vec;
 }
 
-// Read values of type T into a ublas vector<T>. 'nr' is either vector dimension or the value of maximum index
-template <scalar T> auto read_ublas_vector(std::istream &F, const bool nr_is_max_index = false) {
+// Read values of type T into an Eigen vector<T>. 'nr' is either vector dimension or the value of maximum index
+template <scalar T> auto read_Eigen_vector(std::istream &F, const bool nr_is_max_index = false) {
   const auto nr = read_one<size_t>(F);
   const auto len = nr_is_max_index ? nr+1 : nr;
-  return read_ublas_vector<T>(F, len);
+  return read_Eigen_vector<T>(F, len);
 }
 
-// Read 'size1' x 'size2' ublas matrix of type T.
-template <scalar T> auto read_ublas_matrix(std::istream &F, const size_t size1, const size_t size2) {
-  ublas::matrix<T> m(size1, size2);
+// Read 'size1' x 'size2' Eigen matrix of type T.
+template <scalar T> auto read_Eigen_matrix(std::istream &F, const size_t size1, const size_t size2) {
+  Eigen::MatrixX<T> m(size1, size2);
   for (auto j1 = 0; j1 < size1; j1++)
     for (auto j2 = 0; j2 < size2; j2++)
       m(j1, j2) = assert_isfinite( read_one<T>(F) );
@@ -230,7 +223,7 @@ template <scalar T> auto read_ublas_matrix(std::istream &F, const size_t size1, 
 }
 
 template <scalar T> auto read_matrix(std::istream &F, const size_t size1, const size_t size2) {
-  return read_ublas_matrix<T>(F, size1, size2);
+  return read_Eigen_matrix<T>(F, size1, size2);
 }
 
 // Check if the value x is real [for complex number calculations].
@@ -255,33 +248,11 @@ inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); } // sqrt
 
 template<matrix R> // 2D matrix or matrix view
 auto finite_size(const R &m) { return size1(m) && size2(m); }
-   
-// M += factor * A * B^\dag
-template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
-  if (finite_size(A) && finite_size(B)) { // if this contributes at all...
-    my_assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));
-    my_assert(my_isfinite(factor));
-    atlas::gemm(CblasNoTrans, CblasConjTrans, factor, A, B, t_coef(1.0), M);
-  }
-}
 
 template<scalar S, typename T, typename t_coef = coef_traits<S>>
 Eigen::MatrixX<T> product(const t_coef factor, const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B) {
   my_assert(my_isfinite(factor));
   return factor * A * B.adjoint();
-}
-
-// M += factor * A * O * B^\dag
-template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void transform(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
-  if (finite_size(A) && finite_size(B)) {
-    my_assert(size1(M) == size1(A) && size2(A) == size1(O) && size2(O) == size2(B) && size1(B) == size2(M));
-    my_assert(my_isfinite(factor));
-    Matrix T(size1(O), size1(B));
-    atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = O * B^\dag
-    atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
-  }
 }
 
 template<scalar S, typename t_coef = coef_traits<S>, typename T>
@@ -290,36 +261,10 @@ Eigen::MatrixX<T> transform(const t_coef factor, const Eigen::MatrixX<T> &A, con
   return factor * A * O * B.adjoint();
 }
 
-// M += factor * U^\dag * O * U
-template<scalar S, typename U_type, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void rotate(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
-  if (finite_size(U)) {
-    my_assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
-    my_assert(my_isfinite(factor));
-    Matrix T(size2(U), size2(O));
-    atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, O, t_coef(0.0), T); // T = U^\dag * O
-    atlas::gemm(CblasNoTrans, CblasNoTrans, factor, T, U, t_coef(1.0), M); // M += factor * T * U
-  }
-}
-
 template<scalar S, typename t_coef = coef_traits<S>, typename T, typename T1>
 Eigen::MatrixX<T> rotate(const t_coef factor, const Eigen::MatrixX<T1> &U, const Eigen::MatrixX<T> &O) {
   my_assert(my_isfinite(factor));
   return factor * U.adjoint() * O * U;
-}
-
-inline auto to_ublas_range(const std::pair<size_t,size_t> &p) { return ublas::range(p.first, p.second); }
-
-template<scalar S>
-auto submatrix(const ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
-{
-  return ublas::matrix_range<const ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
-}
-
-template<scalar S>
-auto submatrix(ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
-{
-  return ublas::matrix_range<ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
 }
 
 template<scalar S>
@@ -379,20 +324,16 @@ auto trim_matrix(M &mat, const size_t new_size1, const size_t new_size2) {
 template<matrix M>
   bool has_lesseq_rows(const M &A, const M &B) {
     return size1(A) <= size1(B) && size2(A) == size2(B);
-  }
+}
 
-template<typename T, typename U, typename V> // U and/or V may be matrix views
+template<typename T, Eigen_matrix U, Eigen_matrix V> // U and/or V may be matrix views
 auto matrix_prod(const U &A, const V &B) {
-  auto M = ublas::matrix<T>(size1(A), size2(B));
-  atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
-  return M;
+  return A * B;
 }
 
 template<typename T, typename U, typename V> // U and/or V may be matrix views
 auto matrix_adj_prod(const U &A, const V &B) {
-  auto M = ublas::matrix<T>(size2(A), size2(B));
-  atlas::gemm(CblasConjTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
-  return M;
+  return A.adjoint() * B;
 }
 
 // M = A*B, size of A is adapted to the size of B
@@ -450,6 +391,7 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
   }
 }
 
+#ifdef INCL_UBLAS
 template <typename T>
 Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> ublas_to_eigen(ublas::matrix<T> m){
   Eigen::Map<Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>> m_eigen(m.data().begin(),m.size1(),m.size2());
@@ -476,6 +418,7 @@ auto eigen_to_ublas_vector(Eigen::Matrix<T,N,1> m){
   std::copy(m.data(), m.data() + m.size(),m_ublas.data().begin());
   return m_ublas;
 }
+#endif
 
 } // namespace
 

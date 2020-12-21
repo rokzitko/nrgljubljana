@@ -5,8 +5,13 @@
 #include <fstream>
 #include <iostream>
 #include <complex>
-#include "numerics.hpp" // reim
 #include "params.hpp"
+
+#ifdef USE_UBLAS
+#include "numerics_ublas.hpp"  // reim
+#else
+#include "numerics_Eigen.hpp"  // reim
+#endif
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>

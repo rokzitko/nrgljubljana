@@ -8,7 +8,12 @@
 #include "subspaces.hpp"
 #include "operators.hpp"
 #include "symmetry.hpp"
-#include "numerics.hpp"
+
+#ifdef USE_UBLAS
+#include "numerics_ublas.hpp"
+#else
+#include "numerics_Eigen.hpp"
+#endif
 
 namespace NRG {
 

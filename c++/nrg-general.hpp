@@ -94,12 +94,17 @@
 #include "traits.hpp"
 #include "workdir.hpp"
 #include "params.hpp"
-#include "numerics.hpp"
 #include "io.hpp"
 #include "time_mem.hpp"
 #include "outfield.hpp"
 #include "core.hpp"
 #include "mk_sym.hpp"
+
+#ifdef USE_UBLAS
+#include "numerics_ublas.hpp"
+#else
+#include "numerics_Eigen.hpp"
+#endif
 
 namespace NRG {
 

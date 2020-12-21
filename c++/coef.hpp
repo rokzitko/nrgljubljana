@@ -4,8 +4,14 @@
 #include <vector>
 #include <fstream>
 #include "traits.hpp"
-#include "numerics.hpp" // read_vector
 #include "params.hpp"
+
+#ifdef USE_UBLAS
+#include "numerics_ublas.hpp" // read_vector
+#else
+#include "numerics_Eigen.hpp" // read_vector
+#endif
+
 
 namespace NRG {
 

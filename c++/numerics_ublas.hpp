@@ -4,8 +4,8 @@
 // This header should be included in all other headers where vector/matrix
 // objects are manipulated.
 
-#ifndef _numerics_hpp_
-#define _numerics_hpp_
+#ifndef _numerics_ublas_hpp_
+#define _numerics_ublas_hpp_
 
 #include <complex>
 #include <iomanip>
@@ -18,7 +18,6 @@
 
 #include "traits.hpp" // defines INCL_UBLAS and/or INCL_EIGEN
 
-#ifdef INCL_UBLAS
 // ublas matrix & vector containers
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -32,11 +31,6 @@
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
-#endif
-
-#ifdef INCL_EIGEN
-#include <Eigen/Dense>
-#endif
 
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
@@ -91,6 +85,11 @@ template<scalar S, typename Matrix = Matrix_traits<S>>
 template<scalar S>
 [[nodiscard]] auto zero_matrix(const size_t size) { 
   return NRG::zero_matrix<S>(size, size); 
+}
+
+template<scalar S>
+[[nodiscard]] auto id_matrix(const size_t size) { 
+  return ublas::identity_matrix<S>(size); 
 }
 
 template<scalar S, typename Matrix = Matrix_traits<S>>
@@ -266,12 +265,6 @@ void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
   }
 }
 
-template<scalar S, typename T, typename t_coef = coef_traits<S>>
-Eigen::MatrixX<T> product(const t_coef factor, const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B) {
-  my_assert(my_isfinite(factor));
-  return factor * A * B.adjoint();
-}
-
 // M += factor * A * O * B^\dag
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
 void transform(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
@@ -282,12 +275,6 @@ void transform(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O,
     atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = O * B^\dag
     atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
   }
-}
-
-template<scalar S, typename t_coef = coef_traits<S>, typename T>
-Eigen::MatrixX<T> transform(const t_coef factor, const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &O, const Eigen::MatrixX<T> &B) {
-  my_assert(my_isfinite(factor));
-  return factor * A * O * B.adjoint();
 }
 
 // M += factor * U^\dag * O * U
@@ -302,11 +289,6 @@ void rotate(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
   }
 }
 
-template<scalar S, typename t_coef = coef_traits<S>, typename T, typename T1>
-Eigen::MatrixX<T> rotate(const t_coef factor, const Eigen::MatrixX<T1> &U, const Eigen::MatrixX<T> &O) {
-  my_assert(my_isfinite(factor));
-  return factor * U.adjoint() * O * U;
-}
 
 inline auto to_ublas_range(const std::pair<size_t,size_t> &p) { return ublas::range(p.first, p.second); }
 
@@ -320,18 +302,6 @@ template<scalar S>
 auto submatrix(ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
   return ublas::matrix_range<ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
-}
-
-template<scalar S>
-auto submatrix(const Eigen::MatrixX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
-{
-  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
-}
-
-template<scalar S>
-auto submatrix(Eigen::ArrayX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
-{
-  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
 // 'v' is any 1D range we can iterate over
@@ -348,11 +318,6 @@ auto sum_of_exp(R && values, const double factor) // sum exp(-factor*x)
   return ranges::accumulate(values, 0.0, {}, [factor](const auto &x){ return exp(-factor*x); });
 }      
 
-template<typename T>
-auto sum_of_exp(Eigen::MatrixX<T> A, const double factor) // sum exp(-factor*x)
-{
-  return exp(-factor * A.array()).sum();
-}
 
 template<matrix M>
 auto trace_contract(const M &A, const M &B, const size_t range) // Tr[AB]
@@ -448,33 +413,6 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
     // beta we get 1. What remains is the Boltzmann weight exp(-betaEm).
     return exp(-betaEm);
   }
-}
-
-template <typename T>
-Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> ublas_to_eigen(ublas::matrix<T> m){
-  Eigen::Map<Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>> m_eigen(m.data().begin(),m.size1(),m.size2());
-  return m_eigen;
-}
-
-template <typename T>
-Eigen::Matrix<T,Eigen::Dynamic,1> ublas_to_eigen(ublas::vector<T> m){
-  Eigen::Map<Eigen::Matrix<T,Eigen::Dynamic,1>> m_eigen(m.data().begin(),m.size(),1);
-  return m_eigen;
-}
-
-template<typename T, int N, int M>
-auto eigen_to_ublas_matrix(Eigen::Matrix<T,N,M> m){
-  ublas::matrix<T> m_ublas(m.rows(),m.cols());
-  auto m1 = !m.IsRowMajor ? m.transpose() : m;
-  std::copy(m1.data(), m1.data() + m1.size(),m_ublas.data().begin());
-  return m_ublas;
-}
-
-template<typename T, int N>
-auto eigen_to_ublas_vector(Eigen::Matrix<T,N,1> m){
-  ublas::vector<T> m_ublas(m.size());
-  std::copy(m.data(), m.data() + m.size(),m_ublas.data().begin());
-  return m_ublas;
 }
 
 } // namespace

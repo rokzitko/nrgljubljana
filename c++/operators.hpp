@@ -17,9 +17,14 @@
 #include "misc.hpp"
 #include "traits.hpp"
 #include "eigen.hpp"
-#include "numerics.hpp" // read_matrix
 #include "params.hpp"
 #include "h5.hpp"
+
+#ifdef USE_UBLAS
+#include "numerics_ublas.hpp" // read_matrix
+#else
+#include "numerics_Eigen.hpp" // read_matrix
+#endif
 
 namespace NRG {
 

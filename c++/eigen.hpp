@@ -15,9 +15,14 @@
 #include "traits.hpp"
 #include "invar.hpp"
 #include "params.hpp"
-#include "numerics.hpp"
 #include "step.hpp"
 #include "h5.hpp"
+
+#ifdef USE_UBLAS
+#include "numerics_ublas.hpp"
+#else
+#include "numerics_Eigen.hpp"
+#endif
 
 namespace NRG {
 
@@ -109,7 +114,7 @@ class Vectors {
     void resize(const size_t size1, const size_t size2) { m.resize(size1, size2); }
     const auto & operator()() const { return m; }
     void standard_basis(const size_t size) {
-      m = ublas::identity_matrix<t_matel>(size); // XXX: Eigen version? => generic function in numerics.hpp
+      m = id_matrix<t_matel>(size); // XXX: Eigen version? => generic function in numerics.hpp
     }
     auto submatrix(const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2) const {
       return NRG::submatrix(m, r1, r2);
