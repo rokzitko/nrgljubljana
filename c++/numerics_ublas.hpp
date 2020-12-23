@@ -1,5 +1,8 @@
 //Don't include directly, include numerics.hpp with define USE_UBLAS instead
 
+#ifndef _NUMERICS_UBLAS_HPP_
+#define _NUMERICS_UBLAS_HPP_
+
 template<scalar S, typename Matrix = Matrix_traits<S>>
 [[nodiscard]] Matrix zero_matrix(const size_t size1, const size_t size2) {
   return Matrix(size1, size2, 0);
@@ -60,8 +63,8 @@ template <scalar T> ublas::matrix<T> read_matrix(std::istream &F, const size_t s
 }
    
 // M += factor * A * B^\dag
-template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
+template<scalar S, ublas_matrix UM, typename t_coef = coef_traits<S>>
+void product(UM &M, const t_coef factor, const UM &A, const UM &B) {
   if (finite_size(A) && finite_size(B)) { // if this contributes at all...
     my_assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));
     my_assert(my_isfinite(factor));
@@ -70,24 +73,24 @@ void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
 }
 
 // M += factor * A * O * B^\dag
-template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void transform(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
+template<scalar S, ublas_matrix UM, typename t_coef = coef_traits<S>>
+void transform(UM &M, const t_coef factor, const UM &A, const UM &O, const UM &B) {
   if (finite_size(A) && finite_size(B)) {
     my_assert(size1(M) == size1(A) && size2(A) == size1(O) && size2(O) == size2(B) && size1(B) == size2(M));
     my_assert(my_isfinite(factor));
-    Matrix T(size1(O), size1(B));
+    ublas::matrix<S> T(size1(O), size1(B));
     atlas::gemm(CblasNoTrans, CblasConjTrans, t_coef(1.0), O, B, t_coef(0.0), T); // T = O * B^\dag
     atlas::gemm(CblasNoTrans, CblasNoTrans, factor, A, T, t_coef(1.0), M); // M += factor * A * T
   }
 }
 
 // M += factor * U^\dag * O * U
-template<scalar S, typename U_type, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void rotate(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
+template<scalar S, ublas_matrix UM, typename U_type,  typename t_coef = coef_traits<S>>
+void rotate(UM &M, const t_coef factor, const U_type &U, const UM &O) { /// XXX: U_type
   if (finite_size(U)) {
     my_assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
     my_assert(my_isfinite(factor));
-    Matrix T(size2(U), size2(O));
+    ublas::matrix<S> T(size2(U), size2(O));
     atlas::gemm(CblasConjTrans, CblasNoTrans, t_coef(1.0), U, O, t_coef(0.0), T); // T = U^\dag * O
     atlas::gemm(CblasNoTrans, CblasNoTrans, factor, T, U, t_coef(1.0), M); // M += factor * T * U
   }
@@ -120,3 +123,5 @@ auto matrix_adj_prod(const U &A, const V &B) {
   atlas::gemm(CblasConjTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
   return M;
 }
+
+#endif

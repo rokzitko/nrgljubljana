@@ -1,5 +1,8 @@
 //Don't include directly, include numerics.hpp with define USE_EIGEN instead
 
+#ifndef _NUMERICS_EIGEN_HPP_
+#define _NUMERICS_EIGEN_HPP_
+
 template<scalar S>
 [[nodiscard]] Eigen::MatrixX<S> zero_matrix(const size_t size1, const size_t size2) {
   return Eigen::MatrixX<S>::Zero(size1, size2);
@@ -65,8 +68,8 @@ Eigen::MatrixX<T> product(const t_coef factor, const Eigen::MatrixX<T> &A, const
   return factor * A * B.adjoint();
 }
 
-template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void product(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &B) {
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void product(EM &M, const t_coef factor, const EM &A, const EM &B) {
   my_assert(my_isfinite(factor));
   M += factor * A * B.adjoint();
 }
@@ -77,8 +80,8 @@ Eigen::MatrixX<T> transform(const t_coef factor, const Eigen::MatrixX<T> &A, con
   return factor * A * O * B.adjoint();
 }
 
-template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void transform(Matrix &M, const t_coef factor, const Matrix &A, const Matrix &O, const Matrix &B) {
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void transform(EM &M, const t_coef factor, const EM &A, const EM &O, const EM &B) {
   my_assert(my_isfinite(factor));
   M += factor * A * O * B.adjoint();
 }
@@ -89,8 +92,8 @@ Eigen::MatrixX<T> rotate(const t_coef factor, const Eigen::MatrixX<T1> &U, const
   return factor * U.adjoint() * O * U;
 }
 
-template<scalar S, typename U_type, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
-void rotate(Matrix &M, const t_coef factor, const U_type &U, const Matrix &O) {
+template<scalar S, typename U_type, Eigen_matrix EM, typename t_coef = coef_traits<S>> // XXX
+void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
   my_assert(my_isfinite(factor));
   M += factor * U.adjoint() * O * U;
 }
@@ -122,3 +125,5 @@ template<typename T>
 Eigen::MatrixX<T> matrix_adj_prod(const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B) {
   return A.adjoint() * B;
 }
+
+#endif

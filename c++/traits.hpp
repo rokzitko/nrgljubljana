@@ -3,7 +3,7 @@
 
 #define INCL_UBLAS
 #define INCL_EIGEN
-#define USE_EIGEN
+#define USE_UBLAS
 
 //#include <concepts> // C++20
 #include <complex>
