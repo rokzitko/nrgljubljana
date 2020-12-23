@@ -4,8 +4,8 @@
 #include <vector>
 #include <fstream>
 #include "traits.hpp"
-#include "numerics.hpp" // read_vector
 #include "params.hpp"
+#include "numerics.hpp" // read_vector
 
 namespace NRG {
 

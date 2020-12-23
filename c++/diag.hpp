@@ -16,8 +16,8 @@
 #include "params.hpp"
 #include "eigen.hpp"
 #include "time_mem.hpp"
-#include "numerics.hpp" // is_matrix_upper
 #include "debug.hpp" // nrglogdp
+#include "numerics.hpp" // is_matrix_upper
 
 #define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"

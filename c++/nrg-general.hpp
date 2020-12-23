@@ -94,12 +94,12 @@
 #include "traits.hpp"
 #include "workdir.hpp"
 #include "params.hpp"
-#include "numerics.hpp"
 #include "io.hpp"
 #include "time_mem.hpp"
 #include "outfield.hpp"
 #include "core.hpp"
 #include "mk_sym.hpp"
+#include "numerics.hpp"
 
 namespace NRG {
 

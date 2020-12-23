@@ -1,10 +1,14 @@
 #include <gtest/gtest.h>
-#include <numerics.hpp>
 #include "compare.hpp"
+
+#define USE_UBLAS
+#define USE_EIGEN
+#define INCL_UBLAS
+#define INCL_EIGEN
+#include "numerics.hpp"
 
 using namespace NRG;
 using namespace std::complex_literals;
-
 
 TEST(numerics, reim) {
   const auto [r, i] = reim(std::complex(1.0,2.0));
@@ -22,31 +26,6 @@ TEST(numerics, sum2){
 
 TEST(numerics, conj_me){
   EXPECT_EQ(conj_me(std::complex(5.0,8.0)), std::complex(5.0,-8.0));
-}
-TEST(numerics, zero_matrix){
-  const size_t dim1 = 4;
-  const size_t dim2 = 2;
-  const size_t dim3 = 3;
-  auto zero_m1 = NRG::zero_matrix<double>(dim1,dim2);
-  auto zero_m2 = NRG::zero_matrix<double>(dim3);
-
-  ASSERT_EQ(zero_m1.size1(), dim1);
-  ASSERT_EQ(zero_m1.size2(), dim2);
-  ASSERT_EQ(zero_m2.size1(), dim3);
-  ASSERT_EQ(zero_m2.size2(), dim3);
-
-  for(size_t i = 0; i < dim1; i++){
-    for(size_t j = 0; j < dim2; j++){
-      EXPECT_EQ(zero_m1(i,j), 0);
-    }
-  }
-
-  for(size_t i = 0; i < dim3; i++){
-    for(size_t j = 0; j < dim3; j++){
-      EXPECT_EQ(zero_m2(i,j), 0);
-    }
-  }
-
 }
 
 TEST(numerics, bucket){
@@ -73,80 +52,6 @@ TEST(numerics, my_fcmp){
   EXPECT_EQ(my_fcmp(a, b, 0.1, 0.00001), -1);
 }
 
-TEST(numerics, std_trace_exp_real){
-  const int N = 3;
-  std::vector<double> v(N);
-  for(int i = 0; i < N ; i++)
-    v[i] = i + 1;
-  
-  ublas::matrix<double> m(N, N);
-  for(int i = 0; i < N*N; i++)
-    m(i) = i + 1;
-  
-  double expected = 0;
-  for(int i = 0; i < N; i++){
-    expected += exp(- 2.5 * v[i]) * m(i, i);
-  }
-
-  EXPECT_DOUBLE_EQ(expected, trace_exp(v, m , 2.5));
-}
-
-TEST(numerics, std_trace_exp_complex){
-  const int N = 3;
-  std::vector<std::complex<double>> v(N);
-  for(int j = 0; j < N ; j++)
-    v[j] = j + 1 + 3i * j;
-  
-  ublas::matrix<std::complex<double>> m(N, N);
-  for(int j = 0; j < N*N; j++)
-    m(j) = j + 3 + 2i * j;
-  
-  std::complex<double> expected = 0;
-  for(int i = 0; i < N; i++){
-    expected += exp(- 2.5 * v[i]) * m(i, i);
-  }
-
-  compare(expected, trace_exp(v, m , 2.5));
-}
-
-/*
-TEST(numerics, Eigen_trace_exp_real){
-  const int N = 3;
-  Eigen::VectorXd v(N);
-  for(int i = 0; i < N ; i++)
-    v(i) = i + 1;
-  
-  Eigen::MatrixXd m(N, N);
-  for(int i = 0; i < N*N; i++)
-    m(i) = i + 1;
-  
-  double expected = 0;
-  for(int i = 0; i < N; i++){
-    expected += exp(- 2.5 * v[i]) * m(i, i);
-  }
-
-  EXPECT_DOUBLE_EQ(expected, trace_exp(v, m , 2.5));
-}
-
-TEST(numerics, Eigen_trace_exp_complex){
-  const int N = 3;
-  Eigen::VectorXcd v(N);
-  for(int j = 0; j < N ; j++)
-    v(j) = j + 1 + 3i * j;
-  
-  Eigen::MatrixXcd m(N, N);
-  for(int j = 0; j < N*N; j++)
-    m(j) = j + 3 + 2i * j;
-  
-  std::complex<double> expected = 0;
-  for(int i = 0; i < N; i++){
-    expected += exp(- 2.5 * v(i)) * m(i, i);
-  }
-
-  compare(expected, trace_exp(v, m , 2.5));
-}
-*/
-
 class numericsMatrixOperationsTest_complex : public ::testing::Test {
 protected:
   int N;
@@ -164,13 +69,13 @@ protected:
 
   void SetUp() override{
     for(int j = 0; j < N*N; j++)
-      m1_ublas(j) = j + 3 + 2i * j;
+      m1_ublas(j) = j + 3.0 + 2i * (double)j;
     
     for(int j = 0; j < N*N; j++)
-      m2_ublas(j) = j + 1 + 3i * j;
+      m2_ublas(j) = j + 1.0 + 3i * (double)j;
 
     for(int j = 0; j < N*N; j++)
-      m3_ublas(j) = 2 * j + 1 + 5i * j;
+      m3_ublas(j) = 2.0 * j + 1 + 5i * (double)j;
 
     m_ublas_result = ublas::zero_matrix<std::complex<double>>(N,N);
     m1_eigen = ublas_to_eigen(m1_ublas);
@@ -178,19 +83,6 @@ protected:
     m3_eigen = ublas_to_eigen(m3_ublas);
   }
 };
-
-// class numericsMatrixOperationsTest_real : public numericsMatrixOperationsTest_complex {
-// protected:
-//   double factor_real = factor.real();
-//   ublas::matrix<double> m1_ublas_real = ublas::real(m1_ublas);
-//   ublas::matrix<double> m2_ublas_real = ublas::real(m2_ublas);
-//   ublas::matrix<double> m3_ublas_real = ublas::real(m3_ublas);
-//   ublas::matrix<double> m_ublas_result_real = ublas::real(m_ublas_result);
-
-//   Eigen::MatrixXd m1_eigen_real = m1_eigen.real();
-//   Eigen::MatrixXd m2_eigen_real = m2_eigen.real();
-//   Eigen::MatrixXd m3_eigen_real = m3_eigen.real();
-// };
 
 class numericsMatrixOperationsTest_real : public numericsMatrixOperationsTest_complex {
 protected:
@@ -257,50 +149,32 @@ TEST_F(numericsMatrixOperationsTest_complex, rotate){
   compare(m_ublas_result, m_eigen_result);
 }
 
-TEST(numerics, submatrix_ublas){
-  const int N = 3; 
-  ublas::matrix<double> a(N, N);
-  for(int i = 0; i < N*N; i++) a(i) = i;
+TEST(misc, ublas_to_eigen){
+  auto ublas_matrix = read_matrix("txt/matrix.txt");
+  auto eigen_matrix = ublas_to_eigen(ublas_matrix);
+  compare(eigen_matrix, ublas_matrix);
+
+  ublas::vector<int> ublas_vector(5);
+  for(int i = 0; i < 5; i++) ublas_vector(i) = i;
+  auto eigen_vector = ublas_to_eigen(ublas_vector);
+  compare(eigen_vector, ublas_vector);
+}
+
+TEST(misc, eigen_to_ublas){
+  Eigen::Vector4i eigen_vector(3,5,8,14);
+  auto ublas_vector = eigen_to_ublas_vector(eigen_vector);
+  compare(eigen_vector, ublas_vector);
+  {
+    Eigen::Matrix3i eigen_matrix;
+    for (int i = 0; i < eigen_matrix.size(); i++) eigen_matrix(i) = i;
+    auto ublas_matrix = eigen_to_ublas_matrix(eigen_matrix);
+    compare(eigen_matrix, ublas_matrix);
+  }
   
-  ublas::matrix<double> dg(N - 1, N - 1);
-  dg(0, 0) = 0;
-  dg(0, 1) = 1;
-  dg(1, 0) = 3;
-  dg(1, 1) = 4;
-  ublas::matrix<double> dg_result = submatrix(a, {0, 2}, {0, 2});
-  compare(dg, dg_result);
-}
-
-TEST(numerics, submatrix_eigen){
-  const int N = 3; 
-  Eigen::MatrixXd a(N,N);
-  for(int i = 0; i < N*N; i++) a(i) = i;
-
-  Eigen::MatrixXd dg(N - 1, N - 1);
-  dg << 0, 3, 1, 4;
-
-  Eigen::MatrixXd dg_result = submatrix(a, {0, 2}, {0, 2});
-  compare(dg, dg_result);
-}
-
-TEST(numerics, sum_of_exp){
-  const int N = 3;
-  double factor = 1.8;
-  ublas::matrix<double> a(N, N);
-  for(int i = 0; i < N*N; i++) a(i) = i;
-  double result_ublas = sum_of_exp(a.data(), factor);
-  double sum = 0;
-  for(int i = 0; i < N*N; i++) sum += exp(-factor*a(i));
-  compare(result_ublas, sum);
-
-  Eigen::MatrixXd b(N, N);
-  for(int i = 0; i < N*N; i++) b(i) = i;
-  double result_eigen = sum_of_exp(b, factor);
-  compare(result_eigen, sum);
-
-}
-
-int main(int argc, char **argv) {
-   ::testing::InitGoogleTest(&argc, argv);
-   return RUN_ALL_TESTS();
+  {
+    Eigen::Matrix<int, 3, 3, Eigen::RowMajor> eigen_matrix;
+    for (int i = 0; i < eigen_matrix.size(); i++) eigen_matrix(i) = i;
+    auto ublas_matrix = eigen_to_ublas_matrix(eigen_matrix);
+    compare(eigen_matrix, ublas_matrix);
+  }
 }

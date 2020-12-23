@@ -51,7 +51,7 @@ class MPI_diag {
        mpienv.abort(1);
      }
    }
-#ifdef INCL_UBLAS
+#ifdef USE_UBLAS
    // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
    template<scalar S> void send_matrix(const int dest, const ublas::matrix<S> &m) {
      const auto size1 = NRG::size1(m);
@@ -78,6 +78,35 @@ class MPI_diag {
        ublas::matrix_row<Matrix_traits<S>>(m, i) = vec;
      }
      return m;
+   }
+#endif
+#ifdef USE_EIGEN
+   // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
+    template<scalar S>
+    void send_matrix(const int dest, const ::Eigen::MatrixX<S> &m) {
+      const auto size1 = NRG::size1(m);
+      mpiw.send(dest, TAG_MATRIX_SIZE, size1);
+      const auto size2 = NRG::size2(m);
+      mpiw.send(dest, TAG_MATRIX_SIZE, size2);
+      mpilog("Sending matrix of size " << size1 << " x " << size2 << " line by line to " << dest);
+      for (const auto i: range0(size1)) {
+        mpiw.send(dest, TAG_MATRIX_LINE, m.row(i));
+      }
+   }
+   template<scalar S> auto receive_matrix(const int source) {
+      size_t size1;
+      check_status(mpiw.recv(source, TAG_MATRIX_SIZE, size1));
+      size_t size2;
+      check_status(mpiw.recv(source, TAG_MATRIX_SIZE, size2));
+      ::Eigen::MatrixX<S> m(size1, size2);
+      mpilog("Receiving matrix of size " << size1 << " x " << size2 << " line by line from " << source);
+      for (const auto i: range0(size1)) {
+        ublas::vector<matel_traits<S>> vec;
+        check_status(mpiw.recv(source, TAG_MATRIX_LINE, vec));
+        my_assert(vec.size() == size2);
+        m.row(i) = ublas_to_eigen(vec);
+      }
+      return m;
    }
 #endif
    template<scalar S> void send_raweigen(const int dest, const RawEigen<S> &eig) {

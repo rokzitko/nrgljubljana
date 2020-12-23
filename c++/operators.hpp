@@ -17,9 +17,9 @@
 #include "misc.hpp"
 #include "traits.hpp"
 #include "eigen.hpp"
-#include "numerics.hpp" // read_matrix
 #include "params.hpp"
 #include "h5.hpp"
+#include "numerics.hpp"// read_matrix
 
 namespace NRG {
 

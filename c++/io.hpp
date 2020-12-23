@@ -5,8 +5,8 @@
 #include <fstream>
 #include <iostream>
 #include <complex>
-#include "numerics.hpp" // reim
 #include "params.hpp"
+#include "numerics.hpp"// reim
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
