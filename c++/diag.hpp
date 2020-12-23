@@ -17,13 +17,7 @@
 #include "eigen.hpp"
 #include "time_mem.hpp"
 #include "debug.hpp" // nrglogdp
-
-
-#ifdef USE_UBLAS
-#include "numerics_ublas.hpp" // is_matrix_upper
-#else
-#include "numerics_Eigen.hpp" // is_matrix_upper
-#endif
+#include "numerics.hpp" // is_matrix_upper
 
 #define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"

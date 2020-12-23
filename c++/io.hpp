@@ -6,12 +6,7 @@
 #include <iostream>
 #include <complex>
 #include "params.hpp"
-
-#ifdef USE_UBLAS
-#include "numerics_ublas.hpp"  // reim
-#else
-#include "numerics_Eigen.hpp"  // reim
-#endif
+#include "numerics.hpp"// reim
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>

@@ -3,12 +3,7 @@
 
 #include <algorithm>
 #include "params.hpp"
-
-#ifdef USE_UBLAS
-#include "numerics_ublas.hpp"
-#else
-#include "numerics_Eigen.hpp"
-#endif
+#include "numerics.hpp"
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>

@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 #include "compare.hpp"
 
-#include "numerics_Eigen.hpp"
+#ifdef USE_EIGEN
+
+#include "numerics.hpp"
 
 using namespace NRG;
 using namespace std::complex_literals;
@@ -92,3 +94,5 @@ TEST(numerics, sum_of_exp){
   compare(result_eigen, sum);
 
 }
+
+#endif

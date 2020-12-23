@@ -5,13 +5,7 @@
 #include <fstream>
 #include "traits.hpp"
 #include "params.hpp"
-
-#ifdef USE_UBLAS
-#include "numerics_ublas.hpp" // read_vector
-#else
-#include "numerics_Eigen.hpp" // read_vector
-#endif
-
+#include "numerics.hpp" // read_vector
 
 namespace NRG {
 

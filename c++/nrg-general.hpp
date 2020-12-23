@@ -99,12 +99,7 @@
 #include "outfield.hpp"
 #include "core.hpp"
 #include "mk_sym.hpp"
-
-#ifdef USE_UBLAS
-#include "numerics_ublas.hpp"
-#else
-#include "numerics_Eigen.hpp"
-#endif
+#include "numerics.hpp"
 
 namespace NRG {
 

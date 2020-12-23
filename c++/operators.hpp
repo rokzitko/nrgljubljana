@@ -19,12 +19,7 @@
 #include "eigen.hpp"
 #include "params.hpp"
 #include "h5.hpp"
-
-#ifdef USE_UBLAS
-#include "numerics_ublas.hpp" // read_matrix
-#else
-#include "numerics_Eigen.hpp" // read_matrix
-#endif
+#include "numerics.hpp"// read_matrix
 
 namespace NRG {
 

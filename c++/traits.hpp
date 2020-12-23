@@ -3,7 +3,7 @@
 
 #define INCL_UBLAS
 #define INCL_EIGEN
-#define USE_UBLAS
+#define USE_EIGEN
 
 //#include <concepts> // C++20
 #include <complex>
@@ -14,8 +14,11 @@
 #endif
 
 #ifdef INCL_EIGEN
+#define EIGEN_DENSEBASE_PLUGIN "Eigen/src/plugins/Boost_serialization.h"
+//#include "Eigen/src/plugins/boost_serialization_eigen.h"
 #include <Eigen/Dense>
 #endif
+
 
 namespace NRG {
 
@@ -38,8 +41,8 @@ template <typename S> auto size2(const ublas::matrix_range<const ublas::matrix<S
 
 #ifdef INCL_EIGEN
 template <typename S> const auto generate_Eigen = [](const size_t dim1, const size_t dim2) { return Eigen::MatrixX<S>(dim1, dim2); };
-template <typename S> auto size1(const Eigen::MatrixX<S> &m) { return m.rows(); }
-template <typename S> auto size2(const Eigen::MatrixX<S> &m) { return m.cols(); }
+template <typename S> size_t size1(const Eigen::MatrixX<S> &m) { return m.rows(); }
+template <typename S> size_t size2(const Eigen::MatrixX<S> &m) { return m.cols(); }
 #endif
 
 template <typename T>
@@ -66,6 +69,7 @@ template <scalar S> struct is_Eigen_object<Eigen::MatrixX<S>> : std::true_type {
 
 template <typename T> concept ublas_matrix = matrix<T> && is_ublas_object<T>::value;
 template <typename T> concept Eigen_matrix = matrix<T> && is_Eigen_object<T>::value;
+// template <typename T> concept Eigen_object = is_Eigen_object<T>::value;
 template <typename T> concept real_ublas_matrix = real_matrix<T> && is_ublas_object<T>::value;
 template <typename T> concept real_Eigen_matrix = real_matrix<T> && is_Eigen_object<T>::value;
 template <typename T> concept complex_ublas_matrix = complex_matrix<T> && is_ublas_object<T>::value;
