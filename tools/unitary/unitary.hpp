@@ -23,13 +23,9 @@ using namespace std::string_literals;
 
 #include <unistd.h>
 
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-
 #include <basicio.hpp>
 #include <io.hpp>
+#include <numerics.hpp>
 
 namespace NRG::Unitary {
 
@@ -81,13 +77,14 @@ class Unitary {
    }
 
  public:
-   void run(ublas::matrix<double> &A, const ublas::matrix<double> &B, ublas::matrix<double> &C) { // A and B may be transposed
-     if (transpose_first) A = ublas::trans(A);
-     if (transpose_last) C = ublas::trans(C);
-     assert(A.size2() == B.size1());
-     assert(B.size2() == C.size1());
-     ublas::matrix<double> N = ublas::prod(B, C);
-     ublas::matrix<double> M = ublas::prod(A, N);
+   template<real_matrix RM>
+   void run(const RM &A_, const RM &B, const RM &C_) {
+     auto A = transpose_first ? NRG::trans(A_) : A_;
+     auto C = transpose_last ? NRG::trans(C_) : C_;
+     assert(size2(A) == size1(B));
+     assert(size2(B) == size1(C));
+     auto N = matrix_prod<double>(B, C); // XXX: use rotate() instead?
+     auto M = matrix_prod<double>(A, N);
      if (scale_factor != 1.0) M = scale_factor * M;
      if (veryverbose) std::cout << "M=" << M << std::endl;
      if (output_filename) save_matrix(output_filename.value(), M, verbose, chop_tol);

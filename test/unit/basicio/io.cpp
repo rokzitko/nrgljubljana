@@ -7,11 +7,13 @@
 
 using namespace NRG;
 
+/*
 TEST(basicio, read_matrix){
     std::vector<std::vector<int>> const ref_matrix = {{31,41,53,46},{12,5,1,41},{5,2,4,7}};
     auto matrix = read_matrix("txt/matrix.txt");
     compare(ref_matrix, matrix);
 }
+*/
 
 #ifdef INCL_EIGEN
 TEST(basicio, read_matrix_Eigen){
@@ -24,6 +26,7 @@ TEST(basicio, read_matrix_Eigen){
 }
 #endif
 
+/*
 #ifdef INCL_UBLAS
 TEST(basicio, read_matrix_ublas){
   std::vector<std::vector<int>> const ref_matrix = {{31,41,53,46},{12,5,1,41},{5,2,4,7}};
@@ -31,7 +34,8 @@ TEST(basicio, read_matrix_ublas){
   compare(ref_matrix, matrix);
 }
 #endif
-
+*/
+ 
 TEST(basicio, save_matrix){
     auto matrix = read_matrix("txt/matrix.txt");
     save_matrix("txt/matrix_temp.txt", matrix);

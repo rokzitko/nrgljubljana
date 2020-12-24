@@ -15,16 +15,20 @@ template <scalar S>
   return Eigen::MatrixX<S>(size1, size2);
 }
 
-template<scalar S>
+template <scalar S>
 [[nodiscard]] Eigen::MatrixX<S> zero_matrix(const size_t size1, const size_t size2) {
   return Eigen::MatrixX<S>::Zero(size1, size2);
 }
 
-template<scalar S>
+template <scalar S>
 [[nodiscard]] Eigen::MatrixX<S> id_matrix(const size_t size) { 
   return Eigen::MatrixX<S>::Identity(size, size);
 }
 #endif
+
+// XXX: return view instead?
+template <scalar S> Eigen::MatrixX<S> herm(const Eigen::MatrixX<S> &m) { return m.adjoint(); }
+template <scalar S> Eigen::MatrixX<S> trans(const Eigen::MatrixX<S> &m) { return m.transpose(); }
 
 // Access the low-level data storage in the matrix (used in diag.hpp)
 template<scalar S> S * data(Eigen::MatrixX<S> &m) { return m.data(); }

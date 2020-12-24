@@ -48,10 +48,10 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
     const bool conj_transpose = i > j;
     if (conj_transpose) {
       auto hsub = submatrix(h, qq.part_mma(j), qq.part_mma(i));
-      noalias(hsub) += conj_me(factor_scaled) * herm(mat);
+      hsub += conj_me(factor_scaled) * herm(mat);
     } else {
       auto hsub = submatrix(h, qq.part_mma(i), qq.part_mma(j));
-      noalias(hsub) += factor_scaled * mat;
+      hsub += factor_scaled * mat;
     }
   } else
     throw std::runtime_error(fmt::format("offdiag_function(): matrix not found {} {} {} {}", i, j, ch, fnr));

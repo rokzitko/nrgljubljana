@@ -10,6 +10,9 @@
 #include <array>
 #include <vector>
 
+#include <traits.hpp>
+#include <numerics.hpp>
+
 #include "compare.hpp"
 using namespace NRG::Unitary;
 using namespace NRG;
@@ -36,9 +39,9 @@ TEST(unitary, unitary_help){
 class unitaryProdTest : public ::testing::Test {
     protected:
         void SetUp() override{
-            A = read_matrix("txt/matrix_A.txt");
-            B = read_matrix("txt/matrix_B.txt");
-            C = read_matrix("txt/matrix_C.txt");
+            A = read_matrix_ublas("txt/matrix_A.txt");
+            B = read_matrix_ublas("txt/matrix_B.txt");
+            C = read_matrix_ublas("txt/matrix_C.txt");
         }
 
         void TearDown() override{
@@ -48,7 +51,7 @@ class unitaryProdTest : public ::testing::Test {
     void Compare() {
         ublas::matrix<double> D = ublas::prod(B,C);
         my_result = ublas::prod(A, D);
-        func_result = read_matrix("txt/temp_result_matrix.txt");
+        func_result = read_matrix_ublas("txt/temp_result_matrix.txt");
         compare(my_result, func_result);
     }
     ublas::matrix<double> A;
