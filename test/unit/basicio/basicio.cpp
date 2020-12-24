@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <traits.hpp>
 #include <basicio.hpp>
 #include <sstream>
 
@@ -28,21 +29,24 @@ TEST(basicio, inserters1) {
   }
   {
     std::stringstream ss;
-    ublas::matrix<int> m(2,2);
-    m(0,0) = 1;
-    m(0,1) = 2;
-    m(1,0) = 3;
-    m(1,1) = 4;
-    ss << m;
-    EXPECT_EQ(ss.str(), "1 2 \n3 4 \n"); // trailing ws
-  }
-  {
-    std::stringstream ss;
     std::set s = {1, 2, 3};
     ss << s;
     EXPECT_EQ(ss.str(), "1 2 3 "); // trailing ws
   } 
 }
+
+#ifdef INCL_UBLAS
+TEST(basicio, inserters_ublas) {
+  std::stringstream ss;
+  ublas::matrix<int> m(2,2);
+  m(0,0) = 1;
+  m(0,1) = 2;
+  m(1,0) = 3;
+  m(1,1) = 4;
+  ss << m;
+  EXPECT_EQ(ss.str(), "1 2 \n3 4 \n"); // trailing ws
+}
+#endif
 
 TEST(basicio, from_string) {
   {
@@ -90,47 +94,6 @@ TEST(basicio, get_dims) {
     auto file_err = safe_open_for_reading("txt/matrix_err.txt");
     EXPECT_THROW(get_dims(file_err), std::runtime_error);
 }
-
-TEST(basicio, read_matrix){
-    std::vector<std::vector<int>> const ref_matrix = {{31,41,53,46},{12,5,1,41},{5,2,4,7}};
-    auto matrix = read_matrix("txt/matrix.txt");
-    compare(ref_matrix, matrix);
-}
-
-TEST(basicio, read_matrix_Eigen){
-    Eigen::Matrix<double, 3,4> ref_matrix;
-    ref_matrix << 31,41,53,46,
-                  12,5,1,41,
-                  5,2,4,7;
-    auto matrix = read_matrix_Eigen("txt/matrix.txt");
-    compare(ref_matrix, matrix);
-}
-
-TEST(basicio, save_matrix){
-    auto matrix = read_matrix("txt/matrix.txt");
-    save_matrix("txt/matrix_temp.txt", matrix);
-    auto matrix_temp = read_matrix("txt/matrix_temp.txt");
-    compare(matrix, matrix_temp);
-    std::remove("txt/matrix_temp.txt");
-}
-
-TEST(basicio, save_matrix_ublas){
-    auto matrix = read_matrix_ublas("txt/matrix.txt");
-    save_matrix("txt/matrix_temp.txt", matrix);
-    auto matrix_temp = read_matrix_ublas("txt/matrix_temp.txt");
-    compare(matrix, matrix_temp);
-    std::remove("txt/matrix_temp.txt");
-}
-
-/*
- TEST(basicio, save_matrix_Eigen){
-    auto matrix = read_matrix_Eigen("txt/matrix.txt");
-    save_matrix("txt/matrix_temp.txt", matrix); // generic function!
-    auto matrix_temp = read_matrix_Eigen("txt/matrix_temp.txt");
-    compare(matrix, matrix_temp);
-    std::remove("txt/matrix_temp.txt");
-}
-*/
 
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);

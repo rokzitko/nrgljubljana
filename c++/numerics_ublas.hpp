@@ -3,16 +3,26 @@
 #ifndef _NUMERICS_UBLAS_HPP_
 #define _NUMERICS_UBLAS_HPP_
 
+template <scalar S>
+[[nodiscard]] ublas::matrix<S> generate_ublas(const size_t size1, const size_t size2) {
+  return ublas::matrix<S>(size1, size2);
+}
+
 // Generators
 #ifdef USE_UBLAS
+template <scalar S>
+[[nodiscard]] ublas::matrix<S> generate_matrix(const size_t size1, const size_t size2) {
+  return ublas::matrix<S>(size1, size2);
+}
+
 template<scalar S>
-[[nodiscard]] auto zero_matrix(const size_t size1, const size_t size2) {
+[[nodiscard]] ublas::matrix<S> zero_matrix(const size_t size1, const size_t size2) {
   return ublas::matrix<S>(size1, size2, 0);
 }
 
 template<scalar S>
-[[nodiscard]] auto id_matrix(const size_t size) { 
-  return ublas::identity_matrix<S>(size); 
+[[nodiscard]] ublas::matrix<S> id_matrix(const size_t size) {
+  return ublas::identity_matrix<S>(size);
 }
 #endif
 

@@ -29,6 +29,7 @@ using namespace std::string_literals;
 #include <boost/numeric/ublas/operation.hpp>
 
 #include <basicio.hpp>
+#include <io.hpp>
 
 namespace NRG::Unitary {
 

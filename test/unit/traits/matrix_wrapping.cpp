@@ -3,7 +3,7 @@
 #include <complex>
 
 #include <traits.hpp>
-#include <Eigen/Dense>
+#include <numerics.hpp>
 
 using namespace NRG;
 

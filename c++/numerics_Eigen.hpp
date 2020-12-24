@@ -3,16 +3,26 @@
 #ifndef _NUMERICS_EIGEN_HPP_
 #define _NUMERICS_EIGEN_HPP_
 
+template <scalar S> 
+[[nodiscard]] Eigen::MatrixX<S> generate_Eigen(const size_t size1, const size_t size2) {
+  return Eigen::MatrixX<S>(size1, size2);
+}
+
 // Generators
 #ifdef USE_EIGEN
+template <scalar S> 
+[[nodiscard]] Eigen::MatrixX<S> generate_matrix(const size_t size1, const size_t size2) {
+  return Eigen::MatrixX<S>(size1, size2);
+}
+
 template<scalar S>
-[[nodiscard]] auto zero_matrix(const size_t size1, const size_t size2) {
+[[nodiscard]] Eigen::MatrixX<S> zero_matrix(const size_t size1, const size_t size2) {
   return Eigen::MatrixX<S>::Zero(size1, size2);
 }
 
 template<scalar S>
-[[nodiscard]] auto id_matrix(const size_t size) { 
-  return Eigen::MatrixX<S>::Identity(size, size); 
+[[nodiscard]] Eigen::MatrixX<S> id_matrix(const size_t size) { 
+  return Eigen::MatrixX<S>::Identity(size, size);
 }
 #endif
 

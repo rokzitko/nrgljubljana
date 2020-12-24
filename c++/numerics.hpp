@@ -53,6 +53,7 @@
 
 #include "portabil.hpp"
 #include "misc.hpp"
+#include "traits.hpp"
 
 namespace NRG {
 

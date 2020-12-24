@@ -70,8 +70,8 @@ auto new_subspaces(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
 }
 
 template<scalar S>
-Matrix_traits<S> hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
-                             const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
+auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
+                 const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
   auto h = zero_matrix<S>(rm.total());

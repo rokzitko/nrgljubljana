@@ -3,8 +3,8 @@
 
 // Use the matrix backend settings from traits.hpp
 #include "traits.hpp"
-
 #include "numerics.hpp"
+#include "io.hpp"
 
 using namespace NRG;
 using namespace std::complex_literals;
@@ -148,8 +148,9 @@ TEST_F(numericsMatrixOperationsTest_complex, rotate){
   compare(m_ublas_result, m_eigen_result);
 }
 
+#if defined(INCL_UBLAS) && defined(INCL_EIGEN)
 TEST(misc, ublas_to_eigen){
-  auto ublas_matrix = read_matrix("txt/matrix.txt");
+  auto ublas_matrix = read_matrix_ublas("txt/matrix.txt");
   auto eigen_matrix = ublas_to_eigen(ublas_matrix);
   compare(eigen_matrix, ublas_matrix);
 
@@ -177,3 +178,4 @@ TEST(misc, eigen_to_ublas){
     compare(eigen_matrix, ublas_matrix);
   }
 }
+#endif

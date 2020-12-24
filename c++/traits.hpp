@@ -16,10 +16,8 @@
 
 #ifdef INCL_EIGEN
 #define EIGEN_DENSEBASE_PLUGIN "Eigen/src/plugins/Boost_serialization.h"
-//#include "Eigen/src/plugins/boost_serialization_eigen.h"
 #include <Eigen/Dense>
 #endif
-
 
 namespace NRG {
 
@@ -33,7 +31,6 @@ template <floating_point T> struct is_complex<std::complex<T>> : std::true_type 
 template <typename T> concept scalar = floating_point<T> || is_complex<T>::value;
 
 #ifdef INCL_UBLAS
-template <typename S> const auto generate_ublas = [](const size_t dim1, const size_t dim2) { return ublas::matrix<S>(dim1, dim2); };
 template <typename S> auto size1(const ublas::matrix<S> &m) { return m.size1(); }
 template <typename S> auto size2(const ublas::matrix<S> &m) { return m.size2(); }
 template <typename S> auto size1(const ublas::matrix_range<const ublas::matrix<S>> &m) { return m.size1(); }
@@ -41,7 +38,6 @@ template <typename S> auto size2(const ublas::matrix_range<const ublas::matrix<S
 #endif
 
 #ifdef INCL_EIGEN
-template <typename S> const auto generate_Eigen = [](const size_t dim1, const size_t dim2) { return Eigen::MatrixX<S>(dim1, dim2); };
 template <typename S> size_t size1(const Eigen::MatrixX<S> &m) { return m.rows(); }
 template <typename S> size_t size2(const Eigen::MatrixX<S> &m) { return m.cols(); }
 #endif
@@ -70,7 +66,6 @@ template <scalar S> struct is_Eigen_object<Eigen::MatrixX<S>> : std::true_type {
 
 template <typename T> concept ublas_matrix = matrix<T> && is_ublas_object<T>::value;
 template <typename T> concept Eigen_matrix = matrix<T> && is_Eigen_object<T>::value;
-// template <typename T> concept Eigen_object = is_Eigen_object<T>::value;
 template <typename T> concept real_ublas_matrix = real_matrix<T> && is_ublas_object<T>::value;
 template <typename T> concept real_Eigen_matrix = real_matrix<T> && is_Eigen_object<T>::value;
 template <typename T> concept complex_ublas_matrix = complex_matrix<T> && is_ublas_object<T>::value;
@@ -133,13 +128,6 @@ template <scalar S> using weight_traits  = typename traits<S>::t_weight;
 template <scalar S> using evec_traits    = typename traits<S>::evec;
 template <scalar S> using RVector_traits = typename traits<S>::RVector;
 template <scalar S> using Matrix_traits  = typename traits<S>::Matrix;
-
-#ifdef USE_UBLAS
-template <scalar S> const auto generate_matrix = generate_ublas<S>;
-#endif
-#ifdef USE_EIGEN
-template <scalar S> const auto generate_matrix = generate_Eigen<S>;
-#endif
 
 template <matrix M> auto nrvec(const M &m) { return size1(m); }
 template <matrix M> auto dim(const M &m) { return size2(m); }

@@ -5,6 +5,7 @@
 
 #include <traits.hpp>
 #include <basicio.hpp>
+#include <io.hpp>
 #include <misc.hpp>
 #include <h5.hpp>
 
