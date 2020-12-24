@@ -11,3 +11,19 @@ TEST(eigen, basic_vector){
     c << 5,7,9;
     compare(c,b);
 }
+
+TEST(eigen, matrix_ops) {
+  Eigen::MatrixX<double> m(2,2);
+  EXPECT_EQ(size1(m), 2);
+  EXPECT_EQ(size2(m), 2);
+
+  m(0,0) = 1;
+  m(0,1) = 2;
+  m(1,0) = 3;
+  m(1,1) = 4;
+
+  EXPECT_DOUBLE_EQ(m(0,0), 1);
+  EXPECT_DOUBLE_EQ(m(0,1), 2);
+  EXPECT_DOUBLE_EQ(m(1,0), 3);
+  EXPECT_DOUBLE_EQ(m(1,1), 4);
+}

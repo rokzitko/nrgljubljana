@@ -35,6 +35,9 @@ TEST(numerics, zero_matrix){
     }
   }
 
+  // Test modification
+  zero_m1(0,0) = 1;
+  EXPECT_EQ(zero_m1(0,0), 1);
 }
 
 TEST(numerics, std_trace_exp_real){
