@@ -100,3 +100,11 @@ TEST(numerics, sum_of_exp){
   for(int i = 0; i < N*N; i++) sum += exp(-factor*a(i));
   compare(result_ublas, sum);
 }
+
+TEST(numerics_ublas, submatrix) {
+  ublas::matrix<double> m(2,2);
+  m(0,0) = m(0,1) = m(1,0) = m(1,1) = 0;
+  auto sub = submatrix(m, {1,1}, {1,1});
+  sub(0,0) = 1;
+  EXPECT_DOUBLE_EQ(m(1,1), 1);
+}

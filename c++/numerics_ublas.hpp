@@ -127,14 +127,14 @@ auto submatrix(ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const st
   return ublas::matrix_range<ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
 }
 
-template<typename T, typename U, typename V> // U and/or V may be matrix views
+template<scalar T, ublas_matrix U, ublas_matrix V> // U and/or V may be matrix views
 auto matrix_prod(const U &A, const V &B) {
   auto M = ublas::matrix<T>(size1(A), size2(B));
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
   return M;
 }
 
-template<typename T, typename U, typename V> // U and/or V may be matrix views
+template<scalar T, ublas_matrix U, ublas_matrix V> // U and/or V may be matrix views
 auto matrix_adj_prod(const U &A, const V &B) {
   auto M = ublas::matrix<T>(size2(A), size2(B));
   atlas::gemm(CblasConjTrans, CblasNoTrans, 1.0, A, B, 0.0, M);

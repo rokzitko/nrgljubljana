@@ -118,15 +118,15 @@ void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
 }
 
 template<scalar S>
-Eigen::MatrixX<S> submatrix(const Eigen::MatrixX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+Eigen::Block<const Eigen::MatrixX<S>> submatrix(const Eigen::MatrixX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
-  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first); // XXX: avoid copy?
+  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
 template<scalar S>
-Eigen::MatrixX<S> submatrix(Eigen::ArrayX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+Eigen::Block<Eigen::MatrixX<S>> submatrix(Eigen::MatrixX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
-  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first); // XXX
+  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
 template<typename T>
@@ -135,13 +135,13 @@ auto sum_of_exp(Eigen::MatrixX<T> A, const double factor) // sum exp(-factor*x)
   return exp(-factor * A.array()).sum();
 }
 
-template<typename T>
-Eigen::MatrixX<T> matrix_prod(const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B) {
+template<scalar T, Eigen_matrix U, Eigen_matrix V>
+Eigen::MatrixX<T> matrix_prod(const U &A, const V &B) {
   return A * B;
 }
 
-template<typename T>
-Eigen::MatrixX<T> matrix_adj_prod(const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B) {
+template<scalar T, Eigen_matrix U, Eigen_matrix V>
+Eigen::MatrixX<T> matrix_adj_prod(const U &A, const V &B) {
   return A.adjoint() * B;
 }
 

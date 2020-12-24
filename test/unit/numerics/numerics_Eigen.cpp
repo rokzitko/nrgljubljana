@@ -100,3 +100,12 @@ TEST(numerics, sum_of_exp){
   compare(result_eigen, sum);
 
 }
+
+TEST(numerics_Eigen, submatrix) {
+  Eigen::MatrixX<double> m(2,2);
+    m(0,0) = m(0,1) = m(1,0) = m(1,1) = 0;
+    auto sub = submatrix(m, {1,1}, {1,1});
+    sub(0,0) = 1;
+    EXPECT_DOUBLE_EQ(m(1,1), 1);
+}
+

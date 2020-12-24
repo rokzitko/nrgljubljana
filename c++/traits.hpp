@@ -40,6 +40,8 @@ template <typename S> auto size2(const ublas::matrix_range<const ublas::matrix<S
 #ifdef INCL_EIGEN
 template <typename S> size_t size1(const Eigen::MatrixX<S> &m) { return m.rows(); }
 template <typename S> size_t size2(const Eigen::MatrixX<S> &m) { return m.cols(); }
+template <typename S> auto size1(const Eigen::Block<const Eigen::MatrixX<S>> &m) { return m.rows(); }
+template <typename S> auto size2(const Eigen::Block<const Eigen::MatrixX<S>> &m) { return m.cols(); }
 #endif
 
 template <typename T>
@@ -63,6 +65,7 @@ template <scalar S> struct is_ublas_object<ublas::matrix_range<const ublas::matr
 
 template <typename T> struct is_Eigen_object : std::false_type {};
 template <scalar S> struct is_Eigen_object<Eigen::MatrixX<S>> : std::true_type {};
+template <scalar S> struct is_Eigen_object<Eigen::Block<const Eigen::MatrixX<S>>> : std::true_type {};
 
 template <typename T> concept ublas_matrix = matrix<T> && is_ublas_object<T>::value;
 template <typename T> concept Eigen_matrix = matrix<T> && is_Eigen_object<T>::value;
