@@ -3,15 +3,18 @@
 #ifndef _NUMERICS_EIGEN_HPP_
 #define _NUMERICS_EIGEN_HPP_
 
+// Generators
+#ifdef USE_EIGEN
 template<scalar S>
-[[nodiscard]] Eigen::MatrixX<S> zero_matrix(const size_t size1, const size_t size2) {
+[[nodiscard]] auto zero_matrix(const size_t size1, const size_t size2) {
   return Eigen::MatrixX<S>::Zero(size1, size2);
 }
 
 template<scalar S>
-[[nodiscard]] Eigen::MatrixX<S> id_matrix(const size_t size) { 
+[[nodiscard]] auto id_matrix(const size_t size) { 
   return Eigen::MatrixX<S>::Identity(size, size); 
 }
+#endif
 
 // Access the low-level data storage in the matrix (used in diag.hpp)
 template<scalar S> S * data(Eigen::MatrixX<S> &m) { return m.data(); }
@@ -58,9 +61,11 @@ template <scalar T> auto read_Eigen_matrix(std::istream &F, const size_t size1, 
   return m;
 }
 
-template <scalar T> Eigen::MatrixX<T> read_matrix(std::istream &F, const size_t size1, const size_t size2) {
+#ifdef USE_EIGEN
+template <scalar T> auto read_matrix(std::istream &F, const size_t size1, const size_t size2) {
   return read_Eigen_matrix<T>(F, size1, size2);
 }
+#endif
 
 template<scalar S, typename T, typename t_coef = coef_traits<S>>
 Eigen::MatrixX<T> product(const t_coef factor, const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B) {
@@ -92,7 +97,7 @@ Eigen::MatrixX<T> rotate(const t_coef factor, const Eigen::MatrixX<T1> &U, const
   return factor * U.adjoint() * O * U;
 }
 
-template<scalar S, typename U_type, Eigen_matrix EM, typename t_coef = coef_traits<S>> // XXX
+template<scalar S, typename U_type, Eigen_matrix EM, typename t_coef = coef_traits<S>> // XXX: U_type
 void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
   my_assert(my_isfinite(factor));
   M += factor * U.adjoint() * O * U;
@@ -101,13 +106,13 @@ void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
 template<scalar S>
 Eigen::MatrixX<S> submatrix(const Eigen::MatrixX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
-  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
+  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first); // XXX: avoid copy?
 }
 
 template<scalar S>
 Eigen::MatrixX<S> submatrix(Eigen::ArrayX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
-  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
+  return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first); // XXX
 }
 
 template<typename T>

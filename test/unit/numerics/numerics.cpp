@@ -1,10 +1,9 @@
 #include <gtest/gtest.h>
 #include "compare.hpp"
 
-#define USE_UBLAS
-#define USE_EIGEN
-#define INCL_UBLAS
-#define INCL_EIGEN
+// Use the matrix backend settings from traits.hpp
+#include "traits.hpp"
+
 #include "numerics.hpp"
 
 using namespace NRG;
@@ -70,7 +69,7 @@ protected:
   void SetUp() override{
     for(int j = 0; j < N*N; j++)
       m1_ublas(j) = j + 3.0 + 2i * (double)j;
-    
+
     for(int j = 0; j < N*N; j++)
       m2_ublas(j) = j + 1.0 + 3i * (double)j;
 
@@ -170,7 +169,7 @@ TEST(misc, eigen_to_ublas){
     auto ublas_matrix = eigen_to_ublas_matrix(eigen_matrix);
     compare(eigen_matrix, ublas_matrix);
   }
-  
+
   {
     Eigen::Matrix<int, 3, 3, Eigen::RowMajor> eigen_matrix;
     for (int i = 0; i < eigen_matrix.size(); i++) eigen_matrix(i) = i;

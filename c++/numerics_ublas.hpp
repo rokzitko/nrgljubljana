@@ -3,15 +3,18 @@
 #ifndef _NUMERICS_UBLAS_HPP_
 #define _NUMERICS_UBLAS_HPP_
 
-template<scalar S, typename Matrix = Matrix_traits<S>>
-[[nodiscard]] Matrix zero_matrix(const size_t size1, const size_t size2) {
-  return Matrix(size1, size2, 0);
+// Generators
+#ifdef USE_UBLAS
+template<scalar S>
+[[nodiscard]] auto zero_matrix(const size_t size1, const size_t size2) {
+  return ublas::matrix<S>(size1, size2, 0);
 }
 
 template<scalar S>
-[[nodiscard]] ublas::matrix<S> id_matrix(const size_t size) { 
+[[nodiscard]] auto id_matrix(const size_t size) { 
   return ublas::identity_matrix<S>(size); 
 }
+#endif
 
 // Access the low-level data storage in the matrix (used in diag.hpp)
 template<scalar S> S * data(ublas::matrix<S> &m) { return bindings::traits::matrix_storage(m); }
@@ -58,9 +61,11 @@ template <scalar T> auto read_ublas_matrix(std::istream &F, const size_t size1, 
   return m;
 }
 
+#ifdef USE_UBLAS
 template <scalar T> ublas::matrix<T> read_matrix(std::istream &F, const size_t size1, const size_t size2) {
   return read_ublas_matrix<T>(F, size1, size2);
 }
+#endif
    
 // M += factor * A * B^\dag
 template<scalar S, ublas_matrix UM, typename t_coef = coef_traits<S>>

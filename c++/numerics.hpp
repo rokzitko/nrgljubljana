@@ -18,6 +18,10 @@
 
 #include "traits.hpp" // defines INCL_UBLAS and/or INCL_EIGEN
 
+#if !(defined(USE_UBLAS) || defined(USE_EIGEN))
+#error "Pick one matrix backend"
+#endif
+
 #if defined(INCL_UBLAS) || defined(USE_UBLAS)
 // ublas matrix & vector containers
 #include <boost/numeric/ublas/vector.hpp>
@@ -32,12 +36,10 @@
 #include <boost/numeric/bindings/traits/ublas_vector.hpp>
 #include <boost/numeric/bindings/traits/ublas_matrix.hpp>
 #include <boost/numeric/bindings/atlas/cblas.hpp>
-
 #endif
 
 #if defined(INCL_EIGEN) || defined(USE_EIGEN)
 #include <Eigen/Dense>
-
 #endif
 
 // Serialization support (used for storing to files and for MPI)
@@ -255,11 +257,11 @@ auto eigen_to_ublas_vector(Eigen::Matrix<T,N,M> m){
 
 #endif
 
-#ifdef USE_UBLAS
+#ifdef INCL_UBLAS
 #include "numerics_ublas.hpp"
 #endif
 
-#ifdef USE_EIGEN
+#ifdef INCL_EIGEN
 #include "numerics_Eigen.hpp"
 #endif
 

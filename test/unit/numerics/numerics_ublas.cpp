@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 #include "compare.hpp"
 
-#ifdef USE_UBLAS
+#define INCL_UBLAS
+#define USE_UBLAS
+#undef INCL_EIGEN
+#undef USE_EIGEN
 
 #include "numerics.hpp"
 
@@ -39,11 +42,11 @@ TEST(numerics, std_trace_exp_real){
   std::vector<double> v(N);
   for(int i = 0; i < N ; i++)
     v[i] = i + 1;
-  
+
   ublas::matrix<double> m(N, N);
   for(int i = 0; i < N*N; i++)
     m(i) = i + 1;
-  
+
   double expected = 0;
   for(int i = 0; i < N; i++){
     expected += exp(- 2.5 * v[i]) * m(i, i);
@@ -57,11 +60,11 @@ TEST(numerics, std_trace_exp_complex){
   std::vector<std::complex<double>> v(N);
   for(int j = 0; j < N ; j++)
     v[j] = j + 1 + 3i * j;
-  
+
   ublas::matrix<std::complex<double>> m(N, N);
   for(int j = 0; j < N*N; j++)
     m(j) = j + 3 + 2i * j;
-  
+
   std::complex<double> expected = 0;
   for(int i = 0; i < N; i++){
     expected += exp(- 2.5 * v[i]) * m(i, i);
@@ -74,7 +77,7 @@ TEST(numerics, submatrix_ublas){
   const int N = 3; 
   ublas::matrix<double> a(N, N);
   for(int i = 0; i < N*N; i++) a(i) = i;
-  
+
   ublas::matrix<double> dg(N - 1, N - 1);
   dg(0, 0) = 0;
   dg(0, 1) = 1;
@@ -94,5 +97,3 @@ TEST(numerics, sum_of_exp){
   for(int i = 0; i < N*N; i++) sum += exp(-factor*a(i));
   compare(result_ublas, sum);
 }
-
-#endif

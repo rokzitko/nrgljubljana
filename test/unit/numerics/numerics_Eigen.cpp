@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 #include "compare.hpp"
 
-#ifdef USE_EIGEN
+#define INCL_EIGEN
+#define USE_EIGEN
+#undef INCL_UBLAS
+#undef USE_UBLAS
 
 #include "numerics.hpp"
 
@@ -39,11 +42,11 @@ TEST(numerics, Eigen_trace_exp_real){
   Eigen::VectorXd v(N);
   for(int i = 0; i < N ; i++)
     v(i) = i + 1;
-  
+
   Eigen::MatrixXd m(N, N);
   for(int i = 0; i < N*N; i++)
     m(i) = i + 1;
-  
+
   double expected = 0;
   for(int i = 0; i < N; i++){
     expected += exp(- 2.5 * v[i]) * m(i, i);
@@ -57,11 +60,11 @@ TEST(numerics, Eigen_trace_exp_complex){
   Eigen::VectorXcd v(N);
   for(int j = 0; j < N ; j++)
     v(j) = j + 1.0 + 3i * (double)j;
-  
+
   Eigen::MatrixXcd m(N, N);
   for(int j = 0; j < N*N; j++)
     m(j) = j + 3.0 + 2i * (double)j;
-  
+
   std::complex<double> expected = 0;
   for(int i = 0; i < N; i++){
     expected += exp(- 2.5 * v(i)) * m(i, i);
@@ -94,5 +97,3 @@ TEST(numerics, sum_of_exp){
   compare(result_eigen, sum);
 
 }
-
-#endif
