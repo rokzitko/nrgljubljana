@@ -134,3 +134,5 @@ test210_absolute_substeps
 test211_absolute_fdm
 test220_hdf5
 test221_hdf5_dm
+test0_minimal_Nmax1
+test0_minimal_Nmax1_td
