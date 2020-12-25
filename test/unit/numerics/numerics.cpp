@@ -98,15 +98,19 @@ TEST(numerics, save_r) {
   auto m1 = generate_matrix<double>(10,20);
   for (size_t i = 0; i < 10*20; i++) m1(i) = (double)i;
   {
-    std::ofstream f("test", std::ios::binary);
+    std::ofstream f("test", std::ios::binary | std::ios::out);
+    EXPECT_TRUE(f);
     boost::archive::binary_oarchive oa(f);
-    save(oa, m1);
+    NRG::save(oa, m1);
+    EXPECT_FALSE(f.bad());
   }
   {
-    std::ifstream f("test", std::ios::binary);
+    std::ifstream f("test", std::ios::binary | std::ios::in);
+    EXPECT_TRUE(f);
     boost::archive::binary_iarchive ia(f);
-    const auto m2 = load<double>(ia);
+    const auto m2 = NRG::load<double>(ia);
     compare(m1, m2);
+    EXPECT_FALSE(f.bad());
   }
 }
 
@@ -114,16 +118,80 @@ TEST(numerics, save_c) {
   auto m1 = generate_matrix<std::complex<double>>(10,20);
   for (size_t i = 0; i < 10*20; i++) m1(i) = (double)i + 1.0i;
   {
-    std::ofstream f("test", std::ios::binary);
+    std::ofstream f("test", std::ios::binary | std::ios::out);
+    EXPECT_TRUE(f);
     boost::archive::binary_oarchive oa(f);
-    save(oa, m1);
+    NRG::save(oa, m1);
+    EXPECT_FALSE(f.bad());
   }
   {
-    std::ifstream f("test", std::ios::binary);
+    std::ifstream f("test", std::ios::binary | std::ios::in);
+    EXPECT_TRUE(f);
     boost::archive::binary_iarchive ia(f);
-    const auto m2 = load<std::complex<double>>(ia);
+    const auto m2 = NRG::load<std::complex<double>>(ia);
     compare(m1, m2);
+    EXPECT_FALSE(f.bad());
   }
+}
+
+TEST(numerics, product) {
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  a(0,0) = a(0,1) = a(1,0) = a(1,1) = 1;
+  b(0,0) = b(0,1) = b(1,0) = b(1,1) = 1;
+  auto r = NRG::zero_matrix<double>(2,2);
+  auto ref = generate_matrix<double>(2,2);
+  ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 2;
+  product<double>(r, 1.0, a, b);
+  compare(r, ref);
+}
+ 
+TEST(numerics, transform) {
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  auto c = generate_matrix<double>(2,2);
+  a(0,0) = a(0,1) = a(1,0) = a(1,1) = 1;
+  b(0,0) = b(0,1) = b(1,0) = b(1,1) = 1;
+  c(0,0) = c(0,1) = c(1,0) = c(1,1) = 1;
+  auto r = NRG::zero_matrix<double>(2,2);
+  auto ref = generate_matrix<double>(2,2);
+  ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 4;
+  transform<double>(r, 1.0, a, b, c);
+  compare(r, ref);
+}
+ 
+TEST(numerics, rotate) {
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  a(0,0) = a(0,1) = a(1,0) = a(1,1) = 1;
+  b(0,0) = b(0,1) = b(1,0) = b(1,1) = 1;
+  auto r = NRG::zero_matrix<double>(2,2);
+  auto ref = generate_matrix<double>(2,2);
+  ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 4;
+  rotate<double>(r, 1.0, a, b);
+  compare(r, ref);
+}
+
+TEST(numerics, matrix_prod) {
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  a(0,0) = a(0,1) = a(1,0) = a(1,1) = 1;
+  b(0,0) = b(0,1) = b(1,0) = b(1,1) = 1;
+  auto ref = generate_matrix<double>(2,2);
+  ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 2;
+  const auto r = matrix_prod<double>(a, b);
+  compare(r, ref);
+}
+
+TEST(numerics, matrix_adj_prod) {
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  a(0,0) = a(0,1) = a(1,0) = a(1,1) = 1;
+  b(0,0) = b(0,1) = b(1,0) = b(1,1) = 1;
+  auto ref = generate_matrix<double>(2,2);
+  ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 2;
+  const auto r = matrix_adj_prod<double>(a, b);
+  compare(r, ref);
 }
 
 #if defined(INCL_UBLAS) && defined(INCL_EIGEN)

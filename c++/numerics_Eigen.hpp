@@ -41,7 +41,7 @@ void save(boost::archive::binary_oarchive &oa, const Eigen::MatrixX<T> &m) {
 }
 
 template <scalar T>
-void load_Eigen(boost::archive::binary_iarchive &ia) {
+auto load_Eigen(boost::archive::binary_iarchive &ia) {
   const auto size1 = read_one<size_t>(ia);
   const auto size2 = read_one<size_t>(ia);
   auto m = Eigen::MatrixX<T>(size1, size2);
