@@ -3,6 +3,25 @@
 #ifndef _NUMERICS_UBLAS_HPP_
 #define _NUMERICS_UBLAS_HPP_
 
+// ublas matrix & vector containers
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_proxy.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/symmetric.hpp>
+#include <boost/numeric/ublas/operation.hpp>
+
+// Numeric bindings to BLAS/LAPACK
+#include <boost/numeric/bindings/traits/ublas_vector.hpp>
+#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
+#include <boost/numeric/bindings/atlas/cblas.hpp>
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+
+#include "basicio.hpp"
+
 template <scalar S>
 [[nodiscard]] ublas::matrix<S> generate_ublas(const size_t size1, const size_t size2) {
   return ublas::matrix<S>(size1, size2);

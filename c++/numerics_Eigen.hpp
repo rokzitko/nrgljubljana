@@ -3,38 +3,47 @@
 #ifndef _NUMERICS_EIGEN_HPP_
 #define _NUMERICS_EIGEN_HPP_
 
+#include <Eigen/Dense>
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+
+#include "basicio.hpp"
+
 template <scalar S> 
-[[nodiscard]] Eigen::MatrixX<S> generate_Eigen(const size_t size1, const size_t size2) {
-  return Eigen::MatrixX<S>(size1, size2);
+[[nodiscard]] EigenMatrix<S> generate_Eigen(const size_t size1, const size_t size2) {
+  return EigenMatrix<S>(size1, size2);
 }
 
 // Generators
 #ifdef USE_EIGEN
 template <scalar S> 
-[[nodiscard]] Eigen::MatrixX<S> generate_matrix(const size_t size1, const size_t size2) {
-  return Eigen::MatrixX<S>(size1, size2);
+[[nodiscard]] EigenMatrix<S> generate_matrix(const size_t size1, const size_t size2) {
+  return EigenMatrix<S>(size1, size2);
 }
 
 template <scalar S>
-[[nodiscard]] Eigen::MatrixX<S> zero_matrix(const size_t size1, const size_t size2) {
-  return Eigen::MatrixX<S>::Zero(size1, size2);
+[[nodiscard]] EigenMatrix<S> zero_matrix(const size_t size1, const size_t size2) {
+  return EigenMatrix<S>::Zero(size1, size2);
 }
 
 template <scalar S>
-[[nodiscard]] Eigen::MatrixX<S> id_matrix(const size_t size) { 
-  return Eigen::MatrixX<S>::Identity(size, size);
+[[nodiscard]] EigenMatrix<S> id_matrix(const size_t size) { 
+  return EigenMatrix<S>::Identity(size, size);
 }
 #endif
 
 // XXX: return view instead?
-template <scalar S> Eigen::MatrixX<S> herm(const Eigen::MatrixX<S> &m) { return m.adjoint(); }
-template <scalar S> Eigen::MatrixX<S> trans(const Eigen::MatrixX<S> &m) { return m.transpose(); }
+template <scalar S> EigenMatrix<S> herm(const EigenMatrix<S> &m) { return m.adjoint(); }
+template <scalar S> EigenMatrix<S> trans(const EigenMatrix<S> &m) { return m.transpose(); }
 
 // Access the low-level data storage in the matrix (used in diag.hpp)
-template<scalar S> S * data(Eigen::MatrixX<S> &m) { return m.data(); }
+template<scalar S> S * data(EigenMatrix<S> &m) { 
+  return m.data();
+}
 
 template <scalar T>
-void save(boost::archive::binary_oarchive &oa, const Eigen::MatrixX<T> &m) {
+void save(boost::archive::binary_oarchive &oa, const EigenMatrix<T> &m) {
   oa << size1(m) << size2(m);
   for (const auto row : m.rowwise())
     oa << row;
@@ -44,9 +53,9 @@ template <scalar T>
 auto load_Eigen(boost::archive::binary_iarchive &ia) {
   const auto size1 = read_one<size_t>(ia);
   const auto size2 = read_one<size_t>(ia);
-  auto m = Eigen::MatrixX<T>(size1, size2);
+  auto m = EigenMatrix<T>(size1, size2);
   for (const auto i : range0(size1))
-    m.row(i) = read_one<Eigen::MatrixX<T>>(ia);
+    m.row(i) = read_one<EigenMatrix<T>>(ia);
   return m;
 }
 
@@ -73,7 +82,7 @@ template <scalar T> auto read_Eigen_vector(std::istream &F, const bool nr_is_max
 
 // Read 'size1' x 'size2' Eigen matrix of type T.
 template <scalar T> auto read_Eigen_matrix(std::istream &F, const size_t size1, const size_t size2) {
-  Eigen::MatrixX<T> m(size1, size2);
+  EigenMatrix<T> m(size1, size2);
   for (auto j1 = 0; j1 < size1; j1++)
     for (auto j2 = 0; j2 < size2; j2++)
       m(j1, j2) = assert_isfinite( read_one<T>(F) );
@@ -115,25 +124,25 @@ void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
 }
 
 template<scalar S>
-Eigen::Block<const Eigen::MatrixX<S>> submatrix(const Eigen::MatrixX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+Eigen::Block<const EigenMatrix<S>> submatrix(const EigenMatrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
 template<scalar S>
-Eigen::Block<Eigen::MatrixX<S>> submatrix(Eigen::MatrixX<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+Eigen::Block<EigenMatrix<S>> submatrix(EigenMatrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
 template<scalar T, Eigen_matrix U, Eigen_matrix V>
-Eigen::MatrixX<T> matrix_prod(const U &A, const V &B) {
+EigenMatrix<T> matrix_prod(const U &A, const V &B) {
   my_assert(size2(A) == size1(B));
   return A * B;
 }
 
 template<scalar T, Eigen_matrix U, Eigen_matrix V>
-Eigen::MatrixX<T> matrix_adj_prod(const U &A, const V &B) {
+EigenMatrix<T> matrix_adj_prod(const U &A, const V &B) {
   my_assert(size1(A) == size1(B));
   return A.adjoint() * B;
 }

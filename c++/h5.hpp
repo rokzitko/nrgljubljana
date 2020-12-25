@@ -57,7 +57,7 @@ namespace NRG {
 
   template <complex_Eigen_matrix CEM>
   void h5_dump_matrix(H5Easy::File &file, const std::string &path, const CEM &m) {
-     Eigen::MatrixXd mr = m.real();
+     EigenMatrix<double> mr = m.real();
      h5_dump_matrix(file, path, mr);
    }
 #endif

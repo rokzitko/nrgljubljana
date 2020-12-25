@@ -1,22 +1,48 @@
 #include <gtest/gtest.h>
-#include "compare.hpp"
 
-#define INCL_EIGEN
 #define USE_EIGEN
-#undef INCL_UBLAS
-#undef USE_UBLAS
+#include <traits.hpp>
+#include <numerics.hpp>
 
-#include "numerics.hpp"
+#include "compare.hpp"
 
 using namespace NRG;
 using namespace std::complex_literals;
+
+TEST(Eigen, default_constructor) {
+  EigenMatrix<double> md;
+  EigenMatrix<std::complex<double>> mc;
+}
+
+TEST(eigen, basic_vector) {
+  Eigen::Vector3i a(5,7,9);
+  std::vector b = {5,7,9};
+  compare(a,b);
+  Eigen::Vector3i c;
+  c << 5,7,9;
+  compare(c,b);
+}
+
+TEST(eigen, matrix_ops) {
+  EigenMatrix<double> m(2,2);
+  EXPECT_EQ(size1(m), 2);
+  EXPECT_EQ(size2(m), 2);
+  m(0,0) = 1;
+  m(0,1) = 2;
+  m(1,0) = 3;
+  m(1,1) = 4;
+  EXPECT_DOUBLE_EQ(m(0,0), 1);
+  EXPECT_DOUBLE_EQ(m(0,1), 2);
+  EXPECT_DOUBLE_EQ(m(1,0), 3);
+  EXPECT_DOUBLE_EQ(m(1,1), 4);
+}
 
 TEST(numerics_Eigen, zero_matrix) {
   const size_t dim1 = 4;
   const size_t dim2 = 2;
   const size_t dim3 = 3;
-  Eigen::MatrixXd zero_m1 = NRG::zero_matrix<double>(dim1,dim2);
-  Eigen::MatrixXd zero_m2 = NRG::zero_matrix<double>(dim3);
+  EigenMatrix<double> zero_m1 = NRG::zero_matrix<double>(dim1,dim2);
+  EigenMatrix<double> zero_m2 = NRG::zero_matrix<double>(dim3);
   ASSERT_EQ(zero_m1.rows(), dim1);
   ASSERT_EQ(zero_m1.cols(), dim2);
   ASSERT_EQ(zero_m2.rows(), dim3);
@@ -33,28 +59,30 @@ TEST(numerics_Eigen, zero_matrix) {
 }
 
 TEST(numerics_Eigen, trace_exp_real) {
+  using T = double;
   const size_t N = 3;
-  Eigen::VectorXd v(N);
+  Eigen::VectorX<T> v(N);
   for(size_t i = 0; i < N ; i++)
     v(i) = i + 1;
-  Eigen::MatrixXd m(N, N);
+  EigenMatrix<T> m(N, N);
   for(size_t i = 0; i < N*N; i++)
     m(i) = i + 1;
-  double expected = 0;
+  T expected = 0;
   for(size_t i = 0; i < N; i++)
     expected += exp(-2.5 * v[i]) * m(i, i);
   compare(expected, trace_exp(v, m, 2.5));
 }
 
 TEST(numerics_Eigen, trace_exp_complex) {
+  using T = std::complex<double>;
   const size_t N = 3;
-  Eigen::VectorXcd v(N);
+  Eigen::VectorX<T> v(N);
   for(size_t j = 0; j < N ; j++)
     v(j) = j + 1.0 + 3i * (double)j;
-  Eigen::MatrixXcd m(N, N);
+  EigenMatrix<T> m(N, N);
   for(size_t j = 0; j < N*N; j++)
     m(j) = j + 3.0 + 2i * (double)j;
-  std::complex<double> expected = 0;
+  T expected = 0;
   for(size_t i = 0; i < N; i++)
     expected += exp(- 2.5 * v(i)) * m(i, i);
   compare(expected, trace_exp(v, m , 2.5));
@@ -62,19 +90,52 @@ TEST(numerics_Eigen, trace_exp_complex) {
 
 TEST(numerics_Eigen, submatrix1) {
   const size_t N = 3; 
-  Eigen::MatrixXd a(N,N);
+  EigenMatrix<double> a(N,N);
   for(size_t i = 0; i < N*N; i++) a(i) = i;
-  Eigen::MatrixXd dg(N - 1, N - 1);
+  EigenMatrix<double> dg(N - 1, N - 1);
   dg << 0, 3, 1, 4;
-  const Eigen::MatrixXd dg_result = submatrix(a, {0, 2}, {0, 2});
+  const EigenMatrix<double> dg_result = submatrix(a, {0, 2}, {0, 2});
   compare(dg, dg_result);
 }
 
 TEST(numerics_Eigen, submatrix2) {
-  Eigen::MatrixX<double> m(2,2);
+  EigenMatrix<double> m(2,2);
   m(0,0) = m(0,1) = m(1,0) = m(1,1) = 0;
   auto sub = submatrix(m, {1,1}, {1,1});
   sub(0,0) = 1;
   EXPECT_DOUBLE_EQ(m(1,1), 1);
 }
 
+TEST(numerics_Eigen, data_r) {
+  EigenMatrix<double> m(2, 3);
+  m(0,0) = 1.;
+  m(0,1) = 2.;
+  m(0,2) = 3.;
+  m(1,0) = 4.;
+  m(1,1) = 5.;
+  m(1,2) = 6.;
+  double * d = data(m);
+  EXPECT_EQ(*(d+0), 1.);
+  EXPECT_EQ(*(d+1), 2.);
+  EXPECT_EQ(*(d+2), 3.);
+  EXPECT_EQ(*(d+3), 4.);
+  EXPECT_EQ(*(d+4), 5.);
+  EXPECT_EQ(*(d+5), 6.);
+}
+
+TEST(numerics_Eigen, data_c) {
+  EigenMatrix<std::complex<double>> m(2, 3);
+  m(0,0) = 1.*(1.+1.i);
+  m(0,1) = 2.*(1.+1.i);
+  m(0,2) = 3.*(1.+1.i);
+  m(1,0) = 4.*(1.+1.i);
+  m(1,1) = 5.*(1.+1.i);
+  m(1,2) = 6.*(1.+1.i);
+  std::complex<double> * d = data(m);
+  EXPECT_EQ(*(d+0), 1.*(1.+1.i));
+  EXPECT_EQ(*(d+1), 2.*(1.+1.i));
+  EXPECT_EQ(*(d+2), 3.*(1.+1.i));
+  EXPECT_EQ(*(d+3), 4.*(1.+1.i));
+  EXPECT_EQ(*(d+4), 5.*(1.+1.i));
+  EXPECT_EQ(*(d+5), 6.*(1.+1.i));
+}

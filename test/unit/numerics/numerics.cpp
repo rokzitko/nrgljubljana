@@ -1,10 +1,11 @@
 #include <gtest/gtest.h>
-#include "compare.hpp"
 
 // Use the matrix backend settings from traits.hpp
-#include "traits.hpp"
-#include "numerics.hpp"
-#include "io.hpp"
+#include <traits.hpp>
+#include <numerics.hpp>
+#include <io.hpp>
+
+#include "compare.hpp"
 
 using namespace NRG;
 using namespace std::complex_literals;
@@ -197,32 +198,25 @@ TEST(numerics, matrix_adj_prod) {
 #if defined(INCL_UBLAS) && defined(INCL_EIGEN)
 class numericsMatrixOperationsTest_complex : public ::testing::Test {
 protected:
-  int N;
-  std::complex<double> factor;
-  ublas::matrix<std::complex<double>> m1_ublas;
-  ublas::matrix<std::complex<double>> m2_ublas;
-  ublas::matrix<std::complex<double>> m3_ublas;
-  ublas::matrix<std::complex<double>> m_ublas_result;
-  Eigen::MatrixXcd m1_eigen;
-  Eigen::MatrixXcd m2_eigen;
-  Eigen::MatrixXcd m3_eigen;
-  Eigen::MatrixXcd m_eigen_result;
-
+  size_t N;
+  using T = std::complex<double>;
+  T factor;
+  ublas::matrix<T> m1_ublas, m2_ublas, m3_ublas, m_ublas_result;
+  EigenMatrix<T> m1_eigen, m2_eigen, m3_eigen, m_eigen_result;
   numericsMatrixOperationsTest_complex(): N(3), factor(2.5 + 1.5i), m1_ublas(N, N), m2_ublas(N, N), m3_ublas(N, N) {}
-
   void SetUp() override {
     for(int i = 0; i < N; i++) {
       for(int j = 0; j < N; j++) {
-        m1_ublas(i,j) = 1.0 + 2.0 * (double)i + 3.0i * (double)j;
-        m2_ublas(i,j) = 4.0 + 5.0 * (double)i + 6.0i * (double)j;
-        m3_ublas(i,j) = 7.0 + 8.0 * (double)i + 9.0i * (double)j;
+        m1_ublas(i,j) = 1.0 + 2.0 * (T)i + 3.0i * (T)j;
+        m2_ublas(i,j) = 4.0 + 5.0 * (T)i + 6.0i * (T)j;
+        m3_ublas(i,j) = 7.0 + 8.0 * (T)i + 9.0i * (T)j;
       }
     }
-    m_ublas_result = ublas::zero_matrix<std::complex<double>>(N,N);
+    m_ublas_result = ublas::zero_matrix<T>(N,N);
     m1_eigen = ublas_to_eigen(m1_ublas);
     m2_eigen = ublas_to_eigen(m2_ublas);
     m3_eigen = ublas_to_eigen(m3_ublas);
-    m_eigen_result = Eigen::MatrixXcd::Zero(N,N);
+    m_eigen_result = EigenMatrix<T>::Zero(N,N);
   }
 };
 
@@ -283,31 +277,24 @@ TEST_F(numericsMatrixOperationsTest_complex, matrix_adj_prod) {
 class numericsMatrixOperationsTest_real : public ::testing::Test {
 protected:
   int N;
-  double factor;
-  ublas::matrix<double> m1_ublas;
-  ublas::matrix<double> m2_ublas;
-  ublas::matrix<double> m3_ublas;
-  ublas::matrix<double> m_ublas_result;
-  Eigen::MatrixXd m1_eigen;
-  Eigen::MatrixXd m2_eigen;
-  Eigen::MatrixXd m3_eigen;
-  Eigen::MatrixXd m_eigen_result;
-
+  using T = double;
+  T factor;
+  ublas::matrix<T> m1_ublas, m2_ublas, m3_ublas, m_ublas_result;
+  EigenMatrix<T> m1_eigen, m2_eigen, m3_eigen, m_eigen_result;
   numericsMatrixOperationsTest_real(): N(3), factor(2.5), m1_ublas(N, N), m2_ublas(N, N), m3_ublas(N, N) {}
-
   void SetUp() override {
     for(int i = 0; i < N; i++) {
       for(int j = 0; j < N; j++) {
-        m1_ublas(i,j) = 1.0 + 2.0 * (double)i + 3.0 * (double)j;
-        m2_ublas(i,j) = 4.0 + 5.0 * (double)i + 6.0 * (double)j;
-        m3_ublas(i,j) = 7.0 + 8.0 * (double)i + 9.0 * (double)j;
+        m1_ublas(i,j) = 1.0 + 2.0 * (T)i + 3.0 * (T)j;
+        m2_ublas(i,j) = 4.0 + 5.0 * (T)i + 6.0 * (T)j;
+        m3_ublas(i,j) = 7.0 + 8.0 * (T)i + 9.0 * (T)j;
       }
     }
-    m_ublas_result = ublas::zero_matrix<double>(N,N);
+    m_ublas_result = ublas::zero_matrix<T>(N,N);
     m1_eigen = ublas_to_eigen(m1_ublas);
     m2_eigen = ublas_to_eigen(m2_ublas);
     m3_eigen = ublas_to_eigen(m3_ublas);
-    m_eigen_result = Eigen::MatrixXd::Zero(N,N);
+    m_eigen_result = EigenMatrix<T>::Zero(N,N);
   }
 };
 

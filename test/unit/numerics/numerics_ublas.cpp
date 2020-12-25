@@ -1,12 +1,10 @@
 #include <gtest/gtest.h>
-#include "compare.hpp"
 
-#define INCL_UBLAS
 #define USE_UBLAS
-#undef INCL_EIGEN
-#undef USE_EIGEN
+#include <traits.hpp>
+#include <numerics.hpp>
 
-#include "numerics.hpp"
+#include "compare.hpp"
 
 using namespace NRG;
 using namespace std::complex_literals;
@@ -96,4 +94,38 @@ TEST(numerics_ublas, submatrix2) {
   auto sub = submatrix(m, {1,1}, {1,1});
   sub(0,0) = 1;
   EXPECT_DOUBLE_EQ(m(1,1), 1);
+}
+
+TEST(numerics_Eigen, data_r) {
+  ublas::matrix<double> m(2, 3);
+  m(0,0) = 1.;
+  m(0,1) = 2.;
+  m(0,2) = 3.;
+  m(1,0) = 4.;
+  m(1,1) = 5.;
+  m(1,2) = 6.;
+  double * d = data(m);
+  EXPECT_EQ(*(d+0), 1.);
+  EXPECT_EQ(*(d+1), 2.);
+  EXPECT_EQ(*(d+2), 3.);
+  EXPECT_EQ(*(d+3), 4.);
+  EXPECT_EQ(*(d+4), 5.);
+  EXPECT_EQ(*(d+5), 6.);
+}
+
+TEST(numerics_Eigen, data_c) {
+  ublas::matrix<std::complex<double>> m(2, 3);
+  m(0,0) = 1.*(1.+1.i);
+  m(0,1) = 2.*(1.+1.i);
+  m(0,2) = 3.*(1.+1.i);
+  m(1,0) = 4.*(1.+1.i);
+  m(1,1) = 5.*(1.+1.i);
+  m(1,2) = 6.*(1.+1.i);
+  std::complex<double> * d = data(m);
+  EXPECT_EQ(*(d+0), 1.*(1.+1.i));
+  EXPECT_EQ(*(d+1), 2.*(1.+1.i));
+  EXPECT_EQ(*(d+2), 3.*(1.+1.i));
+  EXPECT_EQ(*(d+3), 4.*(1.+1.i));
+  EXPECT_EQ(*(d+4), 5.*(1.+1.i));
+  EXPECT_EQ(*(d+5), 6.*(1.+1.i));
 }

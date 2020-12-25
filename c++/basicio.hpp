@@ -67,15 +67,6 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &vec) {
   return os;
 }
 
-template <matrix M> std::ostream &operator<<(std::ostream &os, const M &m) {
-  for (auto r1 = 0; r1 < size1(m); r1++) {
-    for (auto r2 = 0; r2 < size2(m); r2++)
-      os << m(r1, r2) << ' ';
-    os << std::endl;
-  }
-  return os;
-}
-
 // Returns a string with a floating value in fixed (non-exponential) format with N digits of precision after the
 // decimal point.
 inline std::string prec(const double x, const int N)

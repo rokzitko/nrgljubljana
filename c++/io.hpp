@@ -37,6 +37,15 @@ inline void outputxy(std::ostream &F, const double x, const std::complex<double>
   F << std::endl;
 }
 
+template <matrix M> std::ostream &operator<<(std::ostream &os, const M &m) {
+  for (auto r1 = 0; r1 < size1(m); r1++) {
+    for (auto r2 = 0; r2 < size2(m); r2++)
+      os << m(r1, r2) << ' ';
+    os << std::endl;
+  }
+  return os;
+}
+
 // Read dim1 x dim2 matrix from stream. Use function next_value to extract consecutive values. 'gen' generates the matrix.
 template<typename GEN, typename FNC>
 auto read_matrix_data(GEN && generate_matrix, FNC && next_value, const size_t dim1, const size_t dim2, const bool check_is_finite = true) {
