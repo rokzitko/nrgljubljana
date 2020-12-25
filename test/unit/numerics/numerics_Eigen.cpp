@@ -91,9 +91,14 @@ TEST(numerics_Eigen, trace_exp_complex) {
 TEST(numerics_Eigen, submatrix1) {
   const size_t N = 3; 
   EigenMatrix<double> a(N,N);
-  for(size_t i = 0; i < N*N; i++) a(i) = i;
-  EigenMatrix<double> dg(N - 1, N - 1);
-  dg << 0, 3, 1, 4;
+  for(size_t i = 0; i < N; i++)
+    for(size_t j = 0; j < N; j++)
+      a(i, j) = i+10*j;
+  EigenMatrix<double> dg(N-1, N-1);
+  dg(0,0) = 0;
+  dg(0,1) = 10;
+  dg(1,0) = 1;
+  dg(1,1) = 11;
   const EigenMatrix<double> dg_result = submatrix(a, {0, 2}, {0, 2});
   compare(dg, dg_result);
 }

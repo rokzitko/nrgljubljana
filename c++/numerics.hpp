@@ -283,8 +283,8 @@ auto trim_matrix(M &mat, const size_t new_size1, const size_t new_size2) {
   mat.swap(mat2);
 } 
 
-template<matrix M>
-  bool has_lesseq_rows(const M &A, const M &B) {
+template<matrix M, matrix N>
+  bool has_lesseq_rows(const M &A, const N &B) {
     return size1(A) <= size1(B) && size2(A) == size2(B);
 }
 
