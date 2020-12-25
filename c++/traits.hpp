@@ -5,8 +5,12 @@
 #define INCL_EIGEN
 
 #if !(defined(USE_BLAS) || defined(USE_EIGEN))
-  #define USE_UBLAS
-  //#define USE_EIGEN
+  //#define USE_UBLAS
+  #define USE_EIGEN
+#endif
+
+#if !(defined(USE_UBLAS) || defined(USE_EIGEN))
+#error "Pick one matrix backend"
 #endif
 
 //#include <concepts> // C++20
