@@ -39,13 +39,19 @@ void save(boost::archive::binary_oarchive &oa, const ublas::matrix<T> &m) {
 }
 
 template <scalar T>
-void load(boost::archive::binary_iarchive &ia, ublas::matrix<T> &m) { // XXX
+auto load_ublas(boost::archive::binary_iarchive &ia) {
   const auto size1 = read_one<size_t>(ia);
   const auto size2 = read_one<size_t>(ia);
-  m = ublas::matrix<T>(size1, size2);
+  auto m = ublas::matrix<T>(size1, size2);
   for (const auto i : range0(size1))
     ublas::matrix_row<ublas::matrix<T>>(m, i) = read_one<ublas::vector<T>>(ia);
+  return m;
 }
+
+#ifdef USE_UBLAS
+template <scalar T>
+auto load(boost::archive::binary_iarchive &ia) { return load_ublas<T>(ia); }
+#endif
 
 // Read 'size' values of type T into a ublas vector<T>.
 template <scalar T> auto read_ublas_vector(std::istream &F, const size_t size) {
@@ -129,6 +135,7 @@ auto submatrix(ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const st
 
 template<scalar T, ublas_matrix U, ublas_matrix V> // U and/or V may be matrix views
 auto matrix_prod(const U &A, const V &B) {
+  my_assert(size2(A) == size1(B));
   auto M = ublas::matrix<T>(size1(A), size2(B));
   atlas::gemm(CblasNoTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
   return M;
@@ -136,6 +143,7 @@ auto matrix_prod(const U &A, const V &B) {
 
 template<scalar T, ublas_matrix U, ublas_matrix V> // U and/or V may be matrix views
 auto matrix_adj_prod(const U &A, const V &B) {
+  my_assert(size1(A) == size1(B));
   auto M = ublas::matrix<T>(size2(A), size2(B));
   atlas::gemm(CblasConjTrans, CblasNoTrans, 1.0, A, B, 0.0, M);
   return M;

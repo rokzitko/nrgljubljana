@@ -41,13 +41,19 @@ void save(boost::archive::binary_oarchive &oa, const Eigen::MatrixX<T> &m) {
 }
 
 template <scalar T>
-void load(boost::archive::binary_iarchive &ia, Eigen::MatrixX<T> &m) { // XXX
+void load_Eigen(boost::archive::binary_iarchive &ia) {
   const auto size1 = read_one<size_t>(ia);
   const auto size2 = read_one<size_t>(ia);
-  m = Eigen::MatrixX<T>(size1, size2);
+  auto m = Eigen::MatrixX<T>(size1, size2);
   for (const auto i : range0(size1))
     m.row(i) = read_one<Eigen::MatrixX<T>>(ia);
+  return m;
 }
+
+#ifdef USE_EIGEN
+template <scalar T>
+auto load(boost::archive::binary_iarchive &ia) { return load_Eigen<T>(ia); }
+#endif
 
 // Read 'size' values of type T into an Eigen vector<T>.
 template <scalar T> auto read_Eigen_vector(std::istream &F, const size_t size) {
@@ -81,40 +87,31 @@ template <scalar T> auto read_matrix(std::istream &F, const size_t size1, const 
 }
 #endif
 
-template<scalar S, typename T, typename t_coef = coef_traits<S>>
-Eigen::MatrixX<T> product(const t_coef factor, const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &B) {
-  my_assert(my_isfinite(factor));
-  return factor * A * B.adjoint();
-}
-
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void product(EM &M, const t_coef factor, const EM &A, const EM &B) {
-  my_assert(my_isfinite(factor));
-  M += factor * A * B.adjoint();
-}
-
-template<scalar S, typename t_coef = coef_traits<S>, typename T>
-Eigen::MatrixX<T> transform(const t_coef factor, const Eigen::MatrixX<T> &A, const Eigen::MatrixX<T> &O, const Eigen::MatrixX<T> &B) {
-  my_assert(my_isfinite(factor));
-  return factor * A * O * B.adjoint();
+  if (finite_size(A) && finite_size(B)) {
+    my_assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));   
+    my_assert(my_isfinite(factor));
+    M += factor * A * B.adjoint();
+  }
 }
 
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void transform(EM &M, const t_coef factor, const EM &A, const EM &O, const EM &B) {
-  my_assert(my_isfinite(factor));
-  M += factor * A * O * B.adjoint();
-}
-
-template<scalar S, typename t_coef = coef_traits<S>, typename T, typename T1>
-Eigen::MatrixX<T> rotate(const t_coef factor, const Eigen::MatrixX<T1> &U, const Eigen::MatrixX<T> &O) {
-  my_assert(my_isfinite(factor));
-  return factor * U.adjoint() * O * U;
+  if (finite_size(A) && finite_size(B)) {
+    my_assert(size1(M) == size1(A) && size2(A) == size1(O) && size2(O) == size2(B) && size1(B) == size2(M));
+    my_assert(my_isfinite(factor));
+    M += factor * A * O * B.adjoint();
+  }
 }
 
 template<scalar S, typename U_type, Eigen_matrix EM, typename t_coef = coef_traits<S>> // XXX: U_type
 void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
-  my_assert(my_isfinite(factor));
-  M += factor * U.adjoint() * O * U;
+  if (finite_size(U)) {
+    my_assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
+    my_assert(my_isfinite(factor));
+    M += factor * U.adjoint() * O * U;
+  }
 }
 
 template<scalar S>
@@ -129,19 +126,15 @@ Eigen::Block<Eigen::MatrixX<S>> submatrix(Eigen::MatrixX<S> &M, const std::pair<
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
-template<typename T>
-auto sum_of_exp(Eigen::MatrixX<T> A, const double factor) // sum exp(-factor*x)
-{
-  return exp(-factor * A.array()).sum();
-}
-
 template<scalar T, Eigen_matrix U, Eigen_matrix V>
 Eigen::MatrixX<T> matrix_prod(const U &A, const V &B) {
+  my_assert(size2(A) == size1(B));
   return A * B;
 }
 
 template<scalar T, Eigen_matrix U, Eigen_matrix V>
 Eigen::MatrixX<T> matrix_adj_prod(const U &A, const V &B) {
+  my_assert(size1(A) == size1(B));
   return A.adjoint() * B;
 }
 

@@ -123,7 +123,7 @@ class Vectors {
       NRG::save(oa, m);
     }
     void load(boost::archive::binary_iarchive &ia) {
-      NRG::load(ia, m);
+      m = NRG::load<S>(ia);
     }
     void h5save(H5Easy::File &fd, const std::string &name) const {
       h5_dump_matrix(fd, name + "/matrix", m);
@@ -164,7 +164,7 @@ public:
   }
   void load(boost::archive::binary_iarchive &ia) {
     resize(read_one<size_t>(ia));
-    for (auto &b: blocks) NRG::load(ia, b);
+    for (auto &b: blocks) b = NRG::load<S>(ia);
   }
   void clear() { ranges::fill(blocks, Matrix()); }
 };

@@ -102,7 +102,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
      const auto nr = read_one<size_t>(ia);
      for (const auto cnt : range0(nr)) {
        const auto inv = read_one<Invar>(ia);
-       NRG::load(ia, (*this)[inv]);
+       (*this)[inv] = NRG::load<S>(ia);
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));  // Check each time
      }
      MATRIXF.close();
