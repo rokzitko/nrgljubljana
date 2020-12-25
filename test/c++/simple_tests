@@ -136,3 +136,5 @@ test220_hdf5
 test221_hdf5_dm
 test0_minimal_Nmax1
 test0_minimal_Nmax1_td
+test0_minimal_Nmax2
+test0_minimal_Nmax2_td
