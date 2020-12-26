@@ -124,7 +124,7 @@ void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
 }
 
 template<scalar S>
-Eigen::Block<const EigenMatrix<S>> submatrix(const EigenMatrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+Eigen::Block<const EigenMatrix<S>> submatrix_const(const EigenMatrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }

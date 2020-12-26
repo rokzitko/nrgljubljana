@@ -278,7 +278,7 @@ auto trim_matrix(M &mat, const size_t new_size1, const size_t new_size2) {
   if (old_size1 == 0 || old_size2 == 0) return;
   my_assert(new_size1 <= old_size1 && new_size2 <= old_size2);
   if (new_size1 == old_size1 && new_size2 == old_size2) return; // Trimming not necessary!!
-  const auto sub = submatrix(mat, {0, new_size1}, {0, new_size2});
+  const auto sub = submatrix_const(mat, {0, new_size1}, {0, new_size2});
   M mat2 = sub;
   mat.swap(mat2);
 } 
@@ -294,7 +294,7 @@ auto prod_fit_left(const M &A, const M &B) {
   using T = typename M::value_type;
   my_assert(size1(B) <= size2(A));
   if (size1(A) == 0 || size2(B) == 0) return empty_matrix<T>();
-  const auto Asub = submatrix(A, {0, size1(A)}, {0, size1(B)});
+  const auto Asub = submatrix_const(A, {0, size1(A)}, {0, size1(B)});
   return matrix_prod<T>(Asub, B);
 }
 
@@ -304,7 +304,7 @@ auto prod_fit_right(const M &A, const M &B) {
   using T = typename M::value_type;
   my_assert(size1(B) >= size2(A));
   if (size1(A) == 0 || size2(B) == 0) return empty_matrix<T>();
-  const auto Bsub = submatrix(B, {0, size2(A)}, {0, size2(B)});
+  const auto Bsub = submatrix_const(B, {0, size2(A)}, {0, size2(B)});
   return matrix_prod<T>(A, Bsub);
 }
 
@@ -319,7 +319,7 @@ inline auto prod_adj_fit_left(const M &A, const M &B) {
   using T = typename M::value_type;
   my_assert(size1(B) <= size1(A));
   if (size2(A) == 0 || size2(B) == 0) return empty_matrix<T>();
-  const auto Asub = submatrix(A, {0, size1(B)}, {0, size2(A)});
+  const auto Asub = submatrix_const(A, {0, size1(B)}, {0, size2(A)});
   return matrix_adj_prod<T>(Asub, B);
 }
 

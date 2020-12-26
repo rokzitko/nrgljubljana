@@ -115,8 +115,8 @@ class Vectors {
     void standard_basis(const size_t size) {
       m = id_matrix<t_matel>(size); // XXX: Eigen version? => generic function in numerics.hpp
     }
-    auto submatrix(const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2) const {
-      return NRG::submatrix(m, r1, r2);
+    auto submatrix_const(const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2) const {
+      return NRG::submatrix_const(m, r1, r2);
     }
     void shrink() {
       const auto d = dim();

@@ -40,7 +40,7 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
   if (!my_isfinite(factor))
     throw std::runtime_error(fmt::format("offdiag_function(): factor not finite {} {} {} {}", i, j, ch, fnr));
   if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) {   // < In[i] r | f^\dag | In[j] r' >
-    const auto &mat = f->second;
+    const Matrix & mat = f->second;
     my_assert(qq.rmax(i-1) == size1(mat) && qq.rmax(j-1) == size2(mat));
     const auto factor_scaled = factor / step.scale();
     // We are building the upper triangular part of the Hermitian Hamiltonian. Thus usually i < j. If not, we must
