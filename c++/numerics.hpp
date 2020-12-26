@@ -366,6 +366,36 @@ bool is_unitary(const Matrix &vec,
   return true;
 }
 
+template <scalar S, typename Matrix = Matrix_traits<S>>
+bool is_unitary_blocks(const std::vector<Matrix> &U,
+                       const double NORMALIZATION_EPSILON = 1e-12,
+                       const double ORTHOGONALITY_EPSILON = 1e-12) {
+  my_assert(U.size() > 0);
+  const auto M = nrvec(U[0]);
+  // Check normalization
+  for (const auto r : range0(M)) {
+    S sumabs{};
+    for (const auto i : range0(U.size())) {
+      const auto d = dim(U[i]);
+      my_assert(M == nrvec(U[i]));
+      for (const auto j : range0(d)) sumabs += conj_me(U[i](r, j)) * U[i](r, j);
+    }
+    if (!num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON)) return false;
+  }
+  // Check orthogonality
+  for (const auto r1 : range0(M)) {
+    for (const auto r2 : boost::irange(r1 + 1, M)) {
+      S skpdt{};
+      for (const auto i : range0(U.size())) {
+        const auto d = dim(U[i]);
+        for (const auto j : range0(d)) skpdt += conj_me(U[i](r1, j)) * U[i](r2, j);
+      }
+      if (!num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) return false;
+    }
+  }
+  return true;
+}
+
 template <scalar S, typename RVector = RVector_traits<S>, typename Matrix = Matrix_traits<S>> 
 void check_diag(const RVector &val, const Matrix &vec) {
   my_assert(val.size() == nrvec(vec));

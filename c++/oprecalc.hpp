@@ -56,7 +56,7 @@ class Oprecalc {
    template <typename RecalcFnc>
      MatrixElements<S> recalc(const std::string &name, const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const std::string &tip,
                               const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
-       nrglog('0', "Recalculate " << tip << " " << name);
+       nrglog('0', "\n#### Recalculate " << tip << " " << name);
        auto mnew = recalc_fnc(diag, substruct, mold);
        if (tip == "g") Sym->recalc_global(step, diag, substruct, name, mnew);
        return mnew;

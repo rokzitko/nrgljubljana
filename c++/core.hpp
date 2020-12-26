@@ -184,6 +184,9 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
     std::cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
   for (const auto &[name, m] : a.opq)
     std::cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
+  for (const auto && [i, ch] : a.opch | ranges::views::enumerate)
+    for (const auto && [j, m] : ch | ranges::views::enumerate) 
+      std::cout << "norm[f," << i << "," << j << "]=" << norm(m, Sym, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
 }
 
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.

@@ -12,20 +12,20 @@
 
 namespace NRG {
 
-// We split the matrices of eigenvectors in blocks according to the partition into "ancestor subspaces". At the price
-// of some copying, this increases memory localisation of data and thus improves numerical performence of gemm calls
-// in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting had
-// completed!
+// We split the matrices of eigenvectors into blocks according to the partition into "ancestor subspaces". At the price
+// of some copying, this increases memory locality of data and thus improves numerical performence of matrix-matrix multiplies
+// in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting.
 template<scalar S, typename Matrix = Matrix_traits<S>>
 inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
   const auto combs = sub.combs();
   e.U.resize(combs);
-  const auto nr = e.getnrstored(); // nr. of eigenpairs
-  my_assert(0 < nr && nr <= e.getdim()); // dim = length of eigenvectors
+  const auto nr = e.getnrstored();
+  my_assert(0 < nr && nr <= e.getdim());
   for (const auto block: range0(combs)) {
-    auto Up = e.vectors.submatrix({0, nr}, sub.part(block));
-    e.U.set(block, std::move(Up));
+    Matrix U = e.vectors.submatrix({0, nr}, sub.part(block));
+    e.U.set(block, std::move(U));
   }
+  my_assert(e.U.is_unitary());
   e.vectors.shrink();
 }
 
@@ -56,7 +56,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
                            const Invar &Ip, // ket
                            const T &table) const
 {
-  nrglog('f', "recalc_f() ** f: I1=(" << I1 << ") Ip=(" << Ip << ")");
+  nrglog('f', "*** recalc_f() ** f: I1=(" << I1 << ") Ip=(" << Ip << ")");
   if (!recalc_f_coupled(I1, Ip, this->Invar_f)) return Matrix(0,0); // exception for QST and SPSU2T
   const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
   const auto & [dim1, dimp]     = diag.dims(I1, Ip);   // # of states in Ip and in I1, i.e. the dimension of the <||f||> matrix.
@@ -82,7 +82,7 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
                                  const T &table,
                                  const Invar &Iop) const      // quantum numbers of the operator
 {
-  if (P.logletter('r')) std::cout << "recalc_general: " << nrgdump3(I1, Ip, Iop) << std::endl;
+  if (P.logletter('r')) std::cout << "*** recalc_general: " << nrgdump3(I1, Ip, Iop) << std::endl;
   const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
   const auto & [dim1, dimp]     = diag.dims(I1, Ip);
   const Twoinvar II = {I1, Ip};

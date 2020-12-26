@@ -9,8 +9,8 @@
   //#define USE_EIGEN
 #endif
 
-#if !(defined(USE_UBLAS) || defined(USE_EIGEN))
-#error "Pick one matrix backend"
+#if (defined(USE_UBLAS) && defined(USE_EIGEN))
+#error "Pick only one matrix backend"
 #endif
 
 //#include <concepts> // C++20

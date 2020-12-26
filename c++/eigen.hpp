@@ -104,9 +104,9 @@ class Vectors {
   public:
     auto M() const { return size1(m); }
     auto dim() const { return size2(m); }
-    void set(Matrix m_) { 
-      m = std::move(m_); // YYY
-      my_assert(is_unitary<S>(m)); // YYY
+    void set(Matrix m_) {
+      m = std::move(m_);
+      my_assert(is_unitary<S>(m));
       my_assert(M() <= dim()); 
     }
     const auto & get() const { return m; }
@@ -147,6 +147,9 @@ public:
   void set(const size_t i, Matrix m) {
     my_assert(i < blocks.size());
     blocks[i] = std::move(m);
+  }
+  [[nodiscard]] bool is_unitary() const {
+    return NRG::is_unitary_blocks<S>(blocks);
   }
   const Matrix & get(const size_t i) const {
     my_assert(i < blocks.size());
