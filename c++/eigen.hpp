@@ -104,7 +104,11 @@ class Vectors {
   public:
     auto M() const { return size1(m); }
     auto dim() const { return size2(m); }
-    void set(Matrix m_) { m = std::move(m_); my_assert(M() <= dim()); }
+    void set(Matrix m_) { 
+      m = std::move(m_); // YYY
+      my_assert(is_unitary<S>(m)); // YYY
+      my_assert(M() <= dim()); 
+    }
     const auto & get() const { return m; }
     void resize(const size_t size1, const size_t size2) { m.resize(size1, size2); }
     const auto & operator()() const { return m; }
@@ -188,25 +192,7 @@ public:
     ranges::for_each_n(val.begin(), std::min(val.size(), max_nr), [&F](const double x) { F << x << ' '; });
     F << std::endl;
   }
-  void check_diag(const double NORMALIZATION_EPSILON = 1e-12, const double ORTHOGONALITY_EPSILON = 1e-12) const { // XXX: throw exception instead?
-    const auto M   = getnrcomputed();
-    const auto dim = getdim();
-    // Check normalization
-    for (const auto r : range0(M)) {
-      assert_isfinite(val[r]);
-      S sumabs{};
-      for (const auto j : range0(dim)) sumabs += conj_me(vec(r, j)) * vec(r, j);
-      my_assert(num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON));
-    }
-    // Check orthogonality
-    for (const auto r1 : range0(M)) {
-      for (const auto r2 : boost::irange(r1 + 1, M)) {
-        S skpdt{};
-        for (const auto j : range0(dim)) skpdt += conj_me(vec(r1, j)) * vec(r2, j);
-        my_assert(num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON));
-      }
-    }
-  }
+  void check_diag() const { NRG::check_diag<S>(val, vec); }
 };
 
 // High-level representation of eigenvalues/eigenvectors
