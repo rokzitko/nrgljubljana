@@ -162,7 +162,9 @@ public:
   void truncate(const size_t nr) {
     for (auto &i : blocks) {
       my_assert(nr <= nrvec(i));
-      i.resize(nr, dim(i));
+      Matrix tmp = submatrix(i, {0, nr}, {0, dim(i)});
+      i = tmp;
+      // OLD: i.resize(nr, dim(i));
     }
   }
   void save(boost::archive::binary_oarchive &oa) const {
