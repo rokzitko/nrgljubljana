@@ -111,6 +111,41 @@ TEST(numerics_Eigen, submatrix2) {
   EXPECT_DOUBLE_EQ(m(1,1), 1);
 }
 
+TEST(numerics_Eigen, submatrix3) {
+  using T = std::complex<double>;
+  const size_t dim1 = 15;
+  const size_t dim2 = 25;
+  EigenMatrix<T> m(dim1, dim2);
+  EXPECT_EQ(size1(m), dim1);
+  EXPECT_EQ(size2(m), dim2);
+
+  for (size_t i = 0; i < dim1; i++)
+    for (size_t j = 0; j < dim2; j++)
+      m(i, j) = T(i, j);
+
+  for (size_t offset1 = 0; offset1 < dim1; offset1++) {
+    for (size_t offset2 = 0; offset2 < dim2; offset2++) {
+      for (size_t sz1 = 0; sz1 < std::min(dim1, dim1-offset1); sz1++) {
+        for (size_t sz2 = 0; sz2 < std::min(dim2, dim2-offset2); sz2++) {
+          const auto sm1 = m.block(offset1, offset2, sz1, sz2);
+          //EXPECT_EQ(size1(sm1), sz1);
+          //EXPECT_EQ(size2(sm1), sz2);
+          for (size_t i = 0; i < sz1; i++)
+            for (size_t j = 0; j < sz2; j++)
+              EXPECT_EQ(sm1(i,j), T(offset1+i, offset2+j));
+
+          const auto sm2 = submatrix_const(m, {offset1, offset1+sz1}, {offset2, offset2+sz2});
+          EXPECT_EQ(size1(sm2), sz1);
+          EXPECT_EQ(size2(sm2), sz2);
+          for (size_t i = 0; i < sz1; i++)
+            for (size_t j = 0; j < sz2; j++)
+              EXPECT_EQ(sm2(i,j), T(offset1+i, offset2+j));
+        }
+      }
+    }
+  }
+}
+
 TEST(numerics_Eigen, data_r) {
   EigenMatrix<double> m(2, 3);
   m(0,0) = 1.;
@@ -120,12 +155,21 @@ TEST(numerics_Eigen, data_r) {
   m(1,1) = 5.;
   m(1,2) = 6.;
   double * d = data(m);
-  EXPECT_EQ(*(d+0), 1.);
-  EXPECT_EQ(*(d+1), 2.);
-  EXPECT_EQ(*(d+2), 3.);
-  EXPECT_EQ(*(d+3), 4.);
-  EXPECT_EQ(*(d+4), 5.);
-  EXPECT_EQ(*(d+5), 6.);
+  if (is_row_ordered(m)) {
+    EXPECT_EQ(*(d+0), 1.);
+    EXPECT_EQ(*(d+1), 2.);
+    EXPECT_EQ(*(d+2), 3.);
+    EXPECT_EQ(*(d+3), 4.);
+    EXPECT_EQ(*(d+4), 5.);
+    EXPECT_EQ(*(d+5), 6.);
+  } else {
+    EXPECT_EQ(*(d+0), 1.);
+    EXPECT_EQ(*(d+1), 4.);
+    EXPECT_EQ(*(d+2), 2.);
+    EXPECT_EQ(*(d+3), 5.);
+    EXPECT_EQ(*(d+4), 3.);
+    EXPECT_EQ(*(d+5), 6.);
+  }
 }
 
 TEST(numerics_Eigen, data_c) {
@@ -137,10 +181,19 @@ TEST(numerics_Eigen, data_c) {
   m(1,1) = 5.*(1.+1.i);
   m(1,2) = 6.*(1.+1.i);
   std::complex<double> * d = data(m);
-  EXPECT_EQ(*(d+0), 1.*(1.+1.i));
-  EXPECT_EQ(*(d+1), 2.*(1.+1.i));
-  EXPECT_EQ(*(d+2), 3.*(1.+1.i));
-  EXPECT_EQ(*(d+3), 4.*(1.+1.i));
-  EXPECT_EQ(*(d+4), 5.*(1.+1.i));
-  EXPECT_EQ(*(d+5), 6.*(1.+1.i));
+  if (is_row_ordered(m)) {
+    EXPECT_EQ(*(d+0), 1.*(1.+1.i));
+    EXPECT_EQ(*(d+1), 2.*(1.+1.i));
+    EXPECT_EQ(*(d+2), 3.*(1.+1.i));
+    EXPECT_EQ(*(d+3), 4.*(1.+1.i));
+    EXPECT_EQ(*(d+4), 5.*(1.+1.i));
+    EXPECT_EQ(*(d+5), 6.*(1.+1.i));
+  } else {
+    EXPECT_EQ(*(d+0), 1.*(1.+1.i));
+    EXPECT_EQ(*(d+1), 4.*(1.+1.i));
+    EXPECT_EQ(*(d+2), 2.*(1.+1.i));
+    EXPECT_EQ(*(d+3), 5.*(1.+1.i));
+    EXPECT_EQ(*(d+4), 3.*(1.+1.i));
+    EXPECT_EQ(*(d+5), 6.*(1.+1.i));
+  }
 }

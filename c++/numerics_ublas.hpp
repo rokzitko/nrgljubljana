@@ -45,6 +45,7 @@ template<scalar S>
 }
 #endif
 
+template<scalar S> ublas::matrix<S> herm(const ublas::matrix<S> &m) { return ublas::herm(m); }
 template<scalar S> ublas::matrix<S> trans(const ublas::matrix<S> &m) { return ublas::trans(m); }
 
 // Access the low-level data storage in the matrix (used in diag.hpp)

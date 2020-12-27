@@ -63,8 +63,14 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   auto f = zero_matrix<S>(dim1, dimp);
   // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
-  for (const auto &[i1, ip, factor]: table)
-    product<S>(f, factor, diagI1.U(i1), diagIp.U(ip));
+  for (const auto &[i1, ip, factor]: table) {
+    nrglog('f', "** i1=" << i1 << " ip=" << ip << " factor=" << factor);
+    const auto U1 = diagI1.U(i1);
+    const auto Up = diagIp.U(ip);
+    nrglog('f', "* norm1=" << frobenius_norm(U1) << " normp=" << frobenius_norm(Up));
+    if (finite_size(U1) && finite_size(Up)) nrglog('f', "* U1(0,0)=" << U1(0,0) << " Up(0,0)=" << Up(0,0));
+    product<S>(f, factor, U1, Up);
+  }
   if (P.logletter('F')) dump_matrix(f);
   return f;
 }

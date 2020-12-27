@@ -96,7 +96,44 @@ TEST(numerics_ublas, submatrix2) {
   EXPECT_DOUBLE_EQ(m(1,1), 1);
 }
 
-TEST(numerics_Eigen, data_r) {
+TEST(numerics_ublas, submatrix3) {
+  using T = std::complex<double>;
+  const size_t dim1 = 15;
+  const size_t dim2 = 25;
+  ublas::matrix<T> m(dim1, dim2);
+  EXPECT_EQ(size1(m), dim1);
+  EXPECT_EQ(size2(m), dim2);
+
+  for (size_t i = 0; i < dim1; i++)
+    for (size_t j = 0; j < dim2; j++)
+      m(i, j) = T(i, j);
+
+  for (size_t offset1 = 0; offset1 < dim1; offset1++) {
+    for (size_t offset2 = 0; offset2 < dim2; offset2++) {
+      for (size_t sz1 = 0; sz1 < std::min(dim1, dim1-offset1); sz1++) {
+        for (size_t sz2 = 0; sz2 < std::min(dim2, dim2-offset2); sz2++) {
+          const auto sm1 = ublas::matrix_range<const ublas::matrix<T>>(m,
+                                                                       ublas::range(offset1, offset1+sz1),
+                                                                       ublas::range(offset2, offset2+sz2));
+          EXPECT_EQ(size1(sm1), sz1);
+          EXPECT_EQ(size2(sm1), sz2);
+          for (size_t i = 0; i < sz1; i++)
+            for (size_t j = 0; j < sz2; j++)
+              EXPECT_EQ(sm1(i,j), T(offset1+i, offset2+j));
+
+          const auto sm2 = submatrix_const(m, {offset1, offset1+sz1}, {offset2, offset2+sz2});
+          EXPECT_EQ(size1(sm2), sz1);
+          EXPECT_EQ(size2(sm2), sz2);
+          for (size_t i = 0; i < sz1; i++)
+            for (size_t j = 0; j < sz2; j++)
+              EXPECT_EQ(sm2(i,j), T(offset1+i, offset2+j));
+        }
+      }
+    }
+  }
+}
+
+TEST(numerics_ublas, data_r) {
   ublas::matrix<double> m(2, 3);
   m(0,0) = 1.;
   m(0,1) = 2.;
@@ -113,7 +150,7 @@ TEST(numerics_Eigen, data_r) {
   EXPECT_EQ(*(d+5), 6.);
 }
 
-TEST(numerics_Eigen, data_c) {
+TEST(numerics_ublas, data_c) {
   ublas::matrix<std::complex<double>> m(2, 3);
   m(0,0) = 1.*(1.+1.i);
   m(0,1) = 2.*(1.+1.i);

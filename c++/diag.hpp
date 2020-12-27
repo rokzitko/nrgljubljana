@@ -44,6 +44,7 @@ void copy_vec(U* eigenvectors, MM & diagvectors, const size_t dim, const size_t 
   diagvectors.resize(M, dim);
   for (const auto r : range0(M))
     for (const auto j : range0(dim)) diagvectors(r, j) = to_matel(eigenvectors[dim * r + j]);
+  // this works correctly for both row-order and column-order storage types (diagvectors)
 }
 
 template<scalar S, vector V, typename U>
@@ -59,6 +60,7 @@ auto copy_results(const V &eigenvalues, U* eigenvectors, const char jobz, const 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
 template<real_matrix RM>
 auto diagonalise_dsyev(RM &m, const char jobz = 'V') {
+  if (!is_row_ordered(m)) m = NRG::herm(m);
   const auto dim = size1(m);
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
@@ -82,6 +84,7 @@ auto diagonalise_dsyev(RM &m, const char jobz = 'V') {
 template<real_matrix RM>
 auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 {
+  if (!is_row_ordered(m)) m = NRG::herm(m);
   const auto dim = size1(m);
   auto ham       = data(m);
   std::vector<double> eigenvalues(dim);
@@ -113,6 +116,7 @@ auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 
 template<real_matrix RM>
 auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') {
+  if (!is_row_ordered(m)) m = NRG::herm(m);
   const auto dim = size1(m);
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
@@ -169,6 +173,7 @@ auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') 
 
 template<complex_matrix CM>
 auto diagonalise_zheev(CM &m, const char jobz = 'V') {
+  if (!is_row_ordered(m)) m = NRG::herm(m);
   const auto dim = size1(m);
   auto ham       = reinterpret_cast<lapack_complex_double*>(data(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
@@ -193,6 +198,7 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V') {
 
 template<complex_matrix CM>
 auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
+  if (!is_row_ordered(m)) m = NRG::herm(m);
   const auto dim = size1(m);
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.

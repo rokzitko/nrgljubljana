@@ -363,6 +363,7 @@ bool is_unitary(const Matrix &vec,
       if (!num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) return false;
     }
   }
+  std::cout << "is_unitary (0,0)=" << vec(0,0) << " (-1,-1)=" << vec(M-1,d-1) << "\n"; // XXXX
   return true;
 }
 
@@ -393,6 +394,8 @@ bool is_unitary_blocks(const std::vector<Matrix> &U,
       if (!num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) return false;
     }
   }
+  std::cout << "is_unitary_blocks\n";
+  if (dim(U[0]) > 0) std::cout << "   (0,0)=" << U[0](0,0) << "\n"; // XXXX
   return true;
 }
 
