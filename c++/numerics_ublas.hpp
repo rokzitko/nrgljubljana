@@ -153,6 +153,12 @@ auto submatrix(ublas::matrix<S> &M, const std::pair<size_t,size_t> &r1, const st
   return ublas::matrix_range<ublas::matrix<S>>(M, to_ublas_range(r1), to_ublas_range(r2));
 }
 
+template<scalar S>
+void resize(ublasMatrix<S> &m, const size_t new_size1, const size_t new_size2) {
+  my_assert(new_size1 <= size1(m) && new_size2 <= size2(m));
+  m.resize(new_size1, new_size2);
+}
+
 template<scalar T, ublas_matrix U, ublas_matrix V> // U and/or V may be matrix views
 auto matrix_prod(const U &A, const V &B) {
   my_assert(size2(A) == size1(B));

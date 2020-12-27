@@ -135,6 +135,15 @@ Eigen::Block<EigenMatrix<S>> submatrix(EigenMatrix<S> &M, const std::pair<size_t
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
+
+template<scalar S>
+void resize(EigenMatrix<S> &m, const size_t new_size1, const size_t new_size2) {
+  my_assert(new_size1 <= size1(m) && new_size2 <= size2(m));
+//  const EigenMatrix<S> tmp = submatrix_const(m, {0, new_size1}, {0, new_size2});
+//  m = tmp;
+  m.conservativeResize(new_size1, new_size2);
+}
+
 template<scalar T, Eigen_matrix U, Eigen_matrix V>
 EigenMatrix<T> matrix_prod(const U &A, const V &B) {
   my_assert(size2(A) == size1(B));

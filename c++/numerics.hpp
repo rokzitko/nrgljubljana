@@ -342,34 +342,41 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
   }
 }
 
+// Note: with dsyevr I have experienced orthogonality between eigenvectors below 1e-12. We thus use a more conservative
+// epsilon for orthogonality tests of 1e-10.
 template <scalar S, typename Matrix = Matrix_traits<S>>
 bool is_unitary(const Matrix &vec,
                 const double NORMALIZATION_EPSILON = 1e-12,
-                const double ORTHOGONALITY_EPSILON = 1e-12) {
+                const double ORTHOGONALITY_EPSILON = 1e-10) {
   const auto M = nrvec(vec);
   const auto d = dim(vec);
   // Check normalization
   for (const auto r : range0(M)) {
     S sumabs{};
     for (const auto j : range0(d)) sumabs += conj_me(vec(r, j)) * vec(r, j);
-    if (!num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON)) return false;
+    if (!num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON)) {
+      std::cout << "is_unitary() r=" << r << " : sumabs=" << sumabs << std::endl;
+      return false;
+    }
   }
   // Check orthogonality
   for (const auto r1 : range0(M)) {
     for (const auto r2 : boost::irange(r1 + 1, M)) {
       S skpdt{};
       for (const auto j : range0(d)) skpdt += conj_me(vec(r1, j)) * vec(r2, j);
-      if (!num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) return false;
+      if (!num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) {
+        std::cout << "is_unitary() r1=" << r1 << " r2=" << r2 << " : skpdt=" << skpdt << std::endl;
+        return false;
+      }
     }
   }
-  std::cout << "is_unitary (0,0)=" << vec(0,0) << " (-1,-1)=" << vec(M-1,d-1) << "\n"; // XXXX
   return true;
 }
 
 template <scalar S, typename Matrix = Matrix_traits<S>>
 bool is_unitary_blocks(const std::vector<Matrix> &U,
                        const double NORMALIZATION_EPSILON = 1e-12,
-                       const double ORTHOGONALITY_EPSILON = 1e-12) {
+                       const double ORTHOGONALITY_EPSILON = 1e-10) {
   my_assert(U.size() > 0);
   const auto M = nrvec(U[0]);
   // Check normalization
@@ -393,8 +400,6 @@ bool is_unitary_blocks(const std::vector<Matrix> &U,
       if (!num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) return false;
     }
   }
-  std::cout << "is_unitary_blocks\n";
-  if (dim(U[0]) > 0) std::cout << "   (0,0)=" << U[0](0,0) << "\n"; // XXXX
   return true;
 }
 
