@@ -90,10 +90,10 @@ void Tridiag<S>::tridiag_ch(const size_t alpha, Coef<S> &coef) {
 
   for (unsigned int m = 0; m <= mMAX; m++) {
     // Only real parameters are supported in this code [8.10.2009]
-    mpf_set_d(up_prev[m], check_real(coef.u0p(m, alpha)));
-    mpf_set_d(um_prev[m], check_real(coef.u0m(m, alpha)));
-    mpf_set_d(ep1[m], check_real(coef.ep(m, alpha)));
-    mpf_set_d(em1[m], check_real(coef.em(m, alpha)));
+    mpf_set_d(up_prev[m], real_part_with_check(coef.u0p(m, alpha)));
+    mpf_set_d(um_prev[m], real_part_with_check(coef.u0m(m, alpha)));
+    mpf_set_d(ep1[m], real_part_with_check(coef.ep(m, alpha)));
+    mpf_set_d(em1[m], real_part_with_check(coef.em(m, alpha)));
     mpf_mul(ep2[m], ep1[m], ep1[m]);
     mpf_mul(em2[m], em1[m], em1[m]);
   }

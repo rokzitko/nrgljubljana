@@ -186,22 +186,21 @@ constexpr inline auto is_real(const std::complex<double> z, const double check_r
 }
 
 // Check if x is real and return the real part, i.e. x.real().
-constexpr inline auto check_real(double x) { return x; }
-constexpr inline auto check_real(std::complex<double> z) {
+constexpr inline auto real_part_with_check(double x) { return x; }
+constexpr inline auto real_part_with_check(std::complex<double> z) {
   if (!is_real(z)) std::cout << "Warning: expected real number, but got " << z << std::endl;
   return z.real();
 }
 
 template <matrix M> auto trace_real(const M &m) {
   my_assert(is_square(m));
-  return ranges::accumulate(range0(size1(m)), 0.0, {}, [&m](const auto i){ return check_real(m(i, i)); });
+  return ranges::accumulate(range0(size1(m)), 0.0, {}, [&m](const auto i){ return real_part_with_check(m(i, i)); });
 }
 
-inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); } // sqrt() not constexpr for complex
+inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); } // sqrt() not constexpr for complex (C++17)
 
 template<matrix R> // 2D matrix or matrix view
 auto finite_size(const R &m) { return size1(m) && size2(m); }
-
 
 // 'v' is any 1D range we can iterate over
 template<typename R, matrix M>
