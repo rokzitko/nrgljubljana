@@ -11,7 +11,6 @@
 
 #include "compare.hpp"
 
-#ifdef NOT_YET
 TEST(h5dump, eigen_dump_matrix) { // NOLINT
   H5Easy::File file("eigen_matrix.h5", HighFive::File::Overwrite);
   const auto nx = 2;
@@ -53,7 +52,6 @@ TEST(h5dump, eigen_matrix_real_part_rect) { // NOLINT
     for (int y = 0; y < ny; y++)
       EXPECT_EQ(w(x,y).real(), r(x,y));
 }
-#endif
 
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);

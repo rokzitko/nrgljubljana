@@ -60,7 +60,7 @@ auto copy_results(const V &eigenvalues, U* eigenvectors, const char jobz, const 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
 template<real_matrix RM>
 auto diagonalise_dsyev(RM &m, const char jobz = 'V') {
-  if (!is_row_ordered(m)) m = NRG::herm(m);
+  if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = size1(m);
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
@@ -84,7 +84,7 @@ auto diagonalise_dsyev(RM &m, const char jobz = 'V') {
 template<real_matrix RM>
 auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 {
-  if (!is_row_ordered(m)) m = NRG::herm(m);
+  if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = size1(m);
   auto ham       = data(m);
   std::vector<double> eigenvalues(dim);
@@ -116,7 +116,7 @@ auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 
 template<real_matrix RM>
 auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') {
-  if (!is_row_ordered(m)) m = NRG::herm(m);
+  if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = size1(m);
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
@@ -173,7 +173,7 @@ auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') 
 
 template<complex_matrix CM>
 auto diagonalise_zheev(CM &m, const char jobz = 'V') {
-  if (!is_row_ordered(m)) m = NRG::herm(m);
+  if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = size1(m);
   auto ham       = reinterpret_cast<lapack_complex_double*>(data(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
@@ -198,7 +198,7 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V') {
 
 template<complex_matrix CM>
 auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
-  if (!is_row_ordered(m)) m = NRG::herm(m);
+  if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = size1(m);
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.

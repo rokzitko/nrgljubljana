@@ -50,11 +50,9 @@ namespace NRG {
 #ifdef INCL_EIGEN
    template <real_Eigen_matrix REM>
    void h5_dump_matrix(H5Easy::File &file, const std::string &path, const REM &m) {
-#ifdef NOT_YET
       H5Easy::detail::createGroupsToDataSet(file, path);
       HighFive::DataSet dataset = file.createDataSet<double>(path, HighFive::DataSpace::From(m));
       dataset.write(m);
-#endif
     }
 
   template <complex_Eigen_matrix CEM>
