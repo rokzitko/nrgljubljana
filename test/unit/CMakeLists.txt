@@ -7,30 +7,19 @@ configure_file(include/cmake_configure.hpp.in include/cmake_configure.hpp)
 option(GCOV "gcov" OFF)
 
 if(GCOV)
+  find_package(Perl REQUIRED)
   message(STATUS "*** gcov instrumentalization enabled")
-  set(OBJECT_DIR ${CMAKE_BINARY_DIR}/test/unit/CMakeFiles)
   set(gtest_test_name "gtest_")
-  set(OBJECT_DIRS)
-  set(SOURCE_DIRS)
-  #set(CMAKE_CXX_EXTENSIONS OFF)
-  foreach(test ${all_tests})
-    get_filename_component(test_name ${test} NAME_WE)
-    get_filename_component(test_dir ${test} DIRECTORY)
-    get_filename_component(ext ${test} EXT)
-    list(APPEND OBJECT_DIRS ${OBJECT_DIR}/${test_name}.dir/${test_dir}/ )
-    list(APPEND SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/${test} )
-  endforeach()
-
   add_custom_target(gcov
                     COMMAND rm -r test/unit
-                    COMMAND make
-                    COMMAND ctest -j2 -R gtest
+                    COMMAND make || exit 1
+                    COMMAND ctest -j2 -R gtest || echo "Test failed" || exit 1
                     COMMAND rm -rf gcoverage
                     COMMAND mkdir -p gcoverage
                     WORKING_DIRECTORY ${CMAKE_BINARY_DIR} )
 
   add_custom_command(TARGET gcov
-                     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gcov/gcov ${CMAKE_SOURCE_DIR}
+                     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gcov/gcov
                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/gcoverage )
 endif()
 
