@@ -262,7 +262,7 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
   using S = typename M::value_type;
   mpilog("diagonalise " << size1(m) << "x" << size2(m) << " " << DP.diag << " " << DP.diagratio);
   Timing timer;
-  check_is_matrix_upper(m);
+  my_assert(is_matrix_upper(m));
   RawEigen<S> d;
   if constexpr (std::is_same_v<S, double>) {
     if (DP.diag == "dsyev"s || DP.diag == "default"s) d = diagonalise_dsyev(m);

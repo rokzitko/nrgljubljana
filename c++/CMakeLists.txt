@@ -18,7 +18,8 @@ add_library(nrgljubljana_c  SHARED ${sources})
 # Enable warnings
 target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
 
-option(GPROF "gprof" OFF)
+option(GPROF "Enable profiling using gprof" OFF)
+
 # Configure compilation
 target_compile_options(nrgljubljana_c     PRIVATE ${NRG_CXX_OPT} $<$<BOOL:${GPROF}>:-pg>)
 target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
@@ -38,13 +39,14 @@ target_compile_definitions(nrgljubljana_c PUBLIC
 target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl mpi hdf5
   $<$<BOOL:${ASAN}>:asan>
   $<$<BOOL:${UBSAN}>:ubsan>
-  PRIVATE
-  $<$<BOOL:${GPROF}>:-pg>
 )
+
+target_link_options(nrgljubljana_c PRIVATE $<$<BOOL:${GPROF}>:-pg>)
 
 # Compile nrg executable
 add_executable(nrg nrg.cc)
-target_link_libraries(nrg PRIVATE nrgljubljana_c $<$<BOOL:${GPROF}>:-pg>)
+target_link_libraries(nrg PRIVATE nrgljubljana_c)
+target_link_options(nrg PRIVATE $<$<BOOL:${GPROF}>:-pg>)
 target_compile_options(nrg PRIVATE ${NRG_CXX_OPT} $<$<BOOL:${GPROF}>:-pg>)
 
 # Install library and headers

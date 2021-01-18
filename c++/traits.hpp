@@ -42,6 +42,8 @@ template <scalar S> using ublasMatrix = ublas::matrix<S, ublas::row_major>; // d
 template <scalar S> constexpr auto is_row_ordered(const ublasMatrix<S> &m) { return true; }
 template <scalar S> auto size1(const ublasMatrix<S> &m) { return m.size1(); }
 template <scalar S> auto size2(const ublasMatrix<S> &m) { return m.size2(); }
+template <scalar S> auto size1(const ublas::matrix_range<ublasMatrix<S>> &m) { return m.size1(); }
+template <scalar S> auto size2(const ublas::matrix_range<ublasMatrix<S>> &m) { return m.size2(); }
 template <scalar S> auto size1(const ublas::matrix_range<const ublasMatrix<S>> &m) { return m.size1(); }
 template <scalar S> auto size2(const ublas::matrix_range<const ublasMatrix<S>> &m) { return m.size2(); }
 #endif
@@ -51,6 +53,8 @@ template <scalar S> using EigenMatrix = Eigen::Matrix<S, -1, -1, Eigen::ColMajor
 template <scalar S> constexpr auto is_row_ordered(const EigenMatrix<S> &m) { return false; }
 template <scalar S> size_t size1(const EigenMatrix<S> &m) { return m.rows(); }  // XXX: auto?
 template <scalar S> size_t size2(const EigenMatrix<S> &m) { return m.cols(); }
+template <scalar S> auto size1(const Eigen::Block<EigenMatrix<S>> &m) { return m.rows(); }
+template <scalar S> auto size2(const Eigen::Block<EigenMatrix<S>> &m) { return m.cols(); }
 template <scalar S> auto size1(const Eigen::Block<const EigenMatrix<S>> &m) { return m.rows(); }
 template <scalar S> auto size2(const Eigen::Block<const EigenMatrix<S>> &m) { return m.cols(); }
 #endif

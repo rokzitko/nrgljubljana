@@ -64,14 +64,6 @@ namespace atlas = boost::numeric::bindings::atlas;
 #endif
 
 template <typename T>
-  using complex_array_ref_t = T(&)[2];
-
-template<typename T>
-  complex_array_ref_t<T> reim(std::complex<T>& z) {
-    return reinterpret_cast<T(&)[2]>(z);
-  }
-
-template <typename T>
   using complex_array_const_ref_t = const T(&)[2];
 
 template<typename T>
@@ -144,12 +136,13 @@ template<matrix M> auto frobenius_norm(const M &m) { // Frobenius norm (without 
 
 template<matrix M> bool is_square(const M &m) { return size1(m) == size2(m); }
 
-// Check if m is upper triangular. In the lower triangle, all elements must be 0.
-template<matrix M> void check_is_matrix_upper(const M &m) {
-  my_assert(is_square(m));
+// Is m upper triangular? In the lower triangle, all elements must be 0.
+template<matrix M> auto is_matrix_upper(const M &m) {
+  if (!is_square(m)) return false;
   for (auto i = 1; i < size1(m); i++)
     for (auto j = 0; j < i; j++) // j < i
-      my_assert(num_equal(m(i, j), 0));
+      if (!num_equal(m(i, j), 0.0)) return false;
+  return true;
 }
 
 // (-1)^n
@@ -271,15 +264,15 @@ template<scalar S>
 }
 
 template<matrix M>
-auto trim_matrix(M &mat, const size_t new_size1, const size_t new_size2) {
+[[nodiscard]] auto trim_matrix(const M &mat, const size_t new_size1, const size_t new_size2) {
   const auto old_size1 = size1(mat);
   const auto old_size2 = size2(mat);
-  if (old_size1 == 0 || old_size2 == 0) return;
+  if (old_size1 == 0 || old_size2 == 0) return mat;                 // trimming not necessary
   my_assert(new_size1 <= old_size1 && new_size2 <= old_size2);
-  if (new_size1 == old_size1 && new_size2 == old_size2) return; // Trimming not necessary!!
+  if (new_size1 == old_size1 && new_size2 == old_size2) return mat; // trimming not necessary
   const auto sub = submatrix_const(mat, {0, new_size1}, {0, new_size2});
-  M mat2 = sub;
-  mat.swap(mat2);
+  M new_mat = sub;
+  return new_mat;
 } 
 
 template<matrix M, matrix N>
