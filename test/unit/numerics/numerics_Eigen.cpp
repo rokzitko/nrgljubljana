@@ -106,7 +106,9 @@ TEST(numerics_Eigen, submatrix1) {
 TEST(numerics_Eigen, submatrix2) {
   EigenMatrix<double> m(2,2);
   m(0,0) = m(0,1) = m(1,0) = m(1,1) = 0;
-  auto sub = submatrix(m, {1,1}, {1,1});
+  auto sub = submatrix(m, {1,2}, {1,2});
+  EXPECT_EQ(size1(sub), 1);
+  EXPECT_EQ(size2(sub), 1);
   sub(0,0) = 1;
   EXPECT_DOUBLE_EQ(m(1,1), 1);
 }

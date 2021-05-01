@@ -66,7 +66,7 @@ TEST(Diag, check_is_matrix_upper) {
   m(0,0) = m(0,1) = m(1,1) = 1.0;
   m(1,0) = 0.0;
   EXPECT_TRUE(is_square(m));
-  check_is_matrix_upper(m);
+  EXPECT_TRUE(is_matrix_upper(m));
 }
 
 constexpr double sq2 = 1.0/sqrt(2.0);

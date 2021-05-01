@@ -46,7 +46,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
      for (auto &[II, mat] : *this) {
        const auto &[I1, I2] = II;
        const auto &[dim1, dim2] = diag.dims(I1, I2); // Target matrix dimensions
-       trim_matrix(mat, dim1, dim2);
+       mat = trim_matrix(mat, dim1, dim2);
      }
    }
    std::ostream &insertor(std::ostream &os) const {
