@@ -13,6 +13,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <functional>
 
 using namespace std;
 using namespace std::string_literals;

@@ -112,28 +112,28 @@ inline constexpr bool is_odd(const T n) { return n & 1; } // must return bool
 template <typename T>
 inline constexpr bool is_even(const T n) { return !is_odd(n); } // must return bool
 
-inline constexpr int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
+inline int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
   if (x == 0.0 && y == 0.0) return 0.0; // evidently equal
   if (std::abs(x) < small_epsilon && std::abs(y) < small_epsilon) return 0; // If both x and y are small, we ASSUME them to be equivalent
   if (std::abs(x-y) < rel_epsilon * (std::abs(x)+std::abs(y))) return 0;
   return boost::math::sign(x-y);
 }
 
-inline constexpr int my_fcmp(const double x, const double y, const double epsilon) { return my_fcmp(x, y, epsilon, epsilon); }
+inline int my_fcmp(const double x, const double y, const double epsilon) { return my_fcmp(x, y, epsilon, epsilon); }
 
 // Test if two numbers are equal to within numerical errors. (Use this for comparing values that are expected to be
 // of order 1.)
-inline constexpr auto num_equal(const double a, const double b, const double check_precision = 1.e-12) {
+inline auto num_equal(const double a, const double b, const double check_precision = 1.e-12) {
   return my_fcmp(a, b, check_precision) == 0;
 }
 
-inline constexpr auto num_equal(const std::complex<double> &a, const std::complex<double> &b, const double check_precision = 1.e-12) {
+inline auto num_equal(const std::complex<double> &a, const std::complex<double> &b, const double check_precision = 1.e-12) {
   return (my_fcmp(a.real(), b.real(), check_precision) == 0) && (my_fcmp(a.imag(), b.imag(), check_precision) == 0);
 }
 
-inline constexpr auto are_conjugate(const double a, const double b) { return num_equal(a, b); }
+inline auto are_conjugate(const double a, const double b) { return num_equal(a, b); }
 
-inline constexpr auto are_conjugate(const std::complex<double> &a, const std::complex<double> &b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
+inline auto are_conjugate(const std::complex<double> &a, const std::complex<double> &b) { return num_equal(a.real(), b.real()) && num_equal(a.imag(), -b.imag()); }
 
 template<matrix M> auto frobenius_norm(const M &m) { // Frobenius norm (without taking the final square root!)
   double sum{};
