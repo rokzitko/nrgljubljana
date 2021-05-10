@@ -134,7 +134,7 @@ class Symmetry {
    [[nodiscard]] virtual bool Invar_allowed(const Invar &I) const { return true; }
 
    // Project the states before taking measurements. String p defines what kind of projection is performed.
-   const DiagInfo<S> project(const DiagInfo<S> &diag, std::string p) const {
+   virtual DiagInfo<S> project(const DiagInfo<S> &diag, std::string p) const {
      return diag; // by default return a copy (i.e., no projection)
    }
 

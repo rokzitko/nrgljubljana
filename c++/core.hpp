@@ -197,6 +197,7 @@ void store_states(const Step &step, Store<S> &store, const DiagInfo<S> &diag_in,
     store[step.ndx()] = Subs(diag_in, substruct, step.last());
   } else {
     const auto diag = Sym->project(diag_in, P.project);
+    // We need 'substruct' to obtain information about the structure (rmax values) of the ancestor spaces.
     store[step.ndx()] = Subs(diag, substruct, step.last());
   }
 }
