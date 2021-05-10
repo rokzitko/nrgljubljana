@@ -123,6 +123,17 @@ inline bool already_computed(const std::string &prefix, const Params &P) {
   return true;
 }
 
+template<scalar S>
+auto load_and_project(const size_t N, const Symmetry<S> *Sym, const Params &P) {
+  DiagInfo<S> diag_loaded(N, P);
+  if (P.project == ""s) {
+    return diag_loaded;
+  } else {
+    DiagInfo<S> diag = Sym->project(diag_loaded, P.project);
+    return diag;
+  }
+}
+
 // calc_densitymatrix() is called prior to starting the NRG procedure for the second time. Here we calculate the
 // shell-N density matrices for all iteration steps.
 template<scalar S>
@@ -134,7 +145,7 @@ void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, const Sy
   const auto section_timing = mt.time_it("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[DM] " << N << std::endl;
-    DiagInfo<S> diag_loaded(N, P);
+    const auto diag_loaded = load_and_project(N, Sym, P);
     auto rhoPrev = calc_densitymatrix_iterN(diag_loaded, rho, N, store, Sym, P);
     check_trace_rho(rhoPrev, Sym->multfnc()); // Make sure rho is normalized to 1.
     rhoPrev.save(N-1, P, filename);
@@ -214,11 +225,11 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const 
   const auto section_timing = mt.time_it("FDM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[FDM] " << N << std::endl;
-    DiagInfo<S> diag_loaded(N, P);
-    auto rhoFDMPrev = calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, N, store, stats, Sym, P);
-    const auto tr         = rhoFDMPrev.trace(Sym->multfnc());
-    const auto expected   = std::accumulate(stats.wn.begin() + N, stats.wn.begin() + P.Nmax, 0.0);
-    const auto diff       = (tr - expected) / expected;
+    const auto diag_loaded = load_and_project(N, Sym, P);
+    auto rhoFDMPrev        = calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, N, store, stats, Sym, P);
+    const auto tr          = rhoFDMPrev.trace(Sym->multfnc());
+    const auto expected    = std::accumulate(stats.wn.begin() + N, stats.wn.begin() + P.Nmax, 0.0);
+    const auto diff        = (tr - expected) / expected;
     nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
     my_assert(num_equal(diff, 0.0));
     rhoFDMPrev.save(N-1, P, filename);
