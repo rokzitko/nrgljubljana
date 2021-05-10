@@ -191,8 +191,9 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
 
 // Store information about subspaces and states for the DM algorithms
 template<scalar S>
-void store_states(const Step &step, Store<S> &store, const DiagInfo<S> &diag_in, const SubspaceStructure &substruct,
+void store_states(const Step &step, Store<S> &store, Store<S> &store_all, const DiagInfo<S> &diag_in, const SubspaceStructure &substruct,
                   const Symmetry<S> *Sym, const Params &P) {
+  store_all[step.ndx()] = Subs(diag_in, substruct, step.last());
   if (P.project == ""s) {
     store[step.ndx()] = Subs(diag_in, substruct, step.last());
   } else {
@@ -205,7 +206,7 @@ void store_states(const Step &step, Store<S> &store, const DiagInfo<S> &diag_in,
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
-                const SubspaceStructure &substruct, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, 
+                const SubspaceStructure &substruct, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym,
                 MemTime &mt, const Params &P) {
   stats.update(step);
   if (step.nrg()) {
@@ -227,7 +228,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   }
   if (!P.ZBW())
     diag.truncate_perform();                               // Actual truncation occurs at this point
-  store_states(step, store, diag, substruct, Sym, P);
+  store_states(step, store, store_all, diag, substruct, Sym, P);
   if (!step.last()) {
     recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
     if (P.dump_f) operators.opch.dump();
@@ -246,13 +247,13 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
 // Perform one iteration step
 template<scalar S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+             Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   TaskList tasklist{substruct};
   if (P.h5raw)
     substruct.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/structure");
   auto diag = do_diag(step, operators, coef, stats, diagprev, output, tasklist, Sym, mpi, mt, P);
-  after_diag(step, operators, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
+  after_diag(step, operators, stats, diag, output, substruct, store, store_all, oprecalc, Sym, mt, P);
   operators.trim_matrices(diag);
   diag.clear_eigenvectors();
   mt.brief_report();
@@ -276,7 +277,7 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
 // It replaces do_diag() and calls after_diag() as the last step.
 template<scalar S>
 auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
-             Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
+             Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();
   // --- begin do_diag() equivalent
@@ -291,16 +292,16 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
   truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   SubspaceStructure substruct{};
-  after_diag(step, operators, stats, diag, output, substruct, store, oprecalc, Sym, mt, P);
+  after_diag(step, operators, stats, diag, output, substruct, store, store_all, oprecalc, Sym, mt, P);
   return diag;
 }
 
 template<scalar S>
 auto nrg_loop(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
-              Output<S> &output, Store<S> &store, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+              Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
-    diag = iterate(step, operators, coef, stats, diag, output, store, oprecalc, Sym, mpi, mt, P);
+    diag = iterate(step, operators, coef, stats, diag, output, store, store_all, oprecalc, Sym, mpi, mt, P);
   step.set(step.lastndx());
   return diag;
 }

@@ -26,6 +26,8 @@ fdmexpv=true
 fdmmats=true
 mats=3
 
+cfs=true
+
 broaden_ratio=1.03
 broaden_max=10.0
 bins=200

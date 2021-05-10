@@ -113,7 +113,7 @@ private:
   InputData<S> input;
   std::shared_ptr<Symmetry<S>> Sym;
   Stats<S> stats;
-  Store<S> store;
+  Store<S> store, store_all;
   MemTime mt; // memory and timing statistics
 public:
   auto run_nrg(const RUNTYPE runtype, Operators<S> operators, const Coef<S> &coef, DiagInfo<S> diag0) {
@@ -127,8 +127,8 @@ public:
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
     if (step.nrg() && P.calc0 && !P.ZBW())
       docalc0(step, operators, diag0, stats, output, oprecalc, Sym.get(), mt, P);
-    auto diag = P.ZBW() ? nrg_ZBW(step, operators, stats, diag0, output, store, oprecalc, Sym.get(), mt, P)
-                        : nrg_loop(step, operators, coef, stats, diag0, output, store, oprecalc, Sym.get(), mpi, mt, P);
+    auto diag = P.ZBW() ? nrg_ZBW(step, operators, stats, diag0, output, store, store_all, oprecalc, Sym.get(), mt, P)
+                        : nrg_loop(step, operators, coef, stats, diag0, output, store, store_all, oprecalc, Sym.get(), mpi, mt, P);
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
     if (step.nrg()) {
@@ -145,7 +145,7 @@ public:
     step.set_last();
     auto rho = init_rho(step, diag, Sym.get(), P);
     rho.save(step.lastndx(), P, fn_rho);
-    if (!P.ZBW()) calc_densitymatrix(rho, store, Sym.get(), mt, P);
+    if (!P.ZBW()) calc_densitymatrix(rho, store, store_all, Sym.get(), mt, P);
   }
   void calc_rhoFDM() {
     Step step{P, RUNTYPE::NRG};
@@ -156,11 +156,11 @@ public:
     fdm_thermodynamics(store, stats, Sym.get(), P.T);
     auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
     rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-    if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym.get(), mt, P);
+    if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
   }
   NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) : 
     mpi(mpi), P("param", "param", std::move(workdir), embedded), input(P, "data"), Sym(input.Sym),
-    stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen)
+    stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen), store_all(P.Ninit, P.Nlen)
   {
     auto diag = run_nrg(RUNTYPE::NRG, input.operators, input.coef, input.diag);
     if (P.dm) {

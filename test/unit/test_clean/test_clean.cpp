@@ -64,13 +64,13 @@ TEST(Clean, H) { // NOLINT
 
   auto rho = init_rho(step, diag, Sym, P);
   rho.save(step.lastndx(), P, fn_rho);
-  calc_densitymatrix(rho, store, Sym, mt, P);
+  calc_densitymatrix(rho, store, store, Sym, mt, P);
 
   calc_ZnD(store, stats, Sym, P.T);
   fdm_thermodynamics(store, stats, Sym, P.T);
   auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
   rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-  calc_fulldensitymatrix(step, rhoFDM, store, stats, Sym, mt, P);
+  calc_fulldensitymatrix(step, rhoFDM, store, store, stats, Sym, mt, P);
 
   // single-step calculation: no need to recalculate diag & operators, but we need to run
   // subtract_GS_energy()
