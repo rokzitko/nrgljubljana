@@ -223,15 +223,15 @@ void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<
   }
 }
 
-template<scalar S, typename MF>
+template<scalar S>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                  const DiagInfo<S> &diag_in, const Operators<S> &operators, const Store<S> &store,
-                                 MF mult, MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
+                                 MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
    if (P.project == ""s) {
-     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store, mult, mt, P);
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store, Sym->multfnc(), mt, P);
    } else {
      auto diag = Sym->project(diag_in, P.project);
-     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag, operators, store, mult, mt, P);
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
    }
 }
 

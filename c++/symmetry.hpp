@@ -133,7 +133,10 @@ class Symmetry {
    // Is an invariant subspace with given quantum numbers allowed?
    [[nodiscard]] virtual bool Invar_allowed(const Invar &I) const { return true; }
 
-   const DiagInfo<S> project(const DiagInfo<S> &diag, std::string p) const { return DiagInfo<S>(); }
+   // Project the states before taking measurements. String p defines what kind of projection is performed.
+   const DiagInfo<S> project(const DiagInfo<S> &diag, std::string p) const {
+     return diag; // by default return a copy (i.e., no projection)
+   }
 
    using Matrix  = Matrix_traits<S>;
    using t_matel = matel_traits<S>;

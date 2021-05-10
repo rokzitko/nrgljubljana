@@ -48,7 +48,7 @@ TEST(Clean, H) { // NOLINT
   MemTime mt;
   auto oprecalc = Oprecalc<double>(step.get_runtype(), operators, SymSP, mt, P);
   oprecalc.recalculate_operators(operators, step, diag, substruct);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, Sym, P);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, mt, Sym, P);
   diag.truncate_perform();
   EXPECT_EQ(step.last(), true);
   store[step.ndx()] = Subs(diag, substruct, step.last());
@@ -79,7 +79,7 @@ TEST(Clean, H) { // NOLINT
   Step step_dmnrg{P, RUNTYPE::DMNRG};
   auto oprecalc_dmnrg = Oprecalc<double>(step_dmnrg.get_runtype(), operators, SymSP, mt, P);
   auto output_dmnrg = Output(step_dmnrg.get_runtype(), operators, stats, P);
-  calculate_spectral_and_expv(step_dmnrg, stats, output_dmnrg, oprecalc_dmnrg, diag, operators, store, Sym->multfnc(), mt, Sym, P);
+  calculate_spectral_and_expv(step_dmnrg, stats, output_dmnrg, oprecalc_dmnrg, diag, operators, store, mt, Sym, P);
 }
 
 int main(int argc, char **argv) {
