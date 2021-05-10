@@ -195,10 +195,10 @@ void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult,
 }
 
 template<scalar S, typename MF>
-void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
-                                 const DiagInfo<S> &diag, const Operators<S> &operators, const Store<S> &store,
-                                 MF mult, MemTime &mt, const Params &P) {
-  // Calculate the density matrices
+void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
+                                      const DiagInfo<S> &diag, const Operators<S> &operators, const Store<S> &store,
+                                      MF mult, MemTime &mt, const Params &P) {
+  // Load the density matrices
   DensMatElements<S> rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
@@ -223,14 +223,37 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
   }
 }
 
+template<scalar S, typename MF>
+void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
+                                 const DiagInfo<S> &diag_in, const Operators<S> &operators, const Store<S> &store,
+                                 MF mult, MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
+   if (P.project == ""s) {
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store, mult, mt, P);
+   } else {
+     auto diag = Sym->project(diag_in, P.project);
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag, operators, store, mult, mt, P);
+   }
+}
+
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
 template<scalar S>
-void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym,
-                                Stats<S> &stats, Output<S> &output) {
-  output.dump_energies(step.ndx(), diag);
-  output.annotated.dump(step, diag, stats, Sym->multfnc());
-  calculate_TD(step, diag, stats, Sym);
+void perform_basic_measurements_impl(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym,
+                                     Stats<S> &stats, Output<S> &output) {
+  output.dump_energies(step.ndx(), diag);                   // "energies.nrg"
+  output.annotated.dump(step, diag, stats, Sym->multfnc()); // "annotated.dat"
+  calculate_TD(step, diag, stats, Sym);                     // "td"
+}
+
+template<scalar S>
+void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag_in, const Symmetry<S> *Sym,
+                                Stats<S> &stats, Output<S> &output, const Params &P) {
+  if (P.project == ""s) {
+    perform_basic_measurements_impl(step, diag_in, Sym, stats, output);
+  } else {
+    auto diag = Sym->project(diag_in, P.project);
+    perform_basic_measurements_impl(step, diag, Sym, stats, output);
+  }
 }
 
 } // namespace

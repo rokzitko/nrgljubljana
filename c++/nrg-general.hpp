@@ -143,7 +143,7 @@ public:
   void calc_rho(const DiagInfo<S> &diag) {
     Step step{P, RUNTYPE::NRG};
     step.set_last();
-    auto rho = init_rho(step, diag, Sym->multfnc());
+    auto rho = init_rho(step, diag, Sym.get(), P);
     rho.save(step.lastndx(), P, fn_rho);
     if (!P.ZBW()) calc_densitymatrix(rho, store, Sym.get(), mt, P);
   }

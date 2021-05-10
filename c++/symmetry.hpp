@@ -133,6 +133,8 @@ class Symmetry {
    // Is an invariant subspace with given quantum numbers allowed?
    [[nodiscard]] virtual bool Invar_allowed(const Invar &I) const { return true; }
 
+   const DiagInfo<S> project(const DiagInfo<S> &diag, std::string p) const { return DiagInfo<S>(); }
+
    using Matrix  = Matrix_traits<S>;
    using t_matel = matel_traits<S>;
    using t_coef  = coef_traits<S>;

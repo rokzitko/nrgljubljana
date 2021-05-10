@@ -1,5 +1,5 @@
 // dmnrg.h - Density-matrix NRG
-// Copyright (C) 2009-2020 Rok Zitko
+// Copyright (C) 2009-2021 Rok Zitko
 
 #ifndef _dmnrg_hpp_
 #define _dmnrg_hpp_
@@ -40,7 +40,7 @@ void check_trace_rho(const DensMatElements<S> &m, MF mult, const double ref_valu
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
 template<scalar S, typename MF>
-auto init_rho(const Step &step, const DiagInfo<S> &diag, MF mult) {
+auto init_rho_impl(const Step &step, const DiagInfo<S> &diag, MF mult) {
   DensMatElements<S> rho;
   for (const auto &[I, eig]: diag)
     rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step.scT(), diag, mult);
@@ -49,6 +49,16 @@ auto init_rho(const Step &step, const DiagInfo<S> &diag, MF mult) {
   return rho;
 }
 
+template<scalar S>
+auto init_rho(const Step &step, const DiagInfo<S> &diag_in, const Symmetry<S> *Sym, const Params &P) {
+  if (P.project == ""s) {
+    return init_rho_impl(step, diag_in, Sym->multfnc());
+  } else {
+    const auto diag = Sym->project(diag_in, P.project);
+    return init_rho_impl(step, diag, Sym->multfnc());
+  }
+}
+   
 // Calculation of the contribution from subspace I1 of rhoN (density matrix at iteration N) to rhoNEW (density matrix
 // at iteration N-1)
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>

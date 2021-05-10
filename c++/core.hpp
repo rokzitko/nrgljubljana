@@ -189,6 +189,18 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
       std::cout << "norm[f," << i << "," << j << "]=" << norm(m, Sym, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
 }
 
+// Store information about subspaces and states for the DM algorithms
+template<scalar S>
+void store_states(const Step &step, Store<S> &store, const DiagInfo<S> &diag_in, const SubspaceStructure &substruct,
+                  const Symmetry<S> *Sym, const Params &P) {
+  if (P.project == ""s) {
+    store[step.ndx()] = Subs(diag_in, substruct, step.last());
+  } else {
+    const auto diag = Sym->project(diag_in, P.project);
+    store[step.ndx()] = Subs(diag, substruct, step.last());
+  }
+}
+
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
@@ -199,7 +211,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
       diag.save(step.ndx(), P);
-    perform_basic_measurements(step, diag, Sym, stats, output); // Measurements are performed before the truncation!
+    perform_basic_measurements(step, diag, Sym, stats, output, P); // Measurements are performed before the truncation!
   }
   if (P.h5raw)
     diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/");
@@ -210,21 +222,21 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
     oprecalc.recalculate_operators(operators, step, diag, substruct);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, Sym, P);
   }
   if (!P.ZBW())
-    diag.truncate_perform();                        // Actual truncation occurs at this point
-  store[step.ndx()] = Subs(diag, substruct, step.last());  // Store information about subspaces and states for DM algorithms
+    diag.truncate_perform();                               // Actual truncation occurs at this point
+  store_states(step, store, diag, substruct, Sym, P);
   if (!step.last()) {
     recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
     if (P.dump_f) operators.opch.dump();
   }
   if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
     oprecalc.recalculate_operators(operators, step, diag, substruct);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, Sym, P);
   }
   if (P.do_recalc_none())  // ... or this
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
   if (P.h5raw)
     operators.h5save(*output.h5raw, std::to_string(step.ndx()+1));
@@ -253,9 +265,9 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << std::endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
-  perform_basic_measurements(step, diag0, Sym, stats, output);
+  perform_basic_measurements(step, diag0, Sym, stats, output, P);
   Store<S> empty_st(0, 0);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, operators, empty_st, Sym->multfnc(), mt, P);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, operators, empty_st, Sym->multfnc(), mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
 }
 
