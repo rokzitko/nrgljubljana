@@ -426,6 +426,7 @@ class Params {
    ! - debug internal variables
    D - DMNRG calculation details
    @ - follow the program flow
+   Z - report the values of different partition functions
    Useful combinations:
     fr - debug recalculation of irreducible matrix elements <||f||>
     ies - debug matrix construction and diagonalization

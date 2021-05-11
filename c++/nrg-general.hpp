@@ -150,7 +150,7 @@ public:
   void calc_rhoFDM() {
     Step step{P, RUNTYPE::NRG};
     step.set_last();
-    calc_ZnD(store, stats, Sym.get(), P.T);
+    calc_ZnD(store, stats, Sym.get(), P);
     if (P.logletter('w'))
       report_ZnD(stats, P);
     fdm_thermodynamics(store, stats, Sym.get(), P.T);

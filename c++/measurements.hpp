@@ -22,9 +22,10 @@ auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF 
 
 // Measure thermodynamic expectation values of singlet operators
 template<scalar S, typename MF>
-void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag) {
+void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag, const Params &P) {
   const auto Z = ranges::accumulate(diag, 0.0, {}, [mult, factor](const auto &d) { const auto &[I, eig] = d;
                                                    return mult(I) * sum_of_exp(eig.value_corr_msr(), factor); });
+  nrglog('Z', "Z_expv=" << Z);
   for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
   for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
 }
@@ -57,7 +58,8 @@ auto grand_canonical_Z(const double factor, const DiagInfo<S> &diag, MF mult) {
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
 // energies. calc_ZnD() must be called before the second NRG run.
 template<scalar S>
-void calc_ZnD(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T) {
+void calc_ZnD(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const Params &P) {
+  const auto T = P.T;
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
   for (const auto N : store.Nall()) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
@@ -89,14 +91,14 @@ void calc_ZnD(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, co
     mpf_add(ZZG, ZZG, c);
   }
   stats.ZZG = mpf_get_d(ZZG);
-  std::cout << "ZZG=" << HIGHPREC(stats.ZZG) << std::endl;
+  nrglog('Z', "ZZG=" << HIGHPREC(stats.ZZG));
   for (const auto N : store.Nall()) {
     const double w  = std::pow(Sym->nr_combs(), store.Nend - N - 1) / stats.ZZG; // ZZZ
     stats.wnfactor[N] = w; // These ratios enter the terms for the spectral function.
     stats.wn[N] = w * mpf_get_d(stats.ZnDG[N]); // This is w_n defined after Eq. (8) in the WvD paper.
   }
   const auto sumwn = ranges::accumulate(stats.wn, 0.0);
-  std::cout << "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0 << std::endl;
+  nrglog('Z', "sumwn=" << sumwn << " sumwn-1=" << sumwn - 1.0);
   my_assert(num_equal(sumwn, 1.0));  // Check the sum-rule.
 }
 
@@ -167,7 +169,7 @@ void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, const Symmetry<S
 // member functions defined in symmetry.h
 template<scalar S>
 void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
-                  const Symmetry<S> *Sym, const double additional_factor = 1.0) {
+                  const Symmetry<S> *Sym, const Params &P, const double additional_factor = 1.0) {
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
   const auto rescale_factor = step.TD_factor() * additional_factor;
@@ -175,6 +177,7 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
   const auto E  = diag.trace([](double x) { return x; },        rescale_factor, Sym->multfnc()); // Tr[beta H]
   const auto E2 = diag.trace([](double x) { return pow(x,2); }, rescale_factor, Sym->multfnc()); // Tr[(beta H)^2]
   stats.Z = Z;
+  nrglog('Z', "Z_td=" << stats.Z);
   stats.td.set("T",     step.Teff());
   stats.td.set("<E>",   E/Z);               // beta <H>
   stats.td.set("<E^2>", E2/Z);              // beta^2 <H^2>
@@ -188,6 +191,7 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
 template<scalar S, typename MF>
 void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult, const Params &P) {
   stats.Zft = grand_canonical_Z(step.scT(), diag, mult);
+  nrglog('Z', "Z_ft=" << stats.Zft);
   if (std::string(P.specgt) != "" || std::string(P.speci1t) != "" || std::string(P.speci2t) != "")
     stats.Zgt = grand_canonical_Z(1.0/P.gtp, diag, mult); // exp(-x*gtp)
   if (std::string(P.specchit) != "") 
@@ -196,7 +200,8 @@ void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult,
 
 template<scalar S, typename MF>
 void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
-                                      const DiagInfo<S> &diag, const Operators<S> &operators, 
+                                      const DiagInfo<S> &diag, // projected!
+                                      const Operators<S> &operators,
                                       const Store<S> &store, const Store<S> &store_all,
                                       MF mult, MemTime &mt, const Params &P) {
   // Load the density matrices
@@ -214,7 +219,7 @@ void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, P);
   // Calculate all expectation values
   if (step.nrg()) {
-    measure_singlet(step.TD_factor(), stats, operators, mult, diag);
+    measure_singlet(step.TD_factor(), stats, operators, mult, diag, P);
     output.custom->field_values(step.Teff());
     operators.dump_diagonal(P.dumpdiagonal);
   }
@@ -240,21 +245,25 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
 // Perform calculations of physical quantities. Called prior to NRG iteration (if calc0=true) and after each NRG
 // step.
 template<scalar S>
-void perform_basic_measurements_impl(const Step &step, const DiagInfo<S> &diag, const Symmetry<S> *Sym,
-                                     Stats<S> &stats, Output<S> &output) {
+void perform_basic_measurements_impl(const Step &step,
+                                     const DiagInfo<S> &diag, // projected!
+                                     const Symmetry<S> *Sym,
+                                     Stats<S> &stats,
+                                     Output<S> &output,
+                                     const Params &P) {
   output.dump_energies(step.ndx(), diag);                   // "energies.nrg"
   output.annotated.dump(step, diag, stats, Sym->multfnc()); // "annotated.dat"
-  calculate_TD(step, diag, stats, Sym);                     // "td"
+  calculate_TD(step, diag, stats, Sym, P);                  // "td"
 }
 
 template<scalar S>
 void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag_in, const Symmetry<S> *Sym,
                                 Stats<S> &stats, Output<S> &output, const Params &P) {
   if (P.project == ""s) {
-    perform_basic_measurements_impl(step, diag_in, Sym, stats, output);
+    perform_basic_measurements_impl(step, diag_in, Sym, stats, output, P);
   } else {
     auto diag = Sym->project(diag_in, P.project);
-    perform_basic_measurements_impl(step, diag, Sym, stats, output);
+    perform_basic_measurements_impl(step, diag, Sym, stats, output, P);
   }
 }
 

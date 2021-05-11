@@ -43,7 +43,7 @@ TEST(Clean, H) { // NOLINT
   Clusters<double> clusters(diag, P.fixeps);
   truncate_prepare(step, diag, Sym->multfnc(), P);
   calc_abs_energies(step, diag, stats);
-  calculate_TD(step, diag, stats, Sym);
+  calculate_TD(step, diag, stats, Sym, P);
   split_in_blocks(diag, substruct);
   MemTime mt;
   auto oprecalc = Oprecalc<double>(step.get_runtype(), operators, SymSP, mt, P);
@@ -66,7 +66,7 @@ TEST(Clean, H) { // NOLINT
   rho.save(step.lastndx(), P, fn_rho);
   calc_densitymatrix(rho, store, store, Sym, mt, P);
 
-  calc_ZnD(store, stats, Sym, P.T);
+  calc_ZnD(store, stats, Sym, P);
   fdm_thermodynamics(store, stats, Sym, P.T);
   auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
   rhoFDM.save(step.lastndx(), P, fn_rhoFDM);

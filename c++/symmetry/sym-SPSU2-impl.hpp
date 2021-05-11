@@ -75,6 +75,21 @@ class SymmetrySPSU2 : public Symmetry<SC> {
     stats.td.set("<Sz^2>", trSZ / stats.Z);
   }
 
+  DiagInfo<SC> project(const DiagInfo<SC> &diag, std::string p) const override {
+    DiagInfo<SC> proj;
+    if (p == "trivial"s) {
+      proj = diag; // no projection
+    } else if (p == "even"s) {
+      for (const auto &[I, eig]: diag)
+	if (is_odd(I.get("SS"))) // even particule number is half-interger spin, SS=1,3,5,...
+	  proj[I] = eig;
+    } else if (p == "odd"s) { // odd particle number is integer spin, SS=2,4,...
+      for (const auto &[I, eig]: diag)
+	if (is_even(I.get("SS")))
+	  proj[I] = eig;
+    } else throw std::runtime_error(fmt::format("Unknown projection type {} for symmetry SPSU2.", p));
+    return proj;
+  }
   DECL;
   HAS_DOUBLET;
   HAS_TRIPLET;
