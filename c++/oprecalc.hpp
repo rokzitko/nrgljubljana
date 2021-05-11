@@ -45,9 +45,9 @@ class Oprecalc {
    // Spectral densities
    struct SL : public speclist<S> {
      void calc(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM,
-               const Stats<S> &stats, MemTime &mt, const Params &P) {
+               const Stats<S> &stats, MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
        const auto section_timing = mt.time_it("spec");
-       for (auto &i : *this) i.calc(step, diag, rho, rhoFDM, stats);
+       for (auto &i : *this) i.calc(step, diag, rho, rhoFDM, stats, Sym, P);
      }
    };
    SL sl;

@@ -198,33 +198,33 @@ void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult,
     stats.Zchit = grand_canonical_Z(1.0/P.chitp, diag, mult); // exp(-x*chitp)
 }
 
-template<scalar S, typename MF>
+template<scalar S>
 void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                       const DiagInfo<S> &diag, // projected!
                                       const Operators<S> &operators,
-                                      const Store<S> &store, const Store<S> &store_all,
-                                      MF mult, MemTime &mt, const Params &P) {
+                                      const Store<S> &store, const Store<S> &store_all, MemTime &mt, 
+                                      const Symmetry<S> *Sym, const Params &P) {
   // Load the density matrices
   DensMatElements<S> rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
       rho.load(step.ndx(), P, fn_rho, P.removefiles);
-      check_trace_rho(rho, mult); // Check if Tr[rho]=1, i.e. the normalization
+      check_trace_rho(rho, Sym->multfnc()); // Check if Tr[rho]=1, i.e. the normalization
     }
     if (P.need_rhoFDM())
       rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.removefiles);
   }
   // Calculate all spectral functions
-  calc_Z(step, stats, diag, mult, P); // required for FT and CFS approaches
-  oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, P);
+  calc_Z(step, stats, diag, Sym->multfnc(), P); // required for FT and CFS approaches
+  oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, Sym, P);
   // Calculate all expectation values
   if (step.nrg()) {
-    measure_singlet(step.TD_factor(), stats, operators, mult, diag, P);
+    measure_singlet(step.TD_factor(), stats, operators, Sym->multfnc(), diag, P);
     output.custom->field_values(step.Teff());
     operators.dump_diagonal(P.dumpdiagonal);
   }
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) {
-    measure_singlet_fdm(step.N(), stats, operators, mult, rhoFDM, store_all); // store_all required here!
+    measure_singlet_fdm(step.N(), stats, operators, Sym->multfnc(), rhoFDM, store_all); // store_all required here!
     output.customfdm->field_values(P.T);
   }
 }
@@ -235,10 +235,10 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
                                  const Store<S> &store, const Store<S> &store_all,
                                  MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
    if (P.project == ""s) {
-     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store, store_all, Sym->multfnc(), mt, P);
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store, store_all, mt, Sym, P);
    } else {
      auto diag = Sym->project(diag_in, P.project);
-     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag, operators, store, store_all, Sym->multfnc(), mt, P);
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
    }
 }
 
