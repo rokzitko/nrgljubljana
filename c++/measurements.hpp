@@ -31,16 +31,16 @@ void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a
 
 template<scalar S, typename MF, typename t_matel = matel_traits<S>>
 auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
-                                  const Store<S> &store, MF mult) {
-  return ranges::accumulate(rhoFDM, t_matel{}, {}, [&n, &s = store[ndx], mult](const auto &x) { const auto [I, rhoI] = x;
+                                  const Store<S> &store_all, MF mult) {
+  return ranges::accumulate(rhoFDM, t_matel{}, {}, [&n, &s = store_all[ndx], mult](const auto &x) { const auto [I, rhoI] = x;
     return mult(I) * trace_contract(rhoI, n.at({I,I}), s.at(I).kept()); }); // over kept states ONLY
 }
 
 template<scalar S, typename MF>
 void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &a, MF mult,
-                         const DensMatElements<S> &rhoFDM, const Store<S> &store) {
-  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store, mult);
-  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store, mult);
+                         const DensMatElements<S> &rhoFDM, const Store<S> &store_all) {
+  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store_all, mult);
+  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store_all, mult);
 }
 
 // Calculate grand canonical partition function at current NRG energy shell. This is not the same as the true
@@ -196,7 +196,8 @@ void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult,
 
 template<scalar S, typename MF>
 void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
-                                      const DiagInfo<S> &diag, const Operators<S> &operators, const Store<S> &store,
+                                      const DiagInfo<S> &diag, const Operators<S> &operators, 
+                                      const Store<S> &store, const Store<S> &store_all,
                                       MF mult, MemTime &mt, const Params &P) {
   // Load the density matrices
   DensMatElements<S> rho, rhoFDM;
@@ -218,20 +219,21 @@ void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<
     operators.dump_diagonal(P.dumpdiagonal);
   }
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) {
-    measure_singlet_fdm(step.N(), stats, operators, mult, rhoFDM, store);
+    measure_singlet_fdm(step.N(), stats, operators, mult, rhoFDM, store_all); // store_all required here!
     output.customfdm->field_values(P.T);
   }
 }
 
 template<scalar S>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
-                                 const DiagInfo<S> &diag_in, const Operators<S> &operators, const Store<S> &store,
+                                 const DiagInfo<S> &diag_in, const Operators<S> &operators, 
+                                 const Store<S> &store, const Store<S> &store_all,
                                  MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
    if (P.project == ""s) {
-     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store, Sym->multfnc(), mt, P);
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store, store_all, Sym->multfnc(), mt, P);
    } else {
      auto diag = Sym->project(diag_in, P.project);
-     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag, operators, store, Sym->multfnc(), mt, P);
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag, operators, store, store_all, Sym->multfnc(), mt, P);
    }
 }
 

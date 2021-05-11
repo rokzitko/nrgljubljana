@@ -224,7 +224,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
     oprecalc.recalculate_operators(operators, step, diag, substruct);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, mt, Sym, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
   }
   if (!P.ZBW())
     diag.truncate_perform();                               // Actual truncation occurs at this point
@@ -235,10 +235,10 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   }
   if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
     oprecalc.recalculate_operators(operators, step, diag, substruct);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, mt, Sym, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
   }
   if (P.do_recalc_none())  // ... or this
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, mt, Sym, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
   if (P.h5raw)
     operators.h5save(*output.h5raw, std::to_string(step.ndx()+1));
@@ -269,7 +269,7 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
   std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output, P);
   Store<S> empty_st(0, 0);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, operators, empty_st, mt, Sym, P);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, operators, empty_st, empty_st, mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
 }
 
