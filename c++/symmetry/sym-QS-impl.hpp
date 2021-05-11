@@ -84,20 +84,14 @@ class SymmetryQS : public Symmetry<SC> {
      stats.td.set("<Q^2>",  trQ2 / stats.Z);
    }
 
-   DiagInfo<SC> project(const DiagInfo<SC> &diag, std::string p) const override {
-     DiagInfo<SC> proj;
+   bool project_subspace(const Invar &I, const std::string &p) const override {
      if (p == "trivial"s) {
-       proj = diag; // no projection
+       return true;
      } else if (p == "evenQ"s) {
-       for (const auto &[I, eig]: diag)
-         if (is_even(I.get("Q")))
-           proj[I] = eig;
+       return is_even(I.get("Q"));
      } else if (p == "oddQ"s) {
-       for (const auto &[I, eig]: diag)
-         if (is_odd(I.get("Q")))
-           proj[I] = eig;
+       return is_odd(I.get("Q"));
      } else throw std::runtime_error(fmt::format("Unknown projection type {} for symmetry QS.", p));
-     return proj;
    }
 
    DECL;

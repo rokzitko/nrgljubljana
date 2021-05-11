@@ -134,8 +134,18 @@ class Symmetry {
    [[nodiscard]] virtual bool Invar_allowed(const Invar &I) const { return true; }
 
    // Project the states before taking measurements. String p defines what kind of projection is performed.
-   virtual DiagInfo<S> project(const DiagInfo<S> &diag, std::string p) const {
-     return diag; // by default return a copy (i.e., no projection)
+   virtual bool project_subspace(const Invar &I, const std::string &p) const {
+     return true; // by default retain all (i.e., no projection)
+   }
+   virtual DiagInfo<S> project(const DiagInfo<S> &diag, const std::string &p) const {
+     my_assert(p != ""s); // for performance reasons, this should never be called if the projection is not specified explicitly
+     DiagInfo<S> proj;
+     if (p == "trivial"s) {
+       proj = diag; // no projection
+     } else {
+       for (const auto &[I, eig]: diag) if (project_subspace(I, p)) proj[I] = eig;
+     }
+     return proj;
    }
 
    using Matrix  = Matrix_traits<S>;
