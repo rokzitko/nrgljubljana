@@ -85,7 +85,7 @@ class SymmetryQS : public Symmetry<SC> {
    }
 
    bool project_subspace(const Invar &I, const std::string &p) const override {
-     if (p == "trivial"s) {
+     if (p == ""s || p == "trivial"s) {
        return true;
      } else if (p == "evenQ"s) {
        return is_even(I.get("Q"));

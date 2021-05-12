@@ -76,7 +76,7 @@ class SymmetrySPSU2 : public Symmetry<SC> {
   }
    
   bool project_subspace(const Invar &I, const std::string &p) const override {
-    if (p == "trivial"s) {
+    if (p == ""s || p == "trivial"s) {
       return true;
     } else if (p == "even"s) {  // even particule number is half-interger spin, SS=1,3,5,...
       return is_odd(I.get("SS"));
