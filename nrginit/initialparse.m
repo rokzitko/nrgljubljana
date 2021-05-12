@@ -1,6 +1,6 @@
 (*
    Parameter file parsing code 
-   Rok Zitko, rok.zitko@ijs.si, 2007
+   Rok Zitko, rok.zitko@ijs.si, 2007-2021
 *)
 
 (* Helper functions *)
@@ -48,7 +48,8 @@ parse[filename_]:=Module[{l, len, group, i, line},
     If[parseisgroup[line],
       (* Header line *)
       group = parsestrip[line];
-      listdata[group] = {}, (* !! *)
+      listdata[group] = {};
+      listkeywords[group] = {}, (* !! *)
     (* elese *)
       (* Key-value line *)
       If[group == Null, Message[parse::nogroup, line]; Return[$Failed]];
@@ -59,6 +60,7 @@ parse[filename_]:=Module[{l, len, group, i, line},
       value = stripws[value];
       data[group][key] = value;
       AppendTo[listdata[group], {key,value}];
+      AppendTo[listkeywords[group], key];
     ];
   ];
 ];
@@ -78,7 +80,8 @@ paramnum[key_, group_:"param"] := importnum @ param[key, group];
 parambool[key_, group_:"param"] := 
   MemberQ[{"Yes", "yes", "True", "true", "TRUE", "1"}, param[key, group] ];
 
-paramexists[key_, group_:"param"] := ValueQ[ data[group][key] ];
+(* paramexists[key_, group_:"param"] := ValueQ[ data[group][key] ]; *)
+paramexists[key_, group_:"param"] := MemberQ[ listkeywords[group], key ];
 
 paramdefault[key_, default_, group_:"param"] :=
   If[paramexists[key, group], param[key, group], default];
