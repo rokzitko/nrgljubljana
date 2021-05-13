@@ -6,7 +6,11 @@ build_*
 run_tests*
 *.pyc
 nrg
-nrgcmpl
+nrgcmpl*
+nrg.gdb
 nrgexec
 TODO*
 .vscode
+README.warts
+nrg-framework*
+test/test_long/README*

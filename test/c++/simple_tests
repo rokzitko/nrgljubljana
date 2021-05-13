@@ -141,3 +141,8 @@ test0_minimal_Nmax2_td
 test0_minimal_Nmax3
 test0_minimal_Nmax3_td
 test212_project_trivial
+test225_project_SPSU2_trivial
+test226_project_SPSU2_even
+test226_project_SPSU2_odd
+test227_project_SPSU2_even_Gamma
+test213_project_evenQ
