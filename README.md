@@ -5,7 +5,7 @@ numerical renormalization group (NRG) calculations for quantum
 impurity problems. It is highly extensible without sacrificing
 numerical efficiency.
 
-*Copyright (C) 2006-2020 Rok Zitko*
+*Copyright (C) 2006-2021 Rok Zitko*
 
 The framework "NRG Ljubljana" is a set of interrelated computer codes
 for performing numerical renormalization group (NRG) calculations for
@@ -119,6 +119,7 @@ NRG calculations on computer clusters.
     * Boost C++ libraries
     * GNU Scientific library (GSL)
     * GNU MP Bignum Library (GMP) for arbitrary-precision numerics
+    * HDF5
 
    Due to the heavy use of template metaprogramming in Boost libraries, a
    high-quality standards-compliant C++ compiler must be used. Tested to
