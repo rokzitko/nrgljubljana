@@ -619,7 +619,8 @@ class Params {
 
   // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the
   // energies on the original scale. Also named the "reduced bandwidth".
-  auto SCALE(int N) const {
+  // TO DO: use polymorphism instead of if statements.
+  auto SCALE(int N) const noexcept {
     double scale = 0.0;
     if (discretization == "Y"s)
       // Yoshida,Whitaker,Oliveira PRB 41 9403 Eq. (39)
@@ -631,7 +632,6 @@ class Params {
       scale *= pow(Lambda, -(N - 1) / 2. + 1 - z); // NOLINT
     else
       scale *= pow(Lambda, -N / (2. * channels) + 3 / 2. - z); // NOLINT
-    my_assert(scale != 0.0);     // yes, != is intentional here.
     scale = scale * bandrescale; // RESCALE   // XXX: is this the appropriate place for rescaling? compatible with P.absolute==true?
     return scale;
   }
