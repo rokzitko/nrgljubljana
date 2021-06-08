@@ -60,10 +60,10 @@ void save(boost::archive::binary_oarchive &oa, const ublas::matrix<T> &m) {
 
 template <scalar T>
 auto load_ublas(boost::archive::binary_iarchive &ia) {
-  const auto size1 = read_one<size_t>(ia);
-  const auto size2 = read_one<size_t>(ia);
-  auto m = ublas::matrix<T>(size1, size2);
-  for (const auto i : range0(size1))
+  const auto isize1 = read_one<size_t>(ia);
+  const auto isize2 = read_one<size_t>(ia);
+  auto m = ublas::matrix<T>(isize1, isize2);
+  for (const auto i : range0(isize1))
     ublas::matrix_row<ublas::matrix<T>>(m, i) = read_one<ublas::vector<T>>(ia);
   return m;
 }

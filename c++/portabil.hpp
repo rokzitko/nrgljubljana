@@ -55,12 +55,12 @@ inline T finite_test_fnc(T x, const char *file, const int line) {
 #define my_assert(x)                                                                                                                                 \
   do {                                                                                                                                               \
     if (!(x)) {                                                                                                                                       \
-		std::stringstream o;                                                                                                                                     \
-      o << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                                       \
-      o << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                           \
-      o << #x << std::endl;                                                                                                                            \
+      std::stringstream my_assert_o;                                                                                                                                     \
+      my_assert_o << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                                       \
+      my_assert_o << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                           \
+      my_assert_o << #x << std::endl;                                                                                                                            \
       print_trace();                                                                                                                               \
-      throw std::runtime_error(o.str());                                                                                                                                       \
+      throw std::runtime_error(my_assert_o.str());                                                                                                                                       \
     }                                                                                                                                                \
   } while(0)
 

@@ -51,10 +51,10 @@ void save(boost::archive::binary_oarchive &oa, const EigenMatrix<T> &m) {
 
 template <scalar T>
 auto load_Eigen(boost::archive::binary_iarchive &ia) {
-  const auto size1 = read_one<size_t>(ia);
-  const auto size2 = read_one<size_t>(ia);
-  auto m = EigenMatrix<T>(size1, size2);
-  for (const auto i : range0(size1))
+  const auto isize1 = read_one<size_t>(ia);
+  const auto isize2 = read_one<size_t>(ia);
+  auto m = EigenMatrix<T>(isize1, isize2);
+  for (const auto i : range0(isize1))
     m.row(i) = read_one<EigenMatrix<T>>(ia);
   return m;
 }
