@@ -29,6 +29,9 @@ evalstr[str_String] := str;
 parse::nogroup = "Line `1` not contained in a group.";
 
 parse[filename_]:=Module[{l, len, group, i, line},
+  listdata["extra"] = {}; (* backward compatibility fix *)
+  listkeywords["extra"] = {}; (* backward compatibility fix *)
+
   l = Import[filename, "Lines"];
   If[l == $Failed, Return[$Failed]];
 

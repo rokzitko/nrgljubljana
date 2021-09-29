@@ -498,7 +498,7 @@ class Params {
   size_t combs = 0;        // dimension of new shell Hilbert space, 4 for single-channel, 16 for two-channel, etc.
   size_t Nlen = 0;         // Nlen=Nmax for regular calculations. Nlen=1 for ZBW. Length of wn, wnfactor, ZnD and dm vectors.
 
-  [[nodiscard]] bool ZBW() const { return Nmax == Ninit; } // Zero-bandwidth calculation
+  [[nodiscard]] bool ZBW() const noexcept { return Nmax == Ninit; } // Zero-bandwidth calculation
 
   // Spin expressed in terms of the spin multiplicity, 2S+1. For SL & SL 3 symmetry types, P.spin is 1. Default value
   // of 2 is valid for all other symmetry types.
@@ -534,21 +534,21 @@ class Params {
       fmt::print("coefchannels={} perchannel={} combs={}", coefchannels, perchannel, combs);
   }
 
-  bool cfs_flags() const { return cfs || cfsgt || cfsls; }
-  bool fdm_flags() const { return fdm || fdmgt || fdmls || fdmmats || fdmexpv; }
-  bool dmnrg_flags() const { return dmnrg || dmnrgmats; }
-  bool cfs_or_fdm_flags() const { return cfs_flags() || fdm_flags(); }
-  bool dm_flags() const { return cfs_flags() || fdm_flags() || dmnrg_flags(); }
-  bool keep_all_states_in_last_step() const { return lastall || (cfs_or_fdm_flags() && !lastalloverride); }
-  bool need_rho() const { return cfs_flags() || dmnrg_flags(); }
-  bool need_rhoFDM() const { return fdm_flags(); }
-  bool do_recalc_kept(const RUNTYPE &runtype) const {   // kept: Recalculate using vectors kept after truncation
+  bool cfs_flags() const noexcept { return cfs || cfsgt || cfsls; }
+  bool fdm_flags() const noexcept { return fdm || fdmgt || fdmls || fdmmats || fdmexpv; }
+  bool dmnrg_flags() const noexcept { return dmnrg || dmnrgmats; }
+  bool cfs_or_fdm_flags() const noexcept { return cfs_flags() || fdm_flags(); }
+  bool dm_flags() const noexcept { return cfs_flags() || fdm_flags() || dmnrg_flags(); }
+  bool keep_all_states_in_last_step() const noexcept { return lastall || (cfs_or_fdm_flags() && !lastalloverride); }
+  bool need_rho() const noexcept { return cfs_flags() || dmnrg_flags(); }
+  bool need_rhoFDM() const noexcept { return fdm_flags(); }
+  bool do_recalc_kept(const RUNTYPE &runtype) const noexcept {   // kept: Recalculate using vectors kept after truncation
     return strategy == "kept" && !(cfs_or_fdm_flags() && runtype == RUNTYPE::DMNRG) && !ZBW(); 
   }
-  bool do_recalc_all(const RUNTYPE &runtype) const {    // all: Recalculate using all vectors
+  bool do_recalc_all(const RUNTYPE &runtype) const noexcept {    // all: Recalculate using all vectors
     return !do_recalc_kept(runtype) && !ZBW(); 
   }
-  bool do_recalc_none() const { return ZBW(); }
+  bool do_recalc_none() const noexcept { return ZBW(); }
 
    // What is the last iteration completed in the previous NRG runs?
   void init_laststored() {
@@ -637,31 +637,31 @@ class Params {
   }
 
   // Energy scale at the last NRG iteration. Use in binning and broadening code.
-  double last_step_scale() const { return SCALE(Nmax); }
+  double last_step_scale() const noexcept { return SCALE(Nmax); }
 
-  double nrg_step_scale_factor() const { // rescale factor in the RG transformation (matrix construction)
+  double nrg_step_scale_factor() const noexcept { // rescale factor in the RG transformation (matrix construction)
     return absolute ? 1 : (!substeps ? sqrt(Lambda) : pow(Lambda, 0.5/channels)); // NOLINT
   }
   
   // Here we set the lowest frequency at which we will evaluate the spectral density. If the value is not predefined
   // in the parameters file, use the smallest scale from the calculation multiplied by P.broaden_min_ratio.
-  double get_broaden_min() const { return broaden_min <= 0.0 ? broaden_min_ratio * last_step_scale() : broaden_min; }
+  double get_broaden_min() const noexcept { return broaden_min <= 0.0 ? broaden_min_ratio * last_step_scale() : broaden_min; }
   
   // Energy scale factor that is exponentiated. N/N+1 patching is recommended for larger values of Lambda, so as to
   // reduce the upper limit of the patching window to omega_N*goodE*Lambda, i.e., by a factor of Lambda compared to
   // the N/N+2 patching where the upper limit is omega_N*goodE*Lambda^2.
-  double getEfactor() const {
+  double getEfactor() const noexcept {
     return (channels == 1 && !NN1) ? Lambda : std::sqrt(Lambda);
   }
 
   // Energy window for the patching procedure [FT and DMNRG algorithms]. In ZBW calculations the window is extended to [0:infty]
   // to get all spectral contributions.
-  double getE0()   const { return goodE; }
-  double getEmin() const { return !ZBW() ? getE0() : 0.0; }
-  double getEx()   const { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
-  double getEmax() const { return !ZBW() ? getE0() * pow(getEfactor(),2) : std::numeric_limits<double>::max(); }
+  double getE0()   const noexcept { return goodE; }
+  double getEmin() const noexcept { return !ZBW() ? getE0() : 0.0; }
+  double getEx()   const noexcept { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
+  double getEmax() const noexcept { return !ZBW() ? getE0() * pow(getEfactor(),2) : std::numeric_limits<double>::max(); }
 
-  auto Nall() const { return boost::irange(size_t(Ninit), size_t(Nlen)); }
+  auto Nall() const noexcept { return boost::irange(size_t(Ninit), size_t(Nlen)); }
 };
 
 class DiagParams {

@@ -1,3 +1,0 @@
-{{0, gammaPolCh[1], 0, 0}, {gammaPolCh[1], eps1 - coefzeta[1, 0], 
-  coefdelta[1, 0], 0}, {0, coefdelta[1, 0], eps1 + coefzeta[1, 0], 
-  -gammaPolCh[1]}, {0, 0, -gammaPolCh[1], 2*eps1 + U1}}
