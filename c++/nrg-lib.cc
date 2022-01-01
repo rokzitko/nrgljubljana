@@ -3,9 +3,9 @@
 namespace NRG {
 
 void print_about_message() {
-  fmt::print(fmt::emphasis::bold, "NRG Ljubljana - (c) rok.zitko@ijs.si\n");
-  fmt::print(fmt::emphasis::bold, "Timestamp: {}\n",  __TIMESTAMP__);
-  fmt::print(fmt::emphasis::bold, "Compiled on {} at {}\n\n", __DATE__, __TIME__);
+  fmt::print("NRG Ljubljana - (c) rok.zitko@ijs.si\n");
+  fmt::print("Timestamp: {}\n",  __TIMESTAMP__);
+  fmt::print("Compiled on {} at {}\n\n", __DATE__, __TIME__);
 }
 
 // Called from the NRG stand-alone executable

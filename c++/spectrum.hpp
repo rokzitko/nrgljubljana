@@ -6,6 +6,7 @@
 #include "params.hpp"
 #include "bins.hpp"
 #include "matsubara.hpp"
+#include "io.hpp" // {fmt}, color_print
 
 namespace NRG {
 
@@ -80,7 +81,7 @@ class SpectrumRealFreq {
      mergeNN2half(fsneg, cs.sneg, step);
    }
    void save() {
-     fmt::print(fmt::emphasis::bold, "Spectrum: {} {} -> ", name, algoname); // savebins() & continuous() append the filenames
+     fmt::color_print(P.pretty_out, fmt::emphasis::bold, "Spectrum: {} {} -> ", name, algoname); // savebins() & continuous() append the filenames
      trim();
      if (P.savebins) savebins();
      if (P.broaden) continuous();
@@ -221,7 +222,7 @@ class GFMatsubara {
      results.merge(cm.m);
    }
    void save() {
-     fmt::print(fmt::emphasis::bold, "GF Matsubara: {} {} -> {}\n", name, algoname, filename);
+     fmt::color_print(P.pretty_out, fmt::emphasis::bold, "GF Matsubara: {} {} -> {}\n", name, algoname, filename);
      results.save(safe_open(filename + ".dat"), P.prec_xy);
    }
 };
@@ -239,7 +240,7 @@ class TempDependence {
      std::copy(ctd.v.cbegin(), ctd.v.cend(), std::back_inserter(results));
    }
    void save() {
-     fmt::print(fmt::emphasis::bold, "Temperature dependence: {} {} -> {}\n", name, algoname, filename);
+     fmt::color_print(P.pretty_out, fmt::emphasis::bold, "Temperature dependence: {} {} -> {}\n", name, algoname, filename);
      ranges::sort(results, sortfirst());
      results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
    }

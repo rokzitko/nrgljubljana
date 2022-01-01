@@ -13,6 +13,15 @@
 #include <fmt/color.h>
 #include <fmt/ranges.h>
 
+namespace fmt {
+template <typename S, typename... Args,
+  FMT_ENABLE_IF(detail::is_string<S>::value)>
+    auto color_print(bool enable_color, const text_style& ts, const S& format_str, const Args&... args) {
+      return enable_color ? print(stdout, ts, format_str, args...)
+                          : print(stdout, format_str, args...);
+    }
+} // namespace fmt
+
 namespace NRG {
 
 using namespace fmt::literals;

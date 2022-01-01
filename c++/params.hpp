@@ -16,7 +16,7 @@
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
-#include "misc.hpp" // contains, from_string, parsing code
+#include "misc.hpp" // contains, from_string, is_stdout_redirected, parsing code
 #include "workdir.hpp"
 
 namespace NRG {
@@ -490,6 +490,7 @@ class Params {
   // **************************************************
   // Internal parameters, not under direct user control
 
+  bool pretty_out;         // If true, produce color output using the {fmt} library.
   bool embedded;           // If true, the code is being called as a library from some application, not stand-alone.
   size_t channels = 0;     // Number of channels
   size_t coeffactor = 0;   // coefchannels = coeffactor * channels (typically coeffactor=1)
@@ -591,6 +592,7 @@ class Params {
          const bool quiet = false )
      : workdir(std::move(workdir_)), embedded(embedded) 
   {
+    pretty_out = !is_stdout_redirected();
     if (filename != "") { 
       auto parsed_params = parser(filename, block);
       for (const auto &i : all) {

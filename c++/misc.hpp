@@ -1,5 +1,5 @@
 // misc.h - Miscelaneous functions
-// Copyright (C) 2005-2020 Rok Zitko
+// Copyright (C) 2005-2022 Rok Zitko
 
 #ifndef _misc_hpp_
 #define _misc_hpp_
@@ -15,6 +15,8 @@
 #include <fstream>
 #include <cstring> // stdcasecmp
 #include <exception>
+#include <cstdio> // stdout
+#include <unistd.h> // isatyy
 
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/map.hpp>
@@ -28,6 +30,15 @@
 #include <Eigen/Dense>
 
 namespace NRG {
+
+inline bool is_stdout_redirected() {
+  return !isatty(fileno(stdout));
+}
+
+inline auto file_exists(const char *fileName) {
+  std::ifstream file(fileName);
+  return file.good();
+}
 
 inline auto contains(const std::string &str, const char c) {
   return str.find(c) != std::string::npos;

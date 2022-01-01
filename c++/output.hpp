@@ -51,7 +51,7 @@ class ExpvOutput {
      F << std::endl;
      if (cout_dump)
        for (const auto &op: fields)
-         fmt::print(fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op])); // NOTE: real and imaginary part shown
+         fmt::color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op])); // NOTE: real and imaginary part shown
    }
    ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m, 
               std::list<std::string> fields, const Params &P) : m(m), fields(std::move(fields)), P(P) {

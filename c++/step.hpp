@@ -4,9 +4,7 @@
 #include <algorithm>
 #include "params.hpp"
 #include "numerics.hpp"
-
-#define FMT_HEADER_ONLY
-#include <fmt/format.h>
+#include "io.hpp" // {fmt}, color_print
 
 namespace NRG {
 
@@ -46,7 +44,7 @@ class Step {
      auto info = fmt::format(" ***** [{}] Iteration {}/{} (scale {}) ***** ", runtype == RUNTYPE::NRG ? "NRG"s : "DM"s, 
                              ndxN+1, int(P.Nmax), energyscale());
      info += P.substeps ? fmt::format(" step {} substep {}", NM().first+1, NM().second+1) : "";
-     fmt::print(fmt::emphasis::bold, "\n{}\n", info);
+     fmt::color_print(P.pretty_out, fmt::emphasis::bold, "\n{}\n", info);
    }
    void set_ZBW() noexcept {
      trueN = P.Ninit - 1; // if Ninit=0, trueN will be -1 (this is the only exceptional case)

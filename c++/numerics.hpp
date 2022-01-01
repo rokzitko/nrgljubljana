@@ -337,6 +337,7 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
 
 // Note: with dsyevr I have experienced orthogonality between eigenvectors below 1e-12. We thus use a more conservative
 // epsilon for orthogonality tests of 1e-10.
+// Addendum (2021): with dysevr, orthogonality can even go below 1e-10. Is it even safe to go beyond this point??
 template <scalar S, typename Matrix = Matrix_traits<S>>
 bool is_unitary(const Matrix &vec,
                 const double NORMALIZATION_EPSILON = 1e-12,

@@ -36,12 +36,21 @@ int main(int argc, char **argv) {
   boost::mpi::environment mpienv(argc, argv);
   boost::mpi::communicator mpiw;
   if (mpiw.rank() == 0) {
+    help(argc, argv, "Usage: nrg [-h] [-w workdir]");
+    if (!file_exists("data")) {
+      std::cout << "Input file 'data' does not exist. Terminating." << std::endl;
+      return 1;
+    }
+    if (!file_exists("param")) {
+      std::cout << "Input file 'param' does not exist. Terminating." << std::endl;
+      return 1;
+    }
     std::cout << "MPI job running on " << mpiw.size() << " processors." << std::endl << std::endl;
     report_openMP();
-    help(argc, argv, "Usage: nrg [-h] [-w workdir]");
     auto workdir = set_workdir(argc, argv);
     run_nrg_master(mpienv, mpiw, std::move(workdir));
   } else {
     run_nrg_slave(mpienv, mpiw); // slaves do no disk I/O
   }
+  return 0;
 }

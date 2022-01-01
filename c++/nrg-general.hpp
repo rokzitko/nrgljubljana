@@ -129,7 +129,7 @@ public:
       docalc0(step, operators, diag0, stats, output, oprecalc, Sym.get(), mt, P);
     auto diag = P.ZBW() ? nrg_ZBW(step, operators, stats, diag0, output, store, store_all, oprecalc, Sym.get(), mt, P)
                         : nrg_loop(step, operators, coef, stats, diag0, output, store, store_all, oprecalc, Sym.get(), mpi, mt, P);
-    fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
+    fmt::color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
     if (step.nrg()) {
       store.shift_abs_energies(stats.GS_energy);
