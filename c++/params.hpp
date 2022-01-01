@@ -482,6 +482,8 @@ class Params {
   param<bool> h5raw{"h5raw", "Store raw data during the iteration", "false", all};
   param<bool> h5all{"h5all", "Store raw data at all steps", "true", all};
   param<bool> h5last{"h5last", "Store raw data at last step", "true", all};
+  param<bool> h5U{"h5U", "Store eigenvectors U", "false", all};
+  param<bool> h5struct{"h5struct", "Store relations between subspaces", "false", all};
 
   param<std::string> project{"project", "Project the states before taking measurements", "", all};
 

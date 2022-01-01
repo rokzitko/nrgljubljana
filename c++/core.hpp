@@ -220,7 +220,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/");
   if (!P.ZBW()) {
     split_in_blocks(diag, substruct);
-    if (P.h5raw && (P.h5all || (P.h5last && step.last())))
+    if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5U)
       h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct);
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
@@ -251,7 +251,7 @@ auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Sta
              Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   TaskList tasklist{substruct};
-  if (P.h5raw && (P.h5all || (P.h5last && step.last())))
+  if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5struct)
     substruct.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/structure");
   auto diag = do_diag(step, operators, coef, stats, diagprev, output, tasklist, Sym, mpi, mt, P);
   after_diag(step, operators, stats, diag, output, substruct, store, store_all, oprecalc, Sym, mt, P);
