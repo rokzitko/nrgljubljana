@@ -38,8 +38,11 @@ inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruc
 template<scalar S>
 inline void h5save_blocks_Eigen(H5Easy::File &fd, const std::string &name, const Eigen<S> &eig, const SubspaceDimensions &sub)
 {
-  for (const auto i: range0(sub.combs()))
-    h5_dump_matrix(fd, name + "/" + sub.ancestor(i).name(), eig.U.get(i));
+  // For certain symmetry types (SPSU2) the same ancestor subspace may contribute more than one
+  // time, thus we add a suffix with a counter (nr).
+  const auto range = range0(sub.combs());
+  for (const auto & [nr, i]: range | ranges::views::enumerate)
+    h5_dump_matrix(fd, name + "/" + sub.ancestor(i).name() + "|nr=" + std::to_string(nr), eig.U.get(i));
 }
 
 template<scalar S>

@@ -83,7 +83,7 @@ auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Co
   }
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
-  if (P.h5raw)
+  if (P.h5raw && (P.h5all || (P.h5last && step.last())))
     h5_dump_matrix(*output.h5raw, std::to_string(step.ndx()+1) + "/hamiltonian/" + I.name() + "/matrix", h);
   return h;
 }
@@ -216,11 +216,11 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
       diag.save(step.ndx(), P);
     perform_basic_measurements(step, diag, Sym, stats, output, P); // Measurements are performed before the truncation!
   }
-  if (P.h5raw)
+  if (P.h5raw && (P.h5all || (P.h5last && step.last())))
     diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/");
   if (!P.ZBW()) {
     split_in_blocks(diag, substruct);
-    if (P.h5raw)
+    if (P.h5raw && (P.h5all || (P.h5last && step.last())))
       h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct);
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
@@ -241,7 +241,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   if (P.do_recalc_none())  // ... or this
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
-  if (P.h5raw)
+  if (P.h5raw && (P.h5all || (P.h5last && step.last())))
     operators.h5save(*output.h5raw, std::to_string(step.ndx()+1));
 }
 
@@ -251,7 +251,7 @@ auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Sta
              Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   TaskList tasklist{substruct};
-  if (P.h5raw)
+  if (P.h5raw && (P.h5all || (P.h5last && step.last())))
     substruct.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/structure");
   auto diag = do_diag(step, operators, coef, stats, diagprev, output, tasklist, Sym, mpi, mt, P);
   after_diag(step, operators, stats, diag, output, substruct, store, store_all, oprecalc, Sym, mt, P);

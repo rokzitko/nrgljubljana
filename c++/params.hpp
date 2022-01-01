@@ -480,6 +480,8 @@ class Params {
   param<std::string> diag_mode{"diag_mode", "Parallelization strategy", "MPI", all};
 
   param<bool> h5raw{"h5raw", "Store raw data during the iteration", "false", all};
+  param<bool> h5all{"h5all", "Store raw data at all steps", "true", all};
+  param<bool> h5last{"h5last", "Store raw data at last step", "true", all};
 
   param<std::string> project{"project", "Project the states before taking measurements", "", all};
 

@@ -119,7 +119,7 @@ public:
   auto run_nrg(const RUNTYPE runtype, Operators<S> operators, const Coef<S> &coef, DiagInfo<S> diag0) {
     auto oprecalc = Oprecalc<S>(runtype, operators, Sym, mt, P);
     auto output = Output<S>(runtype, operators, stats, P);
-    if (P.h5raw) {
+    if (P.h5raw && P.h5all) {
        diag0.h5save(*output.h5raw, std::to_string(P.Ninit) + "/eigen/");
        operators.h5save(*output.h5raw, std::to_string(P.Ninit));
     }
@@ -136,7 +136,8 @@ public:
       if (P.dumpabsenergies) store.dump_all_absolute_energies();
       if (P.dumpsubspaces) store.dump_subspaces();
     }
-    if (P.h5raw) store.h5save(*output.h5raw, "/store");
+    if (P.h5raw && P.h5all)
+      store.h5save(*output.h5raw, "store");
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
