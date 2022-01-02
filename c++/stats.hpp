@@ -81,12 +81,13 @@ class Stats {
        h5_dump_scalar(fd, prefix + "/energyscale", step.energyscale());
        h5_dump_scalar(fd, prefix + "/scale", step.scale());
        h5_dump_scalar(fd, prefix + "/Teff", step.Teff());
-       h5_dump_scalar(fd, prefix + "/rel_Esg", rel_Egs[ndx]);
+       h5_dump_scalar(fd, prefix + "/rel_Egs", rel_Egs[ndx]);
        h5_dump_scalar(fd, prefix + "/abs_Egs", rel_Egs[ndx]);
-       h5_dump_scalar(fd, prefix + "/energy_offsets", energy_offsets[ndx]);
+       h5_dump_scalar(fd, prefix + "/energy_offset", energy_offsets[ndx]);
      }
      for (const auto [name, value]: expv)
        h5_dump_scalar(fd, "expv/" + name, value);
+     h5_dump_scalar(fd, "total_energy", total_energy);
    }
 
    // Called after second run
