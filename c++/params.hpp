@@ -597,6 +597,14 @@ class Params {
 
    void h5save(H5Easy::File &file) const {
      for (const auto &i : all) i->h5save(file, "params");
+     h5_dump_scalar(file, "params/Nmax", Nmax);
+     h5_dump_scalar(file, "params/channels", channels);
+     h5_dump_scalar(file, "params/coeffactor", coeffactor);
+     h5_dump_scalar(file, "params/coefchannels", coefchannels);
+     h5_dump_scalar(file, "params/perchannel", perchannel);
+     h5_dump_scalar(file, "params/combs", combs);
+     h5_dump_scalar(file, "params/Nlen", Nmax);
+     h5_dump_scalar(file, "params/spin", spin);
    }
 
   explicit Params(const std::string &filename, const std::string &block,
