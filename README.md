@@ -5,7 +5,7 @@ numerical renormalization group (NRG) calculations for quantum
 impurity problems. It is highly extensible without sacrificing
 numerical efficiency.
 
-*Copyright (C) 2006-2021 Rok Zitko*
+*Copyright (C) 2006-2022 Rok Zitko*
 
 The framework "NRG Ljubljana" is a set of interrelated computer codes
 for performing numerical renormalization group (NRG) calculations for
@@ -68,6 +68,7 @@ NRG calculations on computer clusters.
    - dynamic spin susceptibility, dynamic charge susceptibility, etc.
      It is possible to compute arbitrary spectral functions for any
      pair of local operators.
+   - flexible output (tabulated ASCII, binary files, structured HDF5 files)
    - multiple logarithmic discretization schemes (Wilson/Krishnamurthy,
      Yoshida/Whitaker/Oliveira, Campo/Oliveira, ODE scheme)
    - support for non-flat bands (i.e. cosine band that arrises from
