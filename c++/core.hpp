@@ -71,7 +71,7 @@ auto new_subspaces(const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
 }
 
 template<scalar S>
-auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef, 
+auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Coef<S> &coef,
                  const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
@@ -112,16 +112,16 @@ auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S
 
 // Build matrix H(ri;r'i') in each subspace and diagonalize it
 template<scalar S>
-auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, 
-                      const Output<S> &output, const std::vector<Invar> &tasks, const double diagratio, 
+auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev,
+                      const Output<S> &output, const std::vector<Invar> &tasks, const double diagratio,
                       const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   const auto section_timing = mt.time_it("diag");
-  return P.diag_mode == "MPI" ? mpi.diagonalisations_MPI<S>(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P) 
+  return P.diag_mode == "MPI" ? mpi.diagonalisations_MPI<S>(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P)
                               : diagonalisations_OpenMP(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P);
 }
 
 template<scalar S>
-auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev, 
+auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
@@ -186,7 +186,7 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
   for (const auto &[name, m] : a.opq)
     std::cout << "norm[" << name << "]=" << norm(m, Sym, Sym->SpecdensquadFactorFnc(), 0) << std::endl;
   for (const auto && [i, ch] : a.opch | ranges::views::enumerate)
-    for (const auto && [j, m] : ch | ranges::views::enumerate) 
+    for (const auto && [j, m] : ch | ranges::views::enumerate)
       std::cout << "norm[f," << i << "," << j << "]=" << norm(m, Sym, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
 }
 
@@ -263,7 +263,7 @@ auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Sta
 
 // Perform calculations with quantities from 'data' file
 template<scalar S>
-void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output, 
+void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0, Stats<S> &stats, Output<S> &output,
              Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   step.set(P.Ninit - 1); // in the usual case with Ninit=0, this will result in N=-1
   std::cout << std::endl << "Before NRG iteration";
@@ -277,7 +277,7 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
 // doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
 // It replaces do_diag() and calls after_diag() as the last step.
 template<scalar S>
-auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output, 
+auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output,
              Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
   step.set_ZBW();

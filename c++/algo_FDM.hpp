@@ -33,7 +33,7 @@ class Algo_FDMls : virtual public Algo<S> {
    {
      const auto wnf   = stats.wnfactor[step.ndx()];
      const auto rho_op2 = prod_fit(rhoFDM.at(Ij), op2);
-     const auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
+     const auto energies = [&diagIi, &diagIj](const auto i, const auto j) {
        return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
      };
      const auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
@@ -78,16 +78,16 @@ class Algo_FDMgt : virtual public Algo<S> {
    std::unique_ptr<CB> cb;
  public:
    using Algo<S>::P;
-   Algo_FDMgt(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true) 
+   Algo_FDMgt(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true)
      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   void calc(const Step &step, const Eigen<S> &diagIi, const Eigen<S> &diagIj, const Matrix &op1, const Matrix &op2, 
-             t_coef factor, const Invar &Ii, const Invar &Ij, const DensMatElements<S> &rhoFDM, 
+   void calc(const Step &step, const Eigen<S> &diagIi, const Eigen<S> &diagIj, const Matrix &op1, const Matrix &op2,
+             t_coef factor, const Invar &Ii, const Invar &Ij, const DensMatElements<S> &rhoFDM,
              const Stats<S> &stats) override
    {
      const auto wnf   = stats.wnfactor[step.ndx()];
      const auto op2_rho = prod_fit(op2, rhoFDM.at(Ii));
-     const auto energies = [&diagIi, &diagIj](const auto i, const auto j) { 
+     const auto energies = [&diagIi, &diagIj](const auto i, const auto j) {
        return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
      };
      const auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
@@ -207,7 +207,7 @@ class Algo_FDMmats : public Algo<S> {
      for (const auto i : diagIi.Drange())
        for (const auto j : diagIj.Krange())
          #pragma omp parallel for schedule(static)
-         for (size_t n = 0; n < cutoff; n++) 
+         for (size_t n = 0; n < cutoff; n++)
            cm->add(n, term2(i,j,n) * factor);
      for (const auto i : diagIi.Krange())
        for (const auto j : diagIj.Drange())

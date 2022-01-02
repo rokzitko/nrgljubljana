@@ -78,7 +78,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
  public:
    template <typename MF>
      auto trace(MF mult) const {
-       return ranges::accumulate(*this, 0.0, {}, 
+       return ranges::accumulate(*this, 0.0, {},
                                  [mult](const auto z) { const auto &[I, mat] = z; return mult(I) * trace_real(mat); });
      }
    void save(const size_t N, const Params &P, const std::string &prefix) const {
@@ -112,7 +112,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
 };
 
 // Map of operator matrices
-template <scalar S> 
+template <scalar S>
 struct CustomOp : public std::map<std::string, MatrixElements<S>> {
   void trim(const DiagInfo<S> &diag) {
     for (auto &op : *this | boost::adaptors::map_values) op.trim(diag);

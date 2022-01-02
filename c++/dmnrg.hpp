@@ -59,7 +59,7 @@ auto init_rho(const Step &step, const DiagInfo<S> &diag_in, const Symmetry<S> *S
     return init_rho_impl(step, diag, Sym->multfnc());
   }
 }
-   
+
 // Calculation of the contribution from subspace I1 of rhoN (density matrix at iteration N) to rhoNEW (density matrix
 // at iteration N-1)
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>>
@@ -154,7 +154,7 @@ void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, const St
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
 template<scalar S, typename MF>
-DensMatElements<S> init_rho_FDM(const size_t N, const Store<S> &store, const Stats<S> &stats, 
+DensMatElements<S> init_rho_FDM(const size_t N, const Store<S> &store, const Stats<S> &stats,
                                 MF mult, const double T) {
   DensMatElements<S> rhoFDM;
   for (const auto &[I, ds] : store[N]) {

@@ -83,9 +83,9 @@ void Bins<S>::loggrid_acc() {
   const double a = P.accumulation;
   my_assert(a > 0.0);
   bins.resize(0);
-  for (auto e = emin; e <= emax; e *= pow(base, 1.0 / P.bins)) 
+  for (auto e = emin; e <= emax; e *= pow(base, 1.0 / P.bins))
     bins.emplace_back((emax - a) / emax * e + a, 0);
-  if (P.linstep > 0) 
+  if (P.linstep > 0)
     for (auto e = a; e > 0.0; e -= P.linstep) bins.emplace_back(e, 0);
   bins.emplace_back(DBL_MIN, 0); // add zero point
   ranges::sort(bins, sortfirst());

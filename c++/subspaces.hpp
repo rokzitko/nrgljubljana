@@ -14,7 +14,7 @@ namespace NRG {
 
 template<scalar S> class Symmetry;
 
-// Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc. 
+// Dimensions of the invariant subspaces |r,1>, |r,2>, |r,3>, etc.
 class SubspaceDimensions {
  private:
    std::vector<size_t> dims;
@@ -22,7 +22,7 @@ class SubspaceDimensions {
  public:
    SubspaceDimensions() = default;
    template<scalar S>
-     SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
+     SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev,
                         const Symmetry<S> *Sym, const bool ignore_inequality = false);
    [[nodiscard]] auto combs() const { return dims.size(); } // number of subspaces
    [[nodiscard]] auto rmax(const size_t i) const { // subspace dimension

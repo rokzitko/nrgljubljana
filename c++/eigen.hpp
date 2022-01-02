@@ -73,7 +73,7 @@ class Values {
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
-   void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }  
+   void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
    void set_corr(std::vector<t_eigen> in) { corrected = std::move(in); }
    [[nodiscard]] auto has_abs() const noexcept { return std::isfinite(scale); }
    [[nodiscard]] auto has_zero() const noexcept { return std::isfinite(shift); }
@@ -107,7 +107,7 @@ class Vectors {
     void set(Matrix m_) {
       m = std::move(m_);
       assert(is_unitary<S>(m));
-      assert(M() <= dim()); 
+      assert(M() <= dim());
     }
     [[nodiscard]] const auto & get() const noexcept { return m; }
     [[nodiscard]] const auto & operator()() const noexcept { return m; }
@@ -177,7 +177,7 @@ public:
 };
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
-template <scalar S, typename RVector = RVector_traits<S>, typename Matrix = Matrix_traits<S>> 
+template <scalar S, typename RVector = RVector_traits<S>, typename Matrix = Matrix_traits<S>>
 struct RawEigen {
 public:
   RVector val;
@@ -199,7 +199,7 @@ public:
 };
 
 // High-level representation of eigenvalues/eigenvectors
-template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
+template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>>
 class Eigen {
 public:
   Values<S> values;   // eigenvalues
@@ -262,7 +262,7 @@ public:
     vectors.standard_basis(v.size());
   }
   void subtract_Egs(const t_eigen Egs) {
-    values.set_shift(Egs); 
+    values.set_shift(Egs);
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
     values.set_abs_GS_energy(GS_energy);
@@ -270,11 +270,11 @@ public:
   [[nodiscard]] auto diagonal_exp(const double factor) const noexcept { // produce a diagonal matrix with exp(-factor*E) diagonal elements, used in init_rho()
     const auto dim = getnrstored();
     auto m = zero_matrix<S>(dim);
-    for (const auto i: range0(dim)) 
+    for (const auto i: range0(dim))
       m(i, i) = exp(-values.corr(i) * factor); // corrected eigenvalues!
     return m;
   }
-  template<typename F> 
+  template<typename F>
   [[nodiscard]] auto trace(F fnc, const double factor) const noexcept { // Tr[fnc(factor*E) exp(-factor*E)]
     return ranges::accumulate(values.all_rel_zero(), 0.0, {}, [fnc, factor](const auto x) { return fnc(factor*x) * exp(-factor*x); });
   }
@@ -300,7 +300,7 @@ public:
 };
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
-template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>> 
+template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>>
 class DiagInfo : public std::map<Invar, Eigen<S>> {
  public:
    explicit DiagInfo() = default;
@@ -336,13 +336,13 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    }
    [[nodiscard]] std::vector<t_eigen> sorted_energies_rel_zero() const {
      std::vector<t_eigen> energies;
-     for (const auto &eig: eigs()) 
+     for (const auto &eig: eigs())
        energies.insert(energies.end(), eig.values.all_rel_zero().begin(), eig.values.all_rel_zero().end());
      return energies | ranges::move | ranges::actions::sort;
    }
    [[nodiscard]] std::vector<t_eigen> sorted_energies_corr() const {
      std::vector<t_eigen> energies;
-     for (const auto &eig: eigs()) 
+     for (const auto &eig: eigs())
        energies.insert(energies.end(), eig.values.all_corr().begin(), eig.values.all_corr().end());
      return energies | ranges::move | ranges::actions::sort;
    }
@@ -367,22 +367,22 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      ranges::for_each(eigs(), &Eigen<S>::clear_eigenvectors);
    }
    // Total number of states (symmetry taken into account)
-   template <typename MF> 
+   template <typename MF>
    [[nodiscard]] auto count_states(MF && mult) const noexcept {
      return ranges::accumulate(*this, 0, {}, [mult](const auto &x) { const auto &[I, eig] = x; return mult(I)*eig.getnrstored(); });
    }
    [[nodiscard]] auto count_subspaces() const noexcept {    // Count non-empty subspaces
      return ranges::count_if(eigs(), [](const auto &eig) { return eig.getnrstored()>0; });
    }
-   template<typename F, typename M> 
+   template<typename F, typename M>
    [[nodiscard]] auto trace(F fnc, const double factor, M mult) const noexcept { // Tr[fnc(factor*E) exp(-factor*E)]
      return ranges::accumulate(*this, 0.0, {}, [fnc, factor, mult](const auto &x) { const auto &[I, eig] = x; return mult(I) * eig.trace(fnc, factor); });
    }
    template <typename MF>
    void states_report(MF && mult) const {
        fmt::print("Number of invariant subspaces: {}\n", count_subspaces());
-       for (const auto &[I, eig]: *this) 
-         if (eig.getnrstored()) 
+       for (const auto &[I, eig]: *this)
+         if (eig.getnrstored())
            fmt::print("({}) {} states: {}\n", I.str(), eig.getnrstored(), eig.values.all_rel());
        fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
@@ -414,8 +414,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void h5save(H5Easy::File &fd, const std::string &name) const {
      for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name());
    }
-   explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) { 
-     load(N, P, remove_files); 
+   explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) {
+     load(N, P, remove_files);
    } // called from do_diag()
 };
 

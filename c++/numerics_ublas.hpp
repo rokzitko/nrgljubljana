@@ -104,7 +104,7 @@ template <scalar T> ublas::matrix<T> read_matrix(std::istream &F, const size_t s
   return read_ublas_matrix<T>(F, size1, size2);
 }
 #endif
-   
+
 // M += factor * A * B^\dag
 template<scalar S, ublas_matrix UM, typename t_coef = coef_traits<S>>
 void product(UM &M, const t_coef factor, const UM &A, const UM &B) {

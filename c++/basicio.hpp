@@ -145,7 +145,7 @@ template <scalar T> auto read_std_vector(std::istream &F, const size_t size) {
   return vec;
 }
 
-// Read values of type T into a std::vector<T>. First value to be read, 'nr', is either vector dimension or 
+// Read values of type T into a std::vector<T>. First value to be read, 'nr', is either vector dimension or
 // the value of maximum index.
 template <scalar T> auto read_std_vector(std::istream &F, const bool nr_is_max_index = false) {
   const auto nr = read_one<size_t>(F);

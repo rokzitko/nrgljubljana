@@ -51,7 +51,7 @@ void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &
 // calculations, stats.Zchit for chi(T) calculations.
 template<scalar S, typename MF>
 auto grand_canonical_Z(const double factor, const DiagInfo<S> &diag, MF mult) {
-  return ranges::accumulate(diag, 0.0, {}, [factor,mult](const auto &x) { const auto &[I, eig] = x; 
+  return ranges::accumulate(diag, 0.0, {}, [factor,mult](const auto &x) { const auto &[I, eig] = x;
     return mult(I) * sum_of_exp(eig.value_corr_kept(), factor); }); // over kept states ONLY
 }
 
@@ -157,7 +157,7 @@ void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, const Symmetry<S
   std::cout << "S_fdm=" << HIGHPREC(stats.S_fdm) << std::endl;
   std::cout << std::endl;
   stats.td_fdm.set("T", T);
-  stats.td_fdm.set("F_fdm", stats.F_fdm); 
+  stats.td_fdm.set("F_fdm", stats.F_fdm);
   stats.td_fdm.set("E_fdm", stats.E_fdm);
   stats.td_fdm.set("C_fdm", stats.C_fdm);
   stats.td_fdm.set("S_fdm", stats.S_fdm);
@@ -194,7 +194,7 @@ void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult,
   nrglog('Z', "Z_ft=" << stats.Zft);
   if (std::string(P.specgt) != "" || std::string(P.speci1t) != "" || std::string(P.speci2t) != "")
     stats.Zgt = grand_canonical_Z(1.0/P.gtp, diag, mult); // exp(-x*gtp)
-  if (std::string(P.specchit) != "") 
+  if (std::string(P.specchit) != "")
     stats.Zchit = grand_canonical_Z(1.0/P.chitp, diag, mult); // exp(-x*chitp)
 }
 
@@ -202,7 +202,7 @@ template<scalar S>
 void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                       const DiagInfo<S> &diag, // projected!
                                       const Operators<S> &operators,
-                                      const Store<S> &store, const Store<S> &store_all, MemTime &mt, 
+                                      const Store<S> &store, const Store<S> &store_all, MemTime &mt,
                                       const Symmetry<S> *Sym, const Params &P) {
   // Load the density matrices
   DensMatElements<S> rho, rhoFDM;
@@ -231,7 +231,7 @@ void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<
 
 template<scalar S>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
-                                 const DiagInfo<S> &diag_in, const Operators<S> &operators, 
+                                 const DiagInfo<S> &diag_in, const Operators<S> &operators,
                                  const Store<S> &store, const Store<S> &store_all,
                                  MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
    if (P.project == ""s) {

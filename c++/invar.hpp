@@ -107,7 +107,7 @@ class Invar {
    // In DMNRG runs, we must perform the "inverse of the quantum number addition", i.e. find subspaces that an
    // invariant subspaces contributed *to*.
    void inverse() {
-     for (size_t i = 0; i < invdim; i++) 
+     for (size_t i = 0; i < invdim; i++)
        switch (qntype[i]) {
        case additive:
          // For SU(2) and U(1) related quantum numbers, we just flip the sign.

@@ -165,7 +165,7 @@ void SpectrumRealFreq<S>::savebins() {
     my_assert(e < 0.0); // attention!
     Fbins.write((char *)&e,  sizeof(double));
     Fbins.write((char *)&wr, sizeof(double));
-    if (P.reim) 
+    if (P.reim)
       Fbins.write((char *)&wi, sizeof(double));
   }
 }
@@ -216,7 +216,7 @@ class GFMatsubara {
    const Params &P;
    Matsubara<S> results;
  public:
-   GFMatsubara(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) : 
+   GFMatsubara(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) :
      name(name), algoname(algoname), filename(filename), P(P), results(P.mats, gt, P.T) {}
    void merge(const ChainMatsubara<S> &cm) {
      results.merge(cm.m);
@@ -234,7 +234,7 @@ class TempDependence {
    const Params &P;
    Spikes<S> results;
  public:
-   TempDependence<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) : 
+   TempDependence<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
      name(name), algoname(algoname), filename(filename),  P(P) {}
    void merge(const ChainTempDependence<S> &ctd) {
      std::copy(ctd.v.cbegin(), ctd.v.cend(), std::back_inserter(results));

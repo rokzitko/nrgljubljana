@@ -28,7 +28,7 @@ class Algo {
    explicit Algo(const Params &P) : P(P) {}
    virtual ~Algo() {}
    virtual void begin(const Step &) = 0;
-   virtual void calc(const Step &, const Eigen<S> &, const Eigen<S> &, const Matrix &, const Matrix &, 
+   virtual void calc(const Step &, const Eigen<S> &, const Eigen<S> &, const Matrix &, const Matrix &,
                      const t_coef, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) = 0;
    virtual void end(const Step &) = 0;
    virtual std::string rho_type() { return ""; } // what rho type is required

@@ -109,7 +109,7 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
   if (P.logletter('R')) dump_matrix(cn);
   return cn;
 }
-   
+
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
 template<scalar S>
 void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag, // XXX: pass Eigen instead

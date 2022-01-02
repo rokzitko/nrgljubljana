@@ -157,8 +157,8 @@ class Oprecalc {
   }
 
   // Reset lists of operators which need to be iterated
-  Oprecalc(const RUNTYPE &runtype, const Operators<S> &a, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) : 
-    runtype(runtype), Sym(Sym), mt(mt), P(P) 
+  Oprecalc(const RUNTYPE &runtype, const Operators<S> &a, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) :
+    runtype(runtype), Sym(Sym), mt(mt), P(P)
   {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)
@@ -203,7 +203,7 @@ class Oprecalc {
 
 // Recalculate irreducible matrix elements for Wilson chains.
 template<scalar S>
-void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, Opch<S> &opch, 
+void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, Opch<S> &opch,
                         const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   const auto section_timing = mt.time_it("recalc f");
   if (!P.substeps) {

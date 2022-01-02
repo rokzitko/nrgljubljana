@@ -33,11 +33,11 @@ struct Sub {
     h5_dump_scalar(fd, name + "/kept", kept());
     h5_dump_scalar(fd, name + "/total", total());
     h5_dump_scalar(fd, name + "/min", min());
-    h5_dump_scalar(fd, name + "/max", max()); 
+    h5_dump_scalar(fd, name + "/max", max());
   }
 };
 
-template<scalar S> 
+template<scalar S>
 class Subs : public std::map<Invar, Sub<S>> {
  public:
    Subs() = default;

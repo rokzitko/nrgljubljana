@@ -94,7 +94,7 @@ auto read_matrix_bin(GEN && generate_matrix, const std::string &filename, const 
 
 #ifdef INCL_UBLAS
 inline auto read_matrix_ublas(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
-  auto M = bin ? read_matrix_bin(generate_ublas<double>, filename, verbose) 
+  auto M = bin ? read_matrix_bin(generate_ublas<double>, filename, verbose)
                : read_matrix_text(generate_ublas<double>, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;
@@ -103,7 +103,7 @@ inline auto read_matrix_ublas(const std::string &filename, const bool bin = fals
 
 #ifdef INCL_EIGEN
 inline auto read_matrix_Eigen(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
-  auto M = bin ? read_matrix_bin(generate_Eigen<double>, filename, verbose) 
+  auto M = bin ? read_matrix_bin(generate_Eigen<double>, filename, verbose)
                : read_matrix_text(generate_Eigen<double>, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;
@@ -111,7 +111,7 @@ inline auto read_matrix_Eigen(const std::string &filename, const bool bin = fals
 #endif
 
 inline auto read_matrix(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {
-  auto M = bin ? read_matrix_bin(generate_matrix<double>, filename, verbose) 
+  auto M = bin ? read_matrix_bin(generate_matrix<double>, filename, verbose)
                : read_matrix_text(generate_matrix<double>, filename, verbose);
   if (veryverbose) std::cout << M << std::endl;
   return M;

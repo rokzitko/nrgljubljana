@@ -205,7 +205,7 @@ inline int atoi(const std::string &s) { return std::atoi(s.c_str()); }
 
 // Read data from stream F.
 template <typename T1, typename T2>
-std::vector<std::pair<T1, T2>> readtable(const std::string &filename, const bool verbose = false) 
+std::vector<std::pair<T1, T2>> readtable(const std::string &filename, const bool verbose = false)
 {
   auto F = safe_open_for_reading(filename);
   std::vector<std::pair<T1, T2>> v;

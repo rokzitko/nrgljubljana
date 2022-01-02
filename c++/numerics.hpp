@@ -149,7 +149,7 @@ template<matrix M> auto is_matrix_upper(const M &m) {
 inline constexpr auto psgn(const int n) { return n % 2 == 0 ? 1.0 : -1.0; }
 
 // Dump a matrix with full numerical precision. The columns are aligned for easier inspection. Expect large output!
-template<matrix M> inline void dump_matrix(const M &m, std::ostream &F = std::cout, 
+template<matrix M> inline void dump_matrix(const M &m, std::ostream &F = std::cout,
                                            const int header_width = 7, const int column_width = 23) {
   boost::io::ios_base_all_saver ofs(F);
   F << std::setprecision(std::numeric_limits<double>::max_digits10);
@@ -259,8 +259,8 @@ auto eigen_to_ublas_vector(Eigen::Matrix<T,N,M> m){
 #endif
 
 template<scalar S>
-[[nodiscard]] auto zero_matrix(const size_t size) { 
-  return NRG::zero_matrix<S>(size, size); 
+[[nodiscard]] auto zero_matrix(const size_t size) {
+  return NRG::zero_matrix<S>(size, size);
 }
 
 template<matrix M>
@@ -397,7 +397,7 @@ bool is_unitary_blocks(const std::vector<Matrix> &U,
   return true;
 }
 
-template <scalar S, typename RVector = RVector_traits<S>, typename Matrix = Matrix_traits<S>> 
+template <scalar S, typename RVector = RVector_traits<S>, typename Matrix = Matrix_traits<S>>
 void check_diag(const RVector &val, const Matrix &vec) {
   my_assert(val.size() == nrvec(vec));
   for (const auto v: val) assert_isfinite(v);

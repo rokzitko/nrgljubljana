@@ -75,7 +75,7 @@ class Algo_DMNRGmats : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-      const auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2, this](const auto rm, const auto rj) { 
+      const auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2, this](const auto rm, const auto rj) {
          const auto Em = diagIp.values.abs_zero(rm);
          const auto Ej = diagI1.values.abs_zero(rj);
          t_weight sumA{};
@@ -96,7 +96,7 @@ class Algo_DMNRGmats : public Algo<S> {
      for (const auto rm: diagIp.kept())
        for (const auto rj: diagI1.kept())
          for (size_t n = 0; n < P.mats; n++)
-           cm->add(n, factor * term(rm, rj, n)); 
+           cm->add(n, factor * term(rm, rj, n));
    }
    void end(const Step &step) override {
           gf.merge(*cm.get());

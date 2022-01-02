@@ -10,14 +10,14 @@
 
 #include "basicio.hpp"
 
-template <scalar S> 
+template <scalar S>
 [[nodiscard]] EigenMatrix<S> generate_Eigen(const size_t size1, const size_t size2) {
   return EigenMatrix<S>(size1, size2);
 }
 
 // Generators
 #ifdef USE_EIGEN
-template <scalar S> 
+template <scalar S>
 [[nodiscard]] EigenMatrix<S> generate_matrix(const size_t size1, const size_t size2) {
   return EigenMatrix<S>(size1, size2);
 }
@@ -28,7 +28,7 @@ template <scalar S>
 }
 
 template <scalar S>
-[[nodiscard]] EigenMatrix<S> id_matrix(const size_t size) { 
+[[nodiscard]] EigenMatrix<S> id_matrix(const size_t size) {
   return EigenMatrix<S>::Identity(size, size);
 }
 #endif
@@ -38,7 +38,7 @@ template <scalar S> EigenMatrix<S> herm(const EigenMatrix<S> &m) { return m.adjo
 template <scalar S> EigenMatrix<S> trans(const EigenMatrix<S> &m) { return m.transpose(); }
 
 // Access the low-level data storage in the matrix (used in diag.hpp)
-template<scalar S> S * data(EigenMatrix<S> &m) { 
+template<scalar S> S * data(EigenMatrix<S> &m) {
   return m.data();
 }
 
@@ -99,7 +99,7 @@ template <scalar T> auto read_matrix(std::istream &F, const size_t size1, const 
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void product(EM &M, const t_coef factor, const EM &A, const EM &B) {
   if (finite_size(A) && finite_size(B)) {
-    my_assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));   
+    my_assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));
     my_assert(my_isfinite(factor));
     M += factor * A * B.adjoint();
   }
