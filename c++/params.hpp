@@ -1,5 +1,5 @@
 // param.cc - Parameter parsing
-// Copyright (C) 2009-2020 Rok Zitko
+// Copyright (C) 2009-2022 Rok Zitko
 
 #ifndef _param_hpp_
 #define _param_hpp_
@@ -18,6 +18,7 @@
 
 #include "misc.hpp" // contains, from_string, is_stdout_redirected, parsing code
 #include "workdir.hpp"
+#include "h5.hpp"
 
 namespace NRG {
 
@@ -39,12 +40,13 @@ class parambase {
    virtual ~parambase() = default;
    virtual void set_str(const std::string &new_value) = 0;
    virtual void dump(std::ostream &F = std::cout) = 0;
+   virtual void h5save(H5Easy::File &file, std::string path) = 0;
    [[nodiscard]] auto getkeyword() const noexcept { return keyword; }
    [[nodiscard]] auto getdesc() const noexcept { return desc; }
 };
 
 // Templated specialized classes for various storage types (int, double, string, bool)
-template <typename T> 
+template <typename T>
 class param : public parambase {
  private:
    T data;
@@ -60,8 +62,11 @@ class param : public parambase {
          if (i->getkeyword() == keyword) throw std::runtime_error("param class internal error: keyword conflict.");
        allparams.push_back(this);
      }
-   void dump(std::ostream &F = std::cout) override { 
+   void dump(std::ostream &F = std::cout) override {
      F << keyword << "=" << data << (!is_default ? " *" : "") << std::endl;
+   }
+   void h5save(H5Easy::File &file, std::string path) override {
+     h5_dump_scalar(file, path + "/" + keyword, data);
    }
    // This line enables to access parameters using an object as a rvalue
    [[nodiscard]] inline operator const T &() const noexcept { return data; }
@@ -475,7 +480,7 @@ class Params {
   param<bool> checksumrules{"checksumrules", "Check operator sumrules", "false", all}; // N
 
   param<bool> absolute{"absolute", "Do NRG without any rescaling", "false", all};
-   
+
   // Parallelization strategy: MPI or OpenMP
   param<std::string> diag_mode{"diag_mode", "Parallelization strategy", "MPI", all};
 
@@ -551,7 +556,7 @@ class Params {
     return strategy == "kept" && !(cfs_or_fdm_flags() && runtype == RUNTYPE::DMNRG) && !ZBW(); 
   }
   bool do_recalc_all(const RUNTYPE &runtype) const noexcept {    // all: Recalculate using all vectors
-    return !do_recalc_kept(runtype) && !ZBW(); 
+    return !do_recalc_kept(runtype) && !ZBW();
   }
   bool do_recalc_none() const noexcept { return ZBW(); }
 
@@ -590,14 +595,18 @@ class Params {
     for (const auto &i : all) i->dump(F);
   }
 
-  explicit Params(const std::string &filename, const std::string &block, 
-         std::unique_ptr<Workdir> workdir_, 
+   void h5save(H5Easy::File &file) const {
+     for (const auto &i : all) i->h5save(file, "params");
+   }
+
+  explicit Params(const std::string &filename, const std::string &block,
+         std::unique_ptr<Workdir> workdir_,
          const bool embedded,
          const bool quiet = false )
-     : workdir(std::move(workdir_)), embedded(embedded) 
+     : workdir(std::move(workdir_)), embedded(embedded)
   {
     pretty_out = !is_stdout_redirected();
-    if (filename != "") { 
+    if (filename != "") {
       auto parsed_params = parser(filename, block);
       for (const auto &i : all) {
         const std::string keyword = i->getkeyword();
@@ -648,11 +657,11 @@ class Params {
   double nrg_step_scale_factor() const noexcept { // rescale factor in the RG transformation (matrix construction)
     return absolute ? 1 : (!substeps ? sqrt(Lambda) : pow(Lambda, 0.5/channels)); // NOLINT
   }
-  
+
   // Here we set the lowest frequency at which we will evaluate the spectral density. If the value is not predefined
   // in the parameters file, use the smallest scale from the calculation multiplied by P.broaden_min_ratio.
   double get_broaden_min() const noexcept { return broaden_min <= 0.0 ? broaden_min_ratio * last_step_scale() : broaden_min; }
-  
+
   // Energy scale factor that is exponentiated. N/N+1 patching is recommended for larger values of Lambda, so as to
   // reduce the upper limit of the patching window to omega_N*goodE*Lambda, i.e., by a factor of Lambda compared to
   // the N/N+2 patching where the upper limit is omega_N*goodE*Lambda^2.

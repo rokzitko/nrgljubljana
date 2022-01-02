@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <complex>
+#include <type_traits>
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
@@ -28,8 +29,13 @@ namespace NRG {
 #ifdef H5_DEBUG
      std::cout << "h5_dump_scalar " << path << std::endl;
 #endif
-     std::vector<T> vec = {x};
-     H5Easy::dump(file, path, vec);
+     if constexpr (std::is_same<T, bool>::value) {
+       std::vector<int> vec = {x ? 1 : 0}; // workaround for bool
+       H5Easy::dump(file, path, vec);
+     } else {
+       std::vector<T> vec = {x};
+       H5Easy::dump(file, path, vec);
+     }
    }
 
    template<typename T>

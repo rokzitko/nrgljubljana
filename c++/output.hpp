@@ -53,7 +53,7 @@ class ExpvOutput {
        for (const auto &op: fields)
          fmt::color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, to_string(m[op])); // NOTE: real and imaginary part shown
    }
-   ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m, 
+   ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m,
               std::list<std::string> fields, const Params &P) : m(m), fields(std::move(fields)), P(P) {
      F.open(fn);
      field_numbers();
@@ -68,14 +68,14 @@ class Annotated {
    // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor)
    template<typename T, scalar S>
    inline auto scaled_energy(const T e, const Step &step, const Stats<S> &stats,
-			     const bool scaled = true, const bool absolute = false) {
+                             const bool scaled = true, const bool absolute = false) {
      return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0);
    }
    const Params &P;
  public:
    explicit Annotated(const Params &P) : P(P) {}
-   template<scalar S, typename MF> 
-   void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats, 
+   template<scalar S, typename MF>
+   void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats,
              MF mult, const std::string &filename = "annotated.dat") {
      if (!P.dumpannotated) return;
      if (!F.is_open()) { // open output file
@@ -110,7 +110,7 @@ class Annotated {
        }
      } else {
        seznam.resize(len); // truncate!
-       for (const auto &[e, I] : seznam) 
+       for (const auto &[e, I] : seznam)
          F << scale(e) << " " << I << std::endl;
      }
      F << std::endl; // Consecutive iterations are separated by an empty line
@@ -138,19 +138,20 @@ struct Output {
   std::unique_ptr<H5Easy::File> h5raw;
   Output(const RUNTYPE &runtype, const Operators<S> &operators, Stats<S> &stats, const Params &P,
          const std::string filename_energies= "energies.nrg"s,
-         const std::string filename_custom = "custom", 
+         const std::string filename_custom = "custom",
          const std::string filename_customfdm = "customfdm")
-    : runtype(runtype), P(P), annotated(P) 
+    : runtype(runtype), P(P), annotated(P)
     {
       if (P.dumpenergies && runtype == RUNTYPE::NRG) Fenergies.open(filename_energies);
       const auto ops = singlet_operators_for_expv_evaluation(operators);
       if (runtype == RUNTYPE::NRG)
         custom = std::make_unique<ExpvOutput<S>>(filename_custom, stats.expv, ops, P);
-      else if (runtype == RUNTYPE::DMNRG && P.fdmexpv) 
+      else if (runtype == RUNTYPE::DMNRG && P.fdmexpv)
         customfdm = std::make_unique<ExpvOutput<S>>(filename_customfdm, stats.fdmexpv, ops, P);
       if (P.h5raw) {
         const auto filename_h5 = runtype == RUNTYPE::NRG ? "raw.h5" : "raw-dm.h5";
         h5raw = std::make_unique<H5Easy::File>(filename_h5, H5Easy::File::Overwrite);
+        P.h5save(*h5raw);
       }
     }
   // Dump eigenvalues from the diagonalisation to a file.

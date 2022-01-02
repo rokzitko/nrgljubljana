@@ -135,9 +135,13 @@ public:
       store.shift_abs_energies(stats.GS_energy);
       if (P.dumpabsenergies) store.dump_all_absolute_energies();
       if (P.dumpsubspaces) store.dump_subspaces();
+      if (P.h5raw) stats.h5save_nrg(*output.h5raw); // saved in raw.h5
+      if (P.h5raw && P.h5all)
+        store.h5save(*output.h5raw, "store");
     }
-    if (P.h5raw && P.h5all)
-      store.h5save(*output.h5raw, "store");
+    if (step.dmnrg()) {
+      if (P.h5raw) stats.h5save_dmnrg(*output.h5raw); // saved in raw-dm.h5
+    }
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
@@ -159,7 +163,7 @@ public:
     rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
     if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
   }
-  NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) : 
+  NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) :
     mpi(mpi), P("param", "param", std::move(workdir), embedded), input(P, "data"), Sym(input.Sym),
     stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen), store_all(P.Ninit, P.Nlen)
   {

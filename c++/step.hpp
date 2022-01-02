@@ -21,7 +21,7 @@ class Step {
      ndxN = std::max(newN, 0);
    }
    void init() noexcept { set(P.Ninit); }
-   constexpr Step(const Params &P_, const RUNTYPE runtype_) noexcept : P(P_), runtype(runtype_) { init(); }
+   constexpr Step(const Params &P_, const RUNTYPE runtype_ = RUNTYPE::NRG) noexcept : P(P_), runtype(runtype_) { init(); }
    constexpr void next() noexcept { trueN++; ndxN++; }
    [[nodiscard]] constexpr auto N() const noexcept { return ndxN; }
    [[nodiscard]] constexpr auto ndx() const noexcept { return ndxN; }
@@ -41,7 +41,7 @@ class Step {
      return {N, M};
    }
    void infostring() const {
-     auto info = fmt::format(" ***** [{}] Iteration {}/{} (scale {}) ***** ", runtype == RUNTYPE::NRG ? "NRG"s : "DM"s, 
+     auto info = fmt::format(" ***** [{}] Iteration {}/{} (scale {}) ***** ", runtype == RUNTYPE::NRG ? "NRG"s : "DM"s,
                              ndxN+1, int(P.Nmax), energyscale());
      info += P.substeps ? fmt::format(" step {} substep {}", NM().first+1, NM().second+1) : "";
      fmt::color_print(P.pretty_out, fmt::emphasis::bold, "\n{}\n", info);
@@ -66,9 +66,9 @@ class Step {
    }
    [[nodiscard]] auto last() const noexcept { return last(ndxN); }
    [[nodiscard]] auto end() const noexcept { return ndxN >= P.Nmax; } // ndxN is outside the allowed range
-   void set_last() noexcept { 
-     set(lastndx()); 
-     if (P.ZBW()) set_ZBW(); 
+   void set_last() noexcept {
+     set(lastndx());
+     if (P.ZBW()) set_ZBW();
    }
    // NOTE: for ZBW calculations, Ninit=0 and Nmax=0, so that first() == true and last() == true for ndxN=0.
    [[nodiscard]] constexpr auto nrg() const noexcept { return runtype == RUNTYPE::NRG; }
@@ -79,8 +79,8 @@ class Step {
    [[nodiscard]] constexpr auto get_trueN() const noexcept { return trueN; }
    [[nodiscard]] constexpr auto get_ndxN() const noexcept { return ndxN; }
    [[nodiscard]] constexpr auto get_runtype() const noexcept { return runtype; }
-   [[nodiscard]] constexpr bool operator==(const Step &other) const noexcept { 
-     return trueN == other.get_trueN() && ndxN == other.get_ndxN() && runtype == other.get_runtype(); 
+   [[nodiscard]] constexpr bool operator==(const Step &other) const noexcept {
+     return trueN == other.get_trueN() && ndxN == other.get_ndxN() && runtype == other.get_runtype();
    }
 };
 
