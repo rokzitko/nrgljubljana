@@ -61,6 +61,8 @@ namespace NRG {
    void h5_dump_matrix(H5Easy::File &file, const std::string &path, const CUM &m) {
      ublas::matrix<double> mr = ublas::real(m);
      h5_dump_matrix(file, path, mr);
+     ublas::matrix<double> mi = ublas::imag(m);
+     h5_dump_matrix(file, path + "-imag", mi);
    }
 #endif
 
@@ -79,6 +81,8 @@ namespace NRG {
   void h5_dump_matrix(H5Easy::File &file, const std::string &path, const CEM &m) {
     EigenMatrix<double> mr = m.real();
     h5_dump_matrix(file, path, mr);
+    EigenMatrix<double> mi = m.imag();
+    h5_dump_matrix(file, path + "-imag", mi);
   }
 #endif
 }
