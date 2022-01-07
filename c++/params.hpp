@@ -484,9 +484,12 @@ class Params {
   // Parallelization strategy: MPI or OpenMP
   param<std::string> diag_mode{"diag_mode", "Parallelization strategy", "MPI", all};
 
-  param<bool> h5raw{"h5raw", "Store raw data during the iteration", "false", all};
-  param<bool> h5all{"h5all", "Store raw data at all steps", "true", all};
+  param<bool> h5raw{"h5raw", "Store raw data in an HDF5 file", "false", all};
+  param<bool> h5all{"h5all", "Store raw data at all steps", "false", all};
   param<bool> h5last{"h5last", "Store raw data at last step", "true", all};
+  param<bool> h5ham{"h5ham", "Store Hamiltonian matrices", "false", all};
+  param<bool> h5ops{"h5ops", "Store operator matrices", "false", all};
+  param<bool> h5vectors{"h5vectors", "Store eigenvectors", "false", all};
   param<bool> h5U{"h5U", "Store eigenvectors U", "false", all};
   param<bool> h5struct{"h5struct", "Store relations between subspaces", "false", all};
 

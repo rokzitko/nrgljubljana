@@ -292,9 +292,9 @@ public:
     vectors.load(ia);
     ia >> nrpost >> nrstored >> last;
   }
-  void h5save(H5Easy::File &fd, const std::string &name) const {
+  void h5save(H5Easy::File &fd, const std::string &name, const bool save_vectors = true) const {
     values.h5save(fd, name);
-    vectors.h5save(fd, name);
+    if (save_vectors) vectors.h5save(fd, name);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
   }
 };
@@ -411,8 +411,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      if (remove_files) NRG::remove(fn);
    }
-   void h5save(H5Easy::File &fd, const std::string &name) const {
-     for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name());
+   void h5save(H5Easy::File &fd, const std::string &name, const bool save_vectors = true) const {
+     for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name(), save_vectors);
    }
    explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) {
      load(N, P, remove_files);
