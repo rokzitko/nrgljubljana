@@ -209,7 +209,6 @@ template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                 const SubspaceStructure &substruct, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym,
                 MemTime &mt, const Params &P) {
-  nrglog('@', "after_diag()");
   stats.update(step);
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
@@ -225,21 +224,18 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
       h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct);
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
-    oprecalc.recalculate_operators(operators, step, diag, substruct, P);
+    oprecalc.recalculate_operators(operators, step, diag, substruct);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
   }
-  if (!P.ZBW()) {
-    nrglog('@', "truncate_perform()");
+  if (!P.ZBW())
     diag.truncate_perform();                               // Actual truncation occurs at this point
-  }
   store_states(step, store, store_all, diag, substruct, Sym, P);
   if (!step.last()) {
-    nrglog('@', "recalc_irreducible()");
     recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
     if (P.dump_f) operators.opch.dump();
   }
   if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
-    oprecalc.recalculate_operators(operators, step, diag, substruct, P);
+    oprecalc.recalculate_operators(operators, step, diag, substruct);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
   }
   if (P.do_recalc_none())  // ... or this

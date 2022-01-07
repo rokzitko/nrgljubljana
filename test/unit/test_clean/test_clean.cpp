@@ -47,7 +47,7 @@ TEST(Clean, H) { // NOLINT
   split_in_blocks(diag, substruct);
   MemTime mt;
   auto oprecalc = Oprecalc<double>(step.get_runtype(), operators, SymSP, mt, P);
-  oprecalc.recalculate_operators(operators, step, diag, substruct, P);
+  oprecalc.recalculate_operators(operators, step, diag, substruct);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store, mt, Sym, P);
   diag.truncate_perform();
   EXPECT_EQ(step.last(), true);
