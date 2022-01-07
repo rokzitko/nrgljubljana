@@ -68,8 +68,9 @@ class Oprecalc {
      }
 
    // Recalculate operator matrix representations
-   void recalculate_operators(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
-       const auto section_timing = mt.time_it("recalc");
+   void recalculate_operators(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P) {
+     nrglog('@', "recalculate_operators()");
+     const auto section_timing = mt.time_it("recalc");
        for (auto &[name, m] : a.ops)
          m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
        for (auto &[name, m] : a.opsp)

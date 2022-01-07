@@ -260,7 +260,9 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') 
 // equal to the dimension of the matrix h. Matrix m is destroyed in the process, thus no const attribute!
 template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank) {
   using S = typename M::value_type;
+  const std::string rank_string = myrank >= 0 ? " [rank=" + std::to_string(myrank) + "]" : "";
   mpilog("diagonalise " << size1(m) << "x" << size2(m) << " " << DP.diag << " " << DP.diagratio);
+  nrglogdp('@', "diagonalise() - size(m)=" << size1(m) << rank_string);
   Timing timer;
   my_assert(is_matrix_upper(m));
   RawEigen<S> d;
@@ -284,10 +286,9 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
   my_assert(has_lesseq_rows(d.vec, m)); // sanity check
   if (DP.logletter('e'))
     d.dump_eigenvalues();
-  const std::string rank_string = myrank >= 0 ? " [rank=" + std::to_string(myrank) + "]" : "";
   nrglogdp('A', "LAPACK, dim=" << dim(m) << " M=" << nr_computed << rank_string);
   nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << rank_string);
-  d.check_diag();
+  assert(check_diag()); // only in debug mode!
   return d;
 }
 
