@@ -1,10 +1,10 @@
 (*
-  NRG Ljubljana - Operator definitions 
-  (c) Rok Zitko, rok.zitko@ijs.si, 2005-2019
+  NRG Ljubljana - Operator definitions
+  (c) Rok Zitko, rok.zitko@ijs.si, 2005-2022
 *)
 
 MyPrint["operators.m started"];
-Module[{t = {}}, 
+Module[{t = {}},
   t = Join[t, mtSingletOp["I", 1] ]; (* Identity operator. <I>=1. *)
 
   (* Parts of the total Hamiltonian *)
@@ -33,11 +33,11 @@ Module[{t = {}},
   (* Spectral density of electron gas *)
   t = Join[t, mtDoubletOp["A_f", f[0] ]];
   t = Join[t, mtDoubletOp["A_F", f ]];
-      
+
   (* Conjugated A_f operator for computing anomalous Green's function. *)
   t = Join[t, mtDoubletOp["Ac_f", ((-1)^#2 f[1-#1, 0, 1-#2])& ]];
 
-  (* Spectral density of electron gas (spin projected) *)  
+  (* Spectral density of electron gas (spin projected) *)
   t = Join[t, mtDoubletOp["A_f_u", f[0], UP ]];
   t = Join[t, mtDoubletOp["A_f_d", f[0], DO ]];
 
@@ -84,15 +84,16 @@ Module[{t = {}},
   t = Join[t, mtSingletOp["q_d^2", pow[number[d[]]-1, 2] ] ];
 
   (* Hopping amplitude from impurity to the lead *)
-  t = Join[t, mtSingletOp["hop0", hop[d[], f[0]] ] ];
-  t = Join[t, mtSingletOp["hop0^2", pow[hop[d[], f[0]],2] ] ];
+  t = Join[t, mtSingletOp["hop0", hop[f[0], d[]] ] ];
+  t = Join[t, mtSingletOp["imhop0", hopphi[f[0], d[], Pi/2] ] ];
+  t = Join[t, mtSingletOp["hop0^2", pow[hop[f[0], d[]],2] ] ];
 
   (* Hopping-n_d combination; used for testing the sum rules. *)
-  t = Join[t, mtSingletOp["hop0-n_d", nc[hop[d[], f[0]], number[d[]]] ] ];
+  t = Join[t, mtSingletOp["hop0-n_d", nc[hop[f[0], d[]], number[d[]]] ] ];
 
-  (* Current operator *) 
+  (* Current operator *)
   t = Join[t, mtSingletOp["cur0", current[d[], f[0]] ] ];
- 
+
   (* Isospin operators *)
   t = Join[t, mtSingletOp["pair_d", nc[d[CR,UP], d[CR, DO]] ] ];
   t = Join[t, mtSingletOp["Ix_d", isospinx[d[]] ] ];
@@ -101,21 +102,21 @@ Module[{t = {}},
   t = Join[t, mtSingletOp["Iy_d^2", pow[isospiny[d[]],2] ] ];
   t = Join[t, mtSingletOp["Iz_d", isospinz[d[]] ] ];
   t = Join[t, mtSingletOp["Iz_d^2", pow[isospinz[d[]],2] ] ];
-  
+
   (* Majorana operators *)
   (* If fermion parity is conserved, they all have zero expectation value. *)
   t = Join[t, mtSingletOp["maj1up", (d[CR,UP]+d[AN,UP])/2 ] ];
   t = Join[t, mtSingletOp["maj1do", (d[CR,DO]+d[AN,DO])/2 ] ];
   t = Join[t, mtSingletOp["maj2up", I (d[CR,UP]-d[AN,UP])/2 ] ];
   t = Join[t, mtSingletOp["maj2do", I (d[CR,DO]-d[AN,DO])/2 ] ];
-  
+
   (* Transverse isospin squared *)
   t = Join[t, mtSingletOp["Ixy_d^2", pow[isospinx[d[]],2] + pow[isospiny[d[]],2] ] ];
-  
+
   t = Join[t, mtSingletOp["pnup_d", nc[number[d[], UP], d[CR,UP], d[CR, DO]] ] ];
   t = Join[t, mtSingletOp["pndo_d", nc[number[d[], DO], d[CR,UP], d[CR, DO]] ] ];
   t = Join[t, mtSingletOp["pn_d", nc[number[d[]], d[CR,UP], d[CR, DO]] ] ];
-  
+
   (* Spin-resolved current/hopping operators *)
   (* R/I = Re vs. Im, U/D = UP vs. DO *)
   t = Join[t, mtSingletOp["jRU",     hop[d[], f[0], UP] ] ];
@@ -124,7 +125,7 @@ Module[{t = {}},
   t = Join[t, mtSingletOp["jID", current[d[], f[0], DO] ] ];
 
   t = Join[t, mtSingletOp["jIU^2", pow[current[d[], f[0], UP],2] ] ];
-  
+
   (* Note that jRU+jRD <=> hop0 *)
 
   (* Equivalent operators for the 2nd channel *)
@@ -133,18 +134,19 @@ Module[{t = {}},
   t = Join[t, mtSingletOp["jIUr", current[d[], f[1], UP] ] ];
   t = Join[t, mtSingletOp["jIDr", current[d[], f[1], DO] ] ];
 
-  (* Current from one lead to another, spin UP only. Use this 
+  (* Current from one lead to another, spin UP only. Use this
      for spin-less models! *)
   t = Join[t, mtSingletOp["cur", current[d[], f[0], UP] - current[d[], f[1], UP] ]];
 
   (* Both spin orientations. Use this for the spin-full models! *)
   t = Join[t, mtSingletOp["curUD", current[d[], f[0]] - current[d[], f[1]] ]];
-  
+
  If[CHANNELS >= 2,
     (* Local 'occupancy' of electron gas *)
     t = Join[t, mtSingletOp["q_f1", number[f[1]]-1 ] ];
     t = Join[t, mtSingletOp["q_f1^2", pow[number[f[1]]-1, 2] ] ];
-    t = Join[t, mtSingletOp["hop1", hop[d[], f[1]] ] ];
+    t = Join[t, mtSingletOp["hop1", hop[f[1], d[]] ] ];
+    t = Join[t, mtSingletOp["imhop1", hopphi[f[1], d[], Pi/2] ] ];
 
     (* Symmetric and antisymmetric combinations *)
     t = Join[t, mtSingletOp["hops", 1/Sqrt[2] (hop[d[], f[0]] + hop[d[], f[1]]) ]];
@@ -163,41 +165,41 @@ Module[{t = {}},
     t = Join[t, mtSingletOp["hopa^2",
       pow[1/Sqrt[2] (hop[d[], f[0]] - hop[d[], f[1]]), 2] ] ];
   ];
-  
+
   If[CHANNELS >= 3,
     t = Join[t, mtSingletOp["q_f2", number[f[2]]-1 ] ];
-    t = Join[t, mtSingletOp["q_f2^2", pow[number[f[2]]-1, 2] ] ];                            
-    t = Join[t, mtSingletOp["hop2", hop[d[], f[2]] ] ]; 
+    t = Join[t, mtSingletOp["q_f2^2", pow[number[f[2]]-1, 2] ] ];
+    t = Join[t, mtSingletOp["hop2", hop[d[], f[2]] ] ];
     t = Join[t, mtSingletOp["q_f012", number[f[0]] + number[f[1]] + number[f[2]] - 3 ] ];
   ];
-  
+
   (* Impurity spectral density *)
   t = Join[t, mtDoubletOp["A_d", d ]];
-    
-  (* A_d_u, A_d_d are to be used with U1 symmetry type. There are also U_d, D_d etc. operators 
+
+  (* A_d_u, A_d_d are to be used with U1 symmetry type. There are also U_d, D_d etc. operators
      which correspont to spin-projected operators. *)
   t = Join[t, mtDoubletOp["A_d_u", d[#1, #2]&, UP ]];
   t = Join[t, mtDoubletOp["A_d_d", d[#1, #2]&, DO ]];
-  
+
   (* Spin-projected doublet operators. *)
   t = Join[t, mtDoubletOp["U_d", (If[#2 == UP, 1, 0] d[#1, #2])& ]];
   t = Join[t, mtDoubletOp["D_d", (If[#2 == DO, 1, 0] d[#1, #2])& ]];
 
   (* Version of the above, explicitly defined to be the creation operators.
-     Should be exactly equivalent to U_d & D_d for QSZ and SPU1 symmetries, 
+     Should be exactly equivalent to U_d & D_d for QSZ and SPU1 symmetries,
      since #1 is always CR for those cases. *)
   t = Join[t, mtDoubletOp["CU_d", (If[#1 == CR, 1, 0] If[#2 == UP, 1, 0] d[#1, #2])& ]];
   t = Join[t, mtDoubletOp["CD_d", (If[#1 == CR, 1, 0] If[#2 == DO, 1, 0] d[#1, #2])& ]];
 
-  (* Important implementation note: argument #2 is the spin of the excitation described by 
+  (* Important implementation note: argument #2 is the spin of the excitation described by
      the operator, i.e., which invariant subspaces it links. For SPU1 #1 is always CR.
-     Creation operator will increase spin, annihilation operator will decrease it. 
-     We therefore need to invert (1-#2) the argument to obtain the correct operator for 
+     Creation operator will increase spin, annihilation operator will decrease it.
+     We therefore need to invert (1-#2) the argument to obtain the correct operator for
      particle annihilation. *)
   t = Join[t, mtDoubletOp["AD_d", (If[#1 == CR, 1, 0] If[#2 == UP, 1, 0] d[1-#1, 1-#2])& ]];
   t = Join[t, mtDoubletOp["AU_d", (If[#1 == CR, 1, 0] If[#2 == DO, 1, 0] d[1-#1, 1-#2])& ]];
 
-  (* For SYMTYPE == "NONE" *) 
+  (* For SYMTYPE == "NONE" *)
   t = Join[t, mtDoubletOp["A_d_0", d[#1, #2]&, 0 ]];
   t = Join[t, mtDoubletOp["A_d_1", d[#1, #2]&, 1 ]];
   t = Join[t, mtDoubletOp["A_d_2", d[#1, #2]&, 2 ]];
@@ -211,8 +213,8 @@ Module[{t = {}},
   t = Join[t, mtSingletOp["sAc_d_u", d[CR, UP] ] ];
   t = Join[t, mtSingletOp["sA_d_d",  d[AN, DO] ] ];
   t = Join[t, mtSingletOp["sAc_d_d", d[CR, DO] ] ];
-  
-  (* See symmetry_test__self_operators_for_ISO.nb. B_d is the operator which 
+
+  (* See symmetry_test__self_operators_for_ISO.nb. B_d is the operator which
   results from [Iz^2,d], i.e. from the Coulomb repulsion term expressed in an
   isospin-symmetric way. *)
   t = Join[t, mtDoubletOp["B_d", d[#1,#2]~nc~(d[CR,1-#2]~nc~d[AN,1-#2]-1/2) If[#1==AN,-1,1]&, nnop[d[]] ]];
@@ -222,11 +224,11 @@ Module[{t = {}},
   (* Recall: UP=1, DO=0 *)
   (* For spin-UP --> -d[1-#2, DO] *)
   (* For spin-DO --> +d[1-#2, UP] *)
-  (* WARNING: the minus sign is conventional, some people use different definitions! 
+  (* WARNING: the minus sign is conventional, some people use different definitions!
      Be careful! *)
 
   t = Join[t, mtDoubletOp["Ac_d", ((-1)^#2 d[1-#1, 1-#2])& ]];
-  
+
   (* QSZ only! *)
   t = Join[t, mtDoubletOp["nAc_d", (nc[number[d[], #2], d[1-#1, 1-#2]])& ]];
 
@@ -272,8 +274,8 @@ Module[{t = {}},
   (* This only works for (Q, S_z) basis, since these projectors do NOT
   transform as SU(2) multiplets. The same holds, obviously, for the
   components of the spin operator. *)
-  
-  If[isQSZ[] || isNONE[] || isSU2[] || isU1[] || isANYJ[] || isISOSZ[] || isSPU1[] 
+
+  If[isQSZ[] || isNONE[] || isSU2[] || isU1[] || isANYJ[] || isISOSZ[] || isSPU1[]
     || isDBLSU2[] || isDBLISOSZ[] || isP[] || isPP[],
     (* Diagonal projectors. Recall that P^2=P *)
     t = Join[t, mtSingletOp["Pu", projectorUP @ d[] ] ];
@@ -282,7 +284,7 @@ Module[{t = {}},
     t = Join[t, mtSingletOp["Pua", projectorUP @ a[] ] ];
     t = Join[t, mtSingletOp["Pda", projectorDO @ a[] ] ];
 
-    t = Join[t, mtSingletOp["SXd",  spinx[d[]] ] ];    
+    t = Join[t, mtSingletOp["SXd",  spinx[d[]] ] ];
     t = Join[t, mtSingletOp["SX2d", pow[spinx[d[]],2] ] ];
     t = Join[t, mtSingletOp["SYd",  spiny[d[]] ] ];
     t = Join[t, mtSingletOp["SY2d", pow[spiny[d[]],2] ] ];
@@ -295,7 +297,7 @@ Module[{t = {}},
 
     (* For model=KONDO *)
     t = Join[t, mtSingletOp["SX",  spinketbraX[SPIN] ] ];
-    t = Join[t, mtSingletOp["SX2", pow[spinketbraX[SPIN],2] ] ];    
+    t = Join[t, mtSingletOp["SX2", pow[spinketbraX[SPIN],2] ] ];
     t = Join[t, mtSingletOp["SY",  spinketbraY[SPIN] ] ];
     t = Join[t, mtSingletOp["SY2", pow[spinketbraY[SPIN],2] ] ];
     t = Join[t, mtSingletOp["SZ",  spinketbraZ[SPIN] ] ];
@@ -306,25 +308,25 @@ Module[{t = {}},
     t = Join[t, mtSingletOp["Rdd",  nc[ket[-1/2], bra[-1/2]] ] ];
     t = Join[t, mtSingletOp["Rud",  nc[ket[+1/2], bra[-1/2]] ] ];
     t = Join[t, mtSingletOp["Rdu",  nc[ket[-1/2], bra[+1/2]] ] ];
-    
+
     (* For model=TWOKONDO *)
     (* Operators sx1, etc. must be defined in the model definition itself. *)
     t = Join[t, mtSingletOp["S1X",  sx1 ] ];
-    t = Join[t, mtSingletOp["S1X2", pow[sx1,2] ] ];    
+    t = Join[t, mtSingletOp["S1X2", pow[sx1,2] ] ];
     t = Join[t, mtSingletOp["S1Y",  sy1 ] ];
     t = Join[t, mtSingletOp["S1Y2", pow[sy1,2] ] ];
     t = Join[t, mtSingletOp["S1Z",  sz1 ] ];
     t = Join[t, mtSingletOp["S1Z2", pow[sz1,2] ] ];
 
     t = Join[t, mtSingletOp["S2X",  sx2 ] ];
-    t = Join[t, mtSingletOp["S2X2", pow[sx2,2] ] ];    
+    t = Join[t, mtSingletOp["S2X2", pow[sx2,2] ] ];
     t = Join[t, mtSingletOp["S2Y",  sy2 ] ];
     t = Join[t, mtSingletOp["S2Y2", pow[sy2,2] ] ];
     t = Join[t, mtSingletOp["S2Z",  sz2 ] ];
     t = Join[t, mtSingletOp["S2Z2", pow[sz2,2] ] ];
 
     t = Join[t, mtSingletOp["S1S2", S1S2 ] ];
-    
+
     (* Projection operators for two sites *)
     t = Join[t, mtSingletOp["P00", nc[projector0[d],  projector0[a]  ] ]];
     t = Join[t, mtSingletOp["P0u", nc[projector0[d],  projectorUP[a] ] ]];
@@ -342,7 +344,7 @@ Module[{t = {}},
     t = Join[t, mtSingletOp["P2u", nc[projector2[d],  projectorUP[a] ] ]];
     t = Join[t, mtSingletOp["P2d", nc[projector2[d],  projectorDO[a] ] ]];
     t = Join[t, mtSingletOp["P22", nc[projector2[d],  projector2[a]  ] ]];
-    
+
     (* Projection operators for three sites *)
     If[calcopq["Pthree"],
      MyPrint["Pthree"];
@@ -357,9 +359,15 @@ Module[{t = {}},
       ll = Flatten[ll, 2];
       ll = Map[(MyPrint[First[#]]; mtdoSingletOp[First[#],Last[#]])&, ll];
       ll = Join @@ ll;
-      t = Join[t, ll];            
+      t = Join[t, ll];
      ];
     ];
+
+    t = Join[t, mtSingletOp["sfhop0",   spinfliphop[f[0], d[]] ] ];
+    t = Join[t, mtSingletOp["imsfhop0", spinfliphopphi[f[0], d[], Pi/2] ] ];
+    t = Join[t, mtSingletOp["sfhop1",   spinfliphop[f[1], d[]] ] ];
+    t = Join[t, mtSingletOp["imsfhop1", spinfliphopphi[f[1], d[], Pi/2] ] ];
+
   ];
 
  (** Correlations *)
@@ -437,7 +445,7 @@ Module[{t = {}},
   (* N_sigma = (a+a^\dag) f_{0\sigma} *)
   t = Join[t, mtDoubletOp["N_d", nc[displop, f[#1, 0, #2]] & ]];
 
-  (* Spectral function of an arbitrary linear combination of orbitals. 
+  (* Spectral function of an arbitrary linear combination of orbitals.
      Specified as, for example, A_x(d[]+a[]) or A_x(d[]-2a[]+b[]), etc.*)
 
   Module[{lst, expr, koefs},
@@ -452,7 +460,7 @@ Module[{t = {}},
       )&, lst];
   ];
 
-  (* Local energies: Hinit will correspond to the initial NRG cluster, 
+  (* Local energies: Hinit will correspond to the initial NRG cluster,
      while Hloc is the truly local part (i.e., without the hybridisation). *)
   Module[{op},
     op = H /. params;
@@ -460,7 +468,7 @@ Module[{t = {}},
     op = op /. f[CR|AN, _, _]->0;
     t = Join[t, mtSingletOp["Hloc", op]];
   ];
-    
+
   (* === Add site 'a' === *)
   If[NRDOTS >= 2,
     t = Join[t, mtSingletOp["n_a", number[a[]] ] ];
@@ -481,7 +489,7 @@ Module[{t = {}},
     t = Join[t, mtSingletOp["n_an_d", nc[number[a[]], number[d[]]] ] ];
     t = Join[t, mtSingletOp["q_aq_d", nc[number[a[]]-1, number[d[]]-1] ] ];
     t = Join[t, mtSingletOp["n_an_f", nc[number[a[]], number[f[0]]] ] ];
-  
+
     t = Join[t, mtDoubletOp["A_a", a[] ]];
     t = Join[t, mtDoubletOp["A_even", (d[#1,#2]+a[#1,#2])/Sqrt[2]& ]];
     t = Join[t, mtDoubletOp["A_odd",  (d[#1,#2]-a[#1,#2])/Sqrt[2]& ]];
@@ -509,7 +517,7 @@ Module[{t = {}},
     (* nc[n,hop] -> n_e^2 = 1/4(ntot^2+hop^2+2nhop) *)
     (* n_o^2 = 1/4(ntot^2+hop^2-2nhop *)
     t = Join[t, mtSingletOp["nhop", nc[ntot, hp ] ] ];
-    
+
     (** Projector operators for two-sites **)
 
     (* For (Q, S) basis, Ptwo = Ppar + Pperp can be defined. *)
@@ -524,19 +532,19 @@ Module[{t = {}},
     projectors do NOT transform as SU(2) multiplets. *)
     (* Mind the order: the first one is 'd', the second is 'a' *)
     If[isQSZ[] || isISOSZ[] || isDBLISOSZ[],
-      t = Join[t, mtSingletOp["Puu", 
+      t = Join[t, mtSingletOp["Puu",
         nc[projectorUP[d[]], projectorUP[a[]] ] ]];
-      t = Join[t, mtSingletOp["Pud", 
+      t = Join[t, mtSingletOp["Pud",
         nc[projectorUP[d[]], projectorDO[a[]] ] ]];
-      t = Join[t, mtSingletOp["Pdu", 
+      t = Join[t, mtSingletOp["Pdu",
         nc[projectorDO[d[]], projectorUP[a[]] ] ]];
-      t = Join[t, mtSingletOp["Pdd", 
+      t = Join[t, mtSingletOp["Pdd",
         nc[projectorDO[d[]], projectorDO[a[]] ] ]];
-      
+
       (* Probability that two electrons with parallel spin occupy the dots *)
-      t = Join[t, mtSingletOp["Ppar", 
+      t = Join[t, mtSingletOp["Ppar",
         nc[projectorDO[d[]], projectorDO[a[]] ] +
-        nc[projectorUP[d[]], projectorUP[a[]] ] 
+        nc[projectorUP[d[]], projectorUP[a[]] ]
       ]];
 
       (* Probability that two electrons with opposite spin occupy the dots *)
@@ -564,11 +572,11 @@ Module[{t = {}},
     t = Join[t, mtSingletOp["q_b^2", pow[number[b[]]-1, 2] ] ];
 
     (* Symmetrized fluctuations of side dots, for QSLR code *)
-    t = Join[t, mtSingletOp["n_ab^2", 
+    t = Join[t, mtSingletOp["n_ab^2",
       1/2 (pow[number[b[]], 2] + pow[number[b[]], 2]) ] ];
 
     (* Symmetrized fluctuations of side dots, for ISOLR code *)
-    t = Join[t, mtSingletOp["q_ab^2", 
+    t = Join[t, mtSingletOp["q_ab^2",
       1/2 (pow[number[b[]]-1, 2] + pow[number[b[]]-1, 2]) ] ];
 
     t = Join[t, mtSingletOp["n_bn_d", nc[number[b[]], number[d[]]] ] ];
@@ -577,7 +585,7 @@ Module[{t = {}},
     t = Join[t, mtSingletOp["SaSb", spinspin[a[], b[]]] ];
 
     (* Symmetrized correlation for LR symmetric triangular TQD *)
-    t = Join[t, mtSingletOp["SabSd", 
+    t = Join[t, mtSingletOp["SabSd",
       1/2 (spinspin[a[], d[]] + spinspin[b[], d[]]) ] ];
 
     (* Bonding orbital *)
@@ -589,7 +597,7 @@ Module[{t = {}},
 
     (* Symmetric combination of a-b *)
     mox = 1/Sqrt[2] (a[CR, SIGMA] + b[CR, SIGMA]); (* Sign ??? *)
-    
+
     (* Occupancy of bonding orbital *)
     nmob = Sum[nc[mob, conj[mob]], {SIGMA, 0, 1}];
     nmob2 = pow[nmob, 2]; (* occupancy squared *)
@@ -605,7 +613,7 @@ Module[{t = {}},
     (* Occupancy of symmetric combination of a-b *)
     nmox = Sum[nc[mox, conj[mox]], {SIGMA, 0, 1}];
     nmox2 = pow[nmox, 2];
-    
+
     t = Join[t, mtSingletOp["nmob", nmob] ];
     t = Join[t, mtSingletOp["nmob^2", nmob2] ];
     t = Join[t, mtSingletOp["nmon", nmon] ];
