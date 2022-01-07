@@ -85,7 +85,7 @@ template <scalar T> auto read_Eigen_matrix(std::istream &F, const size_t size1, 
   EigenMatrix<T> m(size1, size2);
   for (auto j1 = 0; j1 < size1; j1++)
     for (auto j2 = 0; j2 < size2; j2++)
-      m(j1, j2) = read_one<T>(F);
+      m(j1, j2) = assert_isfinite( read_one<T>(F) );
   if (F.fail()) std::runtime_error("read_matrix() error. Input file is corrupted.");
   return m;
 }
@@ -99,8 +99,8 @@ template <scalar T> auto read_matrix(std::istream &F, const size_t size1, const 
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void product(EM &M, const t_coef factor, const EM &A, const EM &B) {
   if (finite_size(A) && finite_size(B)) {
-    assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));
-    assert(my_isfinite(factor));
+    my_assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));
+    my_assert(my_isfinite(factor));
     M += factor * A * B.adjoint();
   }
 }
@@ -108,8 +108,8 @@ void product(EM &M, const t_coef factor, const EM &A, const EM &B) {
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void transform(EM &M, const t_coef factor, const EM &A, const EM &O, const EM &B) {
   if (finite_size(A) && finite_size(B)) {
-    assert(size1(M) == size1(A) && size2(A) == size1(O) && size2(O) == size2(B) && size1(B) == size2(M));
-    assert(my_isfinite(factor));
+    my_assert(size1(M) == size1(A) && size2(A) == size1(O) && size2(O) == size2(B) && size1(B) == size2(M));
+    my_assert(my_isfinite(factor));
     M += factor * A * O * B.adjoint();
   }
 }
@@ -117,8 +117,8 @@ void transform(EM &M, const t_coef factor, const EM &A, const EM &O, const EM &B
 template<scalar S, typename U_type, Eigen_matrix EM, typename t_coef = coef_traits<S>> // XXX: U_type
 void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
   if (finite_size(U)) {
-    assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
-    assert(my_isfinite(factor));
+    my_assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
+    my_assert(my_isfinite(factor));
     M += factor * U.adjoint() * O * U;
   }
 }
@@ -138,7 +138,7 @@ Eigen::Block<EigenMatrix<S>> submatrix(EigenMatrix<S> &M, const std::pair<size_t
 
 template<scalar S>
 void resize(EigenMatrix<S> &m, const size_t new_size1, const size_t new_size2) {
-  assert(new_size1 <= size1(m) && new_size2 <= size2(m));
+  my_assert(new_size1 <= size1(m) && new_size2 <= size2(m));
 //  const EigenMatrix<S> tmp = submatrix_const(m, {0, new_size1}, {0, new_size2});
 //  m = tmp;
   m.conservativeResize(new_size1, new_size2);
@@ -146,13 +146,13 @@ void resize(EigenMatrix<S> &m, const size_t new_size1, const size_t new_size2) {
 
 template<scalar T, Eigen_matrix U, Eigen_matrix V>
 EigenMatrix<T> matrix_prod(const U &A, const V &B) {
-  assert(size2(A) == size1(B));
+  my_assert(size2(A) == size1(B));
   return A * B;
 }
 
 template<scalar T, Eigen_matrix U, Eigen_matrix V>
 EigenMatrix<T> matrix_adj_prod(const U &A, const V &B) {
-  assert(size1(A) == size1(B));
+  my_assert(size1(A) == size1(B));
   return A.adjoint() * B;
 }
 

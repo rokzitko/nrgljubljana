@@ -186,7 +186,7 @@ constexpr inline auto real_part_with_check(std::complex<double> z) {
 }
 
 template <matrix M> auto trace_real(const M &m) {
-  assert(is_square(m));
+  my_assert(is_square(m));
   return ranges::accumulate(range0(size1(m)), 0.0, {}, [&m](const auto i){ return real_part_with_check(m(i, i)); });
 }
 
@@ -198,7 +198,7 @@ auto finite_size(const R &m) { return size1(m) && size2(m); }
 // 'v' is any 1D range we can iterate over
 template<typename R, matrix M>
 auto trace_exp(R && v, const M &m, const double factor) { // Tr[exp(-factor*v) m]
-  assert(v.size() == size1(m) && v.size() == size2(m));
+  my_assert(v.size() == size1(m) && v.size() == size2(m));
   return ranges::accumulate(range0(v.size()), typename M::value_type{}, {}, [&v, &m, factor](const auto i){ return exp(-factor * v[i]) * m(i, i); });
 }
 
@@ -268,7 +268,7 @@ template<matrix M>
   const auto old_size1 = size1(mat);
   const auto old_size2 = size2(mat);
   if (old_size1 == 0 || old_size2 == 0) return mat;                 // trimming not necessary
-  assert(new_size1 <= old_size1 && new_size2 <= old_size2);
+  my_assert(new_size1 <= old_size1 && new_size2 <= old_size2);
   if (new_size1 == old_size1 && new_size2 == old_size2) return mat; // trimming not necessary
   const auto sub = submatrix_const(mat, {0, new_size1}, {0, new_size2});
   M new_mat = sub;
@@ -284,7 +284,7 @@ template<matrix M, matrix N>
 template<matrix M>
 auto prod_fit_left(const M &A, const M &B) {
   using T = typename M::value_type;
-  assert(size1(B) <= size2(A));
+  my_assert(size1(B) <= size2(A));
   if (size1(A) == 0 || size2(B) == 0) return empty_matrix<T>();
   const auto Asub = submatrix_const(A, {0, size1(A)}, {0, size1(B)});
   return matrix_prod<T>(Asub, B);
@@ -294,7 +294,7 @@ auto prod_fit_left(const M &A, const M &B) {
 template<matrix M>
 auto prod_fit_right(const M &A, const M &B) {
   using T = typename M::value_type;
-  assert(size1(B) >= size2(A));
+  my_assert(size1(B) >= size2(A));
   if (size1(A) == 0 || size2(B) == 0) return empty_matrix<T>();
   const auto Bsub = submatrix_const(B, {0, size2(A)}, {0, size2(B)});
   return matrix_prod<T>(A, Bsub);
@@ -309,7 +309,7 @@ auto prod_fit(const M &A, const M &B) {
 template<matrix M>
 inline auto prod_adj_fit_left(const M &A, const M &B) {
   using T = typename M::value_type;
-  assert(size1(B) <= size1(A));
+  my_assert(size1(B) <= size1(A));
   if (size2(A) == 0 || size2(B) == 0) return empty_matrix<T>();
   const auto Asub = submatrix_const(A, {0, size1(B)}, {0, size2(A)});
   return matrix_adj_prod<T>(Asub, B);
@@ -371,14 +371,14 @@ template <scalar S, typename Matrix = Matrix_traits<S>>
 bool is_unitary_blocks(const std::vector<Matrix> &U,
                        const double NORMALIZATION_EPSILON = 1e-12,
                        const double ORTHOGONALITY_EPSILON = 1e-10) {
-  assert(U.size() > 0);
+  my_assert(U.size() > 0);
   const auto M = nrvec(U[0]);
   // Check normalization
   for (const auto r : range0(M)) {
     S sumabs{};
     for (const auto i : range0(U.size())) {
       const auto d = dim(U[i]);
-      assert(M == nrvec(U[i]));
+      my_assert(M == nrvec(U[i]));
       for (const auto j : range0(d)) sumabs += conj_me(U[i](r, j)) * U[i](r, j);
     }
     if (!num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON)) return false;
@@ -399,9 +399,9 @@ bool is_unitary_blocks(const std::vector<Matrix> &U,
 
 template <scalar S, typename RVector = RVector_traits<S>, typename Matrix = Matrix_traits<S>>
 void check_diag(const RVector &val, const Matrix &vec) {
-  assert(val.size() == nrvec(vec));
-  for (const auto v: val) assert(my_isfinite(v));
-  assert(is_unitary<S>(vec));
+  my_assert(val.size() == nrvec(vec));
+  for (const auto v: val) assert_isfinite(v);
+  my_assert(is_unitary<S>(vec));
 }
 
 } // namespace
