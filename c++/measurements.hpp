@@ -219,11 +219,13 @@ void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<
   oprecalc.sl.calc(step, diag, rho, rhoFDM, stats, mt, Sym, P);
   // Calculate all expectation values
   if (step.nrg()) {
+    const auto section_timing = mt.time_it("singlet");
     measure_singlet(step.TD_factor(), stats, operators, Sym->multfnc(), diag, P);
     output.custom->field_values(step.Teff());
     operators.dump_diagonal(P.dumpdiagonal);
   }
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) {
+    const auto section_timing = mt.time_it("singlet fdm");
     measure_singlet_fdm(step.N(), stats, operators, Sym->multfnc(), rhoFDM, store_all); // store_all required here!
     output.customfdm->field_values(P.T);
   }
@@ -234,7 +236,7 @@ void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &o
                                  const DiagInfo<S> &diag_in, const Operators<S> &operators,
                                  const Store<S> &store, const Store<S> &store_all,
                                  MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
-   if (P.project == ""s) {
+  if (P.project == ""s) {
      calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store, store_all, mt, Sym, P);
    } else {
      auto diag = Sym->project(diag_in, P.project);
