@@ -25,7 +25,7 @@ inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
     Matrix U = e.vectors.submatrix_const({0, nr}, sub.part(block));
     e.U.set(block, std::move(U));
   }
-  my_assert(e.U.is_unitary());
+  assert(e.U.is_unitary());
   e.vectors.shrink();
 }
 

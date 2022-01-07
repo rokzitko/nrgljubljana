@@ -399,9 +399,9 @@ bool is_unitary_blocks(const std::vector<Matrix> &U,
 
 template <scalar S, typename RVector = RVector_traits<S>, typename Matrix = Matrix_traits<S>>
 void check_diag(const RVector &val, const Matrix &vec) {
-  my_assert(val.size() == nrvec(vec));
+  assert(val.size() == nrvec(vec));
   for (const auto v: val) assert_isfinite(v);
-  my_assert(is_unitary<S>(vec));
+  assert(is_unitary<S>(vec));
 }
 
 } // namespace
