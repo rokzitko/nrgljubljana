@@ -20,12 +20,12 @@ inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
   const auto combs = sub.combs();
   e.U.resize(combs);
   const auto nr = e.getnrstored();
-  my_assert(0 < nr && nr <= e.getdim());
+  assert(0 < nr && nr <= e.getdim());
   for (const auto block: range0(combs)) {
     Matrix U = e.vectors.submatrix_const({0, nr}, sub.part(block));
     e.U.set(block, std::move(U));
   }
-  my_assert(e.U.is_unitary());
+  assert(e.U.is_unitary());
   e.vectors.shrink();
 }
 
@@ -98,10 +98,10 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
   auto cn = zero_matrix<S>(dim1, dimp);
   if (dim1 == 0 || dimp == 0) return cn; // return empty matrix
   for (const auto &[i1, ip, IN1, INp, factor]: table) {
-    my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
+    assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
     if (P.logletter('r')) std::cout << nrgdump5(i1, ip, IN1, INp, factor) << std::endl;
     if (!Invar_allowed(IN1) || !Invar_allowed(INp)) continue;
-    my_assert(IN1 == ancestor(I1, i1-1) && INp == ancestor(Ip, ip-1));
+    assert(IN1 == ancestor(I1, i1-1) && INp == ancestor(Ip, ip-1));
     const Twoinvar ININ = {IN1, INp};
     if (cold.count(ININ) == 0) continue;
     transform<S>(cn, factor, diagI1.U(i1), cold.at(ININ), diagIp.U(ip));
