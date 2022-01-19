@@ -60,15 +60,6 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/optional.hpp>
 
-// This is included in the library only. Should not be used if a cblas library is available.
-#ifdef CBLAS_WORKAROUND
- #define ADD_
- #include "cblas_globals.c"
- #include "cblas_dgemm.c"
- #include "cblas_zgemm.c"
- #include "cblas_xerbla.c"
-#endif
-
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>

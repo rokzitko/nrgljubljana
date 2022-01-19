@@ -1,5 +1,14 @@
 #include "nrg-general.hpp"
 
+// This is compiled n the library only. Should not be used if a cblas library is available.
+#ifdef CBLAS_WORKAROUND
+ #define ADD_
+ #include "cblas_globals.c"
+ #include "cblas_dgemm.c"
+ #include "cblas_zgemm.c"
+ #include "cblas_xerbla.c"
+#endif
+
 namespace NRG {
 
 void print_about_message() {
