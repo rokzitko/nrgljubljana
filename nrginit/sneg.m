@@ -2,7 +2,7 @@
    SNEG - Mathematica package for calculations with non-commuting
    operators of the second quantization algebra
    
-   Copyright (C) 2002-2019 Rok Zitko
+   Copyright (C) 2002-2022 Rok Zitko
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,8 +31,8 @@
 
 BeginPackage["Sneg`"];
 
-snegidstring = "sneg.m 1.251 20 Mar 2019";
-snegcopyright = "Copyright (C) 2002-2019 Rok Zitko";
+snegidstring = "sneg.m 2.0.0 April 2022";
+snegcopyright = "Copyright (C) 2002-2022 Rok Zitko";
 
 $SnegVersion = Module[{pos, p1, p2},
   pos = StringPosition[snegidstring, " "];
@@ -560,7 +560,7 @@ scalar product 1/N Sum(S_a . S_b) between pairs of S=1/2 spin
 operators corresponding to the levels described by the opreators
 a,b,... Here N is the number of pairs."];
 UsageWithMore[maskOp,
-"maskOp[op, args] calls function op while all constants declared to
+"maskOp[op, margs] calls function op while all constants declared to
 sneg are masked. This prevents some interferences between sneg and
 certain Mathematica functions."];
 UsageWithMore[quickISObasis,
@@ -760,10 +760,6 @@ SnegPPoperator[x_, spin_:1/2] := Block[{},
             ScriptBaselineShifts -> {1, 1}]
         ]
       ];
-
-     (* Avoid superfluous parenthesis *)
-     (* MakeBoxes[a_ * x[i_, j___, sigma_], fmt:(StandardForm|TraditionalForm)] :=
-      RowBox[{MakeBoxes[a, fmt], MakeBoxes[x[i, j, sigma], fmt]}]; *)
    ];
 
 (* Convert x to a string in the TeX format *)
@@ -860,10 +856,6 @@ SnegPPbosonoperator[x_] := Block[{},
             ScriptBaselineShifts -> {1, 1}]
         ]
       ];
-
-     (* Avoid superfluous parenthesis *)
-     (* MakeBoxes[a_ * x[i_, j___], fmt:(StandardForm|TraditionalForm)] :=
-      RowBox[{MakeBoxes[a, fmt], MakeBoxes[x[i, j, sigma], fmt]}]; *)
    ];
 
 
@@ -885,6 +877,12 @@ snegbosonoperators[l__] := Scan[snegaddbosonop, {l}];
 snegrealconstants[l__] := Scan[
 {  (* We must define the symbol to be numeric. *)
    snegnonopQ[#] ^= True;
+   Conjugate[#] ^= #;
+   addto[listrealconstants, #];
+}&, {l}];
+
+snegpositiveconstants[l__] := Scan[   
+{  snegnonopQ[#] ^= True;
    Conjugate[#] ^= #;
    addto[listrealconstants, #];
 
@@ -938,11 +936,6 @@ SnegPPspinoperator[x_] := Block[{},
             ScriptSizeMultipliers -> 1, 
             ScriptBaselineShifts -> {1, 1}]
       ];
-
-
-     (* Avoid superfluous parenthesis *)
-     (* MakeBoxes[a_ * x[i_, j___], fmt:(StandardForm|TraditionalForm)] :=
-      RowBox[{MakeBoxes[a, fmt], MakeBoxes[x[i, j], fmt]}]; *)
    ];
 
 snegspinoperators[l__] := Scan[
@@ -1468,6 +1461,9 @@ superantikomutator[a_, b_, i_Integer] /; i > 1 :=
 (* Aliases with correct spelling *)
 supercommutator[a___] := superkomutator[a];
 superanticommutator[a___] := superantikomutator[a];    
+
+(* Other helper functions *)
+extracteps[a_, b_, H_] := anticommutator[a, commutator[H, conj[b]]] // Expand;
 
 (* (Manual) normal ordering *)
 SetAttributes[normalorder, Listable];
@@ -2165,6 +2161,15 @@ SetAttributes[nambu, Listable];
 nambu[op_?fermionQ[j___], n_:0] := {op[CR, j, UP], (-1)^n op[AN, j, DO]};
 nambu[op_?AtomQ, n___] := nambu[op[], n];
 
+(* BCS pairing operator *)
+bcs[op_?fermionQ[j1__], Phi_] :=
+  Exp[ I Phi] nc[op[CR, j1, UP], op[CR, j1, DO]] + 
+  Exp[-I Phi] nc[op[AN, j1, DO], op[AN, j1, UP]]
+
+bcs[Delta_, op_?fermionQ[j1__]] :=
+  Delta nc[op[CR, j1, UP], op[CR, j1, DO]] + 
+  Conjugate[Delta] nc[op[AN, j1, DO], op[AN, j1, UP]]
+
 (* X, Y and Z componentes of the isospin operator. *)
 
 SetAttributes[{isospinxyz, isospin, isospinx, isospiny, isospinz, 
@@ -2270,13 +2275,21 @@ hop[fn1_Function, fn2_Function] :=
 hop[fn1_Function, op2_?fermionQ[j2___]] := hop[fn1, op2[#1, j2, #2]&];
 hop[op1_?fermionQ[j1___], fn2_Function] := hop[op1[#1, j1, #2]&, fn2];
 
+(* Generic hopping with a complex-valued parameter t *)
+genhop[t_, op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma_] := 
+  t op1[CR, j1, sigma]~nc~op2[AN, j2, sigma] + 
+  Conjugate[t] op2[CR, j2, sigma]~nc~op1[AN, j1, sigma];
+
+genhop[t_, op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /; (spinof[op1] == spinof[op2] == 1/2) := 
+  genhop[t, op1[j1], op2[j2], UP] + genhop[t, op1[j1], op2[j2], DO];
+
 (* Hopping with spin-flip *)
 SetAttributes[spinfliphop, Listable];
 spinfliphop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] := Sum[
   op1[CR, j1, sigma] ~ nc ~ op2[AN, j2, 1-sigma] +
   op2[CR, j2, sigma] ~ nc ~ op1[AN, j1, 1-sigma],
-  {sigma, DO, UP} ];
-  
+{sigma, DO, UP} ];
+
 (* Hopping with hole operators: 
 c^\dag_{k,\sigma} f_\sigma} + f^\dag_\sigma c_{k\sigma}
 \to 
@@ -2309,10 +2322,10 @@ hopphi[op1_?fermionQ[j1___], op2_?fermionQ[j2___], phi_] /;
 
 (* Hopping with spin-flip and phase change *)
 SetAttributes[spinfliphopphi, Listable];
-spinfliphopphi[op1_?fermionQ[j1___], op2_?fermionQ[j2___], phi_] := 
-  Sum[Exp[I phi] op1[CR, j1, sigma]~nc~op2[AN, j2, 1 - sigma] + 
-      Exp[-I phi] op2[CR, j2, sigma]~nc~op1[AN, j1, 1 - sigma], 
-      {sigma, DO, UP}];
+spinfliphopphi[op1_?fermionQ[j1___], op2_?fermionQ[j2___], phi_] :=
+  Sum[Exp[I phi] op1[CR, j1, sigma]~nc~op2[AN, j2, 1 - sigma] +
+  Exp[-I phi] op2[CR, j2, sigma]~nc~op1[AN, j1, 1 - sigma],
+        {sigma, DO, UP}];
 
 (* Current operator *)
 (* 
@@ -2630,8 +2643,8 @@ snegtoascii[expr_] := expr //. snegtoasciirules;
 buildop[op_String, type_] := With[{x = ToExpression[op]},
   x[type] /; (x =!= $Failed && operatorQ[x])];
 
-buildop[op_String, type_, args_String] := 
-  With[{x = ToExpression[op], arglist = removecommas[args]},
+buildop[op_String, type_, margs_String] := 
+  With[{x = ToExpression[op], arglist = removecommas[margs]},
     x @@ Prepend[arglist, type] /; (x =!= $Failed && operatorQ[x])];
 
 buildket[n_String] := ket @@ removecommas[n];
@@ -2640,11 +2653,11 @@ buildbra[n_String] := bra @@ removecommas[n];
 
 snegstringparse[s_String] := StringCases[s, {
   (op : Except[Characters["|<>()+"]] ..) ~~ 
-  "+(" ~~ (args : Except[Characters[")"]] ...) ~~ ")" :> 
-    buildop[op, CR, args],
+  "+(" ~~ (margs : Except[Characters[")"]] ...) ~~ ")" :> 
+    buildop[op, CR, margs],
   (op : Except[Characters["|<>()+"]] ..) ~~ 
-  "(" ~~ (args : Except[Characters[")"]] ...) ~~ ")" :> 
-    buildop[op, AN, args],
+  "(" ~~ (margs : Except[Characters[")"]] ...) ~~ ")" :> 
+    buildop[op, AN, margs],
   "|" ~~ (ndx : Except[Characters["|<>()"]] ...) ~~ ">" :> 
     buildket[ndx],
   "<" ~~ (ndx : Except[Characters["|<>()"]] ...) ~~ "|" :> 
@@ -3823,9 +3836,9 @@ maskOp[op_] := Module[{map, invmap, tmp, res},
 (* Sometimes arguments needs to be evaluated before being passed to
 a function. *)
 
-maskOp[op_, args__] := Module[{map, invmap, tmp, res},
+maskOp[op_, margs__] := Module[{map, invmap, tmp, res},
   {map, invmap} = maskconstants[];
-  tmp = {args} /. map;
+  tmp = {margs} /. map;
   res = ReleaseHold[op] @@ tmp;
   res /. invmap
 ];
