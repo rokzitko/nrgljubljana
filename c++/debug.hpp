@@ -30,6 +30,10 @@ namespace NRG {
   #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " " << #STR4 << "=" << (STR4) << " " << #STR5  \
        << "=" << (STR5) << " "
 
+#define nrgdump7(STR1, STR2, STR3, STR4, STR5, STR6, STR7)                                                                                   \
+  #STR1 << "=" << (STR1) << " " << #STR2 << "=" << (STR2) << " " << #STR3 << "=" << (STR3) << " " << #STR4 << "=" << (STR4) << " " << #STR5  \
+       << "=" << (STR5) << " " << #STR6 << "=" << (STR6) << " " << #STR7 << "=" << (STR7) << " "
+
 } // namespace
 
 #endif

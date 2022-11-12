@@ -276,7 +276,7 @@ Module[{t = {}},
   components of the spin operator. *)
 
   If[isQSZ[] || isNONE[] || isSU2[] || isU1[] || isANYJ[] || isISOSZ[] || isSPU1[]
-    || isDBLSU2[] || isDBLISOSZ[] || isP[] || isPP[],
+    || isDBLQSZ[] || isDBLSU2[] || isDBLISOSZ[] || isP[] || isPP[],
     (* Diagonal projectors. Recall that P^2=P *)
     t = Join[t, mtSingletOp["Pu", projectorUP @ d[] ] ];
     t = Join[t, mtSingletOp["Pd", projectorDO @ d[] ] ];
@@ -531,7 +531,7 @@ Module[{t = {}},
     (* The following only works for (Q, S_z) basis, since individual
     projectors do NOT transform as SU(2) multiplets. *)
     (* Mind the order: the first one is 'd', the second is 'a' *)
-    If[isQSZ[] || isISOSZ[] || isDBLISOSZ[],
+    If[isQSZ[] || isISOSZ[] || isDBLISOSZ[] || isDBLQSZ[],
       t = Join[t, mtSingletOp["Puu",
         nc[projectorUP[d[]], projectorUP[a[]] ] ]];
       t = Join[t, mtSingletOp["Pud",

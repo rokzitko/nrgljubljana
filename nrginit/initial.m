@@ -149,12 +149,14 @@ If[!ValueQ[SYMTYPE],  SYMTYPE = "QS"];
 
 (* Implemented symmetry types are:
  "QS", ==>                 U(1)_charge x SU(2)_spin
+ "DBLQS", ==>              U(1)_charge1 x U(1)_charge2 x SU(2)_spin [TO DO!!]
  "QST", ==>                U(1)_charge x SU(2)_spin x SO(3)_orbital [three orbitals]
  "QSTZ", ==>               U(1)_charge x SU(2)_spin x U(1)_orbital [three orbitals]
  "QSZTZ", ==>              U(1)_charge x U(1)_spin x U(1)_orbital [three orbitals]
  "QJ", ==>                 U(1)_charge x SU(2)_total_momentum [three orbitals]
  "ISO" and "ISO2", ==>     SU(2)_isospin x SU(2)_spin
  "QSZ", ==>                U(1)_charge x U(1)_spin
+ "DBLQSZ", ==>             U(1)_charge1 x U(1)_charge2 x U(1)_spin
  "ISOSZ", ==>              SU(2)_isospin x U(1)_spin
  "ISOSZLR", ==>            SU(2)_isospin x U(1)_spin x Z_2
  "ISOLR" and "ISO2LR", ==> SU(2)_isospin x SU(2)_spin x Z_2
@@ -187,7 +189,7 @@ If[SYMTYPE == "runtime",
 
 knownsymtypes = 
 {"QS", "QST", "QSTZ", "QSZTZ", "QJ", "ISO", "ISO2", "QSZ", "ISOLR", "ISO2LR", "QSLR", "QSC3",
-"QSZLR", "DBLSU2", "DBLISOSZ",
+"QSZLR", "DBLQSZ", "DBLSU2", "DBLISOSZ",
 "SU2", "U1", "SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2C3", "SPSU2T",
 "SL", "SL3", "P", "PP", "NONE", "ISOSZ", "ISOSZLR"};
 If[!(MemberQ[knownsymtypes, SYMTYPE]),
@@ -216,6 +218,7 @@ isORB[] := MemberQ[orbtypes, SYMTYPE];
 isSU2[] := (SYMTYPE === "SU2");
 isDBLSU2[] := (SYMTYPE === "DBLSU2");
 isDBLISOSZ[] := (SYMTYPE === "DBLISOSZ");
+isDBLQSZ[] := (SYMTYPE == "DBLQSZ");
 isU1[] := (SYMTYPE === "U1");
 isSPSU2[] := (SYMTYPE === "SPSU2");
 isSPU1[] := (SYMTYPE === "SPU1");
@@ -315,7 +318,7 @@ addextraparams[] := Module[{params2},
 
 (* Define extraPARAM=VALUE for all PARAM=VALUE lines in [extra]
    block of the input file (for backward compatibility). *)
-If[ValueQ[listdata["extra"]],
+If[listdata["extra"] =!= {},
    exmap = Map[ {ToExpression["extra" <> First[#]],     
           parsevalue @ Last[#] }&, listdata["extra"] ];
    MapThread[Set, Transpose[exmap]];
@@ -796,7 +799,7 @@ lrextrarule = {};
 
 
 (* Some useful functions for Hamiltonian construction and error checking. *)
-checkQSZ[] := If[Nor[isQSZ[], isP[], isPP[], isNONE[], isDBLSU2[], isDBLISOSZ[], isSU2[], isU1[], 
+checkQSZ[] := If[Nor[isQSZ[], isP[], isPP[], isNONE[], isDBLQSZ[], isDBLSU2[], isDBLISOSZ[], isSU2[], isU1[], 
                      isSPU1[], isSPU1LR, isISOSZ[]],
  MyError["SYMTYPE==QSZ (and similar) only"]
 ];
@@ -1113,6 +1116,21 @@ If[GENERATEBASIS == True,
     bz = szbasis[basisops];
   ];
 
+  If[isDBLQSZ[],
+    MyAssert[CHANNELS == 2];
+    If[Length[basisops] == 2,
+      basisops1 = {First[basisops]};
+      basisops2 = {Last[basisops]},
+    (* else *)
+      MyAssert[Mod[Length[lrchain],2] == 0];  
+      basisops1 = Take[lrchain, Length[lrchain]/2];
+      basisops2 = Take[lrchain, -Length[lrchain]/2];
+    ];
+    MyPrint["basisops1=", basisops1];  
+    MyPrint["basisops2=", basisops2];
+    bz = quickDBLSZ[basisops1, basisops2, qszbasis];
+  ];
+
   If[isDBLSU2[],
     MyAssert[CHANNELS == 2];
     MyAssert[Length[basisops] == 2];
@@ -1233,6 +1251,14 @@ If[GENERATEBASIS == True,
 
     bvc = bzop2bzvc[bz, vak];
     MyVPrint[2, "ISO/ISOSZ/SU2 baza=", bz];
+  ];
+
+  If[isDBLQSZ[],
+    bz = Map[ {{#[[1,1]], #[[1,2]], 2*#[[1,3]]+1}, #[[2]]}&, bz ];
+    bvc = bzop2bzvc[bz, vak];
+    MyVPrint[2, "DBLQSZ bz=", bz];
+    MyVPrint[2, "DBLQSZ bvc=", bvc];
+    degnr[{_, _, _}] = 1;
   ];
 
   If[isDBLSU2[],
@@ -1419,15 +1445,15 @@ If[GENERATEBASIS == True,
       bz = bzvc2bzop[bvc];
     ];
 
-    DBLISOSZaddspinketNRG[bvc_List, SP_] := Module[{spinbz},
+    SZaddspinketNRG[bvc_List, SP_] := Module[{spinbz},
       spinbz = spinbasis[SP];
       basistensorproduct[spinbz, bvc, Function[{qn1, qn2},
         Module[{x=qn2}, x[[3]] += 2*First[qn1]; x] ]  (* Note the factor 2! *)
       ]
     ];
 
-    If[isDBLISOSZ[],
-      bvc = DBLISOSZaddspinketNRG[bvc, MAKESPINKET];
+    If[isDBLQSZ[] || isDBLISOSZ[],
+      bvc = SZaddspinketNRG[bvc, MAKESPINKET];
       bz = bzvc2bzop[bvc];
     ];
 
@@ -1887,6 +1913,11 @@ coupledQ["ISOSZ" | "ISOSZLR", {{ii1_, ssz1_, j1___}, {ii2_, ssz2_, j2___}}] :=
 coupledQ["SU2", {{ii1_, j1___}, {ii2_, j2___}}] := 
   If[Abs[ii1-ii2] == 1, True, False, MyError["oops"]];
 
+coupledQ["DBLQSZ", {{q11_, q21_, ssz1_, j1___}, {q12_, q22_, ssz2_, j2___}}] := 
+  If[    (* ((q11 == q12+1 && q21 == q22) ~ Xor ~ (q11 == q12 && q21 == q22+1))  && *)
+  Abs[ssz1-ssz2] == 1,
+  True, False, MyError["oops coupledQ"]];
+
 coupledQ["DBLSU2", {{ii11_, ii21_, j1___}, {ii12_, ii22_, j2___}}] := 
   If[(Abs[ii11-ii12] == 1) ~ Xor ~ (Abs[ii21-ii22] == 1),
   True, False, MyError["oops coupledQ"]];
@@ -1922,6 +1953,8 @@ coupledQ["SL3", {{q11_, q21_, q31_, i1___}, {q12_, q22_, q32_, i2___}}] :=
 coupledQ[s_String, a___] := MyError["coupledQ not defined for ", {s,a}];
 
 (* ======================= *)
+
+MyVPrint[3, "subspaces=", subspaces];
 
 Flatten1[list_] := Flatten[list, 1];
 
@@ -2004,6 +2037,7 @@ signf[szop_] := If[szop == 1/2, +1, -1, MyError["oops, szop=", szop]];
 getIsospinQN["ISO" | "ISOLR" | "ISO2" | "ISO2LR" | "ISOSZ" | "ISOSZLR" | 
              "SU2", inv_] := inv[[1]];
 
+getSpinQN["DBLQSZ", inv_] := inv[[3]];
 getSpinQN["QS" | "QSLR" | "QSC3" | "QSZ" | "QSZLR" | "ISO" | "ISOLR" | 
           "ISO2" | "ISO2LR" | "ISOSZ" | "ISOSZLR" | "QST" | "QSTZ" | "QSZTZ", inv_] := inv[[2]];
 getSpinQN["SPSU2" | "SPSU2LR" | "SPSU2T" | "SPU1" | "SPU1LR" | "SPSU2C3", inv_] := inv[[1]];
@@ -2013,7 +2047,7 @@ getOrbitalQN["SPSU2T", inv_] := inv[[2]];
 
 getJQN["QJ", inv_] := inv[[2]];
 
-ireducMatrixSpeedy[symtype:("QSZ" | "QSZLR" | "SPU1" | "SPU1LR"),
+ireducMatrixSpeedy[symtype:("QSZ" | "QSZLR" | "SPU1" | "SPU1LR" | "DBLQSZ"),
                    op_, {inv1_, inv2_}, ___] := 
 Module[
   {ssz1, ssz2, szop, ud, op1},

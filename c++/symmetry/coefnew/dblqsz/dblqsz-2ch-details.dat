@@ -1,0 +1,48 @@
+[1] qn=Invar(-1, -1, 0); d=Invar(1, 1, 0); state=1
+nc[coef[1], dirpdt[{{1 + Q1, 1 + Q2, Sz}, {}, r}, 1]]
+[2] qn=Invar(-1, 0, -1); d=Invar(1, 0, 1); state=b[0, 0]
+                                 1
+nc[coef[1], dirpdt[{{1 + Q1, Q2, - + Sz}, {}, r}, b[0, 0]]]
+                                 2
+[3] qn=Invar(-1, 0, 1); d=Invar(1, 0, -1); state=b[0, 1]
+                                   1
+nc[coef[1], dirpdt[{{1 + Q1, Q2, -(-) + Sz}, {}, r}, b[0, 1]]]
+                                   2
+[4] qn=Invar(-1, 1, 0); d=Invar(1, -1, 0); state=-nc[b[0, 0], b[0, 1]]
+nc[coef[1], dirpdt[{{1 + Q1, -1 + Q2, Sz}, {}, r}, -nc[b[0, 0], b[0, 1]]]]
+[5] qn=Invar(0, -1, -1); d=Invar(0, 1, 1); state=a[0, 0]
+                                 1
+nc[coef[1], dirpdt[{{Q1, 1 + Q2, - + Sz}, {}, r}, a[0, 0]]]
+                                 2
+[6] qn=Invar(0, -1, 1); d=Invar(0, 1, -1); state=a[0, 1]
+                                   1
+nc[coef[1], dirpdt[{{Q1, 1 + Q2, -(-) + Sz}, {}, r}, a[0, 1]]]
+                                   2
+[7] qn=Invar(0, 0, -2); d=Invar(0, 0, 2); state=nc[a[0, 0], b[0, 0]]
+nc[coef[1], dirpdt[{{Q1, Q2, 1 + Sz}, {}, r}, nc[a[0, 0], b[0, 0]]]]
+[8] qn=Invar(0, 0, 0); d=Invar(0, 0, 0); state=nc[a[0, 0], b[0, 1]]
+nc[coef[1], dirpdt[{{Q1, Q2, Sz}, {}, r}, nc[a[0, 0], b[0, 1]]]]
+[9] qn=Invar(0, 0, 0); d=Invar(0, 0, 0); state=nc[a[0, 1], b[0, 0]]
+nc[coef[1], dirpdt[{{Q1, Q2, Sz}, {}, r}, nc[a[0, 1], b[0, 0]]]]
+[10] qn=Invar(0, 0, 2); d=Invar(0, 0, -2); state=nc[a[0, 1], b[0, 1]]
+nc[coef[1], dirpdt[{{Q1, Q2, -1 + Sz}, {}, r}, nc[a[0, 1], b[0, 1]]]]
+[11] qn=Invar(0, 1, -1); d=Invar(0, -1, 1); state=-nc[a[0, 0], b[0, 0], b[0, 1]]
+                                  1
+nc[coef[1], dirpdt[{{Q1, -1 + Q2, - + Sz}, {}, r}, -nc[a[0, 0], b[0, 0], b[0, 1]]]]
+                                  2
+[12] qn=Invar(0, 1, 1); d=Invar(0, -1, -1); state=-nc[a[0, 1], b[0, 0], b[0, 1]]
+                                    1
+nc[coef[1], dirpdt[{{Q1, -1 + Q2, -(-) + Sz}, {}, r}, -nc[a[0, 1], b[0, 0], b[0, 1]]]]
+                                    2
+[13] qn=Invar(1, -1, 0); d=Invar(-1, 1, 0); state=-nc[a[0, 0], a[0, 1]]
+nc[coef[1], dirpdt[{{-1 + Q1, 1 + Q2, Sz}, {}, r}, -nc[a[0, 0], a[0, 1]]]]
+[14] qn=Invar(1, 0, -1); d=Invar(-1, 0, 1); state=-nc[a[0, 0], a[0, 1], b[0, 0]]
+                                  1
+nc[coef[1], dirpdt[{{-1 + Q1, Q2, - + Sz}, {}, r}, -nc[a[0, 0], a[0, 1], b[0, 0]]]]
+                                  2
+[15] qn=Invar(1, 0, 1); d=Invar(-1, 0, -1); state=-nc[a[0, 0], a[0, 1], b[0, 1]]
+                                    1
+nc[coef[1], dirpdt[{{-1 + Q1, Q2, -(-) + Sz}, {}, r}, -nc[a[0, 0], a[0, 1], b[0, 1]]]]
+                                    2
+[16] qn=Invar(1, 1, 0); d=Invar(-1, -1, 0); state=nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1]]
+nc[coef[1], dirpdt[{{-1 + Q1, -1 + Q2, Sz}, {}, r}, nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1]]]]
