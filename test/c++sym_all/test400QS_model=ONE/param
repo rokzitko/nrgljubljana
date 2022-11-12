@@ -1,0 +1,25 @@
+[extra]
+U=3.3
+delta=0.1
+Gamma=0.2
+
+[param]
+symtype=QS
+model=ONE
+variant=SIAM
+
+T=0.1
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Nmax=2
+keep=10000
+
+ops=q_d q_d^2 q_f q_f^2
+
+dumpannotated=200
+
+fdm=true
+fdmexpv=true

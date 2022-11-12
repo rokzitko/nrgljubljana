@@ -58,3 +58,10 @@ legacy_su2_su2_3
 legacy_su2_su2_4
 legacy_u1_SxSx_transverse
 legacy_u1_u11
+test314DBLQSZ_model=ZERO
+test314QSZ_model=ZERO
+test400QS_model=ONE
+test400QSZ_model=ONE
+test401DBLQSZ_model=ONE
+test401QS_model=ONE
+test401QSZ_model=ONE
