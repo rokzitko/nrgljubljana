@@ -41,6 +41,8 @@ m4 nrg-recalc-DBLSU2.hpp.m4 >nrg-recalc-DBLSU2.hpp
 
 m4 nrg-recalc-DBLISOSZ.hpp.m4 >nrg-recalc-DBLISOSZ.hpp
 
+m4 nrg-recalc-DBLQSZ.hpp.m4 >nrg-recalc-DBLQSZ.hpp
+
 m4 nrg-recalc-U1.hpp.m4 >nrg-recalc-U1.hpp
 
 m4 nrg-recalc-SPSU2LR.hpp.m4 >nrg-recalc-SPSU2LR.hpp

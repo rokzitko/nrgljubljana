@@ -20,6 +20,7 @@
 #endif
 
 #ifdef NRG_SYM_ALL
+#include "sym-DBLQSZ.hpp"
 #include "sym-DBLSU2.hpp"
 #include "sym-DBLISOSZ.hpp"
 #include "sym-ISOLR.hpp"
@@ -59,6 +60,7 @@ auto get(const std::string &sym_string, const Params &P)
   if (sym_string == "SPU1") return mk_SPU1<S>(P);
 #endif
 #ifdef NRG_SYM_ALL
+  if (sym_string == "DBLQSZ") return mk_DBLQSZ<S>(P);
   if (sym_string == "DBLSU2") return mk_DBLSU2<S>(P);
   if (sym_string == "DBLISOSZ") return mk_DBLISOSZ<S>(P);
   if (sym_string == "ISOLR") return mk_ISOLR<S>(P);
