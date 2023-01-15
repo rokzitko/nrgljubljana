@@ -1,18 +1,18 @@
-(* 
+(*
    NRG Ljubljana -- Numerical renormalization group code
-  
-   Copyright (C) 2005-2020 Rok Zitko
+
+   Copyright (C) 2005-2022 Rok Zitko
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -28,7 +28,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2020.10";
+VERSION = "2022.12";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -41,7 +41,7 @@ SetOptions[$Output, PageWidth -> 240];
 SetOptions[$Messages, PageWidth -> 240];
 
 (* Generalization of Print[] which wraps all strings in StandardForm[]
-format directives to remove the quotation marks. *) 
+format directives to remove the quotation marks. *)
 Print2[l__] := Print @@ ({l} /. x_String -> StandardForm[x]);
 
 Print2["NRG Ljubljana ", VERSION, " (c) Rok Zitko, rok.zitko@ijs.si, 2005-2020"];
@@ -49,14 +49,14 @@ Print2["NRG Ljubljana ", VERSION, " (c) Rok Zitko, rok.zitko@ijs.si, 2005-2020"]
 (* Print a warning/error message at specified verbosity level *)
 DEBUG = 1;
 MyPrint[msg__] := If[DEBUG >= 1, Print2[msg]];
-MyPrintForm[form_, msg___] := If[DEBUG >= 1, 
+MyPrintForm[form_, msg___] := If[DEBUG >= 1,
   Print2 @ ToString @ StringForm[form, Sequence @@ (InputForm /@ {msg})]
 ];
 MyVPrint[verbosity_, msg__] := If[DEBUG >= verbosity, Print2[msg]];
 
 (* Prints an error message and exits *)
 If[!ValueQ[ExitOnError], ExitOnError = True];
-MyError[msg__] := (Print2[msg]; Print2["Aborting.\n"]; 
+MyError[msg__] := (Print2[msg]; Print2["Aborting.\n"];
   If[ExitOnError, Exit[1] ]);
 
 (* Prints a warning message -- does not exit *)
@@ -115,7 +115,7 @@ loadmodule[filename_String, exitonfailure_:True] := Module[{ret},
   ret (* The result is returned! *)
 ];
 
-(* External hook: if the variable 'var' ends with a ".m" suffix, 
+(* External hook: if the variable 'var' ends with a ".m" suffix,
    the corresponding external module is called. *)
 hook[var_] := If[StringTake[var,-2] == ".m", loadmodule[var, True]];
 
@@ -187,7 +187,7 @@ If[SYMTYPE == "runtime",
   SYMTYPE = param["symtype"];
 ];
 
-knownsymtypes = 
+knownsymtypes =
 {"QS", "QST", "QSTZ", "QSZTZ", "QJ", "ISO", "ISO2", "QSZ", "ISOLR", "ISO2LR", "QSLR", "QSC3",
 "QSZLR", "DBLQSZ", "DBLSU2", "DBLISOSZ",
 "SU2", "U1", "SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2C3", "SPSU2T",
@@ -196,11 +196,11 @@ If[!(MemberQ[knownsymtypes, SYMTYPE]),
   MyError["Unknown SYMTYPE."];
 ];
 
-(* isLR[] returns True if the problem has Z_2 parity symmetry. For symmetry 
-types in this list, we create a parity-adapted set of basis states as 
+(* isLR[] returns True if the problem has Z_2 parity symmetry. For symmetry
+types in this list, we create a parity-adapted set of basis states as
 step number 5 in the basis-state-generation part of the code. *)
 lrsymtypes = {"QSLR", "QSZLR", "ISOLR", "ISO2LR", "ISOSZLR", "SPU1LR", "SPSU2LR"};
-isLR[] := MemberQ[lrsymtypes, SYMTYPE]; 
+isLR[] := MemberQ[lrsymtypes, SYMTYPE];
 
 qstypes = {"QS", "QSLR"};
 qsztypes = {"QSZ", "QSZLR"};
@@ -276,7 +276,7 @@ POLARIZED = paramdefaultbool["polarized", False];
    allows to describe the full 2x2 structure in the spin space. *)
 POL2x2 = paramdefaultbool["pol2x2", False];
 
-(* Allow channel-mixing terms in the Wilson chain. *)   
+(* Allow channel-mixing terms in the Wilson chain. *)
 RUNGS = paramdefaultbool["rungs", False];
 
 (* It is possible to take into account more than a single site of the Wilson
@@ -286,7 +286,7 @@ that is still retained in the initial Hamiltonian. *)
 
 Ninit = paramdefaultnum["Ninit", 0];
 
-(* Commonly used model parameters. These four are special, 
+(* Commonly used model parameters. These four are special,
 since they can be defined in either [extra] or [param] blocks,
 and they have default values if not defined anywhere. *)
 
@@ -302,24 +302,24 @@ realdelta = getmodelparam["delta", 0.];
 realt     = getmodelparam["t", 0.];
 
 parsevalue[str_String] /;  klicaj[str] := ToExpression[StringDrop[str, 1]];
-parsevalue[str_String] /; !klicaj[str] := importnum[str];        
+parsevalue[str_String] /; !klicaj[str] := importnum[str];
 
-(* All PARAM=VALUE lines in [extra] block of the input file get transformed 
-   into PARAM->VALUE rules in params. Since rules are applied in the order 
+(* All PARAM=VALUE lines in [extra] block of the input file get transformed
+   into PARAM->VALUE rules in params. Since rules are applied in the order
    of their appearance in the list, this implies that the preexisting rules
    take precendence over these automatically appended ones. *)
 addextraparams[] := Module[{params2},
   If[ValueQ[listdata["extra"]],
-    params2 = Map[ToExpression[First[#]] -> parsevalue @ Last[#] &, 
+    params2 = Map[ToExpression[First[#]] -> parsevalue @ Last[#] &,
                   listdata["extra"]];
     params = Join[params, params2];
-  ];                 
+  ];
 ];
 
 (* Define extraPARAM=VALUE for all PARAM=VALUE lines in [extra]
    block of the input file (for backward compatibility). *)
 If[listdata["extra"] =!= {},
-   exmap = Map[ {ToExpression["extra" <> First[#]],     
+   exmap = Map[ {ToExpression["extra" <> First[#]],
           parsevalue @ Last[#] }&, listdata["extra"] ];
    MapThread[Set, Transpose[exmap]];
 ];
@@ -337,14 +337,14 @@ MyStringSplit[l_]:=Module[{c, p},
       p=Join[{0},p,{Length[c]+1}];
       Table[StringTake[l,{p[[i-1]]+1,p[[i]]-1}],{i,2,Length[p]}]
 ];
-MyStringSplit[""] := {};      
+MyStringSplit[""] := {};
 
 (* OPS is a space delimited list of operators that we request to compute
 during the NRG iteration. It is sorted alphabetically to ensure consistency
 of the generated data file irrespective of the ordering in the input file. *)
 lops = Sort @ MyStringSplit[OPS];
 
-(* calcopq[op] returns True if we requested calculation of operator 'op'. 
+(* calcopq[op] returns True if we requested calculation of operator 'op'.
 This is used in the generation of the input file for NRG iteration. *)
 calcopq[op_] := MemberQ[lops, op];
 
@@ -358,11 +358,11 @@ calcoplist[prefix_] := Module[{len, l, stringstrip},
   l = Select[l, StringTake[#, len] == prefix &];
 
   (* stringstrip[] is ugly, but works with Mathematica 5.0 *)
-  stringstrip[str_] := 
-    stringstrip @ StringDrop[str, 1] /; 
+  stringstrip[str_] :=
+    stringstrip @ StringDrop[str, 1] /;
     StringLength[str] >= 1 && StringTake[str, 1] == "(";
-  stringstrip[str_] := 
-    stringstrip @ StringDrop[str, -1] /; 
+  stringstrip[str_] :=
+    stringstrip @ StringDrop[str, -1] /;
     StringLength[str] >= 1 && StringTake[str, -1] == ")";
   stringstrip[str_] := str;
 
@@ -405,9 +405,9 @@ workarounds are required which can be enabled at run-time. *)
 
 addoption[keyword_] := AppendTo[loptions, keyword];
 
-(* 
-KNOWN OPTIONS 
-============= 
+(*
+KNOWN OPTIONS
+=============
 PARAMPRE - apply parameters before calling matrixrepresntationvc[]
 WRITE - write basis and Hamiltonian matrix files
 READBASIS - read basis from a file
@@ -428,18 +428,18 @@ BANDSPIN = 1/2;
 
 (***************************** GENERAL STUFF *******************************)
 
-(* 
+(*
  The following parameters are common to all models:
  delta = deviation from p-h symmetry, delta=epsilon+U/2
  U = e-e repulsion parameter
- gamma = pi rho |V|^2, hybridisation strength, gamma/D = (t'/t)^2 for 
+ gamma = pi rho |V|^2, hybridisation strength, gamma/D = (t'/t)^2 for
    single embedded dot (model SIAM). It is not used directly.
- gammaPol = sqrt{gamma} \sim V, i.e. proportional to hopping 
+ gammaPol = sqrt{gamma} \sim V, i.e. proportional to hopping
  t = coupling of the side dot
  For other parameters, consult the Hamiltonian definitions!
 
- NOTE: all dimensionfull parameters are expressed in units of the   
- bandwidth D. 
+ NOTE: all dimensionfull parameters are expressed in units of the
+ bandwidth D.
 *)
 
 snegrealconstants[delta, U, gammaPol, t];
@@ -2598,13 +2598,19 @@ generalopMatrixSpeedy[op_, inv1_, inv2_] := Module[{mat0, mat, vecs1, vecs2},
 
 (* Makes a table with singlet operator irreducible matrix elements
    for every (inv) subspace. *)
-singletopTable[op_] := Module[{t, i, inv, tmp},
+singletopTable[op_] := Module[{t, i, inv, mat},
   t = {{nrsub}};
   For[i = 1, i <= nrsub, i++,
     inv = subspaces[[i]];
     AppendTo[t, Flatten[{inv, inv}]];
-    tmp = singletopMatrixSpeedy[op, inv];
-    t = Join[t, N[tmp]]; (* NUMERICAL *)
+    mat = Simplify @ singletopMatrixSpeedy[op, inv]; (* simplify! *)
+    If[!option["GENERATE_TEMPLATE_ALL"] || opfn === "",
+      t = Join[t, N[mat]],  (* NUMERICAL *)
+    (* else *)
+      opfnsub = opfn <> "_" <> Invar2String[inv] <> "_" <> Invar2String[inv];
+      t = Join[t, {opfnsub}];
+      Put[mat, opfnsub];
+    ];
   ];
   t
 ];
@@ -2638,7 +2644,7 @@ mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] :=  Module[{t, op},
     AppendTo[t, {prefix <> opname}];
     t = Join[t, OPTABLEFNC[ op ] ];
     MyPut[opdata, opfn, option["GENERATE_TEMPLATE"]];
-    t,  
+    t,
   (* else *) {}
   ]
 ];
