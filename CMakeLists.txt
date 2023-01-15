@@ -26,7 +26,7 @@ endif()
 
 # ############
 # Define Project
-project(NRGLJUBLJANA VERSION 2022.01 LANGUAGES C CXX)
+project(NRGLJUBLJANA VERSION 2023.01 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # Get the git hash & print status
@@ -104,11 +104,11 @@ target_compile_options(project_warnings
 # C++ options
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++20" HAS_CPP20)
-#if(HAS_CPP20)
-#  set(NRG_CXX_OPT -std=c++20)
-#else()
+if(HAS_CPP20)
+  set(NRG_CXX_OPT -std=c++20)
+else()
   set(NRG_CXX_OPT -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
-#endif()
+endif()
 
 # ###########
 # MPI support

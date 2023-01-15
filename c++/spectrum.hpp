@@ -234,7 +234,7 @@ class TempDependence {
    const Params &P;
    Spikes<S> results;
  public:
-   TempDependence<S>(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
+   TempDependence(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
      name(name), algoname(algoname), filename(filename),  P(P) {}
    void merge(const ChainTempDependence<S> &ctd) {
      std::copy(ctd.v.cbegin(), ctd.v.cend(), std::back_inserter(results));

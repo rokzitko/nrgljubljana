@@ -13,7 +13,9 @@
 #error "Pick only one matrix backend"
 #endif
 
-//#include <concepts> // C++20
+#if __cplusplus >= 202002L
+  #include <concepts>
+#endif
 #include <complex>
 #include <type_traits> // is_same_v, is_floating_point_v
 
