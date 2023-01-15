@@ -16,13 +16,13 @@ class Step {
    const Params &P; // reference to parameters (beta, T)
    RUNTYPE runtype; // NRG vs. DM-NRG run
  public:
-   constexpr void set(const int newN) noexcept {
+   void set(const int newN) noexcept {
      trueN = newN;
      ndxN = std::max(newN, 0);
    }
    void init() noexcept { set(P.Ninit); }
-   constexpr Step(const Params &P_, const RUNTYPE runtype_ = RUNTYPE::NRG) noexcept : P(P_), runtype(runtype_) { init(); }
-   constexpr void next() noexcept { trueN++; ndxN++; }
+   Step(const Params &P_, const RUNTYPE runtype_ = RUNTYPE::NRG) noexcept : P(P_), runtype(runtype_) { init(); }
+   void next() noexcept { trueN++; ndxN++; }
    [[nodiscard]] constexpr auto N() const noexcept { return ndxN; }
    [[nodiscard]] constexpr auto ndx() const noexcept { return ndxN; }
    [[nodiscard]] auto energyscale() const noexcept { return P.SCALE(trueN+1); } // current energy scale in units of bandwidth D
