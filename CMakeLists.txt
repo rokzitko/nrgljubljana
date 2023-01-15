@@ -95,7 +95,11 @@ target_compile_options(project_warnings
     -Wno-vla
 #    -Wno-vla-extension
     -Wno-unused-variable
-    -Wno-deprecated-copy
+    -Wno-deprecated-copy # issue with Boost ublas
+    -Wno-psabi          # issue with pair<double, double>
+    -Wno-double-promotion  # issue in Boost factorials
+    -Warray-bounds      # issue in fmt
+    -Wunused-function   # issue in matrix tool
 #    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
 #    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>

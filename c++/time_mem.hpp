@@ -53,7 +53,7 @@ class Timing {
      std::cout << std::endl << "Timing report" << std::endl;
      std::cout << std::setw(T_WIDTH) << "All"
        << ": " << prec3(t_all.count()) << " s" << std::endl;
-     dp t_sum;
+     dp t_sum{};
      for (const auto &[name, val] : t) {
        if (val/t_all > non_negligible_ratio) {
          std::cout << std::setw(T_WIDTH) << name << ": " << prec3(val.count()) << " s" << std::endl;
