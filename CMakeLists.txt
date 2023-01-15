@@ -84,9 +84,9 @@ target_compile_options(project_warnings
 #    -Wconversion ### USEFUL!
 #    -Wsign-conversion # because {fmt}, Eigen
     -Wdouble-promotion
-    -Wduplicated-cond
+    $<$<CXX_COMPILER_ID:GNU>:-Wduplicated-cond>
 #    -Wduplicated-branches  # because Eigen
-    -Wlogical-op
+    $<$<CXX_COMPILER_ID:GNU>:-Wlogical-op>
 #    -Wuseless-cast  # because Ranges
 #    -Wlifetime # clang only
     -Wno-sign-compare
