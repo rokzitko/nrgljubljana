@@ -3,7 +3,7 @@
 # See the FindMathematica manual for usage hints.
 #
 #=============================================================================
-# Copyright 2010-2019 Sascha Kratky
+# Copyright 2010-2021 Sascha Kratky
 #
 # Permission is hereby granted, free of charge, to any person)
 # obtaining a copy of this software and associated documentation)
@@ -34,7 +34,7 @@ cmake_minimum_required(VERSION 2.8.12)
 cmake_policy(POP)
 
 set (Mathematica_CMAKE_MODULE_DIR "${CMAKE_CURRENT_LIST_DIR}")
-set (Mathematica_CMAKE_MODULE_VERSION "3.2.5")
+set (Mathematica_CMAKE_MODULE_VERSION "3.8.0")
 
 # activate select policies
 if (POLICY CMP0025)
@@ -242,10 +242,15 @@ endmacro()
 macro (_get_program_names _outProgramNames)
 	set (${_outProgramNames} "")
 	# Mathematica products in order of preference
-	set (_MathematicaApps "Mathematica" "gridMathematica Server")
+	set (_MathematicaApps
+		"Mathematica" "mathematica"
+		"Wolfram Desktop" "Wolfram Engine"
+		"gridMathematica Server")
 	# Mathematica product versions in order of preference
 	set (_MathematicaVersions
-		"12.0" "11.3" "11.2" "11.1" "11.0"
+		"13.2" "13.1" "13.0"
+		"12.3" "12.2" "12.1" "12.0"
+		"11.3" "11.2" "11.1" "11.0"
 		"10.4" "10.3" "10.2" "10.1" "10.0"
 		"9.0" "8.0" "7.0" "6.0" "5.2")
 	# search for explicitly requested application version first
@@ -271,7 +276,9 @@ endmacro()
 
 # internal function to get Mathematica Windows installation directory for a registry entry
 function (_add_registry_search_path _registryKey _outSearchPaths)
-	set (_ProductNamePatterns "Wolfram Mathematica [0-9]+" "Wolfram Finance Platform")
+	set (_ProductNamePatterns
+		"Wolfram Mathematica [0-9.]+" "Wolfram Desktop [0-9.]+"
+		"Wolfram Engine [0-9.]+" "Wolfram Finance Platform")
 	get_filename_component (
 		_productName "[${_registryKey};ProductName]" NAME)
 	get_filename_component (
@@ -345,8 +352,10 @@ function (_add_launch_services_search_paths _outSearchPaths)
 		# the executable usually resides in the LaunchServices framework Support directory
 		# The LaunchServices framework is a sub-framework of the CoreServices umbrella framework
 		cmake_find_frameworks(CoreServices)
-		find_program (Mathematica_LSRegister_EXECUTABLE NAMES "lsregister" PATH_SUFFIXES "Support"
-			HINTS "${CoreServices_FRAMEWORKS}/Frameworks/LaunchServices.framework")
+		find_program (Mathematica_LSRegister_EXECUTABLE
+			NAMES "lsregister"
+			PATH_SUFFIXES "/Frameworks/LaunchServices.framework/Support"
+			HINTS ${CoreServices_FRAMEWORKS})
 		mark_as_advanced(
 			Mathematica_CoreServices_DIR
 			Mathematica_LaunchServices_DIR
@@ -358,7 +367,7 @@ function (_add_launch_services_search_paths _outSearchPaths)
 		foreach (_bundleID IN ITEMS ${ARGN})
 			execute_process(
 				COMMAND "${Mathematica_LSRegister_EXECUTABLE}" "-dump"
-				COMMAND "grep" "--before-context=20" "--after-context=20" " ${_bundleID} "
+				COMMAND "grep" "--before-context=20" "--after-context=20" "${_bundleID}"
 				COMMAND "grep" "--only-matching" "/.*\\.app"
 				TIMEOUT 10 OUTPUT_VARIABLE _queryResult ERROR_QUIET)
 			string (REPLACE ";" "\\;" _queryResult "${_queryResult}")
@@ -458,6 +467,14 @@ macro (_get_search_paths _outSearchPaths)
 				list (APPEND ${_outSearchPaths} "${_unixPath}/Wolfram Research" )
 			endif()
 		endforeach()
+		# add default installation path
+		if (IS_DIRECTORY "C:/Program Files/Wolfram Research")
+			list (APPEND ${_outSearchPaths} "C:/Program Files/Wolfram Research" )
+		endif()
+		# Windows container paths may be lowercase
+		if (IS_DIRECTORY "C:/Program Files/wolfram research")
+			list (APPEND ${_outSearchPaths} "C:/Program Files/wolfram research" )
+		endif()
 	elseif (CMAKE_HOST_APPLE)
 		# add standard Mathematica Mac OS X installation paths
 		list (APPEND ${_outSearchPaths} "~/Applications;/Applications")
@@ -497,6 +514,8 @@ macro (_systemNameToSystemID _systemName _systemProcessor _outSystemIDs)
 			set (${_outSystemIDs} "MacOSX-x86")
 		elseif ("${_systemProcessor}" STREQUAL "x86_64")
 			set (${_outSystemIDs} "MacOSX-x86-64")
+		elseif ("${_systemProcessor}" STREQUAL "arm64")
+			set (${_outSystemIDs} "MacOSX-ARM64")
 		elseif ("${_systemProcessor}" MATCHES "ppc64|powerpc64")
 			set (${_outSystemIDs} "Darwin-PowerPC64")
 		elseif ("${_systemProcessor}" MATCHES "ppc|powerpc")
@@ -645,7 +664,22 @@ macro (_get_host_system_IDs _outSystemIDs)
 endmacro()
 
 macro (_get_supported_systemIDs _version _outSystemIDs)
-	if (NOT "${_version}" VERSION_LESS "10.0")
+	if (NOT "${_version}" VERSION_LESS "12.3")
+		set (${_outSystemIDs}
+			"Windows-x86-64"
+			"Linux-x86-64" "Linux-ARM"
+			"MacOSX-x86-64" "MacOSX-ARM64")
+	elseif (NOT "${_version}" VERSION_LESS "12.1")
+		set (${_outSystemIDs}
+			"Windows-x86-64"
+			"Linux-x86-64" "Linux-ARM"
+			"MacOSX-x86-64")
+	elseif (NOT "${_version}" VERSION_LESS "11.3")
+		set (${_outSystemIDs}
+			"Windows" "Windows-x86-64"
+			"Linux-x86-64" "Linux-ARM"
+			"MacOSX-x86-64")
+	elseif (NOT "${_version}" VERSION_LESS "10.0")
 		set (${_outSystemIDs}
 			"Windows" "Windows-x86-64"
 			"Linux" "Linux-x86-64" "Linux-ARM"
@@ -702,8 +736,16 @@ macro (_get_compatible_system_IDs _systemID _outSystemIDs)
 		else()
 			list (APPEND ${_outSystemIDs} "Windows-x86-64")
 		endif()
-		# Windows x64 can run x86 through WoW64
-		list (APPEND ${_outSystemIDs} "Windows")
+		if (Mathematica_VERSION)
+			# Mathematica 12.1 dropped support for x86
+			if ("${Mathematica_VERSION}" VERSION_LESS "12.1")
+				# Windows x64 can run x86 through WoW64
+				list (APPEND ${_outSystemIDs} "Windows")
+			endif()
+		else()
+			# Windows x64 can run x86 through WoW64
+			list (APPEND ${_outSystemIDs} "Windows")
+		endif()
 	elseif ("${_systemID}" MATCHES "MacOSX|Darwin")
 		if ("${_systemID}" MATCHES "MacOSX-x86")
 			if (Mathematica_VERSION)
@@ -719,6 +761,19 @@ macro (_get_compatible_system_IDs _systemID _outSystemIDs)
 				endif()
 			else()
 				list (APPEND ${_outSystemIDs} "MacOSX-x86-64" "MacOSX-x86")
+			endif()
+		elseif ("${_systemID}" MATCHES "MacOSX-ARM64")
+			if (Mathematica_VERSION)
+				# Mathematica 12.3 added support for MacOSX-ARM64
+				if (NOT "${Mathematica_VERSION}" VERSION_LESS "12.3")
+					list (APPEND ${_outSystemIDs} "MacOSX-ARM64")
+				endif()
+				# Mathematica 6 added support for MacOSX-x86-64
+				if (NOT "${Mathematica_VERSION}" VERSION_LESS "6.0")
+					list (APPEND ${_outSystemIDs} "MacOSX-x86-64")
+				endif()
+			else()
+				list (APPEND ${_outSystemIDs} "MacOSX-ARM64" "MacOSX-x86-64")
 			endif()
 		elseif ("${_systemID}" STREQUAL "Darwin-PowerPC64")
 			if (Mathematica_VERSION)
@@ -780,7 +835,7 @@ macro(_get_developer_kit_system_IDs _outSystemIDs)
 				set (${_outSystemIDs} "")
 			else()
 				# Mathematica versions after 9 have a system ID subdirectory
-				set (${_outSystemIDs} "MacOSX-x86-64")
+				set (${_outSystemIDs} "MacOSX-x86-64" "MacOSX-ARM64")
 			endif()
 		else()
 			_get_system_IDs(${_outSystemIDs})
@@ -798,8 +853,8 @@ macro(_get_host_developer_kit_system_IDs _outSystemIDs)
 			if ("${Mathematica_VERSION}" VERSION_LESS "9.0")
 				set (${_outSystemIDs} "")
 			else()
-				# The MacOSX-x86-64 DeveloperKit is a universal binary with architectures i386 and x86_64
-				set (${_outSystemIDs} "MacOSX-x86-64")
+				# Mathematica versions after 9 have a system ID subdirectory
+				set (${_outSystemIDs} "MacOSX-x86-64" "MacOSX-ARM64")
 			endif()
 		else()
 			_get_host_system_IDs(${_outSystemIDs})
@@ -1154,7 +1209,10 @@ macro (_append_WSTP_needed_system_libraries _outLibraries)
 			if (DEFINED Mathematica_WSTP_VERSION_MINOR)
 				if ("${Mathematica_WSTP_VERSION_MINOR}" GREATER 24)
 					# Linux WSTP API revision >= 25 has dependency on libdl and libuuid
-					list (APPEND ${_outLibraries} dl uuid)
+					list (APPEND ${_outLibraries} ${CMAKE_DL_LIBS})
+					find_library (Mathematica_uuid_LIBRARY uuid)
+					mark_as_advanced(Mathematica_uuid_LIBRARY)
+					list (APPEND ${_outLibraries} ${Mathematica_uuid_LIBRARY})
 				endif()
 			endif()
 		endif()
@@ -1241,7 +1299,7 @@ macro (_setup_mathematica_systemIDs)
 	_get_system_IDs(Mathematica_SYSTEM_IDS)
 	# default target platform system ID is first one in Mathematica_SYSTEM_IDS
 	list(GET Mathematica_SYSTEM_IDS 0 Mathematica_SYSTEM_ID)
-	if (COMMAND Mathematica_EXECUTE)
+	if (Mathematica_RUN_KERNEL_ON_CONFIGURE AND COMMAND Mathematica_EXECUTE)
 		# determine true host system ID which depends on both Mathematica version
 		# and OS variant by running Mathematica kernel
 		Mathematica_EXECUTE(
@@ -1294,7 +1352,7 @@ endmacro()
 
 # internal macro to set up Mathematica base directory variable
 macro (_setup_mathematica_base_directory)
-	if (COMMAND Mathematica_EXECUTE)
+	if (Mathematica_RUN_KERNEL_ON_CONFIGURE AND COMMAND Mathematica_EXECUTE)
 		# determine true $BaseDirectory
 		Mathematica_EXECUTE(
 			CODE "Print[StandardForm[$BaseDirectory]]"
@@ -1346,7 +1404,7 @@ endmacro()
 
 # internal macro to set up Mathematica user base directory variable
 macro (_setup_mathematica_userbase_directory)
-	if (COMMAND Mathematica_EXECUTE)
+	if (Mathematica_RUN_KERNEL_ON_CONFIGURE AND COMMAND Mathematica_EXECUTE)
 		# determine true $UserBaseDirectory
 		Mathematica_EXECUTE(
 			CODE "Print[StandardForm[$UserBaseDirectory]]"
@@ -1440,6 +1498,16 @@ macro (_setup_findmathematica_options)
 	option (Mathematica_DEBUG
 		"enable FindMathematica debugging output?"
 		${Mathematica_DEBUG_INIT})
+	if (NOT DEFINED Mathematica_RUN_KERNEL_ON_CONFIGURE_INIT)
+		if (DEFINED Mathematica_RUN_KERNEL_ON_CONFIGURE)
+			set (Mathematica_RUN_KERNEL_ON_CONFIGURE_INIT ${Mathematica_RUN_KERNEL_ON_CONFIGURE})
+		else()
+			set (Mathematica_RUN_KERNEL_ON_CONFIGURE_INIT TRUE)
+		endif()
+	endif()
+	option (Mathematica_RUN_KERNEL_ON_CONFIGURE
+		"allow FindMathematica to implicitly run the Mathematica kernel at CMake configure time?"
+		${Mathematica_RUN_KERNEL_ON_CONFIGURE_INIT})
 endmacro()
 
 # internal macro to find Mathematica installation
@@ -1508,6 +1576,7 @@ macro (_find_mathematica)
 		HINTS
 			"${Mathematica_ROOT_DIR}/SystemFiles/IncludeFiles"
 			"${Mathematica_ROOT_DIR}/Contents/SystemFiles/IncludeFiles"
+			"${Mathematica_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/IncludeFiles"
 		PATH_SUFFIXES "C"
 		DOC "Mathematica C language definitions include directory."
 		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
@@ -1574,6 +1643,7 @@ macro (_find_wolframlibrary)
 		HINTS
 			"${Mathematica_ROOT_DIR}/SystemFiles/Libraries"
 			"${Mathematica_ROOT_DIR}/Contents/SystemFiles/Libraries"
+			"${Mathematica_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/Libraries"
 		PATH_SUFFIXES ${_SystemIDs}
 		DOC "Mathematica Wolfram Runtime Library."
 		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
@@ -1583,6 +1653,7 @@ macro (_find_wolframlibrary)
 		HINTS
 			"${Mathematica_ROOT_DIR}/SystemFiles/IncludeFiles"
 			"${Mathematica_ROOT_DIR}/Contents/SystemFiles/IncludeFiles"
+			"${Mathematica_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/IncludeFiles"
 		PATH_SUFFIXES "C"
 		DOC "Mathematica WolframLibrary include directory."
 		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
@@ -1615,6 +1686,7 @@ macro (_find_mathlink)
 		HINTS
 			"${Mathematica_ROOT_DIR}/SystemFiles/Links/MathLink/DeveloperKit"
 			"${Mathematica_ROOT_DIR}/Contents/SystemFiles/Links/MathLink/DeveloperKit"
+			"${Mathematica_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/Links/MathLink/DeveloperKit"
 			"${Mathematica_ROOT_DIR}/AddOns/MathLink/DeveloperKit"
 		PATH_SUFFIXES ${_SystemIDs}
 		DOC "MathLink target SDK root directory."
@@ -1632,6 +1704,7 @@ macro (_find_mathlink)
 		HINTS
 			"${Mathematica_HOST_ROOT_DIR}/SystemFiles/Links/MathLink/DeveloperKit"
 			"${Mathematica_HOST_ROOT_DIR}/Contents/SystemFiles/Links/MathLink/DeveloperKit"
+			"${Mathematica_HOST_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/Links/MathLink/DeveloperKit"
 			"${Mathematica_HOST_ROOT_DIR}/AddOns/MathLink/DeveloperKit"
 		PATH_SUFFIXES ${_HostSystemIDs}
 		DOC "MathLink host SDK root directory."
@@ -1730,6 +1803,7 @@ macro (_find_WSTP)
 		HINTS
 			"${Mathematica_ROOT_DIR}/SystemFiles/Links/WSTP/DeveloperKit"
 			"${Mathematica_ROOT_DIR}/Contents/SystemFiles/Links/WSTP/DeveloperKit"
+			"${Mathematica_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/Links/WSTP/DeveloperKit"
 		PATH_SUFFIXES ${_SystemIDs}
 		DOC "WSTP target SDK root directory."
 		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
@@ -1746,6 +1820,7 @@ macro (_find_WSTP)
 		HINTS
 			"${Mathematica_HOST_ROOT_DIR}/SystemFiles/Links/WSTP/DeveloperKit"
 			"${Mathematica_HOST_ROOT_DIR}/Contents/SystemFiles/Links/WSTP/DeveloperKit"
+			"${Mathematica_HOST_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/Links/WSTP/DeveloperKit"
 		PATH_SUFFIXES ${_HostSystemIDs}
 		DOC "WSTP host SDK root directory."
 		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
@@ -1840,6 +1915,7 @@ macro (_find_jlink)
 		HINTS
 			"${Mathematica_ROOT_DIR}/SystemFiles/Links/JLink"
 			"${Mathematica_ROOT_DIR}/Contents/SystemFiles/Links/JLink"
+			"${Mathematica_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/Links/JLink"
 			"${Mathematica_ROOT_DIR}/AddOns/JLink"
 		DOC "J/Link SDK root directory."
 		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
@@ -1871,6 +1947,8 @@ macro (_find_jlink)
 	if (CMAKE_HOST_APPLE)
 		if (EXISTS "${Mathematica_HOST_ROOT_DIR}/Contents/SystemFiles/Java")
 			set (_mmaJavaHome "${Mathematica_HOST_ROOT_DIR}/Contents/SystemFiles/Java")
+		elseif (EXISTS "${Mathematica_HOST_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/Java")
+			set (_mmaJavaHome "${Mathematica_HOST_ROOT_DIR}/Contents/Resources/Wolfram Player.app/Contents/SystemFiles/Java")
 		else()
 			# OS X versions of Mathematica earlier than 10 did not have a JVM bundled
 			# but used the Java JVM pre-installed on system
@@ -1898,11 +1976,18 @@ macro (_find_jlink)
 		DOC "J/Link Java launcher."
 		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
 	)
+	find_path (Mathematica_JLink_JAVA_HOME
+		NAMES "bin/${_JLinkJavaNames}"
+		HINTS "${_mmaJavaHome}"
+		PATH_SUFFIXES ${_HostSystemIDs}
+		DOC "J/Link Java home directory."
+		NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
+	)
 endmacro()
 
 # internal macro to find MUnit package
 macro (_find_munit_package)
-	if (COMMAND Mathematica_FIND_PACKAGE)
+	if (Mathematica_RUN_KERNEL_ON_CONFIGURE AND COMMAND Mathematica_FIND_PACKAGE)
 		Mathematica_FIND_PACKAGE(Mathematica_MUnit_PACKAGE_FILE "MUnit`MUnit`")
 		# determine enclosing MUnit package directory
 		if (Mathematica_MUnit_PACKAGE_FILE)
@@ -1916,7 +2001,7 @@ endmacro()
 
 # internal macro to find LibaryLink package
 macro (_find_librarylink_package)
-	if (COMMAND Mathematica_FIND_PACKAGE)
+	if (Mathematica_RUN_KERNEL_ON_CONFIGURE AND COMMAND Mathematica_FIND_PACKAGE)
 		Mathematica_FIND_PACKAGE(Mathematica_LibraryLink_PACKAGE_FILE "LibraryLink`LibraryLink`")
 		# determine enclosing LibraryLink package directory
 		if (Mathematica_LibraryLink_PACKAGE_FILE)
@@ -2400,6 +2485,7 @@ macro (_log_found_variables)
 			message (STATUS "J/Link JAR file ${Mathematica_JLink_JAR_FILE}")
 			message (STATUS "J/Link native library ${Mathematica_JLink_RUNTIME_LIBRARY}")
 			message (STATUS "J/Link java launcher ${Mathematica_JLink_JAVA_EXECUTABLE}")
+			message (STATUS "J/Link java home directory ${Mathematica_JLink_JAVA_HOME}")
 		else()
 			message (STATUS "J/Link not found")
 		endif()
@@ -2408,6 +2494,31 @@ macro (_log_found_variables)
 			message (STATUS "MUnit package dir ${Mathematica_MUnit_PACKAGE_DIR}")
 		else()
 			message (STATUS "MUnit not found")
+		endif()
+	endif()
+	# warn explicitly about common mistakes users make
+	if (UNIX AND NOT APPLE)
+		if (DEFINED Mathematica_uuid_LIBRARY)
+			if (Mathematica_uuid_LIBRARY MATCHES "-NOTFOUND$")
+				message (WARNING "WSTP and MathLink require libuuid. Install libuuid with the system package manager.")
+			endif()
+		endif()
+	endif()
+	if (DEFINED Mathematica_VERSION)
+		if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+			if (WINDOWS)
+				if (NOT "${Mathematica_VERSION}" VERSION_LESS "12.1")
+					message (WARNING "Windows Mathematica ${Mathematica_VERSION} does not support 32-bit.")
+				endif()
+			elseif (APPLE)
+				if (NOT "${Mathematica_VERSION}" VERSION_LESS "9.0")
+					message (WARNING "Mac Mathematica ${Mathematica_VERSION} does not support 32-bit.")
+				endif()
+			elseif (UNIX)
+				if (NOT "${Mathematica_VERSION}" VERSION_LESS "11.3")
+					message (WARNING "Linux Mathematica ${Mathematica_VERSION} does not support 32-bit.")
+				endif()
+			endif()
 		endif()
 	endif()
 	if (DEFINED Mathematica_VERSION_MAJOR AND
@@ -2503,7 +2614,8 @@ macro (_get_dependent_cache_variables _var _outDependentVars)
 			Mathematica_JLink_PACKAGE_DIR
 			Mathematica_MUnit_PACKAGE_FILE
 			Mathematica_LibraryLink_PACKAGE_FILE
-			Mathematica_JLink_JAVA_EXECUTABLE)
+			Mathematica_JLink_JAVA_EXECUTABLE
+			Mathematica_JLink_JAVA_HOME)
 		_get_dependent_cache_variables("Mathematica_MathLink_HOST_ROOT_DIR" ${_outDependentVars})
 		_get_dependent_cache_variables("Mathematica_WSTP_HOST_ROOT_DIR" ${_outDependentVars})
 		_get_dependent_cache_variables("Mathematica_JLink_PACKAGE_DIR" ${_outDependentVars})
@@ -2642,6 +2754,7 @@ macro (_update_cache)
 		Mathematica_LibraryLink_PACKAGE_FILE
 		Mathematica_JLink_RUNTIME_LIBRARY
 		Mathematica_JLink_JAVA_EXECUTABLE
+		Mathematica_JLink_JAVA_HOME
 	)
 	_get_cache_variables(_CacheVariables)
 	foreach (_CacheVariable IN LISTS _CacheVariables)
@@ -2660,7 +2773,7 @@ macro (_get_required_vars _component _outVars)
 	if ("${_component}" STREQUAL "Mathematica")
 		set (${_outVars}
 			Mathematica_ROOT_DIR
-			Mathematica_KERNEL_EXECUTABLE Mathematica_FRONTEND_EXECUTABLE)
+			Mathematica_KERNEL_EXECUTABLE)
 	elseif ("${_component}" STREQUAL "MathLink")
 		set (${_outVars}
 			Mathematica_MathLink_LIBRARY Mathematica_MathLink_INCLUDE_DIR)
@@ -2712,6 +2825,8 @@ macro (_setup_found_variables)
 	_get_components_to_find(_components)
 	foreach(_component IN LISTS _components)
 		_get_required_vars(${_component} _requiredComponentVars)
+		# suppress find_package_handle_standard_args warning on mismatching names
+		set (FPHSA_NAME_MISMATCHED On)
 		find_package_handle_standard_args(
 			Mathematica_${_component}
 			REQUIRED_VARS ${_requiredComponentVars}
@@ -2966,6 +3081,8 @@ macro (_add_launch_prefix _cmdVar _systemIDVar)
 					list (APPEND ${_cmdVar} "/usr/bin/arch" "-i386")
 				elseif("${${_systemIDVar}}" STREQUAL "MacOSX-x86-64")
 					list (APPEND ${_cmdVar} "/usr/bin/arch" "-x86_64")
+				elseif("${${_systemIDVar}}" STREQUAL "MacOSX-ARM64")
+					list (APPEND ${_cmdVar} "/usr/bin/arch" "-arm64")
 				elseif("${${_systemIDVar}}" MATCHES "Darwin|MacOSX")
 					list (APPEND ${_cmdVar} "/usr/bin/arch" "-ppc")
 				elseif("${${_systemIDVar}}" STREQUAL "Darwin-PowerPC64")
@@ -3394,54 +3511,6 @@ function (Mathematica_ADD_TEST)
 	endif()
 	add_test (${_cmd})
 endfunction (Mathematica_ADD_TEST)
-
-# public function to add target that runs Mathematica Splice function on template file
-function (Mathematica_SPLICE_C_CODE _templateFile)
-	get_filename_component(_templateFileBaseName ${_templateFile} NAME_WE)
-	get_filename_component(_templateFileName ${_templateFile} NAME)
-	get_filename_component(_templateFileAbs ${_templateFile} ABSOLUTE)
-	get_filename_component(_templateFileExt ${_templateFileName} EXT)
-	set(_options "")
-	set(_oneValueArgs "OUTPUT")
-	set(_multiValueArgs "")
-	cmake_parse_arguments(_option "${_options}" "${_oneValueArgs}" "${_multiValueArgs}" ${ARGN})
-	if(_option_UNPARSED_ARGUMENTS)
-		message (FATAL_ERROR "Unknown keywords: ${_option_UNPARSED_ARGUMENTS}")
-	endif()
-	# Mathematica function Splice does not produce output in current working directory
-	# Use absolute paths to make it write to the current binary directory
-	if (_option_OUTPUT)
-		if (IS_ABSOLUTE ${_option_OUTPUT})
-			set (_outputFileAbs "${_option_OUTPUT}")
-		else()
-			set (_outputFileAbs "${CMAKE_CURRENT_BINARY_DIR}/${_option_OUTPUT}")
-		endif()
-	else()
-		set (_outputFileAbs "${CMAKE_CURRENT_BINARY_DIR}/${_templateFileBaseName}.c")
-	endif()
-	# Always set FormatType option to prevent Splice function from failing with a
-	# Splice::splict error if the template file path contains more than one dot character
-	string(TOLOWER ${_templateFileExt} _templateFileExt)
-	if ("${_templateFileExt}" STREQUAL ".mc")
-		set (_formatType "CForm")
-	elseif ("${_templateFileExt}" STREQUAL ".mf")
-		set (_formatType "FortranForm")
-	elseif ("${_templateFileExt}" STREQUAL ".mtex")
-		set (_formatType "TeXForm")
-	else()
-		set (_formatType "Automatic")
-	endif()
-	get_filename_component(_outputFileName ${_outputFileAbs} NAME)
-	Mathematica_TO_NATIVE_PATH("${_templateFileAbs}" _templateFileMma)
-	Mathematica_TO_NATIVE_PATH("${_outputFileAbs}" _outputFileMma)
-	set (_msg "Splicing Mathematica code in ${_templateFileName} to ${_outputFileName}")
-	Mathematica_ADD_CUSTOM_COMMAND(
-		CODE "Splice[${_templateFileMma}, ${_outputFileMma}, FormatType->${_formatType}]"
-		OUTPUT "${_outputFileAbs}"
-		DEPENDS "${_templateFileAbs}"
-		COMMENT ${_msg})
-	set_source_files_properties(${_outputFileAbs} PROPERTIES GENERATED TRUE LABELS "Mathematica")
-endfunction(Mathematica_SPLICE_C_CODE)
 
 # public function to add target that runs Mathematica Encode function on input files
 function (Mathematica_ENCODE)
@@ -4004,7 +4073,7 @@ function (Mathematica_MathLink_ADD_EXECUTABLE _executableName _templateFile)
 	_get_mprep_output_file(${_templateFile} _outfile)
 	Mathematica_MathLink_MPREP_TARGET(${_templateFile} OUTPUT ${_outfile})
 	add_executable (${_executableName} WIN32 ${_outfile} ${ARGN})
-	target_link_libraries(${_executableName} ${Mathematica_MathLink_LIBRARIES})
+	target_link_libraries(${_executableName} PRIVATE ${Mathematica_MathLink_LIBRARIES})
 	if (Mathematica_MathLink_LINKER_FLAGS)
 		set_target_properties(${_executableName} PROPERTIES LINK_FLAGS "${Mathematica_MathLink_LINKER_FLAGS}")
 	endif()
@@ -4134,7 +4203,7 @@ function (Mathematica_WSTP_ADD_EXECUTABLE _executableName _templateFile)
 	_get_mprep_output_file("${_templateFile}" _outfile)
 	Mathematica_WSTP_WSPREP_TARGET(${_templateFile} OUTPUT ${_outfile})
 	add_executable (${_executableName} WIN32 ${_outfile} ${ARGN})
-	target_link_libraries(${_executableName} ${Mathematica_WSTP_LIBRARIES})
+	target_link_libraries(${_executableName} PRIVATE ${Mathematica_WSTP_LIBRARIES})
 	if (Mathematica_WSTP_LINKER_FLAGS)
 		set_target_properties(${_executableName} PROPERTIES LINK_FLAGS "${Mathematica_WSTP_LINKER_FLAGS}")
 	endif()
@@ -4460,7 +4529,7 @@ endfunction (Mathematica_ADD_DOCUMENTATION)
 
 endif (Mathematica_KERNEL_EXECUTABLE AND Mathematica_JLink_FOUND)
 
-if (Mathematica_KERNEL_EXECUTABLE AND Mathematica_JLink_FOUND AND JAVA_FOUND)
+if (Mathematica_KERNEL_EXECUTABLE AND Mathematica_JLink_FOUND)
 
 # public function to simplify testing J/Link programs
 function (Mathematica_JLink_ADD_TEST)
@@ -4531,4 +4600,4 @@ function (Mathematica_JLink_ADD_TEST)
 	add_test (${_cmd})
 endfunction(Mathematica_JLink_ADD_TEST)
 
-endif(Mathematica_KERNEL_EXECUTABLE AND Mathematica_JLink_FOUND AND JAVA_FOUND)
+endif(Mathematica_KERNEL_EXECUTABLE AND Mathematica_JLink_FOUND)
