@@ -39,13 +39,12 @@ namespace ranges
 
         /// \brief function template \c partial_sort
         template(typename I, typename S, typename C = less, typename P = identity)(
-            /// \pre
             requires sortable<I, C, P> AND random_access_iterator<I> AND
                 sentinel_for<S, I>)
-        I RANGES_FUNC(partial_sort)(
+        constexpr I RANGES_FUNC(partial_sort)(
             I first, I middle, S last, C pred = C{}, P proj = P{}) //
         {
-            make_heap(first, middle, std::ref(pred), std::ref(proj));
+            make_heap(first, middle, ranges::ref(pred), ranges::ref(proj));
             auto const len = middle - first;
             I i = middle;
             for(; i != last; ++i)
@@ -54,18 +53,17 @@ namespace ranges
                 {
                     iter_swap(i, first);
                     detail::sift_down_n(
-                        first, len, first, std::ref(pred), std::ref(proj));
+                        first, len, first, ranges::ref(pred), ranges::ref(proj));
                 }
             }
-            sort_heap(first, middle, std::ref(pred), std::ref(proj));
+            sort_heap(first, middle, ranges::ref(pred), ranges::ref(proj));
             return i;
         }
 
         /// \overload
         template(typename Rng, typename C = less, typename P = identity)(
-            /// \pre
             requires sortable<iterator_t<Rng>, C, P> AND random_access_range<Rng>)
-        borrowed_iterator_t<Rng> RANGES_FUNC(partial_sort)(
+        constexpr borrowed_iterator_t<Rng> RANGES_FUNC(partial_sort)(
             Rng && rng, iterator_t<Rng> middle, C pred = C{}, P proj = P{}) //
         {
             return (*this)(begin(rng),

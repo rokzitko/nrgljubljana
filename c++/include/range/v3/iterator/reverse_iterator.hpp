@@ -36,6 +36,9 @@ namespace ranges
         private:
             CPP_assert(bidirectional_iterator<I>);
             friend range_access;
+
+            using value_type = iter_value_t<I>;
+
             template<typename OtherI>
             friend struct reverse_cursor;
             struct mixin : basic_mixin<reverse_cursor>
@@ -80,7 +83,6 @@ namespace ranges
                 return it_;
             }
             template(typename J)(
-                /// \pre
                 requires sentinel_for<J, I>)
             constexpr bool equal(reverse_cursor<J> const & that) const
             {
@@ -97,13 +99,11 @@ namespace ranges
             CPP_member
             constexpr auto advance(iter_difference_t<I> n) //
                 -> CPP_ret(void)(
-                    /// \pre
                     requires random_access_iterator<I>)
             {
                 it_ -= n;
             }
             template(typename J)(
-                /// \pre
                 requires sized_sentinel_for<J, I>)
             constexpr iter_difference_t<I> distance_to(reverse_cursor<J> const & that) //
                 const
@@ -122,7 +122,6 @@ namespace ranges
         public:
             reverse_cursor() = default;
             template(typename U)(
-                /// \pre
                 requires convertible_to<U, I>)
             constexpr reverse_cursor(reverse_cursor<U> const & u)
               : it_(u.base())
@@ -134,7 +133,6 @@ namespace ranges
     struct make_reverse_iterator_fn
     {
         template(typename I)(
-            /// \pre
             requires bidirectional_iterator<I>)
         constexpr reverse_iterator<I> operator()(I i) const
         {

@@ -27,7 +27,6 @@ namespace ranges
     struct equal_to
     {
         template(typename T, typename U)(
-            /// \pre
             requires equality_comparable_with<T, U>)
         constexpr bool operator()(T && t, U && u) const
         {
@@ -39,7 +38,6 @@ namespace ranges
     struct not_equal_to
     {
         template(typename T, typename U)(
-            /// \pre
             requires equality_comparable_with<T, U>)
         constexpr bool operator()(T && t, U && u) const
         {
@@ -51,7 +49,6 @@ namespace ranges
     struct less
     {
         template(typename T, typename U)(
-            /// \pre
             requires totally_ordered_with<T, U>)
         constexpr bool operator()(T && t, U && u) const
         {
@@ -63,7 +60,6 @@ namespace ranges
     struct less_equal
     {
         template(typename T, typename U)(
-            /// \pre
             requires totally_ordered_with<T, U>)
         constexpr bool operator()(T && t, U && u) const
         {
@@ -75,7 +71,6 @@ namespace ranges
     struct greater_equal
     {
         template(typename T, typename U)(
-            /// \pre
             requires totally_ordered_with<T, U>)
         constexpr bool operator()(T && t, U && u) const
         {
@@ -87,7 +82,6 @@ namespace ranges
     struct greater
     {
         template(typename T, typename U)(
-            /// \pre
             requires totally_ordered_with<T, U>)
         constexpr bool operator()(T && t, U && u) const
         {
@@ -99,12 +93,11 @@ namespace ranges
     using ordered_less RANGES_DEPRECATED(
         "Repace uses of ranges::ordered_less with ranges::less") = less;
 
-#if __cplusplus > 201703L && defined(__cpp_impl_three_way_comparison) && \
-    __has_include(<compare>)
+#if __cplusplus > 201703L && __has_include(<compare>) && \
+    defined(__cpp_concepts) && defined(__cpp_impl_three_way_comparison)
     struct compare_three_way
     {
         template(typename T, typename U)(
-            /// \pre
             requires three_way_comparable_with<T, U>)
         constexpr auto operator()(T && t, U && u) const
             -> decltype((T &&) t <=> (U &&) u)

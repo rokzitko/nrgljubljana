@@ -49,7 +49,6 @@ namespace ranges
                      typename C = equal_to,
                      typename P1 = identity,
                      typename P2 = identity)(
-            /// \pre
             requires input_iterator<I1> AND sentinel_for<S1, I1> AND
                 input_iterator<I2> AND
                 indirect_relation<C, projected<I1, P1>, projected<I2, P2>>)
@@ -77,17 +76,16 @@ namespace ranges
                      typename C = equal_to,
                      typename P1 = identity,
                      typename P2 = identity)(
-            /// \pre
             requires input_iterator<I1> AND sentinel_for<S1, I1> AND
                 input_iterator<I2> AND sentinel_for<S2, I2> AND
                 indirect_relation<C, projected<I1, P1>, projected<I2, P2>>)
-        mismatch_result<I1, I2> RANGES_FUNC(mismatch)(I1 begin1,
-                                                      S1 end1,
-                                                      I2 begin2,
-                                                      S2 end2,
-                                                      C pred = C{},
-                                                      P1 proj1 = P1{},
-                                                      P2 proj2 = P2{}) //
+        constexpr mismatch_result<I1, I2> RANGES_FUNC(mismatch)(I1 begin1,
+                                                                S1 end1,
+                                                                I2 begin2,
+                                                                S2 end2,
+                                                                C pred = C{},
+                                                                P1 proj1 = P1{},
+                                                                P2 proj2 = P2{}) //
         {
             for(; begin1 != end1 && begin2 != end2; ++begin1, ++begin2)
                 if(!invoke(pred, invoke(proj1, *begin1), invoke(proj2, *begin2)))
@@ -132,12 +130,11 @@ namespace ranges
                      typename C = equal_to,
                      typename P1 = identity,
                      typename P2 = identity)(
-            /// \pre
             requires input_range<Rng1> AND input_range<Rng2> AND
                 indirect_relation<C,
                                   projected<iterator_t<Rng1>, P1>,
                                   projected<iterator_t<Rng2>, P2>>)
-        mismatch_result<borrowed_iterator_t<Rng1>, borrowed_iterator_t<Rng2>> //
+        constexpr mismatch_result<borrowed_iterator_t<Rng1>, borrowed_iterator_t<Rng2>> //
         RANGES_FUNC(mismatch)(Rng1 && rng1,
                               Rng2 && rng2,
                               C pred = C{},

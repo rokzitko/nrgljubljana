@@ -50,12 +50,10 @@ namespace ranges
                 RANGES_EXPECT(n_ >= 0);
                 range_size_t<Rng> const initial_size = ranges::size(rng);
                 range_size_t<Rng> const n = static_cast<range_size_t<Rng>>(n_);
-                RANGES_EXPECT(initial_size >= n);
                 return initial_size > n ? initial_size - n : 0;
             }
 
             template(typename Rng)(
-                /// \pre
                 requires random_access_range<Rng> AND sized_range<Rng>)
             iterator_t<Rng> get_end(Rng & rng, range_difference_t<Rng> n, int)
             {
@@ -63,7 +61,6 @@ namespace ranges
                                         drop_last_view::get_size(rng, n));
             }
             template(typename Rng)(
-                /// \pre
                 requires bidirectional_range<Rng> AND common_range<Rng>)
             iterator_t<Rng> get_end(Rng & rng, range_difference_t<Rng> n, long)
             {
@@ -161,14 +158,12 @@ namespace ranges
             return *end_;
         }
         template(typename CRng = Rng const)(
-            /// \pre
             requires random_access_range<CRng> AND sized_range<CRng>)
         iterator_t<CRng> begin() const
         {
             return ranges::begin(rng_);
         }
         template(typename CRng = Rng const)(
-            /// \pre
             requires random_access_range<CRng> AND sized_range<CRng>)
         iterator_t<CRng> end() const
         {
@@ -177,7 +172,6 @@ namespace ranges
 
         CPP_auto_member
         auto CPP_fun(size)()(
-            /// \pre
             requires sized_range<Rng>)
         {
             return detail::drop_last_view::get_size(rng_, n_);
@@ -262,7 +256,6 @@ namespace ranges
 
         CPP_auto_member
         auto CPP_fun(size)()(
-            /// \pre
             requires sized_range<Rng>)
         {
             return detail::drop_last_view::get_size(this->base(), n_);
@@ -302,7 +295,6 @@ namespace ranges
             return {ranges::begin(rng_), static_cast<difference_t>(size())};
         }
         template(typename CRng = Rng const)(
-            /// \pre
             requires sized_range<CRng>)
         counted_iterator<iterator_t<CRng>> begin() const
         {
@@ -348,7 +340,6 @@ namespace ranges
         struct drop_last_base_fn
         {
             template(typename Rng)(
-                /// \pre
                 requires sized_range<Rng> || forward_range<Rng>)
             constexpr auto operator()(Rng && rng, range_difference_t<Rng> n) const
                 -> drop_last_view<all_t<Rng>>
@@ -362,7 +353,6 @@ namespace ranges
             using drop_last_base_fn::operator();
 
             template(typename Int)(
-                /// \pre
                 requires detail::integer_like_<Int>)
             constexpr auto operator()(Int n) const
             {

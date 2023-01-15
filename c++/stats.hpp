@@ -85,7 +85,7 @@ class Stats {
        h5_dump_scalar(fd, prefix + "/abs_Egs", rel_Egs[ndx]);
        h5_dump_scalar(fd, prefix + "/energy_offset", energy_offsets[ndx]);
      }
-     for (const auto [name, value]: expv)
+     for (const auto &[name, value]: expv)
        h5_dump_scalar(fd, "expv/" + name, value);
      h5_dump_scalar(fd, "total_energy", total_energy);
    }
@@ -99,7 +99,7 @@ class Stats {
        h5_dump_scalar(fd, "fdm/C", C_fdm);
        h5_dump_scalar(fd, "fdm/S", S_fdm);
        if (P.fdmexpv)
-         for (const auto [name, value]: fdmexpv)
+         for (const auto &[name, value]: fdmexpv)
            h5_dump_scalar(fd, "fdm/expv/" + name, value);
      }
    }

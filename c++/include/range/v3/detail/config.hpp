@@ -144,6 +144,7 @@ namespace ranges
 #define RANGES_CXX_CONSTEXPR_11 200704L
 #define RANGES_CXX_CONSTEXPR_14 201304L
 #define RANGES_CXX_CONSTEXPR_17 201603L
+#define RANGES_CXX_CONSTEXPR_20 201907L
 #define RANGES_CXX_CONSTEXPR_LAMBDAS 201603L
 #define RANGES_CXX_RANGE_BASED_FOR_11 200907L
 #define RANGES_CXX_RANGE_BASED_FOR_14 RANGES_CXX_RANGE_BASED_FOR_11
@@ -201,6 +202,7 @@ namespace ranges
 #define RANGES_DIAGNOSTIC_IGNORE_CXX17_COMPAT
 #define RANGES_DIAGNOSTIC_IGNORE_CXX2A_COMPAT
 #define RANGES_DIAGNOSTIC_IGNORE_FLOAT_EQUAL
+#define RANGES_DIAGNOSTIC_IGNORE_FLOAT_CONVERSION
 #define RANGES_DIAGNOSTIC_IGNORE_MISSING_BRACES
 #define RANGES_DIAGNOSTIC_IGNORE_UNDEFINED_FUNC_TEMPLATE
 #define RANGES_DIAGNOSTIC_IGNORE_INCONSISTENT_OVERRIDE
@@ -280,6 +282,11 @@ namespace ranges
 #define RANGES_WORKAROUND_MSVC_OLD_LAMBDA
 #endif
 
+#if _MSVC_LANG <= 201703L
+#define RANGES_WORKAROUND_MSVC_UNUSABLE_SPAN // MSVC provides a <span> header that is
+                                             // guarded against use with std <= 17
+#endif
+
 #elif defined(__GNUC__) || defined(__clang__)
 #define RANGES_PRAGMA(X) _Pragma(#X)
 #define RANGES_DIAGNOSTIC_PUSH RANGES_PRAGMA(GCC diagnostic push)
@@ -300,6 +307,7 @@ namespace ranges
 #define RANGES_DIAGNOSTIC_IGNORE_SIGN_CONVERSION \
     RANGES_DIAGNOSTIC_IGNORE("-Wsign-conversion")
 #define RANGES_DIAGNOSTIC_IGNORE_FLOAT_EQUAL RANGES_DIAGNOSTIC_IGNORE("-Wfloat-equal")
+#define RANGES_DIAGNOSTIC_IGNORE_FLOAT_CONVERSION RANGES_DIAGNOSTIC_IGNORE("-Wfloat-conversion")
 #define RANGES_DIAGNOSTIC_IGNORE_MISSING_BRACES \
     RANGES_DIAGNOSTIC_IGNORE("-Wmissing-braces")
 #define RANGES_DIAGNOSTIC_IGNORE_GLOBAL_CONSTRUCTORS \
@@ -343,9 +351,6 @@ namespace ranges
 #define RANGES_WORKAROUND_CLANG_43400 // template friend is redefinition of itself
 #endif
 #else                                 // __GNUC__
-#if __GNUC__ < 6
-#define RANGES_WORKAROUND_GCC_UNFILED0 /* Workaround old GCC name lookup bug */
-#endif
 #if __GNUC__ == 7 || __GNUC__ == 8
 #define RANGES_WORKAROUND_GCC_91525 /* Workaround strange GCC ICE */
 #endif
@@ -541,15 +546,6 @@ namespace ranges
 #endif
 #endif
 
-// RANGES_CXX14_CONSTEXPR macro (see also BOOST_CXX14_CONSTEXPR)
-// Note: constexpr implies inline, to retain the same visibility
-// C++14 constexpr functions are inline in C++11
-#if RANGES_CXX_CONSTEXPR >= RANGES_CXX_CONSTEXPR_14
-#define RANGES_CXX14_CONSTEXPR constexpr
-#else
-#define RANGES_CXX14_CONSTEXPR inline
-#endif
-
 #ifdef NDEBUG
 #define RANGES_NDEBUG_CONSTEXPR constexpr
 #else
@@ -725,8 +721,9 @@ namespace ranges
 #endif
 #endif // RANGES_CONSTEXPR_IF
 
-#if !defined(RANGES_BROKEN_CPO_LOOKUP) && !defined(RANGES_DOXYGEN_INVOKED) && \
-    (defined(RANGES_WORKAROUND_GCC_UNFILED0) || defined(RANGES_WORKAROUND_MSVC_895622))
+#if !defined(RANGES_BROKEN_CPO_LOOKUP) && \
+    !defined(RANGES_DOXYGEN_INVOKED) && \
+    defined(RANGES_WORKAROUND_MSVC_895622)
 #define RANGES_BROKEN_CPO_LOOKUP 1
 #endif
 #ifndef RANGES_BROKEN_CPO_LOOKUP

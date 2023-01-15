@@ -499,7 +499,8 @@ namespace ranges
     struct not_equal_to;
     struct equal_to;
     struct less;
-#if __cplusplus > 201703L && defined(__cpp_impl_three_way_comparison) && __has_include(<compare>)
+#if __cplusplus > 201703L && __has_include(<compare>) && \
+    defined(__cpp_concepts) && defined(__cpp_impl_three_way_comparison)
     struct compare_three_way;
 #endif // __cplusplus
     struct identity;
@@ -613,6 +614,15 @@ namespace ranges
     namespace views
     {
         struct all_fn;
+    }
+
+
+    template<typename Rng, typename Fun>
+    struct chunk_by_view;
+
+    namespace views
+    {
+        struct chunk_by_fn;
     }
 
     template<typename Rng>

@@ -39,12 +39,11 @@ namespace ranges
 
         /// \brief function template \c remove_if
         template(typename I, typename S, typename C, typename P = identity)(
-            /// \pre
             requires permutable<I> AND sentinel_for<S, I> AND
             indirect_unary_predicate<C, projected<I, P>>)
-        I RANGES_FUNC(remove_if)(I first, S last, C pred, P proj = P{})
+        constexpr I RANGES_FUNC(remove_if)(I first, S last, C pred, P proj = P{})
         {
-            first = find_if(std::move(first), last, std::ref(pred), std::ref(proj));
+            first = find_if(std::move(first), last, ranges::ref(pred), ranges::ref(proj));
             if(first != last)
             {
                 for(I i = next(first); i != last; ++i)
@@ -61,10 +60,9 @@ namespace ranges
 
         /// \overload
         template(typename Rng, typename C, typename P = identity)(
-            /// \pre
             requires forward_range<Rng> AND permutable<iterator_t<Rng>> AND
             indirect_unary_predicate<C, projected<iterator_t<Rng>, P>>)
-        borrowed_iterator_t<Rng> RANGES_FUNC(remove_if)(Rng && rng, C pred, P proj = P{})
+        constexpr borrowed_iterator_t<Rng> RANGES_FUNC(remove_if)(Rng && rng, C pred, P proj = P{})
         {
             return (*this)(begin(rng), end(rng), std::move(pred), std::move(proj));
         }

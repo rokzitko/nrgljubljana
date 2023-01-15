@@ -40,9 +40,8 @@ namespace ranges
 
         /// \brief function template \c generate_n
         template(typename O, typename F)(
-            /// \pre
             requires invocable<F &> AND output_iterator<O, invoke_result_t<F &>>)
-        generate_n_result<O, F> //
+        constexpr generate_n_result<O, F> //
         RANGES_FUNC(generate_n)(O first, iter_difference_t<O> n, F fun)
         {
             RANGES_EXPECT(n >= 0);

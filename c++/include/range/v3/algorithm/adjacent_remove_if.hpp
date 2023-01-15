@@ -45,12 +45,11 @@ namespace ranges
         /// \pre `Rng` is a model of the `forward_range` concept.
         /// \pre `Pred` is a model of the `BinaryPredicate` concept.
         template(typename I, typename S, typename Pred, typename Proj = identity)(
-            /// \pre
             requires permutable<I> AND sentinel_for<S, I> AND
                 indirect_relation<Pred, projected<I, Proj>>)
-        I RANGES_FUNC(adjacent_remove_if)(I first, S last, Pred pred = {}, Proj proj = {})
+        constexpr I RANGES_FUNC(adjacent_remove_if)(I first, S last, Pred pred = {}, Proj proj = {})
         {
-            first = adjacent_find(std::move(first), last, std::ref(pred), std::ref(proj));
+            first = adjacent_find(std::move(first), last, ranges::ref(pred), ranges::ref(proj));
             if(first == last)
                 return first;
 
@@ -71,11 +70,10 @@ namespace ranges
 
         /// \overload
         template(typename Rng, typename Pred, typename Proj = identity)(
-            /// \pre
             requires forward_range<Rng> AND
             indirect_relation<Pred, projected<iterator_t<Rng>, Proj>> AND
             permutable<iterator_t<Rng>>)
-        borrowed_iterator_t<Rng>
+        constexpr borrowed_iterator_t<Rng>
         RANGES_FUNC(adjacent_remove_if)(Rng && rng, Pred pred, Proj proj = {}) //
         {
             return (*this)(begin(rng), end(rng), std::move(pred), std::move(proj));

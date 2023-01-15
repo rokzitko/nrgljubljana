@@ -39,7 +39,6 @@ namespace ranges
 
 #if RANGES_CXX_DEDUCTION_GUIDES >= RANGES_CXX_DEDUCTION_GUIDES_17
     template(typename Rng, typename Pred)(
-        /// \pre
         requires input_range<Rng> AND indirect_unary_predicate<Pred, iterator_t<Rng>> AND
             view_<Rng> AND std::is_object<Pred>::value) //
         filter_view(Rng &&, Pred)
@@ -55,7 +54,6 @@ namespace ranges
         struct cpp20_filter_base_fn
         {
             template(typename Rng, typename Pred)(
-                /// \pre
                 requires viewable_range<Rng> AND input_range<Rng> AND
                     indirect_unary_predicate<Pred, iterator_t<Rng>>)
             constexpr filter_view<all_t<Rng>, Pred> operator()(Rng && rng, Pred pred) //
@@ -85,7 +83,6 @@ namespace ranges
             using cpp20_filter_base_fn::operator();
 
             template(typename Rng, typename Pred, typename Proj)(
-                /// \pre
                 requires viewable_range<Rng> AND input_range<Rng> AND
                     indirect_unary_predicate<Pred, projected<iterator_t<Rng>, Proj>>)
             constexpr filter_view<all_t<Rng>, composed<Pred, Proj>> //
@@ -97,6 +94,38 @@ namespace ranges
             }
         };
 
+        /// # ranges::views::filter
+        /// The filter view takes in a predicate function `T -> bool` and converts an
+        /// input range of `T` into an output range of `T` by keeping all elements for
+        /// which the predicate returns true.
+        ///
+        /// ## Example
+        /// \snippet example/view/filter.cpp filter example
+        ///
+        /// ### Output
+        /// \include example/view/filter_golden.txt
+        ///
+        /// ## Syntax
+        /// ```cpp
+        /// auto output_range = input_range | ranges::views::filter(filter_func);
+        /// ```
+        ///
+        /// ## Parameters
+        /// <pre><b>filter_func</b></pre>
+        ///   - Called once for each element of the input range
+        ///   - Returns true for elements that should present in the output range
+        ///
+        /// <pre><b>input_range</b></pre>
+        ///   - The range of elements to filter
+        ///   - Reference type: `T`
+        ///
+        /// <pre><b>output_range</b></pre>
+        ///   - The range of filtered values
+        ///     - Is either a `forward_range` or the concept satisfied by the input
+        ///     - Is a `common_range` if the input is a `common_range`
+        ///     - Is not a `sized_range` or `borrowed_range`
+        ///   - Reference type: `T`
+        ///
         struct filter_fn : filter_base_fn
         {
             using filter_base_fn::operator();
@@ -108,7 +137,6 @@ namespace ranges
             }
 
             template(typename Pred, typename Proj)(
-                /// \pre
                 requires (!range<Pred>))
             constexpr auto operator()(Pred pred, Proj proj) const
             {
@@ -129,7 +157,6 @@ namespace ranges
             RANGES_INLINE_VARIABLE(ranges::views::cpp20_filter_fn, filter)
         }
         template(typename V, typename Pred)(
-            /// \pre
             requires input_range<V> AND indirect_unary_predicate<Pred, iterator_t<V>> AND
                 view_<V> AND std::is_object<Pred>::value) //
             using filter_view = ranges::filter_view<V, Pred>;
