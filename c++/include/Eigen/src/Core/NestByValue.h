@@ -11,6 +11,8 @@
 #ifndef EIGEN_NESTBYVALUE_H
 #define EIGEN_NESTBYVALUE_H
 
+#include "./InternalHeaderCheck.h"
+
 namespace Eigen {
 
 namespace internal {
@@ -41,16 +43,30 @@ template<typename ExpressionType> class NestByValue
   public:
 
     typedef typename internal::dense_xpr_base<NestByValue>::type Base;
+    static constexpr bool HasDirectAccess = internal::has_direct_access<ExpressionType>::ret;
+    
     EIGEN_DENSE_PUBLIC_INTERFACE(NestByValue)
 
     EIGEN_DEVICE_FUNC explicit inline NestByValue(const ExpressionType& matrix) : m_expression(matrix) {}
 
-    EIGEN_DEVICE_FUNC inline Index rows() const { return m_expression.rows(); }
-    EIGEN_DEVICE_FUNC inline Index cols() const { return m_expression.cols(); }
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR inline Index rows() const EIGEN_NOEXCEPT { return m_expression.rows(); }
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR inline Index cols() const EIGEN_NOEXCEPT { return m_expression.cols(); }
 
     EIGEN_DEVICE_FUNC operator const ExpressionType&() const { return m_expression; }
 
     EIGEN_DEVICE_FUNC const ExpressionType& nestedExpression() const { return m_expression; }
+
+    EIGEN_DEVICE_FUNC typename std::enable_if<HasDirectAccess, const Scalar*>::type data() const {
+      return m_expression.data();
+    }
+    
+    EIGEN_DEVICE_FUNC typename std::enable_if<HasDirectAccess, Index>::type innerStride() const {
+      return m_expression.innerStride();
+    }
+    
+    EIGEN_DEVICE_FUNC typename std::enable_if<HasDirectAccess, Index>::type outerStride() const {
+      return m_expression.outerStride();
+    }
 
   protected:
     const ExpressionType m_expression;

@@ -11,14 +11,16 @@
 #ifndef EIGEN_TRANSPOSE_H
 #define EIGEN_TRANSPOSE_H
 
-namespace Eigen { 
+#include "./InternalHeaderCheck.h"
+
+namespace Eigen {
 
 namespace internal {
 template<typename MatrixType>
 struct traits<Transpose<MatrixType> > : public traits<MatrixType>
 {
   typedef typename ref_selector<MatrixType>::type MatrixTypeNested;
-  typedef typename remove_reference<MatrixTypeNested>::type MatrixTypeNestedPlain;
+  typedef std::remove_reference_t<MatrixTypeNested> MatrixTypeNestedPlain;
   enum {
     RowsAtCompileTime = MatrixType::ColsAtCompileTime,
     ColsAtCompileTime = MatrixType::RowsAtCompileTime,
@@ -58,26 +60,26 @@ template<typename MatrixType> class Transpose
 
     typedef typename TransposeImpl<MatrixType,typename internal::traits<MatrixType>::StorageKind>::Base Base;
     EIGEN_GENERIC_PUBLIC_INTERFACE(Transpose)
-    typedef typename internal::remove_all<MatrixType>::type NestedExpression;
+    typedef internal::remove_all_t<MatrixType> NestedExpression;
 
     EIGEN_DEVICE_FUNC
     explicit EIGEN_STRONG_INLINE Transpose(MatrixType& matrix) : m_matrix(matrix) {}
 
     EIGEN_INHERIT_ASSIGNMENT_OPERATORS(Transpose)
 
-    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-    Index rows() const { return m_matrix.cols(); }
-    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-    Index cols() const { return m_matrix.rows(); }
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE EIGEN_CONSTEXPR
+    Index rows() const EIGEN_NOEXCEPT { return m_matrix.cols(); }
+    EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE EIGEN_CONSTEXPR
+    Index cols() const EIGEN_NOEXCEPT { return m_matrix.rows(); }
 
     /** \returns the nested expression */
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-    const typename internal::remove_all<MatrixTypeNested>::type&
+    const internal::remove_all_t<MatrixTypeNested>&
     nestedExpression() const { return m_matrix; }
 
     /** \returns the nested expression */
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-    typename internal::remove_reference<MatrixTypeNested>::type&
+    std::remove_reference_t<MatrixTypeNested>&
     nestedExpression() { return m_matrix; }
 
     /** \internal */
@@ -130,11 +132,11 @@ template<typename MatrixType> class TransposeImpl<MatrixType,Dense>
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
     Index outerStride() const { return derived().nestedExpression().outerStride(); }
 
-    typedef typename internal::conditional<
-                       internal::is_lvalue<MatrixType>::value,
-                       Scalar,
-                       const Scalar
-                     >::type ScalarWithConstIfNotLvalue;
+    typedef std::conditional_t<
+              internal::is_lvalue<MatrixType>::value,
+              Scalar,
+              const Scalar
+            > ScalarWithConstIfNotLvalue;
 
     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
     ScalarWithConstIfNotLvalue* data() { return derived().nestedExpression().data(); }
@@ -178,7 +180,7 @@ template<typename MatrixType> class TransposeImpl<MatrixType,Dense>
   * \sa transposeInPlace(), adjoint() */
 template<typename Derived>
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-Transpose<Derived>
+typename DenseBase<Derived>::TransposeReturnType
 DenseBase<Derived>::transpose()
 {
   return TransposeReturnType(derived());
@@ -191,7 +193,7 @@ DenseBase<Derived>::transpose()
   * \sa transposeInPlace(), adjoint() */
 template<typename Derived>
 EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-typename DenseBase<Derived>::ConstTransposeReturnType
+const typename DenseBase<Derived>::ConstTransposeReturnType
 DenseBase<Derived>::transpose() const
 {
   return ConstTransposeReturnType(derived());
@@ -336,7 +338,7 @@ struct inplace_transpose_selector<MatrixType,false,MatchPacketSize> { // non squ
   * Notice however that this method is only useful if you want to replace a matrix by its own transpose.
   * If you just need the transpose of a matrix, use transpose().
   *
-  * \note if the matrix is not square, then \c *this must be a resizable matrix. 
+  * \note if the matrix is not square, then \c *this must be a resizable matrix.
   * This excludes (non-square) fixed-size matrices, block-expressions and maps.
   *
   * \sa transpose(), adjoint(), adjointInPlace() */
@@ -400,7 +402,7 @@ struct check_transpose_aliasing_compile_time_selector<DestIsTransposed,CwiseBina
 template<typename Scalar, bool DestIsTransposed, typename OtherDerived>
 struct check_transpose_aliasing_run_time_selector
 {
-  static bool run(const Scalar* dest, const OtherDerived& src)
+  EIGEN_DEVICE_FUNC static bool run(const Scalar* dest, const OtherDerived& src)
   {
     return (bool(blas_traits<OtherDerived>::IsTransposed) != DestIsTransposed) && (dest!=0 && dest==(const Scalar*)extract_data(src));
   }
@@ -409,7 +411,7 @@ struct check_transpose_aliasing_run_time_selector
 template<typename Scalar, bool DestIsTransposed, typename BinOp, typename DerivedA, typename DerivedB>
 struct check_transpose_aliasing_run_time_selector<Scalar,DestIsTransposed,CwiseBinaryOp<BinOp,DerivedA,DerivedB> >
 {
-  static bool run(const Scalar* dest, const CwiseBinaryOp<BinOp,DerivedA,DerivedB>& src)
+  EIGEN_DEVICE_FUNC static bool run(const Scalar* dest, const CwiseBinaryOp<BinOp,DerivedA,DerivedB>& src)
   {
     return ((blas_traits<DerivedA>::IsTransposed != DestIsTransposed) && (dest!=0 && dest==(const Scalar*)extract_data(src.lhs())))
         || ((blas_traits<DerivedB>::IsTransposed != DestIsTransposed) && (dest!=0 && dest==(const Scalar*)extract_data(src.rhs())));
@@ -429,7 +431,7 @@ template<typename Derived, typename OtherDerived,
         >
 struct checkTransposeAliasing_impl
 {
-    static void run(const Derived& dst, const OtherDerived& other)
+    EIGEN_DEVICE_FUNC static void run(const Derived& dst, const OtherDerived& other)
     {
         eigen_assert((!check_transpose_aliasing_run_time_selector
                       <typename Derived::Scalar,blas_traits<Derived>::IsTransposed,OtherDerived>
@@ -443,13 +445,13 @@ struct checkTransposeAliasing_impl
 template<typename Derived, typename OtherDerived>
 struct checkTransposeAliasing_impl<Derived, OtherDerived, false>
 {
-    static void run(const Derived&, const OtherDerived&)
+    EIGEN_DEVICE_FUNC static void run(const Derived&, const OtherDerived&)
     {
     }
 };
 
 template<typename Dst, typename Src>
-void check_for_aliasing(const Dst &dst, const Src &src)
+EIGEN_DEVICE_FUNC inline void check_for_aliasing(const Dst &dst, const Src &src)
 {
   if((!Dst::IsVectorAtCompileTime) && dst.rows()>1 && dst.cols()>1)
     internal::checkTransposeAliasing_impl<Dst, Src>::run(dst, src);

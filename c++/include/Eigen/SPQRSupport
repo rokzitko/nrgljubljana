@@ -28,7 +28,7 @@
   *
   */
 
-#include "src/CholmodSupport/CholmodSupport.h"
+#include "CholmodSupport"
 #include "src/SPQRSupport/SuiteSparseQRSupport.h"
 
 #endif

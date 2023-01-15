@@ -17,6 +17,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <algorithm>
+#include <numeric>
 
 /** 
   * \defgroup SparseCore_Module SparseCore module
@@ -41,7 +42,6 @@
 #include "src/SparseCore/SparseCompressedBase.h"
 #include "src/SparseCore/SparseMatrix.h"
 #include "src/SparseCore/SparseMap.h"
-#include "src/SparseCore/MappedSparseMatrix.h"
 #include "src/SparseCore/SparseVector.h"
 #include "src/SparseCore/SparseRef.h"
 #include "src/SparseCore/SparseCwiseUnaryOp.h"
