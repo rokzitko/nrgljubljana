@@ -99,7 +99,7 @@ target_compile_options(project_warnings
     -Wno-psabi          # issue with pair<double, double>
     -Wno-double-promotion  # issue in Boost factorials
     -Warray-bounds      # issue in fmt
-    -Wunused-function   # issue in matrix tool
+    -Wno-unused-function   # issue in matrix tool
 #    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
 #    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
