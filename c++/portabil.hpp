@@ -108,8 +108,8 @@ inline int getmem(unsigned int *rss, unsigned int *vs) {
 }
 
 inline int memoryused() {
-  unsigned int rss;
-  unsigned int vs;
+  unsigned int rss = 0;
+  unsigned int vs = 0;
 
   getmem(&rss, &vs);
 
