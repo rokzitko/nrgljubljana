@@ -25,7 +25,7 @@ class Outfield {
  public:
    explicit Outfield(const std::string &desc, const int prec, const int width) : desc(desc), prec(prec), width(width) {}
    template<typename T> void set_value(const T x) {
-     value = fmt::format("{x:>{width}.{prec}}", "x"_a = x, "prec"_a = prec, "width"_a = width);
+     value = fmt::format("{:>{}.{}}", x, prec, width); // https://fmt.dev/latest/syntax.html
    }
    void put_header(std::ostream &F) const { F << std::setw(width) << desc << " "; }
    void put_value(std::ostream &F) const  { F << std::setw(width) << value << " "; }
