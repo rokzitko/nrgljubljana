@@ -47,7 +47,7 @@ inline auto contains(const std::string &str, const char c) {
 // x raised to the power of n
 template<typename T, typename N>
 constexpr inline auto intpow(const T x, const N n) {
-  my_assert(n >= 0);
+  assert(n >= 0);
   T res = 1;
   for (N i = 1; i <= n; i++) res *= x;
   return res;
