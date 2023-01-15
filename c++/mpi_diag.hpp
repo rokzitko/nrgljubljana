@@ -6,6 +6,9 @@
 #include <deque>
 #include <algorithm>
 
+#ifdef OMPI_SKIP_MPICXX // workaround to avoid warnings for for redefinition in mpi/environment.hpp
+ #undef OMPI_SKIP_MPICXX
+#endif
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/collectives.hpp> // broadcast
