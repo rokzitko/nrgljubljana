@@ -13,8 +13,6 @@
 
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
-#include <fmt/color.h>
-#include <fmt/ranges.h>
 
 #include <boost/lexical_cast.hpp>
 
@@ -25,7 +23,6 @@
 
 namespace NRG {
 
-using namespace fmt::literals;
 using namespace boost::numeric;
 
 template <class T>

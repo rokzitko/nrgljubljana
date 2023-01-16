@@ -4,7 +4,10 @@
 #include <algorithm>
 #include "params.hpp"
 #include "numerics.hpp"
-#include "io.hpp" // {fmt}, color_print
+#include "io.hpp"
+
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 
 namespace NRG {
 

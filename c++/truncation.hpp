@@ -8,6 +8,9 @@
 #include "symmetry.hpp"
 #include "debug.hpp" // nrgdump
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
 namespace NRG {
 
 // Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.

@@ -36,11 +36,15 @@
 #include "h5.hpp"
 #include "io.hpp"
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+#include <fmt/color.h>
+
 namespace NRG {
 
 // Determine the ranges of index r
 template<scalar S>
-SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev, 
+SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev,
                                        const Symmetry<S> *Sym, const bool ignore_inequality) : ancestors(ancestors) {
   for (const auto &[i, anc] : ancestors | ranges::views::enumerate) {
     const bool coupled = Sym->triangle_inequality(I, anc, Sym->QN_subspace(i));

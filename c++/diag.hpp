@@ -19,6 +19,9 @@
 #include "debug.hpp" // nrglogdp
 #include "numerics.hpp" // is_matrix_upper
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
 #define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"
 

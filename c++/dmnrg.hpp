@@ -23,6 +23,9 @@
 #include "stats.hpp"
 #include "numerics.hpp"
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
 namespace NRG {
 
 // Check if the trace of the density matrix equals 'ref_value'.

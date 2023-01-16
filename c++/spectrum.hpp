@@ -8,6 +8,9 @@
 #include "matsubara.hpp"
 #include "io.hpp" // {fmt}, color_print
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
 namespace NRG {
 
 template<scalar S, typename t_weight = weight_traits<S>>

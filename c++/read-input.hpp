@@ -17,6 +17,9 @@
 #include "coef.hpp"
 #include "mk_sym.hpp"
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+
 namespace NRG {
 
 // Parse the header of the data file, check the version, determine the symmetry type.
