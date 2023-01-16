@@ -31,7 +31,7 @@ class Algo_FT : public Algo<S> {
      const auto stat_factor = [beta = 1.0/P.T, Z = stats.Zft, this](const auto E1, const auto Ep) {
        return ((-sign) * exp(-beta*E1) + exp(-beta*Ep))/Z;
      };
-     const auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor, &step](const auto r1, const auto rp) {
+     const auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp) {
        const auto E1 = diagI1.values.abs_zero(r1);
        const auto Ep = diagIp.values.abs_zero(rp);
        return std::make_pair(E1 - Ep, conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep));

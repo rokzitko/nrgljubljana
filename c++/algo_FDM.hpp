@@ -90,15 +90,15 @@ class Algo_FDMgt : virtual public Algo<S> {
      const auto energies = [&diagIi, &diagIj](const auto i, const auto j) {
        return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
      };
-     const auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+     const auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf](const auto i, const auto j) {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * exp(-Ei/T) * wnf);
      };
-     const auto term2 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
+     const auto term2 = [&energies, &op1, &op2, T = P.T.value(), wnf](const auto i, const auto j) {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * exp(-Ei/T) * wnf);
      };
-     const auto term3 = [&energies, &op1, &op2_rho, this](const auto i, const auto j) {
+     const auto term3 = [&energies, &op1, &op2_rho](const auto i, const auto j) {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2_rho(j, i));
      };

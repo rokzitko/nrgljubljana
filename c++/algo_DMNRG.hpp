@@ -29,7 +29,7 @@ class Algo_DMNRG : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-     const auto weights = [Emin = step.scale() * P.getEmin(), Emax = step.scale() * P.getEmax(), &rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) { 
+     const auto weights = [Emin = step.scale() * P.getEmin(), Emax = step.scale() * P.getEmax(), &rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) {
        const auto Em = diagIp.values.abs_zero(rm);
        const auto Ej = diagI1.values.abs_zero(rj);
        const auto energy = Ej-Em;
@@ -75,7 +75,7 @@ class Algo_DMNRGmats : public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
-      const auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2, this](const auto rm, const auto rj) {
+      const auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) {
          const auto Em = diagIp.values.abs_zero(rm);
          const auto Ej = diagI1.values.abs_zero(rj);
          t_weight sumA{};
