@@ -9,7 +9,7 @@
 
 using namespace NRG;
 
-constexpr double sq2 = 1.0/sqrt(2.0);
+const double sq2 = 1.0/sqrt(2.0);
 
 TEST(Diag, dsyev) {
   {
