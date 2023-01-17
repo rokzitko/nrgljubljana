@@ -481,7 +481,7 @@ params = {
 (* See M. Sindel, PhD dissertation, Appendix A.1 *)
 (* \sqrt{ (\Gamma/\pi) \theta } *)
 (* \theta_0 = \int_{-1}^{1} \Gamma(\epsilon) d\epsilon *)
-(* \theta_0 = \theta \Gamma, i.e. \Gamma defines the overall scale, 
+(* \theta_0 = \theta \Gamma, i.e. \Gamma defines the overall scale,
    \theta is the integral of the frequency dependant part. *)
 
 (* CONVENTION: f[0], f[1] are zero sites of the Wilson chain for the first
@@ -491,7 +491,7 @@ additional impurity orbitals. *)
 snegfermionoperators[{f, BANDSPIN}, a, b, d, e, g];
 
 (* Declare additional parameters using snegrealconstants[]. addexnames[] is
-called from maketable[] or manually when debugging! *) 
+called from maketable[] or manually when debugging! *)
 
 addexnames[] := Module[{exnames},
   exnames = Map[StringDrop[#,5]&, Names["extra*"]];
@@ -531,7 +531,7 @@ adddots[nrdots_] := Module[{},
 
 (* Average number of electrons per Wilson chain site. Depends
 on the degeneracy, i.e. on the electron spin. *)
-AVGOCCUP = (2 BANDSPIN + 1)/2; 
+AVGOCCUP = (2 BANDSPIN + 1)/2;
 
 (* c is the channel index, i is the chain site index *)
 fop[c_Integer, 0, x___]  := f[c, x];
@@ -560,7 +560,7 @@ HBANDonsite[ch_, i_] := Module[{reg, ireg},
   ];
 
   (* Superconducting pairing contribution. This is isospinx[fop, n=0]. *)
-  ireg = coefdelta[ch, i] (nc[fopCR[ch-1, i, UP], fopCR[ch-1, i, DO]] + 
+  ireg = coefdelta[ch, i] (nc[fopCR[ch-1, i, UP], fopCR[ch-1, i, DO]] +
                            nc[fopAN[ch-1, i, DO], fopAN[ch-1, i, UP]]);
 
   reg + ireg
@@ -577,14 +577,14 @@ anomaloushop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
   (spinof[op1] == spinof[op2] == 1/2) :=
   anomaloushop[op1[j1], op2[j2], UP] - anomaloushop[op1[j1], op2[j2], DO];
 
-(* Hop with spin change. Two such terms are required to form a Hermitian 
+(* Hop with spin change. Two such terms are required to form a Hermitian
    Hamiltonian. *)
-hop[op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma1_, sigma2_] := 
+hop[op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma1_, sigma2_] :=
   op1[CR, j1, sigma1] ~ nc ~ op2[AN, j2, sigma2] +
   op2[CR, j2, sigma2] ~ nc ~ op1[AN, j1, sigma1];
 
 (* Hopping Hamiltonian term for hopping from i-1-th to i-th site. Note that
-the order of arguments to anomaloushop[] is important to get the sign right. *) 
+the order of arguments to anomaloushop[] is important to get the sign right. *)
 
 HBANDhop[ch_, 0]  := 0;
 
@@ -592,17 +592,17 @@ HBANDhop[ch_, i_] := Module[{reg, ireg},
   If[!POLARIZED && !POL2x2,
     reg = coefxi[ch, i-1] hop[fop[ch-1, i-1], fop[ch-1, i]];
   ];
-  If[POLARIZED && !POL2x2,  
+  If[POLARIZED && !POL2x2,
     reg = coefxi[ch, i-1]          hop[fop[ch-1, i-1], fop[ch-1, i], UP] +
           coefxi[ch+CHANNELS, i-1] hop[fop[ch-1, i-1], fop[ch-1, i], DO];
   ];
-  (* Added 10.9.2012 *) 
-  If[POL2x2,        
+  (* Added 10.9.2012 *)
+  If[POL2x2,
     reg = coefxi[ch, i-1]          hop[fop[ch-1, i-1], fop[ch-1, i], UP] +
           coefxi[ch+CHANNELS, i-1] hop[fop[ch-1, i-1], fop[ch-1, i], DO] +
           coefxi[ch+2*CHANNELS, i-1] hop[fop[ch-1, i-1], fop[ch-1, i], UP, DO] +
           coefxi[ch+3*CHANNELS, i-1] hop[fop[ch-1, i-1], fop[ch-1, i], DO, UP];
-  ];          
+  ];
 
   (* Support for anomalous hopping terms in the presence of superconductivity:
      these are the f^\dag_{i-1} f^\dag_i terms. *)
@@ -622,8 +622,8 @@ HBAND[] := Module[{H0onsite, H0hop, H0bcs},
   (* If we don't work with SPSU2 symmetry type, we drop all anomalous terms. *)
   If[!isSC[],
     H0 = H0 /. { coefdelta[___] -> 0, coefkappa[___] -> 0};
-  ];  
-  
+  ];
+
   If[RUNGS && CHANNELS == 2,
     H0r = Sum[coefrung[1,i] hop[fop[0, i], fop[1, i]], {i, 0, Ninit}];
     MyPrint["H0r=", H0r];
@@ -632,7 +632,7 @@ HBAND[] := Module[{H0onsite, H0hop, H0bcs},
 
   MyPrint["H0=", H0];
 ];
-  
+
 (* The default band-impurity coupling Hamiltonian. *)
 HC[] := Module[{},
   (* Note: gammaPolCh/zeta/... are indexed as ch=1, 2, ..., while f[]
@@ -645,7 +645,7 @@ HC[] := Module[{},
     Hc = Sum[gammaPolCh[ch]          hop[f[ch-1], d[], UP], {ch, CHANNELS}] +
          Sum[gammaPolCh[ch+CHANNELS] hop[f[ch-1], d[], DO], {ch, CHANNELS}];
   ];
-  (* Added 10.9.2012 *)     
+  (* Added 10.9.2012 *)
   If[POL2x2,
     Hc = Sum[gammaPolCh[ch]            hop[f[ch-1], d[], UP],     {ch, CHANNELS}] +
          Sum[gammaPolCh[ch+CHANNELS]   hop[f[ch-1], d[], DO],     {ch, CHANNELS}] +
@@ -669,14 +669,14 @@ InitPolarized[] := Module[{},
     COEFCHANNELS = 2 CHANNELS; (* Double the number of coefficient sets for channels. *)
     VDIM = 2 * CHANNELS;
   ];
-  If[POL2x2,  
+  If[POL2x2,
     If[!MemberQ[{"U1"}, SYMTYPE],
       MyError["Spin 2x2 structure not supported with chosen SYMTYPE."];
     ];
     COEFCHANNELS = 4 CHANNELS; (* Quadruple the number of coefficient sets for channels. *)
     VDIM = 2 * CHANNELS; (* !! *)
   ];
-  If[POLARIZE && POL2x2,  
+  If[POLARIZE && POL2x2,
     MyError["POLARIZED or POL2x2? Choose one!"];
   ];
 ];
@@ -718,10 +718,10 @@ def2ch[nrdots_:1] := Module[{},
 
   (* For SYMTYPE=ISO, we must have nnop[f[0]] = nnop[f[1]] = 0. *)
   (* For SYMTYPE=ISO2, we must have nnop[f[0]] = 0, nnop[f[1]] = 1. *)
-  If[SYMTYPE == "ISO2" || SYMTYPE == "ISO2LR",  
+  If[SYMTYPE == "ISO2" || SYMTYPE == "ISO2LR",
     nnop[f[0]] = 0;
     nnop[f[1]] = 1;
-  ];    
+  ];
 
   (* WARNING: in TQD, d is the impurity in the middle, so the
   default rule for d[] has to be overriden!! *)
@@ -779,7 +779,7 @@ def4ch[nrdots_:1] := Module[{},
 CHANNELS = -1; (* Bug trap *)
 NRDOTS = -1; (* Bug trap *)
 MAKESPINKET = Null; (* Operator(s?) that is converted to spin kets *)
-MAKEORBKET = Null; 
+MAKEORBKET = Null;
 MAKEPHONON = Null; (* 1 = one phonon mode, etc. *)
 
 
@@ -790,8 +790,8 @@ the real-space configuration of the impurities, for example: {f[0], d[],
 f[1]} for two-channel single-impurity Kondo problem. This list is used to
 generate parity-adapted basis states. List 'lrextrarule' contains additional
 transformation rules that need to be applied to the basis when constructing
-the mirror-symmetric states. For example: in the case of antisymmetric 
-coupling of a phonon mode to a hopping term, all phonon kets need to be 
+the mirror-symmetric states. For example: in the case of antisymmetric
+coupling of a phonon mode to a hopping term, all phonon kets need to be
 multiplied by -1. *)
 
 lrchain = {};
@@ -799,7 +799,7 @@ lrextrarule = {};
 
 
 (* Some useful functions for Hamiltonian construction and error checking. *)
-checkQSZ[] := If[Nor[isQSZ[], isP[], isPP[], isNONE[], isDBLQSZ[], isDBLSU2[], isDBLISOSZ[], isSU2[], isU1[], 
+checkQSZ[] := If[Nor[isQSZ[], isP[], isPP[], isNONE[], isDBLQSZ[], isDBLSU2[], isDBLISOSZ[], isSU2[], isU1[],
                      isSPU1[], isSPU1LR, isISOSZ[]],
  MyError["SYMTYPE==QSZ (and similar) only"]
 ];
@@ -818,13 +818,13 @@ If[ MODEL == "CLEAN",
 (* Single Impurity Anderson Model and its variants *)
 If[ MODEL == "SIAM" && (VARIANT == "" || VARIANT == "MAGFIELD"),
   def1ch[1];
-  
+
   (* SIAM in magnetic field. Only for SYMTYPE=QSZ. *)
   If[VARIANT == "MAGFIELD",
     checkQSZ[];
     H1 = H1 + B spinz[d[]]; (* Zeeman term *)
   ];
-  
+
   H = H0 + H1 + Hc;
 ];
 
@@ -833,7 +833,7 @@ parameters. Currently they are all real constants! Call addparamnames[]
 after adding parameters to params list. *)
 (* TODO: only if symbols? *)
 
-addparamnames[] := Module[{paramnames},   
+addparamnames[] := Module[{paramnames},
    paramnames = params[[All, 1]];
    paramnames = Select[paramnames, AtomQ]; (* Drop parametrized rules *)
    MyVPrint[3, "Declaring as constants: ", paramnames];
@@ -921,7 +921,7 @@ If[NRDOTS >= 1,
 
 (* Odd combination of creation operators for TWO DOTS. This might be
    useful even for more than two dots, as one of the orthogonal
-   combinations of states. *) 
+   combinations of states. *)
 If[NRDOTS >= 2,
   crodd = 1/Sqrt[2] ( d[CR, sigma] - a[CR, sigma] );
   anodd = conj[crodd];
@@ -960,7 +960,7 @@ If[paramdefaultbool["checkHc", True] && Not[option["GENERATE_TEMPLATE"]],
 
 If[DEBUG >= 4,
 (* Rewrite the Hamiltonian in terms of high-level functions. This
-   makes the debugging of Hamiltonian definitions significantly easier. 
+   makes the debugging of Hamiltonian definitions significantly easier.
    Note, however, that this operation may take a lot of time! *)
   MyPrint["Hamiltonian -> ", SnegSimplify[H]];
 ];
@@ -1006,13 +1006,13 @@ checkdefinitions[] := Module[{Htest},
   Htest = H /. params;
   Htest = Htest //. { op_?operatorQ -> 1, bra[__] -> 1, ket[__] -> 1 };
   Htest = N[Htest];
-  MyPrint["checkdefinitions[] -> ", Htest];   
+  MyPrint["checkdefinitions[] -> ", Htest];
 
   If[!NumberQ[Htest],
     MyError["Undefined paramters detected: ", Htest];
   ];
 ];
-  
+
 (****************************** BASIS STATES ************************************)
 
 (* We define a class Invar[] which wraps the quantum numbers, i.e.
@@ -1075,10 +1075,10 @@ If[GENERATEBASIS == True,
   If[MemberQ[needqszlist, SYMTYPE],
     bz = qszbasis[basisops];
   ];
-    
+
   If[isP[],
     bz = qbasis[basisops];
-    bz = Map[ {2(Mod[First[#], 2]-1/2), Last[#]}&, bz]; (* Charge parity *)    
+    bz = Map[ {2(Mod[First[#], 2]-1/2), Last[#]}&, bz]; (* Charge parity *)
     bz = mergebasis[bz];
   ];
 
@@ -1087,27 +1087,27 @@ If[GENERATEBASIS == True,
     If[Length[basisops] != 2, MyError["General case not implemented yet."]];
     basis1 = qbasis[ {basisops[[1]]} ];
     basis2 = qbasis[ {basisops[[2]]} ];
-    
+
     basis1 = Map[ {2(Mod[First[#], 2]-1/2), Last[#]}&, basis1]; (* Charge parity *)
     basis1 = mergebasis[basis1];
-    
+
     basis2 = Map[ {2(Mod[First[#], 2]-1/2), Last[#]}&, basis2]; (* Charge parity *)
     basis2 = mergebasis[basis2];
 
     makebasis[ basisops ]; (* !! *)
 
-    bz = basistensorproduct[basis1, basis2, Function[{qn1,qn2}, {qn1[[1]],qn2[[1]]}]];    
+    bz = basistensorproduct[basis1, basis2, Function[{qn1,qn2}, {qn1[[1]],qn2[[1]]}]];
   ];
 
   If[isNONE[],
     bz = nonebasis[basisops];
     bz = Map[{{0}, #[[2]]}&, bz];
   ];
-    
+
   If[MemberQ[needqlist, SYMTYPE],
     bz = qbasis[basisops];
   ];
-    
+
   If[isSPSU2[] || isSPSU2LR[],
     bz = sbasis[basisops];
   ];
@@ -1122,11 +1122,11 @@ If[GENERATEBASIS == True,
       basisops1 = {First[basisops]};
       basisops2 = {Last[basisops]},
     (* else *)
-      MyAssert[Mod[Length[lrchain],2] == 0];  
+      MyAssert[Mod[Length[lrchain],2] == 0];
       basisops1 = Take[lrchain, Length[lrchain]/2];
       basisops2 = Take[lrchain, -Length[lrchain]/2];
     ];
-    MyPrint["basisops1=", basisops1];  
+    MyPrint["basisops1=", basisops1];
     MyPrint["basisops2=", basisops2];
     bz = quickDBLSZ[basisops1, basisops2, qszbasis];
   ];
@@ -1146,13 +1146,13 @@ If[GENERATEBASIS == True,
       basisops1 = {First[basisops]};
       basisops2 = {Last[basisops]},
     (* else *)
-      MyAssert[Mod[Length[lrchain],2] == 0];  
+      MyAssert[Mod[Length[lrchain],2] == 0];
       basisops1 = Take[lrchain, Length[lrchain]/2];
       basisops2 = Take[lrchain, -Length[lrchain]/2];
     ];
     bz = quickDBLSZ[basisops1, basisops2, quickISOSZbasis];
   ];
-  
+
   If[isSL3[],
     Module[{ops1,ops2,ops3,bz1,bz2,bz3,bz12},
       MyAssert[CHANNELS == 3];
@@ -1184,9 +1184,9 @@ If[GENERATEBASIS == True,
       MyPrint["bz1=", bz1];
       MyPrint["bz2=", bz2];
       MyPrint["bz3=", bz3];
-  
+
       makebasis[basisops]; (* Reset the definition!! *)
-  
+
       bz12 = basistensorproduct[bz1, bz2, {#1[[1]], #2[[1]]} &];
       bz = basistensorproduct[bz12, bz3, {#1[[1]], #1[[2]], #2[[1]]} &];
 
@@ -1195,7 +1195,7 @@ If[GENERATEBASIS == True,
       (* Projection to single spin is performed later; see below. *)
     ];
   ];
-  
+
   basisexceptions = {"QST", "QSTZ", "QSZTZ", "SPSU2T", "QSC3", "SPSU2C3", "QJ"};
   If[MemberQ[basisexceptions, SYMTYPE],
     loadmodule[SYMTYPE <> "basis.m"];
@@ -1230,7 +1230,7 @@ If[GENERATEBASIS == True,
     bvc = bzop2bzvc[bz, vak]; (* ! *)
     bvc = transformQStoIS[bvc]; (* The same for QS, QSZ & Q input! *)
     bz = bzvc2bzop[bvc];
-  
+
     If[isISO[], (* ISO specific *)
       (* Transform to (2I+1,2S+1) naming convention. *)
       bz = Map[ {{2*#[[1,1]]+1, 2*#[[1,2]]+1}, #[[2]]}&, bz];
@@ -1276,19 +1276,19 @@ If[GENERATEBASIS == True,
     MyVPrint[2, "DBLSU2 bvc=", bvc];
     degnr[{ii1_, ii2_, _}] = ii1 ii2;
   ];
-    
+
   If[isQSZ[],
     (* Transform to (Q,2Sz+1) naming convention as used in the QSZ program. *)
     bz = Map[ {{#[[1,1]], 2*#[[1,2]]+1}, #[[2]]}&, bz];
     bvc = bzop2bzvc[bz, vak];
     degnr[{q_Integer, sz_Integer, i___}] := 1;
   ];
-  
+
   If[isP[] || isPP[] || isNONE[] || isU1[] || isSL[] || isSL3[],
     bvc = bzop2bzvc[bz, vak];
     degnr[{___}] := 1;
   ];
-    
+
   If[isSPSU2[] || isSPSU2LR[],
     bz = Map[ {{2*#[[1,1]]+1}, #[[2]]}&, bz];
     bvc = bzop2bzvc[bz, vak];
@@ -1300,7 +1300,7 @@ If[GENERATEBASIS == True,
     bvc = bzop2bzvc[bz, vak];
     degnr[{___}] := 1;
   ];
-  
+
   (* Nothing to do for QST, QSTZ and SPSU2T *)
 
   nrstates1 = Plus @@ Map[(degnr @ #[[1]] * Length @ #[[2]])&, bvc];
@@ -1319,7 +1319,7 @@ If[GENERATEBASIS == True,
       rule = ToExpression[BASISRULE];
       MyPrint["Transformation rule: ", BASISRULE, " -> ", rule],
     (* else *)
-      rule = BASISRULE;    
+      rule = BASISRULE;
       MyPrint["Transformation rule: ", rule];
     ];
 
@@ -1328,7 +1328,7 @@ If[GENERATEBASIS == True,
     bz = bzvc2bzop[bvc];
 
     MyVPrint[2, "PROJECTED baza=", bz];
-  
+
     (* Count all states *)
     nrstates = Plus @@ Map[(degnr[ #[[1]] ] Length[ #[[2]] ])&, bvc];
     MyPrint["PROJECTED NR=", nrstates, " TT3=", Chop[TT3, 4] ];
@@ -1341,7 +1341,7 @@ If[GENERATEBASIS == True,
   symmetry (for example in ONE/COM model). *)
   If[ MAKEPHONON =!= Null,
     MyVPrint[1, "Adding phonons"];
-  
+
     bz = transformtoPH[bz, nph];
     MyVPrint[2, "PHONON baza (op)=", bz];
 
@@ -1361,7 +1361,7 @@ If[GENERATEBASIS == True,
       bvc = transformtoLRvc[bz, lrchain, vak, lrextrarule];
       bz = bzvc2bzop[bvc];
       MyVPrint[2, "LR (parity) baza=", bz];
-    
+
       If[option["LRTRICK"],
         droplrindex[{qn_, states_}] := {Drop[qn, -1], states};
         bvc = mergebasis[Map[droplrindex, bvc]];
@@ -1374,13 +1374,13 @@ If[GENERATEBASIS == True,
       bvc = Map[{Append[#[[1]], 1], #[[2]]}&, bvc];
       bz = Map[{Append[#[[1]], 1], #[[2]]}&, bz];
     ];
-  ]; 
+  ];
 
   If[ !option["LRSPIN"], dolr[] ]; (* LR transform before adding spin kets *)
 
   (*** Step 6: Add spin kets if requested. ***)
 
-  If[ MAKESPINKET =!= Null, 
+  If[ MAKESPINKET =!= Null,
    MyPrint["MAKESPINKET=", MAKESPINKET];
 
    If[isQS[] || isSPSU2[] || isSPSU2LR[] || isQST[] || isQSTZ[] ||
@@ -1390,20 +1390,20 @@ If[GENERATEBASIS == True,
       MyPrint["spin basis=", bzspin];
 
       Off[ClebschGordan::phy];
-      
+
       (* Recall: isQS covers QS and QSLR *)
       If[SYMTYPE == "QS",
         spin1fnc = ((#[[2]]-1)/2 &);
         spincombinefncNRG[s_, {q1_, _}, {___}] := {q1, 2s+1};
-      ]; 
+      ];
       If[SYMTYPE == "QSLR",
         spin1fnc = ((#[[2]]-1)/2 &);
         spincombinefncNRG[s_, {q1_, _, p1_}, {___}] := {q1, 2s+1, p1};
-      ]; 
+      ];
       If[isSPSU2[],
         spin1fnc = ((#[[1]]-1)/2 &);
         spincombinefncNRG[s_, {___}, {___}] := {2s+1};
-      ];  
+      ];
       If[isSPSU2T[] || isSPSU2LR[] || isSPSU2C3[],
         spin1fnc = ((#[[1]]-1)/2 &);
         spincombinefncNRG[s_, {s1_, p1_}, {___}] := {2s+1, p1};
@@ -1412,12 +1412,12 @@ If[GENERATEBASIS == True,
         spin1fnc = ((#[[2]]-1)/2 &);
         spincombinefncNRG[s_, {q1_, s1_, t1_}, {___}] := {q1, 2s+1, t1};
       ];
-        
+
       bz = SU2basistensorproduct[bz, bzspin,
         spin1fnc, First,
         spincombinefncNRG,
         fixspin, fixspinket];
-      bvc = bzop2bzvc[bz, vak];  
+      bvc = bzop2bzvc[bz, vak];
     ];
 
     (* Modified ???addspinket[] functions to conform to the (2Sz+1) convention. *)
@@ -1469,7 +1469,7 @@ If[GENERATEBASIS == True,
     MyVPrint[2, "SPINKET baza=", bz];
     MyVPrint[2, "SPINKET baza=", bvc];
   ];
-  
+
   (*** Step 6b: Add orbital kets, if requested ***)
   If[ MAKEORBKET =!= Null,
     MyPrint["MAKEORBKET=", MAKEORBKET];
@@ -1490,9 +1490,9 @@ If[GENERATEBASIS == True,
       fixtzket[k_, t_, t_] := k;
       fixtzket[k_, t_, tz_] /; tz < t := k /. ket[s_, i_] :> ket[s, i - (t - tz)];
 
-      fixtz[op_, t_, t_] := op;      
+      fixtz[op_, t_, t_] := op;
       fixtz[op_, t_, tz_] /; tz < t := Nest[tzdown, op, t - tz];
-      
+
       oT = 1;
       oS = 1/2;
       tminus[op_[q___, sz_]] :=
@@ -1506,10 +1506,10 @@ If[GENERATEBASIS == True,
 
       normalizeop[op_] := Simplify[op/Simplify[normop[op]]];
       tzdown[op_] := normalizeop @ zeroonvac[Expand[nc[TM, op]]]; (* normalize!! *)
-      
+
       zeroonvac[x:nc[a___, y:op_?fermionQ[i_, j___], ket[___]]] :=
         If[isannihilation[y], 0, x];
-      
+
       bz = SU2basistensorproduct[bz, orbbz,
         tz1fnc, First,
         tzcombinefncNRG,
@@ -1518,12 +1518,12 @@ If[GENERATEBASIS == True,
       bvc = bzop2bzvc[bz, vak];
      ];
     ];
-     
-    If[isQSTZ[] || isQSZTZ[], 
+
+    If[isQSTZ[] || isQSZTZ[],
      Module[{orbbz},
       orbbz = spinbasis[MAKEORBKET];
       MyPrint["orb basis=", orbbz];
-    
+
       (* Spin kets must already be defined. *)
       orbbz = orbbz /. ket[i_] :> ket[Null, i];
       bvc = bvc /. ket[i_] :> ket[i, Null];
@@ -1532,11 +1532,11 @@ If[GENERATEBASIS == True,
       bz = bzvc2bzop[bvc];
      ];
     ];
-      
+
     If[isSPSU2T[],
       MyError["Not implemented."];
     ];
-      
+
     If[!isORB[] && !isQJ[],
       orbbz = spinbasis[MAKEORBKET];
       MyPrint["orb basis=", orbbz];
@@ -1547,12 +1547,12 @@ If[GENERATEBASIS == True,
 
       bvc = basistensorproduct[orbbz, bvc, Function[{qn1, qn2}, qn2]];
       bz = bzvc2bzop[bvc];
-    ]; 
+    ];
 
     MyVPrint[2, "ORBKET baza bz=", bz];
     MyVPrint[2, "ORBKET baza bvc=", bvc];
   ];
-  
+
   (*** Step 6c ***)
   If[ option["LRSPIN"], dolr[] ]; (* LR transform *after* adding spin kets *)
 
@@ -1619,7 +1619,7 @@ Scan[(bazavcdiffvc[First[#]] = getdiffvc[Last[#]]) &, bvc];
 is a (dim x len) matrix, where 'dim' is the number of elements in the basis
 and 'len' the number of vc[] elements which are present. *)
 
-Scan[(bazavctransf[First[#]] = 
+Scan[(bazavctransf[First[#]] =
   Last[#] /. transformrule[bazavcdiffvc[First[#]]]) &, bvc];
 
 (* List of all invariant subspaces, i.e. all possible combinations of the
@@ -1640,7 +1640,7 @@ subspacesz[ss_] := SS2S[ss];
 subspaceiz[ii_] := II2I[ii];
 subspacejz[jj_] := JJ2J[jj];
 
-(* Note: for orbital moments we do not use the 2T+1 convention, 
+(* Note: for orbital moments we do not use the 2T+1 convention,
 thus this one is simply equal to T. *)
 subspacetz[t_] := t;
 
@@ -1648,7 +1648,7 @@ subspacetz[t_] := t;
 dim[inv_] := Length[ bazavc[inv] ];
 
 (* StringJoinSep[] joins strings with a separator between each element. *)
-StringJoinSep[sep_, strlist_] := StringJoin @@ 
+StringJoinSep[sep_, strlist_] := StringJoin @@
   (Most @ Flatten @ ({#, sep}& /@ strlist));
 StringJoinSep[sep_, {}] := "";
 
@@ -1670,13 +1670,13 @@ op2matrix[op_, inv1_, inv2_] := Module[{bz1, bz2, mm, b1, b2},
      appear in inv1 and inv2. *)
   bz1 = bazavcdiffvc[inv1];
   bz2 = bazavcdiffvc[inv2];
-  
+
     (* We use ..vcfast[] here. This function is only applicable to simple
     monomial vectors, such as the ones which appear in bz1 and bz2 here. The
     calculation is performed by applying the operator 'op' on elements of
     bz2 and looking up the indexes of resulting elements in bz1.  *)
-    
-  If[MPVCFAST == True,  
+
+  If[MPVCFAST == True,
     mm = matrixrepresentationvcfast[op, bz1, bz2],
     mm = matrixrepresentationvc[op, bz1, bz2]
   ];
@@ -1713,7 +1713,7 @@ ham[inv_] := Module[{fn, rep},
       GENERATEHAM = True;
     ];
   ];
-    
+
   If[GENERATEHAM && !option["PARAMPRE"],
     MyPrint["Generating matrix: " <> fn];
     rep = matrixrepresentationvc[H, bazavc[inv]];
@@ -1721,11 +1721,11 @@ ham[inv_] := Module[{fn, rep},
     (* Simplification improves numerical precision! *)
     rep = Simplify[rep];
     MyVPrint[2, "rep=", rep];
-  
+
     (* Save the *generic* Hamiltonian matrix to a file *)
     MyPut[rep, fn, option["GENERATE_TEMPLATE"]];
   ];
-    
+
   (* If option PARAMPRE is specified, apply parameters now! *)
   If[GENERATEHAM && option["PARAMPRE"],
     MyPrint["Generatic numerical matrix ", inv];
@@ -1762,7 +1762,7 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
     (* Fake a result with correct structure *)
     Return[{Range[nr], IdentityMatrix[nr]//N}];
   ];
-  
+
   (* Generation of numeric matrices *)
   hamil = hamil /. params; (* Apply parameters here! *)
   MyVPrint[2, "hamil=", hamil];
@@ -1776,46 +1776,46 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
   If[Total[Abs[diff]] != 0,
     MyError["Non-hermitian Hamiltonian: diff=", diff];
   ];
-  
+
   (* Mathematica's built-in Eigensystem[] has problems with numeric
   matrices having eigenvalues with high multiplicity (or even matrices
   with nearly degenerate eigenvalues, leading to lack of orthogonality
   between the eigenvectors), whereas SchurDecomposition[] works just
   fine in such instances! As of 28.7.2011, the Schur decomposition
-  is the default behavior and it can be turned off using the NOSCHUR 
+  is the default behavior and it can be turned off using the NOSCHUR
   option.*)
-  
+
   If[option["NOSCHUR"],
     eigsys = Eigensystem[hamil];
     eigsys = N[eigsys]; (* Enforce numericity! *)
-  
+
     (* Remove (infinitesimal) imaginary parts. *)
     {val, vec} = eigsys;
     val = Re[val],
 
   (* else *)
 
-    (* Perform Schur decomposition (QR) *)   
+    (* Perform Schur decomposition (QR) *)
     {Sq, St} = SchurDecomposition[hamil];
     val = Re @ Diagonal[St];
     vec = Transpose[Sq];
   ];
 
   eigsys = {val, vec};
-     
+
   (* Sort in the ascending order of eigenvalues! *)
   {val, vec} = Transpose[ Sort[ Transpose[eigsys] ] ];
 
   If[DEBUG >= 3,
     MyPrint["val=", val];
   ];
-  
+
   (* Sanity check 1 *)
   vecnormnonzero = Map[(Norm[#] != 0)&, vec];
   If[And @@ vecnormnonzero =!= True,
     MyError["Zero eigenvector detected."];
   ];
-    
+
   (* Normalize eigenvectors *)
   vec = Map[#/Norm[#]&, vec];
 
@@ -1825,10 +1825,10 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
   detdiff = 1.0-Abs[det];
   MyPrint["det[vec]=", det, " 1-abs=", detdiff];
   If[Abs[detdiff] > DETLIMIT, MyError["Det[] error"]];
-    
+
   (* Sanity check 3 *)
   ORTHLIMIT = 10^-10 * nr; (* Don't be too stringent! Rescale by matrix size! *)
-  res = Total[Abs[Dot[vec, 
+  res = Total[Abs[Dot[vec,
     ConjugateTranspose[vec]]-IdentityMatrix[nr]], 2];
   MyPrint["orthogonality check=", res];
   If[Abs[res] > ORTHLIMIT, MyError["orhogonality error"]];
@@ -1843,36 +1843,36 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
 
 coupledQ["QS" | "QSLR", {{q1_, ss1_, i1___}, {q2_, ss2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ss1-ss2] == 1, True, False, MyError["oops"]];
-spincoupledQ["QS" | "QSLR", {{q1_, ss1_, i1___}, {q2_, ss2_, i2___}}] := 
+spincoupledQ["QS" | "QSLR", {{q1_, ss1_, i1___}, {q2_, ss2_, i2___}}] :=
   If[q1 == q2 && (ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2), True, False,
     MyError["oops"]];
 
 (* f[p] of three types. Need finer grained checks. *)
 coupledQ["QSC3", {{q1_, ss1_, p1_, i1___}, {q2_, ss2_, p2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ss1-ss2] == 1, True, False, MyError["oops"]];
-spincoupledQ["QSC3", {{q1_, ss1_, p1_, i1___}, {q2_, ss2_, p2_, i2___}}] := 
+spincoupledQ["QSC3", {{q1_, ss1_, p1_, i1___}, {q2_, ss2_, p2_, i2___}}] :=
   If[q1 == q2 && (ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2) && p1 == p2, True, False,
     MyError["oops"]];
 
 (* Since f is an orbital triplet operator, the case t1=t2=0 counts as not coupled. *)
 coupledQ["QST", {{q1_, ss1_, t1_, i1___}, {q2_, ss2_, t2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ss1-ss2] == 1 && (Abs[t1-t2] <= 1 && !(t1==0 && t2==0)), True, False, MyError["oops"]];
-spincoupledQ["QST", {{q1_, ss1_, t1_, i1___}, {q2_, ss2_, t2_, i2___}}] := 
+spincoupledQ["QST", {{q1_, ss1_, t1_, i1___}, {q2_, ss2_, t2_, i2___}}] :=
   If[q1 == q2 && (ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2) && t1 == t2, True, False,
     MyError["oops"]];
-orbcoupledQ["QST", {{q1_, ss1_, t1_, i1___}, {q2_, ss2_, t2_, i2___}}] := 
+orbcoupledQ["QST", {{q1_, ss1_, t1_, i1___}, {q2_, ss2_, t2_, i2___}}] :=
   If[q1 == q2 && (t1 == t2 || t1 == t2-1 || t1 == t2+1) && ss1 == ss2, True, False,
     MyError["oops"]];
 
 coupledQ["QSTZ", {{q1_, ss1_, tz1_, i1___}, {q2_, ss2_, tz2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ss1-ss2] == 1 && Abs[tz1-tz2] <= 1, True, False, MyError["oops"]];
-spincoupledQ["QSTZ", {{q1_, ss1_, tz1_, i1___}, {q2_, ss2_, tz2_, i2___}}] := 
+spincoupledQ["QSTZ", {{q1_, ss1_, tz1_, i1___}, {q2_, ss2_, tz2_, i2___}}] :=
   If[q1 == q2 && (ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2) && tz1 == tz2, True, False,
     MyError["oops"]];
 
 coupledQ["QSZTZ", {{q1_, ssz1_, tz1_, i1___}, {q2_, ssz2_, tz2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ssz1-ssz2] == 1 && Abs[tz1-tz2] <= 1, True, False, MyError["oops"]];
-spincoupledQ["QSTZ", {{q1_, ssz1_, tz1_, i1___}, {q2_, ssz2_, tz2_, i2___}}] := 
+spincoupledQ["QSTZ", {{q1_, ssz1_, tz1_, i1___}, {q2_, ssz2_, tz2_, i2___}}] :=
   If[q1 == q2 && (ssz1 == ssz2 || ssz1 == ssz2-2 || ssz1 == ssz2+2) && tz1 == tz2, True, False,
     MyError["oops"]];
 
@@ -1884,50 +1884,50 @@ coupledQ["QJ", _] := False;
 (* Since f is an orbital triplet operator, the case t1=t2=0 counts as not coupled. *)
 coupledQ["SPSU2T", {{ss1_, t1_, i1___}, {ss2_, t2_, i2___}}] :=
   If[Abs[ss1-ss2] == 1 && (Abs[t1-t2] <= 1 && !(t1==0 && t2==0)), True, False, MyError["oops"]];
-spincoupledQ["SPSU2T", {{ss1_, t1_, i1___}, {ss2_, t2_, i2___}}] := 
+spincoupledQ["SPSU2T", {{ss1_, t1_, i1___}, {ss2_, t2_, i2___}}] :=
   If[(ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2) && t1 == t2, True, False,
     MyError["oops"]];
 
-coupledQ["SPSU2" | "SPSU2LR" | "SPSU2C3", {{ss1_, i1___}, {ss2_, i2___}}] := 
+coupledQ["SPSU2" | "SPSU2LR" | "SPSU2C3", {{ss1_, i1___}, {ss2_, i2___}}] :=
   If[Abs[ss1-ss2] == 1, True, False, MyError["oops"]];
 (* TODO: parity should not change! *)
-spincoupledQ["SPSU2" | "SPSU2LR" | "SPSU2C3", {{ss1_, i1___}, {ss2_, i2___}}] := 
+spincoupledQ["SPSU2" | "SPSU2LR" | "SPSU2C3", {{ss1_, i1___}, {ss2_, i2___}}] :=
   If[ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2, True, False,
     MyError["oops"]];
 
-coupledQ["SPU1" | "SPU1LR", {{ssz1_, i1___}, {ssz2_, i2___}}] := 
+coupledQ["SPU1" | "SPU1LR", {{ssz1_, i1___}, {ssz2_, i2___}}] :=
   If[Abs[ssz1-ssz2] == 1, True, False, MyError["oops"]];
-spincoupledQ["SPU1" | "SPU1LR", {{ssz1_, i1___}, {ssz2_, i2___}}] := 
+spincoupledQ["SPU1" | "SPU1LR", {{ssz1_, i1___}, {ssz2_, i2___}}] :=
   If[ssz1 == ssz2 || ssz1 == ssz2-2 || ssz1 == ssz2+2, True, False,
      MyError["oops"]];
 
-coupledQ["ISO" | "ISOLR" | "ISO2" | "ISO2LR", 
-  {{ii1_, ss1_, j1___}, {ii2_, ss2_, j2___}}] := 
+coupledQ["ISO" | "ISOLR" | "ISO2" | "ISO2LR",
+  {{ii1_, ss1_, j1___}, {ii2_, ss2_, j2___}}] :=
   If[Abs[ii1-ii2] == 1 && Abs[ss1-ss2] == 1, True, False,
      MyError["oops"]];
-    
-coupledQ["ISOSZ" | "ISOSZLR", {{ii1_, ssz1_, j1___}, {ii2_, ssz2_, j2___}}] := 
+
+coupledQ["ISOSZ" | "ISOSZLR", {{ii1_, ssz1_, j1___}, {ii2_, ssz2_, j2___}}] :=
   If[Abs[ii1-ii2] == 1 && Abs[ssz1-ssz2] == 1, True, False,
      MyError["oops"]];
 
-coupledQ["SU2", {{ii1_, j1___}, {ii2_, j2___}}] := 
+coupledQ["SU2", {{ii1_, j1___}, {ii2_, j2___}}] :=
   If[Abs[ii1-ii2] == 1, True, False, MyError["oops"]];
 
-coupledQ["DBLQSZ", {{q11_, q21_, ssz1_, j1___}, {q12_, q22_, ssz2_, j2___}}] := 
+coupledQ["DBLQSZ", {{q11_, q21_, ssz1_, j1___}, {q12_, q22_, ssz2_, j2___}}] :=
   If[    (* ((q11 == q12+1 && q21 == q22) ~ Xor ~ (q11 == q12 && q21 == q22+1))  && *)
   Abs[ssz1-ssz2] == 1,
   True, False, MyError["oops coupledQ"]];
 
-coupledQ["DBLSU2", {{ii11_, ii21_, j1___}, {ii12_, ii22_, j2___}}] := 
+coupledQ["DBLSU2", {{ii11_, ii21_, j1___}, {ii12_, ii22_, j2___}}] :=
   If[(Abs[ii11-ii12] == 1) ~ Xor ~ (Abs[ii21-ii22] == 1),
   True, False, MyError["oops coupledQ"]];
 
-coupledQ["DBLISOSZ", {{ii11_, ii21_, ssz1_, j1___}, {ii12_, ii22_, ssz2_, j2___}}] := 
-  If[((Abs[ii11-ii12] == 1 && Abs[ii21-ii22] == 0) ~ Xor ~ (Abs[ii21-ii22] == 1 && Abs[ii11-ii12] == 0)) && 
+coupledQ["DBLISOSZ", {{ii11_, ii21_, ssz1_, j1___}, {ii12_, ii22_, ssz2_, j2___}}] :=
+  If[((Abs[ii11-ii12] == 1 && Abs[ii21-ii22] == 0) ~ Xor ~ (Abs[ii21-ii22] == 1 && Abs[ii11-ii12] == 0)) &&
   Abs[ssz1-ssz2] == 1,
   True, False, MyError["oops coupledQ"]];
 
-coupledQ["QSZ" | "QSZLR", {{q1_, ssz1_, i1___}, {q2_, ssz2_, i2___}}] := 
+coupledQ["QSZ" | "QSZLR", {{q1_, ssz1_, i1___}, {q2_, ssz2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ssz1-ssz2] == 1, True, False, MyError["oops"]];
 
 coupledQ["P", {{p1_}, {p2_}}] := (p1 != p2); (* Opposite parity *)
@@ -1936,19 +1936,19 @@ coupledQ["PP", {{pa1_, pb1_}, {pa2_, pb2_}}] := ((pa1 != pa2) && (pb1 == pb2)) |
 
 coupledQ["NONE", {_, _}] := True;
 
-coupledQ["U1", {{q1_, i1___}, {q2_, i2___}}] := 
+coupledQ["U1", {{q1_, i1___}, {q2_, i2___}}] :=
   If[q1 == q2+1, True, False, MyError["oops"]];
 
-coupledQ["SL", {{q1_, i1___}, {q2_, i2___}}] := 
+coupledQ["SL", {{q1_, i1___}, {q2_, i2___}}] :=
   If[q1 == q2+1, True, False, MyError["oops"]];
 
-coupledQ["SL3", {{q11_, q21_, q31_, i1___}, {q12_, q22_, q32_, i2___}}] := 
+coupledQ["SL3", {{q11_, q21_, q31_, i1___}, {q12_, q22_, q32_, i2___}}] :=
   If[
    (q11 == q12+1 && q21 == q22 && q31 == q32) ~ Xor ~
    (q11 == q12 && q21 == q22+1 && q31 == q32) ~ Xor ~
    (q11 == q12 && q21 == q22 && q31 == q32+1),
   True, False, MyError["oops"]];
- 
+
 (* Bug trap *)
 coupledQ[s_String, a___] := MyError["coupledQ not defined for ", {s,a}];
 
@@ -1959,7 +1959,7 @@ MyVPrint[3, "subspaces=", subspaces];
 Flatten1[list_] := Flatten[list, 1];
 
 (* All pairs of subspaces *)
-subspacepairs = Reverse @ Flatten1 @ Table[{subspaces[[i]], subspaces[[j]]}, 
+subspacepairs = Reverse @ Flatten1 @ Table[{subspaces[[i]], subspaces[[j]]},
   {i, nrsub}, {j, nrsub}];
 nrp = Length[subspacepairs];
 
@@ -1988,22 +1988,22 @@ nrorbcp = Length[orbcoupledpairs];
 (* CONVENTIONS:
 
  [name] - routine for a single element calculation. Mostly for testing.
- [name]Matrix - create a matrix of operator in a given subspace or 
-                combination of subspaces 
- [name]Table - call [name]Matrix for every subspace or combination of 
-               subspaces, used to build an exportable table of all 
+ [name]Matrix - create a matrix of operator in a given subspace or
+                combination of subspaces
+ [name]Table - call [name]Matrix for every subspace or combination of
+               subspaces, used to build an exportable table of all
                required matrix elements
 *)
 
 (*                     --- DOUBLET OPERATORS ---               *)
 
-(* 
- Call hierarchy: 
+(*
+ Call hierarchy:
  maketable -> ireducTable -> ireducMatrixSpeedy -> optransform -> op2matrix
 *)
 
 (* Note: for QSZ, both spin projections are considered. They are output as a
-single block: the spin projection is defined by the difference ssz1-ssz2 of 
+single block: the spin projection is defined by the difference ssz1-ssz2 of
 the two invariant subspaces involved. The C++ part of the program should
 disentangle the spectral densities for the separate spin projections. *)
 
@@ -2034,11 +2034,11 @@ udf[szop_] := If[szop == 1/2, UP, DO, MyError["oops, szop=", szop]];
 duf[szop_] := If[szop == 1/2, DO, UP, MyError["oops, szop=", szop]];
 signf[szop_] := If[szop == 1/2, +1, -1, MyError["oops, szop=", szop]];
 
-getIsospinQN["ISO" | "ISOLR" | "ISO2" | "ISO2LR" | "ISOSZ" | "ISOSZLR" | 
+getIsospinQN["ISO" | "ISOLR" | "ISO2" | "ISO2LR" | "ISOSZ" | "ISOSZLR" |
              "SU2", inv_] := inv[[1]];
 
 getSpinQN["DBLQSZ", inv_] := inv[[3]];
-getSpinQN["QS" | "QSLR" | "QSC3" | "QSZ" | "QSZLR" | "ISO" | "ISOLR" | 
+getSpinQN["QS" | "QSLR" | "QSC3" | "QSZ" | "QSZLR" | "ISO" | "ISOLR" |
           "ISO2" | "ISO2LR" | "ISOSZ" | "ISOSZLR" | "QST" | "QSTZ" | "QSZTZ", inv_] := inv[[2]];
 getSpinQN["SPSU2" | "SPSU2LR" | "SPSU2T" | "SPU1" | "SPU1LR" | "SPSU2C3", inv_] := inv[[1]];
 
@@ -2048,7 +2048,7 @@ getOrbitalQN["SPSU2T", inv_] := inv[[2]];
 getJQN["QJ", inv_] := inv[[2]];
 
 ireducMatrixSpeedy[symtype:("QSZ" | "QSZLR" | "SPU1" | "SPU1LR" | "DBLQSZ"),
-                   op_, {inv1_, inv2_}, ___] := 
+                   op_, {inv1_, inv2_}, ___] :=
 Module[
   {ssz1, ssz2, szop, ud, op1},
   ssz1 = getSpinQN[symtype, inv1];
@@ -2065,7 +2065,7 @@ ireducMatrixSpeedy[symtype:("QS" | "QSLR" | "QSC3" | "SPSU2" | "SPSU2LR" | "SPSU
 Module[{ss1, ss2, sz1, sz2, szop, op1, ud, cg},
   ss1 = getSpinQN[symtype, inv1];
   ss2 = getSpinQN[symtype, inv2];
-  (* subspacesz[] returns the S_z for given S. The representative 
+  (* subspacesz[] returns the S_z for given S. The representative
      states in the basis have this value of S_z. *)
   sz1 = subspacesz[ss1];
   sz2 = subspacesz[ss2];
@@ -2095,17 +2095,17 @@ ireducMatrixSpeedy[symtype:("QST" | "SPSU2T"),
 Module[{ss1, ss2, sz1, sz2, szop, op1, ud, t1, t2, tzop, cg1, cg2},
   ss1 = getSpinQN[symtype, inv1];
   ss2 = getSpinQN[symtype, inv2];
-  (* subspacesz[] returns the S_z for given S. The representative 
+  (* subspacesz[] returns the S_z for given S. The representative
      states in the basis have this value of S_z. *)
   sz1 = subspacesz[ss1];
   sz2 = subspacesz[ss2];
   szop = sz1-sz2;
   ud = udf[szop];
-  
+
   t1 = getOrbitalQN[symtype, inv1];
   t2 = getOrbitalQN[symtype, inv2];
   tzop = t1-t2;
-  
+
   op1 = op[CR, tzop, ud]; (* IMPORTANT: CR by default! *)
   cg1 = ClebschGordan[{SS2S[ss2],sz2},{1/2,szop},{SS2S[ss1],sz1}];
   cg2 = ClebschGordan[{t2,t2},{1,tzop},{t1,t1}];
@@ -2117,17 +2117,17 @@ ireducMatrixSpeedy[symtype:("QSTZ"),
 Module[{ss1, ss2, sz1, sz2, szop, op1, ud, tz1, tz2, tzop, cg1},
   ss1 = getSpinQN[symtype, inv1];
   ss2 = getSpinQN[symtype, inv2];
-  (* subspacesz[] returns the S_z for given S. The representative 
+  (* subspacesz[] returns the S_z for given S. The representative
      states in the basis have this value of S_z. *)
   sz1 = subspacesz[ss1];
   sz2 = subspacesz[ss2];
   szop = sz1-sz2;
   ud = udf[szop];
-  
+
   tz1 = getOrbitalQN[symtype, inv1];
   tz2 = getOrbitalQN[symtype, inv2];
   tzop = tz1-tz2;
-  
+
   op1 = op[CR, tzop, ud]; (* IMPORTANT: CR by default! *)
   cg1 = ClebschGordan[{SS2S[ss2],sz2},{1/2,szop},{SS2S[ss1],sz1}];
   optransform[op1, inv1, inv2, cg1]
@@ -2138,22 +2138,22 @@ ireducMatrixSpeedy[symtype:("QSZTZ"),
 Module[{ssz1, ssz2, szop, op1, ud, tz1, tz2, tzop, cg1},
   ssz1 = getSpinQN[symtype, inv1];
   ssz2 = getSpinQN[symtype, inv2];
-  (* subspacesz[] returns the S_z for given S. The representative 
+  (* subspacesz[] returns the S_z for given S. The representative
      states in the basis have this value of S_z. *)
   szop = 1/2(ssz1-ssz2);
   ud = udf[szop];
-  
+
   tz1 = getOrbitalQN[symtype, inv1];
   tz2 = getOrbitalQN[symtype, inv2];
   tzop = tz1-tz2;
-  
+
   op1 = op[CR, tzop, ud]; (* IMPORTANT: CR by default! *)
   optransform[op1, inv1, inv2]
 ];
 
 (* f[] operators are singlets wrt the (trivial) symmetry group. *)
 ireducMatrixSpeedy["NONE" | "P" | "PP", op_, {inv1_, inv2_}, fnr_, ___] := Module[{op1},
-  op1 = Switch[fnr, 
+  op1 = Switch[fnr,
     0, op[CR, DO],
     1, op[CR, UP],
     2, op[AN, DO],
@@ -2183,9 +2183,9 @@ ireducMatrixSpeedy["SL3", op_, {inv1_, inv2_}, ___] := Module[{op1},
 
 (* Code audited: Rok, 22. 8. 2006 *)
 ireducMatrixSpeedy[symtype:("ISO" | "ISOLR" | "ISO2" | "ISO2LR"),
-                   op_, {inv1_, inv2_}, 
-                   optnn___] := 
-Module[{ii1, ii2, iz1, iz2, ss1, ss2, sz1, sz2, szop, 
+                   op_, {inv1_, inv2_},
+                   optnn___] :=
+Module[{ii1, ii2, iz1, iz2, ss1, ss2, sz1, sz2, szop,
         op1, ud, tip, cgs, cgi, faktor},
   ii1 = getIsospinQN[symtype, inv1];
   ii2 = getIsospinQN[symtype, inv2];
@@ -2219,7 +2219,7 @@ Module[{ii1, ii2, iz1, iz2, ss1, ss2, sz1, sz2, szop,
       op[HoldComplete[Sequence[]], HoldComplete[Sequence[]]] ]], (* HACK! *)
     nn = optnn;
   ];
-    
+
   (* In the Nambu spinor, the isospin-up component (creation operator) has
   always the same phase, while the isospin-down component (annihilation
   operator) has an alternating phase, dependant on the position of the site
@@ -2232,14 +2232,14 @@ Module[{ii1, ii2, iz1, iz2, ss1, ss2, sz1, sz2, szop,
 ];
 
 
-ireducMatrixSpeedy[symtype:"ISOSZ" | "ISOSZLR", op_, {inv1_, inv2_}, optnn___] := 
-Module[{ii1, ii2, iz1, iz2, ssz1, ssz2, szop, 
+ireducMatrixSpeedy[symtype:"ISOSZ" | "ISOSZLR", op_, {inv1_, inv2_}, optnn___] :=
+Module[{ii1, ii2, iz1, iz2, ssz1, ssz2, szop,
         op1, ud, tip, cgs, cgi, faktor},
   ii1 = getIsospinQN[symtype, inv1];
   ii2 = getIsospinQN[symtype, inv2];
   iz1 = subspaceiz[ii1];
   iz2 = subspaceiz[ii2];
-  ssz1 = getSpinQN[symtype, inv1];  
+  ssz1 = getSpinQN[symtype, inv1];
   ssz2 = getSpinQN[symtype, inv2];
   szop = 1/2(ssz1-ssz2);
 
@@ -2263,7 +2263,7 @@ Module[{ii1, ii2, iz1, iz2, ssz1, ssz2, szop,
       op[HoldComplete[Sequence[]], HoldComplete[Sequence[]]] ]], (* HACK! *)
     nn = optnn;
   ];
-    
+
   (* In the Nambu spinor, the isospin-up component (creation operator) has
   always the same phase, while the isospin-down component (annihilation
   operator) has an alternating phase, dependant on the position of the site
@@ -2280,11 +2280,11 @@ distinguished by the value of 'type', taking two values (UP,DO). One doublet
 consists of the [f^dag_UP, f_DO] (szop=1/2) pair, the other of the
 [f^dag_DO, -f_UP] (szop=-1/2) pair of operators. Note the sign! *)
 
-ireducMatrixSpeedy[symtype:"SU2", 
-                   op_, 
-                   {inv1_, inv2_}, 
-                   type_, 
-                   optnn___] := 
+ireducMatrixSpeedy[symtype:"SU2",
+                   op_,
+                   {inv1_, inv2_},
+                   type_,
+                   optnn___] :=
  Module[{ii1, ii2, iz1, iz2, izop, tip, spin, szop, op1, ud, cgs, cgi, faktor},
   ii1 = getIsospinQN[symtype, inv1];
   ii2 = getIsospinQN[symtype, inv2];
@@ -2316,7 +2316,7 @@ ireducMatrixSpeedy[symtype:"SU2",
       op[HoldComplete[Sequence[]], HoldComplete[Sequence[]]] ]], (* HACK! *)
     nn = optnn;
   ];
-    
+
   (* Compare with the ISOSZ symmetry type. The difference is that szop is
   not determined by the quantum numbers of the invariant subspaces involved,
   but by the parameter type=1,2. *)
@@ -2327,11 +2327,11 @@ ireducMatrixSpeedy[symtype:"SU2",
 ];
 
 
-ireducMatrixSpeedy[symtype:"DBLSU2", 
-                   op_, 
-                   {inv1_, inv2_}, 
-                   type_, 
-                   optnn___] := 
+ireducMatrixSpeedy[symtype:"DBLSU2",
+                   op_,
+                   {inv1_, inv2_},
+                   type_,
+                   optnn___] :=
  Module[{ii11, ii12, iz1, iz2, ii21, ii22, ii1, ii2,
          izop, tip, spin, szop, op1, ud, cgs, cgi, faktor},
   ii11 = inv1[[1]]; (* first index: channel; second index: 1st or 2nd arg *)
@@ -2376,7 +2376,7 @@ ireducMatrixSpeedy[symtype:"DBLSU2",
       op[HoldComplete[Sequence[]], HoldComplete[Sequence[]]] ]], (* HACK! *)
     nn = optnn;
   ];
-    
+
   (* Compare with the ISOSZ symmetry type. The difference is that szop is
   not determined by the quantum numbers of the invariant subspaces involved,
   but by the parameter type=1,2. *)
@@ -2386,10 +2386,10 @@ ireducMatrixSpeedy[symtype:"DBLSU2",
   optransform[op1, inv1, inv2, faktor * cgi]
 ];
 
-ireducMatrixSpeedy[symtype:"DBLISOSZ", 
-                   op_, 
-                   {inv1_, inv2_}, 
-                   optnn___] := 
+ireducMatrixSpeedy[symtype:"DBLISOSZ",
+                   op_,
+                   {inv1_, inv2_},
+                   optnn___] :=
  Module[{ii11, ii12, iz1, iz2, ii21, ii22, ii1, ii2, ssz1, ssz2,
          izop, tip, spin, szop, op1, ud, cgs, cgi, faktor},
   ii11 = inv1[[1]]; (* first index: channel; second index: 1st or 2nd arg *)
@@ -2398,7 +2398,7 @@ ireducMatrixSpeedy[symtype:"DBLISOSZ",
   ii12 = inv2[[1]];
   ii22 = inv2[[2]];
   ssz2 = inv2[[3]];
-  
+
   ii1 = Indeterminate;
   If[Abs[ii11-ii12] == 1 && Abs[ii21-ii22] == 0, (* f in ch 1 *)
     iz1 = subspaceiz[ii11];
@@ -2413,10 +2413,10 @@ ireducMatrixSpeedy[symtype:"DBLISOSZ",
     ii2 = ii22;
     ];
   If[ii1 === Indeterminate,
-    MyPrint["inv1=", inv1, " inv2=", inv2];  
+    MyPrint["inv1=", inv1, " inv2=", inv2];
     MyError["ireduc[] error."];
   ];
-    
+
   szop = 1/2(ssz1-ssz2);
 
   (* If iz1 = iz2 + 1/2, i.e. izop=1/2, a particle was created (CR) *)
@@ -2445,7 +2445,7 @@ ireducMatrixSpeedy[symtype:"DBLISOSZ",
       op[HoldComplete[Sequence[]], HoldComplete[Sequence[]]] ]], (* HACK! *)
     nn = optnn;
   ];
-    
+
   faktor = If[izop == 1/2, 1, (-1)^nn (-2szop), MyError["oops"]];
 
   optransform[op1, inv1, inv2, faktor * cgi]
@@ -2462,14 +2462,14 @@ noted that if the eigenvalue flows are correct, but the spectra seem wrong,
 then the corresponding ireducMatrixSpeedy routine works properly and the bug
 should be sought after elsewhere (such as i. coefficients, ii. recalculation
 code, iii. specdens_factor() routine). *)
-   
-ireducTable[op_, 
+
+ireducTable[op_,
             optional___] :=  (* optional is passed to ireducMatrixSpeedy[] *)
 Module[{t, cp, i, mat, opfnsub},
   t = {{nrcp}};
   For[i = 1, i <= nrcp, i++,
     (* coupledpairs is a list of subspace pairs that are coupled
-       by doublet operators [that increase charge, when charge conservation 
+       by doublet operators [that increase charge, when charge conservation
        is explicitly taken into account], i.e. creation operators! *)
     cp = coupledpairs[[i]];
     mat = Expand @ ireducMatrixSpeedy[SYMTYPE, op, cp, optional];
@@ -2477,7 +2477,7 @@ Module[{t, cp, i, mat, opfnsub},
     AppendTo[opdata, {cp, mat}];
     If[!option["GENERATE_TEMPLATE"] || opfn === "",
       t = Join[t, mat],
-    (* else *)  
+    (* else *)
       opfnsub = opfn <> "_" <> Invar2String[cp[[1]]] <> "_" <> Invar2String[cp[[2]]];
       t = Join[t, {opfnsub}];
       Put[mat, opfnsub];
@@ -2490,7 +2490,7 @@ Module[{t, cp, i, mat, opfnsub},
 
 (* Irreducible matrix elements of triplet tenzor operator op *)
 ireducsigma[SYMTYPE:("SPSU2" | "QS" | "QSLR" | "QSC3" | "QST" | "QSTZ" | "SPSU2T" | "SPSU2C3"),
- op_, {inv1_, inv2_}] := 
+ op_, {inv1_, inv2_}] :=
   Module[{ss1, ss2, sz1, sz2, szop, op1, xa, xb},
    ss1 = getSpinQN[SYMTYPE, inv1];
    ss2 = getSpinQN[SYMTYPE, inv2];
@@ -2504,7 +2504,7 @@ ireducsigma[SYMTYPE:("SPSU2" | "QS" | "QSLR" | "QSC3" | "QST" | "QSTZ" | "SPSU2T
    If[szop == -1, op1 = 1/Sqrt[2] spinminus[op] ];
 
    xa = optransform[op1, inv1, inv2];
-   xb = If[ss1 == 1 && ss2 == 1, 1, 
+   xb = If[ss1 == 1 && ss2 == 1, 1,
      ClebschGordan[{SS2S[ss2],sz2},{1,szop},{SS2S[ss1],sz1}]];
    xa/xb
 ];
@@ -2524,18 +2524,18 @@ ireducSPIN[SYMTYPE:("SPSU2" | "QS" | "QSLR" | "QSC3" | "QST" | "QSTZ" | "SPSU2T"
    If[szop == -1, op1 = 1/Sqrt[2] spinketbraM[SPIN] ];
 
    xa = optransform[op1, inv1, inv2];
-   xb = If[ss1 == 1 && ss2 == 1, 1, 
+   xb = If[ss1 == 1 && ss2 == 1, 1,
      ClebschGordan[{SS2S[ss2],sz2},{1,szop},{SS2S[ss1],sz1}]];
    xa/xb
 ];
 
 (* Bug trap *)
-ireducsigma[SYMTYPE_, args___] := 
-  MyError["ireducsigma not implemented for " <> SYMTYPE <> 
+ireducsigma[SYMTYPE_, args___] :=
+  MyError["ireducsigma not implemented for " <> SYMTYPE <>
   " args=" <> ToString[{args}]];
 
-ireducSPIN[SYMTYPE_, args___] := 
-  MyError["ireducSPIN not implemented for " <> SYMTYPE <> 
+ireducSPIN[SYMTYPE_, args___] :=
+  MyError["ireducSPIN not implemented for " <> SYMTYPE <>
   " args=" <> ToString[{args}]];
 
 (* Table form for all irreducible matrix elements of a triplet operator sigma *)
@@ -2558,7 +2558,7 @@ ireducsigmaTable[op_] := Module[{t, i, cp, mat},
 
 (*                     --- ORBITAL TRIPLET OPERATORS ---               *)
 
-ireducorbsigma[SYMTYPE:("QST"), op_, {inv1_, inv2_}] := 
+ireducorbsigma[SYMTYPE:("QST"), op_, {inv1_, inv2_}] :=
   Module[{t1, t2, tz1, tz2, tzop, op1, xa, xb},
    t1 = getOrbitalQN[SYMTYPE, inv1];
    t2 = getOrbitalQN[SYMTYPE, inv2];
@@ -2577,8 +2577,8 @@ ireducorbsigma[SYMTYPE:("QST"), op_, {inv1_, inv2_}] :=
 ];
 
 (* Bug trap *)
-ireducorbsigma[SYMTYPE_, args___] := 
-  MyError["ireducorbsigma not implemented for " <> SYMTYPE <> 
+ireducorbsigma[SYMTYPE_, args___] :=
+  MyError["ireducorbsigma not implemented for " <> SYMTYPE <>
   " args=" <> ToString[{args}]];
 
 (* Table form for all irreducible matrix elements of a triplet operator sigma *)
@@ -2598,8 +2598,8 @@ ireducorbsigmaTable[op_] := Module[{t, i, cp, mat},
 
 (*                       --- SINGLET OPERATORS ---                   *)
 
-(* 
- Call hierarchy: 
+(*
+ Call hierarchy:
  maketable -> mtSingletOp -> mtOp -> singletopTable -> singletopMatrixSpeedy -> op2matrix
  NOTE: optransform is not used here!
 *)
@@ -2689,7 +2689,7 @@ mtOrbTripletOp[opname_String, opinput_] := mtOp[opname, opinput, "ot", ireducorb
 (* Find the ground state energy of the system. As a byproduct, all
 diagonalisations will be performed and all eigenvalue/eigenvectors pairs
 will be cached in memory for later use. *)
-   
+
 calcgsenergy[] := Module[{all, i, val, vec},
   MyPrint["calcgsenergy[]"];
   all = {}; (* List of all energy levels *)
@@ -2712,12 +2712,12 @@ MyPrint["Wilson chain"];
 
 ClearAll[thetaCh]; (* Bug honey-pot *)
 
-(* ---- Tridiagonalisation approach: 
+(* ---- Tridiagonalisation approach:
 old - direct use of the recursion relations
-sc - as above, but extended for superconducting hosts with arbitrary DOS 
+sc - as above, but extended for superconducting hosts with arbitrary DOS
      and even-frequency pairing function
 sc2 - as above, but for fully general pairing function
-cpp - tridiagonalisation performed in the C++ part of the code 
+cpp - tridiagonalisation performed in the C++ part of the code
 orth - recursion relations + orthogonality requirements
 none - don't output the coeffcient table
 manual - load the discretization tables from a file
@@ -2736,7 +2736,7 @@ If[TRI == "sc2",
   defaultprec = 1000;
   dothelanczos = dothelanczossc2;
 ];
-If[TRI == "orth",  
+If[TRI == "orth",
   defaultprec = 50;
   dothelanczos = dothelanczosorth;
 ];
@@ -2760,7 +2760,7 @@ If[TRI == "manual" || TRI == "manual_nambu",
   defaultprec = 30; (* Should be enough *)
   dothelanczos = loaddiscretizationtables;
 ];
-If[option["GENERATE_TEMPLATE"],  
+If[option["GENERATE_TEMPLATE"],
   dothelanczos = None;
   Nmax = 0;
 ];
@@ -2786,7 +2786,7 @@ If[paramexists["Nmax"],
 
 Tmin=0;
 
-If[paramexists["T"] && paramexists["Tmin_ratio"],  
+If[paramexists["T"] && paramexists["Tmin_ratio"],
   If[paramnum["T"] > 0 && paramnum["Tmin_ratio"] > 0,
     Tmin = paramnum["T"] * paramnum["Tmin_ratio"];
     MyPrint["Tmin_ratio ==> Tmin=", Tmin];
@@ -2807,7 +2807,7 @@ If[Tmin > 0,
 If[DISCNMAX < 0,
   DISCNMAX = Nmax;
 ];
- 
+
 MyPrint["DISCNMAX=", DISCNMAX];
 If[DISCNMAX < 0 || DISCNMAX >= 999, MyError["Error"] ];
 
@@ -2826,7 +2826,7 @@ If[TRI == "cpp" || TRI == "none",
   TRUEDISCNMAX = DISCNMAX;
   DISCNMAX = Ninit;
 ];
-  
+
 (**********************************)
 
 (* df[a, m] are the integrals over energy of the hybridisation form
@@ -2839,7 +2839,7 @@ df[m]=eps[m]-eps[m+1], i.e. the interval width. *)
 (* theta is the energy integral of the hybridisation form function over all
 discretization intervals, i.e. a sum over all df and dfminus. *)
 
-If[BAND == "flat", 
+If[BAND == "flat",
   eps[a_, 0] = 1;
   eps[a_, m_] = LAMBDA^(-Z-m+1);
   df[a_, m_] := eps[a,m] - eps[a,m+1];
@@ -2848,7 +2848,7 @@ If[BAND == "flat",
 ];
 
 If[BAND == "cosine",
-  df[a_, 0] = (-(Sqrt[-1 + LAMBDA^(2*Z)]/LAMBDA^(2*Z)) + 
+  df[a_, 0] = (-(Sqrt[-1 + LAMBDA^(2*Z)]/LAMBDA^(2*Z)) +
     ArcSec[LAMBDA^Z])/2;
 
   df[a_, m_] = (LAMBDA^(-m - Z)*(LAMBDA*Sqrt[1 - LAMBDA^(-2*(-1 + m +
@@ -2857,10 +2857,10 @@ If[BAND == "cosine",
 
   dfminus = df; (* p-h symmetric *)
   thetaCh[a_] = Pi/2;
-  
+
   (* NOTE: what enters the expression for the operator f_0 are the
   combinations df[]/thetaCh. Thus the normalization of the density of states
-  is automatically taken care of. *) 
+  is automatically taken care of. *)
 ];
 
 MyImport[fn_String, opts___] := Module[{l},
@@ -2869,40 +2869,40 @@ MyImport[fn_String, opts___] := Module[{l},
   l
 ];
 
-ImportTable[fn_String] := Module[{l, dim},  
+ImportTable[fn_String] := Module[{l, dim},
   l = MyImport[fn];
   dim = Dimensions[l];
   If[Length[dim] == 2 && dim[[2]] == 2,
-    (* Array of complex numbers masquerading as a matrix *) 
+    (* Array of complex numbers masquerading as a matrix *)
     l = Map[First[#]+I Last[#]&, l];
   ];
-  l  
-];  
+  l
+];
 
 If[BAND == "dmft",   (* Run an external module! *)
   timestart["dmft"];
   loadmodule["dmft.m", True]; (* Must supply df, dfminus and thetaCh. *)
   timeadd["dmft"];
 ];
-  
+
 If[BAND == "nambu",
   0; (* Do nothing here *)
 ];
 
-(* 
+(*
    If band=manual, we handle the discretization manually outside initial.m.
    This should be performed before running nrginit, since some of the
    Wilson chain parameters are needed to define the initial NRG cluster.
-   To be used with tri=none. 
+   To be used with tri=none.
 *)
-If[BAND == "manual", 
+If[BAND == "manual",
   Print["band=manual, importing theta, COEFCHANNELS=", COEFCHANNELS];
   Module[{fn, th},
     If[COEFCHANNELS == 1,
       fn = "theta.dat";
       th = Flatten[ImportTable[fn]] [[1]];
       thetaCh[a_] = th;
-      Print["thetaCh[1]=", thetaCh[1]];  
+      Print["thetaCh[1]=", thetaCh[1]];
     ];
     If[COEFCHANNELS > 1,
       Do[
@@ -2912,7 +2912,7 @@ If[BAND == "manual",
         Print["thetaCh["<>ToString[nrch]<>"]=", thetaCh[nrch]],
           {nrch, COEFCHANNELS}];
       If[CHANNELS == 1 && POL2x2,
-        Module[{th, th2},  
+        Module[{th, th2},
           (* Special handling for matrix strucure in spin space! *)
           (* We need to take a matrix square root! *)
           th2 = {{thetaCh[1], thetaCh[3]}, {thetaCh[4], thetaCh[2]}};
@@ -2932,7 +2932,7 @@ If[BAND == "manual",
 
 (* A new version, where we deal directly with the hoppings between the impurity
    cluster and the first shell of the Wilson chain(s). *)
-If[BAND == "manual_V", 
+If[BAND == "manual_V",
   Print["band=manual_V, importing V, VDIM=", VDIM];
   Module[{fn, Vnn},
     If[VDIM == 1,
@@ -2940,7 +2940,7 @@ If[BAND == "manual_V",
       Vnn = Flatten[ImportTable[fn]] [[1]];
       V[_,_] = Chop[Vnn]; (* Chop[] is safe here, since Vnn is order 1 *)
       thetaCh[_] = Vnn^2; (* For backward compatibility - DO NOT USE! *)
-      Print["V11=", V[1,1], " thetaCh[1]=", thetaCh[1]];  
+      Print["V11=", V[1,1], " thetaCh[1]=", thetaCh[1]];
     ];
     If[VDIM > 1,
       Do[
@@ -2957,7 +2957,7 @@ If[BAND == "manual_V",
 ];
 
 hook[BAND];
-  
+
 (* This is called from maketable[]. *)
 inittheta0ch[] := Module[{},
   (* Here we take into account the overall hybridization strength. *)
@@ -2968,14 +2968,14 @@ inittheta0ch[] := Module[{},
   If[DownValues[theta0Ch] === {} && realGamma < 0,
     theta0Ch[a_] = bandrescale thetaCh[a]; (* YYY *)
   ];
-    
+
   MyPrintForm["thetaCh=``", cstr10 /@ Array[thetaCh, COEFCHANNELS] ];
   MyPrintForm["theta0Ch=``", cstr10 /@ Array[theta0Ch, COEFCHANNELS] ];
   MyPrintForm["gammaPolCh=``", cstr10 /@ (Array[gammaPolCh, COEFCHANNELS] /. params) ];
 
   (* Backward compatibility for single-channel models. *)
   theta0 = theta0Ch[1];
-  
+
   (* Bug trap *)
   Scan[ If[Negative @ theta0Ch[#], MyError["thetaCh negative"]]&, Range[COEFCHANNELS]];
 ];
@@ -2987,7 +2987,7 @@ only: see Eq. (21) in Bulla et al. JPCM 9 10463 (1997). (Also denoted as
 \Epsilon_n!) See also M. Sindel, PhD dissertation (2004), Appendix A:
 "Derivation of the NRG-Equations" and Eqs. (15)-(17) in R. Bulla, Th.
 Pruschke, A. C. Hewson, "Anderson impurity in pseudo-gap Fermi systems",
-JPCM 9 10463 (1997). *) 
+JPCM 9 10463 (1997). *)
 
 (* Epsilon_n are sort of average energies in individual discretization
 intervals!! *)
@@ -3009,9 +3009,9 @@ lanczosinit[] := Module[{},
   deminusmem[a_, m_] := deminusmem[a, m] = setpr @ deminus[a, m];
 
   (* Diagonal matrix A in the CJ paper. *)
-  diagA[a_] := diagA[a] = 
+  diagA[a_] := diagA[a] =
     setpr @ Join[Table[de[a, m],       {m, 0, mMAX}],
-                 Table[-deminus[a, m], {m, 0, mMAX}]]; 
+                 Table[-deminus[a, m], {m, 0, mMAX}]];
 
   ClearAll[dzeta, xi2, xi, du, dv];
 
@@ -3042,40 +3042,40 @@ lanczosinit[] := Module[{},
   Module[{a, checksum},
     For[a = 1, a <= COEFCHANNELS, a++,
       checksum = Sum[du0[a][0,m]^2+dv0[a][0,m]^2, {m, 0, mMAX}];
-      MyPrintForm["Discretization checksum [-1] (channel ``): ``", 
+      MyPrintForm["Discretization checksum [-1] (channel ``): ``",
             a, N[1-checksum, 10]];
       uvrescalefactor[a] = checksum;
 
       du[a_][0, m_] := du[a][0,m] = du0[a][0,m]/Sqrt[uvrescalefactor[a]];
       dv[a_][0, m_] := dv[a][0,m] = dv0[a][0,m]/Sqrt[uvrescalefactor[a]];
-          
-      (* Increase parameter DISCCHECKSUM in DMFT, since the effective 
+
+      (* Increase parameter DISCCHECKSUM in DMFT, since the effective
       hybridization will be somewhat oscillatory! *)
-      DISCCHECKSUM = 10^-10; 
+      DISCCHECKSUM = 10^-10;
       If[paramexists["discchecksum", "dmft"],
         DISCCHECKSUM = ToExpression @ param["discchecksum", "dmft"];
       ];
       If[Abs[checksum-1] > DISCCHECKSUM,
         MyError["Oops. Check your discretization code."];
       ];
-          
+
     ];
-    uvrescalefactor[a_] := MyError["Unknown band index."]; (* bug trap *)  
+    uvrescalefactor[a_] := MyError["Unknown band index."]; (* bug trap *)
   ];
 ];
-  
+
 dothelanczosnambu[] := Module[{},
   MyAssert[COEFCHANNELS == 2];
   (* For single-channel problems: *)
   (* a=1 spin up *)
   (* a=2 spin down *)
-  
+
   dzeta[a_][m_] := 000;
   xi[a_][m_] := 000;
 
   sckappa[a_][n_] := 0;
   scdelta[a_][n_] := 000;
-  
+
   (* Read thetaCh from file *)
 ];
 
@@ -3084,19 +3084,19 @@ dothelanczosold[] := Module[{},
   dzeta[a_][n_] :=
     dzeta[a][n] = Sum[(demem[a, m] du[a][n, m]^2 - deminusmem[a, m] dv[a][n, m]^2),
       {m, 0, mMAX}];
-  
+
   (* Eq. (17) in CJ. *)
   xi[a_][n_] := xi[a][n] = Sqrt[xi2[a][n]];
   xi2[a_][-1] := 0;
   xi2[a_][n_] :=
     xi2[a][n] = Sum[(demem[a, m]^2 du[a][n, m]^2 + deminusmem[a, m]^2 dv[a][n, m]^2),
     {m, 0, mMAX}] - xi2[a][n - 1] - dzeta[a][n]^2;
-  
+
   (* Eq. (15) in CJ. *)
   du[a_][n_, m_] :=
     du[a][n, m] = ((demem[a, m] - dzeta[a][n - 1]) du[a][n - 1, m] -
     xi[a][n - 2] du[a][n - 2, m])/xi[a][n - 1];
-  
+
   (* Eq. (16) in CJ. *)
   dv[a_][n_, m_] :=
   dv[a][n, m] = ((-deminusmem[a, m] - dzeta[a][n - 1]) dv[a][n - 1, m] -
@@ -3207,28 +3207,28 @@ dothelanczossc[] := Module[{},
   sckappa[a_][n_] := sckappa[a][n] = 0;
 ];
 
-(* Calculation of Wilson chain coefficients: ** superconducting host 
+(* Calculation of Wilson chain coefficients: ** superconducting host
 with arbitrary (even/odd) pairing function frequency dependence ** *)
 dothelanczossc2[] := Module[{},
   (* CONVENTION:
   f_{n,alpha} = U_{n alpha, m beta} a_{m,beta} + V_{n alpha, m beta} b_{m,beta},
-  a_{m,beta} = U_{n alpha, m beta} f_{n,alpha}, 
+  a_{m,beta} = U_{n alpha, m beta} f_{n,alpha},
   b_{m,beta} = U_{n alpha, m beta} f_{n,alpha}.
   *)
 
   duMAT[_, _, _][-1, _] = 0;
   dvMAT[_, _, _][-1, _] = 0;
-  
+
   (* f_{0,alpha} = 1/\sqrt{theta_0} \sum_n (\gamma_n^+ a_{n,alpha}
-                                           +\gamma_n^- b_{n,alpha}). 
-     Recall that du[], dv[] are defined to be gamma^{+-}_n/sqrt{theta_0}, 
+                                           +\gamma_n^- b_{n,alpha}).
+     Recall that du[], dv[] are defined to be gamma^{+-}_n/sqrt{theta_0},
      and that gamma^+=df, gamma^-=dfminus. See lanczsosinit[].
   *)
 
   duMAT[a_, alpha_, beta_][0, m_] := du[a][0, m] KroneckerDelta[alpha, beta];
   dvMAT[a_, alpha_, beta_][0, m_] := dv[a][0, m] KroneckerDelta[alpha, beta];
 
-  (* deMAT are hybridisation matrices: diagonal contains hybridisation 
+  (* deMAT are hybridisation matrices: diagonal contains hybridisation
   coefficients (de/deminus), out-of-diagonal coefficients are pairing
   coefficients. (2,2) component has inverted sign, since f f^\dag = -f^\dag
   f + 1. *)
@@ -3247,23 +3247,23 @@ dothelanczossc2[] := Module[{},
   deminusMAT[a_, 2, 2][m_] := deminusMAT[a, 2, 2][m] = +setpr @ deminus[a, m];
   deminusMAT[a_, 1, 2][m_] := deminusMAT[a, 1, 2][m] = +setpr @ dgminus[a, m];
   deminusMAT[a_, 2, 1][m_] := deminusMAT[a, 2, 1][m] = +setpr @ dgminus[a, m];
-  
-  (* dzeta is the on-site energy matrix; diagonal components are the 
+
+  (* dzeta is the on-site energy matrix; diagonal components are the
     on-site energy (note that the sign of 2,2 component is inverted), while
     the off-diagonal component is the on-site electron pairing. *)
 
-  dzetaMAT[a_, alpha_, beta_][n_] := dzetaMAT[a, alpha, beta][n] = 
-    Sum[ 
+  dzetaMAT[a_, alpha_, beta_][n_] := dzetaMAT[a, alpha, beta][n] =
+    Sum[
       (duMAT[a, alpha, mu][n,m] deplusMAT [a, mu, nu][m] duMAT[a, beta, nu][n, m] +
        dvMAT[a, alpha, mu][n,m] deminusMAT[a, mu, nu][m] dvMAT[a, beta, nu][n, m]),
     {mu, 2}, {nu, 2}, {m, 0, mMAX}];
-      
+
   (* Auxiliary matrix M *)
 
-  dmMAT[a_, alpha_, beta_][n_, m_] := dmMAT[a, alpha, beta][n, m] = 
+  dmMAT[a_, alpha_, beta_][n_, m_] := dmMAT[a, alpha, beta][n, m] =
     Sum[
-      duMAT[a, beta, mu][n, m]  deplusMAT[a, alpha, mu][m] - 
-      dzetaMAT[a, mu, beta][n]  duMAT[a, mu, alpha][n, m] - 
+      duMAT[a, beta, mu][n, m]  deplusMAT[a, alpha, mu][m] -
+      dzetaMAT[a, mu, beta][n]  duMAT[a, mu, alpha][n, m] -
       xiMAT[a, mu, beta][n-1]   duMAT[a, mu, alpha][n-1,m],
     {mu, 1, 2}] ;
 
@@ -3271,53 +3271,53 @@ dothelanczossc2[] := Module[{},
 
   dnMAT[a_, alpha_, beta_][n_, m_] := dnMAT[a, alpha, beta][n, m] =
     Sum[
-      dvMAT[a, beta, mu][n, m] deminusMAT[a, alpha, mu][m] - 
-      dzetaMAT[a, mu, beta][n] dvMAT[a, mu, alpha][n, m] - 
+      dvMAT[a, beta, mu][n, m] deminusMAT[a, alpha, mu][m] -
+      dzetaMAT[a, mu, beta][n] dvMAT[a, mu, alpha][n, m] -
       xiMAT[a, mu, beta][n-1]  dvMAT[a, mu, alpha][n-1,m],
     {mu, 1, 2}] ;
 
   (* Hopping matrix, assumed to be diagonal, thus we only keep track of a
      single index alpha. *)
-  
+
   xiMAT[_, _, _][-1] := 0;
   xiMAT[a_, 1, 2][n_] := xiMAT[a, 1, 2][n] = Sqrt[s2[a][n]];
   xiMAT[a_, 2, 1][n_] := xiMAT[a, 2, 1][n] = Sqrt[s2[a][n]];
   xiMAT[a_, 1, 1][n_] := xiMAT[a, 1, 1][n] = +Sqrt[t2[a][n]];
   xiMAT[a_, 2, 2][n_] := xiMAT[a, 2, 2][n] = -Sqrt[t2[a][n]];
-  
+
   t2[a_][n_] := (t2s2[a][n] - s2mt2[a][n])/2;
   s2[a_][n_] := (t2s2[a][n] + s2mt2[a][n])/2;
-  
+
   xiINV[a_][n_] := xiINV[a][n] = Inverse[
-    {{xiMAT[a, 1, 1][n], xiMAT[a, 1, 2][n]}, 
-     {xiMAT[a, 2, 1][n], xiMAT[a, 2, 2][n]}} 
+    {{xiMAT[a, 1, 1][n], xiMAT[a, 1, 2][n]},
+     {xiMAT[a, 2, 1][n], xiMAT[a, 2, 2][n]}}
   ];
-  
+
   xiINVMAT[a_, alpha_, beta_][n_] := xiINVMAT[a, alpha, beta][n] = xiINV[a][n] [[alpha, beta]];
 
   (* t2s2 = t^2+s^2, i.e. diagonal element of the hopping matrix squared *)
-  t2s2[a_][n_] := t2s2[a][n] = 
-    Sum[ 
-      Sum[(dmMAT[a, mu, 1][n, m])^2 + 
+  t2s2[a_][n_] := t2s2[a][n] =
+    Sum[
+      Sum[(dmMAT[a, mu, 1][n, m])^2 +
           (dnMAT[a, mu, 1][n, m])^2,    {mu, 1, 2}],
-    {m, 0, mMAX}];
-      
+      {m, 0, mMAX}];
+
   (* s2mt2 = s^2-t^2, i.e. the out-of-diagonal element of the (t.sigma_x.t) matrix,
       where t is the hopping matrix and sigma_x is the Pauli matrix x. *)
   s2mt2[a_][n_] := s2mt2[a][n] =
     Sum[dmMAT[a, 1, 1][n, m] dmMAT[a, 2, 2][n, m] +
         dmMAT[a, 2, 1][n, m] dmMAT[a, 1, 2][n, m] +
         dnMAT[a, 1, 1][n, m] dnMAT[a, 2, 2][n, m] +
-        dnMAT[a, 2, 1][n, m] dnMAT[a, 1, 2][n, m], 
+        dnMAT[a, 2, 1][n, m] dnMAT[a, 1, 2][n, m],
     {m, 0, mMAX}];
 
   (* Recursion for U and V matrixes *)
-  
-  duMAT[a_, tau_, beta_][n_, m_] := duMAT[a, tau, beta][n, m] = 
+
+  duMAT[a_, tau_, beta_][n_, m_] := duMAT[a, tau, beta][n, m] =
    Sum[ xiINVMAT[a, tau, alpha][n-1] *
     Sum[
        deplusMAT[a, beta, mu][m]      duMAT[a, alpha, mu  ][n - 1, m] -
-       dzetaMAT[a, mu, alpha][n - 1]  duMAT[a, mu,    beta][n - 1, m] - 
+       dzetaMAT[a, mu, alpha][n - 1]  duMAT[a, mu,    beta][n - 1, m] -
        xiMAT[a, mu, alpha][n - 2]     duMAT[a, mu,    beta][n - 2, m],
     {mu, 2}],
    {alpha, 2}];
@@ -3325,12 +3325,12 @@ dothelanczossc2[] := Module[{},
   dvMAT[a_, tau_, beta_][n_, m_] := dvMAT[a, tau, beta][n, m] =
    Sum[ xiINVMAT[a, tau, alpha][n-1] *
     Sum[
-       deminusMAT[a, beta, mu][m]     dvMAT[a, alpha, mu  ][n - 1, m] - 
-       dzetaMAT[a, mu, alpha][n - 1]  dvMAT[a, mu,    beta][n - 1, m] - 
+       deminusMAT[a, beta, mu][m]     dvMAT[a, alpha, mu  ][n - 1, m] -
+       dzetaMAT[a, mu, alpha][n - 1]  dvMAT[a, mu,    beta][n - 1, m] -
        xiMAT[a, mu, alpha][n - 2]     dvMAT[a, mu,    beta][n - 2, m],
     {mu, 2}],
    {alpha, 2}];
-       
+
   (* Extract required components *)
   xi[a_][n_] := xi[a][n] = xiMAT[a, 1, 1][n];
   sckappa[a_][n_] := sckappa[a][n] = xiMAT[a, 1, 2][n];
@@ -3338,10 +3338,10 @@ dothelanczossc2[] := Module[{},
   scdelta[a_][n_] := scdelta[a][n] = dzetaMAT[a, 1, 2][n];
 ];
 
-dothelanczosorth[] := Module[{},  
+dothelanczosorth[] := Module[{},
   (* Eq. (18) in CJ. *)
-  dzeta[a_][n_] := 
-  dzeta[a][n] = Sum[(demem[a, m] du[a][n, m]^2 - deminusmem[a, m] dv[a][n, m]^2), 
+  dzeta[a_][n_] :=
+  dzeta[a][n] = Sum[(demem[a, m] du[a][n, m]^2 - deminusmem[a, m] dv[a][n, m]^2),
     {m, 0, mMAX}];
 
   (* Eq. (17) in CJ. *)
@@ -3356,12 +3356,12 @@ dothelanczosorth[] := Module[{},
   ];
 
   (* Eq. (15) in CJ. *)
-  duexpr[a_][n_, m_] := ((demem[a, m] - dzeta[a][n - 1]) du[a][n - 1, m] - 
+  duexpr[a_][n_, m_] := ((demem[a, m] - dzeta[a][n - 1]) du[a][n - 1, m] -
       xi[a][n - 2] du[a][n - 2, m])/xi[a][n - 1];
   du[a_][n_, m_] /; m >= Quotient[n, 2] := du[a][n, m] = duexpr[a][n, m];
 
   (* Eq. (16) in CJ. *)
-  dvexpr[a_][n_, m_] := ((-deminusmem[a, m] - dzeta[a][n - 1]) dv[a][n - 1, m] - 
+  dvexpr[a_][n_, m_] := ((-deminusmem[a, m] - dzeta[a][n - 1]) dv[a][n - 1, m] -
     xi[a][n - 2] dv[a][n - 2, m])/xi[a][n - 1];
   dv[a_][n_, m_] /; m >= Quotient[n, 2] := dv[a][n, m] = dvexpr[a][n, m];
 
@@ -3419,7 +3419,7 @@ loaddiscretizationtables[] := Module[{imp1,imp2},
     imp2=Flatten[ImportTable["zeta.dat"]];
     Print["zeta=", Table[ dzeta[_][n] = imp2[[n+1]], {n,0,DISCNMAX} ]];
   ];
-  If[COEFCHANNELS > 1,  
+  If[COEFCHANNELS > 1,
     Do[
       Print["nrch=", nrch];
       imp1=Flatten[ImportTable["xi" <> ToString[nrch] <> ".dat"]];
@@ -3435,7 +3435,7 @@ loaddiscretizationtables[] := Module[{imp1,imp2},
         imp2=Flatten[ImportTable["zetaR" <> ToString[nrch] <> ".dat"]];
         Print["zetaR=", Table[ zetaR[nrch][n] = imp2[[n+1]], {n,0,DISCNMAX} ]],
         {nrch, COEFCHANNELS}];
-    ];  
+    ];
   ];
 ];
 
@@ -3445,14 +3445,14 @@ loadtablescdelta[] := Module[{imp1,imp2},
     imp1=Flatten[ImportTable["scdelta.dat"]];
     Print["scdelta=", Table[ scdelta[_][n] = imp1[[n+1]], {n,0,DISCNMAX} ]];
   ];
-  If[COEFCHANNELS > 1,  
+  If[COEFCHANNELS > 1,
     Do[
       imp1=Flatten[ImportTable["scdelta" <> ToString[nrch] <> ".dat"]];
       Print["scdelta=", Table[ scdelta[nrch][n] = imp1[[n+1]], {n,0,DISCNMAX} ]],
       {nrch, COEFCHANNELS}];
   ];
 ];
-  
+
 (* Use the following for debugging purposes. *)
 discretizationChecks[] := Module[{},
   normalizationcheck[a_] := Module[{tab},
@@ -3466,24 +3466,24 @@ discretizationChecks[] := Module[{},
   orthscalar[a_][n_, j_] := Sum[du[a][n, m] du[a][j, m], {m, 0, mMAX}]  +
                             Sum[dv[a][n, m] dv[a][j, m], {m, 0, mMAX}];
 
-  orthogonalitycheck[a_] := Module[{eq, tab, unknowns},  
+  orthogonalitycheck[a_] := Module[{eq, tab, unknowns},
     MyPrint["Orthogonality (channel ``)", a];
     tab = Table[orthscalar[a][10, j], {j, 0, 10}];
     MyPrintForm["Orthogonality: sums_m u_{nm} u_{jm}+v_{nm} v_{jm} (channel ``)", a];
     MyPrint[cstr10[#]] & /@ tab;
   ];
- 
+
   normalizationcheck[1];
   orthogonalitycheck[1];
 ];
- 
+
 
 (* See Yoshida, Whitaker, Oliveira, "Renormalization-group calculation of
 excitation properties for impurity models", PRB 41 9403 (1990). Hereafter
-referenced as YWO. *) 
+referenced as YWO. *)
 
-If[DY, 
-  (* Evaluated in lanczos-Yoshida.nb *)      
+If[DY,
+  (* Evaluated in lanczos-Yoshida.nb *)
   If[BAND == "flat",
     de[a_, 0] = (1 + LAMBDA^-Z)/2;
     de[a_, m_] = (1 + LAMBDA^-1)/2 LAMBDA^(1-Z-m);
@@ -3491,36 +3491,36 @@ If[DY,
     dg[_, _] = dgminus[_, _] = paramdefaultnum["bcsgap2", "0"];
   ];
 
-  (* Evaluated in lanczos-Yoshida.nb *)      
+  (* Evaluated in lanczos-Yoshida.nb *)
   If[BAND == "cosine",
      de[a_, 0] = (-2*(-1 + LAMBDA^(2*Z))^(3/2))/(3*
        LAMBDA^Z*(Sqrt[-1 + LAMBDA^(2*Z)] - LAMBDA^(2*Z)*ArcSec[LAMBDA^Z]));
 
      de[a_, m_] = (2*LAMBDA^(m + Z)*((1 - LAMBDA^(-2*(-1 + m + Z)))^(3/2)
        - (1 - LAMBDA^(-2*(m + Z)))^(3/2)))/(3*(-(LAMBDA* Sqrt[1 -
-       LAMBDA^(-2*(-1 + m + Z))]) + Sqrt[1 - LAMBDA^(-2*(m + Z))] + 
+       LAMBDA^(-2*(-1 + m + Z))]) + Sqrt[1 - LAMBDA^(-2*(m + Z))] +
        LAMBDA^(m + Z)*(-ArcCsc[LAMBDA^(-1 + m + Z)] + ArcCsc[LAMBDA^(m +
        Z)])));
-            
+
      deminus = de; (* p-h symmetric *)
   ];
 ];
 
 (* See Campo, Oliveira, "Alternative discretization in the numerical
 renormalization-group method", PRB 72 104432 (2005). Hereafter referenced as
-CO. *) 
+CO. *)
 
-If[DC, 
-  (* Evaluated in lanczos-CampoOliveira.nb *)      
+If[DC,
+  (* Evaluated in lanczos-CampoOliveira.nb *)
   If[BAND == "flat",
     de[a_, m_] := (eps[a, m] - eps[a, m+1]) / Log[eps[a, m]/eps[a, m+1]];
     deminus = de; (* p-h symmetric *)
   ];
 
-  (* Evaluated in lanczos-CampoOliveira.nb *)      
+  (* Evaluated in lanczos-CampoOliveira.nb *)
   If[BAND == "cosine",
-    de[a_, 0] = (Sqrt[-1 + LAMBDA^(2*Z)]/LAMBDA^(2*Z) - 
-     ArcSec[LAMBDA^Z])/(2*Sqrt[1 - LAMBDA^(-2*Z)] - 
+    de[a_, 0] = (Sqrt[-1 + LAMBDA^(2*Z)]/LAMBDA^(2*Z) -
+     ArcSec[LAMBDA^Z])/(2*Sqrt[1 - LAMBDA^(-2*Z)] -
       2*(Z*Log[LAMBDA] + Log[1 + Sqrt[1 - LAMBDA^(-2*Z)]]));
 
     de[a_, m_] = -(LAMBDA^(-m - Z)*(-(LAMBDA*Sqrt[1 - LAMBDA^(-2*(-1 + m
@@ -3543,11 +3543,11 @@ If[DZ,
     de[a_, m_] = (eps[a, m] - eps[a, m+1]) / Log[eps[a, m]/eps[a, m+1]];
     deminus = de; (* p-h symmetric *)
   ]; (* BAND == "flat" *)
-     
+
   (* Coside band, i.e. semi-circular DOS. Calculation handled by initial.m
      by numerically solving the discretization ODE using NDSolve. *)
   If[BAND == "cosine",
-    Module[{z, rho0, norm, rho, in, omega, 
+    Module[{z, rho0, norm, rho, in, omega,
             zmax, zfaktor, eqs, sol, fsol, g, tab},
 
       rho0[omega_] = Sqrt[1-omega^2];
@@ -3562,7 +3562,7 @@ If[DZ,
       norm = NIntegrate[rho0[omega], {omega, -1, 1}];
       (* MyPrint["norm=", norm]; *)
       rho[omega_] := rho0[omega]/norm;
-      
+
       zmax = 30; (* ideally mMAX+2 *)
       zfaktor = (1-lambda^-1)/Log[lambda];
 
@@ -3571,10 +3571,10 @@ If[DZ,
       eqs = SetPrecision[eqs, 32];
       (* MyPrint[eqs]; *)
 
-      sol = NDSolve[eqs, f, {z, 1, zmax}, WorkingPrecision -> 32]; 
+      sol = NDSolve[eqs, f, {z, 1, zmax}, WorkingPrecision -> 32];
       sol = sol[[1]];
       fsol = f /. sol;
-      
+
       tab = Table[fsol[j], {j, 1, zmax}];
       (* Scan[MyPrint, tab]; *)
 
@@ -3616,7 +3616,7 @@ If[DZ,
       tab = Sort[tab];
       tab = Prepend[tab, {0, tab[[1, 2]]}];
       tab = setpr @ tab;
-      If[tab[[-1,1]] < 1.0, tab = Append[tab, {1, tab[[-1,2]]}]; ]; (* fix boundary *)      
+      If[tab[[-1,1]] < 1.0, tab = Append[tab, {1, tab[[-1,2]]}]; ]; (* fix boundary *)
       rho = Interpolation[tab, InterpolationOrder -> 1]; (* Linear interpolation!! *)
       intrho[a][omega_] = Integrate[rho[omega], omega];
 
@@ -3629,7 +3629,7 @@ If[DZ,
         eps[_, m_] = (1-boundary) LAMBDA^(-Z-m+1) + boundary;
       ];
 
-      df[a_, m_] := df[a, m] = 
+      df[a_, m_] := df[a, m] =
         setpr[ intrho[a][eps[a,m]] - intrho[a][eps[a,m+1]] ];
 
       tabneg = Select[l, Negative[ #[[1]] ]& ];
@@ -3644,7 +3644,7 @@ If[DZ,
       MyPrint["pos=", intrho[a][0.1]];
       MyPrint["neg=", intrhoneg[a][0.1]];
 
-      dfminus[a_, m_] := dfminus[a, m] = 
+      dfminus[a_, m_] := dfminus[a, m] =
         setpr[ intrhoneg[a][eps[a,m]] - intrhoneg[a][eps[a,m+1]] ];
 
       thetaCh[a] = setpr[Integrate[   rho[x], {x, 0, 1}] +
@@ -3660,7 +3660,7 @@ If[DZ,
       fsol[a] = Interpolation[fsol[a], InterpolationOrder -> 1];
 
       (* Perform an extrapolation to larger arguments x! *)
-      Eps[a_, x_] := If[x <= xmax-1, fsol[a][x], 
+      Eps[a_, x_] := If[x <= xmax-1, fsol[a][x],
                                      fsol[a][xmax-1]] lambda^(2-x);
 
       zfaktor = (1-lambda^-1)/Log[lambda];
@@ -3675,7 +3675,7 @@ If[DZ,
       fsolneg[a] = Interpolation[fsolneg[a], InterpolationOrder -> 1];
 
       (* Perform an extrapolation to larger arguments x! *)
-      Epsneg[a_, x_] := If[x <= xmax-1, fsolneg[a][x], 
+      Epsneg[a_, x_] := If[x <= xmax-1, fsolneg[a][x],
                                         fsolneg[a][xmax-1]] lambda^(2-x);
 
       (* Show results for error checking. *)
@@ -3774,28 +3774,28 @@ If[DZ,
 
   (* See Hoeck and Schnack, Phys. Rev. B 87, 184408 (2014), Appendix A. *)
   (* See Eqs. (A12) and (A13). Added 15 Jun 2016. *)
-  
+
   (* When we add local field in NRG Ljubljana, we typically write B spinz[d].
      The Hamiltonian term is g_imp mu_B B S_z = g_imp mu_B B (1/2) sigma,
      with sigma = +-1.
      Factor (1/2) is taken into account in spinz[]. Thus B corresponds to
      g_imp mu_B B. *)
-     
+
   (* In Hoeck & Schnack, \epsilon_{k\sigma} = \epsilon_k + \sigma g_bulk mu_B B
      where, importantly, sigma = +-(1/2). Also mu = +-(1/2) in their equations.
-     h is defined as h=g_bulk mu_B B, which is consistent with our convention for 
+     h is defined as h=g_bulk mu_B B, which is consistent with our convention for
      impurity B. *)
-     
+
   (* In other words: both B and bulkh in NRG Ljubljana are defined as Zeeman energy.
      bulkh is thus the splitting between the bottom band edges for spin up and
      spin down electrons. For decoupled band, computing SZf0 we should thus find
      S_z(f0) = 1/2 (n_up - n_down). n_up = rho (W-h/2), n_down = rho (W+h/2).
      Thus S_z(f0) = -1/2 rho W h = -h/4, since rho=1/(2W). *)
-  
+
   If[BAND == "flat_with_bulk_field",
     MyAssert[POLARIZED == True];
     MyAssert[SYMTYPE == "SPU1" || SYMTYPE == "QSZ"];
-  
+
     (* Suffix denotes the h=0 values. *)
     eps0[a_, 0] = 1;
     eps0[a_, m_] = LAMBDA^(-Z-m+1);
@@ -3804,11 +3804,11 @@ If[DZ,
     de0[a_, 0] = (1-LAMBDA^-Z+Log[LAMBDA]-Z Log[LAMBDA])/Log[LAMBDA];
     de0[a_, m_] = (eps0[a, m] - eps0[a, m+1]) / Log[eps0[a, m]/eps0[a, m+1]];
     deminus0 = de0; (* p-h symmetric *)
-    
+
     bulkh = paramdefaultnum["bulkh", 0]; (* Bulk magnetic field in units of W. *)
     MyPrint["bulkh=", bulkh];
     bulkh = setpr @ bulkh; (* Important! *)
-    
+
     rescalep[1] := 1 + bulkh/2; (* Important: we divide by 2! *)
     rescalep[2] := 1 - bulkh/2;
     rescalep[_] := MyError["oops"];
@@ -3820,7 +3820,7 @@ If[DZ,
     dfminus[a_, m_] := setpr[ rescalem[a] dfminus0[a,m] ];
     de[a_, m_]      := setpr[ rescalep[a] de0[a,m] ]; (* \Epsilon *)
     deminus[a_, m_] := setpr[ rescalem[a] deminus0[a,m] ];
-    
+
     (* This remains the same, because the band only shifts, while its total
        spectral weight remains the same. *)
     thetaCh[a_] = 2; (* Denoted as {\bar \gamma} in Campo,Oliveira paper. *)
@@ -3864,7 +3864,7 @@ If[!ValueQ[ thetaCh[1] ],
   MyError["Unknown BAND type."];
 ];
 
-MyPrintForm["BAND=`` thetaCh=``", BAND, 
+MyPrintForm["BAND=`` thetaCh=``", BAND,
   cstr10 /@ Array[thetaCh, COEFCHANNELS] ];
 
 (* Staggered potential in the Wilson chain for problems with hard gap or
@@ -3875,13 +3875,13 @@ that zeta[a][0] = -Delta. This is multiplied by faktor to obtain
 -Deltatilde.  See Eq. (2.19) with N=-1 and factor out Lambda^(-1/2) to
 obtain H=Himp + Sqrt[Gamma] hop - Delta (n-1). *)
 
-zeta[a_][n_] := dzeta[a][n] + 
+zeta[a_][n_] := dzeta[a][n] +
   If[paramexists["gap"], - (-1)^n paramnum["gap"], 0] +
   If[paramexists["shift0"] && n == 0, paramnum["shift0"], 0];
 
 (* IMPORTANT: As of 12.5.2010: use bcsgap=xx for spu1lr, and
 bcsgap1=bcsgap2=xx for spu1/spsu2, etc. For a regression test, see
-spu1lr4/. 
+spu1lr4/.
 
 For f_0 site, included in the initial Hamiltonian, the
 sign is positive by definition.
@@ -3892,7 +3892,7 @@ For single-channel problems, the sign issue is completely
 irrelevant.
 
 TO DO: This is all quite messy. One should clean this up, even if it
-breaks backwards compatibility with param files. 
+breaks backwards compatibility with param files.
 *)
 
 gapdefined = False;
@@ -3903,9 +3903,9 @@ If[!gapdefined && paramexists["bcsgap"],
   gapdefined = True;
   bcssignch2 = If[paramdefaultbool["bcsinvertphase", False], -1, 1];
   scdelta[1][_] = paramnum["bcsgap"];
-  
+
   scdelta[2][_] = bcssignch2 * paramnum["bcsgap"];
-  
+
   scdelta[3][_] = paramnum["bcsgap"];
   sckappa[_][_] = 0;
 ];
@@ -3915,10 +3915,10 @@ Equivalent to bcsgap1=bcsgap2, just saves some typing. *)
 If[!gapdefined && paramexists["bcsgapspsu2"],
   gapdefined = True;
   scdelta[1][_] = paramnum["bcsgapspsu2"];
-  
+
   scdelta[2][0] = paramnum["bcsgapspsu2"];
   scdelta[2][_] = -paramnum["bcsgapspsu2"];
-  
+
   scdelta[3][_] = paramnum["bcsgapspsu2"];
   sckappa[_][_] = 0;
 ];
@@ -3945,18 +3945,18 @@ If[!gapdefined && paramexists["bcsgap1"] && paramexists["bcsgap2"] && paramexist
 
   sckappa[_][_] = 0;
 ];
- 
+
 (* *** Bulk magnetic field support. *** *)
 
 If[POLARIZED && isQSZ[] && paramexists["globalB"],
-  For[i = 1, i <= CHANNELS, i++, 
+  For[i = 1, i <= CHANNELS, i++,
     zeta[i][0] = zeta[i][0] + (1/2) paramnum["globalB"];
     zeta[i+CHANNELS][0] = zeta[i+CHANNELS][0] - (1/2) paramnum["globalB"];
   ];
 ];
 
 If[POLARIZED && isU1[] && paramexists["globalB"],
-  For[i = 1, i <= CHANNELS, i++, 
+  For[i = 1, i <= CHANNELS, i++,
     zeta[i][0] = zeta[i][0] - (1/2) paramnum["globalB"];
     zeta[i+CHANNELS][0] = zeta[i+CHANNELS][0] + (1/2) paramnum["globalB"];
   ];
@@ -3964,7 +3964,7 @@ If[POLARIZED && isU1[] && paramexists["globalB"],
 
 (* Compare with globalB! This one modifies all coefficients. *)
 If[POLARIZED && (isSPU1[] || isP[] || isPP[] || isNONE[]) && paramexists["globalh"],
-  For[i = 1, i <= CHANNELS, i++, 
+  For[i = 1, i <= CHANNELS, i++,
     For[m = 0, m <= mMAX, m++,
       zeta[i][m] = zeta[i][m] + (1/2) paramnum["globalh"];
       zeta[i+CHANNELS][m] = zeta[i+CHANNELS][m] - (1/2) paramnum["globalh"];
@@ -3980,9 +3980,9 @@ showtable[name_, channel_, table_] := Module[{},
   If[(And @@ Map[Element[#, Reals]&, table]) != True,
     MyError["showtable: Coefficients must be real numbers."];
   ];
-  *) 
+  *)
 ];
-  
+
 Module[{a, precxi, preczeta},
   For[a = 1, a <= COEFCHANNELS, a++,
       MyPrintForm["Discretization (channel ``)", a];
@@ -4057,7 +4057,7 @@ chain is included in the initial cluster (i.e. Ninit!=0), SCALE[0] is to be
 replaced with SCALE[Ninit]. *)
 
 If[paramdefaultbool["data_has_rescaled_energies", True], energiesscale = SCALE[Ninit], energiesscale = 1];
-  
+
 makeenergies[] := Module[{i, inv, val, line},
   Flatten1 @ Table[
       inv = subspaces[[i]];
@@ -4079,8 +4079,8 @@ Flatten3[l_List] := Flatten[l, 3];
 lastf[ch_] := If[Ninit == 0, f[ch], f[ch, Ninit]];
 
 
-(* For U1, we need to distinguish between 
-   spin-up and spin-down matrices, since we can't simply take 
+(* For U1, we need to distinguish between
+   spin-up and spin-down matrices, since we can't simply take
    the difference of S_z of the subspaces in bra and ket. *)
 
    (* NOTE: in sneg, DO=0, UP=1. In NRG Ljubljana, and in indexing
@@ -4095,7 +4095,7 @@ makeireducf["U1"] := Module[{},
                    {i, 0, CHANNELS-1}, {j, UP, DO, -1}]
 ];
 
-(* We need to distinguish between two different 
+(* We need to distinguish between two different
 operators wrt isospin symmetry. Recall: DO=0, UP=1. *)
 makeireducf["SU2" | "DBLSU2"] := Module[{},
   MyPrint["makeireducf SI2 & DBLSU2"];
@@ -4138,7 +4138,7 @@ makeireducf["xxxxxQSC3"] := Module[{x, u, o},
   o[0,s_] = x[s] . {1,1,1}/Sqrt[3];
   o[1,s_] = x[s] . {u^2,u,1}/Sqrt[3];
   o[2,s_] = x[s] . {u,u^2,1}/Sqrt[3];
-  
+
   Flatten2 @ Table[{{{ "f " <> ToString[p] <> " 0" }}, ireducTable[ o[p,#]& ]}, {p, 0, 2}]
 ];
 
@@ -4184,7 +4184,7 @@ makeireducf["QJ"] := Module[{},
 (* Generic: ireducible matrix elements <||f||> *)
 makeireducf[_] := Module[{},
   MyPrint["makeireducf GENERAL"];
-  Flatten2 @ Table[{{{ "f " <> ToString[i] <> " 0" }}, 
+  Flatten2 @ Table[{{{ "f " <> ToString[i] <> " 0" }},
                   ireducTable[ lastf[i] ]}, {i, 0, CHANNELS-1}]
 ];
 
@@ -4228,7 +4228,7 @@ makescdisctables[] := Module[{t, a},
    t
 ];
 
-maketritables[] := Module[{t, a},   
+maketritables[] := Module[{t, a},
   t = {{"T"}};
   (*  Coefficients Epsilon_j^z *)
   For[a = 1, a <= COEFCHANNELS, a++,
@@ -4249,24 +4249,24 @@ maketritables[] := Module[{t, a},
     t = Join[t, u0mtable[a]];
   ];
   t
-];   
-   
-(* maketable[] builds a table which is to be saved as a file named 'data' 
+];
+
+(* maketable[] builds a table which is to be saved as a file named 'data'
 and used as input to the NRG iteration routines in the C++ part of the
-software package. The beginning block of this function is the right place 
-to perform various extra tweaks, log parameters and other debugging info, 
-check if parameters make any sense, etc. *) 
+software package. The beginning block of this function is the right place
+to perform various extra tweaks, log parameters and other debugging info,
+check if parameters make any sense, etc. *)
 
 maketable[]:=Module[{t},
-  timestart["maketable"];                   
+  timestart["maketable"];
 
   addexnames[]; (* To be on the safe side... *)
   perturbhamiltonian[];
   inittheta0ch[];
   If[!option["GENERATE_TEMPLATE"], checkdefinitions[]];
 
-  (* Perform all diagonalisations *)  
-  calcgsenergy[]; 
+  (* Perform all diagonalisations *)
+  calcgsenergy[];
 
   opfn=""; opdata={}; (* Prior to makeireducf[] call to silence errors *)
 
@@ -4290,12 +4290,12 @@ maketable[]:=Module[{t},
     t = Join[t, tops];
   ];
 
-  (* Model specific operators *)  
+  (* Model specific operators *)
   tops = loadmodule["modeloperators.m", False];
   If[ tops =!= $Failed,
     t = Join[t, tops];
   ];
-  
+
   If[TRI != "none" && !option["GENERATE_TEMPLATE"],
     t = Join[t,
              {{"# Discretization tables:"}},
@@ -4304,17 +4304,17 @@ maketable[]:=Module[{t},
     If[isSC[],
       t = Join[t, makescdisctables[]];
     ];
-    If[RUNGS,  
+    If[RUNGS,
       t = Join[t, makeRdisctables[]];
-    ];    
+    ];
   ];
-  
+
   If[TRI == "cpp" && !option["GENERATE_TEMPLATE"],
     t = Join[t, maketritables[]];
   ];
 
-  (* Enforce linefeed on the last line. *)  
-  AppendTo[t, {}]; 
+  (* Enforce linefeed on the last line. *)
+  AppendTo[t, {}];
 
   (* Some C++ compilers/libraries generate code which has trouble parsing
   very small (non-representable) floating point numbers. In this case one
@@ -4323,7 +4323,7 @@ maketable[]:=Module[{t},
   If[option["EPSCLIP"],
     EPSREPRESENTABLE = 10^-300; (* Actually smallest double is approx. 10^-324. *)
     t = t /. { x_Real /; Abs[x] < EPSREPRESENTABLE -> 0};
-    t = t /. { z_Complex /; Abs[z] < EPSREPRESENTABLE -> 0};  
+    t = t /. { z_Complex /; Abs[z] < EPSREPRESENTABLE -> 0};
     t = t /. { 0. -> 0, Complex[0.,0.] -> 0 };
   ];
 
@@ -4348,7 +4348,7 @@ makedata[filename_]:=Module[{suffix, fn, tabelca},
   tabelca = maketable[];
   iscomplex = !FreeQ[tabelca, Complex[_,_]] || option["COMPLEX"];
   If[iscomplex,
-    tabelca = tabelca /. Complex[x_,y_] :> 
+    tabelca = tabelca /. Complex[x_,y_] :>
       "(" <> ToString[CForm[x]] <> "," <> ToString[CForm[y]] <> ")";
     tabelca[[3]] = "# COMPLEX";
   ];
