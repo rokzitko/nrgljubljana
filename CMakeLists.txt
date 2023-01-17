@@ -107,13 +107,8 @@ target_compile_options(project_warnings
 
 # ###########
 # C++ options
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++20" HAS_CPP20)
-if(HAS_CPP20)
-  set(NRG_CXX_OPT -std=c++20)
-else()
-  set(NRG_CXX_OPT -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>)
-endif()
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ###########
 # MPI support
@@ -169,6 +164,8 @@ target_link_libraries(openmp INTERFACE ${OpenMP_CXX_FLAGS})
 install(TARGETS openmp EXPORT nrgljubljana-targets)
 
 # Boost
+# https://stackoverflow.com/questions/57415206/is-there-a-way-to-get-rid-of-the-new-boost-version-may-have-incorrect-or-missin
+set(Boost_NO_WARN_NEW_VERSIONS 1)
 set(Boost_NO_BOOST_CMAKE ON)
 set(Boost_USE_STATIC_LIBS OFF)
 find_package(Boost 1.53 REQUIRED COMPONENTS serialization mpi)
