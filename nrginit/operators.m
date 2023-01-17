@@ -271,6 +271,9 @@ Module[{t = {}},
   t = Join[t, mtSingletOp["P1a", projector1  @ a[] ] ];
   t = Join[t, mtSingletOp["P2a", projector2  @ a[] ] ];
 
+  (* Spin operator for KONDO and other Kondo-type impurity Hamiltonians *)
+  t = Join[t, mtTripletOp["S", SPIN] ];
+
   (* This only works for (Q, S_z) basis, since these projectors do NOT
   transform as SU(2) multiplets. The same holds, obviously, for the
   components of the spin operator. *)

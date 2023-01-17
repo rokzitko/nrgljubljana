@@ -1,7 +1,7 @@
 (*
    NRG Ljubljana -- Numerical renormalization group code
 
-   Copyright (C) 2005-2022 Rok Zitko
+   Copyright (C) 2005-2023 Rok Zitko
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2022.12";
+VERSION = "2023.01";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -44,7 +44,7 @@ SetOptions[$Messages, PageWidth -> 240];
 format directives to remove the quotation marks. *)
 Print2[l__] := Print @@ ({l} /. x_String -> StandardForm[x]);
 
-Print2["NRG Ljubljana ", VERSION, " (c) Rok Zitko, rok.zitko@ijs.si, 2005-2020"];
+Print2["NRG Ljubljana ", VERSION, " (c) Rok Zitko, rok.zitko@ijs.si, 2005-2023"];
 
 (* Print a warning/error message at specified verbosity level *)
 DEBUG = 1;
@@ -2509,9 +2509,33 @@ ireducsigma[SYMTYPE:("SPSU2" | "QS" | "QSLR" | "QSC3" | "QST" | "QSTZ" | "SPSU2T
    xa/xb
 ];
 
+ireducSPIN[SYMTYPE:("SPSU2" | "QS" | "QSLR" | "QSC3" | "QST" | "QSTZ" | "SPSU2T" | "SPSU2C3"),
+ SPIN_, {inv1_, inv2_}] :=
+  Module[{ss1, ss2, sz1, sz2, szop, op1, xa, xb},
+   ss1 = getSpinQN[SYMTYPE, inv1];
+   ss2 = getSpinQN[SYMTYPE, inv2];
+   sz1 = subspacesz[ss1];
+   sz2 = subspacesz[ss2];
+   szop = sz1-sz2;
+
+   (* Spherical operators! *)
+   If[szop == 0, op1 = spinketbraZ[SPIN] ];
+   If[szop == 1, op1 = -1/Sqrt[2] spinketbraP[SPIN] ];
+   If[szop == -1, op1 = 1/Sqrt[2] spinketbraM[SPIN] ];
+
+   xa = optransform[op1, inv1, inv2];
+   xb = If[ss1 == 1 && ss2 == 1, 1, 
+     ClebschGordan[{SS2S[ss2],sz2},{1,szop},{SS2S[ss1],sz1}]];
+   xa/xb
+];
+
 (* Bug trap *)
 ireducsigma[SYMTYPE_, args___] := 
   MyError["ireducsigma not implemented for " <> SYMTYPE <> 
+  " args=" <> ToString[{args}]];
+
+ireducSPIN[SYMTYPE_, args___] := 
+  MyError["ireducSPIN not implemented for " <> SYMTYPE <> 
   " args=" <> ToString[{args}]];
 
 (* Table form for all irreducible matrix elements of a triplet operator sigma *)
@@ -2520,7 +2544,10 @@ ireducsigmaTable[op_] := Module[{t, i, cp, mat},
   AppendTo[t, {nrspincp}];
   For[i = 1, i <= nrspincp, i++,
     cp = spincoupledpairs[[i]];
-    mat = ireducsigma[SYMTYPE, op, cp];
+    If[NumberQ[op],
+      mat = ireducSPIN[SYMTYPE, op, cp],
+      mat = ireducsigma[SYMTYPE, op, cp]
+    ];
     AppendTo[t, Flatten[cp]];
     t = Join[t, mat];
     AppendTo[opdata, {cp, mat}];
