@@ -781,7 +781,7 @@ NRDOTS = -1; (* Bug trap *)
 MAKESPINKET = Null; (* Operator(s?) that is converted to spin kets *)
 MAKEORBKET = Null;
 MAKEPHONON = Null; (* 1 = one phonon mode, etc. *)
-
+BZSPIN = Null;
 
 (** Reflection symmetry (parity) **)
 
@@ -1384,10 +1384,17 @@ If[GENERATEBASIS == True,
    MyPrint["MAKESPINKET=", MAKESPINKET];
 
    If[isQS[] || isSPSU2[] || isSPSU2LR[] || isQST[] || isQSTZ[] ||
-    isSPSU2T[] || isQSC3[] || isSPSU2C3[],
-      (* Maximum spin state *)
-      bzspin = {First @ spinbasis[MAKESPINKET]};
-      MyPrint["spin basis=", bzspin];
+     isSPSU2T[] || isQSC3[] || isSPSU2C3[],
+      If[ BZSPIN === Null,
+        bzspin = spinbasis[MAKESPINKET];
+        MyPrint["spin basis=", bzspin];
+        (* Maximum spin state *)
+        bzspin = {First @ spinbasis[MAKESPINKET]};
+        MyPrint["spin basis=", bzspin],
+      (* else *)
+        bzspin = BZSPIN;
+        MyPrint["using manually set spin basis=", bzspin]
+      ];
 
       Off[ClebschGordan::phy];
 
@@ -1423,6 +1430,7 @@ If[GENERATEBASIS == True,
     (* Modified ???addspinket[] functions to conform to the (2Sz+1) convention. *)
     QSZaddspinketNRG[bvc_List, SP_] := Module[{spinbz},
       spinbz = spinbasis[SP];
+      MyVPrint[2, "spinbz=", spinbz];
       basistensorproduct[spinbz, bvc, Function[{qn1, qn2},
         Module[{x=qn2}, x[[2]] += 2*First[qn1]; x] ]  (* Note the factor 2! *)
       ]
@@ -2529,6 +2537,33 @@ ireducSPIN[SYMTYPE:("SPSU2" | "QS" | "QSLR" | "QSC3" | "QST" | "QSTZ" | "SPSU2T"
    xa/xb
 ];
 
+ireducSPINList[SYMTYPE:("SPSU2" | "QS" | "QSLR" | "QSC3" | "QST" | "QSTZ" | "SPSU2T" | "SPSU2C3"),
+ {ndx_}, {inv1_, inv2_}] :=
+  Module[{ss1, ss2, sz1, sz2, szop, op1, xa, xb, SPIN, id, skl},
+   ss1 = getSpinQN[SYMTYPE, inv1];
+   ss2 = getSpinQN[SYMTYPE, inv2];
+   sz1 = subspacesz[ss1];
+   sz2 = subspacesz[ss2];
+   szop = sz1-sz2;
+
+   Which[
+    ndx == 1, SPIN = SPIN1; skl = {1,0}; id = spinketbraI[SPIN2, {0,1}],
+    ndx == 2, SPIN = SPIN2; skl = {0,1}; id = spinketbraI[SPIN1, {1,0}]
+   ];
+
+   (* Spherical operators! *)
+   If[szop == 0, op1 = spinketbraZ[SPIN, skl] ];
+   If[szop == 1, op1 = -1/Sqrt[2] spinketbraP[SPIN, skl] ];
+   If[szop == -1, op1 = 1/Sqrt[2] spinketbraM[SPIN, skl] ];
+
+   op1 = op1 ~ nc ~ id;
+
+   xa = optransform[op1, inv1, inv2];
+   xb = If[ss1 == 1 && ss2 == 1, 1,
+     ClebschGordan[{SS2S[ss2],sz2},{1,szop},{SS2S[ss1],sz1}]];
+   xa/xb
+];
+
 (* Bug trap *)
 ireducsigma[SYMTYPE_, args___] :=
   MyError["ireducsigma not implemented for " <> SYMTYPE <>
@@ -2538,15 +2573,20 @@ ireducSPIN[SYMTYPE_, args___] :=
   MyError["ireducSPIN not implemented for " <> SYMTYPE <>
   " args=" <> ToString[{args}]];
 
+ireducSPINList[SYMTYPE_, args___] :=
+  MyError["ireducSPINList not implemented for " <> SYMTYPE <>
+  " args=" <> ToString[{args}]];
+
 (* Table form for all irreducible matrix elements of a triplet operator sigma *)
 ireducsigmaTable[op_] := Module[{t, i, cp, mat},
   t = {};
   AppendTo[t, {nrspincp}];
   For[i = 1, i <= nrspincp, i++,
     cp = spincoupledpairs[[i]];
-    If[NumberQ[op],
-      mat = ireducSPIN[SYMTYPE, op, cp],
-      mat = ireducsigma[SYMTYPE, op, cp]
+    Which[
+      NumberQ[op], mat = ireducSPIN[SYMTYPE, op, cp],
+      Head[op] === List, mat = ireducSPINList[SYMTYPE, op, cp],
+      True, mat = ireducsigma[SYMTYPE, op, cp]
     ];
     AppendTo[t, Flatten[cp]];
     t = Join[t, mat];
