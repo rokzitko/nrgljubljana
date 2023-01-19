@@ -100,8 +100,8 @@ target_compile_options(project_warnings
     -Wno-double-promotion  # issue in Boost factorials
     -Warray-bounds      # issue in fmt
     -Wno-unused-function   # issue in matrix tool
-    -Wimplicit-int-float-conversion # issue in gtest
-    -Wdeprecated-anon-enum-enum-conversion # issue in Eigen
+    -Wno-implicit-int-float-conversion # issue in gtest
+    -Wno-deprecated-anon-enum-enum-conversion # issue in Eigen
 #    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
 #    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
