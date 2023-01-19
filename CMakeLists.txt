@@ -98,10 +98,11 @@ target_compile_options(project_warnings
     -Wno-deprecated-copy # issue with Boost ublas
     -Wno-psabi          # issue with pair<double, double>
     -Wno-double-promotion  # issue in Boost factorials
-    -Warray-bounds      # issue in fmt
+    -Wno-array-bounds      # issue in fmt
     -Wno-unused-function   # issue in matrix tool
     -Wno-implicit-int-float-conversion # issue in gtest
     -Wno-deprecated-anon-enum-enum-conversion # issue in Eigen
+    -Wno-return-type-c-linkage # issue in lapack.h
 #    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
 #    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
