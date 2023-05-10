@@ -129,6 +129,10 @@ public:
           coef.u0p.read(fdata, P.coefchannels);
           coef.u0m.read(fdata, P.coefchannels);
           break;
+        case 'W':
+          coef.eps.read(fdata);
+          coef.t.read(fdata);
+          break;
       default: throw std::invalid_argument(fmt::format("Unknown block {} in data file.", ch));
       }
     }
