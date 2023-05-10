@@ -28,7 +28,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2023.01";
+VERSION = "2023.05";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -304,18 +304,6 @@ realt     = getmodelparam["t", 0.];
 parsevalue[str_String] /;  klicaj[str] := ToExpression[StringDrop[str, 1]];
 parsevalue[str_String] /; !klicaj[str] := importnum[str];
 
-(* All PARAM=VALUE lines in [extra] block of the input file get transformed
-   into PARAM->VALUE rules in params. Since rules are applied in the order
-   of their appearance in the list, this implies that the preexisting rules
-   take precendence over these automatically appended ones. *)
-addextraparams[] := Module[{params2},
-  If[ValueQ[listdata["extra"]],
-    params2 = Map[ToExpression[First[#]] -> parsevalue @ Last[#] &,
-                  listdata["extra"]];
-    params = Join[params, params2];
-  ];
-];
-
 (* Define extraPARAM=VALUE for all PARAM=VALUE lines in [extra]
    block of the input file (for backward compatibility). *)
 If[listdata["extra"] =!= {},
@@ -489,15 +477,6 @@ and the second channel, d[] is the impurity orbital, a[], b[], e[], g[] are
 additional impurity orbitals. *)
 
 snegfermionoperators[{f, BANDSPIN}, a, b, d, e, g];
-
-(* Declare additional parameters using snegrealconstants[]. addexnames[] is
-called from maketable[] or manually when debugging! *)
-
-addexnames[] := Module[{exnames},
-  exnames = Map[StringDrop[#,5]&, Names["extra*"]];
-  snegrealconstants @@ Map[Symbol, exnames];
-];
-
 
 (***************************** HAMILTONIAN *******************************)
 
@@ -828,19 +807,6 @@ If[ MODEL == "SIAM" && (VARIANT == "" || VARIANT == "MAGFIELD"),
   H = H0 + H1 + Hc;
 ];
 
-(* Important: all left sides of the table params should be defined as sneg
-parameters. Currently they are all real constants! Call addparamnames[]
-after adding parameters to params list. *)
-(* TODO: only if symbols? *)
-
-addparamnames[] := Module[{paramnames},
-   paramnames = params[[All, 1]];
-   paramnames = Select[paramnames, AtomQ]; (* Drop parametrized rules *)
-   MyVPrint[3, "Declaring as constants: ", paramnames];
-   snegrealconstants @@ paramnames;
-];
-
-
 (* Load additional model definitions *)
 loadmodule["models.m"];
 loadmodule["custommodels.m", False];
@@ -854,9 +820,25 @@ If[StringLength[MODEL] >= 2 && StringTake[MODEL, -2] == ".m",
   SCRIPTMODEL = True; (* Use to generate suitable filename *)
 ];
 
-addextraparams[];
-addparamnames[];
+(************************ Parameter handling *****************************)
+
+(* All PARAM=VALUE lines in [extra] block of the input file get transformed
+   into PARAM->VALUE rules in 'params'. Since rules are applied in the order
+   of their appearance in the list, this implies that the preexisting rules
+   take precendence over the automatically appended ones. *)
+If[ValueQ[listdata["extra"]],
+  params2 = Map[ToExpression[First[#]] -> parsevalue @ Last[#] &,
+                listdata["extra"]];
+  params = Join[params, params2];
+];
 MyVPrint[2,"params=", params];
+
+(* Important: all left sides of the table 'params' should be defined as sneg
+parameters. Currently they are all real constants! *)
+paramnames = params[[All, 1]];
+paramnames = Select[paramnames, AtomQ]; (* Drop parametrized rules *)
+paramnames = Select[paramnames, (# =!= "Gamma")&]; (* Gamma is Protected *)
+snegrealconstants @@ paramnames;
 
 If[NRDOTS == -1, MyError["NRDOTS = -1"]]; (* Bug trap *)
 If[CHANNELS == -1, MyError["CHANNELS = -1"]]; (* Bug trap *)
@@ -2805,6 +2787,14 @@ If[option["GENERATE_TEMPLATE"],
   Nmax = 0;
 ];
 
+(* If not specified: determine the interface type according to the current implementation in the C++ part of the code,
+as encoded in defaultchaintype[] *)
+(* legacy = enforce legacy interface *)
+(* matrix = enforce matrix interface *)
+
+defaultchaintype[_] := "legacy";
+WILSONCHAIN = paramdefault["wilsonchain", defaultchaintype[SYMTYPE]];
+
 (* Use arbitrary precision arithmetics *)
 PREC = paramdefaultnum["prec", defaultprec];
 MyVPrint[2,"PREC=", PREC];
@@ -4023,11 +4013,13 @@ showtable[name_, channel_, table_] := Module[{},
   *)
 ];
 
+OUTPREC = 20;
+
+(* Legacy interface for building Wilson chain coefficient tables *)
 Module[{a, precxi, preczeta},
   For[a = 1, a <= COEFCHANNELS, a++,
       MyPrintForm["Discretization (channel ``)", a];
 
-      OUTPREC = 20;
       xitable[a]   = Table[{N[bandrescale xi[a][i],   OUTPREC]}, {i, 0, DISCNMAX}];
       zetatable[a] = Table[{N[bandrescale zeta[a][i], OUTPREC]}, {i, 0, DISCNMAX}];
 
@@ -4229,6 +4221,25 @@ makeireducf[_] := Module[{},
 ];
 
 (* Discretization parameter tables *)
+
+(* New interface *)
+makewilsonchain["QS"] := Module[{mat},
+  t = {{"W"}};
+  AppendTo[t, {DISCNMAX, COEFCHANNELS, COEFCHANNELS}];
+  (* epsilon *)
+  For[n = 0, n <= DISCNMAX, n++,
+    mateps = DiagonalMatrix[Table[bandrescale zeta[a][n], {a, 1, COEFCHANNELS}]];
+    t = Join[t, N[mateps, OUTPREC]];
+  ];
+  (* t *)
+  For[n = 0, n <= DISCNMAX, n++,
+    matt = DiagonalMatrix[Table[bandrescale xi[a][n], {a, 1, COEFCHANNELS}]];
+    t = Join[t, N[matt, OUTPREC]];
+  ];
+  t
+];
+
+(* Old interface *)
 makedisctables[] := Module[{t, a},
    t = {{"z"}};
    For[a = 1, a <= COEFCHANNELS, a++,
@@ -4300,7 +4311,6 @@ check if parameters make any sense, etc. *)
 maketable[]:=Module[{t},
   timestart["maketable"];
 
-  addexnames[]; (* To be on the safe side... *)
   perturbhamiltonian[];
   inittheta0ch[];
   If[!option["GENERATE_TEMPLATE"], checkdefinitions[]];
@@ -4337,15 +4347,23 @@ maketable[]:=Module[{t},
   ];
 
   If[TRI != "none" && !option["GENERATE_TEMPLATE"],
-    t = Join[t,
-             {{"# Discretization tables:"}},
-             makedisctables[]
+    If[WILSONCHAIN == "legacy",
+      t = Join[t,
+               {{"# Discretization tables (legacy form):"}},
+               makedisctables[]
+      ];
+      If[isSC[],
+        t = Join[t, makescdisctables[]];
+      ];
+      If[RUNGS,
+        t = Join[t, makeRdisctables[]];
+      ];
     ];
-    If[isSC[],
-      t = Join[t, makescdisctables[]];
-    ];
-    If[RUNGS,
-      t = Join[t, makeRdisctables[]];
+    If[WILSONCHAIN == "matrix",
+      t = Join[t,
+               {{"# Discretization tables (matrix form):"}},
+               makewilsonchain[SYMTYPE]
+      ];
     ];
   ];
 
