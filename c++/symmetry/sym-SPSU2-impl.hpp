@@ -74,7 +74,7 @@ class SymmetrySPSU2 : public Symmetry<SC> {
     }
     stats.td.set("<Sz^2>", trSZ / stats.Z);
   }
-   
+
   bool project_subspace(const Invar &I, const std::string &p) const override {
     if (p == ""s || p == "trivial"s) {
       return true;
@@ -141,13 +141,8 @@ void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceD
     my_assert(P.coeffactor == 1);
     const auto [Ntrue, M] = step.NM();
 
-// Careful: for historical reasons (argh!) there is a minus sign in
-// the coefficients for the second Wilson chain; see also function
-// matrixopisospin[] in coefnew/spsu2/spsu2.m. That's why we need a
-// (-1) factor for M==1.
-// (M == 1 ? -1 : 1)
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, M, t_matel(factor) * 2.0 * (M == 1 ? -1.0 : 1.0) * coef.delta(Ntrue + 1, M), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, M, t_matel(factor) * 2.0 * coef.delta(Ntrue + 1, M), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, M, 0, t_matel(factor) * coef.kappa(Ntrue, M), h, qq, In, opch)

@@ -25,4 +25,4 @@
 { 15, 15, Invar(ss1, -p1), Invar(ss1, -p1), 1 - 1/S(ss1) + 1/(1 + S(ss1))},
 { 15, 16, Invar(ss1, -p1), Invar(2 + ss1, -p1), 1/(1 + S(ss1))},
 { 16, 15, Invar(2 + ss1, -p1), Invar(ss1, -p1), -((3 + 2*S(ss1))/((1 + S(ss1))*sqrt(3 + 4*S(ss1)*(2 + S(ss1)))))},
-{ 16, 16, Invar(2 + ss1, -p1), Invar(2 + ss1, -p1), (12*sqrt(S(ss1)*(1 + S(ss1))*(2 + S(ss1))) + 33*sqrt(Power(S(ss1),5)*(1 + S(ss1))*(2 + S(ss1))) + 24*sqrt(Power(S(ss1),7)*(1 + S(ss1))*(2 + S(ss1))) + 4*sqrt(Power(S(ss1),9)*(1 + S(ss1))*(2 + S(ss1))) + 18*sqrt((S(ss1)*(2 + S(ss1))*Power(1 + 2*S(ss1),2))/((1 + S(ss1))*Power(3 + 2*S(ss1),2))) + S(ss1)*(29*sqrt(S(ss1)*(1 + S(ss1))*(2 + S(ss1))) + 60*sqrt((S(ss1)*(2 + S(ss1))*Power(1 + 2*S(ss1),2))/((1 + S(ss1))*Power(3 + 2*S(ss1),2))) + 2*S(ss1)*sqrt((S(ss1)*(2 + S(ss1))*Power(1 + 2*S(ss1),2))/((1 + S(ss1))*Power(3 + 2*S(ss1),2)))*(31 + 10*S(ss1))))/(Power(1 + S(ss1),2.5)*(2 + S(ss1))*Power(3 + 2*S(ss1),2))},
+{ 16, 16, Invar(2 + ss1, -p1), Invar(2 + ss1, -p1), sqrt(S(ss1)*(2 + S(ss1)))/(1 + S(ss1))},

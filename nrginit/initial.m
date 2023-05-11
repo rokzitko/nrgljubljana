@@ -3909,70 +3909,28 @@ zeta[a_][n_] := dzeta[a][n] +
   If[paramexists["gap"], - (-1)^n paramnum["gap"], 0] +
   If[paramexists["shift0"] && n == 0, paramnum["shift0"], 0];
 
-(* IMPORTANT: As of 12.5.2010: use bcsgap=xx for spu1lr, and
-bcsgap1=bcsgap2=xx for spu1/spsu2, etc. For a regression test, see
-spu1lr4/.
-
-For f_0 site, included in the initial Hamiltonian, the
-sign is positive by definition.
-
-For symtype=SPSU2, the sign for isospin is inverted for f_1, etc.!
-
-For single-channel problems, the sign issue is completely
-irrelevant.
-
-TO DO: This is all quite messy. One should clean this up, even if it
-breaks backwards compatibility with param files.
-*)
-
 gapdefined = False;
 
 hookfile["hook_bcs"];
 
 If[!gapdefined && paramexists["bcsgap"],
   gapdefined = True;
-  bcssignch2 = If[paramdefaultbool["bcsinvertphase", False], -1, 1];
-  scdelta[1][_] = paramnum["bcsgap"];
-
-  scdelta[2][_] = bcssignch2 * paramnum["bcsgap"];
-
-  scdelta[3][_] = paramnum["bcsgap"];
-  sckappa[_][_] = 0;
-];
-
-(* Added 4.5.2016 - new possibility for SYMTYPE=SPSU2.
-Equivalent to bcsgap1=bcsgap2, just saves some typing. *)
-If[!gapdefined && paramexists["bcsgapspsu2"],
-  gapdefined = True;
-  scdelta[1][_] = paramnum["bcsgapspsu2"];
-
-  scdelta[2][0] = paramnum["bcsgapspsu2"];
-  scdelta[2][_] = -paramnum["bcsgapspsu2"];
-
-  scdelta[3][_] = paramnum["bcsgapspsu2"];
+  scdelta[_][_] = paramnum["bcsgap"];
   sckappa[_][_] = 0;
 ];
 
 If[!gapdefined && paramexists["bcsgap1"] && paramexists["bcsgap2"] && !paramexists["bcsgap3"],
   gapdefined = True;
   scdelta[1][_] = paramnum["bcsgap1"];
-
-  scdelta[2][0] = paramnum["bcsgap2"];
-  scdelta[2][_] = -paramnum["bcsgap2"];
-
+  scdelta[2][_] = paramnum["bcsgap2"];
   sckappa[_][_] = 0;
 ];
 
-(* See spsu2-3ch.m for sign conventions. *)
 If[!gapdefined && paramexists["bcsgap1"] && paramexists["bcsgap2"] && paramexists["bcsgap3"],
   gapdefined = True;
   scdelta[1][_] = paramnum["bcsgap1"];
-
-  scdelta[2][0] = paramnum["bcsgap2"];
-  scdelta[2][_] = -paramnum["bcsgap2"];
-
+  scdelta[2][_] = paramnum["bcsgap2"];
   scdelta[3][_] = paramnum["bcsgap3"];
-
   sckappa[_][_] = 0;
 ];
 

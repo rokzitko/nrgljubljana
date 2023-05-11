@@ -102,10 +102,8 @@ void SymmetrySPU1<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, con
     my_assert(P.coeffactor == 1);
     const auto [Ntrue, M] = step.NM();
 
-// XXX: note the (M == 1 ? -1 : 1) term.
-
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, M, t_matel(factor) * 2.0 * (M == 1 ? -1.0 : 1.0) * coef.delta(Ntrue + 1, M), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, M, t_matel(factor) * 2.0 * coef.delta(Ntrue + 1, M), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, M, 0, t_matel(factor) * coef.kappa(Ntrue, M), h, qq, In, opch)

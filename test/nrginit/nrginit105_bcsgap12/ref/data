@@ -1,6 +1,6 @@
 # Input file for NRG Ljubljana
 # symtype 	SPSU2
-# Using sneg version 	1.251
+# Using sneg version 	2.0.4
 #!9
 # Number of channels, chain sites, subspaces: 
 2	2	5
@@ -106,7 +106,7 @@ f 1 0
 e
 -0.4000000000000001
 # Irreducible matrix elements for other operators:
-# Discretization tables:
+# Discretization tables (legacy form):
 z
 2
 0.59532261153226208887
@@ -131,8 +131,8 @@ Z
 0.1
 2
 0.2
--0.2
--0.2
+0.2
+0.2
 2
 0
 0

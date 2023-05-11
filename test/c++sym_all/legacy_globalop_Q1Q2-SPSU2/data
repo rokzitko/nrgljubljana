@@ -1,6 +1,6 @@
 # Input file for NRG Ljubljana
 # symtype 	SPSU2
-# Using sneg version 	1.251
+# Using sneg version 	2.0.4
 #!9
 # Number of channels, chain sites, subspaces: 
 2	2	4
@@ -436,7 +436,7 @@ gQ2
 -0.0386190224295238	1.9028302683521403e-9	0.03873543712267689	-1.908677026348196e-9	0.003000865820527887	0.9999999997042665
 4	4
 1.
-# Discretization tables:
+# Discretization tables (legacy form):
 z
 2
 0.47223280211507753577
