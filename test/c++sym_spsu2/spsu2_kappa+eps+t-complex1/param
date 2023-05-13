@@ -1,0 +1,23 @@
+[param]
+symtype=SPSU2
+model=CLEAN
+
+discretization=Z
+Lambda=2.0
+
+bcsgap=!0.1+0.1I
+
+Nmax=1
+keep=1000
+
+ops=n_f q_f^2 pair_f pairing_f Ix_f Iy_f Iz_f Ix_f^2 Iy_f^2 Iz_f^2
+
+dumpannotated=10
+
+T=1e-20
+fdmexpv=true
+
+data_has_rescaled_energies=false
+dumpscaled=false
+
+options=COMPLEX

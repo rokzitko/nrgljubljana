@@ -36,6 +36,7 @@ add_subdirectory(c++sym_basic)
 
 if(SYM_MORE)
   add_subdirectory(c++sym_more)
+  add_subdirectory(c++sym_spsu2)
 endif()
 
 if(SYM_ALL)
@@ -51,6 +52,7 @@ add_subdirectory(tools)
 
 if(Mathematica_FOUND AND SYM_ALL)
   add_subdirectory(nrginit)
+  add_subdirectory(nrginit_spsu2)
   add_subdirectory(nrginit+nrgrun)
   if (TEST_LONG)
     add_subdirectory(nrginit+nrgrun_long)

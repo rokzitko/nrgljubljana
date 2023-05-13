@@ -1,0 +1,18 @@
+#!/usr/bin/env perl
+
+$fn = shift;
+if (!defined $fn) { $fn = "spec_FDM_dens_A_f-A_f.bin"; }
+
+open (F, "<$fn") or die;
+binmode F;
+
+$d = '';
+
+while (1) {
+    my $success = read F, $d, 16, length($d);
+    die $! if not defined $success;
+    last if not $success;
+    @x = unpack("d*", $d);
+    print "@x\n";
+    $d= '';
+}

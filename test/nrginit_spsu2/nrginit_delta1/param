@@ -1,0 +1,21 @@
+[param]
+symtype=SPSU2
+model=CLEAN
+
+discretization=Z
+Lambda=2.0
+
+bcsgap=0.1
+
+Nmax=0
+keep=1000
+
+ops=n_f q_f^2 pair_f
+
+dumpannotated=10
+
+T=1e-20
+fdmexpv=true
+
+data_has_rescaled_energies=false
+dumpscaled=false
