@@ -29,6 +29,13 @@ Module[{t = {}},
 
   (* Pairing at the position of the impurity *)
   t = Join[t, mtSingletOp["pair_f", nc[f[CR, 0, UP], f[CR, 0, DO]] ] ];
+  t = Join[t, mtSingletOp["Ix_f",   isospinx[f[0]] ] ];
+  t = Join[t, mtSingletOp["Ix_f^2", pow[isospinx[f[0]],2] ] ];
+  t = Join[t, mtSingletOp["Iy_f",   isospiny[f[0]] ] ];
+  t = Join[t, mtSingletOp["Iy_f^2", pow[isospiny[f[0]],2] ] ];
+  t = Join[t, mtSingletOp["Iz_f",   isospinz[f[0]] ] ];
+  t = Join[t, mtSingletOp["Iz_f^2", pow[isospinz[f[0]],2] ] ];
+  t = Join[t, mtSingletOp["pairing_f", Expand[pow[isospinx[f[0]],2]+pow[isospiny[f[0]],2]] ] ];
 
   (* Spectral density of electron gas *)
   t = Join[t, mtDoubletOp["A_f", f[0] ]];
@@ -102,6 +109,7 @@ Module[{t = {}},
   t = Join[t, mtSingletOp["Iy_d^2", pow[isospiny[d[]],2] ] ];
   t = Join[t, mtSingletOp["Iz_d", isospinz[d[]] ] ];
   t = Join[t, mtSingletOp["Iz_d^2", pow[isospinz[d[]],2] ] ];
+  t = Join[t, mtSingletOp["pairing_d", Expand[pow[isospinx[d[]],2]+pow[isospiny[d[]],2]] ] ];
 
   (* Majorana operators *)
   (* If fermion parity is conserved, they all have zero expectation value. *)
