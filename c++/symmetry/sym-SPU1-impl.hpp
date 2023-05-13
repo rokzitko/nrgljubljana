@@ -78,7 +78,7 @@ class SymmetrySPU1 : public  SymField<SC> {
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 template<typename SC>
 void SymmetrySPU1<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
@@ -112,7 +112,7 @@ void SymmetrySPU1<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, con
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * coef.xi(Ntrue, M), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, M, number, coef.zeta(Ntrue + 1, M), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(Ntrue + 1, M), h, qq)
 
 #include "spu1/spu1-1ch-offdiag.dat"
 #include "spu1/spu1-1ch-anomalous.dat"
@@ -136,9 +136,9 @@ void SymmetrySPU1<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, con
 
 #define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xiDOWN(step.N(), ch), h, qq, In, opch)
 
-#define DIAG_UP(i, j, ch, number) this->diag_function_half(step, i, ch, number, coef.zetaUP(step.N() + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaUP(step.N() + 1, ch), h, qq)
 
-#define DIAG_DOWN(i, j, ch, number) this->diag_function_half(step, i, ch, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
 template<typename SC>
 void SymmetrySPU1<SC>::make_matrix_polarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {

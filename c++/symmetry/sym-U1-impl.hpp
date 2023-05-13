@@ -58,7 +58,7 @@ class SymmetryU1 : public Symmetry<SC> {
 };
 
 #undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 #undef OFFDIAG_UP
 #undef OFFDIAG_DO
@@ -79,9 +79,9 @@ class SymmetryU1 : public Symmetry<SC> {
 #define OFFDIAG_DOUP(i, j, ch, factor0) offdiag_function(step, i, j, ch, 1, t_matel(factor0) * coef.xiDOUP(step.N(), ch), h, qq, In, opch)
 
 // Note the _half !!
-#define DIAG_UP(i, j, ch, number) this->diag_function_half(step, i, ch, number, coef.zetaUP(step.N() + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaUP(step.N() + 1, ch), h, qq)
 
-#define DIAG_DOWN(i, j, ch, number) this->diag_function_half(step, i, ch, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
 // Compare with ISOSPINX for symtype=SPSU2 case
 // See also coefnew/u1/u1.m

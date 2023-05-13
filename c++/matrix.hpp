@@ -68,30 +68,28 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
 // NOTE: for problems where a given invariant subspace does not correspond to a fixed number of added electrons, a
 // generalized routine should be used. 
 template<scalar S>
-void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+void Symmetry<S>::diag_function_impl(const Step &step, const size_t i, const double number, const t_coef sc_zeta,
                                           Matrix &h, const SubspaceDimensions &qq, const double f) const
 {
   my_assert(1 <= i && i <= qq.combs());
-  // For convenience we subtract the average site occupancy.
+  // For convenience we subtract the average site occupancy. XXX: how does this affect the total energy??
   const auto avgoccup = (double)P.spin / 2; // multiplicity divided by 2
-  // Energy shift of the diagonal matrix elements in the NRG Hamiltonian. WARNING: for N=0, we are not adding the
-  // first site of the Wilson chain (indexed as 0), but the second one (indexed as 1). Therefore the appropriate
-  // zeta is not zeta(0), but zeta(1). zeta(0) is the shift applied to the f[0] orbital in initial.m !!!
+  // Energy shift of the diagonal matrix elements in the NRG Hamiltonian.
   for (const auto j: qq.view_mma(i)) h(j, j) += sc_zeta * (number - f*avgoccup) / step.scale();
 }
 
 template<scalar S>
-void Symmetry<S>::diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+void Symmetry<S>::diag_function(const Step &step, const size_t i, const double number, const t_coef sc_zeta,
                                      Matrix &h, const SubspaceDimensions &qq) const
 {
-  diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 1);
+  diag_function_impl(step, i, number, sc_zeta, h, qq, 1);
 }
 
 template<scalar S>
-void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const double number, const t_coef sc_zeta,
                                           Matrix &h, const SubspaceDimensions &qq) const
 {
-  diag_function_impl(step, i, ch, number, sc_zeta, h, qq, 0.5);
+  diag_function_impl(step, i, number, sc_zeta, h, qq, 0.5);
 }
 
 // +++ Shift the offdiagonal matrix elements by factor. +++

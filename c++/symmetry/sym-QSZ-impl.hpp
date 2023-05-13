@@ -91,7 +91,7 @@ class SymmetryQSZ : public SymField<SC> {
    number - number of electrons added in channel 'ch' in subspace 'i' */
 
 #undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 // Note ch indexes the <||f||> matrix which is used to construct the Hamiltonian matrix in the new step, i.e., the
 // f_{N} from the f^\dag_{N_1} f_{N} hopping term.
@@ -134,7 +134,7 @@ void SymmetryQSZ<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, cons
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * coef.xi(N, M), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, M, number, coef.zeta(N + 1, M), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(N + 1, M), h, qq)
 
 #include "qsz/qsz-1ch-offdiag.dat"
 #include "qsz/qsz-1ch-diag.dat"
@@ -147,9 +147,9 @@ void SymmetryQSZ<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, cons
 
 #define OFFDIAG_DOWN(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xiDOWN(step.N(), ch), h, qq, In, opch)
 
-#define DIAG_UP(i, j, ch, number) this->diag_function_half(step, i, ch, number, coef.zetaUP(step.N() + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaUP(step.N() + 1, ch), h, qq)
 
-#define DIAG_DOWN(i, j, ch, number) this->diag_function_half(step, i, ch, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
 template<typename SC>
 void SymmetryQSZ<SC>::make_matrix_polarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, 

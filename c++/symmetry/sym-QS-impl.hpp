@@ -110,7 +110,7 @@ class SymmetryQS : public Symmetry<SC> {
    ch - channel (0 or 1)
    number - number of electrons added in channel 'ch' in subspace 'i' */
 #undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, ch), h, qq)
 
 #undef OFFDIAG_MIX
 #define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xiR(step.N(), ch), h, qq, In, opch)
@@ -155,7 +155,7 @@ void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDime
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * coef.xi(N, M), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, M, number, coef.zeta(N + 1, M), h, qq)
+#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(N + 1, M), h, qq)
 
 #include "qs/qs-1ch-offdiag.dat"
 #include "qs/qs-1ch-diag.dat"

@@ -154,11 +154,11 @@ class Symmetry {
 
    void offdiag_function_impl(const Step &step, const size_t i, const size_t j, const size_t ch, const size_t fnr, const t_coef factor,
                               Matrix &h, const SubspaceDimensions &qq, const InvarVec &In, const Opch<S> &opch) const;
-   void diag_function_impl(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+   void diag_function_impl(const Step &step, const size_t i, const double number, const t_coef sc_zeta,
                            Matrix &h, const SubspaceDimensions &qq, const double f) const;
-   void diag_function(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+   void diag_function(const Step &step, const size_t i, const double number, const t_coef sc_zeta,
                       Matrix &h, const SubspaceDimensions &qq) const;
-   void diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
+   void diag_function_half(const Step &step, const size_t i, const double number, const t_coef sc_zeta,
                            Matrix &h, const SubspaceDimensions &qq) const;
    void diag_offdiag_function(const Step &step, const size_t i, const size_t j, const t_coef factor,
                               Matrix &h, const SubspaceDimensions &qq) const;

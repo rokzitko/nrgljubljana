@@ -106,7 +106,7 @@ double Factorial(const double x) { return boost::math::factorial<double>(round(x
 #define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(step, i, j, Jndx, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, opch)
 
 #undef DIAG
-#define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
+#define DIAG(i, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 inline double J(int JJ) {
   return (JJ - 1.0) / 2.0; // JJ=2J+1
