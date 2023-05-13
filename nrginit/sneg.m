@@ -31,7 +31,7 @@
 
 BeginPackage["Sneg`"];
 
-snegidstring = "sneg.m 2.0.4 Jan 2023";
+snegidstring = "sneg.m 2.0.6 May 2023";
 snegcopyright = "Copyright (C) 2002-2023 Rok Zitko";
 
 $SnegVersion = Module[{pos, p1, p2},
@@ -320,6 +320,9 @@ UsageWithMore[hop,
 "hop[a[i], b[j]] returns the electron hopping operator between
 sites a[i] and b[j]. hop[a[i], b[j], sigma] with sigma=UP | DO
 does the same for a single spin projection sigma."];
+UsageWithMore[anomaloushop,
+"anomaloushop[a[i], b[j]] returns the anomalous hopping operator between
+sites a[i] and b[j]."];
 UsageWithMore[holehop,
 "holehop[h[i], p[j]] returns the electron hopping operator for
 the case of a hole operator h[i] and particle operator p[j]."];
@@ -885,7 +888,7 @@ snegrealfunctions[l__] := Scan[
 {
   snegnonopQ[#] ^= True;
   Conjugate[#[a___]] ^= #[a];
-  isnumeric[#[___]] := True;
+  isnumericQ[#[___]] := True;
 }&, {l}];
 
 snegpositiveconstants[l__] := Scan[
@@ -978,7 +981,8 @@ snegcomplexconstants[l__] := Scan[
 snegcomplexfunctions[l__] := Scan[
 {
   snegnonopQ[#] ^= True;
-  isnumeric[#[___]] := True;
+  isnumericQ[#[___]] := True;
+  isnumericQ[Conjugate[#[___]]] := True;
 }&, {l}];
 
 (* Define which symbols are free indexes that appear in sum[]s *)
@@ -2298,6 +2302,58 @@ genhop[t_, op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma_] :=
 
 genhop[t_, op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /; (spinof[op1] == spinof[op2] == 1/2) :=
   genhop[t, op1[j1], op2[j2], UP] + genhop[t, op1[j1], op2[j2], DO];
+
+(* Anomalous hopping, a a + a^+ a^+ *)
+(* This version is not SU(2) invariant. See below for spin-rotation-invariant version (anhop). *)
+SetAttributes[anomaloushop, Listable];
+anomaloushop[op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma_] :=
+  op1[CR, j1, sigma]   ~ nc ~ op2[CR, j2, 1-sigma] +
+  op2[AN, j2, 1-sigma] ~ nc ~ op1[AN, j1, sigma];
+
+anomaloushop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
+  (spinof[op1] == spinof[op2] == 1/2) :=
+  anomaloushop[op1[j1], op2[j2], UP] + anomaloushop[op1[j1], op2[j2], DO];
+
+anomaloushop[fn1_Function, fn2_Function, sigma_] :=
+  fn1[CR, sigma]   ~ nc ~ fn2[CR, 1-sigma] +
+  fn2[AN, 1-sigma] ~ nc ~ fn1[AN, sigma];
+
+anomaloushop[fn1_Function, fn2_Function] :=
+  anomaloushop[fn1, fn2, UP] + anomaloushop[fn1, fn2, DO];
+
+anomaloushop[fn1_Function, op2_?fermionQ[j2___]] := anomaloushop[fn1, op2[#1, j2, #2]&];
+anomaloushop[op1_?fermionQ[j1___], fn2_Function] := anomaloushop[op1[#1, j1, #2]&, fn2];
+
+(* anhop has a different sign convention as anomaloushop and is a singlet tensor
+operator with respect to spin SU(2) symmetry. *)
+SetAttributes[anhop, Listable];
+anhop[op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma_] :=
+  op1[CR, j1, sigma]   ~ nc ~ op2[CR, j2, 1-sigma] +
+  op2[AN, j2, 1-sigma] ~ nc ~ op1[AN, j1, sigma];
+
+anhop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
+  (spinof[op1] == spinof[op2] == 1/2) :=
+  anhop[op1[j1], op2[j2], UP] - anhop[op1[j1], op2[j2], DO]; (* sign! *)
+
+anhop[fn1_Function, fn2_Function, sigma_] :=
+  fn1[CR, sigma]   ~ nc ~ fn2[CR, 1-sigma] +
+  fn2[AN, 1-sigma] ~ nc ~ fn1[AN, sigma];
+
+anhop[fn1_Function, fn2_Function] :=
+  anhop[fn1, fn2, UP] - anhop[fn1, fn2, DO]; (* sign! *)
+
+anhop[fn1_Function, op2_?fermionQ[j2___]] := anhop[fn1, op2[#1, j2, #2]&];
+anhop[op1_?fermionQ[j1___], fn2_Function] := anhop[op1[#1, j1, #2]&, fn2];
+
+(* Anomalous hopping with a complex-valued parameter t *)
+SetAttributes[genanhop, Listable];
+genanhop[t_, op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma_] :=
+  t op1[CR, j1, sigma]   ~ nc ~ op2[CR, j2, 1-sigma] +
+  Conjugate[t] op2[AN, j2, 1-sigma] ~ nc ~ op1[AN, j1, sigma];
+
+genanhop[t_, op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
+  (spinof[op1] == spinof[op2] == 1/2) :=
+  genanhop[t, op1[j1], op2[j2], UP] - genanhop[t, op1[j1], op2[j2], DO]; (* sign! *)
 
 (* Hopping with spin-flip *)
 SetAttributes[spinfliphop, Listable];
@@ -3748,17 +3804,18 @@ vevwick2[HoldPattern[x : nc[l__]]] := Module[{ic, ia, ndc, nda},
 NOTE: nnop[] will be used, if defined, otherwise all signs are taken to be
 equal (this is likely not what you want!). *)
 
-quickbasis[basisops__, fnc_] := Module[{Tminus, nnop2},
+quickisobasis[basisops__, fnc_] := Module[{Tminus, nnop2},
   nnop2[i_] := If[ValueQ @ nnop[i], nnop[i], 0];
   Tminus = Simplify @ Total @ Map[isospinminus[#, nnop2[#]]&, basisops];
   bzvc2bzop @ transformQStoIS[fnc @ basisops, Tminus]
 ];
 
-quickISObasis[basisops__] := quickbasis[basisops, qsbasisvc];
-quickISOSZbasis[basisops__] := quickbasis[basisops, qszbasisvc];
-quickSU2basis[basisops__] := quickbasis[basisops, qbasisvc];
+quickISObasis[basisops__]   := quickisobasis[basisops, qsbasisvc];
+quickISOSZbasis[basisops__] := quickisobasis[basisops, qszbasisvc];
+quickSU2basis[basisops__]   := quickisobasis[basisops, qbasisvc];
 
-(* Product basis with double (isospin, etc.) symmetry *)
+(* Product basis with double (charge, isospin, etc.) symmetry. *)
+(* The result has quantum numbers (Q1, Q2), (I1, I2), etc. *)
 quickDBL[basisops1_, basisops2_, fnc_] := Module[{bz1, bz2},
   bz1 = fnc @ basisops1;
   bz2 = fnc @ basisops2;
@@ -3769,10 +3826,13 @@ quickDBL[basisops1_, basisops2_, fnc_] := Module[{bz1, bz2},
   directproductbasis[bz1, bz2, Join[#1, #2] &]
 ];
 
+(* Product basis with double (charge, isospin, etc.) symmetry and a total spin SZ projection. *)
+(* The result has quantum numbers (Q1, Q2, SZ), (I1, I2, SZ), etc. *)
 quickDBLSZ[basisops1_, basisops2_, fnc_] := Module[{bz1, bz2},
   bz1 = fnc @ basisops1;
   bz2 = fnc @ basisops2;
   makebasis[Join[basisops1, basisops2]];
+  (* NOTE: we are summing S_z. *)
   mergebasis @ directproductbasis[bz1, bz2, {#1[[1]], #2[[1]], #1[[2]]+#2[[2]]} &]
 ];
 
