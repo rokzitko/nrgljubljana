@@ -77,10 +77,16 @@ param[key_, group_:"param"] := evalstr[ data[group][key] ];
 expression such as 1e-3. Note: only the first number is returned! *)
 importnum[""] := Null;
 importnum[str_String] := First @ ImportString[ str, "List" ];
-paramnum[key_, group_:"param"] := importnum @ param[key, group];
+paramnum[key_, group_:"param"] := Module[{str},
+  str = data[group][key];
+  If[klicaj[str],
+     ToExpression @ stripws @ StringDrop[str, 1],
+     importnum[str]
+  ]
+];
 
 (* For logic quantities we allow several ways of specifying True. *)
-parambool[key_, group_:"param"] := 
+parambool[key_, group_:"param"] :=
   MemberQ[{"Yes", "yes", "True", "true", "TRUE", "1"}, param[key, group] ];
 
 (* paramexists[key_, group_:"param"] := ValueQ[ data[group][key] ]; *)
