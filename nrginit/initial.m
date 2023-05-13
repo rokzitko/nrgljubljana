@@ -545,17 +545,6 @@ HBANDonsite[ch_, i_] := Module[{reg, ireg},
   reg + ireg
 ];
 
-(* Anomalous hopping operator *)
-SetAttributes[anomaloushop, Listable];
-anomaloushop[op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma_] :=
-  op1[CR, j1, sigma] ~ nc ~ op2[CR, j2, 1-sigma] +
-  op2[AN, j2, 1-sigma] ~ nc ~ op1[AN, j1, sigma];
-
-(* NOTE THE MINUS SIGN! *)
-anomaloushop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
-  (spinof[op1] == spinof[op2] == 1/2) :=
-  anomaloushop[op1[j1], op2[j2], UP] - anomaloushop[op1[j1], op2[j2], DO];
-
 (* Hop with spin change. Two such terms are required to form a Hermitian
    Hamiltonian. *)
 hop[op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma1_, sigma2_] :=
@@ -585,7 +574,7 @@ HBANDhop[ch_, i_] := Module[{reg, ireg},
 
   (* Support for anomalous hopping terms in the presence of superconductivity:
      these are the f^\dag_{i-1} f^\dag_i terms. *)
-  ireg = coefkappa[ch, i-1] anomaloushop[fop[ch-1, i-1], fop[ch-1, i]];
+  ireg = coefkappa[ch, i-1] anhop[fop[ch-1, i-1], fop[ch-1, i]];
   reg + ireg
 ];
 
