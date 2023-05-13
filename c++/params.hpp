@@ -474,9 +474,6 @@ class Params {
   // matrix files are kept after the calculation.
   param<bool> removefiles{"removefiles", "Remove temporary data files?", "true", all}; // N
 
-  // Output imaginary parts of expectation values. Default is OFF!
-  param<bool> noimag{"noimag", "Do not output imaginary parts of expvs", "true", all}; // N
-
   param<bool> checksumrules{"checksumrules", "Check operator sumrules", "false", all}; // N
 
   param<bool> absolute{"absolute", "Do NRG without any rescaling", "false", all};
