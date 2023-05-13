@@ -58,7 +58,7 @@ class SymmetrySPSU2C3 : public SymC3<SC> {
 };
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, factor) this->diag_offdiag_function(step, i, j, 0, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
+#define ISOSPINX(i, j, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
 
 #undef OFFDIAG
 #define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)

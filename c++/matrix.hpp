@@ -97,7 +97,7 @@ void Symmetry<S>::diag_function_half(const Step &step, const size_t i, const siz
 // +++ Shift the offdiagonal matrix elements by factor. +++
 
 template<scalar S>
-void Symmetry<S>::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor,
+void Symmetry<S>::diag_offdiag_function(const Step &step, const size_t i, const size_t j, const t_coef factor,
                                              Matrix &h, const SubspaceDimensions &qq) const
 {
   my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
@@ -109,7 +109,7 @@ void Symmetry<S>::diag_offdiag_function(const Step &step, const size_t i, const 
   const auto contributes = (size1 > 0) && (size2 > 0);
   if (!contributes) return;
   my_assert(size1 == size2);
-  const auto factor_scaled = factor / step.scale();
+  const t_coef factor_scaled = factor / step.scale();
   for (const auto l: range0(size1)) h(begin1 + l, begin2 + l) += factor_scaled;
 }
 

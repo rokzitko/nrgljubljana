@@ -99,7 +99,7 @@ class SymmetryQSZ : public SymField<SC> {
 #define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xiR(step.N(), ch), h, qq, In, opch)
 
 #undef RUNGHOP
-#define RUNGHOP(i, j, factor) this->diag_offdiag_function(step, i, j, 0, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
+#define RUNGHOP(i, j, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
 
 // "non-polarized" here means that the coefficients xi do not depend on spin. Note, however, that there is support
 // for a global magnetic field, cf. P.globalB.

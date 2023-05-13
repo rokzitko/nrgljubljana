@@ -116,7 +116,7 @@ class SymmetryQS : public Symmetry<SC> {
 #define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xiR(step.N(), ch), h, qq, In, opch)
 
 #undef RUNGHOP
-#define RUNGHOP(i, j, factor) this->diag_offdiag_function(step, i, j, 0, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
+#define RUNGHOP(i, j, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
 
 template<typename SC>
 void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, 

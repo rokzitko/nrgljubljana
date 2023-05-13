@@ -121,7 +121,7 @@ bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I
 #define DIAG(i, number) this->diag_function(step, i, 0, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, factor) this->diag_offdiag_function(step, i, j, 0, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
+#define ISOSPINX(i, j, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, factor) offdiag_function(step, i, j, 0, 0, t_matel(factor) * coef.kappa(step.N(), 0), h, qq, In, opch)

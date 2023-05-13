@@ -85,6 +85,24 @@ class SymmetrySPSU2 : public Symmetry<SC> {
     } else throw std::runtime_error(fmt::format("Unknown projection type {} for symmetry SPSU2.", p));
   }
 
+  void show_coefficients(const Step &step, const Coef<SC> &coef) const override {
+    Symmetry<SC>::show_coefficients(step, coef);
+    if (!P.substeps) {
+      for (size_t i = 0; i < P.coefchannels; i++) {
+        const auto N = step.N();
+        std::cout << "[" << i + 1 << "]"
+          << " Delta(" << N+1 << ")=" << coef.delta(N+1, i) << " kappa(" << N << ")=" << coef.kappa(N, i) << std::endl;
+      }
+    } else {
+      const auto [N, M] = step.NM();
+      for (auto i = 0; i < P.coeffactor; i++) {
+        const auto index = M + P.channels * i;
+        std::cout << "[" << index << "]"
+          << " Delta(" << N+1 << ")=" << coef.delta(N+1, index) << " kappa(" << N << ")=" << coef.kappa(N, index) << std::endl;
+      }
+    }
+  }
+
   DECL;
   HAS_DOUBLET;
   HAS_TRIPLET;
@@ -92,12 +110,16 @@ class SymmetrySPSU2 : public Symmetry<SC> {
   HAS_SUBSTEPS;
 };
 
-// NOTE: the additional factor of 2 is due to the fact that the
-// isospin is in fact defined as 1/2 of the (d^\dag d^\dag + d d)
-// pairing operator.
+// NOTE: the additional factor of 2 for coef.delta is due to the fact that the isospin is in fact defined as 1/2 of
+// the (d^\dag d^\dag + d d) pairing operator.
 
+template<typename SC>
+void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
+  int ss = I.get("SS");
+
+  if (!P.substeps) {
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, ch, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.kappa(step.N(), ch), h, qq, In, opch)
@@ -108,11 +130,6 @@ class SymmetrySPSU2 : public Symmetry<SC> {
 #undef DIAG
 #define DIAG(i, ch, number) this->diag_function(step, i, ch, number, coef.zeta(step.N() + 1, ch), h, qq)
 
-template<typename SC>
-void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
-  int ss = I.get("SS");
-
-  if (!P.substeps) {
     switch (P.channels) {
       case 1:
 #include "spsu2/spsu2-1ch-offdiag.dat"
@@ -142,7 +159,7 @@ void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceD
     const auto [Ntrue, M] = step.NM();
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, M, t_matel(factor) * 2.0 * coef.delta(Ntrue + 1, M), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(Ntrue + 1, M), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, M, 0, t_matel(factor) * coef.kappa(Ntrue, M), h, qq, In, opch)

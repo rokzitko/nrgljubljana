@@ -160,7 +160,7 @@ class Symmetry {
                       Matrix &h, const SubspaceDimensions &qq) const;
    void diag_function_half(const Step &step, const size_t i, const size_t ch, const double number, const t_coef sc_zeta,
                            Matrix &h, const SubspaceDimensions &qq) const;
-   void diag_offdiag_function(const Step &step, const size_t i, const size_t j, const size_t chin, const t_coef factor,
+   void diag_offdiag_function(const Step &step, const size_t i, const size_t j, const t_coef factor,
                               Matrix &h, const SubspaceDimensions &qq) const;
 
    virtual void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In,

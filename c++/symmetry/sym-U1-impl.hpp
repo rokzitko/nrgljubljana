@@ -85,7 +85,7 @@ class SymmetryU1 : public Symmetry<SC> {
 
 // Compare with ISOSPINX for symtype=SPSU2 case
 // See also coefnew/u1/u1.m
-#define DIAG_DOUP(i, j, ch, factor) this->diag_offdiag_function(step, i, j, ch, t_matel(factor) * coef.zetaDOUP(step.N() + 1, ch), h, qq)
+#define DIAG_DOUP(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * coef.zetaDOUP(step.N() + 1, ch), h, qq)
 
 template<typename SC>
 void SymmetryU1<SC>::make_matrix_polarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
