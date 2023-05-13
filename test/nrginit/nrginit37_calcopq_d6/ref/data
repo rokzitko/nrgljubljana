@@ -1,6 +1,6 @@
 # Input file for NRG Ljubljana
 # symtype 	SPU1
-# Using sneg version 	1.251
+# Using sneg version 	2.0.6
 #!9
 # Number of channels, chain sites, subspaces: 
 1	4	5
@@ -106,7 +106,7 @@ dAC_d
 -0.031237188808011587
 -1	0
 -0.18399037155853637	0.2900527757367431	0.05271675663714369	0.93767684946938
-# Discretization tables:
+# Discretization tables (legacy form):
 z
 4
 0.54528747084262258072

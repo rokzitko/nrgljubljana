@@ -446,8 +446,10 @@ Conjugate[hybV[i__]] ^= hybV[i];
 Conjugate[coefzeta[i__]] ^= coefzeta[i];
 Conjugate[coefrung[i__]] ^= coefrung[i];
 Conjugate[coefxi[i__]] ^= coefxi[i];
-Conjugate[coefdelta[i__]] ^= coefdelta[i];
 Conjugate[coefkappa[i__]] ^= coefkappa[i];
+
+(* ! *)
+(* Conjugate[coefdelta[i__]] ^= coefdelta[i]; *)
 
 (* Quantities 'theta0' and 'gammaA' are defined below, when
 discretization is set up. *)
@@ -539,8 +541,8 @@ HBANDonsite[ch_, i_] := Module[{reg, ireg},
   ];
 
   (* Superconducting pairing contribution. This is isospinx[fop, n=0]. *)
-  ireg = coefdelta[ch, i] (nc[fopCR[ch-1, i, UP], fopCR[ch-1, i, DO]] +
-                           nc[fopAN[ch-1, i, DO], fopAN[ch-1, i, UP]]);
+  ireg = coefdelta[ch, i]            nc[fopCR[ch-1, i, UP], fopCR[ch-1, i, DO]] +
+         Conjugate[coefdelta[ch, i]] nc[fopAN[ch-1, i, DO], fopAN[ch-1, i, UP]];
 
   reg + ireg
 ];
