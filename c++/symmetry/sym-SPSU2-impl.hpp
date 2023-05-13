@@ -118,8 +118,9 @@ void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceD
   int ss = I.get("SS");
 
   if (!P.substeps) {
+// conjugate the coefficient, to bring it in line with the standard convention for superconducting phases (only relevant for complex-valued parameters)
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * conj_me( coef.delta(step.N() + 1, ch) ), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.kappa(step.N(), ch), h, qq, In, opch)
@@ -159,7 +160,7 @@ void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceD
     const auto [Ntrue, M] = step.NM();
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(Ntrue + 1, M), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * conj_me( coef.delta(Ntrue + 1, M) ), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, M, 0, t_matel(factor) * coef.kappa(Ntrue, M), h, qq, In, opch)

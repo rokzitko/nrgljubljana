@@ -1,0 +1,76 @@
+# Input file for NRG Ljubljana
+# symtype 	SPSU2
+# Using sneg version 	2.0.6
+#!9
+# Number of channels, chain sites, subspaces: 
+1	1	2
+# SCALE 	1
+# Energies (GS energy subtracted, multiplied by 1/SCALE):
+1
+2
+0.	0.2
+2
+1
+0.1
+# Irreducible matrix elements for Wilson chains:
+f 0 0
+2
+2	1
+0.7071067811865476	0.7071067811865476
+1	2
+1.0000000000000002
+-1.0000000000000002
+# GS energy in absolute units:
+e
+-0.1
+# Irreducible matrix elements for other operators:
+sn_f
+2
+1	1
+1.0000000000000002	-1.0000000000000002
+-1.0000000000000002	1.0000000000000002
+2	2
+1.
+sq_f^2
+2
+1	1
+1.0000000000000002	0.
+0.	1.0000000000000002
+2	2
+0.
+spair_f
+2
+1	1
+-0.5000000000000001	-0.5000000000000001
+0.5000000000000001	0.5000000000000001
+2	2
+0.
+dA_f
+2
+2	1
+0.7071067811865476	0.7071067811865476
+1	2
+1.0000000000000002
+-1.0000000000000002
+dAc_f
+2
+2	1
+-0.7071067811865476	0.7071067811865476
+1	2
+1.0000000000000002
+1.0000000000000002
+# Discretization tables (legacy form):
+z
+1
+0.54528747084262258072
+0.41550946829175445321
+1
+0.e-999
+0.e-998
+Z
+1
+0.1
+0.1
+1
+0
+0
