@@ -151,12 +151,23 @@ Module[{t = {}},
 
  If[CHANNELS >= 2,
     (* Local 'occupancy' of electron gas *)
+    t = Join[t, mtSingletOp["n_f1", number[f[1]] ] ];
+    t = Join[t, mtSingletOp["n_f1^2", pow[number[f[1]], 2] ] ];
     t = Join[t, mtSingletOp["q_f1", number[f[1]]-1 ] ];
     t = Join[t, mtSingletOp["q_f1^2", pow[number[f[1]]-1, 2] ] ];
     t = Join[t, mtSingletOp["hop1", hop[f[1], d[]] ] ];
     t = Join[t, mtSingletOp["imhop1", hopphi[f[1], d[], Pi/2] ] ];
 
-    (* Symmetric and antisymmetric combinations *)
+    t = Join[t, mtSingletOp["q_f*q_f1", nc[number[f[0]]-1, number[f[1]]-1] ] ];
+    t = Join[t, mtSingletOp["q_f^2*q_f1^2", nc[pow[number[f[0]]-1,2], pow[number[f[1]]-1,2]] ] ];
+    t = Join[t, mtSingletOp["hop_f_f1", hop[f[0], f[1]] ] ];
+
+    t = Join[t, mtDoubletOp["A_f1", f[1] ]];
+    t = Join[t, mtDoubletOp["Ac_f1", ((-1)^#2 f[1-#1, 1, 1-#2])& ]];
+    t = Join[t, mtDoubletOp["A_f1_u", f[1], UP ]];
+    t = Join[t, mtDoubletOp["A_f1_d", f[1], DO ]];
+
+   (* Symmetric and antisymmetric combinations *)
     t = Join[t, mtSingletOp["hops", 1/Sqrt[2] (hop[d[], f[0]] + hop[d[], f[1]]) ]];
 
     If[isLR[],
@@ -175,10 +186,15 @@ Module[{t = {}},
   ];
 
   If[CHANNELS >= 3,
+    t = Join[t, mtSingletOp["n_f2", number[f[2]] ] ];
+    t = Join[t, mtSingletOp["n_f2^2", pow[number[f[2]], 2] ] ];
     t = Join[t, mtSingletOp["q_f2", number[f[2]]-1 ] ];
     t = Join[t, mtSingletOp["q_f2^2", pow[number[f[2]]-1, 2] ] ];
     t = Join[t, mtSingletOp["hop2", hop[d[], f[2]] ] ];
+
     t = Join[t, mtSingletOp["q_f012", number[f[0]] + number[f[1]] + number[f[2]] - 3 ] ];
+
+    t = Join[t, mtDoubletOp["A_f2", f[2] ]];
   ];
 
   (* Impurity spectral density *)

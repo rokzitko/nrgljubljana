@@ -708,7 +708,7 @@ If[ MODEL == "ZERO",
   If[ VARIANT == "COUPLED",
     H = H0 + t hop[f[0], f[1]];
   ];
-    
+
   lrchain = {f[0], f[1]};
 ];
 
@@ -1100,6 +1100,19 @@ If[ MODEL == "ONEKONDO2CH",
 
   lrchain = {f[0], f[1]};
 ];
+
+(*** THREE-CHANNELS ***)
+
+If[ MODEL == "ZERO3CH",
+  def3ch[0];
+  H = H0;
+
+  (* Inter-band coupling terms *)
+  If[ VARIANT == "COUPLED",
+    H = H0 + t1 hop[f[0], f[1]] + t2 hop[f[1], f[2]] + t3 hop[f[2], f[0]];
+  ];
+];
+
 
 (**** [THREE-CHANNELS] One-impurity problems ****)
 
