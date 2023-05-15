@@ -1,0 +1,26 @@
+[param]
+symtype=SPSU2
+model=CLEAN
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+bcsgap=0.123
+
+Nmax=2
+keep=5000
+
+ops=q_f^2 q_f A_f Ac_f sigma_f pair_f pairing_f
+
+specs=q_f^2-q_f^2 q_f-q_f pair_f-pair_f
+specd=A_f-A_f Ac_f-A_f
+spect=sigma_f-sigma_f
+
+dumpannotated=200
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+

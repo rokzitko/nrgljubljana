@@ -1,0 +1,27 @@
+[extra]
+t=0.321
+
+[param]
+symtype=QSZ
+model=ZERO
+variant=COUPLED
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Nmax=2
+keep=5000
+
+ops=q_f^2 q_f A_f q_f1^2 A_f1 q_f*q_f1 hop_f_f1 q_f^2*q_f1^2 SZf
+
+specs=q_f^2-q_f^2 q_f-q_f q_f1^2-q_f1^2 q_f*q_f1-q_f*q_f1 hop_f_f1-hop_f_f1 SZf-SZf
+specd=A_f-A_f-u A_f-A_f-d A_f1-A_f1-u A_f1-A_f1-d
+
+dumpannotated=200
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+

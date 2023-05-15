@@ -1,0 +1,23 @@
+[param]
+symtype=ISO2
+model=CLEAN
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Nmax=2
+keep=5000
+
+ops=q_f^2 A_f
+
+specs=q_f^2-q_f^2
+specd=A_f-A_f
+
+dumpannotated=500
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+

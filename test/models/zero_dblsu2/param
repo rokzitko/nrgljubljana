@@ -1,0 +1,22 @@
+[param]
+symtype=DBLSU2
+model=ZERO
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Nmax=2
+keep=5000
+
+ops=q_f^2 SZf0 q_f1^2
+
+specs=q_f^2-q_f^2 q_f1^2-q_f1^2 SZf0-SZf0
+
+dumpannotated=500
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+

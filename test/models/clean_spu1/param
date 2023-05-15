@@ -1,0 +1,25 @@
+[param]
+symtype=SPU1
+model=CLEAN
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+bcsgap=0
+
+Nmax=2
+keep=5000
+
+ops=q_f^2 q_f A_f Ac_f pair_f pairing_f SZf0
+
+specs=q_f^2-q_f^2 q_f-q_f pair_f-pair_f SZf0-SZf0
+specd=A_f-A_f-u Ac_f-A_f-u
+
+dumpannotated=200
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+

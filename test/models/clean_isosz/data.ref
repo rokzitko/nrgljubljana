@@ -1,0 +1,68 @@
+# Input file for NRG Ljubljana
+# symtype 	ISOSZ
+# Using sneg version 	2.0.6
+#!9
+# Number of channels, chain sites, subspaces: 
+1	2	3
+# SCALE 	1.0201394465967895
+# Energies (GS energy subtracted, multiplied by 1/SCALE):
+2	1
+1
+0.
+1	2
+1
+0.
+1	0
+1
+0.
+# Irreducible matrix elements for Wilson chains:
+f 0 0
+4
+1	0	2	1
+-1.4142135623730951
+1	2	2	1
+-1.4142135623730951
+2	1	1	0
+1.
+2	1	1	2
+-1.
+# GS energy in absolute units:
+e
+0.
+# Irreducible matrix elements for other operators:
+sq_f^2
+3
+2	1	2	1
+1.
+1	2	1	2
+0.
+1	0	1	0
+0.
+dA_f
+4
+1	0	2	1
+-1.4142135623730951
+1	2	2	1
+-1.4142135623730951
+2	1	1	0
+1.
+2	1	1	2
+-1.
+sSZf0
+3
+2	1	2	1
+0.
+1	2	1	2
+0.5
+1	0	1	0
+-0.5
+# Discretization tables (legacy form):
+z
+2
+0.54528747084262258072
+0.41550946829175445321
+0.32189917767609217007
+2
+0.e-999
+0.e-998
+0.e-997

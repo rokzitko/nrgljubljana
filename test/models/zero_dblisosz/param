@@ -1,0 +1,22 @@
+[param]
+symtype=DBLISOSZ
+model=ZERO
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Nmax=2
+keep=5000
+
+ops=q_f*q_f1 hop_f_f1
+
+dumpannotated=500
+
+specs=q_f*q_f1-q_f*q_f1 hop_f_f1-hop_f_f1
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+

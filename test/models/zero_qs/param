@@ -1,0 +1,24 @@
+[param]
+symtype=QS
+model=ZERO
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Nmax=2
+keep=5000
+
+ops=q_f^2 q_f A_f sigma_f q_f1^2 A_f1 q_f*q_f1 hop_f_f1 q_f^2*q_f1^2
+
+specs=q_f^2-q_f^2 q_f-q_f q_f1^2-q_f1^2 q_f*q_f1-q_f*q_f1 hop_f_f1-hop_f_f1 q_f^2-q_f1^2
+specd=A_f-A_f A_f1-A_f1
+spect=sigma_f-sigma_f
+
+dumpannotated=200
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+

@@ -1,0 +1,23 @@
+[param]
+symtype=U1
+model=ZERO
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Nmax=2
+keep=5000
+
+ops=q_f^2 n_f SZf0 A_f_u A_f_d q_f1^2 A_f1_u A_f1_d
+
+specs=q_f^2-q_f^2 n_f-n_f SZf0-SZf0 q_f1^2-q_f1^2
+specd=A_f_u-A_f_u A_f_d-A_f_d A_f1_u A_f1_d
+
+dumpannotated=500
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+

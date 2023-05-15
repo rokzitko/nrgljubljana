@@ -1,0 +1,17 @@
+[param]
+symtype=NONE
+model=ZERO
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+bcsgap=0
+
+Nmax=2
+keep=5000
+
+ops=q_f^2 q_f pair_f pairing_f SZf0 q_f1^2
+
+dumpannotated=200
+

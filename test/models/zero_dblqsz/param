@@ -1,0 +1,23 @@
+[param]
+symtype=DBLQSZ
+model=ZERO
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Nmax=2
+keep=5000
+
+ops=q_f^2 q_f A_f SZf0 A_f1
+
+specs=q_f^2-q_f^2 q_f-q_f SZf0-SZf0
+specd=A_f-A_f-u A_f-A_f-d A_f1-A_f1-u A_f1-A_f1-d
+
+dumpannotated=200
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+

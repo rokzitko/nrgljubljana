@@ -1,0 +1,23 @@
+[param]
+symtype=SL3
+model=ZERO3CH
+
+discretization=Z
+Lambda=2.0
+z=1.0
+
+Nmax=2
+keep=5000
+
+ops=n_f A_f n_f1 A_f1 n_f2 A_f2 q_f012
+
+specs=n_f-n_f n_f1-n_f1 n_f2-n_f2
+specd=A_f-A_f A_f1-A_f1 A_f2-A_f2
+
+dumpannotated=500
+
+fdmexpv=true
+fdmmats=true
+mats=5
+T=0.01
+
