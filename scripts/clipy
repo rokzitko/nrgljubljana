@@ -1,0 +1,43 @@
+#!/usr/bin/env perl
+# Clip tabulated y values to an interval [ymin:ymax]. Half-intervals
+# are also supported.
+# Rok Zitko, rok.zitko@ijs.si, May 2009
+
+use strict;
+use warnings;
+
+my $mode = shift;
+
+if (!defined($mode) || !($mode eq "t" || $mode eq "b" || $mode eq "bt")) {
+  die "Usage: clipy <b|t|bt> [ymin] [ymax] [filename]\n";
+}
+
+my ($ymin, $ymax);
+
+if ($mode eq "t") {
+    $ymax = shift;
+}
+
+if ($mode eq "b") {
+    $ymin = shift;
+}
+
+if ($mode eq "bt") {
+    $ymin = shift;
+    $ymax = shift;
+}
+
+while (<>) {
+    next if (/^#/);
+    chomp;
+    my @vals = split;
+    my $x = $vals[0];
+    my $y = $vals[1];
+    if (defined($ymin)) {
+	$y = ($y > $ymin ? $y : $ymin);
+    }
+    if (defined($ymax)) {
+	$y = ($y < $ymax ? $y : $ymax);
+    }
+    print "$x $y\n";
+}

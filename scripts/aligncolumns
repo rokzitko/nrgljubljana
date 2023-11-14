@@ -1,0 +1,52 @@
+#!/usr/bin/perl
+# Align tabulated results for easier inspection.
+# Rok Zitko, rok.zitko@ijs.si, April 2008
+# $Id$
+
+use strict;
+use warnings;
+
+my @cont;
+
+# Read data, strip white space
+while (<>) {
+    if (/^#/) {
+	print;
+    } else {
+	my $line = $_;
+	chomp($line);
+	$line =~ s/^\s+//;
+	$line =~ s/\s+$//;
+	push(@cont, $line);
+    }
+}
+
+# Find maximal widths
+my @maxlens;
+foreach(@cont) {
+    my @vals = split(/\s+/);
+    my @lens = map { length($_) } @vals;
+    if (@maxlens) {
+	if (scalar(@maxlens) != scalar(@lens)) {
+	    die "Lengths don't match.\n";
+	}
+	my $i;
+	for ($i = 0; $i < @lens; $i++) {
+	    if ($lens[$i] > $maxlens[$i]) {
+		$maxlens[$i] = $lens[$i];
+	    }
+	}
+    } else {
+	@maxlens = @lens;
+    }
+}
+
+# Formatted output
+foreach (@cont) {
+    my @vals = split(/\s+/);
+    my $i;
+    for ($i = 0; $i < @vals; $i++) {
+	printf '%*s ', $maxlens[$i], $vals[$i];
+    }
+    print "\n";
+}

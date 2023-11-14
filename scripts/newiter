@@ -1,0 +1,23 @@
+#!/usr/bin/env perl
+# Increase the iteration number by one.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Oct 2008
+
+# CHANGE LOG
+# 30.10.2013 - support for directory parameter
+
+use warnings;
+use strict;
+
+my $dir = shift;
+if (!defined($dir)) {
+    $dir = ".";
+}
+
+my $iter = `getiter $dir`;
+
+$iter++;
+
+my $fn = "$dir/ITER";
+open(F, ">$fn") or die "Can't open $fn for writing: $!";
+print F "$iter";
+close F;

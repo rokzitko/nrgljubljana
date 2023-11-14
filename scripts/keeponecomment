@@ -1,0 +1,17 @@
+#!/usr/bin/perl
+# Filter all comment lines except the first.
+# Rok Zitko, rok.zitko@ijs.si, April 2008
+# $Id$
+
+my $found = 0;
+
+while (<>) {
+    if (/^#/) {
+	if ($found eq 0) {
+	    $found = 1;
+	    print;
+	}
+    } else {
+	print;
+    }
+}

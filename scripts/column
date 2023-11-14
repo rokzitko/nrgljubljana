@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+# Extract a column.
+# Rok Zitko, rok.zitko@ijs.si, Apr, Nov 2008
+# $Id$
+
+use strict;
+use warnings;
+
+if (@ARGV != 2) {
+  die "Synthax: column <filename> <column>\n";
+}
+
+my $filename = $ARGV[0];
+my $column = $ARGV[1]-1; # offset 1!
+
+if ($column < 0) {
+    die "Column number is negative.\n";
+}
+
+open(F, "<$filename") or die "Can't open $filename: $!";
+
+while (<F>) {
+    next if (/^#/);
+    chomp;
+    my @vals = split;
+    my $x = $vals[$column];
+    print "$x\n";
+}
+
+close(F);

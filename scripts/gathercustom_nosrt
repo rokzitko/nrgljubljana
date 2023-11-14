@@ -1,0 +1,18 @@
+#!/usr/bin/env perl
+# Collect custom files from working subdirectories and join the files.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008, Aug 2009
+
+use strict;
+use warnings;
+
+my @dirs = <[1-9]*>;
+
+my $fn = "custom.dat";
+unlink $fn;
+
+foreach (@dirs) {
+    my $dir = $_;
+    if (-d $dir) {
+	system("cat $dir/custom >>$fn");
+    }
+}

@@ -1,0 +1,20 @@
+#!/usr/bin/env perl
+# Normalize a tabulated function to 1
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
+# $Id$
+
+use strict;
+use warnings;
+
+if (@ARGV != 1) {
+  die ("Usage: normalize <filename>\n");
+}
+
+my $fn = shift;
+
+chomp(my $norm = `integrate $fn`);
+
+my $invnorm = 1.0/$norm;
+
+system "scaleby $invnorm $fn";
+

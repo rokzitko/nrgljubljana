@@ -1,0 +1,18 @@
+#!/usr/bin/perl
+# Divide 2nd column by the 1st column
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, April 2008
+
+use warnings;
+use strict;
+
+while (<>) {
+  if (!/^#/) {
+    chomp;
+    my @d = split;
+    $d[1] /= $d[0];
+      
+    print "@d\n";
+  } else {
+    print;
+  }
+}

@@ -1,0 +1,20 @@
+#!/usr/bin/perl
+# Sort table by numeric value of the first column
+# Rok Zitko, rok.zitko@ijs.si, March 2008
+# $Id$
+
+use warnings;
+
+my @data;
+
+while(<>) {
+  if (/^#/) {
+    print;
+  } else {
+    my @vals = split(' ', $_);
+    my $first = $vals[0];
+    push(@data, [$first, $_]);
+  }
+}
+
+map { print $_->[1] } sort { $a->[0] <=> $b->[0] } @data;

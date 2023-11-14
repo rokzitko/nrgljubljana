@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+# Extract a column with a given header keyword. The header line is the last lin$
+# with a # character which contains the names of the columns.
+# Rok Zitko, rok.zitko@ijs.si, Mar 2008
+# $Id$
+
+if (@ARGV != 2) {
+  die "Synthax: extractcolumn <filename> <keyword>\n";
+}
+
+my $filename = $ARGV[0];
+my $keyword = $ARGV[1];
+
+open(F, "<$filename") or die "Can't open $filename: $!";
+
+while (<F>) {
+  if (/^#/) {
+     $headerline = $_;
+  } else {
+     $headerline =~ s/^#\s*(.*)/$1/;
+     @keywords = split(/\s+/, $headerline);
+     for ($i = 0; $i < @keywords; $i++) {
+       last if $keywords[$i] eq $keyword;
+     }
+     $column = $i;
+
+     $line = $_;
+     chomp($line);
+     $line =~ s/^\s+(.*)/$1/;
+     @vals = split(/\s+/, $line);
+
+     $x = @vals[$column];
+     print "$x\n";
+  }
+}
+
+close(F);
+

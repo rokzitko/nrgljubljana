@@ -1,0 +1,4 @@
+#!/bin/sh
+# Extract the first column from a table.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
+perl -ane 'chomp($F[0]); print $F[0], "\n";' $@

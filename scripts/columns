@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+# Extract several columns from a file.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
+
+use warnings;
+use strict;
+
+if (@ARGV < 2) {
+  die "Synthax: columns <filename> <column1> <column2>...\n";
+}
+
+my $filename = shift;
+my @columns = @ARGV; 
+
+open(F, "<$filename") or die "Can't open $filename: $!";
+
+$,=" ";
+
+while (<F>) {
+    next if (/^#/);
+    chomp;
+    my @vals = split;
+    my @output;
+    for (my $i = 0; $i < @columns; $i++) {
+	my $col = $columns[$i]-1; # offset 1!
+	my $val = $vals[$col];
+	push(@output, $val);
+    }
+    print @output;
+    print "\n";
+}
+
+close(F);

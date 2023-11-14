@@ -1,0 +1,2 @@
+#!/bin/sh
+grep "Total energy:" log | sed "s/Total energy:\s*//"

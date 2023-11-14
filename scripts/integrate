@@ -1,0 +1,29 @@
+#!/usr/bin/env perl
+# Integrate column data by trapezoid rule
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Feb, Oct, Nov 2008
+# $Id$
+
+# CHANGE LOG
+# 24.3.2010 - split lines correctly
+
+use strict;
+use warnings;
+
+my $xprev = 0;
+my $yprev = 0;
+my $sum = 0;
+
+while (<>) {
+  chomp;
+  next if /^#/; # skip comments
+  my ($x,$y,$remainder) = split;
+  
+  if ($. != 1) {
+    $sum += ($x-$xprev) * ($y + $yprev)/2.0;
+  }
+  
+  $xprev = $x;
+  $yprev = $y;
+}
+
+print "$sum\n";

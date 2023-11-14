@@ -1,0 +1,20 @@
+#!/usr/bin/perl
+# Filter all comment lines except the last one.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
+
+use warnings;
+
+my $shown = 0;
+my $store;
+
+while (<>) {
+    if (/^#/) {
+	$store = $_;
+    } else {
+	if (!$shown) {
+	    print $store;
+	    $shown = 1;
+	}
+	print;
+    }
+}

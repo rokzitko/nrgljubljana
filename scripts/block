@@ -1,0 +1,34 @@
+#!/usr/bin/env perl
+# In a file containings data in blocks separated by an empty line,
+# extract block number 'N'.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, July 2008
+
+if (@ARGV != 2) {
+  die "Usage: block <filename> <N>.\n";
+}
+
+my $filename = $ARGV[0];
+my $N = $ARGV[1];
+
+open(F, "<$filename") or die "Can't open $filename: $!\n";
+
+my $cnt = 0;
+my @lastblock = ();
+
+while(<F>) {
+    chomp;
+    if (!/^#/) {
+      $line = $_;
+      if ($line eq "") {
+	  $cnt++;
+	  if ($cnt == $N) {
+	      print @lastblock;
+	  }
+	  @lastblock = ();
+      } else {
+	  push(@lastblock, "$line\n");
+      }
+  }
+}
+
+print STDERR "Total blocks=$cnt\n";

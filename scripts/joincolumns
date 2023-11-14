@@ -1,0 +1,37 @@
+#!/usr/bin/perl
+# Join columns into a table
+# Rok Zitko, rok.zitko@ijs.si, Mar 2008
+# $Id$
+
+use warnings;
+use strict;
+
+if (@ARGV != 2) {
+  die "Syntax: joincolumns <filename1> <filename2>\n";
+}
+
+my $filename1 = @ARGV[0];
+my $filename2 = @ARGV[1];
+
+open(F1, "<$filename1") or die "Can't open $filename1: $!";
+open(F2, "<$filename2") or die "Can't open $filename2: $!";
+
+while (<F1>) {
+  my $line1 = $_;
+  my $line2 = <F2>;
+
+  chomp($line1);
+  chomp($line2);
+
+  if (/^#/) {
+    print;
+  } else {
+    print "$line1 $line2\n";
+  }
+}
+
+close(F2);
+close(F1);
+
+
+

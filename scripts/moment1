@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+# Integrate column data by trapezoid rule - FIRST MOMENT CALCULATION
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Feb, Jun 2008
+
+use warnings;
+
+$xprev = 0;
+$yprev = 0;
+$sum = 0;
+
+while (<>) {
+  chomp;
+  @d = split;
+  $x = $d[0];
+  $y = $d[1];
+  
+  if ($. != 1) {
+    my $f = ($y + $yprev)/2.0;
+    my $xavg = ($x + $xprev)/2.0;
+    my $integrand = $f * $xavg; # First moment
+    my $width = $x - $xprev;
+    $sum += $width * $integrand;
+  }
+  
+  $xprev = $x;
+  $yprev = $y;
+}
+
+print "$sum\n";

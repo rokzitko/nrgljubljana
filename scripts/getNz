@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+# Extract Nz
+# Rok Zitko, rok.zitko@ijs.si, Dec 2018
+
+if (@ARGV != 0 && @ARGV != 1) {
+    die "Usage: getNz [param filename]\n";
+}
+
+my $fn = shift | "param.loop";
+
+open (F, "<$fn") or die "Can't open $fn for reading: $!\n";
+
+while (<F>) {
+    if (/\$Nz=(.*)/) {
+       my $Nz = $1;
+       $Nz =~ s/;//;
+       print "$Nz\n";
+    }
+}
+
+close(F);

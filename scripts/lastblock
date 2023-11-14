@@ -1,0 +1,42 @@
+#!/usr/bin/env perl
+# In a file containing data in blocks separated by empty lines,
+# extract the last block of non-empty lines.
+# gzipped files are automatically decompressed on the fly.
+# Rok Zitko, rok.zitko@ijs.si, Sep 2009
+
+# CHANGE LOG
+# 24.9.2015 - no output to stderr
+
+use strict;
+use warnings;
+
+if (@ARGV != 1) {
+  die "Usage: lastblock <filename>.\n";
+}
+
+my $filename = shift;
+
+my $arg;
+if ($filename =~ /\.gz$/) {
+    $arg = "gunzip -c $filename |";
+} else {
+    $arg = "<$filename";
+}
+
+open(F, $arg) or die "Can't open $filename: $!\n";
+
+my @lastblock = ();
+my @block = ();
+
+while(<F>) {
+    if (!/^#/) {
+      if ($_ eq "\n") {
+	  @lastblock = @block;
+	  @block = ();
+      } else {
+	  push(@block, $_);
+      }
+  }
+}
+
+print @lastblock;

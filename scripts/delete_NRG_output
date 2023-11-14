@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Oct 2008
+
+use File::Path;
+
+$cnt = 1;
+while (-d $cnt) {
+  if (-e "$cnt/param" && -e "$cnt/data") {
+      rmtree $cnt;
+  }
+  $cnt++;
+}

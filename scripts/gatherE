@@ -1,0 +1,24 @@
+#!/usr/bin/env perl
+# Collect total energy data from working subdirectories, join the files
+# and sort the data numerically.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008, March 2009
+
+use strict;
+use warnings;
+
+my @dirs = <[1-9]*>;
+@dirs = sort { $a <=> $b } @dirs;
+print @dirs;
+print "\n";
+
+my $fn = "E.dat";
+unlink $fn;
+
+foreach (@dirs) {
+    my $dir = $_;
+    if (-d $dir && -e "$dir/DONE") {
+        system("cd $dir ; totalE");
+	system("cd $dir ; totalE >>../$fn");
+    }
+}
+

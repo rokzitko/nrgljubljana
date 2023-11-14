@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+# Take absolute value of selected column
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
+
+use warnings;
+use strict;
+
+if (@ARGV < 1) {
+  die "Synthax: abs <column> [filename]\n";
+}
+
+my $col = shift;
+
+$,=" ";
+
+while (<>) {
+    next if (/^#/);
+    chomp;
+    my @vals = split;
+    my $x = $vals[$col-1];
+    $x = abs($x);
+    splice(@vals, $col-1, 1, $x);
+    print @vals;
+    print "\n";
+}

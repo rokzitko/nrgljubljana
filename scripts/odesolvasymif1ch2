@@ -1,0 +1,32 @@
+#!/usr/bin/env perl
+# Run "odesolv" if the current working directory is ../1
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
+
+$_ = `pwd`;
+if (/\/1$/) {
+  system("cp ../Delta.dat2 ../Delta.dat");
+    
+  system("adapt P | tee solverlog");
+  system("adapt N | tee solverlogneg");
+    
+  if (!(-e "FSOL.dat" && -e "FSOLNEG.dat")) {
+    print "solver failed.\n";
+    exit(1);
+  } else {
+    system("mv FSOL.dat ../FSOL.dat2");
+    system("mv FSOLNEG.dat ../FSOLNEG.dat2");
+  }
+
+  system("cp ../Delta.dat1 ../Delta.dat");
+    
+  system("adapt P | tee solverlog");
+  system("adapt N | tee solverlogneg");
+    
+  if (!(-e "FSOL.dat" && -e "FSOLNEG.dat")) {
+    print "solver failed.\n";
+    exit(1);
+  } else {
+    system("mv FSOL.dat ..");
+    system("mv FSOLNEG.dat ..");
+  }
+}

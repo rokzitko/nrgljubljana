@@ -1,0 +1,29 @@
+#!/usr/bin/env perl
+# Extract the ground state energy from the log file
+# Rok Zitko, rok.zitko@ijs.si, Oct 2009, Feb 2011
+
+# CHANGE LOG
+# 17.2.2011 - support for gzipped log files
+
+use warnings;
+
+my $fn = (@ARGV >= 1 ? shift : "log");
+
+if (!-e $fn && -e "$fn.gz") {
+    $str = "zcat $fn.gz |";
+} else {
+    $str = "<$fn";
+}
+
+open(F,"$str") or die "Error opening $fn. Exiting";
+
+while (<F>) {
+  if (/^Total energy:\s+(\S+)\n$/) {
+    print "$1";
+    exit(0);
+  }
+}
+
+close F;
+
+exit(1);

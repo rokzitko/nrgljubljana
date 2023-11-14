@@ -1,0 +1,61 @@
+#!/usr/bin/perl
+# Gather results from a run
+# (c) Rok Zitko, rok.zitko@ijs.si, April 2005, May 2008, Nov 2010
+# $Id: gather,v 1.8 2006/01/01 16:57:19 zitko Exp zitko $
+
+# CHANGE LOG
+# 9.3.2014 - arbitrary number of comment lines in the header
+
+use strict;
+use warnings;
+
+my $paramname = shift;
+if (!defined $paramname) {
+    $paramname = "UNDEF";
+}
+
+my $path = ".";
+
+opendir(DIR, $path);
+my @dirs;
+@dirs = map  { $_->[1] }                # extract pathnames
+sort { $a->[0] <=> $b->[0] }    # sort names numeric
+grep { -d $_->[1] }             # path is a dir
+map  { [ $_, "$path/$_" ] }     # form (name, path)
+grep { /^\d+$/ }                # just numerics
+readdir(DIR);                   # all files
+closedir(DIR);
+
+my $fn = "custom.dat";
+
+unlink($fn);
+
+# Copy headers!
+if (-e "$dirs[0]/custom") {
+  system("grep '^#' $dirs[0]/custom >$fn"); # General stuff
+}
+
+open(F, ">>$fn") or die "Can't open $fn.";
+
+print "dirs = [@dirs]\n";
+foreach $a (@dirs) {
+    print "$a - ";
+    if (-e "$a/DONE") {
+	my $line = `tail -n 1 $a/custom`;
+	chop($line);
+	my $param = `cd $a ; getparam $paramname`;
+	chop($param);
+	$line =~ s/^\s+(.*)/$1/;	
+	my @line = split('\s', $line);
+	$line[0] = $param;
+	print F "     @line\n";
+	print "done\n";
+    } else {
+	print "not yet";
+	if (-e "$a/RUNNING") {
+	    print (" - running\n");
+	} else {
+	    print ("\n");
+	}
+    }
+}

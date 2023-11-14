@@ -1,0 +1,16 @@
+#!/usr/bin/perl
+# Extract discretization parameters from "log" file
+# Rok Zitko, rok.zitko@ijs.si, Jul 2020
+
+open(F, "<log") or die "Can't open the log file.";
+open(X, ">xi_scaled") or die "Can't open xi_scaled for writing.";
+
+while(<F>) {
+  if (/xi_scaled\([0-9]+\)=(\S+)/) {
+      print;
+      print X "$1\n";
+  }
+}
+
+close(F);
+close(X);

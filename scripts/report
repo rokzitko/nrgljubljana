@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+# Perl version of report.nb, the formatted output processing tool.
+# Splits custom.dat or an equivalent file into several files named
+# according to the column headers.
+#
+# $Id: report,v 1.1 2009/09/18 07:53:47 rok Exp rok $
+# rok.zitko@ijs.si
+
+# Usage: report <input file> <output prefix> [col1] [col2] ...
+# If the columns names are not specified, all columns are processed.
+
+# CHANGE LOG
+# 24.9.2007 - .dat missing suffix
+# 18.9.2009 - support for specifying a list of columns to extract
+
+use warnings;
+
+# Determine input filename: either first argument, or the default
+# "custom.dat"
+my $fnin = shift;
+defined($fnin) or $fnin = "custom.dat"; 
+open (F, "<$fnin") or die "Can't open $fnin: $!\n";
+
+# The second argument (if provided) overrides the default output filename
+# prefix.
+my $fnprefix = shift;
+if (!defined $fnprefix) {
+    my $def = `pwd`;
+    chomp $def;
+    $def =~ s/.*\/([A-Za-z0-9_.-]+)$/$1/;
+    $fnprefix = $def;
+}
+
+$fnprefix = "$fnprefix-"; 
+
+my %hash = ();
+foreach my $a (@ARGV) {
+    $hash{ $a } = 1; # Flag the columns for output
+}
+my $len = keys(%hash); # Length of the list
+
+my $lastline; # last header line
+my $data = 0; # flag - have we encountered numeric data yet?
+my $nr = 0; # number of columns
+
+my %destfn = (); # Destination files for columns
+
+while(<F>) {
+  chomp;
+  if (/^#/) {
+    $lastline = $_;
+  } else {
+    if ($data == 0) { 
+      # We have found the first non-comment line, thus the previous line
+      # ($lastline) contains the headers of the columns.
+      $data = 1;
+      my @headers = split(' ', $lastline);
+      shift(@headers); # Drop the # sign
+      foreach my $var (@headers) {
+	  if ($len == 0 || defined($hash{$var})) {
+	      my $fn = "$fnprefix$var.dat";
+	      # Strip non-alphanumerics
+	      $fn =~ s/[^\w.-]//g;
+	      print "$var -> $fn\n";
+	      open "fn$nr", ">$fn" or die "Can't open $fn. $!";
+	      print { "fn$nr" } "# $headers[0] $var\n";
+	      $destfn{$nr} = "fn$nr";
+	  }
+	  $nr++;
+      }
+    }
+
+    # Process a data line
+    @dataline = split;
+    my $x = $dataline[0]; # First column
+    for (my $i = 1; $i < $nr; $i++) {
+	if (defined($destfn{$i})) {
+	    print { $destfn{$i} } "$x $dataline[$i]\n";
+	}
+    }
+  }
+}

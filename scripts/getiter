@@ -1,0 +1,29 @@
+#!/usr/bin/env perl
+# Determine the iteration number.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Oct 2008
+
+# CHANGE LOG
+# 30.10.2013 - support for directory parameter
+
+use warnings;
+use strict;
+
+my $dir = shift;
+if (!defined($dir)) {
+    $dir = ".";
+}
+
+my $iter;
+
+my $fn = "$dir/ITER";
+
+if (-e $fn) {
+  chomp($iter = `cat $fn`);
+} else {
+  open(F, ">$fn") or die "Can't open $fn for writing: $!";
+  print F "0";
+  close(F);
+  $iter = 0;
+}
+
+print "$iter";

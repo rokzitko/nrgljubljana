@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+# Scale the first two columns in tabulated data by factors given on
+# the command line 
+# Rok Zitko, rok.zitko@ijs.si, Sep 2009
+
+use warnings;
+use strict;
+
+if (@ARGV < 2) {
+    die "Usage: scalexy <factor x> <factor y> [filename]\n";
+}     
+
+my $factorx = eval(shift);
+my $factory = eval(shift);
+
+while (<>) {
+  if (!/^#/) {
+    chomp;
+    my @d = split;
+    $d[0] = $d[0] * $factorx;
+    $d[1] = $d[1] * $factory;
+    
+    print "@d\n";
+  } else {
+    print;
+  }
+}

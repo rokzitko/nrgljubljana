@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+# Filter based on the condition (applied to the first column)
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
+
+use warnings;
+
+if (@ARGV < 1) {
+  die "Synthax: restrict <condition> [filename]\n";
+}
+
+my $cond = shift;
+
+$,=" ";
+
+while (<>) {
+    next if (/^#/);
+    chomp;
+    my @vals = split;
+    my $x = $vals[0];
+    my $result = eval($cond);
+    if ($result) {
+	print "$_\n";
+    }
+}

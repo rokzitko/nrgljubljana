@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+# Sum the y-columns of two files. Checks if the x-columns match.
+# Rok Zitko, rok.zitko@ijs.si, May 2008
+
+@ARGV == 2 or die "Syntax: sumy <filename1> <filename2>\n";
+
+my $filename1 = shift;
+my $filename2 = shift;
+
+open(F1, "<$filename1") or die "Can't open $filename1: $!";
+open(F2, "<$filename2") or die "Can't open $filename2: $!";
+
+while (<F1>) {
+  my $line1 = $_;
+  my $line2 = <F2>;
+  
+  chomp($line1);
+  chomp($line2);
+  $line1 =~ s/^\s+(.*)/$1/;
+  $line2 =~ s/^\s+(.*)/$1/;
+  
+  if (/^#/) {
+    print;
+  } else {
+    my @d1 = split(/\s+/, $line1);
+    my @d2 = split(/\s+/, $line2);
+    my $x1 = $d1[0];
+    my $x2 = $d2[0];
+    if ($x1 != $x2) {
+	print STDERR "Warning: mismatch in first column. $x1 != $x2\n";
+    }
+    $d1[1] = $d1[1] + $d2[1]; # leave other columns unchanged!
+    print "@d1\n";
+  }
+}
+
+close(F2);
+close(F1);

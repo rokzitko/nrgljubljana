@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+# Average values in each column.
+# Rok Zitko, rok.zitko@ijs.si, August 2009
+
+use warnings;
+use strict;
+
+my @data;
+
+while(<>) {
+    chomp;
+    my @vals = split;
+    if (/^#/) {
+	next;
+    }
+    push(@data, [@vals]);
+}
+
+my $nr = @data;
+
+$nr != 0 or exit(1);
+
+my $len = @{ $data[0] };
+
+$len != 0 or exit(1);
+
+my @avg;
+
+for (my $col = 0; $col < $len; $col++) {
+    push(@avg, 0);
+}
+
+for (my $n = 0; $n < $nr; $n++) {
+    for (my $col = 0; $col < $len; $col++) {
+	$avg[$col] += $data[$n]->[$col];
+    }
+}
+
+for (my $col = 0; $col < $len; $col++) {
+    my $val = ($avg[$col] /= $nr);
+    print "$val ";
+}
+
+print "\n";

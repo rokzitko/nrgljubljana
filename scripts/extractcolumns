@@ -1,0 +1,64 @@
+#!/usr/bin/perl
+# Extract column with given header keywords. The header line is the last line
+# with a # character which contains the names of the columns.
+# Rok Zitko, rok.zitko@ijs.si, Jan 2010
+
+use warnings;
+use strict;
+
+if (@ARGV < 1) {
+  die "Synthax: extractcolumn <filename> [keyword1] [keyword2] ...\n";
+}
+
+my $filename = shift;
+open(F, "<$filename") or die "Can't open $filename: $!";
+
+my @cols; # column numbers
+
+my $nrkeywords = @ARGV;
+
+my $headerline;
+
+while (<F>) {
+  if (/^#/) {
+     $headerline = $_;
+  } else {
+     # First non-comment line detected
+     $headerline =~ s/^#\s*(.*)/$1/;
+     my @tags = split(' ', $headerline);
+     for (my $cnt = 0; $cnt < $nrkeywords; $cnt++) {
+       my $keyword = $ARGV[$cnt];	 
+       for (my $i = 0; $i < @tags; $i++) {
+         if ($tags[$i] eq $keyword) {
+	   push(@cols, $i);
+	 }
+       }
+     }
+     process_line($_);
+     last;
+  }
+}
+
+while (<F>) {
+    process_line($_);
+}
+    
+close F;
+
+sub process_line
+{
+  my $line = $_;
+  chomp($line);
+  my @vals = split(' ', $line);
+
+  for(my $i = 0; $i < @cols; $i++) {
+    my $x = @vals[$cols[$i]];
+    print "$x";
+    if ($i != @cols-1) { 
+	print " "; 
+    } else {
+	print "\n";
+    }
+  }
+}
+

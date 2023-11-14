@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+# Scale the first column in tabulated data by a factor given on command line
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Apr 2008
+
+if (@ARGV < 1) {
+    die "Usage: scalex <factor> [filename]\n";
+}     
+
+my $factor = eval(shift);
+
+while (<>) {
+  if (!/^#/) {
+    chomp;
+    @d = split;
+    $d[0] = $d[0] * $factor;
+    
+    print "@d\n";
+  } else {
+    print;
+  }
+}

@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+# Subtract one table from another [element by element]
+# Rok Zitko, rok.zitko@ijs.si, Mar, Oct 2008
+# $Id$
+
+use warnings;
+
+if (@ARGV != 2) {
+  die "Synthax: subtract <filename1> <filename2>\n";
+}
+
+my $filename1 = $ARGV[0];
+my $filename2 = $ARGV[1];
+
+open(F1, "<$filename1") or die "Can't open $filename1: $!. Stopped";
+open(F2, "<$filename2") or die "Can't open $filename2: $!. Stopped";
+
+while(<F1>) {
+    my $line1 = $_;
+    my $line2 = <F2>;
+    
+    if (/^#/) {
+	# Copy comment lines
+	print $_;
+	next;
+     }
+
+    chomp($line1);
+    chomp($line2);
+	
+    @vals1 = split(' ', $line1);
+    @vals2 = split(' ', $line2);
+	
+    @diff = @vals1;
+    for ($i = 0; $i < @diff; $i++) {
+	$diff[$i] = $vals1[$i] - $vals2[$i];
+    }
+    print "@diff\n";
+}
+
+close(F2);
+close(F1);

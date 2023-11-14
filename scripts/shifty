@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+# Shift the second column in tabulated data by a value given on command line
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Feb 2008, Aug 2009
+
+use warnings;
+
+if (@ARGV == 0) {
+    print "Shift the second column of a file by some value.\n";
+    print "Rok Zitko, rok.zitko\@ijs.si, May 2008\n";
+    print "Usage: shifty <shift> [filename]\n";
+    exit(1);
+}     
+
+my $shift = eval(shift);
+
+while (<>) {
+  if (!/^#/) {
+    chomp;
+    my @d = split;
+    $d[1] = $d[1] + $shift;
+    
+    print "@d\n";
+  } else {
+    print;
+  }
+}

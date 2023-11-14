@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+# Periodically run a command and wait
+# Rok Zitko, rzitko@gwdg.de, Feb 2008
+# $Id$
+
+use strict;
+use warnings;
+use Term::ANSIColor qw(:constants);
+
+if (@ARGV < 2) {
+    die "Usage: every <seconds> <command>\n";
+}    
+
+my $period = shift;
+my $cmd = "@ARGV";
+
+while (1) {
+  my $time = localtime();
+  print BOLD, "[every $period s] $time\n", RESET;
+  system("$cmd");
+  sleep($period);
+}

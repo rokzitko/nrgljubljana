@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+# Extract discretization parameters from "data" file
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, May 2008, Jan 2009
+
+open(F, "<data") or die "Can't open the data file.";
+open(X, ">xi") or die "Can't open xi for writing.";
+
+while(<F>) {
+  if (/^z$/) {
+    $nr = <F>;
+    chomp($nr);
+    print "Coefficients xi -- nr=$nr\n";
+    for ($i = 1; $i <= $nr+1; $i++) {
+      $xi = <F>;
+      print X $xi;
+    }
+  }
+}
+
+close(F);
+close(X);

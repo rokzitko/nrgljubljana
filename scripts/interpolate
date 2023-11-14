@@ -1,0 +1,53 @@
+#!/usr/bin/env perl
+# Calculate f(x) using linear interpolation.
+# The data (x,y pairs) are assumed to be sorted in ascending order
+# Rok Zitko, rok.zitko@ijs.is, August 2009
+
+use warnings;
+use strict;
+
+if (@ARGV != 2) {
+  print "Calculates f(x) for a given x using linear interpolation.\n";
+  die "Usage: interpolate <filename> <x>\n";
+}
+
+my $fn = shift;
+my $xtarget = shift;
+
+open (F, "<$fn") or die "Can't open $fn, stopped";
+
+my ($xprev, $yprev);
+
+while (<F>) {
+    if (/^#/) {
+	next;
+    }
+    
+    chomp;
+    my @v = split(' ', $_);
+    if (@v < 2) {
+	die "Error: at least two numbers per line are expected, stopped";
+    }
+    my $x = $v[0];
+    my $y = $v[1];
+    
+    if (!defined($xprev)) {
+	$xprev = $x;
+	$yprev = $y;
+	next;
+    }
+    
+    if ($xprev <= $xtarget && $xtarget <= $x) {
+	# x is brackted
+	my $slope = ($yprev-$y)/($xprev-$x);
+	my $dy = $slope * ($xtarget-$xprev);
+	my $solution = $yprev + $dy;
+	print "$solution\n";
+	exit(1);
+    }
+    
+    $xprev = $x;
+    $yprev = $y;
+}
+
+die "No solution.\n";

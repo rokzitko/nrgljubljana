@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+# Scale the second column in tabulated data by a factor given on command line
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Feb 2008, Nov 2008
+
+if (@ARGV < 1) {
+    die "Usage: scaley <factor> [filename]\n";
+}     
+
+my $factor = eval(shift);
+
+while (<>) {
+  if (!/^#/) {
+    chomp;
+    @d = split;
+    $d[1] = $d[1] * $factor;
+    
+    print "@d\n";
+  } else {
+    print;
+  }
+}

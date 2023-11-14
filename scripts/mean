@@ -1,0 +1,18 @@
+#!/usr/bin/env perl
+# Calculate mean of a series of values.
+# Rok Zitko,zitko@theorie.physik.uni-goettingen.de, Oct 2008
+
+use strict;
+use warnings;
+
+my $sum = 0.0;
+my $cnt = 0;
+
+while (<>) {
+  $sum += $_;
+  $cnt++;
+}
+
+my $mean = $sum/$cnt;
+
+print "$mean\n";

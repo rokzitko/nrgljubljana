@@ -1,0 +1,45 @@
+#!/usr/bin/env perl
+# Symmetrize a tabulated function with respect to x=0
+# This can be used to enforce particle-hole symmetry.
+# WARNING: the file is overwritten!
+# Rok Zitko, rok.zitko@ijs.si, April 2009
+
+use warnings;
+use strict;
+
+my $fn = shift;
+unless(defined($fn)) {
+    die "Usage: symmetrize <filename>.";
+}
+
+open(F, "<$fn") or die "Can't open $fn for reading.";
+
+my @x = ();
+my @y = ();
+
+while (<F>) {
+    chomp;
+    my @d = split;
+    push(@x, $d[0]);
+    push(@y, $d[1]);
+}
+
+close(F);
+
+my $len = @x;
+
+($len == @y) or die "Lengths don't match.";
+
+($len % 2 == 0) or die "The number of lines is not even.";
+
+open(F, ">$fn") or die "Can't open $fn for writing.";
+
+for (my $i = 0; $i < $len; $i++) {
+    my $omega = $x[$i];
+    # Note: we don't check if $x[$i] == - $x[$len-$i-1]
+    my $yavg = ($y[$i] + $y[$len-$i-1])/2.0;
+    print F "$omega $yavg\n";
+}
+
+close(F);
+    

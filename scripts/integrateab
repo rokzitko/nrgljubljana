@@ -1,0 +1,48 @@
+#!/usr/bin/env perl
+# Integrate column data on the interval [-1:1] by the trapezoid rule.
+# Linear interpolation is used when needed.
+# Rok Zitko, rok.zitko@ijs.si, April 2009
+
+use strict;
+use warnings;
+
+my $xprev = 0.0;
+my $yprev = 0.0;
+my $sum = 0.0;
+my ($slope, $xprevIN, $xIN, $ym1, $y1);
+
+while (<>) {
+  chomp;
+  my ($x,$y,$remainder) = split;
+  
+  if ($. != 1) {
+      $slope = ($y-$yprev)/($x-$xprev);
+
+      $xprevIN = (-1.0 <= $xprev && $xprev <= 1.0);
+      $xIN = (-1.0 <= $x && $x <= 1.0);
+
+      if ($xprevIN && $xIN) {
+	  # Both points within [-1:1]
+	  $sum += ($x-$xprev) * ($y + $yprev)/2.0;
+      } elsif ($xprev < -1.0 && $xIN) {
+	  # $x within [-1:1], $xprev < -1
+
+	  # Interpolate the value at x=-1
+	  $ym1 = $slope * (-1.0 - $xprev) + $yprev;
+	    
+	  $sum += ($x-(-1.0)) * ($y + $ym1)/2.0;
+      } elsif ($xprevIN && $x > 1.0) {
+	  # $xprev within [-1:1], $x > 1
+
+	  # Interpolate the value at x=1
+	  $y1 = $slope * (1.0 - $xprev) + $yprev;
+	    
+	  $sum += (1.0-$xprev) * ($yprev + $y1)/2.0;
+      }
+  }
+  
+  $xprev = $x;
+  $yprev = $y;
+}
+
+print "$sum\n";

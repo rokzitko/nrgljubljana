@@ -1,0 +1,169 @@
+#!/usr/bin/env perl
+# Parameter sweep tool.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Oct 2008
+# $Id: looper,v 1.3 2010/12/22 09:47:39 rok Exp rok $
+
+# CHANGE LOG
+# 17.11.2009 - automatic subdirectory creation (AUTOLOOP)
+# 22.12.2010 - option 'continue' for continuing
+#              interrupted autoloops
+# 23. 6.2011 - stop switch for stopping after first iteration
+#  5. 6.2013 - OVERWRITE option (for AUTOLOOP)
+# 11. 7.2019 - removed cd from $autoloop, explicit chdir commands
+#            - more error checking
+
+# NOTE: BEFORE and AFTER commands are system commands, not perl
+# expressions! PRELUDE is a perl expression evaluated before any
+# loops are started. AUTOLOOP and LOOP are system commands.
+
+use strict;
+use warnings;
+
+my $verbose = 0; # verbose diagnostics
+
+my ($before, $prelude, $autoloop, $loop, $after, $continue); # loop control
+my ($stop, $overwrite);
+
+$before = ""; # system command before the loop
+$prelude = ""; # perl code before the loop
+$autoloop = ""; # system command in the inner loop (executed in a subdir)
+$loop = ""; # system command for each new iteration
+$after = ""; # system command after the loop
+$continue = 0; # autoloop directory name incrementing mode
+$stop = 0; # stop after the first iteration
+$overwrite = 0; # overwrite existing directories (dangerous!)
+
+my @code; # generated perl code for looping
+my @forloopcode; # generated for loop lines
+my $looplevel; # for loop nesting level
+
+# Output line before the loop
+sub preline {
+    my $line = shift;
+    unshift (@code, $line);
+}
+
+# Output for loop line
+sub forline {
+    my $line = shift;
+    push (@forloopcode, $line);
+}
+
+# Output line inside the loop
+sub loopline {
+    my $line = shift;
+    push (@code, $line);
+}
+
+# Output line after the loop
+sub postline {
+    my $line = shift;
+    push (@code, $line);
+}
+
+# Read the input from STDIN.
+while (<>) {
+    if (/^#/) { # Either comment or macro line
+	if (/^#BEFORE:\s*(.*)/) {
+	    $before = $1;
+	} elsif (/^#PRELUDE:\s*(.*)/) {
+	    $prelude = $1;
+	} elsif (/^#AUTOLOOP:\s*(.*)/) {
+	    $autoloop = $1;
+	} elsif (/^#LOOP:\s*(.*)/) {
+	    $loop = $1;
+	} elsif (/^#AFTER:\s*(.*)/) {
+	    $after = $1;
+	} elsif (/^#CONTINUE/) {
+	    $continue = 1;
+	} elsif (/^#STOP/) {
+	    $stop = 1;
+	} elsif (/^#OVERWRITE/) {
+	    $overwrite = 1;
+	}
+    } else {
+	if (/^@(.*)/) { # Loop statement
+	    forline "for($1) { \n";
+	    $looplevel++;
+	} elsif (/^!(.*)/) { # Verbatim Perl expression
+	    chomp;
+	    loopline "$_;\n";
+	} else {
+	    chomp;
+	    loopline "print F \"$_\\n\"; \n";
+	}
+    }
+}
+
+my $closebrackets = "";
+for (my $i = 1; $i <= $looplevel; $i++) {
+    $closebrackets = "$closebrackets } ";
+}
+
+my $autoflag = 0;
+if (!$autoloop eq "") {
+    # NOTE: $loop is overwritten!
+    $loop = "cat - >param ; $autoloop";
+    $autoflag = 1;
+}
+
+if ($verbose) {
+    print "BEFORE: $before\n";
+    print "AUTOLOOP: $autoloop\n";
+    print "LOOP: $loop\n";
+    print "AFTER: $after\n";
+}
+
+# The actual work is done here:
+
+system $before;
+
+open (SCRIPT, "| perl -") or die "Can't write to perl.";
+
+print SCRIPT <<ENDSCRIPT;
+$prelude;
+# Additional perl code which is executed at run-time can be added here.
+\$cnt = 0;
+\$dir = 0;
+@forloopcode
+\$cnt++;
+\$dir++;
+if ($autoflag) {
+    if ($overwrite == 1) {
+	if (-d \$dir) {
+	    system "rm -rfv \$dir";
+	}
+	mkdir \$dir;
+    } elsif ($continue == 0) {
+	# Make a subdirectory
+	while (-d \$dir) { \$dir++ };
+	mkdir \$dir;
+    } else {
+	if (-d \$dir) { 
+	    next;
+	}
+	mkdir \$dir;
+    }
+    -d \$dir or die;
+    chdir \$dir or die;
+}
+# $loop are the commands executed to generate the param file and suitably process it (typically
+# nrginit and nrgrun/sub). param is generated using "print F" statements.
+open(F, "| $loop");
+@code;
+close(F);
+
+if ($autoflag) {
+    chdir ".." or die;
+}
+
+if ($stop == 1) {
+    die "looper: Stopping as requested.\n";
+}
+
+$closebrackets
+ENDSCRIPT
+
+close (SCRIPT);
+
+system $after;

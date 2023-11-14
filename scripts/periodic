@@ -1,0 +1,17 @@
+#!/usr/bin/perl
+# Periodically clear screen, run a command, and wait
+# Rok Zitko, rzitko@gwdg.de, Feb 2008
+# $Id$
+
+my $clear = `clear`;
+my $cmd = "@ARGV";
+my $period = 5; # in seconds
+
+while (1) {
+  print $clear;
+  system("clear");
+  my $time = localtime();
+  print "periodic [every $period s] $time\n";
+  system("$cmd");
+  sleep($period);
+}

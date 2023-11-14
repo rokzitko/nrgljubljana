@@ -1,0 +1,48 @@
+#!/usr/bin/perl
+# Divide one table by another element by element, except for the
+# first column. [x/0 -> 0]
+# Rok Zitko, rok.zitko@ijs.si, May 2009
+
+use strict;
+use warnings;
+
+if (@ARGV != 2) {
+  die "Synthax: divy <filename1> <filename2>\n";
+}
+
+my $filename1 = $ARGV[0];
+my $filename2 = $ARGV[1];
+
+open(F1, "<$filename1") or die "Can't open $filename1: $!. Stopped";
+open(F2, "<$filename2") or die "Can't open $filename2: $!. Stopped";
+
+while(<F1>) {
+    my $line1 = $_;
+    my $line2 = <F2>;
+    
+    if (/^#/) {
+	# Copy comment lines
+	print $_;
+	next;
+     }
+
+    chomp $line1;
+    chomp $line2;
+	
+    my @vals1 = split(' ', $line1);
+    my @vals2 = split(' ', $line2);
+	
+    my @div = @vals1;
+    my $firstindex = 1; # SKIP THE FIRST COLUMN!
+    for (my $i = $firstindex; $i < @div; $i++) {
+	if ($vals2[$i] != 0) {
+	    $div[$i] = $vals1[$i] / $vals2[$i];
+	} else {
+	    $div[$i] = 0;
+	}
+    }
+    print "@div\n";
+}
+
+close F2;
+close F1;

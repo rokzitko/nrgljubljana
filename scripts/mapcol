@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+# Apply a (perl) function on a chosen column
+# The argument of the function is $x
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, April 2008
+
+use strict;
+use warnings;
+
+if (@ARGV != 2) {
+    print "Apply a (perl) function on a chosen column\n";
+    print "Usage: mapcol <col> <function>\n";
+    exit(1);
+}     
+
+my $col = $ARGV[0]-1;
+my $function = $ARGV[1];
+
+while (<STDIN>) {
+  if (!/^#/) {
+    chomp;
+    s/^(\s*)//;
+    s/(\s*)$//;
+    my @d = split;
+    my $x = $d[$col];
+
+    $d[$col] = eval($function);
+      
+    print "@d\n";
+  } else {
+    print;
+  }
+}

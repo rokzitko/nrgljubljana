@@ -1,0 +1,24 @@
+#!/usr/bin/env perl
+# Collect td files from working subdirectories, join the files
+# and sort the data numerically.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
+
+use strict;
+use warnings;
+
+my @dirs = <[1-9]*>;
+
+my $fn = "td.dat";
+my $fntmp = "$fn.tmp";
+unlink $fntmp;
+
+foreach (@dirs) {
+    my $dir = $_;
+    if (-d $dir && -e "$dir/DONE") {
+	system("cat $dir/td >>$fntmp");
+    }
+}
+
+if (-e $fntmp) {
+  system "sortnum $fntmp >$fn";
+}

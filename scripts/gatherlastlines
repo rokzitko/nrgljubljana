@@ -1,0 +1,54 @@
+#!/usr/bin/perl
+# Gather results from a run
+# (c) Rok Zitko, rok.zitko@ijs.si, April 2005, May 2008, Nov 2010, Feb 2012
+
+# CHANGE LOG
+# 9.3.2014 - arbitrary number of comment lines in the header
+
+use strict;
+use warnings;
+
+my $fnin = shift;
+if (!defined $fnin) {
+    $fnin = "custom";
+}
+
+my $path = ".";
+
+opendir(DIR, $path);
+my @dirs;
+@dirs = map  { $_->[1] }                # extract pathnames
+sort { $a->[0] <=> $b->[0] }    # sort names numeric
+grep { -d $_->[1] }             # path is a dir
+map  { [ $_, "$path/$_" ] }     # form (name, path)
+grep { /^\d+$/ }                # just numerics
+readdir(DIR);                   # all files
+closedir(DIR);
+
+my $fnout = $fnin;
+
+unlink($fnout);
+
+# Copy headers!
+if (-e "$dirs[0]/$fnin") {
+  system("grep '^#' $dirs[0]/custom >$fnout"); # General stuff
+}
+
+open(F, ">>$fnout") or die "Can't open $fnout.";
+
+print "dirs = [@dirs]\n";
+foreach $a (@dirs) {
+    print "$a - ";
+    if (-e "$a/DONE") {
+	my $line = `tail -n 1 $a/$fnin`;
+	print F $line;
+	print "done\n";
+    } else {
+	print "not yet";
+	if (-e "$a/RUNNING") {
+	    print (" - running\n");
+	} else {
+	    print ("\n");
+	}
+    }
+}

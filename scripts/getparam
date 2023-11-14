@@ -1,0 +1,28 @@
+#!/usr/bin/perl
+# Extract a parameter from 'param' file
+# Rok Zitko, rok.zitko@ijs.si, April 2008
+# $Id$
+
+if (@ARGV != 1 && @ARGV != 2) {
+    die "Usage: getparam <keyword> [param filename]\n";
+}
+
+my $keyword = $ARGV[0];
+
+my $fn;
+if (@ARGV == 1) {
+    $fn = "param";
+} else {
+    $fn = $ARGV[1];
+}
+
+open (F, "<$fn") or die "Can't open $fn for reading: $!\n";
+
+while (<F>) {
+    if (/^$keyword=(.*)/) {
+	print "$1\n";
+    }
+}
+
+close(F);
+

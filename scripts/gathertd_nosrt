@@ -1,0 +1,18 @@
+#!/usr/bin/env perl
+# Collect td files from working subdirectories and join the files.
+# Rok Zitko, rok.zitko@ijs.si, 2008-2020
+
+use strict;
+use warnings;
+
+my $prefix = shift;
+defined($prefix) or $prefix = "td";
+
+my $fn = $prefix . ".dat";
+unlink $fn;
+
+foreach (<[1-9]*>) {
+    -d or next;
+    /^\d*$/ or next;
+    system("cat $_/$prefix >>$fn");
+}
