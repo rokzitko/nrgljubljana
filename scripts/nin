@@ -1,0 +1,16 @@
+#!/usr/bin/env perl
+# Initialize NRG until 'data' is generated.
+# Workaround for limited number of Mathematica licences.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Oct 2008
+
+use strict;
+use warnings;
+
+unlink('data');
+while (!-e 'data') {
+    system("timeout -s KILL 10m nrginit");
+    if (!-e 'data') {
+	print "nrginit failed. Will retry in 10 seconds.\n";
+	sleep(10);
+    }
+}
