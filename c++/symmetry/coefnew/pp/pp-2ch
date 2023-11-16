@@ -1,0 +1,2 @@
+#!/bin/sh
+math -batchinput -batchoutput <pp-2ch.m

@@ -1,0 +1,4 @@
+#!/bin/sh
+nice wolframscript --batchinput <<END | tee log
+<<"spsu2-1ch.m";
+END

@@ -1,0 +1,4 @@
+#!/bin/sh
+math << EOF
+<<"qs-4ch.m";
+EOF

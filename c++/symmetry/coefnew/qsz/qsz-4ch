@@ -1,0 +1,4 @@
+#!/bin/bash
+nice wolframscript --batchinput <<END | tee log
+<<"qsz-4ch.m";
+EOF

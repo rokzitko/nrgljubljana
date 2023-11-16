@@ -1,0 +1,5 @@
+#!/bin/bash
+nice wolframscript --batchinput <<END | tee log
+<<"qslr-2ch.m";
+END
+

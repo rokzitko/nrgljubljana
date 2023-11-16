@@ -1,0 +1,4 @@
+#!/bin/sh
+nice math <<EOF | tee log
+<<"qst-3ch.m";
+EOF

@@ -1,0 +1,4 @@
+#!/bin/bash
+math <<EOF
+<<"isoszlr-2ch.m";
+EOF

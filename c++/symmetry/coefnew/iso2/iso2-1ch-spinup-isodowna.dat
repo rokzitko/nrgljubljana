@@ -1,2 +1,2 @@
 { 2, 4, -sqrt(1 - 1/(2.*(1 + S(ssp))))},
-{ 3, 1, -(Power(-1,NN)*sqrt(1 + 1/(2.*ISO(iip))))},
+{ 3, 1, -((Power(-1,NN)*sqrt(2 + 1/ISO(iip)))/sqrt(2))},

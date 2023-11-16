@@ -1,0 +1,4 @@
+#!/bin/sh
+nice math --batchinput <<END | tee log
+<<"iso-3ch.m";
+END

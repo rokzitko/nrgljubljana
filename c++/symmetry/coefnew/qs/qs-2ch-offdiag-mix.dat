@@ -15,7 +15,7 @@ OFFDIAG_MIX(8, 15, 0, 1);
 OFFDIAG_MIX(9, 12, 0, sqrt(1 - 1/(2.*S(ss))));
 OFFDIAG_MIX(10, 12, 0, -(sqrt(1 + 1/S(ss))/sqrt(2)));
 OFFDIAG_MIX(10, 13, 0, 1/sqrt(2 + 2/S(ss)));
-OFFDIAG_MIX(11, 13, 0, -sqrt(4 + 2/(1 + S(ss)))/2.);
+OFFDIAG_MIX(11, 13, 0, -0.5*sqrt(4 + 2/(1 + S(ss))));
 OFFDIAG_MIX(14, 16, 0, -(sqrt(2)*sqrt(S(ss)/(1 + 2*S(ss)))));
 OFFDIAG_MIX(15, 16, 0, (2*(1 + S(ss)))/sqrt(2 + 6*S(ss) + 4*Power(S(ss),2)));
 OFFDIAG_MIX(1, 4, 1, 1);

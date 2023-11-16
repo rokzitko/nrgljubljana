@@ -1,0 +1,4 @@
+#!/bin/bash
+nice wolframscript --batchinput <<END | tee log
+<<"u1-3ch.m";
+END

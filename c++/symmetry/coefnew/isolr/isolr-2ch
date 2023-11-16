@@ -1,0 +1,4 @@
+#!/bin/sh
+nice wolframscript --batchinput <<END | tee log
+<<"isolr-2ch.m";
+END

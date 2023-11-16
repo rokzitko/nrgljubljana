@@ -1,2 +1,7 @@
 This directory contains the coefficient tables for different symmetry types.
 These are compiled into the executable code.
+
+This version has been cleaned up (somewhat) and tested to run correctly with 
+Mathematica 13.1 in May 2023.
+
+Rok Zitko

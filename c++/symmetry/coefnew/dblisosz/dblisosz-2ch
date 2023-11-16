@@ -1,0 +1,2 @@
+#!/bin/sh
+wolframscript -batchinput -batchoutput <dblisosz-2ch.m

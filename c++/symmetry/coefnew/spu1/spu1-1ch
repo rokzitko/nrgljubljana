@@ -1,0 +1,4 @@
+#!/bin/sh
+math << EOF
+<<"spu1-1ch.m";
+EOF

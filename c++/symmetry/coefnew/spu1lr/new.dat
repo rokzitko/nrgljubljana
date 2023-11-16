@@ -1,0 +1,48 @@
+new[1] = nc[coef[1], dirpdt[{{1 + Sz, -P}, {}, r}, nc[a[0, 0], b[0, 0]]]]
+ 
+new[2] = nc[coef[1], dirpdt[{{1/2 + Sz, -P}, {}, r}, 
+     -(a[0, 0]/Sqrt[2]) + b[0, 0]/Sqrt[2]]]
+ 
+new[3] = nc[coef[1], dirpdt[{{1/2 + Sz, -P}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0]]/Sqrt[2] - nc[a[0, 0], b[0, 0], b[0, 1]]/
+       Sqrt[2]]]
+ 
+new[4] = nc[coef[1], dirpdt[{{1/2 + Sz, P}, {}, r}, 
+     a[0, 0]/Sqrt[2] + b[0, 0]/Sqrt[2]]]
+ 
+new[5] = nc[coef[1], dirpdt[{{1/2 + Sz, P}, {}, r}, 
+     -(nc[a[0, 0], a[0, 1], b[0, 0]]/Sqrt[2]) - nc[a[0, 0], b[0, 0], b[0, 1]]/
+       Sqrt[2]]]
+ 
+new[6] = nc[coef[1], dirpdt[{{Sz, -P}, {}, r}, nc[a[0, 0], a[0, 1]]/Sqrt[2] - 
+      nc[b[0, 0], b[0, 1]]/Sqrt[2]]]
+ 
+new[7] = nc[coef[1], dirpdt[{{Sz, -P}, {}, r}, nc[a[0, 0], b[0, 1]]/Sqrt[2] + 
+      nc[a[0, 1], b[0, 0]]/Sqrt[2]]]
+ 
+new[8] = nc[coef[1], dirpdt[{{Sz, P}, {}, r}, 1]]
+ 
+new[9] = nc[coef[1], dirpdt[{{Sz, P}, {}, r}, 
+     -(nc[a[0, 0], a[0, 1]]/Sqrt[2]) - nc[b[0, 0], b[0, 1]]/Sqrt[2]]]
+ 
+new[10] = nc[coef[1], dirpdt[{{Sz, P}, {}, r}, nc[a[0, 0], b[0, 1]]/Sqrt[2] - 
+      nc[a[0, 1], b[0, 0]]/Sqrt[2]]]
+ 
+new[11] = nc[coef[1], dirpdt[{{Sz, P}, {}, r}, nc[a[0, 0], a[0, 1], b[0, 0], 
+      b[0, 1]]]]
+ 
+new[12] = nc[coef[1], dirpdt[{{-1/2 + Sz, -P}, {}, r}, 
+     -(a[0, 1]/Sqrt[2]) + b[0, 1]/Sqrt[2]]]
+ 
+new[13] = nc[coef[1], dirpdt[{{-1/2 + Sz, -P}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2] - nc[a[0, 1], b[0, 0], b[0, 1]]/
+       Sqrt[2]]]
+ 
+new[14] = nc[coef[1], dirpdt[{{-1/2 + Sz, P}, {}, r}, 
+     a[0, 1]/Sqrt[2] + b[0, 1]/Sqrt[2]]]
+ 
+new[15] = nc[coef[1], dirpdt[{{-1/2 + Sz, P}, {}, r}, 
+     -(nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2]) - nc[a[0, 1], b[0, 0], b[0, 1]]/
+       Sqrt[2]]]
+ 
+new[16] = nc[coef[1], dirpdt[{{-1 + Sz, -P}, {}, r}, nc[a[0, 1], b[0, 1]]]]

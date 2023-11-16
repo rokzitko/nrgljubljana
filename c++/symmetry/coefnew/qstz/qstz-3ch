@@ -1,0 +1,4 @@
+#!/bin/sh
+wolframscript <<EOF | tee log
+<<"qstz-3ch.m";
+EOF

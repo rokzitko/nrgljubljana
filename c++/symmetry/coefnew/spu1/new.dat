@@ -1,0 +1,7 @@
+new[1] = nc[coef[1], dirpdt[{{1/2 + Sz}, {}, r}, a[0, 0]]]
+ 
+new[2] = nc[coef[1], dirpdt[{{Sz}, {}, r}, 1]]
+ 
+new[3] = nc[coef[1], dirpdt[{{Sz}, {}, r}, -nc[a[0, 0], a[0, 1]]]]
+ 
+new[4] = nc[coef[1], dirpdt[{{-1/2 + Sz}, {}, r}, a[0, 1]]]

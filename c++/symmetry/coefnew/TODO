@@ -3,3 +3,5 @@
   while the lists should contain those additional quantum numbers that
   drop out of the problem
 - argument 'r' is totally useless (dirpdt)
+- each symmetry comes with a corresponding test in nrgljubljana/tests/models. Not all functionalities
+  are tested, though.

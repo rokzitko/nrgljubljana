@@ -1,0 +1,25 @@
+#!/bin/sh
+# Additional simplifications
+math <<EOL
+
+
+fn = "qst-orb-triplets.dat";
+<<"process2.m";
+
+fn = "qst-orb-tripletp.dat";
+<<"process2.m";
+
+fn = "qst-orb-tripletm.dat";
+<<"process2.m";
+
+fn = "qst-triplets.dat";
+<<"process2.m";
+
+fn = "qst-tripletp.dat";
+<<"process2.m";
+
+fn = "qst-tripletm.dat";
+<<"process2.m";
+
+
+EOL

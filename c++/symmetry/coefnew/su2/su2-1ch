@@ -1,0 +1,4 @@
+#!/bin/bash
+nice wolframscript --batchinput <<END | tee log
+<<"su2-1ch.m";
+END

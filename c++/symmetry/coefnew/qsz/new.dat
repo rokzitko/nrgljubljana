@@ -1,0 +1,731 @@
+new[1] = nc[coef[1], dirpdt[{{4 + Q, Sz}, {}, r}, 1]]
+ 
+new[2] = nc[coef[1], dirpdt[{{3 + Q, 1/2 + Sz}, {}, r}, d[0, 0]]]
+ 
+new[3] = nc[coef[1], dirpdt[{{3 + Q, 1/2 + Sz}, {}, r}, c[0, 0]]]
+ 
+new[4] = nc[coef[1], dirpdt[{{3 + Q, 1/2 + Sz}, {}, r}, b[0, 0]]]
+ 
+new[5] = nc[coef[1], dirpdt[{{3 + Q, 1/2 + Sz}, {}, r}, a[0, 0]]]
+ 
+new[6] = nc[coef[1], dirpdt[{{3 + Q, -1/2 + Sz}, {}, r}, d[0, 1]]]
+ 
+new[7] = nc[coef[1], dirpdt[{{3 + Q, -1/2 + Sz}, {}, r}, c[0, 1]]]
+ 
+new[8] = nc[coef[1], dirpdt[{{3 + Q, -1/2 + Sz}, {}, r}, b[0, 1]]]
+ 
+new[9] = nc[coef[1], dirpdt[{{3 + Q, -1/2 + Sz}, {}, r}, a[0, 1]]]
+ 
+new[10] = nc[coef[1], dirpdt[{{2 + Q, 1 + Sz}, {}, r}, nc[c[0, 0], d[0, 0]]]]
+ 
+new[11] = nc[coef[1], dirpdt[{{2 + Q, 1 + Sz}, {}, r}, nc[b[0, 0], d[0, 0]]]]
+ 
+new[12] = nc[coef[1], dirpdt[{{2 + Q, 1 + Sz}, {}, r}, nc[b[0, 0], c[0, 0]]]]
+ 
+new[13] = nc[coef[1], dirpdt[{{2 + Q, 1 + Sz}, {}, r}, nc[a[0, 0], d[0, 0]]]]
+ 
+new[14] = nc[coef[1], dirpdt[{{2 + Q, 1 + Sz}, {}, r}, nc[a[0, 0], c[0, 0]]]]
+ 
+new[15] = nc[coef[1], dirpdt[{{2 + Q, 1 + Sz}, {}, r}, nc[a[0, 0], b[0, 0]]]]
+ 
+new[16] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, -nc[d[0, 0], d[0, 1]]]]
+ 
+new[17] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[c[0, 0], d[0, 1]]]]
+ 
+new[18] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[c[0, 1], d[0, 0]]]]
+ 
+new[19] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, -nc[c[0, 0], c[0, 1]]]]
+ 
+new[20] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[b[0, 0], d[0, 1]]]]
+ 
+new[21] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[b[0, 0], c[0, 1]]]]
+ 
+new[22] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[b[0, 1], d[0, 0]]]]
+ 
+new[23] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[b[0, 1], c[0, 0]]]]
+ 
+new[24] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, -nc[b[0, 0], b[0, 1]]]]
+ 
+new[25] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[a[0, 0], d[0, 1]]]]
+ 
+new[26] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[a[0, 0], c[0, 1]]]]
+ 
+new[27] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[a[0, 0], b[0, 1]]]]
+ 
+new[28] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[a[0, 1], d[0, 0]]]]
+ 
+new[29] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[a[0, 1], c[0, 0]]]]
+ 
+new[30] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, nc[a[0, 1], b[0, 0]]]]
+ 
+new[31] = nc[coef[1], dirpdt[{{2 + Q, Sz}, {}, r}, -nc[a[0, 0], a[0, 1]]]]
+ 
+new[32] = nc[coef[1], dirpdt[{{2 + Q, -1 + Sz}, {}, r}, nc[c[0, 1], d[0, 1]]]]
+ 
+new[33] = nc[coef[1], dirpdt[{{2 + Q, -1 + Sz}, {}, r}, nc[b[0, 1], d[0, 1]]]]
+ 
+new[34] = nc[coef[1], dirpdt[{{2 + Q, -1 + Sz}, {}, r}, nc[b[0, 1], c[0, 1]]]]
+ 
+new[35] = nc[coef[1], dirpdt[{{2 + Q, -1 + Sz}, {}, r}, nc[a[0, 1], d[0, 1]]]]
+ 
+new[36] = nc[coef[1], dirpdt[{{2 + Q, -1 + Sz}, {}, r}, nc[a[0, 1], c[0, 1]]]]
+ 
+new[37] = nc[coef[1], dirpdt[{{2 + Q, -1 + Sz}, {}, r}, nc[a[0, 1], b[0, 1]]]]
+ 
+new[38] = nc[coef[1], dirpdt[{{1 + Q, 3/2 + Sz}, {}, r}, 
+     nc[b[0, 0], c[0, 0], d[0, 0]]]]
+ 
+new[39] = nc[coef[1], dirpdt[{{1 + Q, 3/2 + Sz}, {}, r}, 
+     nc[a[0, 0], c[0, 0], d[0, 0]]]]
+ 
+new[40] = nc[coef[1], dirpdt[{{1 + Q, 3/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], d[0, 0]]]]
+ 
+new[41] = nc[coef[1], dirpdt[{{1 + Q, 3/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], c[0, 0]]]]
+ 
+new[42] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[43] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[44] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[b[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[45] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[b[0, 0], c[0, 0], d[0, 1]]]]
+ 
+new[46] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[b[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[47] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[b[0, 0], c[0, 0], c[0, 1]]]]
+ 
+new[48] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[b[0, 1], c[0, 0], d[0, 0]]]]
+ 
+new[49] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[b[0, 0], b[0, 1], d[0, 0]]]]
+ 
+new[50] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[b[0, 0], b[0, 1], c[0, 0]]]]
+ 
+new[51] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[52] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], c[0, 0], d[0, 1]]]]
+ 
+new[53] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[54] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], c[0, 0], c[0, 1]]]]
+ 
+new[55] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], d[0, 1]]]]
+ 
+new[56] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], c[0, 1]]]]
+ 
+new[57] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 1], d[0, 0]]]]
+ 
+new[58] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 1], c[0, 0]]]]
+ 
+new[59] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1]]]]
+ 
+new[60] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], c[0, 0], d[0, 0]]]]
+ 
+new[61] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], d[0, 0]]]]
+ 
+new[62] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], c[0, 0]]]]
+ 
+new[63] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], d[0, 0]]]]
+ 
+new[64] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], c[0, 0]]]]
+ 
+new[65] = nc[coef[1], dirpdt[{{1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0]]]]
+ 
+new[66] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[67] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[68] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[b[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[69] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[b[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[70] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[b[0, 1], c[0, 0], d[0, 1]]]]
+ 
+new[71] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[b[0, 1], c[0, 1], d[0, 0]]]]
+ 
+new[72] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[b[0, 1], c[0, 0], c[0, 1]]]]
+ 
+new[73] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[b[0, 0], b[0, 1], d[0, 1]]]]
+ 
+new[74] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[b[0, 0], b[0, 1], c[0, 1]]]]
+ 
+new[75] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[76] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 1], d[0, 1]]]]
+ 
+new[77] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 1], c[0, 1]]]]
+ 
+new[78] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[79] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], c[0, 0], d[0, 1]]]]
+ 
+new[80] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], c[0, 1], d[0, 0]]]]
+ 
+new[81] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], c[0, 0], c[0, 1]]]]
+ 
+new[82] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], d[0, 1]]]]
+ 
+new[83] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], c[0, 1]]]]
+ 
+new[84] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 1], d[0, 0]]]]
+ 
+new[85] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 1], c[0, 0]]]]
+ 
+new[86] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1]]]]
+ 
+new[87] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], d[0, 1]]]]
+ 
+new[88] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], c[0, 1]]]]
+ 
+new[89] = nc[coef[1], dirpdt[{{1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1]]]]
+ 
+new[90] = nc[coef[1], dirpdt[{{1 + Q, -3/2 + Sz}, {}, r}, 
+     nc[b[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[91] = nc[coef[1], dirpdt[{{1 + Q, -3/2 + Sz}, {}, r}, 
+     nc[a[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[92] = nc[coef[1], dirpdt[{{1 + Q, -3/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 1], d[0, 1]]]]
+ 
+new[93] = nc[coef[1], dirpdt[{{1 + Q, -3/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 1], c[0, 1]]]]
+ 
+new[94] = nc[coef[1], dirpdt[{{Q, 2 + Sz}, {}, r}, nc[a[0, 0], b[0, 0], 
+      c[0, 0], d[0, 0]]]]
+ 
+new[95] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[b[0, 0], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[96] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[b[0, 0], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[97] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[b[0, 0], b[0, 1], c[0, 0], d[0, 0]]]]
+ 
+new[98] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[a[0, 0], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[99] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[a[0, 0], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[100] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[101] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], c[0, 0], d[0, 1]]]]
+ 
+new[102] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[103] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], c[0, 0], c[0, 1]]]]
+ 
+new[104] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 1], c[0, 0], d[0, 0]]]]
+ 
+new[105] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1], d[0, 0]]]]
+ 
+new[106] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1], c[0, 0]]]]
+ 
+new[107] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], c[0, 0], d[0, 0]]]]
+ 
+new[108] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], c[0, 0], d[0, 0]]]]
+ 
+new[109] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], d[0, 0]]]]
+ 
+new[110] = nc[coef[1], dirpdt[{{Q, 1 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], c[0, 0]]]]
+ 
+new[111] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[c[0, 0], c[0, 1], d[0, 0], 
+      d[0, 1]]]]
+ 
+new[112] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[b[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[113] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[b[0, 0], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[114] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[b[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[115] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[b[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[116] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[b[0, 0], b[0, 1], d[0, 0], 
+      d[0, 1]]]]
+ 
+new[117] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[b[0, 0], b[0, 1], c[0, 0], d[0, 1]]]]
+ 
+new[118] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[b[0, 0], b[0, 1], c[0, 1], d[0, 0]]]]
+ 
+new[119] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[b[0, 0], b[0, 1], c[0, 0], 
+      c[0, 1]]]]
+ 
+new[120] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[121] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[122] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[a[0, 0], b[0, 0], c[0, 1], 
+      d[0, 1]]]]
+ 
+new[123] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[124] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[a[0, 0], b[0, 1], c[0, 0], 
+      d[0, 1]]]]
+ 
+new[125] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[a[0, 0], b[0, 1], c[0, 1], 
+      d[0, 0]]]]
+ 
+new[126] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 1], c[0, 0], c[0, 1]]]]
+ 
+new[127] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1], d[0, 1]]]]
+ 
+new[128] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1], c[0, 1]]]]
+ 
+new[129] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[130] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[131] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[132] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[a[0, 1], b[0, 0], c[0, 0], 
+      d[0, 1]]]]
+ 
+new[133] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[a[0, 1], b[0, 0], c[0, 1], 
+      d[0, 0]]]]
+ 
+new[134] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], c[0, 0], c[0, 1]]]]
+ 
+new[135] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[a[0, 1], b[0, 1], c[0, 0], 
+      d[0, 0]]]]
+ 
+new[136] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1], d[0, 0]]]]
+ 
+new[137] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1], c[0, 0]]]]
+ 
+new[138] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[a[0, 0], a[0, 1], d[0, 0], 
+      d[0, 1]]]]
+ 
+new[139] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], c[0, 0], d[0, 1]]]]
+ 
+new[140] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], c[0, 1], d[0, 0]]]]
+ 
+new[141] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[a[0, 0], a[0, 1], c[0, 0], 
+      c[0, 1]]]]
+ 
+new[142] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], d[0, 1]]]]
+ 
+new[143] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], c[0, 1]]]]
+ 
+new[144] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1], d[0, 0]]]]
+ 
+new[145] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1], c[0, 0]]]]
+ 
+new[146] = nc[coef[1], dirpdt[{{Q, Sz}, {}, r}, nc[a[0, 0], a[0, 1], b[0, 0], 
+      b[0, 1]]]]
+ 
+new[147] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[b[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[148] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[b[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[149] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[b[0, 0], b[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[150] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[151] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[a[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[152] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[a[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[153] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[154] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[155] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 1], c[0, 0], d[0, 1]]]]
+ 
+new[156] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 1], c[0, 1], d[0, 0]]]]
+ 
+new[157] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 1], c[0, 0], c[0, 1]]]]
+ 
+new[158] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1], d[0, 1]]]]
+ 
+new[159] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1], c[0, 1]]]]
+ 
+new[160] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[161] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1], d[0, 1]]]]
+ 
+new[162] = nc[coef[1], dirpdt[{{Q, -1 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1], c[0, 1]]]]
+ 
+new[163] = nc[coef[1], dirpdt[{{Q, -2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[164] = nc[coef[1], dirpdt[{{-1 + Q, 3/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[165] = nc[coef[1], dirpdt[{{-1 + Q, 3/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[166] = nc[coef[1], dirpdt[{{-1 + Q, 3/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1], c[0, 0], d[0, 0]]]]
+ 
+new[167] = nc[coef[1], dirpdt[{{-1 + Q, 3/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], c[0, 0], d[0, 0]]]]
+ 
+new[168] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[b[0, 0], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[169] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[b[0, 0], b[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[170] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[171] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[172] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[173] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[174] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[175] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[176] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], b[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[177] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1], c[0, 0], d[0, 1]]]]
+ 
+new[178] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1], c[0, 1], d[0, 0]]]]
+ 
+new[179] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], b[0, 1], c[0, 0], c[0, 1]]]]
+ 
+new[180] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[181] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[182] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1], c[0, 0], d[0, 0]]]]
+ 
+new[183] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[184] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[185] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[186] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], c[0, 0], d[0, 1]]]]
+ 
+new[187] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[188] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], c[0, 0], c[0, 1]]]]
+ 
+new[189] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1], c[0, 0], d[0, 0]]]]
+ 
+new[190] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], d[0, 0]]]]
+ 
+new[191] = nc[coef[1], dirpdt[{{-1 + Q, 1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 0]]]]
+ 
+new[192] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[b[0, 1], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[193] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[b[0, 0], b[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[194] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[195] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[196] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[197] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[198] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[199] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[200] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[201] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[202] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[203] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], b[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[204] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1], c[0, 0], d[0, 1]]]]
+ 
+new[205] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1], c[0, 1], d[0, 0]]]]
+ 
+new[206] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], b[0, 1], c[0, 0], c[0, 1]]]]
+ 
+new[207] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[208] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[209] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[210] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[211] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1], c[0, 0], d[0, 1]]]]
+ 
+new[212] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1], c[0, 1], d[0, 0]]]]
+ 
+new[213] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 1], c[0, 0], c[0, 1]]]]
+ 
+new[214] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], d[0, 1]]]]
+ 
+new[215] = nc[coef[1], dirpdt[{{-1 + Q, -1/2 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 1]]]]
+ 
+new[216] = nc[coef[1], dirpdt[{{-1 + Q, -3/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[217] = nc[coef[1], dirpdt[{{-1 + Q, -3/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[218] = nc[coef[1], dirpdt[{{-1 + Q, -3/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[219] = nc[coef[1], dirpdt[{{-1 + Q, -3/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[220] = nc[coef[1], dirpdt[{{-2 + Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[221] = nc[coef[1], dirpdt[{{-2 + Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], b[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[222] = nc[coef[1], dirpdt[{{-2 + Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[223] = nc[coef[1], dirpdt[{{-2 + Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[224] = nc[coef[1], dirpdt[{{-2 + Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[225] = nc[coef[1], dirpdt[{{-2 + Q, 1 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 0], d[0, 0]]]]
+ 
+new[226] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     -nc[b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[227] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[228] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], b[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[229] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[230] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[231] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], b[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[232] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[233] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[234] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[235] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[236] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[237] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[238] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[239] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 0], d[0, 1]]]]
+ 
+new[240] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 1], d[0, 0]]]]
+ 
+new[241] = nc[coef[1], dirpdt[{{-2 + Q, Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 0], c[0, 1]]]]
+ 
+new[242] = nc[coef[1], dirpdt[{{-2 + Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 1], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[243] = nc[coef[1], dirpdt[{{-2 + Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], b[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[244] = nc[coef[1], dirpdt[{{-2 + Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 1], b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[245] = nc[coef[1], dirpdt[{{-2 + Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[246] = nc[coef[1], dirpdt[{{-2 + Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[247] = nc[coef[1], dirpdt[{{-2 + Q, -1 + Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 1], d[0, 1]]]]
+ 
+new[248] = nc[coef[1], dirpdt[{{-3 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[249] = nc[coef[1], dirpdt[{{-3 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[250] = nc[coef[1], dirpdt[{{-3 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 0], d[0, 0], d[0, 1]]]]
+ 
+new[251] = nc[coef[1], dirpdt[{{-3 + Q, 1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0]]]]
+ 
+new[252] = nc[coef[1], dirpdt[{{-3 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 1], b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[253] = nc[coef[1], dirpdt[{{-3 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 1], c[0, 0], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[254] = nc[coef[1], dirpdt[{{-3 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 1], d[0, 0], d[0, 1]]]]
+ 
+new[255] = nc[coef[1], dirpdt[{{-3 + Q, -1/2 + Sz}, {}, r}, 
+     -nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 1]]]]
+ 
+new[256] = nc[coef[1], dirpdt[{{-4 + Q, Sz}, {}, r}, 
+     nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1], c[0, 0], c[0, 1], d[0, 0], 
+      d[0, 1]]]]

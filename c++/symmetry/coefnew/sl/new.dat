@@ -1,0 +1,15 @@
+new[1] = nc[coef[1], dirpdt[{{3 + Q}, {}, r}, 1]]
+ 
+new[2] = nc[coef[1], dirpdt[{{2 + Q}, {}, r}, c[0, 1]]]
+ 
+new[3] = nc[coef[1], dirpdt[{{2 + Q}, {}, r}, b[0, 1]]]
+ 
+new[4] = nc[coef[1], dirpdt[{{2 + Q}, {}, r}, a[0, 1]]]
+ 
+new[5] = nc[coef[1], dirpdt[{{1 + Q}, {}, r}, nc[b[0, 1], c[0, 1]]]]
+ 
+new[6] = nc[coef[1], dirpdt[{{1 + Q}, {}, r}, nc[a[0, 1], c[0, 1]]]]
+ 
+new[7] = nc[coef[1], dirpdt[{{1 + Q}, {}, r}, nc[a[0, 1], b[0, 1]]]]
+ 
+new[8] = nc[coef[1], dirpdt[{{Q}, {}, r}, nc[a[0, 1], b[0, 1], c[0, 1]]]]

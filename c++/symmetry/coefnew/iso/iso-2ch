@@ -1,0 +1,4 @@
+#!/bin/sh
+nice wolframscript --batchinput <<END | tee log
+<<"iso-2ch.m";
+END

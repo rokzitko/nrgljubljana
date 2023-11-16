@@ -1,0 +1,39 @@
+newstate[1] = -(nc[a[0, 0], a[0, 1]]/Sqrt[2]) + nc[b[0, 0], b[0, 1]]/Sqrt[2]
+ 
+newstate[2] = nc[a[0, 0], b[0, 1]]/Sqrt[2] - nc[a[0, 1], b[0, 0]]/Sqrt[2]
+ 
+newstate[3] = -nc[a[0, 1], b[0, 1]]
+ 
+newstate[4] = -nc[a[0, 1], b[0, 1]]
+ 
+newstate[5] = -nc[a[0, 1], b[0, 1]]
+ 
+newstate[6] = -(nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2]) + 
+    nc[a[0, 1], b[0, 0], b[0, 1]]/Sqrt[2]
+ 
+newstate[7] = -(nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2]) + 
+    nc[a[0, 1], b[0, 0], b[0, 1]]/Sqrt[2]
+ 
+newstate[8] = -(nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2]) + 
+    nc[a[0, 1], b[0, 0], b[0, 1]]/Sqrt[2]
+ 
+newstate[9] = -(nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2]) + 
+    nc[a[0, 1], b[0, 0], b[0, 1]]/Sqrt[2]
+ 
+newstate[10] = nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2] + 
+    nc[a[0, 1], b[0, 0], b[0, 1]]/Sqrt[2]
+ 
+newstate[11] = nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2] + 
+    nc[a[0, 1], b[0, 0], b[0, 1]]/Sqrt[2]
+ 
+newstate[12] = nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2] + 
+    nc[a[0, 1], b[0, 0], b[0, 1]]/Sqrt[2]
+ 
+newstate[13] = nc[a[0, 0], a[0, 1], b[0, 1]]/Sqrt[2] + 
+    nc[a[0, 1], b[0, 0], b[0, 1]]/Sqrt[2]
+ 
+newstate[14] = nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1]]
+ 
+newstate[15] = nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1]]
+ 
+newstate[16] = nc[a[0, 0], a[0, 1], b[0, 0], b[0, 1]]

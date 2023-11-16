@@ -1,0 +1,7 @@
+#!/bin/sh
+find . -name "*-details.dat" -delete
+find . -name "*debug" -delete
+find . -name "*mma" -delete
+find . -name "*-def.dat" -delete
+find . -name "log" -delete
+find . -name ".svn" -delete

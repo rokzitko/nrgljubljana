@@ -1,4 +1,4 @@
-{ 2, 9, -(Power(-1,NN)*sqrt(1 - 1/(2.*(1 + ISO(iip)))))/2.},
+{ 2, 9, -0.5*(Power(-1,NN)*sqrt(1 - 1/(2.*(1 + ISO(iip)))))},
 { 3, 9, (Power(-1,NN)*sqrt(1 - 1/(2.*(1 + ISO(iip)))))/2.},
 { 4, 7, (Power(-1,NN)*sqrt(1 - 1/(2.*(1 + ISO(iip)))))/2.},
 { 5, 13, (Power(-1,NN)*sqrt(2 - 1/(1 + ISO(iip))))/2.},

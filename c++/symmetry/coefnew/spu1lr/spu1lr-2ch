@@ -1,0 +1,2 @@
+#!/bin/sh
+math -batchinput -batchoutput <"spu1lr-2ch.m"

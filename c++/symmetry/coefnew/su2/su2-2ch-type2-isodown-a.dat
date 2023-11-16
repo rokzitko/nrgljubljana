@@ -1,4 +1,4 @@
-{ 2, 6, (1 - 2*ISO(iip))/(2.*sqrt(ISO(iip)*(-1 + 2*ISO(iip))))},
+{ 2, 6, -0.5*sqrt(2 - 1/ISO(iip))},
 { 3, 7, -1},
 { 4, 1, Power(-1,NN)*sqrt(1 + 1/(2.*ISO(iip)))},
 { 5, 2, (Power(-1,NN)*(1 + ISO(iip)))/(sqrt(2)*sqrt(ISO(iip)*(1 + ISO(iip))))},
