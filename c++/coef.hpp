@@ -53,6 +53,7 @@ template <scalar S> auto read_matrix_table(std::istream &F, const bool nr_is_max
   return vec;
 }
 
+#ifdef CHAIN_COEF
 // PROPOSED NEW DATA STRUCTURE
 // Table of Wilson chain coefficients in matrix form, one element per shell.
 // The meaning of the internal matrix dimensions depends on the symmetry type,
@@ -79,6 +80,7 @@ public:
     return matrix_table[0].size1();
   }
 };
+#endif
 
 // One table of discretization coefficients for each channel
 template <scalar S, typename t_coef = coef_traits<S>>
@@ -118,8 +120,10 @@ public:
 
 // NEW INTERFACE
 
+#ifdef CHAIN_COEF
   chain_coef<S> eps; // f^dag_N f_N+1 terms
   chain_coef<S> t;   // f^dag_N f_N terms
+#endif
 
 // OLD INTERFACE
 
