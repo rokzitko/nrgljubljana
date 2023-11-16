@@ -1,4 +1,0 @@
-#!/bin/sh
-math << \EOF | tee log
-<<"spsu2c3-3ch.m";
-EOF

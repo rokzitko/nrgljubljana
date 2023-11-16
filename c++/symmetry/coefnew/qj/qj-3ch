@@ -1,4 +1,0 @@
-#!/bin/sh
-nice math --batchinput <<END | tee log
-<<"qj-3ch.m";
-END

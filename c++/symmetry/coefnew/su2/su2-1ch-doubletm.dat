@@ -1,8 +1,5 @@
 { 1, 1, Invar(-1 + ii1), Invar(-2 + ii1), 1},
 { 1, 2, Invar(-1 + ii1), Invar(ii1), 1/(1 + 2*ISO(ii1))},
-(-1)^NN*Sqrt[1 - 1/(2*(1 + Iq))]*nc[old[{1/2 + Iq}, {1/2 + Iq}, r], a[0, 0], a[0, 1], old[{-1 + Iq}, {-1 + Iq}, r]]
-("{ 2, 2, Invar(1 + ii1), Invar(ii1), (2*sqrt(ISO(ii1)))/(1 + 2*ISO(ii1))}," + 2*Sqrt[Iq]*nc[old[{1/2 + Iq}, {1/2 + Iq}, r], old[{Iq}, {Iq}, r]] - (-1)^NN*Sqrt[2]*nc[old[{1/2 + Iq}, {1/2 + Iq}, r], a[0, 0], a[0, 1], old[{Iq}, {-1 + Iq}, r]])/(2*Sqrt[1 + Iq])
--((-1)^NN*Sqrt[1 - 1/(2*(1 + Iq))]*nc[old[{1/2 + Iq}, {1/2 + Iq}, r], a[0, 0], old[{-1/2 + Iq}, {-1/2 + Iq}, r]])
--((-1)^NN*Sqrt[1 - 1/(2*(1 + Iq))]*nc[old[{1/2 + Iq}, {1/2 + Iq}, r], a[0, 1], old[{-1/2 + Iq}, {-1/2 + Iq}, r]])
+{ 2, 2, Invar(1 + ii1), Invar(ii1), (2*sqrt(ISO(ii1)*(1 + ISO(ii1))))/(1 + 2*ISO(ii1))},
 { 3, 3, Invar(ii1), Invar(-1 + ii1), -1},
 { 4, 4, Invar(ii1), Invar(-1 + ii1), -1},
