@@ -11,7 +11,24 @@ using namespace NRG;
 
 TEST(test_common, basic) {
   Params P;
+  P.logstr.set_str("!");
   auto Sym = set_symmetry<double>(P, "QS", 1);
+  EXPECT_EQ(P.combs, 4);
+  EXPECT_EQ(Sym->nr_combs(), 4);
+}
+
+TEST(test_common_2, basic) {
+  Params P;
+  P.logstr.set_str("!");
+  auto Sym = set_symmetry<double>(P, "QS", 2);
+  EXPECT_EQ(P.combs, 16);
+  EXPECT_EQ(Sym->nr_combs(), 16);
+}
+
+TEST(test_common_cplx, basic) {
+  Params P;
+  P.logstr.set_str("!");
+  auto Sym = set_symmetry<std::complex<double>>(P, "QS", 1);
   EXPECT_EQ(P.combs, 4);
   EXPECT_EQ(Sym->nr_combs(), 4);
 }
