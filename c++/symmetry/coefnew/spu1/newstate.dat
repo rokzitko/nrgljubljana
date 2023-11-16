@@ -1,7 +1,0 @@
-newstate[1] = a[0, 0]
- 
-newstate[2] = 1
- 
-newstate[3] = -nc[a[0, 0], a[0, 1]]
- 
-newstate[4] = a[0, 1]
