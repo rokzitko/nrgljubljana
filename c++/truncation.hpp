@@ -15,7 +15,7 @@
 namespace NRG {
 
 // Returns true if all states should be retained in the current step of the NRG iteration.
-auto keepall(const Step &step, const Params &P) {
+inline auto keepall(const Step &step, const Params &P) {
    if (P.keepall == ""s) return false;
    if (P.keepall == "even"s && step.N() % 2 == 0) return true;
    if (P.keepall == "odd"s && step.N() % 2 == 1) return true;

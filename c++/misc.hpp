@@ -54,7 +54,7 @@ constexpr inline auto intpow(const T x, const N n) {
   for (N i = 1; i <= n; i++) res *= x;
   return res;
 }
-   
+
 template<typename T> auto get_back(T &d) { // usually T is list or deque
   if (d.empty()) throw std::runtime_error("Error: List empty! File: "s + (std::string)__FILE__ + " Line: "s +  std::to_string(__LINE__));
   auto i = d.back();
@@ -189,9 +189,9 @@ inline bool complex_data(const std::string &filename = "data") {
   std::getline(F, l);
   std::getline(F, l);
   std::getline(F, l); // third line
-  const auto pos = l.find("COMPLEX"); 
+  const auto pos = l.find("COMPLEX");
   return pos != std::string::npos;
-} 
+}
 
 template<typename K, typename V>
 auto vector_of_keys(const std::map<K,V> &container)
@@ -211,7 +211,7 @@ std::vector<std::pair<T1, T2>> readtable(const std::string &filename, const bool
 {
   auto F = safe_open_for_reading(filename);
   std::vector<std::pair<T1, T2>> v;
-  while (F) 
+  while (F)
   {
       skip_comments(F);
       const auto x = read_one<T1>(F);
@@ -231,7 +231,7 @@ void writetable(const std::vector<std::pair<T1, T2>> &re, std::string filename, 
   for (const auto & [x, y] : re) F << x << " " << y << std::endl;
 }
 
-std::vector<std::string> split (const std::string &s, char delim) {
+inline std::vector<std::string> split (const std::string &s, char delim) {
     std::vector<std::string> result;
     std::stringstream ss (s);
     std::string item;
