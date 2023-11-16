@@ -166,6 +166,7 @@ class Params {
   param<size_t> keep{"keep", "Maximum number of states to keep at each step", "100", all};     // S
   param<double> keepenergy{"keepenergy", "Cut-off energy for truncation", "-1.0", all};        // S
   param<size_t> keepmin{"keepmin", "Minimum number of states to keep at each step", "0", all}; // S
+  param<std::string> keepall{"keepall", "Keep all states at certain iterations", "", all};
 
   // Safeguard feature: keep more states in case of a near degeneracy
   // near the truncation cutoff. This prevents to truncate in the

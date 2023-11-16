@@ -13,6 +13,8 @@
 #include <set>
 #include <map>
 #include <fstream>
+#include <iostream>
+#include <sstream>
 #include <cstring> // stdcasecmp
 #include <exception>
 #include <cstdio> // stdout
@@ -227,6 +229,18 @@ void writetable(const std::vector<std::pair<T1, T2>> &re, std::string filename, 
   auto F = safe_open(filename);
   F << std::setprecision(output_precision);
   for (const auto & [x, y] : re) F << x << " " << y << std::endl;
+}
+
+std::vector<std::string> split (const std::string &s, char delim) {
+    std::vector<std::string> result;
+    std::stringstream ss (s);
+    std::string item;
+
+    while (getline (ss, item, delim)) {
+        result.push_back (item);
+    }
+
+    return result;
 }
 
 } // namespace
