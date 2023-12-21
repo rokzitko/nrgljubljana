@@ -621,7 +621,7 @@ ham[inv_] := Module[{fn, rep},
 
   If[GENERATEHAM && !option["PARAMPRE"],
     MyPrint["Generating matrix: " <> fn];
-    rep = matrixrepresentationvc[H, bazavc[inv]];
+    rep = op2matrix[H, inv];
 
     (* Simplification improves numerical precision! *)
     rep = Simplify[rep];
@@ -637,7 +637,7 @@ ham[inv_] := Module[{fn, rep},
     Hnum = H /. params;
     Hnum = Hnum /. 0. -> 0;
     MyVPrint[3, "Hnum=", Hnum];
-    rep = matrixrepresentationvc[Hnum, bazavc[inv]];
+    rep = op2matrix[Hnum, inv];
     (* Don't save to file in this case!!! *)
   ];
 
