@@ -604,9 +604,15 @@ GENERATEHAM = If[option["READHAM"], False, True];
 
 hamfn[inv_] := hamfilename <> "_" <> Invar2String[inv];
 
-ham[inv_] := Module[{fn, rep},
+ham[inv_] := Module[{fn, rep, HH},
   timestart["ham"];
   fn = hamfn[inv];
+
+  (* Support for "subspace-dependent" Hamiltonians. *)
+  HH = H;
+  If[MULTIPLEHAM == True,
+    HH = getHam[inv]
+  ];
 
   If[GENERATEHAM == False,
     MyPrint["Reading matrix from " <> fn];
@@ -621,7 +627,7 @@ ham[inv_] := Module[{fn, rep},
 
   If[GENERATEHAM && !option["PARAMPRE"],
     MyPrint["Generating matrix: " <> fn];
-    rep = op2matrix[H, inv];
+    rep = op2matrix[HH, inv];
 
     (* Simplification improves numerical precision! *)
     rep = Simplify[rep];
@@ -634,7 +640,7 @@ ham[inv_] := Module[{fn, rep},
   (* If option PARAMPRE is specified, apply parameters now! *)
   If[GENERATEHAM && option["PARAMPRE"],
     MyPrint["Generatic numerical matrix ", inv];
-    Hnum = H /. params;
+    Hnum = HH /. params;
     Hnum = Hnum /. 0. -> 0;
     MyVPrint[3, "Hnum=", Hnum];
     rep = op2matrix[Hnum, inv];
