@@ -43,7 +43,6 @@ class Bins {
    inline static const double max_bin_shift = 2.0;
    inline static const double min_bin_shift = 2.0;
    inline static const double base = 10;
-   inline static const double zero_epsilon = 1e-14;
    inline static const double discarded_weight_warn_limit = 1e-8;
 
  public:
@@ -113,7 +112,7 @@ template<scalar S>
 inline void Bins<S>::add_std(const double energy, const t_weight weight) {
   // Important: if 'energy' is lower than the lower limit of the first interval, the weight is assigned to the first
   // bin. This is especially relevant for collecting the omega=0 data in bosonic correlators. (rz, 25 Oct 2012)
-  if (energy < zero_epsilon) { // handle this special case separately (for reasons of efficiency)
+  if (energy < emin) { // handle this special case separately (for reasons of efficiency)
     bins[0].second += weight;
     return;
   }
