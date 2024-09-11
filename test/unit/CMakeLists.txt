@@ -27,8 +27,8 @@ foreach(test ${all_tests})
   get_filename_component(test_name ${test} NAME_WE)
   get_filename_component(test_dir ${test} DIRECTORY)
   add_executable(${test_name} ${test})
-  target_compile_options(${test_name} PRIVATE -std=c++17 $<$<CXX_COMPILER_ID:GNU>:-fconcepts>
-                                                         $<$<BOOL:${GCOV}>:--coverage>)
+  target_compile_options(${test_name} PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fconcepts>
+                                              $<$<BOOL:${GCOV}>:--coverage>)
   set_property(TARGET ${test_name} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
   target_link_libraries(${test_name} nrgljubljana_c gtest_main project_warnings gsl)
   target_link_options(${test_name} PRIVATE  $<$<BOOL:${GCOV}>:--coverage>)

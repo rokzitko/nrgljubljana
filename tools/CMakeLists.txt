@@ -4,6 +4,9 @@ macro(add_tool exec_name)
   # Enable warnings
   target_link_libraries(${exec_name} PRIVATE project_warnings)
 
+  # C++ Standard
+  target_compile_features(${exec_name} PRIVATE cxx_std_20)
+
   # Configure compilation
   target_compile_options(${exec_name} PRIVATE -fPIC ${NRG_CXX_OPT})
   target_include_directories(${exec_name} PRIVATE 
