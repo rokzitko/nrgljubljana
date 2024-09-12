@@ -1,0 +1,109 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  CMAKE_C_COMPILER_LAUNCHER: ccache
+  CMAKE_CXX_COMPILER_LAUNCHER: ccache
+  CCACHE_COMPILERCHECK: content
+  CCACHE_BASEDIR: ${{ github.workspace }}
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_MAXSIZE: 500M
+  CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
+  CCACHE_COMPRESS: "1"
+  CCACHE_COMPRESSLEVEL: "1"
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12}
+          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15}
+          - {os: macos-12, cc: gcc-12, cxx: g++-12}
+          - {os: macos-12, cc: clang, cxx: clang++}
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/cache/restore@v4
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
+        restore-keys:
+          ccache-${{ matrix.os }}-${{ matrix.cc }}-
+
+    - name: Install ubuntu dependencies
+      if: matrix.os == 'ubuntu-22.04'
+      run: >
+        sudo apt-get update &&
+        sudo apt-get install lsb-release wget software-properties-common &&
+        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
+        sudo apt-get install
+        ccache
+        clang-15
+        g++-12
+        hdf5-tools
+        libblas-dev
+        libboost-dev
+        libclang-15-dev
+        libc++-15-dev
+        libc++abi-15-dev
+        libomp-15-dev
+        libfftw3-dev
+        libgmp-dev
+        libhdf5-dev
+        liblapack-dev
+        libopenmpi-dev
+        openmpi-bin
+        openmpi-common
+        openmpi-doc
+
+    - name: Install homebrew dependencies
+      if: matrix.os == 'macos-12'
+      run: |
+        brew install ccache gcc@12 llvm boost boost-mpi fftw hdf5 open-mpi openblas
+    
+    - name: add clang cxxflags
+      if: ${{ contains(matrix.cxx, 'clang') }}
+      run: |
+        echo "PATH=/usr/local/opt/llvm/bin:$PATH" >> $GITHUB_ENV
+        echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
+
+    - name: Build NRG Ljubljana
+      env:
+        CC: ${{ matrix.cc }}
+        CXX: ${{ matrix.cxx }}
+        LIBRARY_PATH: /usr/local/opt/llvm/lib
+      run: |
+        git clone https://github.com/donrolih/nrgljubljana --branch ${{ github.ref_name }}
+        mkdir build && cd build && cmake ..
+        make -j2 || make -j1 VERBOSE=1
+    
+    - name: Test NRG Ljubljana
+      env:
+        DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
+        OPENBLAS_NUM_THREADS: "1"
+      run: |
+        cd build
+        ctest -j2 --output-on-failure
+    
+    - name: ccache statistics
+      if: always()
+      run: ccache -sv
+
+    - uses: actions/cache/save@v4
+      if: always()
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
