@@ -87,7 +87,7 @@ jobs:
         LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         git clone https://github.com/donrolih/nrgljubljana --branch ${{ github.ref_name }}
-        mkdir build && cd build && cmake ..
+        mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install
         make -j2 || make -j1 VERBOSE=1
     
     - name: Test NRG Ljubljana
