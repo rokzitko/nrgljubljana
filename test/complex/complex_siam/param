@@ -1,7 +1,7 @@
 [extra]
 Gamma1=0.01
-Gamma2=0.005
-phi=0
+Gamma2=0.006
+phi=0.1
 
 [param]
 model=siamphase.m
@@ -9,15 +9,15 @@ model=siamphase.m
 symtype=QS
 
 U=0.27
-delta=0
+delta=0.01
 
 Lambda=2
 
-Tmin=1e-6
+Tmin=1e-3
 
 keepmin=10
-keepenergy=5.0
-keep=500
+keepenergy=10.0
+keep=1000
 
 discretization=Z
 
@@ -42,6 +42,6 @@ omega0=1e-99
 options=SCHUR COMPLEX
 
 broaden_max=1
-broaden_min=1e-12
+broaden_min=1e-3
 broaden_ratio=1.02
 
