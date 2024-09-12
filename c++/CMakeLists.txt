@@ -13,7 +13,10 @@ if(SYM_ALL)
   sym-U1.cc sym-SPSU2C3.cc sym-QSC3.cc)
 endif()
 
-add_library(nrgljubljana_c  SHARED ${sources})
+add_library(nrgljubljana_c ${sources})
+
+# C++ Standard
+target_compile_features(nrgljubljana_c PUBLIC cxx_std_20)
 
 # Enable warnings
 target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
@@ -79,7 +82,7 @@ if(ANALYZE_SOURCES)
 	TARGET nrgljubljana_c
 	COMMAND ${CPPCHECK_EXECUTABLE}
 	  --enable=warning,style,performance,portability
-	  --std=c++17
+	  --std=c++20
 	  --template=gcc
 	  --verbose
 	  --force
