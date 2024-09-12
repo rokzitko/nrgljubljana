@@ -53,8 +53,10 @@ jobs:
         ccache
         clang-18
         g++-12
+        gfortran
         hdf5-tools
         libblas-dev
+        libboost-all-dev
         libclang-18-dev
         libc++-18-dev
         libc++abi-18-dev
@@ -67,10 +69,7 @@ jobs:
         libopenmpi-dev
         openmpi-bin
         openmpi-common
-        openmpi-doc &&
-        wget -O /tmp/boost_1_82_0.tar.gz https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz &&
-        tar xvf /tmp/boost_1_82_0.tar.gz &&
-        cd /tmp/boost_1_82_0 && ./bootstrap.sh --prefix=/usr/ && sudo ./b2 install && cd ..
+        openmpi-doc
     
     - name: Install homebrew dependencies
       if: matrix.os == 'macos-12'
