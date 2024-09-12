@@ -55,13 +55,14 @@ jobs:
         g++-12
         hdf5-tools
         libblas-dev
-        libboost-dev
+        libboost-all-dev
         libclang-15-dev
         libc++-15-dev
         libc++abi-15-dev
         libomp-15-dev
         libfftw3-dev
         libgmp-dev
+        libgsl-dev
         libhdf5-dev
         liblapack-dev
         libopenmpi-dev
