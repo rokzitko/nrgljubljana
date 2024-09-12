@@ -4,13 +4,13 @@
 spin=1
 Jkondo=0.2
 Bx=0
-Bz=0
+Bz=0.1
 anD=0
 anE=0
 
 [param]
 
-fixeps=1e-14
+fixeps=1e-12
 
 symtype=QSZ
 model=aniso.m
@@ -19,7 +19,7 @@ Lambda=2.
 Tmin=1e-4
 betabar=0.75
 keepmin=500
-keepenergy=6.0
+keepenergy=10.0
 keep=1000
 safeguard=0.01
 
@@ -35,7 +35,7 @@ cfs=true
 prec_xy=12
 broaden_max=2
 broaden_raio=1.03
-broaden_min=1e-14
+broaden_min=1e-4
 
 smooth=new
 alpha=0.8
