@@ -55,9 +55,7 @@ jobs:
         g++-14
         hdf5-tools
         libblas-dev
-        libboost-dev
-        libboost-serialization-dev
-        libboost-mpi-dev
+        libboost1.83-all-dev
         libclang-18-dev
         libc++-18-dev
         libc++abi-18-dev
