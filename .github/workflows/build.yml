@@ -73,12 +73,12 @@ jobs:
         openmpi-doc
     
     - name: Install homebrew dependencies (clang)
-      if: matrix.os == 'macos-12' && ${{ contains(matrix.cxx, 'clang') }}
+      if: ${{ (matrix.os == 'macos-12') && contains(matrix.cxx, 'clang') }}
       run: |
         brew install ccache llvm boost boost-mpi fftw hdf5 open-mpi openblas gsl gmp
     
     - name: Install homebrew dependencies (gcc)
-      if: matrix.os == 'macos-12' && ${{ contains(matrix.cxx, 'g++') }}
+      if: ${{ (matrix.os == 'macos-12') && contains(matrix.cxx, 'g++') }}
       run: |
         brew install ccache gcc@12 boost boost-mpi fftw hdf5 open-mpi openblas gsl gmp --cc=gcc-12
     
