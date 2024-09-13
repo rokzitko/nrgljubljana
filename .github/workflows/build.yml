@@ -27,7 +27,7 @@ jobs:
       matrix:
         include:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12}
-          - {os: ubuntu-22.04, cc: clang-18, cxx: clang++-18}
+          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15}
           - {os: macos-12, cc: gcc-12, cxx: g++-12}
           - {os: macos-12, cc: clang, cxx: clang++}
 
@@ -48,19 +48,19 @@ jobs:
       run: >
         sudo apt-get update &&
         sudo apt-get install lsb-release wget software-properties-common &&
-        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 18 &&
+        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
         sudo apt-get install
         ccache
-        clang-18
+        clang-15
         g++-12
         gfortran
         hdf5-tools
         libblas-dev
         libboost-all-dev
-        libclang-18-dev
-        libc++-18-dev
-        libc++abi-18-dev
-        libomp-18-dev
+        libclang-15-dev
+        libc++-15-dev
+        libc++abi-15-dev
+        libomp-15-dev
         libfftw3-dev
         libgmp-dev
         libgsl-dev
