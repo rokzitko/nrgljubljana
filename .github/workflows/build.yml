@@ -49,6 +49,7 @@ jobs:
         sudo apt-get update &&
         sudo apt-get install lsb-release wget software-properties-common &&
         wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
+        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
         sudo apt-get install
         ccache
         clang-15
@@ -56,11 +57,11 @@ jobs:
         gfortran
         hdf5-tools
         libblas-dev
-        libboost-all-dev
         libclang-15-dev
         libc++-15-dev
         libc++abi-15-dev
         libomp-15-dev
+        boost1.81
         libfftw3-dev
         libgmp-dev
         libgsl-dev
