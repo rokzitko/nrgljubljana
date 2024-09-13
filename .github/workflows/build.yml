@@ -81,7 +81,6 @@ jobs:
       if: ${{ contains(matrix.cxx, 'clang') }}
       run: |
         echo "PATH=/usr/local/opt/llvm/bin:$PATH" >> $GITHUB_ENV
-        echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
 
     - name: Build NRG Ljubljana
       env:
