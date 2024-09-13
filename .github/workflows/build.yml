@@ -28,7 +28,6 @@ jobs:
         include:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12}
           - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15}
-          - {os: macos-12, cc: gcc-12, cxx: g++-12}
           - {os: macos-12, cc: clang, cxx: clang++}
 
     runs-on: ${{ matrix.os }}
@@ -76,11 +75,6 @@ jobs:
       if: ${{ (matrix.os == 'macos-12') && contains(matrix.cxx, 'clang') }}
       run: |
         brew install ccache llvm boost boost-mpi fftw hdf5 open-mpi openblas gsl gmp
-    
-    - name: Install homebrew dependencies (gcc)
-      if: ${{ (matrix.os == 'macos-12') && contains(matrix.cxx, 'g++') }}
-      run: |
-        brew install ccache gcc@12 boost boost-mpi fftw hdf5 open-mpi openblas gsl gmp --cc=gcc-12
     
     - name: add clang cxxflags
       if: ${{ contains(matrix.cxx, 'clang') }}
