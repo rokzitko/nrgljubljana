@@ -109,11 +109,6 @@ target_compile_options(project_warnings
 )
 
 # ###########
-# C++ options
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# ###########
 # MPI support
 
 message(STATUS "-------- MPI detection -------------")
