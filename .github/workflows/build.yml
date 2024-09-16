@@ -53,7 +53,6 @@ jobs:
         ccache
         clang-15
         g++-12
-        gfortran
         hdf5-tools
         libblas-dev
         libclang-15-dev
@@ -61,7 +60,6 @@ jobs:
         libc++abi-15-dev
         libomp-15-dev
         boost1.81
-        libfftw3-dev
         libgmp-dev
         libgsl-dev
         libhdf5-dev
@@ -74,7 +72,7 @@ jobs:
     - name: Install homebrew dependencies (clang)
       if: ${{ (matrix.os == 'macos-12') && contains(matrix.cxx, 'clang') }}
       run: |
-        brew install ccache llvm boost boost-mpi fftw hdf5 open-mpi openblas gsl gmp
+        brew install ccache llvm boost boost-mpi hdf5 open-mpi openblas gsl gmp
     
     - name: add clang cxxflags
       if: ${{ contains(matrix.cxx, 'clang') }}
@@ -87,7 +85,6 @@ jobs:
         CXX: ${{ matrix.cxx }}
         LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
-        git clone https://github.com/donrolih/nrgljubljana --branch ${{ github.ref_name }}
         mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install
         make -j2 || make -j1 VERBOSE=1
     
