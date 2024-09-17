@@ -55,6 +55,7 @@ jobs:
         g++-12
         hdf5-tools
         libblas-dev
+        intel-mkl
         libclang-15-dev
         libc++-15-dev
         libc++abi-15-dev
