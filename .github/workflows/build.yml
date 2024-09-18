@@ -26,9 +26,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12}
-          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15}
-          - {os: macos-12, cc: clang, cxx: clang++}
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS}
+          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS}
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl}
+          - {os: macos-12, cc: clang, cxx: clang++, blas: accelerate}
 
     runs-on: ${{ matrix.os }}
 
@@ -38,12 +39,12 @@ jobs:
     - uses: actions/cache/restore@v4
       with:
         path: ${{ env.CCACHE_DIR }}
-        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-${{ github.run_id }}
         restore-keys:
-          ccache-${{ matrix.os }}-${{ matrix.cc }}-
+          ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-
 
-    - name: Install ubuntu dependencies
-      if: matrix.os == 'ubuntu-22.04'
+    - name: Install ubuntu dependencies (openBLAS)
+      if: ${{ (matrix.os == 'ubuntu-22.04') && contains(matrix.blas, 'openBLAS') }}
       run: >
         sudo apt-get update &&
         sudo apt-get install lsb-release wget software-properties-common &&
@@ -55,7 +56,6 @@ jobs:
         g++-12
         hdf5-tools
         libblas-dev
-        intel-mkl
         libclang-15-dev
         libc++-15-dev
         libc++abi-15-dev
@@ -65,6 +65,31 @@ jobs:
         libgsl-dev
         libhdf5-dev
         liblapack-dev
+        libopenmpi-dev
+        openmpi-bin
+        openmpi-common
+        openmpi-doc
+    
+    - name: Install ubuntu dependencies (Intel MKL)
+      if: ${{ (matrix.os == 'ubuntu-22.04') && contains(matrix.blas, 'imkl') }}
+      run: >
+        sudo apt-get update &&
+        sudo apt-get install lsb-release wget software-properties-common &&
+        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
+        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
+        sudo apt-get install
+        ccache
+        clang-15
+        g++-12
+        hdf5-tools
+        intel-mkl
+        libclang-15-dev
+        libc++-15-dev
+        libc++abi-15-dev
+        boost1.81
+        libgmp-dev
+        libgsl-dev
+        libhdf5-dev
         libopenmpi-dev
         openmpi-bin
         openmpi-common
