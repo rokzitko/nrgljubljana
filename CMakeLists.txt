@@ -133,6 +133,18 @@ install(TARGETS mpi EXPORT nrgljubljana-targets)
 # ############
 # Dependencies
 
+# CPM for downloading dependencies
+include(CMake/CPM.cmake)
+
+# fmt
+CPMAddPackage(
+  NAME fmt
+  GIT_TAG 9.1.0
+  GITHUB_REPOSITORY fmtlib/fmt
+)
+
+install(TARGETS fmt EXPORT nrgljubljana-targets)
+
 # HDF5
 find_package(HDF5 REQUIRED COMPONENTS C HL)
 add_library(hdf5 INTERFACE)
