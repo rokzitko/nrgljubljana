@@ -20,7 +20,7 @@ macro(add_tool exec_name)
 			  )
 
   # Link dependencies
-  target_link_libraries(${exec_name} PRIVATE openmp boost blas_lapack gmp gsl dl hdf5 fmt
+  target_link_libraries(${exec_name} PRIVATE openmp boost blas_lapack gmp gsl dl hdf5 fmt range-v3
         $<$<BOOL:${ASAN}>:asan>
         $<$<BOOL:${UBSAN}>:ubsan>
   )

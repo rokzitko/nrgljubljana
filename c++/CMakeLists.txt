@@ -46,7 +46,7 @@ target_compile_definitions(nrgljubljana_c PUBLIC
 )
 
 # Link dependencies
-target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl mpi hdf5 fmt
+target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl mpi hdf5 fmt range-v3
   $<$<BOOL:${ASAN}>:asan>
   $<$<BOOL:${UBSAN}>:ubsan>
 )
