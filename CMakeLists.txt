@@ -139,7 +139,7 @@ include(CMake/CPM.cmake)
 # fmt
 CPMAddPackage(
   NAME fmt
-  GIT_TAG 9.1.0
+  GIT_TAG 11.0.2
   GITHUB_REPOSITORY fmtlib/fmt
 )
 
