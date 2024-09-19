@@ -29,6 +29,7 @@ target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry/coefnew>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include/range-v3>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tools>)
 target_compile_definitions(nrgljubljana_c PUBLIC
   $<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
