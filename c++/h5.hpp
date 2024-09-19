@@ -10,6 +10,8 @@
 #include "traits.hpp"
 
 #define H5_USE_EIGEN
+#include <highfive/highfive.hpp>
+#include <highfive/eigen.hpp>
 #include <highfive/H5Easy.hpp>
 
 namespace NRG {
@@ -31,9 +33,7 @@ namespace NRG {
 
    template <real_Eigen_matrix REM>
    void h5_dump_matrix(H5Easy::File &file, const std::string &path, const REM &m) {
-     H5Easy::detail::createGroupsToDataSet(file, path);
-     HighFive::DataSet dataset = file.createDataSet<double>(path, HighFive::DataSpace::From(m));
-     dataset.write(m);
+     H5Easy::dump(file, path, m);
    }
 
   template <complex_Eigen_matrix CEM>

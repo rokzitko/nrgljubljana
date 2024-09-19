@@ -6,13 +6,21 @@
  *          http://www.boost.org/LICENSE_1_0.txt)
  *
  */
-#ifndef H5DATATYPE_HPP
-#define H5DATATYPE_HPP
+#pragma once
 
+#include <type_traits>
 #include <vector>
+
+#include <H5Tpublic.h>
 
 #include "H5Object.hpp"
 #include "bits/H5Utils.hpp"
+
+#include "bits/string_padding.hpp"
+#include "H5PropertyList.hpp"
+
+#include "bits/h5_wrapper.hpp"
+#include "bits/h5t_wrapper.hpp"
 
 namespace HighFive {
 
@@ -21,27 +29,37 @@ namespace HighFive {
 /// \brief Enum of Fundamental data classes
 ///
 enum class DataTypeClass {
-    Time,
-    Integer,
-    Float,
-    String,
-    BitField,
-    Opaque,
-    Compound,
-    Reference,
-    Enum,
-    VarLen,
-    Array,
-    Invalid
+    Time = 1 << 1,
+    Integer = 1 << 2,
+    Float = 1 << 3,
+    String = 1 << 4,
+    BitField = 1 << 5,
+    Opaque = 1 << 6,
+    Compound = 1 << 7,
+    Reference = 1 << 8,
+    Enum = 1 << 9,
+    VarLen = 1 << 10,
+    Array = 1 << 11,
+    Invalid = 0
 };
 
+inline DataTypeClass operator|(DataTypeClass lhs, DataTypeClass rhs) {
+    using T = std::underlying_type<DataTypeClass>::type;
+    return static_cast<DataTypeClass>(static_cast<T>(lhs) | static_cast<T>(rhs));
+}
+
+inline DataTypeClass operator&(DataTypeClass lhs, DataTypeClass rhs) {
+    using T = std::underlying_type<DataTypeClass>::type;
+    return static_cast<DataTypeClass>(static_cast<T>(lhs) & static_cast<T>(rhs));
+}
+
+class StringType;
 
 ///
 /// \brief HDF5 Data Type
 ///
-class DataType : public Object {
+class DataType: public Object {
   public:
-
     bool operator==(const DataType& other) const;
 
     bool operator!=(const DataType& other) const;
@@ -55,7 +73,7 @@ class DataType : public Object {
     /// \brief Returns the length (in bytes) of this type elements
     ///
     /// Notice that the size of variable length sequences may have limited applicability
-    ///   given that it refers to the size of the control structure. For info see
+    /// given that it refers to the size of the control structure. For info see
     ///   https://support.hdfgroup.org/HDF5/doc/RM/RM_H5T.html#Datatype-GetSize
     size_t getSize() const;
 
@@ -75,13 +93,22 @@ class DataType : public Object {
     bool isFixedLenStr() const;
 
     ///
+    /// \brief Returns this datatype as a `StringType`.
+    ///
+    StringType asStringType() const;
+
+    ///
     /// \brief Check the DataType was default constructed.
-    /// Such value might represent auto-detection of the datatype from a buffer
     ///
     bool empty() const noexcept;
 
     /// \brief Returns whether the type is a Reference
     bool isReference() const;
+
+    /// \brief Get the list of properties for creation of this DataType
+    DataTypeCreateProps getCreatePropertyList() const {
+        return details::get_plist<DataTypeCreateProps>(*this, H5Tget_create_plist);
+    }
 
   protected:
     using Object::Object;
@@ -89,7 +116,67 @@ class DataType : public Object {
     friend class Attribute;
     friend class File;
     friend class DataSet;
+    friend class CompoundType;
+    template <typename Derivate>
+    friend class NodeTraits;
 };
+
+
+enum class CharacterSet : std::underlying_type<H5T_cset_t>::type {
+    Ascii = H5T_CSET_ASCII,
+    Utf8 = H5T_CSET_UTF8,
+};
+
+class StringType: public DataType {
+  public:
+    ///
+    /// \brief For stings return the character set.
+    ///
+    CharacterSet getCharacterSet() const;
+
+    ///
+    /// \brief For fixed length stings return the padding.
+    ///
+    StringPadding getPadding() const;
+
+  protected:
+    using DataType::DataType;
+    friend class DataType;
+};
+
+class FixedLengthStringType: public StringType {
+  public:
+    ///
+    /// \brief Create a fixed length string datatype.
+    ///
+    /// The string will be `size` bytes long, regardless whether it's ASCII or
+    /// UTF8. In particular, a string with `n` UFT8 characters in general
+    /// requires `4*n` bytes.
+    ///
+    /// The string padding is subtle, essentially it's just a hint. A
+    /// null-terminated string is guaranteed to have one `'\0'` which marks the
+    /// semantic end of the string. The length of the buffer must be at least
+    /// `size` bytes regardless. HDF5 will read or write `size` bytes,
+    /// irrespective of the when the `\0` occurs.
+    ///
+    /// Note that when writing passing `StringPadding::NullTerminated` is a
+    /// guarantee to the reader that it contains a `\0`. Therefore, make sure
+    /// that the string really is nullterminated. Otherwise prefer a
+    /// null-padded string which only means states that the buffer is filled up
+    /// with 0 or more `\0`.
+    FixedLengthStringType(size_t size,
+                          StringPadding padding,
+                          CharacterSet character_set = CharacterSet::Ascii);
+};
+
+class VariableLengthStringType: public StringType {
+  public:
+    ///
+    /// \brief Create a variable length string HDF5 datatype.
+    ///
+    VariableLengthStringType(CharacterSet character_set = CharacterSet::Ascii);
+};
+
 
 ///
 /// \brief create an HDF5 DataType from a C++ type
@@ -97,19 +184,19 @@ class DataType : public Object {
 ///  Support only basic data type
 ///
 template <typename T>
-class AtomicType : public DataType {
+class AtomicType: public DataType {
   public:
     AtomicType();
 
-    typedef T basic_type;
+    using basic_type = T;
 };
 
 
 ///
 /// \brief Create a compound HDF5 datatype
 ///
-class CompoundType : public DataType {
-public:
+class CompoundType: public DataType {
+  public:
     ///
     /// \brief Use for defining a sub-type of compound type
     struct member_def {
@@ -136,10 +223,32 @@ public:
         : members(std::move(t_members)) {
         create(size);
     }
-    inline CompoundType(const std::initializer_list<member_def>& t_members,
-                        size_t size = 0)
+    inline CompoundType(const std::initializer_list<member_def>& t_members, size_t size = 0)
         : members(t_members) {
         create(size);
+    }
+
+    ///
+    /// \brief Initializes a compound type from a DataType
+    /// \param type
+    inline CompoundType(DataType&& type)
+        : DataType(type) {
+        if (getClass() != DataTypeClass::Compound) {
+            std::ostringstream ss;
+            ss << "hid " << _hid << " does not refer to a compound data type";
+            throw DataTypeException(ss.str());
+        }
+        size_t n_members = static_cast<size_t>(detail::h5t_get_nmembers(_hid));
+        members.reserve(n_members);
+        for (unsigned i = 0; i < n_members; i++) {
+            char* name = detail::h5t_get_member_name(_hid, i);
+            size_t offset = detail::h5t_get_member_offset(_hid, i);
+            hid_t member_hid = detail::h5t_get_member_type(_hid, i);
+            DataType member_type{member_hid};
+            members.emplace_back(std::string(name), member_type, offset);
+
+            detail::h5_free_memory(name);
+        }
     }
 
     /// \brief Commit datatype into the given Object
@@ -152,8 +261,7 @@ public:
         return members;
     }
 
-private:
-
+  private:
     /// A vector of the member_def members of this CompoundType
     std::vector<member_def> members;
 
@@ -184,9 +292,9 @@ private:
 ///     auto dataset = file.createDataSet("/foo", Position::FIRST);
 /// }
 /// \endcode
-template<typename T>
+template <typename T>
 class EnumType: public DataType {
-public:
+  public:
     ///
     /// \brief Use for defining a member of enum type
     struct member_def {
@@ -201,18 +309,23 @@ public:
 
     EnumType(const std::vector<member_def>& t_members)
         : members(t_members) {
+        static_assert(std::is_enum<T>::value, "EnumType<T>::create takes only enum");
+        if (members.empty()) {
+            HDF5ErrMapper::ToException<DataTypeException>(
+                "Could not create an enum without members");
+        }
         create();
     }
 
     EnumType(std::initializer_list<member_def> t_members)
-        : EnumType(std::vector<member_def>({t_members})) {}
+        : EnumType(std::vector<member_def>(t_members)) {}
 
     /// \brief Commit datatype into the given Object
     /// \param object Location to commit object into
     /// \param name Name to give the datatype
     void commit(const Object& object, const std::string& name) const;
 
-private:
+  private:
     std::vector<member_def> members;
 
     void create();
@@ -229,11 +342,15 @@ template <typename T>
 DataType create_and_check_datatype();
 
 
+namespace deprecated {
 ///
 /// \brief A structure representing a set of fixed-length strings
 ///
 /// Although fixed-len arrays can be created 'raw' without the need for
 /// this structure, to retrieve results efficiently it must be used.
+///
+/// \tparam N Size of the string in bytes, including the null character. Note,
+///           that all string must be null-terminated.
 ///
 template <std::size_t N>
 class FixedLenStringArray {
@@ -241,20 +358,22 @@ class FixedLenStringArray {
     FixedLenStringArray() = default;
 
     ///
-    /// \brief Create a FixedStringArray from a raw contiguous buffer
+    /// \brief Create a FixedStringArray from a raw contiguous buffer.
     ///
-    FixedLenStringArray(const char array[][N], std::size_t length);
+    /// The argument `n_strings` specifies the number of strings.
+    ///
+    FixedLenStringArray(const char array[][N], std::size_t n_strings);
 
     ///
     /// \brief Create a FixedStringArray from a sequence of strings.
     ///
     /// Such conversion involves a copy, original vector is not modified
     ///
-    explicit FixedLenStringArray(const std::vector<std::string> & vec);
+    explicit FixedLenStringArray(const std::vector<std::string>& vec);
 
     FixedLenStringArray(const std::string* iter_begin, const std::string* iter_end);
 
-    FixedLenStringArray(const std::initializer_list<std::string> &);
+    FixedLenStringArray(const std::initializer_list<std::string>&);
 
     ///
     /// \brief Append an std::string to the buffer structure
@@ -342,6 +461,11 @@ class FixedLenStringArray {
   private:
     vector_t datavec;
 };
+}  // namespace deprecated
+
+template <size_t N>
+using FixedLenStringArray H5_DEPRECATED_USING("Use 'std::vector<std::string>'.") =
+    deprecated::FixedLenStringArray<N>;
 
 }  // namespace HighFive
 
@@ -351,21 +475,20 @@ class FixedLenStringArray {
 /// This macro has to be called outside of any namespace.
 ///
 /// \code{.cpp}
+/// namespace app {
 /// enum FooBar { FOO = 1, BAR = 2 };
 /// EnumType create_enum_foobar() {
 ///    return EnumType<FooBar>({{"FOO", FooBar::FOO},
 ///                             {"BAR", FooBar::BAR}});
 /// }
-/// HIGHFIVE_REGISTER_TYPE(FooBar, create_enum_foobar)
+/// }
+///
+/// HIGHFIVE_REGISTER_TYPE(FooBar, ::app::create_enum_foobar)
 /// \endcode
-#define HIGHFIVE_REGISTER_TYPE(type, function) \
-    namespace HighFive {                       \
-    template<>                                 \
-    DataType create_datatype<type>() {         \
-        return function();                     \
-    }                                          \
+#define HIGHFIVE_REGISTER_TYPE(type, function)                    \
+    template <>                                                   \
+    inline HighFive::DataType HighFive::create_datatype<type>() { \
+        return function();                                        \
     }
 
 #include "bits/H5DataType_misc.hpp"
-
-#endif // H5DATATYPE_HPP

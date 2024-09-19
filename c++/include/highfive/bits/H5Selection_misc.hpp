@@ -6,13 +6,13 @@
  *          http://www.boost.org/LICENSE_1_0.txt)
  *
  */
-#ifndef H5SELECTION_MISC_HPP
-#define H5SELECTION_MISC_HPP
+#pragma once
 
 namespace HighFive {
 
 inline Selection::Selection(const DataSpace& memspace,
-                            const DataSpace& file_space, const DataSet& set)
+                            const DataSpace& file_space,
+                            const DataSet& set)
     : _mem_space(memspace)
     , _file_space(file_space)
     , _set(set) {}
@@ -38,6 +38,12 @@ inline const DataType Selection::getDataType() const {
     return _set.getDataType();
 }
 
-}  // namespace HighFive
+namespace detail {
+inline Selection make_selection(const DataSpace& mem_space,
+                                const DataSpace& file_space,
+                                const DataSet& set) {
+    return Selection(mem_space, file_space, set);
+}
+}  // namespace detail
 
-#endif // H5SELECTION_MISC_HPP
+}  // namespace HighFive

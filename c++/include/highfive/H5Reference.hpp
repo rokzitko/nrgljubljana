@@ -7,8 +7,7 @@
  *
  */
 
-#ifndef H5REFERENCE_HPP
-#define H5REFERENCE_HPP
+#pragma once
 
 #include <string>
 #include <vector>
@@ -16,11 +15,14 @@
 #include <H5Ipublic.h>
 #include <H5Rpublic.h>
 
-#include "H5Object.hpp"
 #include "bits/H5_definitions.hpp"
 
 namespace HighFive {
 
+namespace details {
+template <typename T>
+struct inspector;
+}
 ///
 /// \brief An HDF5 (object) reference type
 ///
@@ -56,7 +58,7 @@ class Reference {
   protected:
     /// \brief Create a Reference from a low-level HDF5 object reference
     inline explicit Reference(const hobj_ref_t h5_ref)
-        : href(h5_ref) {};
+        : href(h5_ref){};
 
     /// \brief Create the low-level reference and store it at refptr
     ///
@@ -65,18 +67,15 @@ class Reference {
     void create_ref(hobj_ref_t* refptr) const;
 
   private:
-
     Object get_ref(const Object& location) const;
 
     hobj_ref_t href{};
     std::string obj_name{};
     hid_t parent_id{};
 
-    friend details::data_converter<std::vector<Reference>>;
+    friend struct details::inspector<Reference>;
 };
 
 }  // namespace HighFive
 
 #include "bits/H5Reference_misc.hpp"
-
-#endif  // H5REFERENCE_HPP

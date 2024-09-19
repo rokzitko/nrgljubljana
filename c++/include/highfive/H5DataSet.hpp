@@ -6,8 +6,7 @@
  *          http://www.boost.org/LICENSE_1_0.txt)
  *
  */
-#ifndef H5DATASET_HPP
-#define H5DATASET_HPP
+#pragma once
 
 #include <vector>
 
@@ -17,6 +16,7 @@
 #include "bits/H5_definitions.hpp"
 #include "bits/H5Annotate_traits.hpp"
 #include "bits/H5Slice_traits.hpp"
+#include "bits/H5Path_traits.hpp"
 #include "bits/H5_definitions.hpp"
 
 namespace HighFive {
@@ -24,17 +24,12 @@ namespace HighFive {
 ///
 /// \brief Class representing a dataset.
 ///
-class DataSet : public Object,
-                public SliceTraits<DataSet>,
-                public AnnotateTraits<DataSet> {
+class DataSet: public Object,
+               public SliceTraits<DataSet>,
+               public AnnotateTraits<DataSet>,
+               public PathTraits<DataSet> {
   public:
-
     const static ObjectType type = ObjectType::Dataset;
-
-    ///
-    /// \brief return the path to the current dataset
-    /// \return the path to the dataset
-    std::string getPath() const;
 
     ///
     /// \brief getStorageSize
@@ -93,16 +88,29 @@ class DataSet : public Object,
         return getSpace().getElementCount();
     }
 
-  protected:
-    using Object::Object;
+    /// \brief Get the list of properties for creation of this dataset
+    DataSetCreateProps getCreatePropertyList() const {
+        return details::get_plist<DataSetCreateProps>(*this, H5Dget_create_plist);
+    }
 
-    inline DataSet(Object&& o) noexcept : Object(std::move(o)) {}
+    /// \brief Get the list of properties for accession of this dataset
+    DataSetAccessProps getAccessPropertyList() const {
+        return details::get_plist<DataSetAccessProps>(*this, H5Dget_access_plist);
+    }
+
+    /// \deprecated Default constructor creates unsafe uninitialized objects
+    H5_DEPRECATED("Default constructor creates unsafe uninitialized objects")
+    DataSet() = default;
+
+  protected:
+    using Object::Object;  // bring DataSet(hid_t)
+
+    DataSet(Object&& o) noexcept
+        : Object(std::move(o)) {}
 
     friend class Reference;
-    template <typename Derivate> friend class NodeTraits;
-
+    template <typename Derivate>
+    friend class NodeTraits;
 };
 
 }  // namespace HighFive
-
-#endif // H5DATASET_HPP

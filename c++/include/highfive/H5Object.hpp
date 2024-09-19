@@ -6,16 +6,15 @@
  *          http://www.boost.org/LICENSE_1_0.txt)
  *
  */
-#ifndef H5OBJECT_HPP
-#define H5OBJECT_HPP
+#pragma once
 
 #include <ctime>
 
 #include <H5Ipublic.h>
 #include <H5Opublic.h>
 
-#include "H5Exception.hpp"
 #include "bits/H5_definitions.hpp"
+#include "bits/H5Friends.hpp"
 
 namespace HighFive {
 
@@ -32,9 +31,31 @@ enum class ObjectType {
     Other  // Internal/custom object type
 };
 
+namespace detail {
+/// \brief Internal hack to create an `Object` from an ID.
+///
+/// WARNING: Creating an Object from an ID has implications w.r.t. the lifetime of the object
+///          that got passed via its ID. Using this method careless opens up the suite of issues
+///          related to C-style resource management, including the analog of double free, dangling
+///          pointers, etc.
+///
+/// NOTE: This is not part of the API and only serves to work around a compiler issue in GCC which
+///       prevents us from using `friend`s instead. This function should only be used for internal
+///       purposes. The problematic construct is:
+///
+///           template<class Derived>
+///           friend class SomeCRTP<Derived>;
+///
+/// \private
+Object make_object(hid_t hid);
+}  // namespace detail
+
 
 class Object {
   public:
+    // move constructor, reuse hid
+    Object(Object&& other) noexcept;
+
     // decrease reference counter
     ~Object();
 
@@ -63,6 +84,11 @@ class Object {
     ///
     ObjectType getType() const;
 
+    // Check if refer to same object
+    bool operator==(const Object& other) const noexcept {
+        return _hid == other._hid;
+    }
+
   protected:
     // empty constructor
     Object();
@@ -70,30 +96,37 @@ class Object {
     // copy constructor, increase reference counter
     Object(const Object& other);
 
-    // move constructor, reuse hid
-    Object(Object&& other) noexcept;
-
     // Init with an low-level object id
     explicit Object(hid_t);
 
+    // Copy-Assignment operator
     Object& operator=(const Object& other);
 
     hid_t _hid;
 
   private:
-
-    template <typename Derivate> friend class NodeTraits;
-    template <typename Derivate> friend class AnnotateTraits;
+    friend Object detail::make_object(hid_t);
     friend class Reference;
+    friend class CompoundType;
+
+#if HIGHFIVE_HAS_FRIEND_DECLARATIONS
+    template <typename Derivate>
+    friend class NodeTraits;
+    template <typename Derivate>
+    friend class AnnotateTraits;
+    template <typename Derivate>
+    friend class PathTraits;
+#endif
 };
 
 
 ///
 /// \brief A class for accessing hdf5 objects info
 ///
-class ObjectInfo  {
+class ObjectInfo {
   public:
     /// \brief Retrieve the address of the object (within its file)
+    /// \deprecated Deprecated since HighFive 2.2. Soon supporting VOL tokens
     H5_DEPRECATED("Deprecated since HighFive 2.2. Soon supporting VOL tokens")
     haddr_t getAddress() const noexcept;
 
@@ -107,7 +140,6 @@ class ObjectInfo  {
     time_t getModificationTime() const noexcept;
 
   protected:
-
 #if (H5Oget_info_vers < 3)
     H5O_info_t raw_info;
 #else
@@ -121,5 +153,3 @@ class ObjectInfo  {
 }  // namespace HighFive
 
 #include "bits/H5Object_misc.hpp"
-
-#endif // H5OBJECT_HPP
