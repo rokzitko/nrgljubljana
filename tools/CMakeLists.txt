@@ -12,7 +12,8 @@ macro(add_tool exec_name)
   target_include_directories(${exec_name} PRIVATE 
                      $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
-                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>)
+                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
+                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include/range-v3>)
   target_compile_definitions(${exec_name} PRIVATE
 # (not used)				NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
 				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
