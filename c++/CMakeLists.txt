@@ -21,6 +21,12 @@ target_compile_features(nrgljubljana_c PUBLIC cxx_std_20)
 # Enable warnings
 target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
 
+# Set library version and PIC flag
+set_target_properties(nrgljubljana_c PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+)
+
 option(GPROF "Enable profiling using gprof" OFF)
 
 # Configure compilation
