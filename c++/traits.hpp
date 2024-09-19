@@ -4,19 +4,11 @@
 #ifndef _traits_hpp_
 #define _traits_hpp_
 
-#define INCL_UBLAS
-#define INCL_EIGEN
-#define USE_EIGEN
-
-#if __cplusplus >= 202002L
-  #include <concepts>
-#endif
+#include <concepts>
 #include <complex>
 #include <type_traits> // is_same_v, is_floating_point_v
 
-#ifdef INCL_UBLAS
 #include <boost/numeric/ublas/matrix.hpp>
-#endif
 
 #define EIGEN_DENSEBASE_PLUGIN "Eigen/src/plugins/Boost_serialization.h"
 #define EIGEN_USE_BLAS
@@ -33,18 +25,6 @@ template <typename T> struct is_complex : std::false_type {};
 template <floating_point T> struct is_complex<std::complex<T>> : std::true_type {};
 template <typename T> concept scalar = floating_point<T> || is_complex<T>::value;
 
-#ifdef INCL_UBLAS
-template <scalar S> using ublasMatrix = ublas::matrix<S, ublas::row_major>; // default in ublas is row major
-template <scalar S> constexpr auto is_row_ordered(const ublasMatrix<S> &m) { return true; }
-template <scalar S> auto size1(const ublasMatrix<S> &m) { return m.size1(); }
-template <scalar S> auto size2(const ublasMatrix<S> &m) { return m.size2(); }
-template <scalar S> auto size1(const ublas::matrix_range<ublasMatrix<S>> &m) { return m.size1(); }
-template <scalar S> auto size2(const ublas::matrix_range<ublasMatrix<S>> &m) { return m.size2(); }
-template <scalar S> auto size1(const ublas::matrix_range<const ublasMatrix<S>> &m) { return m.size1(); }
-template <scalar S> auto size2(const ublas::matrix_range<const ublasMatrix<S>> &m) { return m.size2(); }
-#endif
-
-#ifdef INCL_EIGEN
 template <scalar S> using EigenMatrix = Eigen::Matrix<S, -1, -1, Eigen::ColMajor>; // default in Eigen is column major
 template <scalar S> using EigenVector = Eigen::Matrix<S, -1, 1, Eigen::ColMajor>;
 template <scalar S> constexpr auto is_row_ordered(const EigenMatrix<S> &m) { return false; }
@@ -54,7 +34,6 @@ template <scalar S> auto size1(const Eigen::Block<EigenMatrix<S>> &m) { return m
 template <scalar S> auto size2(const Eigen::Block<EigenMatrix<S>> &m) { return m.cols(); }
 template <scalar S> auto size1(const Eigen::Block<const EigenMatrix<S>> &m) { return m.rows(); }
 template <scalar S> auto size2(const Eigen::Block<const EigenMatrix<S>> &m) { return m.cols(); }
-#endif
 
 template <typename T>
   concept matrix = requires(T a, T b, size_t i, size_t j) {
@@ -69,19 +48,12 @@ template <typename T>
 template <typename T> concept real_matrix = matrix<T> && floating_point<typename T::value_type>;
 template <typename T> concept complex_matrix = matrix<T> && is_complex<typename T::value_type>::value;
 
-template <typename T> struct is_ublas_object : std::false_type {};
-template <scalar S> struct is_ublas_object<ublas::matrix<S>> : std::true_type {};
-template <scalar S> struct is_ublas_object<ublas::matrix_range<const ublas::matrix<S>>> : std::true_type {};
-
 template <typename T> struct is_Eigen_object : std::false_type {};
 template <scalar S> struct is_Eigen_object<EigenMatrix<S>> : std::true_type {};
 template <scalar S> struct is_Eigen_object<Eigen::Block<const EigenMatrix<S>>> : std::true_type {};
 
-template <typename T> concept ublas_matrix = matrix<T> && is_ublas_object<T>::value;
 template <typename T> concept Eigen_matrix = matrix<T> && is_Eigen_object<T>::value;
-template <typename T> concept real_ublas_matrix = real_matrix<T> && is_ublas_object<T>::value;
 template <typename T> concept real_Eigen_matrix = real_matrix<T> && is_Eigen_object<T>::value;
-template <typename T> concept complex_ublas_matrix = complex_matrix<T> && is_ublas_object<T>::value;
 template <typename T> concept complex_Eigen_matrix = complex_matrix<T> && is_Eigen_object<T>::value;
 
 template <typename T>

@@ -16,7 +16,6 @@ template <scalar S>
 }
 
 // Generators
-#ifdef USE_EIGEN
 template <scalar S>
 [[nodiscard]] EigenMatrix<S> generate_matrix(const size_t size1, const size_t size2) {
   return EigenMatrix<S>(size1, size2);
@@ -31,7 +30,6 @@ template <scalar S>
 [[nodiscard]] EigenMatrix<S> id_matrix(const size_t size) {
   return EigenMatrix<S>::Identity(size, size);
 }
-#endif
 
 // XXX: return view instead?
 template <scalar S> EigenMatrix<S> herm(const EigenMatrix<S> &m) { return m.adjoint(); }
@@ -59,10 +57,8 @@ auto load_Eigen(boost::archive::binary_iarchive &ia) {
   return m;
 }
 
-#ifdef USE_EIGEN
 template <scalar T>
 auto load(boost::archive::binary_iarchive &ia) { return load_Eigen<T>(ia); }
-#endif
 
 // Read 'size' values of type T into an Eigen vector<T>.
 template <scalar T> auto read_Eigen_vector(std::istream &F, const size_t size) {
@@ -90,11 +86,9 @@ template <scalar T> auto read_Eigen_matrix(std::istream &F, const size_t size1, 
   return m;
 }
 
-#ifdef USE_EIGEN
 template <scalar T> auto read_matrix(std::istream &F, const size_t size1, const size_t size2) {
   return read_Eigen_matrix<T>(F, size1, size2);
 }
-#endif
 
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void product(EM &M, const t_coef factor, const EM &A, const EM &B) {

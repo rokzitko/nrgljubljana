@@ -101,15 +101,6 @@ TEST(io, read_std_vector) { // NOLINT
   VECTOR_EQ(vec, ref);
 }
 
-TEST(io, read_matrix) { // NOLINT
-  std::string data = "1 2 3\n 4 5 6\n";
-  std::istringstream ss(data);
-  auto mat = read_matrix<double>(ss, 2, 3);
-  ublas::matrix<double> ref(2,3);
-  ref(0,0) = 1; ref(0,1) = 2; ref(0,2) = 3; ref(1,0) = 4; ref(1,1) = 5; ref(1,2) = 6;
-  MATRIX_EQ(mat, ref);
-}
-
 template<typename T>
 auto range_size(T t)
 {

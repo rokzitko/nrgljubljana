@@ -20,10 +20,6 @@ template<matrix M> void foo(const M &m) {
 }
 
 TEST(traits, matrix) {
-  ublas::matrix<double> ur;
-  foo(ur);
-  ublas::matrix<std::complex<double>> uc;
-  foo(uc);
   EigenMatrix<double> er;
   foo(er);
   EigenMatrix<std::complex<double>> ec;
@@ -36,8 +32,6 @@ template<real_matrix RM> void foo_r(const RM &m) {
 }
 
 TEST(traits, real_matrix) {
-  ublas::matrix<double> ur;
-  foo_r(ur);
   EigenMatrix<double> er;
   foo_r(er);
 }
@@ -48,22 +42,8 @@ template<complex_matrix CM> void foo_c(const CM &m) {
 }
 
 TEST(traits, complex_matrix) {
-  ublas::matrix<std::complex<double>> uc;
-  foo_c(uc);
   EigenMatrix<std::complex<double>> ec;
   foo_c(ec);
-}
-
-template<ublas_matrix UM> void foo_u(const UM &m) {
-  EXPECT_EQ(size1(m), 0);
-  EXPECT_EQ(size2(m), 0);
-}
-
-TEST(traits, ublas_matrix) {
-  ublas::matrix<double> ur;
-  foo_u(ur);
-  ublas::matrix<std::complex<double>> uc;
-  foo_u(uc);
 }
 
 template<Eigen_matrix EM> void foo_e(const EM &m) {

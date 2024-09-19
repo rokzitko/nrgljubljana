@@ -44,10 +44,8 @@
 
 namespace NRG {
 
-#ifdef INCL_UBLAS
 using namespace boost::numeric;
 using namespace boost::numeric::ublas; // keep this!
-#endif
 
 template <typename T>
   using complex_array_const_ref_t = const T(&)[2];
