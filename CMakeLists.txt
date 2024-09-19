@@ -139,9 +139,10 @@ include(CMake/CPM.cmake)
 # fmt
 CPMAddPackage(
   NAME fmt
-  GIT_TAG 9.1.0
+  GIT_TAG 10.2.0
   GITHUB_REPOSITORY fmtlib/fmt
 )
+
 install(TARGETS fmt EXPORT nrgljubljana-targets)
 
 # range-v3
