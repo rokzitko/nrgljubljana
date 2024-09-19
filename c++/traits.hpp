@@ -21,9 +21,9 @@ template <typename T> struct is_complex : std::false_type {};
 template <floating_point T> struct is_complex<std::complex<T>> : std::true_type {};
 template <typename T> concept scalar = floating_point<T> || is_complex<T>::value;
 
-template <scalar S> using EigenMatrix = Eigen::Matrix<S, -1, -1, Eigen::ColMajor>; // default in Eigen is column major
-template <scalar S> using EigenVector = Eigen::Matrix<S, -1, 1, Eigen::ColMajor>;
-template <scalar S> constexpr auto is_row_ordered(const EigenMatrix<S> &m) { return false; }
+template <scalar S> using EigenMatrix = Eigen::Matrix<S, -1, -1, Eigen::RowMajor>;
+template <scalar S> using EigenVector = Eigen::Matrix<S, -1, 1>;
+template <scalar S> constexpr auto is_row_ordered(const EigenMatrix<S> &m) { return true; }
 template <scalar S> size_t size1(const EigenMatrix<S> &m) { return m.rows(); }  // XXX: auto?
 template <scalar S> size_t size2(const EigenMatrix<S> &m) { return m.cols(); }
 template <scalar S> auto size1(const Eigen::Block<EigenMatrix<S>> &m) { return m.rows(); }

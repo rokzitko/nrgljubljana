@@ -25,9 +25,7 @@ TEST(h5dump, eigen_dump_matrix) { // NOLINT
   }
   NRG::h5_dump_matrix(file, "/path", w);
 
-  auto dataset = file.getDataSet("/path");
-  EigenMatrix<double> r;
-  dataset.read(r);
+  auto r = H5Easy::load<EigenMatrix<double>>(file, "/path");
   compare(w,r);
 }
 
@@ -45,9 +43,7 @@ TEST(h5dump, eigen_matrix_real_part_rect) { // NOLINT
   }
   NRG::h5_dump_matrix(file, "/path", w);
 
-  auto dataset = file.getDataSet("/path");
-  EigenMatrix<double> r;
-  dataset.read(r);
+  auto r = H5Easy::load<EigenMatrix<double>>(file, "/path");
   for (int x = 0; x < nx; x++)
     for (int y = 0; y < ny; y++)
       EXPECT_EQ(w(x,y).real(), r(x,y));
