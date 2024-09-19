@@ -1,5 +1,5 @@
 // numerics.h - Miscelaneous numerical routines
-// Copyright (C) 2005-2020 Rok Zitko
+// Copyright (C) 2005-2024 Rok Zitko
 
 // This header should be included in all other headers where vector/matrix
 // objects are manipulated.
@@ -16,13 +16,8 @@
 #include <boost/io/ios_state.hpp>
 #include <boost/math/special_functions/sign.hpp>
 
-#include "traits.hpp" // defines INCL_UBLAS and/or INCL_EIGEN
+#include "traits.hpp"
 
-#if !(defined(USE_UBLAS) || defined(USE_EIGEN))
-#error "Pick one matrix backend"
-#endif
-
-#if defined(INCL_UBLAS) || defined(USE_UBLAS)
 // ublas matrix & vector containers
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
@@ -32,15 +27,7 @@
 #include <boost/numeric/ublas/symmetric.hpp>
 #include <boost/numeric/ublas/operation.hpp>
 
-// Numeric bindings to BLAS/LAPACK
-#include <boost/numeric/bindings/traits/ublas_vector.hpp>
-#include <boost/numeric/bindings/traits/ublas_matrix.hpp>
-#include <boost/numeric/bindings/atlas/cblas.hpp>
-#endif
-
-#if defined(INCL_EIGEN) || defined(USE_EIGEN)
 #include <Eigen/Dense>
-#endif
 
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
@@ -60,7 +47,6 @@ namespace NRG {
 #ifdef INCL_UBLAS
 using namespace boost::numeric;
 using namespace boost::numeric::ublas; // keep this!
-namespace atlas = boost::numeric::bindings::atlas;
 #endif
 
 template <typename T>
@@ -221,8 +207,6 @@ auto trace_contract(const M &A, const M &B, const size_t range) // Tr[AB]
   return sum;
 }
 
-#if defined(INCL_UBLAS) && defined(INCL_EIGEN)
-
 template <typename T>
 Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> ublas_to_eigen(ublas::matrix<T> m){
   Eigen::Map<Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>> m_eigen(m.data().begin(),m.size1(),m.size2());
@@ -250,15 +234,7 @@ auto eigen_to_ublas_vector(Eigen::Matrix<T,N,M> m){
   return m_ublas;
 }
 
-#endif
-
-#ifdef INCL_UBLAS
-#include "numerics_ublas.hpp"
-#endif
-
-#ifdef INCL_EIGEN
 #include "numerics_Eigen.hpp"
-#endif
 
 template<scalar S>
 [[nodiscard]] auto zero_matrix(const size_t size) {

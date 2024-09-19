@@ -1,17 +1,12 @@
+// traits.hpp - data types definitions
+// Copyright (C) 2009-2024 Rok Zitko
+
 #ifndef _traits_hpp_
 #define _traits_hpp_
 
 #define INCL_UBLAS
 #define INCL_EIGEN
-
-#if !(defined(USE_UBLAS) || defined(USE_EIGEN))
-  #define USE_UBLAS
-  //#define USE_EIGEN
-#endif
-
-#if (defined(USE_UBLAS) && defined(USE_EIGEN))
-#error "Pick only one matrix backend"
-#endif
+#define USE_EIGEN
 
 #if __cplusplus >= 202002L
   #include <concepts>
@@ -23,10 +18,9 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #endif
 
-#ifdef INCL_EIGEN
 #define EIGEN_DENSEBASE_PLUGIN "Eigen/src/plugins/Boost_serialization.h"
+#define EIGEN_USE_BLAS
 #include <Eigen/Dense>
-#endif
 
 namespace NRG {
 
@@ -71,8 +65,6 @@ template <typename T>
      typename T::value_type;
   };
 
-// XXX: real, imag, conj for complex matrix?
-
 template <typename T> concept real_matrix = matrix<T> && floating_point<typename T::value_type>;
 template <typename T> concept complex_matrix = matrix<T> && is_complex<typename T::value_type>::value;
 
@@ -115,12 +107,7 @@ template <> struct traits<double> {
   using t_weight = std::complex<double>;  // spectral weight accumulators (always complex)
   using evec = std::vector<double>;     // vector of eigenvalues type (always real) // YYY
   using RVector = std::vector<double>;    // vector of eigenvalues type (always real)
-#ifdef USE_UBLAS
-  using Matrix = ublas::matrix<t_matel>;  // matrix type
-#endif
-#ifdef USE_EIGEN
   using Matrix = EigenMatrix<t_matel>; // matrix type
-#endif
 };
 
 template <> struct traits<std::complex<double>> {
@@ -132,12 +119,7 @@ template <> struct traits<std::complex<double>> {
   using t_weight = std::complex<double>;
   using evec = std::vector<double>;
   using RVector = std::vector<double>;
-#ifdef USE_UBLAS
-  using Matrix = ublas::matrix<t_matel>;
-#endif
-#ifdef USE_EIGEN
   using Matrix = EigenMatrix<t_matel>; // matrix type
-#endif
 };
 
 template <scalar S> using matel_traits   = typename traits<S>::t_matel;
