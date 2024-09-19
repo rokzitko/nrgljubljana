@@ -23,7 +23,6 @@
 #include <boost/range/irange.hpp>
 #include <boost/range/adaptor/map.hpp>
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include "basicio.hpp"

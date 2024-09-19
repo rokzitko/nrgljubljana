@@ -137,17 +137,15 @@ install(TARGETS mpi EXPORT nrgljubljana-targets)
 include(CMake/CPM.cmake)
 
 # fmt
+set(FMT_INSTALL ON)
 CPMAddPackage(
   NAME fmt
-  GIT_TAG 10.2.0
+  GIT_TAG 11.0.2
   GITHUB_REPOSITORY fmtlib/fmt
 )
 
-install(TARGETS fmt EXPORT nrgljubljana-targets)
-
 # range-v3
 CPMAddPackage("gh:ericniebler/range-v3#0.12.0")
-install(TARGETS range-v3 EXPORT nrgljubljana-targets)
 
 # HDF5
 find_package(HDF5 REQUIRED COMPONENTS C HL)

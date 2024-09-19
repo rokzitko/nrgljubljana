@@ -11,7 +11,6 @@
 #include <iterator> // ostream_iterator
 #include <stdexcept>
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include <boost/lexical_cast.hpp>

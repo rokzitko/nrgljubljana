@@ -13,7 +13,6 @@
 #include "operators.hpp"
 #include "subspaces.hpp"
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 namespace NRG {
