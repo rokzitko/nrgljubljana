@@ -17,11 +17,10 @@
 #include <fmt/ranges.h>
 
 namespace fmt {
-template <typename S, typename... Args,
-  FMT_ENABLE_IF(detail::is_string<S>::value)>
-    auto color_print(bool enable_color, const text_style& ts, const S& format_str, const Args&... args) {
-      return enable_color ? print(stdout, ts, format_str, args...)
-                          : print(stdout, fmt::text_style{}, format_str, args...);
+template <typename... Args>
+     auto color_print(bool enable_color, const text_style& ts, fmt::format_string<Args...> format_str, Args&&... args) {
+       return enable_color ? print(stdout, ts, format_str, std::forward<Args>(args)...)
+         : print(stdout, fmt::text_style{}, format_str, std::forward<Args>(args)...);
     }
 } // namespace fmt
 
@@ -31,15 +30,15 @@ using namespace fmt::literals;
 
 template <typename T>
 inline std::string formatted_output(const T x, const Params &P) {
-  return fmt::format("{x:>{width}}", "x"_a=x, "width"_a=P.width_custom);
+  return fmt::format("{x:>{width}}", "x"_a=x, "width"_a=int(P.width_custom));
 }
 
 inline std::string formatted_output(const double x, const Params &P) {
-  return fmt::format("{x:>{width}.{prec}}", "x"_a=x, "prec"_a=P.prec_custom, "width"_a=P.width_custom);
+  return fmt::format("{x:>{width}.{prec}}", "x"_a=x, "prec"_a=int(P.prec_custom), "width"_a=int(P.width_custom));
 }
 
 inline std::string formatted_output(const std::complex<double> z, const Params &P) { // XXX
-  return fmt::format("{x:>{width}.{prec}}", "x"_a=z.real(), "prec"_a=P.prec_custom, "width"_a=P.width_custom);
+  return fmt::format("{x:>{width}.{prec}}", "x"_a=z.real(), "prec"_a=int(P.prec_custom), "width"_a=int(P.width_custom));
 }
 
 inline void outputxy(std::ostream &F, const double x, const std::complex<double> z, const bool imagpart, const double clip_tol_imag = 1e-10) {
