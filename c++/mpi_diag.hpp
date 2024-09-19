@@ -54,7 +54,6 @@ class MPI_diag {
        mpienv.abort(1);
      }
    }
-#ifdef USE_EIGEN
    // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
     template<scalar S>
     void send_matrix(const int dest, const EigenMatrix<S> &m) {
@@ -75,14 +74,13 @@ class MPI_diag {
       EigenMatrix<S> m(size1, size2);
       mpilog("Receiving matrix of size " << size1 << " x " << size2 << " line by line from " << source);
       for (const auto i: range0(size1)) {
-        ublas::vector<matel_traits<S>> vec;
+        EigenVector<S> vec;
         check_status(mpiw.recv(source, TAG_MATRIX_LINE, vec));
         my_assert(vec.size() == size2);
-        m.row(i) = ublas_to_eigen(vec);
+        m.row(i) = vec;
       }
       return m;
    }
-#endif
    template<scalar S> void send_raweigen(const int dest, const RawEigen<S> &eig) {
      mpilog("Sending eigen from " << mpiw.rank() << " to " << dest);
      mpiw.send(dest, TAG_EIGEN_VEC, eig.val);

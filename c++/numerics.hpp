@@ -207,33 +207,6 @@ auto trace_contract(const M &A, const M &B, const size_t range) // Tr[AB]
   return sum;
 }
 
-template <typename T>
-Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic> ublas_to_eigen(ublas::matrix<T> m){
-  Eigen::Map<Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic, Eigen::RowMajor>> m_eigen(m.data().begin(),m.size1(),m.size2());
-  return m_eigen;
-}
-
-template <typename T>
-Eigen::Matrix<T,Eigen::Dynamic,1> ublas_to_eigen(ublas::vector<T> m){
-  Eigen::Map<Eigen::Matrix<T,Eigen::Dynamic,1>> m_eigen(m.data().begin(),m.size(),1);
-  return m_eigen;
-}
-
-template<typename T, int N, int M>
-auto eigen_to_ublas_matrix(Eigen::Matrix<T,N,M> m){
-  ublas::matrix<T> m_ublas(m.rows(),m.cols());
-  auto m1 = !m.IsRowMajor ? m.transpose() : m;
-  std::copy(m1.data(), m1.data() + m1.size(),m_ublas.data().begin());
-  return m_ublas;
-}
-
-template<typename T, int N, int M>
-auto eigen_to_ublas_vector(Eigen::Matrix<T,N,M> m){
-  ublas::vector<T> m_ublas(m.size());
-  std::copy(m.data(), m.data() + m.size(),m_ublas.data().begin());
-  return m_ublas;
-}
-
 #include "numerics_Eigen.hpp"
 
 template<scalar S>

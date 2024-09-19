@@ -46,6 +46,7 @@ template <scalar S> auto size2(const ublas::matrix_range<const ublasMatrix<S>> &
 
 #ifdef INCL_EIGEN
 template <scalar S> using EigenMatrix = Eigen::Matrix<S, -1, -1, Eigen::ColMajor>; // default in Eigen is column major
+template <scalar S> using EigenVector = Eigen::Matrix<S, -1, 1, Eigen::ColMajor>;
 template <scalar S> constexpr auto is_row_ordered(const EigenMatrix<S> &m) { return false; }
 template <scalar S> size_t size1(const EigenMatrix<S> &m) { return m.rows(); }  // XXX: auto?
 template <scalar S> size_t size2(const EigenMatrix<S> &m) { return m.cols(); }
