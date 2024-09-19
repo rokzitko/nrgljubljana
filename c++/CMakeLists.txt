@@ -74,8 +74,6 @@ if(ANALYZE_SOURCES)
     message(STATUS "clang-tidy not found in $PATH. Please consider installing clang-tidy for additional checks!")
   endif()
 
-  # TODO: complex version?
-
   # Run cppcheck if found
   if(CPPCHECK_EXECUTABLE)
     message(STATUS "cppcheck found: ${CPPCHECK_EXECUTABLE}")
@@ -90,9 +88,6 @@ if(ANALYZE_SOURCES)
 	  --quiet
     --suppressions-list=suppressions.txt
     --inline-suppr
-#    --suppress=*:*bindings*/*
-#    --suppress=*:*cblas*
-#    --suppress=*:*coewfnew*
     ${sources}
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
