@@ -23,8 +23,6 @@
 
 namespace NRG {
 
-using namespace boost::numeric;
-
 template <class T>
 inline T from_string(const std::string &str) {
   T result;

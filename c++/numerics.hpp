@@ -18,15 +18,6 @@
 
 #include "traits.hpp"
 
-// ublas matrix & vector containers
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/symmetric.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-
 #include <Eigen/Dense>
 
 // Serialization support (used for storing to files and for MPI)

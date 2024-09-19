@@ -16,10 +16,6 @@
 
 namespace NRG {
 
-#ifdef INCL_UBLAS
-using namespace boost::numeric;
-#endif
-
 template <typename T> concept floating_point = std::is_floating_point_v<T>;
 template <typename T> struct is_complex : std::false_type {};
 template <floating_point T> struct is_complex<std::complex<T>> : std::true_type {};
