@@ -7,6 +7,7 @@
 #ifndef _numerics_hpp_
 #define _numerics_hpp_
 
+#include <concepts>
 #include <complex>
 #include <iomanip>
 #include <vector>
@@ -35,8 +36,47 @@
 
 namespace NRG {
 
-using namespace boost::numeric;
-using namespace boost::numeric::ublas; // keep this!
+template <typename T>
+std::complex<T> operator*(const std::integral auto &a, const std::complex<T> &b)
+{
+  return std::complex<T>(a*b.real(), a*b.imag());
+}
+
+template <typename T>
+std::complex<T> operator*(const std::complex<T> &b, const std::integral auto &a)
+{
+  return std::complex<T>(a*b.real(), a*b.imag());
+}
+
+template <typename T>
+std::complex<T> operator/(const std::integral auto &a, const std::complex<T> &b)
+{
+  return a*(1.0/b);
+}
+
+template <typename T>
+std::complex<T> operator-(const std::integral auto &a, const std::complex<T> &b)
+{
+  return std::complex<T>(a-b.real(), -b.imag());
+}
+
+template <typename T>
+std::complex<T> operator-(const std::complex<T> &b, const std::integral auto &a)
+{
+  return std::complex<T>(b.real()-a, b.imag());
+}
+
+template <typename T>
+std::complex<T> operator+(const std::integral auto &a, const std::complex<T> &b)
+{
+  return std::complex<T>(a+b.real(), -b.imag());
+}
+
+template <typename T>
+std::complex<T> operator+(const std::complex<T> &b, const std::integral auto &a)
+{
+  return std::complex<T>(b.real()+a, b.imag());
+}
 
 template <typename T>
   using complex_array_const_ref_t = const T(&)[2];

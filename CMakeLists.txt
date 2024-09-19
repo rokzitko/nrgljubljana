@@ -23,6 +23,9 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)
+endif()
 
 # ############
 # Define Project
@@ -95,14 +98,13 @@ target_compile_options(project_warnings
     -Wno-vla
 #    -Wno-vla-extension
     -Wno-unused-variable
-    -Wno-deprecated-copy # issue with Boost ublas
     -Wno-psabi          # issue with pair<double, double>
     -Wno-double-promotion  # issue in Boost factorials
     -Wno-array-bounds      # issue in fmt
     -Wno-unused-function   # issue in matrix tool
-    -Wno-implicit-int-float-conversion # issue in gtest
-    -Wno-deprecated-anon-enum-enum-conversion # issue in Eigen
-    -Wno-return-type-c-linkage # issue in lapack.h
+    -Wno-stringop-overflow # issue in fmt
+    -Wno-dangling-reference # issue in fmt
+    -Wno-deprecated-declarations # ???
 #    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
 #    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>

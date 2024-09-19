@@ -12,8 +12,6 @@
 #define H5_USE_EIGEN
 #include <highfive/H5Easy.hpp>
 
-//#define H5_DEBUG
-
 namespace NRG {
    template<typename T>
    void h5_dump_scalar(H5Easy::File &file, const std::string &path, const T x) {
