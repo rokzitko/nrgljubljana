@@ -4,8 +4,6 @@
 #include <iostream>
 #include <omp.h>
 
-#define MKL
-
 #ifdef MKL
 #include <mkl_service.h>
 #endif

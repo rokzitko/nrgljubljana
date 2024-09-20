@@ -192,9 +192,9 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/BLAS_LAPACK)
 # BLAS/Lapack
 find_package(LAPACK REQUIRED) # also looks up BLAS
 add_library(blas_lapack INTERFACE)
-string(FIND "${BLAS_LIBRARIES}" "libmkl_rt" MKL_FIND_POS)
+string(FIND "${BLAS_LIBRARIES}" "libmkl" MKL_FIND_POS)
 if(MKL_FIND_POS GREATER -1)
-  message(STATUS "Using MKL (libmkl_rt) for linear algebra")
+  message(STATUS "Using MKL (libmkl) for linear algebra")
   list(APPEND BLAS_LINKER_FLAGS "-DMKL")
   # https://software.intel.com/en-us/forums/intel-math-kernel-library/topic/759670
   # https://software.intel.com/en-us/articles/a-new-linking-model-single-dynamic-library-mkl_rt-since-intel-mkl-103
