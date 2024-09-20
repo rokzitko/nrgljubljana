@@ -18,7 +18,7 @@ using namespace std::string_literals;
 #include <cstring>
 #include <algorithm>
 #include <optional>
-#include <memory> 
+#include <memory>
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
@@ -34,22 +34,23 @@ using namespace NRG;
 
 namespace NRG::Resample{
 
-struct gsl_acc_del{ 
+struct gsl_acc_del{
     void operator()(gsl_interp_accel* acc) {
         if (acc) gsl_interp_accel_free(acc);
     }
 };
-struct gsl_spline_del{ 
+
+struct gsl_spline_del{
     void operator()(gsl_spline* spline){
         if(spline) gsl_spline_free(spline);
-    }  
+    }
 };
 
 template <typename T>
 class Resample
 {
     private:
-    
+
         // Dump additional information to stdout?
         std::string inputfn;  // Filename for input data
         std::string gridfn;   // Filename for a new X grid
@@ -102,7 +103,6 @@ class Resample
             #endif
             std::cout << "Compiled on " << __DATE__ << " at " << __TIME__ << std::endl;
         }
-             
 
     public:
         Resample(int argv, char *argc[])
@@ -134,18 +134,18 @@ class Resample
 
             if (outputfn)
             {
-                writetable(grid, *outputfn, output_precision); 
+                writetable(grid, *outputfn, output_precision);
                 return std::nullopt;
-            } 
+            }
             else return grid;
         }
 
-        void init(std::vector<std::pair<T, T>> &im) 
+        void init(std::vector<std::pair<T, T>> &im)
         {
             int len;      // number of data points
             T Xmin, Xmax; // the interval boundaries
             std::vector<T>  Xpts, Ypts;
-            
+
             std::sort(im.begin(), im.end());
             len  = im.size();
             Xmin = im.front().first;
@@ -162,11 +162,10 @@ class Resample
             gsl_set_error_handler_off();
         }
 
-        void resample(std::vector<std::pair<T, T>> &grid) 
+        void resample(std::vector<std::pair<T, T>> &grid)
         {
             for (auto & i : grid) i.second = gsl_spline_eval(spline.get(), i.first, acc.get());
-        }  
-
+        }
 };
 
 } //namespace
