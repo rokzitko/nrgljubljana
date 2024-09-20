@@ -186,6 +186,14 @@ install(TARGETS gsl EXPORT nrgljubljana-targets)
 find_package(GMP REQUIRED)
 install(TARGETS gmp EXPORT nrgljubljana-targets)
 
+# Google Test
+CPMAddPackage(
+  NAME googletest
+  GITHUB_REPOSITORY google/googletest
+  GIT_TAG v1.15.2
+  VERSION 1.15.2
+)
+
 # MPFR
 #find_package(MPFR REQUIRED)
 #install(TARGETS mpfr EXPORT nrgljubljana-targets)
