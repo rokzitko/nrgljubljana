@@ -202,7 +202,7 @@ template<scalar S>
 void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                       const DiagInfo<S> &diag, // projected!
                                       const Operators<S> &operators,
-                                      const Store<S> &store, const Store<S> &store_all, MemTime &mt,
+                                      const Store<S> &store_all, MemTime &mt,
                                       const Symmetry<S> *Sym, const Params &P) {
   // Load the density matrices
   DensMatElements<S> rho, rhoFDM;
@@ -234,13 +234,13 @@ void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<
 template<scalar S>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                  const DiagInfo<S> &diag_in, const Operators<S> &operators,
-                                 const Store<S> &store, const Store<S> &store_all,
+                                 const Store<S> &store_all,
                                  MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
   if (P.project == ""s) {
-     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store, store_all, mt, Sym, P);
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store_all, mt, Sym, P);
    } else {
      auto diag = Sym->project(diag_in, P.project);
-     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
+     calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
    }
 }
 

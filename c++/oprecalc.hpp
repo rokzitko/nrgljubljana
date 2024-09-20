@@ -71,7 +71,7 @@ class Oprecalc {
      }
 
    // Recalculate operator matrix representations
-   void recalculate_operators(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P) {
+   void recalculate_operators(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const Params &P) {
      nrglog('@', "recalculate_operators()");
      const auto section_timing = mt.time_it("recalc");
        for (auto &[name, m] : a.ops)
@@ -207,7 +207,7 @@ class Oprecalc {
 
 // Recalculate irreducible matrix elements for Wilson chains.
 template<scalar S>
-void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, Opch<S> &opch,
+void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, Opch<S> &opch,
                         const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   const auto section_timing = mt.time_it("recalc f");
   if (!P.substeps) {

@@ -141,7 +141,7 @@ public:
     step.set_last();
     auto rho = init_rho(step, diag, Sym.get(), P);
     rho.save(step.lastndx(), P, fn_rho);
-    if (!P.ZBW()) calc_densitymatrix(rho, store, store_all, Sym.get(), mt, P);
+    if (!P.ZBW()) calc_densitymatrix(rho, store_all, Sym.get(), mt, P);
   }
   void calc_rhoFDM() {
     Step step{P, RUNTYPE::NRG};

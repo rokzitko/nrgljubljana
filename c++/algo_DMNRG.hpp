@@ -27,7 +27,7 @@ class Algo_DMNRG : public Algo<S> {
      Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname), P), sign(gf_sign(gt)) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
-             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
+             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, [[maybe_unused]] const Stats<S> &stats) override
    {
      const auto weights = [Emin = step.scale() * P.getEmin(), Emax = step.scale() * P.getEmax(), &rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) {
        const auto Em = diagIp.values.abs_zero(rm);
@@ -72,8 +72,8 @@ class Algo_DMNRGmats : public Algo<S> {
    Algo_DMNRGmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
-   void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
-             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
+   void calc([[maybe_unused]] const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
+             t_coef factor, [[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1, const DensMatElements<S> &rho, [[maybe_unused]] const Stats<S> &stats) override
    {
       const auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) {
          const auto Em = diagIp.values.abs_zero(rm);

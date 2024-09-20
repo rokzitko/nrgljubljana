@@ -229,8 +229,8 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
       h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct);
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
-    oprecalc.recalculate_operators(operators, step, diag, substruct, P);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
+    oprecalc.recalculate_operators(operators, step, diag, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   }
   if (!P.ZBW()) {
     nrglog('@', "truncate_perform()");
@@ -239,15 +239,15 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   store_states(step, store, store_all, diag, substruct, Sym, P);
   if (!step.last()) {
     nrglog('@', "recalc_irreducible()");
-    recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
+    recalc_irreducible(step, diag, operators.opch, Sym, mt, P);
     if (P.dump_f) operators.opch.dump();
   }
   if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
-    oprecalc.recalculate_operators(operators, step, diag, substruct, P);
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
+    oprecalc.recalculate_operators(operators, step, diag, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   }
   if (P.do_recalc_none())  // ... or this
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store_all, mt, Sym, P);
+    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5ops)
     operators.h5save(*output.h5raw, std::to_string(step.ndx()+1));
@@ -278,7 +278,7 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
   std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output, P);
   Store<S> empty_st(0, 0);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, operators, empty_st, empty_st, mt, Sym, P);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, operators, empty_st, mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
 }
 

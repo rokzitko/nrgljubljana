@@ -44,7 +44,7 @@ class Invar {
  private:
    InvType data;
    friend class boost::serialization::access;
-   template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &data; }
+   template <class Archive> void serialize(Archive &ar, [[maybe_unused]] const unsigned int version) { ar &data; }
  public:
    inline static std::vector<int> qntype;         // must be defined before calls to Invar::combine() and Invar::invert()
    inline static std::map<std::string, int> names; // must be defined before calls to Invar::get()

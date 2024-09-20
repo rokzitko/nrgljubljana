@@ -17,7 +17,7 @@ auto setup_Sym(Params &P)
 }
 
 template<typename S>
-auto setup_diag(Params &P, Symmetry<S> *Sym)
+auto setup_diag(Params &P, [[maybe_unused]] Symmetry<S> *Sym)
 {
   std::string data =
       "0 1\n"
@@ -31,7 +31,7 @@ auto setup_diag(Params &P, Symmetry<S> *Sym)
 }
 
 template<typename S>
-auto setup_diag3(Params &P, Symmetry<S> *Sym)
+auto setup_diag3(Params &P, [[maybe_unused]] Symmetry<S> *Sym)
 {
   std::string data =
       "0 1\n"

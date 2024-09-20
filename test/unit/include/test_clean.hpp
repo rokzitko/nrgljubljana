@@ -22,7 +22,7 @@ auto setup_P_clean(Params &P) {
 }
 
 template<typename S>
-auto setup_diag_clean(Params &P, Symmetry<S> *Sym)
+auto setup_diag_clean(Params &P, [[maybe_unused]] Symmetry<S> *Sym)
 {
   std::string data =
       "-1 1\n"
@@ -41,7 +41,7 @@ auto setup_diag_clean(Params &P, Symmetry<S> *Sym)
 }
 
 template<typename S>
-auto setup_opch_clean(const Params &P, Symmetry<S> *Sym, const DiagInfo<S> &diag) {
+auto setup_opch_clean(const Params &P, [[maybe_unused]] Symmetry<S> *Sym, const DiagInfo<S> &diag) {
   std::string str =
     "f 0 0\n"
     "2\n"

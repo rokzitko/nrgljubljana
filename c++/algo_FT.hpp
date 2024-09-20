@@ -25,7 +25,7 @@ class Algo_FT : public Algo<S> {
    Algo_FT(const std::string &name, const std::string &prefix, const gf_type &gt, const Params &P) :
      Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname), P), sign(gf_sign(gt)) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+   void calc([[maybe_unused]] const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
              const t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
      const auto stat_factor = [beta = 1.0/P.T, Z = stats.Zft, this](const auto E1, const auto Ep) {
@@ -61,7 +61,7 @@ class Algo_FTmats : public Algo<S> {
    Algo_FTmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
-   void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+   void calc([[maybe_unused]] const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
              t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
      const auto stat_factor = [beta = 1.0/P.T, Z = stats.Zft, T = P.T.value(), this](const auto E1, const auto Ep, const auto n) -> t_weight {

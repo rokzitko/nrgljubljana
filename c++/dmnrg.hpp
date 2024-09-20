@@ -130,7 +130,7 @@ inline bool already_computed(const std::string &prefix, const Params &P) {
 // calc_densitymatrix() is called prior to starting the NRG procedure for the second time. Here we calculate the
 // shell-N density matrices for all iteration steps.
 template<scalar S>
-void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store, const Store<S> &store_all, const Symmetry<S> *Sym,
+void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store_all, const Symmetry<S> *Sym,
                         MemTime &mt, const Params &P, const std::string filename = fn_rho) {
   if (P.resume && already_computed(filename, P)) return;
   check_trace_rho(rho, Sym->multfnc()); // Must be 1.

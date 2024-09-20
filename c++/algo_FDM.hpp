@@ -28,7 +28,7 @@ class Algo_FDMls : virtual public Algo<S> {
      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    void calc(const Step &step, const Eigen<S> &diagIi, const Eigen<S> &diagIj, const Matrix &op1, const Matrix &op2,
-             t_coef factor, const Invar &Ii, const Invar &Ij, const DensMatElements<S> &rhoFDM,
+             t_coef factor, [[maybe_unused]] const Invar &Ii, [[maybe_unused]] const Invar &Ij, const DensMatElements<S> &rhoFDM,
              const Stats<S> &stats) override
    {
      const auto wnf   = stats.wnfactor[step.ndx()];
@@ -82,7 +82,7 @@ class Algo_FDMgt : virtual public Algo<S> {
      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    void calc(const Step &step, const Eigen<S> &diagIi, const Eigen<S> &diagIj, const Matrix &op1, const Matrix &op2,
-             t_coef factor, const Invar &Ii, const Invar &Ij, const DensMatElements<S> &rhoFDM,
+             t_coef factor, [[maybe_unused]] const Invar &Ii, [[maybe_unused]] const Invar &Ij, const DensMatElements<S> &rhoFDM,
              const Stats<S> &stats) override
    {
      const auto wnf   = stats.wnfactor[step.ndx()];

@@ -47,12 +47,12 @@ TEST(Clean, H) { // NOLINT
   split_in_blocks(diag, substruct);
   MemTime mt;
   auto oprecalc = Oprecalc<double>(step.get_runtype(), operators, SymSP, mt, P);
-  oprecalc.recalculate_operators(operators, step, diag, substruct, P);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, store, mt, Sym, P);
+  oprecalc.recalculate_operators(operators, step, diag, P);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, mt, Sym, P);
   diag.truncate_perform();
   EXPECT_EQ(step.last(), true);
   store[step.ndx()] = Subs(diag, substruct, step.last());
-  recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
+  recalc_irreducible(step, diag, operators.opch, Sym, mt, P);
   operators.opch.dump();
 //X  operators.trim_matrices(diag);
 //X  diag.clear_eigenvectors();
@@ -64,7 +64,7 @@ TEST(Clean, H) { // NOLINT
 
   auto rho = init_rho(step, diag, Sym, P);
   rho.save(step.lastndx(), P, fn_rho);
-  calc_densitymatrix(rho, store, store, Sym, mt, P);
+  calc_densitymatrix(rho, store, Sym, mt, P);
 
   calc_ZnD(store, stats, Sym, P);
   fdm_thermodynamics(store, stats, Sym, P.T);
@@ -79,7 +79,7 @@ TEST(Clean, H) { // NOLINT
   Step step_dmnrg{P, RUNTYPE::DMNRG};
   auto oprecalc_dmnrg = Oprecalc<double>(step_dmnrg.get_runtype(), operators, SymSP, mt, P);
   auto output_dmnrg = Output(step_dmnrg.get_runtype(), operators, stats, P);
-  calculate_spectral_and_expv(step_dmnrg, stats, output_dmnrg, oprecalc_dmnrg, diag, operators, store, store, mt, Sym, P);
+  calculate_spectral_and_expv(step_dmnrg, stats, output_dmnrg, oprecalc_dmnrg, diag, operators, store, mt, Sym, P);
 }
 
 int main(int argc, char **argv) {
