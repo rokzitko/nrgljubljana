@@ -23,7 +23,7 @@ class Step {
      trueN = newN;
      ndxN = std::max(newN, 0);
    }
-   void init() noexcept { set(P.Ninit); }
+   void init() noexcept { set(int(P.Ninit)); }
    Step(const Params &P_, const RUNTYPE runtype_ = RUNTYPE::NRG) noexcept : P(P_), runtype(runtype_) { init(); }
    void next() noexcept { trueN++; ndxN++; }
    [[nodiscard]] constexpr auto N() const noexcept { return ndxN; }
@@ -50,7 +50,7 @@ class Step {
      fmt::color_print(P.pretty_out, fmt::emphasis::bold, "\n{}\n", info);
    }
    void set_ZBW() noexcept {
-     trueN = P.Ninit - 1; // if Ninit=0, trueN will be -1 (this is the only exceptional case)
+     trueN = int(P.Ninit) - 1; // if Ninit=0, trueN will be -1 (this is the only exceptional case)
      ndxN = P.Ninit;
    }
    // Return true if the spectral-function merging is to be performed at the current step
@@ -67,10 +67,10 @@ class Step {
    [[nodiscard]] auto last(int N) const noexcept {
      return N == lastndx() || (P.ZBW() && N == firstndx()); // special case!
    }
-   [[nodiscard]] auto last() const noexcept { return last(ndxN); }
+   [[nodiscard]] auto last() const noexcept { return last(int(ndxN)); }
    [[nodiscard]] auto end() const noexcept { return ndxN >= P.Nmax; } // ndxN is outside the allowed range
    void set_last() noexcept {
-     set(lastndx());
+     set(int(lastndx()));
      if (P.ZBW()) set_ZBW();
    }
    // NOTE: for ZBW calculations, Ninit=0 and Nmax=0, so that first() == true and last() == true for ndxN=0.

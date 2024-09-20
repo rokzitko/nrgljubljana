@@ -29,7 +29,7 @@ endif()
 
 # ############
 # Define Project
-project(NRGLJUBLJANA VERSION 2023.11 LANGUAGES C CXX)
+project(NRGLJUBLJANA VERSION 2024.09 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # Get the git hash & print status
@@ -77,36 +77,27 @@ target_compile_options(project_warnings
   INTERFACE
     -Wall
     -Wextra
-#    -Wshadow  # because constructors
     -Wnon-virtual-dtor
 #    -Wold-style-cast  # because Eigen
     -Wcast-align
     -Wunused
     -Woverloaded-virtual
     -Wpedantic
-#    -Wconversion ### USEFUL!
+#    -Wconversion # USEFUL, but too many false flags..
 #    -Wsign-conversion # because {fmt}, Eigen
     -Wdouble-promotion
     $<$<CXX_COMPILER_ID:GNU>:-Wduplicated-cond>
-#    -Wduplicated-branches  # because Eigen
     $<$<CXX_COMPILER_ID:GNU>:-Wlogical-op>
-#    -Wuseless-cast  # because Ranges
-#    -Wlifetime # clang only
     -Wno-sign-compare
     -Wno-extra-semi
     -Wno-unused-parameter
-    -Wno-vla
-#    -Wno-vla-extension
-    -Wno-unused-variable
-    -Wno-psabi          # issue with pair<double, double>
+#    -Wno-vla
+#    -Wno-unused-variable
     -Wno-double-promotion  # issue in Boost factorials
-    -Wno-array-bounds      # issue in fmt
     -Wno-unused-function   # issue in matrix tool
-    -Wno-stringop-overflow # issue in fmt
-    -Wno-dangling-reference # issue in fmt
     -Wno-deprecated-declarations # ???
-#    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
-#    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
+    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
+    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
 )
 

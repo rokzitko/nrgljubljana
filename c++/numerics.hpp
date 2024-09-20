@@ -161,7 +161,7 @@ template<matrix M> auto is_matrix_upper(const M &m) {
 }
 
 // (-1)^n
-inline constexpr auto psgn(const int n) { return n % 2 == 0 ? 1.0 : -1.0; }
+inline constexpr auto psgn(const std::integral auto n) { return n % 2 == 0 ? 1.0 : -1.0; }
 
 // Dump a matrix with full numerical precision. The columns are aligned for easier inspection. Expect large output!
 template<matrix M> inline void dump_matrix(const M &m, std::ostream &F = std::cout,

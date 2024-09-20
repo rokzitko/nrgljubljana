@@ -297,8 +297,8 @@ class Hilb {
   bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
 
   auto hilbert(const double x, const double y) {
-    auto Bethe_fnc = [this](const auto x) { return abs(x*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(x * scale)) : 0.0; };
-    auto zero_fnc = [](const auto x) { return 0.0; };
+    auto Bethe_fnc = [this](const auto w) { return abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(w * scale)) : 0.0; };
+    auto zero_fnc = [](const auto w) { return 0.0; };
     const auto z = std::complex(x,y);
     return tabulated ? hilbert_transform(Xpts, Ypts, Ipts, z) : hilbert_transform(Bethe_fnc, zero_fnc, B, z);
   }

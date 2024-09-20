@@ -105,7 +105,7 @@ template<typename T>
 auto range_size(T t)
 {
   size_t ctr = 0;
-  for(const auto &x: t) ctr++;
+  for([[maybe_unused]] const auto &x: t) ctr++;
   return ctr;
 }
 

@@ -106,10 +106,6 @@ Opch<SC> SymmetryDBLQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
     int q2p = Ip.get("Q2");
     int sszp = Ip.get("SSZ");
 
-    // NN is index n of f_n, the last site in the chain prior to adding
-    // the new site (f_{n+1}).
-    int NN = step.getnn();
-
     I1 = Invar(q1p + 1, q2p, sszp + 1);
     {
   nrglog('f', "RECALC_F(fn=" << "dblqsz/dblqsz-2ch-spinup-a.dat" << ", ch=" << 0 << ")");

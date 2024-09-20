@@ -405,7 +405,7 @@ class Params {
   // by reading the "unitary*" files from a previous calculation.
   // Automatically determines the number of files.
   param<bool> resume{"resume", "Attempt restart?", "false", all}; // N
-  int laststored = -1;                                            // int, because -1 indicates that no stored data was found
+  std::optional<size_t> laststored;                             // has value if stored data is found
 
   /* Fine-grained control over data logging with the following tokens:
    i - iteration (subspaces list)
@@ -564,14 +564,17 @@ class Params {
    // What is the last iteration completed in the previous NRG runs?
   void init_laststored() {
     if (resume) {
-      laststored = -1;
+      laststored = std::nullopt;
       for (size_t N = Ninit; N < Nmax; N++) {
         const std::string fn = workdir->unitaryfn(N);
         std::ifstream F(fn);
         if (F.good())
           laststored = N;
       }
-      std::cout << "Last unitary file found: " << laststored << std::endl;
+      if (laststored.has_value()) 
+        std::cout << "Last unitary file found: " << laststored.value() << std::endl;
+      else 
+        std::cout << "No unitary files found." << std::endl;
     }
   }
 
@@ -644,7 +647,7 @@ class Params {
   // The factor that multiplies the eigenvalues of the length-N Wilson chain Hamiltonian in order to obtain the
   // energies on the original scale. Also named the "reduced bandwidth".
   // TO DO: use polymorphism instead of if statements.
-  auto SCALE(int N) const noexcept {
+  auto SCALE(const int N) const noexcept {
     double scale = 0.0;
     if (discretization == "Y"s)
       // Yoshida,Whitaker,Oliveira PRB 41 9403 Eq. (39)
@@ -655,16 +658,16 @@ class Params {
     if (!substeps)
       scale *= pow(Lambda, -(N - 1) / 2. + 1 - z); // NOLINT
     else
-      scale *= pow(Lambda, -N / (2. * channels) + 3 / 2. - z); // NOLINT
+      scale *= pow(Lambda, -N / (2. * double(channels)) + 3 / 2. - z); // NOLINT
     scale = scale * bandrescale; // RESCALE   // XXX: is this the appropriate place for rescaling? compatible with P.absolute==true?
     return scale;
   }
 
-  // Energy scale at the last NRG iteration. Use in binning and broadening code.
+  // Energy scale at the last NRG iteration. Used in binning and broadening code.
   double last_step_scale() const noexcept { return SCALE(Nmax); }
 
   double nrg_step_scale_factor() const noexcept { // rescale factor in the RG transformation (matrix construction)
-    return absolute ? 1 : (!substeps ? sqrt(Lambda) : pow(Lambda, 0.5/channels)); // NOLINT
+    return absolute ? 1 : (!substeps ? sqrt(Lambda) : pow(Lambda, 0.5/double(channels))); // NOLINT
   }
 
   // Here we set the lowest frequency at which we will evaluate the spectral density. If the value is not predefined

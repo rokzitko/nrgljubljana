@@ -134,7 +134,7 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
   while (true) {
     try {
       if (step.nrg()) {
-        if (!(P.resume && int(step.ndx()) <= P.laststored))
+        if (!(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
           diag = diagonalisations(step, operators.opch, coef, diagprev, output, tasklist.get(), diagratio, Sym, mpi, mt, P); // compute in first run
         else
           diag = DiagInfo<S>(step.ndx(), P, false); // or read from disk
@@ -217,7 +217,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   stats.update(step);
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
-    if (P.dm && !(P.resume && int(step.ndx()) <= P.laststored))
+    if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
       diag.save(step.ndx(), P);
     perform_basic_measurements(step, diag, Sym, stats, output, P); // Measurements are performed before the truncation!
   }

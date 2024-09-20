@@ -23,7 +23,7 @@ class Outfield {
    std::string value{};
    int prec, width;
  public:
-   explicit Outfield(const std::string &desc, const int prec, const int width) : desc(desc), prec(prec), width(width) {}
+   explicit Outfield(const std::string &desc, const unsigned int prec, const unsigned int width) : desc(desc), prec(prec), width(width) {}
    template<typename T> void set_value(const T x) {
      value = fmt::format("{:>{}.{}}", x, prec, width); // https://fmt.dev/latest/syntax.html
    }
@@ -34,7 +34,7 @@ class Outfield {
 
 class Allfields : std::vector<Outfield> {
   private:
-    int prec, width;
+    unsigned int prec, width;
   public:
     void add(const std::string &desc, const int position = -1) {
       if (position == -1) {

@@ -1,9 +1,6 @@
 // Diagonalisation tool
 // Computes eigenvalues and eigenvectors of a matrix
-// Rok Zitko, rok.zitko@ijs.si, May 2009, June 2010
-
-// CHANGE LOG
-// 25.6.2010 - binary file output
+// Rok Zitko, rok.zitko@ijs.si, 2009-2024
 
 #include <iostream>
 #include <fstream>
@@ -50,7 +47,7 @@ inline int MAX(int a, int b) { return (a > b ? a : b); }
 
 void diagonalize(unsigned int dim, DVEC &d) {
   double *ham = &d[0];     // contiguous storage guaranteed
-  double eigenvalues[dim]; // eigenvalues on exit
+  std::vector<double> eigenvalues(dim); // eigenvalues on exit
 
   char jobz = 'V'; // eigenvalues and eigenvectors
   char UPLO = 'L'; // lower triangle of a is stored
@@ -59,10 +56,10 @@ void diagonalize(unsigned int dim, DVEC &d) {
   int INFO  = 0;   // 0 on successful exit
 
   int LWORK0 = -1; // length of the WORK array
-  double WORK0[1];
+  std::vector<double> WORK0(1);
 
   // Step 1: determine optimal LWORK
-  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK0, &LWORK0, &INFO);
+  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK0.data(), &LWORK0, &INFO);
 
   assert(INFO == 0);
 
@@ -76,10 +73,10 @@ void diagonalize(unsigned int dim, DVEC &d) {
     LWORK = minLWORK;
   }
 
-  double WORK[LWORK];
+  std::vector<double> WORK(LWORK);
 
   // Step 2: perform the diagonalisation
-  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, (double *)eigenvalues, WORK, &LWORK, &INFO);
+  LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, &INFO);
 
   if (INFO != 0) {
     cerr << "eigensolver failed. INFO=" << INFO;

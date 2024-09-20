@@ -64,7 +64,7 @@ auto copy_results(const V &eigenvalues, U* eigenvectors, const char jobz, const 
 template<real_matrix RM>
 auto diagonalise_dsyev(RM &m, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = size1(m);
+  const auto dim = int(size1(m));
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
@@ -88,7 +88,7 @@ template<real_matrix RM>
 auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = size1(m);
+  const auto dim = int(size1(m));
   auto ham       = data(m);
   std::vector<double> eigenvalues(dim);
   char UPLO  = 'L';
@@ -120,14 +120,14 @@ auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 template<real_matrix RM>
 auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = size1(m);
+  const auto dim = int(size1(m));
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
   auto M = dim;
   char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
-    M     = static_cast<size_t>(ceil(ratio * M)); // round up
-    M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
+    M     = ceil(ratio * M); // round up
+    M     = std::clamp<int>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
   auto ham = data(m);
@@ -177,7 +177,7 @@ auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') 
 template<complex_matrix CM>
 auto diagonalise_zheev(CM &m, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = size1(m);
+  const auto dim = int(size1(m));
   auto ham       = reinterpret_cast<lapack_complex_double*>(data(m));
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
@@ -186,7 +186,7 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V') {
   int INFO   = 0;           // 0 on successful exit
   int LWORK0 = -1;          // length of the WORK array (-1 == query!)
   lapack_complex_double WORK0;
-  int RWORKdim = std::max(1ul, 3 * dim - 2);
+  int RWORKdim = std::max(1, 3 * dim - 2);
   std::vector<double> RWORK(RWORKdim);
   // Step 1: determine optimal LWORK
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK0, RWORK.data(), &INFO);
@@ -202,14 +202,14 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V') {
 template<complex_matrix CM>
 auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = size1(m);
+  const auto dim = int(size1(m));
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
   auto M = dim;
   char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
-    M     = static_cast<size_t>(ceil(ratio * M)); // round up
-    M     = std::clamp<size_t>(M, 1, dim);        // at least 1, at most dim
+    M     = ceil(ratio * M); // round up
+    M     = std::clamp<int>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
   auto ham = reinterpret_cast<lapack_complex_double*>(data(m));

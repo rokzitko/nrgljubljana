@@ -309,7 +309,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    explicit DiagInfo() = default;
    DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) {
      skip_comments(fdata);
-     for (const auto i : range1(nsubs)) {
+     for ([[maybe_unused]] const auto i : range1(nsubs)) {
        const auto I = read_one<Invar>(fdata);
        auto energies = read_std_vector<t_eigen>(fdata);
        if (!(P.data_has_rescaled_energies || P.absolute))
@@ -407,7 +407,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
      const auto nr = read_one<size_t>(ia); // Number of subspaces
-     for (const auto cnt : range0(nr)) {
+     for ([[maybe_unused]] const auto cnt : range0(nr)) {
        const auto inv = read_one<Invar>(ia);
        (*this)[inv].load(ia);
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));

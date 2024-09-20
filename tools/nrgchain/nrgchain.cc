@@ -254,8 +254,6 @@ void tables() {
   cout << "# int_pos2=" << int_pos2 << " int_neg2=" << int_neg2 << " theta2=" << theta2 << endl;
 
   // For consistency with df_pos & df_neg, we use set 2
-  const double int_pos = int_pos2;
-  const double int_neg = int_neg2;
   const double theta = theta2;
   
   ofstream THETA;

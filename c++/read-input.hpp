@@ -65,7 +65,7 @@ void determine_Nmax_Nlen(const Coef<S> &coef, const size_t Nmax0, Params &P) { /
 
 inline auto get_next_block(std::istream &fdata) {
   while (!fdata.eof() && std::isspace(fdata.peek())) fdata.get();       // skip white space
-  char ch = fdata.get();
+  char ch = char(fdata.get());
   std::string opname;
   std::getline(fdata, opname);
   return std::make_pair(ch, opname);

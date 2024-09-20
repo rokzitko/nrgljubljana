@@ -29,7 +29,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
    MatrixElements() = default;
    MatrixElements(std::istream &fdata, const DiagInfo<S> &diag) {
      const auto nf = read_one<size_t>(fdata); // Number of I1 x I2 combinations
-     for (const auto i : range0(nf)) {
+     for ([[maybe_unused]] const auto i : range0(nf)) {
        const auto I1 = read_one<Invar>(fdata);
        const auto I2 = read_one<Invar>(fdata);
        if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
@@ -100,7 +100,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      boost::archive::binary_iarchive ia(MATRIXF);
      const auto nr = read_one<size_t>(ia);
-     for (const auto cnt : range0(nr)) {
+     for ([[maybe_unused]] const auto cnt : range0(nr)) {
        const auto inv = read_one<Invar>(ia);
        (*this)[inv] = NRG::load<S>(ia);
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));  // Check each time
