@@ -117,6 +117,8 @@ NRG calculations on computer clusters.
    NRG code and the tools:
 
     * LAPACK and BLAS linear algebra libraries
+    * MPI implementation
+    * OpenMP
     * Boost C++ libraries
     * GNU Scientific library (GSL)
     * GNU MP Bignum Library (GMP) for arbitrary-precision numerics

@@ -1,0 +1,133 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  CMAKE_C_COMPILER_LAUNCHER: ccache
+  CMAKE_CXX_COMPILER_LAUNCHER: ccache
+  CCACHE_COMPILERCHECK: content
+  CCACHE_BASEDIR: ${{ github.workspace }}
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_MAXSIZE: 500M
+  CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
+  CCACHE_COMPRESS: "1"
+  CCACHE_COMPRESSLEVEL: "1"
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS}
+          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS}
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl}
+          - {os: macos-12, cc: clang, cxx: clang++, blas: accelerate}
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/cache/restore@v4
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-${{ github.run_id }}
+        restore-keys:
+          ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-
+
+    - name: Install ubuntu dependencies (openBLAS)
+      if: ${{ (matrix.os == 'ubuntu-22.04') && contains(matrix.blas, 'openBLAS') }}
+      run: >
+        sudo apt-get update &&
+        sudo apt-get install lsb-release wget software-properties-common &&
+        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
+        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
+        sudo apt-get install
+        ccache
+        clang-15
+        g++-12
+        hdf5-tools
+        libblas-dev
+        libclang-15-dev
+        libc++-15-dev
+        libc++abi-15-dev
+        libomp-15-dev
+        boost1.81
+        libgmp-dev
+        libgsl-dev
+        libhdf5-dev
+        liblapack-dev
+        libopenmpi-dev
+        openmpi-bin
+        openmpi-common
+        openmpi-doc
+    
+    - name: Install ubuntu dependencies (Intel MKL)
+      if: ${{ (matrix.os == 'ubuntu-22.04') && contains(matrix.blas, 'imkl') }}
+      run: >
+        sudo apt-get update &&
+        sudo apt-get install lsb-release wget software-properties-common &&
+        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
+        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
+        sudo apt-get install
+        ccache
+        clang-15
+        g++-12
+        hdf5-tools
+        intel-mkl
+        libclang-15-dev
+        libc++-15-dev
+        libc++abi-15-dev
+        boost1.81
+        libgmp-dev
+        libgsl-dev
+        libhdf5-dev
+        libopenmpi-dev
+        openmpi-bin
+        openmpi-common
+        openmpi-doc
+    
+    - name: Install homebrew dependencies (clang)
+      if: ${{ (matrix.os == 'macos-12') && contains(matrix.cxx, 'clang') }}
+      run: |
+        brew install ccache llvm boost boost-mpi hdf5 open-mpi openblas gsl gmp
+    
+    - name: add clang cxxflags
+      if: ${{ contains(matrix.cxx, 'clang') }}
+      run: |
+        echo "PATH=/usr/local/opt/llvm/bin:$PATH" >> $GITHUB_ENV
+
+    - name: Build NRG Ljubljana
+      env:
+        CC: ${{ matrix.cc }}
+        CXX: ${{ matrix.cxx }}
+        LIBRARY_PATH: /usr/local/opt/llvm/lib
+      run: |
+        mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install
+        make -j2 || make -j1 VERBOSE=1
+    
+    - name: Test NRG Ljubljana
+      env:
+        DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
+        OPENBLAS_NUM_THREADS: "1"
+      run: |
+        cd build
+        ctest -j2 --output-on-failure
+    
+    - name: ccache statistics
+      if: always()
+      run: ccache -sv
+
+    - uses: actions/cache/save@v4
+      if: always()
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
