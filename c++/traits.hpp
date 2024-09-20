@@ -8,8 +8,7 @@
 #include <complex>
 #include <type_traits> // is_same_v, is_floating_point_v
 
-#include <boost/numeric/ublas/matrix.hpp>
-
+#include <boost/serialization/vector.hpp> // for the plugin!
 #define EIGEN_DENSEBASE_PLUGIN "Eigen/src/plugins/Boost_serialization.h"
 #define EIGEN_USE_BLAS
 #include <Eigen/Dense>
