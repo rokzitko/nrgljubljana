@@ -85,15 +85,11 @@ target_compile_options(project_warnings
     -Wpedantic
 #    -Wconversion # USEFUL, but too many false flags..
 #    -Wsign-conversion # because {fmt}, Eigen
-    -Wdouble-promotion
     $<$<CXX_COMPILER_ID:GNU>:-Wduplicated-cond>
     $<$<CXX_COMPILER_ID:GNU>:-Wlogical-op>
     -Wno-sign-compare
-#    -Wno-extra-semi
-#    -Wno-unused-parameter
-    -Wno-double-promotion  # issue in Boost factorials
+    -Wno-unused-parameter # USEFUL, occasionally...
     -Wno-unused-function   # issue in matrix tool
-    -Wno-deprecated-declarations # ???
     $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
     $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
