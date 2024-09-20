@@ -27,11 +27,10 @@
 #include <cfloat>
 #include <unistd.h>
 
-#include <gsl/assert> // Guideline's support library
-
 #include <gsl/gsl_errno.h> // GNU scientific library
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_spline.h>
+
 namespace NRG::Hilb {
 
 inline auto atof(const std::string &s) { return ::atof(s.c_str()); }
@@ -118,8 +117,8 @@ class interpolator {
   gsl_spline *spline    = nullptr; // spline data
   public:
   interpolator(const std::vector<double> &_X, const std::vector<double> &_Y, const double _oob_value = 0.0) : X{_X}, Y{_Y}, oob_value{_oob_value} {
-    Expects(std::is_sorted(X.begin(), X.end()));
-    Expects(X.size() == Y.size());
+    assert(std::is_sorted(X.begin(), X.end()));
+    assert(X.size() == Y.size());
     acc    = gsl_interp_accel_alloc();
     len    = X.size();
     spline = gsl_spline_alloc(gsl_interp_cspline, len);
@@ -185,7 +184,7 @@ inline auto reQ(const double x, const double y, const double B) { return (-log(s
 
 // Calculate the (half)bandwidth, i.e., the size B of the enclosing interval [-B:B].
 inline auto bandwidth(const std::vector<double> &X) {
-  Expects(std::is_sorted(X.begin(), X.end()));
+  assert(std::is_sorted(X.begin(), X.end()));
   const auto Xmin = X.front();
   const auto Xmax = X.back();
   return std::max(abs(Xmin), abs(Xmax));
