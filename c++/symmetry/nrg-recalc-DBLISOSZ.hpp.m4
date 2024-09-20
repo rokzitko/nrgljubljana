@@ -9,7 +9,7 @@ namespace NRG {
 include(recalc-macros.m4)
 
 template<typename SC>
-MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii11 = I1.get("II1");
@@ -45,7 +45,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 }
 
 template<typename SC>
-Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
+Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const {
   Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -86,10 +86,10 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
 }
 
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 template<typename SC>
-void SymmetryDBLISOSZ<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) const {
+void SymmetryDBLISOSZ<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const std::string name, MatrixElements<SC> &cnew) const {
   if (name == "SZtot") {
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

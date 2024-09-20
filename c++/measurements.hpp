@@ -173,9 +173,9 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
   // Rescale factor for energies. The energies are expressed in units of omega_N, thus we need to appropriately
   // rescale them to calculate the Boltzmann weights at the temperature scale Teff (Teff=scale/betabar).
   const auto rescale_factor = step.TD_factor() * additional_factor;
-  const auto Z  = diag.trace([](double x) { return 1; },        rescale_factor, Sym->multfnc()); // partition function
-  const auto E  = diag.trace([](double x) { return x; },        rescale_factor, Sym->multfnc()); // Tr[beta H]
-  const auto E2 = diag.trace([](double x) { return pow(x,2); }, rescale_factor, Sym->multfnc()); // Tr[(beta H)^2]
+  const auto Z  = diag.trace([]([[maybe_unused]] double x) { return 1; }, rescale_factor, Sym->multfnc()); // partition function
+  const auto E  = diag.trace([](double x) { return x; },                  rescale_factor, Sym->multfnc()); // Tr[beta H]
+  const auto E2 = diag.trace([](double x) { return pow(x,2); },           rescale_factor, Sym->multfnc()); // Tr[(beta H)^2]
   stats.Z = Z;
   nrglog('Z', "Z_td=" << stats.Z);
   stats.td.set("T",     step.Teff());

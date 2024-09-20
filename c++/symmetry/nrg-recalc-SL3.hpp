@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetrySL3<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetrySL3<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q11 = I1.get("Q1");
@@ -44,7 +44,7 @@ MatrixElements<SC> SymmetrySL3<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "sl3/sl3-3ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 0, 0));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 0, 0));
     }
   }
 };
@@ -53,7 +53,7 @@ MatrixElements<SC> SymmetrySL3<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 }
 
 template<typename SC>
-Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
+Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const {
   Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     int q1p = Ip.get("Q1");
@@ -71,7 +71,7 @@ Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &d
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "sl3/sl3-3ch-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -85,7 +85,7 @@ Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &d
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "sl3/sl3-3ch-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -99,7 +99,7 @@ Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &d
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "sl3/sl3-3ch-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -108,19 +108,19 @@ Opch<SC> SymmetrySL3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &d
 }
 
 #undef QTOT
-#define QTOT(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define QTOT(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 #undef N1
-#define N1(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define N1(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 #undef N2
-#define N2(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define N2(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 #undef N3
-#define N3(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define N3(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 template<typename SC>
-void SymmetrySL3<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) const {
+void SymmetrySL3<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const std::string name, MatrixElements<SC> &cnew) const {
   if (name == "Qtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};

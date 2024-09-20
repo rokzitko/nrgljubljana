@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetryDBLQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryDBLQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q11 = I1.get("Q1");
@@ -46,7 +46,7 @@ MatrixElements<SC> SymmetryDBLQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblqsz/dblqsz-2ch-doubletm0p.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 0, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 0, -1));
     }
   }
 };
@@ -60,7 +60,7 @@ MatrixElements<SC> SymmetryDBLQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblqsz/dblqsz-2ch-doubletm0m.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 0, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 0, +1));
     }
   }
 };
@@ -74,7 +74,7 @@ MatrixElements<SC> SymmetryDBLQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblqsz/dblqsz-2ch-doublet0mp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 1, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 1, -1));
     }
   }
 };
@@ -88,7 +88,7 @@ MatrixElements<SC> SymmetryDBLQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblqsz/dblqsz-2ch-doublet0mm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 1, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 1, +1));
     }
   }
 };
@@ -97,7 +97,7 @@ MatrixElements<SC> SymmetryDBLQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 }
 
 template<typename SC>
-Opch<SC> SymmetryDBLQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
+Opch<SC> SymmetryDBLQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const {
   Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -115,7 +115,7 @@ Opch<SC> SymmetryDBLQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblqsz/dblqsz-2ch-spinup-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -129,7 +129,7 @@ Opch<SC> SymmetryDBLQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblqsz/dblqsz-2ch-spindown-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -143,7 +143,7 @@ Opch<SC> SymmetryDBLQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblqsz/dblqsz-2ch-spinup-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -157,7 +157,7 @@ Opch<SC> SymmetryDBLQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblqsz/dblqsz-2ch-spindown-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -166,10 +166,10 @@ Opch<SC> SymmetryDBLQSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
 }
 
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 template<typename SC>
-void SymmetryDBLQSZ<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) const {
+void SymmetryDBLQSZ<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const std::string name, MatrixElements<SC> &cnew) const {
   if (name == "SZtot") {
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

@@ -127,14 +127,14 @@ class Symmetry {
      return mult(I) * ranges::accumulate(eig.value_corr_msr(), 0.0, {}, [rf=rescale_factor](const auto &x) { return exp(-rf*x); });
    }
    // Does the combination of subspaces I1 and I2 contribute to the spectral function corresponding to spin SPIN?
-   [[nodiscard]] virtual bool check_SPIN(const Invar &I1, const Invar &I2, const int &SPIN) const { return true; }
+   [[nodiscard]] virtual bool check_SPIN([[maybe_unused]] const Invar &I1, [[maybe_unused]] const Invar &I2, [[maybe_unused]] const int &SPIN) const { return true; }
    // Is the triangle inequality satisfied (i.e. can Clebsch-Gordan coefficient be different from zero)?
-   [[nodiscard]] virtual bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const { return true; }
+   [[nodiscard]] virtual bool triangle_inequality([[maybe_unused]] const Invar &I1, [[maybe_unused]] const Invar &I2, [[maybe_unused]] const Invar &I3) const { return true; }
    // Is an invariant subspace with given quantum numbers allowed?
-   [[nodiscard]] virtual bool Invar_allowed(const Invar &I) const { return true; }
+   [[nodiscard]] virtual bool Invar_allowed([[maybe_unused]] const Invar &I) const { return true; }
 
    // Project the states before taking measurements. String p defines what kind of projection is performed.
-   virtual bool project_subspace(const Invar &I, const std::string &p) const {
+   virtual bool project_subspace([[maybe_unused]] const Invar &I, [[maybe_unused]] const std::string &p) const {
      return true; // by default retain all (i.e., no projection)
    }
    virtual DiagInfo<S> project(const DiagInfo<S> &diag, const std::string &p) const {
@@ -168,36 +168,36 @@ class Symmetry {
 
    // Called from recalc_dynamicsusceptibility().  This is the factor due
    // to the spin degeneracy when calculating the trace of Sz.Sz.
-   [[nodiscard]] virtual double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
+   [[nodiscard]] virtual double dynamicsusceptibility_factor([[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1) const { return 1.0; }
 
    // Called from recalc_dynamic_orb_susceptibility().  This is the factor due
    // to the orbital moment degeneracy when calculating the trace of Tz.Tz.
-   [[nodiscard]] virtual double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
+   [[nodiscard]] virtual double dynamic_orb_susceptibility_factor([[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1) const { return 1.0; }
 
    // Called from calc_specdens().
    // See spectral_density_clebschgordan.nb and DMNRG_clebschgordan.nb.
-   [[nodiscard]] virtual double specdens_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
-   [[nodiscard]] virtual double specdensquad_factor(const Invar &Ip, const Invar &I1) const { return 1.0; }
+   [[nodiscard]] virtual double specdens_factor([[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1) const { return 1.0; }
+   [[nodiscard]] virtual double specdensquad_factor([[maybe_unused]]  const Invar &Ip, [[maybe_unused]]  const Invar &I1) const { return 1.0; }
 
    virtual void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, const double factor) const = 0;
 
-   virtual Opch<S> recalc_irreduc(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) const { my_assert_not_reached(); }
-   virtual OpchChannel<S> recalc_irreduc_substeps(const Step &step, const DiagInfo<S> &diag,
-                                                       const SubspaceStructure &substruct, int M) const { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_doublet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                 const MatrixElements<S> &cold) const { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_triplet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                 const MatrixElements<S> &cold) const { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_orb_triplet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                     const MatrixElements<S> &cold) const { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_quadruplet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                    const MatrixElements<S> &cold) const { my_assert_not_reached(); }
-   virtual void recalc_global(const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, std::string name,
-                              MatrixElements<S> &cnew) const { my_assert_not_reached(); }
+   virtual Opch<S> recalc_irreduc([[maybe_unused]] const Step &step, [[maybe_unused]] const DiagInfo<S> &diag) const { my_assert_not_reached(); }
+   virtual OpchChannel<S> recalc_irreduc_substeps([[maybe_unused]] const Step &step, [[maybe_unused]] const DiagInfo<S> &diag,
+                                                       [[maybe_unused]] int M) const { my_assert_not_reached(); }
+   virtual MatrixElements<S> recalc_doublet([[maybe_unused]] const DiagInfo<S> &diag,
+                                                 [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
+   virtual MatrixElements<S> recalc_triplet([[maybe_unused]] const DiagInfo<S> &diag,
+                                                 [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
+   virtual MatrixElements<S> recalc_orb_triplet([[maybe_unused]] const DiagInfo<S> &diag,
+                                                     [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
+   virtual MatrixElements<S> recalc_quadruplet([[maybe_unused]] const DiagInfo<S> &diag,
+                                                    [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
+   virtual void recalc_global([[maybe_unused]] const Step &step, [[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] std::string name,
+                              [[maybe_unused]] MatrixElements<S> &cnew) const { my_assert_not_reached(); }
 
    // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
    //  parity -1). Generic implementation, valid for all symmetry types.
-   MatrixElements<S> recalc_singlet(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &nold, const int parity) const {
+   MatrixElements<S> recalc_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &nold, const int parity) const {
      MatrixElements<S> nnew;
      my_assert(islr() ? parity == 1 || parity == -1 : parity == 1);
      for (const auto &I : diag.subspaces()) {
@@ -209,7 +209,7 @@ class Symmetry {
          recalc_table.push_back({i+1, i+1, anc, parity == -1 ? anc.InvertParity() : anc, 1.0});
        }
        const auto Iop = parity == -1 ? InvarSinglet.InvertParity() : InvarSinglet;
-       nnew[Twoinvar(I1,Ip)] = recalc_general(diag, substruct, nold, I1, Ip, recalc_table, Iop);
+       nnew[Twoinvar(I1,Ip)] = recalc_general(diag, nold, I1, Ip, recalc_table, Iop);
      }
      return nnew;
    }
@@ -234,25 +234,24 @@ class Symmetry {
    }
 
    // only overriden for symtypes QST and SPSU2T
-   virtual bool recalc_f_coupled(const Invar &I1, const Invar &I2, const Invar &If) const { return true; } // used in recalc_f()
+   virtual bool recalc_f_coupled([[maybe_unused]] const Invar &I1, [[maybe_unused]] const Invar &I2, [[maybe_unused]] const Invar &If) const { return true; } // used in recalc_f()
 
    template<typename T>
-     auto recalc_f(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Invar &I1,
-                   const Invar &Ip, const T &table) const;
+     auto recalc_f(const DiagInfo<S> &diag, const Invar &I1, const Invar &Ip, const T &table) const;
 
    template<typename T>
-     auto recalc_general(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &cold,
+     auto recalc_general(const DiagInfo<S> &diag, const MatrixElements<S> &cold,
                          const Invar &I1, const Invar &Ip, const T &table, const Invar &Iop) const;
 
-   void recalc1_global(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Invar &I,
+   void recalc1_global(const DiagInfo<S> &diag, const Invar &I,
                        Matrix &m, const size_t i1, const size_t ip, const t_coef value) const;
 
-   auto CorrelatorFactorFnc() const   { return [this](const Invar &Ip, const Invar &I1) { return this->mult(I1); }; }
+   auto CorrelatorFactorFnc() const   { return [this]([[maybe_unused]] const Invar &Ip, const Invar &I1) { return this->mult(I1); }; }
    auto SpecdensFactorFnc() const     { return [this](const Invar &Ip, const Invar &I1) { return this->specdens_factor(Ip, I1); }; }
    auto SpecdensquadFactorFnc() const { return [this](const Invar &Ip, const Invar &I1) { return this->specdensquad_factor(Ip, I1); }; }
    auto SpinSuscFactorFnc() const     { return [this](const Invar &Ip, const Invar &I1) { return this->dynamicsusceptibility_factor(Ip, I1); }; }
    auto OrbSuscFactorFnc() const      { return [this](const Invar &Ip, const Invar &I1) { return this->dynamic_orb_susceptibility_factor(Ip, I1); }; }
-   auto TrivialCheckSpinFnc() const   { return [](const Invar &Ip, const Invar &I1, int SPIN) { return true; }; }
+   auto TrivialCheckSpinFnc() const   { return []([[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1, [[maybe_unused]] int SPIN) { return true; }; }
    auto SpecdensCheckSpinFnc() const  { return [this](const Invar &I1, const Invar &Ip, int SPIN) { return this->check_SPIN(I1, Ip, SPIN); }; }
 };
 
@@ -260,19 +259,19 @@ class Symmetry {
 #define DECL                                                                                                      \
   void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, \
              const Opch<SC> &opch, const Coef<SC> &coef) const override;                                          \
-  Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const override
+  Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const override
 
 // Optional declaration
-#define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, int M) const override
-#define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
+#define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, int M) const override
+#define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, \
                                                       const MatrixElements<SC> &cold) const override
-#define HAS_TRIPLET MatrixElements<SC> recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
+#define HAS_TRIPLET MatrixElements<SC> recalc_triplet(const DiagInfo<SC> &diag, \
                                                       const MatrixElements<SC> &cold) const override
-#define HAS_ORB_TRIPLET MatrixElements<SC> recalc_orb_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
+#define HAS_ORB_TRIPLET MatrixElements<SC> recalc_orb_triplet(const DiagInfo<SC> &diag, \
                                                               const MatrixElements<SC> &cold) const override
-#define HAS_QUADRUPLET MatrixElements<SC> recalc_quadruplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
+#define HAS_QUADRUPLET MatrixElements<SC> recalc_quadruplet(const DiagInfo<SC> &diag, \
                                                             const MatrixElements<SC> &cold) const override
-#define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, \
+#define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, \
                                       std::string name, MatrixElements<SC> &cnew) const override
 
 template<scalar S>

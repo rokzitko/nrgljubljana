@@ -29,8 +29,8 @@ double integrate(Vec &vec) {
 // interval [a:b]. It is assued that the upper boundary 'b' is within the
 // interval of tabulation, while the lower boundary 'a' is below it
 // (typically a=0); to obtain the contribution from 'a' to the beginning of
-// the tabulation interval, an extrapolation is performed.
-double integrate_ab(const Vec &vec, double a, double b) {
+// the tabulation interval, an extrapolation could be performed. [IT ISN'T !!!]
+double integrate_ab(const Vec &vec, [[maybe_unused]] double a, double b) {
   assert(a < b);
 
   Vec temp(vec); // We need to make a copy to sort the table.

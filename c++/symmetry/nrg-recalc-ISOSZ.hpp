@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii1   = I1.get("II");
@@ -46,7 +46,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-doubletmp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, -1));
     }
   }
 } } break;
@@ -58,7 +58,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-doubletmp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, -1));
     }
   }
 } } break;
@@ -75,7 +75,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-doubletmm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, +1));
     }
   }
 } } break;
@@ -87,7 +87,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-doubletmm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, +1));
     }
   }
 } } break;
@@ -104,7 +104,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-doubletpp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, -1));
     }
   }
 } } break;
@@ -116,7 +116,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-doubletpp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, -1));
     }
   }
 } } break;
@@ -133,7 +133,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-doubletpm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, +1));
     }
   }
 } } break;
@@ -145,7 +145,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-doubletpm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, +1));
     }
   }
 } } break;
@@ -158,7 +158,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
 // (ISOSZ): Four calls of recalc_f() are necessary for each channel.
 
 template<typename SC>
-Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
+Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const {
   Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -182,7 +182,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-1ch-spinup-isoupa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -194,7 +194,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-2ch-spinup-isoupa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -206,7 +206,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-2ch-spinup-isoupb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -223,7 +223,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-1ch-spindown-isoupa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -235,7 +235,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-2ch-spindown-isoupa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -247,7 +247,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-2ch-spindown-isoupb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -264,7 +264,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-1ch-spinup-isodowna.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -276,7 +276,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-2ch-spinup-isodowna.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -288,7 +288,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-2ch-spinup-isodownb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -305,7 +305,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-1ch-spindown-isodowna.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -317,7 +317,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-2ch-spindown-isodowna.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -329,7 +329,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isosz/isosz-2ch-spindown-isodownb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -340,7 +340,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
 }
 
 template<typename SC>
-MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii1   = I1.get("II");
@@ -357,7 +357,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 0));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 0));
     }
   }
 } } break;
@@ -369,7 +369,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 0));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 0));
     }
   }
 } } break;
@@ -386,7 +386,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, -2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -2));
     }
   }
 } } break;
@@ -398,7 +398,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, -2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -2));
     }
   }
 } } break;
@@ -415,7 +415,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, +2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +2));
     }
   }
 } } break;
@@ -427,7 +427,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, +2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +2));
     }
   }
 } } break;
@@ -438,10 +438,10 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
 }
 
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 template<typename SC>
-void SymmetryISOSZ<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) const {
+void SymmetryISOSZ<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const std::string name, MatrixElements<SC> &cnew) const {
   if (name == "SZtot") {
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

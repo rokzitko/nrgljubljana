@@ -85,7 +85,7 @@ class Algo_FTmats : public Algo<S> {
        }
      }
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
      gf.merge(*cm.get());
      cm.reset();
    }
@@ -127,7 +127,7 @@ class Algo_GT : public Algo<S> {
          value += term(r1, rp); 
      ct->add(temperature, factor * value);
    }
-   void end(const Step &) override {
+   void end([[maybe_unused]] const Step &) override {
      td.merge(*ct.get());
    }
    ~Algo_GT() { td.save(); }
@@ -169,7 +169,7 @@ class Algo_CHIT : public Algo<S> {
          value += term(r1, rp);
      ct->add(temperature, factor * value);
    }
-   void end(const Step &) override {
+   void end([[maybe_unused]] const Step &) override {
      td.merge(*ct.get());
    }
    ~Algo_CHIT() { td.save(); }

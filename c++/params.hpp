@@ -706,7 +706,7 @@ class DiagParams {
 
  private:
    friend class boost::serialization::access;
-   template <class Archive> void serialize(Archive &ar, const unsigned int version) {
+   template <class Archive> void serialize(Archive &ar, [[maybe_unused]] const unsigned int version) {
       ar &diag;
       ar &diagratio;
       ar &logall;

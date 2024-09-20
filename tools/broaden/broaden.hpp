@@ -504,7 +504,7 @@ class Broaden {
    Broaden(int argc, char *argv[]) {
      cmd_line(argc, argv);
    }
-   void calc(const int COUT_PREC = 18) {
+   void calc() {
      read_files();
      merge();
      filter();

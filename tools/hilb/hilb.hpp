@@ -298,7 +298,7 @@ class Hilb {
 
   auto hilbert(const double x, const double y) {
     auto Bethe_fnc = [this](const auto w) { return abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(w * scale)) : 0.0; };
-    auto zero_fnc = [](const auto w) { return 0.0; };
+    auto zero_fnc = []([[maybe_unused]] const auto w) { return 0.0; };
     const auto z = std::complex(x,y);
     return tabulated ? hilbert_transform(Xpts, Ypts, Ipts, z) : hilbert_transform(Bethe_fnc, zero_fnc, B, z);
   }

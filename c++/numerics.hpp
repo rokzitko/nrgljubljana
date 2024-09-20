@@ -190,7 +190,7 @@ inline constexpr double Power(const double i, const double nn) { return std::pow
 inline constexpr double Abs(const double x) { return abs(x); }
 
 // Check if the value x is real [for complex number calculations].
-constexpr inline auto is_real(const double x) { return true; }
+constexpr inline auto is_real([[maybe_unused]] const double x) { return true; }
 constexpr inline auto is_real(const std::complex<double> z, const double check_real_tolerance = 1e-8) {
   return abs(z.imag()) <= check_real_tolerance;
 }

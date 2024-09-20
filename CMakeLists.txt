@@ -89,10 +89,8 @@ target_compile_options(project_warnings
     $<$<CXX_COMPILER_ID:GNU>:-Wduplicated-cond>
     $<$<CXX_COMPILER_ID:GNU>:-Wlogical-op>
     -Wno-sign-compare
-    -Wno-extra-semi
-    -Wno-unused-parameter
-#    -Wno-vla
-#    -Wno-unused-variable
+#    -Wno-extra-semi
+#    -Wno-unused-parameter
     -Wno-double-promotion  # issue in Boost factorials
     -Wno-unused-function   # issue in matrix tool
     -Wno-deprecated-declarations # ???

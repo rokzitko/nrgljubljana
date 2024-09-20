@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
@@ -46,7 +46,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
     }
   }
 } } break;
@@ -58,7 +58,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-2ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
     }
   }
 } } break;
@@ -70,7 +70,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
     }
   }
 } } break;
@@ -87,7 +87,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
     }
   }
 } } break;
@@ -99,7 +99,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-2ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
     }
   }
 } } break;
@@ -111,7 +111,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
     }
   }
 } } break;
@@ -132,7 +132,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
     }
   }
 };
@@ -146,7 +146,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
     }
   }
 };
@@ -156,7 +156,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
 }
 
 template<typename SC>
-Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
+Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const {
   my_assert(!P.substeps);
   Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -173,7 +173,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-spinupa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -185,7 +185,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-2ch-spinupa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -197,7 +197,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-2ch-spinupb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -209,7 +209,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-spinupa.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -221,7 +221,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-spinupb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -233,7 +233,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-spinupc.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -250,7 +250,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-spindowna.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -262,7 +262,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-2ch-spindowna.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -274,7 +274,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-2ch-spindownb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -286,7 +286,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-spindowna.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -298,7 +298,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-spindownb.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -310,7 +310,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-spindownc.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 } } break;
@@ -325,7 +325,7 @@ Opch<SC> SymmetrySPSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
 }
 
 template<typename SC>
-OpchChannel<SC> SymmetrySPSU2<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const int M) const {
+OpchChannel<SC> SymmetrySPSU2<SC>::recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, const int M) const {
   my_assert(P.substeps);
   Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
@@ -341,7 +341,7 @@ OpchChannel<SC> SymmetrySPSU2<SC>::recalc_irreduc_substeps(const Step &step, con
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-spinupa.dat"
       };
-      opch[M][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[M][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -355,7 +355,7 @@ OpchChannel<SC> SymmetrySPSU2<SC>::recalc_irreduc_substeps(const Step &step, con
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-spindowna.dat"
       };
-      opch[M][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[M][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -364,7 +364,7 @@ OpchChannel<SC> SymmetrySPSU2<SC>::recalc_irreduc_substeps(const Step &step, con
 }
 
 template<typename SC>
-MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
@@ -381,7 +381,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(3));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(3));
     }
   }
 } } break;
@@ -393,7 +393,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-2ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(3));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(3));
     }
   }
 } } break;
@@ -405,7 +405,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(3));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(3));
     }
   }
 } } break;
@@ -422,7 +422,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(3));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(3));
     }
   }
 } } break;
@@ -434,7 +434,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-2ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(3));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(3));
     }
   }
 } } break;
@@ -446,7 +446,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-3ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(3));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(3));
     }
   }
 } } break;
@@ -463,7 +463,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-1ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(3));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(3));
     }
   }
 } } break;
@@ -475,7 +475,7 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2/spsu2-2ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(3));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(3));
     }
   }
 } } break;
@@ -487,35 +487,35 @@ MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
 }
 
 #undef CHARGE
-#define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 #undef QDIFF
-#define QDIFF(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define QDIFF(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 #undef Q1
-#define Q1(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define Q1(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 #undef Q2
-#define Q2(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define Q2(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 #undef ISOSPINZ
-#define ISOSPINZ(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define ISOSPINZ(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 // NOTE: the transverse components of the isospin depend on the site
 // index! This is taken into account by appropriately multiplying 'value'
 // by (-1)^N.
 
 #undef ISOSPINX
-#define ISOSPINX(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
+#define ISOSPINX(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 #undef ISOSPINP
-#define ISOSPINP(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
+#define ISOSPINP(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 #undef ISOSPINM
-#define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
+#define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 template<typename SC>
-void SymmetrySPSU2<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) const {
+void SymmetrySPSU2<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const std::string name, MatrixElements<SC> &cnew) const {
   // NOTE: none of these are implemented for substeps==true.
 
   if (name == "Qtot") {

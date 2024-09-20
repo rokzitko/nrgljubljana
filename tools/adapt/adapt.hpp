@@ -190,7 +190,7 @@ class Adapt {
      std::cout << "# intA=" << intA << std::endl;
      A = intA;
    }
-   Vec calc_g(const Vec &vecrho) {
+   Vec calc_g() {
      const auto [ratio1, vecg1] = shoot_g();
      if (abs(ratio1 - 1.0) < convergence_eps)  // We're done
        return vecg1;
@@ -314,7 +314,7 @@ class Adapt {
    auto g_fn(const Sign &sign) { return "GSOL" + (sign == Sign::POS ? ""s : "NEG"s) + ".dat"; }
    auto f_fn(const Sign &sign) { return "FSOL" + (sign == Sign::POS ? ""s : "NEG"s) + ".dat"; }
    void load_or_calc_g() {
-     const auto vecg = P.Pbool("loadg", false) ? load_g(g_fn(sign)) : calc_g(vecrho);
+     const auto vecg = P.Pbool("loadg", false) ? load_g(g_fn(sign)) : calc_g();
      minmaxvec(vecg, "g");
      g = LinInt(vecg);
    }

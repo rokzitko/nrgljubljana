@@ -186,15 +186,15 @@ void init(XYFUNC &im) {
   gsl_set_error_handler_off();
 }
 
-inline double f_neg(double X, void *params) { return (X < 0 ? gsl_spline_eval(spline, X, acc) : 0); }
+inline double f_neg(double X, [[maybe_unused]] void *params) { return (X < 0 ? gsl_spline_eval(spline, X, acc) : 0); }
 
-inline double f_pos(double X, void *params) { return (X > 0 ? gsl_spline_eval(spline, X, acc) : 0); }
+inline double f_pos(double X, [[maybe_unused]] void *params) { return (X > 0 ? gsl_spline_eval(spline, X, acc) : 0); }
 
-inline double f_total(double X, void *params) { return gsl_spline_eval(spline, X, acc); }
+inline double f_total(double X, [[maybe_unused]] void *params) { return gsl_spline_eval(spline, X, acc); }
 
-inline double f_abs(double X, void *params) { return fabs(gsl_spline_eval(spline, X, acc)); }
+inline double f_abs(double X, [[maybe_unused]]  void *params) { return fabs(gsl_spline_eval(spline, X, acc)); }
 
-inline double f_fermi(double X, void *params) {
+inline double f_fermi(double X, [[maybe_unused]] void *params) {
   double fd = 1.0 / (1.0 + exp(X / T));
   return gsl_spline_eval(spline, X, acc) * fd;
 }

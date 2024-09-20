@@ -54,7 +54,6 @@ inline void h5save_blocks(H5Easy::File &fd, const std::string &name, const DiagI
 // Recalculates the irreducible matrix elements <I1|| f || Ip>. Called from recalc_irreduc() in nrg-recalc-* files.
 template<scalar S> template<typename T>
 auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
-                           const SubspaceStructure &substruct,
                            const Invar &I1, // bra
                            const Invar &Ip, // ket
                            const T &table) const
@@ -84,7 +83,6 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
 // one should try to hand optimize.
 template<scalar S> template<typename T>
 auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
-                                 const SubspaceStructure &substruct, // XXX: drop
                                  const MatrixElements<S> &cold,
                                  const Invar &I1,             // target subspace (bra)
                                  const Invar &Ip,             // target subspace (ket)
@@ -114,7 +112,6 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
 // This routine is used for recalculation of global operators in nrg-recalc-*.cc
 template<scalar S>
 void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag, // XXX: pass Eigen instead
-                                 const SubspaceStructure &substruct, // XXX: drop
                                  const Invar &I,
                                  Matrix &m, // modified, not produced!
                                  const size_t i1,

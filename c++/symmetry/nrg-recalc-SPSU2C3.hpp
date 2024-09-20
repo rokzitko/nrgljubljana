@@ -31,7 +31,7 @@ namespace NRG {
 #define xRECALC_F_TAB(a, b, c) 0;
 
 template<typename SC>
-Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
+Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const {
   Opch<SC> opch(P);
 
   if constexpr (std::is_same_v<SC, std::complex<double>>) {
@@ -59,7 +59,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spinup0-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -71,7 +71,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spinup0-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -83,7 +83,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spinup0-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -97,7 +97,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spindown0-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -109,7 +109,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spindown0-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -121,7 +121,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spindown0-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -135,7 +135,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spinup1-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -147,7 +147,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spinup1-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -159,7 +159,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spinup1-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -173,7 +173,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spindown1-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -185,7 +185,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spindown1-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -197,7 +197,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spindown1-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -211,7 +211,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spinup2-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -223,7 +223,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spinup2-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -235,7 +235,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spinup2-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -249,7 +249,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spindown2-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -261,7 +261,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spindown2-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -273,7 +273,7 @@ Opch<SC> SymmetrySPSU2C3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "spsu2c3/spsu2c3-spindown2-c.dat"
       };
-      opch[2][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };

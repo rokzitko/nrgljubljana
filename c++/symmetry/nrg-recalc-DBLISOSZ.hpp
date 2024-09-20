@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii11 = I1.get("II1");
@@ -46,7 +46,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-doubletm0m.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 1, +1));
     }
   }
 };
@@ -60,7 +60,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-doubletm0p.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 1, -1));
     }
   }
 };
@@ -74,7 +74,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-doubletp0m.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 1, +1));
     }
   }
 };
@@ -88,7 +88,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-doubletp0p.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 1, -1));
     }
   }
 };
@@ -102,7 +102,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-doublet0mm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
     }
   }
 };
@@ -116,7 +116,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-doublet0mp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
     }
   }
 };
@@ -130,7 +130,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-doublet0pm.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
     }
   }
 };
@@ -144,7 +144,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-doublet0pp.dat"
       };
-      cnew[II] = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
+      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
     }
   }
 };
@@ -153,7 +153,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 }
 
 template<typename SC>
-Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct) const {
+Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const {
   Opch<SC> opch(P);
   for(const auto &[Ip, eig]: diag) {
     Invar I1;
@@ -175,7 +175,7 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-type1-isoup-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -189,7 +189,7 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-type2-isoup-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -203,7 +203,7 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-type1-isoup-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -217,7 +217,7 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-type2-isoup-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -231,7 +231,7 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-type1-isodown-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -245,7 +245,7 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-type2-isodown-a.dat"
       };
-      opch[0][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -259,7 +259,7 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-type1-isodown-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -273,7 +273,7 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
       std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "dblisosz/dblisosz-2ch-type2-isodown-b.dat"
       };
-      opch[1][0][II] = this->recalc_f(diag, substruct, I1, Ip, recalc_table);
+      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
     }
   }
 };
@@ -282,10 +282,10 @@ Opch<SC> SymmetryDBLISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<S
 }
 
 #undef SPINZ
-#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, substruct, I1, cn, i1, ip, value)
+#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 template<typename SC>
-void SymmetryDBLISOSZ<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const std::string name, MatrixElements<SC> &cnew) const {
+void SymmetryDBLISOSZ<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const std::string name, MatrixElements<SC> &cnew) const {
   if (name == "SZtot") {
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};

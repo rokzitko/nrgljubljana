@@ -34,8 +34,8 @@ auto integrate(Vec &vec) {
 // interval [a:b]. It is assued that the upper boundary 'b' is within the
 // interval of tabulation, while the lower boundary 'a' is below it
 // (typically a=0); to obtain the contribution from 'a' to the beginning of
-// the tabulation interval, an extrapolation is performed.
-auto integrate_ab(const Vec &vec, const double a, const double b) {
+// the tabulation interval, an extrapolation is performed. XXX: IS IT?
+auto integrate_ab(const Vec &vec, [[maybe_unused]] const double a, const double b) {
   assert(a < b);
   Vec temp(vec); // We need to make a copy to sort the table.
   std::sort(temp.begin(), temp.end());

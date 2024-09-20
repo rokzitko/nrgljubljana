@@ -90,7 +90,7 @@ class MemoryStats {
      peakusage          = std::max<long>(peakusage, memused);
      return memused;
    }
-   void report(const bool verbose = false) const {
+   void report() const {
 #ifdef HAS_MEMORY_USAGE
      fmt::print("\nPeak usage: {} MB\n", peakusage / 1024); // NOLINT
 #endif

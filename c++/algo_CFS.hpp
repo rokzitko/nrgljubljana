@@ -26,7 +26,7 @@ class Algo_CFSls : virtual public Algo<S> {
      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
-             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
+             t_coef factor, [[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1, const DensMatElements<S> &rho, const Stats<S> &stats) override
    {
      // Convention: k-loops over retained states, l-loop over discarded states.
      if (step.last()) {
@@ -54,7 +54,7 @@ class Algo_CFSls : virtual public Algo<S> {
            cb->add(term3(rl, rk), factor);
      }
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
      spec.mergeCFS(*cb.get());
      cb.reset();
    }
@@ -106,7 +106,7 @@ class Algo_CFSgt : virtual public Algo<S> {
            cb->add(term2(rk, rl), factor);
      }
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
      spec.mergeCFS(*cb.get());
      cb.reset();
    }
@@ -133,7 +133,7 @@ class Algo_CFS : public Algo_CFSls<S>, public Algo_CFSgt<S> {
      Algo_CFSgt<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
      Algo_CFSls<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
      spec_tot.mergeCFS(*Algo_CFSgt<S>::cb.get());
      spec_tot.mergeCFS(*Algo_CFSls<S>::cb.get());
      Algo_CFSgt<S>::cb.reset();

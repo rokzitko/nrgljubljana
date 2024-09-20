@@ -50,7 +50,7 @@ class Algo_DMNRG : public Algo<S> {
        for (const auto rj: diagI1.kept())
          cb->add(term(rm, rj), factor);
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
      spec.mergeNN2(*cb.get(), step);
      cb.reset();
    }
@@ -98,7 +98,7 @@ class Algo_DMNRGmats : public Algo<S> {
          for (size_t n = 0; n < P.mats; n++)
            cm->add(n, factor * term(rm, rj, n));
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
           gf.merge(*cm.get());
           cm.reset();
    }

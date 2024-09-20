@@ -43,7 +43,7 @@ class Spikes : public std::vector<t_delta_peak<S>> {
 
 // Modified log-Gaussian broadening kernel. For gamma=alpha/4, the
 // kernel is symmetric in both arguments.
-inline double BR_L(double e, double ept, double alpha, double omega0) {
+inline double BR_L(double e, double ept, double alpha) {
   if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
   if (ept == 0.0) return 0.0;
   const double gamma = alpha/4.0;
@@ -57,7 +57,7 @@ inline double BR_G(double e, double ept, double omega0) { return exp(-pow((e - e
 // Note: 'ept' is the energy of the delta peak in the raw spectrum,
 // 'e' is the energy of the data point in the broadened spectrum.
 inline double BR_NEW(double e, double ept, double alpha, double omega0) {
-  double part_l = BR_L(e, ept, alpha, omega0);
+  double part_l = BR_L(e, ept, alpha);
   // Most of the time we only need to compute part_l (loggaussian)
   if (abs(e) > omega0) return part_l;
   // Note: this is DIFFERENT from the broadening kernel proposed by

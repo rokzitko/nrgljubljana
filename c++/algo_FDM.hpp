@@ -58,7 +58,7 @@ class Algo_FDMls : virtual public Algo<S> {
        for (const auto j : diagIj.Drange())
          cb->add(term3(i,j), factor);
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
      spec.mergeCFS(*cb.get());
      cb.reset();
    }
@@ -112,7 +112,7 @@ class Algo_FDMgt : virtual public Algo<S> {
        for (const auto j : diagIj.Drange())
          cb->add(term3(i,j), factor);
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
      spec.mergeCFS(*cb.get());
      cb.reset();
    }
@@ -140,7 +140,7 @@ class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
      Algo_FDMgt<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
      Algo_FDMls<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
      spec_tot.mergeCFS(*Algo_FDMgt<S>::cb.get());
      spec_tot.mergeCFS(*Algo_FDMls<S>::cb.get());
      Algo_FDMgt<S>::cb.reset();
@@ -215,7 +215,7 @@ class Algo_FDMmats : public Algo<S> {
          for (size_t n = 0; n < cutoff; n++)
            cm->add(n, term3(i,j,n) * factor);
    }
-   void end(const Step &step) override {
+   void end([[maybe_unused]] const Step &step) override {
      gf.merge(*cm.get());
      cm.reset();
    }

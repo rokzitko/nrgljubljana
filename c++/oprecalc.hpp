@@ -58,10 +58,10 @@ class Oprecalc {
    // Wrapper routine for recalculations
    template <typename RecalcFnc>
      MatrixElements<S> recalc(const std::string &name, const MatrixElements<S> &mold, RecalcFnc recalc_fnc, const std::string &tip,
-                              const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
+                              const Step &step, const DiagInfo<S> &diag) {
        nrglog('0', "\n#### Recalculate " << tip << " " << name);
-       auto mnew = recalc_fnc(diag, substruct, mold);
-       if (tip == "g") Sym->recalc_global(step, diag, substruct, name, mnew);
+       auto mnew = recalc_fnc(diag, mold);
+       if (tip == "g") Sym->recalc_global(step, diag, name, mnew);
        return mnew;
      }
 
@@ -75,19 +75,19 @@ class Oprecalc {
      nrglog('@', "recalculate_operators()");
      const auto section_timing = mt.time_it("recalc");
        for (auto &[name, m] : a.ops)
-         m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
+         m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag);
        for (auto &[name, m] : a.opsp)
-         m = recalc_or_clear(ops.count({"p", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, "p", step, diag, substruct);
+         m = recalc_or_clear(ops.count({"p", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, "p", step, diag);
        for (auto &[name, m] : a.opsg)
-         m = recalc_or_clear(ops.do_g(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag, substruct);
+         m = recalc_or_clear(ops.do_g(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag);
        for (auto &[name, m] : a.opd)
-         m = recalc_or_clear(ops.count({"d", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, "d", step, diag, substruct);
+         m = recalc_or_clear(ops.count({"d", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, "d", step, diag);
        for (auto &[name, m] : a.opt)
-         m = recalc_or_clear(ops.count({"t", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, "t", step, diag, substruct);
+         m = recalc_or_clear(ops.count({"t", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, "t", step, diag);
        for (auto &[name, m] : a.opot)
-         m = recalc_or_clear(ops.count({"ot", name}), name, m, [this](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, "ot", step, diag, substruct);
+         m = recalc_or_clear(ops.count({"ot", name}), name, m, [this](const auto &... pr) { return Sym->recalc_orb_triplet(pr...); }, "ot", step, diag);
        for (auto &[name, m] : a.opq)
-         m = recalc_or_clear(ops.count({"q", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, "q", step, diag, substruct);
+         m = recalc_or_clear(ops.count({"q", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, "q", step, diag);
      }
 
    // Establish the data structures for storing spectral information [and prepare output files].
@@ -211,15 +211,15 @@ void recalc_irreducible(const Step &step, const DiagInfo<S> &diag, const Subspac
                         const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
   const auto section_timing = mt.time_it("recalc f");
   if (!P.substeps) {
-    opch = Sym->recalc_irreduc(step, diag, substruct);
+    opch = Sym->recalc_irreduc(step, diag);
   } else {
     const auto [N, M] = step.NM();
     for (const auto i: range0(size_t(P.channels)))
       if (i == M) {
-        opch[i] = Sym->recalc_irreduc_substeps(step, diag, substruct, i);
+        opch[i] = Sym->recalc_irreduc_substeps(step, diag, i);
       } else {
         for (const auto j: range0(size_t(P.perchannel)))
-          opch[i][j] = Sym->recalc_doublet(diag, substruct, opch[i][j]);
+          opch[i][j] = Sym->recalc_doublet(diag, opch[i][j]);
       }
   }
 }

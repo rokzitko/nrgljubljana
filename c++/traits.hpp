@@ -22,7 +22,7 @@ template <typename T> concept scalar = floating_point<T> || is_complex<T>::value
 
 template <scalar S> using EigenMatrix = Eigen::Matrix<S, -1, -1, Eigen::RowMajor>;
 template <scalar S> using EigenVector = Eigen::Matrix<S, -1, 1>;
-template <scalar S> constexpr auto is_row_ordered(const EigenMatrix<S> &m) { return true; }
+template <scalar S> constexpr auto is_row_ordered([[maybe_unused]] const EigenMatrix<S> &m) { return true; }
 template <scalar S> size_t size1(const EigenMatrix<S> &m) { return m.rows(); } // keep size_t here!
 template <scalar S> size_t size2(const EigenMatrix<S> &m) { return m.cols(); }
 template <scalar S> auto size1(const Eigen::Block<EigenMatrix<S>> &m) { return m.rows(); }
