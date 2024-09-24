@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, fmt_library]
   pull_request:
     branches: [ master ]
   workflow_call:
@@ -82,7 +82,7 @@ jobs:
         clang-15
         g++-12
         hdf5-tools
-        intel-mkl
+        libmkl-dev
         libclang-15-dev
         libc++-15-dev
         libc++abi-15-dev
