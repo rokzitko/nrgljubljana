@@ -179,7 +179,11 @@ include(CMake/CPM.cmake)
 CPMAddPackage("gh:google/googletest#v1.15.2")
 
 # Eigen, tries finding in system first
-CPMFindPackage("gl:libeigen/eigen#3.4.0")
+CPMFindPackage(
+  NAME Eigen
+  GITLAB_REPOSITORY libeigen/eigen
+  GIT_TAG 3.4.0
+)
 
 # High five library
 CPMAddPackage("gh:BlueBrain/HighFive#v2.10.0")
