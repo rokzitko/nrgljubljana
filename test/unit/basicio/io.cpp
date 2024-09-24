@@ -14,14 +14,14 @@ TEST(io, read_matrix){
                 12,5,1,41,
                 5,2,4,7;
   auto matrix = read_matrix("txt/matrix.txt");
-  compare(ref_matrix, matrix);
+  EXPECT_TRUE(matrix.isApprox(ref_matrix));
 }
 
 TEST(io, save_matrix){
   auto matrix = read_matrix("txt/matrix.txt");
   save_matrix("txt/matrix_temp.txt", matrix);
   auto matrix_temp = read_matrix("txt/matrix_temp.txt");
-  compare(matrix, matrix_temp);
+  EXPECT_TRUE(matrix.isApprox(matrix_temp));
   std::remove("txt/matrix_temp.txt");
 }
 
