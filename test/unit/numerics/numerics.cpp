@@ -463,7 +463,7 @@ TEST(numerics, save_r) {
     EXPECT_TRUE(f);
     boost::archive::binary_iarchive ia(f);
     const auto m2 = NRG::load<double>(ia);
-    compare(m1, m2);
+    EXPECT_TRUE(m1.isApprox(m2));
     EXPECT_FALSE(f.bad());
   }
 }
@@ -483,7 +483,7 @@ TEST(numerics, save_c) {
     EXPECT_TRUE(f);
     boost::archive::binary_iarchive ia(f);
     const auto m2 = NRG::load<std::complex<double>>(ia);
-    compare(m1, m2);
+    EXPECT_TRUE(m1.isApprox(m2));
     EXPECT_FALSE(f.bad());
   }
 }
@@ -497,7 +497,7 @@ TEST(numerics, product) {
   auto ref = generate_matrix<double>(2,2);
   ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 2;
   product<double>(r, 1.0, a, b);
-  compare(r, ref);
+  EXPECT_TRUE(r.isApprox(ref));
 }
  
 TEST(numerics, transform) {
@@ -511,7 +511,7 @@ TEST(numerics, transform) {
   auto ref = generate_matrix<double>(2,2);
   ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 4;
   transform<double>(r, 1.0, a, b, c);
-  compare(r, ref);
+  EXPECT_TRUE(r.isApprox(ref));
 }
  
 TEST(numerics, rotate) {
@@ -523,7 +523,7 @@ TEST(numerics, rotate) {
   auto ref = generate_matrix<double>(2,2);
   ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 4;
   rotate<double>(r, 1.0, a, b);
-  compare(r, ref);
+  EXPECT_TRUE(r.isApprox(ref));
 }
 
 TEST(numerics, matrix_prod) {
@@ -534,7 +534,7 @@ TEST(numerics, matrix_prod) {
   auto ref = generate_matrix<double>(2,2);
   ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 2;
   const auto r = matrix_prod<double>(a, b);
-  compare(r, ref);
+  EXPECT_TRUE(r.isApprox(ref));
 }
 
 TEST(numerics, matrix_adj_prod) {
@@ -545,5 +545,5 @@ TEST(numerics, matrix_adj_prod) {
   auto ref = generate_matrix<double>(2,2);
   ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 2;
   const auto r = matrix_adj_prod<double>(a, b);
-  compare(r, ref);
+  EXPECT_TRUE(r.isApprox(ref));
 }
