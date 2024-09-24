@@ -9,7 +9,7 @@
 #include <type_traits> // is_same_v, is_floating_point_v
 
 #include <boost/serialization/vector.hpp> // for the plugin!
-#define EIGEN_DENSEBASE_PLUGIN "Eigen/src/plugins/Boost_serialization.h"
+#define EIGEN_DENSEBASE_PLUGIN "EigenBoostSerialization.h"
 #define EIGEN_USE_BLAS
 #include <Eigen/Dense>
 

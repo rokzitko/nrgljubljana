@@ -133,20 +133,6 @@ install(TARGETS mpi EXPORT nrgljubljana-targets)
 # ############
 # Dependencies
 
-# CPM for downloading dependencies
-include(CMake/CPM.cmake)
-
-# fmt
-set(FMT_INSTALL ON)
-CPMAddPackage(
-  NAME fmt
-  GIT_TAG 11.0.2
-  GITHUB_REPOSITORY fmtlib/fmt
-)
-
-# range-v3
-CPMAddPackage("gh:ericniebler/range-v3#0.12.0")
-
 # HDF5
 find_package(HDF5 REQUIRED COMPONENTS C HL)
 add_library(hdf5 INTERFACE)
@@ -186,13 +172,23 @@ install(TARGETS gsl EXPORT nrgljubljana-targets)
 find_package(GMP REQUIRED)
 install(TARGETS gmp EXPORT nrgljubljana-targets)
 
+# CPM for downloading dependencies
+include(CMake/CPM.cmake)
+
 # Google Test
-CPMAddPackage(
-  NAME googletest
-  GITHUB_REPOSITORY google/googletest
-  GIT_TAG v1.15.2
-  VERSION 1.15.2
-)
+CPMAddPackage("gh:google/googletest#v1.15.2")
+
+# Eigen, tries finding in system first
+CPMFindPackage("gl:libeigen/eigen#3.4.0")
+
+# High five library
+CPMAddPackage("gh:BlueBrain/HighFive#v2.10.0")
+
+# fmt
+CPMAddPackage("gh:fmtlib/fmt#11.0.2")
+
+# range-v3
+CPMAddPackage("gh:ericniebler/range-v3#0.12.0")
 
 # MPFR
 #find_package(MPFR REQUIRED)
