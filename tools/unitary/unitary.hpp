@@ -29,8 +29,6 @@ using namespace std::string_literals;
 
 namespace NRG::Unitary {
 
-using namespace boost::numeric;
-
 class Unitary {
  private:
    bool quiet            = false;
