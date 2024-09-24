@@ -85,7 +85,7 @@ TEST(numerics_Eigen, trace_exp_complex) {
   T expected = 0;
   for(size_t i = 0; i < N; i++)
     expected += exp(- 2.5 * v(i)) * m(i, i);
-  compare(expected, trace_exp(v, m , 2.5));
+  compare(expected, trace_exp(v, m, 2.5));
 }
 
 TEST(numerics_Eigen, submatrix1) {
@@ -100,7 +100,7 @@ TEST(numerics_Eigen, submatrix1) {
   dg(1,0) = 1;
   dg(1,1) = 11;
   const EigenMatrix<double> dg_result = submatrix(a, {0, 2}, {0, 2});
-  compare(dg, dg_result);
+  EXPECT_TRUE(dg.isApprox(dg_result));
 }
 
 TEST(numerics_Eigen, submatrix2) {
