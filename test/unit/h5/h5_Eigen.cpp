@@ -5,11 +5,12 @@
 
 #include <Eigen/Dense>
 
+#include <traits.hpp>
+using namespace NRG;
+
 #define H5_USE_EIGEN
 #include <highfive/H5File.hpp>
 #include <h5.hpp>
-
-#include "compare.hpp"
 
 TEST(h5dump, eigen_dump_matrix) { // NOLINT
   H5Easy::File file("eigen_matrix.h5", HighFive::File::Overwrite);
@@ -26,7 +27,7 @@ TEST(h5dump, eigen_dump_matrix) { // NOLINT
   NRG::h5_dump_matrix(file, "/path", w);
 
   auto r = H5Easy::load<EigenMatrix<double>>(file, "/path");
-  compare(w,r);
+  EXPECT_TRUE(w.isApprox(r));
 }
 
 TEST(h5dump, eigen_matrix_real_part_rect) { // NOLINT
