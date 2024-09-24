@@ -19,7 +19,7 @@
 #
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
@@ -179,11 +179,14 @@ include(CMake/CPM.cmake)
 CPMAddPackage("gh:google/googletest#v1.15.2")
 
 # Eigen, tries finding in system first
-CPMFindPackage(
-  NAME Eigen
-  GITLAB_REPOSITORY libeigen/eigen
-  GIT_TAG 3.4.0
-)
+block (SCOPE_FOR VARIABLES)
+  set(BUILD_TESTING OFF) # Disable tests for Eigen
+  CPMFindPackage(
+    NAME Eigen3
+    GITLAB_REPOSITORY libeigen/eigen
+    GIT_TAG 3.4.0
+  )
+endblock()
 
 # High five library
 CPMAddPackage("gh:BlueBrain/HighFive#v2.10.0")
