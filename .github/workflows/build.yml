@@ -98,7 +98,7 @@ jobs:
     - name: Install homebrew dependencies (clang)
       if: ${{ (matrix.os == 'macos-12') && contains(matrix.cxx, 'clang') }}
       run: |
-        brew install ccache llvm boost boost-mpi hdf5 open-mpi openblas gsl gmp
+        brew install ccache llvm gcc boost boost-mpi hdf5 open-mpi openblas gsl gmp
     
     - name: add clang cxxflags
       if: ${{ contains(matrix.cxx, 'clang') }}
