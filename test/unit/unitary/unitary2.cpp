@@ -52,7 +52,7 @@ class unitaryProdTest : public ::testing::Test {
         EigenMatrix<double> D = B*C;
         my_result = A*D;
         func_result = read_matrix("txt/temp_result_matrix.txt");
-        compare(my_result, func_result);
+        EXPECT_TRUE(my_result.isApprox(func_result));
     }
     EigenMatrix<double> A;
     EigenMatrix<double> B;
