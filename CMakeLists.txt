@@ -220,8 +220,7 @@ message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 message(STATUS "BLAS_LINKER_FLAGS=${BLAS_LINKER_FLAGS}")
 message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
 message(STATUS "LAPACK_LINKER_FLAGS=${LAPACK_LINKER_FLAGS}")
-target_compile_options(blas_lapack INTERFACE ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
-target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+target_link_libraries(blas_lapack INTERFACE LAPACK::LAPACK)
 install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
 
 # Check for availability of cblas interface
