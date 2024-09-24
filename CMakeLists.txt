@@ -179,17 +179,21 @@ include(CMake/CPM.cmake)
 CPMAddPackage("gh:google/googletest#v1.15.2")
 
 # Eigen, tries finding in system first
-block (SCOPE_FOR VARIABLES)
-  set(BUILD_TESTING OFF) # Disable tests for Eigen
-  CPMFindPackage(
-    NAME Eigen3
-    GITLAB_REPOSITORY libeigen/eigen
-    GIT_TAG 3.4.0
-  )
-endblock()
+CPMFindPackage(
+  NAME Eigen3
+  GITLAB_REPOSITORY libeigen/eigen
+  GIT_TAG 3.4.0
+  OPTIONS
+    "BUILD_TESTING OFF" # Disable tests for Eigen
+)
 
 # High five library
-CPMAddPackage("gh:BlueBrain/HighFive#v2.10.0")
+CPMAddPackage(
+  GITHUB_REPOSITORY BlueBrain/HighFive
+  GIT_TAG v2.10.0
+  OPTIONS
+    "HIGHFIVE_BUILD_DOCS OFF" # Disable HighFive documentation
+)
 
 # fmt
 CPMAddPackage("gh:fmtlib/fmt#11.0.2")
