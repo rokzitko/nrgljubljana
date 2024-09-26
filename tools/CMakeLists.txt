@@ -8,7 +8,7 @@ macro(add_tool exec_name)
   target_compile_features(${exec_name} PRIVATE cxx_std_20)
 
   # Configure compilation
-  target_compile_options(${exec_name} PRIVATE -fPIC ${NRG_CXX_OPT})
+  target_compile_options(${exec_name} PRIVATE ${NRG_CXX_OPT})
   target_include_directories(${exec_name} PRIVATE 
                      $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
@@ -18,9 +18,10 @@ macro(add_tool exec_name)
 # (not used)				NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
 				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
 			  )
+  set_target_properties(${exec_name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
   # Link dependencies
-  target_link_libraries(${exec_name} PRIVATE openmp boost blas_lapack gmp gsl dl hdf5
+  target_link_libraries(${exec_name} PRIVATE openmp boost blas_lapack gmp gsl dl HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
         $<$<BOOL:${ASAN}>:asan>
         $<$<BOOL:${UBSAN}>:ubsan>
   )

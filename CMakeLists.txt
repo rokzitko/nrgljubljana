@@ -19,7 +19,7 @@
 #
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
@@ -172,6 +172,35 @@ install(TARGETS gsl EXPORT nrgljubljana-targets)
 find_package(GMP REQUIRED)
 install(TARGETS gmp EXPORT nrgljubljana-targets)
 
+# CPM for downloading dependencies
+include(CMake/CPM.cmake)
+
+# Google Test
+CPMAddPackage("gh:google/googletest#v1.15.2")
+
+# Eigen, tries finding in system first
+CPMFindPackage(
+  NAME Eigen3
+  GITLAB_REPOSITORY libeigen/eigen
+  GIT_TAG 3.4.0
+  OPTIONS
+    "BUILD_TESTING OFF" # Disable tests for Eigen
+)
+
+# High five library
+CPMAddPackage(
+  GITHUB_REPOSITORY BlueBrain/HighFive
+  GIT_TAG v2.10.0
+  OPTIONS
+    "HIGHFIVE_BUILD_DOCS OFF" # Disable HighFive documentation
+)
+
+# fmt
+CPMAddPackage("gh:fmtlib/fmt#11.0.2")
+
+# range-v3
+CPMAddPackage("gh:ericniebler/range-v3#0.12.0")
+
 # MPFR
 #find_package(MPFR REQUIRED)
 #install(TARGETS mpfr EXPORT nrgljubljana-targets)
@@ -198,8 +227,7 @@ message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 message(STATUS "BLAS_LINKER_FLAGS=${BLAS_LINKER_FLAGS}")
 message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
 message(STATUS "LAPACK_LINKER_FLAGS=${LAPACK_LINKER_FLAGS}")
-target_compile_options(blas_lapack INTERFACE ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
-target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+target_link_libraries(blas_lapack INTERFACE LAPACK::LAPACK)
 install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
 
 # Check for availability of cblas interface

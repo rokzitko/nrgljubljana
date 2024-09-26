@@ -27,7 +27,6 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/complex.hpp>
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include "portabil.hpp"

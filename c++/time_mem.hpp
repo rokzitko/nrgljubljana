@@ -10,7 +10,6 @@
 #include "portabil.hpp"
 #include "basicio.hpp"
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 namespace NRG {

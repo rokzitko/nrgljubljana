@@ -10,7 +10,6 @@
 #include <optional>
 #include <stdexcept>
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include "params.hpp"

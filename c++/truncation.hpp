@@ -9,7 +9,6 @@
 #include "symmetry.hpp"
 #include "debug.hpp" // nrgdump
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 namespace NRG {

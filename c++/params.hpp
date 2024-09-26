@@ -13,7 +13,6 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include "misc.hpp" // contains, from_string, is_stdout_redirected, parsing code

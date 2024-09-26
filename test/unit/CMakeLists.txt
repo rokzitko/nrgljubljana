@@ -1,5 +1,3 @@
-add_subdirectory(gtest EXCLUDE_FROM_ALL)
-
 file(GLOB_RECURSE all_tests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
 configure_file(include/cmake_configure.hpp.in include/cmake_configure.hpp)

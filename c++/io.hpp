@@ -11,20 +11,17 @@
 #include "params.hpp"
 #include "numerics.hpp"// reim
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include <fmt/color.h>
 #include <fmt/ranges.h>
 
-namespace fmt {
-template <typename... Args>
-     auto color_print(bool enable_color, const text_style& ts, fmt::format_string<Args...> format_str, Args&&... args) {
-       return enable_color ? print(stdout, ts, format_str, std::forward<Args>(args)...)
-         : print(stdout, fmt::text_style{}, format_str, std::forward<Args>(args)...);
-    }
-} // namespace fmt
-
 namespace NRG {
+
+template <typename... Args>
+    auto color_print(bool enable_color, const fmt::text_style& ts, fmt::format_string<Args...> format_str, Args&&... args) {
+      return enable_color ? print(stdout, ts, format_str, std::forward<Args>(args)...)
+         : print(stdout, fmt::text_style{}, format_str, std::forward<Args>(args)...);
+}
 
 using namespace fmt::literals;
 

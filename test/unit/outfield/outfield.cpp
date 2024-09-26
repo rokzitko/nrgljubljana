@@ -4,7 +4,6 @@ using namespace std::string_literals;
 #include <fstream>
 #include <exception>
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 #include <outfield.hpp>

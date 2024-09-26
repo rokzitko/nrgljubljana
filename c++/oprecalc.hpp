@@ -12,7 +12,6 @@
 #include "algo.hpp"
 #include "stats.hpp"
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 namespace NRG {

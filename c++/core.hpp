@@ -36,7 +36,6 @@
 #include "h5.hpp"
 #include "io.hpp"
 
-#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include <fmt/color.h>
 
@@ -149,10 +148,10 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
       break;
     }
     catch (NotEnough &e) {
-      fmt::color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::yellow), "Insufficient number of states computed.\n");
+      fmt::print(fmt::emphasis::bold | fg(fmt::color::yellow), "Insufficient number of states computed.\n");
       if (!(step.nrg() && P.restart)) break;
       diagratio = std::min(diagratio * P.restartfactor, 1.0);
-      fmt::color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::yellow), "\nRestarting this iteration step. diagratio={}\n\n", diagratio);
+      fmt::print(fmt::emphasis::bold | fg(fmt::color::yellow), "\nRestarting this iteration step. diagratio={}\n\n", diagratio);
     }
   }
   return diag;
