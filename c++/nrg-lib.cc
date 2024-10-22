@@ -17,28 +17,34 @@ void print_about_message() {
   fmt::print("Compiled on {} at {}\n\n", __DATE__, __TIME__);
 }
 
-// Called from the NRG stand-alone executable
-void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, std::unique_ptr<Workdir> workdir) {
-//  MPI_diag mpi(mpienv, mpiw);
+template <scalar S>
+void run_nrg_master_impl(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, std::unique_ptr<Workdir> workdir) {
+  DiagMPI<S> eng(mpienv, mpiw);
   const bool embedded = false;
+  NRG_calculation<S> calc(std::move(workdir), embedded);
+}
+
+// Called from the NRG stand-alone executable (MPI version)
+void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, std::unique_ptr<Workdir> workdir) {
   if (complex_data())
-    NRG_calculation<std::complex<double>> calc(std::move(workdir), embedded);
+    run_nrg_master_impl<std::complex<double>>(mpienv, mpiw, std::move(workdir));
   else
-    NRG_calculation<double> calc(std::move(workdir), embedded);
-//  mpi.done();
+    run_nrg_master_impl<double>(mpienv, mpiw, std::move(workdir));
+}
+
+template <scalar S>
+void run_nrg_master_impl(const std::string &dir) {
+  auto workdir = set_workdir(dir);
+  const bool embedded = true;
+  NRG_calculation<S> calc(std::move(workdir), embedded);
 }
 
 // Called from a third-party application
 void run_nrg_master(const std::string &dir) {
-//  boost::mpi::environment mpienv;
-//  boost::mpi::communicator mpiw;
-//  MPI_diag mpi(mpienv, mpiw);
-  auto workdir = set_workdir(dir);
-  const bool embedded = true;
   if (complex_data())
-    NRG_calculation<std::complex<double>> calc(std::move(workdir), embedded);
+    run_nrg_master_impl<std::complex<double>>(dir);
   else
-    NRG_calculation<double> calc(std::move(workdir), embedded);
+    run_nrg_master_impl<double>(dir);
 }
 
 template<scalar S>
@@ -75,5 +81,5 @@ void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mp
   else
     run_nrg_slave_impl<double>(mpienv, mpiw);
 }
-    
+
 } // namespace
