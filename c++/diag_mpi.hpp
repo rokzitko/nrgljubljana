@@ -26,17 +26,27 @@
 
 namespace NRG {
 
-enum TAG : int { TAG_EXIT = 1, TAG_DIAG_DBL, TAG_DIAG_CMPL, TAG_SYNC, TAG_MATRIX, TAG_INVAR,
+enum TAG : int { TAG_EXIT = 1, TAG_DIAG, TAG_SYNC, TAG_MATRIX, TAG_INVAR,
                  TAG_MATRIX_SIZE, TAG_MATRIX_LINE, TAG_EIGEN_INT, TAG_EIGEN_VEC };
 
-class MPI_diag {
+inline void check_status(const boost::mpi::status &status) {
+  if (status.error()) {
+    std::cout << "MPI communication error " << status.error() << std::endl;
+    exit(1);
+  }
+}
+
+template <scalar S>
+class DiagMPI : public DiagEngine<S>{
  private:
    boost::mpi::environment &mpienv;
    boost::mpi::communicator &mpiw;
 
  public:
-   MPI_diag(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) : mpienv(mpienv), mpiw(mpiw) {}
-   auto myrank() { return mpiw.rank(); } // used in diag.h, time_mem.h
+   DiagMPI(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) : mpienv(mpienv), mpiw(mpiw) {}
+   ~DiagMPI() {
+     for (auto i = 1; i < mpiw.size(); i++) mpiw.send(i, TAG_EXIT, 0); // notify slaves we are done
+   }
    void send_params(const DiagParams &DP) {
      mpilog("Sending diag parameters " << DP.diag << " " << DP.diagratio);
      for (auto i = 1; i < mpiw.size(); i++) mpiw.send(i, TAG_SYNC, 0);
@@ -49,15 +59,8 @@ class MPI_diag {
      mpilog("Received diag parameters " << DP.diag << " " << DP.diagratio);
      return DP;
    }
-   void check_status(const boost::mpi::status &status) {
-     if (status.error()) {
-       std::cout << "MPI communication error. rank=" << mpiw.rank() << std::endl;
-       mpienv.abort(1);
-     }
-   }
    // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
-    template<scalar S>
-    void send_matrix(const int dest, const EigenMatrix<S> &m) {
+   void send_matrix(const int dest, const EigenMatrix<S> &m) {
       const auto size1 = NRG::size1(m);
       mpiw.send(dest, TAG_MATRIX_SIZE, size1);
       const auto size2 = NRG::size2(m);
@@ -67,7 +70,7 @@ class MPI_diag {
         mpiw.send(dest, TAG_MATRIX_LINE, m.row(i));
       }
    }
-   template<scalar S> auto receive_matrix(const int source) {
+   auto receive_matrix(const int source) {
       size_t size1;
       check_status(mpiw.recv(source, TAG_MATRIX_SIZE, size1));
       size_t size2;
@@ -82,42 +85,42 @@ class MPI_diag {
       }
       return m;
    }
-   template<scalar S> void send_raweigen(const int dest, const RawEigen<S> &eig) {
+   void send_raweigen(const int dest, const RawEigen<S> &eig) {
      mpilog("Sending eigen from " << mpiw.rank() << " to " << dest);
      mpiw.send(dest, TAG_EIGEN_VEC, eig.val);
-     send_matrix<S>(dest, eig.vec);
+     send_matrix(dest, eig.vec);
    }
-   template<scalar S> auto receive_raweigen(const int source) {
+   auto receive_raweigen(const int source) {
      mpilog("Receiving eigen from " << source << " on " << mpiw.rank());
      RawEigen<S> eig;
      check_status(mpiw.recv(source, TAG_EIGEN_VEC, eig.val));
-     eig.vec = receive_matrix<S>(source);
+     eig.vec = receive_matrix(source);
      return eig;
    } 
    // Read results from a slave process.
-   template<scalar S> std::pair<Invar, RawEigen<S>> read_from(const int source) {
+   std::pair<Invar, RawEigen<S>> read_from(const int source) {
      mpilog("Reading results from " << source);
-     const auto eig = receive_raweigen<S>(source);
+     const auto eig = receive_raweigen(source);
      Invar Irecv;
      check_status(mpiw.recv(source, TAG_INVAR, Irecv));
      mpilog("Received results for subspace " << Irecv << " [nr=" << eig.getnrcomputed() << ", dim=" << eig.getdim() << "]");
      return {Irecv, eig};
    }
+   auto myrank() { return mpiw.rank(); }
    // Handle a diagonalisation request
-   template<scalar S> void slave_diag(const int master, const DiagParams &DP) {
+   void slave_diag(const int master, const DiagParams &DP) {
      // 1. receive the matrix and the subspace identification
-     auto m = receive_matrix<S>(master);
+     auto m = receive_matrix(master);
      Invar I;
      check_status(mpiw.recv(master, TAG_INVAR, I));
      // 2. preform the diagonalisation
      const auto eig = diagonalise(m, DP, myrank());
      // 3. send back the results
-     send_raweigen<S>(master, eig);
+     send_raweigen(master, eig);
      mpiw.send(master, TAG_INVAR, I);
    }
-   template<scalar S>
-   DiagInfo<S> diagonalisations_MPI(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
-                                    const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
+   DiagInfo<S> diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
+                                const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
        DiagInfo<S> diagnew;
        send_params(DP);                                         // Synchronise parameters
        std::list<Invar> tasks_todo(tasks.begin(), tasks.end());
@@ -141,14 +144,14 @@ class MPI_diag {
            tasks_done.push_back(I);
            nodes_available.push_back(0);
          } else {
-           mpiw.send(i, std::is_same_v<S, double> ? TAG_DIAG_DBL : TAG_DIAG_CMPL, 0);
-           send_matrix<S>(i, h);
+           mpiw.send(i, TAG_DIAG, 0);
+           send_matrix(i, h);
            mpiw.send(i, TAG_INVAR, I);
          }
          // Check for terminated jobs
          while (auto status = mpiw.iprobe(boost::mpi::any_source, TAG_EIGEN_VEC)) {
            nrglog('M', "Receiveing results from " << status->source());
-           auto [Irecv, eig] = read_from<S>(status->source());
+           auto [Irecv, eig] = read_from(status->source());
            diagnew[Irecv] = Eigen<S>(std::move(eig), step);
            tasks_done.push_back(Irecv);
            // The node is now available for new tasks!
@@ -158,14 +161,11 @@ class MPI_diag {
        // Keep reading results sent from the slave processes until all tasks have been completed.
        while (tasks_done.size() != tasks.size()) {
          const auto status = mpiw.probe(boost::mpi::any_source, TAG_EIGEN_VEC);
-         auto [Irecv, eig]  = read_from<S>(status.source());
+         auto [Irecv, eig]  = read_from(status.source());
          diagnew[Irecv] = Eigen<S>(std::move(eig), step);
          tasks_done.push_back(Irecv);
        }
        return diagnew;
-     }
-   void done() {
-     for (auto i = 1; i < mpiw.size(); i++) mpiw.send(i, TAG_EXIT, 0); // notify slaves we are done
    }
 };
 

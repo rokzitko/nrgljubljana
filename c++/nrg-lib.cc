@@ -41,8 +41,9 @@ void run_nrg_master(const std::string &dir) {
     NRG_calculation<double> calc(std::move(workdir), embedded);
 }
 
-void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) {
-  MPI_diag mpi(mpienv, mpiw);
+template<scalar S>
+void run_nrg_slave_impl(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) {
+  DiagMPI<S> eng(mpienv, mpiw);
   constexpr auto master = 0;
   DiagParams DP;
   for (;;) {
@@ -50,16 +51,13 @@ void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mp
       int task = 0;
       const auto status = mpiw.recv(master, boost::mpi::any_tag, task);
       mpilog("Slave " << mpiw.rank() << " received message with tag " << status.tag());
-      mpi.check_status(status);
+      check_status(status);
       switch (status.tag()) {
       case TAG_SYNC:
-        DP = mpi.receive_params();
+        DP = eng.receive_params();
         break;
-      case TAG_DIAG_DBL:
-        mpi.slave_diag<double>(master, DP);
-        break;
-      case TAG_DIAG_CMPL:
-        mpi.slave_diag<std::complex<double>>(master, DP);
+      case TAG_DIAG:
+        eng.slave_diag(master, DP);
         break;
       case TAG_EXIT:
         return; // exit from run_slave()
@@ -71,4 +69,11 @@ void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mp
   }
 }
 
+void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) {
+  if (complex_data())
+    run_nrg_slave_impl<std::complex<double>>(mpienv, mpiw);
+  else
+    run_nrg_slave_impl<double>(mpienv, mpiw);
+}
+    
 } // namespace
