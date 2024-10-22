@@ -90,6 +90,7 @@ target_compile_options(project_warnings
     -Wno-sign-compare
     -Wno-unused-parameter # USEFUL, occasionally...
     -Wno-unused-function   # issue in matrix tool
+    -Wno-deprecated-declarations  # HighFive using boost/ublas
     $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
     $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
