@@ -21,7 +21,7 @@ template <scalar S>
 void run_nrg_master_impl(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, std::unique_ptr<Workdir> workdir) {
   DiagMPI<S> eng(mpienv, mpiw);
   const bool embedded = false;
-  NRG_calculation<S> calc(std::move(workdir), embedded);
+  NRG_calculation<S> calc(std::move(workdir), &eng, embedded);
 }
 
 // Called from the NRG stand-alone executable (MPI version)
@@ -35,8 +35,9 @@ void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &m
 template <scalar S>
 void run_nrg_master_impl(const std::string &dir) {
   auto workdir = set_workdir(dir);
+  DiagOpenMP<S> eng;
   const bool embedded = true;
-  NRG_calculation<S> calc(std::move(workdir), embedded);
+  NRG_calculation<S> calc(std::move(workdir), &eng, embedded);
 }
 
 // Called from a third-party application
