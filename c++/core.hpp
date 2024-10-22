@@ -92,18 +92,9 @@ auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Co
   return h;
 }
 
-template <scalar S>
-class DiagEngine {
- public:
-   DiagInfo<S> diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
-     const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
-     return diagonalisations_OpenMP(step, opch, coef, diagprev, output, tasks, DP, Sym, P);
-   };
-};
-
 template<scalar S>
 auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, DiagEngine<S> &eng, MemTime &mt, const Params &P) {
+             const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   double diagratio = P.diagratio; // non-const
@@ -113,7 +104,7 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
       if (step.nrg()) {
         if (!(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value())) {
           const auto section_timing = mt.time_it("diag");
-          diag = eng.diagonalisations(step, operators.opch, coef, diagprev, output, tasklist.get(), DiagParams(P, diagratio), Sym, P); // compute in first run
+          diag = eng->diagonalisations(step, operators.opch, coef, diagprev, output, tasklist.get(), DiagParams(P, diagratio), Sym, P); // compute in first run
         } else {
           diag = DiagInfo<S>(step.ndx(), P, false); // or read from disk
         }
@@ -235,7 +226,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
 // Perform one iteration step
 template<scalar S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> &eng, MemTime &mt, const Params &P) {
+             Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   TaskList tasklist{substruct};
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5struct)
@@ -286,7 +277,7 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
 
 template<scalar S>
 auto nrg_loop(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
-              Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> &eng, MemTime &mt, const Params &P) {
+              Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, operators, coef, stats, diag, output, store, store_all, oprecalc, Sym, eng, mt, P);

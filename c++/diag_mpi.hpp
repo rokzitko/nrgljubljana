@@ -22,6 +22,7 @@
 #include "diag.hpp"
 #include "misc.hpp"
 #include "core.hpp"
+#include "diagengine.hpp"
 
 namespace NRG {
 
