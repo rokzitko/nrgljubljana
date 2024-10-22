@@ -19,26 +19,26 @@ void print_about_message() {
 
 // Called from the NRG stand-alone executable
 void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, std::unique_ptr<Workdir> workdir) {
-  MPI_diag mpi(mpienv, mpiw);
+//  MPI_diag mpi(mpienv, mpiw);
   const bool embedded = false;
   if (complex_data())
-    NRG_calculation<std::complex<double>> calc(mpi, std::move(workdir), embedded);
+    NRG_calculation<std::complex<double>> calc(std::move(workdir), embedded);
   else
-    NRG_calculation<double> calc(mpi, std::move(workdir), embedded);
-  mpi.done();
+    NRG_calculation<double> calc(std::move(workdir), embedded);
+//  mpi.done();
 }
 
 // Called from a third-party application
 void run_nrg_master(const std::string &dir) {
-  boost::mpi::environment mpienv;
-  boost::mpi::communicator mpiw;
-  MPI_diag mpi(mpienv, mpiw);
+//  boost::mpi::environment mpienv;
+//  boost::mpi::communicator mpiw;
+//  MPI_diag mpi(mpienv, mpiw);
   auto workdir = set_workdir(dir);
   const bool embedded = true;
   if (complex_data())
-    NRG_calculation<std::complex<double>> calc(mpi, std::move(workdir), embedded);
+    NRG_calculation<std::complex<double>> calc(std::move(workdir), embedded);
   else
-    NRG_calculation<double> calc(mpi, std::move(workdir), embedded);
+    NRG_calculation<double> calc(std::move(workdir), embedded);
 }
 
 void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) {

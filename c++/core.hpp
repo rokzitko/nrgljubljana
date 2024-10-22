@@ -32,7 +32,8 @@
 #include "oprecalc.hpp"
 #include "measurements.hpp"
 #include "truncation.hpp"
-#include "mpi_diag.hpp"
+#include "diag_mpi.hpp"
+#include "diag_openmp.hpp"
 #include "h5.hpp"
 #include "io.hpp"
 
@@ -91,41 +92,18 @@ auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Co
   return h;
 }
 
-template<scalar S>
-auto diagonalisations_OpenMP(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
-                             const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
-  DiagInfo<S> diagnew;
-  const auto nr = tasks.size();
-  size_t itask = 0;
-  // cppcheck-suppress unreadVariable symbolName=nth
-  const int nth = P.diagth; // NOLINT
-#pragma omp parallel for schedule(dynamic) num_threads(nth)
-  for (itask = 0; itask < nr; itask++) {
-    const Invar I  = tasks[itask];
-    auto h = hamiltonian(step, I, opch, coef, diagprev, output, Sym, P); // non-const, consumed by diagonalise()
-    const int thid = omp_get_thread_num();
-#pragma omp critical
-    { nrglog('(', "Diagonalizing " << I << " dim=" << dim(h) << " (task " << itask + 1 << "/" << nr << ", thread " << thid << ")"); }
-    auto e = diagonalise(h, DP, -1); // -1 = not using MPI
-#pragma omp critical
-    { diagnew[I] = Eigen(std::move(e), step); }
-  }
-  return diagnew;
-}
-
-// Build matrix H(ri;r'i') in each subspace and diagonalize it
-template<scalar S>
-auto diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev,
-                      const Output<S> &output, const std::vector<Invar> &tasks, const double diagratio,
-                      const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
-  const auto section_timing = mt.time_it("diag");
-  return P.diag_mode == "MPI" ? mpi.diagonalisations_MPI<S>(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P)
-                              : diagonalisations_OpenMP(step, opch, coef, diagprev, output, tasks, DiagParams(P, diagratio), Sym, P);
-}
+template <scalar S>
+class DiagEngine {
+ public:
+   DiagInfo<S> diagonalisations(const Step &step, const Opch<S> &opch, const Coef<S> &coef, const DiagInfo<S> &diagprev, const Output<S> &output,
+     const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
+     return diagonalisations_OpenMP(step, opch, coef, diagprev, output, tasks, DP, Sym, P);
+   };
+};
 
 template<scalar S>
 auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+             const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, DiagEngine<S> &eng, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   double diagratio = P.diagratio; // non-const
@@ -133,10 +111,12 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
   while (true) {
     try {
       if (step.nrg()) {
-        if (!(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
-          diag = diagonalisations(step, operators.opch, coef, diagprev, output, tasklist.get(), diagratio, Sym, mpi, mt, P); // compute in first run
-        else
+        if (!(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value())) {
+          const auto section_timing = mt.time_it("diag");
+          diag = eng.diagonalisations(step, operators.opch, coef, diagprev, output, tasklist.get(), DiagParams(P, diagratio), Sym, P); // compute in first run
+        } else {
           diag = DiagInfo<S>(step.ndx(), P, false); // or read from disk
+        }
       }
       if (step.dmnrg()) {
         diag = DiagInfo<S>(step.ndx(), P, P.removefiles); // read from disk in second run
@@ -255,12 +235,12 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
 // Perform one iteration step
 template<scalar S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+             Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> &eng, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   TaskList tasklist{substruct};
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5struct)
     substruct.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/structure");
-  auto diag = do_diag(step, operators, coef, stats, diagprev, output, tasklist, Sym, mpi, mt, P);
+  auto diag = do_diag(step, operators, coef, stats, diagprev, output, tasklist, Sym, eng, mt, P);
   after_diag(step, operators, stats, diag, output, substruct, store, store_all, oprecalc, Sym, mt, P);
   operators.trim_matrices(diag);
   diag.clear_eigenvectors();
@@ -306,10 +286,10 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
 
 template<scalar S>
 auto nrg_loop(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
-              Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MPI_diag &mpi, MemTime &mt, const Params &P) {
+              Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> &eng, MemTime &mt, const Params &P) {
   auto diag = diag0;
   for (step.init(); !step.end(); step.next())
-    diag = iterate(step, operators, coef, stats, diag, output, store, store_all, oprecalc, Sym, mpi, mt, P);
+    diag = iterate(step, operators, coef, stats, diag, output, store, store_all, oprecalc, Sym, eng, mt, P);
   step.set(step.lastndx());
   return diag;
 }

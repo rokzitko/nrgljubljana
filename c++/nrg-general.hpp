@@ -2,7 +2,7 @@
  "NRG Ljubljana" - Numerical renormalization group for multiple
  impurities and an arbitrary number of channels
 
- Copyright (C) 2005-2020 Rok Zitko
+ Copyright (C) 2005-2024 Rok Zitko
 
    This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
    License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any
@@ -98,7 +98,7 @@ using namespace fmt::literals;
 
 template <scalar S> class NRG_calculation {
 private:
-  MPI_diag mpi;
+  DiagEngine<S> eng;
   Params P;
   InputData<S> input;
   std::shared_ptr<Symmetry<S>> Sym;
@@ -118,7 +118,7 @@ public:
     if (step.nrg() && P.calc0 && !P.ZBW())
       docalc0(step, operators, diag0, stats, output, oprecalc, Sym.get(), mt, P);
     auto diag = P.ZBW() ? nrg_ZBW(step, operators, stats, diag0, output, store, store_all, oprecalc, Sym.get(), mt, P)
-                        : nrg_loop(step, operators, coef, stats, diag0, output, store, store_all, oprecalc, Sym.get(), mpi, mt, P);
+                        : nrg_loop(step, operators, coef, stats, diag0, output, store, store_all, oprecalc, Sym.get(), eng, mt, P);
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
     if (step.nrg()) {
@@ -153,8 +153,8 @@ public:
     rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
     if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
   }
-  NRG_calculation(MPI_diag &mpi, std::unique_ptr<Workdir> workdir, const bool embedded) :
-    mpi(mpi), P("param", "param", std::move(workdir), embedded), input(P, "data"), Sym(input.Sym),
+  NRG_calculation(std::unique_ptr<Workdir> workdir, const bool embedded) :
+    P("param", "param", std::move(workdir), embedded), input(P, "data"), Sym(input.Sym),
     stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen), store_all(P.Ninit, P.Nlen)
   {
     auto diag = run_nrg(RUNTYPE::NRG, input.operators, input.coef, input.diag);

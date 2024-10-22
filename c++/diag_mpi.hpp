@@ -1,5 +1,5 @@
-#ifndef _mpi_diag_hpp_
-#define _mpi_diag_hpp_
+#ifndef _diag_mpi_hpp_
+#define _diag_mpi_hpp_
 
 #include <iostream>
 #include <list>
