@@ -26,7 +26,7 @@
 
 namespace NRG {
 
-enum TAG : int { TAG_EXIT = 1, TAG_DIAG, TAG_SYNC, TAG_INVAR, TAG_MATRIX, TAG_MATRIX_SIZE, TAG_VEC };
+enum TAG : int { TAG_EXIT = 1, TAG_DIAG, TAG_SYNC, TAG_INVAR, TAG_MATRIX, TAG_MATRIX_PART, TAG_MATRIX_SIZE, TAG_VEC };
 
 template <scalar S>
 class DiagMPI : public DiagEngine<S>{
@@ -51,7 +51,6 @@ class DiagMPI : public DiagEngine<S>{
      mpilog("Received diag parameters: diag=" << DP.diag << " diagratio=" << DP.diagratio);
      return DP;
    }
-   // NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
    void send_matrix(const int dest, const EigenMatrix<S> &m) {
      mpilog("send_matrix() caled, dest=" << dest);
      const size_t size1 = NRG::size1(m);
@@ -59,11 +58,10 @@ class DiagMPI : public DiagEngine<S>{
      const size_t size2 = NRG::size2(m);
      mpiw.send(dest, TAG_MATRIX_SIZE, size2);
      mpilog("Sending matrix of size " << size1 << " x " << size2 << " to " << dest);
-//      for (const auto i: range0(size1)) {
-//        mpiw.send(dest, TAG_MATRIX, m.row(i));
-//      }
-     mpiw.send(dest, TAG_MATRIX, (S*)m.data(), size1*size2);
-//     mpiw.send(dest, TAG_MATRIX, m);
+//   NOTE: MPI is limited to message size of 2GB (or 4GB). For big problems we thus need to send objects line by line.
+//   mpiw.send(dest, TAG_MATRIX, (S*)m.data(), size1*size2);
+     for (size_t i = 0; i < size1; i++)
+       mpiw.send(dest, TAG_MATRIX_PART, (S*)m.data() + i*size2, size2);
    }
    auto receive_matrix(const int source) {
      mpilog("receive_matrix() called, source=" << source);
@@ -73,14 +71,9 @@ class DiagMPI : public DiagEngine<S>{
      mpiw.recv(source, TAG_MATRIX_SIZE, size2);
      mpilog("Receiving matrix of size " << size1 << " x " << size2 << " from " << source);
      EigenMatrix<S> m(size1, size2);
-//      for (const auto i: range0(size1)) {
-//        EigenVector<S> vec;
-//        mpiw.recv(source, TAG_MATRIX, vec);
-//        my_assert(vec.size() == size2);
-//        m.row(i) = vec;
-//      }
-     mpiw.recv(source, TAG_MATRIX, (S*)m.data(), size1*size2);
-//     mpiw.recv(source, TAG_MATRIX, m);
+//     mpiw.recv(source, TAG_MATRIX, (S*)m.data(), size1*size2);
+     for (size_t i = 0; i < size1; i++)
+       mpiw.recv(source, TAG_MATRIX_PART, (S*)m.data() + i*size2, size2);
      return m;
    }
    void send_raweigen(const int dest, const RawEigen<S> &eig) {
