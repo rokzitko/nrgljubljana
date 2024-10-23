@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
     auto workdir = set_workdir(argc, argv);
     run_nrg_master(mpienv, mpiw, std::move(workdir));
   } else {
-    run_nrg_slave(mpienv, mpiw); // slaves do no disk I/O
+    run_nrg_slave(mpienv, mpiw); // slaves do no disk I/O to workdir
   }
   return 0;
 }
