@@ -158,9 +158,9 @@ public:
     stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen), store_all(P.Ninit, P.Nlen)
   {
     if (P.diag_mode == "OpenMP") // override
-//      eng = std::make_shared<DiagOpenMP<S>()>;
+      eng = std::make_shared<DiagOpenMP<S>>();
     if (P.diag_mode == "serial") {
-      // eng = std::make_shared<DiagSerial<S>()>;
+      eng = std::make_shared<DiagSerial<S>>();
     }
     auto diag = run_nrg(RUNTYPE::NRG, input.operators, input.coef, input.diag);
     if (P.dm) {

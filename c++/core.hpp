@@ -34,6 +34,7 @@
 #include "truncation.hpp"
 #include "diag_mpi.hpp"
 #include "diag_openmp.hpp"
+#include "diag_serial.hpp"
 #include "h5.hpp"
 #include "io.hpp"
 
