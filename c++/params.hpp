@@ -478,7 +478,7 @@ class Params {
 
   param<bool> absolute{"absolute", "Do NRG without any rescaling", "false", all};
 
-  // Parallelization strategy: MPI or OpenMP
+  // Parallelization strategy: MPI, OpenMP or serial
   param<std::string> diag_mode{"diag_mode", "Parallelization strategy", "MPI", all};
 
   param<bool> h5raw{"h5raw", "Store raw data in an HDF5 file", "false", all};
