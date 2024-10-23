@@ -58,7 +58,6 @@ void run_nrg_slave_impl(boost::mpi::environment &mpienv, boost::mpi::communicato
       int task = 0;
       const auto status = mpiw.recv(master, boost::mpi::any_tag, task);
       mpilog("Slave " << mpiw.rank() << " received message with tag " << status.tag());
-      check_status(status);
       switch (status.tag()) {
       case TAG_SYNC:
         DP = eng.receive_params();

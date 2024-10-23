@@ -13,10 +13,10 @@ namespace NRG {
 #define nrglog(c, ...)   if (P.logletter(c)) { std::cout << __VA_ARGS__ << std::endl; }
 #define nrglogdp(c, ...) if (DP.logletter(c)) { std::cout << __VA_ARGS__ << std::endl; }
 
-//#define MPI_DEBUG
+#define MPI_DEBUG
 
 #ifdef MPI_DEBUG
- #define mpilog(...) { std::cout << __VA_ARGS__ << " [rank " << myrank() << "]" << std::endl; }
+ #define mpilog(...) { std::cout << __VA_ARGS__ << std::endl; }
 #else
  #define mpilog(...) {}
 #endif
