@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/rokzitko/nrgljubljana.svg?branch=master)](https://travis-ci.org/rokzitko/nrgljubljana)
+[![build](https://github.com/rokzitko/nrgljubljana/actions/workflows/build.yml/badge.svg)](https://github.com/rokzitko/nrgljubljana/actions/workflows/build.yml)
 
 "NRG Ljubljana" is a flexible framework for performing large-scale
 numerical renormalization group (NRG) calculations for quantum
