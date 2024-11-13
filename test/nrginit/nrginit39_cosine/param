@@ -1,8 +1,0 @@
-[param]
-symtype=QS
-model=SIAM
-
-Nmax=2
-keep=20
-
-band=cosine

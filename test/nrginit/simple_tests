@@ -35,7 +35,6 @@ nrginit7_SPSU2_ops
 nrginit8_SPU1_ops
 nrginit9_calcopq_d1
 nrginit38_data_has
-nrginit39_cosine
 nrginit40_polarized
 nrginit42_discY
 nrginit43_discC
