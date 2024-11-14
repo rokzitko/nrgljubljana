@@ -19,8 +19,8 @@ namespace NRG {
 
 template <typename... Args>
     auto color_print(bool enable_color, const fmt::text_style& ts, fmt::format_string<Args...> format_str, Args&&... args) {
-      return enable_color ? print(stdout, ts, format_str, std::forward<Args>(args)...)
-         : print(stdout, fmt::text_style{}, format_str, std::forward<Args>(args)...);
+      return enable_color ? fmt::print(stdout, ts, format_str, std::forward<Args>(args)...)
+         : fmt::print(stdout, fmt::text_style{}, format_str, std::forward<Args>(args)...);
 }
 
 using namespace fmt::literals;
