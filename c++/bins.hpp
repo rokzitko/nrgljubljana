@@ -135,12 +135,17 @@ inline void Bins<S>::add_acc(const double energy, const t_weight weight) {
   for (const auto i: range0(bins.size()-1)) {
     auto &[e1, w1] = bins[i]; // non-const
     auto &[e2, w2] = bins[i+1]; // non-const
-    my_assert(e1 < e2);
-    if (e1 < energy && energy < e2) {
-      const auto dx      = e2 - e1;
-      const auto reldist = (energy - e1) / dx;
-      w1 += (1.0 - reldist) * weight;
-      w2 += reldist * weight;
+    my_assert(e1 <= e2);
+    if (e1 <= energy && energy <= e2) {
+      const auto dx = e2 - e1;
+      if (dx != 0.0) {
+        const auto reldist = (energy - e1) / dx;
+        w1 += (1.0 - reldist) * weight;
+        w2 += reldist * weight;
+      } else { // handle this possible corner case...
+        w1 += 0.5 * weight;
+        w2 += 0.5 * weight;
+      }
       return;
     }
   }
@@ -170,7 +175,7 @@ void Bins<S>::trim() {
   for (const auto i: range0(orig.size()-1)) {
     const auto [e, w] = orig[i];
     const auto e_next = orig[i+1].first;
-    my_assert(e_next > e);  // increasing!
+    my_assert(e_next >= e);  // increasing!
     const auto e_width = e_next - e;
     if (abs(w) >= P.discard_trim * e_width)
       bins.push_back(orig[i]);
