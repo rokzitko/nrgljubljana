@@ -295,16 +295,17 @@ class Hilb {
   bool G           = false; // G(z). Reports real and imaginary part.
   std::vector<double> Xpts, Ypts, Ipts;
   bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
+  double shiftx = 0.0;
+  double shifty = 0.0;
 
   auto hilbert(const double x, const double y) {
     auto Bethe_fnc = [this](const auto w) { return abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(w * scale)) : 0.0; };
     auto zero_fnc = []([[maybe_unused]] const auto w) { return 0.0; };
-    const auto z = std::complex(x,y);
+    const auto z = std::complex(x + shiftx, y + shifty); // shift here!
     return tabulated ? hilbert_transform(Xpts, Ypts, Ipts, z) : hilbert_transform(Bethe_fnc, zero_fnc, B, z);
   }
 
   void do_one(const double x, const double y, std::ostream &OUT) {
-    if (verbose)std::cout << "z=" << std::complex(x, y) << std::endl;
     const auto res = hilbert(x, y);
     if (!G)
       OUT << res.imag() << std::endl;
@@ -399,6 +400,10 @@ class Hilb {
     else
       std::cout << "Semicircular DOS. scale=" << scale << std::endl;
     std::cout << "B=" << B << std::endl;
+    if (shiftx != 0.0)
+      std::cout << "shiftx=" << shiftx << std::endl;
+    if (shifty != 0.0)
+      std::cout << "shifty=" << shifty << std::endl;
   }
 
   void about() {
@@ -420,12 +425,14 @@ class Hilb {
     std::cout << "-B        Half-bandwidth 'B' of the Bethe lattice DOS." << std::endl;
     std::cout << "          Use either -s or -B. Default is scale=B=1." << std::endl;
     std::cout << "-G        Compute the Green's function. hilb then returns Re[G(z)] Im[G(z)]" << std::endl;
+    std::cout << "-x        Shift real part of the argument" << std::endl;
+    std::cout << "-y        Shift imag part of the argument" << std::endl;
   }
 
   void parse_param_run(int argc, char *argv[]) {
     std::optional<std::ofstream> OUTFILE;
     char c;
-    while (c = getopt(argc, argv, "hGd:vVs:B:o:"), c != -1) {
+    while (c = getopt(argc, argv, "hGd:vVs:B:o:x:y:"), c != -1) {
       switch (c) {
         case 'h': usage(); exit(EXIT_SUCCESS);
         case 'G': G = true; break;
@@ -453,6 +460,12 @@ class Hilb {
           OUTFILE = safe_open_wr(optarg);
           if (verbose) { std::cout << "Output file: " << optarg << std::endl; }
           break;
+        case 'x':
+          shiftx = atof(optarg);
+          break;
+        case 'y':
+          shifty = atof(optarg);
+          break;
         default: abort();
       }
     }
@@ -477,10 +490,10 @@ class Hilb {
     if (remaining == 4) {
       about();
       if (verbose) info();
-      auto Frs = safe_open_rd(args[0]); // Re[Sigma]
-      auto Fis = safe_open_rd(args[1]); // Im[Sigma]
-      auto Fra = safe_open_wr(args[2]); // Re[G] or Re[Aw] = -1/pi Re[G]
-      auto Fia = safe_open_wr(args[3]); // Im[G] or Im[Aw] = -1/pi Im[G]
+      auto Frs = safe_open_rd(args[0]); // Re[Sigma] (input)
+      auto Fis = safe_open_rd(args[1]); // Im[Sigma] (input)
+      auto Fra = safe_open_wr(args[2]); // Re[G] or Re[Aw] = -1/pi Re[G] (output) (factor -1/pi controlled by the -G switch)
+      auto Fia = safe_open_wr(args[3]); // Im[G] or Im[Aw] = -1/pi Im[G] (output) (factor -1/pi controlled by the -G switch)
       do_hilb(Frs, Fis, Fra, Fia);
       return;
     }
