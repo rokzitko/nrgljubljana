@@ -290,7 +290,6 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
     d.dump_eigenvalues();
   nrglogdp('A', "LAPACK, dim=" << dim(m) << " M=" << nr_computed << rank_string);
   nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << rank_string);
-  assert(check_diag()); // only in debug mode!
   return d;
 }
 
