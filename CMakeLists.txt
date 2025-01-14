@@ -29,7 +29,7 @@ endif()
 
 # ############
 # Define Project
-project(NRGLJUBLJANA VERSION 2024.09 LANGUAGES C CXX)
+project(NRGLJUBLJANA VERSION 2025.01 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # Get the git hash & print status

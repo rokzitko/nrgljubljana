@@ -13,7 +13,7 @@ if(SYM_ALL)
   sym-U1.cc sym-SPSU2C3.cc sym-QSC3.cc)
 endif()
 
-add_library(nrgljubljana_c ${sources})
+add_library(nrgljubljana_c SHARED ${sources})
 
 # C++ Standard
 target_compile_features(nrgljubljana_c PUBLIC cxx_std_20)
@@ -38,7 +38,6 @@ target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include/range-v3>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tools>)
 target_compile_definitions(nrgljubljana_c PUBLIC
-  $<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
   NRG_SYM_BASIC
   $<$<BOOL:${SYM_MORE}>:NRG_SYM_MORE>
   $<$<BOOL:${SYM_ALL}>:NRG_SYM_ALL>

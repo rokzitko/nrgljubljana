@@ -14,10 +14,7 @@ macro(add_tool exec_name)
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include/range-v3>)
-  target_compile_definitions(${exec_name} PRIVATE
-# (not used)				NRGLJUBLJANA_GIT_HASH=${PROJECT_GIT_HASH}
-				$<$<CONFIG:Debug>:NRGLJUBLJANA_DEBUG>
-			  )
+  target_compile_definitions(${exec_name} PRIVATE)
   set_target_properties(${exec_name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
   # Link dependencies
