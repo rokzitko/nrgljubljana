@@ -407,34 +407,37 @@ class Params {
   std::optional<size_t> laststored;                             // has value if stored data is found
 
   /* Fine-grained control over data logging with the following tokens:
-   i - iteration (subspaces list)
-   s - dump ancestor subspaces during Hamiltonian matrix building
    m - dump Hamiltonian matrix of each subspace [very verbose!]
-   H - details about storing unitary matrices to files
+   0 - functions calls in recalculations, etc. [high-level]
    f - follow recalc_f() [low-level]
    F - matrix elements in recalc_f() [very verbose!]
-   0 - functions calls in recalculations, etc. [high-level]
    r - follow recalc_general() [low-level]
    R - matrix elements in recalc_general() [very verbose!]
    g - follow calc_generic() [low-level]
-   c - details about spectral function calculation [high-level]
    A - eigensolver diagnostics (routine used, matrix size)
    t - timing for eigensolver routines
-   e - dump eigenvalues in function diagonalize_h()
-   d - eigenvalue computation [low-level]
-   T - spectral peak trimming statistics
-   * - merging details
    w - calculation of weights w_n
-   X - show energy clusters in find_clusters()
-   $ - Hamiltonian matrix sorting diagnostics
    M - MPI parallelization details
    ! - debug internal variables
    D - DMNRG calculation details
    @ - follow the program flow
    Z - report the values of different partition functions
    Useful combinations:
+    @0 - high-level calculation flow
     fr - debug recalculation of irreducible matrix elements <||f||>
     ies - debug matrix construction and diagonalization
+   OBSOLETE:
+   i - iteration (subspaces list)
+   e - dump eigenvalues in function diagonalize_h()
+   s - dump ancestor subspaces during Hamiltonian matrix building
+   H - details about storing unitary matrices to files
+   c - details about spectral function calculation [high-level]
+   d - eigenvalue computation [low-level]
+   T - spectral peak trimming statistics
+   * - merging details
+   X - show energy clusters in find_clusters()
+   $ - Hamiltonian matrix sorting diagnostics
+
   */
   param<std::string> logstr{"log", "list of tokens to define what to log", "", all}; // N
   param<bool> logall{"logall", "Log everything", "false", all};              // N
