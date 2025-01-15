@@ -1,5 +1,5 @@
 // broaden - Finite-temperature raw spectral data broadening tool
-// Ljubljana code Rok Zitko, rok.zitko@ijs.si, 2012-2020
+// Ljubljana code Rok Zitko, rok.zitko@ijs.si, 2012-2025
 
 #ifndef _broaden_broaden_hpp_
 #define _broaden_broaden_hpp_
@@ -22,6 +22,11 @@
 
 #include <unistd.h>
 #include <getopt.h>
+
+#include <range/v3/all.hpp>
+
+#include "misc.hpp"
+#include "basicio.hpp"
 
 namespace NRG::Broaden {
 
@@ -117,6 +122,14 @@ auto make_mesh(const double min, const double max, const double ratio,
   return mesh;
 }
 
+auto load_mesh(const std::string &filename, bool verbose = false) {
+  auto l = readtable<double,double>(filename, verbose);
+  std::vector<double> mesh;
+  for (const auto &first : l | ranges::views::transform([](const auto& pair) { return pair.first; }))
+    mesh.push_back(first);
+  return mesh;
+}
+
 auto file_size(std::ifstream &f) {
   f.seekg(0, std::ios::beg);
   const auto begin_pos = f.tellg();
@@ -195,6 +208,7 @@ class Broaden {
    vec mesh; // Frequency mesh
    vec a;    // Spectral function
    vec c;    // Cumulative spectrum = int_{-inf}^omega a(x)dx.
+   std::string mesh_filename = "";
    
    void usage(std::ostream &F = std::cout) {
      F << "Usage: broaden <name> <Nz> <alpha> <T> [omega0_ratio]" << std::endl;
@@ -221,6 +235,7 @@ class Broaden {
      F << " -N -- keep only negative input frequencies" << std::endl;
      F << " -A -- output only positive frequencies" << std::endl;
      F << " -B -- output only negative frequencies" << std::endl;
+     F << " -L <filename> -- load the frequency mesh from a file" << std::endl;
    }
    
    void cmd_line(int argc, char *argv[]) {
@@ -229,7 +244,7 @@ class Broaden {
        exit(EXIT_SUCCESS);
      }
      char c;
-     while (c = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNAB"), c != -1) {
+     while (c = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNABL:"), c != -1) {
        switch (c) {
        case 'c': cumulative = true; break;
        case 's': sumrules = true; break;
@@ -283,6 +298,9 @@ class Broaden {
        case 'N': keeppositive = false; break;
        case 'A': meshnegative = false; break;
        case 'B': meshpositive = false; break;
+       case 'L':
+         mesh_filename = std::string(optarg);
+         break;
        default: abort();
        }
      }
@@ -509,7 +527,10 @@ class Broaden {
      merge();
      filter();
      if (sumrules) integrals_for_sumrules();
-     mesh = make_mesh(broaden_min, broaden_max, broaden_ratio, accumulation, meshpositive, meshnegative);
+     if (mesh_filename != "")
+       mesh = load_mesh(mesh_filename, verbose);
+     else
+       mesh = make_mesh(broaden_min, broaden_max, broaden_ratio, accumulation, meshpositive, meshnegative);
      if (verbose) check_normalizations(mesh);
      a = broaden(mesh);
      if (finalgaussian) convolve(mesh, a, ggamma * T, gaussian_kernel);
