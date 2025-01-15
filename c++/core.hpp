@@ -80,7 +80,13 @@ auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Co
                  const DiagInfo<S> &diagprev, const Output<S> &output, const Symmetry<S> *Sym, const Params &P) {
   const auto anc = Sym->ancestors(I);
   const SubspaceDimensions rm{I, anc, diagprev, Sym};
-  auto h = zero_matrix<S>(rm.total());
+  const auto dim = rm.total();
+  nrglog('i', std::endl << "Subspace (" << I << ") dim=" << dim); // skip a line
+  if (P.logletter('s')) {
+    std::cout << "Ancestors of (" << I << "): ";
+    rm.info();
+  }
+  auto h = zero_matrix<S>(dim);
   for (const auto i : Sym->combs()) {
     const auto range = rm.view(i);
     for (const auto & [n, r] : range | ranges::views::enumerate)

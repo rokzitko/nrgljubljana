@@ -72,6 +72,12 @@ class SubspaceDimensions {
        if (dims[i]) ancestor_names.push_back(ancestors[i].name()); // only true ancestors with dim>0
      H5Easy::dump(fd, name + "/ancestors", ancestor_names);
    }
+   void info() const {
+     for (size_t i = 0; i < combs(); i++)
+       if (dims[i] > 0)
+         std::cout << "(" << ancestors[i] << ", dim=" << dims[i] << ") ";
+     std::cout << std::endl;
+   }
  private:
    friend std::ostream &operator<<(std::ostream &os, const SubspaceDimensions &rmax) {
      for (const auto &x : rmax.dims) os << x << ' ';
