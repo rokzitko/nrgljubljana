@@ -219,7 +219,7 @@ std::vector<std::pair<T1, T2>> readtable(const std::string &filename, const bool
       assert(std::isfinite(x) && std::isfinite(y));
       v.push_back(std::make_pair(x, y));
   }
-  if (verbose) std::cout << v.size() << " lines read." << std::endl;
+  if (verbose) std::cout << "Reading " << filename << "; " << v.size() << " lines read." << std::endl;
   return v;
 }
 
