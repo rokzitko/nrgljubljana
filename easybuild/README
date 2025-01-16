@@ -1,0 +1,4 @@
+Here we distribute some easyconfig files for building NRG Ljubljana.
+
+NRGLjubljana-master-foss-*.eb builds the HEAD of master branch on GitHub, i.e.,
+the most up-to-date version at a given time.

@@ -1,0 +1,53 @@
+easyblock = 'CMakeMake'
+
+name = 'NRGLjubljana'
+version = 'master'
+
+homepage = 'https://github.com/rokzitko/nrgljubljana'
+description = """
+  NRG Ljubljana is an efficient implementation of the numerical renormalization group (NRG)
+  technique for solving quantum impurity problems that arise as simplified models of
+  magnetic impurities and as effective models in the dynamical mean field theory (DMFT)
+  approach to bulk correlated materials.
+"""
+
+docurls = 'http://nrgljubljana.ijs.si/examples/'
+software_license = 'LicenseGPLv3'
+
+toolchain = {'name': 'foss', 'version': '2023b'}
+toolchainopts = {'pic': True, 'usempi': True}
+
+source_urls = ['https://github.com/rokzitko/nrgljubljana/archive/refs/heads/']
+sources = ['master.tar.gz']
+
+dependencies = [
+    ('Boost.MPI', '1.83.0'),
+    ('GMP', '6.3.0'),
+    ('HDF5', '1.14.3'),
+    ('GSL', '2.7'),
+    ('imkl', '2024.0.0', '', SYSTEM),
+]
+
+builddependencies = [
+    ('CMake', '3.27.6')
+]
+
+separate_build_dir = True
+
+runtest = 'test'
+
+sanity_check_paths = {
+    'files': ['bin/adapt', 'bin/broaden', 'bin/diag', 'bin/hilb', 'bin/kk', 'bin/matrix', 'bin/nrgchain', 'bin/unitary', 'bin/nrg'],
+    'dirs': ['bin', 'include', 'lib', 'nrginit', 'share'],
+}
+
+modextrapaths = {
+    'CPLUS_INCLUDE_PATH': 'include',
+    'CMAKE_PREFIX_PATH': 'lib/cmake/nrgljubljana'
+}
+modextravars = {
+    'NRGLJUBLJANA_ROOT': '%(installdir)s',
+    'NRGLJUBLJANA_VERSION': '%(version)s'
+}
+
+moduleclass = 'phys'
