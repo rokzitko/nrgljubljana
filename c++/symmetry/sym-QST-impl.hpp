@@ -123,8 +123,8 @@ bool qst_exception(const unsigned int i, const unsigned int j, const Invar &I) {
   return false;
 }
 
-#define offdiag_qst(i, j, ch, fnr, factor, h, qq, In, I, opch)                            \
-    if (qq.offdiag_contributes(i, j) && !qst_exception(i, j, I) && abs(factor) > 1e-8)    \
+#define offdiag_qst(i, j, ch, fnr, factor, h, qq, In, I, opch)                          \
+   if (qq.offdiag_contributes(i, j) && !qst_exception(i, j, I) && abs(factor) > 0.0)    \
         this->offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch);
 
 // We take the coefficients of the first channel (indexed as 0), because all three set are exactly the same due to
