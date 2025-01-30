@@ -2,7 +2,7 @@ name: build
 
 on:
   push:
-    branches: [ master, fmt_library]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
   workflow_call:
@@ -29,7 +29,7 @@ jobs:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS}
           - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS}
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl}
-          - {os: macos-12, cc: clang, cxx: clang++, blas: accelerate}
+          - {os: macos-14, cc: clang, cxx: clang++, blas: accelerate}
 
     runs-on: ${{ matrix.os }}
 
@@ -96,14 +96,16 @@ jobs:
         openmpi-doc
     
     - name: Install homebrew dependencies (clang)
-      if: ${{ (matrix.os == 'macos-12') && contains(matrix.cxx, 'clang') }}
+      if: ${{ (matrix.os == 'macos-14') && contains(matrix.cxx, 'clang') }}
       run: |
-        brew install ccache llvm gcc boost boost-mpi hdf5 open-mpi openblas gsl gmp
-    
-    - name: add clang cxxflags
-      if: ${{ contains(matrix.cxx, 'clang') }}
+        brew install ccache llvm gcc boost boost-mpi hdf5 libomp open-mpi openblas gsl gmp
+
+    - name: Add clang LDFLAGS for macos to link against brew's libc++
+      if: ${{ contains(matrix.os, 'macos') && contains(matrix.cxx, 'clang') }}
       run: |
-        echo "PATH=/usr/local/opt/llvm/bin:$PATH" >> $GITHUB_ENV
+        echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
+        echo "PATH=$(brew --prefix llvm)/bin:$(brew --prefix gcc)/bin:$PATH" >> $GITHUB_ENV
+        echo 'LDFLAGS="-L$(brew --prefix llvm)/lib/c++ -L$(brew --prefix llvm)/lib -lunwind"' >> $GITHUB_ENV
 
     - name: Build NRG Ljubljana
       env:
