@@ -43,7 +43,8 @@ MatrixElements<SC> SymmetrySL<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "sl/sl-1ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -55,7 +56,8 @@ MatrixElements<SC> SymmetrySL<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "sl/sl-2ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -67,7 +69,8 @@ MatrixElements<SC> SymmetrySL<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "sl/sl-3ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;

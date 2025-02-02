@@ -128,7 +128,8 @@ MatrixElements<SC> SymmetryNONE<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "none/none-1ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar());
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar());
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -140,7 +141,8 @@ MatrixElements<SC> SymmetryNONE<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "none/none-2ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar());
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar());
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;

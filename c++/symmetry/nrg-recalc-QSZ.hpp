@@ -55,7 +55,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-1ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -67,7 +68,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-2ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -79,7 +81,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-3ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -96,7 +99,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-1ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -108,7 +112,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-2ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -120,7 +125,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-3ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -142,7 +148,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-1ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -1));
+      if (cn) cnew[II] = *cn;
     }
   }
 };
@@ -156,7 +163,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-1ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +1));
+      if (cn) cnew[II] = *cn;
     }
   }
 };
@@ -391,7 +399,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-1ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 0));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 0));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -403,7 +412,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-2ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 0));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 0));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -415,7 +425,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-3ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 0));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 0));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -432,7 +443,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-1ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, -2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, -2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -444,7 +456,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-2ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, -2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, -2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -461,7 +474,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-1ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, +2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, +2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -473,7 +487,8 @@ MatrixElements<SC> SymmetryQSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsz/qsz-2ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, +2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, +2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;

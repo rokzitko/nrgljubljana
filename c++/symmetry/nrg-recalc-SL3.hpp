@@ -44,7 +44,8 @@ MatrixElements<SC> SymmetrySL3<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "sl3/sl3-3ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 0, 0));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 0, 0));
+      if (cn) cnew[II] = *cn;
     }
   }
 };

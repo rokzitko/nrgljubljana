@@ -203,7 +203,8 @@ MatrixElements<SC> SymmetryP<SC>::recalc_doublet(const DiagInfo<SC> &diag, const
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "p/p-1ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -215,7 +216,8 @@ MatrixElements<SC> SymmetryP<SC>::recalc_doublet(const DiagInfo<SC> &diag, const
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "p/p-2ch-doublet.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;

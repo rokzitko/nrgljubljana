@@ -179,7 +179,8 @@ MatrixElements<SC> SymmetryQSLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qslr/qslr-2ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
+      if (cn) cnew[II] = *cn;
     }
   }
 };
@@ -193,7 +194,8 @@ MatrixElements<SC> SymmetryQSLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qslr/qslr-2ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
+      if (cn) cnew[II] = *cn;
     }
   }
 };
@@ -220,7 +222,8 @@ MatrixElements<SC> SymmetryQSLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qslr/qslr-2ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 3, +1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 3, +1));
+      if (cn) cnew[II] = *cn;
     }
   }
 };
@@ -234,7 +237,8 @@ MatrixElements<SC> SymmetryQSLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qslr/qslr-2ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 3, +1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 3, +1));
+      if (cn) cnew[II] = *cn;
     }
   }
 };
@@ -248,7 +252,8 @@ MatrixElements<SC> SymmetryQSLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qslr/qslr-2ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 3, +1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 3, +1));
+      if (cn) cnew[II] = *cn;
     }
   }
 };

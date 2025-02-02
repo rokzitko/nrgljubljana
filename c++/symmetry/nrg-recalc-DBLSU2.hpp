@@ -45,7 +45,8 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doubletm0.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 0));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 0));
+      if (cn) cnew[II] = *cn;
     }
   }
 };
@@ -59,7 +60,8 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doubletp0.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 0));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 0));
+      if (cn) cnew[II] = *cn;
     }
   }
 };
@@ -73,7 +75,8 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doublet0m.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 };
@@ -87,7 +90,8 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doublet0p.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 };

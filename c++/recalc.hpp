@@ -82,7 +82,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
 // recalc_singlet(), and other routines. The inner-most for() loops can be found here, so this is the right spot that
 // one should try to hand optimize.
 template<scalar S> template<typename T>
-auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
+std::optional<Matrix_traits<S>> Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
                                  const MatrixElements<S> &cold,
                                  const Invar &I1,             // target subspace (bra)
                                  const Invar &Ip,             // target subspace (ket)
@@ -90,6 +90,7 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
                                  const Invar &Iop) const      // quantum numbers of the operator
 {
   if (P.logletter('r')) std::cout << "*** recalc_general: " << nrgdump3(I1, Ip, Iop) << std::endl;
+  if (!triangle_inequality(I1, Ip, Iop)) return {};
   const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
   const auto & [dim1, dimp]     = diag.dims(I1, Ip);
   const Twoinvar II = {I1, Ip};
@@ -101,8 +102,13 @@ auto Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
     if (!Invar_allowed(IN1) || !Invar_allowed(INp)) continue;
     my_assert(IN1 == ancestor(I1, i1-1));
     my_assert(INp == ancestor(Ip, ip-1));
+//    const auto rmax1 = subs.rmax(i1-1);
+//    const auto rmaxp = subs.rmax(ip-1);
+//    if (rmax1 == 0 || rmaxp == 0) continue;
     const Twoinvar ININ = {IN1, INp};
     if (cold.count(ININ) == 0) continue;
+    std::cout << "dim1=" << size1(cold.at(ININ)) << " dim2=" << size2(cold.at(ININ)) << std::endl;
+    my_assert(isfinite(factor));
     transform<S>(cn, factor, diagI1.U(i1), cold.at(ININ), diagIp.U(ip));
   } // over table
   if (P.logletter('R')) dump_matrix(cn);

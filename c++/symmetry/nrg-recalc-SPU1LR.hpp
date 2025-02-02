@@ -46,7 +46,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -58,7 +59,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-doubletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -75,7 +77,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(+1, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(+1, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -87,7 +90,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-doubletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(+1, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(+1, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -266,7 +270,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -278,7 +283,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -295,7 +301,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-2, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-2, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -307,7 +314,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-2, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-2, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -324,7 +332,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-1ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(+2, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(+2, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -336,7 +345,8 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spu1lr/spu1lr-2ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(+2, 1));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(+2, 1));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;

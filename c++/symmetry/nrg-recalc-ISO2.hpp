@@ -47,7 +47,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-1ch-doubletmp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -59,7 +60,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-2ch-doubletmp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -76,7 +78,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-1ch-doubletmm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -88,7 +91,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-2ch-doubletmm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -105,7 +109,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-1ch-doubletpp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -117,7 +122,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-2ch-doubletpp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -134,7 +140,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-1ch-doubletpm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -146,7 +153,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-2ch-doubletpm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 2));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -356,7 +364,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-1ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -368,7 +377,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-2ch-triplets.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -385,7 +395,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-1ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -397,7 +408,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-2ch-tripletp.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -414,7 +426,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-1ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
@@ -426,7 +439,8 @@ MatrixElements<SC> SymmetryISO2<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "iso2/iso2-2ch-tripletm.dat"
       };
-      cnew[II] = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 3));
+      if (cn) cnew[II] = *cn;
     }
   }
 } } break;
