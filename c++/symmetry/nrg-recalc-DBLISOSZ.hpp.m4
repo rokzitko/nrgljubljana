@@ -9,7 +9,7 @@ namespace NRG {
 include(recalc-macros.m4)
 
 template<typename SC>
-MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii11 = I1.get("II1");

@@ -83,11 +83,12 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
 // one should try to hand optimize.
 template<scalar S> template<typename T>
 std::optional<Matrix_traits<S>> Symmetry<S>::recalc_general(const DiagInfo<S> &diag,
-                                 const MatrixElements<S> &cold,
-                                 const Invar &I1,             // target subspace (bra)
-                                 const Invar &Ip,             // target subspace (ket)
-                                 const T &table,
-                                 const Invar &Iop) const      // quantum numbers of the operator
+                                                            const SubspaceStructure &substruct,
+                                                            const MatrixElements<S> &cold,
+                                                            const Invar &I1,             // target subspace (bra)
+                                                            const Invar &Ip,             // target subspace (ket)
+                                                            const T &table,
+                                                            const Invar &Iop) const      // quantum numbers of the operator
 {
   if (P.logletter('r')) std::cout << "*** recalc_general: " << nrgdump3(I1, Ip, Iop) << std::endl;
   if (!triangle_inequality(I1, Ip, Iop)) return {};

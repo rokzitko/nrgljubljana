@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii1   = I1.get("II");
@@ -46,7 +46,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-doubletmp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, -1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -59,7 +59,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-doubletmp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, -1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -77,7 +77,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-doubletmm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, +1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -90,7 +90,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-doubletmm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, +1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -108,7 +108,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-doubletpp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, -1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -121,7 +121,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-doubletpp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, -1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -139,7 +139,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-doubletpm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, +1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -152,7 +152,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-doubletpm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, +1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -348,7 +348,7 @@ Opch<SC> SymmetryISOSZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
 }
 
 template<typename SC>
-MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii1   = I1.get("II");
@@ -365,7 +365,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-triplets.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 0));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 0));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -378,7 +378,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-triplets.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 0));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 0));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -396,7 +396,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-tripletp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, -2));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -409,7 +409,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-tripletp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, -2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, -2));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -427,7 +427,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-1ch-tripletm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, +2));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -440,7 +440,7 @@ MatrixElements<SC> SymmetryISOSZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isosz/isosz-2ch-tripletm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, +2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, +2));
       if (cn) cnew[II] = *cn;
     }
   }

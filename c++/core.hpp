@@ -206,7 +206,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
       h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct);
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
-    oprecalc.recalculate_operators(operators, step, diag, P);
+    oprecalc.recalculate_operators(operators, step, diag, substruct, P);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   }
   if (!P.ZBW()) {
@@ -216,11 +216,11 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   store_states(step, store, store_all, diag, substruct, Sym, P);
   if (!step.last()) {
     nrglog('@', "recalc_irreducible()");
-    recalc_irreducible(step, diag, operators.opch, Sym, mt, P);
+    recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
     if (P.dump_f) operators.opch.dump();
   }
   if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
-    oprecalc.recalculate_operators(operators, step, diag, P);
+    oprecalc.recalculate_operators(operators, step, diag, substruct, P);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   }
   if (P.do_recalc_none())  // ... or this

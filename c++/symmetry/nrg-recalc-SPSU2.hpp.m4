@@ -9,7 +9,7 @@ namespace NRG {
 include(recalc-macros.m4)
 
 template<typename SC>
-MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetrySPSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {
@@ -94,7 +94,7 @@ OpchChannel<SC> SymmetrySPSU2<SC>::recalc_irreduc_substeps(const Step &step, con
 }
 
 template<typename SC>
-MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetrySPSU2<SC>::recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   if (!P.substeps) {
     for(const auto &[I1, eig]: diag) {

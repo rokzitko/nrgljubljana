@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii11 = I1.get("II1");
@@ -45,7 +45,7 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doubletm0.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 0));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 0));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -60,7 +60,7 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doubletp0.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2, 0));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 0));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -75,7 +75,7 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doublet0m.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 2));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -90,7 +90,7 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doublet0p.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 2));
       if (cn) cnew[II] = *cn;
     }
   }

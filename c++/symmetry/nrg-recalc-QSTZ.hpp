@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1   = I1.get("Q");
@@ -51,7 +51,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletp-1.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -66,7 +66,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletm-1.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -81,7 +81,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletp0.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -96,7 +96,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletm0.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -111,7 +111,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletp+1.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -126,7 +126,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-doubletm+1.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -241,7 +241,7 @@ Opch<SC> SymmetryQSTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
 }
 
 template<typename SC>
-MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1   = I1.get("Q");
@@ -258,7 +258,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-triplets.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -273,7 +273,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-tripletp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -288,7 +288,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qstz/qstz-tripletm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
       if (cn) cnew[II] = *cn;
     }
   }

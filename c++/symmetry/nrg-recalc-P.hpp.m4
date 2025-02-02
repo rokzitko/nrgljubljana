@@ -34,7 +34,7 @@ Opch<SC> SymmetryP<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &dia
 }
 
 template<typename SC>
-MatrixElements<SC> SymmetryP<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryP<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int p1   = I1.get("P");

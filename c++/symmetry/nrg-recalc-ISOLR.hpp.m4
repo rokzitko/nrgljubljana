@@ -77,7 +77,7 @@ Opch<SC> SymmetryISOLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
 
 // Recalculate matrix elements of a doublet tensor operator [EVEN PARITY]
 template<typename SC>
-MatrixElements<SC> SymmetryISOLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryISOLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii1 = I1.get("II");
@@ -102,7 +102,7 @@ MatrixElements<SC> SymmetryISOLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
 
 // Recalculate matrix elements of a triplet tensor operator [EVEN PARITY]
 template<typename SC>
-MatrixElements<SC> SymmetryISOLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryISOLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii1 = I1.get("II");

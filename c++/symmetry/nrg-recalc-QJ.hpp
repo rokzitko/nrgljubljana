@@ -30,7 +30,7 @@ namespace NRG {
 
 // Recalculate matrix elements of a doublet tensor operator
 template<typename SC>
-MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1 = I1.get("Q");
@@ -46,7 +46,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-doubletp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -61,7 +61,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-doubletm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -75,7 +75,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
 
 // Recalculate matrix elements of a quadruplet tensor operator
 template<typename SC>
-MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1 = I1.get("Q");
@@ -92,7 +92,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad1.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 4));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 4));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -107,7 +107,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad2.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 4));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 4));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -122,7 +122,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad3.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 4));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 4));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -137,7 +137,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, c
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qj/qj-quad4.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1, 4));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 4));
       if (cn) cnew[II] = *cn;
     }
   }

@@ -10,7 +10,7 @@ include(recalc-macros.m4)
 
 // Recalculate matrix elements of a doublet tensor operator
 template<typename SC>
-MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1 = I1.get("Q");
@@ -31,7 +31,7 @@ MatrixElements<SC> SymmetryQJ<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
 
 // Recalculate matrix elements of a quadruplet tensor operator
 template<typename SC>
-MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryQJ<SC>::recalc_quadruplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1 = I1.get("Q");

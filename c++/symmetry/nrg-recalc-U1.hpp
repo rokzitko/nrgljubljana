@@ -30,7 +30,7 @@ namespace NRG {
 
 // Recalculate matrix elements of a doublet tensor operator
 template<typename SC>
-MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int q1 = I1.get("Q");
@@ -44,7 +44,7 @@ MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "u1/u1-1ch-doublet.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -57,7 +57,7 @@ MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "u1/u1-2ch-doublet.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -70,7 +70,7 @@ MatrixElements<SC> SymmetryU1<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "u1/u1-3ch-doublet.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
       if (cn) cnew[II] = *cn;
     }
   }

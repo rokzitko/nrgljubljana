@@ -188,7 +188,7 @@ Opch<SC> SymmetryP<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &dia
 }
 
 template<typename SC>
-MatrixElements<SC> SymmetryP<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetryP<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int p1   = I1.get("P");
@@ -203,7 +203,7 @@ MatrixElements<SC> SymmetryP<SC>::recalc_doublet(const DiagInfo<SC> &diag, const
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "p/p-1ch-doublet.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-1));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -216,7 +216,7 @@ MatrixElements<SC> SymmetryP<SC>::recalc_doublet(const DiagInfo<SC> &diag, const
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "p/p-2ch-doublet.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(-1));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-1));
       if (cn) cnew[II] = *cn;
     }
   }

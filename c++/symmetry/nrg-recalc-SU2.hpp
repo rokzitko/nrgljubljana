@@ -29,7 +29,7 @@ namespace NRG {
 
 
 template<typename SC>
-MatrixElements<SC> SymmetrySU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const MatrixElements<SC> &cold) const {
+MatrixElements<SC> SymmetrySU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
   MatrixElements<SC> cnew;
   for(const auto &[I1, eig]: diag) {
     int ii1 = I1.get("II");
@@ -45,7 +45,7 @@ MatrixElements<SC> SymmetrySU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "su2/su2-1ch-doubletm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -58,7 +58,7 @@ MatrixElements<SC> SymmetrySU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "su2/su2-2ch-doubletm.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -76,7 +76,7 @@ MatrixElements<SC> SymmetrySU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "su2/su2-1ch-doubletp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
       if (cn) cnew[II] = *cn;
     }
   }
@@ -89,7 +89,7 @@ MatrixElements<SC> SymmetrySU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include "su2/su2-2ch-doubletp.dat"
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, Invar(2));
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2));
       if (cn) cnew[II] = *cn;
     }
   }

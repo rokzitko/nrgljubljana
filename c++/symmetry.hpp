@@ -185,20 +185,20 @@ class Symmetry {
    virtual Opch<S> recalc_irreduc([[maybe_unused]] const Step &step, [[maybe_unused]] const DiagInfo<S> &diag) const { my_assert_not_reached(); }
    virtual OpchChannel<S> recalc_irreduc_substeps([[maybe_unused]] const Step &step, [[maybe_unused]] const DiagInfo<S> &diag,
                                                        [[maybe_unused]] int M) const { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_doublet([[maybe_unused]] const DiagInfo<S> &diag,
+   virtual MatrixElements<S> recalc_doublet([[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] const SubspaceStructure &substruct,
                                                  [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_triplet([[maybe_unused]] const DiagInfo<S> &diag,
+   virtual MatrixElements<S> recalc_triplet([[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] const SubspaceStructure &substruct,
                                                  [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_orb_triplet([[maybe_unused]] const DiagInfo<S> &diag,
+   virtual MatrixElements<S> recalc_orb_triplet([[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] const SubspaceStructure &substruct,
                                                      [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_quadruplet([[maybe_unused]] const DiagInfo<S> &diag,
+   virtual MatrixElements<S> recalc_quadruplet([[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] const SubspaceStructure &substruct,
                                                     [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
    virtual void recalc_global([[maybe_unused]] const Step &step, [[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] std::string name,
                               [[maybe_unused]] MatrixElements<S> &cnew) const { my_assert_not_reached(); }
 
    // Recalculates irreducible matrix elements of a singlet operator, as well as odd-parity spin-singlet operator (for
    //  parity -1). Generic implementation, valid for all symmetry types.
-   MatrixElements<S> recalc_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &nold, const int parity) const {
+   MatrixElements<S> recalc_singlet(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &nold, const int parity) const {
      MatrixElements<S> nnew;
      my_assert(islr() ? parity == 1 || parity == -1 : parity == 1);
      for (const auto &I : diag.subspaces()) {
@@ -210,7 +210,7 @@ class Symmetry {
          recalc_table.push_back({i+1, i+1, anc, parity == -1 ? anc.InvertParity() : anc, 1.0});
        }
        const auto Iop = parity == -1 ? InvarSinglet.InvertParity() : InvarSinglet;
-       auto nn = recalc_general(diag, nold, I1, Ip, recalc_table, Iop);
+       auto nn = recalc_general(diag, substruct, nold, I1, Ip, recalc_table, Iop);
        if (nn) nnew[Twoinvar(I1,Ip)] = *nn;
      }
      return nnew;
@@ -242,7 +242,7 @@ class Symmetry {
      auto recalc_f(const DiagInfo<S> &diag, const Invar &I1, const Invar &Ip, const T &table) const;
 
    template<typename T>
-     std::optional<Matrix_traits<S>> recalc_general(const DiagInfo<S> &diag, const MatrixElements<S> &cold,
+     std::optional<Matrix_traits<S>> recalc_general(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &cold,
                          const Invar &I1, const Invar &Ip, const T &table, const Invar &Iop) const;
 
    void recalc1_global(const DiagInfo<S> &diag, const Invar &I,
@@ -266,12 +266,16 @@ class Symmetry {
 // Optional declaration
 #define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, int M) const override
 #define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, \
+                                                      const SubspaceStructure &substruct, \
                                                       const MatrixElements<SC> &cold) const override
 #define HAS_TRIPLET MatrixElements<SC> recalc_triplet(const DiagInfo<SC> &diag, \
+                                                      const SubspaceStructure &substruct, \
                                                       const MatrixElements<SC> &cold) const override
 #define HAS_ORB_TRIPLET MatrixElements<SC> recalc_orb_triplet(const DiagInfo<SC> &diag, \
+                                                              const SubspaceStructure &substruct, \
                                                               const MatrixElements<SC> &cold) const override
 #define HAS_QUADRUPLET MatrixElements<SC> recalc_quadruplet(const DiagInfo<SC> &diag, \
+                                                            const SubspaceStructure &substruct, \
                                                             const MatrixElements<SC> &cold) const override
 #define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, \
                                       std::string name, MatrixElements<SC> &cnew) const override

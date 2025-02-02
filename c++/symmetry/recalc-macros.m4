@@ -11,7 +11,7 @@ define(`RECALC_TAB', {
       std::initializer_list<Recalc<SC>> recalc_table = {
 #include $1
       };
-      auto cn = this->recalc_general(diag, cold, I1, Ip, recalc_table, $2);
+      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, $2);
       if (cn) cnew[II] = *cn;
     }
   }
