@@ -103,12 +103,11 @@ std::optional<Matrix_traits<S>> Symmetry<S>::recalc_general(const DiagInfo<S> &d
     if (!Invar_allowed(IN1) || !Invar_allowed(INp)) continue;
     my_assert(IN1 == ancestor(I1, i1-1));
     my_assert(INp == ancestor(Ip, ip-1));
-//    const auto rmax1 = subs.rmax(i1-1);
-//    const auto rmaxp = subs.rmax(ip-1);
-//    if (rmax1 == 0 || rmaxp == 0) continue;
+    const auto rmax1 = substruct.at(I1).rmax(i1-1);
+    const auto rmaxp = substruct.at(Ip).rmax(ip-1);
+    if (rmax1 == 0 || rmaxp == 0) continue;
     const Twoinvar ININ = {IN1, INp};
     if (cold.count(ININ) == 0) continue;
-    std::cout << "dim1=" << size1(cold.at(ININ)) << " dim2=" << size2(cold.at(ININ)) << std::endl;
     my_assert(isfinite(factor));
     transform<S>(cn, factor, diagI1.U(i1), cold.at(ININ), diagIp.U(ip));
   } // over table
