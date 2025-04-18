@@ -32,8 +32,8 @@ void dump_matrix(struct mat *dmat);
 double gammapolch(int);
 double coefxi(int, int);
 double coefzeta(int, int);
-double coefscdelta(int, int);
-double coefsckappa(int, int);
+double coefdelta(int, int);
+double coefkappa(int, int);
 double coefV(int, int); // Nambu indexes; channel index not implemented yet
 void yyerror(const char *);
 int yylex();
@@ -67,7 +67,7 @@ bool veryverbose = false;
 %nonassoc UMINUS
 
 %token PARSE EXIT
-%token GAMMAPOLCH COEFZETA COEFXI COEFSCDELTA COEFSCKAPPA COEFV
+%token GAMMAPOLCH COEFZETA COEFXI COEFDELTA COEFKAPPA COEFV
 
 %type <dval> expression
 %type <dvec> expressionlist
@@ -130,8 +130,8 @@ expression:	expression '+' expression { $$ = $1 + $3; }
 expression:   GAMMAPOLCH '[' INTEGER ']' { $$ = gammapolch($3); }
         |     COEFXI     '[' INTEGER ',' INTEGER ']' { $$ = coefxi($3, $5); } 
 	|     COEFZETA         '[' INTEGER ',' INTEGER ']' { $$ = coefzeta($3, $5); }
-	|     COEFSCDELTA      '[' INTEGER ',' INTEGER ']' { $$ = coefscdelta($3, $5); }
-	|     COEFSCKAPPA      '[' INTEGER ',' INTEGER ']' { $$ = coefsckappa($3, $5); }
+	|     COEFDELTA      '[' INTEGER ',' INTEGER ']' { $$ = coefdelta($3, $5); }
+	|     COEFKAPPA      '[' INTEGER ',' INTEGER ']' { $$ = coefkappa($3, $5); }
 	|     COEFV            '[' INTEGER ',' INTEGER ']' { $$ = coefV($3, $5); }
 	;
 
@@ -246,8 +246,8 @@ void parse_param(int argc, char *argv[])
 vector<double> theta;
 vector<vector<double>> xi;
 vector<vector<double>> zeta;
-vector<vector<double>> scdelta;
-vector<vector<double>> sckappa;
+vector<vector<double>> delta;
+vector<vector<double>> kappa;
 vector<vector<vector<double>>> V;
 
 void load_vector(string filename, vector<double> &v)
@@ -324,10 +324,10 @@ void load_discretization_sc()
     load_vector(fnxi, xi[ch-1]);
     string fnzeta = "zeta" + suffix;
     load_vector(fnzeta, zeta[ch-1]);
-    string fnscdelta = "scdelta" + suffix;
-    load_vector(fnscdelta, scdelta[ch-1]);
-    string fnsckappa = "sckappa" + suffix;
-    load_vector(fnsckappa, sckappa[ch-1]);
+    string fndelta = "scdelta" + suffix;
+    load_vector(fndelta, delta[ch-1]);
+    string fnkappa = "sckappa" + suffix;
+    load_vector(fnkappa, kappa[ch-1]);
   }
 }
 
@@ -374,8 +374,8 @@ int main(int argc, char *argv[])
  theta.resize(nrchannels);
  zeta.resize(nrchannels);
  xi.resize(nrchannels);
- scdelta.resize(nrchannels);
- sckappa.resize(nrchannels);
+ delta.resize(nrchannels);
+ kappa.resize(nrchannels);
  V.resize(nrchannels);
  
  if (!sc) {
@@ -472,18 +472,18 @@ double coefxi(int ch, int i)
   return xi[ch-1][i];
 }
 
-double coefscdelta(int ch, int i)
+double coefdelta(int ch, int i)
 {
   assert(1 <= ch && ch <= nrchannels);
-  assert(i < scdelta[ch-1].size());
-  return scdelta[ch-1][i];
+  assert(i < delta[ch-1].size());
+  return delta[ch-1][i];
 }
 
-double coefsckappa(int ch, int i)
+double coefkappa(int ch, int i)
 {
   assert(1 <= ch && ch <= nrchannels);
-  assert(i < sckappa[ch-1].size());
-  return sckappa[ch-1][i];
+  assert(i < kappa[ch-1].size());
+  return kappa[ch-1][i];
 }
 
 // channel number has offset 1

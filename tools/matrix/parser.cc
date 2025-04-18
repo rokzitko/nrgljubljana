@@ -91,8 +91,8 @@ void dump_matrix(struct mat *dmat);
 double gammapolch(int);
 double coefxi(int, int);
 double coefzeta(int, int);
-double coefscdelta(int, int);
-double coefsckappa(int, int);
+double coefdelta(int, int);
+double coefkappa(int, int);
 double coefV(int, int); // Nambu indexes; channel index not implemented yet
 void yyerror(const char *);
 int yylex();
@@ -125,7 +125,10 @@ bool veryverbose = false;
 # define YYERROR_VERBOSE 0
 #endif
 
-
+/* In a future release of Bison, this section will be replaced
+   by #include "parser.hh".  */
+#ifndef YY_YY_PARSER_HH_INCLUDED
+# define YY_YY_PARSER_HH_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -149,8 +152,8 @@ extern int yydebug;
     GAMMAPOLCH = 265,
     COEFZETA = 266,
     COEFXI = 267,
-    COEFSCDELTA = 268,
-    COEFSCKAPPA = 269,
+    COEFDELTA = 268,
+    COEFKAPPA = 269,
     COEFV = 270
   };
 #endif
@@ -169,7 +172,7 @@ union YYSTYPE
 	struct mat *dmat;
 	struct symtab *symp;
 
-#line 173 "parser.cc" /* yacc.c:355  */
+#line 176 "parser.cc" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -182,11 +185,11 @@ extern YYSTYPE yylval;
 
 int yyparse (void);
 
-
+#endif /* !YY_YY_PARSER_HH_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 
-#line 190 "parser.cc" /* yacc.c:358  */
+#line 193 "parser.cc" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -499,10 +502,10 @@ static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "STRING", "NAME", "NUMBER", "INTEGER",
   "'-'", "'+'", "'*'", "'/'", "','", "UMINUS", "PARSE", "EXIT",
-  "GAMMAPOLCH", "COEFZETA", "COEFXI", "COEFSCDELTA", "COEFSCKAPPA",
-  "COEFV", "'\\n'", "'='", "'('", "')'", "'['", "']'", "'{'", "'}'",
-  "$accept", "statement_list", "statement", "expression", "expressionlist",
-  "vector", "vectorlist", "matrix", YY_NULLPTR
+  "GAMMAPOLCH", "COEFZETA", "COEFXI", "COEFDELTA", "COEFKAPPA", "COEFV",
+  "'\\n'", "'='", "'('", "')'", "'['", "']'", "'{'", "'}'", "$accept",
+  "statement_list", "statement", "expression", "expressionlist", "vector",
+  "vectorlist", "matrix", YY_NULLPTR
 };
 #endif
 
@@ -1327,25 +1330,25 @@ yyreduce:
 		   }
                    (yyvsp[-2].symp)->value = (yyvsp[0].dval); 
 		}
-#line 1331 "parser.cc" /* yacc.c:1646  */
+#line 1334 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 5:
 #line 88 "parser.yy" /* yacc.c:1646  */
     { OUT << prefix << (yyvsp[0].dval) << endl; }
-#line 1337 "parser.cc" /* yacc.c:1646  */
+#line 1340 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 6:
 #line 89 "parser.yy" /* yacc.c:1646  */
     { OUT << prefix; dump_vector((yyvsp[0].dvec)); }
-#line 1343 "parser.cc" /* yacc.c:1646  */
+#line 1346 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 7:
 #line 90 "parser.yy" /* yacc.c:1646  */
     { OUT << prefix; dump_matrix((yyvsp[0].dmat)); }
-#line 1349 "parser.cc" /* yacc.c:1646  */
+#line 1352 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 8:
@@ -1354,25 +1357,25 @@ yyreduce:
 	           /* We are done! */
 		   exit(1);
 		}
-#line 1358 "parser.cc" /* yacc.c:1646  */
+#line 1361 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 10:
 #line 98 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[-2].dval) + (yyvsp[0].dval); }
-#line 1364 "parser.cc" /* yacc.c:1646  */
+#line 1367 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 11:
 #line 99 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[-2].dval) - (yyvsp[0].dval); }
-#line 1370 "parser.cc" /* yacc.c:1646  */
+#line 1373 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 12:
 #line 100 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[-2].dval) * (yyvsp[0].dval); }
-#line 1376 "parser.cc" /* yacc.c:1646  */
+#line 1379 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 13:
@@ -1382,31 +1385,31 @@ yyreduce:
 					else
 						(yyval.dval) = (yyvsp[-2].dval) / (yyvsp[0].dval);
 				}
-#line 1386 "parser.cc" /* yacc.c:1646  */
+#line 1389 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 14:
 #line 107 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = -(yyvsp[0].dval); }
-#line 1392 "parser.cc" /* yacc.c:1646  */
+#line 1395 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 15:
 #line 108 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[-1].dval); }
-#line 1398 "parser.cc" /* yacc.c:1646  */
+#line 1401 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 17:
 #line 110 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[0].ival); }
-#line 1404 "parser.cc" /* yacc.c:1646  */
+#line 1407 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 18:
 #line 111 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = (yyvsp[0].symp)->value; }
-#line 1410 "parser.cc" /* yacc.c:1646  */
+#line 1413 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 19:
@@ -1419,7 +1422,7 @@ yyreduce:
 				(yyval.dval) = 0.0;
 			}
 		}
-#line 1423 "parser.cc" /* yacc.c:1646  */
+#line 1426 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 20:
@@ -1432,43 +1435,43 @@ yyreduce:
 				(yyval.dval) = 0.0;
 			}
 		}
-#line 1436 "parser.cc" /* yacc.c:1646  */
+#line 1439 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 21:
 #line 130 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = gammapolch((yyvsp[-1].ival)); }
-#line 1442 "parser.cc" /* yacc.c:1646  */
+#line 1445 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 22:
 #line 131 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = coefxi((yyvsp[-3].ival), (yyvsp[-1].ival)); }
-#line 1448 "parser.cc" /* yacc.c:1646  */
+#line 1451 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 23:
 #line 132 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = coefzeta((yyvsp[-3].ival), (yyvsp[-1].ival)); }
-#line 1454 "parser.cc" /* yacc.c:1646  */
+#line 1457 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 24:
 #line 133 "parser.yy" /* yacc.c:1646  */
-    { (yyval.dval) = coefscdelta((yyvsp[-3].ival), (yyvsp[-1].ival)); }
-#line 1460 "parser.cc" /* yacc.c:1646  */
+    { (yyval.dval) = coefdelta((yyvsp[-3].ival), (yyvsp[-1].ival)); }
+#line 1463 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 25:
 #line 134 "parser.yy" /* yacc.c:1646  */
-    { (yyval.dval) = coefsckappa((yyvsp[-3].ival), (yyvsp[-1].ival)); }
-#line 1466 "parser.cc" /* yacc.c:1646  */
+    { (yyval.dval) = coefkappa((yyvsp[-3].ival), (yyvsp[-1].ival)); }
+#line 1469 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 26:
 #line 135 "parser.yy" /* yacc.c:1646  */
     { (yyval.dval) = coefV((yyvsp[-3].ival), (yyvsp[-1].ival)); }
-#line 1472 "parser.cc" /* yacc.c:1646  */
+#line 1475 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 27:
@@ -1478,7 +1481,7 @@ yyreduce:
 		(yyval.dvec)->val = (yyvsp[0].dval);
     		(yyval.dvec)->next = 0;
             }
-#line 1482 "parser.cc" /* yacc.c:1646  */
+#line 1485 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 28:
@@ -1489,19 +1492,19 @@ yyreduce:
 		new_node->next = (yyvsp[0].dvec);
 		(yyval.dvec) = new_node;
 	    }
-#line 1493 "parser.cc" /* yacc.c:1646  */
+#line 1496 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 29:
 #line 151 "parser.yy" /* yacc.c:1646  */
     { (yyval.dvec) = 0; }
-#line 1499 "parser.cc" /* yacc.c:1646  */
+#line 1502 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 30:
 #line 152 "parser.yy" /* yacc.c:1646  */
     { (yyval.dvec) = (yyvsp[-1].dvec); }
-#line 1505 "parser.cc" /* yacc.c:1646  */
+#line 1508 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 31:
@@ -1511,7 +1514,7 @@ yyreduce:
 	       (yyval.dmat)->vec = (yyvsp[0].dvec);
 	       (yyval.dmat)->next = 0;
          }
-#line 1515 "parser.cc" /* yacc.c:1646  */
+#line 1518 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 32:
@@ -1522,23 +1525,23 @@ yyreduce:
 		new_node->next = (yyvsp[0].dmat);
 		(yyval.dmat) = new_node;
 	 }
-#line 1526 "parser.cc" /* yacc.c:1646  */
+#line 1529 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 33:
 #line 168 "parser.yy" /* yacc.c:1646  */
     { (yyval.dmat) = 0; }
-#line 1532 "parser.cc" /* yacc.c:1646  */
+#line 1535 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 34:
 #line 169 "parser.yy" /* yacc.c:1646  */
     { (yyval.dmat) = (yyvsp[-1].dmat); }
-#line 1538 "parser.cc" /* yacc.c:1646  */
+#line 1541 "parser.cc" /* yacc.c:1646  */
     break;
 
 
-#line 1542 "parser.cc" /* yacc.c:1646  */
+#line 1545 "parser.cc" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1844,8 +1847,8 @@ void parse_param(int argc, char *argv[])
 vector<double> theta;
 vector<vector<double>> xi;
 vector<vector<double>> zeta;
-vector<vector<double>> scdelta;
-vector<vector<double>> sckappa;
+vector<vector<double>> delta;
+vector<vector<double>> kappa;
 vector<vector<vector<double>>> V;
 
 void load_vector(string filename, vector<double> &v)
@@ -1922,10 +1925,10 @@ void load_discretization_sc()
     load_vector(fnxi, xi[ch-1]);
     string fnzeta = "zeta" + suffix;
     load_vector(fnzeta, zeta[ch-1]);
-    string fnscdelta = "scdelta" + suffix;
-    load_vector(fnscdelta, scdelta[ch-1]);
-    string fnsckappa = "sckappa" + suffix;
-    load_vector(fnsckappa, sckappa[ch-1]);
+    string fndelta = "scdelta" + suffix;
+    load_vector(fndelta, delta[ch-1]);
+    string fnkappa = "sckappa" + suffix;
+    load_vector(fnkappa, kappa[ch-1]);
   }
 }
 
@@ -1972,8 +1975,8 @@ int main(int argc, char *argv[])
  theta.resize(nrchannels);
  zeta.resize(nrchannels);
  xi.resize(nrchannels);
- scdelta.resize(nrchannels);
- sckappa.resize(nrchannels);
+ delta.resize(nrchannels);
+ kappa.resize(nrchannels);
  V.resize(nrchannels);
  
  if (!sc) {
@@ -2070,18 +2073,18 @@ double coefxi(int ch, int i)
   return xi[ch-1][i];
 }
 
-double coefscdelta(int ch, int i)
+double coefdelta(int ch, int i)
 {
   assert(1 <= ch && ch <= nrchannels);
-  assert(i < scdelta[ch-1].size());
-  return scdelta[ch-1][i];
+  assert(i < delta[ch-1].size());
+  return delta[ch-1][i];
 }
 
-double coefsckappa(int ch, int i)
+double coefkappa(int ch, int i)
 {
   assert(1 <= ch && ch <= nrchannels);
-  assert(i < sckappa[ch-1].size());
-  return sckappa[ch-1][i];
+  assert(i < kappa[ch-1].size());
+  return kappa[ch-1][i];
 }
 
 // channel number has offset 1

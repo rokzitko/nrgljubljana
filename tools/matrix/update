@@ -1,6 +1,5 @@
 #!/bin/bash
-bison parser.yy -o parser.cc
-
-
-
+bison -d parser.yy -o parser.cc
+# --c++
+flex -o matrix.cc matrix.ll
 

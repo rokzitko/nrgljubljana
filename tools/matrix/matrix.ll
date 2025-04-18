@@ -30,6 +30,9 @@ TEXT ([A-Za-z][^\n]*)
 gammaPolCh { return GAMMAPOLCH; }
 coefxi     { return COEFXI; }
 coefzeta   { return COEFZETA; }
+coefdelta  { return COEFDELTA; }
+coefkappa  { return COEFKAPPA; }
+coefV      { return COEFV; }
 parse      { BEGIN(incl); }
 
 <incl>[ \t]* ;
