@@ -157,10 +157,6 @@ set(Boost_USE_STATIC_LIBS OFF)
 find_package(Boost 1.53 REQUIRED COMPONENTS serialization mpi)
 # note: header-only libraries such as multiprecision do not need to be listed
 # as components in find_package()
-add_library(boost INTERFACE)
-target_include_directories(boost SYSTEM INTERFACE ${Boost_INCLUDE_DIRS})
-target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
-install(TARGETS boost EXPORT nrgljubljana-targets)
 
 # GSL
 find_package(GSL REQUIRED)

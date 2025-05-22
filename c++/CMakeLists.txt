@@ -45,7 +45,7 @@ target_compile_definitions(nrgljubljana_c PUBLIC
 )
 
 # Link dependencies
-target_link_libraries(nrgljubljana_c     PUBLIC openmp boost blas_lapack gmp dl mpi HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
+target_link_libraries(nrgljubljana_c     PUBLIC openmp Boost::headers Boost::mpi Boost::serialization blas_lapack gmp dl mpi HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
   $<$<BOOL:${ASAN}>:asan>
   $<$<BOOL:${UBSAN}>:ubsan>
 )

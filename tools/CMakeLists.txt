@@ -18,7 +18,7 @@ macro(add_tool exec_name)
   set_target_properties(${exec_name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
   # Link dependencies
-  target_link_libraries(${exec_name} PRIVATE openmp boost blas_lapack gmp gsl dl HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
+  target_link_libraries(${exec_name} PRIVATE openmp Boost::boost Boost::mpi Boost::serialization blas_lapack gmp gsl dl HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
         $<$<BOOL:${ASAN}>:asan>
         $<$<BOOL:${UBSAN}>:ubsan>
   )
