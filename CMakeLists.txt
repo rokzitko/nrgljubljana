@@ -187,7 +187,7 @@ CPMFindPackage(
 # High five library
 CPMAddPackage(
   GITHUB_REPOSITORY BlueBrain/HighFive
-  GIT_TAG v2.10.0
+  GIT_TAG v2.10.1
   OPTIONS
     "HIGHFIVE_BUILD_DOCS OFF" # Disable HighFive documentation
 )
@@ -195,7 +195,7 @@ CPMAddPackage(
 # fmt
 # Check if fmt is already a target; important when using as an outside library in nrgljubljana_interface
 if (NOT TARGET fmt::fmt)
-  CPMAddPackage("gh:fmtlib/fmt#11.0.2")
+  CPMAddPackage("gh:fmtlib/fmt#11.2.0")
 endif()
 
 # range-v3
