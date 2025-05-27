@@ -20,11 +20,9 @@
 # ##############################################################################
 
 cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
-if(POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
-if(POLICY CMP0144)
-  cmake_policy(SET CMP0144 NEW)
+cmake_policy(VERSION ${CMAKE_VERSION})
+if(POLICY CMP0173) # CMakeFindFrameworks Availability
+  cmake_policy(SET CMP0173 OLD)
 endif()
 
 # ############
@@ -157,10 +155,6 @@ set(Boost_USE_STATIC_LIBS OFF)
 find_package(Boost 1.53 REQUIRED COMPONENTS serialization mpi)
 # note: header-only libraries such as multiprecision do not need to be listed
 # as components in find_package()
-add_library(boost INTERFACE)
-target_include_directories(boost SYSTEM INTERFACE ${Boost_INCLUDE_DIRS})
-target_link_libraries(boost INTERFACE ${Boost_LIBRARIES})
-install(TARGETS boost EXPORT nrgljubljana-targets)
 
 # GSL
 find_package(GSL REQUIRED)
@@ -191,7 +185,7 @@ CPMFindPackage(
 # High five library
 CPMAddPackage(
   GITHUB_REPOSITORY BlueBrain/HighFive
-  GIT_TAG v2.10.0
+  GIT_TAG v2.10.1
   OPTIONS
     "HIGHFIVE_BUILD_DOCS OFF" # Disable HighFive documentation
 )
@@ -199,7 +193,7 @@ CPMAddPackage(
 # fmt
 # Check if fmt is already a target; important when using as an outside library in nrgljubljana_interface
 if (NOT TARGET fmt::fmt)
-  CPMAddPackage("gh:fmtlib/fmt#11.0.2")
+  CPMAddPackage("gh:fmtlib/fmt#11.2.0")
 endif()
 
 # range-v3
