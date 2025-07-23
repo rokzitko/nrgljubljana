@@ -184,8 +184,8 @@ CPMFindPackage(
 
 # High five library
 CPMAddPackage(
-  GITHUB_REPOSITORY BlueBrain/HighFive
-  GIT_TAG v2.10.1
+  GITHUB_REPOSITORY highfive-devs/highfive
+  GIT_TAG v3.1.0
   OPTIONS
     "HIGHFIVE_BUILD_DOCS OFF" # Disable HighFive documentation
 )
