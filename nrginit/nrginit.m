@@ -1,7 +1,7 @@
 (*
   "NRG Ljubljana" - Numerical renormalization group code
 
-  Copyright (C) 2005-2023 Rok Zitko
+  Copyright (C) 2005-2026 Rok Zitko
 
      This program is free software; you can redistribute it and/or modify
      it under the terms of the GNU General Public License as published by

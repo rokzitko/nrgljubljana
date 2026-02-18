@@ -1,7 +1,7 @@
 (*
    NRG Ljubljana -- Numerical renormalization group code
 
-   Copyright (C) 2005-2023 Rok Zitko
+   Copyright (C) 2005-2026 Rok Zitko
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2023.05";
+VERSION = "2026.02";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -43,7 +43,7 @@ SetOptions[$Messages, PageWidth -> 240];
 DEBUG=1;
 Get["misc.m", Path->PACKAGEPATH];
 
-Print2["NRG Ljubljana ", VERSION, " (c) Rok Zitko, rok.zitko@ijs.si, 2005-2023"];
+Print2["NRG Ljubljana ", VERSION, " (c) Rok Zitko, rok.zitko@ijs.si"];
 Print2["Mathematica version: ", $Version];
 Print2["sneg version: ", $SnegVersion];
 
@@ -224,9 +224,10 @@ addoption[keyword_] := AppendTo[loptions, keyword];
 KNOWN OPTIONS
 =============
 PARAMPRE - apply parameters before calling matrixrepresntationvc[]
-WRITE - write basis and Hamiltonian matrix files
+WRITE - write basis and Hamiltonian matrix files (see MyPut[] function)
 READBASIS - read basis from a file
-READHAM - read the Hamiltonian matrices from a file
+READHAM - read the Hamiltonian matrices from files
+READOPS - read the operator matrices from files
 EPSCLIP - clip nonrepresentably small (in double type) floating points to zero
 TEMPLATE - create a template for the output file 'data' rather than an actual output file.
            This is used to create the 'data' file on computers without Mathematica.
@@ -429,13 +430,6 @@ If[paramdefaultbool["checkHc", True] && Not[option["GENERATE_TEMPLATE"]],
   ];
 ];
 
-If[DEBUG >= 4,
-(* Rewrite the Hamiltonian in terms of high-level functions. This
-   makes the debugging of Hamiltonian definitions significantly easier.
-   Note, however, that this operation may take a lot of time! *)
-  MyPrint["Hamiltonian -> ", SnegSimplify[H]];
-];
-
 (*************************)
 
 (* In NRG, it is customary to define a dimensionless Hamiltonian H_N whose
@@ -592,11 +586,6 @@ op2matrix[op_, inv1_, inv2_] := Module[{bz1, bz2, mm, b1, b2},
 
 op2matrix[op_, inv_] := op2matrix[op, inv, inv];
 
-(* List of directories in which we look for dump files of basis vectors and
-Hamiltonian matrices. In addition to the current directory, we also look
-in the parent; this is useful for parameter sweeps. *)
-dumppath = {".", ".."};
-
 (* Generate the matrix form of the Hamiltonian in a given invariant
 subspace. Function ham[] is called from diagvc[]. *)
 
@@ -608,21 +597,17 @@ ham[inv_] := Module[{fn, rep, HH},
   timestart["ham"];
   fn = hamfn[inv];
 
-  (* Support for "subspace-dependent" Hamiltonians. *)
   HH = H;
   If[MULTIPLEHAM == True,
-    HH = getHam[inv]
+    HH = getHam[inv]    (* Support for "subspace-dependent" Hamiltonians. *)
   ];
 
   If[GENERATEHAM == False,
     MyPrint["Reading matrix from " <> fn];
-    rep = silentGet[fn, Path -> dumppath];
-    MyVPrint[2, "rep=", rep];
-
+    rep = silentGet[fn, Path -> readdir];
+    MyVPrint[3, "rep=", rep];
     (* Fall back to matrix generation *)
-    If[rep === $Failed,
-      GENERATEHAM = True;
-    ];
+    If[rep === $Failed, GENERATEHAM = True; ];
   ];
 
   If[GENERATEHAM && !option["PARAMPRE"],
@@ -631,7 +616,7 @@ ham[inv_] := Module[{fn, rep, HH},
 
     (* Simplification improves numerical precision! *)
     rep = Simplify[rep];
-    MyVPrint[2, "rep=", rep];
+    MyVPrint[3, "rep=", rep];
 
     (* Save the *generic* Hamiltonian matrix to a file *)
     MyPut[rep, fn, option["GENERATE_TEMPLATE"]];
@@ -662,7 +647,7 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
   MyPrint["diagvc[", inv, "]"];
 
   hamil = ham[inv];
-  MyVPrint[1, "hamil=", hamil];
+  MyVPrint[2, "hamil=", hamil];
 
   dim = Dimensions[hamil];
   MyVPrint[1, "dim=", dim];
@@ -717,9 +702,7 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
   (* Sort in the ascending order of eigenvalues! *)
   {val, vec} = Transpose[ Sort[ Transpose[eigsys] ] ];
 
-  If[DEBUG >= 3,
-    MyPrint["val=", val];
-  ];
+  MyPrint["val(5 lowest)=", Take[val, UpTo[5]]];
 
   (* Sanity check 1 *)
   vecnormnonzero = Map[(Norm[#] != 0)&, vec];
@@ -1374,6 +1357,8 @@ then the corresponding ireducMatrixSpeedy routine works properly and the bug
 should be sought after elsewhere (such as i. coefficients, ii. recalculation
 code, iii. specdens_factor() routine). *)
 
+READOPS = option["READOPS"];
+
 ireducTable[op_,
             optional___] :=  (* optional is passed to ireducMatrixSpeedy[] *)
 Module[{t, cp, i, mat, opfnsub},
@@ -1383,15 +1368,26 @@ Module[{t, cp, i, mat, opfnsub},
        by doublet operators [that increase charge, when charge conservation
        is explicitly taken into account], i.e. creation operators! *)
     cp = coupledpairs[[i]];
-    mat = Expand @ ireducMatrixSpeedy[SYMTYPE, op, cp, optional];
     AppendTo[t, Flatten[cp]];
-    AppendTo[opdata, {cp, mat}];
-    If[!option["GENERATE_TEMPLATE"] || opfn === "",
+    opfnsub = opfn <> "_" <> Invar2String[cp[[1]]] <> "_" <> Invar2String[cp[[2]]];
+    If[READOPS,
+      MyPrint["Reading ", opfnsub];
+      mat = silentGet[opfnsub, Path -> readdir];
+      MyPrint["el[1,1]=", mat[[1,1]] ];
+      MyVPrint[3, "mat=", mat];
+      (* Fall back to matrix generation upon first failure *)
+      If[mat === $Failed, READOPS = False];
+    ];
+    If[!READOPS,
+      mat = Expand @ ireducMatrixSpeedy[SYMTYPE, op, cp, optional];
+      AppendTo[opdata, {cp, mat}];
+      MyPut[mat, opfnsub, option["GENERATE_TEMPLATE"]];
+      MyPrint["el[1,1]=", mat[[1,1]] ];
+    ];
+    If[!option["GENERATE_TEMPLATE"],
       t = Join[t, mat],
     (* else *)
-      opfnsub = opfn <> "_" <> Invar2String[cp[[1]]] <> "_" <> Invar2String[cp[[2]]];
       t = Join[t, {opfnsub}];
-      Put[mat, opfnsub];
     ];
   ];
   t (* Return *)
@@ -1572,14 +1568,23 @@ singletopTable[op_] := Module[{t, i, inv, mat},
   t = {{nrsub}};
   For[i = 1, i <= nrsub, i++,
     inv = subspaces[[i]];
+    opfnsub = opfn <> "_" <> Invar2String[inv] <> "_" <> Invar2String[inv];
     AppendTo[t, Flatten[{inv, inv}]];
-    mat = Simplify @ singletopMatrixSpeedy[op, inv]; (* simplify! *)
-    If[!option["GENERATE_TEMPLATE_ALL"] || opfn === "",
+    If[READOPS,
+      MyPrint["Reading ", opfnsub];
+      mat = silentGet[opfnsub, Path -> readdir];
+      MyVPrint[3, "mat=", mat];
+      (* Fall back to matrix generation upon first failure *)
+      If[mat === $Failed, READOPS = False];
+    ];
+    If[!READOPS,
+      mat = Simplify @ singletopMatrixSpeedy[op, inv]; (* simplify! *)
+      MyPut[mat, opfnsub, option["GENERATE_TEMPLATE_ALL"]];
+    ];
+    If[!option["GENERATE_TEMPLATE_ALL"],
       t = Join[t, N[mat]],  (* NUMERICAL *)
     (* else *)
-      opfnsub = opfn <> "_" <> Invar2String[inv] <> "_" <> Invar2String[inv];
       t = Join[t, {opfnsub}];
-      Put[mat, opfnsub];
     ];
   ];
   t
@@ -1609,8 +1614,8 @@ mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] :=  Module[{t, op},
     op = Expand[opinput];
     MyPrint[prefix, ": ", opname, " ", op];
     t = {};
-    opfn = opfilename <> "." <> opname;
-    opdata = {}; (* Global variable ! *)
+    opfn = opfilename <> "." <> opname; (* Global variable !! *)
+    opdata = {}; (* Global variable !! This will be saved to file 'opfn'. *)
     AppendTo[t, {prefix <> opname}];
     t = Join[t, OPTABLEFNC[ op ] ];
     MyPut[opdata, opfn, option["GENERATE_TEMPLATE"]];
@@ -1720,6 +1725,7 @@ lastf[ch_] := If[Ninit == 0, f[ch], f[ch, Ninit]];
 makeireducf["U1"] := Module[{},
   MyPrint["makeireducf U1"];
   Flatten3 @ Table[{{{"f " <> ToString[i] <> " " <> ToString[1-j]}},
+                   opfn = "opf" <> ToString[i] <> "." <> ToString[1-j];
                    ireducTable[ lastf[i], j ]}, (* Recall: DO=0, UP=1 *)
                    {i, 0, CHANNELS-1}, {j, UP, DO, -1}]
 ];
@@ -1729,6 +1735,7 @@ operators wrt isospin symmetry. Recall: DO=0, UP=1. *)
 makeireducf["SU2" | "DBLSU2"] := Module[{},
   MyPrint["makeireducf SI2 & DBLSU2"];
   Flatten3 @ Table[{{{"f " <> ToString[i] <> " " <> ToString[1-j]}},
+                   opfn = "opf" <> ToString[i] <> "." <> ToString[1-j];
                    ireducTable[ lastf[i], j ]},
                    {i, 0, CHANNELS-1}, {j, UP, DO, -1}]
 ];
@@ -1737,6 +1744,7 @@ makeireducf["SU2" | "DBLSU2"] := Module[{},
 makeireducf["NONE" | "P" | "PP"] := Module[{},
   MyPrint["makeireducf NONE/P/PP"];
   Flatten3 @ Table[{{{"f " <> ToString[i] <> " " <> ToString[j]}},
+                   opfn = "opf" <> ToString[i] <> "." <> ToString[j];
                    ireducTable[ lastf[i], j ]},
                    {i, 0, CHANNELS-1}, {j, 0, 3}]
 ];
@@ -1746,14 +1754,14 @@ makeireducf["NONE" | "P" | "PP"] := Module[{},
    number. *)
 makeireducf["QST" | "SPSU2T"] := Module[{},
   MyPrint["makeireducf QST or SPSU2T"];
-  Flatten1 @ {{ "f 0 0" }, ireducTable[ f[#1,#2,#3]& ], {"f 1 0"}, {"0"}, {"f 2 0"}, {"0"}}
+  Flatten1 @ {{ "f 0 0" }, opfn = "opf"; ireducTable[ f[#1,#2,#3]& ], {"f 1 0"}, {"0"}, {"f 2 0"}, {"0"}}
 ];
 
 (* Channel information is here carried by the Delta T_z quantum number !! *)
 
 makeireducf["QSTZ" | "QSZTZ"] := Module[{},
   MyPrint["makeireducf QSTZ/QSZTZ"];
-  Flatten1 @ {{ "f 0 0" }, ireducTable[ f[#1,#2,#3]& ], {"f 1 0"}, {"0"}, {"f 2 0"}, {"0"}}
+  Flatten1 @ {{ "f 0 0" }, opfn = "opf"; ireducTable[ f[#1,#2,#3]& ], {"f 1 0"}, {"0"}, {"f 2 0"}, {"0"}}
 ];
 
 (* p quantum number handling in QSC3 and SPSU2C3 *)
@@ -1768,7 +1776,7 @@ makeireducf["xxxxxQSC3"] := Module[{x, u, o},
   o[1,s_] = x[s] . {u^2,u,1}/Sqrt[3];
   o[2,s_] = x[s] . {u,u^2,1}/Sqrt[3];
 
-  Flatten2 @ Table[{{{ "f " <> ToString[p] <> " 0" }}, ireducTable[ o[p,#]& ]}, {p, 0, 2}]
+  Flatten2 @ Table[{{{ "f " <> ToString[p] <> " 0" }}, opfn = "opf" <> ToString[p]; ireducTable[ o[p,#]& ]}, {p, 0, 2}]
 ];
 
 If[is["QJ"],
@@ -1805,15 +1813,16 @@ If[is["QJ"],
 (* Channel QN masquerading as j. ch=0 => j=1/2, ch=1 => j=3/2 *)
 makeireducf["QJ"] := Module[{},
  MyPrint["makeireducf QJ"];
- Flatten1 @ {{ "f 0 0" }, ireducTableQJ[ fj[#1, 1/2, #2]&, 1/2 ],
-             { "f 1 0" }, ireducTableQJ[ fj[#1, 3/2, #2]&, 3/2 ],
-             { "f 2 0" }, {"0"}}
+ Flatten1 @ {{ "f 0 0" }, opfn = "opf0"; ireducTableQJ[ fj[#1, 1/2, #2]&, 1/2 ],
+             { "f 1 0" }, opfn = "opf1"; ireducTableQJ[ fj[#1, 3/2, #2]&, 3/2 ],
+             { "f 2 0" }, opfn = "opf2"; {"0"}}
 ];
 
 (* Generic: ireducible matrix elements <||f||> *)
 makeireducf[_] := Module[{},
   MyPrint["makeireducf GENERAL"];
   Flatten2 @ Table[{{{ "f " <> ToString[i] <> " 0" }},
+                  opfn = "opf" <> ToString[i];
                   ireducTable[ lastf[i] ]}, {i, 0, CHANNELS-1}]
 ];
 

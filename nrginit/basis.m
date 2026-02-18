@@ -15,30 +15,26 @@ basisfilename = "basis";
 hamfilename = "ham";
 opfilename =  "op";
 
-writedir = paramdefault["writedir", ""];
-MyPut[x_, fn_, forcewrite_:False] := If[option["WRITE"] || forcewrite, Put[x, writedir <> fn]];
+readdir = {paramdefault["readdir", "."], ".."}; (* default = current directory; parent directory as fallback *)
+writedir = paramdefault["writedir", ""]; (* default = current directory *)
 
+MyPut[x_, fn_, forcewrite_:False] := If[option["WRITE"] || forcewrite,
+  MyPrint["Writing ", fn];
+  Put[x, writedir <> fn]
+];
+
+(* If requested using "options=READBASIS" in the parameters file, we attempt to
+   read the basis definition from a file. Warning: no checks are performed, the user
+   must ensure consistency of all files. *)
 GENERATEBASIS = If[option["READBASIS"], False, True];
 
 If[GENERATEBASIS == False,
-
-  (* NEW: If requested (i.e. if there is a line "options=READBASIS" in the
-  parameters file), we read the base states from a file. Thus repeated
-  generation of the Hamiltonian matrices is avoided which can save a
-  considerable amount of time if parameter sweeps are performed.  Warning:
-  no checks are performed at this time, so you better know what you are
-  doing. *)
-
   MyPrint["Reading basis from " <> basisfilename];
-  bvc = silentGet[basisfilename, Path -> dumppath];
+  bvc = silentGet[basisfilename, Path -> readdir];
   MyVPrint[2, "bvc=", bvc];
-
   (* If reading fails, fall back to generating the states. *)
-  If[bvc === $Failed,
-    GENERATEBASIS = True;
-  ];
+  If[bvc === $Failed, GENERATEBASIS = True; ];
 ];
-
 
 If[GENERATEBASIS == True,
   MyPrint["Generating basis"];
@@ -325,9 +321,11 @@ If[GENERATEBASIS == True,
   basis, since in some models phonon kets transform under the mirror
   symmetry (for example in ONE/COM model). *)
   If[ MAKEPHONON =!= Null,
-    MyVPrint[1, "Adding phonons"];
+    If[MAKEPHONON == 1, cutoffs = {nph}];
+    If[MAKEPHONON == 2, cutoffs = {nph, nph}];
+    MyVPrint[1, "Adding phonons, cutoffs=", cutoffs];
 
-    bz = transformtoPH[bz, nph];
+    bz = transformtoPH[bz, cutoffs];
     MyVPrint[2, "PHONON baza (op)=", bz];
 
     bvc = bzop2bzvc[bz, vak];

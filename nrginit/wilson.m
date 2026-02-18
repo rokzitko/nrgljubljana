@@ -1169,7 +1169,7 @@ If[TRI == "manual_nambu",
 ];
 
 If[TRI == "manual_nambu_new",
-  If[SYMTYPE == "SPSU2",
+  If[SYMTYPE == "SPSU2" || SYMTYPE == "SPU1",
     loadtablescdelta[]; (* loaded from scdelta.dat *)
     loadtablesckappa[]; (* loaded from sckappa.dat *)
   ];
