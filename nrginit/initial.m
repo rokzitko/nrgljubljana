@@ -1384,10 +1384,13 @@ Module[{t, cp, i, mat, opfnsub},
       MyPut[mat, opfnsub, option["GENERATE_TEMPLATE"]];
       MyPrint["el[1,1]=", mat[[1,1]] ];
     ];
-    If[!option["GENERATE_TEMPLATE"],
-      t = Join[t, mat],
+    (* Here we decide what goes in the data/data.in file. If we are generating the template,   
+       we save the filename. An exception is when generating the <|f|> irreducible matrix elements,
+       for those we use numerical values (unless overriding with GENERATE_TEMPLATE_F). *)
+    If[( (STAGE == 2) && option["GENERATE_TEMPLATE"] ) || ( (STAGE == 1) && option["GENERATE_TEMPLATE_F"] ),
+      t = Join[t, {opfnsub}],
     (* else *)
-      t = Join[t, {opfnsub}];
+      t = Join[t, mat]
     ];
   ];
   t (* Return *)
@@ -1925,6 +1928,8 @@ maketable[]:=Module[{t},
   calcgsenergy[];
 
   opfn=""; opdata={}; (* Prior to makeireducf[] call to silence errors *)
+  
+  STAGE = 1; (* Eigenstates / f matrix elements *)
 
   t = Join[makeheader[],
            {{"# SCALE ", energiesscale}},
@@ -1935,7 +1940,9 @@ maketable[]:=Module[{t},
            {{"# GS energy in absolute units:"}},
            {{"e"}, {GSenergy}},
            {{"# Irreducible matrix elements for other operators:"}}
-          ];
+           ];
+           
+  STAGE = 2; (* Matrix elements for all other operators *)
 
   (* Operator definitions *)
   tops = loadmodule["operators.m"];
@@ -1951,6 +1958,8 @@ maketable[]:=Module[{t},
   If[ tops =!= $Failed,
     t = Join[t, tops];
   ];
+    
+  STAGE = 3; (* Wilson chain coefficients *)
 
   If[TRI != "none" && !option["GENERATE_TEMPLATE"],
     If[WILSONCHAIN == "legacy",
