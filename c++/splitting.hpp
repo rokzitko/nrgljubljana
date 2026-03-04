@@ -41,7 +41,8 @@ class Clusters {
        for (auto &r : v)
          if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
            r = m->second;
-        eig.values.set_corr(std::move(v));
+       eig.values.set_corr(std::move(v));
+       eig.values.crit_copy_corr(); // update truncation criterion with corrected eigenvalues
      }
    }
    // Find clusters of values which differ by at most 'epsilon'

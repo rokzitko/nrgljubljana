@@ -23,7 +23,7 @@ inline auto keepall(const Step &step, const Params &P) {
    return false;
 }
 
-// Determine the number of states to be retained. Returns Emax - the highest energy to still be retained.
+// Determine the number of states to be retained. Returns Emax - the highest energy (cost) to still be retained.
 template <scalar S> auto highest_retained_energy(const Step &step, const DiagInfo<S> &diag, const Params &P) {
   const auto energies = diag.sorted_energies_corr(); // We use roundoff-error corrected eigenvalues here!
   const auto totalnumber = energies.size();

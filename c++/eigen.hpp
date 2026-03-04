@@ -38,9 +38,12 @@ class Values {
    double T_shift = std::numeric_limits<double>::quiet_NaN();
    double abs_GS_energy = std::numeric_limits<double>::quiet_NaN();
    std::vector<t_eigen> corrected;
-   std::vector<t_eigen> c; // cost function for truncation; constrols the sort order of states!!
+   std::vector<t_eigen> c; // criterion, value of "cost" function for truncation; constrols the sort order of states!!
   public:
-   void resize(const size_t size) { v.resize(size); }
+   void resize(const size_t size) { 
+     v.resize(size); 
+     c.resize(size); 
+   }
    [[nodiscard]] auto raw(const size_t i) const { return v[i]; }
    [[nodiscard]] auto rel(const size_t i) const { return v[i]; }
    [[nodiscard]] auto abs(const size_t i) const { assert(std::isfinite(scale)); return rel(i) * scale; }
@@ -53,7 +56,7 @@ class Values {
    [[nodiscard]] auto lowest_rel() const { return v.front(); }
    [[nodiscard]] auto highest_corr() const { return corrected.back(); }
    [[nodiscard]] const auto & all_rel() const noexcept { return v; }
-   [[nodiscard]] const auto & all_cost() const noexcept { return c; }
+   [[nodiscard]] const auto & all_crit() const noexcept { return c; }
    [[nodiscard]] auto all_rel_zero() const noexcept {
      assert(v.size() == 0 || std::isfinite(shift));
      return ranges::views::transform(v, [this](const auto x){ return x-shift; });
@@ -79,15 +82,17 @@ class Values {
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
    void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
    void set_corr(std::vector<t_eigen> in) { corrected = std::move(in); }
-   [[nodiscard]] auto cost(const size_t i) const { return c[i]; }
-   void set_cost(const size_t i, const t_eigen x) { c[i] = x; }
+   [[nodiscard]] auto crit(const size_t i) const { return c[i]; }
+   void set_crit(const size_t i, const t_eigen x) { c[i] = x; }
+   void crit_copy_raw() { c = v; }
+   void crit_copy_corr() { c = corrected; }
    [[nodiscard]] auto has_abs() const noexcept { return std::isfinite(scale); }
    [[nodiscard]] auto has_zero() const noexcept { return std::isfinite(shift); }
    [[nodiscard]] auto has_abs_zero() const noexcept { return has_abs() && has_zero(); }
    [[nodiscard]] auto has_abs_T() const noexcept { return has_abs_zero() && std::isfinite(T_shift); }
    [[nodiscard]] auto has_abs_G() const noexcept { return has_abs_T() && std::isfinite(abs_GS_energy); }
    [[nodiscard]] auto has_corr() const noexcept { return corrected.size() > 0; }
-   [[nodiscard]] auto has_cost() const noexcept { return c.size() > 0; }
+   [[nodiscard]] auto has_crit() const noexcept { return c.size() > 0; }
    void save(boost::archive::binary_oarchive &oa) const {
      oa << v << scale << shift << T_shift << abs_GS_energy << corrected << c;
    }
@@ -101,7 +106,7 @@ class Values {
      if (has_abs_T())    h5_dump_vector(fd, name + "/absenergy",      all_abs_T()    | ranges::to_vector);
      if (has_abs_G())    h5_dump_vector(fd, name + "/absenergyG",     all_abs_G()    | ranges::to_vector);
      if (has_corr())     h5_dump_vector(fd, name + "/value_corr",     all_corr());
-     if (has_cost())     h5_dump_vector(fd, name + "/cost",           all_cost());
+     if (has_crit())     h5_dump_vector(fd, name + "/crit",           all_crit());
   }
 };
 
@@ -221,6 +226,7 @@ public:
   }
   explicit Eigen(RawEigen<S> && raw, const Step &step) {
     values.set(std::move(raw.val));
+    values.crit_copy_raw(); // conventionally, cost = energy for truncation criterion
     vectors.set(std::move(raw.vec));
     last = step.last();
   }
