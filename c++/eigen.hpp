@@ -54,7 +54,7 @@ class Values {
    [[nodiscard]] auto corr(const size_t i) const { return corrected[i]; }
    [[nodiscard]] auto size() const noexcept { return v.size(); }
    [[nodiscard]] auto lowest_rel() const { return v.front(); }
-   [[nodiscard]] auto highest_corr() const { return corrected.back(); }
+   [[nodiscard]] auto highest_crit() const { return c.back(); }
    [[nodiscard]] const auto & all_rel() const noexcept { return v; }
    [[nodiscard]] const auto & all_crit() const noexcept { return c; }
    [[nodiscard]] auto all_rel_zero() const noexcept {
@@ -236,6 +236,7 @@ public:
     values.set_corr(v); // required for matrix construction in the first step!
     values.set_shift(0.0); // required in the first step!
     values.set_scale(scale);
+    values.crit_copy_raw();
     last = last_step;
   }
   [[nodiscard]] auto getnrcomputed() const noexcept { return values.size(); } // number of computed eigenpairs
@@ -354,11 +355,11 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        energies.insert(energies.end(), eig.values.all_rel_zero().begin(), eig.values.all_rel_zero().end());
      return energies | ranges::move | ranges::actions::sort;
    }
-   [[nodiscard]] std::vector<t_eigen> sorted_energies_corr() const {
-     std::vector<t_eigen> energies;
+   [[nodiscard]] std::vector<t_eigen> sorted_criterion_values() const {
+     std::vector<t_eigen> all;
      for (const auto &eig: eigs())
-       energies.insert(energies.end(), eig.values.all_corr().begin(), eig.values.all_corr().end());
-     return energies | ranges::move | ranges::actions::sort;
+       all.insert(all.end(), eig.values.all_crit().begin(), eig.values.all_crit().end());
+     return all | ranges::move | ranges::actions::sort; // sort by absolute value here!
    }
    void dump_energies(std::ostream &F) const {
      for (const auto &[I, eig]: *this)
@@ -369,9 +370,12 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    }
    [[nodiscard]] auto size_subspace(const Invar &I) const {
      const auto f = this->find(I);
-     return f != this->cend() ? f->second.getnrstored() : 0;
+     const auto val = f != this->cend() ? f->second.getnrstored() : 0;
+     my_assert(0 <= val && val <= 1000000); // bug trap
+     return val;
    }
    [[nodiscard]] auto subs(const Invar &I1, const Invar &I2) const {
+     my_assert(this->find(I1) != this->cend() && this->find(I2) != this->cend()); // bug trap: check for existance
      return std::make_pair(this->at(I1), this->at(I2));
    }
    [[nodiscard]] auto dims(const Invar &I1, const Invar &I2) const { // Determines matrix sizes for operators (# stored)

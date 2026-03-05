@@ -63,6 +63,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
   const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
   const auto & [dim1, dimp]     = diag.dims(I1, Ip);   // # of states in Ip and in I1, i.e. the dimension of the <||f||> matrix.
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
+  my_assert(dim1 < 1000000 && dimp < 1000000); // bug trap
   auto f = zero_matrix<S>(dim1, dimp);
   // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
   for (const auto &[i1, ip, factor]: table) {

@@ -14,6 +14,7 @@ using namespace NRG;
 TEST(Clean, H) { // NOLINT
   Params P;
   setup_P_clean(P);
+  P.logall = true;
 
   auto SymSP = setup_Sym<double>(P); // get the shared pointer
   auto Sym = SymSP.get(); // get the raw pointer
@@ -54,8 +55,6 @@ TEST(Clean, H) { // NOLINT
   store[step.ndx()] = Subs(diag, substruct, step.last());
   recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
   operators.opch.dump();
-//X  operators.trim_matrices(diag);
-//X  diag.clear_eigenvectors();
 
   mt.brief_report();
   EXPECT_EQ(step.ndx(), step.lastndx());
