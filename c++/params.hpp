@@ -181,6 +181,8 @@ class Params {
   // 1e-15 cures differences in the 2-3 least significant bits.)
   param<double> fixeps{"fixeps", "Threshold value for eigenvalue splitting corrections", "1e-15", all}; // N
 
+  param<bool> floquet{"floquet", "Energies are actually Floquet quasi-energies", "false", all};
+
   // ******************************************************
   // Physical temperature for finite-temperature quantities
   param<double> T{"T", "Temperature, k_B T/D,", "0.001", all}; // S

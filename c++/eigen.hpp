@@ -341,9 +341,10 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void subtract_Egs(const t_eigen Egs) {
      ranges::for_each(eigs(), [Egs](auto &eig) { eig.subtract_Egs(Egs); });
    }
-   t_eigen Egs_subtraction() {
+   t_eigen Egs_subtraction(bool shift_it = true) {
      const auto Egs = find_groundstate();
-     subtract_Egs(Egs);
+     const auto shift = shift_it ? Egs : 0.0; // GS energy shifting can be disabled
+     subtract_Egs(shift);
      return Egs;
    }
    void subtract_GS_energy(const t_eigen GS_energy) {

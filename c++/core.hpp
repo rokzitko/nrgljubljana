@@ -100,6 +100,12 @@ auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Co
 }
 
 template<scalar S>
+void calc_floquet_truncation_criterion(DiagInfo<S> &diag, const Params &P) {
+  const auto Egs = diag.find_groundstate();
+  ranges::for_each(diag.eigs(), [Egs](auto &eig) { eig.subtract_Egs(Egs); });
+}
+
+template<scalar S>
 auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   step.infostring();
@@ -120,7 +126,12 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
         diag = DiagInfo<S>(step.ndx(), P, P.removefiles); // read from disk in second run
         diag.subtract_GS_energy(stats.GS_energy);
       }
-      stats.Egs = diag.Egs_subtraction();
+      if (P.floquet) {
+        calc_floquet_truncation_criterion(diag, P);
+        stats.Egs = diag.find_groundstate();
+      } else {
+        stats.Egs = diag.Egs_subtraction();
+      }
       Clusters<S> clusters(diag, P.fixeps);
       truncate_prepare(step, diag, Sym->multfnc(), P);
       break;
@@ -274,7 +285,7 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
     diag = DiagInfo<S>(step.ndx(), P, P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
-  stats.Egs = diag.Egs_subtraction();
+  stats.Egs = diag.Egs_subtraction(!P.floquet);
   truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   SubspaceStructure substruct{};

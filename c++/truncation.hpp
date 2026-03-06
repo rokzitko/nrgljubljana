@@ -28,7 +28,8 @@ template <scalar S> auto highest_retained(const Step &step, const DiagInfo<S> &d
   const auto all = diag.sorted_criterion_values(); // We use roundoff-error corrected eigenvalues here!
   const auto totalnumber = all.size();
   my_assert(totalnumber != 0);
-  my_assert(all.front() == 0.0); // check for the subtraction of Egs
+  if (!P.floquet)
+    my_assert(all.front() == 0.0); // check for the subtraction of Egs
 
   if (keepall(step, P))
       return all.back();
