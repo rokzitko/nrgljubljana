@@ -123,7 +123,7 @@ TEST(Diag, constructor) { // NOLINT
   EXPECT_EQ(diag.size(), 2);
   EXPECT_EQ(range_size(diag.subspaces()), 2);
   EXPECT_EQ(range_size(diag.eigs()), 2);
-  EXPECT_DOUBLE_EQ(diag.find_groundstate(), 1.0);
+  EXPECT_DOUBLE_EQ(diag.find_Egs(), 1.0);
 //  std::vector ref_energies = { 1.0, 2.0, 4.0, 5.0, 6.0 };
 //  EXPECT_EQ(diag.sorted_energies_rel(), ref_energies);
   EXPECT_EQ(diag.size_subspace(Invar(0,1)), 2);

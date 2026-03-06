@@ -39,6 +39,7 @@ class Values {
    double abs_GS_energy = std::numeric_limits<double>::quiet_NaN();
    std::vector<t_eigen> corrected;
    std::vector<t_eigen> c; // criterion, value of "cost" function for truncation; constrols the sort order of states!!
+   double c_shift = std::numeric_limits<double>::quiet_NaN(); // shift for criterion 'c'
   public:
    void resize(const size_t size) { 
      v.resize(size); 
@@ -54,12 +55,17 @@ class Values {
    [[nodiscard]] auto corr(const size_t i) const { return corrected[i]; }
    [[nodiscard]] auto size() const noexcept { return v.size(); }
    [[nodiscard]] auto lowest_rel() const { return v.front(); }
+   [[nodiscard]] auto lowest_crit() const { return c.front(); }
    [[nodiscard]] auto highest_crit() const { return c.back(); }
    [[nodiscard]] const auto & all_rel() const noexcept { return v; }
    [[nodiscard]] const auto & all_crit() const noexcept { return c; }
    [[nodiscard]] auto all_rel_zero() const noexcept {
      assert(v.size() == 0 || std::isfinite(shift));
      return ranges::views::transform(v, [this](const auto x){ return x-shift; });
+   }
+   [[nodiscard]] auto all_crit_zero() const noexcept {
+     assert(c.size() == 0 || std::isfinite(c_shift));
+     return ranges::views::transform(c, [this](const auto x){ return x-c_shift; });
    }
    [[nodiscard]] auto all_abs_zero() const noexcept {
      assert(v.size() == 0 || (std::isfinite(shift) && std::isfinite(scale)));
@@ -79,6 +85,7 @@ class Values {
    void set(std::vector<t_eigen> in) { v = std::move(in); }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
+   void set_c_shift(const double c_shift_) { c_shift = c_shift_; }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
    void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
    void set_corr(std::vector<t_eigen> in) { corrected = std::move(in); }
@@ -279,6 +286,9 @@ public:
   void subtract_Egs(const t_eigen Egs) {
     values.set_shift(Egs);
   }
+  void subtract_Clw(const t_eigen Clw) {
+    values.set_c_shift(Clw);
+  }
   void subtract_GS_energy(const t_eigen GS_energy) {
     values.set_abs_GS_energy(GS_energy);
   }
@@ -333,16 +343,21 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    [[nodiscard]] auto subspaces() const noexcept { return *this | boost::adaptors::map_keys; }
    [[nodiscard]] auto eigs() const noexcept { return *this | boost::adaptors::map_values; }
    [[nodiscard]] auto eigs() noexcept { return *this | boost::adaptors::map_values; }
-   [[nodiscard]] auto find_groundstate() const {
+   [[nodiscard]] auto find_Egs() const {
      const auto [Iground, eig] = *ranges::min_element(*this, {}, [](const auto &a) { return a.second.values.lowest_rel(); });
      const auto Egs = eig.values.lowest_rel();
      return Egs;
+   }
+   [[nodiscard]] auto find_Clw() const {
+     const auto [Ilowest, eig] = *ranges::min_element(*this, {}, [](const auto &a) { return a.second.values.lowest_crit(); });
+     const auto Clw = eig.values.lowest_crit();
+     return Clw;
    }
    void subtract_Egs(const t_eigen Egs) {
      ranges::for_each(eigs(), [Egs](auto &eig) { eig.subtract_Egs(Egs); });
    }
    t_eigen Egs_subtraction(bool shift_it = true) {
-     const auto Egs = find_groundstate();
+     const auto Egs = find_Egs();
      const auto shift = shift_it ? Egs : 0.0; // GS energy shifting can be disabled
      subtract_Egs(shift);
      return Egs;
@@ -351,16 +366,22 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      ranges::for_each(eigs(), [GS_energy](auto &eig) { eig.subtract_GS_energy(GS_energy); });
    }
    [[nodiscard]] std::vector<t_eigen> sorted_energies_rel_zero() const {
-     std::vector<t_eigen> energies;
+     std::vector<t_eigen> all;
      for (const auto &eig: eigs())
-       energies.insert(energies.end(), eig.values.all_rel_zero().begin(), eig.values.all_rel_zero().end());
-     return energies | ranges::move | ranges::actions::sort;
+       all.insert(all.end(), eig.values.all_rel_zero().begin(), eig.values.all_rel_zero().end());
+     return all | ranges::move | ranges::actions::sort;
    }
    [[nodiscard]] std::vector<t_eigen> sorted_criterion_values() const {
      std::vector<t_eigen> all;
      for (const auto &eig: eigs())
        all.insert(all.end(), eig.values.all_crit().begin(), eig.values.all_crit().end());
-     return all | ranges::move | ranges::actions::sort; // sort by absolute value here!
+     return all | ranges::move | ranges::actions::sort;
+   }
+   [[nodiscard]] std::vector<t_eigen> sorted_criteria_zero() const {
+     std::vector<t_eigen> all;
+     for (const auto &eig: eigs())
+       all.insert(all.end(), eig.values.all_crit_zero().begin(), eig.values.all_crit_zero().end());
+     return all | ranges::move | ranges::actions::sort;
    }
    void dump_energies(std::ostream &F) const {
      for (const auto &[I, eig]: *this)
