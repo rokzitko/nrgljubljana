@@ -102,7 +102,11 @@ auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Co
 template<scalar S>
 void calc_floquet_truncation_criterion(DiagInfo<S> &diag, const Params &P) {
   const auto Egs = diag.find_Egs();
-  ranges::for_each(diag.eigs(), [Egs](auto &eig) { eig.subtract_Egs(Egs); });
+  const auto Clw = diag.find_Clw();
+  ranges::for_each(diag.eigs(), [Egs, Clw](auto &eig) {
+    eig.subtract_Egs(Egs);
+    eig.subtract_Clw(Clw);
+  });
 }
 
 template<scalar S>
