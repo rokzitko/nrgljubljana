@@ -37,7 +37,7 @@ class Values {
    double shift = std::numeric_limits<double>::quiet_NaN();
    double T_shift = std::numeric_limits<double>::quiet_NaN();
    double abs_GS_energy = std::numeric_limits<double>::quiet_NaN();
-   std::vector<t_eigen> corrected;
+   std::vector<t_eigen> corrected; // these are referenced to Egs in current step (in the same way as rel_zero)
    std::vector<t_eigen> c; // criterion, value of "cost" function for truncation; constrols the sort order of states!!
    double c_shift = std::numeric_limits<double>::quiet_NaN(); // shift for criterion 'c'
   public:
