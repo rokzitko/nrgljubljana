@@ -264,6 +264,9 @@ void perform_basic_measurements(const Step &step, const DiagInfo<S> &diag_in, co
   if (P.project == ""s) {
     perform_basic_measurements_impl(step, diag_in, Sym, stats, output, P);
   } else {
+    // In this mode, basic measurements are performed after filtering! Thus all subspaces are retained for
+    // building the new set of Hamiltonians for the NRG iterations, but only a subset is used for evaluating
+    // physical properties.
     auto diag = Sym->project(diag_in, P.project);
     perform_basic_measurements_impl(step, diag, Sym, stats, output, P);
   }

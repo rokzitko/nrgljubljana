@@ -41,6 +41,8 @@ class Values {
    std::vector<t_eigen> c; // criterion, value of "cost" function for truncation; constrols the sort order of states!!
    double c_shift = std::numeric_limits<double>::quiet_NaN(); // shift for criterion 'c'
   public:
+   std::vector<t_eigen> & ref_v() { return v; }
+   std::vector<t_eigen> & ref_c() { return c; }
    void resize(const size_t size) { 
      v.resize(size); 
      c.resize(size); 
@@ -114,7 +116,7 @@ class Values {
      if (has_abs_G())    h5_dump_vector(fd, name + "/absenergyG",     all_abs_G()    | ranges::to_vector);
      if (has_corr())     h5_dump_vector(fd, name + "/value_corr",     all_corr());
      if (has_crit())     h5_dump_vector(fd, name + "/crit",           all_crit());
-  }
+   }
 };
 
 template <scalar S, typename t_matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
@@ -122,6 +124,7 @@ class Vectors {
   private:
     Matrix m;
   public:
+    Matrix & ref_m() { return m; }
     [[nodiscard]] auto M() const noexcept { return size1(m); }
     [[nodiscard]] auto dim() const noexcept { return size2(m); }
     void set(Matrix m_) {
@@ -218,6 +221,11 @@ public:
   void check_diag() const { NRG::check_diag<S>(val, vec); }
 };
 
+template <typename T, typename U, typename S>
+void perform_sort_by_c(std::vector<T>& c,
+                       std::vector<U>& v,
+                       Eigen::Matrix<S, -1, -1, Eigen::RowMajor>& m) {}
+       
 // High-level representation of eigenvalues/eigenvectors
 template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>>
 class Eigen {
@@ -268,6 +276,10 @@ public:
   [[nodiscard]] auto Krange() const noexcept { return boost::irange(0ul, boundary()); }
   [[nodiscard]] auto value_corr_kept() const noexcept { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrkept()); }
   [[nodiscard]] auto value_corr_msr() const noexcept { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
+  // Reordering
+  void do_sort_by_c() {
+    perform_sort_by_c(values.ref_c(), values.ref_v(), vectors.ref_m()); // XXX: corrected?
+  }
   // Truncate to nrpost states.
   void truncate_prepare(const size_t nrpost_) {
     nrpost = nrpost_;
@@ -386,6 +398,10 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void dump_energies(std::ostream &F) const {
      for (const auto &[I, eig]: *this)
        F << "Subspace: " << I << std::endl << eig.values.all_rel() << std::endl;
+   }
+   void sort_by_c() {
+     for (auto &eig: eigs())
+       eig.do_sort_by_c();
    }
    void truncate_perform() {
      ranges::for_each(eigs(), &Eigen<S>::truncate_perform); // Truncate subspace to appropriate size

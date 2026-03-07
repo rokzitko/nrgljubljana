@@ -208,6 +208,14 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   nrglog('@', "after_diag()");
   stats.update(step);
   if (step.nrg()) {
+    if (P.floquet) {
+      std::cout << "Writing to energies.nrg" << std::endl;
+      output.dump_energies(100+step.ndx(), diag); // another copy to "energies.nrg", XXX
+      std::cout << "sort_by_c()" << std::endl;
+      diag.sort_by_c();
+      std::cout << "sort_by_c() done" << std::endl;
+      // XXX
+    }
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
       diag.save(step.ndx(), P);
