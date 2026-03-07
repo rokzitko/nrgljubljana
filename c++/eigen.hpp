@@ -23,6 +23,20 @@
 
 namespace NRG {
 
+template<typename T>
+std::vector<T> negate_copy(const std::vector<T>& v) {
+  std::vector<T> out(v.size());
+  std::transform(v.begin(), v.end(), out.begin(),
+                 [](const T& x) { return -x; });
+  return out;
+}
+
+template<typename T>
+void negate_inplace(std::vector<T>& v) {
+  for (auto& x : v)
+    x = -x;
+}
+
 // Storage container for eigenvalues. Vector v contains the raw eigenvalues as computed in the Hamiltonian
 // diagonalisation. If scale, shift, T_shift and/or GS_energy parameters are defined, then one has also access to various
 // derived quantities. 'Relative' means in the units of the current NRG shell. 'Absolute' means in the units of
@@ -95,6 +109,7 @@ class Values {
    void set_crit(const size_t i, const t_eigen x) { c[i] = x; }
    void crit_copy_raw() { c = v; }
    void crit_copy_corr() { c = corrected; }
+   void crit_negate() { negate_inplace(c); }
    [[nodiscard]] auto has_abs() const noexcept { return std::isfinite(scale); }
    [[nodiscard]] auto has_zero() const noexcept { return std::isfinite(shift); }
    [[nodiscard]] auto has_abs_zero() const noexcept { return has_abs() && has_zero(); }
@@ -224,8 +239,35 @@ public:
 template <typename T, typename U, typename S>
 void perform_sort_by_c(std::vector<T>& c,
                        std::vector<U>& v,
-                       Eigen::Matrix<S, -1, -1, Eigen::RowMajor>& m) {}
-       
+                       Eigen::Matrix<S, -1, -1, Eigen::RowMajor>& m) {
+  const std::size_t n = c.size();
+  assert(v.size() == n);
+  assert(static_cast<std::size_t>(m.rows()) == n);
+  // Build permutation: p[i] = original index of the i-th smallest element of c
+  std::vector<std::size_t> p(n);
+  std::iota(p.begin(), p.end(), 0);
+  std::sort(p.begin(), p.end(),
+            [&](std::size_t a, std::size_t b) {
+              return c[a] < c[b];
+            });
+  // Apply permutation to c and v
+  std::vector<T> c_sorted;
+  std::vector<U> v_sorted;
+  c_sorted.reserve(n);
+  v_sorted.reserve(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    c_sorted.push_back(std::move(c[p[i]]));
+    v_sorted.push_back(std::move(v[p[i]]));
+  }
+  // Apply permutation to rows of m
+  Eigen::Matrix<S, -1, -1, Eigen::RowMajor> m_sorted(m.rows(), m.cols());
+  for (std::size_t i = 0; i < n; ++i)
+    m_sorted.row(static_cast<Eigen::Index>(i)) = m.row(static_cast<Eigen::Index>(p[i]));
+  c = std::move(c_sorted);
+  v = std::move(v_sorted);
+  m = std::move(m_sorted);
+}
+
 // High-level representation of eigenvalues/eigenvectors
 template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>>
 class Eigen {
@@ -402,6 +444,10 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void sort_by_c() {
      for (auto &eig: eigs())
        eig.do_sort_by_c();
+   }
+   void negate_c() {
+     for (auto &eig: eigs())
+       eig.values.crit_negate();
    }
    void truncate_perform() {
      ranges::for_each(eigs(), &Eigen<S>::truncate_perform); // Truncate subspace to appropriate size
