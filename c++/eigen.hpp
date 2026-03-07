@@ -170,6 +170,18 @@ class Vectors {
     void h5save(H5Easy::File &fd, const std::string &name) const {
       h5_dump_matrix(fd, name + "/matrix", m);
     }
+   void dump(std::ostream &F) const {
+     for (size_t i = 0; i < M(); i++) {
+       F << "vec(" << i << ")=[";
+       double sum = 0.0;
+       for (size_t j = 0; j < dim(); j++) {
+         F << m(i,j) << (j != dim()-1 ? ", " : "");
+         sum += pow(abs(m(i,j)),2);
+       }
+       const double diff = sum-1.0;
+       F << "] norm-1=" << diff << std::endl;
+     }
+   }
 };
 
 // Eigenvectors separated according to the invariant subspace from which they originate.
@@ -440,6 +452,15 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void dump_energies(std::ostream &F) const {
      for (const auto &[I, eig]: *this)
        F << "Subspace: " << I << std::endl << eig.values.all_rel() << std::endl;
+   }
+   void dump_states(std::ostream &F) const {
+     for (const auto &[I, eig]: *this) {
+       F << "Subspace: " << I << std::endl;
+       F << "Energies (rel): " << eig.values.all_rel() << std::endl;
+       F << "Vectors:" << std::endl;
+       eig.vectors.dump(F);
+       F << std::endl; // empty line
+     }
    }
    void sort_by_c() {
      for (auto &eig: eigs())

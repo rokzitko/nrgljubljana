@@ -133,16 +133,19 @@ struct Output {
   const Params &P;
   Annotated annotated;
   std::ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
+  std::ofstream Fstates;    // all states
   std::unique_ptr<ExpvOutput<S>> custom;
   std::unique_ptr<ExpvOutput<S>> customfdm;
   std::unique_ptr<H5Easy::File> h5raw;
   Output(const RUNTYPE &runtype, const Operators<S> &operators, Stats<S> &stats, const Params &P,
          const std::string filename_energies= "energies.nrg"s,
+         const std::string filename_states = "states.nrg"s,
          const std::string filename_custom = "custom",
          const std::string filename_customfdm = "customfdm")
     : runtype(runtype), P(P), annotated(P)
     {
       if (P.dumpenergies && runtype == RUNTYPE::NRG) Fenergies.open(filename_energies);
+      if (P.dumpstates   && runtype == RUNTYPE::NRG) Fstates.open(filename_states);
       const auto ops = singlet_operators_for_expv_evaluation(operators);
       if (runtype == RUNTYPE::NRG)
         custom = std::make_unique<ExpvOutput<S>>(filename_custom, stats.expv, ops, P);
@@ -159,6 +162,11 @@ struct Output {
     if (!Fenergies) return;
     Fenergies << std::endl << "===== Iteration number: " << N << std::endl;
     diag.dump_energies(Fenergies);
+  }
+  void dump_states(const int N, const DiagInfo<S> &diag) {
+    if (!Fstates) return;
+    Fstates << std::endl << "===== Iteration number: " << N << std::endl;
+    diag.dump_states(Fstates);
   }
 };
 

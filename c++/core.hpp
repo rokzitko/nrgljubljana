@@ -211,6 +211,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     if (P.floquet) {
       std::cout << "Writing to energies.nrg" << std::endl;
       output.dump_energies(100+step.ndx(), diag); // another copy to "energies.nrg", XXX
+      output.dump_states(100+step.ndx(), diag); // XXX
       diag.negate_c();
       std::cout << "sort_by_c()" << std::endl;
       diag.sort_by_c();
