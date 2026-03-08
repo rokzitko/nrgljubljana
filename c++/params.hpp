@@ -473,8 +473,10 @@ class Params {
   // subspace pair by subspace pair.
   param<bool> dump_f{"dump_f", "Dump <f> matrix elements", "false", all}; // N
 
-  param<bool> dumpenergies{"dumpenergies", "Dump (all) energies to file?", "false", all};  // N
-  param<bool> dumpstates{"dumpstates", "Dump (all) energies and vectors to file?", "false", all};  // N - new
+  param<bool> dumpenergies{"dumpenergies", "Dump (all) energies to file [energies.nrg]?", "false", all};  // N
+  param<bool> dumpcorr{"dumpcorr", "Dump corrected energies to file [energies.nrg]?", "false", all};  // N - new
+  param<bool> dumpcrit{"dumpcrit", "Dump criterion values to file [energies.nrg]?", "false", all};  // N - new
+  param<bool> dumpstates{"dumpstates", "Dump (all) energies and vectors to file [states.nrg]?", "false", all};  // N - new
   param<bool> dumpabsenergies{"dumpabsenergies", "Dump (all) absolute energies to file?", "false", all};  // N - new
 
   // If set to false, the unitary transformation matrix and density

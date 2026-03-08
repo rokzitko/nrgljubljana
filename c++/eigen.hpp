@@ -32,9 +32,23 @@ std::vector<T> negate_copy(const std::vector<T>& v) {
 }
 
 template<typename T>
+std::vector<T> abs_copy(const std::vector<T>& v) {
+  std::vector<T> out(v.size());
+  std::transform(v.begin(), v.end(), out.begin(),
+                 [](const T& x) { return std::abs(x); });
+  return out;
+}
+
+template<typename T>
 void negate_inplace(std::vector<T>& v) {
   for (auto& x : v)
     x = -x;
+}
+
+template<typename T>
+void abs_inplace(std::vector<T>& v) {
+  for (auto& x : v)
+    x = std::abs(x);
 }
 
 // Storage container for eigenvalues. Vector v contains the raw eigenvalues as computed in the Hamiltonian
@@ -111,6 +125,7 @@ class Values {
    void crit_copy_raw() { c = v; }
    void crit_copy_corr() { c = corrected; }
    void crit_negate() { negate_inplace(c); }
+   void crit_abs() { abs_inplace(c); }
    [[nodiscard]] auto has_abs() const noexcept { return std::isfinite(scale); }
    [[nodiscard]] auto has_zero() const noexcept { return std::isfinite(shift); }
    [[nodiscard]] auto has_abs_zero() const noexcept { return has_abs() && has_zero(); }
@@ -400,9 +415,15 @@ public:
 // Full information after diagonalizations (eigenspectra in all subspaces)
 template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>>
 class DiagInfo : public std::map<Invar, Eigen<S>> {
+ private:
+//   const Params &P;
+   bool dumpcorr = false;
+   bool dumpcrit = false;
  public:
    explicit DiagInfo() = default;
-   DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) {
+   DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) :
+     dumpcorr(P.dumpcorr),
+     dumpcrit(P.dumpcrit) {
      skip_comments(fdata);
      for ([[maybe_unused]] const auto i : range1(nsubs)) {
        const auto I = read_one<Invar>(fdata);
@@ -413,6 +434,11 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      my_assert(this->size() == nsubs);
    }
+   explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) :
+     dumpcorr(P.dumpcorr),
+     dumpcrit(P.dumpcrit) {
+       load(N, P, remove_files);
+     } // called from do_diag()
    [[nodiscard]] auto subspaces() const noexcept { return *this | boost::adaptors::map_keys; }
    [[nodiscard]] auto eigs() const noexcept { return *this | boost::adaptors::map_values; }
    [[nodiscard]] auto eigs() noexcept { return *this | boost::adaptors::map_values; }
@@ -457,8 +483,14 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      return all | ranges::move | ranges::actions::sort;
    }
    void dump_energies(std::ostream &F) const {
-     for (const auto &[I, eig]: *this)
-       F << "Subspace: " << I << std::endl << eig.values.all_rel() << std::endl;
+     for (const auto &[I, eig]: *this) {
+       F << "Subspace: " << I << std::endl;
+       F << eig.values.all_rel() << std::endl;
+       if (dumpcorr)
+         F << "corr=" << eig.values.all_corr() << std::endl;
+       if (dumpcrit)
+         F << "crit=" << eig.values.all_crit() << std::endl;
+     }
    }
    void dump_states(std::ostream &F) const {
      for (const auto &[I, eig]: *this) {
@@ -476,6 +508,10 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void negate_c() {
      for (auto &eig: eigs())
        eig.values.crit_negate();
+   }
+   void abs_c() {
+     for (auto &eig: eigs())
+       eig.values.crit_abs();
    }
    void truncate_perform() {
      ranges::for_each(eigs(), &Eigen<S>::truncate_perform); // Truncate subspace to appropriate size
@@ -544,9 +580,6 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    void h5save(H5Easy::File &fd, const std::string &name, const bool save_vectors = true) const {
      for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name(), save_vectors);
    }
-   explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) {
-     load(N, P, remove_files);
-   } // called from do_diag()
 };
 
 } // namespace

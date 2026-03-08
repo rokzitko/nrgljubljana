@@ -32,6 +32,8 @@ inline bool cluster_splitting(const T &i0, const T &i1) {
 
 template<scalar S, typename t_eigen = eigen_traits<S>>
 class Clusters {
+ private:
+   const Params &P;
  public:
    std::unordered_map<t_eigen, t_eigen> cluster_mapping;
    // Fix splittings of eigenvalues.
@@ -42,11 +44,12 @@ class Clusters {
          if (auto m = cluster_mapping.find(r); m != cluster_mapping.cend())
            r = m->second;
        eig.values.set_corr(std::move(v));
-       eig.values.crit_copy_corr(); // update truncation criterion with corrected eigenvalues
+       if (!P.floquet)
+         eig.values.crit_copy_corr(); // update truncation criterion with corrected eigenvalues
      }
    }
    // Find clusters of values which differ by at most 'epsilon'
-   Clusters(DiagInfo<S> &diag, const double epsilon, bool fix = true) {
+   Clusters(DiagInfo<S> &diag, const double epsilon, const Params &_P, bool fix = true) : P(_P) {
      const auto energies = diag.sorted_energies_rel_zero();
      my_assert(energies.size());
      auto e0 = energies.front();  // energy of the lower boundary of the cluster, [e0:e1]

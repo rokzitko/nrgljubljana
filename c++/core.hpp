@@ -136,12 +136,15 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
       } else {
         stats.Egs = diag.Egs_subtraction();
       }
-      Clusters<S> clusters(diag, P.fixeps);
+      Clusters<S> clusters(diag, P.fixeps, P);
+//      if (!P.floquet)
+//        diag.copy_c_from_corrected();
       if (P.floquet) {
 //#ifdef HACK2
         output.dump_energies(200+step.ndx(), diag); // another copy to "energies.nrg", XXX
         output.dump_states(200+step.ndx(), diag); // XXX
-        diag.negate_c();
+        diag.abs_c();
+//        diag.negate_c();
         diag.sort_by_c();
 //#endif
       }
