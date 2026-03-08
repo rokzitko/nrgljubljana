@@ -56,6 +56,7 @@ class Values {
    double c_shift = std::numeric_limits<double>::quiet_NaN(); // shift for criterion 'c'
   public:
    std::vector<t_eigen> & ref_v() { return v; }
+   std::vector<t_eigen> & ref_corrected() { return corrected; }
    std::vector<t_eigen> & ref_c() { return c; }
    void resize(const size_t size) { 
      v.resize(size); 
@@ -248,12 +249,14 @@ public:
   void check_diag() const { NRG::check_diag<S>(val, vec); }
 };
 
-template <typename T, typename U, typename S>
+template <typename T, typename S>
 void perform_sort_by_c(std::vector<T>& c,
-                       std::vector<U>& v,
+                       std::vector<T>& v,
+                       std::vector<T>& corrected,
                        Eigen::Matrix<S, -1, -1, Eigen::RowMajor>& m) {
   const std::size_t n = c.size();
   assert(v.size() == n);
+  assert(corrected.size() == n);
   assert(static_cast<std::size_t>(m.rows()) == n);
   // Build permutation: p[i] = original index of the i-th smallest element of c
   std::vector<std::size_t> p(n);
@@ -264,12 +267,15 @@ void perform_sort_by_c(std::vector<T>& c,
             });
   // Apply permutation to c and v
   std::vector<T> c_sorted;
-  std::vector<U> v_sorted;
+  std::vector<T> v_sorted;
+  std::vector<T> corrected_sorted;
   c_sorted.reserve(n);
   v_sorted.reserve(n);
+  corrected_sorted.reserve(n);
   for (std::size_t i = 0; i < n; ++i) {
     c_sorted.push_back(std::move(c[p[i]]));
     v_sorted.push_back(std::move(v[p[i]]));
+    corrected_sorted.push_back(std::move(corrected[p[i]]));
   }
   // Apply permutation to rows of m
   Eigen::Matrix<S, -1, -1, Eigen::RowMajor> m_sorted(m.rows(), m.cols());
@@ -277,6 +283,7 @@ void perform_sort_by_c(std::vector<T>& c,
     m_sorted.row(static_cast<Eigen::Index>(i)) = m.row(static_cast<Eigen::Index>(p[i]));
   c = std::move(c_sorted);
   v = std::move(v_sorted);
+  corrected = std::move(corrected_sorted);
   m = std::move(m_sorted);
 }
 
@@ -332,7 +339,7 @@ public:
   [[nodiscard]] auto value_corr_msr() const noexcept { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
   // Reordering
   void do_sort_by_c() {
-    perform_sort_by_c(values.ref_c(), values.ref_v(), vectors.ref_m()); // XXX: corrected?
+    perform_sort_by_c(values.ref_c(), values.ref_v(), values.ref_corrected(), vectors.ref_m()); // XXX: corrected?
   }
   // Truncate to nrpost states.
   void truncate_prepare(const size_t nrpost_) {
