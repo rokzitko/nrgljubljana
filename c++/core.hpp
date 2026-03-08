@@ -111,7 +111,7 @@ void calc_floquet_truncation_criterion(DiagInfo<S> &diag, const Params &P) {
 
 template<scalar S>
 auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             const Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
+             Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
   double diagratio = P.diagratio; // non-const
@@ -137,6 +137,14 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
         stats.Egs = diag.Egs_subtraction();
       }
       Clusters<S> clusters(diag, P.fixeps);
+      if (P.floquet) {
+//#ifdef HACK2
+        output.dump_energies(200+step.ndx(), diag); // another copy to "energies.nrg", XXX
+        output.dump_states(200+step.ndx(), diag); // XXX
+        diag.negate_c();
+        diag.sort_by_c();
+//#endif
+      }
       truncate_prepare(step, diag, Sym->multfnc(), P);
       break;
     }
@@ -209,14 +217,12 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   stats.update(step);
   if (step.nrg()) {
     if (P.floquet) {
-      std::cout << "Writing to energies.nrg" << std::endl;
+#ifdef HACK1
       output.dump_energies(100+step.ndx(), diag); // another copy to "energies.nrg", XXX
       output.dump_states(100+step.ndx(), diag); // XXX
       diag.negate_c();
-      std::cout << "sort_by_c()" << std::endl;
       diag.sort_by_c();
-      std::cout << "sort_by_c() done" << std::endl;
-      // XXX
+#endif
     }
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
