@@ -308,7 +308,7 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
     diag = DiagInfo<S>(step.ndx(), P, P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
-  stats.Egs = diag.Egs_subtraction(!P.floquet);
+  stats.Egs = diag.Egs_subtraction();
   truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   SubspaceStructure substruct{};
