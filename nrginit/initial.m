@@ -79,6 +79,7 @@ BAND           = paramdefault["band", "flat"];
 DEBUG          = paramdefaultnum["mmadebug", 1];
 bandrescale    = paramdefaultnum["bandrescale", 1];
 DISCRETIZATION = paramdefault["discretization", "Z"];
+FLOQUET        = paramdefaultbool["floquet", False];
 
 If[StringLength[DISCRETIZATION] >= 1,
   DISCRETIZATION = StringTake[DISCRETIZATION, {1}] ];
@@ -1651,12 +1652,18 @@ calcgsenergy[] := Module[{all, i, val, vec},
     all = Join[all, val];
   ];
   all = Sort[all];
-  first20 = Take[all, Min[Length[all], 20]];
-  MyPrint["Lowest energies (absolute):", first20];
-  GSenergy = First[all]; (* WARNING (side effect): GSenergy is a global variable! *)
-  MyPrint["Lowest energies (GS shifted):", first20-GSenergy];
-  MyPrint["Scale factor SCALE(Ninit):", SCALE[Ninit]];
-  MyPrint["Lowest energies (shifted and scaled):", (first20-GSenergy)/SCALE[Ninit]];
+  If[!(FLOQUET || option["NOGSSHIFT"]),
+    first20 = Take[all, Min[Length[all], 20]];
+    MyPrint["Lowest energies:", first20];
+    GSenergy = First[all]; (* WARNING (side effect): GSenergy is a global variable! *)
+    MyPrint["Lowest energies (GS shifted):", first20-GSenergy];
+    MyPrint["Scale factor SCALE(Ninit):", SCALE[Ninit]];
+    MyPrint["Lowest energies (GS shifted and scaled):", (first20-GSenergy)/SCALE[Ninit]],
+  (* else *)
+    MyPrint["Not shifting."];
+    GSenergy = 0;
+  ];
+  MyPrint["GSenergy=", GSenergy];
 ];
 
 Get["wilson.m", Path->PACKAGEPATH];
