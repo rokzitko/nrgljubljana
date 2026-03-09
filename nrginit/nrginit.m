@@ -42,15 +42,13 @@ SYMTYPE = "runtime";
 (* Load sneg first! *)
 Get["sneg.m", Path->PACKAGEPATH];
 
-res=Get["initialparse.m", Path->PACKAGEPATH];
-If[res == $Failed,
+If[Get["initialparse.m", Path->PACKAGEPATH] == $Failed,
   Print["Can't load initialparse.m"];
   Exit[1];
 ];
 
 MyPrint["Parsing parameters"];
-res = parse["param"];
-If[res == $Failed,
+If[parse["param"] == $Failed,
   Print["Failed parsing parameter file."];
   Exit[1];
 ];

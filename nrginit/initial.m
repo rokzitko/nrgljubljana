@@ -28,7 +28,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2026.02";
+VERSION = "2026.03";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -122,6 +122,8 @@ getmodelparam[key_, default_] := Module[{},
   If[paramexists[key, "param"], Return[paramnum[key, "param"]]];
   Return[default];
 ];
+
+Unprotect[Gamma]; (* Avoid Mathematica warnings *)
 
 realU     = getmodelparam["U", 0.1];
 realGamma = getmodelparam["Gamma", 0.1];
@@ -643,7 +645,7 @@ isnumericmat[a_] := And @@ Map[NumericQ, Flatten[a]];
 two lists: eigenvalues (absolute energy units [D], no factors!), and
 eigenvectors as numeric arrays (i.e. a matrix). The results are cached. *)
 
-diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
+diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec, reslt},
   MyPrint["diagvc[", inv, "]"];
 
   hamil = ham[inv];
@@ -722,10 +724,10 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec},
 
   (* Sanity check 3 *)
   ORTHLIMIT = 10^-10 * nr; (* Don't be too stringent! Rescale by matrix size! *)
-  res = Total[Abs[Dot[vec,
+  reslt = Total[Abs[Dot[vec,
     ConjugateTranspose[vec]]-IdentityMatrix[nr]], 2];
-  MyPrint["orthogonality check=", res];
-  If[Abs[res] > ORTHLIMIT, MyError["orhogonality error"]];
+  MyPrint["orthogonality check=", reslt];
+  If[Abs[reslt] > ORTHLIMIT, MyError["orhogonality error"]];
 
   {val, vec}
 ];
@@ -1546,13 +1548,13 @@ ireducorbsigmaTable[op_] := Module[{t, i, cp, mat},
  NOTE: optransform is not used here!
 *)
 
-singletopMatrixSpeedy[op_, inv_] := Module[{mat, vecs, res},
+singletopMatrixSpeedy[op_, inv_] := Module[{mat, vecs, reslt},
   mat = op2matrix[op, inv];
   AppendTo[opdata, {inv, mat}]; (* opdata is global! *)
   vecs = diagvc[inv] [[2]];
   (* Unitarity transformation to the eigenbasis. This is essentially the same code as in optransform[]. *)
-  res = Conjugate[vecs] . mat . Transpose[vecs]; (* conjugate bras, transpose kets *)
-  res
+  reslt = Conjugate[vecs] . mat . Transpose[vecs]; (* conjugate bras, transpose kets *)
+  reslt
 ];
 
 generalopMatrixSpeedy[op_, inv1_, inv2_] := Module[{mat0, mat, vecs1, vecs2},

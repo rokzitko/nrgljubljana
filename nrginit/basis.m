@@ -321,6 +321,7 @@ If[GENERATEBASIS == True,
   basis, since in some models phonon kets transform under the mirror
   symmetry (for example in ONE/COM model). *)
   If[ MAKEPHONON =!= Null,
+    MyVPrint[1, "MAKEPHONON=", MAKEPHONON];
     If[MAKEPHONON == 1, cutoffs = {nph}];
     If[MAKEPHONON == 2, cutoffs = {nph, nph}];
     MyVPrint[1, "Adding phonons, cutoffs=", cutoffs];
@@ -332,6 +333,18 @@ If[GENERATEBASIS == True,
     MyVPrint[2, "PHONON baza (vc)=", bvc];
   ];
 
+  If[ MAKEFLOQUET =!= Null,
+    MyVPrint[1, "MAKEFLOQUET=", MAKEFLOQUET];
+    If[MAKEFLOQUET == 1, cutoffs = {ncut}];
+    If[MAKEFLOQUET == 2, cutoffs = {ncut, ncut}];
+    MyVPrint[1, "Adding Floquet modes, cutoffs=", cutoffs];
+
+    bz = transformtoFL[bz, cutoffs];
+    MyVPrint[2, "FLOQUET baza (op)=", bz];
+
+    bvc = bzop2bzvc[bz, vak];
+    MyVPrint[2, "FLOQUET baza (vc)=", bvc];
+  ];
 
   (*** Step 5: Generate parity-adapted basis ***)
   dolr[] := Module[{},
