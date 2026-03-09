@@ -21,6 +21,7 @@
 #include "stats.hpp"
 #include "symmetry.hpp"
 #include "h5.hpp"
+#include "eigen.hpp"
 
 namespace NRG {
 
@@ -161,12 +162,12 @@ struct Output {
   void dump_energies(const int N, const DiagInfo<S> &diag) {
     if (!Fenergies) return;
     Fenergies << std::endl << "===== Iteration number: " << N << std::endl;
-    diag.dump_energies(Fenergies);
+    dump_all_energies(diag, Fenergies, P);
   }
   void dump_states(const int N, const DiagInfo<S> &diag) {
     if (!Fstates) return;
     Fstates << std::endl << "===== Iteration number: " << N << std::endl;
-    diag.dump_states(Fstates);
+    dump_all_states(diag, Fstates, P);
   }
 };
 

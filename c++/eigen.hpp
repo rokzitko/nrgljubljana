@@ -415,15 +415,9 @@ public:
 // Full information after diagonalizations (eigenspectra in all subspaces)
 template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>>
 class DiagInfo : public std::map<Invar, Eigen<S>> {
- private:
-//   const Params &P;
-   bool dumpcorr = false;
-   bool dumpcrit = false;
  public:
    explicit DiagInfo() = default;
-   DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) :
-     dumpcorr(P.dumpcorr),
-     dumpcrit(P.dumpcrit) {
+   DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) {
      skip_comments(fdata);
      for ([[maybe_unused]] const auto i : range1(nsubs)) {
        const auto I = read_one<Invar>(fdata);
@@ -434,11 +428,9 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      my_assert(this->size() == nsubs);
    }
-   explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) :
-     dumpcorr(P.dumpcorr),
-     dumpcrit(P.dumpcrit) {
+   explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) {  // called from do_diag()
        load(N, P, remove_files);
-     } // called from do_diag()
+   }
    [[nodiscard]] auto subspaces() const noexcept { return *this | boost::adaptors::map_keys; }
    [[nodiscard]] auto eigs() const noexcept { return *this | boost::adaptors::map_values; }
    [[nodiscard]] auto eigs() noexcept { return *this | boost::adaptors::map_values; }
@@ -481,25 +473,6 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      for (const auto &eig: eigs())
        all.insert(all.end(), eig.values.all_crit_zero().begin(), eig.values.all_crit_zero().end());
      return all | ranges::move | ranges::actions::sort;
-   }
-   void dump_energies(std::ostream &F) const {
-     for (const auto &[I, eig]: *this) {
-       F << "Subspace: " << I << std::endl;
-       F << eig.values.all_rel() << std::endl;
-       if (dumpcorr)
-         F << "corr=" << eig.values.all_corr() << std::endl;
-       if (dumpcrit)
-         F << "crit=" << eig.values.all_crit() << std::endl;
-     }
-   }
-   void dump_states(std::ostream &F) const {
-     for (const auto &[I, eig]: *this) {
-       F << "Subspace: " << I << std::endl;
-       F << "Energies (rel): " << eig.values.all_rel() << std::endl;
-       F << "Vectors:" << std::endl;
-       eig.vectors.dump(F);
-       F << std::endl; // empty line
-     }
    }
    void sort_by_c() {
      for (auto &eig: eigs())
@@ -581,6 +554,29 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name(), save_vectors);
    }
 };
+
+template<scalar S>
+void dump_all_energies(const DiagInfo<S> &diag, std::ostream &F, const Params &P)  {
+  for (const auto &[I, eig]: diag) {
+    F << "Subspace: " << I << std::endl;
+    F << eig.values.all_rel() << std::endl;
+    if (P.dumpcorr)
+      F << "corr=" << eig.values.all_corr() << std::endl;
+    if (P.dumpcrit)
+      F << "crit=" << eig.values.all_crit() << std::endl;
+  }
+}
+
+template<scalar S>
+void dump_all_states(const DiagInfo<S> &diag, std::ostream &F, const Params &P)  {
+  for (const auto &[I, eig]: diag) {
+    F << "Subspace: " << I << std::endl;
+    F << "Energies (rel): " << eig.values.all_rel() << std::endl;
+    F << "Vectors:" << std::endl;
+    eig.vectors.dump(F);
+    F << std::endl; // empty line
+  }
+}
 
 } // namespace
 
