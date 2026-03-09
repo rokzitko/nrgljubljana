@@ -134,7 +134,8 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
         calc_floquet_truncation_criterion(diag, P);
         stats.Egs = diag.find_Egs();
       } else {
-        stats.Egs = diag.Egs_subtraction();
+        diag.Egs_subtraction();
+        stats.Egs = diag.find_Egs();
       }
       Clusters<S> clusters(diag, P.fixeps, P);
 //      if (!P.floquet)
@@ -308,7 +309,13 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
     diag = DiagInfo<S>(step.ndx(), P, P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
-  stats.Egs = diag.Egs_subtraction();
+  if (P.floquet) {
+    calc_floquet_truncation_criterion(diag, P);
+    stats.Egs = diag.find_Egs();
+  } else {
+    diag.Egs_subtraction();
+    stats.Egs = diag.find_Egs();
+  }
   truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   SubspaceStructure substruct{};
