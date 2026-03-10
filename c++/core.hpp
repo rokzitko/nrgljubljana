@@ -102,8 +102,10 @@ auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Co
 template<scalar S>
 void calc_floquet_truncation_criterion(DiagInfo<S> &diag, const Params &P) {
   const auto Clw = diag.find_Clw();
-  ranges::for_each(diag.eigs(), [Egs, Clw](auto &eig)
+  ranges::for_each(diag.eigs(), [Clw](auto &eig) {
     eig.subtract_Clw(Clw);
+    eig.subtract_Egs(0.0); // !!!
+  });
 }
 
 template<scalar S>
@@ -129,7 +131,7 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
       }
       if (P.floquet) {
         calc_floquet_truncation_criterion(diag, P);
-        stats.Egs = diag.find_Egs();
+        stats.Egs = 0.0;
       } else {
         diag.Egs_subtraction();
         stats.Egs = diag.find_Egs();
@@ -142,7 +144,6 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
         output.dump_energies(200+step.ndx(), diag); // another copy to "energies.nrg", XXX
         output.dump_states(200+step.ndx(), diag); // XXX
         diag.abs_c();
-//        diag.negate_c();
         diag.sort_by_c();
 //#endif
       }
@@ -308,7 +309,7 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
   }
   if (P.floquet) {
     calc_floquet_truncation_criterion(diag, P);
-    stats.Egs = diag.find_Egs();
+    stats.Egs = 0.0;
   } else {
     diag.Egs_subtraction();
     stats.Egs = diag.find_Egs();
