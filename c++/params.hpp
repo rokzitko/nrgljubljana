@@ -182,6 +182,7 @@ class Params {
   param<double> fixeps{"fixeps", "Threshold value for eigenvalue splitting corrections", "1e-15", all}; // N
 
   param<bool> floquet{"floquet", "Energies are actually Floquet quasi-energies", "false", all};
+  param<double> Omega{"Omega", "Floquet frequency", "0", all};
 
   // ******************************************************
   // Physical temperature for finite-temperature quantities

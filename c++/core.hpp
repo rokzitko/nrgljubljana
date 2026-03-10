@@ -210,6 +210,9 @@ void store_states(const Step &step, Store<S> &store, Store<S> &store_all, const 
   }
 }
 
+inline double to_double(double x) { return x; }
+inline double to_double(std::complex<double> z) { return z.real(); }
+
 // Perform processing after a successful NRG step. Also called from doZBW() as a final step.
 template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
@@ -246,6 +249,17 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     output.dump_energies(300+step.ndx(), diag); // another copy to "energies.nrg", XXX, before modifications...
     output.dump_states(300+step.ndx(), diag); // XXX, states, before modifications
 //    diag.abs_c();
+    for(auto &[I, eig]: diag) {
+      std::cout << "Setting " << I << std::endl;
+      for (size_t i = 0; i < eig.values.size(); i++) {
+        const auto e = eig.values.raw(i);
+        const auto m = mnew[Twoinvar(I, I)](i,i);
+        const auto mOmega = to_double(m)*P.Omega;
+        const auto x = pow(e-mOmega, 2) + pow(mOmega, 2);
+        std::cout << "i=" << i << " e=" << e << " m=" << m << " e-mOmega=" << e-mOmega << " x=" << x << std::endl;
+        eig.values.set_crit(i, x);
+      }
+    }
     diag.sort_by_c();
     // XXX
     split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
