@@ -55,7 +55,7 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
      return os;
    }
    friend std::ostream &operator<<(std::ostream &os, const MatrixElements<S> &m) { return m.insertor(os); }
-   friend void dump_diagonal_op(const std::string &name, const MatrixElements<S> &m, const size_t max_nr, std::ostream &F) {
+   friend void dump_diagonal_op(const std::string &name, const MatrixElements<S> &m, const size_t max_nr, std::ostream &F = std::cout) {
      F << "Diagonal matrix elements of operator " << name << std::endl;
      for (const auto &[II, mat] : m) {
        const auto & [I1, I2] = II;

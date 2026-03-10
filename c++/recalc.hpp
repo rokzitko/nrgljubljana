@@ -16,7 +16,7 @@ namespace NRG {
 // of some copying, this increases memory locality of data and thus improves numerical performence of matrix-matrix multiplies
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting.
 template<scalar S, typename Matrix = Matrix_traits<S>>
-inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
+inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub, const bool shrink = true) {
   const auto combs = sub.combs();
   e.U.resize(combs);
   const auto nr = e.getnrstored();
@@ -26,13 +26,13 @@ inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub) {
     e.U.set(block, std::move(U));
   }
   assert(e.U.is_unitary());
-  e.vectors.shrink();
+  if (shrink) e.vectors.shrink();
 }
 
 template<scalar S>
-inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruct) {
+inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool shrink = true) {
   for(auto &[I, eig]: diag)
-    split_in_blocks_Eigen(eig, substruct.at(I));
+    split_in_blocks_Eigen(eig, substruct.at(I), shrink);
 }
 
 template<scalar S>

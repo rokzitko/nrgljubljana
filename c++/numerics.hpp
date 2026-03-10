@@ -176,7 +176,8 @@ template<matrix M> inline void dump_matrix(const M &m, std::ostream &F = std::co
 }
 
 template<matrix M> inline void dump_diagonal_matrix(const M &m, const size_t max_nr, std::ostream &F = std::cout) {
-  for (const auto r : range0(std::min(size1(m), max_nr))) F << m(r,r) << ' ';
+  const size_t nr = (max_nr == 0 ? size1(m) : max_nr); // max_nr=0 => all!
+  for (const auto r : range0(std::min(size1(m), nr))) F << m(r,r) << ' ';
   F << std::endl;
 }
 

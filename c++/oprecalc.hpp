@@ -89,6 +89,19 @@ class Oprecalc {
          m = recalc_or_clear(ops.count({"q", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_quadruplet(pr...);  }, "q", step, diag, substruct);
      }
 
+   // Special case for Floquet problems
+   MatrixElements<S> recalculate_operator_m(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P) {
+     nrglog('@', "recalculate_operator_m()");
+     const auto section_timing = mt.time_it("recalc");
+     MatrixElements<S> mnew;
+     for (auto &[name, m] : a.ops)
+       if (name == "m") {
+         std::cout << "Matched " << name << std::endl;
+         mnew = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
+       }
+     return mnew;
+   }
+
    // Establish the data structures for storing spectral information [and prepare output files].
    template<typename A, typename M>
      [[nodiscard]] bool prepare_spec_algo(std::string prefix, const Params &P, FactorFnc ff, CheckFnc cf, M && op1, M && op2, int spin,

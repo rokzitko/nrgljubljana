@@ -140,12 +140,12 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
 //      if (!P.floquet)
 //        diag.copy_c_from_corrected();
       if (P.floquet) {
-//#ifdef HACK2
+#ifdef HACK2
         output.dump_energies(200+step.ndx(), diag); // another copy to "energies.nrg", XXX
         output.dump_states(200+step.ndx(), diag); // XXX
         diag.abs_c();
         diag.sort_by_c();
-//#endif
+#endif
       }
       truncate_prepare(step, diag, Sym->multfnc(), P);
       break;
@@ -234,9 +234,21 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   if (P.h5raw && (P.h5all || (P.h5last && step.last())))
     diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/", P.h5vectors);
   if (!P.ZBW()) {
-    split_in_blocks(diag, substruct);
+    const bool shrink = !P.floquet;
+    split_in_blocks(diag, substruct, shrink); // We need to keep raw matrices if P.floquet=true
     if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5U)
       h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct);
+  }
+  if (P.floquet) {
+    // recalculate only the m operator
+    auto mnew = oprecalc.recalculate_operator_m(operators, step, diag, substruct, P);
+    dump_diagonal_op("m", mnew, 0);
+    output.dump_energies(300+step.ndx(), diag); // another copy to "energies.nrg", XXX, before modifications...
+    output.dump_states(300+step.ndx(), diag); // XXX, states, before modifications
+//    diag.abs_c();
+    diag.sort_by_c();
+    // XXX
+    split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
     oprecalc.recalculate_operators(operators, step, diag, substruct, P);
