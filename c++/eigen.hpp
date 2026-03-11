@@ -96,7 +96,7 @@ class Values {
    [[nodiscard]] auto highest_crit() const { return c.back(); }
    void report(bool verbose = false) const {
      assert(v.size() > 0);
-     std::cout << "v[0]=" << v[0] << " crit[0]=" << c[0] << std::endl;
+     std::cout << "v[0]=" << v.front() << " corrected[0]=" << corrected.front() << " crit[0]=" << c.front() << std::endl;
      if (verbose)
        std::cout << "scale=" << scale << " shift=" << shift << " T_shift=" << T_shift << " c_shift=" << c_shift << std::endl;
    }
@@ -129,7 +129,7 @@ class Values {
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
    void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
    void set_corr(std::vector<t_eigen> in) { corrected = std::move(in); }
-   void do_corr_shift(const double shift) { shift_inplace(c, shift); }
+   void do_corr_shift(const double shift) { shift_inplace(corrected, shift); }
    [[nodiscard]] auto crit(const size_t i) const { return c[i]; }
    void set_crit(const size_t i, const t_eigen x) { c[i] = x; }
    void crit_copy_raw() { c = v; }
@@ -385,6 +385,7 @@ public:
     values.set_shift(Egs);
   }
   void shift(const t_eigen Egs, const t_eigen Clw) {
+    std::cout << "shift, Egs=" << Egs << " Clw=" << Clw << std::endl;
     values.do_corr_shift(Egs);
     values.do_c_shift(Clw);
   }
