@@ -235,7 +235,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     // Shift truncation criteria to zero offset
     const auto Clw = diag.find_Clw();
     std::cout << "Clw=" << Clw << std::endl;
-    diag.subtract_Clw(Clw);
+    diag.shift(stats.Egs, Clw); // this mimics what Clusters() does
     diag.report(true);
     // Sort eigensolutions by the value of the 'truncation criterion' value
     std::cout << "sort_by_c()" << std::endl;

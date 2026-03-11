@@ -51,6 +51,12 @@ void abs_inplace(std::vector<T>& v) {
     x = std::abs(x);
 }
 
+template<typename T>
+void shift_inplace(std::vector<T>& v, const T shift) {
+  for (auto& x : v)
+    x -= shift; // note that we do a subtraction!
+}
+
 // Storage container for eigenvalues. Vector v contains the raw eigenvalues as computed in the Hamiltonian
 // diagonalisation. If scale, shift, T_shift and/or GS_energy parameters are defined, then one has also access to various
 // derived quantities. 'Relative' means in the units of the current NRG shell. 'Absolute' means in the units of
@@ -100,10 +106,6 @@ class Values {
      assert(v.size() == 0 || std::isfinite(shift));
      return ranges::views::transform(v, [this](const auto x){ return x-shift; });
    }
-   [[nodiscard]] auto all_crit_zero() const noexcept {
-     assert(c.size() == 0 || std::isfinite(c_shift));
-     return ranges::views::transform(c, [this](const auto x){ return x-c_shift; });
-   }
    [[nodiscard]] auto all_abs_zero() const noexcept {
      assert(v.size() == 0 || (std::isfinite(shift) && std::isfinite(scale)));
      return ranges::views::transform(v, [this](const auto x){ return (x-shift) * scale; });
@@ -123,9 +125,11 @@ class Values {
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_c_shift(const double c_shift_) { c_shift = c_shift_; }
+   void do_c_shift(const double shift) { shift_inplace(c, shift); }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
    void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
    void set_corr(std::vector<t_eigen> in) { corrected = std::move(in); }
+   void do_corr_shift(const double shift) { shift_inplace(c, shift); }
    [[nodiscard]] auto crit(const size_t i) const { return c[i]; }
    void set_crit(const size_t i, const t_eigen x) { c[i] = x; }
    void crit_copy_raw() { c = v; }
@@ -377,11 +381,12 @@ public:
     values.set(v);
     vectors.standard_basis(v.size());
   }
-  void subtract_Egs(const t_eigen Egs) {
+  void subtract_Egs(const t_eigen Egs) { // TODO: rename!
     values.set_shift(Egs);
   }
-  void subtract_Clw(const t_eigen Clw) {
-    values.set_c_shift(Clw);
+  void shift(const t_eigen Egs, const t_eigen Clw) {
+    values.do_corr_shift(Egs);
+    values.do_c_shift(Clw);
   }
   void subtract_GS_energy(const t_eigen GS_energy) {
     values.set_abs_GS_energy(GS_energy);
@@ -450,11 +455,12 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      const auto Clw = eig.values.lowest_crit();
      return Clw;
    }
-   void subtract_Egs(const t_eigen Egs) {
+   void subtract_Egs(const t_eigen Egs) { // TODO: rename
      ranges::for_each(eigs(), [Egs](auto &eig) { eig.subtract_Egs(Egs); });
    }
-   void subtract_Clw(const t_eigen Clw) {
-     ranges::for_each(eigs(), [Clw](auto &eig) { eig.subtract_Clw(Clw); });
+   // shifts corr(ected) and criterion; raw values (v) remain untouched
+   void shift(const t_eigen Egs, const t_eigen Clw) {
+     ranges::for_each(eigs(), [Egs, Clw](auto &eig) { eig.shift(Egs, Clw); });
    }
    void subtract_GS_energy(const t_eigen GS_energy) {
      ranges::for_each(eigs(), [GS_energy](auto &eig) { eig.subtract_GS_energy(GS_energy); });
@@ -469,12 +475,6 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      std::vector<t_eigen> all;
      for (const auto &eig: eigs())
        all.insert(all.end(), eig.values.all_crit().begin(), eig.values.all_crit().end());
-     return all | ranges::move | ranges::actions::sort;
-   }
-   [[nodiscard]] std::vector<t_eigen> sorted_criteria_zero() const {
-     std::vector<t_eigen> all;
-     for (const auto &eig: eigs())
-       all.insert(all.end(), eig.values.all_crit_zero().begin(), eig.values.all_crit_zero().end());
      return all | ranges::move | ranges::actions::sort;
    }
    void sort_by_c() {
