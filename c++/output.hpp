@@ -159,15 +159,15 @@ struct Output {
       }
     }
   // Dump eigenvalues from the diagonalisation to a file.
-  void dump_energies(const int N, const DiagInfo<S> &diag) {
+  void dump_energies(const int N, const DiagInfo<S> &diag, const double rescaled_by = 1.0) {
     if (!Fenergies) return;
     Fenergies << std::endl << "===== Iteration number: " << N << std::endl;
-    dump_all_energies(diag, Fenergies, P);
+    dump_all_energies(diag, rescaled_by, Fenergies, P);
   }
-  void dump_states(const int N, const DiagInfo<S> &diag) {
+  void dump_states(const int N, const DiagInfo<S> &diag, const double rescaled_by = 1.0) {
     if (!Fstates) return;
     Fstates << std::endl << "===== Iteration number: " << N << std::endl;
-    dump_all_states(diag, Fstates, P);
+    dump_all_states(diag, rescaled_by, Fstates, P);
   }
 };
 

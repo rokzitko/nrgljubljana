@@ -478,6 +478,10 @@ class Params {
   param<bool> dumpcorr{"dumpcorr", "Dump corrected energies to file [energies.nrg]?", "false", all};  // N - new
   param<bool> dumpcrit{"dumpcrit", "Dump criterion values to file [energies.nrg]?", "false", all};  // N - new
   param<bool> dumpstates{"dumpstates", "Dump (all) energies and vectors to file [states.nrg]?", "false", all};  // N - new
+
+  // applies to the output enabled by dumpenergis, dumpcorr, dumpcrit and dumpstates
+  param<bool> dumpenergiesunscaled{"dumpenergiesunscaled", "Dump unscaled energies, i.e. no scaled by SCALE(N)", "false", all};
+
   param<bool> dumpabsenergies{"dumpabsenergies", "Dump (all) absolute energies to file?", "false", all};  // N - new
 
   // If set to false, the unitary transformation matrix and density

@@ -253,8 +253,9 @@ void perform_basic_measurements_impl(const Step &step,
                                      Stats<S> &stats,
                                      Output<S> &output,
                                      const Params &P) {
-  output.dump_energies(step.ndx(), diag);                   // "energies.nrg"
-  output.dump_states(step.ndx(), diag);                     // "states.nrg"
+  const double rescaled_by = P.dumpenergiesunscaled ? step.scale() : 1.0;
+  output.dump_energies(step.ndx(), diag, rescaled_by);      // "energies.nrg"
+  output.dump_states(step.ndx(), diag, rescaled_by);        // "states.nrg"
   output.annotated.dump(step, diag, stats, Sym->multfnc()); // "annotated.dat"
   calculate_TD(step, diag, stats, Sym, P);                  // "td"
 }

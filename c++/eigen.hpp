@@ -554,23 +554,25 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    }
 };
 
+inline auto rescaled(std::vector<double> v, double a) { std::ranges::for_each(v, [a](double& x){ x *= a; }); return v; }
+
 template<scalar S>
-void dump_all_energies(const DiagInfo<S> &diag, std::ostream &F, const Params &P)  {
+void dump_all_energies(const DiagInfo<S> &diag, const double rescaled_by, std::ostream &F, const Params &P)  {
   for (const auto &[I, eig]: diag) {
     F << "Subspace: " << I << std::endl;
-    F << eig.values.all_rel() << std::endl;
+    F << rescaled(eig.values.all_rel(), rescaled_by) << std::endl;
     if (P.dumpcorr)
-      F << "corr=" << eig.values.all_corr() << std::endl;
+      F << "corr=" << rescaled(eig.values.all_corr(), rescaled_by) << std::endl;
     if (P.dumpcrit)
-      F << "crit=" << eig.values.all_crit() << std::endl;
+      F << "crit=" << rescaled(eig.values.all_crit(), rescaled_by) << std::endl;
   }
 }
 
 template<scalar S>
-void dump_all_states(const DiagInfo<S> &diag, std::ostream &F, const Params &P)  {
+void dump_all_states(const DiagInfo<S> &diag, const double rescaled_by, std::ostream &F, const Params &P)  {
   for (const auto &[I, eig]: diag) {
     F << "Subspace: " << I << std::endl;
-    F << "Energies (rel): " << eig.values.all_rel() << std::endl;
+    F << "Energies (rel): " << rescaled(eig.values.all_rel(), rescaled_by) << std::endl;
     F << "Vectors:" << std::endl;
     eig.vectors.dump(F);
     F << std::endl; // empty line

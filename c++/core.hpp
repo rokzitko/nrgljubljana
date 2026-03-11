@@ -250,6 +250,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     output.dump_states(300+step.ndx(), diag); // XXX, states, before modifications
 //    diag.abs_c();
     double e0min = std::numeric_limits<double>::max(); // lowest value of e-m*Omega
+    std::cout << "Omega=" << P.Omega << std::endl;
     for(auto &[I, eig]: diag) {
       std::cout << "Setting " << I << std::endl;
       for (size_t i = 0; i < eig.values.size(); i++) {
