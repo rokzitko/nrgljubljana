@@ -40,7 +40,7 @@ TEST(Clean, H) { // NOLINT
   }
 
   stats.Egs = diag.find_Egs();
-  diag.subtract_Egs(stats.Egs);
+  diag.set_shift_Egs(stats.Egs);
   stats.update(step);
   Clusters<double> clusters(diag, P.fixeps, P);
   truncate_prepare(step, diag, Sym->multfnc(), P);

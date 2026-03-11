@@ -61,7 +61,7 @@ TEST(Eigen, constructor_diagonal) { // NOLINT
   EXPECT_DOUBLE_EQ(m(1,1), 1.0);
   EXPECT_DOUBLE_EQ(m(2,2), 1.0);
   EXPECT_DOUBLE_EQ(e.values.rel_zero(0), 1.0);
-  e.subtract_Egs(1.0);
+  e.set_shift_Egs(1.0);
   EXPECT_DOUBLE_EQ(e.values.rel_zero(0), 0.0);
   // todo: check scales, etc.
 }

@@ -381,11 +381,10 @@ public:
     values.set(v);
     vectors.standard_basis(v.size());
   }
-  void subtract_Egs(const t_eigen Egs) { // TODO: rename!
+  void set_shift_Egs(const t_eigen Egs) {
     values.set_shift(Egs);
   }
   void shift(const t_eigen Egs, const t_eigen Clw) {
-    std::cout << "shift, Egs=" << Egs << " Clw=" << Clw << std::endl;
     values.do_corr_shift(Egs);
     values.do_c_shift(Clw);
   }
@@ -456,8 +455,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      const auto Clw = eig.values.lowest_crit();
      return Clw;
    }
-   void subtract_Egs(const t_eigen Egs) { // TODO: rename
-     ranges::for_each(eigs(), [Egs](auto &eig) { eig.subtract_Egs(Egs); });
+   void set_shift_Egs(const t_eigen Egs) {
+     ranges::for_each(eigs(), [Egs](auto &eig) { eig.set_shift_Egs(Egs); });
    }
    // shifts corr(ected) and criterion; raw values (v) remain untouched
    void shift(const t_eigen Egs, const t_eigen Clw) {
