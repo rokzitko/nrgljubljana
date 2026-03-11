@@ -130,8 +130,8 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
         diag.subtract_GS_energy(stats.GS_energy);
       }
       if (P.floquet) {
-        calc_floquet_truncation_criterion(diag, P);
-        stats.Egs = 0.0;
+        calc_floquet_truncation_criterion(diag, P); // YYY
+        stats.Egs = 0.0; // handled later
       } else {
         diag.Egs_subtraction();
         stats.Egs = diag.find_Egs();
@@ -139,14 +139,6 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
       Clusters<S> clusters(diag, P.fixeps, P);
 //      if (!P.floquet)
 //        diag.copy_c_from_corrected();
-      if (P.floquet) {
-#ifdef HACK2
-        output.dump_energies(200+step.ndx(), diag); // another copy to "energies.nrg", XXX
-        output.dump_states(200+step.ndx(), diag); // XXX
-        diag.abs_c();
-        diag.sort_by_c();
-#endif
-      }
       truncate_prepare(step, diag, Sym->multfnc(), P);
       break;
     }
@@ -220,35 +212,17 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
                 MemTime &mt, const Params &P) {
   nrglog('@', "after_diag()");
   stats.update(step);
-  if (step.nrg()) {
-    if (P.floquet) {
-#ifdef HACK1
-      output.dump_energies(100+step.ndx(), diag); // another copy to "energies.nrg", XXX
-      output.dump_states(100+step.ndx(), diag); // XXX
-      diag.negate_c();
-      diag.sort_by_c();
-#endif
-    }
-    calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
-    if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
-      diag.save(step.ndx(), P);
-    perform_basic_measurements(step, diag, Sym, stats, output, P); // Measurements are performed before the truncation!
-  }
-  if (P.h5raw && (P.h5all || (P.h5last && step.last())))
-    diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/", P.h5vectors);
   if (!P.ZBW()) {
     const bool shrink = !P.floquet;
     split_in_blocks(diag, substruct, shrink); // We need to keep raw matrices if P.floquet=true
-    if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5U)
-      h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct);
   }
   if (P.floquet) {
     // recalculate only the m operator
     auto mnew = oprecalc.recalculate_operator_m(operators, step, diag, substruct, P);
     dump_diagonal_op("m", mnew, 0);
-    output.dump_energies(300+step.ndx(), diag); // another copy to "energies.nrg", XXX, before modifications...
-    output.dump_states(300+step.ndx(), diag); // XXX, states, before modifications
-//    diag.abs_c();
+    const double rescaled_by = P.dumpenergiesunscaled ? step.scale() : 1.0;
+    output.dump_energies(300+step.ndx(), diag, rescaled_by); // another copy to "energies.nrg", XXX, before modifications...
+    output.dump_states(300+step.ndx(), diag, rescaled_by); // XXX, states, before modifications
     double e0min = std::numeric_limits<double>::max(); // lowest value of e-m*Omega
     std::cout << "Omega=" << P.Omega << std::endl;
     for(auto &[I, eig]: diag) {
@@ -259,7 +233,8 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
         const auto mOmega = to_double(m)*P.Omega;
         const auto e0 = e-mOmega;
         e0min = std::min(e0min, e0);
-        const auto x = sqrt(pow(e-mOmega, 2) + pow(mOmega, 2));
+//        const auto x = sqrt(pow(e0, 2) + pow(mOmega, 2));
+        const auto x = e0;
         std::cout << "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x << std::endl;
         eig.values.set_crit(i, x);
       }
@@ -267,8 +242,18 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     std::cout << "e0_min=" << e0min << std::endl;
     diag.sort_by_c();
     diag.subtract_Egs(e0min);
-    // XXX
     split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
+  }
+  if (step.nrg()) {
+    calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
+    if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
+      diag.save(step.ndx(), P);
+    perform_basic_measurements(step, diag, Sym, stats, output, P); // Measurements are performed before the truncation!
+  }
+  if (P.h5raw && (P.h5all || (P.h5last && step.last()))) {
+    diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/", P.h5vectors);
+    if (P.h5U)
+      h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct); // after split_in_blocks()
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
     oprecalc.recalculate_operators(operators, step, diag, substruct, P);
