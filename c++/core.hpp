@@ -100,15 +100,6 @@ auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Co
 }
 
 template<scalar S>
-void calc_floquet_truncation_criterion(DiagInfo<S> &diag, const Params &P) {
-  const auto Clw = diag.find_Clw();
-  ranges::for_each(diag.eigs(), [Clw](auto &eig) {
-    eig.subtract_Clw(Clw);
-    eig.subtract_Egs(0.0); // !!!
-  });
-}
-
-template<scalar S>
 auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   step.infostring();
@@ -129,13 +120,11 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
         diag = DiagInfo<S>(step.ndx(), P, P.removefiles); // read from disk in second run
         diag.subtract_GS_energy(stats.GS_energy);
       }
-      if (P.floquet) {
-        calc_floquet_truncation_criterion(diag, P); // YYY
+      if (P.floquet)
         stats.Egs = 0.0; // handled later
-      } else {
-        diag.Egs_subtraction();
+      else
         stats.Egs = diag.find_Egs();
-      }
+      diag.subtract_Egs(stats.Egs);
       Clusters<S> clusters(diag, P.fixeps, P);
 //      if (!P.floquet)
 //        diag.copy_c_from_corrected();
@@ -240,6 +229,8 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
       }
     }
     std::cout << "e0_min=" << e0min << std::endl;
+    const auto Clw = diag.find_Clw();
+    diag.subtract_Clw(Clw);
     diag.sort_by_c();
     diag.subtract_Egs(e0min);
     split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
@@ -324,13 +315,11 @@ auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInf
     diag = DiagInfo<S>(step.ndx(), P, P.removefiles);
     diag.subtract_GS_energy(stats.GS_energy);
   }
-  if (P.floquet) {
-    calc_floquet_truncation_criterion(diag, P);
-    stats.Egs = 0.0;
-  } else {
-    diag.Egs_subtraction();
+  if (P.floquet)
+    stats.Egs = 0.0; // handled later
+  else
     stats.Egs = diag.find_Egs();
-  }
+  diag.subtract_Egs(stats.Egs);
   truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
   // --- end do_diag() equivalent
   SubspaceStructure substruct{};

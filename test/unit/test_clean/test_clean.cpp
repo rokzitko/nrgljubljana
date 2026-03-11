@@ -39,7 +39,8 @@ TEST(Clean, H) { // NOLINT
     diag[I] = NRG::Eigen<double>(std::move(e), step);
   }
 
-  stats.Egs = diag.Egs_subtraction();
+  stats.Egs = diag.find_Egs();
+  diag.subtract_Egs(stats.Egs);
   stats.update(step);
   Clusters<double> clusters(diag, P.fixeps, P);
   truncate_prepare(step, diag, Sym->multfnc(), P);
