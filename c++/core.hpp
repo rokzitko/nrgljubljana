@@ -249,18 +249,23 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     output.dump_energies(300+step.ndx(), diag); // another copy to "energies.nrg", XXX, before modifications...
     output.dump_states(300+step.ndx(), diag); // XXX, states, before modifications
 //    diag.abs_c();
+    double e0min = std::numeric_limits<double>::max(); // lowest value of e-m*Omega
     for(auto &[I, eig]: diag) {
       std::cout << "Setting " << I << std::endl;
       for (size_t i = 0; i < eig.values.size(); i++) {
         const auto e = eig.values.raw(i);
         const auto m = mnew[Twoinvar(I, I)](i,i);
         const auto mOmega = to_double(m)*P.Omega;
-        const auto x = pow(e-mOmega, 2) + pow(mOmega, 2);
-        std::cout << "i=" << i << " e=" << e << " m=" << m << " e-mOmega=" << e-mOmega << " x=" << x << std::endl;
+        const auto e0 = e-mOmega;
+        e0min = std::min(e0min, e0);
+        const auto x = sqrt(pow(e-mOmega, 2) + pow(mOmega, 2));
+        std::cout << "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x << std::endl;
         eig.values.set_crit(i, x);
       }
     }
+    std::cout << "e0_min=" << e0min << std::endl;
     diag.sort_by_c();
+    diag.subtract_Egs(e0min);
     // XXX
     split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
   }
