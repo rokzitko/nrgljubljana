@@ -146,7 +146,7 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
 template<scalar S>
 void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stats) {
   for (auto &eig : diag.eigs()) {
-    eig.values.set_scale(step.scale());
+    eig.values.set_scale(step.scale()); // !!!
     eig.values.set_T_shift(stats.total_energy);
   }
 }
@@ -200,7 +200,6 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
                 const SubspaceStructure &substruct, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym,
                 MemTime &mt, const Params &P) {
   nrglog('@', "after_diag()");
-  stats.update(step);
   if (!P.ZBW()) {
     const bool shrink = !P.floquet;
     split_in_blocks(diag, substruct, shrink); // We need to keep raw matrices if P.floquet=true
@@ -228,13 +227,25 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
         eig.values.set_crit(i, x);
       }
     }
-    std::cout << "e0_min=" << e0min << std::endl;
+    diag.report(true);
+    // Shift eigenvalues to zero offset
+    stats.Egs = e0min;
+    std::cout << "Egs=" << stats.Egs << std::endl;
+    diag.subtract_Egs(stats.Egs);
+    // Shift truncation criteria to zero offset
     const auto Clw = diag.find_Clw();
+    std::cout << "Clw=" << Clw << std::endl;
     diag.subtract_Clw(Clw);
+    diag.report(true);
+    // Sort eigensolutions by the value of the 'truncation criterion' value
+    std::cout << "sort_by_c()" << std::endl;
     diag.sort_by_c();
-    diag.subtract_Egs(e0min);
+    diag.report(true);
+    output.dump_energies(400+step.ndx(), diag, rescaled_by); // another copy to "energies.nrg", XXX, before modifications...
+    output.dump_states(400+step.ndx(), diag, rescaled_by); // XXX, states, before modifications
     split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
   }
+  stats.update(step); // updates total_energy; stats.Egs must be set correctly
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))

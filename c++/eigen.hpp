@@ -88,6 +88,12 @@ class Values {
    [[nodiscard]] auto lowest_rel() const { return v.front(); }
    [[nodiscard]] auto lowest_crit() const { return c.front(); }
    [[nodiscard]] auto highest_crit() const { return c.back(); }
+   void report(bool verbose = false) const {
+     assert(v.size() > 0);
+     std::cout << "v[0]=" << v[0] << " crit[0]=" << c[0] << std::endl;
+     if (verbose)
+       std::cout << "scale=" << scale << " shift=" << shift << " T_shift=" << T_shift << " c_shift=" << c_shift << std::endl;
+   }
    [[nodiscard]] const auto & all_rel() const noexcept { return v; }
    [[nodiscard]] const auto & all_crit() const noexcept { return c; }
    [[nodiscard]] auto all_rel_zero() const noexcept {
@@ -354,7 +360,7 @@ public:
   [[nodiscard]] auto value_corr_msr() const noexcept { return ranges::subrange(values.all_corr().begin(), values.all_corr().begin() + getnrstored()); } // range used in measurements (all or kept, depending on the moment of call)
   // Reordering
   void do_sort_by_c() {
-    perform_sort_by_c(values.ref_c(), values.ref_v(), values.ref_corrected(), vectors.ref_m()); // XXX: corrected?
+    perform_sort_by_c(values.ref_c(), values.ref_v(), values.ref_corrected(), vectors.ref_m());
   }
   // Truncate to nrpost states.
   void truncate_prepare(const size_t nrpost_) {
@@ -483,6 +489,13 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      for (auto &eig: eigs())
        eig.values.crit_abs();
    }
+   void report(const bool verbose = false) const {
+     std::cout << "DiagInfo report" << std::endl;
+     for (auto &[I, eig]: *this) {
+       std::cout << "I=" << I << std::endl;
+       eig.values.report(true);
+     }
+   }
    void truncate_perform() {
      ranges::for_each(eigs(), &Eigen<S>::truncate_perform); // Truncate subspace to appropriate size
    }
@@ -554,6 +567,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
 
 inline auto rescaled(std::vector<double> v, double a) { std::ranges::for_each(v, [a](double& x){ x *= a; }); return v; }
 
+// This dumps all energies. These are the 'relative' (scaled), but *not* shifted to zero!
 template<scalar S>
 void dump_all_energies(const DiagInfo<S> &diag, const double rescaled_by, std::ostream &F, const Params &P)  {
   for (const auto &[I, eig]: diag) {
