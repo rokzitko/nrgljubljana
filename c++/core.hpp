@@ -223,7 +223,8 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
         const auto e0 = e-mOmega;
         e0min = std::min(e0min, e0);
 //        const auto x = sqrt(pow(e0, 2) + pow(mOmega, 2));
-        const auto x = e0;
+//        const auto x = e0;
+        const auto x = e0 + abs(mOmega); // second term: penalize high-m states
         std::cout << "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x << std::endl;
         std::cout << "real scale i=" << i << " e=" << e*scale << " m=" << m << " e0=e-m*Omega=" << e0*scale << " x=" << x*scale << std::endl;
         eig.values.set_crit(i, x);
