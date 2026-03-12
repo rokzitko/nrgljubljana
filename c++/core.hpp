@@ -205,23 +205,27 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     split_in_blocks(diag, substruct, shrink); // We need to keep raw matrices if P.floquet=true
   }
   if (P.floquet) {
+    my_assert(P.extra_params.count("Omega") > 0);
+    const auto scale = step.scale();
+    const auto _Omega = std::stod(P.extra_params.at("Omega"));
+    const auto Omega = _Omega/scale;
+    std::cout << "Omega=" << _Omega << " rescaled=" << Omega << std::endl;
     // recalculate only the m operator
     auto mnew = oprecalc.recalculate_operator_m(operators, step, diag, substruct, P);
     dump_diagonal_op("m", mnew, 0);
-    const double rescaled_by = P.dumpenergiesunscaled ? step.scale() : 1.0;
     double e0min = std::numeric_limits<double>::max(); // lowest value of e-m*Omega
-    std::cout << "Omega=" << P.Omega << std::endl;
     for(auto &[I, eig]: diag) {
       std::cout << "Setting " << I << std::endl;
       for (size_t i = 0; i < eig.values.size(); i++) {
         const auto e = eig.values.raw(i);
         const auto m = mnew[Twoinvar(I, I)](i,i);
-        const auto mOmega = to_double(m)*P.Omega;
+        const auto mOmega = to_double(m)*Omega;
         const auto e0 = e-mOmega;
         e0min = std::min(e0min, e0);
 //        const auto x = sqrt(pow(e0, 2) + pow(mOmega, 2));
         const auto x = e0;
         std::cout << "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x << std::endl;
+        std::cout << "real scale i=" << i << " e=" << e*scale << " m=" << m << " e0=e-m*Omega=" << e0*scale << " x=" << x*scale << std::endl;
         eig.values.set_crit(i, x);
       }
     }

@@ -91,6 +91,7 @@ class Params {
 
  public:
   std::unique_ptr<Workdir> workdir;
+  std::map<std::string, std::string> extra_params;
 
   param<std::string> symtype{"symtype", "Symmetry type", "", all}; // S
 
@@ -182,7 +183,6 @@ class Params {
   param<double> fixeps{"fixeps", "Threshold value for eigenvalue splitting corrections", "1e-15", all}; // N
 
   param<bool> floquet{"floquet", "Energies are actually Floquet quasi-energies", "false", all};
-  param<double> Omega{"Omega", "Floquet frequency", "0", all};
 
   // ******************************************************
   // Physical temperature for finite-temperature quantities
@@ -643,6 +643,13 @@ class Params {
       if (parsed_params.size()) {
         std::cout << "Unused settings: " << std::endl;
         for (const auto &[key, value] : parsed_params)
+          std::cout << " " << key << "=" << value << std::endl;
+        std::cout << std::endl;
+      }
+      if (filename != "") {
+        extra_params = parser(filename, "extra");
+        std::cout << "Extra params:" << std::endl;
+        for (const auto &[key, value] : extra_params)
           std::cout << " " << key << "=" << value << std::endl;
         std::cout << std::endl;
       }
