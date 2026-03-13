@@ -213,17 +213,15 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     // recalculate only the m operator
     auto mnew = oprecalc.recalculate_operator_m(operators, step, diag, substruct, P);
     dump_diagonal_op("m", mnew, 0);
-    double e0min = std::numeric_limits<double>::max(); // lowest value of e-m*Omega
+    double emin = std::numeric_limits<double>::max(); // lowest Floquet energy
     for(auto &[I, eig]: diag) {
       std::cout << "Setting " << I << std::endl;
       for (size_t i = 0; i < eig.values.size(); i++) {
         const auto e = eig.values.raw(i);
+        emin = std::min(emin, e);
         const auto m = mnew[Twoinvar(I, I)](i,i);
         const auto mOmega = to_double(m)*Omega;
         const auto e0 = e-mOmega;
-        e0min = std::min(e0min, e0);
-//        const auto x = sqrt(pow(e0, 2) + pow(mOmega, 2));
-//        const auto x = e0;
         const auto x = e0 + abs(mOmega); // second term: penalize high-m states
         std::cout << "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x << std::endl;
         std::cout << "real scale i=" << i << " e=" << e*scale << " m=" << m << " e0=e-m*Omega=" << e0*scale << " x=" << x*scale << std::endl;
@@ -232,13 +230,12 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     }
     diag.report(true);
     // Shift eigenvalues to zero offset
-    stats.Egs = e0min;
+    stats.Egs = emin;
     std::cout << "Egs=" << stats.Egs << std::endl;
-    diag.set_shift_Egs(stats.Egs);
     // Shift truncation criteria to zero offset
     const auto Clw = diag.find_Clw();
     std::cout << "Clw=" << Clw << std::endl;
-    diag.shift(stats.Egs, Clw); // this mimics what Clusters() does
+    diag.shift(stats.Egs, Clw); // inplace shift!
     diag.report(true);
     // Sort eigensolutions by the value of the 'truncation criterion' value
     std::cout << "sort_by_c()" << std::endl;

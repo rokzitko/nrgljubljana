@@ -125,10 +125,11 @@ class Values {
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
    void set_c_shift(const double c_shift_) { c_shift = c_shift_; }
-   void do_c_shift(const double shift) { shift_inplace(c, shift); }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
    void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
    void set_corr(std::vector<t_eigen> in) { corrected = std::move(in); }
+   void do_shift(const double shift) { shift_inplace(v,shift); }
+   void do_c_shift(const double shift) { shift_inplace(c, shift); }
    void do_corr_shift(const double shift) { shift_inplace(corrected, shift); }
    [[nodiscard]] auto crit(const size_t i) const { return c[i]; }
    void set_crit(const size_t i, const t_eigen x) { c[i] = x; }
@@ -385,6 +386,7 @@ public:
     values.set_shift(Egs);
   }
   void shift(const t_eigen Egs, const t_eigen Clw) {
+    values.do_shift(Egs);
     values.do_corr_shift(Egs);
     values.do_c_shift(Clw);
   }
