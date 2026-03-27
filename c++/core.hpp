@@ -209,13 +209,15 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     const auto scale = step.scale();
     const auto _Omega = std::stod(P.extra_params.at("Omega"));
     const auto Omega = _Omega/scale;
-    std::cout << "Omega=" << _Omega << " rescaled=" << Omega << std::endl;
+    nrglog('0' , "Omega=" << _Omega << " rescaled=" << Omega);
     // recalculate only the m operator
     auto mnew = oprecalc.recalculate_operator_m(operators, step, diag, substruct, P);
-    dump_diagonal_op("m", mnew, 0);
+    if (P.logletter('1'))
+      dump_diagonal_op("m", mnew, 0);
     double emin = std::numeric_limits<double>::max(); // lowest Floquet energy
     for(auto &[I, eig]: diag) {
-      std::cout << "Setting " << I << std::endl;
+      if (P.logletter('2') || P.logletter('3'))
+        std::cout << "Floquet: subspace " << I << std::endl;
       for (size_t i = 0; i < eig.values.size(); i++) {
         const auto e = eig.values.raw(i);
         emin = std::min(emin, e);
@@ -223,12 +225,11 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
         const auto mOmega = to_double(m)*Omega;
         const auto e0 = e-mOmega;
         const auto x = e0 + abs(mOmega); // second term: penalize high-m states
-        std::cout << "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x << std::endl;
-        std::cout << "real scale i=" << i << " e=" << e*scale << " m=" << m << " e0=e-m*Omega=" << e0*scale << " x=" << x*scale << std::endl;
+        nrglog('2', "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x);
+        nrglog('3', "rs i=" << i << " e=" << e*scale << " m=" << m << " e0=e-m*Omega=" << e0*scale << " x=" << x*scale);
         eig.values.set_crit(i, x);
       }
     }
-    diag.report(true);
     // Shift eigenvalues to zero offset
     stats.Egs = emin;
     std::cout << "Egs=" << stats.Egs << std::endl;
@@ -236,11 +237,10 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     const auto Clw = diag.find_Clw();
     std::cout << "Clw=" << Clw << std::endl;
     diag.shift(stats.Egs, Clw); // inplace shift!
-    diag.report(true);
+    if (P.logletter('4'))
+      diag.report(true);
     // Sort eigensolutions by the value of the 'truncation criterion' value
-    std::cout << "sort_by_c()" << std::endl;
     diag.sort_by_c();
-    diag.report(true);
     split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
   }
   stats.update(step); // updates total_energy; stats.Egs must be set correctly
