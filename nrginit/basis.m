@@ -560,7 +560,29 @@ If[GENERATEBASIS == True,
   (*** Step 6c ***)
   If[ option["LRSPIN"], dolr[] ]; (* LR transform *after* adding spin kets *)
 
-  (*** Step 7: spinless-fermions hack ***)
+  transformtoPHtensor[bvc_List, cutoffs:{_Integer ..}] := Module[{vecs, fn, phbasis},
+    phbasis = phononbasis[cutoffs];
+    fn[x_] = ketbratensorproduct[#, x]&;
+    vecs = Map[applybasis[bvc, fn[#]]&, phbasis];
+    mergebasis @ Flatten[vecs, 1]
+  ];
+
+  (*** Step 7 ***)
+  (* Add phonons in addition to existing ket structure as a tensor product *)
+  If[ MAKEPHONONTENSOR =!= Null,
+    MyVPrint[1, "MAKEPHONONTENSOR=", MAKEPHONONTENSOR];
+    If[MAKEPHONONTENSOR == 1, cutoffs = {nph}];
+    If[MAKEPHONONTENSOR == 2, cutoffs = {nph, nph}];
+    MyVPrint[1, "Adding phonons, cutoffs=", cutoffs];
+
+    bz = transformtoPHtensor[bz, cutoffs];
+    MyVPrint[2, "PHONON baza (op)=", bz];
+
+    bvc = bzop2bzvc[bz, vak];
+    MyVPrint[2, "PHONON baza (vc)=", bvc];
+  ];
+
+  (*** Step 8: spinless-fermions hack ***)
 
   (* Support for spinless fermions is implemented as a simple hack:
   we keep only spin-up fermions in the basis! *)

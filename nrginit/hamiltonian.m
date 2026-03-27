@@ -269,6 +269,7 @@ NRDOTS = -1; (* Bug trap *)
 MAKESPINKET = Null; (* Operator(s?) that is converted to spin kets *)
 MAKEORBKET = Null;
 MAKEPHONON = Null; (* 1 = one phonon mode, etc. *)
+MAKEPHONONTENSOR = Null;
 MAKEFLOQUET = Null;
 BZSPIN = Null;
 
