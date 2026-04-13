@@ -66,7 +66,7 @@ class ExpvOutput {
 class Annotated {
  private:
    std::ofstream F;
-   // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor)
+   // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor). note: dumpEscale is not applied here.
    template<typename T, scalar S>
    inline auto scaled_energy(const T e, const Step &step, const Stats<S> &stats,
                              const bool scaled = true, const bool absolute = false) {
@@ -91,7 +91,7 @@ class Annotated {
      size_t len = std::min<size_t>(seznam.size(), P.dumpannotated); // non-const
      // If states are clustered, we dump the full cluster
      while (len < seznam.size()-1 && my_fcmp(seznam[len].first, seznam[len-1].first, P.grouptol) == 0) len++;
-     const auto scale = [&step, &stats, this](auto x) { return scaled_energy(x, step, stats, P.dumpscaled, P.dumpabs); };
+     const auto scale = [&step, &stats, this](auto x) { return scaled_energy(x, step, stats, P.dumpscaled, P.dumpabs)/P.dumpEscale; };
      if (P.dumpgroups) {
        // Group by degeneracies
        for (size_t i = 0; i < len;) { // i increased in the while loop below

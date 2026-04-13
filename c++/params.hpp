@@ -322,7 +322,11 @@ class Params {
   // energies of excitations.
   param<size_t> dumpannotated{"dumpannotated", "Number of eigenvalues to dump", "0", all};                      // N
   param<bool> dumpabs{"dumpabs", "Dump in terms of absolute energies", "false", all};                           // N
+  // If dumpscaled=true, which is the default, the energy is expressed in units of omega_N (characteristic energy scale
+  // of the N-th step of the NRG iteration).
+  // dumpscaled and dumpEscale are unrelated: dumpEscale is applied last and in every case (but defaults to 1).
   param<bool> dumpscaled{"dumpscaled", "Dump using omega_N energy units", "true", all};                         // N
+  param<double> dumpEscale{"dumpEscale", "Rescale energy in reporting by some value", "1.0", all};
   param<size_t> dumpprecision{"dumpprecision", "Dump with # digits of precision", "8", all};                    // N
   param<bool> dumpgroups{"dumpgroups", "Dump by grouping degenerate states", "true", all};                      // N
   param<double> grouptol{"grouptol", "Energy tolerance for considering two states as degenerate", "1e-6", all}; // N
