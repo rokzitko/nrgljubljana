@@ -135,18 +135,23 @@ struct Output {
   Annotated annotated;
   std::ofstream Fenergies;  // all energies (different file for NRG and for DMNRG)
   std::ofstream Fstates;    // all states
+  std::ofstream Freport;    // select state energies and diagonal matrix elements of singlet operators
   std::unique_ptr<ExpvOutput<S>> custom;
   std::unique_ptr<ExpvOutput<S>> customfdm;
   std::unique_ptr<H5Easy::File> h5raw;
   Output(const RUNTYPE &runtype, const Operators<S> &operators, Stats<S> &stats, const Params &P,
          const std::string filename_energies= "energies.nrg"s,
          const std::string filename_states = "states.nrg"s,
+         const std::string filename_report = "report.nrg"s,
          const std::string filename_custom = "custom",
          const std::string filename_customfdm = "customfdm")
     : runtype(runtype), P(P), annotated(P)
     {
-      if (P.dumpenergies && runtype == RUNTYPE::NRG) Fenergies.open(filename_energies);
-      if (P.dumpstates   && runtype == RUNTYPE::NRG) Fstates.open(filename_states);
+      if (runtype == RUNTYPE::NRG) {
+        if (P.dumpenergies) Fenergies.open(filename_energies);
+        if (P.dumpstates) Fstates.open(filename_states);
+        if (P.reportdiagonal) Freport.open(filename_report);
+      }
       const auto ops = singlet_operators_for_expv_evaluation(operators);
       if (runtype == RUNTYPE::NRG)
         custom = std::make_unique<ExpvOutput<S>>(filename_custom, stats.expv, ops, P);
@@ -169,8 +174,27 @@ struct Output {
     Fstates << std::endl << "===== Iteration number: " << N << std::endl;
     dump_all_states(diag, rescaled_by, Fstates, P);
   }
-};
-
+  void reportdiagonal(const Step &step,
+                      Stats<S> &stats,
+                      const DiagInfo<S> &diag,
+                      const Operators<S> &operators,
+                      const Params &P) {
+    if (!Freport) return;
+    if (P.reportdiagonallast && !step.last()) return;
+    Freport << "=== Report N=" << step.ndx() << std::endl;
+    for (auto &[I, eig] : diag) {
+      const size_t nmax = std::min(size_t(P.reportdiagonal), size_t(eig.getnrkept()));
+      if (nmax) {
+        Freport << "Sector I=" << I << std::endl;
+        for (size_t n = 0; n < nmax; n++) {
+          Freport << "I=" << I << " n=" << n << " E=" << scaled_energy(eig.values.rel_zero(n), step, stats, P) << " ";
+          operators.dump_diagonal_I_n(I, n, Freport);
+        }
+      }
+    }
+    if (!step.last())
+      Freport << std::endl;
+  }};
 } // namespace
 
 #endif

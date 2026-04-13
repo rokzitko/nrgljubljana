@@ -340,6 +340,7 @@ class Params {
 
   // Show diagonal matrix elements, per invariant sector, up to N values in each.
   param<size_t> reportdiagonal{"reportdiagonal", "Report diagonal matrix elements", "0", all}; // N
+  param<bool> reportdiagonallast{"reportdiagonallast", "Only in the last iteration", "true", all}; // N
 
   // ********************
   // Binning & broadening
