@@ -40,9 +40,10 @@ if ($verbose >= 2) {
     print ("Comparing $fn1 and $fn2.\n");
 }
 
-# Trim leading and trailing whitespace
+# Trim leading and trailing whitespace + REMOVE parameter= STRINGS
 sub trim($) {
     my $string = shift;
+    $string =~ s/\b[^=\s]+=//g;   # remove parameter=
     $string =~ s/^\s+//;
     $string =~ s/\s+$//;
     return $string;
