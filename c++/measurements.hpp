@@ -199,7 +199,9 @@ void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult,
 }
 
 template<scalar S>
-void reportdiagonal(const DiagInfo<S> &diag,
+void reportdiagonal(const Step &step,
+                    Stats<S> &stats,
+                    const DiagInfo<S> &diag,
                     const Operators<S> &operators,
                     std::ostream &F,
                     const Params &P) {
@@ -208,7 +210,7 @@ void reportdiagonal(const DiagInfo<S> &diag,
     if (nmax) {
       std::cout << "Report I=" << I << std::endl;
       for (size_t n = 0; n < nmax; n++) {
-        F << "I=" << I << " n=" << n << " E= ";
+        F << "I=" << I << " n=" << n << " E=" << scaled_energy(eig.values.rel_zero(n), step, stats, P) << " ";
         operators.dump_diagonal_I_n(I, n);
       }
     }
@@ -216,7 +218,10 @@ void reportdiagonal(const DiagInfo<S> &diag,
 }
 
 template<scalar S>
-void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
+void calculate_spectral_and_expv_impl(const Step &step,
+                                      Stats<S> &stats,
+                                      Output<S> &output,
+                                      Oprecalc<S> &oprecalc,
                                       const DiagInfo<S> &diag, // projected!
                                       const Operators<S> &operators,
                                       const Store<S> &store_all, MemTime &mt,
@@ -241,7 +246,7 @@ void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<
     output.custom->field_values(step.Teff());
     operators.dump_diagonal(P.dumpdiagonal);
     if (P.reportdiagonal)
-      reportdiagonal(diag, operators, std::cout, P);
+      reportdiagonal(step, stats, diag, operators, std::cout, P);
   }
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) {
     const auto section_timing = mt.time_it("singlet fdm");

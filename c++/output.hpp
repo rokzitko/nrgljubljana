@@ -62,16 +62,16 @@ class ExpvOutput {
    }
 };
 
+// scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor). note: dumpEscale is not applied here.
+template<typename T, scalar S>
+inline auto scaled_energy(const T e, const Step &step, const Stats<S> &stats, const Params &P) {
+   return (e * (P.dumpscaled ? 1.0 : step.scale()) + (P.dumpabs ? stats.total_energy : 0.0))/P.dumpEscale;
+}
+
 // Store eigenvalue & quantum numbers information (RG flow diagrams)
 class Annotated {
  private:
    std::ofstream F;
-   // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor). note: dumpEscale is not applied here.
-   template<typename T, scalar S>
-   inline auto scaled_energy(const T e, const Step &step, const Stats<S> &stats,
-                             const bool scaled = true, const bool absolute = false) {
-     return e * (scaled ? 1.0 : step.scale()) + (absolute ? stats.total_energy : 0.0);
-   }
    const Params &P;
  public:
    explicit Annotated(const Params &P) : P(P) {}
@@ -91,7 +91,7 @@ class Annotated {
      size_t len = std::min<size_t>(seznam.size(), P.dumpannotated); // non-const
      // If states are clustered, we dump the full cluster
      while (len < seznam.size()-1 && my_fcmp(seznam[len].first, seznam[len-1].first, P.grouptol) == 0) len++;
-     const auto scale = [&step, &stats, this](auto x) { return scaled_energy(x, step, stats, P.dumpscaled, P.dumpabs)/P.dumpEscale; };
+     const auto scale = [&step, &stats, this](auto x) { return scaled_energy(x, step, stats, P); };
      if (P.dumpgroups) {
        // Group by degeneracies
        for (size_t i = 0; i < len;) { // i increased in the while loop below
