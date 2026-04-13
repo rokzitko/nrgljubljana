@@ -199,6 +199,23 @@ void calc_Z(const Step &step, Stats<S> &stats, const DiagInfo<S> &diag, MF mult,
 }
 
 template<scalar S>
+void reportdiagonal(const DiagInfo<S> &diag,
+                    const Operators<S> &operators,
+                    std::ostream &F,
+                    const Params &P) {
+  for (auto &[I, eig] : diag) {
+    const size_t nmax = std::min(size_t(P.reportdiagonal), size_t(eig.getnrkept()));
+    if (nmax) {
+      std::cout << "Report I=" << I << std::endl;
+      for (size_t n = 0; n < nmax; n++) {
+        F << "I=" << I << " n=" << n << " E= ";
+        operators.dump_diagonal_I_n(I, n);
+      }
+    }
+  }
+}
+
+template<scalar S>
 void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                       const DiagInfo<S> &diag, // projected!
                                       const Operators<S> &operators,
@@ -223,6 +240,8 @@ void calculate_spectral_and_expv_impl(const Step &step, Stats<S> &stats, Output<
     measure_singlet(step.TD_factor(), stats, operators, Sym->multfnc(), diag, P);
     output.custom->field_values(step.Teff());
     operators.dump_diagonal(P.dumpdiagonal);
+    if (P.reportdiagonal)
+      reportdiagonal(diag, operators, std::cout, P);
   }
   if (step.dmnrg() && P.fdmexpv && step.N() == P.fdmexpvn) {
     const auto section_timing = mt.time_it("singlet fdm");

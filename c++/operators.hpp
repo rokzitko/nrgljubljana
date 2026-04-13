@@ -65,6 +65,13 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
        }
      }
    }
+   friend void dump_diagonal_op_I_n(const std::string &name, const MatrixElements<S> &m, const Invar I, const size_t n, std::ostream &F = std::cout) {
+     for (const auto &[II, mat] : m) {
+       const auto & [I1, I2] = II;
+       if (I == I1 && I == I2)
+         F << "<" << name << ">=" << mat(n, n) << " ";
+     }
+   }
    void h5save(H5Easy::File &fd, const std::string &name) const {
      for (const auto &[II, mat] : *this) {
        const auto &[I1, I2] = II;
@@ -176,11 +183,18 @@ class Operators {
    CustomOp<S> opq;  // quadruplet operators (spectral functions for J=3/2)
    CustomOp<S> opot; // orbital triplet operators
 
+   // Dump diagonal matrix element values for max_nr states in each invariant subspace
    void dump_diagonal(const size_t max_nr, std::ostream &F = std::cout) const {
      if (max_nr) {
        for (const auto &[name, m] : ops)  dump_diagonal_op(name, m, max_nr, F);
        for (const auto &[name, m] : opsg) dump_diagonal_op(name, m, max_nr, F);
      }
+   }
+   // Dump the diagonal matrix element values for state number n in invariant subspace I
+   void dump_diagonal_I_n(const Invar I, const size_t n, std::ostream &F = std::cout) const {
+     for (const auto &[name, m] : ops)  dump_diagonal_op_I_n(name, m, I, n, F);
+     for (const auto &[name, m] : opsg) dump_diagonal_op_I_n(name, m, I, n, F);
+     F << std::endl;
    }
    void trim_matrices(const DiagInfo<S> &diag) {
      ops.trim(diag);

@@ -338,6 +338,9 @@ class Params {
   // goes to the standard output.
   param<size_t> dumpdiagonal{"dumpdiagonal", "Dump diagonal matrix elements", "0", all}; // N
 
+  // Show diagonal matrix elements, per invariant sector, up to N values in each.
+  param<size_t> reportdiagonal{"reportdiagonal", "Report diagonal matrix elements", "0", all}; // N
+
   // ********************
   // Binning & broadening
 
