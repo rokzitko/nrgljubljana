@@ -647,11 +647,13 @@ class Params {
         std::cout << std::endl;
       }
       if (filename != "") {
-        extra_params = parser(filename, "extra");
-        std::cout << "Extra params:" << std::endl;
-        for (const auto &[key, value] : extra_params)
-          std::cout << " " << key << "=" << value << std::endl;
-        std::cout << std::endl;
+        try {
+          extra_params = parser(filename, "extra");
+          std::cout << "Extra params:" << std::endl;
+          for (const auto &[key, value] : extra_params)
+            std::cout << " " << key << "=" << value << std::endl;
+          std::cout << std::endl;
+        } catch (...) {}
       }
     }
     validate();

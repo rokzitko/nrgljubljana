@@ -201,8 +201,11 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
                 MemTime &mt, const Params &P) {
   nrglog('@', "after_diag()");
   if (!P.ZBW()) {
-    const bool shrink = !P.floquet;
-    split_in_blocks(diag, substruct, shrink); // We need to keep raw matrices if P.floquet=true
+    // We need to keep raw matrices if P.floquet=true, because we will reshuffle them,
+    // and then split_in_blocks will be called again.
+//    const bool discard = !P.floquet;
+    const bool discard = false;
+    split_in_blocks(diag, substruct, discard);
   }
   if (P.floquet) {
     my_assert(P.extra_params.count("Omega") > 0);
