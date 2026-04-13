@@ -16,23 +16,38 @@ namespace NRG {
 // of some copying, this increases memory locality of data and thus improves numerical performence of matrix-matrix multiplies
 // in the recalculation of matrix elements. Note that the original (matrix) data is discarded after the splitting.
 template<scalar S, typename Matrix = Matrix_traits<S>>
-inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub, const bool shrink = true) {
+inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub, const bool discard = true) {
   const auto combs = sub.combs();
   e.U.resize(combs);
   const auto nr = e.getnrstored();
+#ifdef DEBUG
+  std::cout << "nr=" << nr << std::endl;
+  std::cout << "vectors dims=" << e.vectors.M() << " " << e.vectors.dim() << std::endl;
+#endif
   my_assert(0 < nr && nr <= e.getdim());
   for (const auto block: range0(combs)) {
+#ifdef DEBUG
+    std::cout << "block=" << block << " part=" << sub.part(block) << std::endl;
+#endif
     Matrix U = e.vectors.submatrix_const({0, nr}, sub.part(block));
-    e.U.set(block, std::move(U));
+    if (discard)
+      e.U.set(block, std::move(U)); // move allowed
+    else
+      e.U.set(block, U); // copying
   }
   assert(e.U.is_unitary());
-  if (shrink) e.vectors.shrink();
+  if (discard)
+    e.vectors.shrink();
 }
 
 template<scalar S>
 inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool shrink = true) {
-  for(auto &[I, eig]: diag)
+  for(auto &[I, eig]: diag) {
+#ifdef DEBUG
+    std::cout << "XXX split_in_blocks_Eigen() I=" << I << std::endl;
+#endif
     split_in_blocks_Eigen(eig, substruct.at(I), shrink);
+  }
 }
 
 template<scalar S>
