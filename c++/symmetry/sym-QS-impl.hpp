@@ -167,6 +167,7 @@ void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDime
 template<typename SC>
 void SymmetryQS<SC>::show_coefficients(const Step &step, const Coef<SC> &coef) const {
   Symmetry<SC>::show_coefficients(step, coef);
+  if (P.silent) return;
   if (P.rungs)
     for (auto i = 0; i < P.channels; i++)
       std::cout << "[" << i + 1 << "]"

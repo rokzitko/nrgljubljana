@@ -288,14 +288,15 @@ template<scalar S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
-  TaskList tasklist{substruct};
+  TaskList tasklist{substruct, !P.silent}; // verbose = !P.silent
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5struct)
     substruct.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/structure");
   auto diag = do_diag(step, operators, coef, stats, diagprev, output, tasklist, Sym, eng, mt, P);
   after_diag(step, operators, stats, diag, output, substruct, store, store_all, oprecalc, Sym, mt, P);
   operators.trim_matrices(diag);
   diag.clear_eigenvectors();
-  mt.brief_report();
+  if (!P.silent)
+    mt.brief_report();
   return diag;
 }
 

@@ -15,7 +15,7 @@ TEST(Subspaces, SubspaceStructure) { // NOLINT
   auto Sym = SymSP.get();
   auto diag = setup_diag(P, Sym);
   SubspaceStructure substruct{diag, Sym};
-  TaskList tasklist{substruct};
+  TaskList tasklist{substruct, false};
   auto tasks = tasklist.get();
   std::cout << tasks << std::endl;
   substruct.dump();

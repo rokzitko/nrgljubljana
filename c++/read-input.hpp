@@ -57,7 +57,7 @@ void determine_Nmax_Nlen(const Coef<S> &coef, const size_t Nmax0, Params &P) { /
   P.Nmax = !P.substeps ? Nmax0 : P.channels * Nmax0;
   P.Nlen = !P.ZBW() ? P.Nmax : P.Nmax+1; // an additional element in the tables for ZBW
   if (P.ZBW()) std::cout << "\nZBW=true -> zero-bandwidth calculation\n";
-  std::cout << "\nlength_coef_table=" << length_coef_table << " Nmax0=" << Nmax0 << " Nmax=" << P.Nmax << "\n\n";
+  if (!P.silent) std::cout << "\nlength_coef_table=" << length_coef_table << " Nmax0=" << Nmax0 << " Nmax=" << P.Nmax << "\n\n";
   my_assert(P.Nlen < MAX_NDX);
   if (P.ZBW()) my_assert(P.substeps == false);
 }
@@ -93,12 +93,13 @@ public:
     my_assert(sym_string == P.symtype.value()); // Check consistency between 'param' and 'data' file
     Sym = set_symmetry<S>(P, sym_string, channels);
     diag = DiagInfo<S>(fdata, nsubs, P); // 0-th step of the NRG iteration
-    diag.states_report(Sym->multfnc());
+    if (!P.silent) 
+      diag.states_report(Sym->multfnc());
     operators.opch = Opch<S>(fdata, diag, P);
     while (true) {
       const auto [ch, opname] = get_next_block(fdata);
       if (fdata.eof()) break;
-      if (ch != '#') std::cout << "Reading <||" << opname << "||> (" << ch << ")" << std::endl;
+      if (ch != '#' && !P.silent) std::cout << "Reading <||" << opname << "||> (" << ch << ")" << std::endl;
       switch (ch) {
         case '#':
           break; // ignore embedded comment lines

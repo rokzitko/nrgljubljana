@@ -117,12 +117,13 @@ class TaskList {
      auto max_size = tasks_with_sizes.front().first;
      F << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << std::endl;
    }
-   explicit TaskList(const SubspaceStructure &structure, std::ostream &F = std::cout) {
+   explicit TaskList(const SubspaceStructure &structure, const bool verbose, std::ostream &F = std::cout) {
      for (const auto &[I, rm] : structure)
        if (rm.total())
          tasks_with_sizes.emplace_back(rm.total(), I);
      ranges::sort(tasks_with_sizes, std::greater<>()); // sort in the *decreasing* order!
-     stats(F);
+     if (verbose)
+       stats(F);
      tasks = tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
    }
    [[nodiscard]] std::vector<Invar> get() const { return tasks; }

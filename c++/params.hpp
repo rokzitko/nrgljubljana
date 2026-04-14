@@ -454,6 +454,9 @@ class Params {
   param<std::string> logstr{"log", "list of tokens to define what to log", "", all}; // N
   param<bool> logall{"logall", "Log everything", "false", all};              // N
 
+  // Sometimes we want to reduce verbosity and just follow basic iteration flow
+  param<bool> silent{"silent", "Produce minimal output", "false", all};
+
   // Returns true if option 'c' is selected for logging
   auto logletter(const char c) const { return logall ? true : contains(logstr, c); }
 

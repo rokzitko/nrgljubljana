@@ -217,6 +217,7 @@ class Symmetry {
    }
 
    virtual void show_coefficients(const Step &step, const Coef<S> &coef) const {
+     if (P.silent) return;
      std::cout << std::setprecision(std::numeric_limits<double>::max_digits10);
      if (!P.substeps) {
        for (size_t i = 0; i < P.coefchannels; i++) {

@@ -87,6 +87,7 @@ class SymmetrySPSU2 : public Symmetry<SC> {
 
   void show_coefficients(const Step &step, const Coef<SC> &coef) const override {
     Symmetry<SC>::show_coefficients(step, coef);
+    if (P.silent) return;
     if (!P.substeps) {
       for (size_t i = 0; i < P.coefchannels; i++) {
         const auto N = step.N();

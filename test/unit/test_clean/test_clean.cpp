@@ -30,7 +30,7 @@ TEST(Clean, H) { // NOLINT
   auto output = Output(step.get_runtype(), operators, stats, P);
 
   SubspaceStructure substruct{diagprev, Sym};
-  TaskList tasklist{substruct};
+  TaskList tasklist{substruct, false};
   DiagInfo<double> diag;
   for(const auto &I : tasklist.get()) {
     auto h = hamiltonian<double>(step, I, operators.opch, coef, diagprev, output, Sym, P);

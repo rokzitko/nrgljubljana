@@ -66,7 +66,8 @@ class Stats {
 
    void update(const Step &step) {
      total_energy += Egs * step.scale(); // stats.Egs has already been initialized
-     std::cout << "Total energy=" << HIGHPREC(total_energy) << "  Egs=" << HIGHPREC(Egs) << std::endl;
+     if (!P.silent)
+       std::cout << "Total energy=" << HIGHPREC(total_energy) << "  Egs=" << HIGHPREC(Egs) << std::endl;
      rel_Egs[step.ndx()] = Egs;
      abs_Egs[step.ndx()] = Egs * step.scale();
      energy_offsets[step.ndx()] = total_energy;

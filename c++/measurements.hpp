@@ -224,7 +224,7 @@ void calculate_spectral_and_expv_impl(const Step &step,
   if (step.nrg()) {
     const auto section_timing = mt.time_it("singlet");
     measure_singlet(step.TD_factor(), stats, operators, Sym->multfnc(), diag, P);
-    output.custom->field_values(step.Teff());
+    output.custom->field_values(step.Teff(), !P.silent); // cout_dump = !P.silent
     operators.dump_diagonal(P.dumpdiagonal);
     if (P.reportdiagonal)
       output.reportdiagonal(step, stats, diag, operators, P);
