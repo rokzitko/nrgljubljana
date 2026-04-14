@@ -15,9 +15,6 @@ basisfilename = "basis";
 hamfilename = "ham";
 opfilename =  "op";
 
-readdir = {paramdefault["readdir", "."], ".."}; (* default = current directory; parent directory as fallback *)
-writedir = paramdefault["writedir", ""]; (* default = current directory *)
-
 MyPut[x_, fn_, forcewrite_:False] := If[option["WRITE"] || forcewrite,
   MyPrint["Writing ", fn];
   Put[x, writedir <> fn]

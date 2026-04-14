@@ -51,9 +51,11 @@ silentGet[x__] := Module[{ret},
 ];
 
 (* Load an external module (another .m) file. *)
-loadmodule[filename_String, exitonfailure_:True] := Module[{ret},
-  MyPrint["Loading module ", filename];
-  ret = silentGet[filename, Path -> modulespath];
+loadmodule[filename_String, exitonfailure_:True] := Module[{path = modulespath, ret},
+  If[ValueQ[readdir], path = Join[path, readdir]];
+  path = Union[path];
+  MyPrint["Loading module ", filename, " path: ", path];
+  ret = silentGet[filename, Path -> path];
   If[ret === $Failed,
     MyWarning["Can't load " <> filename <> ". " <>
       If[exitonfailure, "Aborting.", "Continuing."]];

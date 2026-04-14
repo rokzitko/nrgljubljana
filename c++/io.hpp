@@ -30,12 +30,22 @@ inline std::string formatted_output(const T x, const Params &P) {
   return fmt::format("{x:>{width}}", "x"_a=x, "width"_a=int(P.width_custom));
 }
 
+// Used for custom, customfdm
 inline std::string formatted_output(const double x, const Params &P) {
   return fmt::format("{x:>{width}.{prec}}", "x"_a=x, "prec"_a=int(P.prec_custom), "width"_a=int(P.width_custom));
 }
 
-inline std::string formatted_output(const std::complex<double> z, const Params &P) { // XXX
+inline std::string formatted_output(const std::complex<double> z, const Params &P) { // XXX: re part only
   return fmt::format("{x:>{width}.{prec}}", "x"_a=z.real(), "prec"_a=int(P.prec_custom), "width"_a=int(P.width_custom));
+}
+
+// Used for report.nrg
+inline std::string prec_output(const double x, const Params &P) {
+  return fmt::format("{x:>.{prec}}", "x"_a=x, "prec"_a=int(P.prec_custom));
+}
+
+inline std::string prec_output(const std::complex<double> z, const Params &P) { // XXX: re part only
+  return fmt::format("{x:>.{prec}}", "x"_a=z.real(), "prec"_a=int(P.prec_custom));
 }
 
 inline void outputxy(std::ostream &F, const double x, const std::complex<double> z, const bool imagpart, const double clip_tol_imag = 1e-10) {

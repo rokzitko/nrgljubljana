@@ -68,6 +68,10 @@ loadmodule["sym.m"];
 
 (********)
 
+(* readdir, writedir: reading/writing of templated bases/operators; readdir is also appended to modulespath *)
+readdir = {paramdefault["readdir", "."], ".."}; (* default = current directory; parent directory as fallback *)
+writedir = paramdefault["writedir", ""]; (* default = current directory *)
+
 MODEL          = paramdefault["model", "SIAM"];
 VARIANT        = paramdefault["variant", ""];
 OPTIONS        = paramdefault["options", ""];
@@ -1373,21 +1377,27 @@ Module[{t, cp, i, mat, opfnsub},
     cp = coupledpairs[[i]];
     AppendTo[t, Flatten[cp]];
     opfnsub = opfn <> "_" <> Invar2String[cp[[1]]] <> "_" <> Invar2String[cp[[2]]];
+    GENOPS = True;
     If[READOPS,
       MyPrint["Reading ", opfnsub];
       mat = silentGet[opfnsub, Path -> readdir];
-      MyPrint["el[1,1]=", mat[[1,1]] ];
-      MyVPrint[3, "mat=", mat];
-      (* Fall back to matrix generation upon first failure *)
-      If[mat === $Failed, READOPS = False];
+      If[mat === $Failed,
+        MyPrint["Failed."];
+        GENOPS = True,
+      (* else *)
+        AppendTo[opdata, {cp, mat}];
+        MyPrint["el[1,1]=", mat[[1,1]] ];
+        GENOPS = Failed
+      ];
     ];
-    If[!READOPS,
+    If[GENOPS,
+      MyPrint["Generating f table."];
       mat = Expand @ ireducMatrixSpeedy[SYMTYPE, op, cp, optional];
       AppendTo[opdata, {cp, mat}];
       MyPut[mat, opfnsub, option["GENERATE_TEMPLATE"]];
       MyPrint["el[1,1]=", mat[[1,1]] ];
     ];
-    (* Here we decide what goes in the data/data.in file. If we are generating the template,   
+    (* Here we decide what goes in the data/data.in file. If we are generating the template,
        we save the filename. An exception is when generating the <|f|> irreducible matrix elements,
        for those we use numerical values (unless overriding with GENERATE_TEMPLATE_F). *)
     If[( (STAGE == 2) && option["GENERATE_TEMPLATE"] ) || ( (STAGE == 1) && option["GENERATE_TEMPLATE_F"] ),

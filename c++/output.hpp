@@ -187,8 +187,8 @@ struct Output {
       if (nmax) {
         Freport << "Sector I=" << I << std::endl;
         for (size_t n = 0; n < nmax; n++) {
-          Freport << "I=" << I << " n=" << n << " E=" << scaled_energy(eig.values.rel_zero(n), step, stats, P) << " ";
-          operators.dump_diagonal_I_n(I, n, Freport);
+          Freport << "I=" << I << " n=" << n << " E=" << prec_output(scaled_energy(eig.values.rel_zero(n), step, stats, P), P) << " ";
+          operators.dump_diagonal_I_n(I, n, Freport, P);
         }
       }
     }
