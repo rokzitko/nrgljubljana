@@ -246,6 +246,8 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     diag.sort_by_c();
     split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
   }
+  // At this point, we may complete discarding data [not done in split_in_blocks() if discard=false]
+  shrink(diag, substruct);
   stats.update(step); // updates total_energy; stats.Egs must be set correctly
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
@@ -295,8 +297,7 @@ auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Sta
   after_diag(step, operators, stats, diag, output, substruct, store, store_all, oprecalc, Sym, mt, P);
   operators.trim_matrices(diag);
   diag.clear_eigenvectors();
-  if (!P.silent)
-    mt.brief_report();
+  mt.brief_report();
   return diag;
 }
 

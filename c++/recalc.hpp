@@ -20,15 +20,8 @@ inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub, co
   const auto combs = sub.combs();
   e.U.resize(combs);
   const auto nr = e.getnrstored();
-#ifdef DEBUG
-  std::cout << "nr=" << nr << std::endl;
-  std::cout << "vectors dims=" << e.vectors.M() << " " << e.vectors.dim() << std::endl;
-#endif
   my_assert(0 < nr && nr <= e.getdim());
   for (const auto block: range0(combs)) {
-#ifdef DEBUG
-    std::cout << "block=" << block << " part=" << sub.part(block) << std::endl;
-#endif
     Matrix U = e.vectors.submatrix_const({0, nr}, sub.part(block));
     if (discard)
       e.U.set(block, std::move(U)); // move allowed
@@ -41,13 +34,20 @@ inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub, co
 }
 
 template<scalar S>
-inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool shrink = true) {
-  for(auto &[I, eig]: diag) {
-#ifdef DEBUG
-    std::cout << "XXX split_in_blocks_Eigen() I=" << I << std::endl;
-#endif
-    split_in_blocks_Eigen(eig, substruct.at(I), shrink);
-  }
+inline void split_in_blocks(DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool discard = true) {
+  for(auto &[I, eig]: diag)
+    split_in_blocks_Eigen(eig, substruct.at(I), discard);
+}
+
+template<scalar S, typename Matrix = Matrix_traits<S>>
+inline void shrink(Eigen<S> &e, const SubspaceDimensions &) {
+  e.vectors.shrink();
+}
+
+template<scalar S>
+inline void shrink(DiagInfo<S> &diag, const SubspaceStructure &substruct) {
+  for(auto &[I, eig]: diag)
+    shrink(eig, substruct.at(I));
 }
 
 template<scalar S>
