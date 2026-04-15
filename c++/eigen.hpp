@@ -165,12 +165,14 @@ template <scalar S, typename t_matel = matel_traits<S>, typename Matrix = Matrix
 class Vectors {
   private:
     Matrix m;
+    size_t _dim = 0;
   public:
     Matrix & ref_m() { return m; }
     [[nodiscard]] auto M() const noexcept { return size1(m); }
-    [[nodiscard]] auto dim() const noexcept { return size2(m); }
+    [[nodiscard]] auto dim() const noexcept { return _dim; }
     void set(Matrix m_) {
       m = std::move(m_);
+      _dim = size2(m);
       assert(is_unitary<S>(m));
       assert(M() <= dim());
     }
@@ -180,19 +182,20 @@ class Vectors {
     auto submatrix_const(const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2) const {
       return NRG::submatrix_const(m, r1, r2);
     }
-    void resize(const size_t new_size1, const size_t new_size2) {
+    void resize(const size_t new_size1, const size_t new_size2) { // called from Eigen(int,int) constructor
       m.resize(new_size1, new_size2); // non-conserving resize
+      _dim = new_size2;
     }
     void shrink() {
-      const auto d = dim();
-      resize(0, d); // Shrink to zero size, but keep the information about the dimensionality!!
-      assert(M() == 0 && dim() == d);
+      m = Matrix(0, 0);
     }
     void save(boost::archive::binary_oarchive &oa) const {
       NRG::save(oa, m);
+      oa << _dim;
     }
     void load(boost::archive::binary_iarchive &ia) {
       m = NRG::load<S>(ia);
+      ia >> _dim;
     }
     void h5save(H5Easy::File &fd, const std::string &name) const {
       h5_dump_matrix(fd, name + "/matrix", m);

@@ -201,10 +201,9 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
                 MemTime &mt, const Params &P) {
   nrglog('@', "after_diag()");
   if (!P.ZBW()) {
-    // We need to keep raw matrices if P.floquet=true, because we will reshuffle them,
-    // and then split_in_blocks will be called again.
-//    const bool discard = !P.floquet;
-    const bool discard = false;
+    // We need to keep the raw matrices if P.floquet=true, because we will reshuffle them,
+    // and only then explicitly call shrink().
+    const bool discard = !P.floquet;
     split_in_blocks(diag, substruct, discard);
   }
   if (P.floquet) {
@@ -247,7 +246,8 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
   }
   // At this point, we may complete discarding data [not done in split_in_blocks() if discard=false]
-  shrink(diag, substruct);
+  if (!P.ZBW())
+    shrink(diag, substruct);
   stats.update(step); // updates total_energy; stats.Egs must be set correctly
   if (step.nrg()) {
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
