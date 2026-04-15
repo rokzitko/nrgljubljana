@@ -187,7 +187,7 @@ class Vectors {
       _dim = new_size2;
     }
     void shrink() {
-      m = Matrix(0, 0);
+//      m = Matrix(0, 0);
     }
     void save(boost::archive::binary_oarchive &oa) const {
       NRG::save(oa, m);
@@ -336,13 +336,13 @@ public:
     last = step.last();
   }
   // Called when building DiagInfo from 'data' file.
-  explicit Eigen(const std::vector<t_eigen> &v, const double scale, const bool last_step) {
+  explicit Eigen(const std::vector<t_eigen> &v, const double scale) {
     diagonal(v);
     values.set_corr(v); // required for matrix construction in the first step!
     values.set_shift(0.0); // required in the first step!
     values.set_scale(scale);
     values.crit_copy_raw();
-    last = last_step;
+    last = false; // true only for ZBW, but support for that case has been removed in 2026
   }
   [[nodiscard]] auto getnrcomputed() const noexcept { return values.size(); } // number of computed eigenpairs
   [[nodiscard]] auto getdim() const noexcept { return vectors.dim(); }        // valid also after the split_in_blocks_Eigen() call
@@ -414,11 +414,13 @@ public:
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     vectors.save(oa);
+    U.save(oa);
     oa << nrpost << nrstored << last;
   }  
   void load(boost::archive::binary_iarchive &ia) {
     values.load(ia);
     vectors.load(ia);
+    U.load(ia);
     ia >> nrpost >> nrstored >> last;
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool save_vectors = true) const {
@@ -440,7 +442,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        auto energies = read_std_vector<t_eigen>(fdata);
        if (!(P.data_has_rescaled_energies || P.absolute))
          for (auto &x : energies) x /= P.SCALE(P.Ninit); // rescale to the suitable energy scale
-       (*this)[I] = Eigen<S>(energies, P.absolute ? 1.0 : P.SCALE(P.Ninit), P.ZBW());
+       (*this)[I] = Eigen<S>(energies, P.absolute ? 1.0 : P.SCALE(P.Ninit));
      }
      my_assert(this->size() == nsubs);
    }

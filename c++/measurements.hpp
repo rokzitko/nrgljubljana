@@ -77,7 +77,6 @@ void calc_ZnD(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, co
     mpf_set(stats.ZnDN[N], ZnDN);
     stats.ZnDNd[N] = mpf_get_d(stats.ZnDN[N]);
   }
-  // Note: for ZBW, Nlen=Nmax+1. For Ninit=Nmax=0, index 0 will thus be included here.
   my_mpf ZZG;
   mpf_set_d(ZZG, 0.0);
   for (const auto N : store.Nall()) {

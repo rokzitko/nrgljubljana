@@ -58,7 +58,7 @@ template<scalar S>
 class Store : public std::vector<Subs<S>> {
  public:
    const size_t Nbegin, Nend; // range of valid indexes
-   Store(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend ? Nend : 1); } // at least 1 for ZBW
+   Store(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
    auto Nall() const { return boost::irange(Nbegin, Nend); }
    void dump_abs_G(std::ostream &F) const {
      for (const auto N : Nall()) {

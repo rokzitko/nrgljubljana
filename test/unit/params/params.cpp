@@ -70,7 +70,6 @@ TEST(params, Defaults) {
 
   EXPECT_EQ(P.Ninit.value(), 0);
   EXPECT_EQ(P.Nmax, 0ul);
-  EXPECT_EQ(P.ZBW(), true);
 }
 
 TEST(params, set_channels_and_combs) {

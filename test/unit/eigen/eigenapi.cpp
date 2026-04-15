@@ -53,7 +53,7 @@ TEST(Eigen, diagonal) { // NOLINT
 
 TEST(Eigen, constructor_diagonal) { // NOLINT
   EVEC v = { 1.0, 2.0, 3.0 };
-  NRG::Eigen<double> e(v, 1.0, false);
+  NRG::Eigen<double> e(v, 1.0);
   EXPECT_DOUBLE_EQ(e.values.rel(0), 1.0);
   const auto m = e.vectors.get();
   EXPECT_DOUBLE_EQ(m(0,0), 1.0); // identity matrix

@@ -115,10 +115,9 @@ public:
     }
     Step step{P, runtype};
     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
-    if (step.nrg() && P.calc0 && !P.ZBW())
+    if (step.nrg() && P.calc0)
       docalc0(step, operators, diag0, stats, output, oprecalc, Sym.get(), mt, P);
-    auto diag = P.ZBW() ? nrg_ZBW(step, operators, stats, diag0, output, store, store_all, oprecalc, Sym.get(), mt, P)
-                        : nrg_loop(step, operators, coef, stats, diag0, output, store, store_all, oprecalc, Sym.get(), eng.get(), mt, P);
+    auto diag = nrg_loop(step, operators, coef, stats, diag0, output, store, store_all, oprecalc, Sym.get(), eng.get(), mt, P);
     color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
     stats.GS_energy = stats.total_energy;
     if (step.nrg()) {
@@ -140,7 +139,7 @@ public:
     step.set_last();
     auto rho = init_rho(step, diag, Sym.get(), P);
     rho.save(step.lastndx(), P, fn_rho);
-    if (!P.ZBW()) calc_densitymatrix(rho, store_all, Sym.get(), mt, P);
+    calc_densitymatrix(rho, store_all, Sym.get(), mt, P);
   }
   void calc_rhoFDM() {
     Step step{P, RUNTYPE::NRG};
@@ -151,7 +150,7 @@ public:
     fdm_thermodynamics(store, stats, Sym.get(), P.T);
     auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
     rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-    if (!P.ZBW()) calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
+    calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
   }
   NRG_calculation(std::unique_ptr<Workdir> workdir, std::shared_ptr<DiagEngine<S>> _eng, const bool embedded) :
     P("param", "param", std::move(workdir), embedded), eng(_eng), input(P, "data"), Sym(input.Sym),

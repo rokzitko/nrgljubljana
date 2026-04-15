@@ -55,11 +55,9 @@ void determine_Nmax_Nlen(const Coef<S> &coef, const size_t Nmax0, Params &P) { /
   const auto length_coef_table = coef.xi.max(0); // all channels have the same nr. of coefficients
   my_assert(length_coef_table == Nmax0); // check consistency
   P.Nmax = !P.substeps ? Nmax0 : P.channels * Nmax0;
-  P.Nlen = !P.ZBW() ? P.Nmax : P.Nmax+1; // an additional element in the tables for ZBW
-  if (P.ZBW()) std::cout << "\nZBW=true -> zero-bandwidth calculation\n";
+  P.Nlen = P.Nmax;
   if (!P.silent) std::cout << "\nlength_coef_table=" << length_coef_table << " Nmax0=" << Nmax0 << " Nmax=" << P.Nmax << "\n\n";
   my_assert(P.Nlen < MAX_NDX);
-  if (P.ZBW()) my_assert(P.substeps == false);
 }
 
 inline auto get_next_block(std::istream &fdata) {

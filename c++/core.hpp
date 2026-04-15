@@ -194,62 +194,56 @@ void store_states(const Step &step, Store<S> &store, Store<S> &store_all, const 
 inline double to_double(double x) { return x; }
 inline double to_double(std::complex<double> z) { return z.real(); }
 
-// Perform processing after a successful NRG step. Also called from doZBW() as a final step.
+// Perform processing after a successful NRG step.
 template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                 const SubspaceStructure &substruct, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym,
                 MemTime &mt, const Params &P) {
   nrglog('@', "after_diag()");
-  if (!P.ZBW()) {
-    // We need to keep the raw matrices if P.floquet=true, because we will reshuffle them,
-    // and only then explicitly call shrink().
-    const bool discard = !P.floquet;
-    split_in_blocks(diag, substruct, discard);
-  }
-  if (P.floquet) {
-    my_assert(P.extra_params.count("Omega") > 0);
-    const auto scale = step.scale();
-    const auto _Omega = std::stod(P.extra_params.at("Omega"));
-    const auto Omega = _Omega/scale;
-    nrglog('0' , "Omega=" << _Omega << " rescaled=" << Omega);
-    // recalculate only the m operator
-    auto mnew = oprecalc.recalculate_operator_m(operators, step, diag, substruct, P);
-    if (P.logletter('1'))
-      dump_diagonal_op("m", mnew, 0);
-    double emin = std::numeric_limits<double>::max(); // lowest Floquet energy
-    for(auto &[I, eig]: diag) {
-      if (P.logletter('2') || P.logletter('3'))
-        std::cout << "Floquet: subspace " << I << std::endl;
-      for (size_t i = 0; i < eig.values.size(); i++) {
-        const auto e = eig.values.raw(i);
-        emin = std::min(emin, e);
-        const auto m = mnew[Twoinvar(I, I)](i,i);
-        const auto mOmega = to_double(m)*Omega;
-        const auto e0 = e-mOmega;
-        const auto x = e0 + abs(mOmega); // second term: penalize high-m states
-        nrglog('2', "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x);
-        nrglog('3', "rs i=" << i << " e=" << e*scale << " m=" << m << " e0=e-m*Omega=" << e0*scale << " x=" << x*scale);
-        eig.values.set_crit(i, x);
-      }
-    }
-    // Shift eigenvalues to zero offset
-    stats.Egs = emin;
-    std::cout << "Egs=" << stats.Egs << std::endl;
-    // Shift truncation criteria to zero offset
-    const auto Clw = diag.find_Clw();
-    std::cout << "Clw=" << Clw << std::endl;
-    diag.shift(stats.Egs, Clw); // inplace shift!
-    if (P.logletter('4'))
-      diag.report(true);
-    // Sort eigensolutions by the value of the 'truncation criterion' value
-    diag.sort_by_c();
-    split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
-  }
-  // At this point, we may complete discarding data [not done in split_in_blocks() if discard=false]
-  if (!P.ZBW())
-    shrink(diag, substruct);
-  stats.update(step); // updates total_energy; stats.Egs must be set correctly
   if (step.nrg()) {
+    if (P.floquet) {
+      split_in_blocks(diag, substruct, false); // false = don't discard
+      my_assert(P.extra_params.count("Omega") > 0);
+      const auto scale = step.scale();
+      const auto _Omega = std::stod(P.extra_params.at("Omega"));
+      const auto Omega = _Omega/scale;
+      nrglog('0' , "Omega=" << _Omega << " rescaled=" << Omega);
+      // recalculate only the m operator
+      auto mnew = oprecalc.recalculate_operator_m(operators, step, diag, substruct, P);
+      if (P.logletter('1'))
+        dump_diagonal_op("m", mnew, 0);
+      double emin = std::numeric_limits<double>::max(); // lowest Floquet energy
+      for(auto &[I, eig]: diag) {
+        if (P.logletter('2') || P.logletter('3'))
+          std::cout << "Floquet: subspace " << I << std::endl;
+        for (size_t i = 0; i < eig.values.size(); i++) {
+          const auto e = eig.values.raw(i);
+          emin = std::min(emin, e);
+          const auto m = mnew[Twoinvar(I, I)](i,i);
+          const auto mOmega = to_double(m)*Omega;
+          const auto e0 = e-mOmega;
+          const auto x = e0 + abs(mOmega); // second term: penalize high-m states
+          nrglog('2', "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x);
+          nrglog('3', "rs i=" << i << " e=" << e*scale << " m=" << m << " e0=e-m*Omega=" << e0*scale << " x=" << x*scale);
+          eig.values.set_crit(i, x);
+        }
+      }
+      // Shift eigenvalues to zero offset
+      stats.Egs = emin;
+      std::cout << "Egs=" << stats.Egs << std::endl;
+      // Shift truncation criteria to zero offset
+      const auto Clw = diag.find_Clw();
+      std::cout << "Clw=" << Clw << std::endl;
+      diag.shift(stats.Egs, Clw); // inplace shift!
+      if (P.logletter('4'))
+        diag.report(true);
+      // Sort eigensolutions by the value of the 'truncation criterion' value
+      diag.sort_by_c();
+      split_in_blocks(diag, substruct, true); // We need to do it again! This time the raw matrices may be destroyed.
+    } else {
+      split_in_blocks(diag, substruct, true); // true = discard
+    }
+    stats.update(step); // updates total_energy; stats.Egs must be set correctly
     calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
     if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
       diag.save(step.ndx(), P);
@@ -264,10 +258,8 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     oprecalc.recalculate_operators(operators, step, diag, substruct, P);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   }
-  if (!P.ZBW()) {
-    nrglog('@', "truncate_perform()");
-    diag.truncate_perform();                               // Actual truncation occurs at this point
-  }
+  nrglog('@', "truncate_perform()");
+  diag.truncate_perform();                               // Actual truncation occurs at this point
   store_states(step, store, store_all, diag, substruct, Sym, P);
   if (!step.last()) {
     nrglog('@', "recalc_irreducible()");
@@ -312,33 +304,6 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
   Store<S> empty_st(0, 0);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, operators, empty_st, mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
-}
-
-// doZBW() takes the place of iterate() called from main_loop() in the case of zero-bandwidth calculation.
-// It replaces do_diag() and calls after_diag() as the last step.
-template<scalar S>
-auto nrg_ZBW(Step &step, Operators<S> &operators, Stats<S> &stats, const DiagInfo<S> &diag0, Output<S> &output,
-             Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, MemTime &mt, const Params &P) {
-  std::cout << std::endl << "Zero bandwidth calculation" << std::endl;
-  step.set_ZBW();
-  // --- begin do_diag() equivalent
-  DiagInfo<S> diag;
-  if (step.nrg())
-    diag = diag0;
-  if (step.dmnrg()) {
-    diag = DiagInfo<S>(step.ndx(), P, P.removefiles);
-    diag.subtract_GS_energy(stats.GS_energy);
-  }
-  if (P.floquet)
-    stats.Egs = 0.0; // handled later
-  else
-    stats.Egs = diag.find_Egs();
-  diag.set_shift_Egs(stats.Egs);
-  truncate_prepare(step, diag, Sym->multfnc(), P); // determine # of kept and discarded states
-  // --- end do_diag() equivalent
-  SubspaceStructure substruct{};
-  after_diag(step, operators, stats, diag, output, substruct, store, store_all, oprecalc, Sym, mt, P);
-  return diag;
 }
 
 template<scalar S>

@@ -133,7 +133,6 @@ void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store_all, cons
                         MemTime &mt, const Params &P, const std::string filename = fn_rho) {
   if (P.resume && already_computed(filename, P)) return;
   check_trace_rho(rho, Sym->multfnc()); // Must be 1.
-  if (P.ZBW()) return;
   const auto section_timing = mt.time_it("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[DM] " << N << std::endl;
@@ -213,7 +212,6 @@ template<scalar S>
 void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const Store<S> &store, const Store<S> &store_all, const Stats<S> &stats,
                             const Symmetry<S> *Sym, MemTime &mt, const Params &P, const std::string &filename = fn_rhoFDM) {
   if (P.resume && already_computed(filename, P)) return;
-  if (P.ZBW()) return;
   const auto section_timing = mt.time_it("FDM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[FDM] " << N << std::endl;

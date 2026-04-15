@@ -48,10 +48,6 @@ class Step {
      info += P.substeps ? fmt::format(" step {} substep {}", NM().first+1, NM().second+1) : "";
      color_print(P.pretty_out, fmt::emphasis::bold, "\n{}\n", info);
    }
-   void set_ZBW() noexcept {
-     trueN = int(P.Ninit) - 1; // if Ninit=0, trueN will be -1 (this is the only exceptional case)
-     ndxN = P.Ninit;
-   }
    // Return true if the spectral-function merging is to be performed at the current step
    [[nodiscard]] auto N_for_merging() const noexcept {
      if (P.NN1) return true;
@@ -59,20 +55,18 @@ class Step {
      return P.NN2even ? is_even(ndxN) : is_odd(ndxN);
    }
    [[nodiscard]] size_t firstndx() const noexcept { return P.Ninit; }
-   [[nodiscard]] size_t lastndx() const noexcept { return P.ZBW() ? P.Ninit : P.Nmax-1; }
+   [[nodiscard]] size_t lastndx() const noexcept { return P.Nmax-1; }
    // Return true if this is the first step of the NRG iteration
    [[nodiscard]] auto first() const noexcept { return ndxN == firstndx(); }
    // Return true if N is the last step of the NRG iteration
    [[nodiscard]] auto last(int N) const noexcept {
-     return N == lastndx() || (P.ZBW() && N == firstndx()); // special case!
+     return N == lastndx();
    }
    [[nodiscard]] auto last() const noexcept { return last(int(ndxN)); }
    [[nodiscard]] auto end() const noexcept { return ndxN >= P.Nmax; } // ndxN is outside the allowed range
    void set_last() noexcept {
      set(int(lastndx()));
-     if (P.ZBW()) set_ZBW();
    }
-   // NOTE: for ZBW calculations, Ninit=0 and Nmax=0, so that first() == true and last() == true for ndxN=0.
    [[nodiscard]] constexpr auto nrg() const noexcept { return runtype == RUNTYPE::NRG; }
    [[nodiscard]] constexpr auto dmnrg() const noexcept { return runtype == RUNTYPE::DMNRG; }
    // Index 'n' of the last site in the existing chain, f_n (at iteration 'N'). The site being added is f_{n+1}. This
