@@ -88,15 +88,8 @@ void cdmI(const size_t i,        // Subspace index
   my_assert(rmax == dim);   // Otherwise, rmax must equal dim
   // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match?
   my_assert(nromega <= diagI1.getnrstored());
-  const auto Ux = diagI1.vectors.submatrix_const({0, nromega}, store_all[N].at(I1).rmax.part(i)); // YYY: Ublock ?? ZZZZ YES!
-  const auto U0 =  diagI1.U.get(i);
+  const auto U0 = diagI1.U.get(i);
   const auto U = NRG::submatrix_const(U0, {0, nromega}, {0, size2(U0)});
-  std::cout << "size1(U)=" << size1(U) << std::endl;
-  std::cout << "size1(Ux)=" << size1(Ux) << std::endl;
-  std::cout << "size2(U)=" << size2(U) << std::endl;
-  std::cout << "size2(Ux)=" << size2(Ux) << std::endl;
-  my_assert(size1(U) == size1(Ux));
-  my_assert(size2(U) == size2(Ux));
   rotate<S>(rhoNEW, factor, U, rhoN);
 }
 
