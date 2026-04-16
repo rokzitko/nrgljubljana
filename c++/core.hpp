@@ -248,11 +248,11 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
       diag.save(step.ndx(), P);
     perform_basic_measurements(step, diag, Sym, stats, output, P); // Measurements are performed before the truncation!
-  }
-  if (P.h5raw && (P.h5all || (P.h5last && step.last()))) {
-    diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/", P.h5vectors);
-    if (P.h5U)
-      h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct); // after split_in_blocks()
+    if (P.h5raw && (P.h5all || (P.h5last && step.last()))) {
+      diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/", P.h5vectors);
+      if (P.h5U)
+        h5save_blocks(*output.h5raw, std::to_string(step.ndx()+1) + "/U/", diag, substruct); // after split_in_blocks()
+    }
   }
   if (P.do_recalc_all(step.get_runtype())) { // Either ...
     oprecalc.recalculate_operators(operators, step, diag, substruct, P);
