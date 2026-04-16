@@ -1,5 +1,5 @@
 // numerics.h - Miscelaneous numerical routines
-// Copyright (C) 2005-2024 Rok Zitko
+// Copyright (C) 2005-2026 Rok Zitko
 
 // This header should be included in all other headers where vector/matrix
 // objects are manipulated.
@@ -87,12 +87,11 @@ template<typename T>
 
 template<typename U, typename V>
 V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs
-    return ranges::accumulate(v, V{}, {}, [](const auto el) { return el.second; }); // XXX
+    return ranges::accumulate(v, V{}, {}, [](const auto el) { return el.second; });
 }
  
-// XXX: conj() is constexpr in C++20
-[[nodiscard]] inline std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
-[[nodiscard]] inline double conj_me(const double x) { return x; }    // no op
+[[nodiscard]] constexpr std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
+[[nodiscard]] constexpr double conj_me(const double x) { return x; }    // no op
 
 template<scalar S, typename Matrix = Matrix_traits<S>>
 auto empty_matrix() { return Matrix(); }
@@ -108,15 +107,15 @@ public:
   explicit generic_bucket(std::vector<std::pair<T1, T>> v) {
     for (const auto &i : v) value += i.second;
   }
-  inline constexpr T operator+=(T x) { return value += x; }
-  [[nodiscard]] inline constexpr operator T() const { return value; }
+  constexpr T operator+=(T x) { return value += x; }
+  [[nodiscard]] constexpr operator T() const { return value; }
 };
 using bucket = generic_bucket<double>;
 
 template <typename T>
-inline constexpr bool is_odd(const T n) { return n & 1; } // must return bool
+constexpr bool is_odd(const T n) { return n & 1; } // must return bool
 template <typename T>
-inline constexpr bool is_even(const T n) { return !is_odd(n); } // must return bool
+constexpr bool is_even(const T n) { return !is_odd(n); } // must return bool
 
 inline int my_fcmp(const double x, const double y, const double small_epsilon, const double rel_epsilon) {
   if (x == 0.0 && y == 0.0) return 0.0; // evidently equal
@@ -160,7 +159,7 @@ template<matrix M> auto is_matrix_upper(const M &m) {
 }
 
 // (-1)^n
-inline constexpr auto psgn(const std::integral auto n) { return n % 2 == 0 ? 1.0 : -1.0; }
+constexpr auto psgn(const std::integral auto n) { return n % 2 == 0 ? 1.0 : -1.0; }
 
 // Dump a matrix with full numerical precision. The columns are aligned for easier inspection. Expect large output!
 template<matrix M> inline void dump_matrix(const M &m, std::ostream &F = std::cout,
@@ -182,22 +181,22 @@ template<matrix M> inline void dump_diagonal_matrix(const M &m, const size_t max
 }
 
 // Chop numerical noise
-template <scalar T> inline constexpr T chop(const T x, const double xlimit = 1.e-8) { return std::abs(x) < xlimit ? 0.0 : x; }
+template <scalar T> constexpr T chop(const T x, const double xlimit = 1.e-8) { return std::abs(x) < xlimit ? 0.0 : x; }
 
 // Powers, such as (-1)^n, appear in the coupling coefficients.
-inline constexpr double Power(const double i, const double nn) { return std::pow(i, nn); }
+constexpr double Power(const double i, const double nn) { return std::pow(i, nn); }
 
-inline constexpr double Abs(const double x) { return abs(x); }
+constexpr double Abs(const double x) { return abs(x); }
 
 // Check if the value x is real [for complex number calculations].
-constexpr inline auto is_real([[maybe_unused]] const double x) { return true; }
-constexpr inline auto is_real(const std::complex<double> z, const double check_real_tolerance = 1e-8) {
+constexpr auto is_real([[maybe_unused]] const double x) { return true; }
+constexpr auto is_real(const std::complex<double> z, const double check_real_tolerance = 1e-8) {
   return abs(z.imag()) <= check_real_tolerance;
 }
 
 // Check if x is real and return the real part, i.e. x.real().
-constexpr inline auto real_part_with_check(double x) { return x; }
-constexpr inline auto real_part_with_check(std::complex<double> z) {
+constexpr auto real_part_with_check(double x) { return x; }
+constexpr auto real_part_with_check(std::complex<double> z) {
   if (!is_real(z)) std::cout << "Warning: expected real number, but got " << z << std::endl;
   return z.real();
 }
@@ -207,7 +206,7 @@ template <matrix M> auto trace_real(const M &m) {
   return ranges::accumulate(range0(size1(m)), 0.0, {}, [&m](const auto i){ return real_part_with_check(m(i, i)); });
 }
 
-inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); } // sqrt() not constexpr for complex (C++17)
+inline auto csqrt(const std::complex<double> z) { return std::sqrt(z); } // sqrt() not constexpr for complex (C++17, but it is in C++26)
 
 template<matrix R> // 2D matrix or matrix view
 auto finite_size(const R &m) { return size1(m) && size2(m); }
@@ -295,7 +294,7 @@ inline auto prod_adj_fit_left(const M &A, const M &B) {
   return matrix_adj_prod<T>(Asub, B);
 }
 
-inline constexpr double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
+constexpr double WEIGHT_TOL = 1e-8; // where to switch to l'Hospital rule form
 
 // weight=(exp(-beta Em)-exp(-beta En))/(beta En-beta Em). NOTE: arguments En, Em are order omega_N, while beta is
 // order 1/omega_N, thus the combinations betaEn and betaEm are order 1. Also En>0, Em>0, since these are excitation
