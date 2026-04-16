@@ -583,7 +583,6 @@ class Params {
   bool do_recalc_all(const RUNTYPE &runtype) const noexcept {    // all: Recalculate using all vectors
     return !do_recalc_kept(runtype);
   }
-  bool do_recalc_none() const noexcept { return false; } // XXX: still needed?
 
    // What is the last iteration completed in the previous NRG runs?
   void init_laststored() {

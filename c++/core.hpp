@@ -270,8 +270,6 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
     oprecalc.recalculate_operators(operators, step, diag, substruct, P);
     calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   }
-  if (P.do_recalc_none())  // ... or this
-    calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5ops)
     operators.h5save(*output.h5raw, std::to_string(step.ndx()+1));
