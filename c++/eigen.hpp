@@ -187,7 +187,7 @@ class Vectors {
       _dim = new_size2;
     }
     void shrink() {
-//      m = Matrix(0, 0);
+      m = Matrix(0, 0);
     }
     void save(boost::archive::binary_oarchive &oa) const {
       NRG::save(oa, m);
