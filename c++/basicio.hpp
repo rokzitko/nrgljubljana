@@ -108,8 +108,10 @@ inline size_t count_words_in_string(const std::string &s) { // size_t because it
 // Read one object of type S from an object F which has an extractor operator. Use as read_one<S>(F).
 template<typename S, typename T>
 inline auto read_one(T &F) {
-  S value;
+  S value{};
   F >> value;
+  if constexpr (requires { F.fail(); })
+    if (F.fail()) throw std::runtime_error("read_one() error. Input is corrupted.");
   return value;
 }
   

@@ -213,9 +213,9 @@ std::vector<std::pair<T1, T2>> readtable(const std::string &filename, const bool
   while (F)
   {
       skip_comments(F);
+      if (F.peek() == std::char_traits<char>::eof()) break;
       const auto x = read_one<T1>(F);
       const auto y = read_one<T2>(F);
-      if (F.fail()) break;
       assert(std::isfinite(x) && std::isfinite(y));
       v.push_back(std::make_pair(x, y));
   }

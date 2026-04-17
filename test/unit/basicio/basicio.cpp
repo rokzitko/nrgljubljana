@@ -75,6 +75,11 @@ TEST(basicio, get_dims) {
   EXPECT_THROW(get_dims(file_err), std::runtime_error);
 }
 
+TEST(basicio, read_one_throws_on_truncated_input) {
+  std::istringstream ss;
+  EXPECT_THROW(read_one<size_t>(ss), std::runtime_error);
+}
+
 TEST(basicio, file_exists_is_non_destructive) {
   const auto missing = "file_exists_missing.tmp"s;
   const auto existing = "file_exists_existing.tmp"s;
