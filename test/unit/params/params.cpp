@@ -98,7 +98,7 @@ bool one_of(InputIt first, InputIt last)
 
 void check_recalc(const Params &P, const RUNTYPE runtype)
 {
-  std::vector v = { P.do_recalc_kept(runtype), P.do_recalc_all(runtype), P.do_recalc_none() };
+  std::vector v = { P.do_recalc_kept(runtype), P.do_recalc_all(runtype) };
   EXPECT_EQ(one_of(v.begin(), v.end()), true);
 }
 
