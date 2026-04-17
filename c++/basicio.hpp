@@ -96,7 +96,7 @@ inline std::ifstream safe_open_for_reading(const std::string &filename, const bo
 
 inline bool file_exists(const std::string &fn)
 {
-   std::ofstream F(fn, std::ios::binary | std::ios::out);
+   std::ifstream F(fn, std::ios::binary | std::ios::in);
    return bool(F);
 }
 

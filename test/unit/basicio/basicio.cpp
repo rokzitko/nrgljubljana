@@ -1,4 +1,6 @@
 #include <gtest/gtest.h>
+#include <cstdio>
+#include <fstream>
 #include <sstream>
 
 #include <traits.hpp>
@@ -71,6 +73,32 @@ TEST(basicio, get_dims) {
   EXPECT_EQ(dim2, 4);
   auto file_err = safe_open_for_reading("txt/matrix_err.txt");
   EXPECT_THROW(get_dims(file_err), std::runtime_error);
+}
+
+TEST(basicio, file_exists_is_non_destructive) {
+  const auto missing = "file_exists_missing.tmp"s;
+  const auto existing = "file_exists_existing.tmp"s;
+  const auto payload = "density matrix payload\n"s;
+
+  std::remove(missing.c_str());
+  std::remove(existing.c_str());
+
+  EXPECT_FALSE(file_exists(missing));
+  EXPECT_FALSE(std::ifstream(missing, std::ios::binary | std::ios::in).good());
+
+  {
+    auto file = safe_open(existing, true);
+    file << payload;
+  }
+
+  EXPECT_TRUE(file_exists(existing));
+
+  std::ifstream file(existing, std::ios::binary | std::ios::in);
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  EXPECT_EQ(buffer.str(), payload);
+
+  std::remove(existing.c_str());
 }
 
 int main(int argc, char **argv) {
