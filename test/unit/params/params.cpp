@@ -220,6 +220,34 @@ TEST(params, E) {
   EXPECT_LT(std::abs(P.getEmax()-4.0), 1e-10);
 }
 
+TEST(params, validate_rejects_invalid_nmax) {
+  Params P;
+
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+
+  P.Ninit = 1;
+  P.Nmax = 1;
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+
+  P.Ninit = 0;
+  P.Nmax = 2;
+  EXPECT_NO_THROW(P.validate());
+}
+
+TEST(params, validate_rejects_non_positive_temperature) {
+  Params P;
+  P.Nmax = 2;
+
+  P.T = 0.0;
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+
+  P.T = -1.0;
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+
+  P.T = 1e-3;
+  EXPECT_NO_THROW(P.validate());
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS();

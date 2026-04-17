@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+mkdir -p 1
+cat <<'EOF' > 1/GT.dat
+# empty input
+EOF
+if "$1/intavg" GT.dat 1 >stdout.txt 2>stderr.txt; then
+  echo "intavg unexpectedly succeeded" >&2
+  exit 1
+fi
+grep -q "At least two data points required" stderr.txt

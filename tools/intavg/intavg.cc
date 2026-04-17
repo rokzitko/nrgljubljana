@@ -102,6 +102,11 @@ Vec load(int i) {
     }
   }
 
+  if (data.size() < 2) {
+    cerr << "At least two data points required in file " << filename << endl;
+    exit(1);
+  }
+
   return data;
 }
 

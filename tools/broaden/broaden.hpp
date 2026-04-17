@@ -492,18 +492,18 @@ class Broaden {
    }
    
    // Cumulative spectrum
-   void calc_cumulative(const vec &mesh, vec &c) {
-     const auto nr_mesh = mesh.size();
-     if (verbose) std::cout << "Calculating cumulative spectrum." << std::endl;
-     c.resize(nr_mesh);
-     auto sum = 0.0;
-     auto j   = 0;
-     for (auto i = 0; i < nr_mesh; i++) {
-       const auto max_freq = mesh[i];
-       while (vfreq[j] < max_freq) {
-         sum += vspec[j];
-         j++;
-       }
+    void calc_cumulative(const vec &mesh, vec &c) {
+      const auto nr_mesh = mesh.size();
+      if (verbose) std::cout << "Calculating cumulative spectrum." << std::endl;
+      c.resize(nr_mesh);
+      auto sum = 0.0;
+      size_t j = 0;
+      for (auto i = 0; i < nr_mesh; i++) {
+        const auto max_freq = mesh[i];
+        while (j < vfreq.size() && vfreq[j] < max_freq) {
+          sum += vspec[j];
+          j++;
+        }
        c[i] = sum;
      }
      std::cout << "End sum=" << sum << std::endl;

@@ -602,6 +602,9 @@ class Params {
   }
 
   void validate() {
+    if (Nmax == 0) throw std::invalid_argument("Nmax must be greater than 0.");
+    if (Nmax <= size_t(Ninit.value())) throw std::invalid_argument("Nmax must be greater than Ninit.");
+    if (T <= 0.0) throw std::invalid_argument("T must be greater than 0.");
     my_assert(keep > 1);
     if (keepenergy > 0.0) my_assert(keepmin <= keep);
     if (dm_flags()) dm = true;
@@ -670,7 +673,9 @@ class Params {
     init_laststored();
     if (!quiet) dump();
   }
-  explicit Params() : Params("", "", std::make_unique<Workdir>(), true, true) {} // defaulted version (for testing purposes)
+  explicit Params() : workdir(std::make_unique<Workdir>()), embedded(true) {
+    pretty_out = !is_stdout_redirected();
+  } // defaulted version (for testing purposes)
   Params(const Params &) = delete;
   Params(Params &&) = delete;
   Params &operator=(const Params &) = delete;

@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+export PATH="$1:$PATH"
+cat <<'EOF' >theta.dat
+1
+EOF
+cat <<'EOF' >xi.dat
+1
+EOF
+cat <<'EOF' >zeta.dat
+0
+EOF
+ASAN_OPTIONS=detect_leaks=0 matrix param matrix matrix2.dat >result
+cat <<'EOF' >expected
+1
+2
+EOF
+diff -u expected result

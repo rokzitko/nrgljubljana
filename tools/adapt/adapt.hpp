@@ -145,16 +145,16 @@ class Adapt {
    }
    // Integrate with step dx up to xf. max_diff_x = maximum discrepancy in x when approaching mesh points.
    template<typename FNC>
-   void int_with_to(const double dx, const double xf, FNC rhs, const bool check_f, const double max_diff_x = 1e-10, const int max_cnt = 1000000) {
-     int cnt = 0;
-     do {
-       const double steplength = x+dx < xf ? dx : xf-x; // If dx is too long, steplength should be decreased to xf-x.
-       timestep(steplength, rhs, check_f);
-       cnt++;
-       if (cnt > max_cnt) 
-         std::runtime_error("Number of subdivisions exceeded. max_subdiv should be increased.");
-     } while (abs(x-xf) > max_diff_x); // x is a global variable, updated in timestep()
-   }
+    void int_with_to(const double dx, const double xf, FNC rhs, const bool check_f, const double max_diff_x = 1e-10, const int max_cnt = 1000000) {
+      int cnt = 0;
+      do {
+        const double steplength = x+dx < xf ? dx : xf-x; // If dx is too long, steplength should be decreased to xf-x.
+        timestep(steplength, rhs, check_f);
+        cnt++;
+        if (cnt > max_cnt)
+          throw std::runtime_error("Number of subdivisions exceeded. max_subdiv should be increased.");
+      } while (abs(x-xf) > max_diff_x); // x is a global variable, updated in timestep()
+    }
 
    // returns the g(xmax)/[A/rho(0)] ratio and vecg
    auto shoot_g() {

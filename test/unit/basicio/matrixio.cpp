@@ -1,4 +1,7 @@
 #include <gtest/gtest.h>
+#include <cstdint>
+#include <cstdio>
+#include <fstream>
 #include <sstream>
 
 #include <traits.hpp>
@@ -23,6 +26,21 @@ TEST(io, save_matrix){
   auto matrix_temp = read_matrix("txt/matrix_temp.txt");
   EXPECT_TRUE(matrix.isApprox(matrix_temp));
   std::remove("txt/matrix_temp.txt");
+}
+
+TEST(io, read_matrix_bin_throws_on_truncated_data) {
+  const auto filename = "txt/matrix_truncated.bin";
+  {
+    std::ofstream file(filename, std::ios::binary | std::ios::out);
+    const uint32_t dim = 2;
+    const double element = 1.0;
+    file.write(reinterpret_cast<const char *>(&dim), sizeof(dim));
+    file.write(reinterpret_cast<const char *>(&dim), sizeof(dim));
+    file.write(reinterpret_cast<const char *>(&element), sizeof(element));
+  }
+
+  EXPECT_THROW(read_matrix(filename, true), std::runtime_error);
+  std::remove(filename);
 }
 
 int main(int argc, char **argv) {

@@ -383,6 +383,7 @@ class Hilb {
   }
 
   void report_dos() {
+    if (Xpts.empty()) throw std::runtime_error("DOS file contains no data points.");
     Xmin = Xpts.front();
     Xmax = Xpts.back();
     assert(Xmin < Xmax);

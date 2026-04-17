@@ -30,8 +30,8 @@ class LinInt {
   LinInt() = default;
   LinInt(const Vec &in_vec) : vec(in_vec) {
     len = vec.size();
-    if (len < 2) 
-      std::runtime_error("At least two data points required for interpolation.");
+    if (len < 2)
+      throw std::runtime_error("At least two data points required for interpolation.");
     index            = -1;
     newintegral_flag = false;
     xmin             = vec.front().first;

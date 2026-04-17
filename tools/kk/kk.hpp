@@ -119,9 +119,10 @@ class KK {
    
    // Initialize the KK transformer
    void init(XYFUNC im) {  // pass by value
-     std::sort(im.begin(), im.end());
-     len = im.size();
-     assert(len % 2 == 0);
+      if (im.empty()) throw std::runtime_error("No input data points provided.");
+      std::sort(im.begin(), im.end());
+      len = im.size();
+      assert(len % 2 == 0);
      std::tie (Xmin, Xmax) = x_range(im);
      if (mode == MODE::FILES) std::cout << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
      if (gsl_fcmp(-Xmin, Xmax, 1.e-8) != 0) throw std::runtime_error("Only symmetric intervals are supported!");

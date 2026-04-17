@@ -20,3 +20,9 @@ TEST(resample, basic){
   compare(*output, output_compare);
 
 }
+
+TEST(resample, empty_input_throws) {
+  std::vector<std::pair<double, double>> input;
+  std::vector<std::pair<double, double>> grid = {{1.0, 0.0}};
+  EXPECT_THROW(NRG::Resample::Resample<double>(input, grid), std::runtime_error);
+}

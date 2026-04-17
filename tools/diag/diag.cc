@@ -164,13 +164,20 @@ void diag_stream(istream &F) {
     if (!F.fail()) { data.push_back(x); }
   }
 
-  int size = data.size();
-  int N    = (int)sqrt(size);
+  const auto size = data.size();
+  if (size == 0) {
+    cerr << "ERROR: matrix input is empty!" << endl;
+    exit(1);
+  }
+  const auto N = static_cast<int>(sqrt(size));
   if (verbose) { cout << "size=" << size << " N=" << N << endl; }
 
-  if (size % (N * N) != 0) { cerr << "ERROR: matrix must be square!" << endl; }
+  if (N == 0 || size != static_cast<size_t>(N) * static_cast<size_t>(N)) {
+    cerr << "ERROR: matrix must be square!" << endl;
+    exit(1);
+  }
 
-  diagonalize(N, data);
+  diagonalize(static_cast<unsigned int>(N), data);
 }
 
 void usage(ostream &OUT = cout) { 

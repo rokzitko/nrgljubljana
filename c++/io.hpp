@@ -94,11 +94,20 @@ auto read_matrix_text(GEN && generate_matrix, const std::string &filename, const
 template<typename GEN>
 auto read_matrix_bin(GEN && generate_matrix, const std::string &filename, const bool verbose = false) {
   auto F = safe_open_for_reading(filename, true);
-  uint32_t dim1, dim2;
-  F.read((char *)&dim1, sizeof(uint32_t));
-  F.read((char *)&dim2, sizeof(uint32_t));
+  auto read_binary = [&F, &filename](auto &value, const std::string &what) {
+    F.read(reinterpret_cast<char *>(&value), sizeof(value));
+    if (!F) throw std::runtime_error(fmt::format("Can't read {} from {}", what, filename));
+  };
+  uint32_t dim1{}, dim2{};
+  read_binary(dim1, "matrix row count");
+  read_binary(dim2, "matrix column count");
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
-  return read_matrix_data(generate_matrix, [&F]() { double x; F.read((char *)&x, sizeof(double)); return x; }, dim1, dim2);
+  return read_matrix_data(generate_matrix, [&F, &filename]() {
+    double x{};
+    F.read(reinterpret_cast<char *>(&x), sizeof(double));
+    if (!F) throw std::runtime_error(fmt::format("Can't read matrix data from {}", filename));
+    return x;
+  }, dim1, dim2);
 }
 
 inline auto read_matrix(const std::string &filename, const bool bin = false, const bool verbose = false, const bool veryverbose = false) {

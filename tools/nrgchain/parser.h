@@ -52,11 +52,11 @@ void parse_block(ifstream &F) {
     getline(F, line);
     if (!F) { break; }
 
-    if (line[0] == '[') // new block, we're done!
-      break;
-
     if (line.length() == 0) // skip empty lines
       continue;
+
+    if (line[0] == '[') // new block, we're done!
+      break;
 
     if (line[0] == '#') // skip comment lines
       continue;

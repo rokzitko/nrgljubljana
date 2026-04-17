@@ -147,6 +147,10 @@ const double EPSABS = 1e-12; // numeric integration epsilon (absolute)
 const double EPSREL = 1e-8;  // numeric integration epsilon (relative)
 
 void init(XYFUNC &im) {
+  if (im.empty()) {
+    cerr << "Error: no data points found." << endl;
+    exit(1);
+  }
   sort(im.begin(), im.end());
 
   len = im.size();

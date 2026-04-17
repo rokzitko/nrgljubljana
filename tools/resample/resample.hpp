@@ -142,6 +142,7 @@ class Resample
 
         void init(std::vector<std::pair<T, T>> &im)
         {
+            if (im.empty()) throw std::runtime_error("No input data points available for resampling.");
             int len;      // number of data points
             T Xmin, Xmax; // the interval boundaries
             std::vector<T>  Xpts, Ypts;

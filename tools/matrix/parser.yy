@@ -344,12 +344,13 @@ int yywrap(void)
     if (current != 0) {
       fclose(file);
     }
-    
-    char *filename = filelist[current];
+
     if (current == remaining) {
       // we're done!
       return 1;
     }
+
+    char *filename = filelist[current];
     
     if (verbose) {
       cerr << "Parsing " << filename << endl;
@@ -500,4 +501,3 @@ void yyerror(const char *error)
 {
   cerr << error << endl;
 }
-

@@ -28,18 +28,18 @@ inline bool find_block(std::ifstream &F, const std::string &s) {
 class Params : public std::map<std::string, std::string> {
  private:
    // Parse a block of "keyword=value" lines.
-   void parse_block(std::ifstream &F) {
-     while (F) {
-       std::string line;
-       std::getline(F, line);
-       if (!F) { break; }
-       if (line[0] == '[') // new block, we're done!
-         break;
-       if (line.length() == 0) // skip empty lines
-         continue;
-       if (line[0] == '#') // skip comment lines
-         continue;
-       const auto pos_eq = line.find_first_of('=');
+    void parse_block(std::ifstream &F) {
+      while (F) {
+        std::string line;
+        std::getline(F, line);
+        if (!F) { break; }
+        if (line.length() == 0) // skip empty lines
+          continue;
+        if (line[0] == '[') // new block, we're done!
+          break;
+        if (line[0] == '#') // skip comment lines
+          continue;
+        const auto pos_eq = line.find_first_of('=');
        if (pos_eq == std::string::npos) // not found
          continue;
        const auto keyword = line.substr(0, pos_eq);
