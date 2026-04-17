@@ -1,0 +1,18 @@
+#!/bin/bash
+# $1 = $PROJECT_SOURCE_DIR
+# $2 = $PROJECT_BINARY_DIR
+# $3 = $CMAKE_CURRENT_SOURCE_DIR/${test}
+# $4 = Mathematica kernel executable
+
+# Only run nrginit if data does not yet exist. This allows to keep
+# reference and templeta-initialization runs in the same directory.
+if [ ! -e data ]; then
+  "$1/nrginit/nrginit" "$4"
+fi
+
+"$2/c++/nrg" 2>&1 | tee log
+if [ $? -ne 0 ]; then
+  echo "Abnormal termination. Skipping comparisons."
+  exit 1
+fi
+"$1/test/compare.pl" "$3/ref"

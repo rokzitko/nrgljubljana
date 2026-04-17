@@ -244,6 +244,8 @@ NOSHUR - do not use the Shur decomposition to diagonalize matrices
 MPVCSLOW - set MPVCFAST=False
 GENERATE_TEMPLATE - generate a template file with no Wilson coefficients, to be used
      in the NRG Ljubljana <-> TRIQS interface
+GENERATE_TEMPLATE_ALL - include operators
+GENERATE_TEMPLATE_F - include irreducible operators
 *)
 
 (* Spin of conduction-band electrons. *)
@@ -661,8 +663,12 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec, reslt},
   MyAssert[dim[[1]] == dim[[2]]];
   nr = dim[[1]];
 
-  If[option["TEMPLATE"] || option["GENERATE_TEMPLATE"],
-    (* Fake a result with correct structure *)
+  If[option["TEMPLATE"] || option["GENERATE_TEMPLATE"], (* XXX: do we need TEMPLATE? *)
+    (* Fake a result with correct structure using an identity matrix (standard eigenbasis). *)
+    (* Note: if only option WRITE is given, but not TEMPLATE/GENERATE_TEMPLATE,
+       the generated matrices correspond to a specfic set of eigenvectors.
+       In other words, when generating templates, be sure to use GENERATE_TEMPLATE,
+       not WRITE. WRITE is only useful for debugging purposes. *)
     Return[{Range[nr], IdentityMatrix[nr]//N}];
   ];
 
@@ -923,8 +929,16 @@ ireducMatrixSpeedy[str_String, op_?operatorQ[j___], {inv1_, inv2_}, opt___] :=
 <inv1|op|inv2>/factor and rotates it by a suitable unitary transformation to
 the eigenbases in inv1 and inv2. *)
 
-optransform[op_, inv1_, inv2_, factor_:1] := Module[{mat, vecs1, vecs2, res},
+optransform[op_, inv1_, inv2_, factor_:1] := Module[{mat, vecs1, vecs2},
   mat = op2matrix[op, inv1, inv2] / factor;
+  vecs1 = Conjugate[ diagvc[inv1] [[2]] ]; (* bras are conjugated *)
+  vecs2 = Transpose[ diagvc[inv2] [[2]] ]; (* kets are transposed *)
+
+  vecs1 . mat . vecs2
+];
+
+(* Used in combination with the generated basis files *)
+mattransform[mat_, {inv1_, inv2_}] := Module[{vecs1, vecs2},
   vecs1 = Conjugate[ diagvc[inv1] [[2]] ]; (* bras are conjugated *)
   vecs2 = Transpose[ diagvc[inv2] [[2]] ]; (* kets are transposed *)
 
@@ -1385,9 +1399,10 @@ Module[{t, cp, i, mat, opfnsub},
         MyPrint["Failed."];
         GENOPS = True,
       (* else *)
+        mat = mattransform[mat, cp];
         AppendTo[opdata, {cp, mat}];
         MyPrint["el[1,1]=", mat[[1,1]] ];
-        GENOPS = Failed
+        GENOPS = False
       ];
     ];
     If[GENOPS,
@@ -1586,14 +1601,21 @@ singletopTable[op_] := Module[{t, i, inv, mat},
     inv = subspaces[[i]];
     opfnsub = opfn <> "_" <> Invar2String[inv] <> "_" <> Invar2String[inv];
     AppendTo[t, Flatten[{inv, inv}]];
+    GENOPS = True;
     If[READOPS,
       MyPrint["Reading ", opfnsub];
       mat = silentGet[opfnsub, Path -> readdir];
       MyVPrint[3, "mat=", mat];
-      (* Fall back to matrix generation upon first failure *)
-      If[mat === $Failed, READOPS = False];
+      If[mat === $Failed,
+        MyPrint["Failed."];
+        GENOPS = True,
+      (* else *)
+        mat = mattransform[mat, {inv, inv}];
+        MyPrint["el[1,1]=", mat[[1,1]] ];
+        GENOPS = False
+      ];
     ];
-    If[!READOPS,
+    If[GENOPS,
       mat = Simplify @ singletopMatrixSpeedy[op, inv]; (* simplify! *)
       MyPut[mat, opfnsub, option["GENERATE_TEMPLATE_ALL"]];
     ];
