@@ -54,12 +54,12 @@ class ExpvOutput {
        for (const auto &op: fields)
          color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, formatted_output(m[op], P)); // NOTE: real and imaginary part shown
    }
-   ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m,
-              std::list<std::string> fields, const Params &P) : m(m), fields(std::move(fields)), P(P) {
-     F.open(fn);
-     field_numbers();
-     field_names();
-   }
+    ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m,
+               std::list<std::string> fields, const Params &P) : m(m), fields(std::move(fields)), P(P) {
+      F = safe_open(fn);
+      field_numbers();
+      field_names();
+    }
 };
 
 // scaled = true -> output scaled energies (i.e. do not multiply by the rescale factor). note: dumpEscale is not applied here.
@@ -78,17 +78,21 @@ class Annotated {
    template<scalar S, typename MF>
    void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats,
              MF mult, const std::string &filename = "annotated.dat") {
-     if (!P.dumpannotated) return;
-     if (!F.is_open()) { // open output file
-       F.open(filename);
-       F << std::setprecision(P.dumpprecision);
-     }
-     std::vector<std::pair<double, Invar>> seznam;
-     for (const auto &[I, eig] : diag)
-       for (const auto e : eig.values.all_rel_zero())
-         seznam.emplace_back(e, I);
-     ranges::sort(seznam);
-     size_t len = std::min<size_t>(seznam.size(), P.dumpannotated); // non-const
+      if (!P.dumpannotated) return;
+      if (!F.is_open()) { // open output file
+        F = safe_open(filename);
+        F << std::setprecision(P.dumpprecision);
+      }
+      std::vector<std::pair<double, Invar>> seznam;
+      for (const auto &[I, eig] : diag)
+        for (const auto e : eig.values.all_rel_zero())
+          seznam.emplace_back(e, I);
+      ranges::sort(seznam);
+      if (seznam.empty()) {
+        F << std::endl;
+        return;
+      }
+      size_t len = std::min<size_t>(seznam.size(), P.dumpannotated); // non-const
      // If states are clustered, we dump the full cluster
      while (len < seznam.size()-1 && my_fcmp(seznam[len].first, seznam[len-1].first, P.grouptol) == 0) len++;
      const auto scale = [&step, &stats, this](auto x) { return scaled_energy(x, step, stats, P); };
@@ -148,9 +152,9 @@ struct Output {
     : runtype(runtype), P(P), annotated(P)
     {
       if (runtype == RUNTYPE::NRG) {
-        if (P.dumpenergies) Fenergies.open(filename_energies);
-        if (P.dumpstates) Fstates.open(filename_states);
-        if (P.reportdiagonal) Freport.open(filename_report);
+        if (P.dumpenergies) Fenergies = safe_open(filename_energies);
+        if (P.dumpstates) Fstates = safe_open(filename_states);
+        if (P.reportdiagonal) Freport = safe_open(filename_report);
       }
       const auto ops = singlet_operators_for_expv_evaluation(operators);
       if (runtype == RUNTYPE::NRG)

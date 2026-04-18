@@ -108,8 +108,8 @@ void cmd_line(int argc, char *argv[]) {
   if (verbose) cout << "Processing: " << name << " Nz=" << Nz << endl;
 }
 
-double **buffers; // binary data buffers
-int *sizes;       // sizes of buffers
+vector<vector<double>> buffers; // binary data buffers
+vector<int> sizes;              // sizes of buffers
 
 typedef map<double, double> mapdd;
 using vec = vector<double>;
@@ -153,29 +153,29 @@ void load(int i) {
   if (verbose) cout << "len=" << len << " nr=" << nr << " data points" << endl;
   // Allocate the read buffer. The data will be kept in memory for the
   // duration of the calculation!
-  auto *buffer = new double[rows * nr];
+  auto buffer = std::vector<double>(rows * nr);
   f.seekg(0, ios::beg); // Return to the beginning of the file.
-  f.read((char *)buffer, len);
+  f.read((char *)buffer.data(), len);
   if (f.fail()) {
     cerr << "Error reading " << filename << endl;
     exit(1);
   }
   f.close();
   // Keep record of the the buffer and its size.
-  buffers[i] = buffer;
+  buffers[i] = std::move(buffer);
   sizes[i]   = nr;
   if (verbose) {
     // Check normalization.
     double sum = 0.0;
-    for (int j = 0; j < nr; j++) sum += buffer[rows * j + col];
+    for (int j = 0; j < nr; j++) sum += buffers[i][rows * j + col];
     cout << "Weight=" << sum << endl;
   }
 }
 
 // Load all the input data.
 void read_files() {
-  buffers = new double *[Nz + 1];
-  sizes   = new int[Nz + 1];
+  buffers.resize(Nz + 1);
+  sizes.resize(Nz + 1);
   for (int i = 1; i <= Nz; i++) load(i);
 }
 
@@ -186,8 +186,8 @@ void merge() {
   // (frequency,weight) pairs is used for this purpose.
   for (int i = 1; i <= Nz; i++) {
     for (int l = 0; l < sizes[i]; l++) {
-      double &freq      = buffers[i][rows * l];
-      double &value     = buffers[i][rows * l + col];
+        double &freq      = buffers[i][rows * l];
+        double &value     = buffers[i][rows * l + col];
       auto I = spec.find(freq);
       if (I == spec.end()) {
         spec[freq] = value;
@@ -265,6 +265,10 @@ void central_moments() {
     cout << "4. raw moment = " << mom4 << endl;
   }
   const double weight = mom0;
+  if (weight == 0.0) {
+    cerr << "Error: total spectral weight is zero." << endl;
+    exit(1);
+  }
   const double mean   = mom1 / weight;
   double cmom2 = 0.0, cmom3 = 0.0, cmom4 = 0.0;
   for (unsigned int j = 0; j < nr_spec; j++) {
@@ -277,8 +281,8 @@ void central_moments() {
   cmom3 /= weight;
   cmom4 /= weight;
   const double sigma    = sqrt(cmom2); // std. deviation
-  const double skewness = cmom3 / pow(sigma, 3);
-  const double kurtosis = cmom4 / pow(sigma, 4) - 3.0;
+  const double skewness = sigma == 0.0 ? 0.0 : cmom3 / pow(sigma, 3);
+  const double kurtosis = sigma == 0.0 ? 0.0 : cmom4 / pow(sigma, 4) - 3.0;
   if (verbose) {
     cout << endl;
     cout << "0. moment (weight) = " << mom0 << endl;

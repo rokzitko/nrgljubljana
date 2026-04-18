@@ -28,12 +28,12 @@ class BinAvg {
  private:   
    bool verbose = false; // output verbosity level
    bool one     = false; // For Nz=1, no subdir.
-   int nrcol = 1; // Number of columns
-   int col   = 1; // Which y column are we interested in?
-   std::string name; // filename of binary files containing the raw data
-   int Nz;           // Number of spectra (1..Nz)
-   double **buffers; // binary data buffers
-   int *sizes;       // sizes of buffers
+    int nrcol = 1; // Number of columns
+    int col   = 1; // Which y column are we interested in?
+    std::string name; // filename of binary files containing the raw data
+    int Nz;           // Number of spectra (1..Nz)
+    std::vector<std::vector<double>> buffers; // binary data buffers
+    std::vector<int> sizes;                   // sizes of buffers
 
    typedef std::map<double, double> mapdd;
    using vec = std::vector<double>;
@@ -105,31 +105,31 @@ class BinAvg {
      const int nr = len / (rows * sizeof(double)); // number of lines
      if (verbose) { std::cout << "len=" << len << " nr=" << nr << " data points" << std::endl; }
      // Allocate the read buffer. The data will be kept in memory for the duration of the calculation!
-     auto *buffer = new double[rows * nr];
-     f.seekg(0, std::ios::beg); // Return to the beginning of the file.
-     f.read((char *)buffer, len);
+      auto buffer = std::vector<double>(rows * nr);
+      f.seekg(0, std::ios::beg); // Return to the beginning of the file.
+      f.read((char *)buffer.data(), len);
      if (f.fail()) {
        std::cerr << "Error reading " << filename << std::endl;
        exit(1);
-     }
-     f.close();
-     // Keep record of the the buffer and its size.
-     buffers[i] = buffer;
-     sizes[i]   = nr;
-     if (verbose) {
-       // Check normalization.
-       double sum = 0.0;
-       for (int j = 0; j < nr; j++) sum += buffer[rows * j + col];
-       std::cout << "Weight=" << sum << std::endl;
-     }
-   }
+      }
+      f.close();
+      // Keep record of the the buffer and its size.
+      buffers[i] = std::move(buffer);
+      sizes[i]   = nr;
+      if (verbose) {
+        // Check normalization.
+        double sum = 0.0;
+        for (int j = 0; j < nr; j++) sum += buffers[i][rows * j + col];
+        std::cout << "Weight=" << sum << std::endl;
+      }
+    }
 
-   // Load all the input data.
-   void read_files() {
-     buffers = new double *[Nz + 1];
-     sizes   = new int[Nz + 1];
-     for (int i = 1; i <= Nz; i++) { load(i); }
-   }
+    // Load all the input data.
+    void read_files() {
+      buffers.resize(Nz + 1);
+      sizes.resize(Nz + 1);
+      for (int i = 1; i <= Nz; i++) { load(i); }
+    }
 
    // Combine data from all NRG runs (z-averaging).
    void merge() {

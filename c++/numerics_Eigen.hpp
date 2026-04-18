@@ -82,7 +82,7 @@ template <scalar T> auto read_Eigen_matrix(std::istream &F, const size_t size1, 
   for (auto j1 = 0; j1 < size1; j1++)
     for (auto j2 = 0; j2 < size2; j2++)
       m(j1, j2) = assert_isfinite( read_one<T>(F) );
-  if (F.fail()) std::runtime_error("read_matrix() error. Input file is corrupted.");
+  if (F.fail()) throw std::runtime_error("read_matrix() error. Input file is corrupted.");
   return m;
 }
 

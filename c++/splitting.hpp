@@ -49,31 +49,28 @@ class Clusters {
      }
    }
    // Find clusters of values which differ by at most 'epsilon'
-   Clusters(DiagInfo<S> &diag, const double epsilon, const Params &_P, bool fix = true) : P(_P) {
-     const auto energies = diag.sorted_energies_rel_zero();
-     my_assert(energies.size());
-     auto e0 = energies.front();  // energy of the lower boundary of the cluster, [e0:e1]
-     auto i0 = energies.cbegin(); // iterator to the lower boundary of the cluster, [i0:i1]
-     int size = 1;                // number of states in the current cluster
-     for (auto i = energies.begin(); i != energies.end(); ++i) {
-       if ((*i - e0) < epsilon) { // in the cluster
-         size++;
-       } else { // end of cluster detected
-         auto i1 = i;
-         if (size > 1) {            // is this a real cluster?
-           if (cluster_splitting(i0, i1)) { // are the states actually split?
-             auto replace_with = *i0;    // use the lowest eigenvalue of the cluster
-             for (auto j = (i0 + 1); j != i1; ++j) // skip 1st
-               if (*j != *i0) cluster_mapping.insert({*j, replace_with});
-           }
-         }
-         e0   = *i;
-         i0   = i;
-         size = 1;
-       }
-     }
-     if (fix) fix_it(diag);
-   }
+    Clusters(DiagInfo<S> &diag, const double epsilon, const Params &_P, bool fix = true) : P(_P) {
+      const auto energies = diag.sorted_energies_rel_zero();
+      my_assert(energies.size());
+      auto e0 = energies.front();  // energy of the lower boundary of the cluster, [e0:e1]
+      auto i0 = energies.cbegin(); // iterator to the lower boundary of the cluster, [i0:i1]
+      const auto process_cluster = [this, &i0](const auto i1) {
+        if (std::distance(i0, i1) > 1 && cluster_splitting(i0, i1)) {
+          const auto replace_with = *i0;
+          for (auto j = i0 + 1; j != i1; ++j)
+            if (*j != *i0) cluster_mapping.insert({*j, replace_with});
+        }
+      };
+      for (auto i = energies.begin() + 1; i != energies.end(); ++i) {
+        if ((*i - e0) >= epsilon) {
+          process_cluster(i);
+          e0   = *i;
+          i0   = i;
+        }
+      }
+      process_cluster(energies.cend());
+      if (fix) fix_it(diag);
+    }
 };
 
 } // namespace

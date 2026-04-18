@@ -26,3 +26,9 @@ TEST(resample, empty_input_throws) {
   std::vector<std::pair<double, double>> grid = {{1.0, 0.0}};
   EXPECT_THROW(NRG::Resample::Resample<double>(input, grid), std::runtime_error);
 }
+
+TEST(resample, invalid_akima_input_throws) {
+  std::vector<std::pair<double, double>> input = {{0.0, 1.0}, {0.0, 2.0}, {1.0, 3.0}};
+  std::vector<std::pair<double, double>> grid = {{0.5, 0.0}};
+  EXPECT_THROW(NRG::Resample::Resample<double>(input, grid), std::runtime_error);
+}

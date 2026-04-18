@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+perl -e 'print pack("d*", 0.1, 1.0)' > spec.bin
+if "$1/broaden" -A -B -o spec.bin 1 0.3 1e-4 >stdout.txt 2>stderr.txt; then
+  echo "broaden unexpectedly accepted an empty output mesh" >&2
+  exit 1
+fi
+grep -q "Output mesh cannot be empty." stderr.txt

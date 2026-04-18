@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <memory>
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
@@ -34,6 +35,24 @@
 #include <unistd.h>
 
 namespace NRG::KK {
+
+struct gsl_accel_deleter {
+  void operator()(gsl_interp_accel *acc) const {
+    if (acc) gsl_interp_accel_free(acc);
+  }
+};
+
+struct gsl_spline_deleter {
+  void operator()(gsl_spline *spline) const {
+    if (spline) gsl_spline_free(spline);
+  }
+};
+
+struct gsl_workspace_deleter {
+  void operator()(gsl_integration_workspace *workspace) const {
+    if (workspace) gsl_integration_workspace_free(workspace);
+  }
+};
 
 using XYPOINT = std::pair<double, double>;
 using XYFUNC = std::vector<XYPOINT>;
@@ -108,57 +127,61 @@ class KK {
    DVEC Xpts, Ypts;
    DVEC Xpos;         // Only positive X points [grid]
    double Xmin, Xmax; // Interval boundaries for the frequency grid
-   gsl_interp_accel *acc;
-   gsl_spline *spline;
-   gsl_integration_workspace *w;
+   std::unique_ptr<gsl_interp_accel, gsl_accel_deleter> acc;
+   std::unique_ptr<gsl_spline, gsl_spline_deleter> spline;
+   std::unique_ptr<gsl_integration_workspace, gsl_workspace_deleter> w;
 
    std::ifstream Fin;
    std::ofstream Fout;
 
    inline static const size_t workspace_limit = 1000; // workspace size for integration routine
    
-   // Initialize the KK transformer
-   void init(XYFUNC im) {  // pass by value
+    // Initialize the KK transformer
+    void init(XYFUNC im) {  // pass by value
       if (im.empty()) throw std::runtime_error("No input data points provided.");
       std::sort(im.begin(), im.end());
       len = im.size();
       assert(len % 2 == 0);
-     std::tie (Xmin, Xmax) = x_range(im);
-     if (mode == MODE::FILES) std::cout << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
-     if (gsl_fcmp(-Xmin, Xmax, 1.e-8) != 0) throw std::runtime_error("Only symmetric intervals are supported!");
-     tie(Xpts, Ypts) = split_vector_of_pairs(im);
-     acc = gsl_interp_accel_alloc();
-     // NOTE: With akime splines the might be problems with the loss of the floating point precision in the numeric
-     // integration step. In cubic splines instead no such difficulties seem to appear.
-     // gsl_interp_linear;
-     // gsl_interp_cspline;
-     const auto Interp_type = gsl_interp_akima;
-     spline                 = gsl_spline_alloc(Interp_type, len);
-     gsl_spline_init(spline, Xpts.data(), Ypts.data(), len);
-     const auto sum = gsl_spline_eval_integ(spline, Xmin, Xmax, acc);
-     if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
-     if (mode == MODE::FILES) std::cout << "Sum=" << sum << std::endl;
-     const auto nr = Xpts.size()/2;
-     for (auto i = nr; i < len; i++)
-       assert(gsl_fcmp(Xpts[len - i - 1], -Xpts[i], 1e-8) == 0);     // Check for the symmetry of the grid
-     Xpos = DVEC(nr);   // Xpos are positive and increasing!
-     std::copy(Xpts.begin() + nr, Xpts.end(), Xpos.begin());
-     w = gsl_integration_workspace_alloc(workspace_limit);
-     gsl_set_error_handler_off();
-   }
+      std::tie (Xmin, Xmax) = x_range(im);
+      if (mode == MODE::FILES) std::cout << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
+      if (gsl_fcmp(-Xmin, Xmax, 1.e-8) != 0) throw std::runtime_error("Only symmetric intervals are supported!");
+      tie(Xpts, Ypts) = split_vector_of_pairs(im);
+      gsl_set_error_handler_off();
+      acc.reset(gsl_interp_accel_alloc());
+      if (!acc) throw std::runtime_error("Failed to allocate GSL interpolation accelerator.");
+      // NOTE: With akime splines the might be problems with the loss of the floating point precision in the numeric
+      // integration step. In cubic splines instead no such difficulties seem to appear.
+      // gsl_interp_linear;
+      // gsl_interp_cspline;
+      const auto Interp_type = gsl_interp_akima;
+      spline.reset(gsl_spline_alloc(Interp_type, len));
+      if (!spline) throw std::runtime_error("Failed to allocate GSL spline.");
+      if (const auto status = gsl_spline_init(spline.get(), Xpts.data(), Ypts.data(), len); status != 0)
+        throw std::runtime_error(std::string("Failed to initialize GSL spline: ") + gsl_strerror(status));
+      const auto sum = gsl_spline_eval_integ(spline.get(), Xmin, Xmax, acc.get());
+      if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
+      if (mode == MODE::FILES) std::cout << "Sum=" << sum << std::endl;
+      const auto nr = Xpts.size()/2;
+      for (auto i = nr; i < len; i++)
+        assert(gsl_fcmp(Xpts[len - i - 1], -Xpts[i], 1e-8) == 0);     // Check for the symmetry of the grid
+      Xpos = DVEC(nr);   // Xpos are positive and increasing!
+      std::copy(Xpts.begin() + nr, Xpts.end(), Xpos.begin());
+      w.reset(gsl_integration_workspace_alloc(workspace_limit));
+      if (!w) throw std::runtime_error("Failed to allocate GSL integration workspace.");
+    }
    
    // Integrand. Method: we take a sum of the contributions for positive and negative x and return their sum. This is
    // helpful for even integrands, since it leads to possible cancellations and better accuracy of the final result, in
    // particular for small Z.
-   auto f(const double X, const double Z) const {
-     // [ f(x) - f(z) ] / (x-z)
-     const auto a = X != Z ? (gsl_spline_eval(spline, X, acc) - gsl_spline_eval(spline, Z, acc)) / (X - Z)
-                           : gsl_spline_eval_deriv(spline, X, acc);
-     // [ f(-x) - f(z) ] / (-x-z)
-     const auto b = -X != Z ? (gsl_spline_eval(spline, -X, acc) - gsl_spline_eval(spline, Z, acc)) / (-X - Z) 
-                            : gsl_spline_eval_deriv(spline, -X, acc);
-     return a + b;
-   }
+    auto f(const double X, const double Z) const {
+      // [ f(x) - f(z) ] / (x-z)
+      const auto a = X != Z ? (gsl_spline_eval(spline.get(), X, acc.get()) - gsl_spline_eval(spline.get(), Z, acc.get())) / (X - Z)
+                            : gsl_spline_eval_deriv(spline.get(), X, acc.get());
+      // [ f(-x) - f(z) ] / (-x-z)
+      const auto b = -X != Z ? (gsl_spline_eval(spline.get(), -X, acc.get()) - gsl_spline_eval(spline.get(), Z, acc.get())) / (-X - Z) 
+                            : gsl_spline_eval_deriv(spline.get(), -X, acc.get());
+      return a + b;
+    }
 
    void handle_qag(const int status) {
      if (status && veryverbose) std::cerr << "WARNING - qag error: " << status << " -- " << gsl_strerror(status) << std::endl;
@@ -176,13 +199,7 @@ class KK {
       auto get() { return &F; }
    };
    
-   void gsl_done() {
-     gsl_spline_free(spline);
-     gsl_interp_accel_free(acc);
-     gsl_integration_workspace_free(w);
-   }
-
-   void about() {
+    void about() {
      std::cout << "Kramers-Kronig transformation tool, RZ 2007-2020" << std::endl;
    }
    
@@ -231,18 +248,18 @@ class KK {
      auto F = Wrap([Z,this](double X) -> double { return f(X,Z); }); // wrap a C++ lambda for the C interface of GSL
      double integral;
      double integration_error;
-     int status = gsl_integration_qag(F.get(),             // integrand
-                                      0,                   // lower integration boundary
-                                      Xmax,                // upper integration boundary
-                                      EPSABS, EPSREL,      // convergence criteria
-                                      workspace_limit,     // size of workspace w
-                                      GSL_INTEG_GAUSS15,   // Gauss-Kronrod rule
-                                      w,                   // integration workspace
-                                      &integral,           // final approximation
-                                      &integration_error); // estimate of absolute error
-     handle_qag(status);
-     // Add an approximation of the (-inf,-Xmax] and [Xmax,+inf) intervals.
-     const auto correction = std::abs(Z) != Xmax ? -gsl_spline_eval(spline, Z, acc) * 2. * gsl_atanh(Z / Xmax) : 0.0;
+      int status = gsl_integration_qag(F.get(),             // integrand
+                                       0,                   // lower integration boundary
+                                       Xmax,                // upper integration boundary
+                                       EPSABS, EPSREL,      // convergence criteria
+                                       workspace_limit,     // size of workspace w
+                                       GSL_INTEG_GAUSS15,   // Gauss-Kronrod rule
+                                       w.get(),             // integration workspace
+                                       &integral,           // final approximation
+                                       &integration_error); // estimate of absolute error
+      handle_qag(status);
+      // Add an approximation of the (-inf,-Xmax] and [Xmax,+inf) intervals.
+      const auto correction = std::abs(Z) != Xmax ? -gsl_spline_eval(spline.get(), Z, acc.get()) * 2. * gsl_atanh(Z / Xmax) : 0.0;
      const auto sum = integral + correction;
      if (mode != MODE::STD && verbose) {
        std::cout << std::scientific;
@@ -272,11 +289,9 @@ class KK {
    }
    
    // Modern interface when kk is used as a library
-   KK(XYFUNC im) {
-     init(im);
-   }
-   
-   ~KK() { gsl_done(); }
+    KK(XYFUNC im) {
+      init(im);
+    }
 };
 
 } // namespace

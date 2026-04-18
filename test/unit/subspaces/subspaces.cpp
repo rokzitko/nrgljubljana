@@ -51,6 +51,14 @@ TEST(Subspaces, SubspaceDimensions) { // NOLINT
   EXPECT_EQ(sd.total(), 9);
 }
 
+TEST(Subspaces, EmptyTaskListVerboseStats) { // NOLINT
+  SubspaceStructure substruct;
+  std::ostringstream ss;
+  TaskList tasklist{substruct, true, ss};
+  EXPECT_TRUE(tasklist.get().empty());
+  EXPECT_EQ(ss.str(), "Stats: nr=0 min=0 max=0\n");
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS(); // NOLINT

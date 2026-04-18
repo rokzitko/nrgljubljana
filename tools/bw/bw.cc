@@ -50,8 +50,8 @@ bool one        = false;         // For Nz=1, no subdir.
 
 string name;      // filename of binary files containing the raw data
 int Nz;           // Number of spectra (1..Nz)
-double **buffers; // binary data buffers
-int *sizes;       // sizes of buffers
+vector<vector<double>> buffers; // binary data buffers
+vector<int> sizes;              // sizes of buffers
 
 typedef map<double, double> mapdd;
 using vec = vector<double>;
@@ -191,9 +191,9 @@ void load(int i) {
 
   // Allocate the read buffer. The data will be kept in memory for the
   // duration of the calculation!
-  auto *buffer = new double[2 * nr];
+  auto buffer = vector<double>(2 * nr);
   f.seekg(0, ios::beg); // Return to the beginning of the file.
-  f.read((char *)buffer, len);
+  f.read((char *)buffer.data(), len);
   if (f.fail()) {
     cerr << "Error reading " << filename << endl;
     exit(1);
@@ -201,21 +201,21 @@ void load(int i) {
   f.close();
 
   // Keep record of the the buffer and its size.
-  buffers[i] = buffer;
+  buffers[i] = std::move(buffer);
   sizes[i]   = nr;
 
   if (verbose) {
     // Check normalization to 1.
     double sum = 0.0;
-    for (int j = 0; j < nr; j++) sum += buffer[2 * j + 1];
+    for (int j = 0; j < nr; j++) sum += buffers[i][2 * j + 1];
     cout << "Weight=" << sum << endl;
   }
 }
 
 // Load all the input data.
 void read_files() {
-  buffers = new double *[Nz + 1];
-  sizes   = new int[Nz + 1];
+  buffers.resize(Nz + 1);
+  sizes.resize(Nz + 1);
 
   for (int i = 1; i <= Nz; i++) { load(i); }
 }

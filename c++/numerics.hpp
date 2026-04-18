@@ -8,6 +8,7 @@
 #define _numerics_hpp_
 
 #include <concepts>
+#include <array>
 #include <complex>
 #include <iomanip>
 #include <vector>
@@ -77,13 +78,10 @@ std::complex<T> operator+(const std::complex<T> &b, const std::integral auto &a)
   return std::complex<T>(b.real()+a, b.imag());
 }
 
-template <typename T>
-  using complex_array_const_ref_t = const T(&)[2];
-
 template<typename T>
-  complex_array_const_ref_t<T> reim(const std::complex<T>& z) {
-    return reinterpret_cast<const T(&)[2]>(z);
-  }
+auto reim(const std::complex<T> &z) {
+  return std::array<T, 2>{z.real(), z.imag()};
+}
 
 template<typename U, typename V>
 V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vector of pairs

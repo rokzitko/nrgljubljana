@@ -602,8 +602,6 @@ class Params {
   }
 
   void validate() {
-    if (Nmax == 0) throw std::invalid_argument("Nmax must be greater than 0.");
-    if (Nmax <= size_t(Ninit.value())) throw std::invalid_argument("Nmax must be greater than Ninit.");
     if (T <= 0.0) throw std::invalid_argument("T must be greater than 0.");
     my_assert(keep > 1);
     if (keepenergy > 0.0) my_assert(keepmin <= keep);
@@ -617,6 +615,12 @@ class Params {
     // Take the first character (for backward compatibility)
     discretization = std::string(discretization, 0, 1);
     if (chitp_ratio > 0.0) chitp = chitp_ratio / betabar;
+  }
+
+  // This validation step must be called after the data file has been read and parsed
+  void validate_after_data_file() {
+    if (Nmax == 0) throw std::invalid_argument("Nmax must be greater than 0.");
+    if (Nmax <= size_t(Ninit.value())) throw std::invalid_argument("Nmax must be greater than Ninit.");
   }
 
   void dump(std::ostream &F = std::cout) {

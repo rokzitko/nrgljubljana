@@ -169,12 +169,24 @@ void init(XYFUNC &im) {
     Ypts[i] = im[i].second;
   }
 
+  gsl_set_error_handler_off();
   acc = gsl_interp_accel_alloc();
+  if (!acc) {
+    cerr << "Error: failed to allocate GSL interpolation accelerator." << endl;
+    exit(1);
+  }
   //const gsl_interp_type * Interp_type = gsl_interp_linear;
   //const gsl_interp_type * Interp_type = gsl_interp_cspline;
   const gsl_interp_type *Interp_type = gsl_interp_akima;
   spline                             = gsl_spline_alloc(Interp_type, len);
-  gsl_spline_init(spline, &Xpts[0], &Ypts[0], len);
+  if (!spline) {
+    cerr << "Error: failed to allocate GSL spline." << endl;
+    exit(1);
+  }
+  if (const auto status = gsl_spline_init(spline, &Xpts[0], &Ypts[0], len); status != 0) {
+    cerr << "Error: failed to initialize GSL spline: " << gsl_strerror(status) << endl;
+    exit(1);
+  }
 
   sum = gsl_spline_eval_integ(spline, Xmin, Xmax, acc);
 
@@ -186,8 +198,10 @@ void init(XYFUNC &im) {
   if (verbose) cout << "Sum=" << sum << endl;
 
   w = gsl_integration_workspace_alloc(limit);
-
-  gsl_set_error_handler_off();
+  if (!w) {
+    cerr << "Error: failed to allocate GSL integration workspace." << endl;
+    exit(1);
+  }
 }
 
 inline double f_neg(double X, [[maybe_unused]] void *params) { return (X < 0 ? gsl_spline_eval(spline, X, acc) : 0); }

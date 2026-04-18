@@ -542,11 +542,15 @@ using namespace std;
 extern bool verbose;
 extern bool veryverbose;
 
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+extern FILE *yyin;
+
 extern "C" int yywrap(void);
 
 void parse_file(const char *);
 
 int count_braces = 0;
+int include_depth = 0;
 
 
 
@@ -965,7 +969,15 @@ case YY_STATE_EOF(sys):
            if (verbose) {
              cerr << "EOF" << endl;
 	   }
+	   FILE *finished = nullptr;
+	   if (include_depth > 0 && yyin) {
+	     finished = yyin;
+	     include_depth--;
+	   }
            yypop_buffer_state();
+	   if (finished) {
+	     fclose(finished);
+	   }
 
 	   if (!YY_CURRENT_BUFFER) {
 	     yyterminate();
@@ -2039,6 +2051,6 @@ void parse_file(const char *filename)
      printf("yy_new_buffer() failed.\n");
      exit(1);
    }
+   include_depth++;
    yypush_buffer_state(buffer);
 }
-

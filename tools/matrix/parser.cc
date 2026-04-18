@@ -83,6 +83,9 @@ struct symtab symtab[NSYMS];
 
 void dump_vector(struct vec *dvec);
 void dump_matrix(struct mat *dmat);
+void free_vector(struct vec *dvec);
+void free_matrix(struct mat *dmat);
+void clear_symtab();
 
 // channel index - 0 based
 // Wilson chain site index - 0 based
@@ -1341,13 +1344,13 @@ yyreduce:
 
   case 6:
 #line 89 "parser.yy" /* yacc.c:1646  */
-    { OUT << prefix; dump_vector((yyvsp[0].dvec)); }
+    { OUT << prefix; dump_vector((yyvsp[0].dvec)); free_vector((yyvsp[0].dvec)); }
 #line 1346 "parser.cc" /* yacc.c:1646  */
     break;
 
   case 7:
 #line 90 "parser.yy" /* yacc.c:1646  */
-    { OUT << prefix; dump_matrix((yyvsp[0].dmat)); }
+    { OUT << prefix; dump_matrix((yyvsp[0].dmat)); free_matrix((yyvsp[0].dmat)); }
 #line 1352 "parser.cc" /* yacc.c:1646  */
     break;
 
@@ -1794,8 +1797,7 @@ struct symtab * symlook(char *s)
 
 void addfunc(const char *name, double (*func)(double))
 {
-   char *dup = strdup(name);
-   struct symtab *sp = symlook(dup);
+   struct symtab *sp = symlook(const_cast<char *>(name));
    sp->funcptr = func;
 }
 
@@ -1942,8 +1944,9 @@ extern FILE *yyin;
 extern "C" {
 int yywrap(void)
 {
-    if (current != 0) {
+    if (current != 0 && file) {
       fclose(file);
+      file = nullptr;
     }
 
     if (current == remaining) {
@@ -2001,11 +2004,13 @@ int main(int argc, char *argv[])
 
  yyparse();
 
- if (verbose) {
+  if (verbose) {
   cerr << "DONE!" << endl;
  }
 
- return 0;
+  clear_symtab();
+
+  return 0;
 }
 
 void dump_vector(struct vec *dvec)
@@ -2032,13 +2037,46 @@ void dump_matrix(struct mat *dmat)
   }
 }
 
+void free_vector(struct vec *dvec)
+{
+  while (dvec) {
+    auto *next = dvec->next;
+    delete dvec;
+    dvec = next;
+  }
+}
+
+void free_matrix(struct mat *dmat)
+{
+  while (dmat) {
+    free_vector(dmat->vec);
+    auto *next = dmat->next;
+    delete dmat;
+    dmat = next;
+  }
+}
+
+void clear_symtab()
+{
+  for (auto &entry : symtab) {
+    free(entry.name);
+    entry.name = nullptr;
+    entry.funcptr = nullptr;
+    entry.value = 0.0;
+  }
+}
+
 struct vec * duplicate_vector(struct vec *dvec)
 {
   struct vec *ptr = dvec;
+  struct vec *head = 0;
   struct vec *previous = 0;
   
   while (ptr) {
     struct vec *new_node = new(struct vec);
+    if (!head) {
+      head = new_node;
+    }
     if (previous) {
       previous->next = new_node;
     }
@@ -2049,7 +2087,7 @@ struct vec * duplicate_vector(struct vec *dvec)
     ptr = ptr->next;
   }
   
-  return 0;
+  return head;
 }
 
 double gammapolch(int ch)

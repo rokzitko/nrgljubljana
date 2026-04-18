@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+if "$1/integ" imaw.dat >stdout.txt 2>stderr.txt; then
+  echo "integ unexpectedly accepted invalid spline input" >&2
+  exit 1
+fi
+grep -q "Error: failed to initialize GSL spline" stderr.txt

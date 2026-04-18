@@ -110,13 +110,17 @@ class TaskList {
  private:
    std::vector<std::pair<size_t, Invar>> tasks_with_sizes;
    std::vector<Invar> tasks;
- public:
-   void stats(std::ostream &F) {
-     auto nr       = tasks_with_sizes.size();
-     auto min_size = tasks_with_sizes.back().first;
-     auto max_size = tasks_with_sizes.front().first;
-     F << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << std::endl;
-   }
+  public:
+    void stats(std::ostream &F) {
+      const auto nr = tasks_with_sizes.size();
+      if (tasks_with_sizes.empty()) {
+        F << "Stats: nr=0 min=0 max=0" << std::endl;
+        return;
+      }
+      const auto min_size = tasks_with_sizes.back().first;
+      const auto max_size = tasks_with_sizes.front().first;
+      F << "Stats: nr=" << nr << " min=" << min_size << " max=" << max_size << std::endl;
+    }
    explicit TaskList(const SubspaceStructure &structure, const bool verbose, std::ostream &F = std::cout) {
      for (const auto &[I, rm] : structure)
        if (rm.total())

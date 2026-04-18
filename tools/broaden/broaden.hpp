@@ -58,6 +58,8 @@ template<typename S, typename T, typename FNC>
 void convolve(const std::vector<S> &mesh, std::vector<T> &a, const double sigma, 
               FNC kernel, const double cutoff_ratio = 100) {
   const auto nr_mesh = mesh.size();
+  if (nr_mesh == 0) throw std::runtime_error("Output mesh is empty.");
+  if (sigma <= 0.0) throw std::invalid_argument("Convolution width must be greater than 0.");
   auto b(a); // source
   a[0]           = b[0];
   a[nr_mesh - 1] = b[nr_mesh - 1];
@@ -321,13 +323,16 @@ class Broaden {
        assert(omega0_ratio > 0.0);
        omega0 = omega0_ratio * T;
      }
-     if (remaining == 4) {
-       omega0_ratio = 1e-9; // Effectively zero
-       omega0       = omega0_ratio * T;
-     }
-     std::cout << "Processing: " << name << std::endl;
-     if (verbose) { std::cout << "Nz=" << Nz << " alpha=" << alpha << " T=" << T << " omega0_ratio=" << omega0_ratio << std::endl; }
-   }
+      if (remaining == 4) {
+        omega0_ratio = 1e-9; // Effectively zero
+        omega0       = omega0_ratio * T;
+      }
+      if (finalgaussian && ggamma <= 0.0) throw std::invalid_argument("Final Gaussian width must be greater than 0.");
+      if (finalderfd && dgamma <= 0.0) throw std::invalid_argument("Final derFD width must be greater than 0.");
+      if (!meshpositive && !meshnegative) throw std::invalid_argument("Output mesh cannot be empty.");
+      std::cout << "Processing: " << name << std::endl;
+      if (verbose) { std::cout << "Nz=" << Nz << " alpha=" << alpha << " T=" << T << " omega0_ratio=" << omega0_ratio << std::endl; }
+    }
    void check_buffer_normalisation(const std::vector<double> &buffer, const int col) {
      const auto cols = 1 + nrcol;
      const auto rows = buffer.size()/cols;
@@ -527,12 +532,13 @@ class Broaden {
      merge();
      filter();
      if (sumrules) integrals_for_sumrules();
-     if (mesh_filename != "")
-       mesh = load_mesh(mesh_filename, verbose);
-     else
-       mesh = make_mesh(broaden_min, broaden_max, broaden_ratio, accumulation, meshpositive, meshnegative);
-     if (verbose) check_normalizations(mesh);
-     a = broaden(mesh);
+      if (mesh_filename != "")
+        mesh = load_mesh(mesh_filename, verbose);
+      else
+        mesh = make_mesh(broaden_min, broaden_max, broaden_ratio, accumulation, meshpositive, meshnegative);
+      if (mesh.empty()) throw std::runtime_error("Output mesh is empty.");
+      if (verbose) check_normalizations(mesh);
+      a = broaden(mesh);
      if (finalgaussian) convolve(mesh, a, ggamma * T, gaussian_kernel);
      if (finalderfd) convolve(mesh, a, dgamma * T, derfd_kernel);
      std::cout << "Estimated weight (trapezoidal rule)=" << trapez(mesh, a) << std::endl;

@@ -1,5 +1,6 @@
 #include <string>
 #include <sstream>
+#include <filesystem>
 #include <gtest/gtest.h>
 
 #include "test_common.hpp"
@@ -82,6 +83,28 @@ TEST(Operators, Opch_clean) { // NOLINT
   std::istringstream ss(str);
   auto o = Opch<double>(ss, diag, P);
   o.dump();
+}
+
+TEST(Operators, DensMatSaveUsesTemporaryFile) { // NOLINT
+  Params P;
+  DensMatElements<double> rho;
+  rho[Invar()] = zero_matrix<double>(1);
+
+  const auto fn = P.workdir->rhofn(0, fn_rho);
+  rho.save(0, P, fn_rho);
+
+  EXPECT_TRUE(std::filesystem::exists(fn));
+  EXPECT_FALSE(std::filesystem::exists(fn + ".tmp"));
+}
+
+TEST(Operators, DensMatLoadRemovesCorruptTempFileOnFailure) { // NOLINT
+  Params P;
+  const auto fn = P.workdir->rhofn(0, fn_rho);
+  std::ofstream(fn, std::ios::binary | std::ios::out) << "bad";
+
+  DensMatElements<double> rho;
+  EXPECT_THROW(rho.load(0, P, fn_rho, true), std::exception);
+  EXPECT_FALSE(std::filesystem::exists(fn));
 }
 
 int main(int argc, char **argv) {

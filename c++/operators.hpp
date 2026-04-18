@@ -4,6 +4,7 @@
 #include <map>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <iomanip>
 #include <string>
 #include <stdexcept>
@@ -88,34 +89,59 @@ class DensMatElements : public std::map<Invar, Matrix> {
        return ranges::accumulate(*this, 0.0, {},
                                  [mult](const auto z) { const auto &[I, mat] = z; return mult(I) * trace_real(mat); });
      }
-   void save(const size_t N, const Params &P, const std::string &prefix) const {
-     const auto fn = P.workdir->rhofn(N, prefix);
-     std::ofstream MATRIXF(fn, std::ios::binary | std::ios::out);
-     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
-     boost::archive::binary_oarchive oa(MATRIXF);
-     oa << this->size();
+    void save(const size_t N, const Params &P, const std::string &prefix) const {
+      const auto fn = P.workdir->rhofn(N, prefix);
+      const auto tmp_fn = fn + ".tmp";
+      struct temp_file_guard {
+        std::string filename;
+        bool active = true;
+        ~temp_file_guard() {
+          if (active) {
+            std::error_code ec;
+            std::filesystem::remove(filename, ec);
+          }
+        }
+      } guard{tmp_fn};
+      std::ofstream MATRIXF(tmp_fn, std::ios::binary | std::ios::out);
+      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
+      boost::archive::binary_oarchive oa(MATRIXF);
+      oa << this->size();
      for (const auto &[I, mat] : *this) {
        oa << I;
        NRG::save(oa, mat);
-       if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));  // Check each time
-     }
-     MATRIXF.close();
-   }
-   void load(const size_t N, const Params &P, const std::string &prefix, const bool remove_files) {
-     const auto fn = P.workdir->rhofn(N, prefix);
-     std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
-     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
-     boost::archive::binary_iarchive ia(MATRIXF);
+        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));  // Check each time
+      }
+      MATRIXF.close();
+      std::filesystem::rename(tmp_fn, fn);
+      guard.active = false;
+    }
+    void load(const size_t N, const Params &P, const std::string &prefix, const bool remove_files) {
+      const auto fn = P.workdir->rhofn(N, prefix);
+      struct remove_on_exit {
+        std::string filename;
+        bool active;
+        ~remove_on_exit() {
+          if (active) {
+            std::error_code ec;
+            std::filesystem::remove(filename, ec);
+          }
+        }
+      } guard{fn, remove_files};
+      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
+      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
+      boost::archive::binary_iarchive ia(MATRIXF);
      const auto nr = read_one<size_t>(ia);
      for ([[maybe_unused]] const auto cnt : range0(nr)) {
        const auto inv = read_one<Invar>(ia);
        (*this)[inv] = NRG::load<S>(ia);
        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));  // Check each time
-     }
-     MATRIXF.close();
-     if (remove_files)
-       if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
-   }
+      }
+      MATRIXF.close();
+      if (remove_files) {
+        if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
+        guard.active = false;
+      }
+    }
 };
 
 // Map of operator matrices

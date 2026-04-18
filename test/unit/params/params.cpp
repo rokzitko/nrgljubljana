@@ -223,15 +223,15 @@ TEST(params, E) {
 TEST(params, validate_rejects_invalid_nmax) {
   Params P;
 
-  EXPECT_THROW(P.validate(), std::invalid_argument);
+  EXPECT_THROW(P.validate_after_data_file(), std::invalid_argument);
 
   P.Ninit = 1;
   P.Nmax = 1;
-  EXPECT_THROW(P.validate(), std::invalid_argument);
+  EXPECT_THROW(P.validate_after_data_file(), std::invalid_argument);
 
   P.Ninit = 0;
   P.Nmax = 2;
-  EXPECT_NO_THROW(P.validate());
+  EXPECT_NO_THROW(P.validate_after_data_file());
 }
 
 TEST(params, validate_rejects_non_positive_temperature) {

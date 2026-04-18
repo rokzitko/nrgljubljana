@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 #include <optional>
+#include <stdexcept>
+#include <filesystem>
 #include <cstring> // strncpy
 #include <cstdlib> // mkdtemp, getenv
 #include "portabil.hpp" // remove(std::string)
@@ -33,10 +35,14 @@ class Workdir {
  private:
    const std::string workdir {};
    bool remove_at_exit {true}; // XXX: tie to P.removefiles?
- public:
-   explicit Workdir(const std::string &dir, const bool quiet = false) : workdir(dtemp(dir).value_or(default_workdir)) {
-     if (!quiet) std::cout << "workdir=" << workdir << std::endl << std::endl;
-   }
+  public:
+    explicit Workdir(const std::string &dir, const bool quiet = false) : workdir([&dir]() {
+      const auto temp = dtemp(dir);
+      if (!temp) throw std::runtime_error("Failed to create temporary workdir in " + dir);
+      return temp.value();
+    }()) {
+      if (!quiet) std::cout << "workdir=" << workdir << std::endl << std::endl;
+    }
    explicit Workdir() : Workdir(default_workdir, true) {} // defaulted version (for testing purposes)
    Workdir(const Workdir &) = delete;
    Workdir(Workdir &&) = delete;
@@ -46,12 +52,15 @@ class Workdir {
    [[nodiscard]] auto rhofn(const size_t N, const std::string &filename) const {  // density matrix files
      return workdir + "/" + filename + std::to_string(N);
    }
-   [[nodiscard]] auto unitaryfn(const size_t N, const std::string &filename = "unitary"s) const { // eigenstates files
-     return workdir + "/" + filename + std::to_string(N);
-   }
-   void remove_workdir() {
-     if (workdir != "") NRG::remove(workdir);
-   }
+    [[nodiscard]] auto unitaryfn(const size_t N, const std::string &filename = "unitary"s) const { // eigenstates files
+      return workdir + "/" + filename + std::to_string(N);
+    }
+    void remove_workdir() {
+      if (workdir != "") {
+        std::error_code ec;
+        std::filesystem::remove_all(workdir, ec);
+      }
+    }
   ~Workdir() {
     if (remove_at_exit) remove_workdir();
   }

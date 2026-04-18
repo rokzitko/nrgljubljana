@@ -38,8 +38,8 @@ int col   = 1; // Which y column are we interested in?
 string name;      // filename of binary files containing the raw data
 int Nz;           // Number of spectra (1..Nz)
 int nrmats;       // Number of Matsubara points
-double **buffers; // binary data buffers
-int *sizes;       // sizes of buffers
+vector<vector<double>> buffers; // binary data buffers
+vector<int> sizes;              // sizes of buffers
 
 using cmpl = complex<double>;
 typedef map<double, cmpl> mapdc;
@@ -136,29 +136,29 @@ void load(int i) {
   if (verbose) cout << "len=" << len << " nr=" << nr << " data points" << endl;
   // Allocate the read buffer. The data will be kept in memory for the
   // duration of the calculation!
-  auto *buffer = new double[rows * nr];
+  auto buffer = vector<double>(rows * nr);
   f.seekg(0, ios::beg); // Return to the beginning of the file.
-  f.read((char *)buffer, len);
+  f.read((char *)buffer.data(), len);
   if (f.fail()) {
     cerr << "Error reading " << filename << endl;
     exit(1);
   }
   f.close();
   // Keep record of the the buffer and its size.
-  buffers[i] = buffer;
+  buffers[i] = std::move(buffer);
   sizes[i]   = nr;
   if (verbose) {
     // Check normalization.
     double sum = 0.0;
-    for (int j = 0; j < nr; j++) sum += buffer[rows * j + col];
+    for (int j = 0; j < nr; j++) sum += buffers[i][rows * j + col];
     cout << "Weight=" << sum << endl;
   }
 }
 
 // Load all the input data.
 void read_files() {
-  buffers = new double *[Nz + 1];
-  sizes   = new int[Nz + 1];
+  buffers.resize(Nz + 1);
+  sizes.resize(Nz + 1);
   for (int i = 1; i <= Nz; i++) load(i);
 }
 

@@ -156,11 +156,14 @@ class Resample
             std::transform(im.begin(), im.end(), std::back_inserter(Xpts), [] (const auto& pair){return pair.first;});
             std::transform(im.begin(), im.end(), std::back_inserter(Ypts), [] (const auto& pair){return pair.second;});
 
+            gsl_set_error_handler_off();
             acc.reset(gsl_interp_accel_alloc());
+            if (!acc) throw std::runtime_error("Failed to allocate GSL interpolation accelerator.");
             const gsl_interp_type *Interp_type = gsl_interp_akima;
             spline.reset(gsl_spline_alloc(Interp_type, len));
-            gsl_spline_init(spline.get(), Xpts.data(), Ypts.data(), len);
-            gsl_set_error_handler_off();
+            if (!spline) throw std::runtime_error("Failed to allocate GSL spline.");
+            if (const auto status = gsl_spline_init(spline.get(), Xpts.data(), Ypts.data(), len); status != 0)
+              throw std::runtime_error("Failed to initialize GSL spline: "s + gsl_strerror(status));
         }
 
         void resample(std::vector<std::pair<T, T>> &grid)

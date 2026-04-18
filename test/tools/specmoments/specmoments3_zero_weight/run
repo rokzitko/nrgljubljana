@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+perl -e 'print pack("d*", 1.0, 1.0)' > spec.bin
+if "$1/specmoments" -c -o -l 10 spec.bin 1 >stdout.txt 2>stderr.txt; then
+  echo "specmoments unexpectedly accepted zero-weight input" >&2
+  exit 1
+fi
+grep -q "Error: total spectral weight is zero." stderr.txt

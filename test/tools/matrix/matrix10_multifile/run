@@ -10,7 +10,7 @@ EOF
 cat <<'EOF' >zeta.dat
 0
 EOF
-ASAN_OPTIONS=detect_leaks=0 matrix param matrix matrix2.dat >result
+matrix param matrix matrix2.dat >result
 cat <<'EOF' >expected
 1
 2

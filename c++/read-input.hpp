@@ -138,6 +138,7 @@ public:
     }
     if (std::string(P.tri) == "cpp") Tridiag<S>(coef, Nmax, P); // before calling determine_Nmax_Nlen()
     determine_Nmax_Nlen(coef, Nmax, P);
+    P.validate_after_data_file();
   };
 };
 

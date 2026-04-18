@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <gtest/gtest.h>
+#include <filesystem>
 
 #include "compare.hpp"
 #include "test_common.hpp"
@@ -99,6 +100,28 @@ TEST(io, read_std_vector) { // NOLINT
   std::vector<double> ref(5);
   ref[0] = 1; ref[1] = 2; ref[2] = 3; ref[3] = 4; ref[4] = 5;
   VECTOR_EQ(vec, ref);
+}
+
+TEST(Diag, save_uses_temporary_file) { // NOLINT
+  Params P;
+  DiagInfo<double> diag;
+  diag[Invar()] = NRG::Eigen<double>(std::vector<double>{1.0}, 1.0);
+
+  const auto fn = P.workdir->unitaryfn(0);
+  diag.save(0, P);
+
+  EXPECT_TRUE(std::filesystem::exists(fn));
+  EXPECT_FALSE(std::filesystem::exists(fn + ".tmp"));
+}
+
+TEST(Diag, load_removes_corrupt_temp_file_on_failure) { // NOLINT
+  Params P;
+  const auto fn = P.workdir->unitaryfn(0);
+  std::ofstream(fn, std::ios::binary | std::ios::out) << "bad";
+
+  DiagInfo<double> diag;
+  EXPECT_THROW(diag.load(0, P, true), std::exception);
+  EXPECT_FALSE(std::filesystem::exists(fn));
 }
 
 template<typename T>

@@ -20,6 +20,7 @@
 #include <string>
 #include <map>
 #include <optional>
+#include <memory>
 #include <ctime>
 #include <cmath>
 #include <cstdlib>
@@ -32,6 +33,18 @@
 #include <gsl/gsl_spline.h>
 
 namespace NRG::Hilb {
+
+struct gsl_accel_deleter {
+  void operator()(gsl_interp_accel *acc) const {
+    if (acc) gsl_interp_accel_free(acc);
+  }
+};
+
+struct gsl_spline_deleter {
+  void operator()(gsl_spline *spline) const {
+    if (spline) gsl_spline_free(spline);
+  }
+};
 
 inline auto atof(const std::string &s) { return ::atof(s.c_str()); }
 
@@ -113,31 +126,25 @@ class interpolator {
   std::vector<double> X, Y;        // X and Y tables
   double Xmin, Xmax;               // boundary points
   double oob_value;                // out-of-boundary value
-  gsl_interp_accel *acc = nullptr; // workspace
-  gsl_spline *spline    = nullptr; // spline data
+  std::unique_ptr<gsl_interp_accel, gsl_accel_deleter> acc; // workspace
+  std::unique_ptr<gsl_spline, gsl_spline_deleter> spline;   // spline data
   public:
   interpolator(const std::vector<double> &_X, const std::vector<double> &_Y, const double _oob_value = 0.0) : X{_X}, Y{_Y}, oob_value{_oob_value} {
     assert(std::is_sorted(X.begin(), X.end()));
     assert(X.size() == Y.size());
-    acc    = gsl_interp_accel_alloc();
+    acc.reset(gsl_interp_accel_alloc());
     len    = X.size();
-    spline = gsl_spline_alloc(gsl_interp_cspline, len);
-    gsl_spline_init(spline, X.data(), Y.data(), len);
+    spline.reset(gsl_spline_alloc(gsl_interp_cspline, len));
+    gsl_spline_init(spline.get(), X.data(), Y.data(), len);
     Xmin = X.front();
     Xmax = X.back();
   }
   interpolator(const interpolator &I) : len{I.len}, X{I.X}, Y{I.Y}, Xmin{I.Xmin}, Xmax{I.Xmax}, oob_value{I.oob_value} {
-    // keep the same accelerator workspace
-    if (spline) { gsl_spline_free(spline); } // we need new spline data object
-    spline = gsl_spline_alloc(gsl_interp_cspline, len);
-    gsl_spline_init(spline, X.data(), Y.data(), len);
+    acc.reset(gsl_interp_accel_alloc());
+    spline.reset(gsl_spline_alloc(gsl_interp_cspline, len));
+    gsl_spline_init(spline.get(), X.data(), Y.data(), len);
   }
-  interpolator(interpolator &&I) : len{I.len}, X{I.X}, Y{I.Y}, Xmin{I.Xmin}, Xmax{I.Xmax}, oob_value{I.oob_value} {
-    acc      = I.acc; // steal workspace
-    I.acc    = nullptr;
-    spline   = I.spline; // steal spline data
-    I.spline = nullptr;
-  }
+  interpolator(interpolator &&I) = default;
   interpolator &operator=(const interpolator &I) {
     if (this == &I) return *this;
     len       = I.len;
@@ -146,31 +153,13 @@ class interpolator {
     Xmin      = I.Xmin;
     Xmax      = I.Xmax;
     oob_value = I.oob_value;
-    // keep the same accelerator workspace
-    if (spline) { gsl_spline_free(spline); } // we need new spline data object
-    spline = gsl_spline_alloc(gsl_interp_cspline, len);
-    gsl_spline_init(spline, X.data(), Y.data(), len);
+    acc.reset(gsl_interp_accel_alloc());
+    spline.reset(gsl_spline_alloc(gsl_interp_cspline, len));
+    gsl_spline_init(spline.get(), X.data(), Y.data(), len);
     return *this;
   }
-  interpolator &operator=(interpolator &&I) {
-    if (this == &I) return *this;
-    len       = I.len;
-    X         = std::move(I.X);
-    Y         = std::move(I.Y);
-    Xmin      = I.Xmin;
-    Xmax      = I.Xmax;
-    oob_value = I.oob_value;
-    acc       = I.acc; // steal workspace
-    I.acc     = nullptr;
-    spline    = I.spline; // steal spline data
-    I.spline  = nullptr;
-    return *this;
-  }
-  ~interpolator() {
-    if (spline) { gsl_spline_free(spline); }
-    if (acc) { gsl_interp_accel_free(acc); }
-  }
-  auto operator()(const double x) { return (Xmin <= x && x <= Xmax ? gsl_spline_eval(spline, x, acc) : oob_value); }
+  interpolator &operator=(interpolator &&I) = default;
+  auto operator()(const double x) { return (Xmin <= x && x <= Xmax ? gsl_spline_eval(spline.get(), x, acc.get()) : oob_value); }
 };
 
 // Square of x
@@ -370,15 +359,23 @@ class Hilb {
   void load_dos(const std::string &filename) {
     if (verbose) { std::cout << "Density of states filename: " << filename << std::endl; }
     auto F = safe_open_rd(filename);
+    std::vector<std::pair<double, double>> pts;
     while (F) {
       double x, y;
       F >> x >> y;
       if (!F.fail()) {
         assert(std::isfinite(x) && std::isfinite(y));
-        Xpts.push_back(x);
-        Ypts.push_back(y);
-        Ipts.push_back(0);
+        pts.emplace_back(x, y);
       }
+    }
+    std::sort(pts.begin(), pts.end());
+    Xpts.clear();
+    Ypts.clear();
+    Ipts.clear();
+    for (const auto &[x, y] : pts) {
+      Xpts.push_back(x);
+      Ypts.push_back(y);
+      Ipts.push_back(0);
     }
   }
 
