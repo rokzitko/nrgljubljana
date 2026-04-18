@@ -75,33 +75,37 @@ class Algo_DMNRGmats : public Algo<S> {
    Algo_DMNRGmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
-   void calc([[maybe_unused]] const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
-             t_coef factor, [[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1, const DensMatElements<S> &rho, [[maybe_unused]] const Stats<S> &stats) override
-    {
-       const auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) {
-          const auto Em = diagIp.values.abs_zero(rm);
-         const auto Ej = diagI1.values.abs_zero(rj);
-         t_weight sumA{};
-         for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
-         const auto weightA = sumA * conj_me(op1(rj, rm));
-         t_weight sumB{};
-         for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
-          const auto weightB = sumB * op2(rj, rm);
-          return std::make_tuple(Ej-Em, weightA, weightB);
-      };
-      const auto term = [this](const auto energy, const auto weightA, const auto weightB, const auto n) {
-        if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
-          return (weightA + (-sign) * weightB) / (ww(n, gt, P.T)*1i - energy);
-        else // bosonic w=0 && Em=Ej case
-          return -weightA / t_weight(P.T);
-      };
-      for (const auto rm: diagIp.kept())
-        for (const auto rj: diagI1.kept()) {
-          const auto [energy, weightA, weightB] = weights(rm, rj);
-          for (size_t n = 0; n < P.mats; n++)
-            cm->add(n, factor * term(energy, weightA, weightB, n));
-        }
-    }
+    void calc([[maybe_unused]] const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
+              t_coef factor, [[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1, const DensMatElements<S> &rho, [[maybe_unused]] const Stats<S> &stats) override
+     {
+       const auto &rhoNIp = rho.at(Ip);
+       const auto &rhoNI1 = rho.at(I1);
+       const auto nrIpKept = diagIp.getnrkept();
+       const auto nrI1Kept = diagI1.getnrkept();
+       if (nrIpKept == 0 || nrI1Kept == 0) return;
+
+       const Matrix op2_kept = submatrix_const(op2, {0, nrI1Kept}, {0, nrIpKept});
+       const Matrix op1_kept_conj = submatrix_const(op1, {0, nrI1Kept}, {0, nrIpKept}).conjugate();
+       const Matrix rhoNIp_kept_t = submatrix_const(rhoNIp, {0, nrIpKept}, {0, nrIpKept}).transpose();
+       const Matrix rhoNI1_kept = submatrix_const(rhoNI1, {0, nrI1Kept}, {0, nrI1Kept});
+       const auto sumA = matrix_prod<typename Matrix::value_type>(op2_kept, rhoNIp_kept_t);
+       const auto sumB = matrix_prod<typename Matrix::value_type>(rhoNI1_kept, op1_kept_conj);
+
+       const auto term = [this](const auto energy, const auto weightA, const auto weightB, const auto n) {
+         if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
+           return (weightA + (-sign) * weightB) / (ww(n, gt, P.T)*1i - energy);
+         else // bosonic w=0 && Em=Ej case
+           return -weightA / t_weight(P.T);
+       };
+       for (const auto rm: diagIp.kept())
+         for (const auto rj: diagI1.kept()) {
+           const auto energy = diagI1.values.abs_zero(rj) - diagIp.values.abs_zero(rm);
+           const auto weightA = sumA(rj, rm) * op1_kept_conj(rj, rm);
+           const auto weightB = sumB(rj, rm) * op2_kept(rj, rm);
+           for (size_t n = 0; n < P.mats; n++)
+             cm->add(n, factor * term(energy, weightA, weightB, n));
+         }
+     }
     void end([[maybe_unused]] const Step &step) override {
            gf.merge(*cm.get());
            cm.reset();
