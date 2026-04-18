@@ -37,18 +37,18 @@ class Algo_DMNRG : public Algo<S> {
       const auto nrI1Kept = diagI1.getnrkept();
       if (nrIpKept == 0 || nrI1Kept == 0) return;
 
-      const Matrix op2_kept = submatrix_const(op2, {0, nrI1Kept}, {0, nrIpKept});
-      const Matrix op1_kept_conj = submatrix_const(op1, {0, nrI1Kept}, {0, nrIpKept}).conjugate();
-      const Matrix rhoNIp_kept_t = submatrix_const(rhoNIp, {0, nrIpKept}, {0, nrIpKept}).transpose();
-      const Matrix rhoNI1_kept = submatrix_const(rhoNI1, {0, nrI1Kept}, {0, nrI1Kept});
-      const auto sumA = matrix_prod<typename Matrix::value_type>(op2_kept, rhoNIp_kept_t);
-      const auto sumB = matrix_prod<typename Matrix::value_type>(rhoNI1_kept, op1_kept_conj);
+      const auto op2_kept = submatrix_const(op2, {0, nrI1Kept}, {0, nrIpKept});
+      const auto op1_kept = submatrix_const(op1, {0, nrI1Kept}, {0, nrIpKept});
+      const auto rhoNIp_kept = submatrix_const(rhoNIp, {0, nrIpKept}, {0, nrIpKept});
+      const auto rhoNI1_kept = submatrix_const(rhoNI1, {0, nrI1Kept}, {0, nrI1Kept});
+      const Matrix sumA = op2_kept * rhoNIp_kept.transpose();
+      const Matrix sumB = rhoNI1_kept * op1_kept.conjugate();
 
       for (const auto rj: diagI1.kept())
         for (const auto rm: diagIp.kept()) {
           const auto energy = diagI1.values.abs_zero(rj) - diagIp.values.abs_zero(rm);
           if (abs(energy) < Emin || abs(energy) > Emax) continue;
-          const auto weightA = sumA(rj, rm) * op1_kept_conj(rj, rm);
+          const auto weightA = sumA(rj, rm) * conj_me(op1_kept(rj, rm));
           const auto weightB = sumB(rj, rm) * op2_kept(rj, rm);
           cb->add(std::make_pair(energy, weightA + (-sign) * weightB), factor);
         }
