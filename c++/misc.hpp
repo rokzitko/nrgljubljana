@@ -82,22 +82,11 @@ inline std::optional<std::string> nextline(std::istream &F) {
   std::string line;
   while (F) {
     std::getline(F, line);
-    if (!F) return std::nullopt;       // bail out
-    if (line.length() == 0) continue;  // skip empty lines
-    if (line[0] == '#') continue;      // skip comment lines
+    if (!F) return std::nullopt;              // bail out
+    if (is_blank_or_comment_line(line)) continue;
     return line;
   }
   return std::nullopt;                 // error
-}
-
-inline std::string strip_trailing_whitespace(const std::string &in) {
-  auto s(in);
-  auto it = s.rbegin();
-  while (it != s.rend() && std::isspace(static_cast<unsigned char>(*it))) {
-    s.erase(--it.base());
-    it = s.rbegin();
-  }
-  return s;
 }
 
 // Parse a block of "keyword=value" lines.
@@ -105,15 +94,14 @@ inline auto parse_block(std::istream &F) {
   std::map<std::string, std::string> parsed_params;
   while (F) {
     if (const auto l = nextline(F)) {
-      const auto line = l.value();
+      const auto line = strip_whitespace(l.value());
       if (line[0] == '[') // new block, we're done!
         break;
       const auto pos_eq = line.find_first_of('=');
       if (pos_eq == std::string::npos) // not found
         continue;
-      const auto keyword = line.substr(0, pos_eq);
-      // Important: Strip trailing whitespace to avoid hard-to-detect problems!
-      const auto value   = strip_trailing_whitespace(line.substr(pos_eq+1));
+      const auto keyword = strip_whitespace(line.substr(0, pos_eq));
+      const auto value   = strip_whitespace(line.substr(pos_eq+1));
       if (parsed_params.count(keyword))
         throw std::runtime_error("Duplicate keyword: " + keyword);
       parsed_params[keyword] = value;
@@ -129,7 +117,7 @@ inline bool find_block(std::istream &F, const std::string &s) {
   F.seekg(0, std::ios::beg);
   while (F) {
     if (auto l = nextline(F))
-      if(target.compare(l.value()) == 0) { return true; }
+      if(target.compare(strip_whitespace(l.value())) == 0) { return true; }
   }
   return false;
 }
@@ -184,12 +172,16 @@ template<typename T> auto range1(const T b) { return boost::irange(T{1}, b+1); }
 inline bool complex_data(const std::string &filename = "data") {
   std::ifstream F(filename);
   if (!F) throw std::runtime_error("Can't load initial data.");
-  std::string l;
-  std::getline(F, l);
-  std::getline(F, l);
-  std::getline(F, l); // third line
-  const auto pos = l.find("COMPLEX");
-  return pos != std::string::npos;
+  constexpr size_t header_scan_limit = 64;
+  std::string line;
+  for ([[maybe_unused]] const auto line_no : range0(header_scan_limit)) {
+    if (!std::getline(F, line)) break;
+    const auto trimmed = strip_leading_whitespace(line);
+    if (trimmed.empty()) continue;
+    if (trimmed[0] != '#') return false;
+    if (trimmed.find("COMPLEX") != std::string::npos) return true;
+  }
+  return false;
 }
 
 template<typename K, typename V>

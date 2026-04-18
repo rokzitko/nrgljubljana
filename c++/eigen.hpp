@@ -543,9 +543,9 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
            fmt::print("({}) {} states: {}\n", I.str(), eig.getnrstored(), eig.values.all_rel());
        fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
-    void save(const size_t N, const Params &P) const {
-      const std::string fn = P.workdir->unitaryfn(N);
-      const auto tmp_fn = fn + ".tmp";
+     void save(const size_t N, const Params &P) const {
+       const std::string fn = P.workdir->unitaryfn(N);
+       const auto tmp_fn = fn + ".tmp";
       struct temp_file_guard {
         std::string filename;
         bool active = true;
@@ -555,46 +555,46 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
             std::filesystem::remove(filename, ec);
           }
         }
-      } guard{tmp_fn};
-      std::ofstream MATRIXF(tmp_fn, std::ios::binary | std::ios::out);
-      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
-      boost::archive::binary_oarchive oa(MATRIXF);
-      oa << this->size();
-     for(const auto &[I, eig]: *this) {
-       oa << I;
-        eig.save(oa);
-        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn)); // Check after each write.
-      }
-      MATRIXF.close();
-      std::filesystem::rename(tmp_fn, fn);
-      guard.active = false;
-    }
-    void load(const size_t N, const Params &P, const bool remove_files = false) {
-      const std::string fn = P.workdir->unitaryfn(N);
-      struct remove_on_exit {
-        std::string filename;
-        bool active;
-        ~remove_on_exit() {
-          if (active) {
-            std::error_code ec;
-            std::filesystem::remove(filename, ec);
-          }
-        }
-      } guard{fn, remove_files};
-      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
-      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
-      boost::archive::binary_iarchive ia(MATRIXF);
-     const auto nr = read_one<size_t>(ia); // Number of subspaces
-     for ([[maybe_unused]] const auto cnt : range0(nr)) {
-       const auto inv = read_one<Invar>(ia);
-        (*this)[inv].load(ia);
-        if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
-      }
-      if (remove_files) {
-        if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
-        guard.active = false;
-      }
-    }
+       } guard{tmp_fn};
+       std::ofstream MATRIXF(tmp_fn, std::ios::binary | std::ios::out);
+       if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
+       {
+         boost::archive::binary_oarchive oa(MATRIXF);
+         oa << this->size();
+         for(const auto &[I, eig]: *this) {
+           oa << I;
+           eig.save(oa);
+           if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));
+         }
+       }
+       MATRIXF.flush();
+       if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
+       MATRIXF.close();
+       if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
+       std::filesystem::rename(tmp_fn, fn);
+       guard.active = false;
+     }
+     void load(const size_t N, const Params &P, const bool remove_files = false) {
+       const std::string fn = P.workdir->unitaryfn(N);
+       std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
+       if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
+       DiagInfo<S> loaded;
+       {
+         boost::archive::binary_iarchive ia(MATRIXF);
+         const auto nr = read_one<size_t>(ia); // Number of subspaces
+         for ([[maybe_unused]] const auto cnt : range0(nr)) {
+           const auto inv = read_one<Invar>(ia);
+           loaded[inv].load(ia);
+           if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
+         }
+       }
+       MATRIXF.close();
+       if (!MATRIXF) throw std::runtime_error(fmt::format("Error reading {}", fn));
+       if (remove_files) {
+         if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
+       }
+       this->swap(loaded);
+     }
    void h5save(H5Easy::File &fd, const std::string &name, const bool save_vectors = true) const {
      for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name(), save_vectors);
    }

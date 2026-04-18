@@ -40,15 +40,16 @@ TEST(basicio, from_string) {
   auto str = "12.3";
   auto res = from_string<double>(str);
   EXPECT_EQ(res, 12.3);
-  auto str1 = "true";
-  auto res1 = from_string<bool>(str1);
-  EXPECT_EQ(res1, true);
-  auto str2 = "TRUE";
-  auto res2 = from_string<bool>(str2);
-  EXPECT_EQ(res2, true);
-  auto str3 = "NOTTRUE";
-  auto res3 = from_string<bool>(str3);
-  EXPECT_EQ(res3, false);
+  EXPECT_TRUE(from_string<bool>("true"));
+  EXPECT_TRUE(from_string<bool>("TRUE"));
+  EXPECT_TRUE(from_string<bool>(" YeS "));
+  EXPECT_TRUE(from_string<bool>("1"));
+  EXPECT_FALSE(from_string<bool>("false"));
+  EXPECT_FALSE(from_string<bool>("False"));
+  EXPECT_FALSE(from_string<bool>(" no\t"));
+  EXPECT_FALSE(from_string<bool>("0"));
+  EXPECT_THROW(from_string<bool>("NOTTRUE"), std::runtime_error);
+  EXPECT_THROW(from_string<bool>("2"), std::runtime_error);
 }
 
 TEST(basicio, output) {

@@ -6,6 +6,7 @@
 #include <optional>
 #include <stdexcept>
 #include <filesystem>
+#include <iostream>
 #include <cstring> // strncpy
 #include <cstdlib> // mkdtemp, getenv
 #include "portabil.hpp" // remove(std::string)
@@ -55,15 +56,19 @@ class Workdir {
     [[nodiscard]] auto unitaryfn(const size_t N, const std::string &filename = "unitary"s) const { // eigenstates files
       return workdir + "/" + filename + std::to_string(N);
     }
-    void remove_workdir() {
-      if (workdir != "") {
-        std::error_code ec;
-        std::filesystem::remove_all(workdir, ec);
-      }
-    }
-  ~Workdir() {
-    if (remove_at_exit) remove_workdir();
-  }
+     bool remove_workdir() {
+       if (workdir == "") return true;
+       std::error_code ec;
+       std::filesystem::remove_all(workdir, ec);
+       if (ec) {
+         std::cerr << "Failed to remove workdir " << workdir << ": " << ec.message() << std::endl;
+         return false;
+       }
+       return true;
+     }
+   ~Workdir() {
+     if (remove_at_exit) static_cast<void>(remove_workdir());
+   }
 };
 
 inline auto set_workdir(const std::string &dir_) {

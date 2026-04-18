@@ -50,12 +50,12 @@ class Algo_DMNRG : public Algo<S> {
        for (const auto rj: diagI1.kept())
          cb->add(term(rm, rj), factor);
    }
-   void end([[maybe_unused]] const Step &step) override {
-     spec.mergeNN2(*cb.get(), step);
-     cb.reset();
-   }
-   ~Algo_DMNRG() { spec.save(); }
-   std::string rho_type() override { return "rho"; }
+    void end([[maybe_unused]] const Step &step) override {
+      spec.mergeNN2(*cb.get(), step);
+      cb.reset();
+    }
+    void save() override { spec.save(); }
+    std::string rho_type() override { return "rho"; }
 };
 
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
@@ -98,12 +98,12 @@ class Algo_DMNRGmats : public Algo<S> {
          for (size_t n = 0; n < P.mats; n++)
            cm->add(n, factor * term(rm, rj, n));
    }
-   void end([[maybe_unused]] const Step &step) override {
-          gf.merge(*cm.get());
-          cm.reset();
-   }
-   ~Algo_DMNRGmats() { gf.save(); }
-   std::string rho_type() override { return "rho"; }
+    void end([[maybe_unused]] const Step &step) override {
+           gf.merge(*cm.get());
+           cm.reset();
+    }
+    void save() override { gf.save(); }
+    std::string rho_type() override { return "rho"; }
 };
 
 } // namespace

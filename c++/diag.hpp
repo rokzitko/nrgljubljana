@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iomanip> // std::setprecision
 #include <stdexcept>
+#include <limits>
 
 #include "traits.hpp"
 #include "params.hpp"
@@ -29,6 +30,20 @@ namespace NRG {
 // Handle complex-type conversions (used in copy_vec)
 [[nodiscard]] inline auto to_matel(const double x) { return x; }
 [[nodiscard]] inline auto to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
+[[nodiscard]] inline auto to_lapack_matel(const std::complex<double> &z) { return lapack_complex_double{z.real(), z.imag()}; }
+
+[[nodiscard]] inline auto checked_lapack_int(const size_t value, const char *what) {
+  if (value > static_cast<size_t>(std::numeric_limits<lapack_int>::max()))
+    throw std::runtime_error(fmt::format("{}={} exceeds LAPACK integer range", what, value));
+  return static_cast<lapack_int>(value);
+}
+
+template<complex_matrix CM>
+auto copy_to_lapack_buffer(const CM &m) {
+  std::vector<lapack_complex_double> out(size1(m) * size2(m));
+  std::transform(data(m), data(m) + out.size(), out.begin(), [](const auto &z) { return to_lapack_matel(z); });
+  return out;
+}
 
 template<vector SV, vector DV> requires std::is_convertible_v<typename SV::value_type, typename DV::value_type>
 void copy_val(const SV &source, DV &dest, const size_t M) {
@@ -63,7 +78,7 @@ auto copy_results(const V &eigenvalues, U* eigenvectors, const char jobz, const 
 template<real_matrix RM>
 auto diagonalise_dsyev(RM &m, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = int(size1(m));
+  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
@@ -87,7 +102,7 @@ template<real_matrix RM>
 auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = int(size1(m));
+  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   auto ham       = data(m);
   std::vector<double> eigenvalues(dim);
   char UPLO  = 'L';
@@ -119,7 +134,7 @@ auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 template<real_matrix RM>
 auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = int(size1(m));
+  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   // M is the number of the eigenvalues that we will attempt to
   // calculate using dsyevr.
   auto M = dim;
@@ -176,8 +191,9 @@ auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') 
 template<complex_matrix CM>
 auto diagonalise_zheev(CM &m, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = int(size1(m));
-  auto ham       = reinterpret_cast<lapack_complex_double*>(data(m));
+  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
+  auto ham_storage = copy_to_lapack_buffer(m);
+  auto ham       = ham_storage.data();
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
@@ -201,7 +217,7 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V') {
 template<complex_matrix CM>
 auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = int(size1(m));
+  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   // M is the number of the eigenvalues that we will attempt to
   // calculate using zheevr.
   auto M = dim;
@@ -211,7 +227,8 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') 
     M     = std::clamp<int>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
-  auto ham = reinterpret_cast<lapack_complex_double*>(data(m));
+  auto ham_storage = copy_to_lapack_buffer(m);
+  auto ham = ham_storage.data();
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix

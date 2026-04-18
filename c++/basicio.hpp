@@ -7,10 +7,12 @@
 #include <set>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <iomanip> // set_precision
 #include <iterator> // ostream_iterator
 #include <stdexcept>
 #include <cctype>
+#include <strings.h> // strcasecmp
 
 #include <fmt/format.h>
 
@@ -23,6 +25,25 @@
 
 namespace NRG {
 
+inline std::string strip_leading_whitespace(const std::string &in) {
+  const auto first = std::find_if_not(in.begin(), in.end(), [](const unsigned char ch) { return std::isspace(ch); });
+  return std::string(first, in.end());
+}
+
+inline std::string strip_trailing_whitespace(const std::string &in) {
+  auto s(in);
+  auto it = s.rbegin();
+  while (it != s.rend() && std::isspace(static_cast<unsigned char>(*it))) {
+    s.erase(--it.base());
+    it = s.rbegin();
+  }
+  return s;
+}
+
+inline std::string strip_whitespace(const std::string &in) {
+  return strip_trailing_whitespace(strip_leading_whitespace(in));
+}
+
 template <class T>
 inline T from_string(const std::string &str) {
   T result;
@@ -33,7 +54,14 @@ inline T from_string(const std::string &str) {
 }
 
 template <>
-inline bool from_string(const std::string &str) { return (strcasecmp(str.c_str(), "true") == 0 ? true : false); }
+inline bool from_string(const std::string &str) {
+  const auto trimmed = strip_whitespace(str);
+  if (trimmed == "1") return true;
+  if (trimmed == "0") return false;
+  if (strcasecmp(trimmed.c_str(), "true") == 0 || strcasecmp(trimmed.c_str(), "yes") == 0) return true;
+  if (strcasecmp(trimmed.c_str(), "false") == 0 || strcasecmp(trimmed.c_str(), "no") == 0) return false;
+  throw std::runtime_error(fmt::format("Lexical cast [{}] failed.", str));
+}
 
 // for T=int, std::to_string is used
 template <class T>

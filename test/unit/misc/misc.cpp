@@ -6,6 +6,7 @@
 #include <string>
 using namespace std::string_literals;
 #include <fstream>
+#include <cstdio>
 #include <exception>
 #include <misc.hpp>
 #include "compare.hpp"
@@ -89,6 +90,9 @@ TEST(misc, nextline) {
 
 	auto empty_file = safe_open_for_reading("txt/empty.txt");
 	EXPECT_EQ(nextline(empty_file), std::nullopt);
+
+	std::istringstream indented_comments("   # komentar\n\t\nvalue\n");
+	EXPECT_EQ(nextline(indented_comments), "value"s);
 }
 
 TEST(misc, strip_trailing_whitespace) {
@@ -116,6 +120,39 @@ TEST(misc, block) {
   compare(nekaj_drugega, nekaj_drugega_map);
   compare(nekaj_tretjega, nekaj_tretjega_map);
 	EXPECT_THROW(parser("txt/block.txt", "zadeva"), std::runtime_error); 
+}
+
+TEST(misc, block_whitespace) {
+	const auto filename = "txt/block_whitespace.txt";
+	{
+		std::ofstream file(filename);
+		file << "   # comment before block\n"
+		     << "   [param]\n"
+		     << "  alpha = 1\n"
+		     << "beta= yes  \n"
+		     << "   [extra]\n"
+		     << " gamma = 2\n";
+	}
+
+	const auto parsed = parser(filename, "param");
+	const std::map expected = {std::pair("alpha"s, "1"s), std::pair("beta"s, "yes"s)};
+	compare(parsed, expected);
+	EXPECT_THROW(parser(filename, "missing"), std::runtime_error);
+
+	std::remove(filename);
+}
+
+TEST(misc, block_duplicate_trimmed_keys_throw) {
+	const auto filename = "txt/block_duplicate.txt";
+	{
+		std::ofstream file(filename);
+		file << "[param]\n"
+		     << "alpha=1\n"
+		     << " alpha = 2\n";
+	}
+
+	EXPECT_THROW(parser(filename, "param"), std::runtime_error);
+	std::remove(filename);
 }
 
 TEST(misc, skip_comments){
@@ -150,4 +187,33 @@ TEST(misc, vector_of_keys){
 	const auto b = vector_of_keys(a);
 	const std::vector expected = {-10,12,42,99};
   ASSERT_EQ(b, expected);
+}
+
+TEST(misc, complex_data_detects_header_marker) {
+	const auto filename = "complex_data_header.txt";
+	{
+		std::ofstream file(filename);
+		file << "#! 9\n"
+		     << "# symtype U1\n"
+		     << "   # extra header\n"
+		     << "# COMPLEX\n"
+		     << "0 1\n";
+	}
+
+	EXPECT_TRUE(complex_data(filename));
+	std::remove(filename);
+}
+
+TEST(misc, complex_data_stops_at_payload) {
+	const auto filename = "complex_data_payload.txt";
+	{
+		std::ofstream file(filename);
+		file << "#! 9\n"
+		     << "# symtype U1\n"
+		     << "0 COMPLEX\n"
+		     << "# COMPLEX\n";
+	}
+
+	EXPECT_FALSE(complex_data(filename));
+	std::remove(filename);
 }

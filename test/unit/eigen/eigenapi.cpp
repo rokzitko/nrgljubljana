@@ -114,14 +114,43 @@ TEST(Diag, save_uses_temporary_file) { // NOLINT
   EXPECT_FALSE(std::filesystem::exists(fn + ".tmp"));
 }
 
-TEST(Diag, load_removes_corrupt_temp_file_on_failure) { // NOLINT
+TEST(Diag, load_preserves_corrupt_file_on_failure) { // NOLINT
   Params P;
   const auto fn = P.workdir->unitaryfn(0);
   std::ofstream(fn, std::ios::binary | std::ios::out) << "bad";
 
   DiagInfo<double> diag;
   EXPECT_THROW(diag.load(0, P, true), std::exception);
+  EXPECT_TRUE(std::filesystem::exists(fn));
+}
+
+TEST(Diag, load_does_not_mutate_existing_data_on_failure) { // NOLINT
+  Params P;
+  const auto fn = P.workdir->unitaryfn(0);
+  std::ofstream(fn, std::ios::binary | std::ios::out) << "bad";
+
+  DiagInfo<double> diag;
+  diag[Invar()] = NRG::Eigen<double>(std::vector<double>{42.0}, 1.0);
+
+  EXPECT_THROW(diag.load(0, P, false), std::exception);
+  ASSERT_EQ(diag.size(), 1U);
+  EXPECT_DOUBLE_EQ(diag.at(Invar()).values.rel(0), 42.0);
+  EXPECT_TRUE(std::filesystem::exists(fn));
+}
+
+TEST(Diag, load_removes_file_after_success_when_requested) { // NOLINT
+  Params P;
+  DiagInfo<double> diag_out;
+  diag_out[Invar()] = NRG::Eigen<double>(std::vector<double>{3.0}, 1.0);
+  const auto fn = P.workdir->unitaryfn(0);
+  diag_out.save(0, P);
+
+  DiagInfo<double> diag_in;
+  diag_in.load(0, P, true);
+
   EXPECT_FALSE(std::filesystem::exists(fn));
+  ASSERT_EQ(diag_in.size(), 1U);
+  EXPECT_DOUBLE_EQ(diag_in.at(Invar()).values.rel(0), 3.0);
 }
 
 template<typename T>

@@ -131,6 +131,7 @@ public:
     if (step.dmnrg()) {
       if (P.h5raw) stats.h5save_dmnrg(*output.h5raw); // saved in raw-dm.h5
     }
+    oprecalc.sl.save();
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }

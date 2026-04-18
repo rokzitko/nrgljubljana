@@ -40,11 +40,11 @@ class Algo_FT : public Algo<S> {
        for (const auto rp: diagIp.kept())
          cb->add(term(r1, rp), factor);
    }
-   void end(const Step &step) override {
-     spec.mergeNN2(*cb.get(), step);
-     cb.reset();
-   }
-   ~Algo_FT() { spec.save(); }
+    void end(const Step &step) override {
+      spec.mergeNN2(*cb.get(), step);
+      cb.reset();
+    }
+    void save() override { spec.save(); }
 };
 
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
@@ -85,11 +85,11 @@ class Algo_FTmats : public Algo<S> {
        }
      }
    }
-   void end([[maybe_unused]] const Step &step) override {
-     gf.merge(*cm.get());
-     cm.reset();
-   }
-   ~Algo_FTmats() { gf.save(); }
+    void end([[maybe_unused]] const Step &step) override {
+      gf.merge(*cm.get());
+      cm.reset();
+    }
+    void save() override { gf.save(); }
 };
 
 // Calculation of the temperature-dependent linear conductrance G(T) using the linear response theory &
@@ -127,10 +127,10 @@ class Algo_GT : public Algo<S> {
          value += term(r1, rp); 
      ct->add(temperature, factor * value);
    }
-   void end([[maybe_unused]] const Step &) override {
-     td.merge(*ct.get());
-   }
-   ~Algo_GT() { td.save(); }
+    void end([[maybe_unused]] const Step &) override {
+      td.merge(*ct.get());
+    }
+    void save() override { td.save(); }
 };
 
 // Calculation of the temperature-dependent susceptibility chi_AB(T) using the linear response theory and the matrix
@@ -169,10 +169,10 @@ class Algo_CHIT : public Algo<S> {
          value += term(r1, rp);
      ct->add(temperature, factor * value);
    }
-   void end([[maybe_unused]] const Step &) override {
-     td.merge(*ct.get());
-   }
-   ~Algo_CHIT() { td.save(); }
+    void end([[maybe_unused]] const Step &) override {
+      td.merge(*ct.get());
+    }
+    void save() override { td.save(); }
 };
 
 } // namespace

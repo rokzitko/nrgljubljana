@@ -97,14 +97,45 @@ TEST(Operators, DensMatSaveUsesTemporaryFile) { // NOLINT
   EXPECT_FALSE(std::filesystem::exists(fn + ".tmp"));
 }
 
-TEST(Operators, DensMatLoadRemovesCorruptTempFileOnFailure) { // NOLINT
+TEST(Operators, DensMatLoadPreservesCorruptFileOnFailure) { // NOLINT
   Params P;
   const auto fn = P.workdir->rhofn(0, fn_rho);
   std::ofstream(fn, std::ios::binary | std::ios::out) << "bad";
 
   DensMatElements<double> rho;
   EXPECT_THROW(rho.load(0, P, fn_rho, true), std::exception);
+  EXPECT_TRUE(std::filesystem::exists(fn));
+}
+
+TEST(Operators, DensMatLoadDoesNotMutateExistingDataOnFailure) { // NOLINT
+  Params P;
+  const auto fn = P.workdir->rhofn(0, fn_rho);
+  std::ofstream(fn, std::ios::binary | std::ios::out) << "bad";
+
+  DensMatElements<double> rho;
+  rho[Invar()] = zero_matrix<double>(1);
+  rho[Invar()](0,0) = 7.0;
+
+  EXPECT_THROW(rho.load(0, P, fn_rho, false), std::exception);
+  ASSERT_EQ(rho.size(), 1U);
+  EXPECT_DOUBLE_EQ(rho.at(Invar())(0,0), 7.0);
+  EXPECT_TRUE(std::filesystem::exists(fn));
+}
+
+TEST(Operators, DensMatLoadRemovesFileAfterSuccessWhenRequested) { // NOLINT
+  Params P;
+  DensMatElements<double> rho_out;
+  rho_out[Invar()] = zero_matrix<double>(1);
+  rho_out[Invar()](0,0) = 5.0;
+  const auto fn = P.workdir->rhofn(0, fn_rho);
+  rho_out.save(0, P, fn_rho);
+
+  DensMatElements<double> rho_in;
+  rho_in.load(0, P, fn_rho, true);
+
   EXPECT_FALSE(std::filesystem::exists(fn));
+  ASSERT_EQ(rho_in.size(), 1U);
+  EXPECT_DOUBLE_EQ(rho_in.at(Invar())(0,0), 5.0);
 }
 
 int main(int argc, char **argv) {

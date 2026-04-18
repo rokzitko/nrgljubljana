@@ -14,18 +14,18 @@ using namespace std::complex_literals;
 
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMls : virtual public Algo<S> {
- private:
-   inline static const std::string algoname = "FDMls";
-   SpectrumRealFreq<S> spec;
-   const int sign; // 1 for bosons, -1 for fermions
-   const bool save;
+  private:
+    inline static const std::string algoname = "FDMls";
+    SpectrumRealFreq<S> spec;
+    const int sign; // 1 for bosons, -1 for fermions
+    const bool should_save;
  protected:
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
- public:
-    using Algo<S>::P;
-   Algo_FDMls(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true)
-     : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
+  public:
+     using Algo<S>::P;
+    Algo_FDMls(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true)
+      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), should_save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    void calc(const Step &step, const Eigen<S> &diagIi, const Eigen<S> &diagIj, const Matrix &op1, const Matrix &op2,
              t_coef factor, [[maybe_unused]] const Invar &Ii, [[maybe_unused]] const Invar &Ij, const DensMatElements<S> &rhoFDM,
@@ -58,28 +58,28 @@ class Algo_FDMls : virtual public Algo<S> {
        for (const auto j : diagIj.Drange())
          cb->add(term3(i,j), factor);
    }
-   void end([[maybe_unused]] const Step &step) override {
-     spec.mergeCFS(*cb.get());
-     cb.reset();
-   }
-   ~Algo_FDMls() { if (save) spec.save(); }
-   std::string rho_type() override { return "rhoFDM"; }
+    void end([[maybe_unused]] const Step &step) override {
+      spec.mergeCFS(*cb.get());
+      cb.reset();
+    }
+    void save() override { if (should_save) spec.save(); }
+    std::string rho_type() override { return "rhoFDM"; }
 };
 
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDMgt : virtual public Algo<S> {
- private:
-   inline static const std::string algoname = "FDMgt";
-   SpectrumRealFreq<S> spec;
-   const int sign; // 1 for bosons, -1 for fermions
-   const bool save;
+  private:
+    inline static const std::string algoname = "FDMgt";
+    SpectrumRealFreq<S> spec;
+    const int sign; // 1 for bosons, -1 for fermions
+    const bool should_save;
  protected:
    using CB = ChainBinning<S>;
    std::unique_ptr<CB> cb;
- public:
-   using Algo<S>::P;
-   Algo_FDMgt(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true)
-     : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), save(save) {}
+  public:
+    using Algo<S>::P;
+    Algo_FDMgt(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P, const bool save = true)
+      : Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname, save), P), sign(gf_sign(gt)), should_save(save) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
    void calc(const Step &step, const Eigen<S> &diagIi, const Eigen<S> &diagIj, const Matrix &op1, const Matrix &op2,
              t_coef factor, [[maybe_unused]] const Invar &Ii, [[maybe_unused]] const Invar &Ij, const DensMatElements<S> &rhoFDM,
@@ -112,12 +112,12 @@ class Algo_FDMgt : virtual public Algo<S> {
        for (const auto j : diagIj.Drange())
          cb->add(term3(i,j), factor);
    }
-   void end([[maybe_unused]] const Step &step) override {
-     spec.mergeCFS(*cb.get());
-     cb.reset();
-   }
-   ~Algo_FDMgt() { if (save) spec.save(); }
-   std::string rho_type() override { return "rhoFDM"; }
+    void end([[maybe_unused]] const Step &step) override {
+      spec.mergeCFS(*cb.get());
+      cb.reset();
+    }
+    void save() override { if (should_save) spec.save(); }
+    std::string rho_type() override { return "rhoFDM"; }
 };
 
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
@@ -140,14 +140,14 @@ class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
      Algo_FDMgt<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
      Algo_FDMls<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
    }
-   void end([[maybe_unused]] const Step &step) override {
-     spec_tot.mergeCFS(*Algo_FDMgt<S>::cb.get());
-     spec_tot.mergeCFS(*Algo_FDMls<S>::cb.get());
-     Algo_FDMgt<S>::cb.reset();
-     Algo_FDMls<S>::cb.reset();
-   }
-   ~Algo_FDM() { spec_tot.save(); }
-   std::string rho_type() override { return "rhoFDM"; }
+    void end([[maybe_unused]] const Step &step) override {
+      spec_tot.mergeCFS(*Algo_FDMgt<S>::cb.get());
+      spec_tot.mergeCFS(*Algo_FDMls<S>::cb.get());
+      Algo_FDMgt<S>::cb.reset();
+      Algo_FDMls<S>::cb.reset();
+    }
+    void save() override { spec_tot.save(); }
+    std::string rho_type() override { return "rhoFDM"; }
 };
 
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>, typename t_weight = weight_traits<S>>
@@ -215,12 +215,12 @@ class Algo_FDMmats : public Algo<S> {
          for (size_t n = 0; n < cutoff; n++)
            cm->add(n, term3(i,j,n) * factor);
    }
-   void end([[maybe_unused]] const Step &step) override {
-     gf.merge(*cm.get());
-     cm.reset();
-   }
-   ~Algo_FDMmats() { gf.save(); }
-   std::string rho_type() override { return "rhoFDM"; }
+    void end([[maybe_unused]] const Step &step) override {
+      gf.merge(*cm.get());
+      cm.reset();
+    }
+    void save() override { gf.save(); }
+    std::string rho_type() override { return "rhoFDM"; }
 };
 
 } // namespace

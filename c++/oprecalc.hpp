@@ -45,13 +45,16 @@ class Oprecalc {
    Ops ops;
 
    // Spectral densities
-   struct SL : public speclist<S> {
-     void calc(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM,
-               const Stats<S> &stats, MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
-       const auto section_timing = mt.time_it("spec");
-       for (auto &i : *this) i.calc(step, diag, rho, rhoFDM, stats, Sym, P);
-     }
-   };
+    struct SL : public speclist<S> {
+      void calc(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM,
+                const Stats<S> &stats, MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
+        const auto section_timing = mt.time_it("spec");
+        for (auto &i : *this) i.calc(step, diag, rho, rhoFDM, stats, Sym, P);
+      }
+      void save() {
+        for (auto &i : *this) i.algo->save();
+      }
+    };
    SL sl;
  
    // Wrapper routine for recalculations

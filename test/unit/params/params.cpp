@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <cstdio>
+#include <fstream>
 
 #include <gtest/gtest.h>
 
@@ -262,6 +263,38 @@ TEST(params, h5save_stores_nlen) {
   EXPECT_EQ(H5Easy::load<std::vector<size_t>>(file, "params/Nlen").front(), 3UL);
 
   std::remove("params.h5");
+}
+
+TEST(params, parser_accepts_extended_bool_values) {
+  const auto filename = "params_bool.param";
+  {
+    std::ofstream file(filename);
+    file << "  [param]\n"
+         << "  done = no\n"
+         << "calc0 = YES\n"
+         << " lastall = 1\n"
+         << "fdm = 0\n";
+  }
+
+  Params P(filename, "param", std::make_unique<Workdir>(".", true), true, true);
+  EXPECT_FALSE(P.done);
+  EXPECT_TRUE(P.calc0);
+  EXPECT_TRUE(P.lastall);
+  EXPECT_FALSE(P.fdm);
+
+  std::remove(filename);
+}
+
+TEST(params, parser_rejects_invalid_bool_values) {
+  const auto filename = "params_invalid_bool.param";
+  {
+    std::ofstream file(filename);
+    file << "[param]\n"
+         << "done = maybe\n";
+  }
+
+  EXPECT_THROW(Params(filename, "param", std::make_unique<Workdir>(".", true), true, true), std::runtime_error);
+  std::remove(filename);
 }
 
 int main(int argc, char **argv) {

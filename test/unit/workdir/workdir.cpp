@@ -29,6 +29,8 @@ TEST(workdir, remove_workdir_removes_files) {
     path = workdir.get();
     std::ofstream(workdir.rhofn(1, "rho")) << "data";
     EXPECT_TRUE(std::filesystem::exists(path));
+    EXPECT_TRUE(workdir.remove_workdir());
+    EXPECT_FALSE(std::filesystem::exists(path));
   }
   EXPECT_FALSE(std::filesystem::exists(path));
 }
