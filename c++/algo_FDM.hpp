@@ -48,15 +48,15 @@ class Algo_FDMls : virtual public Algo<S> {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * (-sign) * exp(-Ej/T) * wnf);
      };
-     for (const auto i : diagIi.Drange()) // XXX: change order for sequential memory access!
-       for (const auto j : diagIj.Drange())
-         cb->add(term1(i,j), factor);
-     for (const auto i : diagIi.Drange())
-       for (const auto j : diagIj.Krange())
-         cb->add(term2(i,j), factor);
-     for (const auto i : diagIi.Krange())
-       for (const auto j : diagIj.Drange())
-         cb->add(term3(i,j), factor);
+      for (const auto j : diagIj.Drange())
+        for (const auto i : diagIi.Drange())
+          cb->add(term1(i,j), factor);
+      for (const auto j : diagIj.Krange())
+        for (const auto i : diagIi.Drange())
+          cb->add(term2(i,j), factor);
+      for (const auto j : diagIj.Drange())
+        for (const auto i : diagIi.Krange())
+          cb->add(term3(i,j), factor);
    }
     void end([[maybe_unused]] const Step &step) override {
       spec.mergeCFS(*cb.get());
@@ -102,15 +102,15 @@ class Algo_FDMgt : virtual public Algo<S> {
        const auto [Ei, Ej] = energies(i, j);
        return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2_rho(j, i));
      };
-     for (const auto i : diagIi.Drange())
-       for (const auto j : diagIj.Drange())
-         cb->add(term1(i,j), factor);
-     for (const auto i : diagIi.Drange())
-       for (const auto j : diagIj.Krange())
-         cb->add(term2(i,j), factor);
-     for (const auto i : diagIi.Krange())
-       for (const auto j : diagIj.Drange())
-         cb->add(term3(i,j), factor);
+      for (const auto j : diagIj.Drange())
+        for (const auto i : diagIi.Drange())
+          cb->add(term1(i,j), factor);
+      for (const auto j : diagIj.Krange())
+        for (const auto i : diagIi.Drange())
+          cb->add(term2(i,j), factor);
+      for (const auto j : diagIj.Drange())
+        for (const auto i : diagIi.Krange())
+          cb->add(term3(i,j), factor);
    }
     void end([[maybe_unused]] const Step &step) override {
       spec.mergeCFS(*cb.get());
@@ -213,22 +213,22 @@ class Algo_FDMmats : public Algo<S> {
       const auto term3 = [T, this](const auto energy, const auto weightA, const auto weightB, const auto n) {
         return (weightA + weightB) / (ww(n, gt, T)*1i - energy);
       };
-      for (const auto i : diagIi.Drange())
-        for (const auto j : diagIj.Drange()) {
+      for (const auto j : diagIj.Drange())
+        for (const auto i : diagIi.Drange()) {
           const auto [energy, weightA, weightB] = term1_factors(i, j);
           #pragma omp parallel for schedule(static)
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, term1(energy, weightA, weightB, n) * factor);
         }
-      for (const auto i : diagIi.Drange())
-        for (const auto j : diagIj.Krange()) {
+      for (const auto j : diagIj.Krange())
+        for (const auto i : diagIi.Drange()) {
           const auto [energy, weightA, weightB] = term2_factors(i, j);
           #pragma omp parallel for schedule(static)
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, term2(energy, weightA, weightB, n) * factor);
         }
-      for (const auto i : diagIi.Krange())
-        for (const auto j : diagIj.Drange()) {
+      for (const auto j : diagIj.Drange())
+        for (const auto i : diagIi.Krange()) {
           const auto [energy, weightA, weightB] = term3_factors(i, j);
           #pragma omp parallel for schedule(static)
           for (size_t n = 0; n < cutoff; n++)

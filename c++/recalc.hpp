@@ -77,7 +77,8 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
   if (!recalc_f_coupled(I1, Ip, this->Invar_f)) return Matrix(0,0); // exception for QST and SPSU2T
   const auto &diagI1 = diag.at(I1);
   const auto &diagIp = diag.at(Ip);
-  const auto & [dim1, dimp]     = diag.dims(I1, Ip);   // # of states in Ip and in I1, i.e. the dimension of the <||f||> matrix.
+  const auto dim1 = diagI1.getnrstored(); // # of states in I1, i.e. the dimension of the <||f||> matrix.
+  const auto dimp = diagIp.getnrstored();
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   my_assert(dim1 < 1000000 && dimp < 1000000); // bug trap
   auto f = zero_matrix<S>(dim1, dimp);
@@ -111,23 +112,27 @@ std::optional<Matrix_traits<S>> Symmetry<S>::recalc_general(const DiagInfo<S> &d
   if (!triangle_inequality(I1, Ip, Iop)) return {};
   const auto &diagI1 = diag.at(I1);
   const auto &diagIp = diag.at(Ip);
-  const auto & [dim1, dimp]     = diag.dims(I1, Ip);
+  const auto &substructI1 = substruct.at(I1);
+  const auto &substructIp = substruct.at(Ip);
+  const auto dim1 = diagI1.getnrstored();
+  const auto dimp = diagIp.getnrstored();
   const Twoinvar II = {I1, Ip};
   auto cn = zero_matrix<S>(dim1, dimp);
   if (dim1 == 0 || dimp == 0) return cn; // return empty matrix
   for (const auto &[i1, ip, IN1, INp, factor]: table) {
     my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
-    if (P.logletter('r')) std::cout << nrgdump7(i1, ip, IN1, ancestor(I1,i1-1), INp, ancestor(Ip,ip-1), factor) << std::endl;
-    if (!Invar_allowed(IN1) || !Invar_allowed(INp)) continue;
-    my_assert(IN1 == ancestor(I1, i1-1));
-    my_assert(INp == ancestor(Ip, ip-1));
-    const auto rmax1 = substruct.at(I1).rmax(i1-1);
-    const auto rmaxp = substruct.at(Ip).rmax(ip-1);
-    if (rmax1 == 0 || rmaxp == 0) continue;
-    const Twoinvar ININ = {IN1, INp};
-    if (cold.count(ININ) == 0) continue;
-    my_assert(isfinite(factor));
-    transform<S>(cn, factor, diagI1.U(i1), cold.at(ININ), diagIp.U(ip));
+     if (P.logletter('r')) std::cout << nrgdump7(i1, ip, IN1, ancestor(I1,i1-1), INp, ancestor(Ip,ip-1), factor) << std::endl;
+     if (!Invar_allowed(IN1) || !Invar_allowed(INp)) continue;
+     my_assert(IN1 == ancestor(I1, i1-1));
+     my_assert(INp == ancestor(Ip, ip-1));
+     const auto rmax1 = substructI1.rmax(i1-1);
+     const auto rmaxp = substructIp.rmax(ip-1);
+     if (rmax1 == 0 || rmaxp == 0) continue;
+     const Twoinvar ININ = {IN1, INp};
+     const auto cold_it = cold.find(ININ);
+     if (cold_it == cold.end()) continue;
+     my_assert(isfinite(factor));
+     transform<S>(cn, factor, diagI1.U(i1), cold_it->second, diagIp.U(ip));
   } // over table
   if (P.logletter('R')) dump_matrix(cn);
   return cn;
