@@ -207,45 +207,51 @@ class Algo_FDMmats : public Algo<S> {
       const auto T        = P.T.value();
       const auto rho_op2  = prod_fit(rhoFDM.at(Ij), op2);
       const auto op2_rho  = prod_fit(op2, rhoFDM.at(Ii));
-      const auto energies = [&diagIi, &diagIj](const auto i, const auto j) {
-        return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
-      };
-      const auto term1_factors = [&energies, &op1, &op2, T, wnf, this](const auto i, const auto j) {
-        const auto [Ei, Ej] = energies(i, j);
+      const auto absGi    = diagIi.values.all_abs_G() | ranges::to_vector;
+      const auto absGj    = diagIj.values.all_abs_G() | ranges::to_vector;
+      const auto boltzGi  = absGi | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+      const auto boltzGj  = absGj | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+      std::vector<t_weight> mats_freq(cutoff);
+      for (size_t n = 0; n < cutoff; n++) mats_freq[n] = ww(static_cast<short>(n), gt, T) * 1i;
+      const auto term1_factors = [&absGi, &absGj, &boltzGi, &boltzGj, &op1, &op2, wnf, this](const auto i, const auto j) {
+        const auto Ei = absGi[i];
+        const auto Ej = absGj[j];
         const auto energy = Ej - Ei;
         const auto op1ji = conj_me(op1(j, i));
         const auto op2ji = op2(j, i);
-        const auto weightA = op1ji * op2ji * wnf * exp(-Ei/T); // a[ij] b[ji] exp(-beta e[i])
-        const auto weightB = op1ji * op2ji * (-sign) * wnf * exp(-Ej/T); // a[ij] b[ji] sign exp(-beta e[j])
+        const auto weightA = op1ji * op2ji * wnf * boltzGi[i];
+        const auto weightB = op1ji * op2ji * (-sign) * wnf * boltzGj[j];
         return std::make_tuple(energy, weightA, weightB);
       };
-      const auto term1 = [T, this](const auto energy, const auto weightA, const auto weightB, const auto n) -> t_weight {
-        if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL)
-           return (weightA + weightB) / (ww(n, gt, T)*1i - energy);
-        else // bosonic w=0 && Ei=Ej case
+      const auto term1 = [T, this, &mats_freq](const auto energy, const auto weightA, const auto weightB, const auto n) -> t_weight {
+         if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL)
+           return (weightA + weightB) / (mats_freq[n] - energy);
+         else // bosonic w=0 && Ei=Ej case
            return -weightA/T;
-      };
-      const auto term2_factors = [&energies, &op1, &op2, &rho_op2, T, wnf, this](const auto i, const auto j) {
-        const auto [Ei, Ej] = energies(i, j);
+       };
+      const auto term2_factors = [&absGi, &absGj, &boltzGi, &op1, &op2, &rho_op2, wnf, this](const auto i, const auto j) {
+        const auto Ei = absGi[i];
+        const auto Ej = absGj[j];
         const auto energy = Ej - Ei;
         const auto op1ji = conj_me(op1(j, i));
-        const auto weightA = op1ji * op2(j, i) * wnf * exp(-Ei/T);
+        const auto weightA = op1ji * op2(j, i) * wnf * boltzGi[i];
         const auto weightB = op1ji * rho_op2(j, i) * (-sign);
         return std::make_tuple(energy, weightA, weightB);
       };
-      const auto term2 = [T, this](const auto energy, const auto weightA, const auto weightB, const auto n) {
-        return (weightA + weightB) / (ww(n, gt, T)*1i - energy);
+      const auto term2 = [&mats_freq](const auto energy, const auto weightA, const auto weightB, const auto n) {
+        return (weightA + weightB) / (mats_freq[n] - energy);
       };
-      const auto term3_factors = [&energies, &op1, &op2, &op2_rho, T, wnf, this](const auto i, const auto j) {
-        const auto [Ei, Ej] = energies(i, j);
+      const auto term3_factors = [&absGi, &absGj, &boltzGj, &op1, &op2, &op2_rho, wnf, this](const auto i, const auto j) {
+        const auto Ei = absGi[i];
+        const auto Ej = absGj[j];
         const auto energy = Ej - Ei;
         const auto op1ji = conj_me(op1(j, i));
         const auto weightA = op1ji * op2_rho(j, i);
-        const auto weightB = (-sign) * op1ji * op2(j, i) * wnf * exp(-Ej/T);
+        const auto weightB = (-sign) * op1ji * op2(j, i) * wnf * boltzGj[j];
         return std::make_tuple(energy, weightA, weightB);
       };
-      const auto term3 = [T, this](const auto energy, const auto weightA, const auto weightB, const auto n) {
-        return (weightA + weightB) / (ww(n, gt, T)*1i - energy);
+      const auto term3 = [&mats_freq](const auto energy, const auto weightA, const auto weightB, const auto n) {
+        return (weightA + weightB) / (mats_freq[n] - energy);
       };
       for (const auto j : diagIj.Drange())
         for (const auto i : diagIi.Drange()) {
