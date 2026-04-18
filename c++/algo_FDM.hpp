@@ -114,23 +114,66 @@ class Algo_FDMgt : virtual public Algo<S> {
 template<scalar S, typename Matrix = Matrix_traits<S>, typename t_coef = coef_traits<S>, typename t_eigen = eigen_traits<S>>
 class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
  private:
-   inline static const std::string algoname2 = "FDM";
-   SpectrumRealFreq<S> spec_tot;
- public:
-   using Algo<S>::P;
-   Algo_FDM(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
-     Algo<S>(P), Algo_FDMls<S>(name, prefix, gt, P, false), Algo_FDMgt<S>(name, prefix, gt, P, false), spec_tot(name, algoname2, spec_fn(name, prefix, algoname2), P) {}
-   void begin(const Step &step) override {
-     Algo_FDMgt<S>::begin(step);
-     Algo_FDMls<S>::begin(step);
+    inline static const std::string algoname2 = "FDM";
+    SpectrumRealFreq<S> spec_tot;
+    const int sign;
+  public:
+    using Algo<S>::P;
+    Algo_FDM(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
+      Algo<S>(P), Algo_FDMls<S>(name, prefix, gt, P, false), Algo_FDMgt<S>(name, prefix, gt, P, false), spec_tot(name, algoname2, spec_fn(name, prefix, algoname2), P), sign(gf_sign(gt)) {}
+    void begin(const Step &step) override {
+      Algo_FDMgt<S>::begin(step);
+      Algo_FDMls<S>::begin(step);
    }
-   void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
-             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho,
-             const Stats<S> &stats) override
-   {
-     Algo_FDMgt<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
-     Algo_FDMls<S>::calc(step, diagIp, diagI1, op1, op2, factor, Ip, I1, rho, stats);
-   }
+    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
+              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho,
+              const Stats<S> &stats) override
+    {
+      auto &gt_cb = *Algo_FDMgt<S>::cb;
+      auto &ls_cb = *Algo_FDMls<S>::cb;
+      const auto wnf     = stats.wnfactor[step.ndx()];
+      const auto T       = P.T.value();
+      const auto rho_op2 = prod_fit(rho.at(I1), op2);
+      const auto op2_rho = prod_fit(op2, rho.at(Ip));
+      const auto absGi   = diagIp.values.all_abs_G() | ranges::to_vector;
+      const auto absGj   = diagI1.values.all_abs_G() | ranges::to_vector;
+      const auto boltzGi = absGi | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+      const auto boltzGj = absGj | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+
+      const auto add_exp_weight = [&gt_cb, &ls_cb, &absGi, &absGj, &boltzGi, &boltzGj, &op1, &op2, factor, wnf, sign = sign](const auto i, const auto j) {
+        const auto energy = absGj[j] - absGi[i];
+        const auto op1ji = conj_me(op1(j, i));
+        const auto op2ji = op2(j, i);
+        gt_cb.add(std::make_pair(energy, op1ji * op2ji * wnf * boltzGi[i]), factor);
+        ls_cb.add(std::make_pair(energy, op1ji * op2ji * (-sign) * wnf * boltzGj[j]), factor);
+      };
+      const auto add_ls_rho_weight = [&ls_cb, &absGi, &absGj, &op1, &rho_op2, factor, sign = sign](const auto i, const auto j) {
+        ls_cb.add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * rho_op2(j, i) * (-sign)), factor);
+      };
+      const auto add_gt_rho_weight = [&gt_cb, &absGi, &absGj, &op1, &op2_rho, factor](const auto i, const auto j) {
+        gt_cb.add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * op2_rho(j, i)), factor);
+      };
+
+      for (const auto j : diagI1.Drange())
+        for (const auto i : diagIp.Drange())
+          add_exp_weight(i, j);
+      for (const auto j : diagI1.Krange())
+        for (const auto i : diagIp.Drange()) {
+          const auto energy = absGj[j] - absGi[i];
+          const auto op1ji = conj_me(op1(j, i));
+          const auto op2ji = op2(j, i);
+          gt_cb.add(std::make_pair(energy, op1ji * op2ji * wnf * boltzGi[i]), factor);
+          add_ls_rho_weight(i, j);
+        }
+      for (const auto j : diagI1.Drange())
+        for (const auto i : diagIp.Krange()) {
+          add_gt_rho_weight(i, j);
+          const auto energy = absGj[j] - absGi[i];
+          const auto op1ji = conj_me(op1(j, i));
+          const auto op2ji = op2(j, i);
+          ls_cb.add(std::make_pair(energy, op1ji * op2ji * (-sign) * wnf * boltzGj[j]), factor);
+        }
+    }
     void end([[maybe_unused]] const Step &step) override {
       spec_tot.mergeCFS(*Algo_FDMgt<S>::cb.get());
       spec_tot.mergeCFS(*Algo_FDMls<S>::cb.get());
