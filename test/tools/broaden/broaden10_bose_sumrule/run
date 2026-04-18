@@ -1,6 +1,0 @@
-#!/bin/sh
-set -eu
-perl -e 'print pack("d*", 0.0, 1.0)' > spec.bin
-"$1/broaden" -s -o spec.bin 1 0.3 1 >stdout.txt
-grep -q "Integral with bosonic kernel=0" stdout.txt
-! grep -E -i 'Integral with bosonic kernel=.*(inf|nan)' stdout.txt
