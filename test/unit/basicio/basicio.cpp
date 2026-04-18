@@ -71,6 +71,12 @@ TEST(basicio, get_dims) {
   auto const [dim1, dim2] = get_dims(file);
   EXPECT_EQ(dim1, 3);
   EXPECT_EQ(dim2, 4);
+
+  auto file_comments = safe_open_for_reading("txt/matrix_comments.txt");
+  auto const [comment_dim1, comment_dim2] = get_dims(file_comments);
+  EXPECT_EQ(comment_dim1, 3);
+  EXPECT_EQ(comment_dim2, 3);
+
   auto file_err = safe_open_for_reading("txt/matrix_err.txt");
   EXPECT_THROW(get_dims(file_err), std::runtime_error);
 }

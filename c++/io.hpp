@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <complex>
+#include <sstream>
 #include "params.hpp"
 #include "numerics.hpp"// reim
 
@@ -86,7 +87,14 @@ auto read_matrix_text(GEN && generate_matrix, const std::string &filename, const
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;
   F.clear();
   F.seekg (0, std::ios::beg);
-  return read_matrix_data(generate_matrix, [&F]() { return read_one<double>(F); }, dim1, dim2);
+  std::ostringstream filtered;
+  std::string line;
+  while (std::getline(F, line)) {
+    if (is_blank_or_comment_line(line)) continue;
+    filtered << line << '\n';
+  }
+  std::istringstream data(filtered.str());
+  return read_matrix_data(generate_matrix, [&data]() { return read_one<double>(data); }, dim1, dim2);
 }
 
 // Read a matrix from stream (binary). Format: two unit32_t for matrix size, followed by

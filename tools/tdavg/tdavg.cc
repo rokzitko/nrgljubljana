@@ -106,16 +106,16 @@ dvec split(const string &s) {
   dvec elements;
   string::const_iterator i = s.begin();
   // Skip to first non-space
-  while (i != s.end() && isspace(*i)) i++;
+  while (i != s.end() && std::isspace(static_cast<unsigned char>(*i))) i++;
   while (i != s.end()) {
     string substring;
-    while (i != s.end() && !isspace(*i)) {
+    while (i != s.end() && !std::isspace(static_cast<unsigned char>(*i))) {
       substring += *i;
       i++;
     }
     elements.push_back(atof(substring.c_str()));
     // Skip to next non-space
-    while (i != s.end() && isspace(*i)) i++;
+    while (i != s.end() && std::isspace(static_cast<unsigned char>(*i))) i++;
   }
   return elements;
 }

@@ -10,6 +10,7 @@
 #include <iomanip> // set_precision
 #include <iterator> // ostream_iterator
 #include <stdexcept>
+#include <cctype>
 
 #include <fmt/format.h>
 
@@ -105,6 +106,11 @@ inline size_t count_words_in_string(const std::string &s) { // size_t because it
   return std::distance(std::istream_iterator<std::string>(stream), std::istream_iterator<std::string>());
 }
 
+inline bool is_blank_or_comment_line(const std::string &s) {
+  const auto first = std::find_if_not(s.begin(), s.end(), [](const unsigned char ch) { return std::isspace(ch); });
+  return first == s.end() || *first == '#';
+}
+
 // Read one object of type S from an object F which has an extractor operator. Use as read_one<S>(F).
 template<typename S, typename T>
 inline auto read_one(T &F) {
@@ -119,15 +125,13 @@ inline auto read_one(T &F) {
 inline auto get_dims(std::istream &F) {
   size_t dim1 = 0; // number of rows
   size_t dim2 = 0; // number of columns
-  while (F.good()) {
-    std::string s;
-    std::getline(F, s);
-    if (!F.fail()) {
-      auto n = count_words_in_string(s);
-      if (dim2 > 0 && dim2 != n) throw std::runtime_error("All matrix rows must be equally long");
-      dim2 = n;
-      dim1++;
-    }
+  std::string s;
+  while (std::getline(F, s)) {
+    if (is_blank_or_comment_line(s)) continue;
+    const auto n = count_words_in_string(s);
+    if (dim2 > 0 && dim2 != n) throw std::runtime_error("All matrix rows must be equally long");
+    dim2 = n;
+    dim1++;
   }
   return std::make_pair(dim1, dim2);
 }

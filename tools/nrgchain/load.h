@@ -9,7 +9,7 @@ vector<string> split_string(const string &s, unsigned int atleast = 0) {
   int index = 0;
   int len   = s.length();
 
-  while (index < len && isspace(s[index])) { index++; }
+  while (index < len && std::isspace(static_cast<unsigned char>(s[index]))) { index++; }
 
   vector<string> substrings;
 
@@ -17,14 +17,14 @@ vector<string> split_string(const string &s, unsigned int atleast = 0) {
     string substr = "";
 
     // Copy string until space or end of string
-    while (index < len && !isspace(s[index])) {
+    while (index < len && !std::isspace(static_cast<unsigned char>(s[index]))) {
       substr += s[index];
       index++;
     }
     substrings.push_back(substr);
 
     // Locate new substring
-    while (index < len && isspace(s[index])) { index++; }
+    while (index < len && std::isspace(static_cast<unsigned char>(s[index]))) { index++; }
   }
 
   if (substrings.size() < atleast) {

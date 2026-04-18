@@ -406,7 +406,7 @@ class Broaden {
        const auto fi = 1 / (1 + exp(+omega / T)); // fi=1-f
        const auto bi = 1 / (1 - exp(+omega / T)); // bi=1-b
        if (std::isfinite(f))  { sumfermi    += f * w;  }
-       if (std::isfinite(f))  { sumbose     += b * w;  }
+        if (std::isfinite(b))  { sumbose     += b * w;  }
        if (std::isfinite(fi)) { sumfermiinv += fi * w; }
        if (std::isfinite(bi)) { sumboseinv  += bi * w; }
      }

@@ -28,6 +28,15 @@ TEST(io, save_matrix){
   std::remove("txt/matrix_temp.txt");
 }
 
+TEST(io, read_matrix_skips_blank_and_comment_lines) {
+  Eigen::Matrix<double, 3, 3> ref_matrix;
+  ref_matrix << 1,2,3,
+                4,5,6,
+                7,8,9;
+  auto matrix = read_matrix("txt/matrix_comments.txt");
+  EXPECT_TRUE(matrix.isApprox(ref_matrix));
+}
+
 TEST(io, read_matrix_bin_throws_on_truncated_data) {
   const auto filename = "txt/matrix_truncated.bin";
   {

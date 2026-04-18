@@ -637,7 +637,7 @@ class Params {
      h5_dump_scalar(file, "params/coefchannels", coefchannels);
      h5_dump_scalar(file, "params/perchannel", perchannel);
      h5_dump_scalar(file, "params/combs", combs);
-     h5_dump_scalar(file, "params/Nlen", Nmax);
+     h5_dump_scalar(file, "params/Nlen", Nlen);
      h5_dump_scalar(file, "params/spin", spin);
    }
 

@@ -21,18 +21,18 @@ enum class Sign { POS, NEG }; // positive vs. negative energies
 inline auto split_string(const std::string &s, unsigned int atleast = 0) {
   const int len = s.length();
   int index = 0;
-  while (index < len && isspace(s[index])) { index++; }
+  while (index < len && std::isspace(static_cast<unsigned char>(s[index]))) { index++; }
   std::vector<std::string> substrings;
   while (index < len) {
     std::string substr = "";
     // Copy string until space or end of string
-    while (index < len && !isspace(s[index])) {
+    while (index < len && !std::isspace(static_cast<unsigned char>(s[index]))) {
       substr += s[index];
       index++;
     }
     substrings.push_back(substr);
     // Locate new substring
-    while (index < len && isspace(s[index])) { index++; }
+    while (index < len && std::isspace(static_cast<unsigned char>(s[index]))) { index++; }
   }
   if (substrings.size() < atleast) 
     throw std::runtime_error("At least " + std::to_string(atleast) + " columns expected.");

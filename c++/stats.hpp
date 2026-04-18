@@ -83,7 +83,7 @@ class Stats {
        h5_dump_scalar(fd, prefix + "/scale", step.scale());
        h5_dump_scalar(fd, prefix + "/Teff", step.Teff());
        h5_dump_scalar(fd, prefix + "/rel_Egs", rel_Egs[ndx]);
-       h5_dump_scalar(fd, prefix + "/abs_Egs", rel_Egs[ndx]);
+        h5_dump_scalar(fd, prefix + "/abs_Egs", abs_Egs[ndx]);
        h5_dump_scalar(fd, prefix + "/energy_offset", energy_offsets[ndx]);
      }
      for (const auto &[name, value]: expv)

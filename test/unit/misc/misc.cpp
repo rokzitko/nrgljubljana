@@ -96,6 +96,9 @@ TEST(misc, strip_trailing_whitespace) {
 	EXPECT_EQ(strip_trailing_whitespace(a), " test");
 
 	EXPECT_EQ(strip_trailing_whitespace("  \t   \n  "s), ""s);
+
+	const std::string high_bit = "test"s + static_cast<char>(0x80);
+	EXPECT_EQ(strip_trailing_whitespace(high_bit), high_bit);
 }
 
 

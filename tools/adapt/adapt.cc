@@ -37,7 +37,7 @@ const auto usage = "Usage: adapt [-h] [P|N] [param_filename]"s;
 std::pair<Sign, std::string> cmd_line(int argc, char *argv[]) {
   Sign sign = Sign::POS;
   if (argc >= 2) {
-    const auto first_char = toupper(argv[1][0]);
+    const auto first_char = std::toupper(static_cast<unsigned char>(argv[1][0]));
     switch (first_char) {
     case 'P': sign = Sign::POS; break;
     case 'N': sign = Sign::NEG; break;

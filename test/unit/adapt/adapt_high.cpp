@@ -46,6 +46,15 @@ TEST(Adapt, int_with_to_throws_when_step_limit_is_exceeded) { // NOLINT
   std::remove(filename);
 }
 
+TEST(Adapt, split_string_keeps_high_bit_bytes) { // NOLINT
+  const std::string input = std::string(1, static_cast<char>(0x80)) + "1 2";
+  const auto columns = split_string(input, 2);
+
+  ASSERT_EQ(columns.size(), 2U);
+  EXPECT_EQ(columns[0], std::string(1, static_cast<char>(0x80)) + "1");
+  EXPECT_EQ(columns[1], "2");
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS(); // NOLINT

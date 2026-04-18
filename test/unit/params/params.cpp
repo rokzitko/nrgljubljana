@@ -1,9 +1,11 @@
 #include <string>
 #include <sstream>
+#include <cstdio>
 
 #include <gtest/gtest.h>
 
 #include "test_common.hpp"
+#include <h5.hpp>
 #include <params.hpp>
 
 using namespace std::string_literals;
@@ -246,6 +248,20 @@ TEST(params, validate_rejects_non_positive_temperature) {
 
   P.T = 1e-3;
   EXPECT_NO_THROW(P.validate());
+}
+
+TEST(params, h5save_stores_nlen) {
+  Params P;
+  P.Nmax = 7;
+  P.Nlen = 3;
+
+  H5Easy::File file("params.h5", H5Easy::File::Overwrite);
+  P.h5save(file);
+
+  EXPECT_EQ(H5Easy::load<std::vector<size_t>>(file, "params/Nmax").front(), 7UL);
+  EXPECT_EQ(H5Easy::load<std::vector<size_t>>(file, "params/Nlen").front(), 3UL);
+
+  std::remove("params.h5");
 }
 
 int main(int argc, char **argv) {
