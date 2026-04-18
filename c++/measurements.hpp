@@ -17,7 +17,7 @@ namespace NRG {
 template<scalar S, typename MF, typename t_matel = matel_traits<S>>
 auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
   return ranges::accumulate(diag, S{}, {}, [&m, &mult, factor](const auto &x){
-    const auto [I, eig] = x; return mult(I) * trace_exp(eig.value_corr_msr(), m.at({I,I}), factor); });
+    const auto &[I, eig] = x; return mult(I) * trace_exp(eig.value_corr_msr(), m.at({I,I}), factor); });
 }
 
 // Measure thermodynamic expectation values of singlet operators
@@ -32,8 +32,8 @@ void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a
 
 template<scalar S, typename MF, typename t_matel = matel_traits<S>>
 auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
-                                  const Store<S> &store_all, MF mult) {
-  return ranges::accumulate(rhoFDM, t_matel{}, {}, [&n, &s = store_all[ndx], mult](const auto &x) { const auto [I, rhoI] = x;
+                                   const Store<S> &store_all, MF mult) {
+  return ranges::accumulate(rhoFDM, t_matel{}, {}, [&n, &s = store_all[ndx], mult](const auto &x) { const auto &[I, rhoI] = x;
     return mult(I) * trace_contract(rhoI, n.at({I,I}), s.at(I).kept()); }); // over kept states ONLY
 }
 

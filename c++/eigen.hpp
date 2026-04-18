@@ -450,19 +450,17 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) {  // called from do_diag()
        load(N, P, remove_files);
    }
-   [[nodiscard]] auto subspaces() const noexcept { return *this | boost::adaptors::map_keys; }
-   [[nodiscard]] auto eigs() const noexcept { return *this | boost::adaptors::map_values; }
-   [[nodiscard]] auto eigs() noexcept { return *this | boost::adaptors::map_values; }
-   [[nodiscard]] auto find_Egs() const {
-     const auto [Iground, eig] = *ranges::min_element(*this, {}, [](const auto &a) { return a.second.values.lowest_rel(); });
-     const auto Egs = eig.values.lowest_rel();
-     return Egs;
-   }
-   [[nodiscard]] auto find_Clw() const {
-     const auto [Ilowest, eig] = *ranges::min_element(*this, {}, [](const auto &a) { return a.second.values.lowest_crit(); });
-     const auto Clw = eig.values.lowest_crit();
-     return Clw;
-   }
+    [[nodiscard]] auto subspaces() const noexcept { return *this | boost::adaptors::map_keys; }
+    [[nodiscard]] auto eigs() const noexcept { return *this | boost::adaptors::map_values; }
+    [[nodiscard]] auto eigs() noexcept { return *this | boost::adaptors::map_values; }
+    [[nodiscard]] auto find_Egs() const {
+      const auto ground = ranges::min_element(*this, {}, [](const auto &a) { return a.second.values.lowest_rel(); });
+      return ground->second.values.lowest_rel();
+    }
+    [[nodiscard]] auto find_Clw() const {
+      const auto lowest = ranges::min_element(*this, {}, [](const auto &a) { return a.second.values.lowest_crit(); });
+      return lowest->second.values.lowest_crit();
+    }
    void set_shift_Egs(const t_eigen Egs) {
      ranges::for_each(eigs(), [Egs](auto &eig) { eig.set_shift_Egs(Egs); });
    }

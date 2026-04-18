@@ -75,7 +75,8 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
 {
   nrglog('f', "*** recalc_f() ** f: I1=(" << I1 << ") Ip=(" << Ip << ")");
   if (!recalc_f_coupled(I1, Ip, this->Invar_f)) return Matrix(0,0); // exception for QST and SPSU2T
-  const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
+  const auto &diagI1 = diag.at(I1);
+  const auto &diagIp = diag.at(Ip);
   const auto & [dim1, dimp]     = diag.dims(I1, Ip);   // # of states in Ip and in I1, i.e. the dimension of the <||f||> matrix.
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   my_assert(dim1 < 1000000 && dimp < 1000000); // bug trap
@@ -108,7 +109,8 @@ std::optional<Matrix_traits<S>> Symmetry<S>::recalc_general(const DiagInfo<S> &d
 {
   if (P.logletter('r')) std::cout << "*** recalc_general: " << nrgdump3(I1, Ip, Iop) << std::endl;
   if (!triangle_inequality(I1, Ip, Iop)) return {};
-  const auto & [diagI1, diagIp] = diag.subs(I1, Ip);
+  const auto &diagI1 = diag.at(I1);
+  const auto &diagIp = diag.at(Ip);
   const auto & [dim1, dimp]     = diag.dims(I1, Ip);
   const Twoinvar II = {I1, Ip};
   auto cn = zero_matrix<S>(dim1, dimp);
