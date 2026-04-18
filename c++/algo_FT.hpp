@@ -61,30 +61,39 @@ class Algo_FTmats : public Algo<S> {
    Algo_FTmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
-   void calc([[maybe_unused]] const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
-             t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
-   {
-     const auto stat_factor = [beta = 1.0/P.T, Z = stats.Zft, T = P.T.value(), this](const auto E1, const auto Ep, const auto n) -> t_weight {
-       const auto energy = E1-Ep;
-       if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
-         return ((-sign) * exp(-beta*E1) + exp(-beta*Ep)) / (Z * (ww(n, gt, T)*1i - energy));
-       else // bosonic w=0 && E1=Ep case
-         return -exp(-beta*E1) / (Z * T);
-     };
-     const auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp, const auto n) {
-       const auto E1 = diagI1.values.abs_zero(r1);
-       const auto Ep = diagIp.values.abs_zero(rp);
-       return conj_me(op1(r1, rp)) * op2(r1, rp) * stat_factor(E1,Ep,n);
-     };
-     const size_t cutoff = P.mats;
-     for (const auto r1: diagI1.kept()) {
-       for (const auto rp: diagIp.kept()) {
+    void calc([[maybe_unused]] const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
+              t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
+    {
+      const auto T = P.T.value();
+      const auto beta = 1.0 / T;
+      const auto Z = stats.Zft;
+      const auto pair_factors = [&diagI1, &diagIp, &op1, &op2, beta, Z, T, this](const auto r1, const auto rp) {
+        const auto E1 = diagI1.values.abs_zero(r1);
+        const auto Ep = diagIp.values.abs_zero(rp);
+        const auto matrix_element = conj_me(op1(r1, rp)) * op2(r1, rp);
+        const auto exp_beta_E1 = exp(-beta * E1);
+        const auto exp_beta_Ep = exp(-beta * Ep);
+        const auto energy = E1 - Ep;
+        const auto weight = matrix_element * (((-sign) * exp_beta_E1 + exp_beta_Ep) / Z);
+        const auto zero_freq_bosonic_weight = matrix_element * (-exp_beta_E1 / (Z * T));
+        return std::make_tuple(energy, weight, zero_freq_bosonic_weight);
+      };
+      const auto term = [T, this](const auto energy, const auto weight, const auto zero_freq_bosonic_weight, const auto n) -> t_weight {
+        if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
+          return weight / (ww(n, gt, T)*1i - energy);
+        else // bosonic w=0 && E1=Ep case
+          return zero_freq_bosonic_weight;
+      };
+      const size_t cutoff = P.mats;
+      for (const auto r1: diagI1.kept()) {
+        for (const auto rp: diagIp.kept()) {
+          const auto [energy, weight, zero_freq_bosonic_weight] = pair_factors(r1, rp);
 #pragma omp parallel for schedule(static)
-         for (size_t n = 0; n < cutoff; n++)
-           cm->add(n, factor * term(r1, rp, n));
-       }
-     }
-   }
+          for (size_t n = 0; n < cutoff; n++)
+            cm->add(n, factor * term(energy, weight, zero_freq_bosonic_weight, n));
+        }
+      }
+    }
     void end([[maybe_unused]] const Step &step) override {
       gf.merge(*cm.get());
       cm.reset();
