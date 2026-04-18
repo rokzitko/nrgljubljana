@@ -26,30 +26,33 @@ class Algo_DMNRG : public Algo<S> {
    Algo_DMNRG(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
      Algo<S>(P), spec(name, algoname, spec_fn(name, prefix, algoname), P), sign(gf_sign(gt)) {}
    void begin(const Step &) override { cb = std::make_unique<CB>(P); }
-   void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
-             t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, [[maybe_unused]] const Stats<S> &stats) override
-   {
-     const auto weights = [Emin = step.scale() * P.getEmin(), Emax = step.scale() * P.getEmax(), &rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) {
-       const auto Em = diagIp.values.abs_zero(rm);
-       const auto Ej = diagI1.values.abs_zero(rj);
-       const auto energy = Ej-Em;
-       if (abs(energy) < Emin || abs(energy) > Emax) return std::make_tuple(energy, t_weight{}, t_weight{}); // does not contribute
-       t_weight sumA{};
-       for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
-       const auto weightA = sumA * conj_me(op1(rj, rm));
-       t_weight sumB{};
-       for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
-       const auto weightB = sumB * op2(rj, rm);
-       return std::make_tuple(energy, weightA, weightB);
-     };
-     const auto term = [&weights, this](const auto rm, const auto rj) {
-       const auto [energy, weightA, weightB] = weights(rm, rj);
-       return std::make_pair(energy, weightA + (-sign) * weightB);
-     };
-     for (const auto rm: diagIp.kept())
-       for (const auto rj: diagI1.kept())
-         cb->add(term(rm, rj), factor);
-   }
+    void calc(const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
+              t_coef factor, const Invar &Ip, const Invar &I1, const DensMatElements<S> &rho, [[maybe_unused]] const Stats<S> &stats) override
+    {
+      const auto Emin = step.scale() * P.getEmin();
+      const auto Emax = step.scale() * P.getEmax();
+      const auto &rhoNIp = rho.at(Ip);
+      const auto &rhoNI1 = rho.at(I1);
+      const auto nrIpKept = diagIp.getnrkept();
+      const auto nrI1Kept = diagI1.getnrkept();
+      if (nrIpKept == 0 || nrI1Kept == 0) return;
+
+      const Matrix op2_kept = submatrix_const(op2, {0, nrI1Kept}, {0, nrIpKept});
+      const Matrix op1_kept_conj = submatrix_const(op1, {0, nrI1Kept}, {0, nrIpKept}).conjugate();
+      const Matrix rhoNIp_kept_t = submatrix_const(rhoNIp, {0, nrIpKept}, {0, nrIpKept}).transpose();
+      const Matrix rhoNI1_kept = submatrix_const(rhoNI1, {0, nrI1Kept}, {0, nrI1Kept});
+      const auto sumA = matrix_prod<typename Matrix::value_type>(op2_kept, rhoNIp_kept_t);
+      const auto sumB = matrix_prod<typename Matrix::value_type>(rhoNI1_kept, op1_kept_conj);
+
+      for (const auto rj: diagI1.kept())
+        for (const auto rm: diagIp.kept()) {
+          const auto energy = diagI1.values.abs_zero(rj) - diagIp.values.abs_zero(rm);
+          if (abs(energy) < Emin || abs(energy) > Emax) continue;
+          const auto weightA = sumA(rj, rm) * op1_kept_conj(rj, rm);
+          const auto weightB = sumB(rj, rm) * op2_kept(rj, rm);
+          cb->add(std::make_pair(energy, weightA + (-sign) * weightB), factor);
+        }
+    }
     void end([[maybe_unused]] const Step &step) override {
       spec.mergeNN2(*cb.get(), step);
       cb.reset();
