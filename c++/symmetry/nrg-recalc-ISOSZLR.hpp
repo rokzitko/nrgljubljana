@@ -48,25 +48,21 @@ Opch<SC> SymmetryISOSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spinup-isoupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spinup-isoupa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spinup-isoupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spinup-isoupb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 
@@ -74,25 +70,21 @@ Opch<SC> SymmetryISOSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spindown-isoupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spindown-isoupa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spindown-isoupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spindown-isoupb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 
@@ -100,25 +92,21 @@ Opch<SC> SymmetryISOSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spinup-isodowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spinup-isodowna.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spinup-isodownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spinup-isodownb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 
@@ -126,25 +114,21 @@ Opch<SC> SymmetryISOSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spindown-isodowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spindown-isodowna.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spindown-isodownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spindown-isodownb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 
@@ -154,25 +138,21 @@ Opch<SC> SymmetryISOSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spinup-isoupdiffa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spinup-isoupdiffa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spinup-isoupdiffb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spinup-isoupdiffb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 
@@ -180,25 +160,21 @@ Opch<SC> SymmetryISOSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spindown-isoupdiffa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spindown-isoupdiffa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spindown-isoupdiffb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spindown-isoupdiffb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 
@@ -206,25 +182,21 @@ Opch<SC> SymmetryISOSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spinup-isodowndiffa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spinup-isodowndiffa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spinup-isodowndiffb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spinup-isodowndiffb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 
@@ -232,25 +204,21 @@ Opch<SC> SymmetryISOSZLR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spindown-isodowndiffa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spindown-isodowndiffa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
     {
   nrglog('f', "RECALC_F(fn=" << "isoszlr/isoszlr-2ch-spindown-isodowndiffb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-spindown-isodowndiffb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
   }
@@ -271,14 +239,12 @@ MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_doublet(const DiagInfo<SC> &diag,
     {
   nrglog('f', "RECALC(fn=" << "isoszlr/isoszlr-2ch-doubletmp.dat" << ", Iop=" << Invar(2, -1, +1) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-doubletmp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1, +1));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1, +1));
+    if (cn) cnew[II] = *cn;
   }
 };
 
@@ -286,14 +252,12 @@ MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_doublet(const DiagInfo<SC> &diag,
     {
   nrglog('f', "RECALC(fn=" << "isoszlr/isoszlr-2ch-doubletmm.dat" << ", Iop=" << Invar(2, +1, +1) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-doubletmm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1, +1));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1, +1));
+    if (cn) cnew[II] = *cn;
   }
 };
 
@@ -301,14 +265,12 @@ MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_doublet(const DiagInfo<SC> &diag,
     {
   nrglog('f', "RECALC(fn=" << "isoszlr/isoszlr-2ch-doubletpp.dat" << ", Iop=" << Invar(2, -1, +1) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-doubletpp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1, +1));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, -1, +1));
+    if (cn) cnew[II] = *cn;
   }
 };
 
@@ -316,14 +278,12 @@ MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_doublet(const DiagInfo<SC> &diag,
     {
   nrglog('f', "RECALC(fn=" << "isoszlr/isoszlr-2ch-doubletpm.dat" << ", Iop=" << Invar(2, +1, +1) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-doubletpm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1, +1));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, +1, +1));
+    if (cn) cnew[II] = *cn;
   }
 };
   }
@@ -344,14 +304,12 @@ MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_triplet(const DiagInfo<SC> &diag,
     {
   nrglog('f', "RECALC(fn=" << "isoszlr/isoszlr-2ch-triplets.dat" << ", Iop=" << Invar(1, 0, +1) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-triplets.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 0, +1));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 0, +1));
+    if (cn) cnew[II] = *cn;
   }
 };
 
@@ -359,14 +317,12 @@ MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_triplet(const DiagInfo<SC> &diag,
     {
   nrglog('f', "RECALC(fn=" << "isoszlr/isoszlr-2ch-tripletp.dat" << ", Iop=" << Invar(1, -2, +1) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-tripletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, -2, +1));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, -2, +1));
+    if (cn) cnew[II] = *cn;
   }
 };
 
@@ -374,14 +330,12 @@ MatrixElements<SC> SymmetryISOSZLR<SC>::recalc_triplet(const DiagInfo<SC> &diag,
     {
   nrglog('f', "RECALC(fn=" << "isoszlr/isoszlr-2ch-tripletm.dat" << ", Iop=" << Invar(1, +2, +1) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "isoszlr/isoszlr-2ch-tripletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, +2, +1));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, +2, +1));
+    if (cn) cnew[II] = *cn;
   }
 };
   }

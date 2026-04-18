@@ -239,8 +239,19 @@ class Symmetry {
    // only overriden for symtypes QST and SPSU2T
    virtual bool recalc_f_coupled([[maybe_unused]] const Invar &I1, [[maybe_unused]] const Invar &I2, [[maybe_unused]] const Invar &If) const { return true; } // used in recalc_f()
 
+   [[nodiscard]] bool have_stored_subspaces(const DiagInfo<S> &diag, const Invar &I1, const Invar &Ip) const {
+     const auto it1 = diag.find(I1);
+     if (it1 == diag.end() || !it1->second.getnrstored()) return false;
+     const auto itp = diag.find(Ip);
+     return itp != diag.end() && itp->second.getnrstored();
+   }
+
+   [[nodiscard]] bool have_stored_coupled_subspaces(const DiagInfo<S> &diag, const Invar &I1, const Invar &Ip) const {
+     return recalc_f_coupled(I1, Ip, Invar_f) && have_stored_subspaces(diag, I1, Ip);
+   }
+
    template<typename T>
-     auto recalc_f(const DiagInfo<S> &diag, const Invar &I1, const Invar &Ip, const T &table) const;
+      auto recalc_f(const DiagInfo<S> &diag, const Invar &I1, const Invar &Ip, const T &table) const;
 
    template<typename T>
      std::optional<Matrix_traits<S>> recalc_general(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &cold,

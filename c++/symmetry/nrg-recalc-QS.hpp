@@ -42,53 +42,45 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-1ch-doubletp.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-1ch-doubletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-2ch-doubletp.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-2ch-doubletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 3: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-3ch-doubletp.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-3ch-doubletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 4: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-4ch-doubletp.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-4ch-doubletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   default: my_assert_not_reached();
@@ -99,53 +91,45 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-1ch-doubletm.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-1ch-doubletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-2ch-doubletm.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-2ch-doubletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 3: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-3ch-doubletm.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-3ch-doubletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 4: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-4ch-doubletm.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-4ch-doubletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   default: my_assert_not_reached();
@@ -161,14 +145,12 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       {
   nrglog('f', "RECALC(fn=" << "qs/qs-1ch-doubletp.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-1ch-doubletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 };
 
@@ -176,14 +158,12 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
       {
   nrglog('f', "RECALC(fn=" << "qs/qs-1ch-doubletm.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-1ch-doubletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
+    if (cn) cnew[II] = *cn;
   }
 };
     }
@@ -214,121 +194,101 @@ Opch<SC> SymmetryQS<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-1ch-spinupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-1ch-spinupa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-2ch-spinupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-2ch-spinupa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-2ch-spinupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-2ch-spinupb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 } } break;
   case 3: { {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-3ch-spinupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-3ch-spinupa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-3ch-spinupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-3ch-spinupb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-3ch-spinupc.dat" << ", ch=" << 2 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-3ch-spinupc.dat"
-      };
-      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 } } break;
   case 4: { {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-4ch-spinupa.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-4ch-spinupa.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-4ch-spinupb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-4ch-spinupb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-4ch-spinupc.dat" << ", ch=" << 2 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-4ch-spinupc.dat"
-      };
-      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-4ch-spinupd.dat" << ", ch=" << 3 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-4ch-spinupd.dat"
-      };
-      opch[3][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[3][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 } } break;
   default: my_assert_not_reached();
@@ -339,121 +299,101 @@ Opch<SC> SymmetryQS<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
   case 1: { {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-1ch-spindowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-1ch-spindowna.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-2ch-spindowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-2ch-spindowna.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
             {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-2ch-spindownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-2ch-spindownb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 } } break;
   case 3: { {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-3ch-spindowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-3ch-spindowna.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-3ch-spindownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-3ch-spindownb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-3ch-spindownc.dat" << ", ch=" << 2 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-3ch-spindownc.dat"
-      };
-      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 } } break;
   case 4: { {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-4ch-spindowna.dat" << ", ch=" << 0 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-4ch-spindowna.dat"
-      };
-      opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-4ch-spindownb.dat" << ", ch=" << 1 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-4ch-spindownb.dat"
-      };
-      opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-4ch-spindownc.dat" << ", ch=" << 2 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-4ch-spindownc.dat"
-      };
-      opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 	          {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-4ch-spindownd.dat" << ", ch=" << 3 << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-4ch-spindownd.dat"
-      };
-      opch[3][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[3][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 } } break;
   default: my_assert_not_reached();
@@ -475,13 +415,11 @@ OpchChannel<SC> SymmetryQS<SC>::recalc_irreduc_substeps(const Step &step, const 
     {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-1ch-spinupa.dat" << ", ch=" << M << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-1ch-spinupa.dat"
-      };
-      opch[M][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[M][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
 
@@ -489,13 +427,11 @@ OpchChannel<SC> SymmetryQS<SC>::recalc_irreduc_substeps(const Step &step, const 
     {
   nrglog('f', "RECALC_F(fn=" << "qs/qs-1ch-spindowna.dat" << ", ch=" << M << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip) && this->recalc_f_coupled(I1, Ip, this->Invar_f)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc_f<SC>> recalc_table = {
+  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc_f<SC>> recalc_table = {
 #include "qs/qs-1ch-spindowna.dat"
-      };
-      opch[M][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-    }
+    };
+    opch[M][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
   }
 };
   }
@@ -517,53 +453,45 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_triplet(const DiagInfo<SC> &diag, cons
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-1ch-triplets.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-1ch-triplets.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-2ch-triplets.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-2ch-triplets.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 3: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-3ch-triplets.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-3ch-triplets.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 4: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-4ch-triplets.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-4ch-triplets.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   default: my_assert_not_reached();
@@ -574,53 +502,45 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_triplet(const DiagInfo<SC> &diag, cons
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-1ch-tripletp.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-1ch-tripletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-2ch-tripletp.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-2ch-tripletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 3: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-3ch-tripletp.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-3ch-tripletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 4: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-4ch-tripletp.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-4ch-tripletp.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   default: my_assert_not_reached();
@@ -631,53 +551,45 @@ MatrixElements<SC> SymmetryQS<SC>::recalc_triplet(const DiagInfo<SC> &diag, cons
   case 1: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-1ch-tripletm.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-1ch-tripletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 2: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-2ch-tripletm.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-2ch-tripletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 3: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-3ch-tripletm.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-3ch-tripletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   case 4: { {
   nrglog('f', "RECALC(fn=" << "qs/qs-4ch-tripletm.dat" << ", Iop=" << Invar(0, 3) << ")");
   auto II = Twoinvar(I1, Ip);
-  if (diag.count(I1) && diag.count(Ip)) {
-    if (diag.at(I1).getnrstored() && diag.at(Ip).getnrstored()) {
-      std::initializer_list<Recalc<SC>> recalc_table = {
+  if (this->have_stored_subspaces(diag, I1, Ip)) {
+    std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qs/qs-4ch-tripletm.dat"
-      };
-      auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
-      if (cn) cnew[II] = *cn;
-    }
+    };
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3));
+    if (cn) cnew[II] = *cn;
   }
 } } break;
   default: my_assert_not_reached();
