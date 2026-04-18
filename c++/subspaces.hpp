@@ -130,7 +130,7 @@ class TaskList {
        stats(F);
      tasks = tasks_with_sizes | ranges::views::transform( [](const auto &p) { return p.second; } ) | ranges::to<std::vector>();
    }
-   [[nodiscard]] std::vector<Invar> get() const { return tasks; }
+    [[nodiscard]] const std::vector<Invar> &get() const { return tasks; }
 };
 
 } // namespace
