@@ -74,30 +74,31 @@ class Algo_DMNRGmats : public Algo<S> {
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
    void calc([[maybe_unused]] const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2,
              t_coef factor, [[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1, const DensMatElements<S> &rho, [[maybe_unused]] const Stats<S> &stats) override
-   {
-      const auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) {
-         const auto Em = diagIp.values.abs_zero(rm);
+    {
+       const auto weights = [&rhoNIp = rho.at(Ip), &rhoNI1 = rho.at(I1), &diagIp, &diagI1, &op1, &op2](const auto rm, const auto rj) {
+          const auto Em = diagIp.values.abs_zero(rm);
          const auto Ej = diagI1.values.abs_zero(rj);
          t_weight sumA{};
          for (const auto ri: diagIp.kept()) sumA += op2(rj, ri) * rhoNIp(rm, ri); // rm <-> ri, rho symmetric
          const auto weightA = sumA * conj_me(op1(rj, rm));
          t_weight sumB{};
          for (const auto ri: diagI1.kept()) sumB += conj_me(op1(ri, rm)) * rhoNI1(rj, ri); // non-optimal
-         const auto weightB = sumB * op2(rj, rm);
-         return std::make_tuple(Ej-Em, weightA, weightB);
-     };
-     const auto term = [&weights, this](const auto rm, const auto rj, const auto n) {
-       const auto [energy, weightA, weightB] = weights(rm, rj);
-       if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
-         return (weightA + (-sign) * weightB) / (ww(n, gt, P.T)*1i - energy);
-       else // bosonic w=0 && Em=Ej case
-         return -weightA / t_weight(P.T);
-     };
-     for (const auto rm: diagIp.kept())
-       for (const auto rj: diagI1.kept())
-         for (size_t n = 0; n < P.mats; n++)
-           cm->add(n, factor * term(rm, rj, n));
-   }
+          const auto weightB = sumB * op2(rj, rm);
+          return std::make_tuple(Ej-Em, weightA, weightB);
+      };
+      const auto term = [this](const auto energy, const auto weightA, const auto weightB, const auto n) {
+        if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
+          return (weightA + (-sign) * weightB) / (ww(n, gt, P.T)*1i - energy);
+        else // bosonic w=0 && Em=Ej case
+          return -weightA / t_weight(P.T);
+      };
+      for (const auto rm: diagIp.kept())
+        for (const auto rj: diagI1.kept()) {
+          const auto [energy, weightA, weightB] = weights(rm, rj);
+          for (size_t n = 0; n < P.mats; n++)
+            cm->add(n, factor * term(energy, weightA, weightB, n));
+        }
+    }
     void end([[maybe_unused]] const Step &step) override {
            gf.merge(*cm.get());
            cm.reset();
