@@ -25,23 +25,33 @@ inline auto keepall(const Step &step, const Params &P) {
 
 // Determine the number of states to be retained. Returns Emax - the highest energy (cost) to still be retained.
 template <scalar S> auto highest_retained(const Step &step, const DiagInfo<S> &diag, const Params &P) {
-  const auto all = diag.sorted_criterion_values(); // We use roundoff-error corrected eigenvalues here!
+  std::vector<eigen_traits<S>> all;
+  all.reserve(ranges::accumulate(diag, size_t{0}, {}, [](const auto &d) { return d.second.values.all_crit().size(); }));
+  for (const auto &[I, eig] : diag)
+    all.insert(all.end(), eig.values.all_crit().begin(), eig.values.all_crit().end());
   const auto totalnumber = all.size();
   my_assert(totalnumber != 0);
+  const auto [min_it, max_it] = ranges::minmax_element(all);
   if (!P.floquet)
-    my_assert(all.front() == 0.0); // check for the subtraction of Egs
+    my_assert(*min_it == 0.0); // check for the subtraction of Egs
 
   if (keepall(step, P))
-      return all.back();
+      return *max_it;
 
   // We add 1 for historical reasons. We thus keep states with E<=Emax, and one additional state which has E>Emax.
   auto nrkeep = P.keepenergy <= 0.0 ?
      P.keep :
-     std::clamp<size_t>(1 + ranges::count_if(all, [keepenergy = P.keepenergy * step.unscale()](double e) { return e <= keepenergy; }), P.keepmin, P.keep);
+      std::clamp<size_t>(1 + ranges::count_if(all, [keepenergy = P.keepenergy * step.unscale()](double e) { return e <= keepenergy; }), P.keepmin, P.keep);
+  if (nrkeep >= totalnumber)
+    return *max_it;
+
+  const auto sorted_prefix = std::min(totalnumber, std::max<size_t>(1, nrkeep) + (P.safeguard > 0.0 ? P.safeguardmax : 0));
+  std::nth_element(all.begin(), all.begin() + sorted_prefix - 1, all.end());
+  std::sort(all.begin(), all.begin() + sorted_prefix);
   // Check for near degeneracy and ensure that the truncation occurs in a "gap" between clusters of eigenvalues.
   if (P.safeguard > 0.0) {
     size_t cnt_extra = 0;
-    while (nrkeep < totalnumber && (all[nrkeep] - all[nrkeep - 1]) <= P.safeguard && cnt_extra < P.safeguardmax) {
+    while (nrkeep < sorted_prefix && (all[nrkeep] - all[nrkeep - 1]) <= P.safeguard && cnt_extra < P.safeguardmax) {
       nrkeep++;
       cnt_extra++;
     }
