@@ -2,6 +2,7 @@
 #define _algo_FDM_hpp_
 
 #include <complex>
+#include <vector>
 #include "traits.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"
@@ -30,34 +31,29 @@ class Algo_FDMls : virtual public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIi, const Eigen<S> &diagIj, const Matrix &op1, const Matrix &op2,
              t_coef factor, [[maybe_unused]] const Invar &Ii, [[maybe_unused]] const Invar &Ij, const DensMatElements<S> &rhoFDM,
              const Stats<S> &stats) override
-   {
-     const auto wnf   = stats.wnfactor[step.ndx()];
-     const auto rho_op2 = prod_fit(rhoFDM.at(Ij), op2);
-     const auto energies = [&diagIi, &diagIj](const auto i, const auto j) {
-       return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
-     };
-     const auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
-       const auto [Ei, Ej] = energies(i, j);
-       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * (-sign) * exp(-Ej/T) * wnf);
-     };
-     const auto term2 = [&energies, &op1, &rho_op2, this](const auto i, const auto j) {
-       const auto [Ei, Ej] = energies(i, j);
-       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * rho_op2(j, i) * (-sign));
-     };
-     const auto term3 = [&energies, &op1, &op2, T = P.T.value(), wnf, this](const auto i, const auto j) {
-       const auto [Ei, Ej] = energies(i, j);
-       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * (-sign) * exp(-Ej/T) * wnf);
-     };
+    {
+      const auto wnf     = stats.wnfactor[step.ndx()];
+      const auto T       = P.T.value();
+      const auto rho_op2 = prod_fit(rhoFDM.at(Ij), op2);
+      const auto absGi   = diagIi.values.all_abs_G() | ranges::to_vector;
+      const auto absGj   = diagIj.values.all_abs_G() | ranges::to_vector;
+      const auto boltzGj = absGj | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+      const auto add_exp_weight = [this, &absGi, &absGj, &boltzGj, &op1, &op2, factor, weight_scale = (-sign) * wnf](const auto i, const auto j) {
+        cb->add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * op2(j, i) * weight_scale * boltzGj[j]), factor);
+      };
+      const auto add_rho_weight = [this, &absGi, &absGj, &op1, &rho_op2, factor, sign = sign](const auto i, const auto j) {
+        cb->add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * rho_op2(j, i) * (-sign)), factor);
+      };
       for (const auto j : diagIj.Drange())
         for (const auto i : diagIi.Drange())
-          cb->add(term1(i,j), factor);
+          add_exp_weight(i, j);
       for (const auto j : diagIj.Krange())
         for (const auto i : diagIi.Drange())
-          cb->add(term2(i,j), factor);
+          add_rho_weight(i, j);
       for (const auto j : diagIj.Drange())
         for (const auto i : diagIi.Krange())
-          cb->add(term3(i,j), factor);
-   }
+          add_exp_weight(i, j);
+    }
     void end([[maybe_unused]] const Step &step) override {
       spec.mergeCFS(*cb.get());
       cb.reset();
@@ -84,34 +80,29 @@ class Algo_FDMgt : virtual public Algo<S> {
    void calc(const Step &step, const Eigen<S> &diagIi, const Eigen<S> &diagIj, const Matrix &op1, const Matrix &op2,
              t_coef factor, [[maybe_unused]] const Invar &Ii, [[maybe_unused]] const Invar &Ij, const DensMatElements<S> &rhoFDM,
              const Stats<S> &stats) override
-   {
-     const auto wnf   = stats.wnfactor[step.ndx()];
-     const auto op2_rho = prod_fit(op2, rhoFDM.at(Ii));
-     const auto energies = [&diagIi, &diagIj](const auto i, const auto j) {
-       return std::make_pair(diagIi.values.abs_G(i), diagIj.values.abs_G(j));
-     };
-     const auto term1 = [&energies, &op1, &op2, T = P.T.value(), wnf](const auto i, const auto j) {
-       const auto [Ei, Ej] = energies(i, j);
-       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * exp(-Ei/T) * wnf);
-     };
-     const auto term2 = [&energies, &op1, &op2, T = P.T.value(), wnf](const auto i, const auto j) {
-       const auto [Ei, Ej] = energies(i, j);
-       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2(j, i) * exp(-Ei/T) * wnf);
-     };
-     const auto term3 = [&energies, &op1, &op2_rho](const auto i, const auto j) {
-       const auto [Ei, Ej] = energies(i, j);
-       return std::make_pair(Ej-Ei, conj_me(op1(j, i)) * op2_rho(j, i));
-     };
+    {
+      const auto wnf     = stats.wnfactor[step.ndx()];
+      const auto T       = P.T.value();
+      const auto op2_rho = prod_fit(op2, rhoFDM.at(Ii));
+      const auto absGi   = diagIi.values.all_abs_G() | ranges::to_vector;
+      const auto absGj   = diagIj.values.all_abs_G() | ranges::to_vector;
+      const auto boltzGi = absGi | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+      const auto add_exp_weight = [this, &absGi, &absGj, &boltzGi, &op1, &op2, factor, wnf](const auto i, const auto j) {
+        cb->add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * op2(j, i) * wnf * boltzGi[i]), factor);
+      };
+      const auto add_rho_weight = [this, &absGi, &absGj, &op1, &op2_rho, factor](const auto i, const auto j) {
+        cb->add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * op2_rho(j, i)), factor);
+      };
       for (const auto j : diagIj.Drange())
         for (const auto i : diagIi.Drange())
-          cb->add(term1(i,j), factor);
+          add_exp_weight(i, j);
       for (const auto j : diagIj.Krange())
         for (const auto i : diagIi.Drange())
-          cb->add(term2(i,j), factor);
+          add_exp_weight(i, j);
       for (const auto j : diagIj.Drange())
         for (const auto i : diagIi.Krange())
-          cb->add(term3(i,j), factor);
-   }
+          add_rho_weight(i, j);
+    }
     void end([[maybe_unused]] const Step &step) override {
       spec.mergeCFS(*cb.get());
       cb.reset();
