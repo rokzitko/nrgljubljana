@@ -123,7 +123,7 @@ class Resample
         }
 
         Resample(std::vector<std::pair<T, T>> f, std::vector<std::pair<T, T>> grid, std::optional<std::string> outputfn = std::nullopt, bool verbose = false, int output_precision = 16):
-        grid(grid), outputfn(outputfn), verbose(verbose), output_precision(output_precision)
+        outputfn(outputfn), verbose(verbose), output_precision(output_precision), grid(grid)
         {
             init(f);
         }

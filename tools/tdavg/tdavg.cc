@@ -377,4 +377,5 @@ int main(int argc, char *argv[]) {
   multiVec result = avg();
   if (copycomments && lastcommentline != "") OF << lastcommentline << endl;
   save(result, OF);
+  return 0;
 }
