@@ -4,20 +4,12 @@
 #ifndef _splitting_hpp_
 #define _splitting_hpp_
 
-#include <iostream>
 #include <unordered_map>
 #include "portabil.hpp"
 #include "traits.hpp"
 #include "eigen.hpp"
 
 namespace NRG {
-
-template<typename T>
-inline void cluster_show(const T &i0, const T &i1) {
-  std::cout << "[";
-  for (auto j = i0; j != i1; ++j) { std::cout << HIGHPREC(*j) << " "; }
-  std::cout << "]" << std::endl;
-}
 
 // Returns true if not all the states have the same energy.
 template<typename T>

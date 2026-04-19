@@ -47,8 +47,8 @@ TEST(Store, ThermoAndBackiterBuildersKeepExpectedMetadata) { // NOLINT
   auto diag = setup_diag_clean(P, Sym);
   SubspaceStructure substruct{diag, Sym};
 
-  auto thermo = make_thermo_subs(diag, false);
-  auto backiter = make_backiter_subs(diag, substruct, false);
+  auto thermo = ThermoSubs<double>(diag, false);
+  auto backiter = BackiterSubs(diag, substruct);
 
   ASSERT_EQ(thermo.size(), diag.size());
   ASSERT_EQ(backiter.size(), diag.size());

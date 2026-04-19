@@ -13,35 +13,33 @@
 
 namespace NRG {
    
-// note: t_expv = t_matel, thus the return type is OK
-template<scalar S, typename MF, typename t_matel = matel_traits<S>>
-auto calc_trace_singlet(const DiagInfo<S> &diag, const MatrixElements<S> &m, MF mult, const double factor) {
-  return ranges::accumulate(diag, S{}, {}, [&m, &mult, factor](const auto &x){
-    const auto &[I, eig] = x; return mult(I) * trace_exp(eig.value_corr_msr(), m.at({I,I}), factor); });
-}
-
 // Measure thermodynamic expectation values of singlet operators
 template<scalar S, typename MF>
 void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag, const Params &P) {
   const auto Z = ranges::accumulate(diag, 0.0, {}, [mult, factor](const auto &d) { const auto &[I, eig] = d;
                                                    return mult(I) * sum_of_exp(eig.value_corr_msr(), factor); });
+  const auto trace_singlet = [&diag, &mult, factor](const auto &m) {
+    return ranges::accumulate(diag, S{}, {}, [&m, &mult, factor](const auto &x){
+      const auto &[I, eig] = x;
+      return mult(I) * trace_exp(eig.value_corr_msr(), m.at({I,I}), factor);
+    });
+  };
   nrglog('Z', "Z_expv=" << Z);
-  for (const auto &[name, m] : a.ops)  stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
-  for (const auto &[name, m] : a.opsg) stats.expv[name] = calc_trace_singlet(diag, m, mult, factor) / Z;
-}
-
-template<scalar S, typename MF, typename t_matel = matel_traits<S>>
-auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
-                                   const BackiterStore &store_all, MF mult) {
-  return ranges::accumulate(rhoFDM, t_matel{}, {}, [&n, &s = store_all[ndx], mult](const auto &x) { const auto &[I, rhoI] = x;
-    return mult(I) * trace_contract(rhoI, n.at({I,I}), s.at(I).kept()); }); // over kept states ONLY
+  for (const auto &[name, m] : a.ops)  stats.expv[name] = trace_singlet(m) / Z;
+  for (const auto &[name, m] : a.opsg) stats.expv[name] = trace_singlet(m) / Z;
 }
 
 template<scalar S, typename MF>
 void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &a, MF mult,
                          const DensMatElements<S> &rhoFDM, const BackiterStore &store_all) {
-  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store_all, mult);
-  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store_all, mult);
+  const auto trace_fdm_kept = [&rhoFDM, &store_all, ndx, mult](const auto &n) {
+    return ranges::accumulate(rhoFDM, matel_traits<S>{}, {}, [&n, &s = store_all[ndx], mult](const auto &x) {
+      const auto &[I, rhoI] = x;
+      return mult(I) * trace_contract(rhoI, n.at({I,I}), s.at(I).kept());
+    });
+  };
+  for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = trace_fdm_kept(m);
+  for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = trace_fdm_kept(m);
 }
 
 // Calculate grand canonical partition function at current NRG energy shell. This is not the same as the true

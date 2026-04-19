@@ -45,7 +45,10 @@ TEST(Clean, H) { // NOLINT
   stats.update(step);
   Clusters<double> clusters(diag, P.fixeps, P);
   truncate_prepare(step, diag, Sym->multfnc(), P);
-  calc_abs_energies(step, diag, stats);
+  for (auto &eig : diag.eigs()) {
+    eig.values.set_scale(step.scale());
+    eig.values.set_T_shift(stats.total_energy);
+  }
   calculate_TD(step, diag, stats, Sym, P);
   split_in_blocks(diag, substruct);
   MemTime mt;
@@ -54,8 +57,8 @@ TEST(Clean, H) { // NOLINT
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   diag.truncate_perform();
   EXPECT_EQ(step.last(), true);
-  store[step.ndx()] = make_thermo_subs(diag, step.last());
-  store_all[step.ndx()] = make_backiter_subs(diag, substruct, step.last());
+  store[step.ndx()] = ThermoSubs<double>(diag, step.last());
+  store_all[step.ndx()] = BackiterSubs(diag, substruct);
   recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
   operators.opch.dump();
 

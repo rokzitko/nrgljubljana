@@ -141,16 +141,6 @@ auto do_diag(const Step &step, const Operators<S> &operators, const Coef<S> &coe
   return diag;
 }
 
-// Absolute energies. Must be called in the first NRG run after stats.total_energy has been updated, but before
-// store_transformations().
-template<scalar S>
-void calc_abs_energies(const Step &step, DiagInfo<S> &diag, const Stats<S> &stats) {
-  for (auto &eig : diag.eigs()) {
-    eig.values.set_scale(step.scale()); // !!!
-    eig.values.set_T_shift(stats.total_energy);
-  }
-}
-
 // Operator sumrules
 template<scalar S, typename F> 
 auto norm(const MatrixElements<S> &m, const Symmetry<S> *Sym, F factor_fnc, const int SPIN) {
@@ -176,22 +166,6 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
     for (const auto && [j, m] : ch | ranges::views::enumerate)
       std::cout << "norm[f," << i << "," << j << "]=" << norm(m, Sym, Sym->SpecdensFactorFnc(), SPIN) << std::endl;
 }
-
-// Store information about subspaces and states for the DM algorithms
-template<scalar S>
-void store_states(const Step &step, ThermoStore<S> &store, BackiterStore &store_all, const DiagInfo<S> &diag_in, const SubspaceStructure &substruct,
-                  const Symmetry<S> *Sym, const Params &P) {
-  store_all[step.ndx()] = make_backiter_subs(diag_in, substruct, step.last());
-  if (P.project == ""s) {
-    store[step.ndx()] = make_thermo_subs(diag_in, step.last());
-  } else {
-    const auto diag = Sym->project(diag_in, P.project);
-    store[step.ndx()] = make_thermo_subs(diag, step.last());
-  }
-}
-
-inline double to_double(double x) { return x; }
-inline double to_double(std::complex<double> z) { return z.real(); }
 
 // Perform processing after a successful NRG step.
 template<scalar S>
@@ -219,7 +193,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
           const auto e = eig.values.raw(i);
           emin = std::min(emin, e);
           const auto m = mnew[Twoinvar(I, I)](i,i);
-          const auto mOmega = to_double(m)*Omega;
+          const auto mOmega = std::real(m) * Omega;
           const auto e0 = e-mOmega;
           const auto x = e0 + abs(mOmega); // second term: penalize high-m states
           nrglog('2', "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x);
@@ -243,7 +217,10 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
       split_in_blocks(diag, substruct, true); // true = discard
     }
     stats.update(step); // updates total_energy; stats.Egs must be set correctly
-    calc_abs_energies(step, diag, stats);  // only in the first run, in the second one the data is loaded from file!
+    for (auto &eig : diag.eigs()) {
+      eig.values.set_scale(step.scale());
+      eig.values.set_T_shift(stats.total_energy);
+    }
     if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
       diag.save(step.ndx(), P);
     perform_basic_measurements(step, diag, Sym, stats, output, P); // Measurements are performed before the truncation!
@@ -259,7 +236,13 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   }
   nrglog('@', "truncate_perform()");
   diag.truncate_perform();                               // Actual truncation occurs at this point
-  store_states(step, store, store_all, diag, substruct, Sym, P);
+  store_all[step.ndx()] = BackiterSubs(diag, substruct);
+  if (P.project == ""s) {
+    store[step.ndx()] = ThermoSubs<S>(diag, step.last());
+  } else {
+    const auto projected = Sym->project(diag, P.project);
+    store[step.ndx()] = ThermoSubs<S>(projected, step.last());
+  }
   if (!step.last()) {
     nrglog('@', "recalc_irreducible()");
     recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);

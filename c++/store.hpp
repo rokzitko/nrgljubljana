@@ -95,7 +95,6 @@ struct BackiterSub {
   SubspaceDimensions rmax;
   size_t nrkept = 0;
   size_t dim = 0;
-  bool is_last = false;
   [[nodiscard]] auto kept() const { return nrkept; }
   [[nodiscard]] auto total() const { return dim; }
 };
@@ -104,9 +103,9 @@ class BackiterSubs : public std::map<Invar, BackiterSub> {
  public:
    BackiterSubs() = default;
    template<scalar S>
-   BackiterSubs(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool last) {
+   BackiterSubs(const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
      for (const auto &[I, eig] : diag)
-       (*this)[I] = { substruct.at_or_null(I), eig.getnrkept(), eig.getdim(), last };
+       (*this)[I] = { substruct.at_or_null(I), eig.getnrkept(), eig.getdim() };
    }
 };
 
@@ -116,16 +115,6 @@ class BackiterStore : public std::vector<BackiterSubs> {
    BackiterStore(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
    auto Nall() const { return boost::irange(Nbegin, Nend); }
 };
-
-template<scalar S>
-auto make_thermo_subs(const DiagInfo<S> &diag, const bool last) {
-  return ThermoSubs<S>(diag, last);
-}
-
-template<scalar S>
-auto make_backiter_subs(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool last) {
-  return BackiterSubs(diag, substruct, last);
-}
 
 } // namespace
 

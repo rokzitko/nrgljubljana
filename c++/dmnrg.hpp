@@ -42,24 +42,24 @@ void check_trace_rho(const DensMatElements<S> &m, MF mult, const double ref_valu
 // F. B. Anders, A. Schiller, Phys. Rev. Lett. 95, 196801 (2005).
 // F. B. Anders, A. Schiller, Phys. Rev. B 74, 245113 (2006).
 // R. Peters, Th. Pruschke, F. B. Anders, Phys. Rev. B 74, 245114 (2006).
-template<scalar S, typename MF>
-auto init_rho_impl(const Step &step, const DiagInfo<S> &diag, MF mult) {
-  DensMatElements<S> rho;
-  for (const auto &[I, eig]: diag)
-    rho[I] = eig.diagonal_exp(step.scT()) / grand_canonical_Z(step.scT(), diag, mult);
-    // NOTE: diagonal_exp() and grand_canonical_Z() both use the round-off-error corrected eigenvalues.
-  check_trace_rho(rho, mult);
-  return rho;
-}
-
 template<scalar S>
 auto init_rho(const Step &step, const DiagInfo<S> &diag_in, const Symmetry<S> *Sym, const Params &P) {
+  const auto mult = Sym->multfnc();
   if (P.project == ""s) {
-    return init_rho_impl(step, diag_in, Sym->multfnc());
-  } else {
-    const auto diag = Sym->project(diag_in, P.project);
-    return init_rho_impl(step, diag, Sym->multfnc());
+    DensMatElements<S> rho;
+    const auto Z = grand_canonical_Z(step.scT(), diag_in, mult);
+    for (const auto &[I, eig] : diag_in)
+      rho[I] = eig.diagonal_exp(step.scT()) / Z;
+    check_trace_rho(rho, mult);
+    return rho;
   }
+  const auto diag = Sym->project(diag_in, P.project);
+  DensMatElements<S> rho;
+  const auto Z = grand_canonical_Z(step.scT(), diag, mult);
+  for (const auto &[I, eig] : diag)
+    rho[I] = eig.diagonal_exp(step.scT()) / Z;
+  check_trace_rho(rho, mult);
+  return rho;
 }
 
 // Calculation of the contribution from subspace I1 of rhoN (density matrix at iteration N) to rhoNEW (density matrix
