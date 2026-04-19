@@ -161,6 +161,9 @@ struct InvarStructure {
 
 inline void initInvar(std::initializer_list<InvarStructure> l) {
   Invar::invdim = l.size();
+  Invar::qntype.clear();
+  Invar::qntype.reserve(Invar::invdim);
+  Invar::names.clear();
   auto i = 0;
   for (const auto & [n, t]: l) {
     my_assert(t == additive || t == multiplicative || t == mod3);

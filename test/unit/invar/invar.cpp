@@ -17,6 +17,22 @@ TEST(Invar, initInvar) { // NOLINT
   EXPECT_EQ(Invar::names["SS"], 1);
 }
 
+TEST(Invar, initInvar_resets_global_metadata) { // NOLINT
+  Params P1;
+  auto Sym1 = set_symmetry<double>(P1, "QS", 1);
+  ASSERT_EQ(Invar::qntype.size(), 2U);
+  ASSERT_EQ(Invar::names.size(), 2U);
+  EXPECT_TRUE(Invar::names.count("Q"));
+  EXPECT_TRUE(Invar::names.count("SS"));
+
+  Params P2;
+  auto Sym2 = set_symmetry<double>(P2, "U1", 1);
+  ASSERT_EQ(Invar::qntype.size(), 1U);
+  ASSERT_EQ(Invar::names.size(), 1U);
+  EXPECT_TRUE(Invar::names.count("Q"));
+  EXPECT_FALSE(Invar::names.count("SS"));
+}
+
 TEST(Invar, InvarQS) { // NOLINT
   Params P;
   auto Sym = setup_Sym<double>(P);

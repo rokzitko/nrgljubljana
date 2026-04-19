@@ -94,6 +94,9 @@ auto get(const std::string &sym_string, const Params &P)
 // that Invar can be parsed correctly.
 template <scalar S>
 std::shared_ptr<Symmetry<S>> set_symmetry(Params &P, const std::string &sym_string, const size_t channels) {
+  Invar::invdim = 0;
+  Invar::qntype.clear();
+  Invar::names.clear();
   P.symtype = sym_string;
   P.set_channels_and_combs(channels);
   std::cout << "\nSYMMETRY TYPE: " << sym_string << std::endl;
