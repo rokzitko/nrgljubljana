@@ -106,23 +106,61 @@ private:
   ThermoStore<S> store;
   BackiterStore store_all;
   MemTime mt; // memory and timing statistics
-public:
-  auto run_nrg(const RUNTYPE runtype, const Operators<S> &operators_seed, const Coef<S> &coef, const DiagInfo<S> &diag_seed) {
+
+  void select_diag_engine() {
+    if (P.diag_mode == "OpenMP") // override
+      eng = std::make_shared<DiagOpenMP<S>>();
+    if (P.diag_mode == "serial")
+      eng = std::make_shared<DiagSerial<S>>();
+  }
+
+  void prepare_rho(const DiagInfo<S> &diag) {
+    Step step{P, RUNTYPE::NRG};
+    step.set_last();
+    auto rho = init_rho(step, diag, Sym.get(), P);
+    rho.save(step.lastndx(), P, fn_rho);
+    calc_densitymatrix(rho, store_all, Sym.get(), mt, P);
+  }
+
+  void prepare_rhoFDM() {
+    Step step{P, RUNTYPE::NRG};
+    step.set_last();
+    calc_ZnD(store, stats, Sym.get(), P);
+    if (P.logletter('w'))
+      report_ZnD(stats, P);
+    fdm_thermodynamics(store, stats, Sym.get(), P.T);
+    auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
+    rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
+    calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
+  }
+
+  void run_dm_phase(const Operators<S> &operators_seed, const Coef<S> &coef_seed, const DiagInfo<S> &diag_seed) {
+    run_phase(RUNTYPE::DMNRG, operators_seed, coef_seed, diag_seed);
+  }
+
+  auto run_phase(const RUNTYPE runtype, const Operators<S> &operators_seed, const Coef<S> &coef, const DiagInfo<S> &diag_seed) {
     auto operators = operators_seed;
     auto diag = diag_seed;
+
+    // Per-phase setup.
     auto oprecalc = Oprecalc<S>(runtype, operators, Sym, mt, P);
     auto output = Output<S>(runtype, operators, stats, P);
     if (P.h5raw && P.h5all) {
-       diag.h5save(*output.h5raw, std::to_string(P.Ninit) + "/eigen/");
-       operators.h5save(*output.h5raw, std::to_string(P.Ninit));
-     }
-     Step step{P, runtype};
-     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
-     if (step.nrg() && P.calc0)
-       docalc0(step, operators, diag, stats, output, oprecalc, Sym.get(), mt, P);
-     diag = nrg_loop(step, operators, coef, stats, std::move(diag), output, store, store_all, oprecalc, Sym.get(), eng.get(), mt, P);
-     color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
-     stats.GS_energy = stats.total_energy;
+      diag.h5save(*output.h5raw, std::to_string(P.Ninit) + "/eigen/");
+      operators.h5save(*output.h5raw, std::to_string(P.Ninit));
+    }
+
+    // Pre-iteration TD calculation.
+    Step step{P, runtype};
+    if (step.nrg() && P.calc0)
+      docalc0(step, operators, diag, stats, output, oprecalc, Sym.get(), mt, P);
+
+    // Main iteration loop.
+    diag = nrg_loop(step, operators, coef, stats, std::move(diag), output, store, store_all, oprecalc, Sym.get(), eng.get(), mt, P);
+
+    // Per-phase finalization.
+    color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
+    stats.GS_energy = stats.total_energy;
     if (step.nrg()) {
       store.shift_abs_energies(stats.GS_energy);
       if (P.dumpabsenergies) store.dump_all_absolute_energies();
@@ -138,6 +176,8 @@ public:
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
+
+public:
   NRG_calculation(std::unique_ptr<Workdir> workdir, std::shared_ptr<DiagEngine<S>> _eng, const bool embedded) :
     P("param", "param", std::move(workdir), embedded), eng(_eng), input(P, "data"), Sym(input.Sym),
     stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen), store_all(P.Ninit, P.Nlen)
@@ -146,29 +186,13 @@ public:
     auto diag_seed = std::move(input.diag);
     auto coef_seed = std::move(input.coef);
 
-    if (P.diag_mode == "OpenMP") // override
-      eng = std::make_shared<DiagOpenMP<S>>();
-    if (P.diag_mode == "serial")
-      eng = std::make_shared<DiagSerial<S>>();
-    auto diag = run_nrg(RUNTYPE::NRG, operators_seed, coef_seed, diag_seed);
+    select_diag_engine();
+
+    auto diag = run_phase(RUNTYPE::NRG, operators_seed, coef_seed, diag_seed);
     if (P.dm) {
-      Step step{P, RUNTYPE::NRG};
-      step.set_last();
-      if (P.need_rho()) {
-        auto rho = init_rho(step, diag, Sym.get(), P);
-        rho.save(step.lastndx(), P, fn_rho);
-        calc_densitymatrix(rho, store_all, Sym.get(), mt, P);
-      }
-      if (P.need_rhoFDM()) {
-        calc_ZnD(store, stats, Sym.get(), P);
-        if (P.logletter('w'))
-          report_ZnD(stats, P);
-        fdm_thermodynamics(store, stats, Sym.get(), P.T);
-        auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
-        rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-        calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
-      }
-      run_nrg(RUNTYPE::DMNRG, operators_seed, coef_seed, diag_seed);
+      if (P.need_rho()) prepare_rho(diag);
+      if (P.need_rhoFDM()) prepare_rhoFDM();
+      run_dm_phase(operators_seed, coef_seed, diag_seed);
     }
   }
   NRG_calculation(const NRG_calculation &) = delete;
