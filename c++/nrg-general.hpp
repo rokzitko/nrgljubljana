@@ -103,23 +103,26 @@ private:
   InputData<S> input;
   std::shared_ptr<Symmetry<S>> Sym;
   Stats<S> stats;
-  Store<S> store, store_all;
+  ThermoStore<S> store;
+  BackiterStore store_all;
   MemTime mt; // memory and timing statistics
 public:
-  auto run_nrg(const RUNTYPE runtype, Operators<S> operators, const Coef<S> &coef, DiagInfo<S> diag0) {
+  auto run_nrg(const RUNTYPE runtype, const Operators<S> &operators_seed, const Coef<S> &coef, const DiagInfo<S> &diag_seed) {
+    auto operators = operators_seed;
+    auto diag = diag_seed;
     auto oprecalc = Oprecalc<S>(runtype, operators, Sym, mt, P);
     auto output = Output<S>(runtype, operators, stats, P);
     if (P.h5raw && P.h5all) {
-       diag0.h5save(*output.h5raw, std::to_string(P.Ninit) + "/eigen/");
+       diag.h5save(*output.h5raw, std::to_string(P.Ninit) + "/eigen/");
        operators.h5save(*output.h5raw, std::to_string(P.Ninit));
-    }
-    Step step{P, runtype};
-    // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
-    if (step.nrg() && P.calc0)
-      docalc0(step, operators, diag0, stats, output, oprecalc, Sym.get(), mt, P);
-    auto diag = nrg_loop(step, operators, coef, stats, diag0, output, store, store_all, oprecalc, Sym.get(), eng.get(), mt, P);
-    color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
-    stats.GS_energy = stats.total_energy;
+     }
+     Step step{P, runtype};
+     // If calc0=true, a calculation of TD quantities is performed before starting the NRG iteration.
+     if (step.nrg() && P.calc0)
+       docalc0(step, operators, diag, stats, output, oprecalc, Sym.get(), mt, P);
+     diag = nrg_loop(step, operators, coef, stats, std::move(diag), output, store, store_all, oprecalc, Sym.get(), eng.get(), mt, P);
+     color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), FMT_STRING("\nTotal energy: {:.18}\n"), stats.total_energy);
+     stats.GS_energy = stats.total_energy;
     if (step.nrg()) {
       store.shift_abs_energies(stats.GS_energy);
       if (P.dumpabsenergies) store.dump_all_absolute_energies();

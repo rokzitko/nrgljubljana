@@ -179,15 +179,14 @@ void operator_sumrules(const Operators<S> &a, const Symmetry<S> *Sym) {
 
 // Store information about subspaces and states for the DM algorithms
 template<scalar S>
-void store_states(const Step &step, Store<S> &store, Store<S> &store_all, const DiagInfo<S> &diag_in, const SubspaceStructure &substruct,
+void store_states(const Step &step, ThermoStore<S> &store, BackiterStore &store_all, const DiagInfo<S> &diag_in, const SubspaceStructure &substruct,
                   const Symmetry<S> *Sym, const Params &P) {
-  store_all[step.ndx()] = Subs(diag_in, substruct, step.last());
+  store_all[step.ndx()] = make_backiter_subs(diag_in, substruct, step.last());
   if (P.project == ""s) {
-    store[step.ndx()] = Subs(diag_in, substruct, step.last());
+    store[step.ndx()] = make_thermo_subs(diag_in, step.last());
   } else {
     const auto diag = Sym->project(diag_in, P.project);
-    // We need 'substruct' to obtain information about the structure (rmax values) of the ancestor spaces.
-    store[step.ndx()] = Subs(diag, substruct, step.last());
+    store[step.ndx()] = make_thermo_subs(diag, step.last());
   }
 }
 
@@ -197,7 +196,7 @@ inline double to_double(std::complex<double> z) { return z.real(); }
 // Perform processing after a successful NRG step.
 template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
-                const SubspaceStructure &substruct, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym,
+                const SubspaceStructure &substruct, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym,
                 MemTime &mt, const Params &P) {
   nrglog('@', "after_diag()");
   if (step.nrg()) {
@@ -278,7 +277,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
 // Perform one iteration step
 template<scalar S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
+             Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   TaskList tasklist{substruct, !P.silent}; // verbose = !P.silent
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5struct)
@@ -299,15 +298,14 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
   std::cout << std::endl << "Before NRG iteration";
   std::cout << " (N=" << step.N() << ")" << std::endl;
   perform_basic_measurements(step, diag0, Sym, stats, output, P);
-  Store<S> empty_st(0, 0);
+  BackiterStore empty_st(0, 0);
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag0, operators, empty_st, mt, Sym, P);
   if (P.checksumrules) operator_sumrules(operators, Sym);
 }
 
 template<scalar S>
-auto nrg_loop(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diag0,
-              Output<S> &output, Store<S> &store, Store<S> &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
-  auto diag = diag0;
+auto nrg_loop(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, DiagInfo<S> diag,
+              Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, operators, coef, stats, diag, output, store, store_all, oprecalc, Sym, eng, mt, P);
   step.set(step.lastndx());

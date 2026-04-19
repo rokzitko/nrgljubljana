@@ -72,7 +72,7 @@ void cdmI(const size_t i,        // Subspace index
           Matrix &rhoNEW,        // rho^{N-1}
           const size_t N,
           const t_coef factor, // multiplicative factor that accounts for multiplicity
-          const Store<S> &store_all,
+          const BackiterStore &store_all,
           const Params &P)
 {
   my_assert(i < P.combs);
@@ -97,7 +97,7 @@ void cdmI(const size_t i,        // Subspace index
 // at the current iteration (N, rho)
 template<scalar S>
 auto calc_densitymatrix_iterN(const DiagInfo<S> &diag, const DensMatElements<S> &rho,
-                              const size_t N, const Store<S> &store_all, const Symmetry<S> *Sym, const Params &P) {
+                              const size_t N, const BackiterStore &store_all, const Symmetry<S> *Sym, const Params &P) {
   nrglog('D', "calc_densitymatrix_iterN N=" << N);
   DensMatElements<S> rhoPrev;
   for (const auto &[I, dimsub] : store_all[N - 1]) { // loop over all subspaces at *previous* iteration
@@ -130,7 +130,7 @@ inline bool already_computed(const std::string &prefix, const Params &P) {
 // calc_densitymatrix() is called prior to starting the NRG procedure for the second time. Here we calculate the
 // shell-N density matrices for all iteration steps.
 template<scalar S>
-void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store_all, const Symmetry<S> *Sym,
+void calc_densitymatrix(DensMatElements<S> &rho, const BackiterStore &store_all, const Symmetry<S> *Sym,
                         MemTime &mt, const Params &P, const std::string filename = fn_rho) {
   if (P.resume && already_computed(filename, P)) return;
   check_trace_rho(rho, Sym->multfnc()); // Must be 1.
@@ -156,7 +156,7 @@ void calc_densitymatrix(DensMatElements<S> &rho, const Store<S> &store_all, cons
 // T. A. Costi, V. Zlatic, Phys. Rev. B 81, 235127 (2010)
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
 template<scalar S, typename MF>
-DensMatElements<S> init_rho_FDM(const size_t N, const Store<S> &store, const Stats<S> &stats,
+DensMatElements<S> init_rho_FDM(const size_t N, const ThermoStore<S> &store, const Stats<S> &stats,
                                 MF mult, const double T) {
   DensMatElements<S> rhoFDM;
   for (const auto &[I, ds] : store[N]) {
@@ -178,7 +178,7 @@ template<scalar S>
 auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::last()
                                   const DiagInfo<S> &diag,
                                   const DensMatElements<S> &rhoFDM, // input
-                                  const size_t N, const Store<S> &store, const Store<S> &store_all, const Stats<S> &stats,
+                                  const size_t N, const ThermoStore<S> &store, const BackiterStore &store_all, const Stats<S> &stats,
                                   const Symmetry<S> *Sym, const Params &P) {
   nrglog('D', "calc_fulldensitymatrix_iterN N=" << N);
   DensMatElements<S> rhoDD;
@@ -210,7 +210,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
 }
 
 template<scalar S>
-void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const Store<S> &store, const Store<S> &store_all, const Stats<S> &stats,
+void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const ThermoStore<S> &store, const BackiterStore &store_all, const Stats<S> &stats,
                             const Symmetry<S> *Sym, MemTime &mt, const Params &P, const std::string &filename = fn_rhoFDM) {
   if (P.resume && already_computed(filename, P)) return;
   const auto section_timing = mt.time_it("FDM");

@@ -32,14 +32,14 @@ void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a
 
 template<scalar S, typename MF, typename t_matel = matel_traits<S>>
 auto calc_trace_fdm_kept(const size_t ndx, const MatrixElements<S> &n, const DensMatElements<S> &rhoFDM,
-                                   const Store<S> &store_all, MF mult) {
+                                   const BackiterStore &store_all, MF mult) {
   return ranges::accumulate(rhoFDM, t_matel{}, {}, [&n, &s = store_all[ndx], mult](const auto &x) { const auto &[I, rhoI] = x;
     return mult(I) * trace_contract(rhoI, n.at({I,I}), s.at(I).kept()); }); // over kept states ONLY
 }
 
 template<scalar S, typename MF>
 void measure_singlet_fdm(const size_t ndx, Stats<S> &stats, const Operators<S> &a, MF mult,
-                         const DensMatElements<S> &rhoFDM, const Store<S> &store_all) {
+                         const DensMatElements<S> &rhoFDM, const BackiterStore &store_all) {
   for (const auto &[name, m] : a.ops)  stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store_all, mult);
   for (const auto &[name, m] : a.opsg) stats.fdmexpv[name] = calc_trace_fdm_kept(ndx, m, rhoFDM, store_all, mult);
 }
@@ -58,7 +58,7 @@ auto grand_canonical_Z(const double factor, const DiagInfo<S> &diag, MF mult) {
 // Calculate partial statistical sums, ZnD*, and the grand canonical Z (stats.ZZG), computed with respect to absolute
 // energies. calc_ZnD() must be called before the second NRG run.
 template<scalar S>
-void calc_ZnD(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const Params &P) {
+void calc_ZnD(const ThermoStore<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const Params &P) {
   const auto T = P.T;
   mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
   for (const auto N : store.Nall()) {
@@ -116,7 +116,7 @@ void report_ZnD(Stats<S> &stats, const Params &P) {
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
 template<scalar S>
-void fdm_thermodynamics(const Store<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T)
+void fdm_thermodynamics(const ThermoStore<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T)
 {
   stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
   stats.F_fdm = -log(stats.ZZG)*T+stats.GS_energy; // F = -k_B*T*log(Z)
@@ -204,7 +204,7 @@ void calculate_spectral_and_expv_impl(const Step &step,
                                       Oprecalc<S> &oprecalc,
                                       const DiagInfo<S> &diag, // projected!
                                       const Operators<S> &operators,
-                                      const Store<S> &store_all, MemTime &mt,
+                                      const BackiterStore &store_all, MemTime &mt,
                                       const Symmetry<S> *Sym, const Params &P) {
   // Load the density matrices
   DensMatElements<S> rho, rhoFDM;
@@ -238,7 +238,7 @@ void calculate_spectral_and_expv_impl(const Step &step,
 template<scalar S>
 void calculate_spectral_and_expv(const Step &step, Stats<S> &stats, Output<S> &output, Oprecalc<S> &oprecalc,
                                  const DiagInfo<S> &diag_in, const Operators<S> &operators,
-                                 const Store<S> &store_all,
+                                 const BackiterStore &store_all,
                                  MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
   if (P.project == ""s) {
      calculate_spectral_and_expv_impl(step, stats, output, oprecalc, diag_in, operators, store_all, mt, Sym, P);

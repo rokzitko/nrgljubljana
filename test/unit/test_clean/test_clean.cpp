@@ -21,7 +21,8 @@ TEST(Clean, H) { // NOLINT
   Stats<double> stats(P, Sym->get_td_fields(), 0.0);
   Step step{P, RUNTYPE::NRG};
   EXPECT_EQ(step.ndx(), 0);
-  Store<double> store(P.Ninit,P.Nlen);
+  ThermoStore<double> store(P.Ninit, P.Nlen);
+  BackiterStore store_all(P.Ninit, P.Nlen);
   auto diagprev = setup_diag_clean(P, Sym);
   auto operators = setup_operators_clean<double>(diagprev);
   operators.opch = setup_opch_clean(P, Sym, diagprev);
@@ -50,10 +51,11 @@ TEST(Clean, H) { // NOLINT
   MemTime mt;
   auto oprecalc = Oprecalc<double>(step.get_runtype(), operators, SymSP, mt, P);
   oprecalc.recalculate_operators(operators, step, diag, substruct, P);
-  calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store, mt, Sym, P);
+  calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
   diag.truncate_perform();
   EXPECT_EQ(step.last(), true);
-  store[step.ndx()] = Subs(diag, substruct, step.last());
+  store[step.ndx()] = make_thermo_subs(diag, step.last());
+  store_all[step.ndx()] = make_backiter_subs(diag, substruct, step.last());
   recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
   operators.opch.dump();
 
@@ -64,13 +66,13 @@ TEST(Clean, H) { // NOLINT
 
   auto rho = init_rho(step, diag, Sym, P);
   rho.save(step.lastndx(), P, fn_rho);
-  calc_densitymatrix(rho, store, Sym, mt, P);
+  calc_densitymatrix(rho, store_all, Sym, mt, P);
 
   calc_ZnD(store, stats, Sym, P);
   fdm_thermodynamics(store, stats, Sym, P.T);
   auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
   rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-  calc_fulldensitymatrix(step, rhoFDM, store, store, stats, Sym, mt, P);
+  calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym, mt, P);
 
   // single-step calculation: no need to recalculate diag & operators, but we need to run
   // subtract_GS_energy()
@@ -79,7 +81,7 @@ TEST(Clean, H) { // NOLINT
   Step step_dmnrg{P, RUNTYPE::DMNRG};
   auto oprecalc_dmnrg = Oprecalc<double>(step_dmnrg.get_runtype(), operators, SymSP, mt, P);
   auto output_dmnrg = Output(step_dmnrg.get_runtype(), operators, stats, P);
-  calculate_spectral_and_expv(step_dmnrg, stats, output_dmnrg, oprecalc_dmnrg, diag, operators, store, mt, Sym, P);
+  calculate_spectral_and_expv(step_dmnrg, stats, output_dmnrg, oprecalc_dmnrg, diag, operators, store_all, mt, Sym, P);
 }
 
 int main(int argc, char **argv) {

@@ -17,18 +17,14 @@
 
 namespace NRG {
 
-// Container for all information which needs to be gathered in each invariant subspace.
-// Required for the density-matrix construction.
 template<scalar S>
-struct Sub {
-  Eigen<S> eig;
-  SubspaceDimensions rmax;
-  bool is_last = false;
-  [[nodiscard]] auto kept() const { return eig.getnrkept(); }
-  [[nodiscard]] auto total() const { return eig.getdim(); }
-  [[nodiscard]] auto min() const { return is_last ? 0 : kept(); } // min(), max() return the range of D states to be summed over in FDM
-  [[nodiscard]] auto max() const { return total(); }
-  [[nodiscard]] auto all() const { return boost::irange(min(), max()); }
+struct ThermoSub {
+  StoredEigen<S> eig;
+  [[nodiscard]] auto kept() const { return eig.kept(); }
+  [[nodiscard]] auto total() const { return eig.total(); }
+  [[nodiscard]] auto min() const { return eig.min(); }
+  [[nodiscard]] auto max() const { return eig.max(); }
+  [[nodiscard]] auto all() const { return eig.all(); }
   void h5save(H5Easy::File &fd, const std::string &name) const {
     h5_dump_scalar(fd, name + "/kept", kept());
     h5_dump_scalar(fd, name + "/total", total());
@@ -38,32 +34,32 @@ struct Sub {
 };
 
 template<scalar S>
-class Subs : public std::map<Invar, Sub<S>> {
+class ThermoSubs : public std::map<Invar, ThermoSub<S>> {
  public:
-   Subs() = default;
-   Subs(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool last) {
-     for (const auto &[I, eig]: diag)
-       (*this)[I] = { eig, substruct.at_or_null(I), last };
-   }
-   void h5save(H5Easy::File &fd, const std::string &name) const {
-     const std::vector<int> dummy = {1};
-     for (const auto &I : *this | boost::adaptors::map_keys)
-       H5Easy::dump(fd, name+"/list/" + I.name(), dummy);
+    ThermoSubs() = default;
+    explicit ThermoSubs(const DiagInfo<S> &diag, const bool last) {
+      for (const auto &[I, eig]: diag)
+        (*this)[I] = { StoredEigen<S>(eig, last) };
+    }
+    void h5save(H5Easy::File &fd, const std::string &name) const {
+      const std::vector<int> dummy = {1};
+      for (const auto &I : *this | boost::adaptors::map_keys)
+        H5Easy::dump(fd, name+"/list/" + I.name(), dummy);
      for (const auto &[I, sub]: *this)
        sub.h5save(fd, name + "/data/" + I.name());
-   }
+    }
 };
 
 template<scalar S>
-class Store : public std::vector<Subs<S>> {
+class ThermoStore : public std::vector<ThermoSubs<S>> {
  public:
-   const size_t Nbegin, Nend; // range of valid indexes
-   Store(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
-   auto Nall() const { return boost::irange(Nbegin, Nend); }
-   void dump_abs_G(std::ostream &F) const {
-     for (const auto N : Nall()) {
-       F << std::endl << "===== Iteration number: " << N+1 << std::endl; // mind the shift by 1
-       for (const auto &[I, ds]: this->at(N))
+    const size_t Nbegin, Nend; // range of valid indexes
+    ThermoStore(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
+    auto Nall() const { return boost::irange(Nbegin, Nend); }
+    void dump_abs_G(std::ostream &F) const {
+      for (const auto N : Nall()) {
+        F << std::endl << "===== Iteration number: " << N+1 << std::endl; // mind the shift by 1
+        for (const auto &[I, ds]: this->at(N))
          F << "Subspace: " << I << std::endl << (ds.eig.values.all_abs_G() | ranges::to_vector) << std::endl;
      }
    }
@@ -79,21 +75,57 @@ class Store : public std::vector<Subs<S>> {
        O << "len_dm=" << this->at(N).size() << std::endl;
        for (const auto &[I, sub] : this->at(N))
          O << "I=" << I << " kept=" << sub.kept() << " total=" << sub.total() << std::endl;
-       O << std::endl;
-     }
-   }
-   void shift_abs_energies(const double GS_energy) {
-     for (const auto N : Nall())
-       for (auto &ds : this->at(N) | boost::adaptors::map_values)
-         ds.eig.subtract_GS_energy(GS_energy);
+        O << std::endl;
+      }
+    }
+    void shift_abs_energies(const double GS_energy) {
+      for (const auto N : Nall())
+        for (auto &ds : this->at(N) | boost::adaptors::map_values)
+          ds.eig.subtract_GS_energy(GS_energy);
    }
    void h5save(H5Easy::File &fd, const std::string &name) const {
      const std::vector range = {Nbegin, Nend};
      H5Easy::dump(fd, name + "/range", range);
      for (const auto N : Nall())
-       this->at(N).h5save(fd, name + "/" + std::to_string(N+1)); // note the shift by 1
+        this->at(N).h5save(fd, name + "/" + std::to_string(N+1)); // note the shift by 1
+    }
+};
+
+struct BackiterSub {
+  SubspaceDimensions rmax;
+  size_t nrkept = 0;
+  size_t dim = 0;
+  bool is_last = false;
+  [[nodiscard]] auto kept() const { return nrkept; }
+  [[nodiscard]] auto total() const { return dim; }
+};
+
+class BackiterSubs : public std::map<Invar, BackiterSub> {
+ public:
+   BackiterSubs() = default;
+   template<scalar S>
+   BackiterSubs(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool last) {
+     for (const auto &[I, eig] : diag)
+       (*this)[I] = { substruct.at_or_null(I), eig.getnrkept(), eig.getdim(), last };
    }
 };
+
+class BackiterStore : public std::vector<BackiterSubs> {
+ public:
+   const size_t Nbegin, Nend;
+   BackiterStore(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
+   auto Nall() const { return boost::irange(Nbegin, Nend); }
+};
+
+template<scalar S>
+auto make_thermo_subs(const DiagInfo<S> &diag, const bool last) {
+  return ThermoSubs<S>(diag, last);
+}
+
+template<scalar S>
+auto make_backiter_subs(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const bool last) {
+  return BackiterSubs(diag, substruct, last);
+}
 
 } // namespace
 

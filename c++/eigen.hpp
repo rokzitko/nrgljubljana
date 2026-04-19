@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 #include <boost/range/adaptor/map.hpp>
+#include <boost/range/irange.hpp>
 
 #include <range/v3/all.hpp>
 
@@ -431,6 +432,27 @@ public:
     if (save_vectors) vectors.h5save(fd, name);
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
   }
+};
+
+template<scalar S, typename t_eigen = eigen_traits<S>>
+class StoredEigen {
+ public:
+  Values<S> values;
+ private:
+  size_t nrkept_ = 0;
+  size_t dim_ = 0;
+  bool last_ = false;
+ public:
+  StoredEigen() = default;
+  explicit StoredEigen(const Eigen<S> &eig, const bool last)
+    : values(eig.values), nrkept_(eig.getnrkept()), dim_(eig.getdim()), last_(last) {}
+
+  [[nodiscard]] auto kept() const noexcept { return nrkept_; }
+  [[nodiscard]] auto total() const noexcept { return dim_; }
+  [[nodiscard]] auto min() const noexcept { return last_ ? 0UL : kept(); }
+  [[nodiscard]] auto max() const noexcept { return total(); }
+  [[nodiscard]] auto all() const noexcept { return boost::irange(min(), max()); }
+  void subtract_GS_energy(const t_eigen GS_energy) { values.set_abs_GS_energy(GS_energy); }
 };
 
 // Full information after diagonalizations (eigenspectra in all subspaces)
