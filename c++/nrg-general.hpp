@@ -160,15 +160,19 @@ public:
     P("param", "param", std::move(workdir), embedded), eng(_eng), input(P, "data"), Sym(input.Sym),
     stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen), store_all(P.Ninit, P.Nlen)
   {
+    auto operators_seed = std::move(input.operators);
+    auto diag_seed = std::move(input.diag);
+    auto coef_seed = std::move(input.coef);
+
     if (P.diag_mode == "OpenMP") // override
       eng = std::make_shared<DiagOpenMP<S>>();
     if (P.diag_mode == "serial")
       eng = std::make_shared<DiagSerial<S>>();
-    auto diag = run_nrg(RUNTYPE::NRG, input.operators, input.coef, input.diag);
+    auto diag = run_nrg(RUNTYPE::NRG, operators_seed, coef_seed, diag_seed);
     if (P.dm) {
       if (P.need_rho()) calc_rho(diag); // XXX: diag required here?
       if (P.need_rhoFDM()) calc_rhoFDM();
-      run_nrg(RUNTYPE::DMNRG, input.operators, input.coef, input.diag);
+      run_nrg(RUNTYPE::DMNRG, operators_seed, coef_seed, diag_seed);
     }
   }
   NRG_calculation(const NRG_calculation &) = delete;
