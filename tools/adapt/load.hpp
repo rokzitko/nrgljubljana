@@ -13,127 +13,63 @@
 #include <cctype>
 #include <cstdlib>
 
+#include "../common/tabulated.hpp"
+
 namespace NRG::Adapt {
 
 enum class Sign { POS, NEG }; // positive vs. negative energies
 
 // Split a string 's' into substrings. Leading spaces are ignored.
 inline auto split_string(const std::string &s, unsigned int atleast = 0) {
-  const int len = s.length();
-  int index = 0;
-  while (index < len && std::isspace(static_cast<unsigned char>(s[index]))) { index++; }
-  std::vector<std::string> substrings;
-  while (index < len) {
-    std::string substr = "";
-    // Copy string until space or end of string
-    while (index < len && !std::isspace(static_cast<unsigned char>(s[index]))) {
-      substr += s[index];
-      index++;
-    }
-    substrings.push_back(substr);
-    // Locate new substring
-    while (index < len && std::isspace(static_cast<unsigned char>(s[index]))) { index++; }
-  }
-  if (substrings.size() < atleast) 
-    throw std::runtime_error("At least " + std::to_string(atleast) + " columns expected.");
-  return substrings;
+  return NRG::Tools::split_fields(s, atleast);
 }
 
 inline auto load_g(const std::string &filename) {
   std::ifstream F;
   safe_open(F, filename);
-  Vec vecg;
-  while (F) {
-    const auto line = getnextline(F);
-    if (!F) break;
-    const auto columns = split_string(line, 2);
-    vecg.emplace_back(std::make_pair(atof(columns[0]), atof(columns[1])));
-  }
-  if (vecg.size() == 0) 
-    throw std::runtime_error("No data found.");
-  return vecg;
+  return NRG::Tools::load_pairs<Vec>(F, [](std::ifstream &input) { return getnextline(input); });
 }
 
 inline void rescalevecxy(Vec &vec, const double factorx, const double factory) {
-  for (int i = 0; i < vec.size(); i++) {
-    vec[i].first  *= factorx;
-    vec[i].second *= factory;
-  }
-  std::cout << "Rescaled to the interval [ " << vec.front().first << " : " << vec.back().first << " ]" << std::endl;
+  NRG::Tools::rescale_xy(vec, factorx, factory);
 }
 
 // Show minimal and maximal y in a table.
 inline void minmaxvec(const Vec &vec, const std::string name) {
-  auto miny   = DBL_MAX;
-  auto maxy   = 0;
-  for (int i = 0; i < vec.size(); i++) {
-    const auto y = vec[i].second;
-    if (y > maxy) { maxy = y; }
-    if (y < miny) { miny = y; }
-  }
-  std::cout << "# min[" << name << "]=" << miny << " max[" << name << "]=" << maxy << std::endl;
+  NRG::Tools::print_minmax(vec, name);
 }
 
 // Load positive (sign=POS) or negative (sogn=NEG) part of the hybridisation function into a vector.
 inline Vec load_rho(const std::string &filename, const Sign sign) {
   std::ifstream F;
   safe_open(F, filename);
-  Vec vecrho;
-  while (F) {
-    const auto line = getnextline(F);
-    if (!F) break;
-    const auto columns = split_string(line, 2);
-    const auto  x = atof(columns[0]);
-    const auto  y = atof(columns[1]);
-    if ((sign == Sign::POS && x > 0) || (sign == Sign::NEG && x < 0)) {
-      // y must be positive (or zero)
-      if (y < 0.0) 
-        throw std::runtime_error("Negative y found.");
-      // Disregard sign of x !
-      vecrho.emplace_back(std::make_pair(abs(x), y));
-    }
-  }
-  if (vecrho.size() == 0) 
-    throw std::runtime_error("No data found.");
-  std::sort(vecrho.begin(), vecrho.end());
-  std::cout << "# " << filename << " ";
-  std::cout << "- " << (sign == Sign::POS ? "POS" : "NEG") << " ";
-  std::cout << "- interval [ " << vecrho.front().first << " : ";
-  std::cout << vecrho.back().first << " ]" << std::endl;
+  auto vecrho = NRG::Tools::load_abs_pairs<Vec>(
+    F,
+    sign,
+    [](const Sign s, const double x) { return (s == Sign::POS && x > 0) || (s == Sign::NEG && x < 0); },
+    [](std::ifstream &input) { return getnextline(input); });
+  NRG::Tools::print_interval(filename, sign == Sign::POS ? "POS" : "NEG", vecrho);
   return vecrho;
-}
-
-inline std::string tostring(const Pair &p) {
-  std::ostringstream str;
-  str << p.first << " " << p.second;
-  return str.str();
 }
 
 inline void save(const std::string &fn, const Vec &v) {
   std::ofstream F(fn.c_str());
   if (!F) 
     throw std::runtime_error("Failed to open " + fn + " for writing.");
-  std::transform(v.begin(), v.end(), std::ostream_iterator<std::string>(F, "\n"), tostring);
+  NRG::Tools::save_pairs(F, v);
 }
 
 inline void save(const std::string &fn, const std::vector<double> &v) {
   std::ofstream F(fn.c_str());
   if (!F) 
     throw std::runtime_error("Failed to open " + fn + " for writing.");
-  F << std::setprecision(18);
-  std::copy(v.begin(), v.end(), std::ostream_iterator<double>(F, "\n"));
+  NRG::Tools::save_values(F, v);
 }
 
 inline void load(const std::string &fn, std::vector<double> &v) {
   std::ifstream F;
   safe_open(F, fn);
-  v.clear();
-  while (F) {
-    const auto line = getnextline(F);
-    if (!F) break;
-    const auto x = atof(line.c_str());
-    v.push_back(x);
-  }
+  NRG::Tools::load_values(F, v, [](std::ifstream &input) { return getnextline(input); });
 }
 
 } // namespace
