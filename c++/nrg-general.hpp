@@ -138,24 +138,6 @@ public:
     fmt::print("\n** Iteration completed.\n\n");
     return diag;
   }
-  void calc_rho(const DiagInfo<S> &diag) {
-    Step step{P, RUNTYPE::NRG};
-    step.set_last();
-    auto rho = init_rho(step, diag, Sym.get(), P);
-    rho.save(step.lastndx(), P, fn_rho);
-    calc_densitymatrix(rho, store_all, Sym.get(), mt, P);
-  }
-  void calc_rhoFDM() {
-    Step step{P, RUNTYPE::NRG};
-    step.set_last();
-    calc_ZnD(store, stats, Sym.get(), P);
-    if (P.logletter('w'))
-      report_ZnD(stats, P);
-    fdm_thermodynamics(store, stats, Sym.get(), P.T);
-    auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
-    rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
-    calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
-  }
   NRG_calculation(std::unique_ptr<Workdir> workdir, std::shared_ptr<DiagEngine<S>> _eng, const bool embedded) :
     P("param", "param", std::move(workdir), embedded), eng(_eng), input(P, "data"), Sym(input.Sym),
     stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen), store_all(P.Ninit, P.Nlen)
@@ -170,8 +152,22 @@ public:
       eng = std::make_shared<DiagSerial<S>>();
     auto diag = run_nrg(RUNTYPE::NRG, operators_seed, coef_seed, diag_seed);
     if (P.dm) {
-      if (P.need_rho()) calc_rho(diag); // XXX: diag required here?
-      if (P.need_rhoFDM()) calc_rhoFDM();
+      Step step{P, RUNTYPE::NRG};
+      step.set_last();
+      if (P.need_rho()) {
+        auto rho = init_rho(step, diag, Sym.get(), P);
+        rho.save(step.lastndx(), P, fn_rho);
+        calc_densitymatrix(rho, store_all, Sym.get(), mt, P);
+      }
+      if (P.need_rhoFDM()) {
+        calc_ZnD(store, stats, Sym.get(), P);
+        if (P.logletter('w'))
+          report_ZnD(stats, P);
+        fdm_thermodynamics(store, stats, Sym.get(), P.T);
+        auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
+        rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
+        calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
+      }
       run_nrg(RUNTYPE::DMNRG, operators_seed, coef_seed, diag_seed);
     }
   }

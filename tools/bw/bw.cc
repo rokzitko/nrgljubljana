@@ -530,7 +530,6 @@ class LinInt {
   double x0{}, x1{};         // last x was in [x0:x1]
   double f0{}, f1{};         // f(x0), f(x1)
   double deriv{};          // (f1-f0)/(x1-x0)
-  bool newintegral_flag{}; // set to true when we switch to a new interval
   double xmin{}, xmax{};     // lowest and highest x contained in vec
   double fxmin{}, fxmax{};   // f(xmin), f(xmax)
 
@@ -539,7 +538,6 @@ class LinInt {
   LinInt(Vec &in_vec) : vec(in_vec) {
     len              = vec.size();
     index            = -1;
-    newintegral_flag = false;
     xmin             = vec.front().first;
     fxmin            = vec.front().second;
     xmax             = vec.back().first;
@@ -605,7 +603,6 @@ double LinInt::operator()(double x) {
   if (x >= xmax) { return fxmax; }
 
   if (index == -1 || !(x0 <= x && x < x1)) {
-    newintegral_flag = true;
     findindex(x);
   }
 

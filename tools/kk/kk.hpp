@@ -61,9 +61,6 @@ using DVEC = std::vector<double>;
 // number of digits of precision in the generated output file
 constexpr auto OUTPUT_PRECISION = 16;
 
-// Output width for verbose mode
-constexpr auto WIDTH = 24;
-
 // Read data from stream F.
 inline auto read(std::istream &F) {
   XYFUNC v;
@@ -118,9 +115,6 @@ enum class MODE { LIBRARY, FILES, STD };
 
 class KK {
  private:
-   bool verbose     = false;
-   bool veryverbose = false;
-
    MODE mode = MODE::LIBRARY;
    
    int len;           // number of data points
@@ -183,11 +177,7 @@ class KK {
       return a + b;
     }
 
-   void handle_qag(const int status) {
-     if (status && veryverbose) std::cerr << "WARNING - qag error: " << status << " -- " << gsl_strerror(status) << std::endl;
-   }
-
-   class Wrap {
+    class Wrap {
     private:
       gsl_function F;
       std::function<double(double)> fnc;
@@ -245,30 +235,23 @@ class KK {
              const double EPSABS = 1e-12, // numeric integration epsilon (absolute)
              const double EPSREL = 1e-8)  // numeric integration epsilon (relative)
    {
-     auto F = Wrap([Z,this](double X) -> double { return f(X,Z); }); // wrap a C++ lambda for the C interface of GSL
-     double integral;
-     double integration_error;
-      int status = gsl_integration_qag(F.get(),             // integrand
-                                       0,                   // lower integration boundary
-                                       Xmax,                // upper integration boundary
-                                       EPSABS, EPSREL,      // convergence criteria
-                                       workspace_limit,     // size of workspace w
-                                       GSL_INTEG_GAUSS15,   // Gauss-Kronrod rule
-                                       w.get(),             // integration workspace
-                                       &integral,           // final approximation
-                                       &integration_error); // estimate of absolute error
-      handle_qag(status);
+      auto F = Wrap([Z,this](double X) -> double { return f(X,Z); }); // wrap a C++ lambda for the C interface of GSL
+      double integral;
+      double integration_error;
+      [[maybe_unused]] const int status = gsl_integration_qag(F.get(),             // integrand
+                                        0,                   // lower integration boundary
+                                        Xmax,                // upper integration boundary
+                                        EPSABS, EPSREL,      // convergence criteria
+                                        workspace_limit,     // size of workspace w
+                                        GSL_INTEG_GAUSS15,   // Gauss-Kronrod rule
+                                        w.get(),             // integration workspace
+                                        &integral,           // final approximation
+                                        &integration_error); // estimate of absolute error
       // Add an approximation of the (-inf,-Xmax] and [Xmax,+inf) intervals.
       const auto correction = std::abs(Z) != Xmax ? -gsl_spline_eval(spline.get(), Z, acc.get()) * 2. * gsl_atanh(Z / Xmax) : 0.0;
-     const auto sum = integral + correction;
-     if (mode != MODE::STD && verbose) {
-       std::cout << std::scientific;
-       std::cout << std::setw(WIDTH) << Z << " t=" << std::setw(WIDTH) << integral / M_PI << " c=" << std::setw(WIDTH) << correction / M_PI << " ratio=" << std::setw(WIDTH)
-         << correction / integral << std::endl;
-       std::cout.unsetf(std::ios_base::scientific);
-     }
-     return sum/M_PI;  // Divide by pi in the definition of the KK relation!
-   }
+      const auto sum = integral + correction;
+      return sum/M_PI;  // Divide by pi in the definition of the KK relation!
+    }
    
    // Perform the calculations for all points on a grid
    auto calc(const DVEC &grid) {

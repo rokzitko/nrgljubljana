@@ -122,15 +122,6 @@ class Annotated {
    }
 };
 
-template<scalar S>
-auto singlet_operators_for_expv_evaluation(const Operators<S> &operators)
-{
-  std::list<std::string> ops;
-  for (const auto &name : operators.ops  | boost::adaptors::map_keys) ops.push_back(name);
-  for (const auto &name : operators.opsg | boost::adaptors::map_keys) ops.push_back(name);
-  return ops;
-}
-
 // Handle all output
 template<scalar S>
 struct Output {
@@ -156,7 +147,9 @@ struct Output {
         if (P.dumpstates) Fstates = safe_open(filename_states);
         if (P.reportdiagonal) Freport = safe_open(filename_report);
       }
-      const auto ops = singlet_operators_for_expv_evaluation(operators);
+      std::list<std::string> ops;
+      for (const auto &name : operators.ops  | boost::adaptors::map_keys) ops.push_back(name);
+      for (const auto &name : operators.opsg | boost::adaptors::map_keys) ops.push_back(name);
       if (runtype == RUNTYPE::NRG)
         custom = std::make_unique<ExpvOutput<S>>(filename_custom, stats.expv, ops, P);
       else if (runtype == RUNTYPE::DMNRG && P.fdmexpv)

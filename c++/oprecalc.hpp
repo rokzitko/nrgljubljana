@@ -153,22 +153,16 @@ class Oprecalc {
        return b;
      }
 
-   // Construct the suffix of the filename for spectral density files: 'A_?-A_?'.
-   // If SPIN == 1 or SPIN == -1, '-u' or '-d' is appended to the string.
-   [[nodiscard]] auto sdname(const std::string &a, const std::string &b, const int spin) {
-     return a + "-" + b + (spin == 0 ? "" : (spin == 1 ? "-u" : "-d"));
-   }
-
-   void loopover(const CustomOp<S> &set1, const CustomOp<S> &set2,
-                 const string_token &stringtoken, FactorFnc ff, CheckFnc cf,
-                 const std::string &prefix,
-                 const std::string &type1, const std::string &type2, const gf_type gt, const int spin) {
-    for (const auto &[name1, op1] : set1) {
-      for (const auto &[name2, op2] : set2) {
-        if (const auto name = sdname(name1, name2, spin); stringtoken.find(name)) {
-          if (prepare_spec(prefix, ff, cf, op1, op2, spin, name, gt)) {
-            ops.insert({type1, name1});
-            ops.insert({type2, name2});
+    void loopover(const CustomOp<S> &set1, const CustomOp<S> &set2,
+                  const string_token &stringtoken, FactorFnc ff, CheckFnc cf,
+                  const std::string &prefix,
+                  const std::string &type1, const std::string &type2, const gf_type gt, const int spin) {
+     for (const auto &[name1, op1] : set1) {
+       for (const auto &[name2, op2] : set2) {
+         if (const auto name = name1 + "-" + name2 + (spin == 0 ? "" : (spin == 1 ? "-u" : "-d")); stringtoken.find(name)) {
+           if (prepare_spec(prefix, ff, cf, op1, op2, spin, name, gt)) {
+             ops.insert({type1, name1});
+             ops.insert({type2, name2});
           }
         }
       }
