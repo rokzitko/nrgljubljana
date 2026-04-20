@@ -46,10 +46,12 @@ endforeach()
 # Top Sphinx target
 # ---------------------------------
 # Sphinx has internal caching, always run it
-add_custom_target(docs_sphinx ALL)
-add_custom_command(
-  TARGET docs_sphinx
-  COMMAND PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH} sphinx-build -c . -j8 -b html ${CMAKE_CURRENT_SOURCE_DIR} html
+add_custom_target(docs_sphinx ALL
+  COMMAND
+    ${CMAKE_COMMAND} -E env
+    PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH}
+    sphinx-build -c . -j8 -b html ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 option(Sphinx_Only "When building the documentation, skip the Python Modules and the generation of C++ Api and example outputs" OFF)

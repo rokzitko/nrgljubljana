@@ -62,7 +62,7 @@ class Unitary {
        case 's': scale_factor = atof(optarg); break;
        case 'o': output_filename = std::string(optarg); break;
        case 'c': chop_tol = atof(optarg); break;
-       default: throw std::runtime_error("Unknown argument "s + c);
+       default: throw std::runtime_error("Unknown argument "s + std::string(1, static_cast<char>(c)));
        }
      }
    }
