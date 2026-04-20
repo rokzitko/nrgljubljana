@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-mkdir 1 2
+mkdir -p 1 2
 perl -e 'print pack("d*", 1.0, 2.0)' > 1/spec.bin
 perl -e 'print pack("d*", 1.0, 4.0)' > 2/spec.bin
 "$1/binavg" spec.bin 2 > stdout.txt
