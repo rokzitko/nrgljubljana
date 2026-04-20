@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+"$1/h5write" -t -s out.h5 /scalar 3.25
+h5dump -d /scalar out.h5 > dump.txt
+grep -q "3.25" dump.txt

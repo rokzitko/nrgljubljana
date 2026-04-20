@@ -133,3 +133,132 @@ jobs:
       with:
         path: ${{ env.CCACHE_DIR }}
         key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
+
+  sanitizers:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install sanitizer dependencies
+      run: >
+        sudo apt-get update &&
+        sudo apt-get install lsb-release wget software-properties-common &&
+        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
+        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
+        sudo apt-get install
+        ccache
+        clang-15
+        g++-12
+        hdf5-tools
+        libblas-dev
+        libclang-15-dev
+        libc++-15-dev
+        libc++abi-15-dev
+        libomp-15-dev
+        boost1.81
+        libgmp-dev
+        libgsl-dev
+        libhdf5-dev
+        liblapack-dev
+        libopenmpi-dev
+        openmpi-bin
+        openmpi-common
+        openmpi-doc
+
+    - name: Build with sanitizers
+      env:
+        CC: clang-15
+        CXX: clang++-15
+        LIBRARY_PATH: /usr/local/opt/llvm/lib
+      run: |
+        cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/install -DASAN=ON -DUBSAN=ON -DCMAKE_BUILD_TYPE=Debug
+        cmake --build build --parallel 2
+
+    - name: Test with sanitizers
+      env:
+        DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
+        OPENBLAS_NUM_THREADS: "1"
+      run: |
+        ctest --test-dir build -j2 --output-on-failure
+
+  analysis:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install analysis dependencies
+      run: >
+        sudo apt-get update &&
+        sudo apt-get install lsb-release wget software-properties-common &&
+        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
+        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
+        sudo apt-get install
+        ccache
+        clang-15
+        clang-tidy-15
+        cppcheck
+        g++-12
+        hdf5-tools
+        libblas-dev
+        libclang-15-dev
+        libc++-15-dev
+        libc++abi-15-dev
+        libomp-15-dev
+        boost1.81
+        libgmp-dev
+        libgsl-dev
+        libhdf5-dev
+        liblapack-dev
+        libopenmpi-dev
+        openmpi-bin
+        openmpi-common
+        openmpi-doc
+
+    - name: Add LLVM tools to PATH
+      run: echo "/usr/lib/llvm-15/bin" >> $GITHUB_PATH
+
+    - name: Run static analysis build
+      env:
+        CC: clang-15
+        CXX: clang++-15
+        LIBRARY_PATH: /usr/local/opt/llvm/lib
+      run: |
+        cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/install -DANALYZE_SOURCES=ON
+        cmake --build build --target nrgljubljana_c --parallel 2
+
+  docs:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install documentation dependencies
+      run: >
+        sudo apt-get update &&
+        sudo apt-get install lsb-release wget software-properties-common &&
+        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
+        sudo apt-get install
+        ccache
+        g++-12
+        hdf5-tools
+        libblas-dev
+        boost1.81
+        libgmp-dev
+        libgsl-dev
+        libhdf5-dev
+        liblapack-dev
+        libopenmpi-dev
+        openmpi-bin
+        openmpi-common
+        openmpi-doc
+        python3-sphinx
+
+    - name: Build documentation
+      env:
+        CC: gcc-12
+        CXX: g++-12
+      run: |
+        cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/install -DBuild_Documentation=ON -DSphinx_Only=ON
+        cmake --build build --target docs_sphinx --parallel 2

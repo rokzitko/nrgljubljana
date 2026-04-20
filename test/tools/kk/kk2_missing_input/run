@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+if "$1/kk" missing.dat reaw.dat >stdout.txt 2>stderr.txt; then
+  exit 1
+fi
+grep -Eq 'Can.t open|No such file|Failed|error' stderr.txt

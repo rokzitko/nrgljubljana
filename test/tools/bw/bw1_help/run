@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+"$1/bw" -h > stdout.txt
+grep -q "Usage: bw" stdout.txt

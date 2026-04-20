@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+if "$1/bw" -o spec.bin 0.1 1 >stdout.txt 2>stderr.txt; then
+  exit 1
+fi
+grep -q "Error opening file" stderr.txt

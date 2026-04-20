@@ -18,7 +18,7 @@ extensions = ['sphinx.ext.autodoc',
 source_suffix = '.rst'
 
 project = u'NRG Ljubljana - numerical renormalization group code'
-copyright = u'2016-2019 R. Žitko, Jozef Stefan Institute, Ljubljana'
+copyright = u'2016-2026 R. Žitko, Jozef Stefan Institute, Ljubljana'
 version = '@PROJECT_VERSION@'
 
 mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5"
@@ -38,4 +38,4 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = 'NRGLjubljanadoc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}

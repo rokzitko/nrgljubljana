@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+export PATH="$1:$PATH"
+if nrgchain >stdout.txt 2>stderr.txt; then
+  exit 1
+fi
+grep -q "Can't open missing.dat" stderr.txt

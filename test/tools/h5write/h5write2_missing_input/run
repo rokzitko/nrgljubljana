@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+if "$1/h5write" out.h5 /matrix missing.txt >stdout.txt 2>stderr.txt; then
+  exit 1
+fi
+grep -Eq 'Can.t open|No such file|Failed|error' stderr.txt

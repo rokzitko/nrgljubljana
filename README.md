@@ -126,10 +126,9 @@ NRG calculations on computer clusters.
 
    Due to the heavy use of template metaprogramming in Boost libraries, a
    high-quality standards-compliant C++ compiler must be used. Tested to
-   work with GCC, Clang and Intel C++ compiler. As of 2019, the code
-   is written in C++14.
+   work with GCC and Clang. The codebase currently requires C++20.
 
-   Wolfram Reasearch Mathematica must be installed for running the
+   Wolfram Research Mathematica must be installed for running the
    Mathematica part of the NRG code. Versions 5 through 12 have been
    tested. Mathematica is only required for the initialization of the
    problem (basis construction, diagonalisation of the initial
@@ -141,29 +140,45 @@ NRG calculations on computer clusters.
    numerically demanding (C++) part of the program can be ran on the
    cluster nodes.
 
-   Since Nov 2019, the code uses cmake for the configuration stage.
-   The compilation thus consists of the following steps:
+   The project uses CMake for configuration and build orchestration. A
+   standard local build consists of the following steps:
 
 ```shell
-   mkdir build
-   cd build
-   cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/
-   make
-   make install
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/
+cmake --build build --parallel
+cmake --install build
 ```
-   For debugging, add -DCMAKE_BUILD_TYPE=Debug to cmake.
+
+   For debugging, add `-DCMAKE_BUILD_TYPE=Debug` at configure time.
+
+   Useful configure options for developers include:
+
+   - `-DTEST_LONG=ON` to enable long-running test suites
+   - `-DASAN=ON` to compile with AddressSanitizer
+   - `-DUBSAN=ON` to compile with UndefinedBehaviorSanitizer
+   - `-DANALYZE_SOURCES=ON` to run `clang-tidy`/`cppcheck` during the build
+   - `-DBuild_Documentation=ON -DSphinx_Only=ON` to build the Sphinx docs
+
+   Local tests can then be run with:
+
+```shell
+ctest --test-dir build --output-on-failure
+```
+
+   Some integration suites under `test/` depend on Mathematica and are only
+   enabled when Mathematica is detected during configuration.
 
 
 4. Contributing to "NRG Ljubljana"
 
    If you make improvements to "NRG Ljubljana", you are encouraged to
    share them with other users. Bug reports (and fixes) are very welcome
-   as well.  The contact information is in the next section.
+   as well. See `CONTRIBUTING.md` for a concise local build/test workflow.
 
 
 5. Contact information:
 
-   "NRG Ljubljana" home-page: http://nrgljubljana.ijs.si/
+   "NRG Ljubljana" home-page: https://nrgljubljana.ijs.si/
 
 ```
    Rok Zitko

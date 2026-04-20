@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+mkdir 1 2
+if "$1/binavg" spec.bin 2 >stdout.txt 2>stderr.txt; then
+  exit 1
+fi
+grep -q "Error opening file" stderr.txt

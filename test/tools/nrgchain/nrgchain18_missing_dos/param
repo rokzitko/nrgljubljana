@@ -1,0 +1,8 @@
+[param]
+Lambda=2.0
+z=1.0
+xmax=4
+Nmax=4
+mMAX=8
+dos=missing.dat
+adapt=false

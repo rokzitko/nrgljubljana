@@ -1,7 +1,3 @@
-find_package(Perl REQUIRED)
-
-# Regression tests
-
 file(STRINGS simple_tests simple_tests)
 
 foreach(test ${simple_tests})
@@ -10,5 +6,3 @@ foreach(test ${simple_tests})
            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test})
   set_tests_properties(${test} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
 endforeach()
-
-configure_file(kk1/imaw.dat kk1/imaw.dat COPYONLY)

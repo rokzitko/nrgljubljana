@@ -1,0 +1,6 @@
+[param]
+Lambda=2.0
+xmax=3
+xfine=2
+outputstep=1
+adapt=false
