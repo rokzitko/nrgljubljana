@@ -100,25 +100,32 @@ jobs:
       run: |
         brew install ccache llvm gcc boost boost-mpi hdf5 libomp open-mpi openblas gsl gmp
 
-    - name: Add clang LDFLAGS for macos to link against brew's libc++
+    - name: Add clang library path for ubuntu
+      if: ${{ (matrix.os == 'ubuntu-22.04') && contains(matrix.cxx, 'clang') }}
+      run: |
+        echo "LIBRARY_PATH=/usr/lib/llvm-15/lib" >> $GITHUB_ENV
+
+    - name: Add clang environment for macos
       if: ${{ contains(matrix.os, 'macos') && contains(matrix.cxx, 'clang') }}
       run: |
+        LLVM_PREFIX="$(brew --prefix llvm)"
+        GCC_PREFIX="$(brew --prefix gcc)"
         echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
-        echo "PATH=$(brew --prefix llvm)/bin:$(brew --prefix gcc)/bin:$PATH" >> $GITHUB_ENV
-        echo 'LDFLAGS="-L$(brew --prefix llvm)/lib/c++ -L$(brew --prefix llvm)/lib -lunwind"' >> $GITHUB_ENV
+        echo "PATH=$LLVM_PREFIX/bin:$GCC_PREFIX/bin:$PATH" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$LLVM_PREFIX/lib/c++ -L$LLVM_PREFIX/lib -lunwind" >> $GITHUB_ENV
+        echo "LIBRARY_PATH=$LLVM_PREFIX/lib/c++:$LLVM_PREFIX/lib" >> $GITHUB_ENV
+        echo "DYLD_FALLBACK_LIBRARY_PATH=$LLVM_PREFIX/lib/c++:$LLVM_PREFIX/lib" >> $GITHUB_ENV
 
     - name: Build NRG Ljubljana
       env:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
-        LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install
         make -j2 || make -j1 VERBOSE=1
     
     - name: Test NRG Ljubljana
       env:
-        DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
         OPENBLAS_NUM_THREADS: "1"
       run: |
         cd build
@@ -166,18 +173,20 @@ jobs:
         openmpi-common
         openmpi-doc
 
+    - name: Add clang library path for ubuntu
+      run: |
+        echo "LIBRARY_PATH=/usr/lib/llvm-15/lib" >> $GITHUB_ENV
+
     - name: Build with sanitizers
       env:
         CC: clang-15
         CXX: clang++-15
-        LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/install -DASAN=ON -DUBSAN=ON -DCMAKE_BUILD_TYPE=Debug
         cmake --build build --parallel 2
 
     - name: Test with sanitizers
       env:
-        DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
         OPENBLAS_NUM_THREADS: "1"
       run: |
         ctest --test-dir build -j2 --output-on-failure
@@ -216,14 +225,15 @@ jobs:
         openmpi-common
         openmpi-doc
 
-    - name: Add LLVM tools to PATH
-      run: echo "/usr/lib/llvm-15/bin" >> $GITHUB_PATH
+    - name: Add LLVM tools to environment
+      run: |
+        echo "/usr/lib/llvm-15/bin" >> $GITHUB_PATH
+        echo "LIBRARY_PATH=/usr/lib/llvm-15/lib" >> $GITHUB_ENV
 
     - name: Run static analysis build
       env:
         CC: clang-15
         CXX: clang++-15
-        LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/install -DANALYZE_SOURCES=ON
         cmake --build build --target nrgljubljana_c --parallel 2

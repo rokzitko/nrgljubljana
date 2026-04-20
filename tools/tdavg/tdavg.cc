@@ -66,8 +66,8 @@ bool file_exists(string filename) {
 }
 
 void cmd_line(int argc, char *argv[]) {
-  char c;
-  while (c = getopt(argc, argv, "hvVc"), c != -1) {
+  int c;
+  while ((c = getopt(argc, argv, "hvVc")) != -1) {
     switch (c) {
       case 'h':
         usage();

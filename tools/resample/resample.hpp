@@ -71,8 +71,8 @@ class Resample
 
         void parse_param(int argc, char *argv[]) 
         {
-            char c;
-            while (c = getopt(argc, argv, "hvp:"), c != -1) 
+            int c;
+            while ((c = getopt(argc, argv, "hvp:")) != -1)
             {
                 switch (c) 
                 {

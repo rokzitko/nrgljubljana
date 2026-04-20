@@ -32,8 +32,8 @@ class H5Write {
    }
 
    void parse_cmd_line(int argc, char *argv[]) {
-     char c;
-     while (c = getopt(argc, argv, "hst"), c != -1) {
+     int c;
+     while ((c = getopt(argc, argv, "hst")) != -1) {
        switch (c) {
        case 'h': usage(); exit(EXIT_SUCCESS);
        case 's': scalar = true; break;
@@ -70,4 +70,3 @@ class H5Write {
 } // namespace
 
 #endif
-

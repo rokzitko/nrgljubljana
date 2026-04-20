@@ -429,8 +429,8 @@ class Hilb {
 
   void parse_param_run(int argc, char *argv[]) {
     std::optional<std::ofstream> OUTFILE;
-    char c;
-    while (c = getopt(argc, argv, "hGd:vVs:B:o:x:y:"), c != -1) {
+    int c;
+    while ((c = getopt(argc, argv, "hGd:vVs:B:o:x:y:")) != -1) {
       switch (c) {
         case 'h': usage(); exit(EXIT_SUCCESS);
         case 'G': G = true; break;

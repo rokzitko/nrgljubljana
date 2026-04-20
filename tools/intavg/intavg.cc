@@ -41,8 +41,8 @@ dvec mesh;         // output mesh
 void usage(ostream &F = cout) { F << "Usage: intavg [-h] [-vV] <name> <Nz>\n"; }
 
 void cmd_line(int argc, char *argv[]) {
-  char c;
-  while (c = getopt(argc, argv, "hvV"), c != -1) {
+  int c;
+  while ((c = getopt(argc, argv, "hvV")) != -1) {
     switch (c) {
       case 'h':
         usage();

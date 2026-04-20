@@ -185,8 +185,8 @@ void usage(ostream &OUT = cout) {
 }
 
 void parse_param(int argc, char *argv[]) {
-  char c;
-  while (c = getopt(argc, argv, "htTbBvVqo:O:s:"), c != -1) {
+  int c;
+  while ((c = getopt(argc, argv, "htTbBvVqo:O:s:")) != -1) {
     switch (c) {
       case 'h':
         usage();

@@ -245,8 +245,8 @@ class Broaden {
        usage();
        exit(EXIT_SUCCESS);
      }
-     char c;
-     while (c = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNABL:"), c != -1) {
+     int c;
+     while ((c = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNABL:")) != -1) {
        switch (c) {
        case 'c': cumulative = true; break;
        case 's': sumrules = true; break;
