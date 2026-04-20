@@ -81,7 +81,7 @@ class Resample
                     exit(EXIT_SUCCESS);
                 case 'v': verbose = true; break;
                 case 'p': output_precision = atoi(optarg); break;
-                default: throw std::runtime_error("Unknown argument "s + c);
+                default: throw std::runtime_error("Unknown argument "s + std::string(1, static_cast<char>(c)));
                 }
             }
             int remaining = argc - optind;

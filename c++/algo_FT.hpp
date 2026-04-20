@@ -87,7 +87,10 @@ class Algo_FTmats : public Algo<S> {
       const size_t cutoff = P.mats;
       for (const auto r1: diagI1.kept()) {
         for (const auto rp: diagIp.kept()) {
-          const auto [energy, weight, zero_freq_bosonic_weight] = pair_factors(r1, rp);
+          const auto factors = pair_factors(r1, rp);
+          const auto energy = std::get<0>(factors);
+          const auto weight = std::get<1>(factors);
+          const auto zero_freq_bosonic_weight = std::get<2>(factors);
 #pragma omp parallel for schedule(static)
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, factor * term(energy, weight, zero_freq_bosonic_weight, n));

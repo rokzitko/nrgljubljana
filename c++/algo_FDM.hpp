@@ -255,21 +255,30 @@ class Algo_FDMmats : public Algo<S> {
       };
       for (const auto j : diagIj.Drange())
         for (const auto i : diagIi.Drange()) {
-          const auto [energy, weightA, weightB] = term1_factors(i, j);
+          const auto factors = term1_factors(i, j);
+          const auto energy = std::get<0>(factors);
+          const auto weightA = std::get<1>(factors);
+          const auto weightB = std::get<2>(factors);
           #pragma omp parallel for schedule(static)
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, term1(energy, weightA, weightB, n) * factor);
         }
       for (const auto j : diagIj.Krange())
         for (const auto i : diagIi.Drange()) {
-          const auto [energy, weightA, weightB] = term2_factors(i, j);
+          const auto factors = term2_factors(i, j);
+          const auto energy = std::get<0>(factors);
+          const auto weightA = std::get<1>(factors);
+          const auto weightB = std::get<2>(factors);
           #pragma omp parallel for schedule(static)
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, term2(energy, weightA, weightB, n) * factor);
         }
       for (const auto j : diagIj.Drange())
         for (const auto i : diagIi.Krange()) {
-          const auto [energy, weightA, weightB] = term3_factors(i, j);
+          const auto factors = term3_factors(i, j);
+          const auto energy = std::get<0>(factors);
+          const auto weightA = std::get<1>(factors);
+          const auto weightB = std::get<2>(factors);
           #pragma omp parallel for schedule(static)
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, term3(energy, weightA, weightB, n) * factor);
