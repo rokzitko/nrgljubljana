@@ -28,10 +28,12 @@ foreach(test ${all_tests})
   target_compile_options(${test_name} PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fconcepts>
                                               $<$<BOOL:${GCOV}>:--coverage>)
   set_property(TARGET ${test_name} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
+  set_property(TARGET ${test_name} PROPERTY BUILD_RPATH "${PROJECT_BINARY_DIR}/c++")
   target_link_libraries(${test_name} nrgljubljana_c gtest_main project_warnings gsl)
   target_link_options(${test_name} PRIVATE  $<$<BOOL:${GCOV}>:--coverage>)
   target_include_directories(${test_name} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include)
   add_test(NAME ${gtest_test_name}${test_name} COMMAND ${test_name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
+  set_tests_properties(${gtest_test_name}${test_name} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
 
   file(GLOB_RECURSE txtfiles RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${test_dir}/*.txt)
   foreach(file ${txtfiles})
@@ -39,4 +41,3 @@ foreach(test ${all_tests})
   endforeach()
 
 endforeach()
-

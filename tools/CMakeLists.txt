@@ -15,7 +15,7 @@ macro(add_tool exec_name)
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include/range-v3>)
   target_compile_definitions(${exec_name} PRIVATE)
-  set_target_properties(${exec_name} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  set_target_properties(${exec_name} PROPERTIES POSITION_INDEPENDENT_CODE ON BUILD_RPATH "${PROJECT_BINARY_DIR}/c++")
 
   # Link dependencies
   target_link_libraries(${exec_name} PRIVATE openmp Boost::boost Boost::mpi Boost::serialization blas_lapack gmp gsl dl HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen

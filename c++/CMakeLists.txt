@@ -57,6 +57,7 @@ add_executable(nrg nrg.cc)
 target_link_libraries(nrg PRIVATE nrgljubljana_c)
 target_link_options(nrg PRIVATE $<$<BOOL:${GPROF}>:-pg>)
 target_compile_options(nrg PRIVATE ${NRG_CXX_OPT} $<$<BOOL:${GPROF}>:-pg>)
+set_target_properties(nrg PROPERTIES BUILD_RPATH "${PROJECT_BINARY_DIR}/c++")
 
 # Install library and headers
 install(TARGETS nrgljubljana_c EXPORT nrgljubljana-targets DESTINATION lib)
