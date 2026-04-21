@@ -112,9 +112,6 @@ jobs:
         GCC_PREFIX="$(brew --prefix gcc)"
         echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
         echo "PATH=$LLVM_PREFIX/bin:$GCC_PREFIX/bin:$PATH" >> $GITHUB_ENV
-        echo "LDFLAGS=-L$LLVM_PREFIX/lib/c++ -L$LLVM_PREFIX/lib" >> $GITHUB_ENV
-        echo "LIBRARY_PATH=$LLVM_PREFIX/lib/c++:$LLVM_PREFIX/lib" >> $GITHUB_ENV
-        echo "DYLD_FALLBACK_LIBRARY_PATH=$LLVM_PREFIX/lib/c++:$LLVM_PREFIX/lib" >> $GITHUB_ENV
 
     - name: Build NRG Ljubljana
       env:

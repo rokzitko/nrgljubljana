@@ -664,13 +664,14 @@ class Params {
         std::cout << std::endl;
       }
       if (filename != "") {
-        try {
-          extra_params = parser(filename, "extra");
+        auto F = safe_open_for_reading(filename);
+        if (find_block(F, "extra")) {
+          extra_params = parse_block(F);
           std::cout << "Extra params:" << std::endl;
           for (const auto &[key, value] : extra_params)
             std::cout << " " << key << "=" << value << std::endl;
           std::cout << std::endl;
-        } catch (...) {}
+        }
       }
     }
     validate();
