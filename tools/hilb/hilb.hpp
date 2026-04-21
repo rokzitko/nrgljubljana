@@ -16,6 +16,7 @@
 #include <complex>
 #include <utility>
 #include <functional>
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <map>
