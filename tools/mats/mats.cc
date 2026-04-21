@@ -26,10 +26,10 @@
 
 using namespace std;
 
-bool verbose = false; // output verbosity level
-double T;             // temperature parameter
-bool one  = false;    // For Nz=1, no subdir.
-char stat = 'f';      // f)ermionic, b)osonic
+bool verbose      = false; // output verbosity level
+double T;                 // temperature parameter
+bool one          = false; // For Nz=1, no subdir.
+char particle_stat = 'f';  // f)ermionic, b)osonic
 
 // Multi-column support
 int nrcol = 1; // Number of columns
@@ -198,9 +198,9 @@ void merge() {
 // Matsubara frequency (WITHOUT the imaginary unit)
 // Starting from n=0
 double omegan(int n) {
-  if (stat == 'f') return T * M_PI * (2 * n + 1);
-  if (stat == 'b') return T * M_PI * (2 * n);
-  cerr << "oops. stat=" << stat << endl;
+  if (particle_stat == 'f') return T * M_PI * (2 * n + 1);
+  if (particle_stat == 'b') return T * M_PI * (2 * n);
+  cerr << "oops. particle_stat=" << particle_stat << endl;
   exit(1);
 }
 
