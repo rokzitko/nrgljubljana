@@ -4,6 +4,7 @@
 
 #include "test_common.hpp"
 #include "test_clean.hpp"
+#include <core.hpp>
 #include <store.hpp>
 #include <subspaces.hpp>
 
