@@ -1,206 +1,93 @@
 [![build](https://github.com/rokzitko/nrgljubljana/actions/workflows/build.yml/badge.svg)](https://github.com/rokzitko/nrgljubljana/actions/workflows/build.yml)
 
-"NRG Ljubljana" is a flexible framework for performing large-scale
-numerical renormalization group (NRG) calculations for quantum
-impurity problems. It is highly extensible without sacrificing
-numerical efficiency.
+# NRG Ljubljana
 
-*Copyright (C) 2006-2022 Rok Zitko*
+NRG Ljubljana is a framework for numerical renormalization group (NRG) calculations for quantum impurity problems. It combines a Mathematica-based initialization layer with a C++20 runtime for the iterative NRG calculation, density-matrix variants, and a collection of standalone analysis tools.
 
-The framework "NRG Ljubljana" is a set of interrelated computer codes
-for performing numerical renormalization group (NRG) calculations for
-quantum impurity problems, described by models such as the Kondo
-exchange (s-d) model or the Anderson single impurity model, and their
-multi-impurity and multi-channel generalizations. It also contains a
-number of tools for analyzing the results (thermodynamic properties,
-such as magnetic and charge susceptibility, entropy and heat capacity;
-expectation values of arbitrary operators; spectral functions). It is
-user-friendly, in the sense that it is easy to set up new types of
-problems (Hamiltonians, perturbation terms, etc.) and the output is
-formatted and annotated for easy interpretation, parsing and plotting.
-It efficiently handles problems with different symmetries, such as
-spin SU(2) symmetry, charge SU(2) symmetry, Z_2 reflection symmetry
-(parity), etc.
+## What It Covers
 
-To achieve a high degree of flexibility without sacrificing numerical
-efficiency, "NRG Ljubljana" is composed of a hierarchy of modules:
-high level modules are written in a mixture of functional and
-procedural Mathematica code, while the low level numerically intensive
-parts are programmed in the object oriented approach in the C++
-language. The foundation of the framework is a Mathematica package for
-performing calculations with non-commutative second quantisation
-operators, SNEG. The next layer is a Mathematica program which defines
-the Hamiltonian, the basis of states, and the physical operators of
-interest: with the help of SNEG, Hamiltonian and operators can be
-defined using the familiar second-quantization expressions. This
-program performs the diagonalization of the initial Hamiltonian and
-prepares the input for the NRG iteration proper.
+- multiple symmetry backends, including QS, QSZ, ISO, ISOSZ, SPSU2, and extended symmetry sets
+- standard NRG iteration together with CFS, DM-NRG, and FDM workflows
+- thermodynamic quantities, expectation values, spectral functions, Matsubara quantities, and conductance-related calculations
+- preprocessing and postprocessing tools for discretization, chain generation, broadening, Hilbert transforms, resampling, and file conversion
+- structured output in text, binary, and HDF5 formats
 
-For efficiency, NRG iteration is performed by a separate C++ program:
-for a typical problem, most of the time (90%) is spent in the LAPACK
-dsyev routine which solves the eigenvalue problem. There is very
-little housekeeping overhead due to the tasks required by the NRG
-iteration; "NRG Ljubljana" is thus suitable for performing large scale
-NRG calculations on computer clusters.
+## Quick Start
 
-1. Features
+Build locally with CMake:
 
-   - all parameters, model definitions and observables configurable at run-time
-   - support for a large number of different symmetry types
-   - flexible truncation schemes (energy cut-off truncation, avoidance
-     of trunction within gaps, etc.)
-   - density-matrix NRG (DM-NRG), complete Fock space (CFS) and full-density matrix
-     (FD-NRG) for all symmetry types
-   - FDM calculation of expectation values at finite temperatures
-   - various spectral-function broadening schemes & stand-alone tools
-   - self-energy trick calculations
-   - arbitrary number of channels
-   - calculations with real and complex numbers
-   - support for superconducting bands, spin-polarized bands, etc.
-   - support for global operators (i.e., operators defined on the
-     Wilson chain sites)
-   - calculation of temperature-dependent conductance, G(T)
-   - automatic exact diagonalisation of the initial Hamiltonian with
-     automagic generation of the basis
-   - flexibility in the choice of operators whose thermodynamical averages
-     are computed, they can be expressed using operators of second
-     quantization
-   - dynamic spin susceptibility, dynamic charge susceptibility, etc.
-     It is possible to compute arbitrary spectral functions for any
-     pair of local operators.
-   - flexible output (tabulated ASCII, binary files, structured HDF5 files)
-   - multiple logarithmic discretization schemes (Wilson/Krishnamurthy,
-     Yoshida/Whitaker/Oliveira, Campo/Oliveira, ODE scheme)
-   - support for non-flat bands (i.e. cosine band that arrises from
-     tight-binding description of leads in quantum transport problems,
-     or arbitrary hybridization as needed in DMFT)
-   - object-oriented code for easy maintenance and expandability
-   - very high numeric efficiency with optimized-for loops in the most
-     numerically demanding parts of the code (chiefly the recalculation
-     of irreducible matrix elements of operators)
-   - configurable verbosity level
-   - automatic recording of time elapsed in various parts of the program
-   - monitoring of memory usage
-   - formated output files for easy interpretation of the results
-   - internal consistency checks, assertions, parameter compatibility
-     and reasonableness checks that reduce the possibility of undetected
-     bugs
-
-
-2. License
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-   The full text of the GPL General Public License can be found
-   in file LICENSE.
-
-3. Compiling and dependencies
-
-   NRG Ljubljana is very portable and it should work without any modification
-   on any modern Linux distribution and, with some tweaking, on any Unix or
-   Unix-like operating system with a good standards-compliant C++ compiler. It
-   has been reported to me that it can also be compiled under Windows.
-
-   The following libraries are required to compile the C++ part of the
-   NRG code and the tools:
-
-    * LAPACK and BLAS linear algebra libraries
-    * MPI implementation
-    * OpenMP
-    * Boost C++ libraries
-    * GNU Scientific library (GSL)
-    * GNU MP Bignum Library (GMP) for arbitrary-precision numerics
-    * HDF5
-
-   Due to the heavy use of template metaprogramming in Boost libraries, a
-   high-quality standards-compliant C++ compiler must be used. Tested to
-   work with GCC and Clang. The codebase currently requires C++20.
-
-   Wolfram Research Mathematica must be installed for running the
-   Mathematica part of the NRG code. Versions 5 through 12 have been
-   tested. Mathematica is only required for the initialization of the
-   problem (basis construction, diagonalisation of the initial
-   Hamiltonian, transformations of the operator matrices, etc.) which is
-   relatively fast. When "NRG Ljubljana" is used on a cluster, it is
-   therefore sufficient to have Mathematica installed on a single
-
-   computer (for example on the cluster host computer), while the
-   numerically demanding (C++) part of the program can be ran on the
-   cluster nodes.
-
-   The project uses CMake for configuration and build orchestration. A
-   standard local build consists of the following steps:
-
-```shell
+```sh
 cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/
 cmake --build build --parallel
 cmake --install build
 ```
 
-   For debugging, add `-DCMAKE_BUILD_TYPE=Debug` at configure time.
+Run the default test suite with:
 
-   Useful configure options for developers include:
-
-   - `-DTEST_LONG=ON` to enable long-running test suites
-   - `-DASAN=ON` to compile with AddressSanitizer
-   - `-DUBSAN=ON` to compile with UndefinedBehaviorSanitizer
-   - `-DANALYZE_SOURCES=ON` to run `clang-tidy`/`cppcheck` during the build
-   - `-DBuild_Documentation=ON -DSphinx_Only=ON` to build the Sphinx docs
-
-   Local tests can then be run with:
-
-```shell
+```sh
 ctest --test-dir build --output-on-failure
 ```
 
-   Some integration suites under `test/` depend on Mathematica and are only
-   enabled when Mathematica is detected during configuration.
+Useful developer options:
 
+- `-DCMAKE_BUILD_TYPE=Debug`
+- `-DTEST_LONG=ON`
+- `-DASAN=ON -DUBSAN=ON`
+- `-DANALYZE_SOURCES=ON`
 
-4. Contributing to "NRG Ljubljana"
+Core native dependencies:
 
-   If you make improvements to "NRG Ljubljana", you are encouraged to
-   share them with other users. Bug reports (and fixes) are very welcome
-   as well. See `CONTRIBUTING.md` for a concise local build/test workflow.
+- BLAS and LAPACK
+- MPI
+- OpenMP
+- Boost
+- GSL
+- GMP
+- HDF5
 
+Mathematica is required for the `nrginit` side of the workflow, which prepares the initial Hamiltonian, basis, and operator data used by the C++ executable.
 
-5. Contact information:
+## Repository Map
 
-   "NRG Ljubljana" home-page: https://nrgljubljana.ijs.si/
+- `c++/`: core NRG engine, runtime flow, diagonalization, symmetry framework, operators, stores, and numerical utilities
+- `tools/`: standalone preprocessing and postprocessing executables
+- `nrginit/`: Mathematica-side model initialization and input generation
+- `test/`: unit tests, regression suites, tool tests, and Mathematica-driven integration tests
+- `share/`: installed auxiliary CMake files and runtime assets
+- `scripts/`: small helper scripts for inspecting and postprocessing outputs
+- `doc/`: legacy Sphinx documentation kept during the documentation migration
+- `docs/`: new MkDocs documentation tree
 
-```
-   Rok Zitko
-   "Jozef Stefan" Institute
-   F1 - Theoretical physics
-   Jamova 39
-   SI-1000 Ljubljana
-   Slovenia
+## Documentation
 
-   rok.zitko@ijs.si
-```
+The in-tree documentation refresh is being migrated to MkDocs under `docs/` while the legacy Sphinx content in `doc/` remains available.
 
-6. Acknowledgements
+- New documentation entry point: `docs/docs/index.md`
+- MkDocs local preview instructions: `docs/README.mkdocs`
+- Legacy Sphinx content: `doc/`
+- Contributor workflow: `CONTRIBUTING.md`
 
-   The development of the "NRG Ljubljana" framework started during
-   author's PhD studies at the Faculty for mathematics and physics of the
-   University of Ljubljana, and the "Jozef Stefan" Institute, Ljubljana,
-   Slovenia. Discussions and collaboration with prof. Janez Bonca, prof.
-   Anton Ramsak, dr. Jernej Mravlje and dr. Tomaz Rejec from the F1,
-   Theoretical Physics department are acknowledged. I'm also grateful to
-   prof. Thomas Pruschke, Robert Peters and Oliver Bodensiek from the
-   University in Goettingen for many very fruitful discussions. I thank
-   Marcus Greger from the University in Augsburg for contributing
-   optimized routines for the spectral function calculation. Nils
-   Wentzell helped me make the switch to cmake build system.
+The new documentation focuses on:
+
+- project structure
+- runtime flow through the code
+- main data structures and subsystem boundaries
+- developer and testing workflows
+
+## Contributing
+
+See `CONTRIBUTING.md` for the local build, test, sanitizer, analysis, and documentation commands used in development.
+
+## License
+
+NRG Ljubljana is distributed under the GNU General Public License. See `COPYING` for the full license text.
+
+## Contact
+
+- project home page: https://nrgljubljana.ijs.si/
+- Rok Zitko, "Jozef Stefan" Institute, Ljubljana, Slovenia
+- rok.zitko@ijs.si
+
+## Acknowledgements
+
+NRG Ljubljana started during Rok Zitko's PhD work at the University of Ljubljana and the "Jozef Stefan" Institute. The codebase reflects collaboration and discussions with multiple researchers in the NRG community and contributions from collaborators over many years.

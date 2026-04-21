@@ -1,0 +1,23 @@
+site_name: NRG Ljubljana
+repo_url: https://github.com/rokzitko/nrgljubljana
+edit_uri: edit/master/docs/docs/
+nav:
+  - Overview: index.md
+  - Getting Started: getting-started.md
+  - Architecture:
+    - Project structure: project-structure.md
+    - Input and configuration: input-and-configuration.md
+    - Runtime flow: runtime-flow.md
+    - Iteration engine: iteration-engine.md
+    - Data structures: data-structures.md
+    - State and persistence: state-and-persistence.md
+    - Symmetry framework: symmetry-framework.md
+    - nrginit workflow: nrginit-workflow.md
+  - Tools: tools.md
+  - Testing: testing.md
+  - Developer Guide: developer-guide.md
+  - About: about.md
+theme:
+  name: readthedocs
+markdown_extensions:
+  - attr_list

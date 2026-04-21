@@ -1,0 +1,34 @@
+# MkDocs documentation
+
+The new contributor-facing documentation lives in this directory and is built with MkDocs.
+
+## Local preview
+
+```sh
+python3 -m pip install mkdocs
+cd docs
+make serve
+```
+
+## Build the static site
+
+```sh
+python3 -m pip install mkdocs
+cd docs
+make
+```
+
+Clean the generated site with:
+
+```sh
+make clean
+```
+
+## Upload the generated site
+
+```sh
+cd docs
+make upload SITE=user@host:/path/to/nrgljubljana-docs/
+```
+
+The legacy Sphinx documentation under `../doc/` is intentionally kept in parallel during the migration.
