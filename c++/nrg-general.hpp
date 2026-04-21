@@ -194,6 +194,8 @@ public:
       if (P.need_rhoFDM()) prepare_rhoFDM();
       run_dm_phase(operators_seed, coef_seed, diag_seed);
     }
+
+    if (P.done) { std::ofstream D("DONE"); } // Indicate successful completion by creating a flag file
   }
   NRG_calculation(const NRG_calculation &) = delete;
   NRG_calculation(NRG_calculation &&) = delete;
@@ -201,7 +203,6 @@ public:
   NRG_calculation & operator=(const NRG_calculation &&) = delete;
   ~NRG_calculation() {
     if (!P.embedded) mt.report(); // only when running as a stand-alone application
-    if (P.done) { std::ofstream D("DONE"); } // Indicate completion by creating a flag file
   }
 };
 
