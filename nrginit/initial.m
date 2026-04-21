@@ -374,7 +374,7 @@ If[NRDOTS >= 1,
   ntot2 = pow[ntot, 2];
 
   (* Total S^2 operator. *)
-  ops2 = inner[opstot, opstot] //Expand;
+  ops2 = inner[opstot, opstot];
 
   (* Total S_Z, S_+ and S_- operators. I define them here mostly for
   convenience and for testing purposes. *)
@@ -393,9 +393,9 @@ MyVPrint[3, "ntot:", ntot];
 If[NRDOTS >= 1,
   creven = (Plus @@ Map[# /. op_[] -> op[CR, sigma] &, basopsdot]) / Sqrt[NRDOTS];
   aneven = conj[creven];
-  neven = Sum[ nc[creven, aneven], {sigma, 0, 1}] // Expand;
+  neven = Sum[ nc[creven, aneven], {sigma, 0, 1}];
   sxyzeven = spinxyzgen[(creven/.sigma->#)&];
-  s2even = inner[sxyzeven, sxyzeven] // Expand;
+  s2even = inner[sxyzeven, sxyzeven];
   MyVPrint[3, "neven:", neven]; (* Report level 3 = nonessntial stuff *)
   MyVPrint[3, "s2even:", s2even];
 ];
@@ -406,20 +406,15 @@ If[NRDOTS >= 1,
 If[NRDOTS >= 2,
   crodd = 1/Sqrt[2] ( d[CR, sigma] - a[CR, sigma] );
   anodd = conj[crodd];
-  nodd = Sum[ nc[crodd, anodd], {sigma, 0, 1}] // Expand;
+  nodd = Sum[ nc[crodd, anodd], {sigma, 0, 1}];
   sxyzodd = spinxyzgen[(crodd/.sigma->#)&];
-  s2odd = inner[sxyzodd, sxyzodd] // Expand;
+  s2odd = inner[sxyzodd, sxyzodd];
   MyVPrint[3, "nodd:", nodd];
   MyVPrint[3, "s2odd:", s2odd];
-  seso = inner[sxyzeven, sxyzodd] // Expand;
+  seso = inner[sxyzeven, sxyzodd];
   MyVPrint[3, "seso:", seso];
 ];
 
-
-(* Expand will factor common operators. We also collect common factors in
-advance. *)
-
-H = Expand[H];
 MyPrint["Hamiltonian generated. ", H];
 
 (* Is Hamiltonian Hermitian? *)
@@ -1649,7 +1644,7 @@ generalopTable[op_] := Module[{t, cnt, i, cp, mat},
 (* It first checks if the calculation of operator 'opname' was requested! *)
 mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] :=  Module[{t, op},
   If[calcopq[opname],
-    op = Expand[opinput];
+    op = opinput;
     MyPrint[prefix, ": ", opname, " ", op];
     t = {};
     opfn = opfilename <> "." <> opname; (* Global variable !! *)
@@ -1709,7 +1704,7 @@ perturbhamiltonian[] := Module[{},
     ];
 
     MyPrint["PERTURBATION: ", PERTURB];
-    Hprime = Expand @ ToExpression[PERTURB];
+    Hprime = ToExpression[PERTURB];
     MyPrint["Hprime: ", Hprime];
     H = H + Hprime;
     MyPrint["New total Hamiltonian: ", H];
