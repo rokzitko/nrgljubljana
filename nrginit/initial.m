@@ -415,10 +415,10 @@ If[NRDOTS >= 2,
   MyVPrint[3, "seso:", seso];
 ];
 
-MyPrint["Hamiltonian generated. ", H];
+MyVPrint[2, "Hamiltonian generated. ", H];
 
 (* Is Hamiltonian Hermitian? *)
-If[paramdefaultbool["checkHc", True] && Not[option["GENERATE_TEMPLATE"]],
+If[paramdefaultbool["checkHc", True] && Not[option["GENERATE_TEMPLATE"]] && Not[option["READHAM"]],
   Module[{Hcheck, Hdiff},
     Hcheck = conj[H];
     Hdiff = Simplify[Expand[H-Hcheck]];
@@ -1375,9 +1375,9 @@ code, iii. specdens_factor() routine). *)
 
 READOPS = option["READOPS"];
 
-ireducTable[op_,
+ireducTable[opinput_,
             optional___] :=  (* optional is passed to ireducMatrixSpeedy[] *)
-Module[{t, cp, i, mat, opfnsub},
+Module[{t, cp, i, mat, opfnsub, op = ReleaseHold[opinput]},
   t = {{nrcp}};
   For[i = 1, i <= nrcp, i++,
     (* coupledpairs is a list of subspace pairs that are coupled
@@ -1503,7 +1503,7 @@ ireducSPINList[SYMTYPE_, args___] :=
   " args=" <> ToString[{args}]];
 
 (* Table form for all irreducible matrix elements of a triplet operator sigma *)
-ireducsigmaTable[op_] := Module[{t, i, cp, mat},
+ireducsigmaTable[opinput_] := Module[{t, i, cp, mat, op = ReleaseHold[opinput]},
   t = {};
   AppendTo[t, {nrspincp}];
   For[i = 1, i <= nrspincp, i++,
@@ -1547,7 +1547,7 @@ ireducorbsigma[SYMTYPE_, args___] :=
   " args=" <> ToString[{args}]];
 
 (* Table form for all irreducible matrix elements of a triplet operator sigma *)
-ireducorbsigmaTable[op_] := Module[{t, i, cp, mat},
+ireducorbsigmaTable[opinput_] := Module[{t, i, cp, mat, op = ReleaseHold[opinput]},
   t = {};
   AppendTo[t, {nrorbcp}];
   For[i = 1, i <= nrorbcp, i++,
@@ -1590,7 +1590,7 @@ generalopMatrixSpeedy[op_, inv1_, inv2_] := Module[{mat0, mat, vecs1, vecs2},
 
 (* Makes a table with singlet operator irreducible matrix elements
    for every (inv) subspace. *)
-singletopTable[op_] := Module[{t, i, inv, mat},
+singletopTable[opinput_] := Module[{t, i, inv, mat, op = opinput},
   t = {{nrsub}};
   For[i = 1, i <= nrsub, i++,
     inv = subspaces[[i]];
@@ -1611,6 +1611,7 @@ singletopTable[op_] := Module[{t, i, inv, mat},
       ];
     ];
     If[GENOPS,
+      op = ReleaseHold[op];
       mat = Simplify @ singletopMatrixSpeedy[op, inv]; (* simplify! *)
       MyPut[mat, opfnsub, option["GENERATE_TEMPLATE_ALL"]];
     ];
@@ -1624,7 +1625,7 @@ singletopTable[op_] := Module[{t, i, inv, mat},
 ];
 
 (* Strategy: test all combinations of spaces if they give non-zero matrix elements. *)
-generalopTable[op_] := Module[{t, cnt, i, cp, mat},
+generalopTable[opinput_] := Module[{t, cnt, i, cp, mat, op = ReleaseHold[opinput]},
   t = {};
   cnt = 0;
   For[i = 1, i <= nrp, i++, (* nrp = length of subspacepairs *)
@@ -1645,8 +1646,6 @@ generalopTable[op_] := Module[{t, cnt, i, cp, mat},
 mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] :=  Module[{t, op = HoldComplete[opinput]},
   If[calcopq[opname],
     MyPrint[prefix, ": ", opname, " ", op];
-    op = ReleaseHold[op];
-    MyVPrint[1, "op=", op];
     t = {};
     opfn = opfilename <> "." <> opname; (* Global variable !! *)
     opdata = {}; (* Global variable !! This will be saved to file 'opfn'. *)
@@ -1661,13 +1660,13 @@ mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] :=  Module[{t, op = HoldComp
 SetAttributes[mtOp, HoldAll];
 SetAttributes[mtSingletOp, HoldAll];
 
-mtSingletOp[opname_String, opinput_] := mtOp[opname, opinput, "s", singletopTable];
-mtGeneralOp[opname_String, opinput_] := mtOp[opname, opinput, "p", generalopTable];
-mtGlobalOp[opname_String, opinput_] := mtOp[opname, opinput, "g", singletopTable];
-mtDoubletOp[opname_String, opinput_] := mtOp[opname, opinput, "d", ireducTable];
-mtDoubletOp[opname_String, opinput_, opt_] := mtOp[opname, opinput, "d", ireducTable[#1,opt]& ];
-mtTripletOp[opname_String, opinput_] := mtOp[opname, opinput, "t", ireducsigmaTable];
-mtOrbTripletOp[opname_String, opinput_] := mtOp[opname, opinput, "ot", ireducorbsigmaTable[op]];
+mtSingletOp[opname_String, opinput_] :=       mtOp[opname, opinput, "s",  singletopTable];
+mtGeneralOp[opname_String, opinput_] :=       mtOp[opname, opinput, "p",  generalopTable];
+mtGlobalOp[opname_String, opinput_] :=        mtOp[opname, opinput, "g",  singletopTable];
+mtDoubletOp[opname_String, opinput_] :=       mtOp[opname, opinput, "d",  ireducTable];
+mtDoubletOp[opname_String, opinput_, opt_] := mtOp[opname, opinput, "d",  ireducTable[#1,opt]& ];
+mtTripletOp[opname_String, opinput_] :=       mtOp[opname, opinput, "t",  ireducsigmaTable];
+mtOrbTripletOp[opname_String, opinput_] :=    mtOp[opname, opinput, "ot", ireducorbsigmaTable[op]];
 
 (************* DIAGONALIZATION *************)
 
