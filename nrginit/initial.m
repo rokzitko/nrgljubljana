@@ -1642,10 +1642,11 @@ generalopTable[op_] := Module[{t, cnt, i, cp, mat},
 
 (* low-level functions called from mtSingletOp, mtGlobalOp & mtGeneralOp with different OPTABLEFNC *)
 (* It first checks if the calculation of operator 'opname' was requested! *)
-mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] :=  Module[{t, op},
+mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] :=  Module[{t, op = HoldComplete[opinput]},
   If[calcopq[opname],
-    op = opinput;
     MyPrint[prefix, ": ", opname, " ", op];
+    op = ReleaseHold[op];
+    MyVPrint[1, "op=", op];
     t = {};
     opfn = opfilename <> "." <> opname; (* Global variable !! *)
     opdata = {}; (* Global variable !! This will be saved to file 'opfn'. *)
@@ -1656,6 +1657,9 @@ mtOp[opname_String, opinput_, prefix_, OPTABLEFNC_] :=  Module[{t, op},
   (* else *) {}
   ]
 ];
+
+SetAttributes[mtOp, HoldAll];
+SetAttributes[mtSingletOp, HoldAll];
 
 mtSingletOp[opname_String, opinput_] := mtOp[opname, opinput, "s", singletopTable];
 mtGeneralOp[opname_String, opinput_] := mtOp[opname, opinput, "p", generalopTable];
