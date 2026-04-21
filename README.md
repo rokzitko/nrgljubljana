@@ -45,7 +45,7 @@ Core native dependencies:
 - GMP
 - HDF5
 
-Mathematica is required for the `nrginit` side of the workflow, which prepares the initial Hamiltonian, basis, and operator data used by the C++ executable.
+Wolfram Mathematica is required for the `nrginit` side of the workflow, which prepares the initial Hamiltonian, basis, and operator data used by the C++ executable.
 
 ## Repository Map
 
@@ -55,24 +55,14 @@ Mathematica is required for the `nrginit` side of the workflow, which prepares t
 - `test/`: unit tests, regression suites, tool tests, and Mathematica-driven integration tests
 - `share/`: installed auxiliary CMake files and runtime assets
 - `scripts/`: small helper scripts for inspecting and postprocessing outputs
-- `doc/`: legacy Sphinx documentation kept during the documentation migration
+- `doc/`: legacy Sphinx documentation
 - `docs/`: new MkDocs documentation tree
 
 ## Documentation
 
-The in-tree documentation refresh is being migrated to MkDocs under `docs/` while the legacy Sphinx content in `doc/` remains available.
+The in-tree documentation refresh is being migrated to MkDocs under `docs/`, while the legacy Sphinx content in `doc/` remains available.
 
-- New documentation entry point: `docs/docs/index.md`
-- MkDocs local preview instructions: `docs/README.mkdocs`
-- Legacy Sphinx content: `doc/`
-- Contributor workflow: `CONTRIBUTING.md`
-
-The new documentation focuses on:
-
-- project structure
-- runtime flow through the code
-- main data structures and subsystem boundaries
-- developer and testing workflows
+MkDocs documentation: http://auger.ijs.si/nrgljubljana/site/
 
 ## Contributing
 
@@ -84,7 +74,7 @@ NRG Ljubljana is distributed under the GNU General Public License. See `COPYING`
 
 ## Contact
 
-- project home page: https://nrgljubljana.ijs.si/
+- project home page: http://nrgljubljana.ijs.si/
 - Rok Zitko, "Jozef Stefan" Institute, Ljubljana, Slovenia
 - rok.zitko@ijs.si
 
