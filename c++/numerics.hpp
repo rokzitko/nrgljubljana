@@ -326,7 +326,7 @@ bool is_unitary(const Matrix &vec,
     S sumabs{};
     for (const auto j : range0(d)) sumabs += conj_me(vec(r, j)) * vec(r, j);
     if (!num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON)) {
-      std::cout << "is_unitary() r=" << r << " : sumabs=" << sumabs << std::endl;
+      std::cout << "is_unitary() r=" << r << " : 1-sumabs=" << 1.0-sumabs << std::endl;
       return false;
     }
   }
