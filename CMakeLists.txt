@@ -47,8 +47,18 @@ message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------"
 # Make additional Find Modules available
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/share/cmake/Modules)
 
-# FindMathematica
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/Mathematica)
+# FindMathematica (optional, default OFF only on aarch64; overridable from CLI)
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" NRGLJUBLJANA_SYSTEM_PROCESSOR_LOWER)
+set(NRGLJUBLJANA_ENABLE_MATHEMATICA_DEFAULT ON)
+if(NRGLJUBLJANA_SYSTEM_PROCESSOR_LOWER STREQUAL "aarch64")
+  set(NRGLJUBLJANA_ENABLE_MATHEMATICA_DEFAULT OFF)
+endif()
+option(NRGLJUBLJANA_ENABLE_MATHEMATICA "Enable Mathematica detection via FindMathematica" ${NRGLJUBLJANA_ENABLE_MATHEMATICA_DEFAULT})
+if(NRGLJUBLJANA_ENABLE_MATHEMATICA)
+  list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/Mathematica)
+else()
+  message(STATUS "Mathematica detection disabled (NRGLJUBLJANA_ENABLE_MATHEMATICA=OFF)")
+endif()
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -205,9 +215,11 @@ CPMAddPackage("gh:ericniebler/range-v3#0.12.0")
 ### Not yet. Long-term goal: promote thermodynamic quantities to multiple-precision variables.
 
 # Mathematica (optional)
-find_package(Mathematica)
-if(Mathematica_FOUND)
-  message(STATUS "Mathematica executable ${Mathematica_KERNEL_EXECUTABLE}")
+if(NRGLJUBLJANA_ENABLE_MATHEMATICA)
+  find_package(Mathematica)
+  if(Mathematica_FOUND)
+    message(STATUS "Mathematica executable ${Mathematica_KERNEL_EXECUTABLE}")
+  endif()
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/BLAS_LAPACK)
@@ -338,4 +350,3 @@ if(BUILD_DEBIAN_PACKAGE AND NOT IS_SUBPROJECT)
   set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
   include(CPack)
 endif()
-

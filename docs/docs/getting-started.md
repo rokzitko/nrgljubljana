@@ -36,6 +36,7 @@ Useful configure options:
 - `-DASAN=ON -DUBSAN=ON` enables sanitizer builds
 - `-DANALYZE_SOURCES=ON` turns on static analysis hooks
 - `-DBuild_Documentation=ON -DSphinx_Only=ON` builds the legacy Sphinx docs
+- `-DNRGLJUBLJANA_ENABLE_MATHEMATICA=ON|OFF` controls `FindMathematica` (default: `OFF` on `aarch64`, `ON` otherwise)
 
 ## Test
 

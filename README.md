@@ -34,6 +34,7 @@ Useful developer options:
 - `-DTEST_LONG=ON`
 - `-DASAN=ON -DUBSAN=ON`
 - `-DANALYZE_SOURCES=ON`
+- `-DNRGLJUBLJANA_ENABLE_MATHEMATICA=ON|OFF` controls `FindMathematica` (default: `OFF` on `aarch64`, `ON` otherwise)
 
 Core native dependencies:
 
