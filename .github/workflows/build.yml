@@ -30,12 +30,15 @@ jobs:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS}
           - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS}
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl}
+          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS}
+          - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS}
           - {os: ubuntu-24.04, cc: gcc-15, cxx: g++-15, blas: openBLAS}
           - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS}
           - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS}
           - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS}
           - {os: macos-14, cc: clang, cxx: clang++, blas: accelerate}
           - {os: macos-15, cc: clang, cxx: clang++, blas: accelerate}
+          - {os: macos-26, cc: clang, cxx: clang++, blas: accelerate, require_arm64: true}
 
     runs-on: ${{ matrix.os }}
 
@@ -50,7 +53,7 @@ jobs:
           ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-
 
     - name: Install ubuntu dependencies (openBLAS)
-      if: ${{ (matrix.os == 'ubuntu-22.04') && contains(matrix.blas, 'openBLAS') }}
+      if: ${{ startsWith(matrix.os, 'ubuntu-22.04') && contains(matrix.blas, 'openBLAS') }}
       run: >
         sudo apt-get update &&
         sudo apt-get install lsb-release wget software-properties-common &&
@@ -151,8 +154,13 @@ jobs:
       run: |
         brew install ccache llvm gcc boost boost-mpi hdf5 libomp open-mpi openblas gsl gmp
 
+    - name: Assert Apple Silicon runner
+      if: ${{ matrix.require_arm64 == true }}
+      run: |
+        test "$(uname -m)" = "arm64"
+
     - name: Add clang library path for ubuntu
-      if: ${{ (matrix.os == 'ubuntu-22.04') && contains(matrix.cxx, 'clang') }}
+      if: ${{ startsWith(matrix.os, 'ubuntu-22.04') && contains(matrix.cxx, 'clang') }}
       run: |
         echo "LIBRARY_PATH=/usr/lib/llvm-15/lib" >> $GITHUB_ENV
 
