@@ -3,7 +3,7 @@
 # See the FindMathematica manual for usage hints.
 #
 #=============================================================================
-# Copyright 2010-2024 Sascha Kratky
+# Copyright 2010-2025 Sascha Kratky
 #
 # Permission is hereby granted, free of charge, to any person)
 # obtaining a copy of this software and associated documentation)
@@ -28,85 +28,14 @@
 #=============================================================================
 
 # we need the CMakeParseArguments module
-# call cmake_minimum_required, but prevent modification of the CMake policy stack
-cmake_policy(PUSH)
-cmake_minimum_required(VERSION 3.5.0)
-cmake_policy(POP)
+cmake_minimum_required(VERSION 3.10..3.31)
 
 set (Mathematica_CMAKE_MODULE_DIR "${CMAKE_CURRENT_LIST_DIR}")
-set (Mathematica_CMAKE_MODULE_VERSION "4.0.0")
-
-# activate select policies
-if (POLICY CMP0025)
-	# Compiler id for Apple Clang is now AppleClang
-	cmake_policy(SET CMP0025 NEW)
-endif()
-
-if (POLICY CMP0026)
-	# disallow use of the LOCATION target property
-	if (CYGWIN OR MSYS)
-		# Cygwin and MSYS do not produce workable Mathematica paths using
-		# the $<TARGET_FILE:...> notation
-		cmake_policy(SET CMP0026 OLD)
-	else()
-		cmake_policy(SET CMP0026 NEW)
-	endif()
-endif()
-
-if (POLICY CMP0038)
-	# targets may not link directly to themselves
-	cmake_policy(SET CMP0038 NEW)
-endif()
-
-if (POLICY CMP0039)
-	# utility targets may not have link dependencies
-	cmake_policy(SET CMP0039 NEW)
-endif()
-
-if (POLICY CMP0040)
-	# target in the TARGET signature of add_custom_command() must exist
-	cmake_policy(SET CMP0040 NEW)
-endif()
-
-if (POLICY CMP0045)
-	# error on non-existent target in get_target_property
-	cmake_policy(SET CMP0045 NEW)
-endif()
-
-if (POLICY CMP0046)
-	# error on non-existent dependency in add_dependencies
-	cmake_policy(SET CMP0046 NEW)
-endif()
-
-if (POLICY CMP0049)
-	# do not expand variables in target source entries
-	cmake_policy(SET CMP0049 NEW)
-endif()
-
-if (POLICY CMP0050)
-	# disallow add_custom_command SOURCE signatures
-	cmake_policy(SET CMP0050 NEW)
-endif()
-
-if (POLICY CMP0051)
-	# include TARGET_OBJECTS expressions in a target's SOURCES property
-	cmake_policy(SET CMP0051 NEW)
-endif()
-
-if (POLICY CMP0053)
-	# simplify variable reference and escape sequence evaluation
-	cmake_policy(SET CMP0053 NEW)
-endif()
-
-if (POLICY CMP0054)
-	# only interpret if() arguments as variables or keywords when unquoted
-	cmake_policy(SET CMP0054 NEW)
-endif()
+set (Mathematica_CMAKE_MODULE_VERSION "4.2.0")
 
 include(TestBigEndian)
 include(CMakeParseArguments)
 include(FindPackageHandleStandardArgs)
-include(CMakeFindFrameworks)
 
 # internal function to convert Windows path to Cygwin workable CMake path
 # E.g., "C:\Program Files" is converted to "/cygdrive/c/Program Files"
@@ -207,11 +136,11 @@ endmacro()
 # internal macro to to compute front end paths (relative to installation directory)
 macro (_get_host_frontend_names _outFrontEndNames)
 	if (CMAKE_HOST_WIN32 OR CYGWIN)
-		set (${_outFrontEndNames} "Mathematica.exe")
+		set (${_outFrontEndNames} "WolframNB.exe" "Mathematica.exe")
 	elseif (CMAKE_HOST_APPLE)
-		set (${_outFrontEndNames} "Contents/MacOS/Mathematica")
+		set (${_outFrontEndNames} "Contents/MacOS/WolframNB" "Contents/MacOS/Mathematica")
 	elseif (CMAKE_HOST_UNIX)
-		set (${_outFrontEndNames}
+		set (${_outFrontEndNames} "Executables/wolframnb" "Executables/WolframNB"
 			"Executables/mathematica" "Executables/Mathematica")
 	endif()
 endmacro()
@@ -243,12 +172,12 @@ macro (_get_program_names _outProgramNames)
 	set (${_outProgramNames} "")
 	# Mathematica products in order of preference
 	set (_MathematicaApps
-		"Mathematica" "mathematica"
+		"Wolfram" "Mathematica" "mathematica"
 		"Wolfram Desktop" "Wolfram Engine"
 		"gridMathematica Server")
 	# Mathematica product versions in order of preference
 	set (_MathematicaVersions
-		"14.0"
+		"14.3" "14.2" "14.1" "14.0"
 		"13.3" "13.2" "13.1" "13.0"
 		"12.3" "12.2" "12.1" "12.0"
 		"11.3" "11.2" "11.1" "11.0"
@@ -278,7 +207,7 @@ endmacro()
 # internal function to get Mathematica Windows installation directory for a registry entry
 function (_add_registry_search_path _registryKey _outSearchPaths)
 	set (_ProductNamePatterns
-		"Wolfram Mathematica [0-9.]+" "Wolfram Desktop [0-9.]+"
+		"Wolfram Mathematica [0-9.]+" "Wolfram [0-9.]+" "Wolfram Desktop [0-9.]+"
 		"Wolfram Engine [0-9.]+" "Wolfram Finance Platform")
 	get_filename_component (
 		_productName "[${_registryKey};ProductName]" NAME)
@@ -338,75 +267,6 @@ function (_add_registry_search_paths _outSearchPaths)
 				set (_paths "")
 				foreach (_installID IN LISTS _installIDs)
 					_add_registry_search_path("${_registryKey}\\${_installID}" _paths)
-				endforeach()
-				list (APPEND ${_outSearchPaths} ${_paths})
-			endif()
-		endforeach()
-		set (${_outSearchPaths} ${${_outSearchPaths}} PARENT_SCOPE)
-	endif()
-endfunction()
-
-# internal function to determine Mathematica installation paths from macOS LaunchServices database
-function (_add_launch_services_search_paths _outSearchPaths)
-	if (CMAKE_HOST_APPLE)
-		# the lsregister executable is needed to search the LaunchServices database
-		# the executable usually resides in the LaunchServices framework Support directory
-		# The LaunchServices framework is a sub-framework of the CoreServices umbrella framework
-		cmake_find_frameworks(CoreServices)
-		find_program (Mathematica_LSRegister_EXECUTABLE
-			NAMES "lsregister"
-			PATH_SUFFIXES "/Frameworks/LaunchServices.framework/Support"
-			HINTS ${CoreServices_FRAMEWORKS})
-		mark_as_advanced(
-			Mathematica_CoreServices_DIR
-			Mathematica_LaunchServices_DIR
-			Mathematica_LSRegister_EXECUTABLE)
-		if (NOT Mathematica_LSRegister_EXECUTABLE)
-			message (STATUS "Skipping search of the LaunchServices database, because the lsregister executable could not be found.")
-			return()
-		endif()
-		foreach (_bundleID IN ITEMS ${ARGN})
-			execute_process(
-				COMMAND "${Mathematica_LSRegister_EXECUTABLE}" "-dump"
-				COMMAND "grep" "--before-context=20" "--after-context=20" "${_bundleID}"
-				COMMAND "grep" "--only-matching" "/.*\\.app"
-				TIMEOUT 20 OUTPUT_VARIABLE _queryResult ERROR_QUIET)
-			string (REPLACE ";" "\\;" _queryResult "${_queryResult}")
-			string (REPLACE "\n" ";" _appPaths "${_queryResult}")
-			if (_appPaths)
-				# put paths into canonical order
-				list (SORT _appPaths)
-				list (REVERSE _appPaths)
-			else()
-				message (STATUS "No Mathematica apps registered in macOS LaunchServices database.")
-			endif()
-			if (Mathematica_DEBUG)
-				message (STATUS "macOS LaunchServices database registered apps=${_appPaths}")
-			endif()
-			if (_appPaths)
-				set (_paths "")
-				set (_insertIndex 0)
-				foreach (_appPath IN LISTS _appPaths)
-					# ignore paths that no longer exist
-					if (EXISTS "${_appPath}")
-						_to_cmake_path("${_appPath}" _appPath)
-						if (Mathematica_FIND_VERSION AND Mathematica_FIND_VERSION_EXACT)
-							if ("${_appPath}" MATCHES "${Mathematica_FIND_VERSION_MAJOR}.${Mathematica_FIND_VERSION_MINOR}")
-								# insert in front of other versions if version matches requested one
-								list (LENGTH _paths _len)
-								if (_len EQUAL _insertIndex)
-									list (APPEND _paths "${_appPath}")
-								else()
-									list (INSERT _paths ${_insertIndex} "${_appPath}")
-								endif()
-								math(EXPR _insertIndex "${_insertIndex} + 1")
-							else()
-								list (APPEND _paths "${_appPath}")
-							endif()
-						else()
-							list (APPEND _paths "${_appPath}")
-						endif()
-					endif()
 				endforeach()
 				list (APPEND ${_outSearchPaths} ${_paths})
 			endif()
@@ -482,8 +342,6 @@ macro (_get_search_paths _outSearchPaths)
 		if (CMAKE_SYSTEM_APPBUNDLE_PATH)
 			list (APPEND ${_outSearchPaths} ${CMAKE_SYSTEM_APPBUNDLE_PATH})
 		endif()
-		# add non-standard installation paths from macOS LaunchServices database
-		_add_launch_services_search_paths(${_outSearchPaths} "com.wolfram.Mathematica")
 	elseif (CMAKE_HOST_UNIX)
 		# add standard Mathematica Unix installation paths
 		list (APPEND ${_outSearchPaths} "/usr/local/Wolfram" "/opt/Wolfram")
@@ -511,12 +369,12 @@ macro (_systemNameToSystemID _systemName _systemProcessor _outSystemIDs)
 			set (${_outSystemIDs} "Windows")
 		endif()
 	elseif ("${_systemName}" STREQUAL "Darwin")
-		if ("${_systemProcessor}" STREQUAL "i386")
-			set (${_outSystemIDs} "MacOSX-x86")
+		if ("${_systemProcessor}" STREQUAL "arm64")
+			set (${_outSystemIDs} "MacOSX-ARM64")
 		elseif ("${_systemProcessor}" STREQUAL "x86_64")
 			set (${_outSystemIDs} "MacOSX-x86-64")
-		elseif ("${_systemProcessor}" STREQUAL "arm64")
-			set (${_outSystemIDs} "MacOSX-ARM64")
+		elseif ("${_systemProcessor}" STREQUAL "i386")
+			set (${_outSystemIDs} "MacOSX-x86")
 		elseif ("${_systemProcessor}" MATCHES "ppc64|powerpc64")
 			set (${_outSystemIDs} "Darwin-PowerPC64")
 		elseif ("${_systemProcessor}" MATCHES "ppc|powerpc")
@@ -532,10 +390,12 @@ macro (_systemNameToSystemID _systemName _systemProcessor _outSystemIDs)
 			endif()
 		endif()
 	elseif ("${_systemName}" STREQUAL "Linux")
-		if ("${_systemProcessor}" MATCHES "^i.86$")
-			set (${_outSystemIDs} "Linux")
-		elseif ("${_systemProcessor}" MATCHES "x86_64|amd64")
+		if ("${_systemProcessor}" MATCHES "x86_64|amd64")
 			set (${_outSystemIDs} "Linux-x86-64")
+		elseif ("${_systemProcessor}" MATCHES "i.86|x86")
+			set (${_outSystemIDs} "Linux")
+		elseif ("${_systemProcessor}" MATCHES "aarch64|arm64")
+			set (${_outSystemIDs} "Linux-ARM64")
 		elseif ("${_systemProcessor}" STREQUAL "ia64")
 			set (${_outSystemIDs} "Linux-IA64")
 		elseif ("${_systemProcessor}" MATCHES "^arm")
@@ -588,7 +448,7 @@ macro (_get_system_IDs _outSystemIDs)
 				endif()
 			endforeach()
 		else()
-			# determine System ID by checking endianness and pointer size
+			# determine System ID by checking endianness and system processor
 			TEST_BIG_ENDIAN(_isBigEndian)
 			if (_isBigEndian)
 				if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -606,26 +466,23 @@ macro (_get_system_IDs _outSystemIDs)
 					endif()
 				endif()
 			else()
-				if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-					set (${_outSystemIDs} "MacOSX-x86-64")
+				_systemNameToSystemID("${CMAKE_SYSTEM_NAME}" "${CMAKE_SYSTEM_PROCESSOR}" _systemID)
+				if (_systemID)
+					list (APPEND ${_outSystemIDs} ${_systemID})
 				else()
-					set (${_outSystemIDs} "MacOSX-x86")
+					message (FATAL_ERROR "Unsupported macOS architecture ${CMAKE_SYSTEM_PROCESSOR}")
 				endif()
 			endif()
 		endif()
 	elseif (UNIX)
-		if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-			# pointer size check is more reliable than CMAKE_SYSTEM_PROCESSOR
-			if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-				set (${_outSystemIDs} "Linux-x86-64")
-			else()
-				set (${_outSystemIDs} "Linux")
-			endif()
+		_systemNameToSystemID("${CMAKE_SYSTEM_NAME}" "${CMAKE_SYSTEM_PROCESSOR}" _systemID)
+		if (_systemID)
+			list (APPEND ${_outSystemIDs} ${_systemID})
 		else()
-			_systemNameToSystemID("${CMAKE_SYSTEM_NAME}" "${CMAKE_SYSTEM_PROCESSOR}" ${_outSystemIDs})
+			message (FATAL_ERROR "Unsupported ${CMAKE_SYSTEM_NAME} architecture ${CMAKE_SYSTEM_PROCESSOR}")
 		endif()
 	else()
-		set (${_outSystemIDs} "Generic")
+		message (FATAL_ERROR "Unsupported platform ${CMAKE_SYSTEM_NAME}")
 	endif()
 	list (REMOVE_DUPLICATES ${_outSystemIDs})
 endmacro(_get_system_IDs)
@@ -665,7 +522,12 @@ macro (_get_host_system_IDs _outSystemIDs)
 endmacro()
 
 macro (_get_supported_systemIDs _version _outSystemIDs)
-	if (NOT "${_version}" VERSION_LESS "12.3")
+	if (NOT "${_version}" VERSION_LESS "13.2")
+		set (${_outSystemIDs}
+			"Windows-x86-64"
+			"Linux-x86-64" "Linux-ARM64"
+			"MacOSX-x86-64" "MacOSX-ARM64")
+	elseif (NOT "${_version}" VERSION_LESS "12.3")
 		set (${_outSystemIDs}
 			"Windows-x86-64"
 			"Linux-x86-64" "Linux-ARM"
@@ -763,7 +625,7 @@ macro (_get_compatible_system_IDs _systemID _outSystemIDs)
 			else()
 				list (APPEND ${_outSystemIDs} "MacOSX-x86-64" "MacOSX-x86")
 			endif()
-		elseif ("${_systemID}" MATCHES "MacOSX-ARM64")
+		elseif ("${_systemID}" STREQUAL "MacOSX-ARM64")
 			if (Mathematica_VERSION)
 				# Mathematica 12.3 added support for MacOSX-ARM64
 				if (NOT "${Mathematica_VERSION}" VERSION_LESS "12.3")
@@ -806,7 +668,7 @@ macro (_get_compatible_system_IDs _systemID _outSystemIDs)
 	elseif ("${_systemID}" MATCHES "Linux-x86-64|Linux-IA64")
 		if (Mathematica_VERSION)
 			if (NOT "${Mathematica_VERSION}" VERSION_LESS "5.2")
-				# Mathematica 5.2 added support for 64-bit
+				# Mathematica 5.2 added support for 64-bit Linux x86
 				list (APPEND ${_outSystemIDs} ${_systemID})
 			endif()
 		else()
@@ -815,11 +677,40 @@ macro (_get_compatible_system_IDs _systemID _outSystemIDs)
 		# Linux 64-bit can run x86 through ia32-libs package
 		if (Mathematica_VERSION)
 			if ("${Mathematica_VERSION}" VERSION_LESS "11.3")
-				# Mathematica 11.3 dropped support for 32-bit Linux
+				# Mathematica 11.3 dropped support for 32-bit Linux x86
 				list (APPEND ${_outSystemIDs} "Linux")
 			endif()
 		else()
 			list (APPEND ${_outSystemIDs} "Linux")
+		endif()
+	elseif ("${_systemID}" STREQUAL "Linux-ARM64")
+		if (Mathematica_VERSION)
+			# Mathematica 13.2 added support for 64-bit Linux ARM
+			if (NOT "${Mathematica_VERSION}" VERSION_LESS "13.2")
+				list (APPEND ${_outSystemIDs} ${_systemID})
+			endif()
+		else()
+			list (APPEND ${_outSystemIDs} ${_systemID})
+		endif()
+	elseif ("${_systemID}" STREQUAL "Linux-ARM")
+		if (Mathematica_VERSION)
+			# Mathematica 10.0 added support for 32-bit Linux ARM
+			# Mathematica 13.2 dropped support for 32-bit Linux ARM
+			if (NOT "${Mathematica_VERSION}" VERSION_LESS "10.0" AND
+					"${Mathematica_VERSION}" VERSION_LESS "13.2")
+				list (APPEND ${_outSystemIDs} ${_systemID})
+			endif()
+		else()
+			list (APPEND ${_outSystemIDs} ${_systemID})
+		endif()
+	elseif ("${_systemID}" STREQUAL "Linux")
+		if (Mathematica_VERSION)
+			# Mathematica 11.3 dropped support for 32-bit Linux x86
+			if ("${Mathematica_VERSION}" VERSION_LESS "11.3")
+				list (APPEND ${_outSystemIDs} ${_systemID})
+			endif()
+		else()
+			list (APPEND ${_outSystemIDs} ${_systemID})
 		endif()
 	else()
 		list (APPEND ${_outSystemIDs} ${_systemID})
@@ -1372,11 +1263,13 @@ macro (_setup_mathematica_base_directory)
 		endif()
 	else ()
 		# guess Mathematica_BASE_DIR from environment
-		# environment variable MATHEMATICA_BASE may override default
+		# environment variable MATHEMATICA_BASE (or WOLFRAM_BASE) may override default
 		# $BaseDirectory, see
 		# https://reference.wolfram.com/language/tutorial/ConfigurationFiles.html
 		if (DEFINED ENV{MATHEMATICA_BASE})
 			set (Mathematica_BASE_DIR "$ENV{MATHEMATICA_BASE}")
+		elseif (DEFINED ENV{WOLFRAM_BASE})
+			set (Mathematica_BASE_DIR "$ENV{WOLFRAM_BASE}")
 		elseif (CMAKE_HOST_WIN32 OR CYGWIN)
 			if (DEFINED $ENV{PROGRAMDATA})
 				set (Mathematica_BASE_DIR "$ENV{PROGRAMDATA}\\Mathematica")
@@ -1424,11 +1317,13 @@ macro (_setup_mathematica_userbase_directory)
 		endif()
 	else ()
 		# guess Mathematica_USERBASE_DIR from environment
-		# environment variable MATHEMATICA_USERBASE may override default
+		# environment variable MATHEMATICA_USERBASE (or WOLFRAM_USERBASE) may override default
 		# $UserBaseDirectory, see
 		# https://reference.wolfram.com/language/tutorial/ConfigurationFiles.html
 		if (DEFINED ENV{MATHEMATICA_USERBASE})
 			set (Mathematica_USERBASE_DIR "$ENV{MATHEMATICA_USERBASE}")
+		elseif (DEFINED ENV{WOLFRAM_USERBASE})
+			set (Mathematica_USERBASE_DIR "$ENV{WOLFRAM_USERBASE}")
 		elseif (CMAKE_HOST_WIN32 OR CYGWIN)
 			if (DEFINED ENV{APPDATA})
 				set (Mathematica_USERBASE_DIR "$ENV{APPDATA}\\Mathematica")
