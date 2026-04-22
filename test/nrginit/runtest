@@ -1,4 +1,5 @@
 #!/bin/sh
+set -o pipefail
 # $1 = PROJECT_SOURCE_DIR
 # $2 = CMAKE_CURRENT_SOURCE_DIR/${test}
 # $3 = Mathematica kernel executable
