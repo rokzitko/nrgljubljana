@@ -187,7 +187,7 @@ CPMAddPackage("gh:google/googletest#v1.15.2")
 CPMFindPackage(
   NAME Eigen3
   GITLAB_REPOSITORY libeigen/eigen
-  GIT_TAG 3.4.0
+  GIT_TAG 3.4.1
   OPTIONS
     "BUILD_TESTING OFF" # Disable tests for Eigen
 )
@@ -302,6 +302,12 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND DEFINED ENV{LIBRARY_PATH})
     string(APPEND CMAKE_MODULE_LINKER_FLAGS " -L${dir}")
     string(APPEND CMAKE_EXE_LINKER_FLAGS " -L${dir}")
   endforeach()
+endif()
+
+# Workaround for ABI notes on aarch64 platforms
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$"
+   AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-psabi>)
 endif()
 
 # #############
