@@ -32,10 +32,14 @@ jobs:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl}
           - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS}
           - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS}
+          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: -DCMAKE_BUILD_TYPE=Debug, omp_threads: "1", diag: gcc-arm-debug}
+          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, omp_threads: "1", diag: gcc-arm-omp1}
           - {os: ubuntu-24.04, cc: gcc-15, cxx: g++-15, blas: openBLAS}
           - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS}
           - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS}
           - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS}
+          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: -DCMAKE_BUILD_TYPE=Debug, omp_threads: "1", diag: gcc-arm-debug}
+          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, omp_threads: "1", diag: gcc-arm-omp1}
           - {os: macos-14, cc: clang, cxx: clang++, blas: accelerate}
           - {os: macos-15, cc: clang, cxx: clang++, blas: accelerate}
           - {os: macos-26, cc: clang, cxx: clang++, blas: accelerate, require_arm64: true}
@@ -182,8 +186,14 @@ jobs:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
       run: |
-        mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install
+        mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install ${{ matrix.cmake_flags }}
         make -j2 || make -j1 VERBOSE=1
+
+    - name: Configure test runtime environment
+      if: ${{ matrix.omp_threads != '' }}
+      run: |
+        echo "OMP_NUM_THREADS=${{ matrix.omp_threads }}" >> $GITHUB_ENV
+        echo "OMP_DYNAMIC=FALSE" >> $GITHUB_ENV
     
     - name: Test NRG Ljubljana
       env:
