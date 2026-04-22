@@ -10,6 +10,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  CACHE_VERSION: "v2"
   CMAKE_C_COMPILER_LAUNCHER: ccache
   CMAKE_CXX_COMPILER_LAUNCHER: ccache
   CCACHE_COMPILERCHECK: content
@@ -52,9 +53,9 @@ jobs:
     - uses: actions/cache/restore@v4
       with:
         path: ${{ env.CCACHE_DIR }}
-        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-${{ github.run_id }}
+        key: ccache-${{ env.CACHE_VERSION }}-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-${{ github.run_id }}
         restore-keys:
-          ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-
+          ccache-${{ env.CACHE_VERSION }}-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-
 
     - name: Install ubuntu dependencies (openBLAS)
       if: ${{ startsWith(matrix.os, 'ubuntu-22.04') && contains(matrix.blas, 'openBLAS') }}
@@ -210,7 +211,7 @@ jobs:
       if: always()
       with:
         path: ${{ env.CCACHE_DIR }}
-        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
+        key: ccache-${{ env.CACHE_VERSION }}-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-${{ github.run_id }}
 
   sanitizers:
     runs-on: ubuntu-22.04
