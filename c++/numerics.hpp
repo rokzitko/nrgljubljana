@@ -9,6 +9,7 @@
 
 #include <concepts>
 #include <array>
+#include <cmath>
 #include <complex>
 #include <iomanip>
 #include <vector>
@@ -141,7 +142,7 @@ inline auto are_conjugate(const std::complex<double> &a, const std::complex<doub
 template<matrix M> auto frobenius_norm(const M &m) { // Frobenius norm (without taking the final square root!)
   double sum{};
   for (auto i = 0; i < size1(m); i++)
-    for (auto j = 0; j < size2(m); j++) sum += pow(abs(m(i, j)),2);
+    for (auto j = 0; j < size2(m); j++) sum += pow(std::abs(m(i, j)),2);
   return sum;
 }
 
@@ -184,12 +185,12 @@ template <scalar T> constexpr T chop(const T x, const double xlimit = 1.e-8) { r
 // Powers, such as (-1)^n, appear in the coupling coefficients.
 constexpr double Power(const double i, const double nn) { return std::pow(i, nn); }
 
-constexpr double Abs(const double x) { return abs(x); }
+   constexpr double Abs(const double x) { return std::abs(x); }
 
 // Check if the value x is real [for complex number calculations].
 constexpr auto is_real([[maybe_unused]] const double x) { return true; }
 constexpr auto is_real(const std::complex<double> z, const double check_real_tolerance = 1e-8) {
-  return abs(z.imag()) <= check_real_tolerance;
+  return std::abs(z.imag()) <= check_real_tolerance;
 }
 
 // Check if x is real and return the real part, i.e. x.real().
@@ -301,7 +302,7 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
   const auto betaEn = beta * En;
   const auto betaEm = beta * Em;
   const auto x      = betaEn - betaEm;
-  if (abs(x) > WEIGHT_TOL) {
+  if (std::abs(x) > WEIGHT_TOL) {
     // If one of {betaEm,betaEn} is small, one of exp() will have a value around 1, the other around 0, thus the
     // overall result will be approximately +-1/x.
     return (exp(-betaEm) - exp(-betaEn)) / x;
@@ -325,8 +326,8 @@ bool is_unitary(const Matrix &vec,
   for (const auto r : range0(M)) {
     S sumabs{};
     for (const auto j : range0(d)) sumabs += conj_me(vec(r, j)) * vec(r, j);
-    if (!num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON)) {
-      std::cout << "is_unitary() r=" << r << " : 1-sumabs=" << 1.0-sumabs << std::endl;
+    if (!num_equal(std::abs(sumabs), 1.0, NORMALIZATION_EPSILON)) {
+      std::cout << "is_unitary() r=" << r << " : 1-|sumabs|=" << 1.0-std::abs(sumabs) << std::endl;
       return false;
     }
   }
@@ -335,8 +336,8 @@ bool is_unitary(const Matrix &vec,
     for (const auto r2 : boost::irange(r1 + 1, M)) {
       S skpdt{};
       for (const auto j : range0(d)) skpdt += conj_me(vec(r1, j)) * vec(r2, j);
-      if (!num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) {
-        std::cout << "is_unitary() r1=" << r1 << " r2=" << r2 << " : skpdt=" << skpdt << std::endl;
+      if (!num_equal(std::abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) {
+        std::cout << "is_unitary() r1=" << r1 << " r2=" << r2 << " : |skpdt|=" << std::abs(skpdt) << std::endl;
         return false;
       }
     }
@@ -358,7 +359,7 @@ bool is_unitary_blocks(const std::vector<Matrix> &U,
       assert(M == nrvec(U[i]));
       for (const auto j : range0(d)) sumabs += conj_me(U[i](r, j)) * U[i](r, j);
     }
-    if (!num_equal(abs(sumabs), 1.0, NORMALIZATION_EPSILON)) return false;
+    if (!num_equal(std::abs(sumabs), 1.0, NORMALIZATION_EPSILON)) return false;
   }
   // Check orthogonality
   for (const auto r1 : range0(M)) {
@@ -368,7 +369,7 @@ bool is_unitary_blocks(const std::vector<Matrix> &U,
         const auto d = dim(U[i]);
         for (const auto j : range0(d)) skpdt += conj_me(U[i](r1, j)) * U[i](r2, j);
       }
-      if (!num_equal(abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) return false;
+      if (!num_equal(std::abs(skpdt), 0.0, ORTHOGONALITY_EPSILON)) return false;
     }
   }
   return true;
