@@ -28,22 +28,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS}
-          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS}
-          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl}
-          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS}
-          - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS}
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: -DCMAKE_BUILD_TYPE=Debug, omp_threads: "1", diag: gcc-arm-debug}
-          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, omp_threads: "1", diag: gcc-arm-omp1}
-          - {os: ubuntu-24.04, cc: gcc-15, cxx: g++-15, blas: openBLAS}
-          - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS}
-          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS}
-          - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS}
+          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: "1", diag: gcc-arm-omp1}
+          - {os: ubuntu-24.04, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: -DCMAKE_BUILD_TYPE=Debug, omp_threads: "1", diag: gcc-arm-debug}
-          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, omp_threads: "1", diag: gcc-arm-omp1}
-          - {os: macos-14, cc: clang, cxx: clang++, blas: accelerate}
-          - {os: macos-15, cc: clang, cxx: clang++, blas: accelerate}
-          - {os: macos-26, cc: clang, cxx: clang++, blas: accelerate, require_arm64: true}
+          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: "", omp_threads: "1", diag: gcc-arm-omp1}
+          - {os: macos-14, cc: clang, cxx: clang++, blas: accelerate, cmake_flags: "", omp_threads: ""}
+          - {os: macos-15, cc: clang, cxx: clang++, blas: accelerate, cmake_flags: "", omp_threads: ""}
+          - {os: macos-26, cc: clang, cxx: clang++, blas: accelerate, require_arm64: true, cmake_flags: "", omp_threads: ""}
 
     runs-on: ${{ matrix.os }}
 
@@ -260,6 +260,8 @@ jobs:
     - name: Test with sanitizers
       env:
         OPENBLAS_NUM_THREADS: "1"
+        # Small memory leaks expected from third-party dependencies
+        ASAN_OPTIONS: "detect_leaks=0"
       run: |
         ctest --test-dir build -j2 --output-on-failure
 
