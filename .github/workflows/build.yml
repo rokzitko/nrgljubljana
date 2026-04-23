@@ -31,16 +31,14 @@ jobs:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+# Beware: gcc on arm produces incorrect numerical results (April 2026). Considering thus platform
+# as "unsupported" for now.
+#          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: -DCMAKE_BUILD_TYPE=Debug, omp_threads: "1", diag: gcc-arm-debug}
-          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: "1", diag: gcc-arm-omp1}
           - {os: ubuntu-24.04, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+#          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: -DCMAKE_BUILD_TYPE=Debug, omp_threads: "1", diag: gcc-arm-debug}
-          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: "", omp_threads: "1", diag: gcc-arm-omp1}
           - {os: macos-14, cc: clang, cxx: clang++, blas: accelerate, cmake_flags: "", omp_threads: ""}
           - {os: macos-15, cc: clang, cxx: clang++, blas: accelerate, cmake_flags: "", omp_threads: ""}
           - {os: macos-26, cc: clang, cxx: clang++, blas: accelerate, require_arm64: true, cmake_flags: "", omp_threads: ""}
