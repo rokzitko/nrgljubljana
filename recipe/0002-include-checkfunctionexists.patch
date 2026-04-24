@@ -1,0 +1,10 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -243,6 +243,7 @@
+ target_link_libraries(blas_lapack INTERFACE LAPACK::LAPACK)
+ install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
+ 
++include(CheckFunctionExists)
+ # Check for availability of cblas interface
+ set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+ set(CMAKE_REQUIRED_FLAGS ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})

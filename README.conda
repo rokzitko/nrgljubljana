@@ -1,0 +1,97 @@
+# Conda build notes
+
+This document describes how to build `nrgljubljana` with conda while expecting a local Mathematica installation to be detected during CMake configuration.
+
+## Recipe layout
+
+The conda recipe lives in:
+
+- `recipe/meta.yaml`
+- `recipe/build.sh`
+- `recipe/*.patch`
+
+Build with:
+
+```bash
+conda build recipe
+```
+
+## Prerequisites
+
+1. Conda tooling:
+
+```bash
+conda install -n base -c conda-forge conda-build
+```
+
+2. A local Mathematica installation on the machine.
+
+3. Mathematica kernel visible to CMake `FindMathematica` (any one of these is usually sufficient):
+   - `WolframKernel` in `PATH`
+   - `math` in `PATH`
+   - explicit CMake hint via `CMAKE_ARGS` (examples below)
+
+## Optional: help CMake find Mathematica
+
+If automatic detection does not work, pass one of these hints when building:
+
+```bash
+export CMAKE_ARGS="${CMAKE_ARGS} -DMathematica_ROOT_DIR=/path/to/Wolfram"
+```
+
+or
+
+```bash
+export CMAKE_ARGS="${CMAKE_ARGS} -DMathematica_KERNEL_EXECUTABLE=/full/path/to/WolframKernel"
+```
+
+## Build the package
+
+From repository root:
+
+```bash
+conda build recipe
+```
+
+Artifacts are placed in your local conda-bld directory (for example under `~/miniconda3/conda-bld/`).
+
+## Install from local build
+
+```bash
+conda create -n nrg-local -c local -c conda-forge nrgljubljana
+conda activate nrg-local
+```
+
+## Verify install
+
+Basic binary/library checks:
+
+```bash
+command -v nrg
+command -v adapt
+test -f "${CONDA_PREFIX}/lib/cmake/nrgljubljana/nrgljubljana-config.cmake"
+```
+
+Activation hook:
+
+```bash
+echo "${NRGLJUBLJANA_ROOT}"
+```
+
+It should print the active conda prefix.
+
+## Verify Mathematica-enabled path
+
+Because this build expects local Mathematica, confirm that CMake detected Mathematica during build logs (look for a line similar to `Mathematica executable ...`) and verify `nrginit` was installed:
+
+```bash
+test -x "${CONDA_PREFIX}/nrginit/nrginit"
+```
+
+If `nrginit` is missing, Mathematica was not detected at configure time; rebuild with explicit `CMAKE_ARGS` hints above.
+
+## Notes
+
+- Current recipe skips Windows and Linux `aarch64`.
+- Mathematica is not provided by conda dependencies; detection relies on local system installation.
+- In isolated CI environments without Mathematica, `nrginit` will be skipped.

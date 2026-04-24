@@ -1,0 +1,77 @@
+{% set name = "nrgljubljana" %}
+{% set version = "2026.04" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  git_url: https://github.com/rokzitko/nrgljubljana.git
+  git_rev: master
+  git_depth: 1
+  patches:
+    - 0001-use-packaged-dependencies-and-disable-nrginit-without-mathematica.patch
+    - 0002-include-checkfunctionexists.patch
+    - 0003-lapack-target-fallback.patch
+
+build:
+  number: 0
+  skip: true  # [win or (linux and aarch64)]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - cmake >=3.25
+    - ninja
+    - git
+  host:
+    - blas-devel =*=*openblas
+    - eigen >=3.4,<3.5
+    - fmt 11.2.0
+    - gmp
+    - gsl
+    - gtest 1.15.2
+    - hdf5
+    - highfive 3.1.0
+    - libboost-devel
+    - libboost-mpi
+    - llvm-openmp  # [osx]
+    - openmpi
+    - range-v3 0.12.*
+  run:
+    - gmp
+    - gsl
+    - hdf5
+    - libboost
+    - libboost-mpi
+    - llvm-openmp  # [osx]
+    - openmpi
+
+test:
+  commands:
+    - test -x "${PREFIX}/bin/nrg"  # [unix]
+    - test -x "${PREFIX}/bin/adapt"  # [unix]
+    - test -f "${PREFIX}/lib/libnrgljubljana_c.so"  # [linux]
+    - test -f "${PREFIX}/lib/libnrgljubljana_c.dylib"  # [osx]
+    - test -f "${PREFIX}/lib/cmake/nrgljubljana/nrgljubljana-config.cmake"  # [unix]
+    - test -f "${PREFIX}/etc/conda/activate.d/nrgljubljana.sh"  # [unix]
+
+about:
+  home: https://github.com/rokzitko/nrgljubljana
+  summary: Numerical renormalization group framework for quantum impurity problems
+  description: |
+    NRG Ljubljana is a framework for numerical renormalization group calculations
+    for quantum impurity problems. This recipe builds the C++ runtime and the
+    standalone tools from conda-packaged dependencies.
+
+    If Mathematica is available on the local machine and detected by CMake,
+    the nrginit component is installed as part of the package.
+  license: GPL-3.0-or-later
+  license_file: COPYING
+  dev_url: https://github.com/rokzitko/nrgljubljana
+  doc_url: http://auger.ijs.si/nrgljubljana/site/
+
+extra:
+  recipe-maintainers:
+    - rokzitko

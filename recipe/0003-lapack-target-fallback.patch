@@ -1,0 +1,17 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -240,7 +240,13 @@
+ message(STATUS "BLAS_LINKER_FLAGS=${BLAS_LINKER_FLAGS}")
+ message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
+ message(STATUS "LAPACK_LINKER_FLAGS=${LAPACK_LINKER_FLAGS}")
+-target_link_libraries(blas_lapack INTERFACE LAPACK::LAPACK)
++if(TARGET LAPACK::LAPACK)
++  target_link_libraries(blas_lapack INTERFACE LAPACK::LAPACK)
++else()
++  message(WARNING "LAPACK::LAPACK target not provided by FindLAPACK; using LAPACK_LIBRARIES/BLAS_LIBRARIES directly")
++  target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
++endif()
++
+ install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
+ 
+ include(CheckFunctionExists)
