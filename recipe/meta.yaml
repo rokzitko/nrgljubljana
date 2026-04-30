@@ -15,7 +15,7 @@ source:
     - 0003-lapack-target-fallback.patch
 
 build:
-  number: 1
+  number: 2
   skip: true  # [win or (linux and aarch64)]
 
 requirements:
@@ -26,7 +26,8 @@ requirements:
     - ninja
     - git
   host:
-    - blas-devel =*=*openblas
+    - blas-devel =*=*mkl  # [target_platform == "linux-64"]
+    - blas-devel =*=*openblas  # [target_platform != "linux-64"]
     - eigen >=3.4,<3.5
     - fmt 11.2.0
     - gmp

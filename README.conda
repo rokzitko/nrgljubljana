@@ -101,5 +101,6 @@ If `nrginit` is missing, Mathematica was not detected at configure time; rebuild
 ## Notes
 
 - Current recipe skips Windows and Linux `aarch64`.
+- The conda recipe uses Intel MKL on `linux-64` and OpenBLAS on other supported platforms.
 - Mathematica is not provided by conda dependencies; detection relies on local system installation.
 - In isolated CI environments without Mathematica, `nrginit` will be skipped.
