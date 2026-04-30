@@ -15,7 +15,7 @@ source:
     - 0003-lapack-target-fallback.patch
 
 build:
-  number: 2
+  number: 3
   skip: true  # [win or (linux and aarch64)]
 
 requirements:
@@ -37,7 +37,7 @@ requirements:
     - highfive 3.1.0
     - libboost-devel
     - libboost-mpi
-    - llvm-openmp  # [osx]
+    - llvm-openmp  # [target_platform == "linux-64" or osx]
     - openmpi
     - range-v3 0.12.*
   run:
@@ -46,13 +46,15 @@ requirements:
     - hdf5
     - libboost
     - libboost-mpi
-    - llvm-openmp  # [osx]
+    - llvm-openmp  # [target_platform == "linux-64" or osx]
+    - mkl  # [target_platform == "linux-64"]
     - openmpi
 
 test:
   commands:
     - test -x "${PREFIX}/bin/nrg"  # [unix]
     - test -x "${PREFIX}/bin/adapt"  # [unix]
+    - test -z "$(ldd "${PREFIX}/bin/nrg" | grep 'not found')"  # [linux]
     - test -f "${PREFIX}/lib/libnrgljubljana_c.so"  # [linux]
     - test -f "${PREFIX}/lib/libnrgljubljana_c.dylib"  # [osx]
     - test -f "${PREFIX}/lib/cmake/nrgljubljana/nrgljubljana-config.cmake"  # [unix]
