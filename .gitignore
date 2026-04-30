@@ -4,6 +4,7 @@ build
 build-x86
 build-arm
 build.*
+!recipe/build.sh
 build_*
 run_tests*
 *.pyc

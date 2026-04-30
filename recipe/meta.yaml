@@ -15,7 +15,7 @@ source:
     - 0003-lapack-target-fallback.patch
 
 build:
-  number: 0
+  number: 1
   skip: true  # [win or (linux and aarch64)]
 
 requirements:
@@ -56,6 +56,8 @@ test:
     - test -f "${PREFIX}/lib/libnrgljubljana_c.dylib"  # [osx]
     - test -f "${PREFIX}/lib/cmake/nrgljubljana/nrgljubljana-config.cmake"  # [unix]
     - test -f "${PREFIX}/etc/conda/activate.d/nrgljubljana.sh"  # [unix]
+    - test -f "${PREFIX}/etc/conda/deactivate.d/nrgljubljana.sh"  # [unix]
+    - grep -q 'CONDA_PREFIX}/nrginit' "${PREFIX}/etc/conda/activate.d/nrgljubljana.sh"  # [unix]
 
 about:
   home: https://github.com/rokzitko/nrgljubljana

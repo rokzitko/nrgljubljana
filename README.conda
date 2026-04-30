@@ -13,7 +13,7 @@ The conda recipe lives in:
 Build with:
 
 ```bash
-conda build recipe
+conda build -c conda-forge recipe
 ```
 
 ## Prerequisites
@@ -50,7 +50,7 @@ export CMAKE_ARGS="${CMAKE_ARGS} -DMathematica_KERNEL_EXECUTABLE=/full/path/to/W
 From repository root:
 
 ```bash
-conda build recipe
+conda build -c conda-forge recipe
 ```
 
 Artifacts are placed in your local conda-bld directory (for example under `~/miniconda3/conda-bld/`).
@@ -60,6 +60,12 @@ Artifacts are placed in your local conda-bld directory (for example under `~/min
 ```bash
 conda create -n nrg-local -c local -c conda-forge nrgljubljana
 conda activate nrg-local
+```
+
+To reinstall a rebuilt local package into an existing environment:
+
+```bash
+conda install -n nrg-local -c local -c conda-forge --force-reinstall nrgljubljana
 ```
 
 ## Verify install
@@ -76,9 +82,10 @@ Activation hook:
 
 ```bash
 echo "${NRGLJUBLJANA_ROOT}"
+printf '%s\n' "${PATH}" | tr ':' '\n' | grep -Fx "${CONDA_PREFIX}/nrginit"
 ```
 
-It should print the active conda prefix.
+It should print the active conda prefix and show that `nrginit/` is on `PATH`.
 
 ## Verify Mathematica-enabled path
 
@@ -86,6 +93,7 @@ Because this build expects local Mathematica, confirm that CMake detected Mathem
 
 ```bash
 test -x "${CONDA_PREFIX}/nrginit/nrginit"
+command -v nrginit
 ```
 
 If `nrginit` is missing, Mathematica was not detected at configure time; rebuild with explicit `CMAKE_ARGS` hints above.
