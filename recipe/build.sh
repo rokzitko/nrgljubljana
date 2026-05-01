@@ -41,7 +41,12 @@ cmake -S . -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
   -DCMAKE_PREFIX_PATH="${PREFIX}" \
+  -DCMAKE_IGNORE_PREFIX_PATH="/opt/homebrew;/usr/local" \
   -DCMAKE_FIND_PACKAGE_PREFER_CONFIG=ON \
+  -DCMAKE_CXX_SCAN_FOR_MODULES=OFF \
+  -DHDF5_NO_FIND_PACKAGE_CONFIG_FILE=ON \
+  -DHDF5_ROOT="${PREFIX}" \
+  -DHDF5_C_COMPILER_EXECUTABLE="${PREFIX}/bin/h5cc" \
   -DBuild_Tests="${build_tests}" \
   -DTEST_LONG="${test_long}" \
   -DBuild_Documentation=OFF \

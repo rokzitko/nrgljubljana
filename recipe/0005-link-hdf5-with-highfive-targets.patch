@@ -1,0 +1,33 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -143,7 +143,7 @@ install(TARGETS mpi EXPORT nrgljubljana-targets)
+ # Dependencies
+ 
+ # HDF5
+-find_package(HDF5 REQUIRED COMPONENTS C HL)
++find_package(HDF5 MODULE REQUIRED COMPONENTS C HL)
+ add_library(hdf5 INTERFACE)
+ target_include_directories(hdf5 SYSTEM INTERFACE ${HDF5_INCLUDE_DIRS})
+ target_link_libraries(hdf5 INTERFACE "${HDF5_LIBRARIES}" ${HDF5_HL_LIBRARIES})
+--- a/c++/CMakeLists.txt
++++ b/c++/CMakeLists.txt
+@@ -45,7 +45,7 @@ target_compile_definitions(nrgljubljana_c PUBLIC
+ )
+ 
+ # Link dependencies
+-target_link_libraries(nrgljubljana_c     PUBLIC openmp Boost::headers Boost::mpi Boost::serialization blas_lapack gmp dl mpi HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
++target_link_libraries(nrgljubljana_c     PUBLIC openmp Boost::headers Boost::mpi Boost::serialization blas_lapack gmp dl mpi hdf5 HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
+   $<$<BOOL:${ASAN}>:asan>
+   $<$<BOOL:${UBSAN}>:ubsan>
+ )
+--- a/tools/CMakeLists.txt
++++ b/tools/CMakeLists.txt
+@@ -18,7 +18,7 @@ macro(add_tool exec_name)
+   set_target_properties(${exec_name} PROPERTIES POSITION_INDEPENDENT_CODE ON BUILD_RPATH "${PROJECT_BINARY_DIR}/c++")
+ 
+   # Link dependencies
+-  target_link_libraries(${exec_name} PRIVATE openmp Boost::boost Boost::mpi Boost::serialization blas_lapack gmp gsl dl HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
++  target_link_libraries(${exec_name} PRIVATE openmp Boost::boost Boost::mpi Boost::serialization blas_lapack gmp gsl dl hdf5 HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
+         $<$<BOOL:${ASAN}>:asan>
+         $<$<BOOL:${UBSAN}>:ubsan>
+   )

@@ -14,9 +14,10 @@ source:
     - 0002-include-checkfunctionexists.patch
     - 0003-lapack-target-fallback.patch
     - 0004-provide-hdf5-cmake-target.patch
+    - 0005-link-hdf5-with-highfive-targets.patch
 
 build:
-  number: 7
+  number: 8
   skip: true  # [win or (linux and aarch64)]
 
 requirements:
