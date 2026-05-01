@@ -18,6 +18,8 @@ jobs:
         include:
           - os: ubuntu-24.04
             label: linux-64
+          - os: ubuntu-24.04-arm
+            label: linux-aarch64
           - os: macos-14
             label: macos
 
@@ -32,6 +34,8 @@ jobs:
       CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
       NRGLJUBLJANA_CONDA_GIT_URL: file://${{ github.workspace }}
       NRGLJUBLJANA_CONDA_GIT_REV: ${{ github.sha }}
+      OMPI_MCA_memory: ^patcher
+      OPENBLAS_NUM_THREADS: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +59,7 @@ jobs:
       - name: Build package
         run: |
           conda build -c conda-forge --no-anaconda-upload \
-            --variants "{nrgljubljana_build_jobs: ['2']}" \
+            --variants "{nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}" \
             recipe
 
       - name: Upload conda packages

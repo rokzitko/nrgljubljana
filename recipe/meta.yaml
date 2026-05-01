@@ -14,7 +14,7 @@ source:
 
 build:
   number: 9
-  skip: true  # [win or (linux and aarch64)]
+  skip: true  # [win]
 
 requirements:
   build:

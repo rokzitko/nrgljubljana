@@ -123,7 +123,7 @@ If Mathematica was detected during the build, the logs contain a line similar to
 
 ## Notes
 
-- Current recipe skips Windows and Linux `aarch64`.
+- Current recipe skips Windows.
 - The conda recipe uses Intel MKL on `linux-64` and OpenBLAS on other supported platforms.
 - Mathematica is not provided by conda dependencies; using `nrginit` relies on a local system installation.
 - In isolated CI environments without Mathematica, `nrginit` is still installed but Mathematica-dependent tests are skipped.

@@ -1,4 +1,5 @@
 [![build](https://github.com/rokzitko/nrgljubljana/actions/workflows/build.yml/badge.svg)](https://github.com/rokzitko/nrgljubljana/actions/workflows/build.yml)
+[![conda](https://github.com/rokzitko/nrgljubljana/actions/workflows/conda.yml/badge.svg)](https://github.com/rokzitko/nrgljubljana/actions/workflows/conda.yml)
 
 # NRG Ljubljana
 
