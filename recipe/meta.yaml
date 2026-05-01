@@ -13,10 +13,9 @@ source:
     - 0001-use-packaged-dependencies-and-disable-nrginit-without-mathematica.patch
     - 0002-include-checkfunctionexists.patch
     - 0003-lapack-target-fallback.patch
-    - 0004-use-findboost-module-mode.patch
 
 build:
-  number: 4
+  number: 5
   skip: true  # [win or (linux and aarch64)]
 
 requirements:
@@ -39,7 +38,8 @@ requirements:
     - libboost-devel
     - libboost-mpi
     - llvm-openmp  # [target_platform == "linux-64" or osx]
-    - openmpi
+    - openmpi  # [linux]
+    - mpich  # [osx]
     - range-v3 0.12.*
   run:
     - gmp
@@ -49,7 +49,8 @@ requirements:
     - libboost-mpi
     - llvm-openmp  # [target_platform == "linux-64" or osx]
     - mkl  # [target_platform == "linux-64"]
-    - openmpi
+    - openmpi  # [linux]
+    - mpich  # [osx]
 
 test:
   commands:
