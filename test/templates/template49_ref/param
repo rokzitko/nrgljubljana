@@ -36,12 +36,12 @@ prec_custom=14
 
 lastalloverride=true
 
-dumpannotated=30
+dumpannotated=3
 dumpgroups=false
 dumpprecision=14
 dumpscaled=false
-dumpdiagonal=30
+dumpdiagonal=3
 
 project=even
 
-reportdiagonal=10
+reportdiagonal=3
