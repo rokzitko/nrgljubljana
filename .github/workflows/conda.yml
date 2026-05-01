@@ -1,0 +1,67 @@
+name: conda
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  conda-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            label: linux-64
+
+    name: conda build (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    env:
+      CONDA_BLD_PATH: ${{ github.workspace }}/conda-bld
+      NRGLJUBLJANA_CONDA_GIT_URL: file://${{ github.workspace }}
+      NRGLJUBLJANA_CONDA_GIT_REV: ${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: conda-forge
+          channel-priority: strict
+          auto-update-conda: false
+          auto-activate-base: true
+
+      - name: Install conda-build
+        run: conda install -n base -y conda-build
+
+      - name: Render recipe
+        run: conda render -c conda-forge recipe
+
+      - name: Build package
+        run: |
+          conda build -c conda-forge --no-anaconda-upload \
+            --variants "{nrgljubljana_build_jobs: ['2']}" \
+            recipe
+
+      - name: Upload conda packages
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conda-packages-${{ matrix.label }}
+          path: |
+            ${{ env.CONDA_BLD_PATH }}/**/nrgljubljana-*.conda
+            ${{ env.CONDA_BLD_PATH }}/**/nrgljubljana-*.tar.bz2
+          if-no-files-found: warn
