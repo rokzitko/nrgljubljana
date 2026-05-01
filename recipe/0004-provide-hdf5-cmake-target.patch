@@ -1,0 +1,12 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -148,6 +148,9 @@
+ target_include_directories(hdf5 SYSTEM INTERFACE ${HDF5_INCLUDE_DIRS})
+ target_link_libraries(hdf5 INTERFACE "${HDF5_LIBRARIES}" ${HDF5_HL_LIBRARIES})
+ target_compile_options(hdf5 INTERFACE ${HDF5_DEFINITIONS})
++if(NOT TARGET HDF5::HDF5)
++  add_library(HDF5::HDF5 ALIAS hdf5)
++endif()
+ install(TARGETS hdf5 EXPORT nrgljubljana-targets)
+ 
+ # OpenMP
