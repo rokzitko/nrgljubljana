@@ -46,7 +46,7 @@
 +if(TARGET GTest::gtest_main AND NOT TARGET gtest_main)
 +  add_library(gtest_main ALIAS GTest::gtest_main)
 +endif()
-+find_package(Eigen3 3.4.1 CONFIG REQUIRED)
++find_package(Eigen3 3.4 CONFIG REQUIRED)
 +set(HIGHFIVE_FIND_HDF5 Off)
 +find_package(HighFive CONFIG REQUIRED)
 +find_package(fmt 11 CONFIG REQUIRED)

@@ -15,7 +15,7 @@ source:
     - 0003-lapack-target-fallback.patch
 
 build:
-  number: 5
+  number: 6
   skip: true  # [win or (linux and aarch64)]
 
 requirements:
