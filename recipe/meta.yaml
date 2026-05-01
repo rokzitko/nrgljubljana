@@ -13,9 +13,10 @@ source:
     - 0001-use-packaged-dependencies-and-disable-nrginit-without-mathematica.patch
     - 0002-include-checkfunctionexists.patch
     - 0003-lapack-target-fallback.patch
+    - 0004-use-findboost-module-mode.patch
 
 build:
-  number: 3
+  number: 4
   skip: true  # [win or (linux and aarch64)]
 
 requirements:

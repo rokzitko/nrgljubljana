@@ -1,0 +1,11 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -162,7 +162,7 @@
+ set(Boost_NO_WARN_NEW_VERSIONS 1)
+ set(Boost_NO_BOOST_CMAKE ON)
+ set(Boost_USE_STATIC_LIBS OFF)
+-find_package(Boost 1.53 REQUIRED COMPONENTS serialization mpi)
++find_package(Boost 1.53 MODULE REQUIRED COMPONENTS serialization mpi)
+ # note: header-only libraries such as multiprecision do not need to be listed
+ # as components in find_package()
+ 
