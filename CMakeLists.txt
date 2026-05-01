@@ -187,8 +187,8 @@ CPMAddPackage("gh:google/googletest#v1.15.2")
 CPMFindPackage(
   NAME Eigen3
   GITLAB_REPOSITORY libeigen/eigen
-  VERSION 3.4.1
-  GIT_TAG 3.4.1
+  VERSION 3.4.0
+  GIT_TAG 3.4.0
   OPTIONS
     "BUILD_TESTING OFF" # Disable tests for Eigen
     "EIGEN_BUILD_TESTING OFF"
