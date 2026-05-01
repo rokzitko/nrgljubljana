@@ -1,6 +1,6 @@
 --- a/CMakeLists.txt	2026-04-23 17:44:27.630077825 +0000
 +++ b/CMakeLists.txt	2026-04-23 17:52:25.440037418 +0000
-@@ -177,40 +177,13 @@
+@@ -177,40 +177,19 @@
  find_package(GMP REQUIRED)
  install(TARGETS gmp EXPORT nrgljubljana-targets)
  
@@ -40,6 +40,12 @@
 -CPMAddPackage("gh:ericniebler/range-v3#0.12.0")
 +# Use dependencies supplied by the package manager instead of fetching them.
 +find_package(GTest CONFIG REQUIRED)
++if(TARGET GTest::gtest AND NOT TARGET gtest)
++  add_library(gtest ALIAS GTest::gtest)
++endif()
++if(TARGET GTest::gtest_main AND NOT TARGET gtest_main)
++  add_library(gtest_main ALIAS GTest::gtest_main)
++endif()
 +find_package(Eigen3 3.4.1 CONFIG REQUIRED)
 +set(HIGHFIVE_FIND_HDF5 Off)
 +find_package(HighFive CONFIG REQUIRED)

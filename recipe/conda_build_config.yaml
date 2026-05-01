@@ -1,2 +1,10 @@
 numpy:
   - "1.26"
+nrgljubljana_build_tests:
+  - "OFF"
+nrgljubljana_test_long:
+  - "OFF"
+nrgljubljana_build_jobs:
+  - "0"
+nrgljubljana_test_jobs:
+  - "0"
