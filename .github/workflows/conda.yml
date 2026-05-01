@@ -18,6 +18,8 @@ jobs:
         include:
           - os: ubuntu-24.04
             label: linux-64
+          - os: macos-14
+            label: macos
 
     name: conda build (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
