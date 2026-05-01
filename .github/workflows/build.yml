@@ -10,6 +10,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  DEBIAN_FRONTEND: noninteractive
   CACHE_VERSION: "v2"
   CMAKE_C_COMPILER_LAUNCHER: ccache
   CMAKE_CXX_COMPILER_LAUNCHER: ccache
@@ -35,9 +36,9 @@ jobs:
 # as "unsupported" for now.
 #          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-24.04, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-#          - {os: ubuntu-24.04-arm, cc: gcc-15, cxx: g++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+#          - {os: ubuntu-24.04-arm, cc: gcc-14, cxx: g++-14, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "", omp_threads: ""}
           - {os: macos-14, cc: clang, cxx: clang++, blas: accelerate, cmake_flags: "", omp_threads: ""}
           - {os: macos-15, cc: clang, cxx: clang++, blas: accelerate, cmake_flags: "", omp_threads: ""}
@@ -59,20 +60,21 @@ jobs:
       if: ${{ startsWith(matrix.os, 'ubuntu-22.04') && contains(matrix.blas, 'openBLAS') }}
       run: >
         sudo apt-get update &&
-        sudo apt-get install lsb-release wget software-properties-common &&
+        sudo apt-get install -y --no-install-recommends lsb-release wget software-properties-common &&
         wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
-        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
-        sudo apt-get install
+        sudo apt-get install -y --no-install-recommends
         ccache
         clang-15
         g++-12
         hdf5-tools
         libblas-dev
+        libboost-dev
+        libboost-mpi-dev
+        libboost-serialization-dev
         libclang-15-dev
         libc++-15-dev
         libc++abi-15-dev
         libomp-15-dev
-        boost1.81
         libgmp-dev
         libgsl-dev
         libhdf5-dev
@@ -86,19 +88,20 @@ jobs:
       if: ${{ (matrix.os == 'ubuntu-22.04') && contains(matrix.blas, 'imkl') }}
       run: >
         sudo apt-get update &&
-        sudo apt-get install lsb-release wget software-properties-common &&
+        sudo apt-get install -y --no-install-recommends lsb-release wget software-properties-common &&
         wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
-        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
-        sudo apt-get install
+        sudo apt-get install -y --no-install-recommends
         ccache
         clang-15
         g++-12
         hdf5-tools
         libmkl-dev
+        libboost-dev
+        libboost-mpi-dev
+        libboost-serialization-dev
         libclang-15-dev
         libc++-15-dev
         libc++abi-15-dev
-        boost1.81
         libgmp-dev
         libgsl-dev
         libhdf5-dev
@@ -107,16 +110,14 @@ jobs:
         openmpi-common
         openmpi-doc
 
-    - name: Install ubuntu 24.04 dependencies (openBLAS, GCC 15)
-      if: ${{ startsWith(matrix.os, 'ubuntu-24.04') && (matrix.cc == 'gcc-15') && contains(matrix.blas, 'openBLAS') }}
+    - name: Install ubuntu 24.04 dependencies (openBLAS, GCC 14)
+      if: ${{ startsWith(matrix.os, 'ubuntu-24.04') && (matrix.cc == 'gcc-14') && contains(matrix.blas, 'openBLAS') }}
       run: >
         sudo apt-get update &&
-        sudo apt-get install software-properties-common &&
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test && sudo apt-get update &&
-        sudo apt-get install
+        sudo apt-get install -y --no-install-recommends
         ccache
-        gcc-15
-        g++-15
+        gcc-14
+        g++-14
         hdf5-tools
         libblas-dev
         libboost-dev
@@ -133,7 +134,7 @@ jobs:
       if: ${{ startsWith(matrix.os, 'ubuntu-24.04') && (matrix.cc == 'clang-18') && contains(matrix.blas, 'openBLAS') }}
       run: >
         sudo apt-get update &&
-        sudo apt-get install
+        sudo apt-get install -y --no-install-recommends
         ccache
         clang-18
         hdf5-tools
@@ -225,20 +226,21 @@ jobs:
     - name: Install sanitizer dependencies
       run: >
         sudo apt-get update &&
-        sudo apt-get install lsb-release wget software-properties-common &&
+        sudo apt-get install -y --no-install-recommends lsb-release wget software-properties-common &&
         wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
-        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
-        sudo apt-get install
+        sudo apt-get install -y --no-install-recommends
         ccache
         clang-15
         g++-12
         hdf5-tools
         libblas-dev
+        libboost-dev
+        libboost-mpi-dev
+        libboost-serialization-dev
         libclang-15-dev
         libc++-15-dev
         libc++abi-15-dev
         libomp-15-dev
-        boost1.81
         libgmp-dev
         libgsl-dev
         libhdf5-dev
@@ -277,10 +279,9 @@ jobs:
     - name: Install analysis dependencies
       run: >
         sudo apt-get update &&
-        sudo apt-get install lsb-release wget software-properties-common &&
+        sudo apt-get install -y --no-install-recommends lsb-release wget software-properties-common &&
         wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
-        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
-        sudo apt-get install
+        sudo apt-get install -y --no-install-recommends
         ccache
         clang-15
         clang-tidy-15
@@ -288,11 +289,13 @@ jobs:
         g++-12
         hdf5-tools
         libblas-dev
+        libboost-dev
+        libboost-mpi-dev
+        libboost-serialization-dev
         libclang-15-dev
         libc++-15-dev
         libc++abi-15-dev
         libomp-15-dev
-        boost1.81
         libgmp-dev
         libgsl-dev
         libhdf5-dev
@@ -324,14 +327,14 @@ jobs:
     - name: Install documentation dependencies
       run: >
         sudo apt-get update &&
-        sudo apt-get install lsb-release wget software-properties-common &&
-        sudo add-apt-repository ppa:mhier/libboost-latest && sudo apt update &&
-        sudo apt-get install
+        sudo apt-get install -y --no-install-recommends
         ccache
         g++-12
         hdf5-tools
         libblas-dev
-        boost1.81
+        libboost-dev
+        libboost-mpi-dev
+        libboost-serialization-dev
         libgmp-dev
         libgsl-dev
         libhdf5-dev
