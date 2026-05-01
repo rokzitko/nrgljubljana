@@ -1,6 +1,6 @@
 # Conda build notes
 
-This document describes how to build `nrgljubljana` with conda while expecting a local Mathematica installation to be detected during CMake configuration.
+This document describes how to build `nrgljubljana` with conda using dependencies from conda-forge. The `nrginit` scripts are installed by default; using them requires Mathematica at runtime.
 
 ## Recipe layout
 
@@ -8,7 +8,6 @@ The conda recipe lives in:
 
 - `recipe/meta.yaml`
 - `recipe/build.sh`
-- `recipe/*.patch`
 
 Build with:
 
@@ -24,9 +23,9 @@ conda build -c conda-forge recipe
 conda install -n base -c conda-forge conda-build
 ```
 
-2. A local Mathematica installation on the machine.
+2. Optional: a local Mathematica installation on the machine, needed to run `nrginit` and Mathematica-dependent tests.
 
-3. Mathematica kernel visible to CMake `FindMathematica` (any one of these is usually sufficient):
+3. Optional: Mathematica kernel visible to CMake `FindMathematica` (any one of these is usually sufficient):
    - `WolframKernel` in `PATH`
    - `math` in `PATH`
    - explicit CMake hint via `CMAKE_ARGS` (examples below)
@@ -111,20 +110,20 @@ printf '%s\n' "${PATH}" | tr ':' '\n' | grep -Fx "${CONDA_PREFIX}/nrginit"
 
 It should print the active conda prefix and show that `nrginit/` is on `PATH`.
 
-## Verify Mathematica-enabled path
+## Verify nrginit installation
 
-Because this build expects local Mathematica, confirm that CMake detected Mathematica during build logs (look for a line similar to `Mathematica executable ...`) and verify `nrginit` was installed:
+The `nrginit` scripts are installed by default. Verify the launcher is present and on `PATH` after activation:
 
 ```bash
 test -x "${CONDA_PREFIX}/nrginit/nrginit"
 command -v nrginit
 ```
 
-If `nrginit` is missing, Mathematica was not detected at configure time; rebuild with explicit `CMAKE_ARGS` hints above.
+If Mathematica was detected during the build, the logs contain a line similar to `Mathematica executable ...`. Mathematica-dependent tests only run when Mathematica is detected.
 
 ## Notes
 
 - Current recipe skips Windows and Linux `aarch64`.
 - The conda recipe uses Intel MKL on `linux-64` and OpenBLAS on other supported platforms.
-- Mathematica is not provided by conda dependencies; detection relies on local system installation.
-- In isolated CI environments without Mathematica, `nrginit` will be skipped.
+- Mathematica is not provided by conda dependencies; using `nrginit` relies on a local system installation.
+- In isolated CI environments without Mathematica, `nrginit` is still installed but Mathematica-dependent tests are skipped.

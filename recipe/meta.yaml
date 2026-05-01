@@ -9,15 +9,9 @@ source:
   git_url: https://github.com/rokzitko/nrgljubljana.git
   git_rev: master
   git_depth: 1
-  patches:
-    - 0001-use-packaged-dependencies-and-disable-nrginit-without-mathematica.patch
-    - 0002-include-checkfunctionexists.patch
-    - 0003-lapack-target-fallback.patch
-    - 0004-provide-hdf5-cmake-target.patch
-    - 0005-link-hdf5-with-highfive-targets.patch
 
 build:
-  number: 8
+  number: 9
   skip: true  # [win or (linux and aarch64)]
 
 requirements:
@@ -74,8 +68,8 @@ about:
     for quantum impurity problems. This recipe builds the C++ runtime and the
     standalone tools from conda-packaged dependencies.
 
-    If Mathematica is available on the local machine and detected by CMake,
-    the nrginit component is installed as part of the package.
+    The nrginit scripts are installed as part of the package. Using them
+    requires Mathematica at runtime.
   license: GPL-3.0-or-later
   license_file: COPYING
   dev_url: https://github.com/rokzitko/nrgljubljana

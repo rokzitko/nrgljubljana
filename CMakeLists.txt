@@ -59,6 +59,13 @@ if(NRGLJUBLJANA_ENABLE_MATHEMATICA)
 else()
   message(STATUS "Mathematica detection disabled (NRGLJUBLJANA_ENABLE_MATHEMATICA=OFF)")
 endif()
+option(NRGLJUBLJANA_USE_SYSTEM_DEPS "Use dependencies supplied by the system or package manager instead of CPM" OFF)
+option(NRGLJUBLJANA_INSTALL_NRGINIT "Install nrginit Mathematica scripts" ON)
+option(Build_Tests "Build tests" ON)
+set(NRGLJUBLJANA_BUILD_TESTS_ENABLED OFF)
+if(Build_Tests AND NOT IS_SUBPROJECT)
+  set(NRGLJUBLJANA_BUILD_TESTS_ENABLED ON)
+endif()
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -143,11 +150,14 @@ install(TARGETS mpi EXPORT nrgljubljana-targets)
 # Dependencies
 
 # HDF5
-find_package(HDF5 REQUIRED COMPONENTS C HL)
+find_package(HDF5 MODULE REQUIRED COMPONENTS C HL)
 add_library(hdf5 INTERFACE)
 target_include_directories(hdf5 SYSTEM INTERFACE ${HDF5_INCLUDE_DIRS})
 target_link_libraries(hdf5 INTERFACE "${HDF5_LIBRARIES}" ${HDF5_HL_LIBRARIES})
 target_compile_options(hdf5 INTERFACE ${HDF5_DEFINITIONS})
+if(NOT TARGET HDF5::HDF5)
+  add_library(HDF5::HDF5 ALIAS hdf5)
+endif()
 install(TARGETS hdf5 EXPORT nrgljubljana-targets)
 
 # OpenMP
@@ -177,40 +187,61 @@ install(TARGETS gsl EXPORT nrgljubljana-targets)
 find_package(GMP REQUIRED)
 install(TARGETS gmp EXPORT nrgljubljana-targets)
 
-# CPM for downloading dependencies
-include(CMake/CPM.cmake)
+if(NRGLJUBLJANA_USE_SYSTEM_DEPS)
+  message(STATUS "Using dependencies supplied by the system or package manager")
 
-# Google Test
-CPMAddPackage("gh:google/googletest#v1.15.2")
+  if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
+    find_package(GTest CONFIG REQUIRED)
+    if(TARGET GTest::gtest AND NOT TARGET gtest)
+      add_library(gtest ALIAS GTest::gtest)
+    endif()
+    if(TARGET GTest::gtest_main AND NOT TARGET gtest_main)
+      add_library(gtest_main ALIAS GTest::gtest_main)
+    endif()
+  endif()
 
-# Eigen, tries finding in system first
-CPMFindPackage(
-  NAME Eigen3
-  GITLAB_REPOSITORY libeigen/eigen
-  VERSION 3.4.0
-  GIT_TAG 3.4.0
-  OPTIONS
-    "BUILD_TESTING OFF" # Disable tests for Eigen
-    "EIGEN_BUILD_TESTING OFF"
-    "EIGEN_BUILD_CMAKE_PACKAGE ON"
-)
+  find_package(Eigen3 3.4 CONFIG REQUIRED)
+  set(HIGHFIVE_FIND_HDF5 Off)
+  find_package(HighFive CONFIG REQUIRED)
+  find_package(fmt 11 CONFIG REQUIRED)
+  find_package(range-v3 CONFIG REQUIRED)
+else()
+  # CPM for downloading dependencies
+  include(CMake/CPM.cmake)
 
-# High five library
-CPMAddPackage(
-  GITHUB_REPOSITORY highfive-devs/highfive
-  GIT_TAG v3.1.0
-  OPTIONS
-    "HIGHFIVE_BUILD_DOCS OFF" # Disable HighFive documentation
-)
+  if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
+    CPMAddPackage("gh:google/googletest#v1.15.2")
+  endif()
 
-# fmt
-# Check if fmt is already a target; important when using as an outside library in nrgljubljana_interface
-if (NOT TARGET fmt::fmt)
-  CPMAddPackage("gh:fmtlib/fmt#11.2.0")
+  # Eigen, tries finding in system first
+  CPMFindPackage(
+    NAME Eigen3
+    GITLAB_REPOSITORY libeigen/eigen
+    VERSION 3.4.0
+    GIT_TAG 3.4.0
+    OPTIONS
+      "BUILD_TESTING OFF" # Disable tests for Eigen
+      "EIGEN_BUILD_TESTING OFF"
+      "EIGEN_BUILD_CMAKE_PACKAGE ON"
+  )
+
+  # High five library
+  CPMAddPackage(
+    GITHUB_REPOSITORY highfive-devs/highfive
+    GIT_TAG v3.1.0
+    OPTIONS
+      "HIGHFIVE_BUILD_DOCS OFF" # Disable HighFive documentation
+  )
+
+  # fmt
+  # Check if fmt is already a target; important when using as an outside library in nrgljubljana_interface
+  if (NOT TARGET fmt::fmt)
+    CPMAddPackage("gh:fmtlib/fmt#11.2.0")
+  endif()
+
+  # range-v3
+  CPMAddPackage("gh:ericniebler/range-v3#0.12.0")
 endif()
-
-# range-v3
-CPMAddPackage("gh:ericniebler/range-v3#0.12.0")
 
 # MPFR
 #find_package(MPFR REQUIRED)
@@ -240,9 +271,15 @@ message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 message(STATUS "BLAS_LINKER_FLAGS=${BLAS_LINKER_FLAGS}")
 message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
 message(STATUS "LAPACK_LINKER_FLAGS=${LAPACK_LINKER_FLAGS}")
-target_link_libraries(blas_lapack INTERFACE LAPACK::LAPACK)
+if(TARGET LAPACK::LAPACK)
+  target_link_libraries(blas_lapack INTERFACE LAPACK::LAPACK)
+else()
+  message(WARNING "LAPACK::LAPACK target not provided by FindLAPACK; using LAPACK_LIBRARIES/BLAS_LIBRARIES directly")
+  target_link_libraries(blas_lapack INTERFACE ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+endif()
 install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
 
+include(CheckFunctionExists)
 # Check for availability of cblas interface
 set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
 set(CMAKE_REQUIRED_FLAGS ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
@@ -323,8 +360,7 @@ add_subdirectory(c++)
 add_subdirectory(tools)
 
 # Tests
-option(Build_Tests "Build tests" ON)
-if(Build_Tests AND NOT IS_SUBPROJECT)
+if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
   enable_testing()
   add_subdirectory(test)
 endif()
@@ -340,7 +376,11 @@ endif()
 add_subdirectory(share)
 
 # Mathematica part of NRG Ljubljana (nrginit)
-add_subdirectory(nrginit)
+if(NRGLJUBLJANA_INSTALL_NRGINIT)
+  add_subdirectory(nrginit)
+else()
+  message(STATUS "Skipping nrginit installation (NRGLJUBLJANA_INSTALL_NRGINIT=OFF)")
+endif()
 
 # #############
 # Debian Package

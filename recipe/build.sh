@@ -47,6 +47,8 @@ cmake -S . -B build -G Ninja \
   -DHDF5_NO_FIND_PACKAGE_CONFIG_FILE=ON \
   -DHDF5_ROOT="${PREFIX}" \
   -DHDF5_C_COMPILER_EXECUTABLE="${PREFIX}/bin/h5cc" \
+  -DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON \
+  -DNRGLJUBLJANA_INSTALL_NRGINIT=ON \
   -DBuild_Tests="${build_tests}" \
   -DTEST_LONG="${test_long}" \
   -DBuild_Documentation=OFF \
