@@ -203,7 +203,12 @@ jobs:
     
     - name: ccache statistics
       if: always()
-      run: ccache -sv
+      run: |
+        if command -v ccache >/dev/null 2>&1; then
+          ccache -sv
+        else
+          echo "ccache not found; skipping statistics"
+        fi
 
     - uses: actions/cache/save@v4
       if: always()
