@@ -50,7 +50,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/cache/restore@v4
+    - uses: actions/cache/restore@v5
       with:
         path: ${{ env.CCACHE_DIR }}
         key: ccache-${{ env.CACHE_VERSION }}-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-${{ github.run_id }}
@@ -212,7 +212,7 @@ jobs:
           echo "ccache not found; skipping statistics"
         fi
 
-    - uses: actions/cache/save@v4
+    - uses: actions/cache/save@v5
       if: always()
       with:
         path: ${{ env.CCACHE_DIR }}
