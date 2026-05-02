@@ -72,6 +72,12 @@ To build with one job count and test with another:
 conda build -c conda-forge --variants "{nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['64'], nrgljubljana_test_jobs: ['8']}" recipe
 ```
 
+Linux `aarch64` conda builds should use Clang:
+
+```bash
+conda build -c conda-forge --variants "{c_compiler: ['clang'], cxx_compiler: ['clangxx']}" recipe
+```
+
 To include long tests as well:
 
 ```bash

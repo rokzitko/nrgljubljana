@@ -18,10 +18,13 @@ jobs:
         include:
           - os: ubuntu-24.04
             label: linux-64
+            variants: "{nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}"
           - os: ubuntu-24.04-arm
             label: linux-aarch64
+            variants: "{c_compiler: ['clang'], cxx_compiler: ['clangxx'], nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}"
           - os: macos-14
             label: macos
+            variants: "{nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}"
 
     name: conda build (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
@@ -54,12 +57,12 @@ jobs:
         run: conda install -n base -y conda-build
 
       - name: Render recipe
-        run: conda render -c conda-forge recipe
+        run: conda render -c conda-forge --variants "${{ matrix.variants }}" recipe
 
       - name: Build package
         run: |
           conda build -c conda-forge --no-anaconda-upload \
-            --variants "{nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}" \
+            --variants "${{ matrix.variants }}" \
             recipe
 
       - name: Upload conda packages
