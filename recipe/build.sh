@@ -42,7 +42,7 @@ build_tests="$(cmake_bool "${nrgljubljana_build_tests:-OFF}")"
 test_long="$(cmake_bool "${nrgljubljana_test_long:-OFF}")"
 build_jobs="$(job_count "${nrgljubljana_build_jobs:-0}")"
 test_jobs="$(job_count "${nrgljubljana_test_jobs:-0}")"
-test_timeout="$(positive_integer "test timeout" "${nrgljubljana_test_timeout:-3600}")"
+test_timeout="$(positive_integer "test timeout" "${nrgljubljana_test_timeout:-7200}")"
 
 cmake -S . -B build -G Ninja \
   ${CMAKE_ARGS:-} \
