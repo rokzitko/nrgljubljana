@@ -65,6 +65,9 @@ cmake -S . -B build -G Ninja \
 cmake --build build --parallel "${build_jobs}"
 
 if [ "${build_tests}" = "ON" ]; then
+  export OMP_NUM_THREADS=1
+  export MKL_NUM_THREADS=1
+  export OPENBLAS_NUM_THREADS=1
   ctest --test-dir build --output-on-failure --parallel "${test_jobs}" --timeout "${test_timeout}" --no-tests=error
 fi
 
