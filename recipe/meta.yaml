@@ -35,7 +35,7 @@ requirements:
     - highfive 3.1.0
     - libboost-devel
     - libboost-mpi
-    - llvm-openmp  # [target_platform == "linux-64" or osx]
+    - llvm-openmp  # [linux or osx]
     - openmpi  # [linux]
     - mpich  # [osx]
     - range-v3 0.12.*
@@ -45,7 +45,7 @@ requirements:
     - hdf5
     - libboost
     - libboost-mpi
-    - llvm-openmp  # [target_platform == "linux-64" or osx]
+    - llvm-openmp  # [linux or osx]
     - mkl  # [target_platform == "linux-64"]
     - openmpi  # [linux]
     - mpich  # [osx]

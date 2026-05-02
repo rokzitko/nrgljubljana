@@ -160,10 +160,9 @@ endif()
 install(TARGETS hdf5 EXPORT nrgljubljana-targets)
 
 # OpenMP
-find_package(OpenMP REQUIRED)
+find_package(OpenMP REQUIRED COMPONENTS CXX)
 add_library(openmp INTERFACE)
-target_compile_options(openmp INTERFACE ${OpenMP_CXX_FLAGS})
-target_link_libraries(openmp INTERFACE ${OpenMP_CXX_FLAGS})
+target_link_libraries(openmp INTERFACE OpenMP::OpenMP_CXX)
 install(TARGETS openmp EXPORT nrgljubljana-targets)
 
 # Boost
