@@ -16,15 +16,22 @@ job_count() {
     ''|0) value="${fallback}" ;;
   esac
 
+  positive_integer "job count" "${value}"
+}
+
+positive_integer() {
+  local label="$1"
+  local value="$2"
+
   case "${value}" in
     *[!0-9]*|'')
-      printf 'Invalid job count: %s\n' "${value}" >&2
+      printf 'Invalid %s: %s\n' "${label}" "${value}" >&2
       return 1
       ;;
   esac
 
   if [ "${value}" -lt 1 ]; then
-    printf 'Invalid job count: %s\n' "${value}" >&2
+    printf 'Invalid %s: %s\n' "${label}" "${value}" >&2
     return 1
   fi
 
@@ -35,6 +42,7 @@ build_tests="$(cmake_bool "${nrgljubljana_build_tests:-OFF}")"
 test_long="$(cmake_bool "${nrgljubljana_test_long:-OFF}")"
 build_jobs="$(job_count "${nrgljubljana_build_jobs:-0}")"
 test_jobs="$(job_count "${nrgljubljana_test_jobs:-0}")"
+test_timeout="$(positive_integer "test timeout" "${nrgljubljana_test_timeout:-3600}")"
 
 cmake -S . -B build -G Ninja \
   ${CMAKE_ARGS:-} \
@@ -59,7 +67,7 @@ cmake -S . -B build -G Ninja \
 cmake --build build --parallel "${build_jobs}"
 
 if [ "${build_tests}" = "ON" ]; then
-  ctest --test-dir build --output-on-failure --parallel "${test_jobs}"
+  ctest --test-dir build --output-on-failure --parallel "${test_jobs}" --timeout "${test_timeout}" --no-tests=error
 fi
 
 cmake --install build

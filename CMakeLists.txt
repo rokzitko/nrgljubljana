@@ -19,8 +19,7 @@
 #
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
-cmake_policy(VERSION ${CMAKE_VERSION})
+cmake_minimum_required(VERSION 3.25...3.31 FATAL_ERROR)
 if(POLICY CMP0173) # CMakeFindFrameworks Availability
   cmake_policy(SET CMP0173 OLD)
 endif()

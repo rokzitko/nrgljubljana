@@ -26,8 +26,10 @@ cmake --install build
 Run the default test suite with:
 
 ```sh
-ctest --test-dir build --output-on-failure
+ctest --test-dir build --output-on-failure --timeout 3600 --no-tests=error
 ```
+
+Increase `--timeout` for slow machines or debug builds.
 
 Useful developer options:
 

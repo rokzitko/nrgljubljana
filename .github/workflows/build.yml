@@ -21,6 +21,7 @@ env:
   CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
   CCACHE_COMPRESS: "1"
   CCACHE_COMPRESSLEVEL: "1"
+  NRGLJUBLJANA_CTEST_TIMEOUT_SECONDS: "3600"
 
 jobs:
   build:
@@ -187,7 +188,7 @@ jobs:
         CXX: ${{ matrix.cxx }}
       run: |
         mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install ${{ matrix.cmake_flags }}
-        make -j2 || make -j1 VERBOSE=1
+        cmake --build . --parallel 2
 
     - name: Configure test runtime environment
       if: ${{ matrix.omp_threads != '' }}
@@ -200,7 +201,7 @@ jobs:
         OPENBLAS_NUM_THREADS: "1"
       run: |
         cd build
-        ctest -j2 --output-on-failure
+        ctest -j2 --output-on-failure --timeout "${NRGLJUBLJANA_CTEST_TIMEOUT_SECONDS}" --no-tests=error
     
     - name: ccache statistics
       if: always()
@@ -268,7 +269,7 @@ jobs:
         # Small memory leaks expected from third-party dependencies
         ASAN_OPTIONS: "detect_leaks=0"
       run: |
-        ctest --test-dir build -j2 --output-on-failure
+        ctest --test-dir build -j2 --output-on-failure --timeout "${NRGLJUBLJANA_CTEST_TIMEOUT_SECONDS}" --no-tests=error
 
   analysis:
     runs-on: ubuntu-22.04
