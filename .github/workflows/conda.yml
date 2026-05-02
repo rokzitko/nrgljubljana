@@ -5,6 +5,9 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    # Weekly dependency drift check against current conda-forge packages.
+    - cron: "0 4 * * 1"
   workflow_dispatch:
 
 env:
