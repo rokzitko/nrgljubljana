@@ -1,0 +1,29 @@
+#!/usr/bin/env perl
+
+system("cp ./Delta-d.dat ./Delta.dat");
+system("cp ./Delta-d.dat ./Delta.dat2"); # for initial.m
+    
+system("adapt P | tee solverlog-d");
+system("adapt N | tee solverlogneg-d");
+    
+if (!(-e "FSOL.dat" && -e "FSOLNEG.dat")) {
+    print "solver failed.\n";
+    exit(1);
+} else {
+    system("mv FSOL.dat ./FSOL.dat2");
+    system("mv FSOLNEG.dat ./FSOLNEG.dat2");
+}
+
+system("cp ./Delta-u.dat ./Delta.dat");
+    
+system("adapt P | tee solverlog-u");
+system("adapt N | tee solverlogneg-u");
+    
+if (!(-e "FSOL.dat" && -e "FSOLNEG.dat")) {
+    print "solver failed.\n";
+    exit(1);
+} else {
+    system("mv FSOL.dat ./FSOL.dat");
+    system("mv FSOLNEG.dat ./FSOLNEG.dat");
+}
+

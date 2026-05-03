@@ -1,0 +1,37 @@
+#!/usr/bin/env perl
+# Invert a tabulated function with respect to the x=0 axis.
+# Rok Zitko, rok.zitko@ijs.si, June 2014
+
+use warnings;
+use strict;
+
+my $fn = shift;
+unless(defined($fn)) {
+    die "Usage: invertx <filename>.";
+}
+
+open(F, "<$fn") or die "Can't open $fn for reading.";
+
+my @x = ();
+my @y = ();
+
+while (<F>) {
+    chomp;
+    my @d = split;
+    push(@x, $d[0]);
+    push(@y, $d[1]);
+}
+
+close(F);
+
+my $len = @x;
+
+($len == @y) or die "Lengths don't match.";
+
+($len % 2 == 0) or die "The number of lines is not even.";
+
+for (my $i = 0; $i < $len; $i++) {
+    my $xnew = $x[$i];
+    my $ynew = $y[$len-$i-1];
+    print "$xnew $ynew\n";
+}

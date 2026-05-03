@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+# Dump file, skipping those lines where the first column has a value 
+# larger (in absolute value) than some given cut-off value.
+# Rok Zitko, rok.zitko@ijs.si, April 2018
+
+use warnings;
+use strict;
+
+if (@ARGV < 1) {
+    die "Usage: cutouthigh <cutoff> [filename]\n";
+}     
+
+my $cutoff = eval(shift);
+
+while (<>) {
+  if (!/^#/) {
+    chomp;
+    my @d = split;
+    my $x = $d[0];
+    
+    if (abs($x) <= $cutoff) {
+	print "@d\n";
+    }
+  } else {
+    print;
+  }
+}

@@ -1,0 +1,61 @@
+#!/usr/bin/env perl
+# Spectral function averaging : 4-column version
+# Rok Zitko, rok.zitko@ijs.si, July 2019
+
+use strict;
+use warnings;
+
+my $Nz = @ARGV; # number of filenames
+    
+# Algorithm: just sum both columns and divide the sums by Nz at the
+# end. No attempt is made to check for the sanity of input files.
+my @sumx; 
+my @sumy;
+my @sumz;
+my @sumw;
+    
+for (my $i = 0; $i < $Nz; $i++) {
+    my $filename = $ARGV[$i];
+    open(F, "<$filename") or die "Can't open $filename: $!\n";
+	
+    my $cnt = 0; # line counter
+    while (<F>) {
+	chomp;
+	if (/^#/) { # skip comment lines
+	    next;
+	}
+	
+	my $line = $_;
+	$line =~ s/^\s+(.*)/$1/; # strip leading white space
+	my @vals = split(/\s+/, $line); # split on whitespace
+	my $x = $vals[0];
+	my $y = $vals[1];
+	my $z = $vals[2];
+	my $w = $vals[3];
+	
+	if ($i == 0) { 
+	    push(@sumx, $x); # push back in the first iteration
+	    push(@sumy, $y);
+	    push(@sumz, $z);
+	    push(@sumw, $w);
+	} else {
+	    $sumx[$cnt] += $x; # add in later iterations
+	    $sumy[$cnt] += $y;
+	    $sumz[$cnt] += $z;
+	    $sumw[$cnt] += $w;
+	}
+	$cnt++;
+    }
+    close(F);
+}
+
+my $len = @sumx;
+
+for (my $l = 0; $l < $len; $l++) {
+    $sumx[$l] /= $Nz;
+    $sumy[$l] /= $Nz;
+    $sumz[$l] /= $Nz;
+    $sumw[$l] /= $Nz;
+    print "$sumx[$l] $sumy[$l] $sumz[$l] $sumw[$l]\n";
+}
+

@@ -1,0 +1,91 @@
+#!/usr/bin/env perl
+# This tools analyzes a tabular representation of a function and refines the mesh (grid) over
+# which it is defined. It does so by quantifying the accuracy of the linear extrapolation from
+# two preceeding data points to the current data point. For large interpolation error, one
+# additional point is added to the mesh (midway between the previous and the current point). 
+# This is potentially useful in DMFT calculations for situation with sharp spectral features.
+# Rok Zitko, Jan 2025
+
+use warnings;
+use strict;
+
+my $debug = 1;
+my $verbose = 1;
+
+@ARGV >= 2 or die "Syntax: optimize_mesh <filename> <delta> [dxmin] [miny]\n";
+
+my $filename = shift; # Input file
+my $delta = shift; # Relative error for adding points, e.g. 1e-2 for pretty high accuracy
+my $dxmin = (@ARGV > 0 ? shift : 1e-12); # Minimum spacing in the mesh
+my $miny = (@ARGV > 0 ? shift : 1e-4); # Do not add points in regions where the value of the function is below $miny
+
+if ($verbose) { print STDERR "optimize_mesh: filename=$filename delta=$delta dxmin=$dxmin miny=$miny\n"; }
+
+open(F, "<$filename") or die "Can't open $filename: $!";
+
+my $p; # previous line from the input file
+my $pp; # and the line before the previous
+my $previousremoved = ""; # last line that had been removed
+
+my $maxrel = 0; # maximum relative error encountered in the file 
+my $nradd = 0; # number of mesh points added
+
+my $cntorig = 0;
+my $cntfinal = 0;
+
+my $line;
+my $x;
+my $y;
+while (<F>) {
+  chomp($line = $_);
+  $line =~ s/^\s+(.*)/$1/;
+
+  if (/^#/) {
+    print;
+  } else {
+      $cntorig++;
+      if (defined($p) && defined($pp)) {
+          $line =~ /(\S*)\s*(\S*)/ or die; # current
+          $x = $1;
+          $y = $2;
+          $pp =~ /(\S*)\s*(\S*)/ or die; # current-2
+          my $x1 = $1;
+          my $y1 = $2;
+          $p =~ /(\S*)\s*(\S*)/ or die; # current-1 (previous)
+          my $x2 = $1;
+          my $y2 = $2;
+          my $slope = ($y2-$y1)/($x2-$x1);
+          my $yest = $y2 + $slope * ($x-$x2); # linear extrapolation
+          my $error = abs($y - $yest);
+          my $rel = 2.0 * $error / (abs($y) + abs($yest));
+          $maxrel = ($rel > $maxrel ? $rel : $maxrel);
+
+          if ($rel > $delta && abs($x-$x2) > $dxmin && (abs($y)+abs($y2))>2.0*$miny) { # Error too large, adding point (between previous and current)
+              my $x0 = $x2 + ($x-$x2)/2.0;
+              my $slope2 = ($y-$y2)/($x-$x2);
+              my $y0 = $y2 + $slope2 * ($x-$x2)/2.0;
+              if ($debug) { print STDERR "$x0 $y0 ADDED error=$error rel=$rel\n"; }
+              print "$x0 $y0\n";
+              $cntfinal++;
+              $nradd++;
+          }
+          print "$x $y\n";
+          $cntfinal++;
+      } else {
+          print "$line\n";
+          $cntfinal++;
+      }
+      if (defined($p)) {
+          $pp = $p;
+      }
+      $p = $line;
+  }
+}
+
+# Safeguard: never drop the last mesh point
+if ($previousremoved eq $line) {
+    print "$line\n";
+    $cntfinal++;
+}
+
+if ($verbose) { print STDERR "optimize_mesh: max_relative_error=$maxrel added=$nradd --- before=$cntorig after=$cntfinal\n"; }

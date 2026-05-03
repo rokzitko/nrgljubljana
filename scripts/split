@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+# Split annotated.dat according to quantum numbers and even/odd N
+# rok.zitko@ijs.si, June 2013
+
+$cnt = 0;
+
+system ("rm -f [eo]-*.dat");
+
+open (F, "<annotated.dat") or die;
+
+while (<F>) {
+  !/^#/ or next;
+  chomp;
+  if ($_ eq "") {
+    $cnt++;
+    next;
+  }
+  ($e,$q,$s) = split;
+  $fn = ($cnt % 2 == 0 ? "e" : "o") . "-$q-$s.dat";
+  system "echo $cnt $e >>$fn";
+}

@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+# Kondo temperature calculator.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, July 2008
+
+@ARGV == 2 or die "Usage: tk <U> <Gamma>\n";
+
+my $u = eval(shift);
+my $gamma = eval(shift);
+
+print "u=$u\ngamma=$gamma\n";
+
+my $rhoJ=8*$gamma/(3.14159*$u);
+
+print "rho_0 J=$rhoJ\n";
+
+my $Deff = 0.182 * $u;
+
+print "Deff=$Deff\n";
+
+my $tk = $Deff * sqrt($rhoJ) * exp(-1/$rhoJ);
+
+print "T_K=$tk\n";

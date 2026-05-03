@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+# Invert the second column in tabulated data
+# Rok Zitko, Dec 2016
+
+if (@ARGV < 1) {
+    die "Usage: inverty [filename]\n";
+}     
+
+while (<>) {
+  if (!/^#/) {
+    chomp;
+    @d = split;
+    $d[1] = 1/$d[1];
+    
+    print "@d\n";
+  } else {
+    print;
+  }
+}

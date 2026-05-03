@@ -1,0 +1,9 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+while (my $line = <STDIN>) {
+    last if $line =~ /^\s*$/;   # stop at first empty (or whitespace-only) line
+    print $line;                # keep lines before it
+}
+

@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+
+$T = `getparam T param.loop`;
+$beta = 1/$T;
+$pi = 3.141592653589793;
+
+open (I, ">matsu_imG_dense.dat");
+open (R, ">matsu_reG_dense.dat");
+
+for ($w = 0.01; $w <= 10; $w += 0.01) {
+  $om = $w*$pi/$beta; # fermionic points are y=2i+1
+
+  $y = `hilb -d imaw.dat -G 0 $om`; # input to 'hilb' is DOS, i.e. A(w)
+  chomp($y);
+  $y =~ /\((.*),(.*)\)/;
+  $re = $1;
+  $im = $2;
+    
+  print R "$om $re\n";
+  print I "$om $im\n";
+}

@@ -1,0 +1,93 @@
+#!/usr/bin/env perl
+# Average files and compute the error estimate. The errors are assumed
+# independent and normally distributed.
+#
+# This tool is used to process the QMC results.
+#
+# Rok Zitko, rok.zitko@ijs.si, Mar 2011
+
+use strict;
+use warnings;
+
+my $Nz = @ARGV; # number of filenames
+
+if ($Nz == 0) {
+    my $prog = "averagefiles_mc";
+    print "$prog computes the averages and error estimates for tabulated data\n";
+    print "Usage: $prog <file1> <file2> <file3> ...\n";
+    exit(1);
+}
+    
+# Algorithm: just sum both columns and divide the sums by Nz at the
+# end. No attempt is made to check for the sanity of input files.
+my @sumx; 
+my @sumy;
+my @sumy2;
+    
+for (my $i = 0; $i < $Nz; $i++) {
+    my $filename = $ARGV[$i];
+    open(F, "<$filename") or die "Can't open $filename: $!\n";
+	
+    my $cnt = 0; # line counter
+    while (<F>) {
+	chomp;
+	if (/^#/) { # skip comment lines
+	    next;
+	}
+	
+	my @vals = split(' ',$_);
+	my $x = $vals[0];
+	my $y = $vals[1];
+	my $y2 = $y**2;
+	
+	if ($i == 0) { 
+	    push(@sumx, $x); # push back in the first iteration
+	    push(@sumy, $y);
+	    push(@sumy2, $y2);
+	} else {
+	    $sumx[$cnt] += $x; # add in later iterations
+	    $sumy[$cnt] += $y;
+	    $sumy2[$cnt] += $y2;
+	}
+	$cnt++;
+    }
+    close(F);
+}
+
+my $len = @sumx;
+
+for (my $l = 0; $l < $len; $l++) {
+    $sumx[$l] /= $Nz;
+    $sumy[$l] /= $Nz;
+    $sumy2[$l] /= $Nz;
+}
+
+for (my $l = 0; $l < $len; $l++) {
+    my $x = $sumx[$l];
+    my $y = $sumy[$l];
+    my $y2 = $sumy2[$l];
+    
+    my $variance = ($y2-$y*$y);
+    
+    # Standard deviation of the sample
+    my $stddev = sqrt($variance);
+    
+    # Sample standard deviation
+    my $s = sqrt($Nz/($Nz-1)) * $stddev;
+    # Note: Bessel's correction corrects the bias in the estimation of
+    # sample variance and some, but not all, of the bias in the
+    # estimation of the sample standard deviation.
+      
+    # Standard error of the mean (SEM)
+    my $sigmamean = $stddev/sqrt($Nz);
+
+    # Small sample correction
+    # See also http://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation
+
+    my $c4 = 1.0 - (1.0/4.0)/$Nz - (7./32.)/$Nz**2;
+    
+    my $error = $sigmamean/$c4;
+    
+    
+    print "$x $y $error\n";
+}

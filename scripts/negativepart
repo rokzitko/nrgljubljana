@@ -1,0 +1,12 @@
+#!/usr/bin/perl
+# Keep only those lines where the first value is negative
+# Rok Zitko, rok.zitko@ijs.si, Feb 2015
+
+use warnings;
+use strict;
+
+while (<>) {
+  my ($x,$remainder) = split;
+  
+  print if $x < 0;
+}

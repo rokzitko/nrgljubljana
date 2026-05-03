@@ -1,0 +1,23 @@
+#!/usr/bin/env perl
+# Copy "converged" hybridization function as the seed for a new DMFT iteration
+# Rok Zitko, rok.zitko@ijs.si, Oct 2012
+
+if (-e "ITER") {
+    $nr = `getiter`;
+} else {
+    $nr = shift;
+}
+
+if (-e "dmft/$nr-Delta-u.dat") {
+    system "cp dmft/$nr-Delta-u.dat DeltaFirst-u.dat";
+    system "cp dmft/$nr-Delta-d.dat DeltaFirst-d.dat";
+}
+if (-e "dmft/$nr-Delta.dat") {
+    system "cp dmft/$nr-Delta.dat DeltaFirst.dat";
+}
+if (-e "dmft/$nr-Delta-11.dat") {
+    system "cp dmft/$nr-Delta-11.dat DeltaFirst-11.dat";
+    system "cp dmft/$nr-Delta-12.dat DeltaFirst-12.dat";
+    system "cp dmft/$nr-Delta-22.dat DeltaFirst-22.dat";
+    system "cp dmft/$nr-Delta-21.dat DeltaFirst-21.dat";
+}

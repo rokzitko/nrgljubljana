@@ -1,0 +1,39 @@
+#!/usr/bin/env perl
+# Extract states from selected invariant subspace from annotated.dat
+# rok.zitko@ijs.si, June 2013
+
+use warnings;
+
+$#ARGV+1 == 4 or die;
+
+my $peo = shift; # e)ven or o)dd
+my $pq = shift; # charge Q
+my $ps = shift; # spin S
+my $nr = shift; # seniority
+
+open (F, "<annotated.dat") or die;
+
+$cnt = 0;
+$seniority = 0;
+
+while (<F>) {
+  !/^#/ or next;
+  chomp;
+  if ($_ eq "") {
+    $cnt++;
+    $seniority = 0;
+    next;
+  }
+  ($e, $q, $s) = split;
+
+  if (($cnt % 2 == 0) xor ($peo eq "o")) {
+    if (($q eq $pq) and ($s eq $ps)) {
+      $seniority++;
+      if ($seniority == $nr) {
+        print "$cnt $e\n";
+      }
+    }
+  }
+}
+
+print "\n";

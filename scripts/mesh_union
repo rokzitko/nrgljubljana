@@ -1,0 +1,73 @@
+#!/usr/bin/env perl
+# Determine the union of mesh points from two files (taking the first columns).
+# Rok Zitko, 2025
+
+use warnings;
+use strict;
+
+my $verbose = 1;
+my $debug = 0;
+
+@ARGV == 2 or die "Syntax: mesh_union <filename1> <filename2>\n";
+
+my $filename1 = shift;
+my $filename2 = shift;
+
+if ($verbose) { print STDERR "mesh_union: filename1=$filename1 filename2=$filename2\n"; }
+
+my @mesh;
+
+my $cnt1 = 0;
+open(F, "<$filename1") or die "Can't open $filename1: $!";
+while (<F>) {
+    chomp(my $line = $_);
+    $line =~ s/^\s+(.*)/$1/;
+    next if /^#/;
+    my ($x, $rest) = split(' ', $line);
+    push(@mesh, $x);
+    $cnt1++;
+}
+close(F);
+
+my $cnt2 = 0;
+open(F, "<$filename2") or die "Can't open $filename2: $!";
+while (<F>) {
+    chomp(my $line = $_);
+    $line =~ s/^\s+(.*)/$1/;
+    next if /^#/;
+    my ($x, $rest) = split(' ', $line);
+    push(@mesh, $x);
+    $cnt2++;
+}
+close(F);
+
+my @inverted_mesh;
+foreach(@mesh) {
+    push(@inverted_mesh, -$_);
+}
+
+my @symmetrized_mesh = (@mesh, @inverted_mesh);
+my @sorted_mesh = sort { $a <=> $b } @symmetrized_mesh;
+
+my $tol = 1e-8; # threshold for detecting duplicates (relative difference!)
+
+my $cnt = 0;
+my $prev;
+foreach(@sorted_mesh) {
+    if (!defined($prev)) {
+        print "$_ 0\n"; # 0 as 2nd (y) element
+        $cnt++;
+    } else {
+        if (2.0*abs($prev-$_)/(abs($prev)+abs($_)) > $tol) {
+            print "$_ 0\n";
+            $cnt++;
+        } else {
+            if ($debug) { print STDERR "DROPPING $_\n"; }
+        }
+    }
+    $prev = $_;
+}
+
+# Note: typically cnt>cnt1,cnt2, even if one grid fully covers all the points of the other grid,
+# because the script also symmetrizes the final mesh.
+if ($verbose) { print STDERR "mesh_union: cnt1=$cnt1 cnt2=$cnt2 -> cnt=$cnt\n"; }

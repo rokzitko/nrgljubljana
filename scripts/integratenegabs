@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+# Integrate column data by trapezoid rule, taking absolute values [negative frequencies only]
+# Rok Zitko, 2025
+
+use warnings;
+use strict;
+
+my $xprev = 0;
+my $yprev = 0;
+my $sum = 0;
+
+while (<>) {
+  chomp;
+  my ($x,$y,$remainder) = split;
+  
+  if ($. != 1) {
+      if ($x < 0 && $xprev < 0.0) {
+        $sum += ($x-$xprev) * abs($y + $yprev)/2.0;
+      }
+  }
+  
+  $xprev = $x;
+  $yprev = $y;
+}
+
+print "$sum\n";

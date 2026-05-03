@@ -1,0 +1,13 @@
+#!/usr/bin/env perl
+# Prepend a string to the beginning of each line.
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, July 2008
+
+if (@ARGV != 1) {
+   die "Usage: prependtoeachline <string>.\n";
+}
+
+my $str = $ARGV[0];
+
+while (<STDIN>) {
+    print "$str $_";
+}

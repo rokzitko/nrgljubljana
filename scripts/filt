@@ -1,0 +1,22 @@
+#!/usr/bin/env perl
+# Filter tool
+# Rok Zitko, rok.zitko@ijs.si, Nov 2012
+# p - positive x
+
+use warnings;
+
+my $task = shift;
+
+while (<>) {
+    if (/^#/) {
+	print;
+	next;
+    }	 	
+    if ($task eq "p") {
+	my ($x, $rest) = split(' ', $_);
+	if ($x >= 0) {
+	    print;
+	    next;
+	}
+    }
+}

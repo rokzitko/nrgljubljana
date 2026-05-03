@@ -1,0 +1,25 @@
+#!/usr/bin/env perl
+
+$T = `getparam T param.loop`;
+$beta = 1/$T;
+$pi = 3.141592653589793;
+
+open (I, ">matsu_imsigma_dense.dat");
+open (R, ">matsu_resigma_dense.dat");
+
+for ($w = 0.01; $w <= 10; $w += 0.01) {
+  $om = $w*$pi/$beta;
+
+  $y = `hilb -d imsigma.dat -G 0 $om`; # input to 'hilb' is DOS, i.e. A(w)=-1/pi G"
+  chomp($y);
+  $y =~ /\((.*),(.*)\)/;
+  $re = $1;
+  $im = $2;
+  
+  # divide by -pi! necessary because of the pi difference between DOS and G"
+  $re = -$re/$pi;
+  $im = -$im/$pi;
+  
+  print R "$om $re\n";
+  print I "$om $im\n";
+}

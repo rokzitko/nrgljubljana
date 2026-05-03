@@ -1,0 +1,35 @@
+#!/usr/bin/perl
+# Apply (perl) functions on columns 1 and 2.
+# NOTE: use proper escaping! Ex: \$x etc. \\\$x from perl system ""
+# Rok Zitko, rok.zitko@ijs.si, May 2014
+
+use strict;
+use warnings;
+use Math::Trig;
+
+if (@ARGV != 2) {
+    print STDERR "Apply (perl) functions on columns 1 and 2\n";
+    print STDERR "Usage: mapxy <function x> <function y>\n";
+    exit(1);
+}     
+
+my $fnx = shift;
+my $fny = shift;
+
+while (<STDIN>) {
+  if (!/^#/) {
+    chomp;
+    s/^(\s*)//;
+    s/(\s*)$//;
+    my @d = split;
+    my $x = $d[0];
+    my $y = $d[1];
+    
+    $d[0] = eval($fnx);
+    $d[1] = eval($fny);
+      
+    print "@d\n";
+  } else {
+    print;
+  }
+}

@@ -1,0 +1,28 @@
+#!/usr/bin/env perl
+# Traverses subdirectories and collects the results from */[filename]
+# The directory names are expected in the form PARAM1=VALUE1_PARAM2=VALUE2.
+# PARAMx_ prefixes are stripped, as well as all the underscores. The resulting string is used
+# as the initial column(s) for the output file.
+# RZ, 2025
+
+if (@ARGV != 1) {
+  die "Syntax: gatherfiles [filename]\n";
+}
+
+my $target = shift;
+
+open (O, "|sortnum >$target") or die;
+
+foreach (<*>) {
+  -d or next;
+  $dir = $_;
+  if (-s "$dir/$target") {
+    $y = `cat $dir/$target`;
+    chomp($y);
+    $x = $dir;
+    $x =~ s/([^_=]*)=//g;
+    $x =~ s/_/ /g;
+    print "$x $y\n";
+    print O "$x $y\n";
+  }
+}

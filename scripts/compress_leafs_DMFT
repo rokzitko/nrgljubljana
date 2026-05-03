@@ -1,0 +1,32 @@
+#!/usr/bin/env perl
+# v2
+# CHANGE LOG
+# 10.3.2016 - handles spaces in filenames
+
+use strict;
+use File::Find;
+use Cwd;
+use File::Basename;
+
+my %seen;
+
+my $here = getcwd;
+
+find( sub { if (-d && -e "$_/param.loop" && (-d "$_/dmft" && -d "$_/res") || (-e "$_/dmft.tgz" || -e "$_/res.tgz")) { $seen{$File::Find::name}++; delete $seen{$File::Find::dir} }; }, '.' );
+
+#print join "\n", (keys %seen, undef);
+
+for $a (keys %seen) {
+    chdir $here;
+    my $dir = dirname($a);
+    chdir $dir;
+    my $target = basename($a);
+    my $here = `pwd`;
+    chomp($here);
+    print "Compressing $target in $here\n";
+    system "tar zcvf \"$target.tgz\" \"$target\"";
+    system "rm -rv \"$target\"/";
+#    exit(1);
+}
+
+    

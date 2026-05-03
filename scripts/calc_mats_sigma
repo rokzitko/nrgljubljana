@@ -1,0 +1,25 @@
+#!/usr/bin/env perl
+
+$T = `getparam T param.loop`;
+$beta = 1/$T;
+$pi = 3.141592653589793;
+
+open (I, ">matsu_imsigma.dat");
+open (R, ">matsu_resigma.dat");
+
+for ($i = 0; $i <= 50; $i ++) {
+  $om = (2*$i+1)*$pi/$beta; # fermionic
+
+  $y = `hilb -d imsigma.dat -G 0 $om`; # input to 'hilb' is DOS, i.e. A(w)=-1/pi G"
+  chomp($y);
+  $y =~ /\((.*),(.*)\)/;
+  $re = $1;
+  $im = $2;
+  
+  # divide by -pi! necessary because of the pi difference between DOS and G"
+  $re = -$re/$pi;
+  $im = -$im/$pi;
+  
+  print R "$om $re\n";
+  print I "$om $im\n";
+}

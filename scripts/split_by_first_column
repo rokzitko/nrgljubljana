@@ -1,0 +1,38 @@
+#!/usr/bin/env perl
+# Split a tabulated file so that multiple lines sharing the same
+# first column value end up in separate output files.
+# Syntax: split_by_first_column file
+# Output: file_1, file_2, file_3, etc.
+# Rok Zitko, rok.zitko@ijs.si, Sep 2014
+
+use warnings;
+use strict;
+
+my $fnin = shift;
+
+open (F, "<$fnin") or die;
+
+system "rm -f ${fnin}_[1-9]*";
+
+my $cnt = 1;
+my $prev;
+
+while (<F>) {
+  my ($x, $rest) = split;
+
+  if (defined($prev) && $x == $prev) {
+    $cnt++;
+  } else {
+    $cnt = 1;
+  }
+  
+  open(O, ">>${fnin}_$cnt") or die;
+  print O;
+  close(O);
+  
+  $prev = $x;
+}
+    
+close(F);
+
+# Possible improvement: keep output files open.

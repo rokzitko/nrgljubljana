@@ -1,0 +1,6 @@
+#!/usr/bin/env perl
+
+my $nr = shift;
+
+system "cp dmft/$nr-Delta-u.dat DeltaFirst-u.dat";
+system "cp dmft/$nr-Delta-d.dat DeltaFirst-d.dat";

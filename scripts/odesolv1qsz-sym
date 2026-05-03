@@ -1,0 +1,41 @@
+#!/usr/bin/env perl
+# Run "adapt" if the current working directory is ../1
+# -- SPIN DEPENDENT -- 
+# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008, March 2009
+
+$_ = `pwd`;
+if (/\/1$/) {
+  system("cp ../Delta-d.dat ../Delta.dat");
+  system("cp ../Delta-d.dat ../Delta.dat2"); # for initial.m
+
+  # OVERWRITE!
+  system("cp ../Delta.dat ../Delta.dat2");
+    
+  system("adapt P | tee solverlog");
+  system("adapt N | tee solverlogneg");
+    
+  if (!(-e "FSOL.dat" && -e "FSOLNEG.dat")) {
+    print "solver failed.\n";
+    exit(1);
+  } else {
+    system("mv FSOL.dat ../FSOL.dat2");
+    system("mv FSOLNEG.dat ../FSOLNEG.dat2");
+  }
+
+  system("cp ../Delta-u.dat ../Delta.dat");
+    
+  system("adapt P | tee solverlog");
+  system("adapt N | tee solverlogneg");
+    
+  if (!(-e "FSOL.dat" && -e "FSOLNEG.dat")) {
+    print "solver failed.\n";
+    exit(1);
+  } else {
+    system("mv FSOL.dat ../FSOL.dat");
+    system("mv FSOLNEG.dat ../FSOLNEG.dat");
+  }
+    
+  # OVERWRITE!
+  system("cp ../FSOL.dat ../FSOL.dat2");
+  system("cp ../FSOLNEG.dat ../FSOLNEG.dat2");
+}

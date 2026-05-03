@@ -1,0 +1,31 @@
+#!/usr/bin/env perl
+# Copy "converged" hybridization function as the seed for a new DMFT iteration
+# Rok Zitko, rok.zitko@ijs.si, Oct 2012
+
+use Cwd;
+use warnings;
+
+$source = shift;
+-d $source or die "$source not found";
+
+$target = getcwd();
+
+chdir $source;
+
+$nr = `getiter`;
+
+print "$source -> $target\n";
+
+if (-e "dmft/$nr-Delta-u.dat") {
+    system "cp dmft/$nr-Delta-u.dat $target/DeltaFirst-u.dat";
+    system "cp dmft/$nr-Delta-d.dat $target/DeltaFirst-d.dat";
+}
+if (-e "dmft/$nr-Delta.dat") {
+    system "cp dmft/$nr-Delta.dat $target/DeltaFirst.dat";
+}
+if (-e "dmft/$nr-Delta-11.dat") {
+    system "cp dmft/$nr-Delta-11.dat $target/DeltaFirst-11.dat";
+    system "cp dmft/$nr-Delta-12.dat $target/DeltaFirst-12.dat";
+    system "cp dmft/$nr-Delta-22.dat $target/DeltaFirst-22.dat";
+    system "cp dmft/$nr-Delta-21.dat $target/DeltaFirst-21.dat";
+}
