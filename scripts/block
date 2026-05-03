@@ -1,34 +1,44 @@
 #!/usr/bin/env perl
-# In a file containings data in blocks separated by an empty line,
-# extract block number 'N'.
-# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, July 2008
+# In a file containing data in blocks separated by empty lines,
+# extract block N of non-empty lines.
+# gzipped files are automatically decompressed on the fly.
+# Rok Zitko, rok.zitko@ijs.si, 2009-2020
+
+use strict;
+use warnings;
 
 if (@ARGV != 2) {
   die "Usage: block <filename> <N>.\n";
 }
 
-my $filename = $ARGV[0];
-my $N = $ARGV[1];
+my $filename = shift;
+my $N = shift;
 
-open(F, "<$filename") or die "Can't open $filename: $!\n";
-
-my $cnt = 0;
-my @lastblock = ();
-
-while(<F>) {
-    chomp;
-    if (!/^#/) {
-      $line = $_;
-      if ($line eq "") {
-	  $cnt++;
-	  if ($cnt == $N) {
-	      print @lastblock;
-	  }
-	  @lastblock = ();
-      } else {
-	  push(@lastblock, "$line\n");
-      }
-  }
+my $arg;
+if ($filename =~ /\.gz$/) {
+    $arg = "gunzip -c $filename |";
+} else {
+    $arg = "<$filename";
 }
 
-print STDERR "Total blocks=$cnt\n";
+open(F, $arg) or die "Can't open $filename: $!\n";
+
+my @lastblock = ();
+my @block = ();
+
+my $ctr = 0;
+while(<F>) {
+    if (!/^#/) {
+        if ($_ eq "\n") {
+            $ctr++;
+            @lastblock = @block;
+            @block = ();
+            if ($ctr == $N) {
+                print @lastblock;
+                exit(0);
+            }
+        } else {
+            push(@block, $_);
+        }
+    }
+}

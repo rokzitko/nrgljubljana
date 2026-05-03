@@ -19,7 +19,7 @@ if (@ARGV == 1) {
 open (F, "<$fn") or die "Can't open $fn for reading: $!\n";
 
 while (<F>) {
-    if (/^$keyword=(.*)/) {
+    if (/^\s+$keyword\s+=\s+(.*)/) {
 	print "$1\n";
     }
 }

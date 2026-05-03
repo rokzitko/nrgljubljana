@@ -18,10 +18,14 @@ open (F, "<$fn") or die "Can't open $fn, stopped";
 
 my ($xprev, $yprev);
 
+my $cnt = 0;
+
 while (<F>) {
     if (/^#/) {
 	next;
     }
+    $cnt++;
+    
     
     chomp;
     my @v = split(' ', $_);
@@ -48,6 +52,12 @@ while (<F>) {
     
     $xprev = $x;
     $yprev = $y;
+}
+
+# HACK
+if ($cnt == 1) {
+    print "$yprev\n";
+    exit(1);
 }
 
 die "No solution.\n";
