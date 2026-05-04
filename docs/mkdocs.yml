@@ -4,6 +4,7 @@ edit_uri: edit/master/docs/docs/
 nav:
   - Overview: index.md
   - Getting Started: getting-started.md
+  - Parallelism: parallelism.md
   - Architecture:
     - Project structure: project-structure.md
     - Input and configuration: input-and-configuration.md

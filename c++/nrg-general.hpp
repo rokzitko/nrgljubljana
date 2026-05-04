@@ -108,8 +108,13 @@ private:
   MemTime mt; // memory and timing statistics
 
   void select_diag_engine() {
-    if (P.diag_mode == "OpenMP") // override
+    if (P.diag_mode == "OpenMP") { // override
+#if NRG_ENABLE_APP_OPENMP
       eng = std::make_shared<DiagOpenMP<S>>();
+#else
+      eng = std::make_shared<DiagSerial<S>>();
+#endif
+    }
     if (P.diag_mode == "serial")
       eng = std::make_shared<DiagSerial<S>>();
   }
@@ -186,6 +191,7 @@ public:
     auto diag_seed = std::move(input.diag);
     auto coef_seed = std::move(input.coef);
 
+    warn_application_openmp_request(P.diag_mode, P.diagth);
     select_diag_engine();
 
     auto diag = run_phase(RUNTYPE::NRG, operators_seed, coef_seed, diag_seed);

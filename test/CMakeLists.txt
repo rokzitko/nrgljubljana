@@ -2,6 +2,18 @@ set(TEST_BUILD_ENV
   "LD_LIBRARY_PATH=${PROJECT_BINARY_DIR}/c++:$ENV{LD_LIBRARY_PATH}"
   "DYLD_FALLBACK_LIBRARY_PATH=${PROJECT_BINARY_DIR}/c++:$ENV{DYLD_FALLBACK_LIBRARY_PATH}")
 
+if(ASAN)
+  set(TEST_ASAN_OPTIONS "$ENV{ASAN_OPTIONS}")
+  if(TEST_ASAN_OPTIONS)
+    string(APPEND TEST_ASAN_OPTIONS ":")
+  endif()
+  # MPI/PMIx/libfabric stacks commonly retain shutdown allocations that are
+  # outside nrgljubljana; keep ASan checks but disable LeakSanitizer for CTest.
+  string(APPEND TEST_ASAN_OPTIONS "detect_leaks=0")
+  string(REPLACE ";" "\\;" TEST_ASAN_OPTIONS "${TEST_ASAN_OPTIONS}")
+  list(APPEND TEST_BUILD_ENV "ASAN_OPTIONS=${TEST_ASAN_OPTIONS}")
+endif()
+
 if(GPROF)
   message(STATUS "*** gprof instrumentalization enabled")
   set(GPROF_DEPEND)

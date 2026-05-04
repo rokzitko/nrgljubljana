@@ -91,7 +91,9 @@ class Algo_FTmats : public Algo<S> {
           const auto energy = std::get<0>(factors);
           const auto weight = std::get<1>(factors);
           const auto zero_freq_bosonic_weight = std::get<2>(factors);
-#pragma omp parallel for schedule(static)
+#if NRG_ENABLE_APP_OPENMP
+# pragma omp parallel for schedule(static)
+#endif
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, factor * term(energy, weight, zero_freq_bosonic_weight, n));
         }

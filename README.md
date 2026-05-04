@@ -37,21 +37,30 @@ Useful developer options:
 - `-DTEST_LONG=ON`
 - `-DASAN=ON -DUBSAN=ON`
 - `-DANALYZE_SOURCES=ON`
+- `-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON|OFF` enables application-level OpenMP regions such as simultaneous diagonalisation scheduling (default: `OFF`)
 - `-DNRGLJUBLJANA_ENABLE_MATHEMATICA=ON|OFF` controls `FindMathematica` (default: `OFF` on `aarch64`, `ON` otherwise)
 - `-DNRGLJUBLJANA_INSTALL_NRGINIT=ON|OFF` controls installation of the `nrginit` scripts (default: `ON`)
 - `-DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON|OFF` uses preinstalled dependencies instead of CPM downloads (default: `OFF`)
 
 Core native dependencies:
 
-- BLAS and LAPACK
+- threaded BLAS and LAPACK, typically MKL or OpenBLAS
 - MPI
-- OpenMP
+- OpenMP only when enabled for application-level regions, or when required by the selected BLAS/LAPACK implementation
 - Boost
 - GSL
 - GMP
 - HDF5
 
 Wolfram Mathematica is required for the `nrginit` side of the workflow, which prepares the initial Hamiltonian, basis, and operator data used by the C++ executable.
+
+## Parallelism Model
+
+NRG Ljubljana's default performance model is BLAS/LAPACK-internal threading. The executable should normally have one numerical threading backend in the process: threaded MKL or threaded OpenBLAS. Application-level OpenMP regions are disabled by default so the code does not accidentally link a second OpenMP runtime such as GNU `libgomp` together with Intel `libiomp5`.
+
+Use `MKL_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, `OMP_NUM_THREADS`, and scheduler CPU binding to control numerical kernel threading. When running with MPI, choose the BLAS/LAPACK thread count together with the rank count; `mpi_ranks * blas_threads` should usually not exceed the CPUs allocated to the job.
+
+`-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON` is an expert option for simultaneous diagonalisation scheduling (`diag_mode=OpenMP`, `diagth>1`) and a few non-BLAS loops. It can create nested parallelism when BLAS/LAPACK is also threaded, so CMake checks the visible link line for mixed OpenMP runtime families and the executable prints startup diagnostics and warnings about the detected MKL/OpenBLAS/OpenMP/MPI threading configuration.
 
 ## Repository Map
 

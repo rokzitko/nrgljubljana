@@ -58,3 +58,12 @@ The compilation of ``NRG Ljubljana`` can be configured using CMake-options::
 +-----------------------------------------------------------------+-----------------------------------------------+
 | Build the documentation                                         | -DBuild_Documentation=ON                      |
 +-----------------------------------------------------------------+-----------------------------------------------+
+| Enable application-level OpenMP regions                         | -DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON          |
++-----------------------------------------------------------------+-----------------------------------------------+
+
+Parallelism
+-----------
+
+The default parallelism model is BLAS/LAPACK-internal threading. Use a threaded MKL or OpenBLAS build and control numerical kernel threads with variables such as ``MKL_NUM_THREADS``, ``OPENBLAS_NUM_THREADS`` and ``OMP_NUM_THREADS``. Application-level OpenMP regions are disabled by default to avoid linking multiple OpenMP runtimes into the same executable.
+
+The option ``-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON`` is intended only for expert runs that intentionally use simultaneous diagonalisation scheduling through ``diag_mode=OpenMP`` and ``diagth``. If BLAS/LAPACK is also threaded, this is nested parallelism. CMake checks the visible link line for mixed GNU/Intel/LLVM OpenMP runtime families, and the executable reports the detected MKL/OpenBLAS/OpenMP/MPI threading configuration at startup.

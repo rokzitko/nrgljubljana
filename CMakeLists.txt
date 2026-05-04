@@ -60,11 +60,14 @@ else()
 endif()
 option(NRGLJUBLJANA_USE_SYSTEM_DEPS "Use dependencies supplied by the system or package manager instead of CPM" OFF)
 option(NRGLJUBLJANA_INSTALL_NRGINIT "Install nrginit Mathematica scripts" ON)
+option(NRGLJUBLJANA_ENABLE_APP_OPENMP "Enable application-level OpenMP parallel regions; BLAS/LAPACK remains threaded independently" OFF)
 option(Build_Tests "Build tests" ON)
 set(NRGLJUBLJANA_BUILD_TESTS_ENABLED OFF)
 if(Build_Tests AND NOT IS_SUBPROJECT)
   set(NRGLJUBLJANA_BUILD_TESTS_ENABLED ON)
 endif()
+
+message(STATUS "Application OpenMP parallel regions: ${NRGLJUBLJANA_ENABLE_APP_OPENMP}")
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -124,9 +127,13 @@ endif()
 
 # Compatibility to Open-MPI 3.0.0: check whether MPI executable has option --oversubscribe and add it
 execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --oversubscribe ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ls ${MPIEXEC_POSTFLAGS} RESULT_VARIABLE HAS_NO_OVERSUBSCRIBE OUTPUT_QUIET ERROR_QUIET)
-if(NOT HAS_NO_OVERSUBSCRIBE)
+if(NOT HAS_NO_OVERSUBSCRIBE AND NOT "--oversubscribe" IN_LIST MPIEXEC_PREFLAGS)
  list(APPEND MPIEXEC_PREFLAGS --oversubscribe)
  set(MPIEXEC_PREFLAGS ${MPIEXEC_PREFLAGS} CACHE STRING "These flags will be directly before the executable that is being run by mpiexec." FORCE)
+endif()
+if(MPIEXEC_PREFLAGS)
+  list(REMOVE_DUPLICATES MPIEXEC_PREFLAGS)
+  set(MPIEXEC_PREFLAGS ${MPIEXEC_PREFLAGS} CACHE STRING "These flags will be directly before the executable that is being run by mpiexec." FORCE)
 endif()
 
 message(STATUS "MPI_FOUND: ${MPI_FOUND} VERSION: ${MPI_VERSION}")
@@ -159,10 +166,15 @@ if(NOT TARGET HDF5::HDF5)
 endif()
 install(TARGETS hdf5 EXPORT nrgljubljana-targets)
 
-# OpenMP
-find_package(OpenMP REQUIRED COMPONENTS CXX)
+# OpenMP for application-level parallel regions. The default parallelism model is
+# BLAS/LAPACK-internal threading; this target is intentionally empty unless the
+# explicit opt-in below is enabled.
 add_library(openmp INTERFACE)
-target_link_libraries(openmp INTERFACE OpenMP::OpenMP_CXX)
+target_compile_definitions(openmp INTERFACE NRG_ENABLE_APP_OPENMP=$<BOOL:${NRGLJUBLJANA_ENABLE_APP_OPENMP}>)
+if(NRGLJUBLJANA_ENABLE_APP_OPENMP)
+  find_package(OpenMP REQUIRED COMPONENTS CXX)
+  target_link_libraries(openmp INTERFACE OpenMP::OpenMP_CXX)
+endif()
 install(TARGETS openmp EXPORT nrgljubljana-targets)
 
 # Boost
@@ -254,21 +266,142 @@ if(NRGLJUBLJANA_ENABLE_MATHEMATICA)
   endif()
 endif()
 
+function(nrgljubljana_collect_target_link_items output target)
+  set(items)
+  if(TARGET ${target})
+    foreach(prop IN ITEMS
+        INTERFACE_LINK_LIBRARIES
+        INTERFACE_LINK_OPTIONS
+        INTERFACE_COMPILE_OPTIONS
+        IMPORTED_LINK_INTERFACE_LIBRARIES
+        IMPORTED_LOCATION
+        IMPORTED_LOCATION_RELEASE
+        IMPORTED_LOCATION_RELWITHDEBINFO
+        IMPORTED_LOCATION_MINSIZEREL
+        IMPORTED_LOCATION_DEBUG)
+      get_target_property(values ${target} ${prop})
+      if(values AND NOT values MATCHES "-NOTFOUND$")
+        list(APPEND items ${values})
+      endif()
+    endforeach()
+  endif()
+  set(${output} ${items} PARENT_SCOPE)
+endfunction()
+
+function(nrgljubljana_detect_openmp_runtime_families output)
+  set(families)
+  set(sequential_mkl OFF)
+  set(mkl_rt OFF)
+  foreach(item IN LISTS ARGN)
+    if(NOT item)
+      continue()
+    endif()
+    string(TOLOWER "${item}" item_lower)
+    if(item_lower MATCHES "mkl_sequential")
+      set(sequential_mkl ON)
+    endif()
+    if(item_lower MATCHES "mkl_rt")
+      set(mkl_rt ON)
+    endif()
+    if(item_lower MATCHES "libgomp|[-]lgomp|mkl_gnu_thread")
+      list(APPEND families GNU)
+    endif()
+    if(item_lower MATCHES "libiomp5|[-]liomp5|libguide|[-]lguide|mkl_intel_thread")
+      list(APPEND families Intel)
+    endif()
+    if(item_lower MATCHES "libomp\\.|[-]lomp|mkl_llvm_thread")
+      list(APPEND families LLVM)
+    endif()
+  endforeach()
+  if(families)
+    list(REMOVE_DUPLICATES families)
+  endif()
+  set(${output} ${families} PARENT_SCOPE)
+  set(NRGLJUBLJANA_DETECTED_SEQUENTIAL_MKL ${sequential_mkl} PARENT_SCOPE)
+  set(NRGLJUBLJANA_DETECTED_MKL_RT ${mkl_rt} PARENT_SCOPE)
+endfunction()
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/BLAS_LAPACK)
 # BLAS/Lapack
 find_package(LAPACK REQUIRED) # also looks up BLAS
 add_library(blas_lapack INTERFACE)
-string(FIND "${BLAS_LIBRARIES}" "libmkl" MKL_FIND_POS)
-if(MKL_FIND_POS GREATER -1)
-  message(STATUS "Using MKL (libmkl) for linear algebra")
-  list(APPEND BLAS_LINKER_FLAGS "-DMKL")
+set(NRGLJUBLJANA_HAVE_MKL OFF)
+set(NRGLJUBLJANA_HAVE_OPENBLAS OFF)
+set(NRGLJUBLJANA_BLAS_VENDOR "unknown")
+string(TOLOWER "${BLA_VENDOR};${BLAS_LIBRARIES};${LAPACK_LIBRARIES};${BLAS_LINKER_FLAGS};${LAPACK_LINKER_FLAGS}" NRGLJUBLJANA_LINALG_LINK_TEXT)
+if(NRGLJUBLJANA_LINALG_LINK_TEXT MATCHES "mkl")
+  set(NRGLJUBLJANA_HAVE_MKL ON)
+  set(NRGLJUBLJANA_BLAS_VENDOR "Intel MKL")
+  message(STATUS "Using Intel MKL for linear algebra")
   # https://software.intel.com/en-us/forums/intel-math-kernel-library/topic/759670
   # https://software.intel.com/en-us/articles/a-new-linking-model-single-dynamic-library-mkl_rt-since-intel-mkl-103
+elseif(NRGLJUBLJANA_LINALG_LINK_TEXT MATCHES "openblas")
+  set(NRGLJUBLJANA_HAVE_OPENBLAS ON)
+  set(NRGLJUBLJANA_BLAS_VENDOR "OpenBLAS")
+  message(STATUS "Using OpenBLAS for linear algebra")
+else()
+  message(STATUS "Using BLAS/LAPACK vendor: ${NRGLJUBLJANA_BLAS_VENDOR}")
 endif()
+string(REPLACE "\"" "\\\"" NRGLJUBLJANA_BLAS_VENDOR_ESCAPED "${NRGLJUBLJANA_BLAS_VENDOR}")
+target_compile_definitions(blas_lapack INTERFACE
+  "NRG_BLAS_VENDOR=\"${NRGLJUBLJANA_BLAS_VENDOR_ESCAPED}\""
+  NRG_HAVE_MKL=$<BOOL:${NRGLJUBLJANA_HAVE_MKL}>
+  NRG_HAVE_OPENBLAS=$<BOOL:${NRGLJUBLJANA_HAVE_OPENBLAS}>
+)
 message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 message(STATUS "BLAS_LINKER_FLAGS=${BLAS_LINKER_FLAGS}")
 message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
 message(STATUS "LAPACK_LINKER_FLAGS=${LAPACK_LINKER_FLAGS}")
+
+set(NRGLJUBLJANA_OPENMP_RUNTIME_LINK_ITEMS
+  ${LAPACK_LIBRARIES}
+  ${BLAS_LIBRARIES}
+  ${LAPACK_LINKER_FLAGS}
+  ${BLAS_LINKER_FLAGS}
+  ${MPI_C_LIBRARIES}
+  ${MPI_CXX_LIBRARIES}
+  ${MPI_C_LINK_FLAGS}
+  ${MPI_CXX_LINK_FLAGS}
+  ${HDF5_LIBRARIES}
+  ${HDF5_HL_LIBRARIES}
+  ${GSL_LIBRARIES}
+)
+nrgljubljana_collect_target_link_items(NRGLJUBLJANA_LAPACK_TARGET_ITEMS LAPACK::LAPACK)
+nrgljubljana_collect_target_link_items(NRGLJUBLJANA_BLAS_TARGET_ITEMS BLAS::BLAS)
+nrgljubljana_collect_target_link_items(NRGLJUBLJANA_MPI_TARGET_ITEMS mpi)
+nrgljubljana_collect_target_link_items(NRGLJUBLJANA_HDF5_TARGET_ITEMS hdf5)
+nrgljubljana_collect_target_link_items(NRGLJUBLJANA_GSL_TARGET_ITEMS gsl)
+nrgljubljana_collect_target_link_items(NRGLJUBLJANA_BOOST_MPI_TARGET_ITEMS Boost::mpi)
+nrgljubljana_collect_target_link_items(NRGLJUBLJANA_BOOST_SERIALIZATION_TARGET_ITEMS Boost::serialization)
+list(APPEND NRGLJUBLJANA_OPENMP_RUNTIME_LINK_ITEMS
+  ${NRGLJUBLJANA_LAPACK_TARGET_ITEMS}
+  ${NRGLJUBLJANA_BLAS_TARGET_ITEMS}
+  ${NRGLJUBLJANA_MPI_TARGET_ITEMS}
+  ${NRGLJUBLJANA_HDF5_TARGET_ITEMS}
+  ${NRGLJUBLJANA_GSL_TARGET_ITEMS}
+  ${NRGLJUBLJANA_BOOST_MPI_TARGET_ITEMS}
+  ${NRGLJUBLJANA_BOOST_SERIALIZATION_TARGET_ITEMS}
+)
+if(NRGLJUBLJANA_ENABLE_APP_OPENMP)
+  nrgljubljana_collect_target_link_items(NRGLJUBLJANA_OPENMP_TARGET_ITEMS OpenMP::OpenMP_CXX)
+  list(APPEND NRGLJUBLJANA_OPENMP_RUNTIME_LINK_ITEMS ${OpenMP_CXX_LIBRARIES} ${OpenMP_CXX_FLAGS} ${NRGLJUBLJANA_OPENMP_TARGET_ITEMS})
+endif()
+nrgljubljana_detect_openmp_runtime_families(NRGLJUBLJANA_OPENMP_RUNTIME_FAMILIES ${NRGLJUBLJANA_OPENMP_RUNTIME_LINK_ITEMS})
+if(NRGLJUBLJANA_DETECTED_SEQUENTIAL_MKL)
+  message(FATAL_ERROR "Sequential MKL was selected, but NRG Ljubljana expects threaded BLAS/LAPACK. Use a threaded MKL BLA_VENDOR, mkl_rt with a threaded MKL_THREADING_LAYER, or OpenBLAS.")
+endif()
+if(NRGLJUBLJANA_OPENMP_RUNTIME_FAMILIES)
+  message(STATUS "OpenMP runtime families visible in BLAS/LAPACK/app link line: ${NRGLJUBLJANA_OPENMP_RUNTIME_FAMILIES}")
+else()
+  message(STATUS "No OpenMP runtime family visible in the link line (normal for pthread OpenBLAS or opaque mkl_rt); runtime startup reporting will inspect loaded libraries")
+endif()
+list(LENGTH NRGLJUBLJANA_OPENMP_RUNTIME_FAMILIES NRGLJUBLJANA_OPENMP_RUNTIME_FAMILY_COUNT)
+if(NRGLJUBLJANA_OPENMP_RUNTIME_FAMILY_COUNT GREATER 1)
+  message(FATAL_ERROR "More than one OpenMP runtime family appears in the link line: ${NRGLJUBLJANA_OPENMP_RUNTIME_FAMILIES}. Do not mix GNU libgomp, Intel libiomp5/libguide, and LLVM libomp. Disable application OpenMP or select a BLAS/LAPACK threading layer compatible with the compiler OpenMP runtime.")
+endif()
+if(NRGLJUBLJANA_ENABLE_APP_OPENMP AND NRGLJUBLJANA_DETECTED_MKL_RT)
+  message(WARNING "Application OpenMP is enabled together with MKL's mkl_rt dispatcher. CMake cannot prove which MKL threading layer will be loaded at runtime; set MKL_THREADING_LAYER to the OpenMP runtime family used by the compiler, or disable NRGLJUBLJANA_ENABLE_APP_OPENMP.")
+endif()
 if(TARGET LAPACK::LAPACK)
   target_link_libraries(blas_lapack INTERFACE LAPACK::LAPACK)
 else()

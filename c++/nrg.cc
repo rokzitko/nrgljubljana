@@ -14,6 +14,32 @@
 
 using namespace NRG;
 
+#ifndef NRG_HAS_ADDRESS_SANITIZER
+#if defined(__SANITIZE_ADDRESS__)
+#define NRG_HAS_ADDRESS_SANITIZER 1
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define NRG_HAS_ADDRESS_SANITIZER 1
+#endif
+#endif
+#endif
+
+#ifndef NRG_HAS_ADDRESS_SANITIZER
+#define NRG_HAS_ADDRESS_SANITIZER 0
+#endif
+
+namespace {
+
+void configure_asan_mpi_environment()
+{
+#if !defined(_WIN32) && NRG_HAS_ADDRESS_SANITIZER
+  // Libfabric memhooks patch allocation functions during MPI_Init and conflict with ASan.
+  if (std::getenv("FI_MR_CACHE_MONITOR") == nullptr) setenv("FI_MR_CACHE_MONITOR", "disabled", 0);
+#endif
+}
+
+}
+
 inline void help(int argc, char **argv, std::string help_message)
 {
   std::vector<std::string> args(argv+1, argv+argc); // NOLINT
@@ -32,6 +58,7 @@ auto set_workdir(int argc, char **argv) { // not inline!
 }
 
 int main(int argc, char **argv) {
+  configure_asan_mpi_environment();
   print_about_message();
   boost::mpi::environment mpienv(argc, argv);
   boost::mpi::communicator mpiw;
@@ -46,7 +73,7 @@ int main(int argc, char **argv) {
       return 1;
     }
     std::cout << "MPI job running on " << mpiw.size() << " processors." << std::endl << std::endl;
-    report_openMP();
+    report_openMP(std::cout, mpiw.size());
     auto workdir = set_workdir(argc, argv);
     run_nrg_master(mpienv, mpiw, std::move(workdir));
   } else {

@@ -259,7 +259,9 @@ class Algo_FDMmats : public Algo<S> {
           const auto energy = std::get<0>(factors);
           const auto weightA = std::get<1>(factors);
           const auto weightB = std::get<2>(factors);
-          #pragma omp parallel for schedule(static)
+#if NRG_ENABLE_APP_OPENMP
+# pragma omp parallel for schedule(static)
+#endif
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, term1(energy, weightA, weightB, n) * factor);
         }
@@ -269,7 +271,9 @@ class Algo_FDMmats : public Algo<S> {
           const auto energy = std::get<0>(factors);
           const auto weightA = std::get<1>(factors);
           const auto weightB = std::get<2>(factors);
-          #pragma omp parallel for schedule(static)
+#if NRG_ENABLE_APP_OPENMP
+# pragma omp parallel for schedule(static)
+#endif
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, term2(energy, weightA, weightB, n) * factor);
         }
@@ -279,7 +283,9 @@ class Algo_FDMmats : public Algo<S> {
           const auto energy = std::get<0>(factors);
           const auto weightA = std::get<1>(factors);
           const auto weightB = std::get<2>(factors);
-          #pragma omp parallel for schedule(static)
+#if NRG_ENABLE_APP_OPENMP
+# pragma omp parallel for schedule(static)
+#endif
           for (size_t n = 0; n < cutoff; n++)
             cm->add(n, term3(energy, weightA, weightB, n) * factor);
         }

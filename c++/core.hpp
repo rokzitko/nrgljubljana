@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <set>
 #include <algorithm>
-#include <omp.h>
 #include <range/v3/all.hpp>
 
 #include "constants.hpp"

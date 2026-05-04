@@ -9,9 +9,15 @@ set(NRGLJUBLJANA_FOUND True)
 # version
 set(NRGLJUBLJANA_VERSION @PROJECT_VERSION@)
 set(NRGLJUBLJANA_GIT_HASH @PROJECT_GIT_HASH@)
+set(NRGLJUBLJANA_ENABLE_APP_OPENMP @NRGLJUBLJANA_ENABLE_APP_OPENMP@)
 
 # Root of the installation
 set(NRGLJUBLJANA_ROOT  @CMAKE_INSTALL_PREFIX@)
+
+include(CMakeFindDependencyMacro)
+if(NRGLJUBLJANA_ENABLE_APP_OPENMP)
+  find_dependency(OpenMP REQUIRED COMPONENTS CXX)
+endif()
 
 # Include the exported targets of this project
 include(@CMAKE_INSTALL_PREFIX@/lib/cmake/nrgljubljana/nrgljubljana-targets.cmake)
