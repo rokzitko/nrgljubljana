@@ -44,6 +44,10 @@ build_jobs="$(job_count "${nrgljubljana_build_jobs:-0}")"
 test_jobs="$(job_count "${nrgljubljana_test_jobs:-0}")"
 test_timeout="$(positive_integer "test timeout" "${nrgljubljana_test_timeout:-7200}")"
 
+if [ "${target_platform:-}" = "linux-aarch64" ]; then
+  export OPENBLAS_CORETYPE="${OPENBLAS_CORETYPE:-ARMV8}"
+fi
+
 cmake -S . -B build -G Ninja \
   ${CMAKE_ARGS:-} \
   -DCMAKE_BUILD_TYPE=Release \

@@ -30,17 +30,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: ""}
+          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: ""}
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl, cmake_flags: "-DBLA_VENDOR=Intel10_64lp", openblas_threads: "1", mkl_threads: "2", omp_threads: "2"}
 # Beware: gcc on arm produces incorrect numerical results (April 2026). Considering thus platform
 # as "unsupported" for now.
 #          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: ARMV8}
+          - {os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "2", mkl_threads: "1", omp_threads: ""}
+          - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: ""}
 #          - {os: ubuntu-24.04-arm, cc: gcc-14, cxx: g++-14, blas: openBLAS, cmake_flags: "", omp_threads: ""}
-          - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "", omp_threads: ""}
+          - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: ARMV8}
           - {os: macos-14, cc: clang, cxx: clang++, blas: accelerate, cmake_flags: "", omp_threads: ""}
           - {os: macos-15, cc: clang, cxx: clang++, blas: accelerate, cmake_flags: "", omp_threads: ""}
           - {os: macos-26, cc: clang, cxx: clang++, blas: accelerate, require_arm64: true, cmake_flags: "", omp_threads: ""}
@@ -68,7 +68,6 @@ jobs:
         clang-15
         g++-12
         hdf5-tools
-        libblas-dev
         libboost-dev
         libboost-mpi-dev
         libboost-serialization-dev
@@ -79,7 +78,7 @@ jobs:
         libgmp-dev
         libgsl-dev
         libhdf5-dev
-        liblapack-dev
+        libopenblas-dev
         libopenmpi-dev
         openmpi-bin
         openmpi-common
@@ -120,14 +119,13 @@ jobs:
         gcc-14
         g++-14
         hdf5-tools
-        libblas-dev
         libboost-dev
         libboost-mpi-dev
         libboost-serialization-dev
         libgmp-dev
         libgsl-dev
         libhdf5-dev
-        liblapack-dev
+        libopenblas-dev
         libopenmpi-dev
         openmpi-bin
 
@@ -139,7 +137,6 @@ jobs:
         ccache
         clang-18
         hdf5-tools
-        libblas-dev
         libboost-dev
         libboost-mpi-dev
         libboost-serialization-dev
@@ -149,7 +146,7 @@ jobs:
         libgmp-dev
         libgsl-dev
         libhdf5-dev
-        liblapack-dev
+        libopenblas-dev
         libomp-18-dev
         libopenmpi-dev
         openmpi-bin
@@ -191,18 +188,32 @@ jobs:
         cmake --build . --parallel 2
 
     - name: Configure test runtime environment
-      if: ${{ matrix.omp_threads != '' }}
       run: |
-        echo "OMP_NUM_THREADS=${{ matrix.omp_threads }}" >> $GITHUB_ENV
-        echo "OMP_DYNAMIC=FALSE" >> $GITHUB_ENV
-    
+        echo "OPENBLAS_NUM_THREADS=${{ matrix.openblas_threads || '1' }}" >> "$GITHUB_ENV"
+        echo "MKL_NUM_THREADS=${{ matrix.mkl_threads || '1' }}" >> "$GITHUB_ENV"
+        echo "OMP_NUM_THREADS=${{ matrix.omp_threads || '1' }}" >> "$GITHUB_ENV"
+        echo "OMP_DYNAMIC=FALSE" >> "$GITHUB_ENV"
+        echo "MKL_DYNAMIC=FALSE" >> "$GITHUB_ENV"
+        if [ -n "${{ matrix.openblas_coretype }}" ]; then
+          echo "OPENBLAS_CORETYPE=${{ matrix.openblas_coretype }}" >> "$GITHUB_ENV"
+        fi
+
     - name: Test NRG Ljubljana
-      env:
-        OPENBLAS_NUM_THREADS: "1"
       run: |
         cd build
         ctest -j2 --output-on-failure --timeout "${NRGLJUBLJANA_CTEST_TIMEOUT_SECONDS}" --no-tests=error
-    
+
+    - name: Upload test logs
+      uses: actions/upload-artifact@v7
+      if: failure()
+      with:
+        name: test-logs-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}
+        path: |
+          build/Testing/Temporary/LastTest.log
+          build/Testing/Temporary/LastTestsFailed.log
+          build/test/**/log
+        if-no-files-found: ignore
+
     - name: ccache statistics
       if: always()
       run: |

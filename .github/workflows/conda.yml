@@ -22,12 +22,15 @@ jobs:
           - os: ubuntu-24.04
             label: linux-64
             variants: "{nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}"
+            openblas_coretype: ""
           - os: ubuntu-24.04-arm
             label: linux-aarch64
             variants: "{c_compiler: ['clang'], cxx_compiler: ['clangxx'], nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}"
+            openblas_coretype: ARMV8
           - os: macos-14
             label: macos
             variants: "{nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}"
+            openblas_coretype: ""
 
     name: conda build (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
@@ -59,6 +62,10 @@ jobs:
       - name: Install conda-build
         run: conda install -n base -y conda-build
 
+      - name: Configure Linux ARM OpenBLAS
+        if: ${{ matrix.openblas_coretype != '' }}
+        run: echo "OPENBLAS_CORETYPE=${{ matrix.openblas_coretype }}" >> "$GITHUB_ENV"
+
       - name: Render recipe
         run: conda render -c conda-forge --variants "${{ matrix.variants }}" recipe
 
@@ -67,6 +74,18 @@ jobs:
           conda build -c conda-forge --no-anaconda-upload \
             --variants "${{ matrix.variants }}" \
             recipe
+
+      - name: Upload conda test logs
+        uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: conda-test-logs-${{ matrix.label }}
+          path: |
+            ${{ env.CONDA_BLD_PATH }}/**/*.log
+            ${{ env.CONDA_BLD_PATH }}/**/work/build/Testing/Temporary/LastTest.log
+            ${{ env.CONDA_BLD_PATH }}/**/work/build/Testing/Temporary/LastTestsFailed.log
+            ${{ env.CONDA_BLD_PATH }}/**/work/build/test/**/log
+          if-no-files-found: ignore
 
       - name: Upload conda packages
         uses: actions/upload-artifact@v7
