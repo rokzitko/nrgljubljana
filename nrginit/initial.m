@@ -28,7 +28,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2026.04";
+VERSION = "2026.05";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -2025,9 +2025,6 @@ maketable[]:=Module[{t},
     t = Join[t, maketritables[]];
   ];
 
-  (* Enforce linefeed on the last line. *)
-  AppendTo[t, {}];
-
   (* Some C++ compilers/libraries generate code which has trouble parsing
   very small (non-representable) floating point numbers. In this case one
   can use option EPSCLIP to truncate all small floating point numbers to
@@ -2053,6 +2050,19 @@ maketable[]:=Module[{t},
   t   (* RETURN *)
 ];
 
+fieldString[x_String] := x;
+fieldString[x_Integer] := ToString[x];
+fieldString[x_Real] := ToString[FortranForm[x], PageWidth -> Infinity];
+fieldString[x_Complex] := ToString[FortranForm[Re[x]], PageWidth -> Infinity] <> "+" <> ToString[FortranForm[Im[x]], PageWidth -> Infinity] <> "*I";
+fieldString[x_] := ToString[x, InputForm, PageWidth -> Infinity];
+
+exportTableFast[file_, tab_] := Module[{s, text},
+  text = StringRiffle[Map[fieldString, tab, {2}], "\n", " "];
+  s = OpenWrite[file];
+  WriteString[s, text, "\n"];
+  Close[s]
+];
+
 (* Actually generate and write datafile *)
 makedata[filename_]:=Module[{suffix, fn, tabelca},
   suffix = If[option["TEMPLATE"] || option["GENERATE_TEMPLATE"], ".in", ""];
@@ -2064,5 +2074,7 @@ makedata[filename_]:=Module[{suffix, fn, tabelca},
       "(" <> ToString[CForm[x]] <> "," <> ToString[CForm[y]] <> ")";
     tabelca[[3]] = "# COMPLEX";
   ];
-  MyPrint[Export[fn, tabelca, "Table"]];
+  MyPrint[exportTableFast[fn, tabelca]];
+  Put[tabelca, "raw.wl"];
+  Put[Map[fieldString, tabelca, {2}], "str.wl"];
 ];
