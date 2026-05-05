@@ -394,6 +394,9 @@ if(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME)
     endif()
   endif()
   target_link_libraries(openmp INTERFACE OpenMP::OpenMP_CXX)
+  # Keep OpenMP symbols visible for tests/tools that call mkl_rt-backed
+  # BLAS/LAPACK without running nrg's startup checks first.
+  target_sources(openmp INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/openmp_link_anchor.cc>)
 endif()
 message(STATUS "Effective MKL threading layer: ${NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER}")
 string(REPLACE "\"" "\\\"" NRGLJUBLJANA_BLAS_VENDOR_ESCAPED "${NRGLJUBLJANA_BLAS_VENDOR}")
