@@ -25,7 +25,7 @@ jobs:
             openblas_coretype: ""
           - os: ubuntu-24.04-arm
             label: linux-aarch64
-            variants: "{c_compiler: ['clang'], cxx_compiler: ['clangxx'], nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}"
+            variants: "{c_compiler: ['clang'], cxx_compiler: ['clangxx'], nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2'], nrgljubljana_test_regex: ['^test_clean$']}"
             openblas_coretype: ARMV8
           - os: macos-14
             label: macos

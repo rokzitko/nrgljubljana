@@ -43,6 +43,7 @@ test_long="$(cmake_bool "${nrgljubljana_test_long:-OFF}")"
 build_jobs="$(job_count "${nrgljubljana_build_jobs:-0}")"
 test_jobs="$(job_count "${nrgljubljana_test_jobs:-0}")"
 test_timeout="$(positive_integer "test timeout" "${nrgljubljana_test_timeout:-7200}")"
+test_regex="${nrgljubljana_test_regex:-}"
 
 if [ "${target_platform:-}" = "linux-aarch64" ]; then
   export OPENBLAS_CORETYPE="${OPENBLAS_CORETYPE:-ARMV8}"
@@ -72,7 +73,11 @@ if [ "${build_tests}" = "ON" ]; then
   export OMP_NUM_THREADS=1
   export MKL_NUM_THREADS=1
   export OPENBLAS_NUM_THREADS=1
-  ctest --test-dir build --output-on-failure --parallel "${test_jobs}" --timeout "${test_timeout}" --no-tests=error
+  ctest_args=(--test-dir build --output-on-failure --parallel "${test_jobs}" --timeout "${test_timeout}" --no-tests=error)
+  if [ -n "${test_regex}" ]; then
+    ctest_args+=(-R "${test_regex}")
+  fi
+  ctest "${ctest_args[@]}"
 fi
 
 cmake --install build

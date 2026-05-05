@@ -10,3 +10,5 @@ nrgljubljana_test_jobs:
   - "0"
 nrgljubljana_test_timeout:
   - "7200"
+nrgljubljana_test_regex:
+  - ""
