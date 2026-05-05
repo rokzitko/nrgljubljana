@@ -3,19 +3,20 @@
 # Lines are parsed and numbers are compaired in pairs up to some
 # given accuracy.
 # Part of "NRG Ljubljana"
-# (C) Rok Zitko, rok.zitko@ijs.si, 2006-2011
+# (C) Rok Zitko, rok.zitko@ijs.si, 2006-2026
 
 # CHANGE LOG
 # 24. 5. 2007 - EOF bugfix, getline() function
 # 17. 6. 2009 - relaxed error triggering
 # 9. 3. 2011 - two verbosity levels
-# 29 3. 2011 - new ABSACCURACY setting   
+# 29 3. 2011 - new ABSACCURACY setting
+# 5. 5. 2026 - reporting improvement
 
 use strict;
 use warnings;
 
-# Keep ABSACCURACY low to avoid false negative reports. In particular,          
-# the round-off errors in saving results might differ from a system             
+# Keep ABSACCURACY low to avoid false negative reports. In particular,
+# the round-off errors in saving results might differ from a system
 # to a system.
 my $ABSACCURACY = 1e-5;
 my $nrdiffshow = 10;
@@ -62,7 +63,7 @@ sub getline($) {
         $line = trim($line);
         $_ = $line;
     } until (!/^#/ || eof($F));
-    
+
     if (eof($F)) {
         return "END OF FILE REACHED\n";
     }
@@ -76,7 +77,7 @@ sub isnumeric($) {
         return 1;
     }
     return 0;
-}  
+}
 
 my $error = 0;
 my $cnt = 0; # line counter
@@ -91,7 +92,7 @@ while (!(eof($F1) || eof($F2))) {
     $line2 =~ s/^\s//;
     $line1 =~ s/\s$//;
     $line2 =~ s/\s$//;
-    
+
     if ($line1 eq $line2) {
         $cntmatch += 1; 
     } else {
@@ -106,7 +107,7 @@ while (!(eof($F1) || eof($F2))) {
         }
         if ($len1 != $len2) {
             if ($verbose >= 2) {
-                print "Lengths don't match, $len1 vs $len2\n";
+                print "Lengths don't match, $len1 vs $len2: [$line1] [$line2]\n";
             }
             $error++;
         } else {
@@ -138,7 +139,7 @@ while (!(eof($F1) || eof($F2))) {
         if ($error == 0) {
             $cntnumeric += 1;
         }
-    } 
+    }
 }
 
 close($F1);
