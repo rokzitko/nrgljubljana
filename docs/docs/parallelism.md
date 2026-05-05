@@ -9,10 +9,13 @@ The expensive dense diagonalisation kernels should run inside a threaded BLAS/LA
 - Build with `NRGLJUBLJANA_ENABLE_APP_OPENMP=OFF`, which is the default.
 - Use threaded MKL or threaded OpenBLAS for BLAS/LAPACK.
 - Control numerical threads with environment variables such as `MKL_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, and `OMP_NUM_THREADS`.
+- For MKL `mkl_rt` builds, use `-DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU`, `INTEL`, or `LLVM` when the threading backend must be explicit.
 - Use MPI for parallelising independent diagonalisation work across ranks when desired.
 - Size MPI jobs as `mpi_ranks * blas_threads <= allocated_cpus` unless oversubscription is intentional and controlled by the scheduler.
 
 In this mode the code has serial application-level scheduling, while each LAPACK call may use many threads internally.
+
+OpenMP-based MKL threading-layer choices link CMake's documented `OpenMP::OpenMP_CXX` target so MKL can resolve the corresponding runtime symbols even though NRG Ljubljana's own OpenMP regions remain disabled.
 
 ## Expert Application OpenMP
 
@@ -31,6 +34,7 @@ The `nrg` executable reports parallel configuration at startup on rank 0, includ
 - application OpenMP build status
 - loaded OpenMP runtime libraries from `/proc/self/maps` when available
 - MKL version, threading layer, max threads, BLAS-domain max threads, and dynamic mode when MKL service symbols are visible
+- clear errors when `MKL_THREADING_LAYER` requests an OpenMP backend whose runtime symbols are not visible
 - OpenBLAS config, core, thread count, and threading model when OpenBLAS reporting symbols are visible
 - MPI rank count times BLAS/LAPACK thread count, with an oversubscription warning when this exceeds online CPUs
 

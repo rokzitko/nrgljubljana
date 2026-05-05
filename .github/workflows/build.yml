@@ -32,7 +32,7 @@ jobs:
         include:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: ""}
           - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: ""}
-          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl, cmake_flags: "-DBLA_VENDOR=Intel10_64_dyn", openblas_threads: "1", mkl_threads: "2", mkl_threading_layer: GNU, omp_threads: "2"}
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl, cmake_flags: "-DBLA_VENDOR=Intel10_64_dyn -DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU", openblas_threads: "1", mkl_threads: "2", mkl_threading_layer: GNU, omp_threads: "2"}
 # Beware: gcc on arm produces incorrect numerical results (April 2026). Considering thus platform
 # as "unsupported" for now.
 #          - {os: ubuntu-22.04-arm, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "", omp_threads: ""}

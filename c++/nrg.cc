@@ -62,6 +62,7 @@ int main(int argc, char **argv) {
   print_about_message();
   boost::mpi::environment mpienv(argc, argv);
   boost::mpi::communicator mpiw;
+  if (!prepare_parallel_runtime(std::cerr, mpiw.rank() == 0)) return 1;
   if (mpiw.rank() == 0) {
     help(argc, argv, "Usage: nrg [-h] [-w workdir]");
     if (!file_exists("data")) {

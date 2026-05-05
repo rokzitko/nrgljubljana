@@ -60,6 +60,8 @@ NRG Ljubljana's default performance model is BLAS/LAPACK-internal threading. The
 
 Use `MKL_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, `OMP_NUM_THREADS`, and scheduler CPU binding to control numerical kernel threading. When running with MPI, choose the BLAS/LAPACK thread count together with the rank count; `mpi_ranks * blas_threads` should usually not exceed the CPUs allocated to the job.
 
+For MKL builds that use the `mkl_rt` dispatcher, set `-DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU`, `INTEL`, or `LLVM` when you need an explicit threading backend. This links the matching compiler OpenMP runtime through CMake's `OpenMP::OpenMP_CXX` target while keeping application-level OpenMP regions disabled unless `NRGLJUBLJANA_ENABLE_APP_OPENMP=ON` is also set.
+
 `-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON` is an expert option for simultaneous diagonalisation scheduling (`diag_mode=OpenMP`, `diagth>1`) and a few non-BLAS loops. It can create nested parallelism when BLAS/LAPACK is also threaded, so CMake checks the visible link line for mixed OpenMP runtime families and the executable prints startup diagnostics and warnings about the detected MKL/OpenBLAS/OpenMP/MPI threading configuration.
 
 ## Repository Map

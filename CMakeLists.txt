@@ -61,13 +61,23 @@ endif()
 option(NRGLJUBLJANA_USE_SYSTEM_DEPS "Use dependencies supplied by the system or package manager instead of CPM" OFF)
 option(NRGLJUBLJANA_INSTALL_NRGINIT "Install nrginit Mathematica scripts" ON)
 option(NRGLJUBLJANA_ENABLE_APP_OPENMP "Enable application-level OpenMP parallel regions; BLAS/LAPACK remains threaded independently" OFF)
+set(NRGLJUBLJANA_MKL_THREADING_LAYER "AUTO" CACHE STRING "MKL threading layer for mkl_rt builds (AUTO, COMPILER, GNU, INTEL, or LLVM)")
+set_property(CACHE NRGLJUBLJANA_MKL_THREADING_LAYER PROPERTY STRINGS AUTO COMPILER GNU INTEL LLVM)
+string(TOUPPER "${NRGLJUBLJANA_MKL_THREADING_LAYER}" NRGLJUBLJANA_MKL_THREADING_LAYER)
+if(NOT NRGLJUBLJANA_MKL_THREADING_LAYER MATCHES "^(AUTO|COMPILER|GNU|INTEL|LLVM)$")
+  message(FATAL_ERROR "Invalid NRGLJUBLJANA_MKL_THREADING_LAYER=${NRGLJUBLJANA_MKL_THREADING_LAYER}; expected AUTO, COMPILER, GNU, INTEL, or LLVM")
+endif()
 option(Build_Tests "Build tests" ON)
 set(NRGLJUBLJANA_BUILD_TESTS_ENABLED OFF)
 if(Build_Tests AND NOT IS_SUBPROJECT)
   set(NRGLJUBLJANA_BUILD_TESTS_ENABLED ON)
 endif()
 
+set(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME ${NRGLJUBLJANA_ENABLE_APP_OPENMP})
+set(NRGLJUBLJANA_MKL_REQUIRES_OPENMP OFF)
+
 message(STATUS "Application OpenMP parallel regions: ${NRGLJUBLJANA_ENABLE_APP_OPENMP}")
+message(STATUS "MKL threading layer request: ${NRGLJUBLJANA_MKL_THREADING_LAYER}")
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -166,15 +176,11 @@ if(NOT TARGET HDF5::HDF5)
 endif()
 install(TARGETS hdf5 EXPORT nrgljubljana-targets)
 
-# OpenMP for application-level parallel regions. The default parallelism model is
-# BLAS/LAPACK-internal threading; this target is intentionally empty unless the
-# explicit opt-in below is enabled.
+# OpenMP for application-level parallel regions and for explicit MKL threading
+# layers. Application-level regions are still controlled only by
+# NRGLJUBLJANA_ENABLE_APP_OPENMP.
 add_library(openmp INTERFACE)
 target_compile_definitions(openmp INTERFACE NRG_ENABLE_APP_OPENMP=$<BOOL:${NRGLJUBLJANA_ENABLE_APP_OPENMP}>)
-if(NRGLJUBLJANA_ENABLE_APP_OPENMP)
-  find_package(OpenMP REQUIRED COMPONENTS CXX)
-  target_link_libraries(openmp INTERFACE OpenMP::OpenMP_CXX)
-endif()
 install(TARGETS openmp EXPORT nrgljubljana-targets)
 
 # Boost
@@ -321,6 +327,19 @@ function(nrgljubljana_detect_openmp_runtime_families output)
   set(NRGLJUBLJANA_DETECTED_MKL_RT ${mkl_rt} PARENT_SCOPE)
 endfunction()
 
+function(nrgljubljana_compiler_openmp_family output)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(family GNU)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+    set(family Intel)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(family LLVM)
+  else()
+    set(family unknown)
+  endif()
+  set(${output} ${family} PARENT_SCOPE)
+endfunction()
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/BLAS_LAPACK)
 # BLAS/Lapack
 find_package(LAPACK REQUIRED) # also looks up BLAS
@@ -342,11 +361,48 @@ elseif(NRGLJUBLJANA_LINALG_LINK_TEXT MATCHES "openblas")
 else()
   message(STATUS "Using BLAS/LAPACK vendor: ${NRGLJUBLJANA_BLAS_VENDOR}")
 endif()
+
+set(NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER "AUTO")
+if(NRGLJUBLJANA_HAVE_MKL)
+  set(NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER "${NRGLJUBLJANA_MKL_THREADING_LAYER}")
+  if(NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER STREQUAL "COMPILER")
+    nrgljubljana_compiler_openmp_family(NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER)
+    if(NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER STREQUAL "unknown")
+      message(FATAL_ERROR "NRGLJUBLJANA_MKL_THREADING_LAYER=COMPILER cannot map compiler ${CMAKE_CXX_COMPILER_ID} to an MKL threading layer")
+    endif()
+  endif()
+  if(NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER MATCHES "^(GNU|INTEL|LLVM)$")
+    set(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME ON)
+    set(NRGLJUBLJANA_MKL_REQUIRES_OPENMP ON)
+  elseif(NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER STREQUAL "AUTO")
+    message(STATUS "MKL threading layer is AUTO; runtime startup reporting will avoid MKL thread queries when mkl_rt is used without MKL_THREADING_LAYER")
+  endif()
+elseif(NOT NRGLJUBLJANA_MKL_THREADING_LAYER STREQUAL "AUTO")
+  message(WARNING "NRGLJUBLJANA_MKL_THREADING_LAYER=${NRGLJUBLJANA_MKL_THREADING_LAYER} was requested, but Intel MKL was not selected")
+endif()
+
+if(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME)
+  find_package(OpenMP REQUIRED COMPONENTS CXX)
+  if(NRGLJUBLJANA_MKL_REQUIRES_OPENMP)
+    nrgljubljana_compiler_openmp_family(NRGLJUBLJANA_COMPILER_OPENMP_FAMILY)
+    set(NRGLJUBLJANA_EXPECTED_OPENMP_FAMILY "${NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER}")
+    if(NRGLJUBLJANA_EXPECTED_OPENMP_FAMILY STREQUAL "INTEL")
+      set(NRGLJUBLJANA_EXPECTED_OPENMP_FAMILY "Intel")
+    endif()
+    if(NOT NRGLJUBLJANA_COMPILER_OPENMP_FAMILY STREQUAL "unknown" AND NOT NRGLJUBLJANA_COMPILER_OPENMP_FAMILY STREQUAL "${NRGLJUBLJANA_EXPECTED_OPENMP_FAMILY}")
+      message(FATAL_ERROR "NRGLJUBLJANA_MKL_THREADING_LAYER=${NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER} requires ${NRGLJUBLJANA_EXPECTED_OPENMP_FAMILY} OpenMP, but compiler ${CMAKE_CXX_COMPILER_ID} uses ${NRGLJUBLJANA_COMPILER_OPENMP_FAMILY} OpenMP. Use NRGLJUBLJANA_MKL_THREADING_LAYER=COMPILER or select a compatible compiler.")
+    endif()
+  endif()
+  target_link_libraries(openmp INTERFACE OpenMP::OpenMP_CXX)
+endif()
+message(STATUS "Effective MKL threading layer: ${NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER}")
 string(REPLACE "\"" "\\\"" NRGLJUBLJANA_BLAS_VENDOR_ESCAPED "${NRGLJUBLJANA_BLAS_VENDOR}")
 target_compile_definitions(blas_lapack INTERFACE
   "NRG_BLAS_VENDOR=\"${NRGLJUBLJANA_BLAS_VENDOR_ESCAPED}\""
   NRG_HAVE_MKL=$<BOOL:${NRGLJUBLJANA_HAVE_MKL}>
   NRG_HAVE_OPENBLAS=$<BOOL:${NRGLJUBLJANA_HAVE_OPENBLAS}>
+  "NRG_MKL_THREADING_LAYER=\"${NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER}\""
+  NRG_MKL_REQUIRES_OPENMP=$<BOOL:${NRGLJUBLJANA_MKL_REQUIRES_OPENMP}>
 )
 message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 message(STATUS "BLAS_LINKER_FLAGS=${BLAS_LINKER_FLAGS}")
@@ -382,11 +438,12 @@ list(APPEND NRGLJUBLJANA_OPENMP_RUNTIME_LINK_ITEMS
   ${NRGLJUBLJANA_BOOST_MPI_TARGET_ITEMS}
   ${NRGLJUBLJANA_BOOST_SERIALIZATION_TARGET_ITEMS}
 )
-if(NRGLJUBLJANA_ENABLE_APP_OPENMP)
+if(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME)
   nrgljubljana_collect_target_link_items(NRGLJUBLJANA_OPENMP_TARGET_ITEMS OpenMP::OpenMP_CXX)
   list(APPEND NRGLJUBLJANA_OPENMP_RUNTIME_LINK_ITEMS ${OpenMP_CXX_LIBRARIES} ${OpenMP_CXX_FLAGS} ${NRGLJUBLJANA_OPENMP_TARGET_ITEMS})
 endif()
 nrgljubljana_detect_openmp_runtime_families(NRGLJUBLJANA_OPENMP_RUNTIME_FAMILIES ${NRGLJUBLJANA_OPENMP_RUNTIME_LINK_ITEMS})
+target_compile_definitions(blas_lapack INTERFACE NRG_HAVE_MKL_RT=$<BOOL:${NRGLJUBLJANA_DETECTED_MKL_RT}>)
 if(NRGLJUBLJANA_DETECTED_SEQUENTIAL_MKL)
   message(FATAL_ERROR "Sequential MKL was selected, but NRG Ljubljana expects threaded BLAS/LAPACK. Use a threaded MKL BLA_VENDOR, mkl_rt with a threaded MKL_THREADING_LAYER, or OpenBLAS.")
 endif()

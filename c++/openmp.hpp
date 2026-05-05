@@ -31,7 +31,19 @@
 #define NRG_HAVE_OPENBLAS 0
 #endif
 
-#if NRG_ENABLE_APP_OPENMP
+#ifndef NRG_HAVE_MKL_RT
+#define NRG_HAVE_MKL_RT 0
+#endif
+
+#ifndef NRG_MKL_THREADING_LAYER
+#define NRG_MKL_THREADING_LAYER "AUTO"
+#endif
+
+#ifndef NRG_MKL_REQUIRES_OPENMP
+#define NRG_MKL_REQUIRES_OPENMP 0
+#endif
+
+#if NRG_ENABLE_APP_OPENMP || NRG_MKL_REQUIRES_OPENMP
 #include <omp.h>
 #endif
 
@@ -47,6 +59,65 @@ inline auto lower(std::string value) {
 inline auto env_value(const char *name) -> std::string {
   if (const char *value = std::getenv(name)) return value;
   return "<unset>";
+}
+
+inline auto normalize_mkl_threading_layer(std::string layer) {
+  layer = lower(std::move(layer));
+  if (layer == "auto") return std::string{"AUTO"};
+  if (layer == "compiler") return std::string{"COMPILER"};
+  if (layer == "gnu" || layer == "gnu_thread" || layer == "gnu openmp") return std::string{"GNU"};
+  if (layer == "intel" || layer == "intel_thread" || layer == "intel openmp") return std::string{"INTEL"};
+  if (layer == "llvm" || layer == "llvm_thread" || layer == "llvm openmp") return std::string{"LLVM"};
+  if (layer == "tbb") return std::string{"TBB"};
+  if (layer == "sequential" || layer == "seq") return std::string{"SEQUENTIAL"};
+  return layer;
+}
+
+inline auto configured_mkl_threading_layer() { return normalize_mkl_threading_layer(NRG_MKL_THREADING_LAYER); }
+
+inline auto environment_mkl_threading_layer() {
+  if (const char *value = std::getenv("MKL_THREADING_LAYER")) return normalize_mkl_threading_layer(value);
+  return std::string{};
+}
+
+inline auto active_mkl_threading_layer() {
+  const auto env_layer = environment_mkl_threading_layer();
+  if (!env_layer.empty()) return env_layer;
+  const auto configured_layer = configured_mkl_threading_layer();
+  return configured_layer == "AUTO" ? std::string{} : configured_layer;
+}
+
+inline auto mkl_layer_openmp_family(const std::string &layer) -> std::string {
+  if (layer == "GNU") return "GNU";
+  if (layer == "INTEL") return "Intel";
+  if (layer == "LLVM") return "LLVM";
+  return "";
+}
+
+inline auto mkl_layer_description(const std::string &layer) -> std::string {
+  if (layer == "GNU") return "GNU OpenMP";
+  if (layer == "INTEL") return "Intel OpenMP";
+  if (layer == "LLVM") return "LLVM OpenMP";
+  if (layer == "TBB") return "Intel TBB";
+  if (layer == "SEQUENTIAL") return "sequential";
+  if (layer == "AUTO") return "automatic";
+  return layer.empty() ? "<unset>" : layer;
+}
+
+inline void set_mkl_threading_layer_from_build(std::ostream *s, const bool verbose) {
+#if NRG_HAVE_MKL
+  const auto configured_layer = configured_mkl_threading_layer();
+  if (configured_layer == "AUTO" || configured_layer == "COMPILER" || std::getenv("MKL_THREADING_LAYER") != nullptr) return;
+#if defined(_WIN32)
+  _putenv_s("MKL_THREADING_LAYER", configured_layer.c_str());
+#else
+  setenv("MKL_THREADING_LAYER", configured_layer.c_str(), 0);
+#endif
+  if (verbose && s != nullptr) *s << "[MKL] MKL_THREADING_LAYER was unset; using build-time layer " << configured_layer << std::endl;
+#else
+  (void)s;
+  (void)verbose;
+#endif
 }
 
 inline auto symbol(const char *name) -> void * { return dlsym(RTLD_DEFAULT, name); }
@@ -106,9 +177,86 @@ inline auto openblas_parallel_name(const int model) -> const char * {
   }
 }
 
+inline void reference_linked_openmp_runtime() {
+#if NRG_MKL_REQUIRES_OPENMP
+  (void)omp_get_num_procs();
+#endif
+}
+
+inline auto validate_mkl_threading_runtime(std::ostream *s, const bool verbose) -> bool {
+#if NRG_HAVE_MKL
+  reference_linked_openmp_runtime();
+  const auto layer = active_mkl_threading_layer();
+  const auto expected_family = mkl_layer_openmp_family(layer);
+  if (expected_family.empty()) return true;
+
+#if NRG_HAVE_MKL_RT
+  const auto configured_layer = configured_mkl_threading_layer();
+  if (configured_layer == "AUTO" || configured_layer == "COMPILER" || !NRG_MKL_REQUIRES_OPENMP) {
+    if (verbose && s != nullptr) {
+      *s << "ERROR: MKL_THREADING_LAYER=" << layer << " selects " << mkl_layer_description(layer)
+         << ", but this mkl_rt build did not link that OpenMP runtime." << std::endl;
+      *s << "ERROR: Reconfigure with -DNRGLJUBLJANA_MKL_THREADING_LAYER=" << layer
+         << " so CMake links the matching OpenMP runtime through OpenMP::OpenMP_CXX." << std::endl;
+    }
+    return false;
+  }
+  if (layer != configured_layer) {
+    if (verbose && s != nullptr) {
+      *s << "ERROR: MKL_THREADING_LAYER=" << layer << " conflicts with build-time NRGLJUBLJANA_MKL_THREADING_LAYER=" << configured_layer << "." << std::endl;
+      *s << "ERROR: Use MKL_THREADING_LAYER=" << configured_layer << " at runtime, or reconfigure with -DNRGLJUBLJANA_MKL_THREADING_LAYER=" << layer << "." << std::endl;
+    }
+    return false;
+  }
+#endif
+
+  void *num_procs_symbol = symbol("omp_get_num_procs");
+  void *max_threads_symbol = symbol("omp_get_max_threads");
+  if (num_procs_symbol == nullptr || max_threads_symbol == nullptr) {
+    if (verbose && s != nullptr) {
+      *s << "ERROR: MKL_THREADING_LAYER=" << layer << " requires " << mkl_layer_description(layer)
+         << " runtime symbols, but omp_get_num_procs/omp_get_max_threads are not visible in this process." << std::endl;
+      *s << "ERROR: Reconfigure with -DNRGLJUBLJANA_MKL_THREADING_LAYER=" << layer
+         << " so the executable links the matching OpenMP runtime, or choose an MKL_THREADING_LAYER compatible with the linked runtime." << std::endl;
+    }
+    return false;
+  }
+#else
+  (void)s;
+  (void)verbose;
+#endif
+  return true;
+}
+
+inline auto mkl_thread_queries_are_safe(std::ostream *s, const bool verbose) -> bool {
+#if NRG_HAVE_MKL
+  if (!validate_mkl_threading_runtime(s, verbose)) return false;
+#if NRG_HAVE_MKL_RT
+  const auto layer = active_mkl_threading_layer();
+  if (layer.empty()) {
+    if (verbose && s != nullptr)
+      *s << "WARNING: Intel MKL is linked through mkl_rt without an explicit MKL_THREADING_LAYER. Skipping MKL thread-count queries because they can initialize an unvalidated threading backend." << std::endl;
+    return false;
+  }
+  if (layer == "TBB") {
+    if (verbose && s != nullptr)
+      *s << "WARNING: MKL_THREADING_LAYER=TBB is not validated by NRG Ljubljana startup checks. Skipping MKL thread-count queries." << std::endl;
+    return false;
+  }
+#endif
+#else
+  (void)s;
+  (void)verbose;
+#endif
+  return true;
+}
+
 inline auto blas_thread_count() -> int {
-  if (const auto mkl_get_max_threads = symbol_as<int (*)()>("MKL_Get_Max_Threads")) return mkl_get_max_threads();
-  if (const auto mkl_get_max_threads = symbol_as<int (*)()>("mkl_get_max_threads")) return mkl_get_max_threads();
+  if (symbol("MKL_Get_Max_Threads") != nullptr || symbol("mkl_get_max_threads") != nullptr) {
+    if (!mkl_thread_queries_are_safe(nullptr, false)) return 0;
+    if (const auto mkl_get_max_threads = symbol_as<int (*)()>("MKL_Get_Max_Threads")) return mkl_get_max_threads();
+    if (const auto mkl_get_max_threads = symbol_as<int (*)()>("mkl_get_max_threads")) return mkl_get_max_threads();
+  }
   if (const auto openblas_get_num_threads = symbol_as<int (*)()>("openblas_get_num_threads")) return openblas_get_num_threads();
   return 0;
 }
@@ -179,6 +327,10 @@ inline void report_mkl(std::ostream &s) {
     mkl_get_version_string(version.data(), static_cast<int>(version.size() - 1));
     version.back() = '\0';
     s << "[MKL] Version: " << version.data() << std::endl;
+  }
+  if (!mkl_thread_queries_are_safe(&s, true)) {
+    s << "[MKL] Threading diagnostics requiring MKL initialization were skipped." << std::endl;
+    return;
   }
   if (max_threads_symbol != nullptr) {
     const auto mkl_get_max_threads = reinterpret_cast<int (*)()>(max_threads_symbol);
@@ -258,12 +410,22 @@ inline void report_parallel_warnings(std::ostream &s, const int mpi_size) {
 
 } // namespace detail
 
+inline auto prepare_parallel_runtime(std::ostream &s = std::cerr, const bool verbose = true) -> bool {
+  detail::set_mkl_threading_layer_from_build(&s, verbose);
+  return detail::validate_mkl_threading_runtime(&s, verbose);
+}
+
 // Report parallelization settings and the numerical library threading backend.
 inline void report_openMP(std::ostream &s = std::cout, const int mpi_size = 1) {
+  const bool runtime_ok = prepare_parallel_runtime(s, true);
   s << "[Parallel] Build-time BLAS/LAPACK vendor: " << NRG_BLAS_VENDOR << std::endl;
   s << "[Parallel] Online CPUs: " << detail::online_cpu_count() << std::endl;
   detail::report_environment(s);
   detail::report_application_openmp(s);
+  if (!runtime_ok) {
+    s << "[Parallel] Startup runtime validation failed; skipping BLAS/LAPACK runtime queries that could trigger a loader error." << std::endl << std::endl;
+    return;
+  }
   detail::report_mkl(s);
   detail::report_openblas(s);
   detail::report_loaded_openmp_runtimes(s);
