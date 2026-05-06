@@ -2075,6 +2075,4 @@ makedata[filename_]:=Module[{suffix, fn, tabelca},
     tabelca[[3]] = "# COMPLEX";
   ];
   MyPrint[exportTableFast[fn, tabelca]];
-  Put[tabelca, "raw.wl"];
-  Put[Map[fieldString, tabelca, {2}], "str.wl"];
 ];
