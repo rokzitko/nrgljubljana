@@ -1,3 +1,9 @@
+#if defined(NRGLJUBLJANA_ENABLE_FP_TRAPS) && NRGLJUBLJANA_ENABLE_FP_TRAPS
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#endif
+
 #define NRG_EXECUTABLE
 
 #include <memory>
@@ -5,6 +11,10 @@
 #include <vector>
 #include <iostream>
 #include <cstdlib>
+#if defined(NRGLJUBLJANA_ENABLE_FP_TRAPS) && NRGLJUBLJANA_ENABLE_FP_TRAPS
+#include <cstdio>
+#include <fenv.h>
+#endif
 
 #include "nrg-general.hpp" // common
 #include "nrg-lib.hpp"     // exposed in library
@@ -30,6 +40,10 @@
 
 #define NRG_STRINGIFY_IMPL(x) #x
 #define NRG_STRINGIFY(x) NRG_STRINGIFY_IMPL(x)
+
+#if defined(NRGLJUBLJANA_ENABLE_FP_TRAPS) && NRGLJUBLJANA_ENABLE_FP_TRAPS
+#pragma STDC FENV_ACCESS ON
+#endif
 
 using namespace NRG;
 
@@ -172,6 +186,16 @@ void configure_asan_mpi_environment()
 #endif
 }
 
+void enable_fp_traps()
+{
+#if defined(NRGLJUBLJANA_ENABLE_FP_TRAPS) && NRGLJUBLJANA_ENABLE_FP_TRAPS
+  feclearexcept(FE_ALL_EXCEPT);
+  if (feenableexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW) != -1) {
+    std::puts("Floating point exception trapping enabled");
+  }
+#endif
+}
+
 }
 
 inline void help(int argc, char **argv, std::string help_message)
@@ -196,6 +220,7 @@ int main(int argc, char **argv) {
   print_nrg_about_message();
   boost::mpi::environment mpienv(argc, argv);
   boost::mpi::communicator mpiw;
+  enable_fp_traps();
   if (!prepare_parallel_runtime(std::cerr, mpiw.rank() == 0)) return 1;
   if (mpiw.rank() == 0) {
     help(argc, argv, "Usage: nrg [-h] [-w workdir]");

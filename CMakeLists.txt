@@ -547,10 +547,13 @@ set(NRGLJUBLJANA_STRICT_FLOATING_POINT_FLAGS
   -ffp-contract=off
   -fno-fast-math
   -frounding-math
+  -ftrapping-math
+  -fno-omit-frame-pointer
 )
 
 if(NRGLJUBLJANA_STRICT_FLOATING_POINT)
   include(CheckCXXCompilerFlag)
+  include(CheckCXXSourceCompiles)
   foreach(flag IN LISTS NRGLJUBLJANA_STRICT_FLOATING_POINT_FLAGS)
     string(MAKE_C_IDENTIFIER "NRGLJUBLJANA_STRICT_FLOATING_POINT_HAS_${flag}" check_var)
     check_cxx_compiler_flag("${flag}" "${check_var}")
@@ -558,6 +561,24 @@ if(NRGLJUBLJANA_STRICT_FLOATING_POINT)
       message(FATAL_ERROR "NRGLJUBLJANA_STRICT_FLOATING_POINT=ON requires unsupported compiler flag: ${flag}")
     endif()
   endforeach()
+
+  check_cxx_source_compiles("
+    #define _GNU_SOURCE
+    #include <fenv.h>
+    #pragma STDC FENV_ACCESS ON
+    int main() {
+      feclearexcept(FE_ALL_EXCEPT);
+      return feenableexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+    }
+  " NRGLJUBLJANA_HAS_FEENABLEEXCEPT)
+  if(NRGLJUBLJANA_HAS_FEENABLEEXCEPT)
+    set(NRGLJUBLJANA_ENABLE_FP_TRAPS ON)
+  else()
+    set(NRGLJUBLJANA_ENABLE_FP_TRAPS OFF)
+    message(WARNING "NRGLJUBLJANA_STRICT_FLOATING_POINT=ON, but feenableexcept is unavailable; nrg runtime FP traps are disabled")
+  endif()
+else()
+  set(NRGLJUBLJANA_ENABLE_FP_TRAPS OFF)
 endif()
 
 function(nrgljubljana_apply_strict_floating_point target)
