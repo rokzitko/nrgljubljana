@@ -307,7 +307,7 @@ class Adapt {
      factor0         = 1.0 + P.P("secant_factor", 1e-7);
      max_iter        = P.Pint("secant_max_iter", 10);
    }
-   Adapt(const Params &P, const Sign &sign) : P(P), sign(sign) {
+   Adapt(const Params &P_, const Sign &sign_) : P(P_), sign(sign_) {
      set_parameters();
      report_parameters();
    }

@@ -54,7 +54,7 @@ template<scalar S>
 class ThermoStore : public std::vector<ThermoSubs<S>> {
  public:
     const size_t Nbegin, Nend; // range of valid indexes
-    ThermoStore(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
+    ThermoStore(const size_t Nbegin_, const size_t Nend_) : Nbegin(Nbegin_), Nend(Nend_) { this->resize(Nend); }
     auto Nall() const { return boost::irange(Nbegin, Nend); }
     void dump_abs_G(std::ostream &F) const {
       for (const auto N : Nall()) {
@@ -112,7 +112,7 @@ class BackiterSubs : public std::map<Invar, BackiterSub> {
 class BackiterStore : public std::vector<BackiterSubs> {
  public:
    const size_t Nbegin, Nend;
-   BackiterStore(const size_t Nbegin, const size_t Nend) : Nbegin(Nbegin), Nend(Nend) { this->resize(Nend); }
+   BackiterStore(const size_t Nbegin_, const size_t Nend_) : Nbegin(Nbegin_), Nend(Nend_) { this->resize(Nend); }
    auto Nall() const { return boost::irange(Nbegin, Nend); }
 };
 

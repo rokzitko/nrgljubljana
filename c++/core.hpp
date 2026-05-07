@@ -44,9 +44,9 @@ namespace NRG {
 
 // Determine the ranges of index r
 template<scalar S>
-SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors, const DiagInfo<S> &diagprev,
-                                       const Symmetry<S> *Sym, const bool ignore_inequality) : ancestors(ancestors) {
-  for (const auto &[i, anc] : ancestors | ranges::views::enumerate) {
+SubspaceDimensions::SubspaceDimensions(const Invar &I, const InvarVec &ancestors_, const DiagInfo<S> &diagprev,
+                                       const Symmetry<S> *Sym, const bool ignore_inequality) : ancestors(ancestors_) {
+  for (const auto &[i, anc] : ancestors_ | ranges::views::enumerate) {
     const bool coupled = Sym->triangle_inequality(I, anc, Sym->QN_subspace(i));
     dims.push_back(coupled || ignore_inequality? diagprev.size_subspace(anc) : 0);
   }

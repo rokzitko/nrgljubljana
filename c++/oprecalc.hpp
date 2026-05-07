@@ -170,8 +170,8 @@ class Oprecalc {
   }
 
   // Reset lists of operators which need to be iterated
-  Oprecalc(const RUNTYPE &runtype, const Operators<S> &a, std::shared_ptr<Symmetry<S>> Sym, MemTime &mt, const Params &P) :
-    runtype(runtype), Sym(Sym), mt(mt), P(P)
+  Oprecalc(const RUNTYPE &runtype_, const Operators<S> &a, std::shared_ptr<Symmetry<S>> Sym_, MemTime &mt_, const Params &P_) :
+    runtype(runtype_), Sym(Sym_), mt(mt_), P(P_)
   {
     std::cout << std::endl << "Computing the following spectra:" << std::endl;
     // Correlators (singlet operators of all kinds)

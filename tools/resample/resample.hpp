@@ -114,16 +114,16 @@ class Resample
             init(f);
         }
 
-        Resample(std::string inputfn, std::string gridfn, std::optional<std::string> outputfn = std::nullopt, bool verbose = false, int output_precision = 16):
-        inputfn(inputfn), gridfn(gridfn), outputfn(outputfn), verbose(verbose), output_precision(output_precision)
+        Resample(std::string inputfn_, std::string gridfn_, std::optional<std::string> outputfn_ = std::nullopt, bool verbose_ = false, int output_precision_ = 16):
+        inputfn(inputfn_), gridfn(gridfn_), outputfn(outputfn_), verbose(verbose_), output_precision(output_precision_)
         {
             std::vector<std::pair<T, T>> f = readtable<T,T>(inputfn, verbose);
             grid = readtable<T,T>(gridfn, verbose);
             init(f);
         }
 
-        Resample(std::vector<std::pair<T, T>> f, std::vector<std::pair<T, T>> grid, std::optional<std::string> outputfn = std::nullopt, bool verbose = false, int output_precision = 16):
-        outputfn(outputfn), verbose(verbose), output_precision(output_precision), grid(grid)
+        Resample(std::vector<std::pair<T, T>> f, std::vector<std::pair<T, T>> grid_, std::optional<std::string> outputfn_ = std::nullopt, bool verbose_ = false, int output_precision_ = 16):
+        outputfn(outputfn_), verbose(verbose_), output_precision(output_precision_), grid(grid_)
         {
             init(f);
         }

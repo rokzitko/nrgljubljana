@@ -116,7 +116,7 @@ private:
   const Params &P;
 
 public:
-  explicit Coef(const Params &P) : P(P) {}
+  explicit Coef(const Params &P_) : P(P_) {}
 
 // NEW INTERFACE
 

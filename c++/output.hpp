@@ -54,8 +54,8 @@ class ExpvOutput {
        for (const auto &op: fields)
          color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::red), "<{}>={}\n", op, formatted_output(m[op], P)); // NOTE: real and imaginary part shown
    }
-    ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m,
-               std::list<std::string> fields, const Params &P) : m(m), fields(std::move(fields)), P(P) {
+    ExpvOutput(const std::string &fn, std::map<std::string, t_expv> &m_,
+               std::list<std::string> fields_, const Params &P_) : m(m_), fields(std::move(fields_)), P(P_) {
       F = safe_open(fn);
       field_numbers();
       field_names();
@@ -74,7 +74,7 @@ class Annotated {
    std::ofstream F;
    const Params &P;
  public:
-   explicit Annotated(const Params &P) : P(P) {}
+   explicit Annotated(const Params &P_) : P(P_) {}
    template<scalar S, typename MF>
    void dump(const Step &step, const DiagInfo<S> &diag, const Stats<S> &stats,
              MF mult, const std::string &filename = "annotated.dat") {
@@ -134,13 +134,13 @@ struct Output {
   std::unique_ptr<ExpvOutput<S>> custom;
   std::unique_ptr<ExpvOutput<S>> customfdm;
   std::unique_ptr<H5Easy::File> h5raw;
-  Output(const RUNTYPE &runtype, const Operators<S> &operators, Stats<S> &stats, const Params &P,
+  Output(const RUNTYPE &runtype_, const Operators<S> &operators, Stats<S> &stats, const Params &P_,
          const std::string filename_energies= "energies.nrg"s,
          const std::string filename_states = "states.nrg"s,
          const std::string filename_report = "report.nrg"s,
          const std::string filename_custom = "custom",
          const std::string filename_customfdm = "customfdm")
-    : runtype(runtype), P(P), annotated(P)
+    : runtype(runtype_), P(P_), annotated(P_)
     {
       if (runtype == RUNTYPE::NRG) {
         if (P.dumpenergies) Fenergies = safe_open(filename_energies);

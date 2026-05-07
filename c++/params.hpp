@@ -35,7 +35,7 @@ class parambase {
    std::string keyword;
    std::string desc;
  public:
-   parambase(const std::string &keyword, const std::string &desc) : keyword(keyword), desc(desc) {};
+   parambase(const std::string &keyword_, const std::string &desc_) : keyword(keyword_), desc(desc_) {};
    virtual ~parambase() = default;
    virtual void set_str(const std::string &new_value) = 0;
    virtual void dump(std::ostream &F = std::cout) = 0;
@@ -643,9 +643,9 @@ class Params {
 
   explicit Params(const std::string &filename, const std::string &block,
          std::unique_ptr<Workdir> workdir_,
-         const bool embedded,
+         const bool embedded_,
          const bool quiet = false )
-     : workdir(std::move(workdir_)), embedded(embedded)
+     : workdir(std::move(workdir_)), embedded(embedded_)
   {
     pretty_out = !is_stdout_redirected();
     if (filename != "") {

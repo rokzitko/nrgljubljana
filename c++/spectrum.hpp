@@ -18,7 +18,7 @@ class ChainBinning {
    const Params &P;
    Bins<S> spos, sneg;
  public:
-   explicit ChainBinning(const Params &P) : P(P), spos(P), sneg(P) {}
+   explicit ChainBinning(const Params &P_) : P(P_), spos(P_), sneg(P_) {}
    void add(const double energy, const t_weight weight) {
      if (energy >= 0.0)
        spos.add(energy, weight);
@@ -39,7 +39,7 @@ class ChainMatsubara {
    const Params &P;
    Matsubara<S> m;
  public:
-   explicit ChainMatsubara(const Params &P, const gf_type gt) : P(P), m(P.mats, gt, P.T){};
+   explicit ChainMatsubara(const Params &P_, const gf_type gt) : P(P_), m(P_.mats, gt, P_.T){};
    void add(const size_t n, const t_weight w) { m.add(n, w); }
    template<scalar U> friend class GFMatsubara;
 };
@@ -50,7 +50,7 @@ class ChainTempDependence {
    const Params &P;
    Temp<S> v;
  public:
-   explicit ChainTempDependence(const Params &P) : P(P), v(P) {}
+   explicit ChainTempDependence(const Params &P_) : P(P_), v(P_) {}
    void add(const double T, const t_weight value) { v.add_value(T, value); }
    template<scalar U> friend class TempDependence;
 };
@@ -71,8 +71,8 @@ class SpectrumRealFreq {
    void savebins();
    void continuous();
  public:
-   SpectrumRealFreq(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
-     name(name), algoname(algoname), filename(filename), P(P), fspos(P), fsneg(P) {}
+   SpectrumRealFreq(const std::string &name_, const std::string &algoname_, const std::string &filename_, const Params &P_) :
+     name(name_), algoname(algoname_), filename(filename_), P(P_), fspos(P_), fsneg(P_) {}
    void mergeCFS(const ChainBinning<S> &cs) {
      fspos.merge(cs.spos); // Collect delta peaks
      fsneg.merge(cs.sneg);
@@ -217,8 +217,8 @@ class GFMatsubara {
    const Params &P;
    Matsubara<S> results;
  public:
-   GFMatsubara(const std::string &name, const std::string &algoname, const std::string &filename, gf_type gt, const Params &P) :
-     name(name), algoname(algoname), filename(filename), P(P), results(P.mats, gt, P.T) {}
+   GFMatsubara(const std::string &name_, const std::string &algoname_, const std::string &filename_, gf_type gt, const Params &P_) :
+     name(name_), algoname(algoname_), filename(filename_), P(P_), results(P_.mats, gt, P_.T) {}
    void merge(const ChainMatsubara<S> &cm) {
      results.merge(cm.m);
    }
@@ -235,8 +235,8 @@ class TempDependence {
    const Params &P;
    Spikes<S> results;
  public:
-   TempDependence(const std::string &name, const std::string &algoname, const std::string &filename, const Params &P) :
-     name(name), algoname(algoname), filename(filename),  P(P) {}
+   TempDependence(const std::string &name_, const std::string &algoname_, const std::string &filename_, const Params &P_) :
+     name(name_), algoname(algoname_), filename(filename_),  P(P_) {}
    void merge(const ChainTempDependence<S> &ctd) {
      std::copy(ctd.v.cbegin(), ctd.v.cend(), std::back_inserter(results));
    }

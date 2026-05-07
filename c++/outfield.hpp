@@ -22,7 +22,7 @@ class Outfield {
    std::string value{};
    int prec, width;
  public:
-   explicit Outfield(const std::string &desc, const unsigned int prec, const unsigned int width) : desc(desc), prec(prec), width(width) {}
+   explicit Outfield(const std::string &desc_, const unsigned int prec_, const unsigned int width_) : desc(desc_), prec(prec_), width(width_) {}
    template<typename T> void set_value(const T x) {
      value = fmt::format("{:>{}.{}}", x, prec, width); // https://fmt.dev/latest/syntax.html
    }
@@ -47,7 +47,7 @@ class Allfields : std::vector<Outfield> {
       if (position != -1) my_assert(position < this->size());
       this->insert(position == -1 ? this->end() : this->begin() + position, more.begin(), more.end());
     }
-    Allfields(const std::vector<std::string> &fields, const size_t prec, const size_t width) : prec(prec), width(width) {
+    Allfields(const std::vector<std::string> &fields, const size_t prec_, const size_t width_) : prec(prec_), width(width_) {
       for(const auto &desc : fields) add(desc);
     }
     void add(const std::vector<std::string> &more, const int position = -1) {
@@ -80,7 +80,7 @@ class TD_generic {
   std::optional<std::ofstream> O;
  public:
   Allfields allfields;
-  TD_generic(const Params &P, const std::string &filename, const std::vector<std::string> &fields) : filename(filename), allfields(fields, P.prec_td, P.width_td) {}
+  TD_generic(const Params &P, const std::string &filename_, const std::vector<std::string> &fields) : filename(filename_), allfields(fields, P.prec_td, P.width_td) {}
   template<typename T> void set(const std::string &desc, const T &x) { allfields.set(desc,x); }
   void save_values() {
     if (!O) {

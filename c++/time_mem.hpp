@@ -72,7 +72,7 @@ class TimeScope {
    Timing &timer;
    const std::string timer_name;
  public:
-   TimeScope(Timing &timer, const std::string &timer_name) : timer(timer), timer_name(timer_name) { timer.start(); }
+   TimeScope(Timing &timer_, const std::string &timer_name_) : timer(timer_), timer_name(timer_name_) { timer.start(); }
    TimeScope(const TimeScope &) = delete;
    TimeScope(TimeScope &&) = delete;
    TimeScope & operator=(const TimeScope &) = delete;

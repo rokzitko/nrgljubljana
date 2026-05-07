@@ -76,8 +76,8 @@ class Symmetry {
      QN.erase(QN.begin());
    }
    template<typename T>
-   Symmetry(const Params &P_, const T td_fields_, const Invar & InvarSinglet = {}, const Invar & Invar_f = {}) :
-     P(P_), td_fields(td_fields_.begin(), td_fields_.end()), In(P.combs+1), QN(P.combs+1), InvarSinglet(InvarSinglet), Invar_f(Invar_f) {}
+   Symmetry(const Params &P_, const T td_fields_, const Invar & InvarSinglet_ = {}, const Invar & Invar_f_ = {}) :
+     P(P_), td_fields(td_fields_.begin(), td_fields_.end()), In(P_.combs+1), QN(P_.combs+1), InvarSinglet(InvarSinglet_), Invar_f(Invar_f_) {}
    Symmetry(const Symmetry &) = delete;
    Symmetry(Symmetry &&) = delete;
    Symmetry &operator=(const Symmetry &) = delete;

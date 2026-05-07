@@ -58,8 +58,8 @@ class Algo_FTmats : public Algo<S> {
    std::unique_ptr<CM> cm;
  public:
    using Algo<S>::P;
-   Algo_FTmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
-     Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
+   Algo_FTmats(const std::string &name, const std::string &prefix, const gf_type gt_, const Params &P_) :
+     Algo<S>(P_), gf(name, algoname, spec_fn(name, prefix, algoname), gt_, P_), sign(gf_sign(gt_)), gt(gt_) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
     void calc([[maybe_unused]] const Step &step, const Eigen<S> &diagIp, const Eigen<S> &diagI1, const Matrix &op1, const Matrix &op2, 
               t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override

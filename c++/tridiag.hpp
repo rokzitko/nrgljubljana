@@ -13,7 +13,7 @@ namespace NRG {
 template<scalar S>
 class Tridiag {
  public:
-   Tridiag(Coef<S> &coef, const size_t Nmax, const Params &P) : Nmax(Nmax), P(P) {
+   Tridiag(Coef<S> &coef, const size_t Nmax_, const Params &P_) : Nmax(Nmax_), P(P_) {
      my_assert(P.coefchannels >= 1);
      for (unsigned int alpha = 0; alpha < P.coefchannels; alpha++) tridiag_ch(alpha, coef);
    }

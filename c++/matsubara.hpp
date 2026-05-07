@@ -38,9 +38,9 @@ class Matsubara {
    t_temp T;
  public:
    Matsubara() = delete;
-   Matsubara(const size_t mats, const gf_type mt, const t_temp T) : mt(mt), T(T) {
-     my_assert(mt == gf_type::bosonic || mt == gf_type::fermionic);
-     for (const auto n: range0(mats)) v.emplace_back(ww(n, mt, T), 0);
+   Matsubara(const size_t mats, const gf_type mt_, const t_temp T_) : mt(mt_), T(T_) {
+     my_assert(mt_ == gf_type::bosonic || mt_ == gf_type::fermionic);
+     for (const auto n: range0(mats)) v.emplace_back(ww(n, mt_, T_), 0);
    }
    void add(const size_t n, const t_weight &w) { v[n].second += w; }
    void merge(const Matsubara &m2) {

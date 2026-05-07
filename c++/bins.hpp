@@ -50,7 +50,7 @@ class Bins {
    operator const Spikes<S> &() const { return bins; }
    operator Spikes<S> &() { return bins; }
    // auto & get() { return bins; }
-   explicit Bins(const Params &P) : P(P) { loggrid(); } // default: logarithmic grid
+   explicit Bins(const Params &P_) : P(P_) { loggrid(); } // default: logarithmic grid
    inline void add(const double energy, const t_weight weight);
    void merge(const Bins<S> &b);
    void trim();
@@ -193,7 +193,7 @@ class Temp : public Spikes<S> {
  private:
    const Params &P;
  public:
-   explicit Temp(const Params &P) : P(P) {}
+   explicit Temp(const Params &P_) : P(P_) {}
    void add_value(const double energy, const t_weight &weight) {
      for (auto & [e, w] : *this) {
        if (e == energy) {

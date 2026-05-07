@@ -24,7 +24,7 @@ class Algo {
    const Params &P;
    Algo() = delete;
    Algo(const Algo&) = delete;
-   explicit Algo(const Params &P) : P(P) {}
+   explicit Algo(const Params &P_) : P(P_) {}
    virtual ~Algo() {}
     virtual void begin(const Step &) = 0;
     virtual void calc(const Step &, const Eigen<S> &, const Eigen<S> &, const Matrix &, const Matrix &,
@@ -48,8 +48,8 @@ class BaseSpectrum {
    spAlgo algo;      // Algo_FDM, Algo_DMNRG,...
    FactorFnc ff;
    CheckFnc cf;
-   BaseSpectrum(const MatrixElements<S> &op1, const MatrixElements<S> &op2, const int spin, spAlgo algo, FactorFnc ff, CheckFnc cf) :
-     op1(op1), op2(op2), spin(spin), algo(algo), ff(ff), cf(cf) {}
+   BaseSpectrum(const MatrixElements<S> &op1_, const MatrixElements<S> &op2_, const int spin_, spAlgo algo_, FactorFnc ff_, CheckFnc cf_) :
+     op1(op1_), op2(op2_), spin(spin_), algo(algo_), ff(ff_), cf(cf_) {}
    // Calculate (finite temperature) spectral function 1/Pi Im << op1^\dag(t) op2(0) >>. Required spin direction is
    // determined by 'SPIN'. For SPIN=0 both spin direction are equivalent. For QSZ, we need to differentiate the two.
     void calc(const Step &step, const DiagInfo<S> &diag,

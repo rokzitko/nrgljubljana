@@ -140,15 +140,15 @@ class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
       const auto boltzGi = absGi | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
       const auto boltzGj = absGj | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
 
-      const auto add_exp_weight = [&gt_cb, &ls_cb, &absGi, &absGj, &boltzGi, &boltzGj, &op1, &op2, factor, wnf, sign = sign](const auto i, const auto j) {
+      const auto add_exp_weight = [&gt_cb, &ls_cb, &absGi, &absGj, &boltzGi, &boltzGj, &op1, &op2, factor, wnf, sign_ = sign](const auto i, const auto j) {
         const auto energy = absGj[j] - absGi[i];
         const auto op1ji = conj_me(op1(j, i));
         const auto op2ji = op2(j, i);
         gt_cb.add(std::make_pair(energy, op1ji * op2ji * wnf * boltzGi[i]), factor);
-        ls_cb.add(std::make_pair(energy, op1ji * op2ji * (-sign) * wnf * boltzGj[j]), factor);
+        ls_cb.add(std::make_pair(energy, op1ji * op2ji * (-sign_) * wnf * boltzGj[j]), factor);
       };
-      const auto add_ls_rho_weight = [&ls_cb, &absGi, &absGj, &op1, &rho_op2, factor, sign = sign](const auto i, const auto j) {
-        ls_cb.add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * rho_op2(j, i) * (-sign)), factor);
+      const auto add_ls_rho_weight = [&ls_cb, &absGi, &absGj, &op1, &rho_op2, factor, sign_ = sign](const auto i, const auto j) {
+        ls_cb.add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * rho_op2(j, i) * (-sign_)), factor);
       };
       const auto add_gt_rho_weight = [&gt_cb, &absGi, &absGj, &op1, &op2_rho, factor](const auto i, const auto j) {
         gt_cb.add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * op2_rho(j, i)), factor);
@@ -195,8 +195,8 @@ class Algo_FDMmats : public Algo<S> {
    std::unique_ptr<CM> cm;
  public:
    using Algo<S>::P;
-   Algo_FDMmats(const std::string &name, const std::string &prefix, const gf_type gt, const Params &P) :
-     Algo<S>(P), gf(name, algoname, spec_fn(name, prefix, algoname), gt, P), sign(gf_sign(gt)), gt(gt) {}
+   Algo_FDMmats(const std::string &name, const std::string &prefix, const gf_type gt_, const Params &P_) :
+     Algo<S>(P_), gf(name, algoname, spec_fn(name, prefix, algoname), gt_, P_), sign(gf_sign(gt_)), gt(gt_) {}
    void begin(const Step &) override { cm = std::make_unique<CM>(P, gt); }
    void calc(const Step &step, const Eigen<S> &diagIi, const Eigen<S> &diagIj, const Matrix &op1, const Matrix &op2,
              t_coef factor, const Invar &Ii, const Invar &Ij, const DensMatElements<S> &rhoFDM,

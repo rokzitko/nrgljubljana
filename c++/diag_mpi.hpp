@@ -35,7 +35,7 @@ class DiagMPI : public DiagEngine<S>{
    boost::mpi::communicator &mpiw;
 
  public:
-   DiagMPI(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw) : mpienv(mpienv), mpiw(mpiw) {}
+   DiagMPI(boost::mpi::environment &mpienv_, boost::mpi::communicator &mpiw_) : mpienv(mpienv_), mpiw(mpiw_) {}
    ~DiagMPI() {
      for (auto i = 1; i < mpiw.size(); i++) mpiw.send(i, TAG_EXIT, 0); // notify slaves we are done
    }
