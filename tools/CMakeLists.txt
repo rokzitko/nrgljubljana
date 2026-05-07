@@ -9,6 +9,7 @@ macro(add_tool exec_name)
 
   # Configure compilation
   target_compile_options(${exec_name} PRIVATE ${NRG_CXX_OPT})
+  nrgljubljana_apply_strict_floating_point(${exec_name})
   target_include_directories(${exec_name} PRIVATE 
                      $<BUILD_INTERFACE:${CURRENT_SOURCE_DIR}/${exec_name}>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>

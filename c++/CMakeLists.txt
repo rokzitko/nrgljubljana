@@ -31,6 +31,7 @@ option(GPROF "Enable profiling using gprof" OFF)
 
 # Configure compilation
 target_compile_options(nrgljubljana_c     PRIVATE ${NRG_CXX_OPT} $<$<BOOL:${GPROF}>:-pg>)
+nrgljubljana_apply_strict_floating_point(nrgljubljana_c)
 target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry/coefnew>
@@ -57,6 +58,7 @@ add_executable(nrg nrg.cc)
 target_link_libraries(nrg PRIVATE nrgljubljana_c)
 target_link_options(nrg PRIVATE $<$<BOOL:${GPROF}>:-pg>)
 target_compile_options(nrg PRIVATE ${NRG_CXX_OPT} $<$<BOOL:${GPROF}>:-pg>)
+nrgljubljana_apply_strict_floating_point(nrg)
 string(REPLACE "\"" "\\\"" NRGLJUBLJANA_CXX_COMPILER_ID_ESCAPED "${CMAKE_CXX_COMPILER_ID}")
 string(REPLACE "\"" "\\\"" NRGLJUBLJANA_CXX_COMPILER_VERSION_ESCAPED "${CMAKE_CXX_COMPILER_VERSION}")
 string(REPLACE "\"" "\\\"" NRGLJUBLJANA_SYSTEM_PROCESSOR_ESCAPED "${CMAKE_SYSTEM_PROCESSOR}")

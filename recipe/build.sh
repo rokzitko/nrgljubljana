@@ -40,6 +40,7 @@ positive_integer() {
 
 build_tests="$(cmake_bool "${nrgljubljana_build_tests:-OFF}")"
 test_long="$(cmake_bool "${nrgljubljana_test_long:-OFF}")"
+strict_floating_point="$(cmake_bool "${nrgljubljana_strict_floating_point:-OFF}")"
 cmake_build_type="${nrgljubljana_cmake_build_type:-Release}"
 build_jobs="$(job_count "${nrgljubljana_build_jobs:-0}")"
 test_jobs="$(job_count "${nrgljubljana_test_jobs:-0}")"
@@ -61,6 +62,7 @@ cmake -S . -B build -G Ninja \
   -DHDF5_ROOT="${PREFIX}" \
   -DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON \
   -DNRGLJUBLJANA_INSTALL_NRGINIT=ON \
+  -DNRGLJUBLJANA_STRICT_FLOATING_POINT="${strict_floating_point}" \
   -DBuild_Tests="${build_tests}" \
   -DTEST_LONG="${test_long}" \
   -DBuild_Documentation=OFF \

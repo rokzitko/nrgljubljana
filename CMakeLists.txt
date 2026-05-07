@@ -61,6 +61,7 @@ endif()
 option(NRGLJUBLJANA_USE_SYSTEM_DEPS "Use dependencies supplied by the system or package manager instead of CPM" OFF)
 option(NRGLJUBLJANA_INSTALL_NRGINIT "Install nrginit Mathematica scripts" ON)
 option(NRGLJUBLJANA_ENABLE_APP_OPENMP "Enable application-level OpenMP parallel regions; BLAS/LAPACK remains threaded independently" OFF)
+option(NRGLJUBLJANA_STRICT_FLOATING_POINT "Compile project C++ targets with strict floating-point flags" OFF)
 set(NRGLJUBLJANA_MKL_THREADING_LAYER "AUTO" CACHE STRING "MKL threading layer for mkl_rt builds (AUTO, COMPILER, GNU, INTEL, or LLVM)")
 set_property(CACHE NRGLJUBLJANA_MKL_THREADING_LAYER PROPERTY STRINGS AUTO COMPILER GNU INTEL LLVM)
 string(TOUPPER "${NRGLJUBLJANA_MKL_THREADING_LAYER}" NRGLJUBLJANA_MKL_THREADING_LAYER)
@@ -78,6 +79,7 @@ set(NRGLJUBLJANA_MKL_REQUIRES_OPENMP OFF)
 
 message(STATUS "Application OpenMP parallel regions: ${NRGLJUBLJANA_ENABLE_APP_OPENMP}")
 message(STATUS "MKL threading layer request: ${NRGLJUBLJANA_MKL_THREADING_LAYER}")
+message(STATUS "Strict floating-point flags: ${NRGLJUBLJANA_STRICT_FLOATING_POINT}")
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -540,6 +542,31 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$"
    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
      add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wno-psabi>)
 endif()
+
+set(NRGLJUBLJANA_STRICT_FLOATING_POINT_FLAGS
+  -ffp-contract=off
+  -fno-fast-math
+  -frounding-math
+)
+
+if(NRGLJUBLJANA_STRICT_FLOATING_POINT)
+  include(CheckCXXCompilerFlag)
+  foreach(flag IN LISTS NRGLJUBLJANA_STRICT_FLOATING_POINT_FLAGS)
+    string(MAKE_C_IDENTIFIER "NRGLJUBLJANA_STRICT_FLOATING_POINT_HAS_${flag}" check_var)
+    check_cxx_compiler_flag("${flag}" "${check_var}")
+    if(NOT ${check_var})
+      message(FATAL_ERROR "NRGLJUBLJANA_STRICT_FLOATING_POINT=ON requires unsupported compiler flag: ${flag}")
+    endif()
+  endforeach()
+endif()
+
+function(nrgljubljana_apply_strict_floating_point target)
+  if(NRGLJUBLJANA_STRICT_FLOATING_POINT)
+    foreach(flag IN LISTS NRGLJUBLJANA_STRICT_FLOATING_POINT_FLAGS)
+      target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${flag}>)
+    endforeach()
+  endif()
+endfunction()
 
 # #############
 # Build Project
