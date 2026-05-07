@@ -258,18 +258,18 @@ void merge() {
 // Calculate integrated spectral function of (a) defined on the mesh (mesh)
 // and store the results in a vector (inta). Trapezoid rule is used to
 // perform the integration.
-void integrate_a(const vec &a, const vec &mesh, vec &inta) {
-  assert(a.size() == mesh.size());
+void integrate_a(const vec &a_, const vec &mesh_, vec &inta_) {
+  assert(a_.size() == mesh_.size());
 
   double sum   = 0.0;
-  const int nr = a.size();
-  inta.resize(nr);
-  inta[0] = 0.0;
+  const int nr = a_.size();
+  inta_.resize(nr);
+  inta_[0] = 0.0;
 
   for (int i = 1; i < nr; i++) {
-    assert(mesh[i] > mesh[i - 1]);
-    sum += (a[i] + a[i - 1]) * (mesh[i] - mesh[i - 1]) / 2.0; // Trapezoid rule
-    inta[i] = sum;                                            // Integrated spectrum up to current freq
+    assert(mesh_[i] > mesh_[i - 1]);
+    sum += (a_[i] + a_[i - 1]) * (mesh_[i] - mesh_[i - 1]) / 2.0; // Trapezoid rule
+    inta_[i] = sum;                                            // Integrated spectrum up to current freq
   }
 
   if (verbose) { cout << "Total weight=" << sum << endl; }
@@ -278,56 +278,56 @@ void integrate_a(const vec &a, const vec &mesh, vec &inta) {
 // inta = \int [-infty, omega]
 // intb = \int [0, omega]
 // intc = \int [+infty, omega]
-void combinations(const vec &mesh, const vec &inta, vec &intb, vec &intc) {
-  const int nr = mesh.size();
-  intb.resize(nr);
-  intc.resize(nr);
+void combinations(const vec &mesh_, const vec &inta_, vec &intb_, vec &intc_) {
+  const int nr = mesh_.size();
+  intb_.resize(nr);
+  intc_.resize(nr);
 
   // Determine the value at omega=0
   double omega0 = -1;
   for (int i = 1; i < nr; i++) {
-    if (mesh[i - 1] < 0.0 && mesh[i] > 0.0) {
-      omega0 = (inta[i - 1] + inta[i]) / 2.0;
+    if (mesh_[i - 1] < 0.0 && mesh_[i] > 0.0) {
+      omega0 = (inta_[i - 1] + inta_[i]) / 2.0;
       break;
     }
   }
 
   // The value at +infty
-  const double omegainf = inta[nr - 1];
+  const double omegainf = inta_[nr - 1];
 
   for (int i = 0; i < nr; i++) {
-    intb[i] = inta[i] - omega0;
-    intc[i] = omegainf - inta[i];
+    intb_[i] = inta_[i] - omega0;
+    intc_[i] = omegainf - inta_[i];
   }
 }
 
 // Create a mesh on which the output spectral function will be computed.
-void make_mesh(vec &mesh) {
+void make_mesh(vec &mesh_) {
   assert(broaden_min < broaden_max);
   assert(broaden_ratio > 1.0);
 
   double z;
   for (z = broaden_min; z < broaden_max; z *= broaden_ratio) {
-    mesh.push_back(z);
-    mesh.push_back(-z);
+    mesh_.push_back(z);
+    mesh_.push_back(-z);
   }
 
   // One more point to ensure that the point 'broaden_max' is part of the
   // full frequency interval.
   z *= broaden_ratio;
-  mesh.push_back(z);
-  mesh.push_back(-z);
+  mesh_.push_back(z);
+  mesh_.push_back(-z);
 
   if (verbose) { cout << "Maximal frequency=" << z << endl; }
 
-  sort(mesh.begin(), mesh.end());
+  sort(mesh_.begin(), mesh_.end());
 }
 
 // Create an initial approximation for the frequency dependent broadening
 // function b(omega).
-void initial_b(vec &b) {
-  b.resize(nr_spec);
-  for (unsigned int i = 0; i < nr_spec; i++) { b[i] = b0; }
+void initial_b(vec &b_) {
+  b_.resize(nr_spec);
+  for (unsigned int i = 0; i < nr_spec; i++) { b_[i] = b0; }
 }
 
 // The modified log-Gaussian broadening function.
@@ -348,87 +348,87 @@ double bfnc(double E, double alpha, double omega) {
   return res;
 }
 
-void refine_mesh(vec &mesh, const vec &a) {
-  assert(mesh.size() == a.size());
-  assert(mesh.size() >= 6); // minimal meaningful mesh size
+void refine_mesh(vec &mesh_, const vec &a_) {
+  assert(mesh_.size() == a_.size());
+  assert(mesh_.size() >= 6); // minimal meaningful mesh size
 
-  const int nr = mesh.size();
+  const int nr = mesh_.size();
 
   vec newmesh;
 
   // Negative part of the spectrum
-  newmesh.push_back(mesh[0]);
-  double newpt1 = -sqrt(mesh[0] * mesh[1]);
-  if (mesh[0] < newpt1 && newpt1 < mesh[1]) newmesh.push_back(newpt1); // always refine here, if still possible!
-  newmesh.push_back(mesh[1]);
-  for (int i = 2; i < nr && mesh[i] < 0.0; i++) {
-    const double deriv       = (a[i - 2] - a[i - 1]) / (mesh[i - 2] - mesh[i - 1]);
-    const double y_predicted = a[i - 1] + deriv * (mesh[i] - mesh[i - 1]);
-    const double y           = a[i];
+  newmesh.push_back(mesh_[0]);
+  double newpt1 = -sqrt(mesh_[0] * mesh_[1]);
+  if (mesh_[0] < newpt1 && newpt1 < mesh_[1]) newmesh.push_back(newpt1); // always refine here, if still possible!
+  newmesh.push_back(mesh_[1]);
+  for (int i = 2; i < nr && mesh_[i] < 0.0; i++) {
+    const double deriv       = (a_[i - 2] - a_[i - 1]) / (mesh_[i - 2] - mesh_[i - 1]);
+    const double y_predicted = a_[i - 1] + deriv * (mesh_[i] - mesh_[i - 1]);
+    const double y           = a_[i];
     const double error_ratio = std::abs((y - y_predicted) / y);
     if (error_ratio > dyn_mesh) {
       // add one additional mesh point!
       // geometric average!
-      double newpt = -sqrt(mesh[i] * mesh[i - 1]);
+      double newpt = -sqrt(mesh_[i] * mesh_[i - 1]);
       // Only add a point if it is actually distinct from its
       // neighbours. This check is necessary in the presence of
       // singularities.
-      if (mesh[i - 1] < newpt && newpt < mesh[i]) newmesh.push_back(newpt);
+      if (mesh_[i - 1] < newpt && newpt < mesh_[i]) newmesh.push_back(newpt);
     }
-    newmesh.push_back(mesh[i]);
+    newmesh.push_back(mesh_[i]);
   }
 
   // Positive part of the spectrum
-  newmesh.push_back(mesh[nr - 1]);
-  double newpt2 = sqrt(mesh[nr - 1] * mesh[nr - 2]);
-  if (mesh[nr - 2] < newpt2 && newpt2 < mesh[nr - 1]) newmesh.push_back(newpt2); // always refine here!
-  newmesh.push_back(mesh[nr - 2]);
-  for (int i = (nr - 1) - 2; i > 0 && mesh[i] > 0.0; i--) {
-    const double deriv       = (a[i + 2] - a[i + 1]) / (mesh[i + 2] - mesh[i + 1]);
-    const double y_predicted = a[i + 1] + deriv * (mesh[i] - mesh[i + 1]);
-    const double y           = a[i];
+  newmesh.push_back(mesh_[nr - 1]);
+  double newpt2 = sqrt(mesh_[nr - 1] * mesh_[nr - 2]);
+  if (mesh_[nr - 2] < newpt2 && newpt2 < mesh_[nr - 1]) newmesh.push_back(newpt2); // always refine here!
+  newmesh.push_back(mesh_[nr - 2]);
+  for (int i = (nr - 1) - 2; i > 0 && mesh_[i] > 0.0; i--) {
+    const double deriv       = (a_[i + 2] - a_[i + 1]) / (mesh_[i + 2] - mesh_[i + 1]);
+    const double y_predicted = a_[i + 1] + deriv * (mesh_[i] - mesh_[i + 1]);
+    const double y           = a_[i];
     const double error_ratio = std::abs((y - y_predicted) / y);
     if (error_ratio > dyn_mesh) {
-      double newpt = +sqrt(mesh[i] * mesh[i + 1]);
-      if (mesh[i] < newpt && newpt < mesh[i + 1]) newmesh.push_back(newpt);
+      double newpt = +sqrt(mesh_[i] * mesh_[i + 1]);
+      if (mesh_[i] < newpt && newpt < mesh_[i + 1]) newmesh.push_back(newpt);
     }
-    newmesh.push_back(mesh[i]);
+    newmesh.push_back(mesh_[i]);
   }
 
   sort(newmesh.begin(), newmesh.end());
 
   // Trick: avoid copying!
-  mesh.swap(newmesh);
+  mesh_.swap(newmesh);
 }
 
 // Note: vector 'a' is resized to match the length of vector 'mesh'. The
 // mesh can thus dynamically change from iteration to iteration.
-void broaden(const vec &mesh, vec &a, const vec &b) {
-  const int nr_mesh = mesh.size();
+void broaden(const vec &mesh_, vec &a_, const vec &b_) {
+  const int nr_mesh = mesh_.size();
 
   if (verbose) { cout << "Broadening. nr_mesh=" << nr_mesh << endl; }
 
-  a.resize(nr_mesh);
+  a_.resize(nr_mesh);
 
   for (int i = 0; i < nr_mesh; i++) {
-    const double &outputfreq = mesh[i];
-    a[i]                     = 0.0;
+    const double &outputfreq = mesh_[i];
+    a_[i]                     = 0.0;
     for (unsigned int j = 0; j < nr_spec; j++) {
       const double &omega = vfreq[j];
       bool sameSign       = (outputfreq < 0.0) == (omega < 0.0);
-      if (sameSign) { a[i] += vspec[j] * bfnc(outputfreq, b[j], omega); }
+      if (sameSign) { a_[i] += vspec[j] * bfnc(outputfreq, b_[j], omega); }
     }
 
     // Enforce positivity
-    if (a[i] < 0.0 && enforce_positivity) {
-      if (veryverbose) { cout << "Warning: a(" << outputfreq << ")=" << a[i] << endl; }
-      a[i] = 1e-16;
+    if (a_[i] < 0.0 && enforce_positivity) {
+      if (veryverbose) { cout << "Warning: a(" << outputfreq << ")=" << a_[i] << endl; }
+      a_[i] = 1e-16;
     }
   }
 }
 
 // Save a map of (double,double) pairs to a file.
-void save(const string filename0, const mapdd &m, int iter = 0, double trim = 0.0) {
+void save(const string filename0, const mapdd &m, int iter = 0, double trim_ = 0.0) {
   const string filename = filename0 + (iter > 0 ? tostring(iter) : "") + ".dat";
 
   if (verbose) { cout << "Saving " << filename << endl; }
@@ -440,13 +440,13 @@ void save(const string filename0, const mapdd &m, int iter = 0, double trim = 0.
   }
 
   for (auto I : m) {
-    if (trim != 0.0 && std::abs(I.first) < trim) { continue; }
+    if (trim_ != 0.0 && std::abs(I.first) < trim_) { continue; }
     F << I.first << " " << I.second << endl;
   }
 }
 
 // Save pairs taken respectively from (mesh) and (data).
-void save(const string filename0, const vec &mesh, const vec &data, int iter = 0, double trim = 0.0) {
+void save(const string filename0, const vec &mesh_, const vec &data, int iter = 0, double trim_ = 0.0) {
   const string filename = filename0 + (iter > 0 ? tostring(iter) : "") + ".dat";
   if (verbose) { cout << "Saving " << filename << endl; }
 
@@ -456,12 +456,12 @@ void save(const string filename0, const vec &mesh, const vec &data, int iter = 0
     exit(1);
   }
 
-  assert(mesh.size() == data.size());
-  int nr = mesh.size();
+  assert(mesh_.size() == data.size());
+  int nr = mesh_.size();
   for (int i = 0; i < nr; i++) {
-    const double x = mesh[i];
+    const double x = mesh_[i];
     const double y = data[i];
-    if (trim != 0.0 && std::abs(x) < trim) { continue; }
+    if (trim_ != 0.0 && std::abs(x) < trim_) { continue; }
     if (std::isfinite(data[i])) {
       F << x << " " << y << endl;
     } else {
@@ -487,18 +487,18 @@ void calc_b(const vec &logd1, const vec &logd2, vec &bb) {
 // We take dlog f/dlog omega = Delta (log f)/Delta (log omega)
 // = (log f_1-log f_0)/(log omega_1-log omega_0)
 // = log(f_1/f_0) / log(omega_1/omega_0).
-void calc_deriv(const vec &inta, vec &deriv) {
+void calc_deriv(const vec &inta_, vec &deriv) {
   if (verbose) { cout << "Calculating a logarithmic derivative." << endl; }
 
-  int nr = inta.size();
+  int nr = inta_.size();
   deriv.resize(nr);
   deriv[0] = 0.0;
 
   for (int i = 1; i < nr; i++) {
     const double &w0 = mesh[i - 1];
     const double &w1 = mesh[i];
-    const double &f0 = inta[i - 1];
-    const double &f1 = inta[i];
+    const double &f0 = inta_[i - 1];
+    const double &f1 = inta_[i];
     assert(w1 > w0);
     const double log1 = log(f1 / f0);
     if (!std::isfinite(log1)) {
@@ -610,13 +610,13 @@ double LinInt::operator()(double x) {
   return f0 + deriv * dx;
 }
 
-void recalc_b(const vec &mesh, const vec &bpos, const vec &bneg, vec &b) {
+void recalc_b(const vec &mesh_, const vec &bpos, const vec &bneg, vec &b_) {
   if (verbose) { cout << "Recalculating b(omega)" << endl; }
 
   const unsigned int sizepos = bpos.size();
   Vec Vecbpos(sizepos);
   for (unsigned int i = 0; i < sizepos; i++) {
-    Vecbpos[i].first  = mesh[i];
+    Vecbpos[i].first  = mesh_[i];
     Vecbpos[i].second = bpos[i];
   }
   LinInt fpos(Vecbpos);
@@ -624,7 +624,7 @@ void recalc_b(const vec &mesh, const vec &bpos, const vec &bneg, vec &b) {
   const unsigned int sizeneg = bneg.size();
   Vec Vecbneg(sizeneg);
   for (unsigned int i = 0; i < sizeneg; i++) {
-    Vecbneg[i].first  = mesh[i];
+    Vecbneg[i].first  = mesh_[i];
     Vecbneg[i].second = bneg[i];
   }
   LinInt fneg(Vecbneg);
@@ -632,7 +632,7 @@ void recalc_b(const vec &mesh, const vec &bpos, const vec &bneg, vec &b) {
   for (unsigned int i = 0; i < nr_spec; i++) {
     const double new_b = (vfreq[i] < 0.0 ? fneg(vfreq[i]) : fpos(vfreq[i]));
     assert(new_b > 0.0);
-    b[i] = (new_b > bmin ? new_b : bmin);
+    b_[i] = (new_b > bmin ? new_b : bmin);
   }
 }
 

@@ -245,9 +245,9 @@ class Broaden {
        usage();
        exit(EXIT_SUCCESS);
      }
-     int c;
-     while ((c = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNABL:")) != -1) {
-       switch (c) {
+     int c_;
+     while ((c_ = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNABL:")) != -1) {
+       switch (c_) {
        case 'c': cumulative = true; break;
        case 's': sumrules = true; break;
        case 'v': verbose = true; break;
@@ -333,11 +333,11 @@ class Broaden {
       std::cout << "Processing: " << name << std::endl;
       if (verbose) { std::cout << "Nz=" << Nz << " alpha=" << alpha << " T=" << T << " omega0_ratio=" << omega0_ratio << std::endl; }
     }
-   void check_buffer_normalisation(const std::vector<double> &buffer, const int col) {
+   void check_buffer_normalisation(const std::vector<double> &buffer, const int col_) {
      const auto cols = 1 + nrcol;
      const auto rows = buffer.size()/cols;
      auto sum = 0.0;
-     for (auto j = 0; j < rows; j++) sum += buffer[cols * j + col];
+     for (auto j = 0; j < rows; j++) sum += buffer[cols * j + col_];
      std::cout << "Weight=" << sum << std::endl;
    }
    // Load all the input data.
@@ -486,10 +486,10 @@ class Broaden {
      }
    }
 
-   vec broaden(const vec &mesh) {
-     if (verbose) { std::cout << "Broadening. Number of mesh points = " << mesh.size() << std::endl; }
-     vec result(mesh.size());
-     std::transform(mesh.begin(), mesh.end(), result.begin(), [this](const auto m) {
+   vec broaden(const vec &mesh_) {
+     if (verbose) { std::cout << "Broadening. Number of mesh points = " << mesh_.size() << std::endl; }
+     vec result(mesh_.size());
+     std::transform(mesh_.begin(), mesh_.end(), result.begin(), [this](const auto m) {
        return std::transform_reduce(vspec.begin(), vspec.end(), vfreq.begin(), 0.0, std::plus<>(), 
                                     [this,m](const auto weight, const auto freq) {
                                       return weight * bfnc(m, freq); }); });
@@ -497,19 +497,19 @@ class Broaden {
    }
    
    // Cumulative spectrum
-    void calc_cumulative(const vec &mesh, vec &c) {
-      const auto nr_mesh = mesh.size();
+    void calc_cumulative(const vec &mesh_, vec &c_) {
+      const auto nr_mesh = mesh_.size();
       if (verbose) std::cout << "Calculating cumulative spectrum." << std::endl;
-      c.resize(nr_mesh);
+      c_.resize(nr_mesh);
       auto sum = 0.0;
       size_t j = 0;
       for (auto i = 0; i < nr_mesh; i++) {
-        const auto max_freq = mesh[i];
+        const auto max_freq = mesh_[i];
         while (j < vfreq.size() && vfreq[j] < max_freq) {
           sum += vspec[j];
           j++;
         }
-       c[i] = sum;
+       c_[i] = sum;
      }
      std::cout << "End sum=" << sum << std::endl;
    }

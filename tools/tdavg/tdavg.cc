@@ -292,15 +292,15 @@ const double EPS = 1e-6;
 inline bool eq_approx(double a, double b) { return std::abs((a - b) / a) < EPS; }
 
 dvec merge_meshes() {
-  dvec mesh;
+  dvec mesh_;
   for (unsigned int i = 0; i < Nz; i++) {
     const unsigned int len = input[i].size();
-    for (unsigned int j = 0; j < len; j++) { mesh.push_back(input[i][j].first); }
+    for (unsigned int j = 0; j < len; j++) { mesh_.push_back(input[i][j].first); }
   }
-  sort(mesh.begin(), mesh.end());
-  auto new_end = unique(mesh.begin(), mesh.end(), eq_approx);
-  mesh.erase(new_end, mesh.end());
-  return mesh;
+  sort(mesh_.begin(), mesh_.end());
+  auto new_end = unique(mesh_.begin(), mesh_.end(), eq_approx);
+  mesh_.erase(new_end, mesh_.end());
+  return mesh_;
 }
 
 using LinIntVector = vector<LinInt>;
@@ -341,13 +341,13 @@ multiVec avg() {
   return result;
 }
 
-void save(const multiVec &result, ostream &f) {
+void save(const multiVec &result, ostream &f_) {
   const unsigned int len = result.size();
   for (unsigned int j = 0; j < len; j++) {
-    f << result[j].first << " ";
+    f_ << result[j].first << " ";
     assert(result[j].second.size() == columns);
-    for (unsigned int k = 0; k < columns; k++) f << result[j].second[k] << " ";
-    f << endl;
+    for (unsigned int k = 0; k < columns; k++) f_ << result[j].second[k] << " ";
+    f_ << endl;
   }
 }
 

@@ -132,9 +132,9 @@ class Values {
    void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
     void set_corr(const std::vector<t_eigen> &in) { corrected = in; }
     void set_corr(std::vector<t_eigen> &&in) { corrected = std::move(in); }
-   void do_shift(const double shift) { shift_inplace(v,shift); }
-   void do_c_shift(const double shift) { shift_inplace(c, shift); }
-   void do_corr_shift(const double shift) { shift_inplace(corrected, shift); }
+   void do_shift(const double shift_) { shift_inplace(v,shift_); }
+   void do_c_shift(const double shift_) { shift_inplace(c, shift_); }
+   void do_corr_shift(const double shift_) { shift_inplace(corrected, shift_); }
    [[nodiscard]] auto crit(const size_t i) const { return c[i]; }
    void set_crit(const size_t i, const t_eigen x) { c[i] = x; }
    void crit_copy_raw() { c = v; }

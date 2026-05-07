@@ -80,12 +80,12 @@ double eps_neg(double x) {
 inline double Eps_flat(double x) {
   assert(x >= 1.0);
   const int j    = floor(x);
-  const double z = x - j;
+  const double z_ = x - j;
 
   if (j == 1) {
-    return (1.0 - Lambda.power(-z)) / Lambda.logL() + 1.0 - z;
+    return (1.0 - Lambda.power(-z_)) / Lambda.logL() + 1.0 - z_;
   } else {
-    return (1.0 - Lambda.power(-1.0)) / Lambda.logL() * Lambda.power(2.0 - j - z);
+    return (1.0 - Lambda.power(-1.0)) / Lambda.logL() * Lambda.power(2.0 - j - z_);
   }
 }
 
@@ -336,7 +336,7 @@ using vmpf = std::vector<my_mpf>;
 
 // Fix normalization of u_{n,m}, v_{n,m} to 1. IMPORTANT: pass by
 // reference!
-void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX) {
+void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX_) {
   // Constants
   my_mpf mpZERO, mpONE;
   mpf_set_str(mpONE, "1.e0", 10);
@@ -344,7 +344,7 @@ void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX) {
   my_mpf sum, temp, tempsq;
 
   mpf_set(sum, mpZERO);
-  for (unsigned int m = 0; m <= mMAX; m++) {
+  for (unsigned int m = 0; m <= mMAX_; m++) {
     mpf_mul(tempsq, up[m], up[m]);
     mpf_add(sum, sum, tempsq);
     mpf_mul(tempsq, um[m], um[m]);
@@ -352,7 +352,7 @@ void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX) {
   }
   mpf_sqrt(temp, sum);
 
-  for (unsigned int m = 0; m <= mMAX; m++) {
+  for (unsigned int m = 0; m <= mMAX_; m++) {
     mpf_div(up[m], up[m], temp);
     mpf_div(um[m], um[m], temp);
   }

@@ -41,8 +41,8 @@ class Algo_FDMls : virtual public Algo<S> {
       const auto add_exp_weight = [this, &absGi, &absGj, &boltzGj, &op1, &op2, factor, weight_scale = (-sign) * wnf](const auto i, const auto j) {
         cb->add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * op2(j, i) * weight_scale * boltzGj[j]), factor);
       };
-      const auto add_rho_weight = [this, &absGi, &absGj, &op1, &rho_op2, factor, sign = sign](const auto i, const auto j) {
-        cb->add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * rho_op2(j, i) * (-sign)), factor);
+      const auto add_rho_weight = [this, &absGi, &absGj, &op1, &rho_op2, factor, sign_ = sign](const auto i, const auto j) {
+        cb->add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * rho_op2(j, i) * (-sign_)), factor);
       };
       for (const auto j : diagIj.Drange())
         for (const auto i : diagIi.Drange())

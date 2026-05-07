@@ -31,14 +31,14 @@ class Oprecalc {
        for (const auto &[type, name]: *this) fmt::print("{} {}\n", name, type);
      }
      // Singlet operators are always recomputed in the first NRG run, so that we can calculate the expectation values.
-     [[nodiscard]] bool do_s(const std::string &name, const Params &P, const Step &step) {
+     [[nodiscard]] bool do_s(const std::string &name, const Params &P_, const Step &step) {
        if (step.nrg()) return true;                                          // for computing <O>
-       if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
+       if (step.dmnrg() && P_.fdmexpv && step.N() <= P_.fdmexpvn) return true; // for computing <O> using FDM algorithm
        return this->count({"s", name});
      }
-     [[nodiscard]] bool do_g(const std::string &name, const Params &P, const Step &step) {
+     [[nodiscard]] bool do_g(const std::string &name, const Params &P_, const Step &step) {
        if (step.nrg()) return true;                                          // for computing <O>
-       if (step.dmnrg() && P.fdmexpv && step.N() <= P.fdmexpvn) return true; // for computing <O> using FDM algorithm
+       if (step.dmnrg() && P_.fdmexpv && step.N() <= P_.fdmexpvn) return true; // for computing <O> using FDM algorithm
        return this->count({"g", name});
      }
    };
@@ -47,9 +47,9 @@ class Oprecalc {
    // Spectral densities
     struct SL : public speclist<S> {
       void calc(const Step &step, const DiagInfo<S> &diag, DensMatElements<S> &rho, DensMatElements<S> &rhoFDM,
-                const Stats<S> &stats, MemTime &mt, const Symmetry<S> *Sym, const Params &P) {
-        const auto section_timing = mt.time_it("spec");
-        for (auto &i : *this) i.calc(step, diag, rho, rhoFDM, stats, Sym, P);
+                const Stats<S> &stats, MemTime &mt_, const Symmetry<S> *Sym_, const Params &P_) {
+        const auto section_timing = mt_.time_it("spec");
+        for (auto &i : *this) i.calc(step, diag, rho, rhoFDM, stats, Sym_, P_);
       }
       void save() {
         for (auto &i : *this) i.algo->save();
@@ -73,15 +73,15 @@ class Oprecalc {
      }
 
    // Recalculate operator matrix representations
-   void recalculate_operators(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P) {
+   void recalculate_operators(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P_) {
      nrglog('@', "recalculate_operators()");
      const auto section_timing = mt.time_it("recalc");
        for (auto &[name, m] : a.ops)
-         m = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
+         m = recalc_or_clear(ops.do_s(name, P_, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
        for (auto &[name, m] : a.opsp)
          m = recalc_or_clear(ops.count({"p", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, "p", step, diag, substruct);
        for (auto &[name, m] : a.opsg)
-         m = recalc_or_clear(ops.do_g(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag, substruct);
+         m = recalc_or_clear(ops.do_g(name, P_, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag, substruct);
        for (auto &[name, m] : a.opd)
          m = recalc_or_clear(ops.count({"d", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, "d", step, diag, substruct);
        for (auto &[name, m] : a.opt)
@@ -93,23 +93,23 @@ class Oprecalc {
      }
 
    // Special case for Floquet problems
-   MatrixElements<S> recalculate_operator_m(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P) {
+   MatrixElements<S> recalculate_operator_m(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P_) {
      nrglog('@', "recalculate_operator_m()");
      const auto section_timing = mt.time_it("recalc");
      MatrixElements<S> mnew;
      for (auto &[name, m] : a.ops)
        if (name == "m") {
          std::cout << "Matched " << name << std::endl;
-         mnew = recalc_or_clear(ops.do_s(name, P, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
+         mnew = recalc_or_clear(ops.do_s(name, P_, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
        }
      return mnew;
    }
 
    // Establish the data structures for storing spectral information [and prepare output files].
    template<typename A, typename M>
-     [[nodiscard]] bool prepare_spec_algo(std::string prefix, const Params &P, FactorFnc ff, CheckFnc cf, M && op1, M && op2, int spin,
+     [[nodiscard]] bool prepare_spec_algo(std::string prefix, const Params &P_, FactorFnc ff, CheckFnc cf, M && op1, M && op2, int spin,
                             std::string name, const gf_type gt) {
-       BaseSpectrum<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin, std::make_shared<A>(name, prefix, gt, P), ff, cf);
+       BaseSpectrum<S> spec(std::forward<M>(op1), std::forward<M>(op2), spin, std::make_shared<A>(name, prefix, gt, P_), ff, cf);
        sl.push_back(spec);
        return true; // recalculation of operators required
      }

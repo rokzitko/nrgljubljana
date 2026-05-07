@@ -61,9 +61,9 @@ class Adapt {
    double intA; // intA=int_0^1 rho(w) dw (trapezoidal method).
    double A;    // parameter in the shooting method. Initially A=intA. Equal to intA if adapt=false.
    // Right-hand-side of the differential equation. y=g !
-   auto rhs_G(const double x, const double y) {
-     const auto powL = Lambda.power(2.0 - x);
-     return Lambda.logL() * (y - A / rho(y * powL));
+   auto rhs_G(const double x_, const double y_) {
+     const auto powL = Lambda.power(2.0 - x_);
+     return Lambda.logL() * (y_ - A / rho(y_ * powL));
    }
    void save(std::ostream &OUT) { OUT << x << " " << y << std::endl; }
    template<typename FNC> auto rk_step(const double dx, FNC rhs)
@@ -174,7 +174,7 @@ class Adapt {
      double x_st = x; // Target x for next output line
      do {
        x_st += output_step;
-       int_with_to(dx, x_st, [this](const auto x, const auto y) { return rhs_G(x, y); }, false); // rhs_G !!
+       int_with_to(dx, x_st, [this](const auto x_, const auto y_) { return rhs_G(x_, y_); }, false); // rhs_G !!
        save(OUTG);
        vecg.emplace_back(std::make_pair(x, y));
        if (x > xfine) { dx = dx_fast; }
@@ -226,28 +226,28 @@ class Adapt {
    // the variable 'boundary'.
    auto rescale(const double omega) { return (1.0 - boundary) * omega + boundary; }
    // eps(x) = D g(x) Lambda^(2-x) for x>2.
-   auto eps(const double x) {
-     const auto gx = adapt ? g(x) : 1.0;
-     double epsilon  = x <= 2.0 ? 1.0 : gx * Lambda.power(2.0-x);
+   auto eps(const double x_) {
+     const auto gx = adapt ? g(x_) : 1.0;
+     double epsilon  = x_ <= 2.0 ? 1.0 : gx * Lambda.power(2.0-x_);
      if (hardgap) { epsilon = rescale(epsilon); }
      return epsilon;
    }
    // Eps(x) = D f(x) Lambda^(2-x)
-   inline auto Eps(const double x, const double f) {
-     assert(x >= 1 && f > 0);
-     return f * Lambda.power(2.0-x);
+   inline auto Eps(const double x_, const double f) {
+     assert(x_ >= 1 && f > 0);
+     return f * Lambda.power(2.0-x_);
    }
    // Right-hand-side of the differential equation. y=f !
-   auto rhs_F(const double x, const double y) {
-     assert(std::isfinite(x));
-     assert(std::isfinite(y));
-     const double term1 = Lambda.logL() * y;
-     const double integral = intrho2(eps(x)) - intrho1(eps(x + 1));
-     const double powL     = Lambda.power(2.0 - x);
-     const double denom    = powL * rho(y * powL);
+   auto rhs_F(const double x_, const double y_) {
+     assert(std::isfinite(x_));
+     assert(std::isfinite(y_));
+     const double term1 = Lambda.logL() * y_;
+     const double integral = intrho2(eps(x_)) - intrho1(eps(x_ + 1));
+     const double powL     = Lambda.power(2.0 - x_);
+     const double denom    = powL * rho(y_ * powL);
      double term2 = integral / denom;
      if (denom == 0.0) {
-       std::cout << "# Warning: denom=0 with integral=" << integral << " at x=" << x << std::endl;
+       std::cout << "# Warning: denom=0 with integral=" << integral << " at x=" << x_ << std::endl;
        std::cout << "# (denom=0 may arise from zeros in the hybridisation function)" << std::endl;
        term2 = 0.0;
      }
@@ -311,8 +311,8 @@ class Adapt {
      set_parameters();
      report_parameters();
    }
-   auto g_fn(const Sign &sign) { return "GSOL" + (sign == Sign::POS ? ""s : "NEG"s) + ".dat"; }
-   auto f_fn(const Sign &sign) { return "FSOL" + (sign == Sign::POS ? ""s : "NEG"s) + ".dat"; }
+   auto g_fn(const Sign &sign_) { return "GSOL" + (sign_ == Sign::POS ? ""s : "NEG"s) + ".dat"; }
+   auto f_fn(const Sign &sign_) { return "FSOL" + (sign_ == Sign::POS ? ""s : "NEG"s) + ".dat"; }
    void load_or_calc_g() {
      const auto vecg = P.Pbool("loadg", false) ? load_g(g_fn(sign)) : calc_g();
      minmaxvec(vecg, "g");
@@ -339,7 +339,7 @@ class Adapt {
      double x_st = x; // Target x for next output line
      do {
        x_st += output_step;
-       int_with_to(dx, x_st, [this](const auto x, const auto y){ return rhs_F(x, y); }, true); // rhs_F !!
+       int_with_to(dx, x_st, [this](const auto x_, const auto y_){ return rhs_F(x_, y_); }, true); // rhs_F !!
        save(OUTF);
        if (x > xfine) { dx = dx_fast; }
        if (std::abs(y) > max_abs) {

@@ -208,18 +208,18 @@ double omegan(int n) {
 cmpl iomegan(int n) { return omegan(n) * cmpl(0, 1); }
 
 // Create a mesh on which the output Green's function will be computed.
-void make_mesh(cvec &mesh) {
-  for (int i = 0; i < nrmats; i++) mesh.push_back(iomegan(i));
+void make_mesh(cvec &mesh_) {
+  for (int i = 0; i < nrmats; i++) mesh_.push_back(iomegan(i));
 }
 
-void compute(const cvec &mesh, cvec &G) {
-  const int nr_mesh = mesh.size();
+void compute(const cvec &mesh_, cvec &G_) {
+  const int nr_mesh = mesh_.size();
   if (verbose) cout << "Computing. nr_mesh=" << nr_mesh << endl;
-  G.resize(nr_mesh);
+  G_.resize(nr_mesh);
   for (int i = 0; i < nr_mesh; i++) {
-    const cmpl &z = mesh[i];
-    G[i]          = 0.0;
-    for (unsigned int j = 0; j < nr_spec; j++) G[i] += vspec[j] / (z - vfreq[j]);
+    const cmpl &z = mesh_[i];
+    G_[i]          = 0.0;
+    for (unsigned int j = 0; j < nr_spec; j++) G_[i] += vspec[j] / (z - vfreq[j]);
   }
 }
 

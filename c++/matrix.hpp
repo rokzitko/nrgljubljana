@@ -36,12 +36,12 @@ void Symmetry<S>::offdiag_function_impl(const Step &step, const size_t i, const 
                                              const size_t ch,      // channel number
                                              const size_t fnr,     // extra index for <||f||>, usually 0
                                              const t_coef factor,  // may be complex (in principle)
-                                             Matrix &h, const SubspaceDimensions &qq, const InvarVec &In, const Opch<S> &opch) const
+                                             Matrix &h, const SubspaceDimensions &qq, const InvarVec &In_, const Opch<S> &opch) const
 {
   my_assert(1 <= i && i <= qq.combs() && 1 <= j && j <= qq.combs());
   if (!my_isfinite(factor))
     throw std::runtime_error(fmt::format("offdiag_function(): factor not finite {} {} {} {}", i, j, ch, fnr));
-  if (const auto f = opch[ch][fnr].find({In[i-1], In[j-1]}); f != opch[ch][fnr].cend()) {   // < In[i] r | f^\dag | In[j] r' >
+  if (const auto f = opch[ch][fnr].find({In_[i-1], In_[j-1]}); f != opch[ch][fnr].cend()) {   // < In[i] r | f^\dag | In[j] r' >
     const Matrix & mat = f->second;
     my_assert(qq.rmax(i-1) == size1(mat) && qq.rmax(j-1) == size2(mat));
     const auto factor_scaled = factor / step.scale();

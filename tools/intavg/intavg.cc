@@ -212,17 +212,17 @@ const double EPS = 1e-6;
 inline bool eq_approx(double a, double b) { return std::abs((a - b) / a) < EPS; }
 
 dvec merge_meshes() {
-  dvec mesh;
+  dvec mesh_;
 
   for (int i = 0; i < Nz; i++) {
     const int len = input[i].size();
-    for (int j = 0; j < len; j++) { mesh.push_back(input[i][j].first); }
+    for (int j = 0; j < len; j++) { mesh_.push_back(input[i][j].first); }
   }
 
-  sort(mesh.begin(), mesh.end());
-  auto new_end = unique(mesh.begin(), mesh.end(), eq_approx);
-  mesh.erase(new_end, mesh.end());
-  return mesh;
+  sort(mesh_.begin(), mesh_.end());
+  auto new_end = unique(mesh_.begin(), mesh_.end(), eq_approx);
+  mesh_.erase(new_end, mesh_.end());
+  return mesh_;
 }
 
 vector<LinInt> f; // interpolation objects
@@ -247,15 +247,15 @@ Vec avg() {
 }
 
 void save(const Vec &result, string filename) {
-  ofstream f(filename.c_str());
-  if (!f) {
+  ofstream f_(filename.c_str());
+  if (!f_) {
     cerr << "Failed opening " << filename << endl;
     exit(1);
   }
-  f << setprecision(16);
+  f_ << setprecision(16);
 
   const int len = result.size();
-  for (int j = 0; j < len; j++) { f << result[j].first << " " << result[j].second << endl; }
+  for (int j = 0; j < len; j++) { f_ << result[j].first << " " << result[j].second << endl; }
 }
 
 int main(int argc, char *argv[]) {

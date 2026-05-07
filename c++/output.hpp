@@ -175,17 +175,17 @@ struct Output {
                       Stats<S> &stats,
                       const DiagInfo<S> &diag,
                       const Operators<S> &operators,
-                      const Params &P) {
+                      const Params &P_) {
     if (!Freport) return;
-    if (P.reportdiagonallast && !step.last()) return;
+    if (P_.reportdiagonallast && !step.last()) return;
     Freport << "=== Report N=" << step.ndx() << std::endl;
     for (auto &[I, eig] : diag) {
-      const size_t nmax = std::min(size_t(P.reportdiagonal), size_t(eig.getnrkept()));
+      const size_t nmax = std::min(size_t(P_.reportdiagonal), size_t(eig.getnrkept()));
       if (nmax) {
         Freport << "Sector I=" << I << std::endl;
         for (size_t n = 0; n < nmax; n++) {
-          Freport << "I=" << I << " n=" << n << " E=" << prec_output(scaled_energy(eig.values.rel_zero(n), step, stats, P), P) << " ";
-          operators.dump_diagonal_I_n(I, n, Freport, P);
+          Freport << "I=" << I << " n=" << n << " E=" << prec_output(scaled_energy(eig.values.rel_zero(n), step, stats, P_), P_) << " ";
+          operators.dump_diagonal_I_n(I, n, Freport, P_);
         }
       }
     }

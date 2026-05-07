@@ -166,9 +166,9 @@ class Resample
               throw std::runtime_error("Failed to initialize GSL spline: "s + gsl_strerror(status));
         }
 
-        void resample(std::vector<std::pair<T, T>> &grid)
+        void resample(std::vector<std::pair<T, T>> &grid_)
         {
-            for (auto & i : grid) i.second = gsl_spline_eval(spline.get(), i.first, acc.get());
+            for (auto & i : grid_) i.second = gsl_spline_eval(spline.get(), i.first, acc.get());
         }
 };
 

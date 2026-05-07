@@ -39,8 +39,8 @@ class Timing {
      tp end  = now();
      return end - timer;
    }
-   void add(const std::string &timer) {
-     t[timer] += stop();
+   void add(const std::string &timer_) {
+     t[timer_] += stop();
    }
    [[nodiscard]] dp total() const {
      const tp end_time = now();
