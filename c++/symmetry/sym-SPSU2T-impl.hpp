@@ -43,7 +43,7 @@ class SymmetrySPSU2T : public Symmetry<SC> {
     check_diff(Ip, I1, "T", 0);
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
-    my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
+    my_assert((std::abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
@@ -51,13 +51,13 @@ class SymmetrySPSU2T : public Symmetry<SC> {
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
-    my_assert(abs(ss1 - ssp) == 1);
+    my_assert(std::abs(ss1 - ssp) == 1);
     double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
     const int tp = Ip.get("T");
     const int t1 = I1.get("T");
     const int ttp    = 2 * tp + 1;
     const int tt1    = 2 * t1 + 1;
-    my_assert(abs(ttp - tt1) == 2 || ttp == tt1);
+    my_assert(std::abs(ttp - tt1) == 2 || ttp == tt1);
     double angmomfactor = switch3(tt1, ttp + 2, 1. + (ttp - 1) / 3., ttp, ttp / 3., ttp - 2, (-2. + ttp) / 3.);
     return spinfactor * angmomfactor;
   }

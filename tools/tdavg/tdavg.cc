@@ -289,7 +289,7 @@ double LinInt::operator()(double x) {
 
 const double EPS = 1e-6;
 
-inline bool eq_approx(double a, double b) { return abs((a - b) / a) < EPS; }
+inline bool eq_approx(double a, double b) { return std::abs((a - b) / a) < EPS; }
 
 dvec merge_meshes() {
   dvec mesh;

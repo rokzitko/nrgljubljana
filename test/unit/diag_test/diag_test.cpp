@@ -81,10 +81,10 @@ TEST(Diag, dsyev) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), 1.0);
     EXPECT_DOUBLE_EQ(res.vec(0,1), 0.0);
     EXPECT_DOUBLE_EQ(res.vec(1,0), 0.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), 1.0);
   }
   {
     Matrix_traits<double> m(2,2); // Sigma_X
@@ -95,11 +95,11 @@ TEST(Diag, dsyev) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), sq2);
     EXPECT_DOUBLE_EQ(res.vec(0,0)*res.vec(0,1), -0.5);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), sq2);
     EXPECT_DOUBLE_EQ(res.vec(1,0)*res.vec(1,1), +0.5);
   }
 }
@@ -114,10 +114,10 @@ TEST(Diag, dsyevr) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), 1.0);
     EXPECT_DOUBLE_EQ(res.vec(0,1), 0.0);
     EXPECT_DOUBLE_EQ(res.vec(1,0), 0.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), 1.0);
   }
   {
     Matrix_traits<double> m(2,2); // Sigma_X
@@ -128,11 +128,11 @@ TEST(Diag, dsyevr) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), sq2);
     EXPECT_DOUBLE_EQ(res.vec(0,0)*res.vec(0,1), -0.5);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), sq2);
     EXPECT_DOUBLE_EQ(res.vec(1,0)*res.vec(1,1), +0.5);
   }
 }
@@ -147,10 +147,10 @@ TEST(Diag, dsyevd) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), 1.0);
     EXPECT_DOUBLE_EQ(res.vec(0,1), 0.0);
     EXPECT_DOUBLE_EQ(res.vec(1,0), 0.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), 1.0);
   }
   {
     Matrix_traits<double> m(2,2); // Sigma_X
@@ -161,11 +161,11 @@ TEST(Diag, dsyevd) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), sq2);
     EXPECT_DOUBLE_EQ(res.vec(0,0)*res.vec(0,1), -0.5);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), sq2);
     EXPECT_DOUBLE_EQ(res.vec(1,0)*res.vec(1,1), +0.5);
   }
 }
@@ -180,10 +180,10 @@ TEST(Diag, zheev) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), 1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), 0.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), 0.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), 0.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), 0.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), 1.0);
   }
   {
     Matrix_traits<std::complex<double>> m(2,2); // Sigma_X
@@ -194,11 +194,11 @@ TEST(Diag, zheev) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(0,0)*res.vec(0,1)).real(), -0.5);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(1,0)*res.vec(1,1)).real(), +0.5);
   }
   {
@@ -210,11 +210,11 @@ TEST(Diag, zheev) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(0,0)*res.vec(0,1)).imag(), -0.5);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(1,0)*res.vec(1,1)).imag(), +0.5);
   }
 }
@@ -229,10 +229,10 @@ TEST(Diag, zheevr) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), 1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), 0.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), 0.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), 0.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), 0.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), 1.0);
   }
   {
     Matrix_traits<std::complex<double>> m(2,2); // Sigma_X
@@ -243,11 +243,11 @@ TEST(Diag, zheevr) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(0,0)*res.vec(0,1)).real(), -0.5);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(1,0)*res.vec(1,1)).real(), +0.5);
   }
   {
@@ -259,11 +259,11 @@ TEST(Diag, zheevr) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(0,0)*res.vec(0,1)).imag(), -0.5);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(1,0)*res.vec(1,1)).imag(), +0.5);
   }
 }
@@ -280,10 +280,10 @@ TEST(Diag, diagonalise_complex) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), 1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), 0.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), 0.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), 1.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), 0.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), 0.0);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), 1.0);
   }
   {
     Matrix_traits<std::complex<double>> m(2,2); // Sigma_X
@@ -294,11 +294,11 @@ TEST(Diag, diagonalise_complex) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(0,0)*res.vec(0,1)).real(), -0.5);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(1,0)*res.vec(1,1)).real(), +0.5);
   }
   {
@@ -310,11 +310,11 @@ TEST(Diag, diagonalise_complex) {
     EXPECT_EQ(res.getdim(), 2);
     EXPECT_DOUBLE_EQ(res.val[0], -1.0);
     EXPECT_DOUBLE_EQ(res.val[1], +1.0);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(0,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(0,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(0,0)*res.vec(0,1)).imag(), -0.5);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,0)), sq2);
-    EXPECT_DOUBLE_EQ(abs(res.vec(1,1)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,0)), sq2);
+    EXPECT_DOUBLE_EQ(std::abs(res.vec(1,1)), sq2);
     EXPECT_DOUBLE_EQ((res.vec(1,0)*res.vec(1,1)).imag(), +0.5);
   }
 }
@@ -323,4 +323,3 @@ int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS(); // NOLINT
 }
-

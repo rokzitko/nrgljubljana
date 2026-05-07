@@ -57,7 +57,7 @@ class SymmetryQS : public Symmetry<SC> {
      check_diff(Ip, I1, "Q", 0);
      const auto ssp = Ip.get("SS");
      const auto ss1 = I1.get("SS");
-     my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
+     my_assert((std::abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
    }
 
@@ -65,7 +65,7 @@ class SymmetryQS : public Symmetry<SC> {
      check_diff(Ip, I1, "Q", 1);
      const auto ssp = Ip.get("SS");
      const auto ss1 = I1.get("SS");
-     my_assert(abs(ss1 - ssp) == 1);
+     my_assert(std::abs(ss1 - ssp) == 1);
      return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
    }
 

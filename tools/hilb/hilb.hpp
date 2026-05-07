@@ -177,7 +177,7 @@ inline auto bandwidth(const std::vector<double> &X) {
   assert(std::is_sorted(X.begin(), X.end()));
   const auto Xmin = X.front();
   const auto Xmax = X.back();
-  return std::max(abs(Xmin), abs(Xmax));
+  return std::max(std::abs(Xmin), std::abs(Xmax));
 }
 
 /**
@@ -202,8 +202,8 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
   // perform the integration after a change of variables. calcB routine directly evaluates the defining
   // integral of the Hilbert transform. Real and imaginary parts are determined in separate steps.
   auto calcA = [&integr, x, y, B](auto f3p, auto f3m, auto d) -> double {
-    const double W1 = (x - B) / abs(y); // Rescaled integration limits. Only the absolute value of y matters here.
-    const double W2 = (B + x) / abs(y);
+    const double W1 = (x - B) / std::abs(y); // Rescaled integration limits. Only the absolute value of y matters here.
+    const double W2 = (B + x) / std::abs(y);
     assert(W2 >= W1);
     // Determine the integration limits depending on the values of (x,y).
     double lim1down = 1.0, lim1up = -1.0, lim2down = 1.0, lim2up = -1.0;
@@ -233,7 +233,7 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
   };
 
   auto calcB = [&integr, B](auto f0) -> double { return integr(f0, -B, B); }; // direct integration
-  auto calc  = [y, lim_direct, calcA, calcB](auto f3p, auto f3m, auto d, auto f0) { return (abs(y) < lim_direct ? calcA(f3p, f3m, d) : calcB(f0)); };
+  auto calc  = [y, lim_direct, calcA, calcB](auto f3p, auto f3m, auto d, auto f0) { return (std::abs(y) < lim_direct ? calcA(f3p, f3m, d) : calcB(f0)); };
 
   // Re part of rho(omega)/(z-omega)
   auto ref0 = [x, y, &rhor, &rhoi](double omega) -> double { return (rhor(omega) * (x - omega) + rhoi(omega) * y) / (sqr(y) + sqr(x - omega)); };
@@ -245,7 +245,7 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
   auto ref1 = [x, y, &rhor, &rhoi](double omega) -> double {
     return ((rhor(omega) - rhor(x)) * (x - omega) + (rhoi(omega) - rhoi(x)) * (y)) / (sqr(y) + sqr(x - omega));
   };
-  auto ref2  = [x, y, ref1](double W) -> double { return abs(y) * ref1(abs(y) * W + x); };
+  auto ref2  = [x, y, ref1](double W) -> double { return std::abs(y) * ref1(std::abs(y) * W + x); };
   auto ref3p = [ref2](double r) -> double { return ref2(exp(r)) * exp(r); };
   auto ref3m = [ref2](double r) -> double { return ref2(-exp(r)) * exp(r); };
   auto red   = rhor(x) * reQ(x, y, B) - rhoi(x) * imQ(x, y, B);
@@ -254,7 +254,7 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
   auto imf1 = [x, y, &rhor, &rhoi](double omega) -> double {
     return ((rhor(omega) - rhor(x)) * (-y) + (rhoi(omega) - rhoi(x)) * (x - omega)) / (sqr(y) + sqr(x - omega));
   };
-  auto imf2  = [x, y, imf1](double W) -> double { return abs(y) * imf1(abs(y) * W + x); };
+  auto imf2  = [x, y, imf1](double W) -> double { return std::abs(y) * imf1(std::abs(y) * W + x); };
   auto imf3p = [imf2](double r) -> double { return imf2(exp(r)) * exp(r); };
   auto imf3m = [imf2](double r) -> double { return imf2(-exp(r)) * exp(r); };
   auto imd   = rhor(x) * imQ(x, y, B) + rhoi(x) * reQ(x, y, B);
@@ -289,7 +289,7 @@ class Hilb {
   double shifty = 0.0;
 
   auto hilbert(const double x, const double y) {
-    auto Bethe_fnc = [this](const auto w) { return abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(w * scale)) : 0.0; };
+    auto Bethe_fnc = [this](const auto w) { return std::abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(w * scale)) : 0.0; };
     auto zero_fnc = []([[maybe_unused]] const auto w) { return 0.0; };
     const auto z = std::complex(x + shiftx, y + shifty); // shift here!
     return tabulated ? hilbert_transform(Xpts, Ypts, Ipts, z) : hilbert_transform(Bethe_fnc, zero_fnc, B, z);
@@ -323,7 +323,7 @@ class Hilb {
       Fr >> label1 >> x;
       Fi >> label2 >> y;
       if (!Fr.fail() && !Fi.fail()) {
-        if (abs(label1 - label2) > 1e-6) throw std::runtime_error("Frequency mismatch in do_hilb()");
+        if (std::abs(label1 - label2) > 1e-6) throw std::runtime_error("Frequency mismatch in do_hilb()");
         // Ensure ImSigma is negative
         const double CLIPPING = 1e-8;
         y                     = std::min(y, -CLIPPING);

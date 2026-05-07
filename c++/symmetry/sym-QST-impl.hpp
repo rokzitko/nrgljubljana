@@ -45,7 +45,7 @@ class SymmetryQST : public Symmetry<SC> {
     check_diff(Ip, I1, "T", 0);
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
-    my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
+    my_assert((std::abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
@@ -56,7 +56,7 @@ class SymmetryQST : public Symmetry<SC> {
     const int t1 = I1.get("T");
     int ttp        = 2 * tp + 1;
     int tt1        = 2 * t1 + 1;
-    my_assert((abs(tt1 - ttp) == 2 || tt1 == ttp));
+    my_assert((std::abs(tt1 - ttp) == 2 || tt1 == ttp));
     return switch3(tt1, ttp + 2, 1. + (ttp - 1) / 3., ttp, ttp / 3., ttp - 2, (-2. + ttp) / 3.);
   }
 
@@ -66,13 +66,13 @@ class SymmetryQST : public Symmetry<SC> {
     check_diff(Ip, I1, "Q", 1);
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
-    my_assert(abs(ss1 - ssp) == 1);
+    my_assert(std::abs(ss1 - ssp) == 1);
     double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
     const int tp = Ip.get("T");
     const int t1 = I1.get("T");
     const int ttp    = 2 * tp + 1;
     const int tt1    = 2 * t1 + 1;
-    my_assert(abs(ttp - tt1) == 2 || ttp == tt1);
+    my_assert(std::abs(ttp - tt1) == 2 || ttp == tt1);
     double angmomfactor;
     if (tt1 == 1 && ttp == 1) {
       angmomfactor = 0; // special case, two singlets don't couple
@@ -124,7 +124,7 @@ bool qst_exception(const unsigned int i, const unsigned int j, const Invar &I) {
 }
 
 #define offdiag_qst(i, j, ch, fnr, factor, h, qq, In, I, opch)                          \
-   if (qq.offdiag_contributes(i, j) && !qst_exception(i, j, I) && abs(factor) > 0.0)    \
+   if (qq.offdiag_contributes(i, j) && !qst_exception(i, j, I) && std::abs(factor) > 0.0)    \
         this->offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch);
 
 // We take the coefficients of the first channel (indexed as 0), because all three set are exactly the same due to

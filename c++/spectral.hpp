@@ -47,7 +47,7 @@ inline double BR_L(double e, double ept, double alpha) {
   if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
   if (ept == 0.0) return 0.0;
   const double gamma = alpha/4.0;
-  return exp(-pow(log(e / ept) / alpha - gamma, 2)) / (alpha * abs(e) * M_SQRTPI);
+  return exp(-pow(log(e / ept) / alpha - gamma, 2)) / (alpha * std::abs(e) * M_SQRTPI);
 }
 
 // Normalized to 1, width omega0. The kernel is symmetric in both
@@ -59,13 +59,13 @@ inline double BR_G(double e, double ept, double omega0) { return exp(-pow((e - e
 inline double BR_NEW(double e, double ept, double alpha, double omega0) {
   double part_l = BR_L(e, ept, alpha);
   // Most of the time we only need to compute part_l (loggaussian)
-  if (abs(e) > omega0) return part_l;
+  if (std::abs(e) > omega0) return part_l;
   // Note: this is DIFFERENT from the broadening kernel proposed by
   // by Weichselbaum et al. This BR_h is a function of 'e', not
   // of 'ept'! This breaks the normalization at finite temperatures.
   // On the other hand, it gives nicer spectra when used in conjunction
   // with the self-energy trick.
-  double BR_h = exp(-pow(log(abs(e) / omega0) / alpha, 2));
+  double BR_h = exp(-pow(log(std::abs(e) / omega0) / alpha, 2));
   my_assert(BR_h >= 0.0 && BR_h <= 1.0);
   return part_l * BR_h + BR_G(e, ept, omega0) * (1.0 - BR_h);
 }

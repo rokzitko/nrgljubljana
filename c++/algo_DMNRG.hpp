@@ -47,7 +47,7 @@ class Algo_DMNRG : public Algo<S> {
       for (const auto rj: diagI1.kept())
         for (const auto rm: diagIp.kept()) {
           const auto energy = diagI1.values.abs_zero(rj) - diagIp.values.abs_zero(rm);
-          if (abs(energy) < Emin || abs(energy) > Emax) continue;
+          if (std::abs(energy) < Emin || std::abs(energy) > Emax) continue;
           const auto weightA = sumA(rj, rm) * conj_me(op1_kept(rj, rm));
           const auto weightB = sumB(rj, rm) * op2_kept(rj, rm);
           cb->add(std::make_pair(energy, weightA + (-sign) * weightB), factor);
@@ -92,7 +92,7 @@ class Algo_DMNRGmats : public Algo<S> {
        const Matrix sumB = rhoNI1_kept * op1_kept.conjugate();
 
        const auto term = [this](const auto energy, const auto weightA, const auto weightB, const auto n) {
-         if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
+         if (gt == gf_type::fermionic || n>0 || std::abs(energy) > WEIGHT_TOL) // [[likely]]
            return (weightA + (-sign) * weightB) / (ww(n, gt, P.T)*1i - energy);
          else // bosonic w=0 && Em=Ej case
            return -weightA / t_weight(P.T);

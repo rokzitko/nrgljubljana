@@ -202,7 +202,7 @@ void handle_floquet_postprocess(const Step &step, Operators<S> &operators, Stats
       const auto m = mnew[Twoinvar(I, I)](i, i);
       const auto mOmega = std::real(m) * Omega;
       const auto e0 = e - mOmega;
-      const auto x = e0 + abs(mOmega); // second term: penalize high-m states
+      const auto x = e0 + std::abs(mOmega); // second term: penalize high-m states
       nrglog('2', "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x);
       nrglog('3', "rs i=" << i << " e=" << e*scale << " m=" << m << " e0=e-m*Omega=" << e0*scale << " x=" << x*scale);
       eig.values.set_crit(i, x);

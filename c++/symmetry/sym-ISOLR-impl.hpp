@@ -33,10 +33,10 @@ class SymmetryISOLRcommon : public SymLR<SC> {
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
-    my_assert(abs(ss1 - ssp) == 1);
+    my_assert(std::abs(ss1 - ssp) == 1);
     const int iip = Ip.get("II");
     const int ii1 = I1.get("II");
-    my_assert(abs(ii1 - iip) == 1);
+    my_assert(std::abs(ii1 - iip) == 1);
     const double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
     const double isofactor  = (ii1 == iip + 1 ? ISO(iip) + 1.0 : ISO(iip));
     return spinfactor * isofactor;

@@ -103,7 +103,7 @@ class Adapt {
        }
        // Calculate a second-order result using Heun's formula and estimate the error in y.
        const auto dy_heun = heun_step(dx, rhs);
-       error          = abs(dy_heun - dy);
+       error          = std::abs(dy_heun - dy);
        max_error      = std::max(max_error, error); // update max_error
        // Check the flags for k2_heun evaluation.
        if (rho.flag()) {
@@ -153,7 +153,7 @@ class Adapt {
         cnt++;
         if (cnt > max_cnt)
           throw std::runtime_error("Number of subdivisions exceeded. max_subdiv should be increased.");
-      } while (abs(x-xf) > max_diff_x); // x is a global variable, updated in timestep()
+      } while (std::abs(x-xf) > max_diff_x); // x is a global variable, updated in timestep()
     }
 
    // returns the g(xmax)/[A/rho(0)] ratio and vecg
@@ -192,12 +192,12 @@ class Adapt {
    }
    Vec calc_g() {
      const auto [ratio1, vecg1] = shoot_g();
-     if (abs(ratio1 - 1.0) < convergence_eps)  // We're done
+     if (std::abs(ratio1 - 1.0) < convergence_eps)  // We're done
        return vecg1;
      // Otherwise more effort is required...
      A = ratio1 > 1.0 ? A * factor0 : A / factor0;
      const auto [ratio2, vecg2] = shoot_g();
-     if (abs(ratio2 - 1.0) < convergence_eps)  // We're done
+     if (std::abs(ratio2 - 1.0) < convergence_eps)  // We're done
        return vecg2;
      // Refine using secant method
      double x0 = intA;
@@ -211,7 +211,7 @@ class Adapt {
        A                          = xnew;
        const auto [rationew,vecg] = shoot_g();
        ynew                       = rationew - 1.0;
-       if (abs(rationew-1) < convergence_eps)
+       if (std::abs(rationew-1) < convergence_eps)
          return vecg;
        // Shift
        x0 = x1;
@@ -342,11 +342,11 @@ class Adapt {
        int_with_to(dx, x_st, [this](const auto x, const auto y){ return rhs_F(x, y); }, true); // rhs_F !!
        save(OUTF);
        if (x > xfine) { dx = dx_fast; }
-       if (abs(y) > max_abs) {
+       if (std::abs(y) > max_abs) {
          std::cout<< "***** y=" << y << " |y|>max_abs=" << max_abs << std::endl;
          std::cout<< "***** Terminating!" << std::endl;
        }
-     } while (x < xmax && abs(y) <= max_abs);
+     } while (x < xmax && std::abs(y) <= max_abs);
    }
    void run() {
      load_init_rho();

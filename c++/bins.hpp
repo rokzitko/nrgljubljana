@@ -101,7 +101,7 @@ void Bins<S>::loggrid_std() {
 // Unbiased assignment of the spectral weight to bins.
 template<scalar S>
 inline void Bins<S>::add(const double energy, const t_weight weight) {
-  if (abs(weight) < P.discard_immediately * energy) return;
+  if (std::abs(weight) < P.discard_immediately * energy) return;
   if (P.accumulation > 0.0)
     add_acc(energy, weight);
   else
@@ -177,10 +177,10 @@ void Bins<S>::trim() {
     const auto e_next = orig[i+1].first;
     my_assert(e_next >= e);  // increasing!
     const auto e_width = e_next - e;
-    if (abs(w) >= P.discard_trim * e_width)
+    if (std::abs(w) >= P.discard_trim * e_width)
       bins.push_back(orig[i]);
     else
-      discarded_weight_abs += abs(w);
+      discarded_weight_abs += std::abs(w);
   }
   // Always keep the last one.. This ensures that we keep information about the energy range on which the
   // calculations has been performed.

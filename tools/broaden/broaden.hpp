@@ -65,7 +65,7 @@ void convolve(const std::vector<S> &mesh, std::vector<T> &a, const double sigma,
   a[nr_mesh - 1] = b[nr_mesh - 1];
   for (auto i = 1; i < nr_mesh - 1; i++) {
     const auto x = mesh[i];
-    if (abs(x) < cutoff_ratio * sigma) {
+    if (std::abs(x) < cutoff_ratio * sigma) {
       auto sum = 0.0;
       auto sum_kernel = 0.0;
       for (auto j = 1; j < nr_mesh - 1; j++) {
@@ -377,8 +377,8 @@ class Broaden {
 
    void filter() {
      for (auto j = 0; j < nr_spec; j++) {
-       if (abs(vfreq[j]) < filterlow) { vspec[j] = 0.0; }
-       if (abs(vfreq[j]) > filterhigh) { vspec[j] = 0.0; }
+       if (std::abs(vfreq[j]) < filterlow) { vspec[j] = 0.0; }
+       if (std::abs(vfreq[j]) > filterhigh) { vspec[j] = 0.0; }
      }
      for (auto j = 0; j < nr_spec; j++) {
        if (!keeppositive && vfreq[j] >= 0) { vspec[j] = 0.0; }
@@ -425,7 +425,7 @@ class Broaden {
      if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
      if (ept == 0.0) return 0.0;
      const auto gamma = alpha / 4;
-     return exp(-sqr(log(e / ept) / alpha - gamma)) / (alpha * abs(e) * m_SQRTPI);
+     return exp(-sqr(log(e / ept) / alpha - gamma)) / (alpha * std::abs(e) * m_SQRTPI);
    }
 
    // As above, with support for a shifted accumulation point
@@ -445,7 +445,7 @@ class Broaden {
      if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
      if (ept == 0.0) return 0.0;
      const auto gamma = alpha / 4;
-     return exp(-sqr(log(e / ept) / alpha - gamma)) / (alpha * abs(e) * m_SQRTPI);
+     return exp(-sqr(log(e / ept) / alpha - gamma)) / (alpha * std::abs(e) * m_SQRTPI);
    }
 
 #define BR_L BR_L_acc
@@ -461,7 +461,7 @@ class Broaden {
    }
 
    inline auto BR_h0(const double x) {
-     const auto absx = abs(x);
+     const auto absx = std::abs(x);
      return absx > omega0 ? 1.0 : exp(-sqr(log(absx / omega0) / alpha));
    }
 

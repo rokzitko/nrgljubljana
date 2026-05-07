@@ -131,7 +131,7 @@ void SpectrumRealFreq<S>::mergeNN2half(Bins<S> &fullspec, const Bins<S> &cs, con
 
 template<scalar S>
 void SpectrumRealFreq<S>::weight_report(const double imag_tolerance) {
-  const auto fmt = [imag_tolerance](const auto x) -> std::string { return abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
+  const auto fmt = [imag_tolerance](const auto x) -> std::string { return std::abs(x.imag()) < imag_tolerance ? to_string(x.real()) : to_string(x); };
   const auto twneg = fsneg.total_weight();
   const auto twpos = fspos.total_weight();
   std::cout << std::endl << "pos=" << fmt(twpos) << " neg=" << fmt(twneg) << " sum= " << fmt(twpos + twneg) << std::endl;

@@ -224,7 +224,7 @@ class Algo_FDMmats : public Algo<S> {
         return std::make_tuple(energy, weightA, weightB);
       };
       const auto term1 = [T, this, &mats_freq](const auto energy, const auto weightA, const auto weightB, const auto n) -> t_weight {
-         if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL)
+         if (gt == gf_type::fermionic || n>0 || std::abs(energy) > WEIGHT_TOL)
            return (weightA + weightB) / (mats_freq[n] - energy);
          else // bosonic w=0 && Ei=Ej case
            return -weightA/T;

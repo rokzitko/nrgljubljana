@@ -336,7 +336,7 @@ void initial_b(vec &b) {
 // delta peak, the broadened function is still normalized to one since
 // alpha is a constant [for that particular contribution].
 double bfnc(double E, double alpha, double omega) {
-  const double div = alpha * abs(E) * sqrt(M_PI);
+  const double div = alpha * std::abs(E) * sqrt(M_PI);
 
   const double gamma = alpha / 4.0;
   const double ln    = log(E / omega);
@@ -365,7 +365,7 @@ void refine_mesh(vec &mesh, const vec &a) {
     const double deriv       = (a[i - 2] - a[i - 1]) / (mesh[i - 2] - mesh[i - 1]);
     const double y_predicted = a[i - 1] + deriv * (mesh[i] - mesh[i - 1]);
     const double y           = a[i];
-    const double error_ratio = abs((y - y_predicted) / y);
+    const double error_ratio = std::abs((y - y_predicted) / y);
     if (error_ratio > dyn_mesh) {
       // add one additional mesh point!
       // geometric average!
@@ -387,7 +387,7 @@ void refine_mesh(vec &mesh, const vec &a) {
     const double deriv       = (a[i + 2] - a[i + 1]) / (mesh[i + 2] - mesh[i + 1]);
     const double y_predicted = a[i + 1] + deriv * (mesh[i] - mesh[i + 1]);
     const double y           = a[i];
-    const double error_ratio = abs((y - y_predicted) / y);
+    const double error_ratio = std::abs((y - y_predicted) / y);
     if (error_ratio > dyn_mesh) {
       double newpt = +sqrt(mesh[i] * mesh[i + 1]);
       if (mesh[i] < newpt && newpt < mesh[i + 1]) newmesh.push_back(newpt);
@@ -440,7 +440,7 @@ void save(const string filename0, const mapdd &m, int iter = 0, double trim = 0.
   }
 
   for (auto I : m) {
-    if (trim != 0.0 && abs(I.first) < trim) { continue; }
+    if (trim != 0.0 && std::abs(I.first) < trim) { continue; }
     F << I.first << " " << I.second << endl;
   }
 }
@@ -461,7 +461,7 @@ void save(const string filename0, const vec &mesh, const vec &data, int iter = 0
   for (int i = 0; i < nr; i++) {
     const double x = mesh[i];
     const double y = data[i];
-    if (trim != 0.0 && abs(x) < trim) { continue; }
+    if (trim != 0.0 && std::abs(x) < trim) { continue; }
     if (std::isfinite(data[i])) {
       F << x << " " << y << endl;
     } else {
@@ -476,8 +476,8 @@ void calc_b(const vec &logd1, const vec &logd2, vec &bb) {
   bb.resize(n);
 
   for (unsigned int i = 0; i < n; i++) {
-    const double part1 = 1.0 / (q + abs(logd1[i]));
-    const double part2 = 1.0 / (q + abs(logd2[i]));
+    const double part1 = 1.0 / (q + std::abs(logd1[i]));
+    const double part2 = 1.0 / (q + std::abs(logd2[i]));
     const double avg   = q * (part1 + part2) / 2.0;
     bb[i]              = b0 * avg;
   }
@@ -505,7 +505,7 @@ void calc_deriv(const vec &inta, vec &deriv) {
       if (veryverbose) { cout << "Warning: log1 not finite at w0=" << w0 << endl; }
     }
 
-    const double log2 = log(abs(w1 / w0));
+    const double log2 = log(std::abs(w1 / w0));
     assert(std::isfinite(log2));
 
     const double d = log1 / log2;

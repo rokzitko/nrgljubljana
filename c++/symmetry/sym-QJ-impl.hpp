@@ -56,7 +56,7 @@ class SymmetryQJ : public Symmetry<SC> {
     check_diff(Ip, I1, "Q", 1);
     const int jjp = Ip.get("JJ");
     const int jj1 = I1.get("JJ");
-    my_assert(abs(jj1 - jjp) == 1);
+    my_assert(std::abs(jj1 - jjp) == 1);
     return (jj1 == jjp + 1 ? S(jjp) + 1.0 : S(jjp));
   }
 
@@ -65,7 +65,7 @@ class SymmetryQJ : public Symmetry<SC> {
     check_diff(Ip, I1, "Q", 1);
     const int jjp = Ip.get("JJ");
     const int jj1 = I1.get("JJ");
-    my_assert(abs(jj1 - jjp) == 1 || abs(jj1 - jjp) == 3);
+    my_assert(std::abs(jj1 - jjp) == 1 || std::abs(jj1 - jjp) == 3);
     if (jj1 == jjp + 3) return S(jjp) / 2.0 + 1.0;
     if (jj1 == jjp + 1) {
       my_assert(jjp >= 2); // singlet in kvadruplet se ne moreta sklopiti v dublet

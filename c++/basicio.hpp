@@ -102,7 +102,7 @@ inline std::string prec3(const double x) { return prec(x, 3); }
 
 template <typename T>
 inline bool negligible_imag_part(const std::complex<T> &z, const double output_imag_eps = 1e-13) {
-  return abs(z.imag()) < abs(z.real()) * output_imag_eps;
+  return std::abs(z.imag()) < std::abs(z.real()) * output_imag_eps;
 }
 
 inline std::ofstream safe_open(const std::string &filename, const bool binary = false) {

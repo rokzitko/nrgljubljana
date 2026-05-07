@@ -52,7 +52,7 @@ inline std::string prec_output(const std::complex<double> z, const Params &P) { 
 inline void outputxy(std::ostream &F, const double x, const std::complex<double> z, const bool imagpart, const double clip_tol_imag = 1e-10) {
   const auto [r, i] = reim(z);
   F << x << " " << r;
-  if (imagpart) F << " " << (abs(i)>abs(r)*clip_tol_imag ? i : 0);
+  if (imagpart) F << " " << (std::abs(i)>std::abs(r)*clip_tol_imag ? i : 0);
   F << std::endl;
 }
 

@@ -285,7 +285,7 @@ void tables() {
 
   // A large deviation probably indicates a serious problem!
   const double CHECKSUM_LIMIT = 1e-10;
-  if (abs(1 - checksum) > CHECKSUM_LIMIT) {
+  if (std::abs(1 - checksum) > CHECKSUM_LIMIT) {
     cerr << "Checksum test failed." << endl;
     exit(1);
   }

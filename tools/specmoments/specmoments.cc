@@ -215,8 +215,8 @@ void merge() {
 
 void filter() {
   for (unsigned int j = 0; j < nr_spec; j++) {
-    if (abs(vfreq[j]) < filterlow) vspec[j] = 0.0;
-    if (abs(vfreq[j]) > filterhigh) vspec[j] = 0.0;
+    if (std::abs(vfreq[j]) < filterlow) vspec[j] = 0.0;
+    if (std::abs(vfreq[j]) > filterhigh) vspec[j] = 0.0;
     if (vfreq[j] < 0.0 && posonly) vspec[j] = 0.0;
     if (vfreq[j] > 0.0 && negonly) vspec[j] = 0.0;
   }

@@ -210,7 +210,7 @@ class Vectors {
        double sum = 0.0;
        for (size_t j = 0; j < dim(); j++) {
          F << m(i,j) << (j != dim()-1 ? ", " : "");
-         sum += pow(abs(m(i,j)),2);
+          sum += pow(std::abs(m(i,j)),2);
        }
        const double diff = sum-1.0;
        F << "] norm-1=" << diff << std::endl;

@@ -30,7 +30,7 @@ using cmpl = std::complex<double>;
 // This is important, for example, for triplet operators, which are zero when evaluated between two singlet states.
 // Arguments ss1, ss2, ss3 are spin multiplicities. Returns true if the inequality is satisfied, false otherwise.
 inline auto su2_triangle_inequality(const int ss1, const int ss2, const int ss3) {
-  return (abs(ss1-ss2) <= ss3-1) && (abs(ss2-ss3) <= ss1-1) && (abs(ss3-ss1) <= ss2-1);
+  return (std::abs(ss1-ss2) <= ss3-1) && (std::abs(ss2-ss3) <= ss1-1) && (std::abs(ss3-ss1) <= ss2-1);
 }
 
 inline auto u1_equality(const int q1, const int q2, const int q3) { return q1 == q2 + q3; }     // Equality for U(1) symmetry
@@ -325,7 +325,7 @@ class SymFieldLR : public Symmetry<S> {
 inline void check_abs_diff(const Invar &Ip, const Invar &I1, const std::string &what, const int diff) {
   const auto a = Ip.get(what);
   const auto b = I1.get(what);
-  my_assert(abs(b - a) == diff);
+  my_assert(std::abs(b - a) == diff);
 }
 
 inline void check_diff(const Invar &Ip, const Invar &I1, const std::string &what, const int diff) {

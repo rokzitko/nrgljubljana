@@ -48,14 +48,14 @@ class SymmetryDBLISOSZ : public SymField<SC> {
     const int ii11 = I1.get("II1");
     const int ii2p = Ip.get("II2");
     const int ii21 = I1.get("II2");
-    if (abs(ii11 - ii1p) == 1) {
+    if (std::abs(ii11 - ii1p) == 1) {
       const double isofactor1 = (ii11 == ii1p + 1 ? ISO(ii1p) + 1.0 : ISO(ii1p));
       my_assert(ii2p == ii21);
       my_assert(ii2p >= 1);
       const double isofactor2 = ii2p; // multiplicity wrt 2nd isospin quantum number
       return isofactor1 * isofactor2;
     }
-    if (abs(ii21 - ii2p) == 1) {
+    if (std::abs(ii21 - ii2p) == 1) {
       const double isofactor1 = (ii21 == ii2p + 1 ? ISO(ii2p) + 1.0 : ISO(ii2p));
       my_assert(ii1p == ii11);
       my_assert(ii1p >= 1);

@@ -34,7 +34,7 @@ class SymmetrySPSU2C3 : public SymC3<SC> {
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
-    my_assert((abs(ss1 - ssp) == 2 || ss1 == ssp));
+    my_assert((std::abs(ss1 - ssp) == 2 || ss1 == ssp));
     return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 

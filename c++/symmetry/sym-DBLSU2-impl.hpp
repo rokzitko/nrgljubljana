@@ -32,7 +32,7 @@ class SymmetryDBLSU2 : public Symmetry<SC> {
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const int ii1p = Ip.get("II1");
     const int ii11 = I1.get("II1");
-    my_assert(abs(ii11 - ii1p) == 1);
+    my_assert(std::abs(ii11 - ii1p) == 1);
     const double isofactor = (ii11 == ii1p + 1 ? ISO(ii1p) + 1.0 : ISO(ii1p));
     return isofactor;
   }

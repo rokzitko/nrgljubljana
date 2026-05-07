@@ -79,7 +79,7 @@ class Algo_FTmats : public Algo<S> {
         return std::make_tuple(energy, weight, zero_freq_bosonic_weight);
       };
       const auto term = [T, this](const auto energy, const auto weight, const auto zero_freq_bosonic_weight, const auto n) -> t_weight {
-        if (gt == gf_type::fermionic || n>0 || abs(energy) > WEIGHT_TOL) // [[likely]]
+        if (gt == gf_type::fermionic || n>0 || std::abs(energy) > WEIGHT_TOL) // [[likely]]
           return weight / (ww(n, gt, T)*1i - energy);
         else // bosonic w=0 && E1=Ep case
           return zero_freq_bosonic_weight;
