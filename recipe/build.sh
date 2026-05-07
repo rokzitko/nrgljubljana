@@ -40,6 +40,7 @@ positive_integer() {
 
 build_tests="$(cmake_bool "${nrgljubljana_build_tests:-OFF}")"
 test_long="$(cmake_bool "${nrgljubljana_test_long:-OFF}")"
+cmake_build_type="${nrgljubljana_cmake_build_type:-Release}"
 build_jobs="$(job_count "${nrgljubljana_build_jobs:-0}")"
 test_jobs="$(job_count "${nrgljubljana_test_jobs:-0}")"
 test_timeout="$(positive_integer "test timeout" "${nrgljubljana_test_timeout:-7200}")"
@@ -51,7 +52,7 @@ fi
 
 cmake -S . -B build -G Ninja \
   ${CMAKE_ARGS:-} \
-  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_BUILD_TYPE="${cmake_build_type}" \
   -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
   -DCMAKE_PREFIX_PATH="${PREFIX}" \
   -DCMAKE_IGNORE_PREFIX_PATH="/opt/homebrew;/usr/local" \
