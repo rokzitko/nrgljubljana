@@ -78,13 +78,85 @@ auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int moment) {
   return sumA+sumB;
 }
 
-inline constexpr double fermi_fnc(const double omega, const double T) {
-  return 1 / (1 + exp(-omega / T));
+inline constexpr double unsafe_fermi_fnc(const double omega, const double T) {
+  const auto x = omega/T;
+  return 1.0 / (1.0 + exp(-x));
 }
 
-inline constexpr double bose_fnc(const double omega, const double T) {
-  const auto d = 1.0 - exp(-omega / T);
+template <class T> T sigmoid(T x) noexcept {
+   static_assert(std::is_floating_point_v<T>);
+   // NaN propagates naturally, but this makes the intent explicit.
+   if (std::isnan(x)) {
+     return x;
+   }
+   // For sufficiently large positive x, sigmoid(x) rounds to 1 anyway.
+   // For double this threshold is about +36.7.
+   const T one_threshold = std::log(T{2} / std::numeric_limits<T>::epsilon());
+   if (x >= one_threshold) {
+     return T{1};
+   }
+   // Avoid exp(x) entering the underflow/subnormal region if traps are enabled.
+   // For double this is about -708.4.
+   const T zero_threshold = std::log(std::numeric_limits<T>::min());
+   if (x <= zero_threshold) {
+     return T{0};
+   }
+   if (x >= T{0}) {
+     const T e = std::exp(-x);
+     return T{1} / (T{1} + e);
+   } else {
+     const T e = std::exp(x);
+     return e / (T{1} + e);
+   }
+}
+
+inline double fermi_fnc(const double omega, const double T) noexcept {
+  const auto x = omega/T;
+  return sigmoid(x);
+}
+
+inline constexpr double unsafe_bose_fnc(const double omega, const double T) {
+  const auto x = omega/T;
+  const auto d = 1.0 - exp(-x);
   return d != 0.0 ? 1.0/d : std::numeric_limits<double>::quiet_NaN();
+}
+
+template <class T> T inv_one_minus_exp_neg(T x) noexcept {
+   static_assert(std::is_floating_point_v<T>);
+   const T inf = std::numeric_limits<T>::infinity();
+   if (std::isnan(x)) {
+     return x;
+   }
+   if (x == T{0}) {
+     return std::copysign(inf, x);
+   }
+   // Near the pole, the mathematical value may exceed the representable range.
+   // This avoids overflow in the final division.
+   const T pole_overflow_threshold = T{1} / std::numeric_limits<T>::max();
+   if (std::abs(x) <= pole_overflow_threshold) {
+     return std::copysign(inf, x);
+   }
+   // For sufficiently large positive x, the result rounds to 1.
+   const T one_threshold = std::log(T{2} / std::numeric_limits<T>::epsilon());
+   if (x >= one_threshold) {
+     return T{1};
+   }
+   // For sufficiently large negative x, the result is tiny and negative.
+   // Using min() avoids entering the subnormal range if traps are enabled.
+   const T zero_threshold = std::log(std::numeric_limits<T>::min());
+   if (x <= zero_threshold) {
+     return -T{0};
+   }
+   if (x > T{0}) {
+     return -T{1} / std::expm1(-x);
+   } else {
+     return std::exp(x) / std::expm1(x);
+   }
+}
+
+inline double bose_fnc(const double omega, const double T) noexcept {
+  const auto x = omega/T;
+  return inv_one_minus_exp_neg(x);
 }
 
 // Integrated spectral function with a kernel as in FDT for fermions
