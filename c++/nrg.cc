@@ -12,6 +12,25 @@
 #include "openmp.hpp"      // report_openMP() called from main()
 #include "workdir.hpp"
 
+#ifndef NRG_BUILD_CXX_COMPILER_ID
+ #define NRG_BUILD_CXX_COMPILER_ID ""
+#endif
+#ifndef NRG_BUILD_CXX_COMPILER_VERSION
+ #define NRG_BUILD_CXX_COMPILER_VERSION ""
+#endif
+#ifndef NRG_BUILD_SYSTEM_PROCESSOR
+ #define NRG_BUILD_SYSTEM_PROCESSOR ""
+#endif
+#ifndef NRG_BUILD_SYSTEM_NAME
+ #define NRG_BUILD_SYSTEM_NAME ""
+#endif
+#ifndef NRG_BUILD_SYSTEM_VERSION
+ #define NRG_BUILD_SYSTEM_VERSION ""
+#endif
+
+#define NRG_STRINGIFY_IMPL(x) #x
+#define NRG_STRINGIFY(x) NRG_STRINGIFY_IMPL(x)
+
 using namespace NRG;
 
 #ifndef NRG_HAS_ADDRESS_SANITIZER
@@ -29,6 +48,121 @@ using namespace NRG;
 #endif
 
 namespace {
+
+auto has_text(const char *value) -> bool { return value != nullptr && value[0] != '\0'; }
+
+auto fallback_compiler_name() -> const char * {
+#if defined(__INTEL_LLVM_COMPILER)
+  return "IntelLLVM";
+#elif defined(__INTEL_COMPILER)
+  return "Intel";
+#elif defined(__apple_build_version__) && defined(__clang__)
+  return "AppleClang";
+#elif defined(__clang__)
+  return "Clang";
+#elif defined(__GNUC__)
+  return "GCC";
+#elif defined(_MSC_VER)
+  return "MSVC";
+#else
+  return "unknown";
+#endif
+}
+
+auto fallback_compiler_version() -> const char * {
+#if defined(__INTEL_LLVM_COMPILER)
+  return NRG_STRINGIFY(__INTEL_LLVM_COMPILER);
+#elif defined(__INTEL_COMPILER)
+  return NRG_STRINGIFY(__INTEL_COMPILER);
+#elif defined(__clang_version__)
+  return __clang_version__;
+#elif defined(__VERSION__)
+  return __VERSION__;
+#elif defined(_MSC_FULL_VER)
+  return NRG_STRINGIFY(_MSC_FULL_VER);
+#elif defined(_MSC_VER)
+  return NRG_STRINGIFY(_MSC_VER);
+#else
+  return "";
+#endif
+}
+
+auto fallback_architecture() -> const char * {
+#if defined(__x86_64__) || defined(_M_X64)
+  return "x86_64";
+#elif defined(__i386__) || defined(_M_IX86)
+  return "x86";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+  return "aarch64";
+#elif defined(__arm__) || defined(_M_ARM)
+  return "arm";
+#elif defined(__powerpc64__) || defined(__ppc64__)
+  return "ppc64";
+#elif defined(__powerpc__) || defined(__ppc__) || defined(_M_PPC)
+  return "ppc";
+#elif defined(__riscv)
+ #if defined(__riscv_xlen) && __riscv_xlen == 64
+  return "riscv64";
+ #elif defined(__riscv_xlen) && __riscv_xlen == 32
+  return "riscv32";
+ #else
+  return "riscv";
+ #endif
+#else
+  return "unknown";
+#endif
+}
+
+auto fallback_os_name() -> const char * {
+#if defined(__linux__)
+  return "Linux";
+#elif defined(__APPLE__) && defined(__MACH__)
+  return "Darwin";
+#elif defined(_WIN32)
+  return "Windows";
+#elif defined(__FreeBSD__)
+  return "FreeBSD";
+#elif defined(__OpenBSD__)
+  return "OpenBSD";
+#elif defined(__NetBSD__)
+  return "NetBSD";
+#elif defined(__unix__)
+  return "Unix";
+#else
+  return "unknown";
+#endif
+}
+
+auto compiler_info() {
+  std::string compiler = has_text(NRG_BUILD_CXX_COMPILER_ID) ? NRG_BUILD_CXX_COMPILER_ID : fallback_compiler_name();
+  if (compiler == "GNU") compiler = "GCC";
+  const char *version = has_text(NRG_BUILD_CXX_COMPILER_VERSION) ? NRG_BUILD_CXX_COMPILER_VERSION : fallback_compiler_version();
+  if (has_text(version)) {
+    compiler += ' ';
+    compiler += version;
+  }
+  return compiler;
+}
+
+auto architecture_info() {
+  return has_text(NRG_BUILD_SYSTEM_PROCESSOR) ? std::string{NRG_BUILD_SYSTEM_PROCESSOR} : std::string{fallback_architecture()};
+}
+
+auto os_info() {
+  std::string os = has_text(NRG_BUILD_SYSTEM_NAME) ? NRG_BUILD_SYSTEM_NAME : fallback_os_name();
+  if (has_text(NRG_BUILD_SYSTEM_VERSION)) {
+    os += ' ';
+    os += NRG_BUILD_SYSTEM_VERSION;
+  }
+  return os;
+}
+
+void print_nrg_about_message() {
+  fmt::print("NRG Ljubljana - (c) rok.zitko@ijs.si\n");
+  fmt::print("Timestamp: {}\n",  __TIMESTAMP__);
+  fmt::print("Compiled on {} at {}\n", __DATE__, __TIME__);
+  fmt::print("Compiler/platform: {}; arch={}; os={}\n\n", compiler_info(), architecture_info(), os_info());
+}
 
 void configure_asan_mpi_environment()
 {
@@ -59,7 +193,7 @@ auto set_workdir(int argc, char **argv) { // not inline!
 
 int main(int argc, char **argv) {
   configure_asan_mpi_environment();
-  print_about_message();
+  print_nrg_about_message();
   boost::mpi::environment mpienv(argc, argv);
   boost::mpi::communicator mpiw;
   if (!prepare_parallel_runtime(std::cerr, mpiw.rank() == 0)) return 1;
