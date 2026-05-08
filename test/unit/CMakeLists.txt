@@ -9,11 +9,11 @@ if(GCOV)
   message(STATUS "*** gcov instrumentalization enabled")
   set(gtest_test_name "gtest_")
   add_custom_target(gcov
-                    COMMAND rm -r test/unit
-                    COMMAND make || exit 1
-                    COMMAND ctest -j2 -R gtest || echo "Test failed" || exit 1
-                    COMMAND rm -rf gcoverage
-                    COMMAND mkdir -p gcoverage
+                    COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_BINARY_DIR}/test/unit
+                    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}
+                    COMMAND ${CMAKE_CTEST_COMMAND} -j2 -R gtest --output-on-failure
+                    COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_BINARY_DIR}/gcoverage
+                    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/gcoverage
                     WORKING_DIRECTORY ${CMAKE_BINARY_DIR} )
 
   add_custom_command(TARGET gcov

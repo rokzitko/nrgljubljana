@@ -64,7 +64,7 @@ endif()
 # ---------------------------------
 # Install
 # ---------------------------------
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ COMPONENT documentation DESTINATION share/doc/nrgljubljana
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ COMPONENT documentation DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/nrgljubljana
   FILES_MATCHING
   REGEX "\\.(html|pdf|png|gif|jpg|svg|js|xsl|css|py|txt|inv|bib)$"
   PATTERN "_*"

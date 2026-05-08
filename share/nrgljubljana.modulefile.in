@@ -7,8 +7,8 @@ set     version     @PROJECT_VERSION@
 set     root        @CMAKE_INSTALL_PREFIX@
 set     git_hash    @PROJECT_GIT_HASH@
 
-set     url         "https://github.com/TRIQS/nrgljubljana"
-set     description "An example application using cpp2py and triqs."
+set     url         "https://github.com/rokzitko/nrgljubljana"
+set     description "Numerical renormalization group framework for quantum impurity problems."
 
 module-whatis   "$description"
 
@@ -27,8 +27,9 @@ setenv          NRGLJUBLJANA_ROOT      $root
 setenv          NRGLJUBLJANA_VERSION   $version
 setenv          NRGLJUBLJANA_GIT_HASH  $git_hash
 
-prepend-path    PATH                $root/bin
-prepend-path    CPLUS_INCLUDE_PATH  $root/include
-prepend-path    LIBRARY_PATH        $root/lib
-prepend-path    LD_LIBRARY_PATH     $root/lib
-prepend-path    CMAKE_PREFIX_PATH   $root/lib/cmake/nrgljubljana
+prepend-path    PATH                $root/@CMAKE_INSTALL_BINDIR@
+prepend-path    PATH                $root/@NRGLJUBLJANA_INSTALL_NRGINIT_DIR@
+prepend-path    CPLUS_INCLUDE_PATH  $root/@CMAKE_INSTALL_INCLUDEDIR@
+prepend-path    LIBRARY_PATH        $root/@CMAKE_INSTALL_LIBDIR@
+prepend-path    LD_LIBRARY_PATH     $root/@CMAKE_INSTALL_LIBDIR@
+prepend-path    CMAKE_PREFIX_PATH   $root/@CMAKE_INSTALL_LIBDIR@/cmake/nrgljubljana

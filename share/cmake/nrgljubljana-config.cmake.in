@@ -2,6 +2,8 @@
 # We provide general project information
 # and reestablish the exported CMake Targets
 
+@PACKAGE_INIT@
+
 # Multiple inclusion guard
 if(NOT NRGLJUBLJANA_FOUND)
 set(NRGLJUBLJANA_FOUND True)
@@ -14,15 +16,16 @@ set(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME @NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME@)
 set(NRGLJUBLJANA_MKL_THREADING_LAYER @NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER@)
 
 # Root of the installation
-set(NRGLJUBLJANA_ROOT  @CMAKE_INSTALL_PREFIX@)
+set(NRGLJUBLJANA_ROOT "${PACKAGE_PREFIX_DIR}")
 
 include(CMakeFindDependencyMacro)
+find_dependency(MPI REQUIRED COMPONENTS CXX)
 if(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME)
   find_dependency(OpenMP REQUIRED COMPONENTS CXX)
 endif()
 
 # Include the exported targets of this project
-include(@CMAKE_INSTALL_PREFIX@/lib/cmake/nrgljubljana/nrgljubljana-targets.cmake)
+include("${CMAKE_CURRENT_LIST_DIR}/nrgljubljana-targets.cmake")
 
 message(STATUS "Found nrgljubljana-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@")
 

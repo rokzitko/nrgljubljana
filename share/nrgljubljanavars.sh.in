@@ -1,10 +1,34 @@
 # Source this in your environment.
 
-export NRGLJUBLJANA_ROOT=@CMAKE_INSTALL_PREFIX@
+_nrgljubljana_root="${NRGLJUBLJANA_ROOT:-}"
+if [ -z "${_nrgljubljana_root}" ] && [ -n "${BASH_SOURCE:-}" ]; then
+  _nrgljubljana_vars_dir="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE}")" >/dev/null 2>&1 && pwd)"
+  if [ -n "${_nrgljubljana_vars_dir}" ]; then
+    _nrgljubljana_root="$(CDPATH= cd -- "${_nrgljubljana_vars_dir}/.." >/dev/null 2>&1 && pwd)"
+  fi
+fi
+if [ -z "${_nrgljubljana_root}" ]; then
+  _nrgljubljana_root="@CMAKE_INSTALL_PREFIX@"
+fi
+export NRGLJUBLJANA_ROOT="${_nrgljubljana_root}"
 
-export CPLUS_INCLUDE_PATH=@CMAKE_INSTALL_PREFIX@/include:$CPLUS_INCLUDE_PATH
-export PATH=@CMAKE_INSTALL_PREFIX@/bin:@CMAKE_INSTALL_PREFIX@/nrginit:$PATH
-export LIBRARY_PATH=@CMAKE_INSTALL_PREFIX@/lib:$LIBRARY_PATH 
-export LD_LIBRARY_PATH=@CMAKE_INSTALL_PREFIX@/lib:$LD_LIBRARY_PATH
-export DYLD_LIBRARY_PATH=@CMAKE_INSTALL_PREFIX@/lib:$DYLD_LIBRARY_PATH
-export CMAKE_PREFIX_PATH=@CMAKE_INSTALL_PREFIX@/lib/cmake/nrgljubljana:$CMAKE_PREFIX_PATH
+_nrgljubljana_bindir="@CMAKE_INSTALL_BINDIR@"
+_nrgljubljana_libdir="@CMAKE_INSTALL_LIBDIR@"
+_nrgljubljana_datadir="@CMAKE_INSTALL_DATADIR@"
+_nrgljubljana_includedir="@CMAKE_INSTALL_INCLUDEDIR@"
+_nrgljubljana_nrginitdir="@NRGLJUBLJANA_INSTALL_NRGINIT_DIR@"
+
+case "${_nrgljubljana_bindir}" in /*) ;; *) _nrgljubljana_bindir="${NRGLJUBLJANA_ROOT}/${_nrgljubljana_bindir}" ;; esac
+case "${_nrgljubljana_libdir}" in /*) ;; *) _nrgljubljana_libdir="${NRGLJUBLJANA_ROOT}/${_nrgljubljana_libdir}" ;; esac
+case "${_nrgljubljana_datadir}" in /*) ;; *) _nrgljubljana_datadir="${NRGLJUBLJANA_ROOT}/${_nrgljubljana_datadir}" ;; esac
+case "${_nrgljubljana_includedir}" in /*) ;; *) _nrgljubljana_includedir="${NRGLJUBLJANA_ROOT}/${_nrgljubljana_includedir}" ;; esac
+case "${_nrgljubljana_nrginitdir}" in /*) ;; *) _nrgljubljana_nrginitdir="${NRGLJUBLJANA_ROOT}/${_nrgljubljana_nrginitdir}" ;; esac
+
+export CPLUS_INCLUDE_PATH="${_nrgljubljana_includedir}${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
+export PATH="${_nrgljubljana_bindir}:${_nrgljubljana_nrginitdir}${PATH:+:${PATH}}"
+export LIBRARY_PATH="${_nrgljubljana_libdir}${LIBRARY_PATH:+:${LIBRARY_PATH}}"
+export LD_LIBRARY_PATH="${_nrgljubljana_libdir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+export DYLD_LIBRARY_PATH="${_nrgljubljana_libdir}${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}"
+export CMAKE_PREFIX_PATH="${_nrgljubljana_libdir}/cmake/nrgljubljana${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}"
+
+unset _nrgljubljana_root _nrgljubljana_vars_dir _nrgljubljana_bindir _nrgljubljana_libdir _nrgljubljana_datadir _nrgljubljana_includedir _nrgljubljana_nrginitdir

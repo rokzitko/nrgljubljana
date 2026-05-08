@@ -35,10 +35,11 @@ class DiagMPI : public DiagEngine<S>{
    boost::mpi::communicator &mpiw;
 
  public:
-   DiagMPI(boost::mpi::environment &mpienv_, boost::mpi::communicator &mpiw_) : mpienv(mpienv_), mpiw(mpiw_) {}
-   ~DiagMPI() {
-     for (auto i = 1; i < mpiw.size(); i++) mpiw.send(i, TAG_EXIT, 0); // notify slaves we are done
-   }
+    DiagMPI(boost::mpi::environment &mpienv_, boost::mpi::communicator &mpiw_) : mpienv(mpienv_), mpiw(mpiw_) {}
+    ~DiagMPI() {
+      if (mpiw.rank() != 0) return;
+      for (auto i = 1; i < mpiw.size(); i++) mpiw.send(i, TAG_EXIT, 0); // notify slaves we are done
+    }
    void send_params(const DiagParams &DP) {
      mpilog("Sending diag parameters: diag=" << DP.diag << " diagratio=" << DP.diagratio);
      for (auto i = 1; i < mpiw.size(); i++) mpiw.send(i, TAG_SYNC, 0);

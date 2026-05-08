@@ -75,8 +75,11 @@ target_compile_definitions(nrg PRIVATE
 set_target_properties(nrg PROPERTIES BUILD_RPATH "${PROJECT_BINARY_DIR}/c++")
 
 # Install library and headers
-install(TARGETS nrgljubljana_c EXPORT nrgljubljana-targets DESTINATION lib)
-install(TARGETS nrg DESTINATION bin)
+install(TARGETS nrgljubljana_c EXPORT nrgljubljana-targets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS nrg RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # ========= Static Analyzer Checks ==========
 

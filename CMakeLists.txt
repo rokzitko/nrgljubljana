@@ -29,6 +29,8 @@ endif()
 project(NRGLJUBLJANA VERSION 2026.04 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
+include(GNUInstallDirs)
+
 # Get the git hash & print status
 execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_VARIABLE PROJECT_GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE)
 message(STATUS "${PROJECT_NAME} version : ${PROJECT_VERSION}")
@@ -60,6 +62,7 @@ else()
 endif()
 option(NRGLJUBLJANA_USE_SYSTEM_DEPS "Use dependencies supplied by the system or package manager instead of CPM" OFF)
 option(NRGLJUBLJANA_INSTALL_NRGINIT "Install nrginit Mathematica scripts" ON)
+set(NRGLJUBLJANA_INSTALL_NRGINIT_DIR "nrginit" CACHE PATH "Install directory for nrginit Mathematica scripts")
 option(NRGLJUBLJANA_ENABLE_APP_OPENMP "Enable application-level OpenMP parallel regions; BLAS/LAPACK remains threaded independently" OFF)
 option(NRGLJUBLJANA_STRICT_FLOATING_POINT "Compile project C++ targets with strict floating-point flags" OFF)
 set(NRGLJUBLJANA_MKL_THREADING_LAYER "AUTO" CACHE STRING "MKL threading layer for mkl_rt builds (AUTO, COMPILER, GNU, INTEL, or LLVM)")
@@ -157,10 +160,7 @@ message(STATUS "MPIEXEC_POSTFLAGS: ${MPIEXEC_POSTFLAGS}")
 
 # Create an interface target
 add_library(mpi INTERFACE)
-target_include_directories(mpi SYSTEM INTERFACE ${MPI_C_INCLUDE_PATH})
-target_link_libraries(mpi INTERFACE ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
-separate_arguments(MPI_C_COMPILE_FLAGS) # Convert to list
-target_compile_options(mpi INTERFACE ${MPI_C_COMPILE_FLAGS})
+target_link_libraries(mpi INTERFACE MPI::MPI_CXX)
 install(TARGETS mpi EXPORT nrgljubljana-targets)
 
 # ############

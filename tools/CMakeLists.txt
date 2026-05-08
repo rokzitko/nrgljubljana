@@ -25,7 +25,7 @@ macro(add_tool exec_name)
   )
 
   # Install executables
-  install(TARGETS ${exec_name} EXPORT nrgljubljana-targets DESTINATION bin)
+  install(TARGETS ${exec_name} EXPORT nrgljubljana-targets RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endmacro()
 
 set(all_executables adapt binavg broaden bw diag h5write hilb intavg integ kk matrix mats nrgchain resample specmoments tdavg unitary)
