@@ -84,6 +84,14 @@ Linux `aarch64` conda builds should use Clang:
 conda build -c conda-forge --variants "{c_compiler: ['clang'], cxx_compiler: ['clangxx']}" recipe
 ```
 
+On NVIDIA Grace systems, build the Linux `aarch64` package with NVPL BLAS/LAPACK:
+
+```bash
+conda build -c conda-forge --no-anaconda-upload \
+  --variants "{c_compiler: ['clang'], cxx_compiler: ['clangxx'], blas_impl: ['nvpl'], nrgljubljana_build_tests: ['ON']}" \
+  recipe
+```
+
 To include long tests as well:
 
 ```bash
@@ -136,6 +144,6 @@ If Mathematica was detected during the build, the logs contain a line similar to
 ## Notes
 
 - Current recipe skips Windows.
-- The conda recipe uses Intel MKL on `linux-64` and OpenBLAS on other supported platforms.
+- The conda recipe uses Intel MKL on `linux-64`, Accelerate on macOS, and OpenBLAS on generic Linux `aarch64`; NVPL is available as an explicit Linux `aarch64` variant.
 - Mathematica is not provided by conda dependencies; using `nrginit` relies on a local system installation.
 - In isolated CI environments without Mathematica, `nrginit` is still installed but Mathematica-dependent tests are skipped.

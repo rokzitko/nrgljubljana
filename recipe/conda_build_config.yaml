@@ -1,5 +1,9 @@
 numpy:
   - "1.26"
+blas_impl:
+  - mkl  # [linux64]
+  - openblas  # [linux and aarch64]
+  - accelerate  # [osx]
 nrgljubljana_build_tests:
   - "OFF"
 nrgljubljana_test_long:

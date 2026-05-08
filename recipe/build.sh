@@ -46,8 +46,9 @@ build_jobs="$(job_count "${nrgljubljana_build_jobs:-0}")"
 test_jobs="$(job_count "${nrgljubljana_test_jobs:-0}")"
 test_timeout="$(positive_integer "test timeout" "${nrgljubljana_test_timeout:-7200}")"
 test_regex="${nrgljubljana_test_regex:-}"
+blas_impl_value="${blas_impl:-}"
 
-if [ "${target_platform:-}" = "linux-aarch64" ]; then
+if [ "${target_platform:-}" = "linux-aarch64" ] && [ "${blas_impl_value}" != "nvpl" ]; then
   export OPENBLAS_CORETYPE="${OPENBLAS_CORETYPE:-ARMV8}"
 fi
 

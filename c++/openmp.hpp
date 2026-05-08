@@ -274,6 +274,9 @@ inline void report_environment(std::ostream &s) {
     "MKL_DYNAMIC",
     "MKL_THREADING_LAYER",
     "OPENBLAS_NUM_THREADS",
+    "OPENBLAS_CORETYPE",
+    "NVPL_BLAS_VERBOSE",
+    "VECLIB_MAXIMUM_THREADS",
     "GOTO_NUM_THREADS",
     "BLIS_NUM_THREADS"
   };
