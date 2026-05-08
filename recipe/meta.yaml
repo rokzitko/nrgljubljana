@@ -46,6 +46,7 @@ requirements:
     - libboost
     - libboost-mpi
     - llvm-openmp  # [linux or osx]
+    - blas-devel =*=*mkl  # [target_platform == "linux-64"]
     - mkl  # [target_platform == "linux-64"]
     - openmpi  # [linux]
     - mpich  # [osx]
