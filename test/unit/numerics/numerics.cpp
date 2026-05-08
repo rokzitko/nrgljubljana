@@ -16,6 +16,12 @@ TEST(numerics, reim) {
   EXPECT_EQ(i, 2.0);
 }
 
+TEST(numerics, complex_integral_addition) {
+  const auto z = std::complex<double>(2.0, 3.0);
+  EXPECT_EQ(1 + z, std::complex<double>(3.0, 3.0));
+  EXPECT_EQ(z + 1, std::complex<double>(3.0, 3.0));
+}
+
 /*
 TEST(numerics, reim_non_const) {
   auto z = std::complex(1.0, 2.0);

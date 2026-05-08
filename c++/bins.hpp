@@ -5,6 +5,7 @@
 #define _bins_hpp_
 
 #include <cmath>
+#include <stdexcept>
 #include <range/v3/all.hpp>
 #include "portabil.hpp"
 #include "traits.hpp"
@@ -62,6 +63,8 @@ void Bins<S>::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the conduction band!!
   emax = (P.emax > 0 ? P.emax : P.SCALE(0) * pow(base, max_bin_shift));
   emin = (P.emin > 0 ? P.emin : P.last_step_scale() / pow(base, min_bin_shift));
+  if (!std::isfinite(emin) || !std::isfinite(emax) || emin <= 0.0 || emax <= 0.0 || emin >= emax)
+    throw std::invalid_argument("Invalid binning limits: require finite 0 < emin < emax.");
   // Trick: use ceil/floor to obtain uniform binning grids for different values of the twist parameter z!
   log10emin = floor(log10(emin));
   log10emax = ceil(log10(emax));
@@ -69,7 +72,7 @@ void Bins<S>::setlimits() {
 
 template<scalar S>
 void Bins<S>::loggrid() {
-  my_assert(P.bins > 0);
+  if (P.bins.value() == 0) throw std::invalid_argument("bins must be greater than 0.");
   setlimits();
   if (P.accumulation > 0.0)
     loggrid_acc();

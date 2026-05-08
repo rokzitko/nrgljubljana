@@ -212,7 +212,7 @@ class Algo_FDMmats : public Algo<S> {
       const auto boltzGi  = absGi | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
       const auto boltzGj  = absGj | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
       std::vector<t_weight> mats_freq(cutoff);
-      for (size_t n = 0; n < cutoff; n++) mats_freq[n] = ww(static_cast<short>(n), gt, T) * 1i;
+      for (size_t n = 0; n < cutoff; n++) mats_freq[n] = ww(n, gt, T) * 1i;
       const auto term1_factors = [&absGi, &absGj, &boltzGi, &boltzGj, &op1, &op2, wnf, this](const auto i, const auto j) {
         const auto Ei = absGi[i];
         const auto Ej = absGj[j];

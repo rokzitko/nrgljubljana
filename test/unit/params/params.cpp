@@ -213,6 +213,12 @@ TEST(params, scale) {
   EXPECT_EQ(P.nrg_step_scale_factor(), 1.0);
 }
 
+TEST(params, invalid_discretization) {
+  Params P;
+  P.discretization = "bad"s;
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+}
+
 TEST(params, E) {
   Params P;
   P.Nmax = 1;

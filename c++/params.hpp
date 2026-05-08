@@ -614,6 +614,8 @@ class Params {
     my_assert(!(dumpabs && dumpscaled)); // dumpabs=true and dumpscaled=true is a meaningless combination
     // Take the first character (for backward compatibility)
     discretization = std::string(discretization, 0, 1);
+    if (discretization != "Y"s && discretization != "C"s && discretization != "Z"s)
+      throw std::invalid_argument(fmt::format("Unsupported discretization scheme: {}", discretization.value()));
     if (chitp_ratio > 0.0) chitp = chitp_ratio / betabar;
   }
 

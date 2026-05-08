@@ -16,17 +16,17 @@ inline constexpr auto S_BOSONIC   = +1;
 inline constexpr auto S_FERMIONIC = -1;
 inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC : S_FERMIONIC; }
 
-// Note: range limited to short numbers.
-[[nodiscard]] inline auto ww(const short n, const gf_type mt, const double T)
+[[nodiscard]] inline auto ww(const size_t n, const gf_type mt, const double T)
 {
+  const auto nd = static_cast<double>(n);
   switch (mt) {
-    case gf_type::bosonic: return T * M_PI * (2 * n);
-    case gf_type::fermionic: return T * M_PI * (2 * n + 1);
+    case gf_type::bosonic: return T * M_PI * (2.0 * nd);
+    case gf_type::fermionic: return T * M_PI * (2.0 * nd + 1.0);
     default: my_assert_not_reached();
   }
 }
-[[nodiscard]] inline auto wb(const short n, const double T) { return T * M_PI * (2 * n); }
-[[nodiscard]] inline auto wf(const short n, const double T) { return T * M_PI * (2 * n + 1); }
+[[nodiscard]] inline auto wb(const size_t n, const double T) { return T * M_PI * (2.0 * static_cast<double>(n)); }
+[[nodiscard]] inline auto wf(const size_t n, const double T) { return T * M_PI * (2.0 * static_cast<double>(n) + 1.0); }
 
 template<scalar S, typename t_weight = weight_traits<S>>
 class Matsubara {

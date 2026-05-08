@@ -2,6 +2,8 @@
 #define _spectrum_hpp_
 
 #include <algorithm>
+#include <cmath>
+#include <stdexcept>
 #include "traits.hpp"
 #include "params.hpp"
 #include "bins.hpp"
@@ -173,9 +175,19 @@ void SpectrumRealFreq<S>::savebins() {
 
 // Energy mesh for spectral functions
 inline std::vector<double> make_mesh(const Params &P) {
+  const double broaden_max = P.broaden_max;
   const double broaden_min = P.get_broaden_min();
+  const double broaden_ratio = P.broaden_ratio;
+  if (!std::isfinite(broaden_ratio) || broaden_ratio <= 1.0)
+    throw std::invalid_argument("broaden_ratio must be finite and greater than 1.");
+  if (!std::isfinite(broaden_max) || broaden_max <= 0.0)
+    throw std::invalid_argument("broaden_max must be finite and greater than 0.");
+  if (!std::isfinite(broaden_min) || broaden_min <= 0.0)
+    throw std::invalid_argument("Effective broaden_min must be finite and greater than 0.");
+  if (broaden_min >= broaden_max)
+    throw std::invalid_argument("Effective broaden_min must be smaller than broaden_max.");
   std::vector<double> vecE; // Energies on the mesh
-  for (double E = P.broaden_max; E > broaden_min; E /= P.broaden_ratio) vecE.push_back(E);
+  for (double E = broaden_max; E > broaden_min; E /= broaden_ratio) vecE.push_back(E);
   return vecE;
 }
 
@@ -184,6 +196,10 @@ void SpectrumRealFreq<S>::continuous() {
   using t_weight = weight_traits<S>;
   const double alpha  = P.alpha;
   const double omega0 = P.omega0 < 0.0 ? P.omega0_ratio * P.T : P.omega0;
+  if (!std::isfinite(alpha) || alpha <= 0.0)
+    throw std::invalid_argument("alpha must be finite and greater than 0.");
+  if (!std::isfinite(omega0) || omega0 <= 0.0)
+    throw std::invalid_argument("Effective omega0 must be finite and greater than 0.");
   Spikes<S> densitypos, densityneg;
   const auto vecE = make_mesh(P); // Energies on the mesh
   for (const auto E : vecE) {

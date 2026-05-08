@@ -11,12 +11,12 @@ separate_arguments(nrgljubljana_c_CXXFLAGS)
 macro(generate_docs header_file)
   add_custom_command(
     TARGET docs_cpp2rst
-    COMMAND rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
+    COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_CURRENT_BINARY_DIR}/cpp2rst_generated
     COMMAND
       c++2rst
       ${header_file}
       -N nrgljubljana
-      --output_directory ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
+      --output_directory ${CMAKE_CURRENT_BINARY_DIR}/cpp2rst_generated
       -I${PROJECT_SOURCE_DIR}/c++
       --cxxflags="${nrgljubljana_CXXFLAGS}"
   )
@@ -34,10 +34,11 @@ foreach(example ${ExampleList})
   get_filename_component(f ${example} NAME_WE)
   get_filename_component(d ${example} DIRECTORY)
   add_executable(doc_${f} EXCLUDE_FROM_ALL ${example})
-  set_property(TARGET doc_${f} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${d})
+  set_property(TARGET doc_${f} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${d})
   add_custom_command(TARGET doc_${f}
-   COMMAND doc_${f} > ${CMAKE_CURRENT_SOURCE_DIR}/${d}/${f}.output 2>/dev/null
-   WORKING_DIRECTORY ${d}
+   COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/${d}
+   COMMAND doc_${f} > ${CMAKE_CURRENT_BINARY_DIR}/${d}/${f}.output 2>/dev/null
+   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${d}
   )
   add_dependencies(docs_example_output doc_${f})
 endforeach()

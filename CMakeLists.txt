@@ -129,7 +129,6 @@ target_compile_options(project_warnings
 # MPI support
 
 message(STATUS "-------- MPI detection -------------")
-unset(MPIEXEC_EXECUTABLE CACHE)
 find_package(MPI REQUIRED)
 
 # Backward compatibility for older FindMPI.cmake

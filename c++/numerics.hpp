@@ -70,7 +70,7 @@ std::complex<T> operator-(const std::complex<T> &b, const std::integral auto &a)
 template <typename T>
 std::complex<T> operator+(const std::integral auto &a, const std::complex<T> &b)
 {
-  return std::complex<T>(a+b.real(), -b.imag());
+  return std::complex<T>(a+b.real(), b.imag());
 }
 
 template <typename T>
