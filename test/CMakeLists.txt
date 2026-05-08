@@ -33,9 +33,9 @@ if(GPROF)
                       COMMAND ${CMAKE_CTEST_COMMAND}
                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     set(GPROF_DEPEND ${GPROF_DEPEND} "gprof_${dir}" PARENT_SCOPE)
-    add_custom_command(TARGET gprof_${dir}
-                      COMMAND ${CMAKE_COMMAND}
-                        "-DSIMPLE_TESTS=${simple_tests}"
+    add_custom_command(TARGET gprof_${dir} POST_BUILD
+                       COMMAND ${CMAKE_COMMAND}
+                         "-DSIMPLE_TESTS=${simple_tests}"
                         "-DCURRENT_BINARY_DIR=${current_binary_dir}"
                         "-DBINARY_DIR=${CMAKE_BINARY_DIR}"
                         "-DNRG_EXECUTABLE=$<TARGET_FILE:nrg>"

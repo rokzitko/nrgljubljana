@@ -37,7 +37,8 @@ target_include_directories(nrgljubljana_c     PUBLIC $<BUILD_INTERFACE:${PROJECT
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/symmetry/coefnew>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include/range-v3>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tools>)
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tools>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/nrgljubljana>)
 target_compile_definitions(nrgljubljana_c PUBLIC
   NRG_SYM_BASIC
   $<$<BOOL:${SYM_MORE}>:NRG_SYM_MORE>
@@ -46,9 +47,23 @@ target_compile_definitions(nrgljubljana_c PUBLIC
 )
 
 # Link dependencies
-target_link_libraries(nrgljubljana_c     PUBLIC openmp Boost::headers Boost::mpi Boost::serialization blas_lapack gmp dl mpi hdf5 HighFive fmt::fmt-header-only range-v3 Eigen3::Eigen
-  $<$<BOOL:${ASAN}>:asan>
-  $<$<BOOL:${UBSAN}>:ubsan>
+target_link_libraries(nrgljubljana_c
+  PUBLIC
+    Boost::headers
+    Boost::mpi
+    Boost::serialization
+    mpi
+    $<BUILD_INTERFACE:openmp>
+    $<BUILD_INTERFACE:blas_lapack>
+    $<BUILD_INTERFACE:gmp>
+    $<BUILD_INTERFACE:dl>
+    $<BUILD_INTERFACE:hdf5>
+    $<BUILD_INTERFACE:HighFive>
+    $<BUILD_INTERFACE:fmt::fmt-header-only>
+    $<BUILD_INTERFACE:range-v3>
+    $<BUILD_INTERFACE:Eigen3::Eigen>
+    $<BUILD_INTERFACE:$<$<BOOL:${ASAN}>:asan>>
+    $<BUILD_INTERFACE:$<$<BOOL:${UBSAN}>:ubsan>>
 )
 
 target_link_options(nrgljubljana_c PRIVATE $<$<BOOL:${GPROF}>:-pg>)
@@ -79,6 +94,7 @@ install(TARGETS nrgljubljana_c EXPORT nrgljubljana-targets
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES nrg-lib.hpp workdir.hpp portabil.hpp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nrgljubljana)
 install(TARGETS nrg RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # ========= Static Analyzer Checks ==========

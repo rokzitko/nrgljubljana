@@ -6,6 +6,8 @@ option(GCOV "gcov" OFF)
 
 if(GCOV)
   find_package(Perl REQUIRED)
+  find_program(LCOV_EXECUTABLE lcov REQUIRED)
+  find_program(GENHTML_EXECUTABLE genhtml REQUIRED)
   message(STATUS "*** gcov instrumentalization enabled")
   set(gtest_test_name "gtest_")
   add_custom_target(gcov
@@ -16,9 +18,12 @@ if(GCOV)
                     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/gcoverage
                     WORKING_DIRECTORY ${CMAKE_BINARY_DIR} )
 
-  add_custom_command(TARGET gcov
-                     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/gcov/gcov
-                     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/gcoverage )
+  add_custom_command(TARGET gcov POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E env
+                       "LCOV_EXECUTABLE=${LCOV_EXECUTABLE}"
+                       "GENHTML_EXECUTABLE=${GENHTML_EXECUTABLE}"
+                       ${CMAKE_CURRENT_SOURCE_DIR}/gcov/gcov
+                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/gcoverage )
 endif()
 
 foreach(test ${all_tests})

@@ -4,6 +4,13 @@
 
 @PACKAGE_INIT@
 
+if(POLICY CMP0144) # find_package uses upper-case <PACKAGENAME>_ROOT variables
+  cmake_policy(SET CMP0144 OLD)
+endif()
+if(POLICY CMP0167) # FindBoost module availability
+  cmake_policy(SET CMP0167 OLD)
+endif()
+
 # Multiple inclusion guard
 if(NOT NRGLJUBLJANA_FOUND)
 set(NRGLJUBLJANA_FOUND True)
@@ -19,7 +26,12 @@ set(NRGLJUBLJANA_MKL_THREADING_LAYER @NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER
 set(NRGLJUBLJANA_ROOT "${PACKAGE_PREFIX_DIR}")
 
 include(CMakeFindDependencyMacro)
+set(Boost_NO_WARN_NEW_VERSIONS 1)
+set(Boost_NO_BOOST_CMAKE ON)
+set(Boost_USE_STATIC_LIBS OFF)
+find_dependency(Boost 1.53 REQUIRED COMPONENTS serialization mpi)
 find_dependency(MPI REQUIRED COMPONENTS CXX)
+find_dependency(LAPACK REQUIRED)
 if(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME)
   find_dependency(OpenMP REQUIRED COMPONENTS CXX)
 endif()

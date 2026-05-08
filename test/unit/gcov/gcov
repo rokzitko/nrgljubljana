@@ -1,6 +1,8 @@
 #!/bin/bash
+: "${LCOV_EXECUTABLE:=lcov}"
+: "${GENHTML_EXECUTABLE:=genhtml}"
 find .. -name *.gcno -type f -print0 | xargs -0 -I % mv % .
 find .. -name *.gcda -type f -print0 | xargs -0 -I % mv % .
 mkdir lcov
-lcov --capture --directory . --output-file lcov/main_coverage.info
-genhtml lcov/main_coverage.info --output-directory lcov
+"${LCOV_EXECUTABLE}" --capture --directory . --output-file lcov/main_coverage.info
+"${GENHTML_EXECUTABLE}" lcov/main_coverage.info --output-directory lcov
