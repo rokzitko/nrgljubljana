@@ -217,9 +217,9 @@ auto set_workdir(int argc, char **argv) { // not inline!
 
 int main(int argc, char **argv) {
   configure_asan_mpi_environment();
-  print_nrg_about_message();
   boost::mpi::environment mpienv(argc, argv);
   boost::mpi::communicator mpiw;
+  if (mpiw.rank() == 0) print_nrg_about_message();
   enable_fp_traps();
   if (!prepare_parallel_runtime(std::cerr, mpiw.rank() == 0)) return 1;
   if (mpiw.rank() == 0) {

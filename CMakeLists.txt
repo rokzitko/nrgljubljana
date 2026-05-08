@@ -133,6 +133,7 @@ target_compile_options(project_warnings
 
 message(STATUS "-------- MPI detection -------------")
 find_package(MPI REQUIRED)
+set(NRG_MPI ${MPI_FOUND})
 
 # Backward compatibility for older FindMPI.cmake
 if(NOT MPIEXEC_EXECUTABLE)
