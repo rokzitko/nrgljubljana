@@ -50,13 +50,21 @@ std::pair<Sign, std::string> cmd_line(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-  const clock_t start_clock = clock();
-  about();
-  help(argc, argv, usage);
-  const auto [sign, param_fn] = cmd_line(argc, argv);
-  Params P(param_fn);
-  Adapt calc(P, sign);
-  calc.run();
-  const clock_t end_clock = clock();
-  std::cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << std::endl;
+  try {
+    const clock_t start_clock = clock();
+    about();
+    help(argc, argv, usage);
+    const auto [sign, param_fn] = cmd_line(argc, argv);
+    Params P(param_fn);
+    Adapt calc(P, sign);
+    calc.run();
+    const clock_t end_clock = clock();
+    std::cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "adapt: error: " << e.what() << std::endl;
+    return EXIT_FAILURE;
+  } catch (...) {
+    std::cerr << "adapt: error: unknown exception" << std::endl;
+    return EXIT_FAILURE;
+  }
 }

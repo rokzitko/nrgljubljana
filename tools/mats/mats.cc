@@ -246,14 +246,22 @@ void save(const string filename, const cvec &x, const cvec &y) {
 }
 
 int main(int argc, char *argv[]) {
-  cout << "mats - thermal Green's function evaluation tool - " << VERSION << endl;
-  cout << "Rok Zitko, rok.zitko@ijs.si, Nov 2012" << endl;
-  cout << setprecision(COUT_PREC);
-  cmd_line(argc, argv);
-  read_files();
-  merge();
-  make_mesh(mesh);
-  compute(mesh, G);
-  string output = "spec.dat";
-  save(output, mesh, G);
+  try {
+    cout << "mats - thermal Green's function evaluation tool - " << VERSION << endl;
+    cout << "Rok Zitko, rok.zitko@ijs.si, Nov 2012" << endl;
+    cout << setprecision(COUT_PREC);
+    cmd_line(argc, argv);
+    read_files();
+    merge();
+    make_mesh(mesh);
+    compute(mesh, G);
+    string output = "spec.dat";
+    save(output, mesh, G);
+  } catch (const std::exception &e) {
+    cerr << "mats: error: " << e.what() << endl;
+    return EXIT_FAILURE;
+  } catch (...) {
+    cerr << "mats: error: unknown exception" << endl;
+    return EXIT_FAILURE;
+  }
 }

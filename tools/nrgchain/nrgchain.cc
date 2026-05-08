@@ -529,22 +529,30 @@ void calc_tables() {
 }
 
 int main(int argc, char *argv[]) {
-  clock_t start_clock = clock();
+  try {
+    clock_t start_clock = clock();
 
-  about();
-  cmd_line(argc, argv);
-  parser(param_fn);
-  set_parameters();
-  cmd_line_post(argc, argv);
+    about();
+    cmd_line(argc, argv);
+    parser(param_fn);
+    set_parameters();
+    cmd_line_post(argc, argv);
 
-  if (nrgchain_tables_load) {
-    load_tables();
-  } else {
-    calc_tables();
+    if (nrgchain_tables_load) {
+      load_tables();
+    } else {
+      calc_tables();
+    }
+
+    if (nrgchain_tridiag) tridiag();
+
+    clock_t end_clock = clock();
+    cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << endl;
+  } catch (const std::exception &e) {
+    cerr << "nrgchain: error: " << e.what() << endl;
+    return EXIT_FAILURE;
+  } catch (...) {
+    cerr << "nrgchain: error: unknown exception" << endl;
+    return EXIT_FAILURE;
   }
-
-  if (nrgchain_tridiag) tridiag();
-
-  clock_t end_clock = clock();
-  cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << endl;
 }

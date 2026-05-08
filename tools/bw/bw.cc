@@ -653,63 +653,71 @@ void defaults() {
 }
 
 int main(int argc, char *argv[]) {
-  cout << "bw - Adaptive broadening tool - " << VERSION << endl;
-  cout << "Rok Zitko, rok.zitko@ijs.si, 2009-2010" << endl;
-  cout << setprecision(16);
+  try {
+    cout << "bw - Adaptive broadening tool - " << VERSION << endl;
+    cout << "Rok Zitko, rok.zitko@ijs.si, 2009-2010" << endl;
+    cout << setprecision(16);
 
-  cmd_line(argc, argv);
-  defaults();
-  read_files();
-  merge();
+    cmd_line(argc, argv);
+    defaults();
+    read_files();
+    merge();
 
-  make_mesh(mesh);
-  initial_b(b);
+    make_mesh(mesh);
+    initial_b(b);
 
-  if (savemore) { save("b", vfreq, b, 0, trim); }
+    if (savemore) { save("b", vfreq, b, 0, trim); }
 
-  for (int iter = 1; iter <= nr_iter; iter++) {
-    broaden(mesh, a, b);
+    for (int iter = 1; iter <= nr_iter; iter++) {
+      broaden(mesh, a, b);
 
-    if (savemore || iter == nr_iter) { save("a", mesh, a, iter, trim); }
+      if (savemore || iter == nr_iter) { save("a", mesh, a, iter, trim); }
 
-    integrate_a(a, mesh, inta);
-    if (saveall) { save("inta", mesh, inta, iter); }
+      integrate_a(a, mesh, inta);
+      if (saveall) { save("inta", mesh, inta, iter); }
 
-    // inta = \int [-infty, omega]
-    // intb = \int [0, omega]
-    // intc = \int [+infty, omega]
-    combinations(mesh, inta, intb, intc);
-    if (saveall) {
-      save("intb", mesh, intb, iter);
-      save("intc", mesh, intc, iter);
+      // inta = \int [-infty, omega]
+      // intb = \int [0, omega]
+      // intc = \int [+infty, omega]
+      combinations(mesh, inta, intb, intc);
+      if (saveall) {
+        save("intb", mesh, intb, iter);
+        save("intc", mesh, intc, iter);
+      }
+
+      vec deriva, derivb, derivc;
+
+      calc_deriv(inta, deriva);
+      calc_deriv(intb, derivb);
+      calc_deriv(intc, derivc);
+
+      if (saveall) {
+        save("deriva", mesh, deriva, iter);
+        save("derivb", mesh, derivb, iter);
+        save("derivc", mesh, derivc, iter);
+      }
+
+      vec bpos;
+      calc_b(derivb, derivc, bpos);
+
+      vec bneg;
+      calc_b(deriva, derivb, bneg);
+
+      recalc_b(mesh, bpos, bneg, b);
+
+      if (saveall) {
+        save("bpos", mesh, bpos, iter);
+        save("bneg", mesh, bneg, iter);
+      }
+      if (savemore) { save("b", vfreq, b, iter, trim); }
+
+      if (dyn_mesh > 0.0) { refine_mesh(mesh, a); }
     }
-
-    vec deriva, derivb, derivc;
-
-    calc_deriv(inta, deriva);
-    calc_deriv(intb, derivb);
-    calc_deriv(intc, derivc);
-
-    if (saveall) {
-      save("deriva", mesh, deriva, iter);
-      save("derivb", mesh, derivb, iter);
-      save("derivc", mesh, derivc, iter);
-    }
-
-    vec bpos;
-    calc_b(derivb, derivc, bpos);
-
-    vec bneg;
-    calc_b(deriva, derivb, bneg);
-
-    recalc_b(mesh, bpos, bneg, b);
-
-    if (saveall) {
-      save("bpos", mesh, bpos, iter);
-      save("bneg", mesh, bneg, iter);
-    }
-    if (savemore) { save("b", vfreq, b, iter, trim); }
-
-    if (dyn_mesh > 0.0) { refine_mesh(mesh, a); }
+  } catch (const std::exception &e) {
+    cerr << "bw: error: " << e.what() << endl;
+    return EXIT_FAILURE;
+  } catch (...) {
+    cerr << "bw: error: unknown exception" << endl;
+    return EXIT_FAILURE;
   }
 }
