@@ -27,6 +27,7 @@
 #include <cmath>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
@@ -135,7 +136,7 @@ class KK {
       if (im.empty()) throw std::runtime_error("No input data points provided.");
       std::sort(im.begin(), im.end());
       len = im.size();
-      assert(len % 2 == 0);
+      if (len % 2 != 0) throw std::runtime_error("Input grid must contain an even number of points.");
       std::tie (Xmin, Xmax) = x_range(im);
       if (mode == MODE::FILES) std::cout << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
       if (gsl_fcmp(-Xmin, Xmax, 1.e-8) != 0) throw std::runtime_error("Only symmetric intervals are supported!");
@@ -157,7 +158,9 @@ class KK {
       if (mode == MODE::FILES) std::cout << "Sum=" << sum << std::endl;
       const auto nr = Xpts.size()/2;
       for (auto i = nr; i < len; i++)
-        assert(gsl_fcmp(Xpts[len - i - 1], -Xpts[i], 1e-8) == 0);     // Check for the symmetry of the grid
+        if (gsl_fcmp(Xpts[len - i - 1], -Xpts[i], 1e-8) != 0) {
+          throw std::runtime_error("Input grid is not symmetric around zero.");
+        }
       Xpos = DVEC(nr);   // Xpos are positive and increasing!
       std::copy(Xpts.begin() + nr, Xpts.end(), Xpos.begin());
       w.reset(gsl_integration_workspace_alloc(workspace_limit));

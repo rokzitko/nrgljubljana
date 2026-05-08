@@ -142,13 +142,13 @@ auto file_size(std::ifstream &f) {
    
 auto nr_doubles(std::ifstream &f) {
   const auto len = file_size(f);
-  assert(len % sizeof(double) == 0);
+  if (len % sizeof(double) != 0) throw std::runtime_error("Binary input size is not a multiple of sizeof(double).");
   return len/sizeof(double);
 }
   
 auto nr_rows(std::ifstream &f, const int cols) {
   const auto d = nr_doubles(f);
-  assert(d % cols == 0);
+  if (d % cols != 0) throw std::runtime_error("Binary input does not contain a whole number of rows.");
   return d / cols;
 }
    
@@ -313,25 +313,25 @@ class Broaden {
      }
      name = std::string(argv[optind]); // Name of spectral density files
      Nz = atoi(argv[optind + 1]); // Number of z-values
-     assert(Nz >= 1);
+     if (!(Nz >= 1)) throw std::invalid_argument("Nz must be greater than or equal to 1.");
      alpha = atof(argv[optind + 2]); // High-energy broadening parameter
-     assert(alpha > 0.0);
+     if (!(alpha > 0.0)) throw std::invalid_argument("alpha must be greater than 0.");
      T = atof(argv[optind + 3]); // Temperature
-     assert(T > 0.0);
+     if (!(T > 0.0)) throw std::invalid_argument("T must be greater than 0.");
      if (remaining == 5) {
        omega0_ratio = atof(argv[optind + 4]); // omega0/T
-       assert(omega0_ratio > 0.0);
+       if (!(omega0_ratio > 0.0)) throw std::invalid_argument("omega0_ratio must be greater than 0.");
        omega0 = omega0_ratio * T;
      }
-      if (remaining == 4) {
-        omega0_ratio = 1e-9; // Effectively zero
-        omega0       = omega0_ratio * T;
-      }
-      if (finalgaussian && ggamma <= 0.0) throw std::invalid_argument("Final Gaussian width must be greater than 0.");
-      if (finalderfd && dgamma <= 0.0) throw std::invalid_argument("Final derFD width must be greater than 0.");
-      if (!meshpositive && !meshnegative) throw std::invalid_argument("Output mesh cannot be empty.");
-      std::cout << "Processing: " << name << std::endl;
-      if (verbose) { std::cout << "Nz=" << Nz << " alpha=" << alpha << " T=" << T << " omega0_ratio=" << omega0_ratio << std::endl; }
+     if (remaining == 4) {
+       omega0_ratio = 1e-9; // Effectively zero
+       omega0       = omega0_ratio * T;
+     }
+     if (finalgaussian && ggamma <= 0.0) throw std::invalid_argument("Final Gaussian width must be greater than 0.");
+     if (finalderfd && dgamma <= 0.0) throw std::invalid_argument("Final derFD width must be greater than 0.");
+     if (!meshpositive && !meshnegative) throw std::invalid_argument("Output mesh cannot be empty.");
+     std::cout << "Processing: " << name << std::endl;
+     if (verbose) { std::cout << "Nz=" << Nz << " alpha=" << alpha << " T=" << T << " omega0_ratio=" << omega0_ratio << std::endl; }
     }
    void check_buffer_normalisation(const std::vector<double> &buffer, const int col_) {
      const auto cols = 1 + nrcol;

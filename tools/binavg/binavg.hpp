@@ -14,6 +14,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
+#include <stdexcept>
 #include <unistd.h> // getopt
 
 namespace NRG::BinAvg {
@@ -79,7 +80,7 @@ class BinAvg {
      }
      name = std::string(argv[optind]); // Name of spectral density files
      Nz = atoi(argv[optind + 1]); // Number of z-values
-     assert(Nz >= 1);
+     if (!(Nz >= 1)) throw std::invalid_argument("Nz must be greater than or equal to 1.");
      std::cout << "Processing: " << name << std::endl;
      std::cout << "Nz=" << Nz << std::endl;
    }
@@ -101,7 +102,7 @@ class BinAvg {
      f.seekg(0, std::ios::end);
      const auto end_pos   = f.tellg();
      const long len       = end_pos - begin_pos;
-     assert(len % (rows * sizeof(double)) == 0);
+     if (len % (rows * sizeof(double)) != 0) throw std::runtime_error("Input binary file has incomplete row data.");
      const int nr = len / (rows * sizeof(double)); // number of lines
      if (verbose) { std::cout << "len=" << len << " nr=" << nr << " data points" << std::endl; }
      // Allocate the read buffer. The data will be kept in memory for the duration of the calculation!

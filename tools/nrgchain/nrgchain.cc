@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <ctime>
 #include <limits>
+#include <stdexcept>
 
 #include <gmp.h>
 
@@ -145,10 +146,10 @@ void set_parameters() {
   cout << setprecision(PREC);
 
   Lambda = LAMBDA(P("Lambda", 2.0));
-  assert(Lambda > 1.0);
+  if (!(Lambda > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
 
   z = P("z", 1.0);
-  assert(0 < z && z <= 1.0);
+  if (!(0 < z && z <= 1.0)) throw std::invalid_argument("z must satisfy 0 < z <= 1.");
 
   adapt = Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
 
@@ -156,16 +157,16 @@ void set_parameters() {
   rescalexi   = Pbool("rescalexi", false);
 
   xmax = P("xmax", 30); // Interval [1..xmax]
-  assert(xmax >= 1.0);
+  if (!(xmax >= 1.0)) throw std::invalid_argument("xmax must be greater than or equal to 1.");
 
   Nmax = Pint("Nmax", 0); // Maximal site index in the Wilson chain
 
   mMAX = Pint("mMAX", 2 * Nmax); // Maximal index of coefficients (e,f)
 
-  assert(mMAX > 0);
+  if (!(mMAX > 0)) throw std::invalid_argument("mMAX must be greater than 0.");
 
   preccpp = Pint("preccpp", 2000); // Precision for GMP
-  assert(preccpp > 10);
+  if (!(preccpp > 10)) throw std::invalid_argument("preccpp must be greater than 10.");
 
   band = Pstr("band", "adapt"); // Default: load FSOL*.dat
 

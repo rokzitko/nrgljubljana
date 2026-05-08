@@ -14,6 +14,7 @@
 #include <map>
 #include <algorithm>
 #include <functional>
+#include <stdexcept>
 
 using namespace std;
 using namespace std::string_literals;
@@ -285,24 +286,26 @@ class Adapt {
    void set_parameters(const int PREC = 16) {
      std::cout << std::setprecision(PREC);
      Lambda = LAMBDA(P.P("Lambda", 2.0));
-     assert(Lambda > 1.0);
+     if (!(Lambda > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
      adapt = P.Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
      hardgap  = P.Pbool("hardgap", false); // Exclude an interval around omega=0 ?
      boundary = P.P("boundary", 0.0);      // The boundary of the exclusion interval.
      bandrescale = P.P("bandrescale", 1.0); // band rescaling parameter
      xmax = P.P("xmax", 30); // Integrate over [1..xmax]
-     assert(xmax > 1);
+     if (!(xmax > 1)) throw std::invalid_argument("xmax must be greater than 1.");
      xfine = P.P("xfine", 5); // Fine stepsize integral [1..xfine]
-     assert(xfine > 1);
+     if (!(xfine > 1)) throw std::invalid_argument("xfine must be greater than 1.");
      output_step = P.P("outputstep", 1.0 / 64.0); // Stepsize for output file
-     assert(output_step <= 1.0);
+     if (!(output_step <= 1.0)) throw std::invalid_argument("outputstep must be less than or equal to 1.");
      dx_fine       = P.P("dx_fine", 1e-5);        // Integration stepsize in [1..xfine]
      dx_fast       = P.P("dx_fast", 1e-4);        // Integration stepsize in [xfine..xmax]
      allowed_error = P.P("allowed_error", 1e-10); // error control for adaptable stepsize
      max_subdiv    = P.Pint("max_subdiv", 10);    // maximum nr of integ. step subdivisions
-     assert(dx_fine * pow(0.5, max_subdiv) > DBL_EPSILON);
+     if (!(dx_fine * pow(0.5, max_subdiv) > DBL_EPSILON)) {
+        throw std::invalid_argument("dx_fine and max_subdiv imply a sub-step below machine precision.");
+      }
      max_abs = P.P("max_abs", 100.0); // Maximal |f(x)|
-     assert(max_abs > 0.0);
+     if (!(max_abs > 0.0)) throw std::invalid_argument("max_abs must be greater than 0.");
      convergence_eps = P.P("secant_eps", 1e-4);
      factor0         = 1.0 + P.P("secant_factor", 1e-7);
      max_iter        = P.Pint("secant_max_iter", 10);

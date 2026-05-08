@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <fstream>
+#include <stdexcept>
 #include "traits.hpp"
 #include "params.hpp"
 #include "numerics.hpp" // read_vector
@@ -41,10 +42,10 @@ public:
 template <scalar S> auto read_matrix_table(std::istream &F, const bool nr_is_max_index = false) {
   const auto nr = read_one<size_t>(F);
   const auto len = nr_is_max_index ? nr+1 : nr;
-  assert(len >= 1);
+  if (len < 1) throw std::runtime_error("read_matrix_table(): expected at least one matrix.");
   const auto size1 = read_one<size_t>(F);
   const auto size2 = read_one<size_t>(F);
-  assert(size1 == size2);
+  if (size1 != size2) throw std::runtime_error("read_matrix_table(): expected square matrices.");
   using t_matrix = Matrix_traits<S>;
   std::vector<t_matrix> vec(len);
   for (auto j = 0; j < len; j++)

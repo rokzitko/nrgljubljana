@@ -20,6 +20,7 @@
 #include <string>
 #include <algorithm>
 #include <complex>
+#include <stdexcept>
 
 #include <unistd.h>
 #include <getopt.h>
@@ -93,11 +94,11 @@ void cmd_line(int argc, char *argv[]) {
   }
   name = string(argv[optind]);   // Name of spectral density files
   Nz   = atoi(argv[optind + 1]); // Number of z-values
-  assert(Nz >= 1);
+  if (!(Nz >= 1)) throw std::invalid_argument("Nz must be greater than or equal to 1.");
   T = atof(argv[optind + 2]); // Temperature
-  assert(T > 0.0);
+  if (!(T > 0.0)) throw std::invalid_argument("T must be greater than 0.");
   nrmats = atoi(argv[optind + 3]); // Number of Matsubara points
-  assert(nrmats >= 1);
+  if (!(nrmats >= 1)) throw std::invalid_argument("nrmats must be greater than or equal to 1.");
   cout << "Processing: " << name << endl;
   cout << "Nz=" << Nz << " T=" << T << " nrmats=" << nrmats << endl;
 }
@@ -131,7 +132,7 @@ void load(int i) {
   f.seekg(0, ios::end);
   const ios::pos_type end_pos = f.tellg();
   const long len              = end_pos - begin_pos;
-  assert(len % (rows * sizeof(double)) == 0);
+  if (len % (rows * sizeof(double)) != 0) throw std::runtime_error("Input binary file has incomplete row data.");
   const int nr = len / (rows * sizeof(double)); // number of lines
   if (verbose) cout << "len=" << len << " nr=" << nr << " data points" << endl;
   // Allocate the read buffer. The data will be kept in memory for the

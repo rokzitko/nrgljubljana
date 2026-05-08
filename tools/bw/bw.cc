@@ -26,6 +26,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
+#include <stdexcept>
 
 #include <unistd.h>
 #include <getopt.h>
@@ -147,9 +148,9 @@ void cmd_line(int argc, char *argv[]) {
   }
   name = string(argv[optind]);   // Name of spectral density files
   b0   = atof(argv[optind + 1]); // Parameter b0 (asymptotic broadening)
-  assert(b0 > 0.0);
+  if (!(b0 > 0.0)) throw std::invalid_argument("b0 must be greater than 0.");
   Nz = atoi(argv[optind + 2]); // Number of z-values
-  assert(Nz >= 1);
+  if (!(Nz >= 1)) throw std::invalid_argument("Nz must be greater than or equal to 1.");
 
   cout << "Processing: " << name << endl;
   cout << "b0=" << b0 << " Nz=" << Nz << endl;
@@ -185,7 +186,7 @@ void load(int i) {
   f.seekg(0, ios::end);
   const ios::pos_type end_pos = f.tellg();
   const long len              = end_pos - begin_pos;
-  assert(len % (2 * sizeof(double)) == 0);
+  if (len % (2 * sizeof(double)) != 0) throw std::runtime_error("Input binary file has incomplete data pairs.");
   const int nr = len / (2 * sizeof(double)); // number of pairs of double
   if (verbose) { cout << "len=" << len << " nr=" << nr << " data points" << endl; }
 
