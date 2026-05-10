@@ -249,17 +249,17 @@ class MatrixEvaluator {
 
     const bool matrix_form = !value.items.front().scalar;
     if (!matrix_form) {
-      Matrix_traits<double> matrix(1, static_cast<Eigen::Index>(value.items.size()));
-      for (size_t col = 0; col < value.items.size(); ++col) matrix(0, static_cast<Eigen::Index>(col)) = scalar(value.items[col]);
+      Matrix_traits<double> matrix(1, static_cast<::Eigen::Index>(value.items.size()));
+      for (size_t col = 0; col < value.items.size(); ++col) matrix(0, static_cast<::Eigen::Index>(col)) = scalar(value.items[col]);
       return matrix;
     }
 
     const auto cols = value.items.front().items.size();
-    Matrix_traits<double> matrix(static_cast<Eigen::Index>(value.items.size()), static_cast<Eigen::Index>(cols));
+    Matrix_traits<double> matrix(static_cast<::Eigen::Index>(value.items.size()), static_cast<::Eigen::Index>(cols));
     for (size_t row = 0; row < value.items.size(); ++row) {
       if (value.items[row].scalar) throw std::runtime_error("Cannot mix scalars and rows in a matrix.");
       if (value.items[row].items.size() != cols) throw std::runtime_error("Matrix rows must have equal length.");
-      for (size_t col = 0; col < cols; ++col) matrix(static_cast<Eigen::Index>(row), static_cast<Eigen::Index>(col)) = scalar(value.items[row].items[col]);
+      for (size_t col = 0; col < cols; ++col) matrix(static_cast<::Eigen::Index>(row), static_cast<::Eigen::Index>(col)) = scalar(value.items[row].items[col]);
     }
     return matrix;
   }
