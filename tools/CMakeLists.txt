@@ -28,10 +28,25 @@ macro(add_tool exec_name)
   install(TARGETS ${exec_name} EXPORT nrgljubljana-targets RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endmacro()
 
-set(all_executables adapt binavg broaden bw diag h5write hilb intavg integ kk matrix mats nrgchain resample specmoments tdavg unitary)
+add_library(nrgchain_core OBJECT nrgchain/nrgchain.cc)
+target_link_libraries(nrgchain_core PRIVATE project_warnings)
+target_compile_features(nrgchain_core PRIVATE cxx_std_20)
+target_compile_options(nrgchain_core PRIVATE ${NRG_CXX_OPT})
+nrgljubljana_apply_strict_floating_point(nrgchain_core)
+target_compile_definitions(nrgchain_core PRIVATE NRGCHAIN_NO_MAIN)
+target_include_directories(nrgchain_core PRIVATE
+                     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nrgchain>
+                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
+                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
+                     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include/range-v3>)
+
+set(all_executables adapt binavg broaden bw diag h5write hilb instantiate intavg integ kk matrix mats nrgchain resample specmoments tdavg unitary)
 foreach(exec ${all_executables})
   add_tool(${exec})
 endforeach()
+
+target_sources(instantiate PRIVATE $<TARGET_OBJECTS:nrgchain_core>)
+target_include_directories(instantiate PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nrgchain>)
 
 # Additional source file for 'matrix' tool
 target_sources(matrix PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/matrix/parser.cc)

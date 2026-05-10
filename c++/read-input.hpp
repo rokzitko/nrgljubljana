@@ -21,6 +21,35 @@
 
 namespace NRG {
 
+struct DataHeader {
+  std::string symtype;
+  size_t channels;
+  size_t Nmax;
+  size_t nsubs;
+};
+
+inline auto read_data_header(std::istream &fdata, const int expected_version = 9) {
+  std::string sym_string;
+  int dataversion = -1;
+  while (fdata.peek() == '#') {
+    fdata.ignore();
+    if (fdata.peek() == '!') {
+      fdata.ignore();
+      fdata >> dataversion;
+    } else {
+      std::string line;
+      std::getline(fdata, line);
+      if (const auto pos = line.find("symtype", 1); pos != std::string::npos) {
+        if (const auto p = line.find_last_of(" \t"); p != std::string::npos && p < line.size() - 1)
+          sym_string = line.substr(p + 1);
+      }
+    }
+    if (fdata.peek() == '\n') fdata.ignore();
+  }
+  my_assert(dataversion == expected_version);
+  return DataHeader{sym_string, read_one<size_t>(fdata), read_one<size_t>(fdata), read_one<size_t>(fdata)};
+}
+
 // Determine Nmax & Nlen, taking into account P.substeps. Must be called after the
 // tridiagonalization routines if not using the tables in the data file.
 template<scalar S>
@@ -36,35 +65,6 @@ void determine_Nmax_Nlen(const Coef<S> &coef, const size_t Nmax0, Params &P) { /
 template<scalar S>
 class InputData {
 private:
-  struct HeaderInfo {
-    std::string sym_string;
-    size_t channels;
-    size_t Nmax;
-    size_t nsubs;
-  };
-
-  static auto read_header(std::istream &fdata, const int expected_version = 9) {
-    std::string sym_string;
-    int dataversion = -1;
-    while (fdata.peek() == '#') {
-      fdata.ignore();
-      if (fdata.peek() == '!') {
-        fdata.ignore();
-        fdata >> dataversion;
-      } else {
-        std::string line;
-        std::getline(fdata, line);
-        if (const auto pos = line.find("symtype", 1); pos != std::string::npos) {
-          if (const auto p = line.find_last_of(" \t"); p != std::string::npos && p < line.size() - 1)
-            sym_string = line.substr(p + 1);
-        }
-      }
-      if (fdata.peek() == '\n') fdata.ignore();
-    }
-    my_assert(dataversion == expected_version);
-    return HeaderInfo{sym_string, read_one<size_t>(fdata), read_one<size_t>(fdata), read_one<size_t>(fdata)};
-  }
-
   static auto read_next_block(std::istream &fdata) {
     while (!fdata.eof() && std::isspace(fdata.peek())) fdata.get();
     char ch = char(fdata.get());
@@ -73,12 +73,12 @@ private:
     return std::make_pair(ch, opname);
   }
 
-  void initialize_symmetry(Params &P, const HeaderInfo &header) {
-    my_assert(header.sym_string == P.symtype.value());
-    Sym = set_symmetry<S>(P, header.sym_string, header.channels);
+  void initialize_symmetry(Params &P, const DataHeader &header) {
+    my_assert(header.symtype == P.symtype.value());
+    Sym = set_symmetry<S>(P, header.symtype, header.channels);
   }
 
-  void read_seed_data(std::istream &fdata, const HeaderInfo &header, Params &P) {
+  void read_seed_data(std::istream &fdata, const DataHeader &header, Params &P) {
     diag = DiagInfo<S>(fdata, header.nsubs, P);
     if (!P.silent)
       diag.states_report(Sym->multfnc());
@@ -130,10 +130,18 @@ private:
     }
   }
 
-  void finalize_coefficients(Params &P, const HeaderInfo &header) {
+  void finalize_coefficients(Params &P, const DataHeader &header) {
     if (std::string(P.tri) == "cpp") Tridiag<S>(coef, header.Nmax, P);
     determine_Nmax_Nlen(coef, header.Nmax, P);
     P.validate_after_data_file();
+  }
+
+  void read(std::istream &fdata, Params &P) {
+    const auto header = read_data_header(fdata);
+    initialize_symmetry(P, header);
+    read_seed_data(fdata, header, P);
+    read_blocks(fdata, P);
+    finalize_coefficients(P, header);
   }
 public:
   std::shared_ptr<Symmetry<S>> Sym;
@@ -141,14 +149,13 @@ public:
   Operators<S> operators;
   Coef<S> coef;
   double GS_energy = 0.0;
+  InputData(Params &P, std::istream &fdata) : coef(P) {
+    read(fdata, P);
+  }
   InputData(Params &P, const std::string &filename = "data") : coef(P) {
     std::ifstream fdata(filename);
-    if (!fdata) throw std::runtime_error("Can't load initial data.");
-    const auto header = read_header(fdata);
-    initialize_symmetry(P, header);
-    read_seed_data(fdata, header, P);
-    read_blocks(fdata, P);
-    finalize_coefficients(P, header);
+    if (!fdata) throw std::runtime_error(fmt::format("Can't load initial data from {}.", filename));
+    read(fdata, P);
   };
 };
 

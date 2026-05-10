@@ -27,6 +27,7 @@ using namespace std;
 #include "parser.h"
 #include "load.h"
 #include "calc.h"
+#include "nrgchain.hpp"
 
 string param_fn = "param";  // file with input parameters
 LAMBDA Lambda;              // discretization parameter
@@ -47,6 +48,9 @@ LinInt g_pos, g_neg;              // g(x)
 LinInt f_pos, f_neg;
 
 using Table = vector<double>;
+
+Table result_xi, result_zeta;
+double result_theta = 0.0;
 
 // Input to the tridiagonalisation.
 Table de_pos, de_neg, du_pos, du_neg;
@@ -256,6 +260,7 @@ void tables() {
 
   // For consistency with df_pos & df_neg, we use set 2
   const double theta = theta2;
+  result_theta = theta;
   
   ofstream THETA;
   safe_open(THETA, "theta.dat"); // theta (hybridisation fnc. weight)
@@ -370,6 +375,8 @@ void tridiag() {
   ofstream XI, ZETA;
   safe_open(XI, "xi.dat");     // hopping constants
   safe_open(ZETA, "zeta.dat"); // on-site energies
+  result_xi.clear();
+  result_zeta.clear();
 
   mpf_set_default_prec(preccpp);
   cout << "Using precision of " << preccpp << " digits." << endl;
@@ -489,6 +496,8 @@ void tridiag() {
 
     XI << coef_xi << endl;
     ZETA << coef_zeta << endl;
+    result_xi.push_back(coef_xi);
+    result_zeta.push_back(coef_zeta);
 
     cout << "  xi(" << n << ")=" << HIGHPREC(dxi) << " --> " << HIGHPREC(coef_xi) << endl;
     cout << "zeta(" << n << ")=" << HIGHPREC(dzeta) << endl;
@@ -528,6 +537,96 @@ void calc_tables() {
   if (nrgchain_tables_save) { save_tables(); }
 }
 
+void reset_calculation_state() {
+  params.clear();
+  Lambda = LAMBDA();
+  z = 0.0;
+  xmax = 0.0;
+  mMAX = 0;
+  Nmax = 0;
+  bandrescale = 1.0;
+  rescalexi = false;
+  preccpp = 0;
+  vecrho_pos.clear();
+  vecrho_neg.clear();
+  rho_pos = LinInt();
+  rho_neg = LinInt();
+  intrho_pos = IntLinInt();
+  intrho_neg = IntLinInt();
+  g_pos = LinInt();
+  g_neg = LinInt();
+  f_pos = LinInt();
+  f_neg = LinInt();
+  de_pos.clear();
+  de_neg.clear();
+  du_pos.clear();
+  du_neg.clear();
+  adapt = false;
+  band.clear();
+  nrgchain_tables_save = false;
+  nrgchain_tables_load = false;
+  nrgchain_tridiag = true;
+  result_xi.clear();
+  result_zeta.clear();
+  result_theta = 0.0;
+}
+
+namespace NRG::Tools::NrgChain {
+
+namespace {
+
+void apply_mode(const TableMode mode) {
+  if (mode == TableMode::SaveOnly) {
+    nrgchain_tables_load = false;
+    nrgchain_tables_save = true;
+    nrgchain_tridiag = false;
+  }
+  if (mode == TableMode::LoadAndTridiagonalize) {
+    nrgchain_tables_load = true;
+    nrgchain_tables_save = false;
+    nrgchain_tridiag = true;
+  }
+}
+
+WilsonData make_result() {
+  WilsonData data;
+  data.channels.push_back(WilsonChannel{result_theta, result_xi, result_zeta});
+  return data;
+}
+
+WilsonData run_calculation(const TableMode mode) {
+  set_parameters();
+  apply_mode(mode);
+
+  if (nrgchain_tables_load) {
+    load_tables();
+  } else {
+    calc_tables();
+  }
+
+  if (nrgchain_tridiag) tridiag();
+
+  return make_result();
+}
+
+} // namespace
+
+WilsonData calculate_from_params(const std::map<std::string, std::string> &param_values, const TableMode mode) {
+  reset_calculation_state();
+  params = param_values;
+  return run_calculation(mode);
+}
+
+WilsonData calculate_from_file(const std::string &param_filename, const TableMode mode) {
+  reset_calculation_state();
+  param_fn = param_filename;
+  parser(param_fn);
+  return run_calculation(mode);
+}
+
+} // namespace NRG::Tools::NrgChain
+
+#ifndef NRGCHAIN_NO_MAIN
 int main(int argc, char *argv[]) {
   try {
     clock_t start_clock = clock();
@@ -556,3 +655,4 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 }
+#endif
