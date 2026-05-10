@@ -47,6 +47,7 @@ endforeach()
 
 target_sources(instantiate PRIVATE $<TARGET_OBJECTS:nrgchain_core>)
 target_include_directories(instantiate PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nrgchain>)
+target_link_libraries(instantiate PRIVATE nrgljubljana_c)
 
 # Additional source file for 'matrix' tool
 target_sources(matrix PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/matrix/parser.cc)

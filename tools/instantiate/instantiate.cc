@@ -12,6 +12,7 @@
 #include <iostream>
 #include <limits>
 #include <map>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -19,6 +20,8 @@
 #include <vector>
 
 #include <diag.hpp>
+#include <tridiag.hpp>
+#include <read-input.hpp>
 #include <traits.hpp>
 
 #include "matrix_evaluator.hpp"
@@ -525,6 +528,26 @@ NRG::Spawn::MatrixEvaluator make_matrix_evaluator(const ParamSections &sections,
   return NRG::Spawn::MatrixEvaluator(std::move(context));
 }
 
+class ScopedCoutRedirect {
+ private:
+  std::ostringstream sink;
+  std::streambuf *old_buffer = nullptr;
+
+ public:
+  ScopedCoutRedirect() : old_buffer(std::cout.rdbuf(sink.rdbuf())) {}
+  ScopedCoutRedirect(const ScopedCoutRedirect &) = delete;
+  ScopedCoutRedirect &operator=(const ScopedCoutRedirect &) = delete;
+  ~ScopedCoutRedirect() { std::cout.rdbuf(old_buffer); }
+};
+
+void validate_generated_data(const std::string &param_filename, const std::string &data_text) {
+  std::istringstream data_in(data_text);
+  ScopedCoutRedirect quiet;
+  auto params = NRG::Params(param_filename, "param", std::make_unique<NRG::Workdir>(), true, true);
+  params.silent = true;
+  const NRG::InputData<double> input(params, data_in);
+}
+
 void run_diag_seed_only(const Options &options) {
   auto sections = parse_param_sections(options.param_filename);
   write_param_section_files(sections, options.param_filename);
@@ -558,18 +581,24 @@ void run_full_instantiation(const Options &options) {
 
   auto evaluator = make_matrix_evaluator(sections, wilson);
 
-  std::ofstream data_out("data");
-  if (!data_out) throw std::runtime_error("Can't open data for writing.");
+  std::ostringstream data_buffer;
 
-  DataTemplateReader data_in(std::filesystem::path(options.template_dir) / "data.in", &data_out);
+  DataTemplateReader data_in(std::filesystem::path(options.template_dir) / "data.in", &data_buffer);
   const auto header = read_template_header(data_in);
   if (header.channels != 1) throw std::runtime_error("Only single-channel data.in templates are supported in this slice.");
-  data_out << header.channels << ' ' << nmax << ' ' << header.subspaces << '\n';
+  data_buffer << header.channels << ' ' << nmax << ' ' << header.subspaces << '\n';
 
   const auto seed = read_seed_data(data_in, header.subspaces, evaluator, options.template_dir, true);
-  write_seed_energy_block(data_out, seed);
-  process_template_tail(data_in, data_out, seed, evaluator, options.template_dir, header.channels);
-  write_z_coefficients(data_out, wilson, header.channels, nmax);
+  write_seed_energy_block(data_buffer, seed);
+  process_template_tail(data_in, data_buffer, seed, evaluator, options.template_dir, header.channels);
+  write_z_coefficients(data_buffer, wilson, header.channels, nmax);
+
+  const auto data_text = data_buffer.str();
+  validate_generated_data(options.param_filename, data_text);
+
+  std::ofstream data_out("data");
+  if (!data_out) throw std::runtime_error("Can't open data for writing.");
+  data_out << data_text;
 
   std::cout << "E_gs=" << std::setprecision(18) << seed.ground_energy << '\n';
 }
