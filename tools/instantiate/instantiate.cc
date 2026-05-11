@@ -197,15 +197,6 @@ std::vector<std::string> fields(const std::string &line) {
   return result;
 }
 
-std::string qn_name(const std::vector<std::string> &tokens) {
-  std::string name;
-  for (size_t i = 0; i < tokens.size(); ++i) {
-    if (i != 0) name += ".";
-    name += tokens[i];
-  }
-  return name;
-}
-
 class DataTemplateReader {
  private:
   std::ifstream in;
@@ -256,7 +247,7 @@ struct TemplateHeader {
 
 struct SeedSubspace {
   std::string qn_line;
-  std::string qn;
+  NRG::Invar qn;
   size_t dimension = 0;
   std::vector<double> eigenvalues;
   NRG::Matrix_traits<double> eigenvectors;
@@ -267,9 +258,42 @@ struct SeedData {
   double smallest = std::numeric_limits<double>::max();
   double ground_energy = 0.0;
   std::vector<SeedSubspace> subspaces;
-  std::map<std::string, size_t> dimensions;
-  std::map<std::string, NRG::Matrix_traits<double>> eigenvectors;
+  std::map<NRG::Invar, size_t> dimensions;
+  std::map<NRG::Invar, NRG::Matrix_traits<double>> eigenvectors;
 };
+
+std::string legacy_qn_name(const NRG::Invar &qn) {
+  std::ostringstream out;
+  qn.insertor(out, ".");
+  return out.str();
+}
+
+NRG::Invar parse_invar_line(const std::string &line, const std::string &context) {
+  std::istringstream input(line);
+  NRG::Invar qn;
+  try {
+    input >> qn;
+  } catch (const std::exception &e) {
+    throw std::runtime_error("Failed reading quantum numbers for " + context + ": " + e.what());
+  }
+  std::string extra;
+  if (input >> extra) throw std::runtime_error("Too many quantum-number fields for " + context + ": " + line);
+  return qn;
+}
+
+std::pair<NRG::Invar, NRG::Invar> parse_invar_pair_line(const std::string &line, const std::string &context) {
+  std::istringstream input(line);
+  NRG::Invar qn1;
+  NRG::Invar qn2;
+  try {
+    input >> qn1 >> qn2;
+  } catch (const std::exception &e) {
+    throw std::runtime_error("Failed reading quantum-number pair for " + context + ": " + e.what());
+  }
+  std::string extra;
+  if (input >> extra) throw std::runtime_error("Too many quantum-number fields for " + context + ": " + line);
+  return {qn1, qn2};
+}
 
 size_t parse_size_t_value(const std::string &text, const std::string &context) {
   const auto stripped = trim(text);
@@ -356,23 +380,22 @@ SeedData read_seed_data(DataTemplateReader &data_in, const size_t subspaces, NRG
     if (!qn_line || !size_line || !diag_line) throw std::runtime_error("Unexpected end of data.in while reading subspaces.");
     if (subspace == 0) seed.factor = data_in.factor();
 
-    const auto qn_tokens = fields(*qn_line);
-    if (qn_tokens.empty()) throw std::runtime_error("Empty quantum-number line in data.in.");
-    const auto qn = qn_name(qn_tokens);
-    const auto expected_size = parse_size_t_value(*size_line, "subspace size for " + qn);
-    if (expected_size == 0) throw std::runtime_error("Invalid subspace size for " + qn + ".");
+    const auto qn = parse_invar_line(*qn_line, "seed subspace");
+    const auto qn_name = legacy_qn_name(qn);
+    const auto expected_size = parse_size_t_value(*size_line, "subspace size for " + qn_name);
+    if (expected_size == 0) throw std::runtime_error("Invalid subspace size for " + qn_name + ".");
 
     std::istringstream diag_stream(*diag_line);
     std::string keyword, matrix_file;
     diag_stream >> keyword >> matrix_file;
-    if (keyword != "DIAG" || matrix_file.empty()) throw std::runtime_error("Expected DIAG line for " + qn + ".");
+    if (keyword != "DIAG" || matrix_file.empty()) throw std::runtime_error("Expected DIAG line for " + qn_name + ".");
 
     auto matrix = evaluator.evaluate_matrix(read_text_file(template_dir / matrix_file), matrix_file);
     if (matrix.rows() != static_cast<Eigen::Index>(expected_size) || matrix.cols() != static_cast<Eigen::Index>(expected_size))
-      throw std::runtime_error("Matrix dimension mismatch for " + qn + ".");
+      throw std::runtime_error("Matrix dimension mismatch for " + qn_name + ".");
 
     if (write_legacy_outputs) {
-      save_text_matrix("ham." + qn, matrix);
+      save_text_matrix("ham." + qn_name, matrix);
       save_text_matrix("ham", matrix);
     }
 
@@ -383,9 +406,10 @@ SeedData read_seed_data(DataTemplateReader &data_in, const size_t subspaces, NRG
     if (write_legacy_outputs) {
       save_values("val", raw.val);
       save_binary_matrix("vec", raw.vec);
-      save_binary_matrix("vec." + qn, raw.vec);
+      save_binary_matrix("vec." + qn_name, raw.vec);
     }
 
+    if (seed.dimensions.contains(qn)) throw std::runtime_error("Duplicate seed subspace " + qn_name + ".");
     seed.dimensions[qn] = expected_size;
     seed.eigenvectors[qn] = raw.vec;
     seed.subspaces.push_back(SeedSubspace{*qn_line, qn, expected_size, std::move(raw.val), std::move(raw.vec)});
@@ -442,25 +466,24 @@ void transform_matrix_block(DataTemplateReader &data_in, std::ostream &out, cons
   for (size_t i = 0; i < count; ++i) {
     const auto qn_line = data_in.next_data_line();
     if (!qn_line) throw std::runtime_error("Unexpected end of data.in while reading matrix-element quantum numbers.");
-    const auto qn_tokens = fields(*qn_line);
-    if (qn_tokens.size() != 4) throw std::runtime_error("Expected four quantum-number fields in matrix-element block.");
-    const auto qn1 = qn_name({qn_tokens[0], qn_tokens[1]});
-    const auto qn2 = qn_name({qn_tokens[2], qn_tokens[3]});
+    const auto [qn1, qn2] = parse_invar_pair_line(*qn_line, "matrix-element block");
+    const auto qn1_name = legacy_qn_name(qn1);
+    const auto qn2_name = legacy_qn_name(qn2);
     const auto dim1_it = seed.dimensions.find(qn1);
     const auto dim2_it = seed.dimensions.find(qn2);
     if (dim1_it == seed.dimensions.end() || dim2_it == seed.dimensions.end())
-      throw std::runtime_error("Matrix-element block references unknown subspace " + qn1 + " -> " + qn2 + ".");
+      throw std::runtime_error("Matrix-element block references unknown subspace " + qn1_name + " -> " + qn2_name + ".");
     const auto vec1_it = seed.eigenvectors.find(qn1);
     const auto vec2_it = seed.eigenvectors.find(qn2);
     if (vec1_it == seed.eigenvectors.end() || vec2_it == seed.eigenvectors.end())
-      throw std::runtime_error("Missing eigenvectors for subspace " + qn1 + " -> " + qn2 + ".");
+      throw std::runtime_error("Missing eigenvectors for subspace " + qn1_name + " -> " + qn2_name + ".");
     const auto dim1 = dim1_it->second;
     const auto dim2 = dim2_it->second;
-    out << qn_tokens[0] << ' ' << qn_tokens[1] << ' ' << qn_tokens[2] << ' ' << qn_tokens[3] << '\n';
+    out << *qn_line << '\n';
 
     const auto first_matrix_line = data_in.next_data_line();
-    if (!first_matrix_line) throw std::runtime_error("Unexpected end of data.in while reading matrix for " + qn1 + " -> " + qn2 + ".");
-    const auto matrix = read_operator_matrix(data_in, *first_matrix_line, dim1, dim2, evaluator, template_dir, qn1 + " -> " + qn2);
+    if (!first_matrix_line) throw std::runtime_error("Unexpected end of data.in while reading matrix for " + qn1_name + " -> " + qn2_name + ".");
+    const auto matrix = read_operator_matrix(data_in, *first_matrix_line, dim1, dim2, evaluator, template_dir, qn1_name + " -> " + qn2_name);
     NRG::Matrix_traits<double> transformed = vec1_it->second * matrix * vec2_it->second.transpose();
     write_matrix(out, transformed);
   }
@@ -540,17 +563,31 @@ class ScopedCoutRedirect {
   ~ScopedCoutRedirect() { std::cout.rdbuf(old_buffer); }
 };
 
+std::unique_ptr<NRG::Params> make_instantiate_params(const std::string &param_filename) {
+  ScopedCoutRedirect quiet;
+  auto params = std::make_unique<NRG::Params>(param_filename, "param", std::make_unique<NRG::Workdir>(), true, true);
+  params->silent = true;
+  return params;
+}
+
+void initialize_template_symmetry(NRG::Params &params, const TemplateHeader &header) {
+  if (params.symtype.value().empty()) throw std::runtime_error("Parameter symtype must be set before parsing template/data.in.");
+  ScopedCoutRedirect quiet;
+  const auto symmetry = NRG::set_symmetry<double>(params, params.symtype.value(), header.channels);
+  (void)symmetry;
+}
+
 void validate_generated_data(const std::string &param_filename, const std::string &data_text) {
   std::istringstream data_in(data_text);
   ScopedCoutRedirect quiet;
-  auto params = NRG::Params(param_filename, "param", std::make_unique<NRG::Workdir>(), true, true);
-  params.silent = true;
-  const NRG::InputData<double> input(params, data_in);
+  auto params = make_instantiate_params(param_filename);
+  const NRG::InputData<double> input(*params, data_in);
 }
 
 void run_diag_seed_only(const Options &options) {
   auto sections = parse_param_sections(options.param_filename);
   write_param_section_files(sections, options.param_filename);
+  auto params = make_instantiate_params(options.param_filename);
 
   const auto wilson = NRG::Tools::NrgChain::calculate_from_file(options.param_filename);
   if (wilson.channels.size() != 1)
@@ -562,6 +599,7 @@ void run_diag_seed_only(const Options &options) {
   DataTemplateReader data_in(std::filesystem::path(options.template_dir) / "data.in");
   const auto header = read_template_header(data_in);
   if (header.channels != 1) throw std::runtime_error("Only single-channel data.in templates are supported in this slice.");
+  initialize_template_symmetry(*params, header);
   const auto seed = read_seed_data(data_in, header.subspaces, evaluator, options.template_dir, true);
   std::cout << "E_gs=" << std::setprecision(18) << seed.ground_energy << '\n';
 }
@@ -569,6 +607,7 @@ void run_diag_seed_only(const Options &options) {
 void run_full_instantiation(const Options &options) {
   auto sections = parse_param_sections(options.param_filename);
   write_param_section_files(sections, options.param_filename);
+  auto params = make_instantiate_params(options.param_filename);
 
   const auto wilson = NRG::Tools::NrgChain::calculate_from_file(options.param_filename);
   if (wilson.channels.size() != 1)
@@ -586,6 +625,7 @@ void run_full_instantiation(const Options &options) {
   DataTemplateReader data_in(std::filesystem::path(options.template_dir) / "data.in", &data_buffer);
   const auto header = read_template_header(data_in);
   if (header.channels != 1) throw std::runtime_error("Only single-channel data.in templates are supported in this slice.");
+  initialize_template_symmetry(*params, header);
   data_buffer << header.channels << ' ' << nmax << ' ' << header.subspaces << '\n';
 
   const auto seed = read_seed_data(data_in, header.subspaces, evaluator, options.template_dir, true);
