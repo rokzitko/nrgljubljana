@@ -1,0 +1,27 @@
+#!/bin/sh
+set -eu
+export PATH="$1:$PATH"
+
+rm -rf from_file from_flat
+mkdir from_file from_flat
+cp param from_file/param
+cat >from_file/Delta.dat <<'EOF'
+-1.0 0.01
+-1e-10 0.01
+1e-10 0.01
+1.0 0.01
+EOF
+
+cp param from_flat/param
+
+(cd from_file && adapt P && adapt N)
+(cd from_flat && adapt --flat 0.01 P && adapt --flat 0.01 N)
+
+test ! -e from_flat/Delta.dat
+"$2/test/mycomp.pl" from_file/FSOL.dat from_flat/FSOL.dat
+"$2/test/mycomp.pl" from_file/FSOLNEG.dat from_flat/FSOLNEG.dat
+
+if adapt --flat not-a-number P >invalid_stdout.txt 2>invalid_stderr.txt; then
+  exit 1
+fi
+grep -q "positive finite number" invalid_stderr.txt

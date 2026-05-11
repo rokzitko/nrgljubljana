@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <functional>
 #include <stdexcept>
+#include <optional>
 
 using namespace std;
 using namespace std::string_literals;
@@ -56,6 +57,7 @@ class Adapt {
    int max_iter           = 10;                       // Maximum number of iterations in the secant method
    double max_abs         = 100.0;                    // Maximum value of |f(x)|.
    double bandrescale     = 1.0;                      // Rescale the input data by this scale factor
+   std::optional<double> flat_gamma;                   // Constant hybridisation supplied on the command line.
    bool adapt; // If adapt=false --> g(x)=1.
    bool hardgap;
    double boundary;
@@ -256,8 +258,12 @@ class Adapt {
      return term1 - term2;
    }
    void load_init_rho() {
-     std::string rhofn = P.Pstr("dos", "Delta.dat");
-     vecrho       = load_rho(rhofn, sign);
+     if (flat_gamma) {
+       vecrho = flat_rho(*flat_gamma, sign);
+     } else {
+       std::string rhofn = P.Pstr("dos", "Delta.dat");
+       vecrho = load_rho(rhofn, sign);
+     }
      add_zero_point(vecrho);
      rescalevecxy(vecrho, 1.0/bandrescale, bandrescale);
      minmaxvec(vecrho, "rho");
@@ -310,7 +316,7 @@ class Adapt {
      factor0         = 1.0 + P.P("secant_factor", 1e-7);
      max_iter        = P.Pint("secant_max_iter", 10);
    }
-   Adapt(const Params &P_, const Sign &sign_) : P(P_), sign(sign_) {
+   Adapt(const Params &P_, const Sign &sign_, std::optional<double> flat_gamma_ = std::nullopt) : P(P_), sign(sign_), flat_gamma(flat_gamma_) {
      set_parameters();
      report_parameters();
    }

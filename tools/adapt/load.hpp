@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <cctype>
 #include <cstdlib>
+#include <cmath>
 
 #include "../common/tabulated.hpp"
 
@@ -49,6 +50,14 @@ inline Vec load_rho(const std::string &filename, const Sign sign) {
     [](const Sign s, const double x) { return (s == Sign::POS && x > 0) || (s == Sign::NEG && x < 0); },
     [](std::ifstream &input) { return getnextline(input); });
   NRG::Tools::print_interval(filename, sign == Sign::POS ? "POS" : "NEG", vecrho);
+  return vecrho;
+}
+
+inline Vec flat_rho(const double gamma, const Sign sign) {
+  if (!(std::isfinite(gamma) && gamma > 0.0))
+    throw std::invalid_argument("Flat hybridisation Gamma must be a positive finite number.");
+  Vec vecrho{{1e-10, gamma}, {1.0, gamma}};
+  NRG::Tools::print_interval("--flat", sign == Sign::POS ? "POS" : "NEG", vecrho);
   return vecrho;
 }
 

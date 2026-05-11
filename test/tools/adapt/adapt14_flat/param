@@ -1,0 +1,11 @@
+[param]
+dos=Delta.dat
+Lambda=2
+adapt=false
+xmax=2.5
+outputstep=0.25
+xfine=1.5
+dx_fine=1e-4
+dx_fast=1e-3
+allowed_error=1e-8
+max_subdiv=20
