@@ -5,6 +5,7 @@ build-x86
 build-arm
 build.*
 !recipe/build.sh
+!recipe-conda-forge/build.sh
 build_*
 run_tests*
 *.pyc
