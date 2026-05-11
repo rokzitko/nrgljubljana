@@ -1,5 +1,5 @@
 {% set name = "nrgljubljana" %}
-{% set version = "2026.04" %}
+{% set version = "2026.05" %}
 {% set git_url = environ.get("NRGLJUBLJANA_CONDA_GIT_URL", "https://github.com/rokzitko/nrgljubljana.git") %}
 {% set git_rev = environ.get("NRGLJUBLJANA_CONDA_GIT_REV", "master") %}
 {% set conda_target_platform = target_platform|default("", true) %}
