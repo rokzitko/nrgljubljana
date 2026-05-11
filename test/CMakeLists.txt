@@ -66,6 +66,7 @@ if(TEST_LONG AND SYM_ALL)
 endif()
 
 add_subdirectory(tools)
+add_subdirectory(nrgspawn)
 
 if(Mathematica_FOUND AND SYM_ALL)
   add_subdirectory(nrginit)
