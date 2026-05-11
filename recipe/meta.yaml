@@ -66,6 +66,9 @@ test:
   commands:
     - test -x "${PREFIX}/bin/nrg"  # [unix]
     - test -x "${PREFIX}/bin/adapt"  # [unix]
+    - test -x "${PREFIX}/bin/instantiate"  # [unix]
+    - test -x "${PREFIX}/nrginit/nrginit"  # [unix]
+    - test -f "${PREFIX}/nrginit/nrginit.m"  # [unix]
     - test -z "$(ldd "${PREFIX}/bin/nrg" | grep 'not found')"  # [linux]
     - test -f "${PREFIX}/lib/libnrgljubljana_c.so"  # [linux]
     - test -f "${PREFIX}/lib/libnrgljubljana_c.dylib"  # [osx]

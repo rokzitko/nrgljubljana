@@ -8,6 +8,8 @@ nrgljubljana_build_tests:
   - "OFF"
 nrgljubljana_test_long:
   - "OFF"
+nrgljubljana_enable_mathematica:
+  - "OFF"
 nrgljubljana_strict_floating_point:
   - "OFF"
 nrgljubljana_build_jobs:

@@ -40,6 +40,7 @@ positive_integer() {
 
 build_tests="$(cmake_bool "${nrgljubljana_build_tests:-OFF}")"
 test_long="$(cmake_bool "${nrgljubljana_test_long:-OFF}")"
+enable_mathematica="$(cmake_bool "${nrgljubljana_enable_mathematica:-OFF}")"
 strict_floating_point="$(cmake_bool "${nrgljubljana_strict_floating_point:-OFF}")"
 cmake_build_type="${nrgljubljana_cmake_build_type:-Release}"
 build_jobs="$(job_count "${nrgljubljana_build_jobs:-0}")"
@@ -62,6 +63,7 @@ cmake -S . -B build -G Ninja \
   -DCMAKE_CXX_SCAN_FOR_MODULES=OFF \
   -DHDF5_ROOT="${PREFIX}" \
   -DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON \
+  -DNRGLJUBLJANA_ENABLE_MATHEMATICA="${enable_mathematica}" \
   -DNRGLJUBLJANA_INSTALL_NRGINIT=ON \
   -DNRGLJUBLJANA_STRICT_FLOATING_POINT="${strict_floating_point}" \
   -DBuild_Tests="${build_tests}" \
