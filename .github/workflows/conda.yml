@@ -64,20 +64,47 @@ jobs:
           auto-activate-base: true
 
       - name: Install conda-build
-        run: conda install -n base -y conda-build
+        run: conda install -n base -y --override-channels -c conda-forge conda-build
 
       - name: Configure Linux ARM OpenBLAS
         if: ${{ matrix.openblas_coretype != '' }}
         run: echo "OPENBLAS_CORETYPE=${{ matrix.openblas_coretype }}" >> "$GITHUB_ENV"
 
       - name: Render recipe
-        run: conda render -c conda-forge --variants "${{ matrix.variants }}" recipe
+        run: |
+          retry_conda() {
+            local attempt
+            for attempt in 1 2 3; do
+              if "$@"; then
+                return 0
+              fi
+              if [ "${attempt}" -eq 3 ]; then
+                return 1
+              fi
+              conda clean -y --index-cache --packages --tarballs
+              sleep $((attempt * 20))
+            done
+          }
+
+          retry_conda conda render --override-channels -c conda-forge --variants "${{ matrix.variants }}" recipe
 
       - name: Build package
         run: |
-          conda build -c conda-forge --no-anaconda-upload \
-            --variants "${{ matrix.variants }}" \
-            recipe
+          retry_conda() {
+            local attempt
+            for attempt in 1 2 3; do
+              if "$@"; then
+                return 0
+              fi
+              if [ "${attempt}" -eq 3 ]; then
+                return 1
+              fi
+              conda clean -y --index-cache --packages --tarballs
+              sleep $((attempt * 20))
+            done
+          }
+
+          retry_conda conda build --override-channels -c conda-forge --no-anaconda-upload --variants "${{ matrix.variants }}" recipe
 
       - name: Upload conda test logs
         uses: actions/upload-artifact@v7
