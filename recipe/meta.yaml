@@ -42,6 +42,7 @@ requirements:
     - fmt 11.2.0
     - gmp
     - gsl
+    - gtest 1.15.2
     - hdf5
     - highfive 3.1.0
     - libboost-devel
