@@ -496,12 +496,13 @@ bool is_operator_block(const char block_type) {
 
 void process_template_tail(DataTemplateReader &data_in, std::ostream &out, const SeedData &seed,
                            NRG::Spawn::MatrixEvaluator &evaluator, const std::filesystem::path &template_dir,
-                           const size_t channels) {
+                           const size_t expected_wilson_blocks) {
   size_t wilson_blocks = 0;
   while (const auto line = data_in.next_data_line()) {
     const auto block_type = line->front();
     if (block_type == 'f') {
-      if (++wilson_blocks > channels) throw std::runtime_error("More Wilson-chain operator blocks than channels in data.in.");
+      if (++wilson_blocks > expected_wilson_blocks)
+        throw std::runtime_error("More Wilson-chain operator blocks than expected for the selected symmetry in data.in.");
       out << *line << '\n';
       transform_matrix_block(data_in, out, seed, evaluator, template_dir);
       continue;
@@ -525,7 +526,8 @@ void process_template_tail(DataTemplateReader &data_in, std::ostream &out, const
     throw std::runtime_error("Unsupported data.in block: " + *line);
   }
 
-  if (wilson_blocks != channels) throw std::runtime_error("Wilson-chain operator block count does not match channel count.");
+  if (wilson_blocks != expected_wilson_blocks)
+    throw std::runtime_error("Wilson-chain operator block count does not match the selected symmetry.");
 }
 
 void write_coefficient_table(std::ostream &out, const std::vector<double> &values, const size_t max_index) {
@@ -630,8 +632,8 @@ void run_full_instantiation(const Options &options) {
 
   const auto seed = read_seed_data(data_in, header.subspaces, evaluator, options.template_dir, true);
   write_seed_energy_block(data_buffer, seed);
-  process_template_tail(data_in, data_buffer, seed, evaluator, options.template_dir, header.channels);
-  write_z_coefficients(data_buffer, wilson, header.channels, nmax);
+  process_template_tail(data_in, data_buffer, seed, evaluator, options.template_dir, params->channels * params->perchannel);
+  write_z_coefficients(data_buffer, wilson, params->coefchannels, nmax);
 
   const auto data_text = data_buffer.str();
   validate_generated_data(options.param_filename, data_text);
