@@ -29,7 +29,7 @@ macro(add_tool exec_name)
 endmacro()
 
 add_library(nrgchain_core OBJECT nrgchain/nrgchain.cc)
-target_link_libraries(nrgchain_core PRIVATE project_warnings)
+target_link_libraries(nrgchain_core PRIVATE project_warnings gmp)
 target_compile_features(nrgchain_core PRIVATE cxx_std_20)
 target_compile_options(nrgchain_core PRIVATE ${NRG_CXX_OPT})
 nrgljubljana_apply_strict_floating_point(nrgchain_core)
