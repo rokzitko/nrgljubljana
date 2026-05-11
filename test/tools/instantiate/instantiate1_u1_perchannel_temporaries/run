@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+export PATH="$1:$PATH"
+
+instantiate --generate-temporaries > instantiate.out
+
+test -s data
+test -s ham
+test -s ham.0
+test -s val
+test -s vec
+test -s vec.0
+test -s xi.dat
+test -s zeta.dat
+test -s theta.dat
+test -s xi1.dat
+test -s zeta1.dat
+test -s theta1.dat
+test -s param.param
+
+count=$(grep -c '^f ' data)
+test "$count" = 2

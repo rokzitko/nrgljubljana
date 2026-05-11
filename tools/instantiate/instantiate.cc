@@ -17,6 +17,8 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <system_error>
+#include <utility>
 #include <vector>
 
 #include <diag.hpp>
@@ -34,10 +36,11 @@ struct Options {
   std::string template_dir = "template";
   bool wilson_only = false;
   bool diag_seed_only = false;
+  bool generate_temporaries = false;
 };
 
 void usage(std::ostream &out = std::cout) {
-  out << "Usage: instantiate [--wilson-only | --diag-seed-only] [--param FILE] [--template-dir DIR]\n";
+  out << "Usage: instantiate [--wilson-only | --diag-seed-only] [--generate-temporaries] [--param FILE] [--template-dir DIR]\n";
 }
 
 Options parse_options(const int argc, char *argv[]) {
@@ -54,6 +57,10 @@ Options parse_options(const int argc, char *argv[]) {
     }
     if (arg == "--diag-seed-only") {
       options.diag_seed_only = true;
+      continue;
+    }
+    if (arg == "--generate-temporaries") {
+      options.generate_temporaries = true;
       continue;
     }
     if (arg == "--param") {
@@ -84,6 +91,17 @@ std::string read_text_file(const std::filesystem::path &filename) {
   std::ostringstream text;
   text << in.rdbuf();
   return text.str();
+}
+
+std::filesystem::path resolve_template_file(const std::filesystem::path &template_dir, const std::filesystem::path &filename) {
+  if (filename.is_absolute()) return filename;
+  const auto in_template_dir = template_dir / filename;
+
+  std::error_code ec;
+  if (std::filesystem::exists(in_template_dir, ec)) return in_template_dir;
+  ec.clear();
+  if (std::filesystem::exists(filename, ec)) return filename;
+  return in_template_dir;
 }
 
 struct ParamSections {
@@ -121,6 +139,53 @@ void write_param_section_files(const ParamSections &sections, const std::string 
     for (const auto &line : lines) out << line << '\n';
   }
 }
+
+void remove_file_noexcept(const std::filesystem::path &filename) {
+  std::error_code ec;
+  std::filesystem::remove(filename, ec);
+}
+
+void remove_prefixed_files_noexcept(const std::string &prefix) {
+  std::error_code ec;
+  for (std::filesystem::directory_iterator it(".", ec), end; !ec && it != end; it.increment(ec)) {
+    const auto filename = it->path().filename().string();
+    if (filename.rfind(prefix + ".", 0) != 0) continue;
+
+    std::error_code type_ec;
+    if (it->is_directory(type_ec)) continue;
+    remove_file_noexcept(it->path());
+  }
+}
+
+void cleanup_instantiation_temporaries(const std::string &param_filename, const ParamSections &sections) {
+  const std::vector<std::string> filenames = {"xi.dat",      "zeta.dat",     "theta.dat", "xi1.dat",     "zeta1.dat",
+                                             "theta1.dat",  "val",          "vec",       "mat",         "mat.res",
+                                             "ham",         "param.param",  "param.dmft", "param.extra", "solverlog",
+                                             "solverlogneg"};
+  for (const auto &filename : filenames) remove_file_noexcept(filename);
+  for (const auto &[section, lines] : sections.lines) {
+    (void)lines;
+    remove_file_noexcept(param_filename + "." + section);
+  }
+  remove_prefixed_files_noexcept("vec");
+  remove_prefixed_files_noexcept("ham");
+}
+
+class TemporaryCleanupGuard {
+ private:
+  bool enabled = false;
+  std::string param_filename;
+  ParamSections sections;
+
+ public:
+  TemporaryCleanupGuard(const bool enabled_, std::string param_filename_, ParamSections sections_)
+      : enabled(enabled_), param_filename(std::move(param_filename_)), sections(std::move(sections_)) {}
+  TemporaryCleanupGuard(const TemporaryCleanupGuard &) = delete;
+  TemporaryCleanupGuard &operator=(const TemporaryCleanupGuard &) = delete;
+  ~TemporaryCleanupGuard() {
+    if (enabled) cleanup_instantiation_temporaries(param_filename, sections);
+  }
+};
 
 std::map<std::string, double> numeric_variables(const std::map<std::string, std::string> &values) {
   std::map<std::string, double> variables;
@@ -409,7 +474,7 @@ SeedData read_seed_data(DataTemplateReader &data_in, const size_t subspaces, NRG
     diag_stream >> keyword >> matrix_file;
     if (keyword != "DIAG" || matrix_file.empty()) throw std::runtime_error("Expected DIAG line for " + qn_name + ".");
 
-    auto matrix = evaluator.evaluate_matrix(read_text_file(template_dir / matrix_file), matrix_file);
+    auto matrix = evaluator.evaluate_matrix(read_text_file(resolve_template_file(template_dir, matrix_file)), matrix_file);
     if (matrix.rows() != static_cast<Eigen::Index>(expected_size) || matrix.cols() != static_cast<Eigen::Index>(expected_size))
       throw std::runtime_error("Matrix dimension mismatch for " + qn_name + ".");
 
@@ -459,7 +524,7 @@ NRG::Matrix_traits<double> read_operator_matrix(DataTemplateReader &data_in, con
                                                 const std::filesystem::path &template_dir,
                                                 const std::string &context) {
   if (!first_line.empty() && first_line.front() == 'o') {
-    auto matrix = evaluator.evaluate_matrix(read_text_file(template_dir / first_line), first_line);
+    auto matrix = evaluator.evaluate_matrix(read_text_file(resolve_template_file(template_dir, first_line)), first_line);
     if (matrix.rows() != static_cast<Eigen::Index>(rows) || matrix.cols() != static_cast<Eigen::Index>(cols))
       throw std::runtime_error("Matrix dimension mismatch for " + context + ".");
     return matrix;
@@ -638,23 +703,25 @@ void run_diag_seed_only(const Options &options) {
 
   auto evaluator = make_matrix_evaluator(sections, wilson);
 
-  DataTemplateReader data_in(std::filesystem::path(options.template_dir) / "data.in");
+  const auto template_dir = std::filesystem::path(options.template_dir);
+  DataTemplateReader data_in(resolve_template_file(template_dir, "data.in"));
   const auto header = read_template_header(data_in);
   if (header.channels != 1) throw std::runtime_error("Only single-channel data.in templates are supported in this slice.");
   initialize_template_symmetry(*params, header);
-  const auto seed = read_seed_data(data_in, header.subspaces, evaluator, options.template_dir, true);
+  const auto seed = read_seed_data(data_in, header.subspaces, evaluator, template_dir, true);
   std::cout << "E_gs=" << std::setprecision(18) << seed.ground_energy << '\n';
 }
 
 void run_full_instantiation(const Options &options) {
   auto sections = parse_param_sections(options.param_filename);
-  write_param_section_files(sections, options.param_filename);
+  TemporaryCleanupGuard cleanup(!options.generate_temporaries, options.param_filename, sections);
+  if (options.generate_temporaries) write_param_section_files(sections, options.param_filename);
   auto params = make_instantiate_params(options.param_filename);
 
   const auto wilson = NRG::Tools::NrgChain::calculate_from_file(options.param_filename);
   if (wilson.channels.size() != 1)
     throw std::runtime_error("Only single-channel Wilson generation is supported in this instantiate slice.");
-  write_wilson_channel(wilson.channels.front(), 1);
+  if (options.generate_temporaries) write_wilson_channel(wilson.channels.front(), 1);
 
   const auto nmax = parse_size_t_value(param_value(sections, "param", "Nmax"), "Nmax");
   const auto polarized = optional_bool_param(sections, "param", "polarized", false);
@@ -664,15 +731,16 @@ void run_full_instantiation(const Options &options) {
 
   std::ostringstream data_buffer;
 
-  DataTemplateReader data_in(std::filesystem::path(options.template_dir) / "data.in", &data_buffer);
+  const auto template_dir = std::filesystem::path(options.template_dir);
+  DataTemplateReader data_in(resolve_template_file(template_dir, "data.in"), &data_buffer);
   const auto header = read_template_header(data_in);
   if (header.channels != 1) throw std::runtime_error("Only single-channel data.in templates are supported in this slice.");
   initialize_template_symmetry(*params, header);
   data_buffer << header.channels << ' ' << nmax << ' ' << header.subspaces << '\n';
 
-  const auto seed = read_seed_data(data_in, header.subspaces, evaluator, options.template_dir, true);
+  const auto seed = read_seed_data(data_in, header.subspaces, evaluator, template_dir, options.generate_temporaries);
   write_seed_energy_block(data_buffer, seed);
-  const auto tail = process_template_tail(data_in, data_buffer, seed, evaluator, options.template_dir, params->channels * params->perchannel);
+  const auto tail = process_template_tail(data_in, data_buffer, seed, evaluator, template_dir, params->channels * params->perchannel);
   if (tail.ground_energy != seed.ground_energy) throw std::runtime_error("Internal ground-energy mismatch while instantiating data.");
   write_z_coefficients(data_buffer, wilson, params->coefchannels, nmax);
 

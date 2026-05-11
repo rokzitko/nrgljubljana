@@ -3,6 +3,7 @@ set -e
 
 export PATH="$1:$PATH"
 
+test ! -d template
 instantiate > instantiate.out
 
 test -s data
