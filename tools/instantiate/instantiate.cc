@@ -262,6 +262,25 @@ struct SeedData {
   std::map<NRG::Invar, NRG::Matrix_traits<double>> eigenvectors;
 };
 
+struct MatrixElementData {
+  std::string qn_line;
+  NRG::Invar bra;
+  NRG::Invar ket;
+  NRG::Matrix_traits<double> matrix;
+};
+
+struct MatrixBlockData {
+  std::string header_line;
+  char block_type = '\0';
+  std::vector<MatrixElementData> elements;
+};
+
+struct TemplateTailData {
+  bool has_ground_energy = false;
+  double ground_energy = 0.0;
+  std::vector<MatrixBlockData> matrix_blocks;
+};
+
 std::string legacy_qn_name(const NRG::Invar &qn) {
   std::ostringstream out;
   qn.insertor(out, ".");
@@ -456,12 +475,16 @@ NRG::Matrix_traits<double> read_operator_matrix(DataTemplateReader &data_in, con
   return parse_inline_matrix(matrix_rows, cols, context);
 }
 
-void transform_matrix_block(DataTemplateReader &data_in, std::ostream &out, const SeedData &seed,
-                            NRG::Spawn::MatrixEvaluator &evaluator, const std::filesystem::path &template_dir) {
+MatrixBlockData read_matrix_block(const std::string &header_line, DataTemplateReader &data_in, const SeedData &seed,
+                                  NRG::Spawn::MatrixEvaluator &evaluator, const std::filesystem::path &template_dir) {
   const auto count_line = data_in.next_data_line();
   if (!count_line) throw std::runtime_error("Unexpected end of data.in while reading matrix-element count.");
   const auto count = parse_size_t_value(*count_line, "matrix-element count");
-  out << count << '\n';
+
+  MatrixBlockData block;
+  block.header_line = header_line;
+  block.block_type = header_line.front();
+  block.elements.reserve(count);
 
   for (size_t i = 0; i < count; ++i) {
     const auto qn_line = data_in.next_data_line();
@@ -479,13 +502,23 @@ void transform_matrix_block(DataTemplateReader &data_in, std::ostream &out, cons
       throw std::runtime_error("Missing eigenvectors for subspace " + qn1_name + " -> " + qn2_name + ".");
     const auto dim1 = dim1_it->second;
     const auto dim2 = dim2_it->second;
-    out << *qn_line << '\n';
 
     const auto first_matrix_line = data_in.next_data_line();
     if (!first_matrix_line) throw std::runtime_error("Unexpected end of data.in while reading matrix for " + qn1_name + " -> " + qn2_name + ".");
     const auto matrix = read_operator_matrix(data_in, *first_matrix_line, dim1, dim2, evaluator, template_dir, qn1_name + " -> " + qn2_name);
     NRG::Matrix_traits<double> transformed = vec1_it->second * matrix * vec2_it->second.transpose();
-    write_matrix(out, transformed);
+    block.elements.push_back(MatrixElementData{*qn_line, qn1, qn2, std::move(transformed)});
+  }
+
+  return block;
+}
+
+void write_matrix_block(std::ostream &out, const MatrixBlockData &block) {
+  out << block.header_line << '\n';
+  out << block.elements.size() << '\n';
+  for (const auto &element : block.elements) {
+    out << element.qn_line << '\n';
+    write_matrix(out, element.matrix);
   }
 }
 
@@ -494,17 +527,19 @@ bool is_operator_block(const char block_type) {
          block_type == 'o' || block_type == 'g' || block_type == 'q';
 }
 
-void process_template_tail(DataTemplateReader &data_in, std::ostream &out, const SeedData &seed,
-                           NRG::Spawn::MatrixEvaluator &evaluator, const std::filesystem::path &template_dir,
-                           const size_t expected_wilson_blocks) {
+TemplateTailData process_template_tail(DataTemplateReader &data_in, std::ostream &out, const SeedData &seed,
+                                       NRG::Spawn::MatrixEvaluator &evaluator, const std::filesystem::path &template_dir,
+                                       const size_t expected_wilson_blocks) {
+  TemplateTailData tail;
   size_t wilson_blocks = 0;
   while (const auto line = data_in.next_data_line()) {
     const auto block_type = line->front();
     if (block_type == 'f') {
       if (++wilson_blocks > expected_wilson_blocks)
         throw std::runtime_error("More Wilson-chain operator blocks than expected for the selected symmetry in data.in.");
-      out << *line << '\n';
-      transform_matrix_block(data_in, out, seed, evaluator, template_dir);
+      auto block = read_matrix_block(*line, data_in, seed, evaluator, template_dir);
+      write_matrix_block(out, block);
+      tail.matrix_blocks.push_back(std::move(block));
       continue;
     }
 
@@ -512,14 +547,17 @@ void process_template_tail(DataTemplateReader &data_in, std::ostream &out, const
       const auto discarded = data_in.next_data_line();
       if (!discarded) throw std::runtime_error("Missing placeholder GS energy after e block in data.in.");
       out << "e\n" << std::setprecision(18) << seed.ground_energy << '\n';
+      tail.has_ground_energy = true;
+      tail.ground_energy = seed.ground_energy;
       continue;
     }
 
     if (block_type == 'z' || block_type == 'Z' || block_type == 'T') break;
 
     if (is_operator_block(block_type)) {
-      out << *line << '\n';
-      transform_matrix_block(data_in, out, seed, evaluator, template_dir);
+      auto block = read_matrix_block(*line, data_in, seed, evaluator, template_dir);
+      write_matrix_block(out, block);
+      tail.matrix_blocks.push_back(std::move(block));
       continue;
     }
 
@@ -528,6 +566,8 @@ void process_template_tail(DataTemplateReader &data_in, std::ostream &out, const
 
   if (wilson_blocks != expected_wilson_blocks)
     throw std::runtime_error("Wilson-chain operator block count does not match the selected symmetry.");
+  if (!tail.has_ground_energy) throw std::runtime_error("Missing e block in template/data.in.");
+  return tail;
 }
 
 void write_coefficient_table(std::ostream &out, const std::vector<double> &values, const size_t max_index) {
@@ -632,7 +672,8 @@ void run_full_instantiation(const Options &options) {
 
   const auto seed = read_seed_data(data_in, header.subspaces, evaluator, options.template_dir, true);
   write_seed_energy_block(data_buffer, seed);
-  process_template_tail(data_in, data_buffer, seed, evaluator, options.template_dir, params->channels * params->perchannel);
+  const auto tail = process_template_tail(data_in, data_buffer, seed, evaluator, options.template_dir, params->channels * params->perchannel);
+  if (tail.ground_energy != seed.ground_energy) throw std::runtime_error("Internal ground-energy mismatch while instantiating data.");
   write_z_coefficients(data_buffer, wilson, params->coefchannels, nmax);
 
   const auto data_text = data_buffer.str();
