@@ -382,6 +382,14 @@ void check_diag(const RVector &val, const Matrix &vec) {
   assert(is_unitary<S>(vec));
 }
 
+inline double myexp(double x) {
+  if (x < -700)
+    return 0.0;
+  if (x > 700)
+    throw std::runtime_error("myexp trap");
+  return std::exp(x);
+}
+
 } // namespace
 
 #endif

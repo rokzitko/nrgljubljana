@@ -34,7 +34,7 @@ class Algo_CFSls : virtual public Algo<S> {
        const auto term1 = [&diagI1, &diagIp, Z=stats.Zft, &op1, &op2, T = P.T.value(), this](const auto r1, const auto rp) {
          const auto E1     = diagI1.values.abs_zero(r1);
          const auto Ep     = diagIp.values.abs_zero(rp);
-         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-E1/T) * (-sign)/Z;
+         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * myexp(-E1/T) * (-sign)/Z;
          return std::make_pair(E1-Ep, weight);
        };
        for (const auto r1: diagI1.kept())
@@ -86,7 +86,7 @@ class Algo_CFSgt : virtual public Algo<S> {
         const auto term1 = [&diagI1, &diagIp, Z=stats.Zft, &op1, &op2, T = P.T.value()](const auto r1, const auto rp) {
          const auto E1     = diagI1.values.abs_zero(r1);
          const auto Ep     = diagIp.values.abs_zero(rp);
-         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * exp(-Ep/T)/Z;
+         const auto weight = conj_me(op1(r1, rp)) * op2(r1, rp) * myexp(-Ep/T)/Z;
          return std::make_pair(E1-Ep, weight);
        };
        for (const auto r1: diagI1.kept())
