@@ -145,7 +145,7 @@ class Params {
   // ************************
   // NRG iteration parameters
 
-  param<std::string> diag{"diag", "Eigensolver routine (dsyev|dsyevd|dsyevr|zheev|zheevr|default)", "default", all}; // N
+  param<std::string> diag{"diag", "Eigensolver routine (dsyev|dsyevd|dsyevr|zheev|zheevd|zheevr|default)", "default", all}; // N
 
   // For partial diagonalisation routines (dsyevr, zheevr), diagratio controls the fraction
   // of eigenspectrum that we compute.

@@ -215,6 +215,42 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V') {
 }
 
 template<complex_matrix CM>
+auto diagonalise_zheevd(CM &m, const char jobz = 'V')
+{
+  if (!is_row_ordered(m)) m = NRG::trans(m);
+  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
+  auto ham_storage = copy_to_lapack_buffer(m);
+  auto ham = ham_storage.data();
+  std::vector<double> eigenvalues(dim);
+  char UPLO  = 'L';
+  int NN     = dim;
+  int LDA    = dim;
+  int INFO   = 0;
+  int LWORK  = -1;
+  int LRWORK = -1;
+  int LIWORK = -1;
+  lapack_complex_double WORK0{}; // on exit: optimal WORK size
+  double RWORK0 = 0;             // on exit: optimal RWORK size
+  int IWORK0 = 0;                // on exit: optimal IWORK size
+  LAPACK_zheevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK, &RWORK0, &LRWORK, &IWORK0, &LIWORK, &INFO);
+  my_assert(INFO == 0);
+  LWORK  = int(WORK0.real);
+  LRWORK = int(RWORK0);
+  LIWORK = IWORK0;
+  std::vector<lapack_complex_double> WORK(LWORK);
+  std::vector<double> RWORK(LRWORK);
+  std::vector<int> IWORK(LIWORK);
+  LAPACK_zheevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &LRWORK, IWORK.data(), &LIWORK, &INFO);
+  if (INFO != 0) {
+    if (INFO > 0)
+      return RawEigen<std::complex<double>>();
+    else
+      throw std::runtime_error(fmt::format("zheevd failed. INFO={}", INFO));
+  }
+  return copy_results<std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
+}
+
+template<complex_matrix CM>
 auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
@@ -297,14 +333,14 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
     if (DP.diag == "dsyevr"s) d = diagonalise_dsyevr(m, DP.diagratio);
   }
   if constexpr (std::is_same_v<S, std::complex<double>>) {
-    if (DP.diag == "zheev"s   || DP.diag == "default"s) d = diagonalise_zheev(m);
-/*    if (DP.diag == "zheevd"s) {
+    if (DP.diag == "zheev"s) d = diagonalise_zheev(m);
+    if (DP.diag == "zheevd"s || DP.diag == "default"s) {
       d = diagonalise_zheevd(m);
       if (d.getnrcomputed() == 0) {
         std::cout << "zheevd failed, falling back to zheev" << std::endl;
         d = diagonalise_zheev(m);
       }
-    } */
+    }
     if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio);
   }
   const auto nr_computed = d.getnrcomputed();
