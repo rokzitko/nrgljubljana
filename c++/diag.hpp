@@ -286,8 +286,8 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
   my_assert(is_matrix_upper(m));
   RawEigen<S> d;
   if constexpr (std::is_same_v<S, double>) {
-    if (DP.diag == "dsyev"s || DP.diag == "default"s) d = diagonalise_dsyev(m);
-    if (DP.diag == "dsyevd"s) {
+    if (DP.diag == "dsyev"s) d = diagonalise_dsyev(m);
+    if (DP.diag == "dsyevd"s  || DP.diag == "default"s) {
       d = diagonalise_dsyevd(m);
       if (d.getnrcomputed() == 0) {
         std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
@@ -297,7 +297,14 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
     if (DP.diag == "dsyevr"s) d = diagonalise_dsyevr(m, DP.diagratio);
   }
   if constexpr (std::is_same_v<S, std::complex<double>>) {
-    if (DP.diag == "zheev"s || DP.diag == "default"s) d = diagonalise_zheev(m);
+    if (DP.diag == "zheev"s   || DP.diag == "default"s) d = diagonalise_zheev(m);
+/*    if (DP.diag == "zheevd"s) {
+      d = diagonalise_zheevd(m);
+      if (d.getnrcomputed() == 0) {
+        std::cout << "zheevd failed, falling back to zheev" << std::endl;
+        d = diagonalise_zheev(m);
+      }
+    } */
     if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio);
   }
   const auto nr_computed = d.getnrcomputed();
