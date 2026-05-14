@@ -22,27 +22,14 @@
 
 #include <fmt/format.h>
 
-#define LAPACK_COMPLEX_STRUCTURE
 #include "lapack.h"
 
 namespace NRG {
-
-// Handle complex-type conversions (used in copy_vec)
-[[nodiscard]] inline auto to_matel(const double x) { return x; }
-[[nodiscard]] inline auto to_matel(const lapack_complex_double &z) { return std::complex<double>(z.real, z.imag); }
-[[nodiscard]] inline auto to_lapack_matel(const std::complex<double> &z) { return lapack_complex_double{z.real(), z.imag()}; }
 
 [[nodiscard]] inline auto checked_lapack_int(const size_t value, const char *what) {
   if (value > static_cast<size_t>(std::numeric_limits<lapack_int>::max()))
     throw std::runtime_error(fmt::format("{}={} exceeds LAPACK integer range", what, value));
   return static_cast<lapack_int>(value);
-}
-
-template<complex_matrix CM>
-auto copy_to_lapack_buffer(const CM &m) {
-  std::vector<lapack_complex_double> out(size1(m) * size2(m));
-  std::transform(data(m), data(m) + out.size(), out.begin(), [](const auto &z) { return to_lapack_matel(z); });
-  return out;
 }
 
 template<vector SV, vector DV> requires std::is_convertible_v<typename SV::value_type, typename DV::value_type>
@@ -60,7 +47,7 @@ void copy_vec(U* eigenvectors, MM & diagvectors, const size_t dim, const size_t 
 {
   diagvectors.resize(M, dim);
   for (const auto r : range0(M))
-    for (const auto j : range0(dim)) diagvectors(r, j) = to_matel(eigenvectors[dim * r + j]);
+    for (const auto j : range0(dim)) diagvectors(r, j) = eigenvectors[dim * r + j];
   // this works correctly for both row-order and column-order storage types (diagvectors)
 }
 
@@ -192,8 +179,7 @@ template<complex_matrix CM>
 auto diagonalise_zheev(CM &m, const char jobz = 'V') {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
-  auto ham_storage = copy_to_lapack_buffer(m);
-  auto ham       = ham_storage.data();
+  auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
   int NN     = dim;         // the order of the matrix
@@ -206,7 +192,7 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V') {
   // Step 1: determine optimal LWORK
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK0, RWORK.data(), &INFO);
   my_assert(INFO == 0);
-  int LWORK  = int(WORK0.real);
+  int LWORK  = int(WORK0.real());
   std::vector<lapack_complex_double> WORK(LWORK);
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &INFO);
@@ -219,8 +205,7 @@ auto diagonalise_zheevd(CM &m, const char jobz = 'V')
 {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
-  auto ham_storage = copy_to_lapack_buffer(m);
-  auto ham = ham_storage.data();
+  auto ham = data(m);
   std::vector<double> eigenvalues(dim);
   char UPLO  = 'L';
   int NN     = dim;
@@ -234,7 +219,7 @@ auto diagonalise_zheevd(CM &m, const char jobz = 'V')
   int IWORK0 = 0;                // on exit: optimal IWORK size
   LAPACK_zheevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK, &RWORK0, &LRWORK, &IWORK0, &LIWORK, &INFO);
   my_assert(INFO == 0);
-  LWORK  = int(WORK0.real);
+  LWORK  = int(WORK0.real());
   LRWORK = int(RWORK0);
   LIWORK = IWORK0;
   std::vector<lapack_complex_double> WORK(LWORK);
@@ -263,8 +248,7 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') 
     M     = std::clamp<int>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
-  auto ham_storage = copy_to_lapack_buffer(m);
-  auto ham = ham_storage.data();
+  auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
   int NN        = dim;      // the order of the matrix
@@ -293,7 +277,7 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') 
   LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), &WORK0, &LWORK0,
                 &RWORK0, &LRWORK0, &IWORK0, &LIWORK0, &INFO);
   my_assert(INFO == 0);
-  int LWORK   = int(WORK0.real);
+  int LWORK   = int(WORK0.real());
   std::vector<lapack_complex_double> WORK(LWORK);
   int LRWORK  = int(RWORK0);
   std::vector<double> RWORK(LRWORK);

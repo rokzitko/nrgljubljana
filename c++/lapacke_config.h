@@ -88,6 +88,8 @@ typedef struct {
 
 #define lapack_complex_float std::complex<float>
 #define lapack_complex_double std::complex<double>
+using _lapack_complex_float = std::complex<float>;
+using _lapack_complex_double = std::complex<double>;
 #define lapack_complex_float_real(z) ((z).real())
 #define lapack_complex_float_imag(z) ((z).imag())
 #define lapack_complex_double_real(z) ((z).real())

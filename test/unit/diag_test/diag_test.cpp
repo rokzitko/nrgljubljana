@@ -14,13 +14,6 @@ TEST(Diag, diagonalise) { // NOLINT
   auto DP = DiagParams(P, 0.5);
 }
 
-TEST(Diag, to_matel) {
-  lapack_complex_double z1 {2.0, 1.0};
-  const auto z2 = to_matel(z1);
-  EXPECT_DOUBLE_EQ(z2.real(), 2.0);
-  EXPECT_DOUBLE_EQ(z2.imag(), 1.0);
-}
-
 TEST(Diag, copy_val) {
   const std::vector<double> s { 1.0, 2.0, 3.0 };
   std::vector<double> d;
