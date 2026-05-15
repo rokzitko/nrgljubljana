@@ -578,6 +578,27 @@ TEST(numerics, product_CUDA_recalc_scope) {
   EXPECT_TRUE(cuda.isApprox(ref));
 }
 
+TEST(numerics, product_CUDA_recalc_accumulator) {
+  if (cuda_mult_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  a(0,0) = 1; a(0,1) = 2; a(1,0) = 3; a(1,1) = 4;
+  b(0,0) = 1; b(0,1) = 0; b(1,0) = 2; b(1,1) = 1;
+  auto cuda = NRG::zero_matrix<double>(2,2);
+  auto ref = NRG::zero_matrix<double>(2,2);
+  {
+    CudaRecalcScope<double> scope;
+    scope.register_matrix(a);
+    scope.register_matrix(b);
+    CudaRecalcAccumulator<double, decltype(cuda)> accumulator(cuda);
+    product_CUDA_accumulate<double>(accumulator, 1.0, a, b);
+    product_CUDA_accumulate<double>(accumulator, 2.0, a, b);
+    accumulator.copy_back();
+  }
+  product_Eigen<double>(ref, 3.0, a, b);
+  EXPECT_TRUE(cuda.isApprox(ref));
+}
+
 TEST(numerics, transform_CUDA) {
   if (cuda_mult_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
   auto a = generate_matrix<double>(2,2);
@@ -610,6 +631,29 @@ TEST(numerics, transform_CUDA_recalc_scope) {
     transform_CUDA<double>(cuda, 1.0, a, b, c);
   }
   transform_Eigen<double>(ref, 1.0, a, b, c);
+  EXPECT_TRUE(cuda.isApprox(ref));
+}
+
+TEST(numerics, transform_CUDA_recalc_accumulator) {
+  if (cuda_mult_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  auto c = generate_matrix<double>(2,2);
+  a(0,0) = 1; a(0,1) = 2; a(1,0) = 3; a(1,1) = 4;
+  b(0,0) = 2; b(0,1) = 1; b(1,0) = 0; b(1,1) = 1;
+  c(0,0) = 1; c(0,1) = 0; c(1,0) = 2; c(1,1) = 1;
+  auto cuda = NRG::zero_matrix<double>(2,2);
+  auto ref = NRG::zero_matrix<double>(2,2);
+  {
+    CudaRecalcScope<double> scope;
+    scope.register_matrix(a);
+    scope.register_matrix(c);
+    CudaRecalcAccumulator<double, decltype(cuda)> accumulator(cuda);
+    transform_CUDA_accumulate<double>(accumulator, 1.0, a, b, c);
+    transform_CUDA_accumulate<double>(accumulator, 2.0, a, b, c);
+    accumulator.copy_back();
+  }
+  transform_Eigen<double>(ref, 3.0, a, b, c);
   EXPECT_TRUE(cuda.isApprox(ref));
 }
 #endif

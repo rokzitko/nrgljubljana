@@ -223,6 +223,81 @@ template<scalar S> class CudaRecalcScope {
   CudaMultBuffer<CT> operand_o_;
 };
 
+template<scalar S, Eigen_matrix EM> class CudaRecalcAccumulator {
+ public:
+  using Traits = CudaMultTraits<S>;
+  using CT = typename Traits::cuda_type;
+
+  explicit CudaRecalcAccumulator(EM &M) : M_(M), ctx_(CudaRecalcScope<S>::current()) {
+    if (ctx_ == nullptr) return;
+    host_ = cuda_mult_copy_matrix<S>(M_);
+    device_ = &ctx_->output_buffer(host_.size());
+    cuda_mult_check(cudaMemcpy(device_->data(), host_.data(), CudaMultBuffer<CT>::bytes(host_.size()), cudaMemcpyHostToDevice), "cudaMemcpy H2D accumulator");
+  }
+
+  [[nodiscard]] bool active() const noexcept { return ctx_ != nullptr; }
+  CudaRecalcScope<S> &context() { return *ctx_; }
+  CT *data() { return device_->data(); }
+  EM &matrix() { return M_; }
+
+  void copy_back() {
+    if (!active()) return;
+    cuda_mult_check(cudaMemcpy(host_.data(), device_->data(), CudaMultBuffer<CT>::bytes(host_.size()), cudaMemcpyDeviceToHost), "cudaMemcpy D2H accumulator");
+    cuda_mult_copy_back<S>(M_, host_);
+  }
+
+ private:
+  EM &M_;
+  CudaRecalcScope<S> *ctx_{};
+  CudaMultBuffer<CT> *device_{};
+  std::vector<CT> host_;
+};
+
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void product_CUDA_accumulate(CudaRecalcAccumulator<S, EM> &accumulator, const t_coef factor, const EM &A, const EM &B) {
+  if (!finite_size(A) || !finite_size(B)) return;
+  [[maybe_unused]] auto &M = accumulator.matrix();
+  assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));
+  assert(my_isfinite(factor));
+  using Traits = CudaMultTraits<S>;
+  const auto m = static_cast<int>(size1(A));
+  const auto n = static_cast<int>(size1(B));
+  const auto k = static_cast<int>(size2(A));
+  auto &ctx = accumulator.context();
+  const auto *d_A = ctx.cached_data(A);
+  if (d_A == nullptr) d_A = ctx.upload_uncached(A, ctx.operand_a_buffer(size1(A) * size2(A)), "cudaMemcpy H2D A");
+  const auto *d_B = ctx.cached_data(B);
+  if (d_B == nullptr) d_B = ctx.upload_uncached(B, ctx.operand_b_buffer(size1(B) * size2(B)), "cudaMemcpy H2D B");
+  const auto alpha = Traits::convert(S(factor));
+  const auto beta = Traits::convert(S(1.0));
+  Traits::gemm(ctx.handle(), Traits::adjoint_op, CUBLAS_OP_N, n, m, k, &alpha, d_B, k, d_A, k, &beta, accumulator.data(), n);
+}
+
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void transform_CUDA_accumulate(CudaRecalcAccumulator<S, EM> &accumulator, const t_coef factor, const EM &A, const EM &O, const EM &B) {
+  if (!finite_size(A) || !finite_size(B)) return;
+  [[maybe_unused]] auto &M = accumulator.matrix();
+  assert(size1(M) == size1(A) && size2(A) == size1(O) && size2(O) == size2(B) && size1(B) == size2(M));
+  assert(my_isfinite(factor));
+  using Traits = CudaMultTraits<S>;
+  const auto m = static_cast<int>(size1(A));
+  const auto a = static_cast<int>(size2(A));
+  const auto b = static_cast<int>(size2(O));
+  const auto n = static_cast<int>(size1(B));
+  auto &ctx = accumulator.context();
+  const auto *d_A = ctx.cached_data(A);
+  if (d_A == nullptr) d_A = ctx.upload_uncached(A, ctx.operand_a_buffer(size1(A) * size2(A)), "cudaMemcpy H2D A");
+  const auto *d_B = ctx.cached_data(B);
+  if (d_B == nullptr) d_B = ctx.upload_uncached(B, ctx.operand_b_buffer(size1(B) * size2(B)), "cudaMemcpy H2D B");
+  const auto *d_O = ctx.upload_uncached(O, ctx.operand_o_buffer(size1(O) * size2(O)), "cudaMemcpy H2D O");
+  auto &d_tmp = ctx.temp_buffer(static_cast<size_t>(b) * static_cast<size_t>(m));
+  const auto one = Traits::convert(S(1.0));
+  const auto zero = Traits::convert(S(0.0));
+  const auto alpha = Traits::convert(S(factor));
+  Traits::gemm(ctx.handle(), CUBLAS_OP_N, CUBLAS_OP_N, b, m, a, &one, d_O, b, d_A, a, &zero, d_tmp.data(), b);
+  Traits::gemm(ctx.handle(), Traits::adjoint_op, CUBLAS_OP_N, n, m, b, &alpha, d_B, b, d_tmp.data(), b, &one, accumulator.data(), n);
+}
+
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void product_CUDA(EM &M, const t_coef factor, const EM &A, const EM &B) {
   if (!finite_size(A) || !finite_size(B)) return;
@@ -330,6 +405,23 @@ template<scalar S> class CudaRecalcScope {
   CudaRecalcScope() = default;
   template<Eigen_matrix EM> void register_matrix(const EM &) {}
 };
+
+template<scalar S, Eigen_matrix EM> class CudaRecalcAccumulator {
+ public:
+  explicit CudaRecalcAccumulator(EM &) {}
+  [[nodiscard]] bool active() const noexcept { return false; }
+  void copy_back() {}
+};
+
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void product_CUDA_accumulate(CudaRecalcAccumulator<S, EM> &, const t_coef, const EM &, const EM &) {
+  throw std::runtime_error("product_CUDA_accumulate requested, but CUDA support was not enabled at build time");
+}
+
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void transform_CUDA_accumulate(CudaRecalcAccumulator<S, EM> &, const t_coef, const EM &, const EM &, const EM &) {
+  throw std::runtime_error("transform_CUDA_accumulate requested, but CUDA support was not enabled at build time");
+}
 #endif
 
 #endif

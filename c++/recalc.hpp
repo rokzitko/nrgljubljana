@@ -82,6 +82,22 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
   nrglog('f', "dim1=" << dim1 << " dimp=" << dimp);
   my_assert(dim1 < 1000000 && dimp < 1000000); // bug trap
   auto f = zero_matrix<S>(dim1, dimp);
+  if (P.mult == "cuda") {
+    CudaRecalcAccumulator<S, Matrix> cuda_f(f);
+    if (cuda_f.active()) {
+      for (const auto &[i1, ip, factor]: table) {
+        nrglog('f', "** i1=" << i1 << " ip=" << ip << " factor=" << factor);
+        const auto &U1 = diagI1.U(i1);
+        const auto &Up = diagIp.U(ip);
+        nrglog('f', "* norm1=" << frobenius_norm(U1) << " normp=" << frobenius_norm(Up));
+        if (finite_size(U1) && finite_size(Up)) nrglog('f', "* U1(0,0)=" << U1(0,0) << " Up(0,0)=" << Up(0,0));
+        product_CUDA_accumulate<S>(cuda_f, factor, U1, Up);
+      }
+      cuda_f.copy_back();
+      if (P.logletter('F')) dump_matrix(f);
+      return f;
+    }
+  }
   // <I1||f||Ip> gets contributions from various |QSr> states. These are given by i1, ip in the Recalc_f type tables.
   for (const auto &[i1, ip, factor]: table) {
     nrglog('f', "** i1=" << i1 << " ip=" << ip << " factor=" << factor);
@@ -119,6 +135,29 @@ std::optional<Matrix_traits<S>> Symmetry<S>::recalc_general(const DiagInfo<S> &d
   const Twoinvar II = {I1, Ip};
   auto cn = zero_matrix<S>(dim1, dimp);
   if (dim1 == 0 || dimp == 0) return cn; // return empty matrix
+  if (P.mult == "cuda") {
+    CudaRecalcAccumulator<S, Matrix> cuda_cn(cn);
+    if (cuda_cn.active()) {
+      for (const auto &[i1, ip, IN1, INp, factor]: table) {
+        my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
+         if (P.logletter('r')) std::cout << nrgdump7(i1, ip, IN1, ancestor(I1,i1-1), INp, ancestor(Ip,ip-1), factor) << std::endl;
+         if (!Invar_allowed(IN1) || !Invar_allowed(INp)) continue;
+         my_assert(IN1 == ancestor(I1, i1-1));
+         my_assert(INp == ancestor(Ip, ip-1));
+         const auto rmax1 = substructI1.rmax(i1-1);
+         const auto rmaxp = substructIp.rmax(ip-1);
+         if (rmax1 == 0 || rmaxp == 0) continue;
+         const Twoinvar ININ = {IN1, INp};
+         const auto cold_it = cold.find(ININ);
+         if (cold_it == cold.end()) continue;
+         my_assert(isfinite(factor));
+         transform_CUDA_accumulate<S>(cuda_cn, factor, diagI1.U(i1), cold_it->second, diagIp.U(ip));
+      }
+      cuda_cn.copy_back();
+      if (P.logletter('R')) dump_matrix(cn);
+      return cn;
+    }
+  }
   for (const auto &[i1, ip, IN1, INp, factor]: table) {
     my_assert(1 <= i1 && i1 <= nr_combs() && 1 <= ip && ip <= nr_combs());
      if (P.logletter('r')) std::cout << nrgdump7(i1, ip, IN1, ancestor(I1,i1-1), INp, ancestor(Ip,ip-1), factor) << std::endl;
