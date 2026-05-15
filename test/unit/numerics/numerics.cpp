@@ -502,7 +502,19 @@ TEST(numerics, product) {
   auto r = NRG::zero_matrix<double>(2,2);
   auto ref = generate_matrix<double>(2,2);
   ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 2;
-  product<double>(r, 1.0, a, b);
+  product_Eigen<double>(r, 1.0, a, b);
+  EXPECT_TRUE(r.isApprox(ref));
+}
+
+TEST(numerics, product_dispatch_blas) {
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  a(0,0) = a(0,1) = a(1,0) = a(1,1) = 1;
+  b(0,0) = b(0,1) = b(1,0) = b(1,1) = 1;
+  auto r = NRG::zero_matrix<double>(2,2);
+  auto ref = generate_matrix<double>(2,2);
+  ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 2;
+  product<double>("blas", r, 1.0, a, b);
   EXPECT_TRUE(r.isApprox(ref));
 }
  
@@ -516,9 +528,53 @@ TEST(numerics, transform) {
   auto r = NRG::zero_matrix<double>(2,2);
   auto ref = generate_matrix<double>(2,2);
   ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 4;
-  transform<double>(r, 1.0, a, b, c);
+  transform_Eigen<double>(r, 1.0, a, b, c);
   EXPECT_TRUE(r.isApprox(ref));
 }
+
+TEST(numerics, transform_dispatch_blas) {
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  auto c = generate_matrix<double>(2,2);
+  a(0,0) = a(0,1) = a(1,0) = a(1,1) = 1;
+  b(0,0) = b(0,1) = b(1,0) = b(1,1) = 1;
+  c(0,0) = c(0,1) = c(1,0) = c(1,1) = 1;
+  auto r = NRG::zero_matrix<double>(2,2);
+  auto ref = generate_matrix<double>(2,2);
+  ref(0,0) = ref(0,1) = ref(1,0) = ref(1,1) = 4;
+  transform<double>("blas", r, 1.0, a, b, c);
+  EXPECT_TRUE(r.isApprox(ref));
+}
+
+#if NRG_ENABLE_CUDA
+TEST(numerics, product_CUDA) {
+  if (cuda_mult_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
+  auto a = generate_matrix<std::complex<double>>(2,2);
+  auto b = generate_matrix<std::complex<double>>(2,2);
+  a(0,0) = {1.0, 1.0}; a(0,1) = {2.0, 0.0}; a(1,0) = {0.0, -1.0}; a(1,1) = {1.0, 0.0};
+  b(0,0) = {1.0, 0.0}; b(0,1) = {0.0, 1.0}; b(1,0) = {2.0, 0.0}; b(1,1) = {1.0, -1.0};
+  auto cuda = NRG::zero_matrix<std::complex<double>>(2,2);
+  auto ref = NRG::zero_matrix<std::complex<double>>(2,2);
+  product_CUDA<std::complex<double>>(cuda, std::complex<double>(1.0, 0.0), a, b);
+  product_Eigen<std::complex<double>>(ref, std::complex<double>(1.0, 0.0), a, b);
+  EXPECT_TRUE(cuda.isApprox(ref));
+}
+
+TEST(numerics, transform_CUDA) {
+  if (cuda_mult_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
+  auto a = generate_matrix<double>(2,2);
+  auto b = generate_matrix<double>(2,2);
+  auto c = generate_matrix<double>(2,2);
+  a(0,0) = 1; a(0,1) = 2; a(1,0) = 3; a(1,1) = 4;
+  b(0,0) = 2; b(0,1) = 1; b(1,0) = 0; b(1,1) = 1;
+  c(0,0) = 1; c(0,1) = 0; c(1,0) = 2; c(1,1) = 1;
+  auto cuda = NRG::zero_matrix<double>(2,2);
+  auto ref = NRG::zero_matrix<double>(2,2);
+  transform_CUDA<double>(cuda, 1.0, a, b, c);
+  transform_Eigen<double>(ref, 1.0, a, b, c);
+  EXPECT_TRUE(cuda.isApprox(ref));
+}
+#endif
  
 TEST(numerics, rotate) {
   auto a = generate_matrix<double>(2,2);

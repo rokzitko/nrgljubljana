@@ -9,6 +9,8 @@
 #include <string>
 #include <stdexcept>
 #include <cmath>
+#include <algorithm>
+#include <cctype>
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -22,6 +24,11 @@
 namespace NRG {
 
 using namespace std::string_literals;
+
+inline auto to_lower(std::string value) {
+  std::transform(value.begin(), value.end(), value.begin(), [](const unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  return value;
+}
 
 enum class RUNTYPE { NRG, DMNRG }; // First or second sweep? Used in class Step.
 
@@ -146,6 +153,7 @@ class Params {
   // NRG iteration parameters
 
   param<std::string> diag{"diag", "Eigensolver routine (dsyev|dsyevd|dsyevr|zheev|zheevd|zheevr|cuda_dsyevd|cuda_zheevd|default)", "default", all}; // N
+  param<std::string> mult{"mult", "Matrix multiply backend (blas|cuda)", "blas", all}; // N
 
   // For partial diagonalisation routines (dsyevr, zheevr), diagratio controls the fraction
   // of eigenspectrum that we compute.
@@ -611,6 +619,8 @@ class Params {
       my_assert(0.0 < diagratio && diagratio <= 1.0);
       if (cfs_flags() && diagratio != 1.0) throw std::invalid_argument("CFS/FDM is not compatible with partial diagonalisation.");
     }
+    mult = to_lower(std::string(mult));
+    if (mult != "blas"s && mult != "cuda"s) throw std::invalid_argument(fmt::format("Unsupported mult backend: {}", mult.value()));
     my_assert(!(dumpabs && dumpscaled)); // dumpabs=true and dumpscaled=true is a meaningless combination
     // Take the first character (for backward compatibility)
     discretization = std::string(discretization, 0, 1);

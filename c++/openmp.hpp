@@ -391,7 +391,7 @@ inline void report_openblas(std::ostream &s) {
 
 inline void report_cuda(std::ostream &s) {
 #if NRG_ENABLE_CUDA
-  s << "[CUDA] CUDA/cuSOLVER support: enabled at build time" << std::endl;
+  s << "[CUDA] CUDA/cuSOLVER/cuBLAS support: enabled at build time" << std::endl;
 #ifdef CUDART_VERSION
   s << "[CUDA] CUDART compile-time version: " << CUDART_VERSION / 1000 << '.' << (CUDART_VERSION % 1000) / 10 << std::endl;
 #endif
@@ -425,7 +425,7 @@ inline void report_cuda(std::ostream &s) {
   }
   s.precision(precision);
 #else
-  s << "[CUDA] CUDA/cuSOLVER support: disabled at build time" << std::endl;
+  s << "[CUDA] CUDA/cuSOLVER/cuBLAS support: disabled at build time" << std::endl;
 #endif
 }
 

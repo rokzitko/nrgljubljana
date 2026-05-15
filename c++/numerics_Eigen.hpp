@@ -91,7 +91,7 @@ template <scalar T> auto read_matrix(std::istream &F, const size_t size1, const 
 }
 
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
-void product(EM &M, const t_coef factor, const EM &A, const EM &B) {
+void product_Eigen(EM &M, const t_coef factor, const EM &A, const EM &B) {
   if (finite_size(A) && finite_size(B)) {
     assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));
     assert(my_isfinite(factor));
@@ -100,7 +100,7 @@ void product(EM &M, const t_coef factor, const EM &A, const EM &B) {
 }
 
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
-void transform(EM &M, const t_coef factor, const EM &A, const EM &O, const EM &B) {
+void transform_Eigen(EM &M, const t_coef factor, const EM &A, const EM &O, const EM &B) {
   if (finite_size(A) && finite_size(B)) {
     assert(size1(M) == size1(A) && size2(A) == size1(O) && size2(O) == size2(B) && size1(B) == size2(M));
     assert(my_isfinite(factor));

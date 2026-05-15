@@ -192,6 +192,8 @@ public:
     auto coef_seed = std::move(input.coef);
 
     validate_cuda_diagonalisation_request(P.diag);
+    validate_cuda_multiplication_request(P.mult);
+    std::cout << "[Matrix multiply] Backend: " << std::string(P.mult) << std::endl;
     warn_application_openmp_request(P.diag_mode, P.diagth);
     select_diag_engine();
 

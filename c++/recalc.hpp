@@ -89,7 +89,7 @@ auto Symmetry<S>::recalc_f(const DiagInfo<S> &diag,
     const auto Up = diagIp.U(ip);
     nrglog('f', "* norm1=" << frobenius_norm(U1) << " normp=" << frobenius_norm(Up));
     if (finite_size(U1) && finite_size(Up)) nrglog('f', "* U1(0,0)=" << U1(0,0) << " Up(0,0)=" << Up(0,0));
-    product<S>(f, factor, U1, Up);
+    product<S>(P.mult, f, factor, U1, Up);
   }
   if (P.logletter('F')) dump_matrix(f);
   return f;
@@ -132,7 +132,7 @@ std::optional<Matrix_traits<S>> Symmetry<S>::recalc_general(const DiagInfo<S> &d
      const auto cold_it = cold.find(ININ);
      if (cold_it == cold.end()) continue;
      my_assert(isfinite(factor));
-     transform<S>(cn, factor, diagI1.U(i1), cold_it->second, diagIp.U(ip));
+     transform<S>(P.mult, cn, factor, diagI1.U(i1), cold_it->second, diagIp.U(ip));
   } // over table
   if (P.logletter('R')) dump_matrix(cn);
   return cn;
@@ -148,7 +148,7 @@ void Symmetry<S>::recalc1_global(const DiagInfo<S> &diag, // XXX: pass Eigen ins
                                  const t_coef value) const
 {
   const auto &diagI = diag.at(I);
-  product<S>(m, value, diagI.U(i1), diagI.U(ip));
+  product<S>(P.mult, m, value, diagI.U(i1), diagI.U(ip));
 }
 
 } // namespace

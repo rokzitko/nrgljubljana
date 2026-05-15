@@ -23,6 +23,16 @@
 
 #include <Eigen/Dense>
 
+#ifndef NRG_ENABLE_CUDA
+#define NRG_ENABLE_CUDA 0
+#endif
+
+#if NRG_ENABLE_CUDA
+#include <cuda_runtime.h>
+#include <cublas_v2.h>
+#include <cuComplex.h>
+#endif
+
 // Serialization support (used for storing to files and for MPI)
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -235,6 +245,31 @@ auto trace_contract(const M &A, const M &B, const size_t range) // Tr[AB]
 }
 
 #include "numerics_Eigen.hpp"
+#include "numerics_CUDA.hpp"
+
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void product(const std::string &mult, EM &M, const t_coef factor, const EM &A, const EM &B) {
+  if (mult == "blas") {
+    product_Eigen<S>(M, factor, A, B);
+  } else if (mult == "cuda") {
+    validate_cuda_multiplication_request(mult);
+    product_CUDA<S>(M, factor, A, B);
+  } else {
+    throw std::invalid_argument(fmt::format("Unsupported mult backend: {}", mult));
+  }
+}
+
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void transform(const std::string &mult, EM &M, const t_coef factor, const EM &A, const EM &O, const EM &B) {
+  if (mult == "blas") {
+    transform_Eigen<S>(M, factor, A, O, B);
+  } else if (mult == "cuda") {
+    validate_cuda_multiplication_request(mult);
+    transform_CUDA<S>(M, factor, A, O, B);
+  } else {
+    throw std::invalid_argument(fmt::format("Unsupported mult backend: {}", mult));
+  }
+}
 
 template<scalar S>
 [[nodiscard]] auto zero_matrix(const size_t size) {
