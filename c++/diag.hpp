@@ -12,6 +12,7 @@
 #include <iomanip> // std::setprecision
 #include <stdexcept>
 #include <limits>
+#include <string>
 
 #include "traits.hpp"
 #include "params.hpp"
@@ -24,7 +25,81 @@
 
 #include "lapack.h"
 
+#ifndef NRG_ENABLE_CUDA
+#define NRG_ENABLE_CUDA 0
+#endif
+
+#if NRG_ENABLE_CUDA
+#include <cuda_runtime.h>
+#include <cusolverDn.h>
+#endif
+
 namespace NRG {
+
+#if NRG_ENABLE_CUDA
+inline void cuda_check(const cudaError_t status, const char *what) {
+  if (status != cudaSuccess)
+    throw std::runtime_error(fmt::format("{} failed: {}", what, cudaGetErrorString(status)));
+}
+
+inline void cusolver_check(const cusolverStatus_t status, const char *what) {
+  if (status != CUSOLVER_STATUS_SUCCESS)
+    throw std::runtime_error(fmt::format("{} failed. status={}", what, static_cast<int>(status)));
+}
+
+inline auto cuda_available_device_count() {
+  int count = 0;
+  const auto status = cudaGetDeviceCount(&count);
+  if (status != cudaSuccess) {
+    cudaGetLastError(); // clear the sticky error for callers that want to skip CUDA work
+    return 0;
+  }
+  return count;
+}
+
+inline auto cuda_diag_requested(const std::string &diag) { return diag == "cuda_dsyevd" || diag == "cuda_zheevd"; }
+
+inline void validate_cuda_diagonalisation_request(const std::string &diag) {
+  if (!cuda_diag_requested(diag)) return;
+  const auto count = cuda_available_device_count();
+  if (count == 0) throw std::runtime_error(fmt::format("{} requested, but no CUDA accelerator was detected", diag));
+}
+
+class CudaSolverHandle {
+ public:
+  CudaSolverHandle() { cusolver_check(cusolverDnCreate(&handle_), "cusolverDnCreate"); }
+  ~CudaSolverHandle() { if (handle_ != nullptr) cusolverDnDestroy(handle_); }
+  CudaSolverHandle(const CudaSolverHandle &) = delete;
+  CudaSolverHandle &operator=(const CudaSolverHandle &) = delete;
+  operator cusolverDnHandle_t() const { return handle_; }
+
+ private:
+  cusolverDnHandle_t handle_{};
+};
+
+template<typename T> class CudaDeviceBuffer {
+ public:
+  explicit CudaDeviceBuffer(const size_t size) : size_(size) {
+    if (size_ != 0) cuda_check(cudaMalloc(reinterpret_cast<void **>(&data_), size_ * sizeof(T)), "cudaMalloc");
+  }
+  ~CudaDeviceBuffer() { if (data_ != nullptr) cudaFree(data_); }
+  CudaDeviceBuffer(const CudaDeviceBuffer &) = delete;
+  CudaDeviceBuffer &operator=(const CudaDeviceBuffer &) = delete;
+  T *data() { return data_; }
+  const T *data() const { return data_; }
+  size_t size() const { return size_; }
+
+ private:
+  T *data_{};
+  size_t size_{};
+};
+#else
+inline auto cuda_diag_requested(const std::string &diag) { return diag == "cuda_dsyevd" || diag == "cuda_zheevd"; }
+
+inline void validate_cuda_diagonalisation_request(const std::string &diag) {
+  if (cuda_diag_requested(diag)) throw std::runtime_error(fmt::format("{} requested, but CUDA support was not enabled at build time", diag));
+}
+#endif
 
 [[nodiscard]] inline auto checked_lapack_int(const size_t value, const char *what) {
   if (value > static_cast<size_t>(std::numeric_limits<lapack_int>::max()))
@@ -295,6 +370,73 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') 
   return copy_results<std::complex<double>>(eigenvalues, Z.data(), jobz, dim, M);
 }
 
+#if NRG_ENABLE_CUDA
+template<real_matrix RM>
+auto diagonalise_cuda_dsyevd(RM &m, const char jobz = 'V') {
+  if (!is_row_ordered(m)) m = NRG::trans(m);
+  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
+  const auto elements = static_cast<size_t>(dim) * static_cast<size_t>(dim);
+  auto ham = data(m);
+  std::vector<double> eigenvalues(dim);
+  CudaSolverHandle solver;
+  CudaDeviceBuffer<double> d_ham(elements);
+  CudaDeviceBuffer<double> d_eigenvalues(dim);
+  CudaDeviceBuffer<int> d_info(1);
+  cuda_check(cudaMemcpy(d_ham.data(), ham, elements * sizeof(double), cudaMemcpyHostToDevice), "cudaMemcpy H2D matrix");
+  const auto mode = jobz == 'V' ? CUSOLVER_EIG_MODE_VECTOR : CUSOLVER_EIG_MODE_NOVECTOR;
+  int lwork = 0;
+  cusolver_check(cusolverDnDsyevd_bufferSize(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), &lwork),
+                 "cusolverDnDsyevd_bufferSize");
+  CudaDeviceBuffer<double> d_work(lwork);
+  cusolver_check(cusolverDnDsyevd(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), d_work.data(), lwork, d_info.data()),
+                 "cusolverDnDsyevd");
+  int info = 0;
+  cuda_check(cudaMemcpy(&info, d_info.data(), sizeof(int), cudaMemcpyDeviceToHost), "cudaMemcpy D2H info");
+  if (info != 0) {
+    if (info > 0) return RawEigen<double>();
+    throw std::runtime_error(fmt::format("cuda_dsyevd failed. INFO={}", info));
+  }
+  cuda_check(cudaMemcpy(eigenvalues.data(), d_eigenvalues.data(), eigenvalues.size() * sizeof(double), cudaMemcpyDeviceToHost), "cudaMemcpy D2H eigenvalues");
+  if (jobz == 'V') cuda_check(cudaMemcpy(ham, d_ham.data(), elements * sizeof(double), cudaMemcpyDeviceToHost), "cudaMemcpy D2H eigenvectors");
+  return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
+}
+
+template<complex_matrix CM>
+auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V') {
+  if (!is_row_ordered(m)) m = NRG::trans(m);
+  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
+  const auto elements = static_cast<size_t>(dim) * static_cast<size_t>(dim);
+  auto ham = data(m);
+  std::vector<double> eigenvalues(dim);
+  CudaSolverHandle solver;
+  CudaDeviceBuffer<cuDoubleComplex> d_ham(elements);
+  CudaDeviceBuffer<double> d_eigenvalues(dim);
+  CudaDeviceBuffer<int> d_info(1);
+  std::vector<cuDoubleComplex> h_ham(elements);
+  for (const auto i : range0(elements)) h_ham[i] = make_cuDoubleComplex(ham[i].real(), ham[i].imag());
+  cuda_check(cudaMemcpy(d_ham.data(), h_ham.data(), elements * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice), "cudaMemcpy H2D matrix");
+  const auto mode = jobz == 'V' ? CUSOLVER_EIG_MODE_VECTOR : CUSOLVER_EIG_MODE_NOVECTOR;
+  int lwork = 0;
+  cusolver_check(cusolverDnZheevd_bufferSize(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), &lwork),
+                 "cusolverDnZheevd_bufferSize");
+  CudaDeviceBuffer<cuDoubleComplex> d_work(lwork);
+  cusolver_check(cusolverDnZheevd(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), d_work.data(), lwork, d_info.data()),
+                 "cusolverDnZheevd");
+  int info = 0;
+  cuda_check(cudaMemcpy(&info, d_info.data(), sizeof(int), cudaMemcpyDeviceToHost), "cudaMemcpy D2H info");
+  if (info != 0) {
+    if (info > 0) return RawEigen<std::complex<double>>();
+    throw std::runtime_error(fmt::format("cuda_zheevd failed. INFO={}", info));
+  }
+  cuda_check(cudaMemcpy(eigenvalues.data(), d_eigenvalues.data(), eigenvalues.size() * sizeof(double), cudaMemcpyDeviceToHost), "cudaMemcpy D2H eigenvalues");
+  if (jobz == 'V') {
+    cuda_check(cudaMemcpy(h_ham.data(), d_ham.data(), elements * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost), "cudaMemcpy D2H eigenvectors");
+    for (const auto i : range0(elements)) ham[i] = std::complex<double>(cuCreal(h_ham[i]), cuCimag(h_ham[i]));
+  }
+  return copy_results<std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
+}
+#endif
+
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
 // equal to the dimension of the matrix h. Matrix m is destroyed in the process, thus no const attribute!
 template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank) {
@@ -315,6 +457,18 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
       }
     }
     if (DP.diag == "dsyevr"s) d = diagonalise_dsyevr(m, DP.diagratio);
+    if (DP.diag == "cuda_dsyevd"s) {
+#if NRG_ENABLE_CUDA
+      validate_cuda_diagonalisation_request(DP.diag);
+      d = diagonalise_cuda_dsyevd(m);
+      if (d.getnrcomputed() == 0) {
+        std::cout << "cuda_dsyevd failed, falling back to dsyev" << std::endl;
+        d = diagonalise_dsyev(m);
+      }
+#else
+      throw std::runtime_error("cuda_dsyevd requested, but CUDA support was not enabled at build time");
+#endif
+    }
   }
   if constexpr (std::is_same_v<S, std::complex<double>>) {
     if (DP.diag == "zheev"s) d = diagonalise_zheev(m);
@@ -326,6 +480,18 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
       }
     }
     if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio);
+    if (DP.diag == "cuda_zheevd"s) {
+#if NRG_ENABLE_CUDA
+      validate_cuda_diagonalisation_request(DP.diag);
+      d = diagonalise_cuda_zheevd(m);
+      if (d.getnrcomputed() == 0) {
+        std::cout << "cuda_zheevd failed, falling back to zheev" << std::endl;
+        d = diagonalise_zheev(m);
+      }
+#else
+      throw std::runtime_error("cuda_zheevd requested, but CUDA support was not enabled at build time");
+#endif
+    }
   }
   const auto nr_computed = d.getnrcomputed();
   my_assert(nr_computed > 0); // zero computed eigenvalues signals serious failure

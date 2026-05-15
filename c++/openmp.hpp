@@ -8,6 +8,7 @@
 #include <cstring>
 #include <dlfcn.h>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <set>
 #include <string>
@@ -41,6 +42,14 @@
 
 #ifndef NRG_MKL_REQUIRES_OPENMP
 #define NRG_MKL_REQUIRES_OPENMP 0
+#endif
+
+#ifndef NRG_ENABLE_CUDA
+#define NRG_ENABLE_CUDA 0
+#endif
+
+#if NRG_ENABLE_CUDA
+#include <cuda_runtime.h>
 #endif
 
 #if NRG_ENABLE_APP_OPENMP || NRG_MKL_REQUIRES_OPENMP
@@ -380,6 +389,46 @@ inline void report_openblas(std::ostream &s) {
   }
 }
 
+inline void report_cuda(std::ostream &s) {
+#if NRG_ENABLE_CUDA
+  s << "[CUDA] CUDA/cuSOLVER support: enabled at build time" << std::endl;
+#ifdef CUDART_VERSION
+  s << "[CUDA] CUDART compile-time version: " << CUDART_VERSION / 1000 << '.' << (CUDART_VERSION % 1000) / 10 << std::endl;
+#endif
+  int runtime_version = 0;
+  if (cudaRuntimeGetVersion(&runtime_version) == cudaSuccess)
+    s << "[CUDA] Runtime version: " << runtime_version / 1000 << '.' << (runtime_version % 1000) / 10 << std::endl;
+  int driver_version = 0;
+  if (cudaDriverGetVersion(&driver_version) == cudaSuccess)
+    s << "[CUDA] Driver version: " << driver_version / 1000 << '.' << (driver_version % 1000) / 10 << std::endl;
+  int count = 0;
+  const auto status = cudaGetDeviceCount(&count);
+  if (status != cudaSuccess) {
+    s << "[CUDA] Device query failed: " << cudaGetErrorString(status) << std::endl;
+    cudaGetLastError();
+    return;
+  }
+  s << "[CUDA] Devices detected: " << count << std::endl;
+  const auto precision = s.precision();
+  for (int i = 0; i < count; ++i) {
+    cudaDeviceProp prop{};
+    if (cudaGetDeviceProperties(&prop, i) != cudaSuccess) {
+      s << "[CUDA]   device " << i << ": properties unavailable" << std::endl;
+      cudaGetLastError();
+      continue;
+    }
+    const auto memory_gib = static_cast<double>(prop.totalGlobalMem) / (1024.0 * 1024.0 * 1024.0);
+    s << "[CUDA]   device " << i << ": " << prop.name
+      << ", capability " << prop.major << '.' << prop.minor
+      << ", global memory " << std::setprecision(3) << memory_gib << " GiB"
+      << ", multiprocessors " << prop.multiProcessorCount << std::endl;
+  }
+  s.precision(precision);
+#else
+  s << "[CUDA] CUDA/cuSOLVER support: disabled at build time" << std::endl;
+#endif
+}
+
 inline void report_application_openmp(std::ostream &s) {
 #if NRG_ENABLE_APP_OPENMP
   s << "[Application OpenMP] Enabled at build time" << std::endl;
@@ -431,6 +480,7 @@ inline void report_openMP(std::ostream &s = std::cout, const int mpi_size = 1) {
   }
   detail::report_mkl(s);
   detail::report_openblas(s);
+  detail::report_cuda(s);
   detail::report_loaded_openmp_runtimes(s);
   detail::report_openmp_symbols(s);
   detail::report_parallel_warnings(s, mpi_size);

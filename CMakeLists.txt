@@ -64,6 +64,7 @@ option(NRGLJUBLJANA_USE_SYSTEM_DEPS "Use dependencies supplied by the system or 
 option(NRGLJUBLJANA_INSTALL_NRGINIT "Install nrginit Mathematica scripts" ON)
 set(NRGLJUBLJANA_INSTALL_NRGINIT_DIR "nrginit" CACHE PATH "Install directory for nrginit Mathematica scripts")
 option(NRGLJUBLJANA_ENABLE_APP_OPENMP "Enable application-level OpenMP parallel regions; BLAS/LAPACK remains threaded independently" OFF)
+option(NRGLJUBLJANA_ENABLE_CUDA "Enable CUDA/cuSOLVER diagonalisation support" OFF)
 option(NRGLJUBLJANA_STRICT_FLOATING_POINT "Compile project C++ targets with strict floating-point flags" OFF)
 set(NRGLJUBLJANA_MKL_THREADING_LAYER "AUTO" CACHE STRING "MKL threading layer for mkl_rt builds (AUTO, COMPILER, GNU, INTEL, or LLVM)")
 set_property(CACHE NRGLJUBLJANA_MKL_THREADING_LAYER PROPERTY STRINGS AUTO COMPILER GNU INTEL LLVM)
@@ -81,6 +82,7 @@ set(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME ${NRGLJUBLJANA_ENABLE_APP_OPENMP})
 set(NRGLJUBLJANA_MKL_REQUIRES_OPENMP OFF)
 
 message(STATUS "Application OpenMP parallel regions: ${NRGLJUBLJANA_ENABLE_APP_OPENMP}")
+message(STATUS "CUDA/cuSOLVER diagonalisation request: ${NRGLJUBLJANA_ENABLE_CUDA}")
 message(STATUS "MKL threading layer request: ${NRGLJUBLJANA_MKL_THREADING_LAYER}")
 message(STATUS "Strict floating-point flags: ${NRGLJUBLJANA_STRICT_FLOATING_POINT}")
 
@@ -184,6 +186,26 @@ install(TARGETS hdf5 EXPORT nrgljubljana-targets)
 add_library(openmp INTERFACE)
 target_compile_definitions(openmp INTERFACE NRG_ENABLE_APP_OPENMP=$<BOOL:${NRGLJUBLJANA_ENABLE_APP_OPENMP}>)
 install(TARGETS openmp EXPORT nrgljubljana-targets)
+
+# CUDA/cuSOLVER support is opt-in and does not require enabling the CUDA
+# language; the diagonalisation wrappers call the cuSOLVER C API from C++.
+add_library(cuda_solver INTERFACE)
+set(NRGLJUBLJANA_CUDA_ENABLED OFF)
+if(NRGLJUBLJANA_ENABLE_CUDA)
+  find_package(CUDAToolkit QUIET)
+  if(CUDAToolkit_FOUND AND TARGET CUDA::cusolver AND TARGET CUDA::cudart)
+    set(NRGLJUBLJANA_CUDA_ENABLED ON)
+    target_link_libraries(cuda_solver INTERFACE CUDA::cusolver CUDA::cudart)
+    message(STATUS "CUDA/cuSOLVER diagonalisation enabled")
+    message(STATUS "CUDAToolkit_VERSION=${CUDAToolkit_VERSION}")
+  else()
+    message(WARNING "NRGLJUBLJANA_ENABLE_CUDA=ON, but CUDAToolkit with cuSOLVER/cuDART was not found; CUDA diagonalisation disabled")
+  endif()
+else()
+  message(STATUS "CUDA/cuSOLVER diagonalisation disabled (NRGLJUBLJANA_ENABLE_CUDA=OFF)")
+endif()
+target_compile_definitions(cuda_solver INTERFACE NRG_ENABLE_CUDA=$<BOOL:${NRGLJUBLJANA_CUDA_ENABLED}>)
+install(TARGETS cuda_solver EXPORT nrgljubljana-targets)
 
 # Boost
 # https://stackoverflow.com/questions/57415206/is-there-a-way-to-get-rid-of-the-new-boost-version-may-have-incorrect-or-missin

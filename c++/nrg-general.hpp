@@ -191,6 +191,7 @@ public:
     auto diag_seed = std::move(input.diag);
     auto coef_seed = std::move(input.coef);
 
+    validate_cuda_diagonalisation_request(P.diag);
     warn_application_openmp_request(P.diag_mode, P.diagth);
     select_diag_engine();
 

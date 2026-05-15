@@ -54,6 +54,7 @@ target_link_libraries(nrgljubljana_c
     Boost::serialization
     mpi
     $<BUILD_INTERFACE:openmp>
+    $<BUILD_INTERFACE:cuda_solver>
     $<BUILD_INTERFACE:blas_lapack>
     $<BUILD_INTERFACE:gmp>
     $<BUILD_INTERFACE:dl>

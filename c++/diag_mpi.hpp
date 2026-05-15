@@ -46,12 +46,13 @@ class DiagMPI : public DiagEngine<S>{
      auto DPcopy = DP;
      boost::mpi::broadcast(mpiw, DPcopy, 0);
    }
-   DiagParams receive_params() {
-     DiagParams DP;
-     boost::mpi::broadcast(mpiw, DP, 0);
-     mpilog("Received diag parameters: diag=" << DP.diag << " diagratio=" << DP.diagratio);
-     return DP;
-   }
+    DiagParams receive_params() {
+      DiagParams DP;
+      boost::mpi::broadcast(mpiw, DP, 0);
+      mpilog("Received diag parameters: diag=" << DP.diag << " diagratio=" << DP.diagratio);
+      validate_cuda_diagonalisation_request(DP.diag);
+      return DP;
+    }
    void send_matrix(const int dest, const EigenMatrix<S> &m) {
      mpilog("send_matrix() caled, dest=" << dest);
      const size_t size1 = NRG::size1(m);

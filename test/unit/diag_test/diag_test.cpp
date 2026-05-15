@@ -310,6 +310,44 @@ TEST(Diag, zheevr) {
   }
 }
 
+#if NRG_ENABLE_CUDA
+TEST(Diag, cuda_dsyevd) {
+  if (cuda_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
+  Matrix_traits<double> m(2,2); // Sigma_X
+  m(0,0) = m(1,1) = m(1,0) = 0.0;
+  m(0,1) = 1.0;
+  const auto res = diagonalise_cuda_dsyevd(m);
+  EXPECT_EQ(res.getnrcomputed(), 2);
+  EXPECT_EQ(res.getdim(), 2);
+  EXPECT_NEAR(res.val[0], -1.0, 1e-12);
+  EXPECT_NEAR(res.val[1], +1.0, 1e-12);
+  EXPECT_NEAR(std::abs(res.vec(0,0)), sq2, 1e-12);
+  EXPECT_NEAR(std::abs(res.vec(0,1)), sq2, 1e-12);
+  EXPECT_NEAR(res.vec(0,0)*res.vec(0,1), -0.5, 1e-12);
+  EXPECT_NEAR(std::abs(res.vec(1,0)), sq2, 1e-12);
+  EXPECT_NEAR(std::abs(res.vec(1,1)), sq2, 1e-12);
+  EXPECT_NEAR(res.vec(1,0)*res.vec(1,1), +0.5, 1e-12);
+}
+
+TEST(Diag, cuda_zheevd) {
+  if (cuda_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
+  Matrix_traits<std::complex<double>> m(2,2); // Sigma_Y
+  m(0,0) = m(1,1) = m(1,0) = 0.0;
+  m(0,1) = std::complex<double>(0.0,1.0);
+  const auto res = diagonalise_cuda_zheevd(m);
+  EXPECT_EQ(res.getnrcomputed(), 2);
+  EXPECT_EQ(res.getdim(), 2);
+  EXPECT_NEAR(res.val[0], -1.0, 1e-12);
+  EXPECT_NEAR(res.val[1], +1.0, 1e-12);
+  EXPECT_NEAR(std::abs(res.vec(0,0)), sq2, 1e-12);
+  EXPECT_NEAR(std::abs(res.vec(0,1)), sq2, 1e-12);
+  EXPECT_NEAR((res.vec(0,0)*res.vec(0,1)).imag(), -0.5, 1e-12);
+  EXPECT_NEAR(std::abs(res.vec(1,0)), sq2, 1e-12);
+  EXPECT_NEAR(std::abs(res.vec(1,1)), sq2, 1e-12);
+  EXPECT_NEAR((res.vec(1,0)*res.vec(1,1)).imag(), +0.5, 1e-12);
+}
+#endif
+
 TEST(Diag, diagonalise_complex) {
   Params P;
   auto DP = DiagParams(P, 0.5);
