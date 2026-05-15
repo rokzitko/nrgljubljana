@@ -72,10 +72,18 @@ class Oprecalc {
        return selected ? recalc(std::forward<Args>(args)...) : MatrixElements<S>();
      }
 
-   // Recalculate operator matrix representations
-   void recalculate_operators(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P_) {
-     nrglog('@', "recalculate_operators()");
-     const auto section_timing = mt.time_it("recalc");
+    // Recalculate operator matrix representations
+    void recalculate_operators(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P_) {
+      nrglog('@', "recalculate_operators()");
+      const auto section_timing = mt.time_it("recalc");
+      std::unique_ptr<CudaRecalcScope<S>> cuda_recalc;
+      if (P_.mult == "cuda") {
+        cuda_recalc = std::make_unique<CudaRecalcScope<S>>();
+        for (const auto &diag_entry : diag) {
+          const auto &eig = diag_entry.second;
+          for (const auto block : range0(eig.U.size())) cuda_recalc->register_matrix(eig.U.get(block));
+        }
+      }
        for (auto &[name, m] : a.ops)
          m = recalc_or_clear(ops.do_s(name, P_, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
        for (auto &[name, m] : a.opsp)

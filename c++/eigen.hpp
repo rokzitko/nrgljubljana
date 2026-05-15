@@ -228,6 +228,7 @@ public:
   void resize(const size_t nr) {
     blocks.resize(nr);
   }
+  [[nodiscard]] auto size() const noexcept { return blocks.size(); }
   void set(const size_t i, Matrix m) {
     assert(i < blocks.size());
     blocks[i] = std::move(m);
