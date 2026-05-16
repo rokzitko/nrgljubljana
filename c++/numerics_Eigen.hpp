@@ -113,7 +113,7 @@ void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
   if (finite_size(U)) {
     assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
     assert(my_isfinite(factor));
-    M += factor * U.adjoint() * O * U;
+    M.noalias() += factor * U.adjoint() * O * U;
   }
 }
 

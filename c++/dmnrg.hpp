@@ -88,7 +88,7 @@ void cdmI(const size_t i,        // Subspace index
   my_assert(rmax == dim);   // Otherwise, rmax must equal dim
   // Check range of omega: do the dimensions of C^N_I1(omega omega') and U^N_I1(omega|r1) match?
   my_assert(nromega <= diagI1.getnrstored());
-  const auto U0 = diagI1.U.get(i);
+  const auto &U0 = diagI1.U.get(i);
   const auto U = NRG::submatrix_const(U0, {0, nromega}, {0, size2(U0)});
   rotate<S>(rhoNEW, factor, U, rhoN);
 }
