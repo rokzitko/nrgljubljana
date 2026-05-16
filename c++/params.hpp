@@ -450,8 +450,9 @@ class Params {
    w - calculation of weights w_n
    M - MPI parallelization details
    ! - debug internal variables
-   D - DMNRG calculation details
-   Z - report the values of different partition functions
+    D - DMNRG calculation details
+    Y - DMNRG profiling summary
+    Z - report the values of different partition functions
    Useful combinations:
     @0 - high-level calculation flow
     is - debug matrix construction

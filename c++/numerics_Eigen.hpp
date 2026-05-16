@@ -117,6 +117,15 @@ void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
   }
 }
 
+template<scalar S, typename U_type, Eigen_matrix EM, typename t_coef = coef_traits<S>> // XXX: U_type
+void rotate_diagonal(EM &M, const t_coef factor, const U_type &U, const EM &O) {
+  if (finite_size(U)) {
+    assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
+    assert(my_isfinite(factor));
+    M.noalias() += factor * U.adjoint() * O.diagonal().asDiagonal() * U;
+  }
+}
+
 template<scalar S>
 Eigen::Block<const EigenMatrix<S>> submatrix_const(const EigenMatrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {

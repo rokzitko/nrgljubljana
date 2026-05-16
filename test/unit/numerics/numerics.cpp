@@ -697,6 +697,18 @@ TEST(numerics, rotate) {
   EXPECT_TRUE(r.isApprox(ref));
 }
 
+TEST(numerics, rotate_diagonal) {
+  auto u = generate_matrix<double>(3,2);
+  auto o = NRG::zero_matrix<double>(3,3);
+  u(0,0) = 1; u(0,1) = 2; u(1,0) = 3; u(1,1) = 4; u(2,0) = 5; u(2,1) = 6;
+  o(0,0) = 2; o(1,1) = 3; o(2,2) = 4;
+  auto diagonal = NRG::zero_matrix<double>(2,2);
+  auto dense = NRG::zero_matrix<double>(2,2);
+  rotate_diagonal<double>(diagonal, 1.0, u, o);
+  rotate<double>(dense, 1.0, u, o);
+  EXPECT_TRUE(diagonal.isApprox(dense));
+}
+
 TEST(numerics, matrix_prod) {
   auto a = generate_matrix<double>(2,2);
   auto b = generate_matrix<double>(2,2);
