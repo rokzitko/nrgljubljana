@@ -50,7 +50,7 @@ auto init_rho(const Step &step, const DiagInfo<S> &diag_in, const Symmetry<S> *S
     const auto Z = grand_canonical_Z(step.scT(), diag_in, mult);
     for (const auto &[I, eig] : diag_in)
       rho[I] = eig.diagonal_exp(step.scT()) / Z;
-    check_trace_rho(rho, mult);
+    if (P.checkrho) check_trace_rho(rho, mult);
     return rho;
   }
   const auto diag = Sym->project(diag_in, P.project);
@@ -58,7 +58,7 @@ auto init_rho(const Step &step, const DiagInfo<S> &diag_in, const Symmetry<S> *S
   const auto Z = grand_canonical_Z(step.scT(), diag, mult);
   for (const auto &[I, eig] : diag)
     rho[I] = eig.diagonal_exp(step.scT()) / Z;
-  check_trace_rho(rho, mult);
+  if (P.checkrho) check_trace_rho(rho, mult);
   return rho;
 }
 
@@ -133,13 +133,13 @@ template<scalar S>
 void calc_densitymatrix(DensMatElements<S> &rho, const BackiterStore &store_all, const Symmetry<S> *Sym,
                         MemTime &mt, const Params &P, const std::string filename = fn_rho) {
   if (P.resume && already_computed(filename, P)) return;
-  check_trace_rho(rho, Sym->multfnc()); // Must be 1.
+  if (P.checkrho) check_trace_rho(rho, Sym->multfnc()); // Must be 1.
   const auto section_timing = mt.time_it("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[DM] " << N << std::endl;
     const DiagInfo<S> diag_loaded(N, P);
     auto rhoPrev = calc_densitymatrix_iterN(diag_loaded, rho, N, store_all, Sym, P); // need store_all for backiteration!
-    check_trace_rho(rhoPrev, Sym->multfnc()); // Make sure rho is normalized to 1.
+    if (P.checkrho) check_trace_rho(rhoPrev, Sym->multfnc()); // Make sure rho is normalized to 1.
     rhoPrev.save(N-1, P, filename);
     rho.swap(rhoPrev);
   }
@@ -157,7 +157,7 @@ void calc_densitymatrix(DensMatElements<S> &rho, const BackiterStore &store_all,
 // H. Zhang, X. C. Xie, Q. Sun, Phys. Rev. B 82, 075111 (2010)
 template<scalar S, typename MF>
 DensMatElements<S> init_rho_FDM(const size_t N, const ThermoStore<S> &store, const Stats<S> &stats,
-                                MF mult, const double T) {
+                                MF mult, const double T, const bool checkrho) {
   DensMatElements<S> rhoFDM;
   for (const auto &[I, ds] : store[N]) {
     rhoFDM[I] = zero_matrix<S>(ds.max());
@@ -165,7 +165,7 @@ DensMatElements<S> init_rho_FDM(const size_t N, const ThermoStore<S> &store, con
       for (const auto i: ds.all())
         rhoFDM[I](i, i) = exp(-ds.eig.values.abs_zero(i) / T) * stats.wn[N] / stats.ZnDNd[N];
   }
-  if (stats.wn[N] != 0.0) { // note: wn \propto ZnDNd, so this is the same condition as above
+  if (checkrho && stats.wn[N] != 0.0) { // note: wn \propto ZnDNd, so this is the same condition as above
     // Trace should be equal to the total weight of the shell-N contribution to the FDM.
     const auto tr = rhoFDM.trace(mult);
     const auto diff = (tr - stats.wn[N]) / stats.wn[N]; // relative error
@@ -184,7 +184,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
   DensMatElements<S> rhoDD;
   DensMatElements<S> rhoFDMPrev;
   if (!step.last(N))
-    rhoDD = init_rho_FDM(N, store, stats, Sym->multfnc(), P.T); // store here!
+    rhoDD = init_rho_FDM(N, store, stats, Sym->multfnc(), P.T, P.checkrho); // store here!
   for (const auto &[I, ds] : store_all[N - 1]) { // loop over all subspaces at *previous* iteration, hence store_all here
     const auto subs = Sym->new_subspaces(I);
     const auto dim  = ds.kept();
@@ -218,11 +218,13 @@ void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const 
     std::cout << "[FDM] " << N << std::endl;
     const DiagInfo<S> diag_loaded(N, P); // = load_and_project(N, Sym, P);
     auto rhoFDMPrev        = calc_fulldensitymatrix_iterN(step, diag_loaded, rhoFDM, N, store, store_all, stats, Sym, P);
-    const auto tr          = rhoFDMPrev.trace(Sym->multfnc());
-    const auto expected    = std::accumulate(stats.wn.begin() + N, stats.wn.begin() + P.Nmax, 0.0);
-    const auto diff        = (tr - expected) / expected;
-    nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
-    my_assert(num_equal(diff, 0.0));
+    if (P.checkrho) {
+      const auto tr          = rhoFDMPrev.trace(Sym->multfnc());
+      const auto expected    = std::accumulate(stats.wn.begin() + N, stats.wn.begin() + P.Nmax, 0.0);
+      const auto diff        = (tr - expected) / expected;
+      nrglog('w', "tr[rhoFDM(" << N << ")]=" << tr << " sum(wn)=" << expected << " diff=" << diff);
+      my_assert(num_equal(diff, 0.0));
+    }
     rhoFDMPrev.save(N-1, P, filename);
     rhoFDM.swap(rhoFDMPrev);
   }

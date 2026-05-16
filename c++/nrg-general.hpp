@@ -134,7 +134,7 @@ private:
     if (P.logletter('w'))
       report_ZnD(stats, P);
     fdm_thermodynamics(store, stats, Sym.get(), P.T);
-    auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T);
+    auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T, P.checkrho);
     rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
     calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym.get(), mt, P);
   }

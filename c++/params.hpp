@@ -34,6 +34,11 @@ enum class RUNTYPE { NRG, DMNRG }; // First or second sweep? Used in class Step.
 
 inline const auto fn_rho {"rho"s};
 inline const auto fn_rhoFDM {"rhofdm"s};
+#ifdef NDEBUG
+inline const auto default_checkrho {"false"s};
+#else
+inline const auto default_checkrho {"true"s};
+#endif
 
 // Base class for parameter containers
 // XXX C++20: std::string may be constexpr
@@ -272,6 +277,9 @@ class Params {
   // If dm is set to true, density matrices are computed.
   // Automatically enabled when needed (DMNRG, CFS, FDM).
   param<bool> dm{"dm", "Compute density matrixes?", "false", all}; // N
+
+  // Check density-matrix trace normalization. Enabled by default in debug builds, disabled in release builds.
+  param<bool> checkrho{"checkrho", "Check density-matrix trace normalization", default_checkrho, all}; // N
 
   // **************
   // Frequency mesh

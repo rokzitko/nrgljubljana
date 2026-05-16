@@ -209,7 +209,7 @@ void calculate_spectral_and_expv_impl(const Step &step,
   if (step.dmnrg()) {
     if (P.need_rho()) {
       rho.load(step.ndx(), P, fn_rho, P.removefiles);
-      check_trace_rho(rho, Sym->multfnc()); // Check if Tr[rho]=1, i.e. the normalization
+      if (P.checkrho) check_trace_rho(rho, Sym->multfnc()); // Check if Tr[rho]=1, i.e. the normalization
     }
     if (P.need_rhoFDM())
       rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.removefiles);
