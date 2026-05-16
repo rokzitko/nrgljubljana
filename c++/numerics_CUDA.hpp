@@ -240,7 +240,7 @@ template<scalar S> class CudaRecalcScope {
 
   template<Eigen_matrix EM>
   static MatrixKey make_key(const EM &M) {
-    return {M.data(), size1(M), size2(M)};
+    return {M.data(), static_cast<size_t>(size1(M)), static_cast<size_t>(size2(M))};
   }
 
   inline static thread_local CudaRecalcScope *current_ = nullptr;
@@ -403,6 +403,43 @@ void transform_CUDA(EM &M, const t_coef factor, const EM &A, const EM &O, const 
   cuda_mult_copy_from_device<S>(M, d_M.data(), "cudaMemcpy D2H M");
 }
 
+template<scalar S, Eigen_matrix EM, Eigen_matrix U_type, typename t_coef = coef_traits<S>>
+void rotate_CUDA(EM &M, const t_coef factor, const U_type &U, const EM &O) {
+  if (!finite_size(U)) return;
+  assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
+  assert(my_isfinite(factor));
+  using Traits = CudaMultTraits<S>;
+  using CT = typename Traits::cuda_type;
+  const auto q = static_cast<int>(size1(U));
+  const auto r = static_cast<int>(size2(U));
+  if (auto *ctx = CudaRecalcScope<S>::current(); ctx != nullptr) {
+    auto &d_M = ctx->output_buffer(size1(M) * size2(M));
+    cuda_mult_copy_to_device<S>(M, d_M, "cudaMemcpy H2D M");
+    const auto *d_U = ctx->cached_data(U);
+    if (d_U == nullptr) d_U = ctx->upload_uncached(U, ctx->operand_a_buffer(size1(U) * size2(U)), "cudaMemcpy H2D U");
+    const auto *d_O = ctx->upload_uncached(O, ctx->operand_o_buffer(size1(O) * size2(O)), "cudaMemcpy H2D O");
+    auto &d_tmp = ctx->temp_buffer(static_cast<size_t>(q) * static_cast<size_t>(r));
+    const auto one = Traits::convert(S(1.0));
+    const auto zero = Traits::convert(S(0.0));
+    const auto alpha = Traits::convert(S(factor));
+    Traits::gemm(ctx->handle(), CUBLAS_OP_N, Traits::adjoint_op, q, r, q, &one, d_O, q, d_U, r, &zero, d_tmp.data(), q);
+    Traits::gemm(ctx->handle(), CUBLAS_OP_N, CUBLAS_OP_N, r, r, q, &alpha, d_U, r, d_tmp.data(), q, &one, d_M.data(), r);
+    cuda_mult_copy_from_device<S>(M, d_M.data(), "cudaMemcpy D2H M");
+    return;
+  }
+  CudaMultBuffer<CT> d_M(size1(M) * size2(M)), d_U(size1(U) * size2(U)), d_O(size1(O) * size2(O)), d_tmp(static_cast<size_t>(q) * static_cast<size_t>(r));
+  cuda_mult_copy_to_device<S>(M, d_M, "cudaMemcpy H2D M");
+  cuda_mult_copy_to_device<S>(U, d_U, "cudaMemcpy H2D U");
+  cuda_mult_copy_to_device<S>(O, d_O, "cudaMemcpy H2D O");
+  const auto one = Traits::convert(S(1.0));
+  const auto zero = Traits::convert(S(0.0));
+  const auto alpha = Traits::convert(S(factor));
+  CublasHandle handle;
+  Traits::gemm(handle, CUBLAS_OP_N, Traits::adjoint_op, q, r, q, &one, d_O.data(), q, d_U.data(), r, &zero, d_tmp.data(), q);
+  Traits::gemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, r, r, q, &alpha, d_U.data(), r, d_tmp.data(), q, &one, d_M.data(), r);
+  cuda_mult_copy_from_device<S>(M, d_M.data(), "cudaMemcpy D2H M");
+}
+
 #else
 inline void validate_cuda_multiplication_request(const std::string &mult) {
   if (cuda_mult_requested(mult)) throw std::runtime_error("mult=cuda requested, but CUDA support was not enabled at build time");
@@ -418,6 +455,11 @@ void transform_CUDA(EM &, const t_coef, const EM &, const EM &, const EM &) {
   throw std::runtime_error("transform_CUDA requested, but CUDA support was not enabled at build time");
 }
 
+template<scalar S, Eigen_matrix EM, Eigen_matrix U_type, typename t_coef = coef_traits<S>>
+void rotate_CUDA(EM &, const t_coef, const U_type &, const EM &) {
+  throw std::runtime_error("rotate_CUDA requested, but CUDA support was not enabled at build time");
+}
+
 template<scalar S> class CudaRecalcScope {
  public:
   CudaRecalcScope() = default;
@@ -426,9 +468,13 @@ template<scalar S> class CudaRecalcScope {
 
 template<scalar S, Eigen_matrix EM> class CudaRecalcAccumulator {
  public:
-  explicit CudaRecalcAccumulator(EM &) {}
+  explicit CudaRecalcAccumulator(EM &M) : M_(M) {}
   [[nodiscard]] bool active() const noexcept { return false; }
+  EM &matrix() { return M_; }
   void copy_back() {}
+
+ private:
+  EM &M_;
 };
 
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
@@ -440,6 +486,7 @@ template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void transform_CUDA_accumulate(CudaRecalcAccumulator<S, EM> &, const t_coef, const EM &, const EM &, const EM &) {
   throw std::runtime_error("transform_CUDA_accumulate requested, but CUDA support was not enabled at build time");
 }
+
 #endif
 
 #endif

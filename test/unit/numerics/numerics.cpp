@@ -656,6 +656,33 @@ TEST(numerics, transform_CUDA_recalc_accumulator) {
   transform_Eigen<double>(ref, 3.0, a, b, c);
   EXPECT_TRUE(cuda.isApprox(ref));
 }
+
+TEST(numerics, rotate_CUDA) {
+  if (cuda_mult_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
+  auto u = generate_matrix<std::complex<double>>(2,2);
+  auto o = generate_matrix<std::complex<double>>(2,2);
+  u(0,0) = {1.0, 1.0}; u(0,1) = {2.0, 0.0}; u(1,0) = {0.0, -1.0}; u(1,1) = {1.0, 0.0};
+  o(0,0) = {2.0, 0.0}; o(0,1) = {1.0, 1.0}; o(1,0) = {1.0, -1.0}; o(1,1) = {3.0, 0.0};
+  auto cuda = NRG::zero_matrix<std::complex<double>>(2,2);
+  auto ref = NRG::zero_matrix<std::complex<double>>(2,2);
+  rotate_CUDA<std::complex<double>>(cuda, std::complex<double>(1.0, 0.0), u, o);
+  rotate<std::complex<double>>(ref, std::complex<double>(1.0, 0.0), u, o);
+  EXPECT_TRUE(cuda.isApprox(ref));
+}
+
+TEST(numerics, rotate_dispatch_cuda) {
+  if (cuda_mult_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
+  auto u = generate_matrix<double>(2,2);
+  auto o = generate_matrix<double>(2,2);
+  u(0,0) = 1; u(0,1) = 2; u(1,0) = 3; u(1,1) = 4;
+  o(0,0) = 2; o(0,1) = 1; o(1,0) = 0; o(1,1) = 1;
+  auto cuda = NRG::zero_matrix<double>(2,2);
+  auto ref = NRG::zero_matrix<double>(2,2);
+  rotate<double>("cuda", cuda, 1.0, u, o);
+  rotate<double>(ref, 1.0, u, o);
+  EXPECT_TRUE(cuda.isApprox(ref));
+}
+
 #endif
  
 TEST(numerics, rotate) {

@@ -271,6 +271,18 @@ void transform(const std::string &mult, EM &M, const t_coef factor, const EM &A,
   }
 }
 
+template<scalar S, Eigen_matrix EM, Eigen_matrix U_type, typename t_coef = coef_traits<S>>
+void rotate(const std::string &mult, EM &M, const t_coef factor, const U_type &U, const EM &O) {
+  if (mult == "blas") {
+    rotate<S>(M, factor, U, O);
+  } else if (mult == "cuda") {
+    validate_cuda_multiplication_request(mult);
+    rotate_CUDA<S>(M, factor, U, O);
+  } else {
+    throw std::invalid_argument(fmt::format("Unsupported mult backend: {}", mult));
+  }
+}
+
 template<scalar S>
 [[nodiscard]] auto zero_matrix(const size_t size) {
   return NRG::zero_matrix<S>(size, size);
