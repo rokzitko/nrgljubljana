@@ -18,7 +18,7 @@ feedstock recipe.
 
 1. Update project versions in the source tree.
 2. Commit the version changes.
-3. Create and push the release tag, for example `2026.05`.
+3. Create and push the release tag, for example `2026.05.1`.
 4. Download the GitHub tag archive.
 5. Compute the archive SHA256.
 6. Update `recipe-conda-forge/meta.yaml` with the version, URL, SHA256, and `build/number: 0`.
@@ -27,20 +27,20 @@ feedstock recipe.
 Example commands for the archive hash:
 
 ```bash
-curl -L -o nrgljubljana-2026.05.tar.gz \
-  https://github.com/rokzitko/nrgljubljana/archive/refs/tags/2026.05.tar.gz
-sha256sum nrgljubljana-2026.05.tar.gz
+curl -L -o nrgljubljana-2026.05.1.tar.gz \
+  https://github.com/rokzitko/nrgljubljana/archive/refs/tags/2026.05.1.tar.gz
+sha256sum nrgljubljana-2026.05.1.tar.gz
 ```
 
 On macOS, use:
 
 ```bash
-shasum -a 256 nrgljubljana-2026.05.tar.gz
+shasum -a 256 nrgljubljana-2026.05.1.tar.gz
 ```
 
 ## Current Release
 
-The current recipe is prepared for tag `2026.05` with:
+The current recipe is prepared for tag `2026.05.1` with:
 
 ```yaml
 source:
@@ -48,7 +48,7 @@ source:
   sha256: 1ae9c0cd738bda29c38944f6c03159174f1339deb5ba6ca7acda5d126a98dfd1
 ```
 
-Do not move or recreate the `2026.05` tag after computing this hash. If the tag
+Do not move or recreate the `2026.05.1` tag after computing this hash. If the tag
 changes, the GitHub archive changes and the SHA256 must be recomputed.
 
 ## Local Checks

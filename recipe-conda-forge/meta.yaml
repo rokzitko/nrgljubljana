@@ -1,5 +1,5 @@
 {% set name = "nrgljubljana" %}
-{% set version = "2026.05" %}
+{% set version = "2026.05.1" %}
 
 package:
   name: {{ name|lower }}
