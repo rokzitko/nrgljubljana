@@ -25,7 +25,8 @@ source:
 build:
   number: 9
   skip: true  # [win]
-  ignore_run_exports:
+  ignore_run_exports_from:
+    # fmt is used as a header-only library, so no libfmt runtime link is needed.
     - fmt
 
 requirements:
@@ -35,7 +36,6 @@ requirements:
     - {{ stdlib("c") }}
     - cmake >=3.25
     - ninja
-    - git
   host:
     - blas-devel * *{{ blas_impl }}
     - eigen >=3.4,<3.5
