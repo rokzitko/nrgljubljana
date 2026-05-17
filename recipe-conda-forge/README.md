@@ -45,7 +45,7 @@ The current recipe is prepared for tag `2026.05.1` with:
 ```yaml
 source:
   url: https://github.com/rokzitko/nrgljubljana/archive/refs/tags/{{ version }}.tar.gz
-  sha256: 1ae9c0cd738bda29c38944f6c03159174f1339deb5ba6ca7acda5d126a98dfd1
+  sha256: 254e136471f69bdcbab48dd7210d59835e0984649aec145151144b59271afa3b
 ```
 
 Do not move or recreate the `2026.05.1` tag after computing this hash. If the tag
