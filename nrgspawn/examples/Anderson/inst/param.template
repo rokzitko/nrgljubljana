@@ -1,0 +1,14 @@
+# Rename param.template to param, then run "nrginit".
+
+[extra]
+#eps=
+#U=
+
+[param]
+options=GENERATE_TEMPLATE GENERATE_TEMPLATE_ALL
+symtype=QS
+model=model.m
+
+ops=A_d self_d n_d n_d_ud Himp Hpot SigmaHd
+
+data_has_rescaled_energies=false

@@ -1,0 +1,16 @@
+#!/usr/bin/env perl
+
+-e "Delta.dat" or die "Delta.dat must exist";
+
+system "cp param.inst param";
+
+system("adapt P");
+system("adapt N");
+
+if (!(-e "FSOL.dat" && -e "FSOLNEG.dat")) {
+  print "solver failed.\n";
+  exit(1);
+}
+
+system "mkdir -p calc";
+system "./instantiate calc";

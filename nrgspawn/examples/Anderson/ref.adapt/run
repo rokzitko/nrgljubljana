@@ -1,0 +1,5 @@
+#!/bin/bash
+adapt P
+adapt N
+nrginit
+mynrgrun

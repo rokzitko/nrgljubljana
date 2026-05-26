@@ -1,0 +1,4 @@
+#!/usr/bin/bash
+./NRG
+cd calc
+mynrgrun

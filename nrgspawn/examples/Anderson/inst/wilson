@@ -1,0 +1,9 @@
+#!/usr/bin/env perl
+my $hybfn = "Delta.dat";
+-e $hybfn or die "Hybridisation funcrtion not found.";
+system "nrgchain";
+-e "xi.dat" && -e "zeta.dat" && -e "theta.dat" or die "Wilson chain coefficients not found.";
+
+system "mv xi.dat xi1.dat";
+system "mv zeta.dat zeta1.dat";
+system "mv theta.dat theta1.dat";

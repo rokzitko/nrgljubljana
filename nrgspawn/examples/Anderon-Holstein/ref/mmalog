@@ -1,0 +1,273 @@
+NRG Ljubljana 2026.05 (c) Rok Zitko, rok.zitko@ijs.si
+Mathematica version: 13.3.0 for Linux x86 (64-bit) (June 3, 2023)
+sneg version: 2.0.13
+Loading module initialparse.m path: {~, ., .., /home/zitko/software/nrgljubljana/current/nrginit, ~/nrg}
+Loading module sym.m path: {~, ., .., /home/zitko/software/nrgljubljana/current/nrginit, ~/nrg}
+Options: {Nph=3}
+Loading module models.m path: {~, ., .., /home/zitko/software/nrgljubljana/current/nrginit, ~/nrg}
+models started
+Loading module custommodels.m path: {~, ., .., /home/zitko/software/nrgljubljana/current/nrginit, ~/nrg}
+custommodels Rok Zitko
+Loading module model.m path: {~, ., .., /home/zitko/software/nrgljubljana/current/nrginit, ~/nrg}
+def1ch, NRDOTS=1
+H0=coefzeta[1, 0]*(-1 + nc[f[0, 0, 0], f[1, 0, 0]] + nc[f[0, 0, 1], f[1, 0, 1]])
+nph=3
+"selfopd[CR,UP]="-0.1*nc[d[0, 0], d[0, 1], d[1, 0]] + g*nc[d[0, 1], ket[0], bra[1]] + g*nc[d[0, 1], ket[1], bra[0]] + Sqrt[2]*g*nc[d[0, 1], ket[1], bra[2]] + Sqrt[2]*g*nc[d[0, 1], ket[2], bra[1]] + Sqrt[3]*g*nc[d[0, 1], ket[2], bra[3]] + 
+   Sqrt[3]*g*nc[d[0, 1], ket[3], bra[2]]
+"selfopd[CR,DO]="0.1*nc[d[0, 0], d[0, 1], d[1, 1]] + g*nc[d[0, 0], ket[0], bra[1]] + g*nc[d[0, 0], ket[1], bra[0]] + Sqrt[2]*g*nc[d[0, 0], ket[1], bra[2]] + Sqrt[2]*g*nc[d[0, 0], ket[2], bra[1]] + Sqrt[3]*g*nc[d[0, 0], ket[2], bra[3]] + 
+   Sqrt[3]*g*nc[d[0, 0], ket[3], bra[2]]
+"selfopd[AN,UP]="-0.1*nc[d[0, 0], d[1, 0], d[1, 1]] - g*nc[d[1, 1], ket[0], bra[1]] - g*nc[d[1, 1], ket[1], bra[0]] - Sqrt[2]*g*nc[d[1, 1], ket[1], bra[2]] - Sqrt[2]*g*nc[d[1, 1], ket[2], bra[1]] - Sqrt[3]*g*nc[d[1, 1], ket[2], bra[3]] - 
+   Sqrt[3]*g*nc[d[1, 1], ket[3], bra[2]]
+"selfopd[AN,DO]="0.1*nc[d[0, 1], d[1, 0], d[1, 1]] - g*nc[d[1, 0], ket[0], bra[1]] - g*nc[d[1, 0], ket[1], bra[0]] - Sqrt[2]*g*nc[d[1, 0], ket[1], bra[2]] - Sqrt[2]*g*nc[d[1, 0], ket[2], bra[1]] - Sqrt[3]*g*nc[d[1, 0], ket[2], bra[3]] - 
+   Sqrt[3]*g*nc[d[1, 0], ket[3], bra[2]]
+"SigmaH[UP]="0.1*nc[d[0, 0], d[1, 0]] + g*nc[ket[0], bra[1]] + g*nc[ket[1], bra[0]] + Sqrt[2]*g*nc[ket[1], bra[2]] + Sqrt[2]*g*nc[ket[2], bra[1]] + Sqrt[3]*g*nc[ket[2], bra[3]] + Sqrt[3]*g*nc[ket[3], bra[2]]
+"SigmaH[DO]="0.1*nc[d[0, 1], d[1, 1]] + g*nc[ket[0], bra[1]] + g*nc[ket[1], bra[0]] + Sqrt[2]*g*nc[ket[1], bra[2]] + Sqrt[2]*g*nc[ket[2], bra[1]] + Sqrt[3]*g*nc[ket[2], bra[3]] + Sqrt[3]*g*nc[ket[3], bra[2]]
+"SigmaH="(0.1*nc[d[0, 0], d[1, 0]] + 0.1*nc[d[0, 1], d[1, 1]] + 2*g*nc[ket[0], bra[1]] + 2*g*nc[ket[1], bra[0]] + 2*Sqrt[2]*g*nc[ket[1], bra[2]] + 2*Sqrt[2]*g*nc[ket[2], bra[1]] + 2*Sqrt[3]*g*nc[ket[2], bra[3]] + 
+     2*Sqrt[3]*g*nc[ket[3], bra[2]])/2
+params={gammaPol -> Sqrt[gammaA*theta0]/Sqrt[Pi], gammaPolCh[ch_] :> Sqrt[1/Pi*theta0Ch[ch]*gammaA], hybV[i_, j_] :> Sqrt[1/Pi]*V[i, j], coefzeta[ch_, j__] :> N[bandrescale*zeta[ch][j]], coefxi[ch_, j__] :> N[bandrescale*xi[ch][j]], 
+   coefrung[ch_, j__] :> N[bandrescale*zetaR[ch][j]], coefdelta[ch_, j__] :> N[bandrescale*scdelta[ch][j]], coefkappa[ch_, j__] :> N[bandrescale*sckappa[ch][j]], U -> 0.1, delta -> 0., t -> 0., 
+   gammaPol2 -> Sqrt[extraGamma2*gammaA*thetaCh[1]]/Sqrt[Pi], gammaPol2to2 -> Sqrt[extraGamma2to2*gammaA*thetaCh[2]]/Sqrt[Pi], gammaPolch1 -> Sqrt[extraGamma1*gammaA*thetaCh[1]]/Sqrt[Pi], 
+   gammaPolch2 -> Sqrt[extraGamma2*gammaA*thetaCh[2]]/Sqrt[Pi], gammaPolch3 -> Sqrt[extraGamma3*gammaA*thetaCh[3]]/Sqrt[Pi], Jspin -> extraJspin*gammaA, Jcharge -> extraJcharge*gammaA, Jcharge1 -> extraJcharge1*gammaA, 
+   Jcharge2 -> extraJcharge2*gammaA, Jkondo -> extraJkondo*gammaA, Jkondo1 -> extraJkondo1*gammaA, Jkondo2 -> extraJkondo2*gammaA, Jkondo3 -> extraJkondo3*gammaA, Jkondo1P -> extraJkondo1P*gammaA, Jkondo2P -> extraJkondo2P*gammaA, 
+   Jkondo1Z -> extraJkondo1Z*gammaA, Jkondo2Z -> extraJkondo2Z*gammaA, JkondoP -> extraJkondoP*gammaA, JkondoZ -> extraJkondoZ*gammaA, Jkondo1ch2 -> extraJkondo1ch2*gammaA, Jkondo2ch2 -> extraJkondo2ch2*gammaA, gep -> 0.2, dd -> extrad, 
+   hybV11 -> Sqrt[extraGamma11*gammaA*thetaCh[1]]/Sqrt[Pi], hybV12 -> Sqrt[extraGamma12*gammaA*thetaCh[2]]/Sqrt[Pi], hybV21 -> Sqrt[extraGamma21*gammaA*thetaCh[1]]/Sqrt[Pi], hybV22 -> Sqrt[extraGamma22*gammaA*thetaCh[2]]/Sqrt[Pi], 
+   eps -> -0.03, U -> 0.1, Gamma -> 0.01, omega -> 0.5, g -> 0.2, n0 -> 1.}
+NRDOTS:1 CHANNELS:1 COEFCHANNELS:1
+basis:{d[], f[0]}
+Hamiltonian generated. eps*(nc[d[0, 0], d[1, 0]] + nc[d[0, 1], d[1, 1]]) + gammaPolCh[1]*(nc[d[0, 0], f[1, 0, 0]] + nc[d[0, 1], f[1, 0, 1]] + nc[f[0, 0, 0], d[1, 0]] + nc[f[0, 0, 1], d[1, 1]]) + 
+   coefzeta[1, 0]*(-1 + nc[f[0, 0, 0], f[1, 0, 0]] + nc[f[0, 0, 1], f[1, 0, 1]]) + omega*(nc[ket[1], bra[1]] + 2*nc[ket[2], bra[2]] + 3*nc[ket[3], bra[3]]) - U*nc[d[0, 0], d[0, 1], d[1, 0], d[1, 1]] + 
+   g*(-(n0*(nc[ket[0], bra[1]] + nc[ket[1], bra[0]] + Sqrt[2]*nc[ket[1], bra[2]] + Sqrt[2]*nc[ket[2], bra[1]] + Sqrt[3]*nc[ket[2], bra[3]] + Sqrt[3]*nc[ket[3], bra[2]])) + nc[d[0, 0], d[1, 0], ket[0], bra[1]] + 
+      nc[d[0, 0], d[1, 0], ket[1], bra[0]] + Sqrt[2]*nc[d[0, 0], d[1, 0], ket[1], bra[2]] + Sqrt[2]*nc[d[0, 0], d[1, 0], ket[2], bra[1]] + Sqrt[3]*nc[d[0, 0], d[1, 0], ket[2], bra[3]] + Sqrt[3]*nc[d[0, 0], d[1, 0], ket[3], bra[2]] + 
+      nc[d[0, 1], d[1, 1], ket[0], bra[1]] + nc[d[0, 1], d[1, 1], ket[1], bra[0]] + Sqrt[2]*nc[d[0, 1], d[1, 1], ket[1], bra[2]] + Sqrt[2]*nc[d[0, 1], d[1, 1], ket[2], bra[1]] + Sqrt[3]*nc[d[0, 1], d[1, 1], ket[2], bra[3]] + 
+      Sqrt[3]*nc[d[0, 1], d[1, 1], ket[3], bra[2]])
+H-conj[H]=0
+SCALE[0]=1.0820212806667224
+faktor=1.8483924814931878
+Generating basis
+Baza:{{{-2, 0}, {1}}, {{-1, 1/2}, {f[0, 0, 1], d[0, 1]}}, {{0, 0}, {nc[f[0, 0, 0], f[0, 0, 1]], (nc[d[0, 0], f[0, 0, 1]] - nc[d[0, 1], f[0, 0, 0]])/Sqrt[2], nc[d[0, 0], d[0, 1]]}}, {{0, 1}, {-nc[d[0, 1], f[0, 0, 1]]}}, 
+   {{1, 1/2}, {nc[d[0, 1], f[0, 0, 0], f[0, 0, 1]], nc[d[0, 0], d[0, 1], f[0, 0, 1]]}}, {{2, 0}, {nc[d[0, 0], d[0, 1], f[0, 0, 0], f[0, 0, 1]]}}}
+Baza (step 2):{{{-2, 1}, {1}}, {{-1, 2}, {f[0, 0, 1], d[0, 1]}}, {{0, 1}, {nc[f[0, 0, 0], f[0, 0, 1]], (nc[d[0, 0], f[0, 0, 1]] - nc[d[0, 1], f[0, 0, 0]])/Sqrt[2], nc[d[0, 0], d[0, 1]]}}, {{0, 3}, {-nc[d[0, 1], f[0, 0, 1]]}}, 
+   {{1, 2}, {nc[d[0, 1], f[0, 0, 0], f[0, 0, 1]], nc[d[0, 0], d[0, 1], f[0, 0, 1]]}}, {{2, 1}, {nc[d[0, 0], d[0, 1], f[0, 0, 0], f[0, 0, 1]]}}}
+MAKEPHONON=1
+Adding phonons, cutoffs={3}
+PHONON baza (op)={{{-2, 1}, {ket[0], ket[1], ket[2], ket[3]}}, {{-1, 2}, {nc[f[0, 0, 1], ket[0]], nc[d[0, 1], ket[0]], nc[f[0, 0, 1], ket[1]], nc[d[0, 1], ket[1]], nc[f[0, 0, 1], ket[2]], nc[d[0, 1], ket[2]], nc[f[0, 0, 1], ket[3]], 
+     nc[d[0, 1], ket[3]]}}, {{0, 1}, {nc[f[0, 0, 0], f[0, 0, 1], ket[0]], (nc[d[0, 0], f[0, 0, 1], ket[0]] - nc[d[0, 1], f[0, 0, 0], ket[0]])/Sqrt[2], nc[d[0, 0], d[0, 1], ket[0]], nc[f[0, 0, 0], f[0, 0, 1], ket[1]], 
+     (nc[d[0, 0], f[0, 0, 1], ket[1]] - nc[d[0, 1], f[0, 0, 0], ket[1]])/Sqrt[2], nc[d[0, 0], d[0, 1], ket[1]], nc[f[0, 0, 0], f[0, 0, 1], ket[2]], (nc[d[0, 0], f[0, 0, 1], ket[2]] - nc[d[0, 1], f[0, 0, 0], ket[2]])/Sqrt[2], 
+     nc[d[0, 0], d[0, 1], ket[2]], nc[f[0, 0, 0], f[0, 0, 1], ket[3]], (nc[d[0, 0], f[0, 0, 1], ket[3]] - nc[d[0, 1], f[0, 0, 0], ket[3]])/Sqrt[2], nc[d[0, 0], d[0, 1], ket[3]]}}, 
+   {{0, 3}, {-nc[d[0, 1], f[0, 0, 1], ket[0]], -nc[d[0, 1], f[0, 0, 1], ket[1]], -nc[d[0, 1], f[0, 0, 1], ket[2]], -nc[d[0, 1], f[0, 0, 1], ket[3]]}}, 
+   {{1, 2}, {nc[d[0, 1], f[0, 0, 0], f[0, 0, 1], ket[0]], nc[d[0, 0], d[0, 1], f[0, 0, 1], ket[0]], nc[d[0, 1], f[0, 0, 0], f[0, 0, 1], ket[1]], nc[d[0, 0], d[0, 1], f[0, 0, 1], ket[1]], nc[d[0, 1], f[0, 0, 0], f[0, 0, 1], ket[2]], 
+     nc[d[0, 0], d[0, 1], f[0, 0, 1], ket[2]], nc[d[0, 1], f[0, 0, 0], f[0, 0, 1], ket[3]], nc[d[0, 0], d[0, 1], f[0, 0, 1], ket[3]]}}, 
+   {{2, 1}, {nc[d[0, 0], d[0, 1], f[0, 0, 0], f[0, 0, 1], ket[0]], nc[d[0, 0], d[0, 1], f[0, 0, 0], f[0, 0, 1], ket[1]], nc[d[0, 0], d[0, 1], f[0, 0, 0], f[0, 0, 1], ket[2]], nc[d[0, 0], d[0, 1], f[0, 0, 0], f[0, 0, 1], ket[3]]}}}
+PHONON baza (vc)={{{-2, 1}, {vc[0, 0, 0, 0, ket[0]], vc[0, 0, 0, 0, ket[1]], vc[0, 0, 0, 0, ket[2]], vc[0, 0, 0, 0, ket[3]]}}, 
+   {{-1, 2}, {vc[0, 0, 1, 0, ket[0]], vc[1, 0, 0, 0, ket[0]], vc[0, 0, 1, 0, ket[1]], vc[1, 0, 0, 0, ket[1]], vc[0, 0, 1, 0, ket[2]], vc[1, 0, 0, 0, ket[2]], vc[0, 0, 1, 0, ket[3]], vc[1, 0, 0, 0, ket[3]]}}, 
+   {{0, 1}, {-vc[0, 0, 1, 1, ket[0]], (vc[0, 1, 1, 0, ket[0]] - vc[1, 0, 0, 1, ket[0]])/Sqrt[2], -vc[1, 1, 0, 0, ket[0]], -vc[0, 0, 1, 1, ket[1]], (vc[0, 1, 1, 0, ket[1]] - vc[1, 0, 0, 1, ket[1]])/Sqrt[2], -vc[1, 1, 0, 0, ket[1]], 
+     -vc[0, 0, 1, 1, ket[2]], (vc[0, 1, 1, 0, ket[2]] - vc[1, 0, 0, 1, ket[2]])/Sqrt[2], -vc[1, 1, 0, 0, ket[2]], -vc[0, 0, 1, 1, ket[3]], (vc[0, 1, 1, 0, ket[3]] - vc[1, 0, 0, 1, ket[3]])/Sqrt[2], -vc[1, 1, 0, 0, ket[3]]}}, 
+   {{0, 3}, {-vc[1, 0, 1, 0, ket[0]], -vc[1, 0, 1, 0, ket[1]], -vc[1, 0, 1, 0, ket[2]], -vc[1, 0, 1, 0, ket[3]]}}, 
+   {{1, 2}, {-vc[1, 0, 1, 1, ket[0]], -vc[1, 1, 1, 0, ket[0]], -vc[1, 0, 1, 1, ket[1]], -vc[1, 1, 1, 0, ket[1]], -vc[1, 0, 1, 1, ket[2]], -vc[1, 1, 1, 0, ket[2]], -vc[1, 0, 1, 1, ket[3]], -vc[1, 1, 1, 0, ket[3]]}}, 
+   {{2, 1}, {vc[1, 1, 1, 1, ket[0]], vc[1, 1, 1, 1, ket[1]], vc[1, 1, 1, 1, ket[2]], vc[1, 1, 1, 1, ket[3]]}}}
+Wilson chain
+PREC=1000
+DISCNMAX=24
+mMAX=80
+Discretization checksum [-1] (channel 1): 1.710569414459005213529943339`10.*^-49
+BAND="flat" thetaCh={"2."}
+Discretization (channel 1)
+"xitable" (channel 1)
+0.4722328021
+0.2557283998
+0.1332084596
+0.067364349
+0.03378021281
+0.01690245707
+0.008452775374
+0.004226581136
+0.002113314752
+0.001056660399
+0.0005283305775
+0.000264165336
+0.0001320826739
+0.00006604133769
+0.00003302066893
+0.00001651033448
+8.255167241e-6
+4.127583621e-6
+2.06379181e-6
+1.031895905e-6
+5.159479526e-7
+2.579739763e-7
+1.289869881e-7
+6.449349407e-8
+3.224674704e-8
+"zetatable" (channel 1)
+0.e-999
+0.e-999
+0.e-998
+0.e-997
+0.e-996
+0.e-995
+0.e-994
+0.e-993
+0.e-992
+0.e-991
+0.e-990
+0.e-990
+0.e-989
+0.e-988
+0.e-987
+0.e-986
+0.e-985
+0.e-984
+0.e-983
+0.e-982
+0.e-981
+0.e-980
+0.e-979
+0.e-979
+0.e-978
+Precision last xi:970.2099827461062
+Precision last zeta: 0.
+Discretization done.
+thetaCh={"2."}
+theta0Ch={"0.02"}
+gammaPolCh={"0.07978845608028654"}
+checkdefinitions[] -> 4.817659572297934
+calcgsenergy[]
+diagvc[{-2, 1}]
+Generating matrix: ham_-2.1
+hamil={{-coefzeta[1, 0], -(g*n0), 0, 0}, {-(g*n0), omega - coefzeta[1, 0], -(Sqrt[2]*g*n0), 0}, {0, -(Sqrt[2]*g*n0), 2*omega - coefzeta[1, 0], -(Sqrt[3]*g*n0)}, {0, 0, -(Sqrt[3]*g*n0), 3*omega - coefzeta[1, 0]}}
+dim={4, 4}
+hamil={{0., -0.2, 0, 0}, {-0.2, 0.5, -0.28284271247461906, 0}, {0, -0.28284271247461906, 1., -0.34641016151377546}, {0, 0, -0.34641016151377546, 1.5}}
+val(5 lowest)={-0.07995600922129448, 0.42283671938289047, 0.9647776462474388, 1.692341643590966}
+det[vec]=1.0000000000000002 1-abs=-2.220446049250313*^-16
+orthogonality check=1.6263032587282567*^-15
+diagvc[{-1, 2}]
+Generating matrix: ham_-1.2
+hamil={{0, gammaPolCh[1], -(g*n0), 0, 0, 0, 0, 0}, {gammaPolCh[1], eps - coefzeta[1, 0], 0, g - g*n0, 0, 0, 0, 0}, {-(g*n0), 0, omega, gammaPolCh[1], -(Sqrt[2]*g*n0), 0, 0, 0}, 
+   {0, g - g*n0, gammaPolCh[1], eps + omega - coefzeta[1, 0], 0, -(Sqrt[2]*g*(-1 + n0)), 0, 0}, {0, 0, -(Sqrt[2]*g*n0), 0, 2*omega, gammaPolCh[1], -(Sqrt[3]*g*n0), 0}, 
+   {0, 0, 0, -(Sqrt[2]*g*(-1 + n0)), gammaPolCh[1], eps + 2*omega - coefzeta[1, 0], 0, -(Sqrt[3]*g*(-1 + n0))}, {0, 0, 0, 0, -(Sqrt[3]*g*n0), 0, 3*omega, gammaPolCh[1]}, 
+   {0, 0, 0, 0, 0, -(Sqrt[3]*g*(-1 + n0)), gammaPolCh[1], eps + 3*omega - coefzeta[1, 0]}}
+dim={8, 8}
+hamil={{0, 0.07978845608028654, -0.2, 0, 0, 0, 0, 0}, {0.07978845608028654, -0.03, 0, 0., 0, 0, 0, 0}, {-0.2, 0, 0.5, 0.07978845608028654, -0.28284271247461906, 0, 0, 0}, {0, 0., 0.07978845608028654, 0.47, 0, 0., 0, 0}, 
+   {0, 0, -0.28284271247461906, 0, 1., 0.07978845608028654, -0.34641016151377546, 0}, {0, 0, 0, 0., 0.07978845608028654, 0.97, 0, 0.}, {0, 0, 0, 0, -0.34641016151377546, 0, 1.5, 0.07978845608028654}, 
+   {0, 0, 0, 0, 0, 0., 0.07978845608028654, 1.47}}
+val(5 lowest)={-0.13414945083571278, 0.020256119158922864, 0.3797929096883466, 0.5106075223700437, 0.9111045779123129}
+det[vec]=1. 1-abs=0.
+orthogonality check=9.954640574916522*^-15
+diagvc[{0, 1}]
+Generating matrix: ham_0.1
+hamil={{coefzeta[1, 0], Sqrt[2]*gammaPolCh[1], 0, -(g*n0), 0, 0, 0, 0, 0, 0, 0, 0}, {Sqrt[2]*gammaPolCh[1], eps, Sqrt[2]*gammaPolCh[1], 0, g - g*n0, 0, 0, 0, 0, 0, 0, 0}, 
+   {0, Sqrt[2]*gammaPolCh[1], 2*eps + U - coefzeta[1, 0], 0, 0, -(g*(-2 + n0)), 0, 0, 0, 0, 0, 0}, {-(g*n0), 0, 0, omega + coefzeta[1, 0], Sqrt[2]*gammaPolCh[1], 0, -(Sqrt[2]*g*n0), 0, 0, 0, 0, 0}, 
+   {0, g - g*n0, 0, Sqrt[2]*gammaPolCh[1], eps + omega, Sqrt[2]*gammaPolCh[1], 0, -(Sqrt[2]*g*(-1 + n0)), 0, 0, 0, 0}, 
+   {0, 0, -(g*(-2 + n0)), 0, Sqrt[2]*gammaPolCh[1], 2*eps + omega + U - coefzeta[1, 0], 0, 0, -(Sqrt[2]*g*(-2 + n0)), 0, 0, 0}, {0, 0, 0, -(Sqrt[2]*g*n0), 0, 0, 2*omega + coefzeta[1, 0], Sqrt[2]*gammaPolCh[1], 0, -(Sqrt[3]*g*n0), 0, 0}, 
+   {0, 0, 0, 0, -(Sqrt[2]*g*(-1 + n0)), 0, Sqrt[2]*gammaPolCh[1], eps + 2*omega, Sqrt[2]*gammaPolCh[1], 0, -(Sqrt[3]*g*(-1 + n0)), 0}, 
+   {0, 0, 0, 0, 0, -(Sqrt[2]*g*(-2 + n0)), 0, Sqrt[2]*gammaPolCh[1], 2*eps + 2*omega + U - coefzeta[1, 0], 0, 0, -(Sqrt[3]*g*(-2 + n0))}, {0, 0, 0, 0, 0, 0, -(Sqrt[3]*g*n0), 0, 0, 3*omega + coefzeta[1, 0], Sqrt[2]*gammaPolCh[1], 0}, 
+   {0, 0, 0, 0, 0, 0, 0, -(Sqrt[3]*g*(-1 + n0)), 0, Sqrt[2]*gammaPolCh[1], eps + 3*omega, Sqrt[2]*gammaPolCh[1]}, {0, 0, 0, 0, 0, 0, 0, 0, -(Sqrt[3]*g*(-2 + n0)), 0, Sqrt[2]*gammaPolCh[1], 2*eps + 3*omega + U - coefzeta[1, 0]}}
+dim={12, 12}
+hamil={{0., 0.11283791670955126, 0, -0.2, 0, 0, 0, 0, 0, 0, 0, 0}, {0.11283791670955126, -0.03, 0.11283791670955126, 0, 0., 0, 0, 0, 0, 0, 0, 0}, {0, 0.11283791670955126, 0.04000000000000001, 0, 0, 0.2, 0, 0, 0, 0, 0, 0}, 
+   {-0.2, 0, 0, 0.5, 0.11283791670955126, 0, -0.28284271247461906, 0, 0, 0, 0, 0}, {0, 0., 0, 0.11283791670955126, 0.47, 0.11283791670955126, 0, 0., 0, 0, 0, 0}, 
+   {0, 0, 0.2, 0, 0.11283791670955126, 0.54, 0, 0, 0.28284271247461906, 0, 0, 0}, {0, 0, 0, -0.28284271247461906, 0, 0, 1., 0.11283791670955126, 0, -0.34641016151377546, 0, 0}, 
+   {0, 0, 0, 0, 0., 0, 0.11283791670955126, 0.97, 0.11283791670955126, 0, 0., 0}, {0, 0, 0, 0, 0, 0.28284271247461906, 0, 0.11283791670955126, 1.04, 0, 0, 0.34641016151377546}, 
+   {0, 0, 0, 0, 0, 0, -0.34641016151377546, 0, 0, 1.5, 0.11283791670955126, 0}, {0, 0, 0, 0, 0, 0, 0, 0., 0, 0.11283791670955126, 1.47, 0.11283791670955126}, {0, 0, 0, 0, 0, 0, 0, 0, 0.34641016151377546, 0, 0.11283791670955126, 1.54}}
+val(5 lowest)={-0.1973603065179824, -0.06638372282039681, 0.09813623378870812, 0.3284061172968347, 0.4402230594581247}
+det[vec]=0.9999999999999991 1-abs=8.881784197001252*^-16
+orthogonality check=3.416626762316677*^-14
+diagvc[{0, 3}]
+Generating matrix: ham_0.3
+hamil={{eps, g - g*n0, 0, 0}, {g - g*n0, eps + omega, -(Sqrt[2]*g*(-1 + n0)), 0}, {0, -(Sqrt[2]*g*(-1 + n0)), eps + 2*omega, -(Sqrt[3]*g*(-1 + n0))}, {0, 0, -(Sqrt[3]*g*(-1 + n0)), eps + 3*omega}}
+dim={4, 4}
+hamil={{-0.03, 0., 0, 0}, {0., 0.47, 0., 0}, {0, 0., 0.97, 0.}, {0, 0, 0., 1.47}}
+val(5 lowest)={-0.03, 0.47, 0.97, 1.47}
+det[vec]=1. 1-abs=0.
+orthogonality check=0.
+diagvc[{1, 2}]
+Generating matrix: ham_1.2
+hamil={{eps + coefzeta[1, 0], -gammaPolCh[1], g - g*n0, 0, 0, 0, 0, 0}, {-gammaPolCh[1], 2*eps + U, 0, -(g*(-2 + n0)), 0, 0, 0, 0}, {g - g*n0, 0, eps + omega + coefzeta[1, 0], -gammaPolCh[1], -(Sqrt[2]*g*(-1 + n0)), 0, 0, 0}, 
+   {0, -(g*(-2 + n0)), -gammaPolCh[1], 2*eps + omega + U, 0, -(Sqrt[2]*g*(-2 + n0)), 0, 0}, {0, 0, -(Sqrt[2]*g*(-1 + n0)), 0, eps + 2*omega + coefzeta[1, 0], -gammaPolCh[1], -(Sqrt[3]*g*(-1 + n0)), 0}, 
+   {0, 0, 0, -(Sqrt[2]*g*(-2 + n0)), -gammaPolCh[1], 2*eps + 2*omega + U, 0, -(Sqrt[3]*g*(-2 + n0))}, {0, 0, 0, 0, -(Sqrt[3]*g*(-1 + n0)), 0, eps + 3*omega + coefzeta[1, 0], -gammaPolCh[1]}, 
+   {0, 0, 0, 0, 0, -(Sqrt[3]*g*(-2 + n0)), -gammaPolCh[1], 2*eps + 3*omega + U}}
+dim={8, 8}
+hamil={{-0.03, -0.07978845608028654, 0., 0, 0, 0, 0, 0}, {-0.07978845608028654, 0.04000000000000001, 0, 0.2, 0, 0, 0, 0}, {0., 0, 0.47, -0.07978845608028654, 0., 0, 0, 0}, {0, 0.2, -0.07978845608028654, 0.54, 0, 0.28284271247461906, 0, 0}, 
+   {0, 0, 0., 0, 0.97, -0.07978845608028654, 0., 0}, {0, 0, 0, 0.28284271247461906, -0.07978845608028654, 1.04, 0, 0.34641016151377546}, {0, 0, 0, 0, 0., 0, 1.47, -0.07978845608028654}, 
+   {0, 0, 0, 0, 0, 0.34641016151377546, -0.07978845608028654, 1.54}}
+val(5 lowest)={-0.11021443972766459, 0.036358805980073926, 0.4039276829207241, 0.5264533723757203, 0.9286681598871983}
+det[vec]=-1.0000000000000007 1-abs=-6.661338147750939*^-16
+orthogonality check=7.484464437101934*^-15
+diagvc[{2, 1}]
+Generating matrix: ham_2.1
+hamil={{2*eps + U + coefzeta[1, 0], -(g*(-2 + n0)), 0, 0}, {-(g*(-2 + n0)), 2*eps + omega + U + coefzeta[1, 0], -(Sqrt[2]*g*(-2 + n0)), 0}, {0, -(Sqrt[2]*g*(-2 + n0)), 2*eps + 2*omega + U + coefzeta[1, 0], -(Sqrt[3]*g*(-2 + n0))}, 
+   {0, 0, -(Sqrt[3]*g*(-2 + n0)), 2*eps + 3*omega + U + coefzeta[1, 0]}}
+dim={4, 4}
+hamil={{0.04000000000000001, 0.2, 0, 0}, {0.2, 0.54, 0.28284271247461906, 0}, {0, 0.28284271247461906, 1.04, 0.34641016151377546}, {0, 0, 0.34641016151377546, 1.54}}
+val(5 lowest)={-0.0399560092212945, 0.4628367193828902, 1.0047776462474383, 1.7323416435909662}
+det[vec]=1.0000000000000002 1-abs=-2.220446049250313*^-16
+orthogonality check=1.700029006457271*^-15
+Lowest energies:{-0.1973603065179824, -0.13414945083571278, -0.11021443972766459, -0.07995600922129448, -0.06638372282039681, -0.0399560092212945, -0.03, 0.020256119158922864, 0.036358805980073926, 0.09813623378870812, 0.3284061172968347, 
+   0.3797929096883466, 0.4039276829207241, 0.42283671938289047, 0.4402230594581247, 0.4628367193828902, 0.47, 0.5106075223700437, 0.5264533723757203, 0.5773869124402512}
+Lowest energies (GS shifted):{0., 0.06321085568226961, 0.0871458667903178, 0.11740429729668792, 0.13097658369758558, 0.1574042972966879, 0.1673603065179824, 0.21761642567690526, 0.23371911249805633, 0.2954965403066905, 0.5257664238148171, 
+   0.577153216206329, 0.6012879894387065, 0.6201970259008729, 0.6375833659761071, 0.6601970259008726, 0.6673603065179824, 0.7079678288880261, 0.7238136788937027, 0.7747472189582336}
+Scale factor SCALE(Ninit):1.0820212806667224
+Lowest energies (GS shifted and scaled):{0., 0.05841923519592905, 0.08053988248421515, 0.10850461020909447, 0.1210480662791402, 0.1454724598389582, 0.154673766134117, 0.2011202825353064, 0.2160023251613339, 0.2730967917050677, 
+   0.4859113524004344, 0.5334028327526954, 0.5557080994453303, 0.5731837598598046, 0.5892521499976779, 0.6101516094896682, 0.616771886507414, 0.6543012060278416, 0.6689458810345223, 0.7160184672900778}
+GSenergy=-0.1973603065179824
+makeireducf GENERAL
+Generating f table.
+el[1,1]=-1.0320714508052033
+Generating f table.
+el[1,1]=0.8354205957321448
+Generating f table.
+el[1,1]=-0.6444362697891345
+Generating f table.
+el[1,1]=-0.5820129564603531
+Generating f table.
+el[1,1]=-1.07617076174572
+Generating f table.
+el[1,1]=-0.8119003518214479
+Loading module operators.m path: {~, ., .., /home/zitko/software/nrgljubljana/current/nrginit, ~/nrg}
+operators.m started
+s: Himp HoldComplete[Himp /. params]
+s: Hpot HoldComplete[Hpot /. params]
+s: n_d HoldComplete[number[d[]]]
+s: n_d_ud HoldComplete[nc[number[d[], DO], number[d[], UP]]]
+d: A_d HoldComplete[d]
+Generating f table.
+el[1,1]=-0.9087996417807781
+Generating f table.
+el[1,1]=-0.8398808338411095
+Generating f table.
+el[1,1]=-0.7038606846256381
+Generating f table.
+el[1,1]=-0.7597130308377051
+Generating f table.
+el[1,1]=0.8525753981470224
+Generating f table.
+el[1,1]=0.5514541385396269
+d: self_d HoldComplete[Chop[Expand[komutator[Hselfd /. params, d[#1, #2]]]] & ]
+Generating f table.
+el[1,1]=-0.008767438105403548
+Generating f table.
+el[1,1]=-0.024482774001805957
+Generating f table.
+el[1,1]=-0.031035794991482762
+Generating f table.
+el[1,1]=-0.055477170664918585
+Generating f table.
+el[1,1]=0.0575512450523228
+Generating f table.
+el[1,1]=0.05143870205908683
+s: nph HoldComplete[phononnumber[nph]]
+s: displ HoldComplete[displop]
+s: displ^2 HoldComplete[pow[displop, 2]]
+operators.m done
+Loading module customoperators.m path: {~, ., .., /home/zitko/software/nrgljubljana/current/nrginit, ~/nrg}
+customoperators Rok Zitko
+Customoperators done.
+Loading module modeloperators.m path: {~, ., .., /home/zitko/software/nrgljubljana/current/nrginit, ~/nrg}
+s: SigmaHd HoldComplete[SigmaHdAvg]
+Timing report
+{basis, 0.034181`4.985329757794356}
+{ham, 0.65616`5.4904034950557365}
+{maketable, 2.557132`6.859298140525819}
+{xi, 0.150509`5.629107463747904}
+{_, 0}
+data
+"Success!"
