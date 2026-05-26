@@ -1,13 +1,21 @@
 #!/usr/bin/perl
 # Extract a parameter from 'param' file
-# Rok Zitko, rok.zitko@ijs.si, April 2008
-# $Id$
+# Rok Zitko, rok.zitko@ijs.si, 2008-2026
+
+use strict;
+use warnings;
+
+my $verbose = 0;
 
 if (@ARGV != 1 && @ARGV != 2) {
     die "Usage: getparam <keyword> [param filename]\n";
 }
 
 my $keyword = $ARGV[0];
+
+if ($verbose) {
+    print "keyword=$keyword\n";
+}
 
 my $fn;
 if (@ARGV == 1) {
@@ -16,13 +24,19 @@ if (@ARGV == 1) {
     $fn = $ARGV[1];
 }
 
+if ($verbose) {
+    print "fn=$fn\n";
+}
+
 open (F, "<$fn") or die "Can't open $fn for reading: $!\n";
 
 while (<F>) {
-    if (/^\s+$keyword\s+=\s+(.*)/) {
-	print "$1\n";
+    if (/^\s*$keyword\s*=\s*(.*)/) {
+        print "$1\n";
+        exit(0);
     }
 }
 
 close(F);
 
+print STDERR "Keyword not found!\n";
