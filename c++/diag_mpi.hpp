@@ -5,6 +5,7 @@
 #include <list>
 #include <deque>
 #include <algorithm>
+#include <vector>
 
 #ifdef OMPI_SKIP_MPICXX // workaround to avoid warnings for for redefinition in mpi/environment.hpp
  #undef OMPI_SKIP_MPICXX
@@ -23,6 +24,7 @@
 #include "misc.hpp"
 #include "core.hpp"
 #include "diagengine.hpp"
+#include "subspaces.hpp"
 
 namespace NRG {
 
@@ -36,6 +38,7 @@ class DiagMPI : public DiagEngine<S>{
 
  public:
     DiagMPI(boost::mpi::environment &mpienv_, boost::mpi::communicator &mpiw_) : mpienv(mpienv_), mpiw(mpiw_) {}
+    int nodes() const override { return mpiw.size(); }
     ~DiagMPI() {
       if (mpiw.rank() != 0) return;
       for (auto i = 1; i < mpiw.size(); i++) mpiw.send(i, TAG_EXIT, 0); // notify slaves we are done
@@ -118,7 +121,8 @@ class DiagMPI : public DiagEngine<S>{
                                 const std::vector<Invar> &tasks, const DiagParams &DP, const Symmetry<S> *Sym, const Params &P) {
        DiagInfo<S> diagnew;
        send_params(DP);                                         // Synchronise parameters
-       std::list<Invar> tasks_todo(tasks.begin(), tasks.end());
+       const auto tasks_by_size = tasks_descending_by_subspace_dimension(tasks, diagprev, Sym);
+       std::list<std::pair<size_t, Invar>> tasks_todo(tasks_by_size.begin(), tasks_by_size.end());
        std::list<Invar> tasks_done;
        std::deque<int> nodes_available(mpiw.size());            // Available nodes including the master, which is always at the head of the deque
        std::iota(nodes_available.begin(), nodes_available.end(), 0);
@@ -128,10 +132,10 @@ class DiagMPI : public DiagEngine<S>{
          // i is the node to which the next job will be scheduled. (If a single task is left undone, do it on the master
          // node to avoid the unnecessary network copying.)
          const auto i = tasks_todo.size() != 1 ? get_back(nodes_available) : 0;
-         // On master, we take short jobs from the end. On slaves, we take long jobs from the beginning.
-         const Invar I = i == 0 ? get_back(tasks_todo) : get_front(tasks_todo);
+         // Master handles short jobs locally; workers receive long jobs first.
+         const auto [dim, I] = i == 0 ? get_back(tasks_todo) : get_front(tasks_todo);
          auto h = hamiltonian(step, I, opch, coef, diagprev, output, Sym, P); // non-const
-         nrglog('M', "Scheduler: job " << I << " (dim=" << dim(h) << ")" << " on node " << i);
+         nrglog('M', "Scheduler: job " << I << " (dim=" << dim << ")" << " on node " << i);
          if (i == 0) {
            // On master, diagonalize immediately.
            auto e = diagonalise(h, DP, myrank());

@@ -108,15 +108,24 @@ private:
   MemTime mt; // memory and timing statistics
 
   void select_diag_engine() {
+    if (P.diag_mode == "default") {
+      if (eng->nodes() == 1) eng = std::make_shared<DiagSerial<S>>();
+      return;
+    }
+    if (P.diag_mode == "MPI") return;
     if (P.diag_mode == "OpenMP") { // override
 #if NRG_ENABLE_APP_OPENMP
       eng = std::make_shared<DiagOpenMP<S>>();
 #else
       eng = std::make_shared<DiagSerial<S>>();
 #endif
+      return;
     }
-    if (P.diag_mode == "serial")
+    if (P.diag_mode == "serial") {
       eng = std::make_shared<DiagSerial<S>>();
+      return;
+    }
+    throw std::invalid_argument(fmt::format("Unsupported diag_mode={}", std::string(P.diag_mode)));
   }
 
   void prepare_rho(const DiagInfo<S> &diag) {

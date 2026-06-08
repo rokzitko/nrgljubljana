@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <vector>
+#include <algorithm>
+#include <functional>
 
 #include <range/v3/all.hpp>
 
@@ -132,6 +134,16 @@ class TaskList {
    }
     [[nodiscard]] const std::vector<Invar> &get() const { return tasks; }
 };
+
+template<scalar S>
+[[nodiscard]] auto tasks_descending_by_subspace_dimension(const std::vector<Invar> &tasks, const DiagInfo<S> &diagprev, const Symmetry<S> *Sym) {
+  std::vector<std::pair<size_t, Invar>> tasks_by_size;
+  tasks_by_size.reserve(tasks.size());
+  for (const auto &I : tasks)
+    tasks_by_size.emplace_back(SubspaceDimensions{I, Sym->ancestors(I), diagprev, Sym}.total(), I);
+  std::sort(tasks_by_size.begin(), tasks_by_size.end(), std::greater<>());
+  return tasks_by_size;
+}
 
 } // namespace
 

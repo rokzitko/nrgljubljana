@@ -13,6 +13,8 @@
 #include <stdexcept>
 #include <limits>
 #include <string>
+#include <cmath>
+#include <cstdint>
 
 #include "traits.hpp"
 #include "params.hpp"
@@ -108,6 +110,88 @@ inline void validate_cuda_diagonalisation_request(const std::string &diag) {
   return static_cast<lapack_int>(value);
 }
 
+[[nodiscard]] inline auto checked_workspace_query(const double value, const char *routine, const char *name) {
+  if (!std::isfinite(value) || value < 1.0) throw std::runtime_error(fmt::format("{} returned invalid {} workspace size {}", routine, name, value));
+  if (value > static_cast<double>(std::numeric_limits<size_t>::max())) return std::numeric_limits<size_t>::max();
+  return static_cast<size_t>(value);
+}
+
+[[nodiscard]] inline auto checked_workspace_formula(const std::uint64_t value, const char *routine, const char *name) {
+  if (value < 1) throw std::runtime_error(fmt::format("{} computed invalid {} workspace size", routine, name));
+  if (value > static_cast<std::uint64_t>(std::numeric_limits<size_t>::max()))
+    throw std::runtime_error(fmt::format("{} computed {} workspace size larger than size_t", routine, name));
+  return static_cast<size_t>(value);
+}
+
+[[nodiscard]] inline auto max_one(const std::uint64_t value) { return value > 1 ? value : std::uint64_t{1}; }
+
+template<typename T> [[nodiscard]] auto workspace_cap() {
+  return std::min(std::vector<T>().max_size(), static_cast<size_t>(std::numeric_limits<lapack_int>::max()));
+}
+
+template<typename T>
+[[nodiscard]] auto select_workspace_size(const char *routine, const char *name, const size_t minimum, const size_t optimal, const bool saveram) {
+  const auto cap = workspace_cap<T>();
+  if (minimum > cap)
+    throw std::runtime_error(fmt::format("{} minimum {} workspace size {} exceeds maximum usable size {}", routine, name, minimum, cap));
+  const auto selected = saveram ? minimum : std::min(std::max(optimal, minimum), cap);
+  return checked_lapack_int(selected, fmt::format("{} {} workspace size", routine, name).c_str());
+}
+
+[[nodiscard]] inline auto dsyev_min_lwork(const size_t n) {
+  if (n == 0) return size_t(1);
+  const auto nn = static_cast<std::uint64_t>(n);
+  return checked_workspace_formula(max_one(3 * nn - 1), "dsyev", "LWORK");
+}
+
+[[nodiscard]] inline auto dsyevd_min_lwork(const size_t n, const char jobz) {
+  if (n <= 1) return size_t(1);
+  const auto nn = static_cast<std::uint64_t>(n);
+  return checked_workspace_formula(jobz == 'N' ? 2 * nn + 1 : 1 + 6 * nn + 2 * nn * nn, "dsyevd", "LWORK");
+}
+
+[[nodiscard]] inline auto dsyevd_min_liwork(const size_t n, const char jobz) {
+  if (n <= 1 || jobz == 'N') return size_t(1);
+  const auto nn = static_cast<std::uint64_t>(n);
+  return checked_workspace_formula(3 + 5 * nn, "dsyevd", "LIWORK");
+}
+
+[[nodiscard]] inline auto dsyevr_min_lwork(const size_t n) { return checked_workspace_formula(max_one(26 * static_cast<std::uint64_t>(n)), "dsyevr", "LWORK"); }
+[[nodiscard]] inline auto dsyevr_min_liwork(const size_t n) { return checked_workspace_formula(max_one(10 * static_cast<std::uint64_t>(n)), "dsyevr", "LIWORK"); }
+[[nodiscard]] inline auto zheev_min_lwork(const size_t n) {
+  if (n == 0) return size_t(1);
+  const auto nn = static_cast<std::uint64_t>(n);
+  return checked_workspace_formula(max_one(2 * nn - 1), "zheev", "LWORK");
+}
+[[nodiscard]] inline auto zheev_min_rwork(const size_t n) {
+  if (n == 0) return size_t(1);
+  const auto nn = static_cast<std::uint64_t>(n);
+  return checked_workspace_formula(max_one(3 * nn - 2), "zheev", "RWORK");
+}
+
+[[nodiscard]] inline auto zheevd_min_lwork(const size_t n, const char jobz) {
+  if (n <= 1) return size_t(1);
+  const auto nn = static_cast<std::uint64_t>(n);
+  return checked_workspace_formula(jobz == 'N' ? nn + 1 : 2 * nn + nn * nn, "zheevd", "LWORK");
+}
+
+[[nodiscard]] inline auto zheevd_min_lrwork(const size_t n, const char jobz) {
+  if (n <= 1) return size_t(1);
+  if (jobz == 'N') return n;
+  const auto nn = static_cast<std::uint64_t>(n);
+  return checked_workspace_formula(1 + 5 * nn + 2 * nn * nn, "zheevd", "LRWORK");
+}
+
+[[nodiscard]] inline auto zheevd_min_liwork(const size_t n, const char jobz) {
+  if (n <= 1 || jobz == 'N') return size_t(1);
+  const auto nn = static_cast<std::uint64_t>(n);
+  return checked_workspace_formula(3 + 5 * nn, "zheevd", "LIWORK");
+}
+
+[[nodiscard]] inline auto zheevr_min_lwork(const size_t n) { return checked_workspace_formula(max_one(2 * static_cast<std::uint64_t>(n)), "zheevr", "LWORK"); }
+[[nodiscard]] inline auto zheevr_min_lrwork(const size_t n) { return checked_workspace_formula(max_one(24 * static_cast<std::uint64_t>(n)), "zheevr", "LRWORK"); }
+[[nodiscard]] inline auto zheevr_min_liwork(const size_t n) { return checked_workspace_formula(max_one(10 * static_cast<std::uint64_t>(n)), "zheevr", "LIWORK"); }
+
 template<vector SV, vector DV> requires std::is_convertible_v<typename SV::value_type, typename DV::value_type>
 void copy_val(const SV &source, DV &dest, const size_t M) {
   using S = typename SV::value_type;
@@ -139,21 +223,24 @@ auto copy_results(const V &eigenvalues, U* eigenvectors, const char jobz, const 
 
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
 template<real_matrix RM>
-auto diagonalise_dsyev(RM &m, const char jobz = 'V') {
+auto diagonalise_dsyev(RM &m, const char jobz = 'V', const bool saveram = false, const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
-  int NN     = dim;         // the order of the matrix
-  int LDA    = dim;         // the leading dimension of the array a
-  int INFO   = 0;           // 0 on successful exit
-  int LWORK0 = -1;          // length of the WORK array
+  lapack_int NN     = dim;         // the order of the matrix
+  lapack_int LDA    = dim;         // the leading dimension of the array a
+  lapack_int INFO   = 0;           // 0 on successful exit
+  lapack_int LWORK0 = -1;          // length of the WORK array
   double WORK0 = 0;         // on exit: optimal WORK size
   // Step 1: determine optimal LWORK
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK0, &INFO);
-  my_assert(INFO == 0);
-  int LWORK    = int(WORK0);
+  if (INFO != 0) throw std::runtime_error(fmt::format("dsyev workspace query failed. INFO={}", INFO));
+  const auto min_lwork = dsyev_min_lwork(dim);
+  const auto opt_lwork = checked_workspace_query(WORK0, "dsyev", "LWORK");
+  auto LWORK = select_workspace_size<double>("dsyev", "LWORK", min_lwork, opt_lwork, saveram);
+  if (log_workspace) std::cout << "dsyev workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK)=" << min_lwork << " opt(LWORK)=" << opt_lwork << " use(LWORK)=" << LWORK << std::endl;
   std::vector<double> WORK(LWORK);
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, &INFO);
@@ -162,26 +249,31 @@ auto diagonalise_dsyev(RM &m, const char jobz = 'V') {
 }
 
 template<real_matrix RM>
-auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
+auto diagonalise_dsyevd(RM &m, const char jobz = 'V', const bool saveram = false, const bool log_workspace = false)
 {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   auto ham       = data(m);
   std::vector<double> eigenvalues(dim);
   char UPLO  = 'L';
-  int NN     = dim;
-  int LDA    = dim;
-  int INFO   = 0;
-  int LWORK  = -1;
-  int LIWORK = -1;
+  lapack_int NN     = dim;
+  lapack_int LDA    = dim;
+  lapack_int INFO   = 0;
+  lapack_int LWORK  = -1;
+  lapack_int LIWORK = -1;
   double WORK0 = 0; // on exit: optimal WORK size
-  int IWORK0 = 0;   // on exit: optimal IWORK size
+  lapack_int IWORK0 = 0;   // on exit: optimal IWORK size
   LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK, &IWORK0, &LIWORK, &INFO);
-  my_assert(INFO == 0);
-  LWORK      = int(WORK0);
-  LIWORK     = IWORK0;
+  if (INFO != 0) throw std::runtime_error(fmt::format("dsyevd workspace query failed. INFO={}", INFO));
+  const auto min_lwork  = dsyevd_min_lwork(dim, jobz);
+  const auto min_liwork = dsyevd_min_liwork(dim, jobz);
+  const auto opt_lwork  = checked_workspace_query(WORK0, "dsyevd", "LWORK");
+  const auto opt_liwork = checked_workspace_query(static_cast<double>(IWORK0), "dsyevd", "LIWORK");
+  LWORK  = select_workspace_size<double>("dsyevd", "LWORK", min_lwork, opt_lwork, saveram);
+  LIWORK = select_workspace_size<lapack_int>("dsyevd", "LIWORK", min_liwork, opt_liwork, saveram);
+  if (log_workspace) std::cout << "dsyevd workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LIWORK)=" << min_lwork << "," << min_liwork << " opt(LWORK,LIWORK)=" << opt_lwork << "," << opt_liwork << " use(LWORK,LIWORK)=" << LWORK << "," << LIWORK << std::endl;
   std::vector<double> WORK(LWORK);
-  std::vector<int> IWORK(LIWORK);
+  std::vector<lapack_int> IWORK(LIWORK);
   LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, IWORK.data(), &LIWORK, &INFO);
   if (INFO != 0) {
     // dsyevd sometimes fails to converge (INFO>0). In such cases we do not trigger
@@ -195,7 +287,7 @@ auto diagonalise_dsyevd(RM &m, const char jobz = 'V')
 }
 
 template<real_matrix RM>
-auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') {
+auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V', const bool saveram = false, const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   // M is the number of the eigenvalues that we will attempt to
@@ -204,46 +296,51 @@ auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') 
   char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
     M     = ceil(ratio * M); // round up
-    M     = std::clamp<int>(M, 1, dim);        // at least 1, at most dim
+    M     = std::clamp<lapack_int>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';     // lower triangle of a is stored
-  int NN        = dim;     // the order of the matrix
-  int LDA       = dim;     // the leading dimension of the array a
-  int INFO      = 0;       // 0 on successful exit
+  lapack_int NN        = dim;     // the order of the matrix
+  lapack_int LDA       = dim;     // the leading dimension of the array a
+  lapack_int INFO      = 0;       // 0 on successful exit
   double VL     = 0;       // value range; not referenced if RANGE != 'V'
   double VU     = 0;
-  int IL        = 1; // index range
-  int IU        = M;
+  lapack_int IL        = 1; // index range
+  lapack_int IU        = M;
   double ABSTOL = 0;
   // If ABSTOL=0, EPS*|T| where |T| is the 1-norm of the tridiagonal
   // matrix obtained by reducing m to tridiagonal form.
-  int MM{}; // total number of eigenvalues found
-  int LDZ = dim;
-  std::vector<int> ISUPPZ(2 * M);
+  lapack_int MM{}; // total number of eigenvalues found
+  lapack_int LDZ = dim;
+  std::vector<lapack_int> ISUPPZ(2 * M);
   //  The support of the eigenvectors in Z, i.e., the indices
   //  indicating the nonzero elements in Z.  The i-th eigenvector is
   //  nonzero only in elements ISUPPZ( 2*i-1 ) through ISUPPZ(2*i).
   std::vector<double> Z(LDZ * M); // eigenvectors
-  int LWORK0  = -1;
-  int LIWORK0 = -1;
+  lapack_int LWORK0  = -1;
+  lapack_int LIWORK0 = -1;
   double WORK0 = 0; // on exit: optimal WORK size
-  int IWORK0 = 0;   // on exist: optimal IWORK size
+  lapack_int IWORK0 = 0;   // on exist: optimal IWORK size
   // Step 1: determine optimal LWORK and LIWORK
   LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), &WORK0, &LWORK0,
                 &IWORK0, &LIWORK0, &INFO);
-  my_assert(INFO == 0);
-  int LWORK  = int(WORK0);
-  int LIWORK = IWORK0;
+  if (INFO != 0) throw std::runtime_error(fmt::format("dsyevr workspace query failed. INFO={}", INFO));
+  const auto min_lwork  = dsyevr_min_lwork(dim);
+  const auto min_liwork = dsyevr_min_liwork(dim);
+  const auto opt_lwork  = checked_workspace_query(WORK0, "dsyevr", "LWORK");
+  const auto opt_liwork = checked_workspace_query(static_cast<double>(IWORK0), "dsyevr", "LIWORK");
+  auto LWORK  = select_workspace_size<double>("dsyevr", "LWORK", min_lwork, opt_lwork, saveram);
+  auto LIWORK = select_workspace_size<lapack_int>("dsyevr", "LIWORK", min_liwork, opt_liwork, saveram);
+  if (log_workspace) std::cout << "dsyevr workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LIWORK)=" << min_lwork << "," << min_liwork << " opt(LWORK,LIWORK)=" << opt_lwork << "," << opt_liwork << " use(LWORK,LIWORK)=" << LWORK << "," << LIWORK << std::endl;
   std::vector<double> WORK(LWORK);
-  std::vector<int> IWORK(LIWORK);
+  std::vector<lapack_int> IWORK(LIWORK);
   // Step 2: perform the diagonalisation
   LAPACK_dsyevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), WORK.data(),
                 &LWORK, IWORK.data(), &LIWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  if (MM != int(M)) {
+  if (MM != M) {
     std::cout << "dsyevr computed " << MM << "/" << M << std::endl;
     M = MM;
     my_assert(M > 0); // at least one
@@ -252,23 +349,26 @@ auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V') 
 }
 
 template<complex_matrix CM>
-auto diagonalise_zheev(CM &m, const char jobz = 'V') {
+auto diagonalise_zheev(CM &m, const char jobz = 'V', const bool saveram = false, const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO  = 'L';         // lower triangle of a is stored
-  int NN     = dim;         // the order of the matrix
-  int LDA    = dim;         // the leading dimension of the array a
-  int INFO   = 0;           // 0 on successful exit
-  int LWORK0 = -1;          // length of the WORK array (-1 == query!)
+  lapack_int NN     = dim;         // the order of the matrix
+  lapack_int LDA    = dim;         // the leading dimension of the array a
+  lapack_int INFO   = 0;           // 0 on successful exit
+  lapack_int LWORK0 = -1;          // length of the WORK array (-1 == query!)
   lapack_complex_double WORK0;
-  int RWORKdim = std::max(1, 3 * dim - 2);
+  auto RWORKdim = checked_lapack_int(zheev_min_rwork(dim), "zheev RWORK workspace size");
   std::vector<double> RWORK(RWORKdim);
   // Step 1: determine optimal LWORK
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK0, RWORK.data(), &INFO);
-  my_assert(INFO == 0);
-  int LWORK  = int(WORK0.real());
+  if (INFO != 0) throw std::runtime_error(fmt::format("zheev workspace query failed. INFO={}", INFO));
+  const auto min_lwork = zheev_min_lwork(dim);
+  const auto opt_lwork = checked_workspace_query(WORK0.real(), "zheev", "LWORK");
+  auto LWORK = select_workspace_size<lapack_complex_double>("zheev", "LWORK", min_lwork, opt_lwork, saveram);
+  if (log_workspace) std::cout << "zheev workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,RWORK)=" << min_lwork << "," << RWORKdim << " opt(LWORK)=" << opt_lwork << " use(LWORK,RWORK)=" << LWORK << "," << RWORKdim << std::endl;
   std::vector<lapack_complex_double> WORK(LWORK);
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &INFO);
@@ -277,30 +377,37 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V') {
 }
 
 template<complex_matrix CM>
-auto diagonalise_zheevd(CM &m, const char jobz = 'V')
+auto diagonalise_zheevd(CM &m, const char jobz = 'V', const bool saveram = false, const bool log_workspace = false)
 {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   auto ham = data(m);
   std::vector<double> eigenvalues(dim);
   char UPLO  = 'L';
-  int NN     = dim;
-  int LDA    = dim;
-  int INFO   = 0;
-  int LWORK  = -1;
-  int LRWORK = -1;
-  int LIWORK = -1;
+  lapack_int NN     = dim;
+  lapack_int LDA    = dim;
+  lapack_int INFO   = 0;
+  lapack_int LWORK  = -1;
+  lapack_int LRWORK = -1;
+  lapack_int LIWORK = -1;
   lapack_complex_double WORK0{}; // on exit: optimal WORK size
   double RWORK0 = 0;             // on exit: optimal RWORK size
-  int IWORK0 = 0;                // on exit: optimal IWORK size
+  lapack_int IWORK0 = 0;                // on exit: optimal IWORK size
   LAPACK_zheevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), &WORK0, &LWORK, &RWORK0, &LRWORK, &IWORK0, &LIWORK, &INFO);
-  my_assert(INFO == 0);
-  LWORK  = int(WORK0.real());
-  LRWORK = int(RWORK0);
-  LIWORK = IWORK0;
+  if (INFO != 0) throw std::runtime_error(fmt::format("zheevd workspace query failed. INFO={}", INFO));
+  const auto min_lwork  = zheevd_min_lwork(dim, jobz);
+  const auto min_lrwork = zheevd_min_lrwork(dim, jobz);
+  const auto min_liwork = zheevd_min_liwork(dim, jobz);
+  const auto opt_lwork  = checked_workspace_query(WORK0.real(), "zheevd", "LWORK");
+  const auto opt_lrwork = checked_workspace_query(RWORK0, "zheevd", "LRWORK");
+  const auto opt_liwork = checked_workspace_query(static_cast<double>(IWORK0), "zheevd", "LIWORK");
+  LWORK  = select_workspace_size<lapack_complex_double>("zheevd", "LWORK", min_lwork, opt_lwork, saveram);
+  LRWORK = select_workspace_size<double>("zheevd", "LRWORK", min_lrwork, opt_lrwork, saveram);
+  LIWORK = select_workspace_size<lapack_int>("zheevd", "LIWORK", min_liwork, opt_liwork, saveram);
+  if (log_workspace) std::cout << "zheevd workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LRWORK,LIWORK)=" << min_lwork << "," << min_lrwork << "," << min_liwork << " opt(LWORK,LRWORK,LIWORK)=" << opt_lwork << "," << opt_lrwork << "," << opt_liwork << " use(LWORK,LRWORK,LIWORK)=" << LWORK << "," << LRWORK << "," << LIWORK << std::endl;
   std::vector<lapack_complex_double> WORK(LWORK);
   std::vector<double> RWORK(LRWORK);
-  std::vector<int> IWORK(LIWORK);
+  std::vector<lapack_int> IWORK(LIWORK);
   LAPACK_zheevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &LRWORK, IWORK.data(), &LIWORK, &INFO);
   if (INFO != 0) {
     if (INFO > 0)
@@ -312,7 +419,7 @@ auto diagonalise_zheevd(CM &m, const char jobz = 'V')
 }
 
 template<complex_matrix CM>
-auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') {
+auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V', const bool saveram = false, const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   // M is the number of the eigenvalues that we will attempt to
@@ -321,49 +428,56 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') 
   char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
     M     = ceil(ratio * M); // round up
-    M     = std::clamp<int>(M, 1, dim);        // at least 1, at most dim
+    M     = std::clamp<lapack_int>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
   auto ham = data(m);
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
   char UPLO     = 'L';      // lower triangle of a is stored
-  int NN        = dim;      // the order of the matrix
-  int LDA       = dim;      // the leading dimension of the array a
-  int INFO      = 0;        // 0 on successful exit
+  lapack_int NN        = dim;      // the order of the matrix
+  lapack_int LDA       = dim;      // the leading dimension of the array a
+  lapack_int INFO      = 0;        // 0 on successful exit
   double VL     = 0;        // value range; not referenced if RANGE != 'V'
   double VU     = 0;
-  int IL        = 1; // index range
-  int IU        = M;
+  lapack_int IL        = 1; // index range
+  lapack_int IU        = M;
   double ABSTOL = 0;
   // If ABSTOL=0, EPS*|T| where |T| is the 1-norm of the tridiagonal
   // matrix obtained by reducing m to tridiagonal form.
-  int MM = 0; // total number of eigenvalues found
-  int LDZ = dim;
-  std::vector<int> ISUPPZ(2 * M);
+  lapack_int MM = 0; // total number of eigenvalues found
+  lapack_int LDZ = dim;
+  std::vector<lapack_int> ISUPPZ(2 * M);
   //  The support of the eigenvectors in Z, i.e., the indices indicating the nonzero elements in Z.  The i-th
   //  eigenvector is nonzero only in elements ISUPPZ( 2*i-1 ) through ISUPPZ(2*i).
   std::vector<lapack_complex_double> Z(LDZ * M); // eigenvectors
-  int LWORK0 = -1;                 // length of the WORK array (-1 == query!)
+  lapack_int LWORK0 = -1;                 // length of the WORK array (-1 == query!)
   lapack_complex_double WORK0;
-  int LRWORK0 = -1;  // query
+  lapack_int LRWORK0 = -1;  // query
   double RWORK0 = 0; // on exit: optimal RWORK size
-  int LIWORK0 = -1;  // query
-  int IWORK0 = 0;    // on exit: optimal IWORK size
+  lapack_int LIWORK0 = -1;  // query
+  lapack_int IWORK0 = 0;    // on exit: optimal IWORK size
   // Step 1: determine optimal LWORK, LRWORK, and LIWORK
   LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), &WORK0, &LWORK0,
                 &RWORK0, &LRWORK0, &IWORK0, &LIWORK0, &INFO);
-  my_assert(INFO == 0);
-  int LWORK   = int(WORK0.real());
+  if (INFO != 0) throw std::runtime_error(fmt::format("zheevr workspace query failed. INFO={}", INFO));
+  const auto min_lwork  = zheevr_min_lwork(dim);
+  const auto min_lrwork = zheevr_min_lrwork(dim);
+  const auto min_liwork = zheevr_min_liwork(dim);
+  const auto opt_lwork  = checked_workspace_query(WORK0.real(), "zheevr", "LWORK");
+  const auto opt_lrwork = checked_workspace_query(RWORK0, "zheevr", "LRWORK");
+  const auto opt_liwork = checked_workspace_query(static_cast<double>(IWORK0), "zheevr", "LIWORK");
+  auto LWORK   = select_workspace_size<lapack_complex_double>("zheevr", "LWORK", min_lwork, opt_lwork, saveram);
   std::vector<lapack_complex_double> WORK(LWORK);
-  int LRWORK  = int(RWORK0);
+  auto LRWORK  = select_workspace_size<double>("zheevr", "LRWORK", min_lrwork, opt_lrwork, saveram);
   std::vector<double> RWORK(LRWORK);
-  int LIWORK  = IWORK0;
-  std::vector<int> IWORK(LIWORK);
+  auto LIWORK  = select_workspace_size<lapack_int>("zheevr", "LIWORK", min_liwork, opt_liwork, saveram);
+  std::vector<lapack_int> IWORK(LIWORK);
+  if (log_workspace) std::cout << "zheevr workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LRWORK,LIWORK)=" << min_lwork << "," << min_lrwork << "," << min_liwork << " opt(LWORK,LRWORK,LIWORK)=" << opt_lwork << "," << opt_lrwork << "," << opt_liwork << " use(LWORK,LRWORK,LIWORK)=" << LWORK << "," << LRWORK << "," << LIWORK << std::endl;
   // Step 2: perform the diagonalisation
   LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), WORK.data(), &LWORK,
                 RWORK.data(), &LRWORK, IWORK.data(), &LIWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("zheevr failed. INFO={}", INFO));
-  if (MM != int(M)) {
+  if (MM != M) {
     std::cout << "zheevr computed " << MM << "/" << M << std::endl;
     M = MM;
     my_assert(M > 0); // at least one
@@ -373,7 +487,7 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V') 
 
 #if NRG_ENABLE_CUDA
 template<real_matrix RM>
-auto diagonalise_cuda_dsyevd(RM &m, const char jobz = 'V') {
+auto diagonalise_cuda_dsyevd(RM &m, const char jobz = 'V', const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   const auto elements = static_cast<size_t>(dim) * static_cast<size_t>(dim);
@@ -388,6 +502,7 @@ auto diagonalise_cuda_dsyevd(RM &m, const char jobz = 'V') {
   int lwork = 0;
   cusolver_check(cusolverDnDsyevd_bufferSize(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), &lwork),
                  "cusolverDnDsyevd_bufferSize");
+  if (log_workspace) std::cout << "cuda_dsyevd workspace dim=" << dim << " jobz=" << jobz << " use(LWORK)=" << lwork << std::endl;
   CudaDeviceBuffer<double> d_work(lwork);
   cusolver_check(cusolverDnDsyevd(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), d_work.data(), lwork, d_info.data()),
                  "cusolverDnDsyevd");
@@ -403,7 +518,7 @@ auto diagonalise_cuda_dsyevd(RM &m, const char jobz = 'V') {
 }
 
 template<complex_matrix CM>
-auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V') {
+auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V', const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = checked_lapack_int(size1(m), "matrix dimension");
   const auto elements = static_cast<size_t>(dim) * static_cast<size_t>(dim);
@@ -420,6 +535,7 @@ auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V') {
   int lwork = 0;
   cusolver_check(cusolverDnZheevd_bufferSize(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), &lwork),
                  "cusolverDnZheevd_bufferSize");
+  if (log_workspace) std::cout << "cuda_zheevd workspace dim=" << dim << " jobz=" << jobz << " use(LWORK)=" << lwork << std::endl;
   CudaDeviceBuffer<cuDoubleComplex> d_work(lwork);
   cusolver_check(cusolverDnZheevd(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), d_work.data(), lwork, d_info.data()),
                  "cusolverDnZheevd");
@@ -445,26 +561,27 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
   const std::string rank_string = myrank >= 0 ? " [rank=" + std::to_string(myrank) + "]" : "";
   mpilog("diagonalise " << size1(m) << "x" << size2(m) << " " << DP.diag << " " << DP.diagratio);
   nrglogdp('@', "diagonalise() - size(m)=" << size1(m) << rank_string);
+  const auto log_workspace = DP.logletter('#');
   Timing timer;
   my_assert(is_matrix_upper(m));
   RawEigen<S> d;
   if constexpr (std::is_same_v<S, double>) {
-    if (DP.diag == "dsyev"s) d = diagonalise_dsyev(m);
+    if (DP.diag == "dsyev"s) d = diagonalise_dsyev(m, 'V', DP.saveram, log_workspace);
     if (DP.diag == "dsyevd"s  || DP.diag == "default"s) {
-      d = diagonalise_dsyevd(m);
+      d = diagonalise_dsyevd(m, 'V', DP.saveram, log_workspace);
       if (d.getnrcomputed() == 0) {
         std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
-        d = diagonalise_dsyev(m);
+        d = diagonalise_dsyev(m, 'V', DP.saveram, log_workspace);
       }
     }
-    if (DP.diag == "dsyevr"s) d = diagonalise_dsyevr(m, DP.diagratio);
+    if (DP.diag == "dsyevr"s) d = diagonalise_dsyevr(m, DP.diagratio, 'V', DP.saveram, log_workspace);
     if (DP.diag == "cuda_dsyevd"s) {
 #if NRG_ENABLE_CUDA
       validate_cuda_diagonalisation_request(DP.diag);
-      d = diagonalise_cuda_dsyevd(m);
+      d = diagonalise_cuda_dsyevd(m, 'V', log_workspace);
       if (d.getnrcomputed() == 0) {
         std::cout << "cuda_dsyevd failed, falling back to dsyev" << std::endl;
-        d = diagonalise_dsyev(m);
+        d = diagonalise_dsyev(m, 'V', DP.saveram, log_workspace);
       }
 #else
       throw std::runtime_error("cuda_dsyevd requested, but CUDA support was not enabled at build time");
@@ -472,22 +589,22 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
     }
   }
   if constexpr (std::is_same_v<S, std::complex<double>>) {
-    if (DP.diag == "zheev"s) d = diagonalise_zheev(m);
+    if (DP.diag == "zheev"s) d = diagonalise_zheev(m, 'V', DP.saveram, log_workspace);
     if (DP.diag == "zheevd"s || DP.diag == "default"s) {
-      d = diagonalise_zheevd(m);
+      d = diagonalise_zheevd(m, 'V', DP.saveram, log_workspace);
       if (d.getnrcomputed() == 0) {
         std::cout << "zheevd failed, falling back to zheev" << std::endl;
-        d = diagonalise_zheev(m);
+        d = diagonalise_zheev(m, 'V', DP.saveram, log_workspace);
       }
     }
-    if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio);
+    if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio, 'V', DP.saveram, log_workspace);
     if (DP.diag == "cuda_zheevd"s) {
 #if NRG_ENABLE_CUDA
       validate_cuda_diagonalisation_request(DP.diag);
-      d = diagonalise_cuda_zheevd(m);
+      d = diagonalise_cuda_zheevd(m, 'V', log_workspace);
       if (d.getnrcomputed() == 0) {
         std::cout << "cuda_zheevd failed, falling back to zheev" << std::endl;
-        d = diagonalise_zheev(m);
+        d = diagonalise_zheev(m, 'V', DP.saveram, log_workspace);
       }
 #else
       throw std::runtime_error("cuda_zheevd requested, but CUDA support was not enabled at build time");

@@ -158,6 +158,7 @@ class Params {
   // NRG iteration parameters
 
   param<std::string> diag{"diag", "Eigensolver routine (dsyev|dsyevd|dsyevr|zheev|zheevd|zheevr|cuda_dsyevd|cuda_zheevd|default)", "default", all}; // N
+  param<bool> saveram{"saveram", "Use minimal documented LAPACK workspace sizes", "false", all}; // N
   param<std::string> mult{"mult", "Matrix multiply backend (blas|cuda)", "blas", all}; // N
 
   // For partial diagonalisation routines (dsyevr, zheevr), diagratio controls the fraction
@@ -520,8 +521,8 @@ class Params {
 
   param<bool> absolute{"absolute", "Do NRG without any rescaling", "false", all};
 
-  // Parallelization strategy: MPI, OpenMP or serial
-  param<std::string> diag_mode{"diag_mode", "Parallelization strategy", "MPI", all};
+  // Parallelization strategy: default, MPI, OpenMP or serial
+  param<std::string> diag_mode{"diag_mode", "Parallelization strategy", "default", all};
 
   param<bool> h5raw{"h5raw", "Store raw data in an HDF5 file", "false", all};
   param<bool> h5all{"h5all", "Store raw data at all steps", "false", all};
@@ -758,13 +759,14 @@ class DiagParams {
  public:
    std::string diag{};
    double diagratio{};
+   bool saveram{};
    bool logall{};
    std::string logstr{};
 
    DiagParams() {}
    explicit DiagParams(const Params &P, const double diagratio_ = -1) :
      diag(P.diag), diagratio(diagratio_ > 0 ? diagratio_ : P.diagratio),
-     logall(P.logall), logstr(P.logstr) {}
+     saveram(P.saveram), logall(P.logall), logstr(P.logstr) {}
    bool logletter(char c) const { return logall ? true : logstr.find(c) != std::string::npos; }
 
  private:
@@ -772,6 +774,7 @@ class DiagParams {
    template <class Archive> void serialize(Archive &ar, [[maybe_unused]] const unsigned int version) {
       ar &diag;
       ar &diagratio;
+      ar &saveram;
       ar &logall;
       ar &logstr;
    }
