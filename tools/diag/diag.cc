@@ -10,10 +10,12 @@
 #include <cassert>
 #include <cfloat>
 #include <utility>
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <map>
 #include <ctime>
+#include <limits>
 #include <unistd.h>
 
 using namespace std;
@@ -39,23 +41,26 @@ void about(ostream &OUT = cout) {
   }
 }
 
-inline int MAX(int a, int b) { return (a > b ? a : b); }
-
 #include "lapack.h"
 
 #define IJ(i, j) (dim * (i) + (j))
 
 void diagonalize(unsigned int dim, DVEC &d) {
+  if (dim > static_cast<unsigned int>(std::numeric_limits<lapack_int>::max())) {
+    cerr << "matrix dimension exceeds LAPACK integer range" << endl;
+    abort();
+  }
+
   double *ham = &d[0];     // contiguous storage guaranteed
   std::vector<double> eigenvalues(dim); // eigenvalues on exit
 
   char jobz = 'V'; // eigenvalues and eigenvectors
   char UPLO = 'L'; // lower triangle of a is stored
-  int NN    = dim; // the order of the matrix
-  int LDA   = dim; // the leading dimension of the array a
-  int INFO  = 0;   // 0 on successful exit
+  lapack_int NN   = dim; // the order of the matrix
+  lapack_int LDA  = dim; // the leading dimension of the array a
+  lapack_int INFO = 0;   // 0 on successful exit
 
-  int LWORK0 = -1; // length of the WORK array
+  lapack_int LWORK0 = -1; // length of the WORK array
   std::vector<double> WORK0(1);
 
   // Step 1: determine optimal LWORK
@@ -63,17 +68,17 @@ void diagonalize(unsigned int dim, DVEC &d) {
 
   assert(INFO == 0);
 
-  int LWORK = int(WORK0[0]);
+  lapack_int LWORK = lapack_int(WORK0[0]);
   if (verbose) { cout << "LWORK=" << LWORK << endl; }
   assert(LWORK > 0);
 
-  const int minLWORK = MAX(1, 3 * dim - 1); // cf. LAPACK 3.1 dsyev.f
+  const lapack_int minLWORK = std::max(lapack_int(1), 3 * NN - 1); // cf. LAPACK 3.1 dsyev.f
   if (LWORK < minLWORK) {
     cerr << "Buggy dsyev. Fixing LWORK." << endl;
     LWORK = minLWORK;
   }
 
-  std::vector<double> WORK(LWORK);
+  std::vector<double> WORK(static_cast<std::size_t>(LWORK));
 
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, &INFO);

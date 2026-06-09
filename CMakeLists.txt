@@ -69,6 +69,7 @@ set(NRGLJUBLJANA_INSTALL_NRGINIT_DIR "nrginit" CACHE PATH "Install directory for
 option(NRGLJUBLJANA_ENABLE_APP_OPENMP "Enable application-level OpenMP parallel regions; BLAS/LAPACK remains threaded independently" OFF)
 option(NRGLJUBLJANA_ENABLE_CUDA "Enable CUDA/cuSOLVER diagonalisation support" OFF)
 option(NRGLJUBLJANA_STRICT_FLOATING_POINT "Compile project C++ targets with strict floating-point flags" OFF)
+option(NRGLJUBLJANA_BLAS_ILP64 "Use ILP64 BLAS/LAPACK integer ABI" OFF)
 set(NRGLJUBLJANA_MKL_THREADING_LAYER "AUTO" CACHE STRING "MKL threading layer for mkl_rt builds (AUTO, COMPILER, GNU, INTEL, or LLVM)")
 set_property(CACHE NRGLJUBLJANA_MKL_THREADING_LAYER PROPERTY STRINGS AUTO COMPILER GNU INTEL LLVM)
 string(TOUPPER "${NRGLJUBLJANA_MKL_THREADING_LAYER}" NRGLJUBLJANA_MKL_THREADING_LAYER)
@@ -88,6 +89,7 @@ message(STATUS "Application OpenMP parallel regions: ${NRGLJUBLJANA_ENABLE_APP_O
 message(STATUS "CUDA/cuSOLVER diagonalisation request: ${NRGLJUBLJANA_ENABLE_CUDA}")
 message(STATUS "MKL threading layer request: ${NRGLJUBLJANA_MKL_THREADING_LAYER}")
 message(STATUS "Strict floating-point flags: ${NRGLJUBLJANA_STRICT_FLOATING_POINT}")
+message(STATUS "BLAS/LAPACK ILP64 integer ABI request: ${NRGLJUBLJANA_BLAS_ILP64}")
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -369,6 +371,9 @@ endfunction()
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/BLAS_LAPACK)
 # BLAS/Lapack
+if(NRGLJUBLJANA_BLAS_ILP64)
+  set(BLA_SIZEOF_INTEGER 8)
+endif()
 find_package(LAPACK REQUIRED) # also looks up BLAS
 add_library(blas_lapack INTERFACE)
 set(NRGLJUBLJANA_HAVE_MKL OFF)
@@ -387,6 +392,15 @@ elseif(NRGLJUBLJANA_LINALG_LINK_TEXT MATCHES "openblas")
   message(STATUS "Using OpenBLAS for linear algebra")
 else()
   message(STATUS "Using BLAS/LAPACK vendor: ${NRGLJUBLJANA_BLAS_VENDOR}")
+endif()
+
+if(NRGLJUBLJANA_BLAS_ILP64)
+  if(NRGLJUBLJANA_LINALG_LINK_TEXT MATCHES "mkl_intel_lp64")
+    message(FATAL_ERROR "NRGLJUBLJANA_BLAS_ILP64=ON but MKL LP64 was selected")
+  endif()
+  if(NRGLJUBLJANA_HAVE_MKL AND NOT NRGLJUBLJANA_LINALG_LINK_TEXT MATCHES "mkl_intel_ilp64|mkl_rt")
+    message(FATAL_ERROR "NRGLJUBLJANA_BLAS_ILP64=ON but MKL ILP64 was not detected")
+  endif()
 endif()
 
 set(NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER "AUTO")
@@ -434,6 +448,12 @@ target_compile_definitions(blas_lapack INTERFACE
   "NRG_MKL_THREADING_LAYER=\"${NRGLJUBLJANA_EFFECTIVE_MKL_THREADING_LAYER}\""
   NRG_MKL_REQUIRES_OPENMP=$<BOOL:${NRGLJUBLJANA_MKL_REQUIRES_OPENMP}>
 )
+if(NRGLJUBLJANA_BLAS_ILP64)
+  target_compile_definitions(blas_lapack INTERFACE LAPACK_ILP64)
+  if(NRGLJUBLJANA_HAVE_MKL)
+    target_compile_definitions(blas_lapack INTERFACE MKL_ILP64 NRG_USE_EIGEN_MKL)
+  endif()
+endif()
 message(STATUS "BLAS_LIBRARIES=${BLAS_LIBRARIES}")
 message(STATUS "BLAS_LINKER_FLAGS=${BLAS_LINKER_FLAGS}")
 message(STATUS "LAPACK_LIBRARIES=${LAPACK_LIBRARIES}")
@@ -507,6 +527,8 @@ unset(CMAKE_REQUIRED_FLAGS)
 if(HAVE_CBLAS)
   message(STATUS "cblas interface found in blas library")
   set(CBLAS_WORKAROUND OFF)
+elseif(NRGLJUBLJANA_HAVE_MKL)
+  message(FATAL_ERROR "Intel MKL was selected, but cblas_dgemm was not found. MKL builds require the library-provided CBLAS interface.")
 else()
   message(WARNING "cblas interface not found; will provide a workaround")
   set(CBLAS_WORKAROUND ON)
