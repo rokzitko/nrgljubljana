@@ -26,7 +26,7 @@ endif()
 
 # ############
 # Define Project
-project(NRGLJUBLJANA VERSION 2026.05.1 LANGUAGES C CXX)
+project(NRGLJUBLJANA VERSION 2026.06.1 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 include(GNUInstallDirs)

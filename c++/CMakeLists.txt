@@ -24,7 +24,7 @@ target_link_libraries(nrgljubljana_c     PRIVATE project_warnings)
 # Set library version and PIC flag
 set_target_properties(nrgljubljana_c PROPERTIES
   POSITION_INDEPENDENT_CODE ON
-  VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+  VERSION ${PROJECT_VERSION}
 )
 
 option(GPROF "Enable profiling using gprof" OFF)
