@@ -45,7 +45,8 @@ void call_gemm(const char *transa, const char *transb, const lapack_int *m, cons
   if constexpr (std::is_same_v<T, double>) {
     LAPACK_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   } else {
-    LAPACK_zgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LAPACK_zgemm(transa, transb, m, n, k, reinterpret_cast<const double *>(alpha), reinterpret_cast<const double *>(a), lda,
+                 reinterpret_cast<const double *>(b), ldb, reinterpret_cast<const double *>(beta), reinterpret_cast<double *>(c), ldc);
   }
 }
 
