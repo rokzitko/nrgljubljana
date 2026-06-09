@@ -60,7 +60,7 @@ inline auto cuda_available_device_count() {
   return count;
 }
 
-inline auto cuda_diag_requested(const std::string &diag) { return diag == "cuda_dsyevd" || diag == "cuda_zheevd"; }
+inline auto cuda_diag_requested(const std::string &diag) { return diag == "cuda" || diag == "cuda_dsyevd" || diag == "cuda_zheevd"; }
 
 inline void validate_cuda_diagonalisation_request(const std::string &diag) {
   if (!cuda_diag_requested(diag)) return;
@@ -97,7 +97,7 @@ template<typename T> class CudaDeviceBuffer {
   size_t size_{};
 };
 #else
-inline auto cuda_diag_requested(const std::string &diag) { return diag == "cuda_dsyevd" || diag == "cuda_zheevd"; }
+inline auto cuda_diag_requested(const std::string &diag) { return diag == "cuda" || diag == "cuda_dsyevd" || diag == "cuda_zheevd"; }
 
 inline void validate_cuda_diagonalisation_request(const std::string &diag) {
   if (cuda_diag_requested(diag)) throw std::runtime_error(fmt::format("{} requested, but CUDA support was not enabled at build time", diag));
@@ -575,7 +575,7 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
       }
     }
     if (DP.diag == "dsyevr"s) d = diagonalise_dsyevr(m, DP.diagratio, 'V', DP.saveram, log_workspace);
-    if (DP.diag == "cuda_dsyevd"s) {
+    if (DP.diag == "cuda"s || DP.diag == "cuda_dsyevd"s) {
 #if NRG_ENABLE_CUDA
       validate_cuda_diagonalisation_request(DP.diag);
       d = diagonalise_cuda_dsyevd(m, 'V', log_workspace);
@@ -584,7 +584,7 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
         d = diagonalise_dsyev(m, 'V', DP.saveram, log_workspace);
       }
 #else
-      throw std::runtime_error("cuda_dsyevd requested, but CUDA support was not enabled at build time");
+      throw std::runtime_error(fmt::format("{} requested, but CUDA support was not enabled at build time", DP.diag));
 #endif
     }
   }
@@ -598,7 +598,7 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
       }
     }
     if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio, 'V', DP.saveram, log_workspace);
-    if (DP.diag == "cuda_zheevd"s) {
+    if (DP.diag == "cuda"s || DP.diag == "cuda_zheevd"s) {
 #if NRG_ENABLE_CUDA
       validate_cuda_diagonalisation_request(DP.diag);
       d = diagonalise_cuda_zheevd(m, 'V', log_workspace);
@@ -607,7 +607,7 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
         d = diagonalise_zheev(m, 'V', DP.saveram, log_workspace);
       }
 #else
-      throw std::runtime_error("cuda_zheevd requested, but CUDA support was not enabled at build time");
+      throw std::runtime_error(fmt::format("{} requested, but CUDA support was not enabled at build time", DP.diag));
 #endif
     }
   }

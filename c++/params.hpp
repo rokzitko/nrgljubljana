@@ -157,7 +157,7 @@ class Params {
   // ************************
   // NRG iteration parameters
 
-  param<std::string> diag{"diag", "Eigensolver routine (dsyev|dsyevd|dsyevr|zheev|zheevd|zheevr|cuda_dsyevd|cuda_zheevd|default)", "default", all}; // N
+  param<std::string> diag{"diag", "Eigensolver routine (dsyev|dsyevd|dsyevr|zheev|zheevd|zheevr|cuda|cuda_dsyevd|cuda_zheevd|default)", "default", all}; // N
   param<bool> saveram{"saveram", "Use minimal documented LAPACK workspace sizes", "false", all}; // N
   param<std::string> mult{"mult", "Matrix multiply backend (blas|cuda)", "blas", all}; // N
 
