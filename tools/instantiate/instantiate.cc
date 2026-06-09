@@ -571,7 +571,8 @@ MatrixBlockData read_matrix_block(const std::string &header_line, DataTemplateRe
     const auto first_matrix_line = data_in.next_data_line();
     if (!first_matrix_line) throw std::runtime_error("Unexpected end of data.in while reading matrix for " + qn1_name + " -> " + qn2_name + ".");
     const auto matrix = read_operator_matrix(data_in, *first_matrix_line, dim1, dim2, evaluator, template_dir, qn1_name + " -> " + qn2_name);
-    NRG::Matrix_traits<double> transformed = vec1_it->second * matrix * vec2_it->second.transpose();
+    const auto intermediate = NRG::matrix_prod<double>(matrix, NRG::trans(vec2_it->second));
+    NRG::Matrix_traits<double> transformed = NRG::matrix_prod<double>(vec1_it->second, intermediate);
     block.elements.push_back(MatrixElementData{*qn_line, qn1, qn2, std::move(transformed)});
   }
 

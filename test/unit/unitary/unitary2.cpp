@@ -49,8 +49,8 @@ class unitaryProdTest : public ::testing::Test {
         }
 
     void Compare() {
-        EigenMatrix<double> D = B*C;
-        my_result = A*D;
+        EigenMatrix<double> D = matrix_prod<double>(B, C);
+        my_result = matrix_prod<double>(A, D);
         func_result = read_matrix("txt/temp_result_matrix.txt");
         EXPECT_TRUE(my_result.isApprox(func_result));
     }

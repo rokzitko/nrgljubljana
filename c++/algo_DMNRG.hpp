@@ -4,6 +4,7 @@
 #include <complex>
 #include <tuple>
 #include "traits.hpp"
+#include "blas_gemm.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"
 
@@ -41,8 +42,14 @@ class Algo_DMNRG : public Algo<S> {
       const auto op1_kept = submatrix_const(op1, {0, nrI1Kept}, {0, nrIpKept});
       const auto rhoNIp_kept = submatrix_const(rhoNIp, {0, nrIpKept}, {0, nrIpKept});
       const auto rhoNI1_kept = submatrix_const(rhoNI1, {0, nrI1Kept}, {0, nrI1Kept});
-      const Matrix sumA = op2_kept * rhoNIp_kept.transpose();
-      const Matrix sumB = rhoNI1_kept * op1_kept.conjugate();
+      Matrix sumA(nrI1Kept, nrIpKept);
+      gemm_rowmajor<S>(S(1), op2_kept, GemmTranspose::none, rhoNIp_kept, GemmTranspose::transpose, S(0), sumA);
+      Matrix op1_conj(nrI1Kept, nrIpKept);
+      for (const auto i : range0(nrI1Kept))
+        for (const auto j : range0(nrIpKept))
+          op1_conj(i, j) = conj_me(op1_kept(i, j));
+      Matrix sumB(nrI1Kept, nrIpKept);
+      gemm_nn<S>(S(1), rhoNI1_kept, op1_conj, S(0), sumB);
 
       for (const auto rj: diagI1.kept())
         for (const auto rm: diagIp.kept()) {
@@ -88,8 +95,14 @@ class Algo_DMNRGmats : public Algo<S> {
        const auto op1_kept = submatrix_const(op1, {0, nrI1Kept}, {0, nrIpKept});
        const auto rhoNIp_kept = submatrix_const(rhoNIp, {0, nrIpKept}, {0, nrIpKept});
        const auto rhoNI1_kept = submatrix_const(rhoNI1, {0, nrI1Kept}, {0, nrI1Kept});
-       const Matrix sumA = op2_kept * rhoNIp_kept.transpose();
-       const Matrix sumB = rhoNI1_kept * op1_kept.conjugate();
+        Matrix sumA(nrI1Kept, nrIpKept);
+        gemm_rowmajor<S>(S(1), op2_kept, GemmTranspose::none, rhoNIp_kept, GemmTranspose::transpose, S(0), sumA);
+        Matrix op1_conj(nrI1Kept, nrIpKept);
+        for (const auto i : range0(nrI1Kept))
+          for (const auto j : range0(nrIpKept))
+            op1_conj(i, j) = conj_me(op1_kept(i, j));
+        Matrix sumB(nrI1Kept, nrIpKept);
+        gemm_nn<S>(S(1), rhoNI1_kept, op1_conj, S(0), sumB);
 
        const auto term = [this](const auto energy, const auto weightA, const auto weightB, const auto n) {
          if (gt == gf_type::fermionic || n>0 || std::abs(energy) > WEIGHT_TOL) // [[likely]]

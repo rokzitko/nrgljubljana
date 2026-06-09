@@ -25,7 +25,7 @@
 
 #include <fmt/format.h>
 
-#include "lapack.h"
+#include "linalg.hpp"
 
 #ifndef NRG_ENABLE_CUDA
 #define NRG_ENABLE_CUDA 0

@@ -44,6 +44,7 @@
 #include "portabil.hpp"
 #include "misc.hpp"
 #include "traits.hpp"
+#include "blas_gemm.hpp"
 
 namespace NRG {
 

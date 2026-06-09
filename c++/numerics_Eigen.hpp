@@ -95,7 +95,7 @@ void product_Eigen(EM &M, const t_coef factor, const EM &A, const EM &B) {
   if (finite_size(A) && finite_size(B)) {
     assert(size1(M) == size1(A) && size2(A) == size2(B) && size1(B) == size2(M));
     assert(my_isfinite(factor));
-    M += factor * A * B.adjoint();
+    gemm_nh<S>(factor, A, B, S(1), M);
   }
 }
 
@@ -104,7 +104,9 @@ void transform_Eigen(EM &M, const t_coef factor, const EM &A, const EM &O, const
   if (finite_size(A) && finite_size(B)) {
     assert(size1(M) == size1(A) && size2(A) == size1(O) && size2(O) == size2(B) && size1(B) == size2(M));
     assert(my_isfinite(factor));
-    M += factor * A * O * B.adjoint();
+    EM temp(size1(A), size2(O));
+    gemm_nn<S>(S(1), A, O, S(0), temp);
+    gemm_nh<S>(factor, temp, B, S(1), M);
   }
 }
 
@@ -113,7 +115,9 @@ void rotate(EM &M, const t_coef factor, const U_type &U, const EM &O) {
   if (finite_size(U)) {
     assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
     assert(my_isfinite(factor));
-    M.noalias() += factor * U.adjoint() * O * U;
+    EM temp(size2(U), size2(O));
+    gemm_hn<S>(S(1), U, O, S(0), temp);
+    gemm_nn<S>(factor, temp, U, S(1), M);
   }
 }
 
@@ -122,7 +126,11 @@ void rotate_diagonal(EM &M, const t_coef factor, const U_type &U, const EM &O) {
   if (finite_size(U)) {
     assert(size1(M) == size2(U) && size1(U) == size1(O) && size2(O) == size1(U) && size2(U) == size2(M));
     assert(my_isfinite(factor));
-    M.noalias() += factor * U.adjoint() * O.diagonal().asDiagonal() * U;
+    EM temp(size1(U), size2(U));
+    for (const auto i : range0(size1(U)))
+      for (const auto j : range0(size2(U)))
+        temp(i, j) = O(i, i) * U(i, j);
+    gemm_hn<S>(factor, U, temp, S(1), M);
   }
 }
 
@@ -148,13 +156,17 @@ void resize(EigenMatrix<S> &m, const size_t new_size1, const size_t new_size2) {
 template<scalar T, Eigen_matrix U, Eigen_matrix V>
 EigenMatrix<T> matrix_prod(const U &A, const V &B) {
   assert(size2(A) == size1(B));
-  return A * B;
+  EigenMatrix<T> result(size1(A), size2(B));
+  gemm_nn<T>(T(1), A, B, T(0), result);
+  return result;
 }
 
 template<scalar T, Eigen_matrix U, Eigen_matrix V>
 EigenMatrix<T> matrix_adj_prod(const U &A, const V &B) {
   assert(size1(A) == size1(B));
-  return A.adjoint() * B;
+  EigenMatrix<T> result(size2(A), size2(B));
+  gemm_hn<T>(T(1), A, B, T(0), result);
+  return result;
 }
 
 #endif

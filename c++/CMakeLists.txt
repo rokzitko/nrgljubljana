@@ -43,7 +43,6 @@ target_compile_definitions(nrgljubljana_c PUBLIC
   NRG_SYM_BASIC
   $<$<BOOL:${SYM_MORE}>:NRG_SYM_MORE>
   $<$<BOOL:${SYM_ALL}>:NRG_SYM_ALL>
-  $<$<BOOL:${CBLAS_WORKAROUND}>:CBLAS_WORKAROUND>
 )
 
 # Link dependencies

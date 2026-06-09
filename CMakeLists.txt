@@ -517,23 +517,6 @@ else()
 endif()
 install(TARGETS blas_lapack EXPORT nrgljubljana-targets)
 
-include(CheckFunctionExists)
-# Check for availability of cblas interface
-set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
-set(CMAKE_REQUIRED_FLAGS ${LAPACK_LINKER_FLAGS} ${BLAS_LINKER_FLAGS})
-check_function_exists(cblas_dgemm HAVE_CBLAS)
-unset(CMAKE_REQUIRED_LIBRARIES)
-unset(CMAKE_REQUIRED_FLAGS)
-if(HAVE_CBLAS)
-  message(STATUS "cblas interface found in blas library")
-  set(CBLAS_WORKAROUND OFF)
-elseif(NRGLJUBLJANA_HAVE_MKL)
-  message(FATAL_ERROR "Intel MKL was selected, but cblas_dgemm was not found. MKL builds require the library-provided CBLAS interface.")
-else()
-  message(WARNING "cblas interface not found; will provide a workaround")
-  set(CBLAS_WORKAROUND ON)
-endif()
-
 # Symmetry types to compile in
 option(SYM_MORE "Compile in an extended set of symmetry types" ON)
 option(SYM_ALL  "Compile in the full set of symmetry types (long compilation time)" ON)

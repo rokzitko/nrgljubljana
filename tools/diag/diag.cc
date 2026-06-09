@@ -41,7 +41,7 @@ void about(ostream &OUT = cout) {
   }
 }
 
-#include "lapack.h"
+#include "linalg.hpp"
 
 #define IJ(i, j) (dim * (i) + (j))
 
