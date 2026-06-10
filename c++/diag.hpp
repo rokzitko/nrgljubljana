@@ -80,6 +80,18 @@ class CudaSolverHandle {
   cusolverDnHandle_t handle_{};
 };
 
+class CudaSolverParams {
+ public:
+  CudaSolverParams() { cusolver_check(cusolverDnCreateParams(&params_), "cusolverDnCreateParams"); }
+  ~CudaSolverParams() { if (params_ != nullptr) cusolverDnDestroyParams(params_); }
+  CudaSolverParams(const CudaSolverParams &) = delete;
+  CudaSolverParams &operator=(const CudaSolverParams &) = delete;
+  operator cusolverDnParams_t() const { return params_; }
+
+ private:
+  cusolverDnParams_t params_{};
+};
+
 template<typename T> class CudaDeviceBuffer {
  public:
   explicit CudaDeviceBuffer(const size_t size) : size_(size) {
@@ -489,23 +501,30 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V', 
 template<real_matrix RM>
 auto diagonalise_cuda_dsyevd(RM &m, const char jobz = 'V', const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
+  const auto dim = size1(m);
+  const auto dim64 = static_cast<int64_t>(dim);
   const auto elements = static_cast<size_t>(dim) * static_cast<size_t>(dim);
   auto ham = data(m);
   std::vector<double> eigenvalues(dim);
   CudaSolverHandle solver;
+  CudaSolverParams params;
   CudaDeviceBuffer<double> d_ham(elements);
   CudaDeviceBuffer<double> d_eigenvalues(dim);
   CudaDeviceBuffer<int> d_info(1);
   cuda_check(cudaMemcpy(d_ham.data(), ham, elements * sizeof(double), cudaMemcpyHostToDevice), "cudaMemcpy H2D matrix");
   const auto mode = jobz == 'V' ? CUSOLVER_EIG_MODE_VECTOR : CUSOLVER_EIG_MODE_NOVECTOR;
-  int lwork = 0;
-  cusolver_check(cusolverDnDsyevd_bufferSize(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), &lwork),
-                 "cusolverDnDsyevd_bufferSize");
-  if (log_workspace) std::cout << "cuda_dsyevd workspace dim=" << dim << " jobz=" << jobz << " use(LWORK)=" << lwork << std::endl;
-  CudaDeviceBuffer<double> d_work(lwork);
-  cusolver_check(cusolverDnDsyevd(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), d_work.data(), lwork, d_info.data()),
-                 "cusolverDnDsyevd");
+  size_t device_workspace_bytes = 0;
+  size_t host_workspace_bytes = 0;
+  cusolver_check(cusolverDnXsyevd_bufferSize(solver, params, mode, CUBLAS_FILL_MODE_LOWER, dim64, CUDA_R_64F, d_ham.data(), dim64,
+                                             CUDA_R_64F, d_eigenvalues.data(), CUDA_R_64F, &device_workspace_bytes, &host_workspace_bytes),
+                 "cusolverDnXsyevd_bufferSize");
+  if (log_workspace) std::cout << "cuda_dsyevd workspace dim=" << dim << " jobz=" << jobz << " device_bytes=" << device_workspace_bytes << " host_bytes=" << host_workspace_bytes << std::endl;
+  CudaDeviceBuffer<char> d_work(device_workspace_bytes);
+  std::vector<char> h_work(host_workspace_bytes);
+  cusolver_check(cusolverDnXsyevd(solver, params, mode, CUBLAS_FILL_MODE_LOWER, dim64, CUDA_R_64F, d_ham.data(), dim64,
+                                  CUDA_R_64F, d_eigenvalues.data(), CUDA_R_64F, d_work.data(), device_workspace_bytes,
+                                  h_work.data(), host_workspace_bytes, d_info.data()),
+                 "cusolverDnXsyevd");
   int info = 0;
   cuda_check(cudaMemcpy(&info, d_info.data(), sizeof(int), cudaMemcpyDeviceToHost), "cudaMemcpy D2H info");
   if (info != 0) {
@@ -520,11 +539,13 @@ auto diagonalise_cuda_dsyevd(RM &m, const char jobz = 'V', const bool log_worksp
 template<complex_matrix CM>
 auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V', const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
-  const auto dim = checked_lapack_int(size1(m), "matrix dimension");
+  const auto dim = size1(m);
+  const auto dim64 = static_cast<int64_t>(dim);
   const auto elements = static_cast<size_t>(dim) * static_cast<size_t>(dim);
   auto ham = data(m);
   std::vector<double> eigenvalues(dim);
   CudaSolverHandle solver;
+  CudaSolverParams params;
   CudaDeviceBuffer<cuDoubleComplex> d_ham(elements);
   CudaDeviceBuffer<double> d_eigenvalues(dim);
   CudaDeviceBuffer<int> d_info(1);
@@ -532,13 +553,18 @@ auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V', const bool log_worksp
   for (const auto i : range0(elements)) h_ham[i] = make_cuDoubleComplex(ham[i].real(), ham[i].imag());
   cuda_check(cudaMemcpy(d_ham.data(), h_ham.data(), elements * sizeof(cuDoubleComplex), cudaMemcpyHostToDevice), "cudaMemcpy H2D matrix");
   const auto mode = jobz == 'V' ? CUSOLVER_EIG_MODE_VECTOR : CUSOLVER_EIG_MODE_NOVECTOR;
-  int lwork = 0;
-  cusolver_check(cusolverDnZheevd_bufferSize(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), &lwork),
-                 "cusolverDnZheevd_bufferSize");
-  if (log_workspace) std::cout << "cuda_zheevd workspace dim=" << dim << " jobz=" << jobz << " use(LWORK)=" << lwork << std::endl;
-  CudaDeviceBuffer<cuDoubleComplex> d_work(lwork);
-  cusolver_check(cusolverDnZheevd(solver, mode, CUBLAS_FILL_MODE_LOWER, dim, d_ham.data(), dim, d_eigenvalues.data(), d_work.data(), lwork, d_info.data()),
-                 "cusolverDnZheevd");
+  size_t device_workspace_bytes = 0;
+  size_t host_workspace_bytes = 0;
+  cusolver_check(cusolverDnXsyevd_bufferSize(solver, params, mode, CUBLAS_FILL_MODE_LOWER, dim64, CUDA_C_64F, d_ham.data(), dim64,
+                                             CUDA_R_64F, d_eigenvalues.data(), CUDA_C_64F, &device_workspace_bytes, &host_workspace_bytes),
+                 "cusolverDnXsyevd_bufferSize");
+  if (log_workspace) std::cout << "cuda_zheevd workspace dim=" << dim << " jobz=" << jobz << " device_bytes=" << device_workspace_bytes << " host_bytes=" << host_workspace_bytes << std::endl;
+  CudaDeviceBuffer<char> d_work(device_workspace_bytes);
+  std::vector<char> h_work(host_workspace_bytes);
+  cusolver_check(cusolverDnXsyevd(solver, params, mode, CUBLAS_FILL_MODE_LOWER, dim64, CUDA_C_64F, d_ham.data(), dim64,
+                                  CUDA_R_64F, d_eigenvalues.data(), CUDA_C_64F, d_work.data(), device_workspace_bytes,
+                                  h_work.data(), host_workspace_bytes, d_info.data()),
+                 "cusolverDnXsyevd");
   int info = 0;
   cuda_check(cudaMemcpy(&info, d_info.data(), sizeof(int), cudaMemcpyDeviceToHost), "cudaMemcpy D2H info");
   if (info != 0) {
