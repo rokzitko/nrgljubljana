@@ -2,6 +2,7 @@
 #define _time_mem_hpp_
 
 #include <algorithm>
+#include <cstddef>
 #include <utility>
 #include <chrono>
 #include <map>
@@ -13,6 +14,17 @@
 #include <fmt/format.h>
 
 namespace NRG {
+
+[[nodiscard]] inline auto format_memory_usage(const size_t value) {
+  const auto digits = std::to_string(value);
+  std::string result;
+  result.reserve(digits.size() + (digits.size() - 1) / 3);
+  for (size_t i = 0; i < digits.size(); ++i) {
+    if (i != 0 && (digits.size() - i) % 3 == 0) result += '\'';
+    result += digits[i];
+  }
+  return result;
+}
 
 // Warning: not thread safe!
 class Timing {
@@ -91,7 +103,7 @@ class MemoryStats {
    }
    void report() const {
 #ifdef HAS_MEMORY_USAGE
-     fmt::print("\nPeak usage: {} MB\n", peakusage / 1024); // NOLINT
+     fmt::print("\nPeak usage: {} MB\n", format_memory_usage(static_cast<size_t>(peakusage / 1024))); // NOLINT
 #endif
    }
 };
@@ -103,7 +115,7 @@ class MemTime {
  public:
    void brief_report() const {
 #ifdef HAS_MEMORY_USAGE
-     std::cout << "Memory used: " << long(ms.used() / 1024) << " MB "; // NOLINT
+     std::cout << "Memory used: " << format_memory_usage(static_cast<size_t>(ms.used() / 1024)) << " MB "; // NOLINT
 #endif
      std::cout << "Time elapsed: " << prec3(tm.total_in_seconds()) << " s" << std::endl;
    }

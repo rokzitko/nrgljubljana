@@ -6,6 +6,13 @@
 
 using namespace NRG;
 
+TEST(Time_Mem, FormatMemoryUsage) { // NOLINT
+  EXPECT_EQ(format_memory_usage(0), "0");
+  EXPECT_EQ(format_memory_usage(12), "12");
+  EXPECT_EQ(format_memory_usage(1234), "1'234");
+  EXPECT_EQ(format_memory_usage(12434123), "12'434'123");
+}
+
 TEST(Time_Mem, MemTime) { // NOLINT
   MemTime mt;
   mt.brief_report();

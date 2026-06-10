@@ -150,6 +150,10 @@ template<typename T>
   return checked_lapack_int(selected, fmt::format("{} {} workspace size", routine, name).c_str());
 }
 
+template<typename T, typename I> [[nodiscard]] auto workspace_bytes(const I count) {
+  return static_cast<size_t>(count) * sizeof(T);
+}
+
 [[nodiscard]] inline auto dsyev_min_lwork(const size_t n) {
   if (n == 0) return size_t(1);
   const auto nn = static_cast<std::uint64_t>(n);
@@ -252,7 +256,7 @@ auto diagonalise_dsyev(RM &m, const char jobz = 'V', const bool saveram = false,
   const auto min_lwork = dsyev_min_lwork(dim);
   const auto opt_lwork = checked_workspace_query(WORK0, "dsyev", "LWORK");
   auto LWORK = select_workspace_size<double>("dsyev", "LWORK", min_lwork, opt_lwork, saveram);
-  if (log_workspace) std::cout << "dsyev workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK)=" << min_lwork << " opt(LWORK)=" << opt_lwork << " use(LWORK)=" << LWORK << std::endl;
+  if (log_workspace) std::cout << "dsyev workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK)=" << min_lwork << " opt(LWORK)=" << opt_lwork << " use(LWORK)=" << LWORK << " workspace_bytes=" << format_memory_usage(workspace_bytes<double>(LWORK)) << std::endl;
   std::vector<double> WORK(LWORK);
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, &INFO);
@@ -283,7 +287,7 @@ auto diagonalise_dsyevd(RM &m, const char jobz = 'V', const bool saveram = false
   const auto opt_liwork = checked_workspace_query(static_cast<double>(IWORK0), "dsyevd", "LIWORK");
   LWORK  = select_workspace_size<double>("dsyevd", "LWORK", min_lwork, opt_lwork, saveram);
   LIWORK = select_workspace_size<lapack_int>("dsyevd", "LIWORK", min_liwork, opt_liwork, saveram);
-  if (log_workspace) std::cout << "dsyevd workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LIWORK)=" << min_lwork << "," << min_liwork << " opt(LWORK,LIWORK)=" << opt_lwork << "," << opt_liwork << " use(LWORK,LIWORK)=" << LWORK << "," << LIWORK << std::endl;
+  if (log_workspace) std::cout << "dsyevd workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LIWORK)=" << min_lwork << "," << min_liwork << " opt(LWORK,LIWORK)=" << opt_lwork << "," << opt_liwork << " use(LWORK,LIWORK)=" << LWORK << "," << LIWORK << " workspace_bytes=" << format_memory_usage(workspace_bytes<double>(LWORK) + workspace_bytes<lapack_int>(LIWORK)) << std::endl;
   std::vector<double> WORK(LWORK);
   std::vector<lapack_int> IWORK(LIWORK);
   LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, IWORK.data(), &LIWORK, &INFO);
@@ -345,7 +349,7 @@ auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V', 
   const auto opt_liwork = checked_workspace_query(static_cast<double>(IWORK0), "dsyevr", "LIWORK");
   auto LWORK  = select_workspace_size<double>("dsyevr", "LWORK", min_lwork, opt_lwork, saveram);
   auto LIWORK = select_workspace_size<lapack_int>("dsyevr", "LIWORK", min_liwork, opt_liwork, saveram);
-  if (log_workspace) std::cout << "dsyevr workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LIWORK)=" << min_lwork << "," << min_liwork << " opt(LWORK,LIWORK)=" << opt_lwork << "," << opt_liwork << " use(LWORK,LIWORK)=" << LWORK << "," << LIWORK << std::endl;
+  if (log_workspace) std::cout << "dsyevr workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LIWORK)=" << min_lwork << "," << min_liwork << " opt(LWORK,LIWORK)=" << opt_lwork << "," << opt_liwork << " use(LWORK,LIWORK)=" << LWORK << "," << LIWORK << " workspace_bytes=" << format_memory_usage(workspace_bytes<double>(LWORK) + workspace_bytes<lapack_int>(LIWORK)) << std::endl;
   std::vector<double> WORK(LWORK);
   std::vector<lapack_int> IWORK(LIWORK);
   // Step 2: perform the diagonalisation
@@ -380,7 +384,7 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V', const bool saveram = false,
   const auto min_lwork = zheev_min_lwork(dim);
   const auto opt_lwork = checked_workspace_query(WORK0.real(), "zheev", "LWORK");
   auto LWORK = select_workspace_size<lapack_complex_double>("zheev", "LWORK", min_lwork, opt_lwork, saveram);
-  if (log_workspace) std::cout << "zheev workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,RWORK)=" << min_lwork << "," << RWORKdim << " opt(LWORK)=" << opt_lwork << " use(LWORK,RWORK)=" << LWORK << "," << RWORKdim << std::endl;
+  if (log_workspace) std::cout << "zheev workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,RWORK)=" << min_lwork << "," << RWORKdim << " opt(LWORK)=" << opt_lwork << " use(LWORK,RWORK)=" << LWORK << "," << RWORKdim << " workspace_bytes=" << format_memory_usage(workspace_bytes<lapack_complex_double>(LWORK) + workspace_bytes<double>(RWORKdim)) << std::endl;
   std::vector<lapack_complex_double> WORK(LWORK);
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &INFO);
@@ -416,7 +420,7 @@ auto diagonalise_zheevd(CM &m, const char jobz = 'V', const bool saveram = false
   LWORK  = select_workspace_size<lapack_complex_double>("zheevd", "LWORK", min_lwork, opt_lwork, saveram);
   LRWORK = select_workspace_size<double>("zheevd", "LRWORK", min_lrwork, opt_lrwork, saveram);
   LIWORK = select_workspace_size<lapack_int>("zheevd", "LIWORK", min_liwork, opt_liwork, saveram);
-  if (log_workspace) std::cout << "zheevd workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LRWORK,LIWORK)=" << min_lwork << "," << min_lrwork << "," << min_liwork << " opt(LWORK,LRWORK,LIWORK)=" << opt_lwork << "," << opt_lrwork << "," << opt_liwork << " use(LWORK,LRWORK,LIWORK)=" << LWORK << "," << LRWORK << "," << LIWORK << std::endl;
+  if (log_workspace) std::cout << "zheevd workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LRWORK,LIWORK)=" << min_lwork << "," << min_lrwork << "," << min_liwork << " opt(LWORK,LRWORK,LIWORK)=" << opt_lwork << "," << opt_lrwork << "," << opt_liwork << " use(LWORK,LRWORK,LIWORK)=" << LWORK << "," << LRWORK << "," << LIWORK << " workspace_bytes=" << format_memory_usage(workspace_bytes<lapack_complex_double>(LWORK) + workspace_bytes<double>(LRWORK) + workspace_bytes<lapack_int>(LIWORK)) << std::endl;
   std::vector<lapack_complex_double> WORK(LWORK);
   std::vector<double> RWORK(LRWORK);
   std::vector<lapack_int> IWORK(LIWORK);
@@ -484,7 +488,7 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V', 
   std::vector<double> RWORK(LRWORK);
   auto LIWORK  = select_workspace_size<lapack_int>("zheevr", "LIWORK", min_liwork, opt_liwork, saveram);
   std::vector<lapack_int> IWORK(LIWORK);
-  if (log_workspace) std::cout << "zheevr workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LRWORK,LIWORK)=" << min_lwork << "," << min_lrwork << "," << min_liwork << " opt(LWORK,LRWORK,LIWORK)=" << opt_lwork << "," << opt_lrwork << "," << opt_liwork << " use(LWORK,LRWORK,LIWORK)=" << LWORK << "," << LRWORK << "," << LIWORK << std::endl;
+  if (log_workspace) std::cout << "zheevr workspace dim=" << dim << " jobz=" << jobz << " saveram=" << saveram << " min(LWORK,LRWORK,LIWORK)=" << min_lwork << "," << min_lrwork << "," << min_liwork << " opt(LWORK,LRWORK,LIWORK)=" << opt_lwork << "," << opt_lrwork << "," << opt_liwork << " use(LWORK,LRWORK,LIWORK)=" << LWORK << "," << LRWORK << "," << LIWORK << " workspace_bytes=" << format_memory_usage(workspace_bytes<lapack_complex_double>(LWORK) + workspace_bytes<double>(LRWORK) + workspace_bytes<lapack_int>(LIWORK)) << std::endl;
   // Step 2: perform the diagonalisation
   LAPACK_zheevr(&jobz, &RANGE, &UPLO, &NN, ham, &LDA, &VL, &VU, &IL, &IU, &ABSTOL, &MM, eigenvalues.data(), Z.data(), &LDZ, ISUPPZ.data(), WORK.data(), &LWORK,
                 RWORK.data(), &LRWORK, IWORK.data(), &LIWORK, &INFO);
@@ -518,7 +522,7 @@ auto diagonalise_cuda_dsyevd(RM &m, const char jobz = 'V', const bool log_worksp
   cusolver_check(cusolverDnXsyevd_bufferSize(solver, params, mode, CUBLAS_FILL_MODE_LOWER, dim64, CUDA_R_64F, d_ham.data(), dim64,
                                              CUDA_R_64F, d_eigenvalues.data(), CUDA_R_64F, &device_workspace_bytes, &host_workspace_bytes),
                  "cusolverDnXsyevd_bufferSize");
-  if (log_workspace) std::cout << "cuda_dsyevd workspace dim=" << dim << " jobz=" << jobz << " device_bytes=" << device_workspace_bytes << " host_bytes=" << host_workspace_bytes << std::endl;
+  if (log_workspace) std::cout << "cuda_dsyevd workspace dim=" << dim << " jobz=" << jobz << " device_bytes=" << format_memory_usage(device_workspace_bytes) << " host_bytes=" << format_memory_usage(host_workspace_bytes) << std::endl;
   CudaDeviceBuffer<char> d_work(device_workspace_bytes);
   std::vector<char> h_work(host_workspace_bytes);
   cusolver_check(cusolverDnXsyevd(solver, params, mode, CUBLAS_FILL_MODE_LOWER, dim64, CUDA_R_64F, d_ham.data(), dim64,
@@ -558,7 +562,7 @@ auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V', const bool log_worksp
   cusolver_check(cusolverDnXsyevd_bufferSize(solver, params, mode, CUBLAS_FILL_MODE_LOWER, dim64, CUDA_C_64F, d_ham.data(), dim64,
                                              CUDA_R_64F, d_eigenvalues.data(), CUDA_C_64F, &device_workspace_bytes, &host_workspace_bytes),
                  "cusolverDnXsyevd_bufferSize");
-  if (log_workspace) std::cout << "cuda_zheevd workspace dim=" << dim << " jobz=" << jobz << " device_bytes=" << device_workspace_bytes << " host_bytes=" << host_workspace_bytes << std::endl;
+  if (log_workspace) std::cout << "cuda_zheevd workspace dim=" << dim << " jobz=" << jobz << " device_bytes=" << format_memory_usage(device_workspace_bytes) << " host_bytes=" << format_memory_usage(host_workspace_bytes) << std::endl;
   CudaDeviceBuffer<char> d_work(device_workspace_bytes);
   std::vector<char> h_work(host_workspace_bytes);
   cusolver_check(cusolverDnXsyevd(solver, params, mode, CUBLAS_FILL_MODE_LOWER, dim64, CUDA_C_64F, d_ham.data(), dim64,
