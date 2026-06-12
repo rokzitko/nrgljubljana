@@ -319,8 +319,10 @@ If[GENERATEBASIS == True,
   symmetry (for example in ONE/COM model). *)
   If[ MAKEPHONON =!= Null,
     MyVPrint[1, "MAKEPHONON=", MAKEPHONON];
-    If[MAKEPHONON == 1, cutoffs = {nph}];
-    If[MAKEPHONON == 2, cutoffs = {nph, nph}];
+    If[!ValueQ[cutoffs],
+      If[MAKEPHONON == 1, cutoffs = {nph}];
+      If[MAKEPHONON == 2, cutoffs = {nph, nph}];
+    ];
     MyVPrint[1, "Adding phonons, cutoffs=", cutoffs];
 
     bz = transformtoPH[bz, cutoffs];
@@ -332,8 +334,10 @@ If[GENERATEBASIS == True,
 
   If[ MAKEFLOQUET =!= Null,
     MyVPrint[1, "MAKEFLOQUET=", MAKEFLOQUET];
-    If[MAKEFLOQUET == 1, cutoffs = {ncut}];
-    If[MAKEFLOQUET == 2, cutoffs = {ncut, ncut}];
+    If[!ValueQ[cutoffs],
+      If[MAKEFLOQUET == 1, cutoffs = {ncut}];
+      If[MAKEFLOQUET == 2, cutoffs = {ncut, ncut}];
+    ];
     MyVPrint[1, "Adding Floquet modes, cutoffs=", cutoffs];
 
     bz = transformtoFL[bz, cutoffs];
@@ -568,8 +572,10 @@ If[GENERATEBASIS == True,
   (* Add phonons in addition to existing ket structure as a tensor product *)
   If[ MAKEPHONONTENSOR =!= Null,
     MyVPrint[1, "MAKEPHONONTENSOR=", MAKEPHONONTENSOR];
-    If[MAKEPHONONTENSOR == 1, cutoffs = {nph}];
-    If[MAKEPHONONTENSOR == 2, cutoffs = {nph, nph}];
+    If[!ValueQ[cutoffs],
+      If[MAKEPHONONTENSOR == 1, cutoffs = {nph}];
+      If[MAKEPHONONTENSOR == 2, cutoffs = {nph, nph}];
+    ];
     MyVPrint[1, "Adding phonons, cutoffs=", cutoffs];
 
     bz = transformtoPHtensor[bz, cutoffs];
