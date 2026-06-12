@@ -54,6 +54,21 @@ TEST(Diag, copy_results) {
   EXPECT_EQ(res.getdim(), 2);
 }
 
+TEST(Diag, sort_eigenpairs_by_value) {
+  std::vector<double> val { 3.0, 1.0, 2.0 };
+  std::vector<double> vec { 30.0, 31.0, 10.0, 11.0, 20.0, 21.0 };
+  sort_eigenpairs_by_value(val, data(vec), 'V', 2, 3);
+  EXPECT_DOUBLE_EQ(val[0], 1.0);
+  EXPECT_DOUBLE_EQ(val[1], 2.0);
+  EXPECT_DOUBLE_EQ(val[2], 3.0);
+  EXPECT_DOUBLE_EQ(vec[0], 10.0);
+  EXPECT_DOUBLE_EQ(vec[1], 11.0);
+  EXPECT_DOUBLE_EQ(vec[2], 20.0);
+  EXPECT_DOUBLE_EQ(vec[3], 21.0);
+  EXPECT_DOUBLE_EQ(vec[4], 30.0);
+  EXPECT_DOUBLE_EQ(vec[5], 31.0);
+}
+
 TEST(Diag, check_is_matrix_upper) {
   Matrix_traits<double> m(2,2);
   m(0,0) = m(0,1) = m(1,1) = 1.0;
@@ -337,6 +352,7 @@ TEST(Diag, cuda_zheevd) {
   const auto res = diagonalise_cuda_zheevd(m);
   EXPECT_EQ(res.getnrcomputed(), 2);
   EXPECT_EQ(res.getdim(), 2);
+  EXPECT_LE(res.val[0], res.val[1]);
   EXPECT_NEAR(res.val[0], -1.0, 1e-12);
   EXPECT_NEAR(res.val[1], +1.0, 1e-12);
   EXPECT_NEAR(std::abs(res.vec(0,0)), sq2, 1e-12);

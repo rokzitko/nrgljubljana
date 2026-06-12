@@ -5,6 +5,7 @@
 #define _diag_hpp_
 
 #include <type_traits> // is_same_v
+#include <algorithm>
 #include <complex>
 #include <vector>
 #include <memory>
@@ -15,6 +16,7 @@
 #include <string>
 #include <cmath>
 #include <cstdint>
+#include <numeric>
 
 #include "traits.hpp"
 #include "params.hpp"
@@ -225,6 +227,27 @@ void copy_vec(U* eigenvectors, MM & diagvectors, const size_t dim, const size_t 
   for (const auto r : range0(M))
     for (const auto j : range0(dim)) diagvectors(r, j) = eigenvectors[dim * r + j];
   // this works correctly for both row-order and column-order storage types (diagvectors)
+}
+
+template<vector V, typename U>
+void sort_eigenpairs_by_value(V &eigenvalues, U *eigenvectors, const char jobz, const size_t dim, const size_t M) {
+  my_assert(eigenvalues.size() >= M);
+  if (M < 2) return;
+  std::vector<size_t> p(M);
+  std::iota(p.begin(), p.end(), 0);
+  std::stable_sort(p.begin(), p.end(), [&eigenvalues](const auto a, const auto b) { return eigenvalues[a] < eigenvalues[b]; });
+  const auto already_sorted = ranges::equal(p, range0(M));
+  if (already_sorted) return;
+
+  std::vector<typename V::value_type> eigenvalues_sorted(M);
+  for (const auto r : range0(M)) eigenvalues_sorted[r] = std::move(eigenvalues[p[r]]);
+  std::move(eigenvalues_sorted.begin(), eigenvalues_sorted.end(), eigenvalues.begin());
+
+  if (jobz != 'V') return;
+  std::vector<U> eigenvectors_sorted(M * dim);
+  for (const auto r : range0(M))
+    for (const auto j : range0(dim)) eigenvectors_sorted[dim * r + j] = std::move(eigenvectors[dim * p[r] + j]);
+  std::move(eigenvectors_sorted.begin(), eigenvectors_sorted.end(), eigenvectors);
 }
 
 template<scalar S, vector V, typename U>
@@ -580,6 +603,7 @@ auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V', const bool log_worksp
     cuda_check(cudaMemcpy(h_ham.data(), d_ham.data(), elements * sizeof(cuDoubleComplex), cudaMemcpyDeviceToHost), "cudaMemcpy D2H eigenvectors");
     for (const auto i : range0(elements)) ham[i] = std::complex<double>(cuCreal(h_ham[i]), cuCimag(h_ham[i]));
   }
+  sort_eigenpairs_by_value(eigenvalues, ham, jobz, dim, dim);
   return copy_results<std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
 }
 #endif
