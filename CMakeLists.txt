@@ -281,7 +281,7 @@ else()
   # fmt
   # Check if fmt is already a target; important when using as an outside library in nrgljubljana_interface
   if (NOT TARGET fmt::fmt)
-    CPMAddPackage("gh:fmtlib/fmt#11.2.0")
+    CPMAddPackage("gh:fmtlib/fmt#12.2.0")
   endif()
 
   # range-v3
