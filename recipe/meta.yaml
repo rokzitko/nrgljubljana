@@ -44,7 +44,7 @@ requirements:
     - gsl
     - gtest 1.15.2
     - hdf5
-    - highfive 3.1.0
+    - highfive
     - libboost-devel
     - libboost-mpi
     - llvm-openmp  # [linux or osx]
