@@ -28,7 +28,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2026.05";
+VERSION = "2026.06";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
@@ -1401,7 +1401,7 @@ Module[{t, cp, i, mat, opfnsub, op = ReleaseHold[opinput]},
       ];
     ];
     If[GENOPS,
-      MyPrint["Generating f table."];
+      MyPrint["Generating f table. op=", op, " cp=", cp];
       mat = Expand @ ireducMatrixSpeedy[SYMTYPE, op, cp, optional];
       AppendTo[opdata, {cp, mat}];
       MyPut[mat, opfnsub, option["GENERATE_TEMPLATE"]];
@@ -1752,8 +1752,14 @@ Flatten2[l_List] := Flatten[l, 2];
 Flatten3[l_List] := Flatten[l, 3];
 
 (* The last operator f on the Wilson chain. ch=0,1,2 *)
-lastf[ch_] := If[Ninit == 0, f[ch], f[ch, Ninit]];
+(* This is used to generate the tables in data file to initialize the NRG calculation. *)
+(* lastf[] can be overridden in the model defintion; the definition below is used only if no
+   prior definition exists. *)
+If[DownValues[lastf] === {},
+  lastf[ch_] := If[Ninit == 0, f[ch], f[ch, Ninit]];
+];
 
+MyPrint[DownValues[lastf]];
 
 (* For U1, we need to distinguish between
    spin-up and spin-down matrices, since we can't simply take
