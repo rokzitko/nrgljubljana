@@ -287,7 +287,7 @@ template <typename T, typename S>
 void perform_sort_by_c(std::vector<T>& c,
                        std::vector<T>& v,
                        std::vector<T>& corrected,
-                       Eigen::Matrix<S, -1, -1, Eigen::RowMajor>& m) {
+                       EigenMatrix<S>& m) {
   const std::size_t n = c.size();
   assert(v.size() == n);
   assert(corrected.size() == n);
@@ -312,7 +312,7 @@ void perform_sort_by_c(std::vector<T>& c,
     corrected_sorted.push_back(std::move(corrected[p[i]]));
   }
   // Apply permutation to rows of m
-  Eigen::Matrix<S, -1, -1, Eigen::RowMajor> m_sorted(m.rows(), m.cols());
+  EigenMatrix<S> m_sorted(m.rows(), m.cols());
   for (std::size_t i = 0; i < n; ++i)
     m_sorted.row(static_cast<Eigen::Index>(i)) = m.row(static_cast<Eigen::Index>(p[i]));
   c = std::move(c_sorted);

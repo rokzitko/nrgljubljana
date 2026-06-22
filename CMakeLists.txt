@@ -82,6 +82,15 @@ if(Build_Tests AND NOT IS_SUBPROJECT)
   set(NRGLJUBLJANA_BUILD_TESTS_ENABLED ON)
 endif()
 
+set(NRGLJUBLJANA_EIGEN_MIN_VERSION 3.4.0)
+macro(nrgljubljana_check_eigen_version)
+  if(DEFINED Eigen3_VERSION AND Eigen3_VERSION VERSION_LESS ${NRGLJUBLJANA_EIGEN_MIN_VERSION})
+    message(FATAL_ERROR "Eigen >= ${NRGLJUBLJANA_EIGEN_MIN_VERSION} is required, found ${Eigen3_VERSION}")
+  elseif(DEFINED EIGEN3_VERSION_STRING AND EIGEN3_VERSION_STRING VERSION_LESS ${NRGLJUBLJANA_EIGEN_MIN_VERSION})
+    message(FATAL_ERROR "Eigen >= ${NRGLJUBLJANA_EIGEN_MIN_VERSION} is required, found ${EIGEN3_VERSION_STRING}")
+  endif()
+endmacro()
+
 set(NRGLJUBLJANA_NEEDS_OPENMP_RUNTIME ${NRGLJUBLJANA_ENABLE_APP_OPENMP})
 set(NRGLJUBLJANA_MKL_REQUIRES_OPENMP OFF)
 
@@ -245,7 +254,8 @@ if(NRGLJUBLJANA_USE_SYSTEM_DEPS)
     endif()
   endif()
 
-  find_package(Eigen3 3.4 CONFIG REQUIRED)
+  find_package(Eigen3 CONFIG REQUIRED)
+  nrgljubljana_check_eigen_version()
   set(HIGHFIVE_FIND_HDF5 Off)
   find_package(HighFive CONFIG REQUIRED)
   find_package(fmt 11 CONFIG REQUIRED)
@@ -258,17 +268,21 @@ else()
     CPMAddPackage("gh:google/googletest#v1.15.2")
   endif()
 
-  # Eigen, tries finding in system first
-  CPMFindPackage(
-    NAME Eigen3
-    GITLAB_REPOSITORY libeigen/eigen
-    VERSION 3.4.0
-    GIT_TAG 3.4.0
-    OPTIONS
-      "BUILD_TESTING OFF" # Disable tests for Eigen
-      "EIGEN_BUILD_TESTING OFF"
-      "EIGEN_BUILD_CMAKE_PACKAGE ON"
-  )
+  # Eigen, accept any compatible system package and only fall back to the bundled version.
+  find_package(Eigen3 CONFIG QUIET)
+  if(TARGET Eigen3::Eigen)
+    nrgljubljana_check_eigen_version()
+  else()
+    CPMAddPackage(
+      NAME Eigen3
+      GITLAB_REPOSITORY libeigen/eigen
+      GIT_TAG 3.4.0
+      OPTIONS
+        "BUILD_TESTING OFF" # Disable tests for Eigen
+        "EIGEN_BUILD_TESTING OFF"
+        "EIGEN_BUILD_CMAKE_PACKAGE ON"
+    )
+  endif()
 
   # High five library
   CPMAddPackage(

@@ -42,9 +42,12 @@ template<scalar S> S * data(EigenMatrix<S> &m) {
 
 template <scalar T>
 void save(boost::archive::binary_oarchive &oa, const EigenMatrix<T> &m) {
-  oa << size1(m) << size2(m);
-  for (const auto row : m.rowwise())
-    oa << row;
+  const auto rows = size1(m);
+  const auto cols = size2(m);
+  oa << rows << cols;
+  for (const auto i : range0(rows))
+    for (const auto j : range0(cols))
+      oa << m(i, j);
 }
 
 template <scalar T>
@@ -53,7 +56,8 @@ auto load_Eigen(boost::archive::binary_iarchive &ia) {
   const auto isize2 = read_one<size_t>(ia);
   auto m = EigenMatrix<T>(isize1, isize2);
   for (const auto i : range0(isize1))
-    m.row(i) = read_one<EigenMatrix<T>>(ia);
+    for (const auto j : range0(isize2))
+      m(i, j) = read_one<T>(ia);
   return m;
 }
 
@@ -135,13 +139,13 @@ void rotate_diagonal(EM &M, const t_coef factor, const U_type &U, const EM &O) {
 }
 
 template<scalar S>
-Eigen::Block<const EigenMatrix<S>> submatrix_const(const EigenMatrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+auto submatrix_const(const EigenMatrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }
 
 template<scalar S>
-Eigen::Block<EigenMatrix<S>> submatrix(EigenMatrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
+auto submatrix(EigenMatrix<S> &M, const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2)
 {
   return M.block(r1.first, r2.first, r1.second - r1.first, r2.second - r2.first);
 }

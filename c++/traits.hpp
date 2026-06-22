@@ -8,8 +8,6 @@
 #include <complex>
 #include <type_traits> // is_same_v, is_floating_point_v
 
-#include <boost/serialization/vector.hpp> // for the plugin!
-#define EIGEN_DENSEBASE_PLUGIN "EigenBoostSerialization.h"
 #define EIGEN_USE_BLAS
 #include <Eigen/Dense>
 
@@ -23,12 +21,8 @@ template <typename T> concept scalar = floating_point<T> || is_complex<T>::value
 template <scalar S> using EigenMatrix = Eigen::Matrix<S, -1, -1, Eigen::RowMajor>;
 template <scalar S> using EigenVector = Eigen::Matrix<S, -1, 1>;
 template <scalar S> constexpr auto is_row_ordered([[maybe_unused]] const EigenMatrix<S> &m) { return true; }
-template <scalar S> size_t size1(const EigenMatrix<S> &m) { return m.rows(); } // keep size_t here!
-template <scalar S> size_t size2(const EigenMatrix<S> &m) { return m.cols(); }
-template <scalar S> auto size1(const Eigen::Block<EigenMatrix<S>> &m) { return m.rows(); }
-template <scalar S> auto size2(const Eigen::Block<EigenMatrix<S>> &m) { return m.cols(); }
-template <scalar S> auto size1(const Eigen::Block<const EigenMatrix<S>> &m) { return m.rows(); }
-template <scalar S> auto size2(const Eigen::Block<const EigenMatrix<S>> &m) { return m.cols(); }
+template <typename Derived> size_t size1(const Eigen::MatrixBase<Derived> &m) { return static_cast<size_t>(m.rows()); }
+template <typename Derived> size_t size2(const Eigen::MatrixBase<Derived> &m) { return static_cast<size_t>(m.cols()); }
 
 template <typename T>
   concept matrix = requires(T a, T b, size_t i, size_t j) {
@@ -43,13 +37,12 @@ template <typename T>
 template <typename T> concept real_matrix = matrix<T> && floating_point<typename T::value_type>;
 template <typename T> concept complex_matrix = matrix<T> && is_complex<typename T::value_type>::value;
 
-template <typename T> struct is_Eigen_object : std::false_type {};
-template <scalar S> struct is_Eigen_object<EigenMatrix<S>> : std::true_type {};
-template <scalar S> struct is_Eigen_object<Eigen::Block<const EigenMatrix<S>>> : std::true_type {};
+template <typename T>
+inline constexpr bool is_Eigen_object_v = std::is_base_of_v<Eigen::MatrixBase<std::remove_cvref_t<T>>, std::remove_cvref_t<T>>;
 
-template <typename T> concept Eigen_matrix = matrix<T> && is_Eigen_object<T>::value;
-template <typename T> concept real_Eigen_matrix = real_matrix<T> && is_Eigen_object<T>::value;
-template <typename T> concept complex_Eigen_matrix = complex_matrix<T> && is_Eigen_object<T>::value;
+template <typename T> concept Eigen_matrix = matrix<T> && is_Eigen_object_v<T>;
+template <typename T> concept real_Eigen_matrix = real_matrix<T> && is_Eigen_object_v<T>;
+template <typename T> concept complex_Eigen_matrix = complex_matrix<T> && is_Eigen_object_v<T>;
 
 template <typename T>
   concept vector = requires(T a, size_t i) {
