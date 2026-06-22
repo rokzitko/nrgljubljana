@@ -8,7 +8,6 @@
 #include <complex>
 #include <type_traits> // is_same_v, is_floating_point_v
 
-#define EIGEN_USE_BLAS
 #include <Eigen/Dense>
 
 namespace NRG {
