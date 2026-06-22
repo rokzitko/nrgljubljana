@@ -31,6 +31,10 @@ jobs:
             label: macos
             variants: "{blas_impl: ['accelerate'], nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}"
             openblas_coretype: ""
+          - os: macos-14
+            label: macos-eigen34
+            variants: "{blas_impl: ['accelerate'], eigen: ['3.4.*'], nrgljubljana_build_tests: ['ON'], nrgljubljana_build_jobs: ['2'], nrgljubljana_test_jobs: ['2']}"
+            openblas_coretype: ""
 
     name: conda build (${{ matrix.label }})
     runs-on: ${{ matrix.os }}

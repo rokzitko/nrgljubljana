@@ -54,17 +54,17 @@ using lapack_complex_double = std::complex<double>;
 
 extern "C" {
 
-int LAPACK_dgemm(const char *transa, const char *transb, const lapack_int *m, const lapack_int *n, const lapack_int *k,
-                 const double *alpha, const double *a, const lapack_int *lda, const double *b, const lapack_int *ldb,
-                 const double *beta, double *c, const lapack_int *ldc)
+void LAPACK_dgemm(const char *transa, const char *transb, const lapack_int *m, const lapack_int *n, const lapack_int *k,
+                  const double *alpha, const double *a, const lapack_int *lda, const double *b, const lapack_int *ldb,
+                  const double *beta, double *c, const lapack_int *ldc)
 #if !defined(__APPLE__)
   __asm__(NRG_BLAS_ASM_SYMBOL(dgemm))
 #endif
   ;
 
-int LAPACK_zgemm(const char *transa, const char *transb, const lapack_int *m, const lapack_int *n, const lapack_int *k,
-                 const double *alpha, const double *a, const lapack_int *lda, const double *b, const lapack_int *ldb,
-                 const double *beta, double *c, const lapack_int *ldc)
+void LAPACK_zgemm(const char *transa, const char *transb, const lapack_int *m, const lapack_int *n, const lapack_int *k,
+                  const double *alpha, const double *a, const lapack_int *lda, const double *b, const lapack_int *ldb,
+                  const double *beta, double *c, const lapack_int *ldc)
 #if !defined(__APPLE__)
   __asm__(NRG_BLAS_ASM_SYMBOL(zgemm))
 #endif
