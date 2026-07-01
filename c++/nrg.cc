@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 #include <cstdlib>
+#include <boost/mpi/collectives.hpp>
 #if defined(NRGLJUBLJANA_ENABLE_FP_TRAPS) && NRGLJUBLJANA_ENABLE_FP_TRAPS
 #include <cstdio>
 #include <fenv.h>
@@ -198,13 +199,14 @@ void enable_fp_traps()
 
 }
 
-inline void help(int argc, char **argv, std::string help_message)
+inline auto help(int argc, char **argv, const std::string &help_message) -> bool
 {
   std::vector<std::string> args(argv+1, argv+argc); // NOLINT
   if (args.size() >= 1 && args[0] == "-h") {
     std::cout << help_message << std::endl;
-    exit(EXIT_SUCCESS);
+    return true;
   }
+  return false;
 }
 
 auto set_workdir(int argc, char **argv) { // not inline!
@@ -222,16 +224,25 @@ int main(int argc, char **argv) {
   if (mpiw.rank() == 0) print_nrg_about_message();
   enable_fp_traps();
   if (!prepare_parallel_runtime(std::cerr, mpiw.rank() == 0)) return 1;
+
+  constexpr int startup_continue = -1;
+  int startup_status = startup_continue;
   if (mpiw.rank() == 0) {
-    help(argc, argv, "Usage: nrg [-h] [-w workdir]");
-    if (!file_exists("data")) {
+    if (help(argc, argv, "Usage: nrg [-h] [-w workdir]")) {
+      startup_status = EXIT_SUCCESS;
+    } else if (!file_exists("data")) {
       std::cout << "Input file 'data' does not exist. Terminating." << std::endl;
-      return 1;
-    }
-    if (!file_exists("param")) {
+      startup_status = EXIT_FAILURE;
+    } else if (!file_exists("param")) {
       std::cout << "Input file 'param' does not exist. Terminating." << std::endl;
-      return 1;
+      startup_status = EXIT_FAILURE;
     }
+  }
+
+  boost::mpi::broadcast(mpiw, startup_status, 0);
+  if (startup_status != startup_continue) return startup_status;
+
+  if (mpiw.rank() == 0) {
     std::cout << "MPI job running on " << mpiw.size() << " processors." << std::endl << std::endl;
     report_openMP(std::cout, mpiw.size());
     auto workdir = set_workdir(argc, argv);
