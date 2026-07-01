@@ -314,14 +314,8 @@ auto diagonalise_dsyevd(RM &m, const char jobz = 'V', const bool saveram = false
   std::vector<double> WORK(LWORK);
   std::vector<lapack_int> IWORK(LIWORK);
   LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, IWORK.data(), &LIWORK, &INFO);
-  if (INFO != 0) {
-    // dsyevd sometimes fails to converge (INFO>0). In such cases we do not trigger
-    // an error but return 0, to permit error recovery.
-    if (INFO > 0)
-      return RawEigen<double>();
-    else
-      throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  }
+  if (INFO != 0)
+    throw std::runtime_error(fmt::format("dsyevd failed. INFO={}. LAPACK may have overwritten the input matrix; not retrying fallback.", INFO));
   return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
 }
 
@@ -448,12 +442,8 @@ auto diagonalise_zheevd(CM &m, const char jobz = 'V', const bool saveram = false
   std::vector<double> RWORK(LRWORK);
   std::vector<lapack_int> IWORK(LIWORK);
   LAPACK_zheevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &LRWORK, IWORK.data(), &LIWORK, &INFO);
-  if (INFO != 0) {
-    if (INFO > 0)
-      return RawEigen<std::complex<double>>();
-    else
-      throw std::runtime_error(fmt::format("zheevd failed. INFO={}", INFO));
-  }
+  if (INFO != 0)
+    throw std::runtime_error(fmt::format("zheevd failed. INFO={}. LAPACK may have overwritten the input matrix; not retrying fallback.", INFO));
   return copy_results<std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
 }
 
@@ -623,10 +613,6 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
     if (DP.diag == "dsyev"s) d = diagonalise_dsyev(m, 'V', DP.saveram, log_workspace);
     if (DP.diag == "dsyevd"s  || DP.diag == "default"s) {
       d = diagonalise_dsyevd(m, 'V', DP.saveram, log_workspace);
-      if (d.getnrcomputed() == 0) {
-        std::cout << "dsyevd failed, falling back to dsyev" << std::endl;
-        d = diagonalise_dsyev(m, 'V', DP.saveram, log_workspace);
-      }
     }
     if (DP.diag == "dsyevr"s) d = diagonalise_dsyevr(m, DP.diagratio, 'V', DP.saveram, log_workspace);
     if (DP.diag == "cuda"s || DP.diag == "cuda_dsyevd"s) {
@@ -646,10 +632,6 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
     if (DP.diag == "zheev"s) d = diagonalise_zheev(m, 'V', DP.saveram, log_workspace);
     if (DP.diag == "zheevd"s || DP.diag == "default"s) {
       d = diagonalise_zheevd(m, 'V', DP.saveram, log_workspace);
-      if (d.getnrcomputed() == 0) {
-        std::cout << "zheevd failed, falling back to zheev" << std::endl;
-        d = diagonalise_zheev(m, 'V', DP.saveram, log_workspace);
-      }
     }
     if (DP.diag == "zheevr"s) d = diagonalise_zheevr(m, DP.diagratio, 'V', DP.saveram, log_workspace);
     if (DP.diag == "cuda"s || DP.diag == "cuda_zheevd"s) {
