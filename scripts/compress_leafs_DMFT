@@ -24,8 +24,10 @@ for $a (keys %seen) {
     my $here = `pwd`;
     chomp($here);
     print "Compressing $target in $here\n";
-    system "tar zcvf \"$target.tgz\" \"$target\"";
-    system "rm -rv \"$target\"/";
+    system("tar", "zcvf", "$target.tgz", $target) == 0
+        or die "tar failed for $target in $here\n";
+    system("rm", "-rv", "$target/") == 0
+        or die "rm failed for $target in $here\n";
 #    exit(1);
 }
 
