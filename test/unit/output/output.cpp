@@ -53,6 +53,16 @@ TEST(Output, StatsH5SaveStoresAbsoluteGroundStateEnergy) { // NOLINT
   std::remove("stats.h5");
 }
 
+TEST(Output, StatsFdmAccumulatorsUseFdmPrecision) { // NOLINT
+  Params P;
+  Stats<double> stats(P, {}, 0.0);
+
+  ASSERT_FALSE(stats.ZnDG.empty());
+  ASSERT_FALSE(stats.ZnDN.empty());
+  EXPECT_GE(mpf_get_prec(stats.ZnDG[0]), FDM_MPF_PRECISION);
+  EXPECT_GE(mpf_get_prec(stats.ZnDN[0]), FDM_MPF_PRECISION);
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS(); // NOLINT

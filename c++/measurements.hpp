@@ -10,6 +10,7 @@
 #include "store.hpp"
 #include "time_mem.hpp"
 #include "oprecalc.hpp"
+#include "mp.hpp"
 
 namespace NRG {
    
@@ -58,7 +59,7 @@ auto grand_canonical_Z(const double factor, const DiagInfo<S> &diag, MF mult) {
 template<scalar S>
 void calc_ZnD(const ThermoStore<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const Params &P) {
   const auto T = P.T;
-  mpf_set_default_prec(400); // this is the number of bits, not decimal digits!
+  mpf_set_default_prec(FDM_MPF_PRECISION);
   for (const auto N : store.Nall()) {
     my_mpf ZnDG, ZnDN; // arbitrary-precision accumulators to avoid precision loss
     mpf_set_d(ZnDG, 0.0);
