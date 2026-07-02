@@ -10,7 +10,7 @@
 using namespace std::string_literals;
 using namespace NRG;
 
-TEST(Output, AnnotatedHandlesEmptyDiag) { // NOLINT
+TEST(OutputFormat, AnnotatedHandlesEmptyDiag) { // NOLINT
   Params P;
   P.dumpannotated = 1;
   Stats<double> stats(P, {}, 0.0);
@@ -24,13 +24,13 @@ TEST(Output, AnnotatedHandlesEmptyDiag) { // NOLINT
   std::remove(filename.c_str());
 }
 
-TEST(Output, ExpvOutputThrowsOnBadPath) { // NOLINT
+TEST(OutputFormat, ExpvOutputThrowsOnBadPath) { // NOLINT
   Params P;
   std::map<std::string, double> values;
   EXPECT_THROW(ExpvOutput<double>("/no/such/dir/custom.dat", values, {}, P), std::runtime_error);
 }
 
-TEST(Output, StatsH5SaveStoresAbsoluteGroundStateEnergy) { // NOLINT
+TEST(OutputFormat, StatsH5SaveStoresAbsoluteGroundStateEnergy) { // NOLINT
   Params P;
   P.Nmax = 2;
 
@@ -53,7 +53,7 @@ TEST(Output, StatsH5SaveStoresAbsoluteGroundStateEnergy) { // NOLINT
   std::remove("stats.h5");
 }
 
-TEST(Output, StatsFdmAccumulatorsUseFdmPrecision) { // NOLINT
+TEST(OutputFormat, StatsFdmAccumulatorsUseFdmPrecision) { // NOLINT
   Params P;
   Stats<double> stats(P, {}, 0.0);
 
