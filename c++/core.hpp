@@ -93,8 +93,12 @@ auto hamiltonian(const Step &step, const Invar &I, const Opch<S> &opch, const Co
   }
   Sym->make_matrix(h, step, rm, I, anc, opch, coef);  // Symmetry-type-specific matrix initialization steps
   if (P.logletter('m')) dump_matrix(h);
-  if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5ham)
+  if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5ham) {
+#if NRG_ENABLE_APP_OPENMP
+#pragma omp critical(nrgljubljana_h5raw)
+#endif
     h5_dump_matrix(*output.h5raw, std::to_string(step.ndx()+1) + "/hamiltonian/" + I.name() + "/matrix", h);
+  }
   return h;
 }
 
