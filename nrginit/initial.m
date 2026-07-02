@@ -1666,7 +1666,7 @@ mtGlobalOp[opname_String, opinput_] :=        mtOp[opname, opinput, "g",  single
 mtDoubletOp[opname_String, opinput_] :=       mtOp[opname, opinput, "d",  ireducTable];
 mtDoubletOp[opname_String, opinput_, opt_] := mtOp[opname, opinput, "d",  ireducTable[#1,opt]& ];
 mtTripletOp[opname_String, opinput_] :=       mtOp[opname, opinput, "t",  ireducsigmaTable];
-mtOrbTripletOp[opname_String, opinput_] :=    mtOp[opname, opinput, "ot", ireducorbsigmaTable[op]];
+mtOrbTripletOp[opname_String, opinput_] :=    mtOp[opname, opinput, "ot", ireducorbsigmaTable];
 
 (************* DIAGONALIZATION *************)
 
