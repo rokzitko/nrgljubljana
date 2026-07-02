@@ -27,6 +27,24 @@ TEST(NRGChainParser, skips_blank_lines) { // NOLINT
   std::remove(filename);
 }
 
+TEST(NRGChainParser, trims_keys_and_values) { // NOLINT
+  const auto filename = "nrgchain_whitespace.param";
+  {
+    ofstream file(filename);
+    file << "[param]\nLambda = 2.0\nadapt = true\nband = custom.dat\nNmax\t=\t8\n";
+  }
+
+  params.clear();
+  parser(filename);
+
+  EXPECT_EQ(P("Lambda", 0.0), 2.0);
+  EXPECT_TRUE(Pbool("adapt", false));
+  EXPECT_EQ(Pstr("band", ""), "custom.dat");
+  EXPECT_EQ(Pint("Nmax", 0), 8);
+
+  std::remove(filename);
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS(); // NOLINT
