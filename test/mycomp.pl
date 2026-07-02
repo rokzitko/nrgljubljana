@@ -56,18 +56,15 @@ sub trim($) {
 # Do so repeatedly, until a non-comment line is read.
 sub getline($) {
     my $F = shift;
-    my $line;
-    do {
-        $line = <$F>;
+
+    while (defined(my $line = <$F>)) {
         chomp($line);
         $line = trim($line);
-        $_ = $line;
-    } until (!/^#/ || eof($F));
-
-    if (eof($F)) {
-        return "END OF FILE REACHED\n";
+        next if $line =~ /^#/;
+        return $line;
     }
-    return $line;
+
+    return undef;
 }
 
 # Is argument numeric? (C float)
@@ -84,10 +81,19 @@ my $cnt = 0; # line counter
 my $cntmatch = 0; # identical matching counter
 my $cntnumeric = 0; # numerical matching counter
 
-while (!(eof($F1) || eof($F2))) { 
+while (1) {
+    my $line1 = getline($F1);
+    my $line2 = getline($F2);
+
+    last if !defined($line1) && !defined($line2);
+
+    if (!defined($line1) || !defined($line2)) {
+        print "File lengths don't match.\n" if $verbose >= 2;
+        $error++;
+        last;
+    }
+
     $cnt++;
-    chomp(my $line1 = getline($F1));
-    chomp(my $line2 = getline($F2));
     $line1 =~ s/^\s//;
     $line2 =~ s/^\s//;
     $line1 =~ s/\s$//;
