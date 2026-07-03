@@ -170,13 +170,17 @@ void prepare_floquet_for_truncation(const Step &step, Operators<S> &operators, S
     diag.report(true);
 }
 
+inline double initial_diagratio_for_step(const Step &step, const Params &P) {
+  return step.last() && P.keep_all_states_in_last_step() ? 1.0 : double(P.diagratio);
+}
+
 template<scalar S>
 auto do_diag(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
              Output<S> &output, const TaskList &tasklist, const SubspaceStructure &substruct, Oprecalc<S> &oprecalc,
              const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
   step.infostring();
   Sym->show_coefficients(step, coef);
-  double diagratio = P.diagratio; // non-const
+  double diagratio = initial_diagratio_for_step(step, P); // non-const
   DiagInfo<S> diag;
   while (true) {
     try {
