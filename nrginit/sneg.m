@@ -31,7 +31,7 @@
 
 BeginPackage["Sneg`"];
 
-snegidstring = "sneg.m 2.0.13 Feb 2026";
+snegidstring = "sneg.m 2.0.22 Jul 2026";
 snegcopyright = "Copyright (C) 2002-2026 Rok Zitko";
 
 $SnegVersion = Module[{pos, p1, p2},
@@ -426,10 +426,12 @@ spin projection quantum numbers (Q,S_z) in occupation number representation.",
 "qszbasis"];
 UsageWithMore[qsbasis,
 "qsbasis[{ops}] returns the basis with well defined charge and
-total spin quantum numbers (Q,S) in creation operator representation."];
+total spin quantum numbers (Q,S) in creation operator representation.
+Operators ops must be spin-1/2 fermion operators."];
 UsageWithMore[qsbasisvc,
 "qsbasisvc[{ops}] returns the basis with well defined charge and
-total spin quantum numbers (Q,S) in occupation number representation."];
+total spin quantum numbers (Q,S) in occupation number representation.
+Operators ops must be spin-1/2 fermion operators."];
 UsageWithMore[zeroonvac,
 "zeroonvac[expr] drops vacuum-annihilating parts of expression expr."];
 UsageWithMore[VACUUM,
@@ -885,12 +887,12 @@ snegrealconstants[l__] := Scan[
    addto[listrealconstants, #];
 }&, {l}];
 
-snegrealfunctions[l__] := Scan[
-{
-  snegnonopQ[#] ^= True;
-  Conjugate[#[a___]] ^= #[a];
-  isnumericQ[#[___]] := True;
-}&, {l}];
+flagrealfunction[x_] := (
+  snegnonopQ[x] ^= True;
+  Conjugate[x[args___]] ^= x[args];
+  isnumericQ[x[___]] := True;
+);
+snegrealfunctions[l__] := Scan[flagrealfunction, {l}];
 
 snegpositiveconstants[l__] := Scan[
 {  snegnonopQ[#] ^= True;
@@ -1217,20 +1219,24 @@ commute; bosonic and fermionic operators are assumed to commute. *)
 (* Creation operators always moved to the left *)
 
 nc[a___, x1:op1_?fermionQ[i1_,___], x2:op2_?fermionQ[i2_,___], b___] /;
-  ( (op1 =!= op2) && (i1 == AN && i2 == CR) ) := -nc[a, x2, x1, b];
+  ( (op1 =!= op2) && ordering[op1] =!= NONE && ordering[op2] =!= NONE &&
+    (i1 == AN && i2 == CR) ) := -nc[a, x2, x1, b];
 
 nc[a___, x1:op1_?bosonQ[i1_,___], x2:op2_?bosonQ[i2_,___], b___] /;
-  ( (op1 =!= op2) && (i1 == AN && i2 == CR) ) := nc[a, x2, x1, b];
+  ( (op1 =!= op2) && ordering[op1] =!= NONE && ordering[op2] =!= NONE &&
+    (i1 == AN && i2 == CR) ) := nc[a, x2, x1, b];
 
 (* In the case of the same *type* of operators, sort according to Head
 (symbol), i.e. in the alphabetical order. *)
 
 nc[a___, x1:op1_?fermionQ[i1_,___], x2:op2_?fermionQ[i2_,___], b___] /;
-  ( (op1 =!= op2) && (i1 === i2) && !OrderedQ[{x1,x2}]) :=
+  ( (op1 =!= op2) && ordering[op1] =!= NONE && ordering[op2] =!= NONE &&
+    (i1 === i2) && !OrderedQ[{x1,x2}]) :=
     -nc[a, x2, x1, b];
 
 nc[a___, x1:op1_?bosonQ[i1_,___], x2:op2_?bosonQ[i2_,___], b___] /;
-  ( (op1 =!= op2) && (i1 === i2) && !OrderedQ[{x1,x2}]) :=
+  ( (op1 =!= op2) && ordering[op1] =!= NONE && ordering[op2] =!= NONE &&
+    (i1 === i2) && !OrderedQ[{x1,x2}]) :=
     nc[a, x2, x1, b];
 
 (* Support for expansion blocking. *)
@@ -1577,10 +1583,22 @@ in quantum mechanics", quant-ph/990069. *)
 
 conj[conj[a_]] := a;
 
+(* Simplify into absolute values *)
+ruleAbs = {
+  z_ Conjugate[z_] :> Abs[z]^2,
+  z_ conj[z_] :> Abs[z]^2
+};
+
 (**** Symbolic sums ****)
 
 (* No sum at all *)
 sum[z_, {}] := z;
+
+(* Pull isolated sums in front of non-commutative multiplications. Avoid
+index capture and leave nested/product sums to the auto-renaming rules. *)
+nc[a___, sum[f_, {q__}], c___] /;
+  FreeQ[{a, c}, sum[_, _List]] && FreeOfIndexQ[{a, c}, {q}] :=
+    sum[nc[a, f, c], {q}];
 
 (* The indexes must be sorted for the simplifications to work correctly *)
 sum[z_, it_List] := sum[z, Sort[it]] /; Not[OrderedQ[it]];
@@ -1596,7 +1614,7 @@ sum[z_ a_, it_List] := z sum[a, it] /; NumberQ[z];
 
 sum[z_ a_, it_List] := z sum[a, it] /; sumFactorizableQ[z, it];
 
-sum[z_, it_List] := z sum[1, it] /; (sumFactorizableQ[z, it] && z != 1);
+sum[z_, it_List] := z sum[1, it] /; (sumFactorizableQ[z, it] && z =!= 1);
 
 
 (* Join two Lists. Send a message if the indexes overlap. *)
@@ -1635,17 +1653,19 @@ ssJWRnewname[n_, allnames_List, expr_:1] := Module[{ns, i, nn},
 ];
 
 snegsumJoinWithRenaming[a1_, a0___, a2_, it1_List, it2_List, reverse_:False] :=
-Module[{l, rule, allnames},
+Module[{l, rule, allnames, captureContext, freshContext, nn},
   l = it1;
   rule = {};
   allnames = Union[it1, it2];
-  Scan[ If[FreeQ[l, #] && FreeQ[a1, #],
+  captureContext = {a1, a0};
+  freshContext = {a1, a0, a2};
+  Scan[ If[FreeQ[l, #] && FreeQ[captureContext, #],
     AppendTo[l, #],
     (* else *)
-    nn = ssJWRnewname[#, allnames, a1];
+    nn = ssJWRnewname[#, allnames, freshContext];
     AppendTo[l, nn];
     AppendTo[allnames, nn];
-    AppendTo[rule, # :> nn] ]&, it2];
+    AppendTo[rule, # -> nn] ]&, it2];
   If[reverse == False,
     sum[nc[a1, a0, a2 /. rule], Sort @ l],
     sum[nc[a2 /. rule, a0, a1], Sort @ l]
@@ -1668,9 +1688,46 @@ komutator[x1:sum[a1_, it1_List], x2:sum[a2_, it2_List]] /; sumAutoRename :=
   snegsumJoinWithRenaming[a1, a2, it1, it2, False] -
   snegsumJoinWithRenaming[a1, a2, it1, it2, True];
 
-(* Multiple sums *)
-sum[sum[a_, it1_List], it2_List] :=
-  sum[a, snegsumJoin[it1, it2]];
+(* Sum of sum *)
+sum[b_. sum[a_, it1_List], it2_List] :=
+  sum[b a, snegsumJoin[it1, it2]];
+(* Keep nested sums intact while auto-renaming is enabled, so product-of-sums
+rules still see the full expression and can rename dummy-index collisions. *)
+sum[b_. sum[a_, it1_List] + c_, it2_List] /; (!sumAutoRename) :=
+  sum[b a, snegsumJoin[it1, it2]] + sum[c, it2];
+sum[b_ (sum[a_, it1_List] + c_), it2_List] /; (!sumAutoRename) :=
+  sum[b a, snegsumJoin[it1, it2]] + sum[b c, it2];
+
+(* Factorization sum -> sum*sum. *)
+FactorSeparableSumCustom[sum[expr_, idx_List]] :=
+ Module[{facs, facIdx, vertsF, vertsI, edges, comps, termFromComp, k, s},
+  facs = If[Head[expr] === Times, List @@ expr, {expr}];
+  facIdx[fac_] := Select[idx, Not @ FreeQ[fac, #] &];
+  vertsF = Table[{"F", k}, {k, Length[facs]}];
+  vertsI = Table[{"I", s}, {s, idx}];
+  edges = Flatten @ Table[
+    UndirectedEdge[{"F", k}, {"I", s}], {k, Length[facs]}, {s, facIdx[facs[[k]]]} ];
+
+  (* include isolated indices as singleton components by explicitly adding them as vertices *)
+  comps = ConnectedComponents @ Graph[Join[vertsF, vertsI], edges];
+
+  termFromComp[c_] := Module[{fk, ii, subexpr, kkk, sss},
+    fk = facs[[ Cases[c, {"F", kkk_} :> kkk] ]];
+    ii = Cases[c, {"I", sss_} :> sss];
+    subexpr = Times @@ fk /. Times[] -> 1;
+    Which[
+     ii === {},                          subexpr,                 (* factor-only: pull out *)
+     fk === {},                          sum[1, ii],              (* index-only: empty factor -> 1 *)
+     True,                               sum[subexpr, ii]         (* mixed: usual *)
+    ]
+  ];
+
+   Times @@ (termFromComp /@ comps)
+];
+
+rulesumFactor = {
+  s:sum[_, _List] :> FactorSeparableSumCustom[s]
+};
 
 (* Thread the first argument *)
 rulesumThread = {
@@ -1693,6 +1750,16 @@ sum[a_, it_List] :> sum[ExpandAll[a], it]
 
 sumExpand[expr_] := expr //. rulesumExpand;
 
+(* Expand[] here, not ExpandAll[], we don't want to blow up the denominators *)
+ruleExpandUnderSum = {
+  sum[a_, it_List] :> sum[Expand[a], it]
+};
+
+(* Does not expand under sums as rulesumExpand does. *)
+rulesumDistribute = {
+  sum[a_ + b_, it_List] :> sum[a, it] + sum[b, it]
+};
+
 rulesumCollect = {
 Plus[z1_. sum[a1_, it_List], z2_. sum[a2_, it_List]] :> sum[z1 a1+z2 a2, it],
 
@@ -1702,19 +1769,75 @@ Plus[z1_. sum[a1_, it1_List], z2_. sum[a2_, it2_List]] /;
       int = Intersection[it1, it2];
       sum[sum[z1 a1, Complement[it1, int]]
          +sum[z2 a2, Complement[it2, int]], int]
-    ],
-
-nc[a___, sum[b_,it_List], c___] :> sum[nc[a, b, c], it]
+    ]
 };
 
 sumCollect[expr_] := expr //. rulesumCollect;
 
-rulesumSimplifyKD = {
-  sum[KroneckerDelta[n1_, n2_] a_., it_List] /; MemberQ[it, n1] :>
-    sum[a //. {n1 :> n2}, Complement[it, {n1}]],
+(* scalar[] marker for explicitly declaring numerical (non-operator) expressions.
+   Speed optimization. Particularly useful for expressions involving sum[]. *)
 
-  sum[KroneckerDelta[n1_, n2_] a_., it_List] /; MemberQ[it, n2] :>
-    sum[a //. {n2 :> n1}, Complement[it, {n2}]],
+(* Always pulled out of noncommutative multiply blocks *)
+nc[a___, b_. scalar[x_], c___] := scalar[x] nc[a, b, c];
+
+(* Drop zeros *)
+scalar[0] := 0;
+scalar[0.] := 0;
+scalar[0.+I 0.] := 0;
+
+(* Sums of scalars are numeric quantities. *)
+isnumericQ[sum[scalar[_], {__}]] := True;
+
+(* A scalar is a scalar... *)
+scalar[a_. scalar[b_]] := scalar[a b];
+
+(* scalar is greedy: it absorbs all non-operator quantities *)
+a_  scalar[b_] /; isnumericQ[a] ^:= scalar[a b];
+scalar[a_] + scalar[b_] ^:= scalar[a + b];
+scalar[a_] scalar[b_] ^:= scalar[a b];
+
+(* Conjugation handling. Note that we use conj[] for scalar, too, instead of Conjugate[]. *)
+conj[scalar[x_] a_] := scalar[conj[x]] conj[a];
+
+(* Speed optimization for vev[] *)
+vev[scalar[x_] a_] := scalar[x] vev[a];
+vev[scalar[x_]] := 0;
+
+(* Pull sums out of scalar[] placeholders! *)
+scalar[a_. sum[b_, {q__}]] := sum[scalar[a  b], {q}];
+
+(* Transformation rules involving scalar[] blocks *)
+rulestripscalar = {
+  scalar[x_] :> x
+};
+
+rulesimplifyscalar = {
+  scalar[x_] :> scalar[Simplify[x]]
+};
+
+rulecollectscalar = {
+  sum[a_ scalar[z1_] + a_ scalar[z2_] + b_., {q_}] :> sum[a scalar[z1 + z2] + b, {q}]
+};
+
+(* Simplification rules for KroneckerDelta in sum[] expressions. *)
+rulesumSimplifyKD = {
+  sum[KroneckerDelta[n1_, n2_] a_. + b_., it_List] /; MemberQ[it, n1] :>
+    sum[a //. {n1 :> n2}, Complement[it, {n1}]] + sum[b, it],
+
+  sum[KroneckerDelta[n1_, n2_] a_. + b_., it_List] /; MemberQ[it, n2] :>
+    sum[a //. {n2 :> n1}, Complement[it, {n2}]] + sum[b, it],
+
+  sum[scalar[KroneckerDelta[n1_, n2_] z_ + c_.] a_. + b_., it_List] /; MemberQ[it, n1] :>
+    sum[(scalar[z] a) //. {n1 :> n2}, Complement[it, {n1}]] + sum[scalar[c] a, it] + sum[b, it],
+
+  sum[scalar[KroneckerDelta[n1_, n2_] z_ + c_.] a_. + b_., it_List] /; MemberQ[it, n2] :>
+    sum[(scalar[z] a) //. {n2 :> n1}, Complement[it, {n2}]] + sum[scalar[c] a, it] + sum[b, it],
+
+  sum[scalar[(KroneckerDelta[n1_, n2_] z_ + c_.)/d_] a_. + b_., it_List] /; MemberQ[it, n1] :>
+    sum[(scalar[z/d] a) //. {n1 :> n2}, Complement[it, {n1}]] + sum[scalar[c/d] a, it] + sum[b, it],
+
+  sum[scalar[(KroneckerDelta[n1_, n2_] z_ + c_.)/d_] a_. + b_., it_List] /; MemberQ[it, n2] :>
+    sum[(scalar[z/d] a) //. {n2 :> n1}, Complement[it, {n2}]] + sum[scalar[c/d] a, it] + sum[b, it],
 
   HoldPattern[sum[a1_ + a2_, x:{i___, n1_, n2_, j___}]] /;
     (FreeQ[a1, n2] && FreeQ[a2, n1]) :>
@@ -1730,6 +1853,15 @@ rulesumSimplifyKD = {
 };
 
 sumSimplifyKD[expr_] := expr //. rulesumSimplifyKD;
+
+(* Optimization *)
+sumSimplifyKD[expr_] /; FreeQ[expr, KroneckerDelta[__]] := expr;
+
+(* Collect KroneckerDelta[] in sums, prior to simplification. *)
+rulesumCollectKD = {
+  sum[a_, {q__}] :> sum[Collect[a, KroneckerDelta[__]], {q}]
+};
+sumCollectSimplifyKD[expr_] := sumSimplifyKD[expr //. rulesumCollectKD];
 
 (* Replace indexes with abstract indexes ndxfunc[i] with i=1,...,nrindexes *)
 (* Be careful: this is only useful for fine-tuned applications to address
@@ -2207,8 +2339,8 @@ SetAttributes[{isospinxyz, isospin, isospinx, isospiny, isospinz,
 
 isospinxyz[op_?fermionQ[j___], n_:0] := Module[{nam, nbar},
   nam = nambu[op[j], n];
-  nambar = conj /@ nam;
-  1/2 VMV[nam, #, nambar]& /@ {PauliX, PauliY, PauliZ}
+  nbar = conj /@ nam;
+  1/2 VMV[nam, #, nbar]& /@ {PauliX, PauliY, PauliZ}
 ];
 
 isospin[x__] := isospinxyz[x];
@@ -2810,10 +2942,9 @@ interleave[l__] := Flatten[ Transpose[{l}], 1];
 (************* BASIS with no symmetries ***************)
 
 (* Make basis with no symmetries, i.e. no good quantum numbers. *)
-nonebasisvc[l_List] := Module[{nr},
-  makebasis[l];
-  nr = Length[l];
-  {{{}, Table[ vc @@ IntegerDigits[i, 2, 2nr], {i, 0, 4^nr-1}]}}
+nonebasisvc[l_List] := Module[{n},
+  n = Length[makebasis[l]];
+  {{{}, Table[ vc @@ IntegerDigits[i, 2, n], {i, 0, 2^n-1}]}}
 ];
 
 nonebasis[l_List] := bzvc2bzop @ nonebasisvc[l];
@@ -2822,11 +2953,10 @@ nonebasis[l_List] := bzvc2bzop @ nonebasisvc[l];
 
 (* Make a basis with good quantum number Q *)
 
-qbasisvc[l_List] := Module[{nr, b},
-  makebasis[l];
-  nr = Length[l];
-  b = Table[ vc @@ IntegerDigits[i, 2, 2nr], {i, 0, 4^nr-1}];
-  b = Map[{{Count[#, 1, {1}] - nr}, {#}}&, b];
+qbasisvc[l_List] := Module[{n, b},
+  n = Length[makebasis[l]];
+  b = Table[ vc @@ IntegerDigits[i, 2, n], {i, 0, 2^n-1}];
+  b = Map[{{Count[#, 1, {1}] - n/2}, {#}}&, b];
   b = mergebasis[b];
   b
 ];
@@ -2839,10 +2969,24 @@ qbasis[l_List] := bzvc2bzop @ qbasisvc[l];
 (* Make a basis of good quantum numbers Q and S *)
 (* Convention: always use the highest possible Sz, i.e. Sz == S ! *)
 
+qsbasis::spin = "qsbasis requires spin-1/2 fermion operators. Unsupported operators: ``. Use qbasis, nonebasis, or qszbasis for spinless operators.";
+qsbasisvc::spin = "qsbasisvc requires spin-1/2 fermion operators. Unsupported operators: ``. Use qbasisvc, nonebasisvc, or qszbasisvc for spinless operators.";
+
+qsbasisSpinHalfOperatorQ[op_[___]] :=
+  fermionQ[op] === True && TrueQ[spinof[op] == 1/2];
+qsbasisSpinHalfOperatorQ[_] := False;
+
+qsbasisBadOps[l_List] := Select[l, !qsbasisSpinHalfOperatorQ[#]&];
+
 qsbasisvcold[l_List] := bzop2bzvc[ qsbasis[l] ];
 
 
-qsbasisvc[l_List] := Module[{},
+qsbasisvc[l_List] := Module[{bad},
+  bad = qsbasisBadOps[l];
+  If[bad =!= {},
+    Message[qsbasisvc::spin, bad];
+    Return[$Failed]
+  ];
   makebasis[l];
   qsbasisvc[{}, l]
 ];
@@ -2894,7 +3038,12 @@ spinflip[op_[i_, j___, sigma_]] := op[i, j, 1-sigma];
    of all single-particle operators. *)
 (* makebasis is called automatically. While not necessary, such behave
    is desirable for consistency with qszbasis[]. *)
-qsbasis[l_List] := Module[{},
+qsbasis[l_List] := Module[{bad},
+  bad = qsbasisBadOps[l];
+  If[bad =!= {},
+    Message[qsbasis::spin, bad];
+    Return[$Failed]
+  ];
   makebasis[l];
   qsbasis[{}, l]
 ];
@@ -3155,8 +3304,8 @@ projector2[op_?AtomQ] := projector2[op[]];
 projector02[op_?AtomQ] := projector02[op[]];
 projectorE[op_?AtomQ] := projectorE[op[]];
 projectorO[op_?AtomQ] := projectorO[op[]];
-projectorEphi[op_?AtomQ] := projectorEphi[op[]];
-projectorOphi[op_?AtomQ] := projectorOphi[op[]];
+projectorEphi[op_?AtomQ, phi_] := projectorEphi[op[], phi];
+projectorOphi[op_?AtomQ, phi_] := projectorOphi[op[], phi];
 
 
 (**** Operations on basis sets ****)
@@ -3455,10 +3604,14 @@ spinbasis[{a_?halfintegerQ, b_?halfintegerQ}] :=
                      spinbasis[b, {0, 1}],
                      Function[{sz1, sz2}, sz1+sz2] ];
 
-spinbasis[{a_?halfintegerQ, b__}] :=
-  basistensorproduct[spinbasis[a, {1, 0}],
-                     spinbasis[b, {0, 1}],
-                     Function[{sz1, sz2}, sz1+sz2] ];
+spinbasis[spins:{_?halfintegerQ, _?halfintegerQ, __?halfintegerQ}] :=
+  Module[{n, pos, bases},
+    n = Length[spins];
+    pos[i_] := Table[If[j == i, 1, 0], {j, n}];
+    bases = MapIndexed[spinbasis[#1, pos[First[#2]]] &, spins];
+    Fold[basistensorproduct[#1, #2, Function[{sz1, sz2}, sz1+sz2]] &,
+         First[bases], Rest[bases]]
+  ];
 
 (* Apply rule to the basis states (vektor form) in 'baza'.
 Used by transformbasis[]. *)
@@ -3563,20 +3716,27 @@ ap[ket[i___], vc[j___, ket[k___]]] := vc[j, ket @@ bkcombine[{i}, {k}]] /;
 ap[a___, x1:bra[i___], vc[j___, x2:ket[k___]]] := ap[a, vc[j]] braketrule[x1, x2] /;
   pairpattern[{i}, {k}];
 
-(* Tensor product of two operator expressions in terms of ket,bra terms *)
-ketbratensorproduct[x1_, x2_] := Module[{y1, y2},
+ketbratensorproduct[x_] := x;
+
+(* Tensor product of operator expressions in terms of ket,bra terms *)
+ketbratensorproduct[x1_, x2_] := Module[{w1, w2, y1, y2, width},
+  width[x_] := Max[0, Sequence @@ Cases[x,
+    (ket[a___] | bra[a___]) :> Length[{a}], Infinity]];
+  w1 = width[x1];
+  w2 = width[x2];
   y1 = x1 /. {
-    ket[a__] :> ket[a, Null],
-    bra[a__] :> bra[a, Null]
+    ket[a___] :> ket @@ Join[{a}, ConstantArray[Null, w2]],
+    bra[a___] :> bra @@ Join[{a}, ConstantArray[Null, w2]]
   };
   y2 = x2 /. {
-    ket[a__] :> ket[Null, a],
-    bra[a__] :> bra[Null, a]
+    ket[a___] :> ket @@ Join[ConstantArray[Null, w1], {a}],
+    bra[a___] :> bra @@ Join[ConstantArray[Null, w1], {a}]
   };
   nc[y1, y2]
 ];
 
-ketbratensorproduct[x_] := x;
+ketbratensorproduct[x1_, x2_, rest__] :=
+  Fold[ketbratensorproduct, x1, {x2, rest}];
 
 (* Merge argument lists of neighboring bra/ket terms. *)
 ruletensor = {
@@ -3605,29 +3765,29 @@ phononx[Nph_Integer] := phononplus[Nph] + phononminus[Nph];
 
 (* Extension to multiple phonons *)
 phononbasis[cutoffs : {_Integer ..}] :=
-  Flatten[Outer[nc[#1, #2] /. ruletensor &, Sequence @@ Map[phononbasis, cutoffs]], 1];
+  Flatten[Outer[(nc[##] //. ruletensor) &, Sequence @@ Map[phononbasis, cutoffs]], Length[cutoffs]-1];
 
 phononid[Nph_Integer] := Sum[nc[ket[i], bra[i]], {i, 0, Nph}];
 
-phononnumber[i_, cutoffs : {_Integer ..}] := Module[{},
+phononnumber[i_, cutoffs : {_Integer ..}] := Module[{nr, ops},
   nr = Length[cutoffs];
   ops = Table[If[j == i, phononnumber, phononid], {j, nr}];
   ketbratensorproduct @@ MapThread[#1[#2] &, {ops, cutoffs}]
 ];
 
-phononplus[i_, cutoffs : {_Integer ..}] := Module[{},
+phononplus[i_, cutoffs : {_Integer ..}] := Module[{nr, ops},
   nr = Length[cutoffs];
   ops = Table[If[j == i, phononplus, phononid], {j, nr}];
   ketbratensorproduct @@ MapThread[#1[#2] &, {ops, cutoffs}]
 ];
 
-phononminus[i_, cutoffs : {_Integer ..}] := Module[{},
+phononminus[i_, cutoffs : {_Integer ..}] := Module[{nr, ops},
   nr = Length[cutoffs];
   ops = Table[If[j == i, phononminus, phononid], {j, nr}];
   ketbratensorproduct @@ MapThread[#1[#2] &, {ops, cutoffs}]
 ];
 
-phononx[i_, cutoffs : {_Integer ..}] := Module[{},
+phononx[i_, cutoffs : {_Integer ..}] := Module[{nr, ops},
   nr = Length[cutoffs];
   ops = Table[If[j == i, phononx, phononid], {j, nr}];
   ketbratensorproduct @@ MapThread[#1[#2] &, {ops, cutoffs}]
@@ -3919,7 +4079,7 @@ quickDBLSZ[basisops1_, basisops2_, fnc_] := Module[{bz1, bz2},
 
 (* bzQ[b] returns True if the argument b is of the correct form to
    represent a basis: a list of {{quantum numbers}, {states}} pairs. *)
-bzQ[{ {{__},{___}}.. }] = True;
+bzQ[{ {{___},{___}}.. }] = True;
 bzQ[_] = False;
 
 (* makematricesbzop[] and makematricesbzvc[] produce a table of operator
@@ -4233,14 +4393,15 @@ sum2list[i_] := {i};
 
 (* Similar to matrixrepresentationvc[], but this function
 returns a sparse matrix and it is significantly faster. *)
-(* UNTESTED! *)
-matrixrepresentationvcsparse[a_, l_List] := Module[{},
+matrixrepresentationvcsparse[a_, l_List] := Module[{n = Length[l]},
   SparseArray[Select[Flatten[
     Table[
       (sum2list @ Collect[ap[a, l[[i]]], l]) /.
-        x_. v_vc :> ({i, Position[l, v][[1, 1]]} :> x),
-      {i, Length[l]}],
-    1], (#=!=0)&]]
+        x_. v_vc :> Module[{pos = Position[l, v]},
+          If[pos === {}, 0, {pos[[1, 1]], i} -> x]
+        ],
+      {i, n}],
+    1], (#=!=0)&], {n, n}]
 ];
 
 (* Similar to matrixrepresentationvc[], but significantly faster. *)
@@ -4409,5 +4570,30 @@ vevwicknew[HoldPattern[l_nc]] /; EvenQ[Length[l]] :=
 
   Total[contributions /. {dd[_]->0}]
 ];
+
+(* Derivatives under the sum *)
+der[a_ + b_, c_] := der[a, c] + der[b, c];
+der[a_ /; FreeQ[a, sum], c_] := D[a, c];
+der[a_ b_, c_] /; FreeQ[a, sum] := D[a, c] b + a der[b, c];
+
+(* Division *)
+nc[a___, b_/c_, d___] /; isnumericQ[c] := nc[a, b, d]/c;
+vev[a_/b_] /; isnumericQ[b] := vev[nc[a]]/b;
+conj[1/a_] := 1/conj[a];
+conj[nc[a__]/b_] := conj[nc[a]]/conj[b];
+sum[a_./(n_ b_ + n_ c_), l_List] /; isnumericQ[n] && sumFactorizableQ[n, l] := (1/n) sum[a/(b + c), l];
+
+(* Improved zeroonvac function; tries harder to drop terms. *)
+Zeroonvac[a_ + b_] := Zeroonvac[a] + Zeroonvac[b];
+Zeroonvac[a_ b_] /; isnumericQ[a] := a Zeroonvac[b];
+Zeroonvac[a_ scalar[x_]] := scalar[x] Zeroonvac[a];
+Zeroonvac[sum[a_, {q__}]] := sum[Zeroonvac[a], {q}];
+Zeroonvac[HoldPattern[nc[a__]]] := zeroonvac[nc[a]];
+Zeroonvac[x : op_[a__]] /; operatorQ[op] := zeroonvac[x];
+Zeroonvac[a_] /; isnumericQ[a] := a;
+
+ruleFullSimplifyUnderSum = {
+  sum[a_, {q__}] :> sum[FullSimplify[a], {q}]
+};
 
 EndPackage[];
