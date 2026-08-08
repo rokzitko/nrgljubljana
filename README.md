@@ -4,7 +4,7 @@
 # NRG Ljubljana
 
 NRG Ljubljana is a framework for numerical renormalization group (NRG) calculations for quantum impurity problems. It combines a Mathematica-based initialization layer 
-(using [sneg](https://github.com/rokzitko/sneg))≈ with a C++20 runtime for the iterative NRG calculation, density-matrix variants, and a collection of standalone analysis tools.
+(using [sneg](https://github.com/rokzitko/sneg)) with a C++20 runtime for the iterative NRG calculation, density-matrix variants, and a collection of standalone analysis tools.
 
 ## What It Covers
 
