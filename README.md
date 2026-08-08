@@ -14,6 +14,11 @@ NRG Ljubljana is a framework for numerical renormalization group (NRG) calculati
 - preprocessing and postprocessing tools for discretization, chain generation, broadening, Hilbert transforms, resampling, and file conversion
 - structured output in text, binary, and HDF5 formats
 
+## Applications
+
+- dynamical mean-field theory (DMFT); see a simple sample code for [Kondo lattice
+model](https://github.com/rokzitko/DMFT_NRG_KLM)
+
 ## Quick Start
 
 Build locally with CMake:
