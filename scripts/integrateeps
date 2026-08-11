@@ -1,0 +1,26 @@
+#!/usr/bin/env perl
+# Integrate column data by trapezoid rule, with energy kernel (i.e. computes average energy)
+# Rok Zitko, rok.zitko@ijs.si, 2008-2026
+
+use strict;
+use warnings;
+
+my $xprev = 0;
+my $yprev = 0;
+my $sum = 0;
+
+while (<>) {
+  chomp;
+  next if /^#/; # skip comments
+  my ($x,$y,$remainder) = split;
+
+  if ($. != 1) {
+    my $xavg = ($x+$xprev)/2.0;
+    $sum += $xavg * ($x-$xprev) * ($y + $yprev)/2.0;
+  }
+
+  $xprev = $x;
+  $yprev = $y;
+}
+
+print "$sum\n";

@@ -39,4 +39,4 @@ while (<F>) {
 
 close(F);
 
-print STDERR "Keyword not found!\n";
+print STDERR "getparam: Keyword $keyword not found!\n";
