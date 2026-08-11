@@ -31,7 +31,7 @@
 
 BeginPackage["Sneg`"];
 
-snegidstring = "sneg.m 2.0.23 Jul 2026";
+snegidstring = "sneg.m 2.1 Aug 2026";
 snegcopyright = "Copyright (C) 2002-2026 Rok Zitko";
 
 $SnegVersion = Module[{pos, p1, p2},
@@ -651,12 +651,14 @@ KS = Compile[{{n, _Integer}, {k, _Integer}},
 
 KSubsets[l_List,0] := { {} }
 KSubsets[l_List,1] := Partition[l,1]
-KSubsets[l_List,2] := Flatten[Table[{l[[i]], l[[j]]},
-                                    {i, Length[l]-1},
-                                    {j, i+1, Length[l]}
-                              ],
-                              1
-                      ]
+KSubsets[l_List,2] := Module[{i, j},
+  Flatten[Table[{l[[i]], l[[j]]},
+                {i, Length[l]-1},
+                {j, i+1, Length[l]}
+          ],
+          1
+  ]
+]
 KSubsets[l_List,k_Integer?Positive] := {l} /; (k == Length[l])
 KSubsets[l_List,k_Integer?Positive] := {}  /; (k > Length[l])
 KSubsets[s_List, k_Integer] := Prepend[Map[s[[#]] &, KS[Length[s], k]], s[[Range[k] ]] ]
@@ -1064,6 +1066,8 @@ sneglinearoperator[op_] := {
    for example, vev[], zeroonvac[].*)
 
 sneglinearoperatorFirst[op_] := {
+  op[z_?grassmanQ] := z;
+  op[HoldPattern[nc[z_?grassmanQ, rest__]]] := nc[z, op[nc[rest]]];
   op[z_?isnumericQ] := z;
   op[z_?isnumericQ, b__] := z op[b];
   op[z_?isnumericQ b_, c___] := z op[b, c]; (* Important: b_, not b__ ! *)
@@ -1163,8 +1167,13 @@ snegOrderedQ[x1 : op_[___], x2 : op_[___]] /;
 
 isannihilation[op_[t_, j___]] /; (ordering[op] == NONE) := (t == AN);
 iscreation[op_[t_, j___]] /; (ordering[op] == NONE) := (t == CR);
-contraction[op_[AN, j1___], op_[CR, j2___]] /; (ordering[op] == NONE) :=
-  If[{j1} === {j2}, 1, 0, 0];
+contraction[x1:op_[AN, j1___], x2:op_[CR, j2___]] /;
+  (ordering[op] == NONE) :=
+    Which[
+      TrueQ[bosonQ[op]], cmt[x1, x2],
+      TrueQ[fermionQ[op]], acmt[x1, x2],
+      True, If[{j1} === {j2}, 1, 0, 0]
+    ];
 contraction[op_[___], op_[___]] /; (ordering[op] == NONE) := 0;
 
 (* NEW RULES for ordering=SEA, 25. 3. 2007 *)
@@ -1185,6 +1194,42 @@ simplifications. *)
 
 snegOrderedQ[x1:op_[___], x2:op_[___]] /;
   (fermionQ[op] && ordering[op] === SEA) := OrderedQ[{x1, x2}];
+
+(* Ordering of fermionic operators with different heads. Determine the
+creation/annihilation role of each operator independently. If a role is not
+known, retain the raw CR/AN index as the fallback ordering key. *)
+snegOrderedQ[
+  x1:op1_?fermionQ[i1_,___],
+  x2:op2_?fermionQ[i2_,___]
+] /; (op1 =!= op2) := Module[
+  {creation1, annihilation1, creation2, annihilation2, type1, type2},
+  If[ordering[op1] === NONE || ordering[op2] === NONE, Return[True]];
+
+  creation1 = TrueQ[iscreation[x1]];
+  annihilation1 = TrueQ[isannihilation[x1]];
+  creation2 = TrueQ[iscreation[x2]];
+  annihilation2 = TrueQ[isannihilation[x2]];
+
+  type1 = Which[
+    creation1 && !annihilation1, CR,
+    annihilation1 && !creation1, AN,
+    True, i1
+  ];
+  type2 = Which[
+    creation2 && !annihilation2, CR,
+    annihilation2 && !creation2, AN,
+    True, i2
+  ];
+
+  Which[
+    MemberQ[{CR, AN}, type1] && MemberQ[{CR, AN}, type2],
+      OrderedQ[{{type1, x1}, {type2, x2}}],
+    type1 === type2,
+      OrderedQ[{x1, x2}],
+    True,
+      True
+  ]
+];
 
 (* Ordering of bosonic operators *)
 snegOrderedQ[x1 : op_[___], x2 : op_[___]] /;
@@ -1220,19 +1265,15 @@ commute; bosonic and fermionic operators are assumed to commute. *)
 
 nc[a___, x1:op1_?fermionQ[i1_,___], x2:op2_?fermionQ[i2_,___], b___] /;
   ( (op1 =!= op2) && ordering[op1] =!= NONE && ordering[op2] =!= NONE &&
-    (i1 == AN && i2 == CR) ) := -nc[a, x2, x1, b];
+    snegOrderedQ[x1, x2] === False ) := -nc[a, x2, x1, b];
 
 nc[a___, x1:op1_?bosonQ[i1_,___], x2:op2_?bosonQ[i2_,___], b___] /;
   ( (op1 =!= op2) && ordering[op1] =!= NONE && ordering[op2] =!= NONE &&
     (i1 == AN && i2 == CR) ) := nc[a, x2, x1, b];
 
-(* In the case of the same *type* of operators, sort according to Head
-(symbol), i.e. in the alphabetical order. *)
-
-nc[a___, x1:op1_?fermionQ[i1_,___], x2:op2_?fermionQ[i2_,___], b___] /;
-  ( (op1 =!= op2) && ordering[op1] =!= NONE && ordering[op2] =!= NONE &&
-    (i1 === i2) && !OrderedQ[{x1,x2}]) :=
-    -nc[a, x2, x1, b];
+(* In the case of the same *type* of bosonic operators, sort according to
+Head (symbol), i.e. in alphabetical order. Fermionic operators are handled
+by snegOrderedQ[] above. *)
 
 nc[a___, x1:op1_?bosonQ[i1_,___], x2:op2_?bosonQ[i2_,___], b___] /;
   ( (op1 =!= op2) && ordering[op1] =!= NONE && ordering[op2] =!= NONE &&
@@ -1274,6 +1315,8 @@ nc[a___, z1_?grassmanQ, z2_?grassmanQ, b___] /; (!OrderedQ[{z1,z2}]) :=
   -nc[a, z2, z1, b];
 
 nc[a___, z_, b___, z_, c___] /; grassmanQ[z] := 0;
+
+nc[a___, b_?bosonQ, z_?grassmanQ, c___] := nc[a, z, b, c];
 
 nc[a___, b_, z_, c___] /; ((fermionQ[b] || majoranaQ[b]) && grassmanQ[z]) :=
   -nc[a, z, b, c];
@@ -1409,6 +1452,11 @@ nc[a___, Exp[b_], c___] /; (isnumericQ @ Simplify @ pow[b, 2]) :=
 (* acmt[] returns 1 if one operator is creation operator, and the other
 operator is the annihilation operators, while all other indexes are equal. *)
 
+(* Fermionic operators with different heads obey canonical
+anti-commutation relations. *)
+acmt[x1:op1_?fermionQ[___], x2:op2_?fermionQ[___]] /;
+  (op1 =!= op2) := 0;
+
 acmt[op_[i_, ___], op_[i_, ___]] /; fermionQ[op] := 0;
 
 acmt[op_[i1_], op_[i2_]] /; fermionQ[op] := If[i1 =!= i2, 1, 0];
@@ -1477,6 +1525,8 @@ cmt[op1_?spinQ[i1___], op2_?spinQ[i2___]] /; (op1 =!= op2) = 0;
 
 (* (Anti-)commutators *)
 SetAttributes[komutator, Listable];
+komutator[x1:op1_?spinQ[___], x2:op2_?spinQ[___]] /;
+  op1 =!= op2 := cmt[x1, x2];
 komutator[a_, b_] := nc[a, b] - nc[b, a];
 
 SetAttributes[antikomutator, Listable];
@@ -1557,10 +1607,10 @@ conj[a_ + b_] := conj[a] + conj[b];
 conj[nc[a_, b__]] := conj[nc[b]] ~ nc ~ conj[a];
 
 (* Complex (Dirac) fermion *)
-conj[op_?fermionQ[i_, j___]] := op[If[i == CR, AN, CR], j];
+conj[op_?fermionQ[i_, j___]] := op[CR + AN - i, j];
 
 (* Boson *)
-conj[op_?bosonQ[i_, j___]] := op[If[i == CR, AN, CR], j];
+conj[op_?bosonQ[i_, j___]] := op[CR + AN - i, j];
 
 (* Real (Majorana) fermion *)
 conj[x:op_?majoranaQ[___]] := x;
@@ -1766,10 +1816,13 @@ rulesumDistribute = {
 };
 
 rulesumCollect = {
-Plus[z1_. sum[a1_, it_List], z2_. sum[a2_, it_List]] :> sum[z1 a1+z2 a2, it],
+Plus[z1_. sum[a1_, it_List], z2_. sum[a2_, it_List]] /;
+  sumFactorizableQ[z1, it] && sumFactorizableQ[z2, it] :>
+    sum[z1 a1+z2 a2, it],
 
 Plus[z1_. sum[a1_, it1_List], z2_. sum[a2_, it2_List]] /;
-  Intersection[it1, it2] =!= {} :>
+  Intersection[it1, it2] =!= {} &&
+  sumFactorizableQ[z1, it1] && sumFactorizableQ[z2, it2] :>
     Module[{int},
       int = Intersection[it1, it2];
       sum[sum[z1 a1, Complement[it1, int]]
@@ -1809,7 +1862,7 @@ conj[scalar[x_] a_] := scalar[conj[x]] conj[a];
 
 (* Speed optimization for vev[] *)
 vev[scalar[x_] a_] := scalar[x] vev[a];
-vev[scalar[x_]] := 0;
+vev[scalar[x_]] := x;
 
 (* Pull sums out of scalar[] placeholders! *)
 scalar[a_. sum[b_, {q__}]] := sum[scalar[a  b], {q}];
@@ -2051,14 +2104,21 @@ vevwick[ nc[x:op_?fermionQ[__], ___] ] /; iscreation[x] := 0;
 vev[ nc[x:op_?bosonQ[CR,___]] ] := 0;
 
 
-(* Special rules for bosons *)
-
-  (* VEV of a string of identical bosonic operators must be zero.
-  The equivalent rule for fermionic operators is not necessary, due
-  to Pauli exclusion rule with is enforced at all times in the definition
-  of nc[] multiplication. *)
-
-vev[ HoldPattern[ nc[op_?bosonQ[___]..] ] ] := 0;
+(* Evaluate residual bosonic annihilation-creation inversions without
+changing the ordering of the original nc expression. *)
+vev[HoldPattern[nc[
+    a___,
+    x1_,
+    x2_,
+    b___
+  ]]] /; (TrueQ[bosonQ[x1]] && TrueQ[bosonQ[x2]] &&
+    TrueQ[isannihilation[x1]] && TrueQ[iscreation[x2]] &&
+    (ordering[Head[x1]] === NONE || ordering[Head[x2]] === NONE)) :=
+  vev[nc[a, x2, x1, b]] +
+    If[Head[x1] === Head[x2],
+      cmt[x1, x2] vev[nc[a, b]],
+      0
+    ];
 
 
 (* Special rules for vev in the case of ordering=SEA *)
@@ -2142,17 +2202,24 @@ direct[l1_List, l2_List] := Flatten @ outer[l1, l2];
 
 (*** Auxiliary functions for operator construction ***)
 
+(* Abstract-orbital Function arguments are creation-defined: fn[CR, sigma]
+   is authoritative. The corresponding annihilation expression is always
+   derived as conj[fn[CR, sigma]]; fn[AN, sigma] is never evaluated. *)
+
 (* Number operator *)
 SetAttributes[number, Listable];
 
 number[op_?fermionQ[j___], sigma_] := op[CR, j, sigma] ~ nc ~ op[AN, j, sigma];
 number[op_?fermionQ[j___]] /; spinof[op] == 1/2 :=
   number[op[j], UP] + number[op[j], DO];
-number[op_?fermionQ[j___]] /; spinof[op] != 1/2 :=
-  Sum[number[op[j], s], {s, -spinof[op], +spinof[op]}];
+number[op_?fermionQ[j___]] /; spinof[op] != 1/2 := Module[{s},
+  Sum[number[op[j], s], {s, -spinof[op], +spinof[op]}]
+];
 
 (* Number operator for abstract function argument *)
-number[fn_Function, sigma_] := fn[CR, sigma] ~ nc ~ fn[AN, sigma];
+number[fn_Function, sigma_] := With[{cr = fn[CR, sigma]},
+  cr ~ nc ~ conj[cr]
+];
 number[fn_Function] := number[fn, UP] + number[fn, DO];
 
 (* Number operator for bosonic operators *)
@@ -2168,7 +2235,7 @@ isozsq[op_?fermionQ[j___]] := pow[number[op[j]]-1, 2];
 SetAttributes[hubbard, Listable];
 hubbard[op_?fermionQ[j___]] /; spinof[op] == 1/2 :=
   number[op[j], UP] ~ nc ~ number[op[j], DO];
-hubbard[op_?fermionQ[j___]] /; spinof[op] != 1/2 := Module[{smin, smax},
+hubbard[op_?fermionQ[j___]] /; spinof[op] != 1/2 := Module[{smin, smax, s1, s2},
   smin = -spinof[op];
   smax = +spinof[op];
   Sum[Sum[number[op[j], s1] ~ nc ~ number[op[j], s2],
@@ -2179,9 +2246,10 @@ hubbard[op_?fermionQ, a___] /; AtomQ[op] := hubbard[op[], a];
 
 (* The Hubbard model for operator op[], nn sites and parameters
    U, t and eps *)
-hamiltonian[Hubbard, op_[j___], nn_, U_, t_, eps_] :=
+hamiltonian[Hubbard, op_[j___], nn_, U_, t_, eps_] := Module[{i},
   Sum[eps number[op[i, j]] + U hubbard[op[i, j]], {i, 1, nn}] +
-  t Sum[hop[op[i, j], op[i+1, j]], {i, 1, nn-1}];
+  t Sum[hop[op[i, j], op[i+1, j]], {i, 1, nn-1}]
+];
 
 (* Inter-site charge-charge interaction *)
 chargecharge[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] :=
@@ -2210,7 +2278,7 @@ spinxyzgen[g_] := Module[{cr, an},
   1/2 VMV[cr, #, an]& /@ {PauliX, PauliY, PauliZ}
 ];
 
-spinxyzgen[g_, spin_?halfintegerQ] := Module[{cr, an},
+spinxyzgen[g_, spin_?halfintegerQ] := Module[{cr, an, s},
   cr = Table[g[s], {s, +spin, -spin, -1}];
   an = conj /@ cr;
   VMV[cr, #, an]& /@
@@ -2275,8 +2343,9 @@ spinspin[op1_?fermionQ[j1___], fn2_Function] :=
 spinspin[fn1_Function, op2_?fermionQ[j2___]] :=
   spinspin[fn1, op2[#1, j2, #2]&];
 
-spinspin[op1_?spinQ[j1___], op2_?spinQ[j2___]] :=
-  Sum[nc[op1[j1, i], op2[j2, i]], {i, 3}];
+spinspin[op1_?spinQ[j1___], op2_?spinQ[j2___]] := Module[{i},
+  Sum[nc[op1[j1, i], op2[j2, i]], {i, 3}]
+];
 
 (* Recall: S1 . S2 = S1^z S2^z + 1/2 (S1^+ S2^- + S1^- S2^+) *)
 (* Note: spinspin[a,b] = spinspinz[a,b] + spinspinxy[a,b] -> no factor 1/2
@@ -2376,7 +2445,7 @@ isospinminus[op_, n___] /; AtomQ[op] := isospinminus[op[], n];
 
 (* Sum of isospin generators for operators enlisted in ops. *)
 manyisospin::unequallength = "Different lengths: ops=`` ns=``.";
-manyisospin[ops_List, ns1_:Null] := Module[{len, ns, ixyz, ii},
+manyisospin[ops_List, ns1_:Null] := Module[{len, ns, ixyz, ii, i},
   len = Length[ops];
   If[ns1 === Null, ns = Table[0, {len}], ns = ns1];
   If[Length[ns] != len,
@@ -2390,7 +2459,7 @@ manyisospin[ops_List, ns1_:Null] := Module[{len, ns, ixyz, ii},
 
 (* Basis states for a single site *)
 SetAttributes[basis, Listable];
-basis[op_?fermionQ[j___]] := Module[{ops},
+basis[op_?fermionQ[j___]] := Module[{ops, n},
   ops = mbfunc[op[j]];
   Join[{1}, Flatten[
     Table[(nc @@ Reverse[#])& /@ KSubsets[ops, n], {n, Length[ops]}],
@@ -2443,12 +2512,14 @@ hop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
   hop[op1[j1], op2[j2], UP] + hop[op1[j1], op2[j2], DO];
 
 hop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
-  (spinof[op1] == spinof[op2] != 1/2) :=
-  Sum[ hop[op1[j1], op2[j2], s], {s, -spinof[op1], spinof[op1]} ];
+  (spinof[op1] == spinof[op2] != 1/2) := Module[{s},
+  Sum[ hop[op1[j1], op2[j2], s], {s, -spinof[op1], spinof[op1]} ]
+];
 
-hop[fn1_Function, fn2_Function, sigma_] :=
-  fn1[CR, sigma] ~ nc ~ fn2[AN, sigma] +
-  fn2[CR, sigma] ~ nc ~ fn1[AN, sigma];
+hop[fn1_Function, fn2_Function, sigma_] := With[{
+  seed = fn1[CR, sigma] ~ nc ~ conj[fn2[CR, sigma]]},
+  seed + conj[seed]
+];
 
 hop[fn1_Function, fn2_Function] :=
   hop[fn1, fn2, UP] + hop[fn1, fn2, DO];
@@ -2475,9 +2546,10 @@ anomaloushop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
   (spinof[op1] == spinof[op2] == 1/2) :=
   anomaloushop[op1[j1], op2[j2], UP] + anomaloushop[op1[j1], op2[j2], DO];
 
-anomaloushop[fn1_Function, fn2_Function, sigma_] :=
-  fn1[CR, sigma]   ~ nc ~ fn2[CR, 1-sigma] +
-  fn2[AN, 1-sigma] ~ nc ~ fn1[AN, sigma];
+anomaloushop[fn1_Function, fn2_Function, sigma_] := With[{
+  seed = fn1[CR, sigma] ~ nc ~ fn2[CR, 1-sigma]},
+  seed + conj[seed]
+];
 
 anomaloushop[fn1_Function, fn2_Function] :=
   anomaloushop[fn1, fn2, UP] + anomaloushop[fn1, fn2, DO];
@@ -2496,9 +2568,10 @@ anhop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
   (spinof[op1] == spinof[op2] == 1/2) :=
   anhop[op1[j1], op2[j2], UP] - anhop[op1[j1], op2[j2], DO]; (* sign! *)
 
-anhop[fn1_Function, fn2_Function, sigma_] :=
-  fn1[CR, sigma]   ~ nc ~ fn2[CR, 1-sigma] +
-  fn2[AN, 1-sigma] ~ nc ~ fn1[AN, sigma];
+anhop[fn1_Function, fn2_Function, sigma_] := With[{
+  seed = fn1[CR, sigma] ~ nc ~ fn2[CR, 1-sigma]},
+  seed + conj[seed]
+];
 
 anhop[fn1_Function, fn2_Function] :=
   anhop[fn1, fn2, UP] - anhop[fn1, fn2, DO]; (* sign! *)
@@ -2518,10 +2591,12 @@ genanhop[t_, op1_?fermionQ[j1___], op2_?fermionQ[j2___]] /;
 
 (* Hopping with spin-flip *)
 SetAttributes[spinfliphop, Listable];
-spinfliphop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] := Sum[
-  op1[CR, j1, sigma] ~ nc ~ op2[AN, j2, 1-sigma] +
-  op2[CR, j2, sigma] ~ nc ~ op1[AN, j1, 1-sigma],
-{sigma, DO, UP} ];
+spinfliphop[op1_?fermionQ[j1___], op2_?fermionQ[j2___]] := Module[{sigma},
+  Sum[
+    op1[CR, j1, sigma] ~ nc ~ op2[AN, j2, 1-sigma] +
+    op2[CR, j2, sigma] ~ nc ~ op1[AN, j1, 1-sigma],
+  {sigma, DO, UP} ]
+];
 
 (* Hopping with hole operators:
 c^\dag_{k,\sigma} f_\sigma} + f^\dag_\sigma c_{k\sigma}
@@ -2531,11 +2606,12 @@ h_{k,-\sigma} f_\sigma + f^\dag_\sigma h^\dag_{k,-\sigma}
 
 SetAttributes[holehop, Listable];
 holehop[oph_?fermionQ[jh___], opf_?fermionQ[jf___], sigma_] :=
-oph[AN, jh, sigma] ~ nc ~ opf[AN, jf, 1-sigma] +
-opf[CR, jf, sigma] ~ nc ~ oph[CR, jh, 1-sigma];
+  oph[AN, jh, 1-sigma] ~ nc ~ opf[AN, jf, sigma] +
+  opf[CR, jf, sigma] ~ nc ~ oph[CR, jh, 1-sigma];
 
-holehop[oph_?fermionQ[jh___], opf_?fermionQ[jf___]] :=
-  Sum[holehop[oph[jh], opf[jf], sigma], {sigma, DO, UP}];
+holehop[oph_?fermionQ[jh___], opf_?fermionQ[jf___]] := Module[{sigma},
+  Sum[holehop[oph[jh], opf[jf], sigma], {sigma, DO, UP}]
+];
 
 (* 2-electron hopping operator *)
 SetAttributes[twohop, Listable];
@@ -2556,9 +2632,11 @@ hopphi[op1_?fermionQ[j1___], op2_?fermionQ[j2___], phi_] /;
 (* Hopping with spin-flip and phase change *)
 SetAttributes[spinfliphopphi, Listable];
 spinfliphopphi[op1_?fermionQ[j1___], op2_?fermionQ[j2___], phi_] :=
-  Sum[Exp[I phi] op1[CR, j1, sigma]~nc~op2[AN, j2, 1 - sigma] +
-  Exp[-I phi] op2[CR, j2, sigma]~nc~op1[AN, j1, 1 - sigma],
-        {sigma, DO, UP}];
+  Module[{sigma},
+    Sum[Exp[I phi] op1[CR, j1, sigma]~nc~op2[AN, j2, 1 - sigma] +
+    Exp[-I phi] op2[CR, j2, sigma]~nc~op1[AN, j1, 1 - sigma],
+          {sigma, DO, UP}]
+  ];
 
 (* Current operator *)
 (*
@@ -2599,6 +2677,16 @@ invertspin[HoldPattern[ nc[a__] ]] := nc @@ Map[invertspin, {a}];
 
 (************** AP **************)
 
+(* FINITE-BASIS CONVENTION:
+   mbfunc[], BASIS, vacuum[], ap[], the basis generators, vc/operator
+   conversions, and lrmap[] use bare-particle occupations relative to the
+   zero-particle vacuum. They represent modes using op[CR,...] and do not
+   follow ordering[op].
+
+   Consequently, this subsystem does not construct a Fermi-sea
+   quasiparticle/hole basis for SEA operators. Operator-form finite bases
+   are supported only with EMPTY-vacuum semantics. *)
+
 (* mbfunc[] expands each generic operator a[j] into a pair of creation
 operators for both spin orientations. This function is used in basis
 construction in makebasis[] and in lrmap[] for constructing a mapping
@@ -2610,8 +2698,9 @@ S=1/2). *)
 SetAttributes[mbfunc, Listable];
 mbfunc[op_[j___]] /; spinof[op] == 1/2 :=
   { op[CR, j, UP], op[CR, j, DO] };
-mbfunc[op_[j___]] /; spinof[op] != 1/2 :=
-  Table[ op[CR, j, s], {s, +spinof[op], -spinof[op], -1} ];
+mbfunc[op_[j___]] /; spinof[op] != 1/2 := Module[{s},
+  Table[ op[CR, j, s], {s, +spinof[op], -spinof[op], -1} ]
+];
 
 
 (* BASIS holds a (global) list of creation operators for all possible
@@ -2736,10 +2825,10 @@ sneglinearoperator[vc2ops];
 SetAttributes[vc2ops, Listable];
 
 (* Special case: expressions with a trailing ket vector. *)
-vc2ops[vc[l__, ket[k__]]] := nc[vc2ops[vc[l]], ket[k]];
+vc2ops[vc[l___, ket[k__]]] := nc[vc2ops[vc[l]], ket[k]];
 
 vc2ops::incom = "Incompatible lenghts of vc[] and BASIS.";
-vc2ops[x:vc[l__]] := Module[{a},
+vc2ops[x:vc[l___]] := Module[{a},
   If[Length[{l}] != Length[BASIS],
     Message[vc2ops::incom]; Infinity,
     nc @@ Pick[BASIS, x, 1]
@@ -2772,10 +2861,18 @@ snegsesquilinearoperator[scalarproduct];
 snegsesquilinearoperator[scalarproductvc];
 SetAttributes[{scalarproduct, scalarproductvc, scalarproductop}, Listable];
 
+scalarproductvc[
+  vc[a___, ket[k1___]], vc[b___, ket[k2___]]
+] /; pairpattern[{k1}, {k2}] :=
+  scalarproductvc[vc[a], vc[b]] braketrule[bra[k1], ket[k2]];
+
 scalarproductvc[a_vc, b_vc] := If[a === b, 1, 0];
 
 scalarproductvc[scalar[z_] a_, b_] := scalar[conj[z]] scalarproductvc[a, b];
 scalarproductvc[a_, scalar[z_] b_] := scalar[z] scalarproductvc[a, b];
+
+scalarproductop[scalar[z_] a_, b_] := scalar[conj[z]] scalarproductop[a, b];
+scalarproductop[a_, scalar[z_] b_] := scalar[z] scalarproductop[a, b];
 
 scalarproductvc[a_, 0.] := 0;
 scalarproductvc[0., b_] := 0;
@@ -3205,6 +3302,7 @@ spindownvc::Usage = "spindownvc[v] effectively applies the spin-lowering
 operator to the state v in the occupation number representation.";
 
 sneglinearoperator[spindownvc1];
+spindownvc1[vc[a___, k:ket[___]]] := ap[k, spindownvc1[vc[a]]];
 spindownvc1[a_vc] := Module[{b, fn},
   b = List @@ Partition[a,2];
   fn[vc[1,0], {i_}] := vc @@ (Join @@ MapAt[vc[0,1]&, b, i]);
@@ -3352,7 +3450,7 @@ orthogop[vecs_?VectorQ, basis_?VectorQ] := Module[{m, l},
   m = Simplify[m]; (* See below! *)
   l = snegorthog[m];
   l = Simplify[l];
-  l = Select[l, Norm[#] != 0 &]; (* Drop zero vectors *)
+  l = Select[l, Not[snegzeroarrayQ[#]] &]; (* Drop proven zero vectors *)
   Expand @ Map[(# . basis)&, l]
 ];
 
@@ -3367,7 +3465,7 @@ orthogvc[vecs_?VectorQ, basis_?VectorQ] := Module[{m, l},
   m = Simplify[m];
   l = snegorthog[m];
   l = Simplify[l];
-  l = Select[l, Norm[#] != 0 &]; (* Drop zero vectors *)
+  l = Select[l, Not[snegzeroarrayQ[#]] &]; (* Drop proven zero vectors *)
   Expand @ Map[(# . basis)&, l]
 ];
 
@@ -3564,9 +3662,19 @@ nc[a___, bra[i1___], bra[i2___], b___] /;
 nc[a___, ket[i1___], ket[i2___], b___] /;
   compatiblepattern[{i1}, {i2}] := nc[a, ket @@ bkcombine[{i1}, {i2}], b];
 
-(* Trick: bra and ket from orthogonal Hilbert spaces: we may commute them! *)
-nc[a___, x1:bra[i1___], x2:ket[i2___], b___] /;
-   compatiblepattern[{i1}, {i2}] := nc[a, x2, x1, b];
+(* Tensor product of rank-one operators on disjoint Hilbert factors. A bare
+bra-ket pair with complementary support remains unevaluated. *)
+nc[a___,
+   ket[k1___], bra[r1___],
+   ket[k2___], bra[r2___],
+   d___] /;
+    pairpattern[{k1}, {r1}] &&
+    pairpattern[{k2}, {r2}] &&
+    compatiblepattern[{k1}, {k2}] :=
+  nc[a,
+    ket @@ bkcombine[{k1}, {k2}],
+    bra @@ bkcombine[{r1}, {r2}],
+    d];
 
 (* Conjugation *)
 conj[ket[k___]] := bra[k];
@@ -3747,7 +3855,7 @@ ketbratensorproduct[x_] := x;
 (* Tensor product of operator expressions in terms of ket,bra terms *)
 ketbratensorproduct[x1_, x2_] := Module[{w1, w2, y1, y2, width},
   width[x_] := Max[0, Sequence @@ Cases[x,
-    (ket[a___] | bra[a___]) :> Length[{a}], Infinity]];
+    (ket[a___] | bra[a___]) :> Length[{a}], {0, Infinity}]];
   w1 = width[x1];
   w2 = width[x2];
   y1 = x1 /. {
@@ -3795,27 +3903,52 @@ phononbasis[cutoffs : {_Integer ..}] :=
 
 phononid[Nph_Integer] := Sum[nc[ket[i], bra[i]], {i, 0, Nph}];
 
+phononnumber::mode = "Mode index `1` must be an integer from 1 through `2`.";
+phononplus::mode = "Mode index `1` must be an integer from 1 through `2`.";
+phononminus::mode = "Mode index `1` must be an integer from 1 through `2`.";
+phononx::mode = "Mode index `1` must be an integer from 1 through `2`.";
+
 phononnumber[i_, cutoffs : {_Integer ..}] := Module[{nr, ops},
   nr = Length[cutoffs];
-  ops = Table[If[j == i, phononnumber, phononid], {j, nr}];
+  If[!IntegerQ[i] || i < 1 || i > nr,
+    Message[phononnumber::mode, i, nr];
+    Return[$Failed]
+  ];
+  ops = ConstantArray[phononid, nr];
+  ops[[i]] = phononnumber;
   ketbratensorproduct @@ MapThread[#1[#2] &, {ops, cutoffs}]
 ];
 
 phononplus[i_, cutoffs : {_Integer ..}] := Module[{nr, ops},
   nr = Length[cutoffs];
-  ops = Table[If[j == i, phononplus, phononid], {j, nr}];
+  If[!IntegerQ[i] || i < 1 || i > nr,
+    Message[phononplus::mode, i, nr];
+    Return[$Failed]
+  ];
+  ops = ConstantArray[phononid, nr];
+  ops[[i]] = phononplus;
   ketbratensorproduct @@ MapThread[#1[#2] &, {ops, cutoffs}]
 ];
 
 phononminus[i_, cutoffs : {_Integer ..}] := Module[{nr, ops},
   nr = Length[cutoffs];
-  ops = Table[If[j == i, phononminus, phononid], {j, nr}];
+  If[!IntegerQ[i] || i < 1 || i > nr,
+    Message[phononminus::mode, i, nr];
+    Return[$Failed]
+  ];
+  ops = ConstantArray[phononid, nr];
+  ops[[i]] = phononminus;
   ketbratensorproduct @@ MapThread[#1[#2] &, {ops, cutoffs}]
 ];
 
 phononx[i_, cutoffs : {_Integer ..}] := Module[{nr, ops},
   nr = Length[cutoffs];
-  ops = Table[If[j == i, phononx, phononid], {j, nr}];
+  If[!IntegerQ[i] || i < 1 || i > nr,
+    Message[phononx::mode, i, nr];
+    Return[$Failed]
+  ];
+  ops = ConstantArray[phononid, nr];
+  ops[[i]] = phononx;
   ketbratensorproduct @@ MapThread[#1[#2] &, {ops, cutoffs}]
 ];
 
@@ -3969,37 +4102,52 @@ contraction[x1 : op1_[t1_, i1___], x2 : op2_[t2_, i2___]] /;
     (ordering[op] =!= NONE) :=
        nc[x1, x2] - normalorder[x1 ~ nc ~ x2];
 
-(* Contract one pair.  ctr is an order index that replaces the contracted
-operators in the operator string, factor is the prefactor of the string and
-ops is the string that we are currently applying the contraction to. *)
+(* Bosonic endpoints are even. Preserve the historical odd behavior for all
+other operators, including custom operator types. *)
+wickparity[x_] := If[TrueQ[bosonQ[x]], 0, 1];
+
+(* Keep legacy integer markers for odd endpoints. remainder[] converts them
+to parity-tagged markers before calculating the permutation sign. *)
+wickmark[n_Integer, x_] :=
+  If[wickparity[x] === 0, wickslot[n, 0], n];
+
+wickswapsign[p1_Integer, p2_Integer] :=
+  If[p1 === 1 && p2 === 1, -1, 1];
+
+(* Contract one pair. ctr is an order index that labels the contracted
+endpoints, factor is the prefactor of the string and ops is the string that
+we are currently applying the contraction to. *)
 
 contractone[{ctr_, factor_, ops_List}, {i1_, i2_}] :=
-  Module[{l = ops, c},
+  Module[{l = ops, c, x1 = ops[[i1]], x2 = ops[[i2]]},
     (* Preserve order! *)
     If[i1 < i2,
-      c = contraction[l[[i1]], l[[i2]]],
-      c = contraction[l[[i2]], l[[i1]]]
+      c = contraction[x1, x2],
+      c = contraction[x2, x1]
     ];
-    l[[i1]] = ctr;
-    l[[i2]] = ctr;
+    l[[i1]] = wickmark[ctr, x1];
+    l[[i2]] = wickmark[ctr, x2];
     {ctr + 1, c*factor, l}
   ];
 
-(* Return the remaining operator string. The integer number indexed
-placeholders are commuted to the beginning of the list and ordered:
-this gives the correct sign of the remaining operator string. Sign is
-flipped whenever two neighboring integers are transposed, and when an
-integer and a neighboring operator are transposed. Note: List2 is a
-non-Listable List. *)
+(* Return the remaining operator string. Endpoint markers are commuted to
+the beginning of the list and ordered. A sign is introduced only when both
+crossing endpoints are odd. Note: List2 is a non-Listable List. *)
 
 remainder[{ops__}] := Module[{ops2},
-  ops2 = List2[ops] //. {
-    List2[a___, nr1_Integer, nr2_Integer, b___] :>
-        -List2[a, nr2, nr1, b] /; nr2 < nr1,
-    List2[a___, x : c_[i__], nr_Integer, b___] :>
-        -List2[a, nr, x, b] /; operatorQ[c]
+  (* Bare integers are legacy odd endpoint markers. Replace only at level 1
+  so integer operator indexes remain untouched. *)
+  ops2 = Replace[List2[ops], nr_Integer :> wickslot[nr, 1], {1}];
+  ops2 = ops2 //. {
+    List2[a___,
+      p1:wickslot[nr1_Integer, q1_Integer],
+      p2:wickslot[nr2_Integer, q2_Integer], b___] :>
+        wickswapsign[q1, q2] List2[a, p2, p1, b] /; nr2 < nr1,
+    List2[a___, x:c_[i__],
+      p:wickslot[nr_Integer, q_Integer], b___] :>
+        wickswapsign[wickparity[x], q] List2[a, p, x, b] /; operatorQ[c]
   };
-  ops2 = ops2 /. {x : List2[i__] :> DeleteCases[x, _Integer, {1}]};
+  ops2 = ops2 /. {x:List2[i__] :> DeleteCases[x, _wickslot, {1}]};
   ops2 = ops2 /. {List2[i___] :> dd[nc[i]]}
 ];
 
@@ -4051,17 +4199,16 @@ thus this version of vevwick is not fully general! It is much faster,
 though. Added 4.3.2010 *)
 
 sneglinearoperatorFirst[vevwick2];
-vevwick2[HoldPattern[x : nc[l__]]] := Module[{ic, ia, ndc, nda},
+vevwick2[HoldPattern[x : nc[l__]]] := Module[{ic, ia, crops, anops},
   ic = indecesCR[x];
   ia = indecesAN[x];
   If[Length[ic] != Length[ia], Return[0]];
   (* Bug trap *)
-  ndc = Check[Extract[x, Map[{#} &, ic]] /. op_[CR, i___] :> {op, i},
-              Null];
-  nda = Check[Extract[x, Map[{#} &, ia]] /. op_[AN, i___] :> {op, i},
-              Null];
-  If[ndc === Null || nda === Null, Return[Problem[{l}]] ];
-  If[Sort[ndc] =!= Sort[nda], Return[0]];
+  crops = Check[Extract[x, Map[{#} &, ic]], Null];
+  anops = Check[Extract[x, Map[{#} &, ia]], Null];
+  If[crops === Null || anops === Null, Return[Problem[{l}]] ];
+  (* Symbolic indexes may still contract through KroneckerDelta. *)
+  If[Sort[Head /@ crops] =!= Sort[Head /@ anops], Return[0]];
   (* The term contributes. Perform the calculation! *)
   vevwick[x]
 ];
@@ -4201,8 +4348,10 @@ allsnegsimplifyrules = {Automatic, SnegSimplifyNumber, SnegSimplifySpin,
       SnegSimplifyHop, SnegSimplifyHubbard, SnegSimplifyMisc};
 
 SnegSimplifyNumber[expr_] :=
-  expr //. {nc[op_[CR, j___, sigma_], op_[AN, j___, sigma_]] :>
-              HoldForm[number[op[j], sigma]] /; operatorQ[op],
+  expr //. {nc[op_[CR, j___], op_[AN, j___]] :>
+              HoldForm[number[op[j]]] /; bosonQ[op],
+            nc[op_[CR, j___, sigma_], op_[AN, j___, sigma_]] :>
+              HoldForm[number[op[j], sigma]] /; fermionQ[op],
             Expand[z_. (HoldForm[number[i_, 1]] + HoldForm[number[i_, 0]]) ] :>
               z HoldForm[number[i]]};
 
@@ -4225,26 +4374,26 @@ ruleSnegSimplifySpin =
 
     (* Rules for a single spin operator *)
 
-    rule1  = Thread[(spinxyz[op1[i1___]] /. ir1) :> (l1 /. ir2)];
-    rule1a = Thread[(Expand[spinxyz[op1[i1___]]] /. ir1) :> (l1 /. ir2)];
-    rule1b = Thread[(Expand[2spinxyz[op1[i1___]]] /. ir1) :> (2l1 /. ir2)];
-    rule1c = Thread[(Expand[I spinxyz[op1[i1___]]] /. ir1) :> (I l1 /. ir2)];
-    rule1d = Thread[(Expand[2I spinxyz[op1[i1___]]] /. ir1) :> (2I l1 /. ir2)];
-    rule1e = Thread[(Simplify[2I spinxyz[op1[i1___]]] /. ir1) :> (2I l1 /. ir2)];
-    rule1f = Thread[(Simplify[-2I spinxyz[op1[i1___]]] /. ir1) :> (-2I l1 /. ir2)];
+    rule1  = Thread[(spinxyz[op1[i1___]] /. ir1) -> (l1 /. ir2)];
+    rule1a = Thread[(Expand[spinxyz[op1[i1___]]] /. ir1) -> (l1 /. ir2)];
+    rule1b = Thread[(Expand[2spinxyz[op1[i1___]]] /. ir1) -> (2l1 /. ir2)];
+    rule1c = Thread[(Expand[I spinxyz[op1[i1___]]] /. ir1) -> (I l1 /. ir2)];
+    rule1d = Thread[(Expand[2I spinxyz[op1[i1___]]] /. ir1) -> (2I l1 /. ir2)];
+    rule1e = Thread[(Simplify[2I spinxyz[op1[i1___]]] /. ir1) -> (2I l1 /. ir2)];
+    rule1f = Thread[(Simplify[-2I spinxyz[op1[i1___]]] /. ir1) -> (-2I l1 /. ir2)];
 
     (* Rules for products of spin operators *)
 
     rule2 = Thread[
           Flatten[Expand[
                   4 outer[spinxyz[op1[i1___]], spinxyz[op2[i2___]]]] /.
-                ir1, 1] :>
+                ir1, 1] ->
             Flatten[Expand[4 outer[l1, l2]] /. ir2, 1]];
 
     rule2b = Thread[
           Flatten[Expand[
                   outer[spinxyz[op1[i1___]], spinxyz[op2[i2___]]]] /.
-                ir1, 1] :>
+                ir1, 1] ->
             Flatten[Expand[outer[l1, l2]] /. ir2, 1]];
 
     (* Some symmetrized combinations of spin - spin products *)
@@ -4283,9 +4432,9 @@ ruleSnegSimplifyHop = Block[{op1, op2, ir1, ir2, rule1, rule2},
   fermionQ[op2] ^= True;
   ir1 = {op1 -> a_?operatorQ, op2 -> b_?operatorQ};
   ir2 = {op1 -> a, op2 -> b};
-  rule1 = Expand[z_. hop[op1[i___], op2[j___]] /. ir1] :>
+  rule1 = Expand[z_. hop[op1[i___], op2[j___]] /. ir1] ->
     (z HoldForm[hop[op1[i], op2[j]]] /. ir2);
-    rule2 = Expand[z_. twohop[op1[i___], op2[j___]] /. ir1] :>
+    rule2 = Expand[z_. twohop[op1[i___], op2[j___]] /. ir1] ->
     (z HoldForm[twohop[op1[i], op2[j]]] /. ir2);
   {rule1, rule2}
  ];
@@ -4347,8 +4496,10 @@ snegSeries[f_, expr_, n_:5] := Module[{s, x, pw},
   s /. x^pw_. :> fastpow[expr, pw]  (* pow -> fastpow, 25.8.2010 *)
 ];
 
-snegSeries[f_[expr_], n_:5] := snegSeries[f, expr, n];
-snegSeries[E^expr_, n_:5] := snegSeries[Exp, expr, n];
+snegSeries[f_[expr_], n_] := snegSeries[f, expr, n];
+snegSeries[f_[expr_]] := snegSeries[f, expr, 5];
+snegSeries[E^expr_, n_] := snegSeries[Exp, expr, n];
+snegSeries[E^expr_] := snegSeries[Exp, expr, 5];
 
 (* Example: snegSeries[Exp[c]] *)
 
@@ -4419,39 +4570,61 @@ sum2list[i_] := {i};
 
 (* Similar to matrixrepresentationvc[], but this function
 returns a sparse matrix and it is significantly faster. *)
-matrixrepresentationvcsparse[a_, l_List] := Module[{n = Length[l]},
+matrixrepresentationvcsparse[a_, l_List] := Module[
+  {n = Length[l], parts, states, bracoeffs},
+  parts = Replace[Expand /@ l,
+    HoldPattern[x_. v_vc] :> {x, v}, {1}];
+  If[!And @@ Map[MatchQ[#, {_, _vc}] &, parts],
+    Return[SparseArray[matrixrepresentationvc[a, l]]]
+  ];
+  states = parts[[All, 2]];
+  (* Auxiliary kets can have symbolic or user-defined overlaps. *)
+  If[!FreeQ[states, _ket] || !DuplicateFreeQ[states],
+    Return[SparseArray[matrixrepresentationvc[a, l]]]
+  ];
+  bracoeffs = conj /@ parts[[All, 1]];
   SparseArray[Select[Flatten[
     Table[
-      (sum2list @ Collect[ap[a, l[[i]]], l]) /.
-        x_. v_vc :> Module[{pos = Position[l, v]},
-          If[pos === {}, 0, {pos[[1, 1]], i} -> x]
+      (sum2list @ Collect[ap[a, l[[i]]], states]) /.
+        x_. v_vc :> Module[{pos = Position[states, v], row},
+          If[pos === {}, 0,
+            row = pos[[1, 1]];
+            {row, i} -> bracoeffs[[row]] x
+          ]
         ],
       {i, n}],
     1], (#=!=0)&], {n, n}]
 ];
 
 (* Similar to matrixrepresentationvc[], but significantly faster. *)
-(* NOTE: only applicable for simple monomial vectors!! *)
-matrixrepresentationvcfast[a_, l_List] := Module[{n = Length[l]},
-  Map[
-    indexvalue2list[
-      Sort[
-        (sum2list @ Collect[Chop[ap[a, #]], l]) /.
-          x_. v_vc :> Module[{pos = Position[l, v]},
-            If[pos === {}, 0, {pos[[1, 1]], x}]
-          ]
-      ],
-    n] &,
-  l] // Transpose
-];
+(* Simple monomial vectors use the optimized path. Other bases fall back
+to matrixrepresentationvc[]. *)
+matrixrepresentationvcfast[a_, l_List] :=
+  matrixrepresentationvcfast[a, l, l];
 
-matrixrepresentationvcfast[a_, l1_List, l2_List] := Module[{n = Length[l1]},
+matrixrepresentationvcfast[a_, l1_List, l2_List] := Module[
+  {n = Length[l1], parts, states, bracoeffs},
+  parts = Replace[Expand /@ l1,
+    HoldPattern[x_. v_vc] :> {x, v}, {1}];
+  If[!And @@ Map[MatchQ[#, {_, _vc}] &, parts],
+    Return[matrixrepresentationvc[a, l1, l2]]
+  ];
+  states = parts[[All, 2]];
+  (* Auxiliary kets can have symbolic or user-defined overlaps. *)
+  If[!FreeQ[states, _ket] || !DuplicateFreeQ[states],
+    Return[matrixrepresentationvc[a, l1, l2]]
+  ];
+  bracoeffs = conj /@ parts[[All, 1]];
   Map[
     indexvalue2list[
       Sort[
-        (sum2list @ Collect[Chop[ap[a, #]], l1]) /.
-        x_. v_vc :> Module[{pos = Position[l1, v]},
-          If[pos==={},0,{pos[[1,1]], x}] ]
+        (sum2list @ Collect[ap[a, #], states]) /.
+        x_. v_vc :> Module[{pos = Position[states, v], row},
+          If[pos === {}, 0,
+            row = pos[[1, 1]];
+            {row, bracoeffs[[row]] x}
+          ]
+        ]
       ],
     n] &,
   l2] // Transpose
@@ -4576,18 +4749,22 @@ vevwicknew[op_?operatorQ[__]] := 0; (* single operator *)
 vevwicknew[HoldPattern[l_nc]] /; OddQ[Length[l]] := 0;
 
 vevwicknew[HoldPattern[l_nc]] /; EvenQ[Length[l]] :=
- Module[{oplist, l1, l2, crops, conjcrops, pos, l3, contributions},
+ Module[{oplist, l1, l2, crops, pos, l3, contributions},
   oplist = List @@ l;
   l1 = indecesCR[l];
   l2 = indecesAN[l];
 
-  (* Extract creation operators and conjugate them *)
+  (* Extract creation operators *)
   crops = Map[l[[#]] &, l1];
-  conjcrops = conj /@ crops;
 
-  (* Locate these in the operator list *)
-  pos = Map[Position[oplist, #, {1}] &, conjcrops];
-  pos = Replace[pos, {n_} :> n, {2}];
+  (* Index equality may remain symbolic, so match by operator head and let
+     contract[] produce the corresponding KroneckerDelta factors. *)
+  pos = Map[
+    Function[crop,
+      Select[l2, Head[oplist[[#]]] === Head[crop] &]
+    ],
+    crops
+  ];
 
   (* Generate all allowed permutations *)
   l3 = allcombinations[pos];
@@ -4624,4 +4801,8 @@ ruleFullSimplifyUnderSum = {
   sum[a_, {q__}] :> sum[FullSimplify[a], {q}]
 };
 
+EndPackage[];
+
+(* Backward-compatible lowercase loader context. *)
+BeginPackage["sneg`", {"Sneg`"}];
 EndPackage[];
