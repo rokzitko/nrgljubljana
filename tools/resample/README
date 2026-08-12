@@ -1,2 +1,11 @@
 Resample tabular representation of a function
 Rok Zitko, rok.zitko@ijs.si, May 2014
+
+Usage: resample [-h] [-v] [-p precision] [-e [-a A] [-b B]] <input> <grid> <output>
+
+The input data are interpolated on the x values supplied by the grid file.
+Use -e to enable constant extrapolation for grid points outside the input
+domain. By default, y at the lowest input x is used for x < x_min and y at
+the highest input x is used for x > x_max. Option -a A overrides the value
+below the domain, while -b B overrides the value above it. Both overrides
+require -e.

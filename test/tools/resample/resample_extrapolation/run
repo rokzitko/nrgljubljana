@@ -1,0 +1,15 @@
+#!/bin/sh
+"$1/resample" -e input.dat grid.dat default.dat
+"$1/resample" -e -a -1.25 -b 9.5 input.dat grid.dat custom.dat
+
+if "$1/resample" -a 0 input.dat grid.dat invalid.dat >/dev/null 2>&1; then
+  echo "resample accepted -a without -e" >&2
+  exit 1
+fi
+
+if "$1/resample" -b 0 input.dat grid.dat invalid.dat >/dev/null 2>&1; then
+  echo "resample accepted -b without -e" >&2
+  exit 1
+fi
+
+"$2/test/compare.pl" "$3/ref"

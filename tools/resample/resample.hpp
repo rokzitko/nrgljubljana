@@ -57,6 +57,11 @@ class Resample
         std::optional<std::string> outputfn; // Filename for resampled data. May be the same as gridfn.
         bool verbose = false; // enable with -v
         int output_precision = 16; // number of digits of precision in the output
+        bool extrapolate = false; // enable constant extrapolation with -e
+        std::optional<T> extrapolation_below;
+        std::optional<T> extrapolation_above;
+        T Xmin{};
+        T Xmax{};
 
         std::unique_ptr<gsl_interp_accel, gsl_acc_del> acc;
         std::unique_ptr<gsl_spline, gsl_spline_del> spline;
@@ -65,14 +70,17 @@ class Resample
 
         void usage() 
         {
-            std::cout << "\nUsage: resample [-h] [-v] <input> <grid> <output>" << std::endl;
+            std::cout << "\nUsage: resample [-h] [-v] [-p precision] [-e [-a A] [-b B]] <input> <grid> <output>" << std::endl;
             std::cout << "-v: toggle verbose messages (now=" << verbose << ")" << std::endl;
+            std::cout << "-e: enable constant extrapolation outside the input x range" << std::endl;
+            std::cout << "-a A: use A for x < x_min (requires -e; default: y at x_min)" << std::endl;
+            std::cout << "-b B: use B for x > x_max (requires -e; default: y at x_max)" << std::endl;
         }
 
         void parse_param(int argc, char *argv[]) 
         {
             int c;
-            while ((c = getopt(argc, argv, "hvp:")) != -1)
+            while ((c = getopt(argc, argv, "hvep:a:b:")) != -1)
             {
                 switch (c) 
                 {
@@ -80,10 +88,15 @@ class Resample
                     usage();
                     exit(EXIT_SUCCESS);
                 case 'v': verbose = true; break;
+                case 'e': extrapolate = true; break;
                 case 'p': output_precision = atoi(optarg); break;
+                case 'a': extrapolation_below = static_cast<T>(std::stod(optarg)); break;
+                case 'b': extrapolation_above = static_cast<T>(std::stod(optarg)); break;
                 default: throw std::runtime_error("Unknown argument "s + std::string(1, static_cast<char>(c)));
                 }
             }
+            if (!extrapolate && (extrapolation_below || extrapolation_above))
+              throw std::invalid_argument("Options -a and -b require -e.");
             int remaining = argc - optind;
             if (remaining != 3) {
                 about();
@@ -144,13 +157,14 @@ class Resample
         {
             if (im.empty()) throw std::runtime_error("No input data points available for resampling.");
             int len;      // number of data points
-            T Xmin, Xmax; // the interval boundaries
             std::vector<T>  Xpts, Ypts;
 
             std::sort(im.begin(), im.end());
             len  = im.size();
             Xmin = im.front().first;
             Xmax = im.back().first;
+            if (!extrapolation_below) extrapolation_below = im.front().second;
+            if (!extrapolation_above) extrapolation_above = im.back().second;
             if (verbose) std::cout << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
 
             std::transform(im.begin(), im.end(), std::back_inserter(Xpts), [] (const auto& pair){return pair.first;});
@@ -168,7 +182,11 @@ class Resample
 
         void resample(std::vector<std::pair<T, T>> &grid_)
         {
-            for (auto & i : grid_) i.second = gsl_spline_eval(spline.get(), i.first, acc.get());
+            for (auto & i : grid_) {
+              if (extrapolate && i.first < Xmin) i.second = *extrapolation_below;
+              else if (extrapolate && i.first > Xmax) i.second = *extrapolation_above;
+              else i.second = gsl_spline_eval(spline.get(), i.first, acc.get());
+            }
         }
 };
 
