@@ -1,0 +1,49 @@
+#!/usr/bin/perl
+# Set a parameter in a keyword=value parameter file
+# Rok Zitko, rok.zitko@ijs.si, 2026
+
+use strict;
+use warnings;
+
+my $verbose = 1;
+
+my $argv = scalar(@ARGV);
+if ($argv != 2 && $argv != 3) {
+    die "Usage: setparam <keyword> <value> [param filename]\n";
+}
+
+my $keyword = shift;
+my $value = shift;
+my $fn= $argv == 3 ? shift : "param";
+
+if ($verbose) {
+    print "setparam: keyword=$keyword value=$value fn=$fn\n";
+}
+
+open (I, "<$fn") or die "Can't open $fn for reading: $!\n";
+open (O, ">$fn.tmp") or die "Can't open $fn.tmp for writing: $!\n";
+
+my $nrsubst = 0; # number of substitutions performed
+while (<I>) {
+    if (/^\s*$keyword\s*=\s*(.*)/) {
+        print O "$keyword=$value\n"; # substitute
+        $nrsubst++;
+    } else {
+        print O;
+    }
+}
+
+if ($nrsubst == 0) {
+    print O "$keyword=$value\n"; # append
+}
+
+close(O);
+close(I);
+
+# Perform file replacement; we do this at the end. If the program fails before,
+# the original file is kept as it was.
+system("mv $fn.tmp $fn") == 0 or die;
+
+if ($verbose) {
+  print "setparam done. nrsubst=$nrsubst\n";
+}

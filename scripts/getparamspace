@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # Extract a parameter from 'param' file
+# This version uses space separated (keyword value) pairs
 # Rok Zitko, rok.zitko@ijs.si, April 2008
-# $Id$
 
 if (@ARGV != 1 && @ARGV != 2) {
     die "Usage: getparam <keyword> [param filename]\n";
@@ -25,4 +25,3 @@ while (<F>) {
 }
 
 close(F);
-
