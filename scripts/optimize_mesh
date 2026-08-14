@@ -4,13 +4,16 @@
 # two preceeding data points to the current data point. For large interpolation error, one
 # additional point is added to the mesh (midway between the previous and the current point). 
 # This is potentially useful in DMFT calculations for situation with sharp spectral features.
-# Rok Zitko, Jan 2025
+# Rok Zitko, 2025-2026
 
 use warnings;
 use strict;
 
+my $smalleps = 1e-38; # Anything smaller than this counts as zero frequency
+
 my $debug = 1;
 my $verbose = 1;
+my $reject_zero = 1;
 
 @ARGV >= 2 or die "Syntax: optimize_mesh <filename> <delta> [dxmin] [miny]\n";
 
@@ -62,12 +65,16 @@ while (<F>) {
 
           if ($rel > $delta && abs($x-$x2) > $dxmin && (abs($y)+abs($y2))>2.0*$miny) { # Error too large, adding point (between previous and current)
               my $x0 = $x2 + ($x-$x2)/2.0;
-              my $slope2 = ($y-$y2)/($x-$x2);
-              my $y0 = $y2 + $slope2 * ($x-$x2)/2.0;
-              if ($debug) { print STDERR "$x0 $y0 ADDED error=$error rel=$rel\n"; }
-              print "$x0 $y0\n";
-              $cntfinal++;
-              $nradd++;
+              if (!($reject_zero && abs($x0) < $smalleps)) {
+                  my $slope2 = ($y-$y2)/($x-$x2);
+                  my $y0 = $y2 + $slope2 * ($x-$x2)/2.0;
+                  if ($debug) { print STDERR "$x0 $y0 ADDED error=$error rel=$rel\n"; }
+                  print "$x0 $y0\n";
+                  $cntfinal++;
+                  $nradd++;
+              } else {
+                  if ($debug) { print STDERR "Not adding point at 0: $x0\n"; }
+              }
           }
           print "$x $y\n";
           $cntfinal++;

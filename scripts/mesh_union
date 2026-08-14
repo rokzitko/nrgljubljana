@@ -1,9 +1,11 @@
 #!/usr/bin/env perl
 # Determine the union of mesh points from two files (taking the first columns).
-# Rok Zitko, 2025
+# Rok Zitko, 2025-2026
 
 use warnings;
 use strict;
+
+my $smalleps = 1e-38; # Anything smaller than this counts as zero frequency
 
 my $verbose = 1;
 my $debug = 0;
@@ -58,7 +60,8 @@ foreach(@sorted_mesh) {
         print "$_ 0\n"; # 0 as 2nd (y) element
         $cnt++;
     } else {
-        if (2.0*abs($prev-$_)/(abs($prev)+abs($_)) > $tol) {
+        my $different_enough = 2.0*abs($prev-$_)/(abs($prev)+abs($_)+$smalleps) > $tol;
+        if ($different_enough) {
             print "$_ 0\n";
             $cnt++;
         } else {
