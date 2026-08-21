@@ -51,3 +51,20 @@ This release summarizes development since `2024.12`, with major improvements in 
 - Checkpoints and density matrices are written atomically and loaded transactionally.
 - The `DONE` marker is created only after all requested calculation stages complete successfully.
 - Conda packaging and build coverage now include broader Linux, macOS, ARM, BLAS, and compiler configurations.
+
+## Installation
+
+NRG Ljubljana is available from conda-forge:
+
+    conda install -c conda-forge nrgljubljana
+
+Packages are available for Linux x86-64, Linux aarch64, macOS x86-64,
+and macOS arm64. Source builds remain appropriate when CUDA support or
+nonstandard numerical-library configurations are required.
+
+## Requirements And Compatibility
+
+- The C++ runtime requires a C++20 compiler.
+- CPU diagonalization now defaults to the divide-and-conquer LAPACK routines dsyevd and zheevd Numerical results should remain equivalent within floating-point tolerances.
+- BLAS/LAPACK and OpenMP runtime selection is handled more explicitly. Users combining MPI with threaded numerical libraries should review their rank and thread settings to avoid oversubscription.
+- CUDA support is optional and must be enabled explicitly in source builds. It is not currently included in the standard conda-forge packages.

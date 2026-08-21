@@ -19,7 +19,17 @@ NRG Ljubljana is a framework for numerical renormalization group (NRG) calculati
 - dynamical mean-field theory (DMFT); see a simple sample code for [Kondo lattice
 model](https://github.com/rokzitko/DMFT_NRG_KLM)
 
-## Quick Start
+## Installation
+
+NRG Ljubljana is available from conda-forge:
+
+   conda install -c conda-forge nrgljubljana
+
+Packages are available for Linux x86-64, Linux aarch64, macOS x86-64,
+and macOS arm64. Source builds remain appropriate when CUDA support or
+nonstandard numerical-library configurations are required.
+
+## Source builds
 
 Build locally with CMake:
 
