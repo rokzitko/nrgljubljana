@@ -1,0 +1,8 @@
+#!/bin/sh
+"$1/hilb" -G points.dat >results.dat
+"$1/hilb" -G -n 0 points.dat >>results.dat
+"$1/hilb" -G -n 1 points.dat >>results.dat
+"$1/hilb" -G -n 2 points.dat >>results.dat
+if "$1/hilb" -n invalid 0.2 0.1 >/dev/null 2>&1; then exit 1; fi
+if "$1/hilb" -n >/dev/null 2>&1; then exit 1; fi
+"$2/test/compare.pl" "$3/ref"

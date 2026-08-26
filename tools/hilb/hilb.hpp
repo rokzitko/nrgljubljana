@@ -1,4 +1,4 @@
-// Computes \int rho(E)/(z-E) dE for given z and tabulated density of states rho(E).
+// Computes \int E^n rho(E)/(z-E) dE for given z and tabulated density of states rho(E).
 //
 // Legacy modes:
 // Mode 1: <Re z> <Im z> as input. Returns Im part by default, or both Re and Im parts if the -G switch is used.
@@ -26,7 +26,10 @@
 #include <cmath>
 #include <cstdlib>
 #include <cassert>
+#include <charconv>
 #include <cfloat>
+#include <stdexcept>
+#include <string_view>
 #include <unistd.h>
 
 #include <gsl/gsl_errno.h> // GNU scientific library
@@ -48,6 +51,14 @@ struct gsl_spline_deleter {
 };
 
 inline auto atof(const std::string &s) { return ::atof(s.c_str()); }
+
+inline auto parse_energy_power(const std::string_view value) {
+  int result = 0;
+  const auto [end, error] = std::from_chars(value.data(), value.data() + value.size(), result);
+  if (error != std::errc{} || end != value.data() + value.size() || result < 0)
+    throw std::runtime_error("Energy power must be a nonnegative integer: " + std::string(value));
+  return result;
+}
 
 // Unwrap a lambda expression and evaluate it at x
 // https://martin-ueding.de/articles/cpp-lambda-into-gsl/index.html
@@ -190,14 +201,24 @@ inline auto bandwidth(const std::vector<double> &X) {
    * @param rhoi Imaginary part of the spectral function
    * @param B Half-bandwidth, i.e., the support of the spectral function is [-B:B]
    * @param z The complex value for which to evaluate the Hilbert transform
-   * @param lim_direct value of y=Im(z) above which rho(E)/(x+Iy-E) is directly integrated, and below which the singularity is removed
+   * @param lim_direct value of y=Im(z) above which g(E)/(x+Iy-E) is directly integrated, and below which the singularity is removed
+   * @param n Nonnegative integer power of the integration energy
    */
-template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<double> z, const double lim_direct = 1e-3) {
+template <typename FNCR, typename FNCI>
+auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<double> z, const double lim_direct = 1e-3,
+                       const int n = 0) {
+  if (n < 0) throw std::invalid_argument("Energy power must be nonnegative.");
   // Initialize GSL and set up the interpolation
   gsl_set_error_handler_off();
   integrator integr;
   const auto x = real(z);
   const auto y = imag(z);
+  auto g_r = [&rhor, n](const double omega) -> double {
+    return n == 0 ? rhor(omega) : std::pow(omega, n) * rhor(omega);
+  };
+  auto g_i = [&rhoi, n](const double omega) -> double {
+    return n == 0 ? rhoi(omega) : std::pow(omega, n) * rhoi(omega);
+  };
   // Low-level Hilbert-transform routines. calcA routine handles the case with removed singularity and
   // perform the integration after a change of variables. calcB routine directly evaluates the defining
   // integral of the Hilbert transform. Real and imaginary parts are determined in separate steps.
@@ -235,29 +256,33 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
   auto calcB = [&integr, B](auto f0) -> double { return integr(f0, -B, B); }; // direct integration
   auto calc  = [y, lim_direct, calcA, calcB](auto f3p, auto f3m, auto d, auto f0) { return (std::abs(y) < lim_direct ? calcA(f3p, f3m, d) : calcB(f0)); };
 
-  // Re part of rho(omega)/(z-omega)
-  auto ref0 = [x, y, &rhor, &rhoi](double omega) -> double { return (rhor(omega) * (x - omega) + rhoi(omega) * y) / (sqr(y) + sqr(x - omega)); };
+  // Re part of g(omega)/(z-omega)
+  auto ref0 = [x, y, &g_r, &g_i](double omega) -> double {
+    return (g_r(omega) * (x - omega) + g_i(omega) * y) / (sqr(y) + sqr(x - omega));
+  };
 
-  // Im part of rho(omega)/(z-omega)
-  auto imf0 = [x,y,&rhor,&rhoi](double omega) -> double { return (rhor(omega)*(-y) + rhoi(omega)*(x-omega) )/(sqr(y)+sqr(x-omega)); };
+  // Im part of g(omega)/(z-omega)
+  auto imf0 = [x, y, &g_r, &g_i](double omega) -> double {
+    return (g_r(omega) * (-y) + g_i(omega) * (x - omega)) / (sqr(y) + sqr(x - omega));
+  };
 
-  // Re part of rho(omega)/(z-omega) with the singularity subtracted out.
-  auto ref1 = [x, y, &rhor, &rhoi](double omega) -> double {
-    return ((rhor(omega) - rhor(x)) * (x - omega) + (rhoi(omega) - rhoi(x)) * (y)) / (sqr(y) + sqr(x - omega));
+  // Re part of g(omega)/(z-omega) with the singularity subtracted out.
+  auto ref1 = [x, y, &g_r, &g_i](double omega) -> double {
+    return ((g_r(omega) - g_r(x)) * (x - omega) + (g_i(omega) - g_i(x)) * y) / (sqr(y) + sqr(x - omega));
   };
   auto ref2  = [x, y, ref1](double W) -> double { return std::abs(y) * ref1(std::abs(y) * W + x); };
   auto ref3p = [ref2](double r) -> double { return ref2(exp(r)) * exp(r); };
   auto ref3m = [ref2](double r) -> double { return ref2(-exp(r)) * exp(r); };
-  auto red   = rhor(x) * reQ(x, y, B) - rhoi(x) * imQ(x, y, B);
+  auto red   = g_r(x) * reQ(x, y, B) - g_i(x) * imQ(x, y, B);
 
-  // Im part of rho(omega)/(z-omega) with the singularity subtracted out.
-  auto imf1 = [x, y, &rhor, &rhoi](double omega) -> double {
-    return ((rhor(omega) - rhor(x)) * (-y) + (rhoi(omega) - rhoi(x)) * (x - omega)) / (sqr(y) + sqr(x - omega));
+  // Im part of g(omega)/(z-omega) with the singularity subtracted out.
+  auto imf1 = [x, y, &g_r, &g_i](double omega) -> double {
+    return ((g_r(omega) - g_r(x)) * (-y) + (g_i(omega) - g_i(x)) * (x - omega)) / (sqr(y) + sqr(x - omega));
   };
   auto imf2  = [x, y, imf1](double W) -> double { return std::abs(y) * imf1(std::abs(y) * W + x); };
   auto imf3p = [imf2](double r) -> double { return imf2(exp(r)) * exp(r); };
   auto imf3m = [imf2](double r) -> double { return imf2(-exp(r)) * exp(r); };
-  auto imd   = rhor(x) * imQ(x, y, B) + rhoi(x) * reQ(x, y, B);
+  auto imd   = g_r(x) * imQ(x, y, B) + g_i(x) * reQ(x, y, B);
 
   return std::complex(calc(ref3p, ref3m, red, ref0), calc(imf3p, imf3m, imd, imf0));
 }
@@ -267,11 +292,13 @@ template <typename FNCR, typename FNCI> auto hilbert_transform(FNCR rhor, FNCI r
    * @param Rpts Real part of the spectral function
    * @param Ipts Imaginary part of the spectral function
    */ 
-template <typename T> auto hilbert_transform(const T &Xpts, const T &Rpts, const T &Ipts, const std::complex<double> z, const double lim_direct = 1e-3) {
+template <typename T>
+auto hilbert_transform(const T &Xpts, const T &Rpts, const T &Ipts, const std::complex<double> z,
+                       const double lim_direct = 1e-3, const int n = 0) {
   interpolator rhor(Xpts, Rpts);
   interpolator rhoi(Xpts, Ipts);
   const double B = bandwidth(Xpts);
-  return hilbert_transform(rhor, rhoi, B, z, lim_direct);
+  return hilbert_transform(rhor, rhoi, B, z, lim_direct, n);
 }
 
 class Hilb {
@@ -287,12 +314,14 @@ class Hilb {
   bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
   double shiftx = 0.0;
   double shifty = 0.0;
+  int n = 0; // power of the integration energy
 
   auto hilbert(const double x, const double y) {
     auto Bethe_fnc = [this](const auto w) { return std::abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(w * scale)) : 0.0; };
     auto zero_fnc = []([[maybe_unused]] const auto w) { return 0.0; };
     const auto z = std::complex(x + shiftx, y + shifty); // shift here!
-    return tabulated ? hilbert_transform(Xpts, Ypts, Ipts, z) : hilbert_transform(Bethe_fnc, zero_fnc, B, z);
+    if (tabulated) return hilbert_transform(Xpts, Ypts, Ipts, z, 1e-3, n);
+    return hilbert_transform(Bethe_fnc, zero_fnc, B, z, 1e-3, n);
   }
 
   void do_one(const double x, const double y, std::ostream &OUT) {
@@ -403,6 +432,8 @@ class Hilb {
       std::cout << "shiftx=" << shiftx << std::endl;
     if (shifty != 0.0)
       std::cout << "shifty=" << shifty << std::endl;
+    if (n != 0)
+      std::cout << "n=" << n << std::endl;
   }
 
   void about() {
@@ -420,18 +451,22 @@ class Hilb {
     std::cout << "-d <dos>  Load the density of state data from file 'dos'" << std::endl;
     std::cout << "          If this option is not used, the Bethe lattice DOS is assumed." << std::endl;
     std::cout << "-v        Increase verbosity" << std::endl;
-    std::cout << "-s        Rescale factor 'scale' for the DOS." << std::endl;
-    std::cout << "-B        Half-bandwidth 'B' of the Bethe lattice DOS." << std::endl;
+    std::cout << "-s <s>    Rescale factor 'scale' for the DOS." << std::endl;
+    std::cout << "-B <B>    Half-bandwidth 'B' of the Bethe lattice DOS." << std::endl;
     std::cout << "          Use either -s or -B. Default is scale=B=1." << std::endl;
-    std::cout << "-G        Compute the Green's function. hilb then returns Re[G(z)] Im[G(z)]" << std::endl;
-    std::cout << "-x        Shift real part of the argument" << std::endl;
-    std::cout << "-y        Shift imag part of the argument" << std::endl;
+    std::cout << "-n <n>    Multiply the integrand by E^n; n must be a nonnegative integer." << std::endl;
+    std::cout << "          Default is n=0." << std::endl;
+    std::cout << "-G        Return both Re[H_n(z)] and Im[H_n(z)]." << std::endl;
+    std::cout << "-o <file> Write output to file in single-point and input-file modes." << std::endl;
+    std::cout << "-x <dx>   Shift real part of the argument" << std::endl;
+    std::cout << "-y <dy>   Shift imag part of the argument" << std::endl;
   }
 
   void parse_param_run(int argc, char *argv[]) {
+    std::optional<std::string> output_filename;
     std::optional<std::ofstream> OUTFILE;
     int c;
-    while ((c = getopt(argc, argv, "hGd:vVs:B:o:x:y:")) != -1) {
+    while ((c = getopt(argc, argv, "hGd:vVs:B:o:x:y:n:")) != -1) {
       switch (c) {
         case 'h': usage(); exit(EXIT_SUCCESS);
         case 'G': G = true; break;
@@ -456,8 +491,7 @@ class Hilb {
           if (verbose) { std::cout << "scale=" << scale << " B=" << B << std::endl; }
           break;
         case 'o':
-          OUTFILE = safe_open_wr(optarg);
-          if (verbose) { std::cout << "Output file: " << optarg << std::endl; }
+          output_filename = optarg;
           break;
         case 'x':
           shiftx = atof(optarg);
@@ -465,11 +499,18 @@ class Hilb {
         case 'y':
           shifty = atof(optarg);
           break;
-        default: abort();
+        case 'n':
+          n = parse_energy_power(optarg);
+          break;
+        default: throw std::runtime_error("Invalid command-line option.");
       }
     }
     const auto remaining = argc - optind; // arguments left
     const std::vector<std::string> args(argv+optind, argv+argc); // NOLINT
+    if (output_filename && (remaining == 1 || remaining == 2)) {
+      OUTFILE = safe_open_wr(*output_filename);
+      if (verbose) std::cout << "Output file: " << *output_filename << std::endl;
+    }
     // Usage case 1: real (x,y) pairs from an input file.
     if (remaining == 1) {
       about();
