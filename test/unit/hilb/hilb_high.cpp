@@ -1,8 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <cmath>
 #include <complex>
 #include <cstdio>
 #include <fstream>
+#include <limits>
+#include <string>
 #include <unistd.h>
 #include <vector>
 
@@ -17,6 +21,19 @@ auto flat_band_h0(const std::complex<double> z) { return (std::log(z + B) - std:
 void expect_complex_near(const std::complex<double> actual, const std::complex<double> expected, const double tolerance) {
   EXPECT_NEAR(actual.real(), expected.real(), tolerance);
   EXPECT_NEAR(actual.imag(), expected.imag(), tolerance);
+}
+
+void run_hilb(std::vector<std::string> arguments) {
+  std::vector<char *> argv;
+  argv.reserve(arguments.size());
+  for (auto &argument : arguments) argv.push_back(argument.data());
+  optind = 1;
+  NRG::Hilb::Hilb(static_cast<int>(argv.size()), argv.data());
+}
+
+void write_file(const std::string &filename, const std::string &contents) {
+  std::ofstream file(filename);
+  file << contents;
 }
 
 } // namespace
@@ -121,6 +138,147 @@ TEST(Hilb, energy_power_parser_requires_nonnegative_integer) { // NOLINT
   EXPECT_THROW(NRG::Hilb::parse_energy_power("2junk"), std::runtime_error);
   EXPECT_THROW(NRG::Hilb::parse_energy_power("999999999999999999999999"), std::runtime_error);
   EXPECT_THROW(NRG::Hilb::hilbert_transform(rho, zero, B, std::complex<double>{0.0, 0.1}, 1e-3, -1), std::invalid_argument);
+}
+
+TEST(Hilb, minimum_safe_imaginary_part_avoids_underflow) { // NOLINT
+  auto rho = [](const double energy) { return 0.5 + 0.1 * energy; };
+  auto zero = [](const double) { return 0.0; };
+  const auto minimum = NRG::Hilb::minimum_safe_imaginary_part();
+
+  EXPECT_DOUBLE_EQ(minimum, std::sqrt(std::numeric_limits<double>::min()));
+  const auto result = NRG::Hilb::hilbert_transform(rho, zero, B, std::complex<double>{0.2, minimum});
+  EXPECT_TRUE(std::isfinite(result.real()));
+  EXPECT_TRUE(std::isfinite(result.imag()));
+  EXPECT_THROW(NRG::Hilb::hilbert_transform(rho, zero, B, std::complex<double>{0.2, minimum / 2.0}), std::invalid_argument);
+  EXPECT_THROW(NRG::Hilb::hilbert_transform(rho, zero, B, std::complex<double>{0.2, 0.0}), std::invalid_argument);
+}
+
+TEST(Hilb, integration_settings_are_configurable_and_validated) { // NOLINT
+  auto rho = [](const double) { return 0.5; };
+  auto zero = [](const double) { return 0.0; };
+  const std::complex<double> z{0.2, 0.1};
+  const auto expected = flat_band_h0(z);
+
+  const auto result = NRG::Hilb::hilbert_transform(rho, zero, B, z, 0.2, 0, 1e-12, 1e-8);
+  expect_complex_near(result, expected, 1e-8);
+  EXPECT_NO_THROW(NRG::Hilb::hilbert_transform(rho, zero, B, z, 0.2, 0, 0.0, 1e-10));
+  EXPECT_THROW(NRG::Hilb::hilbert_transform(rho, zero, B, z, -1.0, 0, 1e-12, 1e-8), std::invalid_argument);
+  EXPECT_THROW(NRG::Hilb::hilbert_transform(rho, zero, B, z, 0.2, 0, -1.0, 1e-8), std::invalid_argument);
+  EXPECT_THROW(NRG::Hilb::hilbert_transform(rho, zero, B, z, 0.2, 0, 0.0, 0.0), std::invalid_argument);
+}
+
+TEST(Hilb, dmft_clipping_is_reported_once) { // NOLINT
+  const std::string resigma = "hilb_clipping_resigma.dat";
+  const std::string imsigma = "hilb_clipping_imsigma.dat";
+  const std::string reoutput = "hilb_clipping_reoutput.dat";
+  const std::string imoutput = "hilb_clipping_imoutput.dat";
+  write_file(resigma, "0 0\n0.25 0\n0.5 0\n");
+  write_file(imsigma, "0 0\n0.25 -0.05\n0.5 -0.2\n");
+
+  testing::internal::CaptureStdout();
+  testing::internal::CaptureStderr();
+  EXPECT_NO_THROW(run_hilb({"hilb", "-G", "-c", "0.1", resigma, imsigma, reoutput, imoutput}));
+  const auto stderr_output = testing::internal::GetCapturedStderr();
+  testing::internal::GetCapturedStdout();
+
+  EXPECT_NE(stderr_output.find("hilb: clipped 2 ImSigma value(s)"), std::string::npos);
+  EXPECT_NE(stderr_output.find("first at omega=0: 0 -> -0.10000000000000001"), std::string::npos);
+  EXPECT_EQ(std::count(stderr_output.begin(), stderr_output.end(), '\n'), 1);
+
+  std::remove(resigma.c_str());
+  std::remove(imsigma.c_str());
+  std::remove(reoutput.c_str());
+  std::remove(imoutput.c_str());
+}
+
+TEST(Hilb, default_dmft_clipping_produces_a_finite_result) { // NOLINT
+  const std::string resigma = "hilb_safe_clipping_resigma.dat";
+  const std::string imsigma = "hilb_safe_clipping_imsigma.dat";
+  const std::string reoutput = "hilb_safe_clipping_reoutput.dat";
+  const std::string imoutput = "hilb_safe_clipping_imoutput.dat";
+  write_file(resigma, "0 0\n");
+  write_file(imsigma, "0 0\n");
+
+  testing::internal::CaptureStdout();
+  testing::internal::CaptureStderr();
+  EXPECT_NO_THROW(run_hilb({"hilb", "-G", resigma, imsigma, reoutput, imoutput}));
+  const auto stderr_output = testing::internal::GetCapturedStderr();
+  testing::internal::GetCapturedStdout();
+  EXPECT_NE(stderr_output.find("hilb: clipped 1 ImSigma value(s)"), std::string::npos);
+  EXPECT_NE(stderr_output.find("-1.4916681462400413e-154"), std::string::npos);
+
+  double label = 0.0;
+  double value = 0.0;
+  std::ifstream refile(reoutput);
+  EXPECT_TRUE(static_cast<bool>(refile >> label >> value));
+  EXPECT_TRUE(std::isfinite(value));
+  std::ifstream imfile(imoutput);
+  EXPECT_TRUE(static_cast<bool>(imfile >> label >> value));
+  EXPECT_TRUE(std::isfinite(value));
+
+  std::remove(resigma.c_str());
+  std::remove(imsigma.c_str());
+  std::remove(reoutput.c_str());
+  std::remove(imoutput.c_str());
+}
+
+TEST(Hilb, dmft_without_clipping_is_silent) { // NOLINT
+  const std::string resigma = "hilb_default_clipping_resigma.dat";
+  const std::string imsigma = "hilb_default_clipping_imsigma.dat";
+  const std::string reoutput = "hilb_default_clipping_reoutput.dat";
+  const std::string imoutput = "hilb_default_clipping_imoutput.dat";
+  write_file(resigma, "0 0\n");
+  write_file(imsigma, "0 -0.1\n");
+
+  testing::internal::CaptureStdout();
+  testing::internal::CaptureStderr();
+  EXPECT_NO_THROW(run_hilb({"hilb", "-G", resigma, imsigma, reoutput, imoutput}));
+  const auto stderr_output = testing::internal::GetCapturedStderr();
+  testing::internal::GetCapturedStdout();
+  EXPECT_TRUE(stderr_output.empty());
+
+  std::remove(resigma.c_str());
+  std::remove(imsigma.c_str());
+  std::remove(reoutput.c_str());
+  std::remove(imoutput.c_str());
+}
+
+TEST(Hilb, frequency_tolerance_is_configurable) { // NOLINT
+  const std::string resigma = "hilb_frequency_resigma.dat";
+  const std::string imsigma = "hilb_frequency_imsigma.dat";
+  const std::string reoutput = "hilb_frequency_reoutput.dat";
+  const std::string imoutput = "hilb_frequency_imoutput.dat";
+  write_file(resigma, "0 0\n");
+  write_file(imsigma, "0.00005 -0.1\n");
+
+  testing::internal::CaptureStdout();
+  EXPECT_THROW(run_hilb({"hilb", "-G", resigma, imsigma, reoutput, imoutput}), std::runtime_error);
+  testing::internal::GetCapturedStdout();
+  testing::internal::CaptureStdout();
+  EXPECT_NO_THROW(run_hilb({"hilb", "-G", "-f", "0.0001", resigma, imsigma, reoutput, imoutput}));
+  testing::internal::GetCapturedStdout();
+
+  std::remove(resigma.c_str());
+  std::remove(imsigma.c_str());
+  std::remove(reoutput.c_str());
+  std::remove(imoutput.c_str());
+}
+
+TEST(Hilb, numerical_cli_options_reject_invalid_values) { // NOLINT
+  EXPECT_THROW(run_hilb({"hilb", "-c", "1e-200", "0", "0.1"}), std::runtime_error);
+  EXPECT_THROW(run_hilb({"hilb", "-c", "invalid", "0", "0.1"}), std::runtime_error);
+  EXPECT_THROW(run_hilb({"hilb", "-t", "-1", "0", "0.1"}), std::runtime_error);
+  EXPECT_THROW(run_hilb({"hilb", "-a", "-1", "0", "0.1"}), std::runtime_error);
+  EXPECT_THROW(run_hilb({"hilb", "-r", "-1", "0", "0.1"}), std::runtime_error);
+  EXPECT_THROW(run_hilb({"hilb", "-f", "-1", "0", "0.1"}), std::runtime_error);
+  EXPECT_THROW(run_hilb({"hilb", "-a", "0", "-r", "0", "0", "0.1"}), std::runtime_error);
+  EXPECT_THROW(run_hilb({"hilb", "-t", "nan", "0", "0.1"}), std::runtime_error);
+}
+
+TEST(Hilb, numerical_cli_options_are_accepted) { // NOLINT
+  testing::internal::CaptureStdout();
+  EXPECT_NO_THROW(run_hilb({"hilb", "-t", "0.2", "-a", "1e-12", "-r", "1e-8", "0.2", "0.1"}));
+  testing::internal::GetCapturedStdout();
 }
 
 int main(int argc, char **argv) {

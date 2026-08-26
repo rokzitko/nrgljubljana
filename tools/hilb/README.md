@@ -94,16 +94,35 @@ omega ReSigma
 omega ImSigma
 ```
 
-The frequency labels in corresponding rows must agree within $10^{-6}$. The
-imaginary self-energy is forced to be no greater than $-10^{-8}$, and the
-transform is evaluated at
+The frequency labels in corresponding rows must agree within the tolerance set
+by `-f`, whose default is $10^{-6}$. The imaginary self-energy is capped as
+
+$$
+\operatorname{Im}\Sigma\leftarrow
+\min(\operatorname{Im}\Sigma,-c),
+$$
+
+where the positive clipping magnitude $c$ is set by `-c`. Its default is
+
+$$
+c=\sqrt{\mathtt{std::numeric_limits<double>::min()}}
+  \simeq 1.4916681462400413\times10^{-154}.
+$$
+
+This is the smallest default whose square remains a normal nonzero `double`,
+which is required by the current small-imaginary-part formulas. Smaller `-c`
+values are rejected. The transform is evaluated at
 
 $$
 z=\omega-\operatorname{Re}\Sigma(\omega)
   +i[-\operatorname{Im}\Sigma(\omega)],
 $$
 
-followed by any shifts requested with `-x` and `-y`.
+followed by any shifts requested with `-x` and `-y`. If one or more input
+values are changed by the cap, `hilb` writes one summary to standard error with
+the number changed, the cap, and the first affected frequency and value. Since
+the shifts are applied after clipping, a shift that makes the final
+$|\operatorname{Im}z|$ smaller than the safe minimum is rejected.
 
 Without `-G`, both real and imaginary results are divided by $-\pi$ before
 being written to `reaw.dat` and `imaw.dat`. With `-G`, the raw real and
@@ -126,6 +145,11 @@ the final positional arguments.
 | `-o FILE` | Write results to `FILE` in the single-point and argument-file modes. |
 | `-x DX` | Add `DX` to the real part of every transform argument. |
 | `-y DY` | Add `DY` to the imaginary part of every transform argument. |
+| `-c C` | Set the positive clipping magnitude for $\operatorname{Im}\Sigma$ in DMFT mode. Default: $\sqrt{\mathtt{double\ min}}\simeq1.4917\times10^{-154}$. |
+| `-t T` | Set the direct/singularity-subtracted integration threshold. Default: $10^{-3}$. |
+| `-a A` | Set the absolute quadrature tolerance. Default: $10^{-14}$. |
+| `-r R` | Set the relative quadrature tolerance. Default: $10^{-10}$. |
+| `-f F` | Set the absolute frequency-label tolerance in DMFT mode. Default: $10^{-6}$. |
 
 Use either `-s` or `-B`; if both are present, the last one takes effect. They
 configure only the built-in density and do not rescale data loaded with `-d`.
@@ -199,8 +223,8 @@ singularity-subtracted form according to the magnitude of $y=\operatorname{Im}z$
 
 ### Direct quadrature
 
-When $|y|\ge 10^{-3}$, the defining integral is evaluated directly. With
-$z=x+iy$, the two real integrands are
+When $|y|\ge T$, the defining integral is evaluated directly, where $T$ is set
+by `-t` and defaults to $10^{-3}$. With $z=x+iy$, the two real integrands are
 
 $$
 \operatorname{Re}\frac{g(E)}{z-E}
@@ -217,9 +241,9 @@ Each is integrated over `[-B,B]` with GSL `gsl_integration_qag` using the
 
 ### Small imaginary part
 
-When $|y|<10^{-3}$, direct quadrature would need to resolve a narrow structure
-near $E=x$. The implementation instead subtracts the complete weighted
-numerator at that point:
+When $|y|<T$, direct quadrature would need to resolve a narrow structure near
+$E=x$. The implementation instead subtracts the complete weighted numerator
+at that point:
 
 $$
 H_n(z)=
@@ -266,22 +290,25 @@ to `-36.8`, for which $e^r$ is approximately $10^{-16}$.
 
 ### Quadrature settings
 
-The settings are fixed in the executable:
+The executable uses these defaults:
 
 | Setting | Value |
 | --- | ---: |
 | GSL routine | `gsl_integration_qag` |
 | Local rule | 15-point Gauss-Kronrod |
 | Workspace subdivision limit | 1000 |
-| Absolute tolerance | $10^{-14}$ |
-| Relative tolerance | $10^{-10}$ |
-| Direct/subtracted threshold | $|\operatorname{Im}z|=10^{-3}$ |
+| Absolute tolerance (`-a`) | $10^{-14}$ |
+| Relative tolerance (`-r`) | $10^{-10}$ |
+| Direct/subtracted threshold (`-t`) | $|\operatorname{Im}z|=10^{-3}$ |
 
-There are no command-line controls for these settings. The C++
-`hilbert_transform` interface exposes the direct/subtracted threshold as
-`lim_direct`; the GSL tolerances remain fixed. The GSL global error handler is
-disabled. The default integration wrapper returns GSL's result without
-reporting its error estimate or a nonzero status code.
+The three numerical values are configurable with the options shown in the
+table. Tolerances must be finite and nonnegative and must form a combination
+accepted by GSL. The C++ `hilbert_transform` interface exposes them as
+`lim_direct`, `epsabs`, and `epsrel`. The command-line tolerances also apply to
+the normalization integral reported for a tabulated DOS. The workspace limit
+and local rule remain fixed. The GSL global error handler is disabled. The
+default integration wrapper returns GSL's result without reporting its error
+estimate or a nonzero status code.
 
 ## Identities And Limitations
 
@@ -301,12 +328,16 @@ This also shows why $H_n$ is not simply $z^nH_0$.
 
 Numerical limitations include:
 
-- `Im(z)=0` is unsupported. The small-imaginary-part path divides by `|y|`
-  and is not a direct principal-value integrator.
+- Values with $|\operatorname{Im}z|<
+  \sqrt{\mathtt{std::numeric_limits<double>::min()}}$ are rejected. Squaring a
+  smaller value can underflow in the small-imaginary-part formulas, and the
+  implementation is not a direct principal-value integrator.
 - Large powers can overflow or underflow in $E^n$ and can amplify cancellation
   in the integral.
-- The fixed threshold $10^{-3}$ is expressed in the same energy units as the
-  input and is not scaled with the bandwidth.
+- The clipping magnitude and direct/subtracted threshold are absolute energy
+  scales and are not scaled with the bandwidth. The absolute quadrature
+  tolerance has the units of the transformed integral; the relative tolerance
+  is dimensionless.
 - Singularity subtraction assumes that $g(E)$ is sufficiently smooth near
   $E=x$. Discontinuous densities are difficult cases.
 - At exactly $x=\pm B$ in the small-imaginary-part branch, the current boundary

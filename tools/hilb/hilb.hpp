@@ -27,7 +27,9 @@
 #include <cstdlib>
 #include <cassert>
 #include <charconv>
+#include <cerrno>
 #include <cfloat>
+#include <limits>
 #include <stdexcept>
 #include <string_view>
 #include <unistd.h>
@@ -51,6 +53,27 @@ struct gsl_spline_deleter {
 };
 
 inline auto atof(const std::string &s) { return ::atof(s.c_str()); }
+
+inline auto parse_finite_double(const std::string_view value, const std::string_view name) {
+  const std::string text(value);
+  char *end = nullptr;
+  errno = 0;
+  const auto result = std::strtod(text.c_str(), &end);
+  if (errno == ERANGE || end == text.c_str() || end != text.c_str() + text.size() || !std::isfinite(result))
+    throw std::runtime_error(std::string(name) + " must be a finite representable number: " + text);
+  return result;
+}
+
+inline auto minimum_safe_imaginary_part() { return std::sqrt(std::numeric_limits<double>::min()); }
+
+inline void validate_integration_settings(const double lim_direct, const double epsabs, const double epsrel) {
+  if (!std::isfinite(lim_direct) || lim_direct < 0.0) throw std::invalid_argument("Direct-integration threshold must be finite and nonnegative.");
+  if (!std::isfinite(epsabs) || epsabs < 0.0) throw std::invalid_argument("Absolute integration tolerance must be finite and nonnegative.");
+  if (!std::isfinite(epsrel) || epsrel < 0.0) throw std::invalid_argument("Relative integration tolerance must be finite and nonnegative.");
+  const auto minimum_relative_tolerance = std::max(50.0 * std::numeric_limits<double>::epsilon(), 0.5e-28);
+  if (epsabs == 0.0 && epsrel < minimum_relative_tolerance)
+    throw std::invalid_argument("Relative integration tolerance is too small when absolute tolerance is zero.");
+}
 
 inline auto parse_energy_power(const std::string_view value) {
   int result = 0;
@@ -203,16 +226,22 @@ inline auto bandwidth(const std::vector<double> &X) {
    * @param z The complex value for which to evaluate the Hilbert transform
    * @param lim_direct value of y=Im(z) above which g(E)/(x+Iy-E) is directly integrated, and below which the singularity is removed
    * @param n Nonnegative integer power of the integration energy
+   * @param epsabs Absolute integration tolerance
+   * @param epsrel Relative integration tolerance
    */
 template <typename FNCR, typename FNCI>
 auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<double> z, const double lim_direct = 1e-3,
-                       const int n = 0) {
+                        const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
   if (n < 0) throw std::invalid_argument("Energy power must be nonnegative.");
+  validate_integration_settings(lim_direct, epsabs, epsrel);
+  const auto x = real(z);
+  const auto y = imag(z);
+  if (!std::isfinite(x) || !std::isfinite(y)) throw std::invalid_argument("Hilbert-transform argument must be finite.");
+  if (std::abs(y) < minimum_safe_imaginary_part())
+    throw std::invalid_argument("Absolute imaginary part is below the minimum safe value sqrt(numeric_limits<double>::min()).");
   // Initialize GSL and set up the interpolation
   gsl_set_error_handler_off();
   integrator integr;
-  const auto x = real(z);
-  const auto y = imag(z);
   auto g_r = [&rhor, n](const double omega) -> double {
     return n == 0 ? rhor(omega) : std::pow(omega, n) * rhor(omega);
   };
@@ -222,7 +251,7 @@ auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<
   // Low-level Hilbert-transform routines. calcA routine handles the case with removed singularity and
   // perform the integration after a change of variables. calcB routine directly evaluates the defining
   // integral of the Hilbert transform. Real and imaginary parts are determined in separate steps.
-  auto calcA = [&integr, x, y, B](auto f3p, auto f3m, auto d) -> double {
+  auto calcA = [&integr, x, y, B, epsabs, epsrel](auto f3p, auto f3m, auto d) -> double {
     const double W1 = (x - B) / std::abs(y); // Rescaled integration limits. Only the absolute value of y matters here.
     const double W2 = (B + x) / std::abs(y);
     assert(W2 >= W1);
@@ -247,13 +276,13 @@ auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<
     } else { // special case: boundary points
       inside = true;
     }
-    const auto result1 = (lim1down < lim1up ? integr(f3p, lim1down, lim1up) : 0.0);
-    const auto result2 = (lim2down < lim2up ? integr(f3m, lim2down, lim2up) : 0.0);
+    const auto result1 = (lim1down < lim1up ? integr(f3p, lim1down, lim1up, epsabs, epsrel) : 0.0);
+    const auto result2 = (lim2down < lim2up ? integr(f3m, lim2down, lim2up, epsabs, epsrel) : 0.0);
     const auto result3 = (inside ? d : 0.0);
     return result1 + result2 + result3;
   };
 
-  auto calcB = [&integr, B](auto f0) -> double { return integr(f0, -B, B); }; // direct integration
+  auto calcB = [&integr, B, epsabs, epsrel](auto f0) -> double { return integr(f0, -B, B, epsabs, epsrel); }; // direct integration
   auto calc  = [y, lim_direct, calcA, calcB](auto f3p, auto f3m, auto d, auto f0) { return (std::abs(y) < lim_direct ? calcA(f3p, f3m, d) : calcB(f0)); };
 
   // Re part of g(omega)/(z-omega)
@@ -294,11 +323,12 @@ auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<
    */ 
 template <typename T>
 auto hilbert_transform(const T &Xpts, const T &Rpts, const T &Ipts, const std::complex<double> z,
-                       const double lim_direct = 1e-3, const int n = 0) {
+                        const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14,
+                        const double epsrel = 1e-10) {
   interpolator rhor(Xpts, Rpts);
   interpolator rhoi(Xpts, Ipts);
   const double B = bandwidth(Xpts);
-  return hilbert_transform(rhor, rhoi, B, z, lim_direct, n);
+  return hilbert_transform(rhor, rhoi, B, z, lim_direct, n, epsabs, epsrel);
 }
 
 class Hilb {
@@ -315,13 +345,18 @@ class Hilb {
   double shiftx = 0.0;
   double shifty = 0.0;
   int n = 0; // power of the integration energy
+  double clipping = minimum_safe_imaginary_part();
+  double lim_direct = 1e-3;
+  double epsabs = 1e-14;
+  double epsrel = 1e-10;
+  double frequency_tolerance = 1e-6;
 
   auto hilbert(const double x, const double y) {
     auto Bethe_fnc = [this](const auto w) { return std::abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(w * scale)) : 0.0; };
     auto zero_fnc = []([[maybe_unused]] const auto w) { return 0.0; };
     const auto z = std::complex(x + shiftx, y + shifty); // shift here!
-    if (tabulated) return hilbert_transform(Xpts, Ypts, Ipts, z, 1e-3, n);
-    return hilbert_transform(Bethe_fnc, zero_fnc, B, z, 1e-3, n);
+    if (tabulated) return hilbert_transform(Xpts, Ypts, Ipts, z, lim_direct, n, epsabs, epsrel);
+    return hilbert_transform(Bethe_fnc, zero_fnc, B, z, lim_direct, n, epsabs, epsrel);
   }
 
   void do_one(const double x, const double y, std::ostream &OUT) {
@@ -347,30 +382,53 @@ class Hilb {
   }
 
   void do_hilb(std::istream &Fr, std::istream &Fi, std::ostream &Or, std::ostream &Oi) {
-    while (Fr.good()) {
-      double label1, label2, x, y;
-      Fr >> label1 >> x;
-      Fi >> label2 >> y;
-      if (!Fr.fail() && !Fi.fail()) {
-        if (std::abs(label1 - label2) > 1e-6) throw std::runtime_error("Frequency mismatch in do_hilb()");
-        // Ensure ImSigma is negative
-        const double CLIPPING = 1e-8;
-        y                     = std::min(y, -CLIPPING);
-        // The argument to calcre/im() is actually omega-Sigma(omega)
-        x              = label1 - x;
-        y              = -y;
-        const auto res = hilbert(x, y);
-        double resre   = res.real();
-        double resim   = res.imag();
-        if (!G) {
-          // We include the -1/pi factor here
-          resre /= -M_PI;
-          resim /= -M_PI;
-        } // Otherwise we are saving the Green's function G itself and no factor is required!
-        Or << label1 << " " << resre << std::endl;
-        Oi << label2 << " " << resim << std::endl;
+    size_t clipped = 0;
+    double first_clipped_label = 0.0;
+    double first_clipped_value = 0.0;
+    auto report_clipping = [&]() {
+      if (clipped == 0) return;
+      const auto old_precision = std::cerr.precision();
+      std::cerr << std::setprecision(std::numeric_limits<double>::max_digits10)
+                << "hilb: clipped " << clipped << " ImSigma value(s) to " << -clipping << "; first at omega=" << first_clipped_label
+                << ": " << first_clipped_value << " -> " << -clipping << std::endl;
+      std::cerr.precision(old_precision);
+    };
+    try {
+      while (Fr.good()) {
+        double label1, label2, x, y;
+        Fr >> label1 >> x;
+        Fi >> label2 >> y;
+        if (!Fr.fail() && !Fi.fail()) {
+          if (std::abs(label1 - label2) > frequency_tolerance) throw std::runtime_error("Frequency mismatch in do_hilb()");
+          // Ensure ImSigma is negative with at least the configured magnitude.
+          if (y > -clipping) {
+            if (clipped == 0) {
+              first_clipped_label = label2;
+              first_clipped_value = y;
+            }
+            ++clipped;
+            y = -clipping;
+          }
+          // The argument to calcre/im() is actually omega-Sigma(omega)
+          x              = label1 - x;
+          y              = -y;
+          const auto res = hilbert(x, y);
+          double resre   = res.real();
+          double resim   = res.imag();
+          if (!G) {
+            // We include the -1/pi factor here
+            resre /= -M_PI;
+            resim /= -M_PI;
+          } // Otherwise we are saving the Green's function G itself and no factor is required!
+          Or << label1 << " " << resre << std::endl;
+          Oi << label2 << " " << resim << std::endl;
+        }
       }
+    } catch (...) {
+      report_clipping();
+      throw;
     }
+    report_clipping();
   }
 
   auto safe_open_rd(const std::string &filename) {
@@ -417,7 +475,7 @@ class Hilb {
     B = std::max(std::abs(Xmin), std::abs(Xmax));
     interpolator rho(Xpts, Ypts);
     integrator integr;
-    const auto sum = integr(rho, -B, B);
+    const auto sum = integr(rho, -B, B, epsabs, epsrel);
     if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
     if (verbose)std::cout << "Sum=" << sum << std::endl;
   }
@@ -460,20 +518,25 @@ class Hilb {
     std::cout << "-o <file> Write output to file in single-point and input-file modes." << std::endl;
     std::cout << "-x <dx>   Shift real part of the argument" << std::endl;
     std::cout << "-y <dy>   Shift imag part of the argument" << std::endl;
+    std::cout << "-c <c>    Minimum magnitude used to clip ImSigma in DMFT mode." << std::endl;
+    std::cout << "          Default is sqrt(numeric_limits<double>::min())." << std::endl;
+    std::cout << "-t <t>    Direct-integration threshold. Default is 1e-3." << std::endl;
+    std::cout << "-a <a>    Absolute integration tolerance. Default is 1e-14." << std::endl;
+    std::cout << "-r <r>    Relative integration tolerance. Default is 1e-10." << std::endl;
+    std::cout << "-f <f>    Frequency-label tolerance in DMFT mode. Default is 1e-6." << std::endl;
   }
 
   void parse_param_run(int argc, char *argv[]) {
     std::optional<std::string> output_filename;
     std::optional<std::ofstream> OUTFILE;
     int c;
-    while ((c = getopt(argc, argv, "hGd:vVs:B:o:x:y:n:")) != -1) {
+    while ((c = getopt(argc, argv, "hGd:vVs:B:o:x:y:n:c:t:a:r:f:")) != -1) {
       switch (c) {
         case 'h': usage(); exit(EXIT_SUCCESS);
         case 'G': G = true; break;
         case 'd': 
           tabulated = true;
           load_dos(optarg);
-          report_dos();
           break;
         case 'v': verbose = true; break;
         case 's':
@@ -502,9 +565,36 @@ class Hilb {
         case 'n':
           n = parse_energy_power(optarg);
           break;
+        case 'c':
+          clipping = parse_finite_double(optarg, "Clipping magnitude");
+          if (clipping < minimum_safe_imaginary_part())
+            throw std::runtime_error("Clipping magnitude must be at least sqrt(numeric_limits<double>::min()).");
+          break;
+        case 't':
+          lim_direct = parse_finite_double(optarg, "Direct-integration threshold");
+          if (lim_direct < 0.0) throw std::runtime_error("Direct-integration threshold must be nonnegative.");
+          break;
+        case 'a':
+          epsabs = parse_finite_double(optarg, "Absolute integration tolerance");
+          if (epsabs < 0.0) throw std::runtime_error("Absolute integration tolerance must be nonnegative.");
+          break;
+        case 'r':
+          epsrel = parse_finite_double(optarg, "Relative integration tolerance");
+          if (epsrel < 0.0) throw std::runtime_error("Relative integration tolerance must be nonnegative.");
+          break;
+        case 'f':
+          frequency_tolerance = parse_finite_double(optarg, "Frequency-label tolerance");
+          if (frequency_tolerance < 0.0) throw std::runtime_error("Frequency-label tolerance must be nonnegative.");
+          break;
         default: throw std::runtime_error("Invalid command-line option.");
       }
     }
+    try {
+      validate_integration_settings(lim_direct, epsabs, epsrel);
+    } catch (const std::invalid_argument &error) {
+      throw std::runtime_error(error.what());
+    }
+    if (tabulated) report_dos();
     const auto remaining = argc - optind; // arguments left
     const std::vector<std::string> args(argv+optind, argv+argc); // NOLINT
     if (output_filename && (remaining == 1 || remaining == 2)) {
