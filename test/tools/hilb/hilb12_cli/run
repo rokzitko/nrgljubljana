@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+version=$("$1/hilb" -V 2>stderr.txt)
+test "$version" = "hilb 2026.09"
+test ! -s stderr.txt
+
+if "$1/hilb" >stdout.txt 2>stderr.txt; then
+  exit 1
+fi
+grep -q "Invalid number of positional arguments" stderr.txt
+test ! -s stdout.txt
+
+if "$1/hilb" junk 0.1 >stdout.txt 2>stderr.txt; then
+  exit 1
+fi
+grep -q "Real argument must be a finite representable number" stderr.txt

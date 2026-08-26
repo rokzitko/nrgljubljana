@@ -5,7 +5,7 @@
 // Mode 2: read x and y from a file.
 // Mode 3: convert imsigma/resigma.dat to imaw/reaw.dat files in the DMFT loop.
 //
-// Rok Zitko, rok.zitko@ijs.si, 2009-2020
+// Rok Zitko, rok.zitko@ijs.si, 2009-2026
 
 #ifndef _hilb_hilb_hpp_
 #define _hilb_hilb_hpp_
@@ -13,6 +13,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <array>
 #include <complex>
 #include <utility>
 #include <functional>
@@ -30,6 +31,7 @@
 #include <cerrno>
 #include <cfloat>
 #include <limits>
+#include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <unistd.h>
@@ -39,6 +41,15 @@
 #include <gsl/gsl_spline.h>
 
 namespace NRG::Hilb {
+
+inline constexpr std::string_view HILB_VERSION = "2026.09";
+inline constexpr int OUTPUT_PRECISION = std::numeric_limits<double>::max_digits10;
+
+inline auto format_double(const double value) {
+  std::ostringstream output;
+  output << std::setprecision(OUTPUT_PRECISION) << value;
+  return output.str();
+}
 
 struct gsl_accel_deleter {
   void operator()(gsl_interp_accel *acc) const {
@@ -52,14 +63,13 @@ struct gsl_spline_deleter {
   }
 };
 
-inline auto atof(const std::string &s) { return ::atof(s.c_str()); }
-
 inline auto parse_finite_double(const std::string_view value, const std::string_view name) {
   const std::string text(value);
   char *end = nullptr;
   errno = 0;
   const auto result = std::strtod(text.c_str(), &end);
-  if (errno == ERANGE || end == text.c_str() || end != text.c_str() + text.size() || !std::isfinite(result))
+  const bool underflowed_to_zero = errno == ERANGE && result == 0.0;
+  if (underflowed_to_zero || end == text.c_str() || end != text.c_str() + text.size() || !std::isfinite(result))
     throw std::runtime_error(std::string(name) + " must be a finite representable number: " + text);
   return result;
 }
@@ -83,6 +93,52 @@ inline auto parse_energy_power(const std::string_view value) {
   return result;
 }
 
+template <size_t N>
+struct numeric_row {
+  std::array<double, N> values;
+  size_t line_number;
+};
+
+template <size_t N>
+class numeric_row_reader {
+  private:
+  std::istream &input;
+  std::string source;
+  size_t line_number = 0;
+  size_t record_count = 0;
+
+  public:
+  numeric_row_reader(std::istream &input_, std::string source_) : input{input_}, source{std::move(source_)} {}
+
+  auto next() -> std::optional<numeric_row<N>> {
+    std::string line;
+    while (std::getline(input, line)) {
+      ++line_number;
+      std::istringstream fields(line);
+      std::vector<std::string> tokens;
+      std::string token;
+      while (fields >> token) tokens.push_back(token);
+      if (tokens.empty()) continue;
+      if (tokens.size() != N)
+        throw std::runtime_error(source + ":" + std::to_string(line_number) + ": expected exactly " + std::to_string(N) + " numeric fields; found "
+                                 + std::to_string(tokens.size()) + ".");
+
+      numeric_row<N> row{{}, line_number};
+      for (size_t i = 0; i < N; ++i) {
+        const auto context = source + ":" + std::to_string(line_number) + ": field " + std::to_string(i + 1);
+        row.values[i] = parse_finite_double(tokens[i], context);
+      }
+      ++record_count;
+      return row;
+    }
+    if (input.bad()) throw std::runtime_error(source + ": I/O error after line " + std::to_string(line_number) + ".");
+    return std::nullopt;
+  }
+
+  auto records_read() const noexcept { return record_count; }
+  const auto &source_name() const noexcept { return source; }
+};
+
 // Unwrap a lambda expression and evaluate it at x
 // https://martin-ueding.de/articles/cpp-lambda-into-gsl/index.html
 inline auto unwrap(const double x, void *p) {
@@ -90,50 +146,104 @@ inline auto unwrap(const double x, void *p) {
   return (*fp)(x);
 }
 
+struct gsl_failure {
+  int status;
+  double lower;
+  double upper;
+  double result;
+  double estimated_error;
+  double epsabs;
+  double epsrel;
+  bool nonfinite;
+};
+
+class gsl_failure_summary {
+  private:
+  size_t total = 0;
+  size_t nonfinite = 0;
+  std::map<int, size_t> by_status;
+  std::optional<gsl_failure> first;
+  bool reported = false;
+
+  public:
+  void record(const gsl_failure &failure) {
+    ++total;
+    if (failure.status != GSL_SUCCESS) ++by_status[failure.status];
+    if (failure.nonfinite) ++nonfinite;
+    if (!first) first = failure;
+  }
+
+  auto count() const noexcept { return total; }
+
+  void report(std::ostream &out) {
+    if (reported || total == 0) return;
+    reported = true;
+    const auto old_precision = out.precision();
+    out << std::setprecision(OUTPUT_PRECISION) << "hilb: warning: " << total << " GSL integration call(s) reported failure";
+    if (!by_status.empty()) {
+      out << "; statuses: ";
+      bool separator = false;
+      for (const auto &[status, count] : by_status) {
+        if (separator) out << ", ";
+        out << status << " (" << gsl_strerror(status) << ") x" << count;
+        separator = true;
+      }
+    }
+    if (nonfinite != 0) out << "; nonfinite result/error x" << nonfinite;
+    if (first) {
+      out << "; first: status=" << first->status << " (" << gsl_strerror(first->status) << "), interval=[" << first->lower << ',' << first->upper
+          << "], result=" << first->result << ", estimated_error=" << first->estimated_error << ", epsabs=" << first->epsabs << ", epsrel=" << first->epsrel;
+    }
+    out << '\n';
+    out.precision(old_precision);
+  }
+};
+
+struct gsl_workspace_deleter {
+  void operator()(gsl_integration_workspace *workspace) const {
+    if (workspace) gsl_integration_workspace_free(workspace);
+  }
+};
+
 // Wrap around GSL integration routines
 class integrator {
   private:
-  size_t limit;                              // size of workspace
-  bool throw_on_error;                        // if true, integration error will trigger a hard error
-  gsl_integration_workspace *work = nullptr; // work space
-  gsl_function F;                            // GSL function struct for evaluation of the integrand
+  size_t limit;
+  bool throw_on_error;
+  gsl_failure_summary *failures;
+  std::unique_ptr<gsl_integration_workspace, gsl_workspace_deleter> work;
+
+  static auto allocate_workspace(const size_t limit) {
+    auto *workspace = gsl_integration_workspace_alloc(limit);
+    if (!workspace) throw std::runtime_error("Failed to allocate GSL integration workspace.");
+    return std::unique_ptr<gsl_integration_workspace, gsl_workspace_deleter>{workspace};
+  }
+
   public:
-  void initF() noexcept {
-    F.function = &unwrap; // the actual function (lambda expression) will be provided as an argument to operator()
-    F.params   = nullptr;
-  }
-  integrator(size_t _limit = 1000, bool _throw_on_error = false) : limit{_limit}, throw_on_error{_throw_on_error} {
-    work = gsl_integration_workspace_alloc(limit);
-    initF();
-  }
-  integrator(const integrator &X) : limit{X.limit}, throw_on_error{X.throw_on_error} {
-    // keep the same workspace
-    initF();
-  }
-  integrator(integrator &&X) : limit{X.limit}, throw_on_error{X.throw_on_error} {
-    work   = X.work; // steal workspace
-    X.work = nullptr;
-    initF();
-  }
-  integrator &operator=(const integrator &X) {
-    if (this == &X) return *this;
-    limit          = X.limit;
-    throw_on_error = X.throw_on_error;
-    // keep the same workspace
-    initF();
+  integrator(size_t limit_ = 1000, bool throw_on_error_ = false, gsl_failure_summary *failures_ = nullptr)
+      : limit{limit_}, throw_on_error{throw_on_error_}, failures{failures_}, work{allocate_workspace(limit)} {}
+
+  integrator(const integrator &other)
+      : limit{other.limit}, throw_on_error{other.throw_on_error}, failures{other.failures}, work{allocate_workspace(limit)} {}
+
+  integrator(integrator &&other) noexcept = default;
+
+  integrator &operator=(const integrator &other) {
+    if (this == &other) return *this;
+    integrator copy(other);
+    swap(copy);
     return *this;
   }
-  integrator &operator=(integrator &&X) {
-    if (this == &X) return *this;
-    limit          = X.limit;
-    throw_on_error = X.throw_on_error;
-    work           = X.work; // steal workspace
-    X.work         = nullptr;
-    initF();
-    return *this;
-  }
-  ~integrator() {
-    if (work) { gsl_integration_workspace_free(work); }
+
+  integrator &operator=(integrator &&other) noexcept = default;
+  ~integrator() = default;
+
+  void swap(integrator &other) noexcept {
+    using std::swap;
+    swap(limit, other.limit);
+    swap(throw_on_error, other.throw_on_error);
+    swap(failures, other.failures);
+    swap(work, other.work);
   }
 
   /**
@@ -146,10 +256,16 @@ class integrator {
      * @param epsrel numeric integration epsilon (relative)
      */
   auto operator()(std::function<double(double)> f, const double a, const double b, const double epsabs = 1e-14, const double epsrel = 1e-10) {
-    F.params = &f;
-    double result, error;
-    const auto status = gsl_integration_qag(&F, a, b, epsabs, epsrel, limit, GSL_INTEG_GAUSS15, work, &result, &error);
-    if (status && std::abs(result) > epsabs && throw_on_error) throw std::runtime_error("qag error: " + std::to_string(status) + " -- " + gsl_strerror(status));
+    if (!work) throw std::runtime_error("Cannot use a moved-from GSL integrator.");
+    gsl_function function{&unwrap, &f};
+    double result = std::numeric_limits<double>::quiet_NaN();
+    double error = std::numeric_limits<double>::quiet_NaN();
+    const auto status = gsl_integration_qag(&function, a, b, epsabs, epsrel, limit, GSL_INTEG_GAUSS15, work.get(), &result, &error);
+    const bool nonfinite = !std::isfinite(result) || !std::isfinite(error);
+    if ((status != GSL_SUCCESS || nonfinite) && failures)
+      failures->record({status, a, b, result, error, epsabs, epsrel, nonfinite});
+    if ((status != GSL_SUCCESS || nonfinite) && throw_on_error)
+      throw std::runtime_error("qag error: " + std::to_string(status) + " -- " + gsl_strerror(status));
     return result;
   }
 };
@@ -157,40 +273,46 @@ class integrator {
 // Wrap around GSL interpolation routines
 class interpolator {
   private:
-  size_t len;                      // number of data points
+  size_t len = 0;                  // number of data points
   std::vector<double> X, Y;        // X and Y tables
-  double Xmin, Xmax;               // boundary points
+  double Xmin = 0.0, Xmax = 0.0;   // boundary points
   double oob_value;                // out-of-boundary value
   std::unique_ptr<gsl_interp_accel, gsl_accel_deleter> acc; // workspace
   std::unique_ptr<gsl_spline, gsl_spline_deleter> spline;   // spline data
-  public:
-  interpolator(const std::vector<double> &_X, const std::vector<double> &_Y, const double _oob_value = 0.0) : X{_X}, Y{_Y}, oob_value{_oob_value} {
-    assert(std::is_sorted(X.begin(), X.end()));
-    assert(X.size() == Y.size());
+
+  void initialize() {
+    if (X.size() != Y.size()) throw std::invalid_argument("Interpolation grids must have equal sizes.");
+    const auto minimum_size = static_cast<size_t>(gsl_interp_type_min_size(gsl_interp_cspline));
+    if (X.size() < minimum_size)
+      throw std::invalid_argument("Cubic interpolation requires at least " + std::to_string(minimum_size) + " points.");
+    for (size_t i = 0; i < X.size(); ++i) {
+      if (!std::isfinite(X[i]) || !std::isfinite(Y[i])) throw std::invalid_argument("Interpolation data must be finite.");
+      if (i != 0 && !(X[i - 1] < X[i])) throw std::invalid_argument("Interpolation energies must be strictly increasing.");
+    }
+
     acc.reset(gsl_interp_accel_alloc());
-    len    = X.size();
+    if (!acc) throw std::runtime_error("Failed to allocate GSL interpolation accelerator.");
+    len = X.size();
     spline.reset(gsl_spline_alloc(gsl_interp_cspline, len));
-    gsl_spline_init(spline.get(), X.data(), Y.data(), len);
+    if (!spline) throw std::runtime_error("Failed to allocate GSL cubic spline.");
+    const auto status = gsl_spline_init(spline.get(), X.data(), Y.data(), len);
+    if (status != GSL_SUCCESS) throw std::runtime_error("Failed to initialize GSL cubic spline: " + std::string(gsl_strerror(status)));
     Xmin = X.front();
     Xmax = X.back();
   }
-  interpolator(const interpolator &I) : len{I.len}, X{I.X}, Y{I.Y}, Xmin{I.Xmin}, Xmax{I.Xmax}, oob_value{I.oob_value} {
-    acc.reset(gsl_interp_accel_alloc());
-    spline.reset(gsl_spline_alloc(gsl_interp_cspline, len));
-    gsl_spline_init(spline.get(), X.data(), Y.data(), len);
+
+  public:
+  interpolator(const std::vector<double> &_X, const std::vector<double> &_Y, const double _oob_value = 0.0) : X{_X}, Y{_Y}, oob_value{_oob_value} {
+    initialize();
+  }
+  interpolator(const interpolator &I) : X{I.X}, Y{I.Y}, oob_value{I.oob_value} {
+    initialize();
   }
   interpolator(interpolator &&I) = default;
   interpolator &operator=(const interpolator &I) {
     if (this == &I) return *this;
-    len       = I.len;
-    X         = I.X;
-    Y         = I.Y;
-    Xmin      = I.Xmin;
-    Xmax      = I.Xmax;
-    oob_value = I.oob_value;
-    acc.reset(gsl_interp_accel_alloc());
-    spline.reset(gsl_spline_alloc(gsl_interp_cspline, len));
-    gsl_spline_init(spline.get(), X.data(), Y.data(), len);
+    interpolator copy(I);
+    *this = std::move(copy);
     return *this;
   }
   interpolator &operator=(interpolator &&I) = default;
@@ -215,105 +337,114 @@ inline auto bandwidth(const std::vector<double> &X) {
 }
 
 /**
-   * Calculate the Hilbert transform of a given spectral function at fixed complex value z. This is the low-level routine, called from
-   * other interfaces. The general strategy is to perform a direct integration of the defining integral for cases where z has a sufficiently
-   * large imaginary part, otherwise the singularity is subtracted out and the calculation of the transformed integrand is performed using
-   * an integration-variable substitution to better handle small values.
-   *
-   * @param rhor Real part of the spectral function
-   * @param rhoi Imaginary part of the spectral function
-   * @param B Half-bandwidth, i.e., the support of the spectral function is [-B:B]
-   * @param z The complex value for which to evaluate the Hilbert transform
-   * @param lim_direct value of y=Im(z) above which g(E)/(x+Iy-E) is directly integrated, and below which the singularity is removed
-   * @param n Nonnegative integer power of the integration energy
-   * @param epsabs Absolute integration tolerance
-   * @param epsrel Relative integration tolerance
-   */
+ * Calculate the Hilbert transform of a given spectral function at fixed complex value z. This is the low-level routine, called from
+ * other interfaces. The general strategy is to perform a direct integration of the defining integral for cases where z has a sufficiently
+ * large imaginary part, otherwise the singularity is subtracted out and the calculation of the transformed integrand is performed using
+ * an integration-variable substitution to better handle small values.
+ *
+ * @param integration Reusable numerical integration workspace
+ * @param rhor Real part of the spectral function
+ * @param rhoi Imaginary part of the spectral function
+ * @param B Half-bandwidth, i.e., the support of the spectral function is [-B:B]
+ * @param z The complex value for which to evaluate the Hilbert transform
+ * @param lim_direct value of y=Im(z) above which g(E)/(x+Iy-E) is directly integrated, and below which the singularity is removed
+ * @param n Nonnegative integer power of the integration energy
+ * @param epsabs Absolute integration tolerance
+ * @param epsrel Relative integration tolerance
+ */
 template <typename FNCR, typename FNCI>
-auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<double> z, const double lim_direct = 1e-3,
-                        const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
+auto hilbert_transform(integrator &integration, FNCR &rhor, FNCI &rhoi, const double B, const std::complex<double> z,
+                        const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
+  gsl_set_error_handler_off();
   if (n < 0) throw std::invalid_argument("Energy power must be nonnegative.");
   validate_integration_settings(lim_direct, epsabs, epsrel);
+  if (!std::isfinite(B) || B <= 0.0) throw std::invalid_argument("Half-bandwidth must be finite and positive.");
   const auto x = real(z);
   const auto y = imag(z);
   if (!std::isfinite(x) || !std::isfinite(y)) throw std::invalid_argument("Hilbert-transform argument must be finite.");
   if (std::abs(y) < minimum_safe_imaginary_part())
     throw std::invalid_argument("Absolute imaginary part is below the minimum safe value sqrt(numeric_limits<double>::min()).");
-  // Initialize GSL and set up the interpolation
-  gsl_set_error_handler_off();
-  integrator integr;
   auto g_r = [&rhor, n](const double omega) -> double {
     return n == 0 ? rhor(omega) : std::pow(omega, n) * rhor(omega);
   };
   auto g_i = [&rhoi, n](const double omega) -> double {
     return n == 0 ? rhoi(omega) : std::pow(omega, n) * rhoi(omega);
   };
-  // Low-level Hilbert-transform routines. calcA routine handles the case with removed singularity and
-  // perform the integration after a change of variables. calcB routine directly evaluates the defining
-  // integral of the Hilbert transform. Real and imaginary parts are determined in separate steps.
-  auto calcA = [&integr, x, y, B, epsabs, epsrel](auto f3p, auto f3m, auto d) -> double {
+
+  if (std::abs(y) >= lim_direct) {
+    auto ref0 = [x, y, &g_r, &g_i](double omega) -> double {
+      return (g_r(omega) * (x - omega) + g_i(omega) * y) / (sqr(y) + sqr(x - omega));
+    };
+    auto imf0 = [x, y, &g_r, &g_i](double omega) -> double {
+      return (g_r(omega) * (-y) + g_i(omega) * (x - omega)) / (sqr(y) + sqr(x - omega));
+    };
+    const auto real_result = integration(ref0, -B, B, epsabs, epsrel);
+    const auto imag_result = integration(imf0, -B, B, epsabs, epsrel);
+    return std::complex(real_result, imag_result);
+  }
+
+  const bool inside = -B <= x && x <= B;
+  const double g_r_x = inside ? g_r(x) : 0.0;
+  const double g_i_x = inside ? g_i(x) : 0.0;
+
+  // Integrate the singularity-subtracted remainder after the logarithmic change of variables.
+  auto calc_subtracted = [&integration, x, y, B, inside, epsabs, epsrel](auto f3p, auto f3m, auto analytic) -> double {
     const double W1 = (x - B) / std::abs(y); // Rescaled integration limits. Only the absolute value of y matters here.
     const double W2 = (B + x) / std::abs(y);
     assert(W2 >= W1);
-    // Determine the integration limits depending on the values of (x,y).
     double lim1down = 1.0, lim1up = -1.0, lim2down = 1.0, lim2up = -1.0;
-    bool inside;
-    if (W1 < 0 && W2 > 0) {        // x within the band
-      const double ln1016 = -36.8; // \approx log(10^-16)
-      lim1down            = ln1016;
-      lim1up              = log(-W1);
-      lim2down            = ln1016;
-      lim2up              = log(W2);
-      inside              = true;
+    if (inside) {
+      constexpr double log_zero_cutoff = -36.8; // approximately log(10^-16)
+      if (W1 < 0.0) {
+        lim1down = log_zero_cutoff;
+        lim1up = std::log(-W1);
+      }
+      if (W2 > 0.0) {
+        lim2down = log_zero_cutoff;
+        lim2up = std::log(W2);
+      }
     } else if (W1 > 0 && W2 > 0) { // x above the band
-      lim2down = log(W1);
-      lim2up   = log(W2);
-      inside   = false;
+      lim2down = std::log(W1);
+      lim2up = std::log(W2);
     } else if (W1 < 0 && W2 < 0) { // x below the band
-      lim1down = log(-W2);
-      lim1up   = log(-W1);
-      inside   = false;
-    } else { // special case: boundary points
-      inside = true;
+      lim1down = std::log(-W2);
+      lim1up = std::log(-W1);
     }
-    const auto result1 = (lim1down < lim1up ? integr(f3p, lim1down, lim1up, epsabs, epsrel) : 0.0);
-    const auto result2 = (lim2down < lim2up ? integr(f3m, lim2down, lim2up, epsabs, epsrel) : 0.0);
-    const auto result3 = (inside ? d : 0.0);
+    const auto result1 = lim1down < lim1up ? integration(f3p, lim1down, lim1up, epsabs, epsrel) : 0.0;
+    const auto result2 = lim2down < lim2up ? integration(f3m, lim2down, lim2up, epsabs, epsrel) : 0.0;
+    const auto result3 = inside ? analytic : 0.0;
     return result1 + result2 + result3;
   };
 
-  auto calcB = [&integr, B, epsabs, epsrel](auto f0) -> double { return integr(f0, -B, B, epsabs, epsrel); }; // direct integration
-  auto calc  = [y, lim_direct, calcA, calcB](auto f3p, auto f3m, auto d, auto f0) { return (std::abs(y) < lim_direct ? calcA(f3p, f3m, d) : calcB(f0)); };
-
-  // Re part of g(omega)/(z-omega)
-  auto ref0 = [x, y, &g_r, &g_i](double omega) -> double {
-    return (g_r(omega) * (x - omega) + g_i(omega) * y) / (sqr(y) + sqr(x - omega));
-  };
-
-  // Im part of g(omega)/(z-omega)
-  auto imf0 = [x, y, &g_r, &g_i](double omega) -> double {
-    return (g_r(omega) * (-y) + g_i(omega) * (x - omega)) / (sqr(y) + sqr(x - omega));
-  };
-
   // Re part of g(omega)/(z-omega) with the singularity subtracted out.
-  auto ref1 = [x, y, &g_r, &g_i](double omega) -> double {
-    return ((g_r(omega) - g_r(x)) * (x - omega) + (g_i(omega) - g_i(x)) * y) / (sqr(y) + sqr(x - omega));
+  auto ref1 = [x, y, g_r_x, g_i_x, &g_r, &g_i](double omega) -> double {
+    return ((g_r(omega) - g_r_x) * (x - omega) + (g_i(omega) - g_i_x) * y) / (sqr(y) + sqr(x - omega));
   };
   auto ref2  = [x, y, ref1](double W) -> double { return std::abs(y) * ref1(std::abs(y) * W + x); };
-  auto ref3p = [ref2](double r) -> double { return ref2(exp(r)) * exp(r); };
-  auto ref3m = [ref2](double r) -> double { return ref2(-exp(r)) * exp(r); };
-  auto red   = g_r(x) * reQ(x, y, B) - g_i(x) * imQ(x, y, B);
+  auto ref3p = [ref2](double r) -> double { return ref2(std::exp(r)) * std::exp(r); };
+  auto ref3m = [ref2](double r) -> double { return ref2(-std::exp(r)) * std::exp(r); };
+  const auto red = g_r_x * reQ(x, y, B) - g_i_x * imQ(x, y, B);
 
   // Im part of g(omega)/(z-omega) with the singularity subtracted out.
-  auto imf1 = [x, y, &g_r, &g_i](double omega) -> double {
-    return ((g_r(omega) - g_r(x)) * (-y) + (g_i(omega) - g_i(x)) * (x - omega)) / (sqr(y) + sqr(x - omega));
+  auto imf1 = [x, y, g_r_x, g_i_x, &g_r, &g_i](double omega) -> double {
+    return ((g_r(omega) - g_r_x) * (-y) + (g_i(omega) - g_i_x) * (x - omega)) / (sqr(y) + sqr(x - omega));
   };
   auto imf2  = [x, y, imf1](double W) -> double { return std::abs(y) * imf1(std::abs(y) * W + x); };
-  auto imf3p = [imf2](double r) -> double { return imf2(exp(r)) * exp(r); };
-  auto imf3m = [imf2](double r) -> double { return imf2(-exp(r)) * exp(r); };
-  auto imd   = g_r(x) * imQ(x, y, B) + g_i(x) * reQ(x, y, B);
+  auto imf3p = [imf2](double r) -> double { return imf2(std::exp(r)) * std::exp(r); };
+  auto imf3m = [imf2](double r) -> double { return imf2(-std::exp(r)) * std::exp(r); };
+  const auto imd = g_r_x * imQ(x, y, B) + g_i_x * reQ(x, y, B);
 
-  return std::complex(calc(ref3p, ref3m, red, ref0), calc(imf3p, imf3m, imd, imf0));
+  const auto real_result = calc_subtracted(ref3p, ref3m, red);
+  const auto imag_result = calc_subtracted(imf3p, imf3m, imd);
+  return std::complex(real_result, imag_result);
+}
+
+template <typename FNCR, typename FNCI>
+auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<double> z, const double lim_direct = 1e-3,
+                        const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
+  gsl_set_error_handler_off();
+  integrator integration;
+  return hilbert_transform(integration, rhor, rhoi, B, z, lim_direct, n, epsabs, epsrel);
 }
 
   /*
@@ -325,10 +456,12 @@ template <typename T>
 auto hilbert_transform(const T &Xpts, const T &Rpts, const T &Ipts, const std::complex<double> z,
                         const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14,
                         const double epsrel = 1e-10) {
+  gsl_set_error_handler_off();
   interpolator rhor(Xpts, Rpts);
   interpolator rhoi(Xpts, Ipts);
   const double B = bandwidth(Xpts);
-  return hilbert_transform(rhor, rhoi, B, z, lim_direct, n, epsabs, epsrel);
+  integrator integration;
+  return hilbert_transform(integration, rhor, rhoi, B, z, lim_direct, n, epsabs, epsrel);
 }
 
 class Hilb {
@@ -337,10 +470,10 @@ class Hilb {
   double B     = 1.0 / scale; // half-bandwidth
   double Xmin = -B;
   double Xmax = +B;
-  const int OUTPUT_PREC = 16;     // digits of output precision
   bool verbose     = false;
   bool G           = false; // G(z). Reports real and imaginary part.
-  std::vector<double> Xpts, Ypts, Ipts;
+  std::vector<double> Xpts, Ypts;
+  std::optional<interpolator> tabulated_rho;
   bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
   double shiftx = 0.0;
   double shifty = 0.0;
@@ -350,79 +483,90 @@ class Hilb {
   double epsabs = 1e-14;
   double epsrel = 1e-10;
   double frequency_tolerance = 1e-6;
+  gsl_failure_summary gsl_failures;
+  integrator integration{1000, false, &gsl_failures};
 
   auto hilbert(const double x, const double y) {
     auto Bethe_fnc = [this](const auto w) { return std::abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(w * scale)) : 0.0; };
     auto zero_fnc = []([[maybe_unused]] const auto w) { return 0.0; };
     const auto z = std::complex(x + shiftx, y + shifty); // shift here!
-    if (tabulated) return hilbert_transform(Xpts, Ypts, Ipts, z, lim_direct, n, epsabs, epsrel);
-    return hilbert_transform(Bethe_fnc, zero_fnc, B, z, lim_direct, n, epsabs, epsrel);
+    if (tabulated) {
+      if (!tabulated_rho) throw std::logic_error("Tabulated DOS spline is not initialized.");
+      return hilbert_transform(integration, *tabulated_rho, zero_fnc, B, z, lim_direct, n, epsabs, epsrel);
+    }
+    return hilbert_transform(integration, Bethe_fnc, zero_fnc, B, z, lim_direct, n, epsabs, epsrel);
   }
 
   void do_one(const double x, const double y, std::ostream &OUT) {
     const auto res = hilbert(x, y);
     if (!G)
-      OUT << res.imag() << std::endl;
+      OUT << res.imag() << '\n';
     else
-      OUT << res << std::endl;
+      OUT << res << '\n';
   }
 
-  void do_stream(std::istream &F, std::ostream &OUT) {
-    while (F.good()) {
-      double label, x, y;
-      F >> label >> x >> y;
-      if (!F.fail()) {
-        const auto res = hilbert(x, y);
-        if (!G)
-          OUT << label << " " << res.imag() << std::endl;
-        else
-          OUT << label << " " << res.real() << " " << res.imag() << std::endl;      
-      }
+  void do_stream(numeric_row_reader<3> &rows, std::ostream &OUT) {
+    while (const auto row = rows.next()) {
+      const auto [label, x, y] = row->values;
+      const auto res = hilbert(x, y);
+      if (!G)
+        OUT << label << ' ' << res.imag() << '\n';
+      else
+        OUT << label << ' ' << res.real() << ' ' << res.imag() << '\n';
     }
   }
 
-  void do_hilb(std::istream &Fr, std::istream &Fi, std::ostream &Or, std::ostream &Oi) {
+  void do_hilb(numeric_row_reader<2> &real_rows, numeric_row_reader<2> &imag_rows, std::ostream &Or, std::ostream &Oi) {
     size_t clipped = 0;
     double first_clipped_label = 0.0;
     double first_clipped_value = 0.0;
     auto report_clipping = [&]() {
       if (clipped == 0) return;
       const auto old_precision = std::cerr.precision();
-      std::cerr << std::setprecision(std::numeric_limits<double>::max_digits10)
+      std::cerr << std::setprecision(OUTPUT_PRECISION)
                 << "hilb: clipped " << clipped << " ImSigma value(s) to " << -clipping << "; first at omega=" << first_clipped_label
-                << ": " << first_clipped_value << " -> " << -clipping << std::endl;
+                << ": " << first_clipped_value << " -> " << -clipping << '\n';
       std::cerr.precision(old_precision);
     };
     try {
-      while (Fr.good()) {
-        double label1, label2, x, y;
-        Fr >> label1 >> x;
-        Fi >> label2 >> y;
-        if (!Fr.fail() && !Fi.fail()) {
-          if (std::abs(label1 - label2) > frequency_tolerance) throw std::runtime_error("Frequency mismatch in do_hilb()");
-          // Ensure ImSigma is negative with at least the configured magnitude.
-          if (y > -clipping) {
-            if (clipped == 0) {
-              first_clipped_label = label2;
-              first_clipped_value = y;
-            }
-            ++clipped;
-            y = -clipping;
+      while (true) {
+        const auto real_row = real_rows.next();
+        const auto imag_row = imag_rows.next();
+        if (!real_row && !imag_row) break;
+        if (!real_row)
+          throw std::runtime_error(real_rows.source_name() + " ended after " + std::to_string(real_rows.records_read()) + " data rows; "
+                                   + imag_rows.source_name() + ":" + std::to_string(imag_row->line_number) + " has an unpaired data row.");
+        if (!imag_row)
+          throw std::runtime_error(imag_rows.source_name() + " ended after " + std::to_string(imag_rows.records_read()) + " data rows; "
+                                   + real_rows.source_name() + ":" + std::to_string(real_row->line_number) + " has an unpaired data row.");
+
+        const auto [label1, real_sigma] = real_row->values;
+        const auto [label2, imaginary_sigma] = imag_row->values;
+        if (std::abs(label1 - label2) > frequency_tolerance)
+          throw std::runtime_error("Frequency mismatch between " + real_rows.source_name() + ":" + std::to_string(real_row->line_number) + " ("
+                                   + format_double(label1) + ") and " + imag_rows.source_name() + ":" + std::to_string(imag_row->line_number) + " ("
+                                   + format_double(label2) + ").");
+
+        auto y = imaginary_sigma;
+        if (y > -clipping) {
+          if (clipped == 0) {
+            first_clipped_label = label2;
+            first_clipped_value = y;
           }
-          // The argument to calcre/im() is actually omega-Sigma(omega)
-          x              = label1 - x;
-          y              = -y;
-          const auto res = hilbert(x, y);
-          double resre   = res.real();
-          double resim   = res.imag();
-          if (!G) {
-            // We include the -1/pi factor here
-            resre /= -M_PI;
-            resim /= -M_PI;
-          } // Otherwise we are saving the Green's function G itself and no factor is required!
-          Or << label1 << " " << resre << std::endl;
-          Oi << label2 << " " << resim << std::endl;
+          ++clipped;
+          y = -clipping;
         }
+        const auto x = label1 - real_sigma;
+        y = -y;
+        const auto res = hilbert(x, y);
+        double resre = res.real();
+        double resim = res.imag();
+        if (!G) {
+          resre /= -M_PI;
+          resim /= -M_PI;
+        }
+        Or << label1 << ' ' << resre << '\n';
+        Oi << label2 << ' ' << resim << '\n';
       }
     } catch (...) {
       report_clipping();
@@ -440,30 +584,22 @@ class Hilb {
   auto safe_open_wr(const std::string &filename) {
     std::ofstream F(filename);
     if (!F) throw std::runtime_error("Error opening file " + filename + " for writing.");
-    F << std::setprecision(OUTPUT_PREC);
+    F << std::setprecision(OUTPUT_PRECISION);
     return F;
   }
 
   void load_dos(const std::string &filename) {
-    if (verbose) { std::cout << "Density of states filename: " << filename << std::endl; }
+    if (verbose) std::cout << "Density of states filename: " << filename << '\n';
     auto F = safe_open_rd(filename);
+    numeric_row_reader<2> rows(F, filename);
     std::vector<std::pair<double, double>> pts;
-    while (F) {
-      double x, y;
-      F >> x >> y;
-      if (!F.fail()) {
-        assert(std::isfinite(x) && std::isfinite(y));
-        pts.emplace_back(x, y);
-      }
-    }
+    while (const auto row = rows.next()) pts.emplace_back(row->values[0], row->values[1]);
     std::sort(pts.begin(), pts.end());
     Xpts.clear();
     Ypts.clear();
-    Ipts.clear();
     for (const auto &[x, y] : pts) {
       Xpts.push_back(x);
       Ypts.push_back(y);
-      Ipts.push_back(0);
     }
   }
 
@@ -471,96 +607,99 @@ class Hilb {
     if (Xpts.empty()) throw std::runtime_error("DOS file contains no data points.");
     Xmin = Xpts.front();
     Xmax = Xpts.back();
-    assert(Xmin < Xmax);
     B = std::max(std::abs(Xmin), std::abs(Xmax));
-    interpolator rho(Xpts, Ypts);
-    integrator integr;
-    const auto sum = integr(rho, -B, B, epsabs, epsrel);
+    if (!std::isfinite(B) || B <= 0.0) throw std::runtime_error("DOS half-bandwidth must be finite and positive.");
+    tabulated_rho.emplace(Xpts, Ypts);
+    const auto sum = integration(std::ref(*tabulated_rho), -B, B, epsabs, epsrel);
     if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
-    if (verbose)std::cout << "Sum=" << sum << std::endl;
+    if (verbose) std::cout << "Sum=" << sum << '\n';
   }
 
   void info() {
     if (tabulated)
-      std::cout << "Xmin=" << Xmin << " Xmax=" << Xmax << std::endl;
+      std::cout << "Xmin=" << Xmin << " Xmax=" << Xmax << '\n';
     else
-      std::cout << "Semicircular DOS. scale=" << scale << std::endl;
-    std::cout << "B=" << B << std::endl;
-    if (shiftx != 0.0)
-      std::cout << "shiftx=" << shiftx << std::endl;
-    if (shifty != 0.0)
-      std::cout << "shifty=" << shifty << std::endl;
-    if (n != 0)
-      std::cout << "n=" << n << std::endl;
+      std::cout << "Semicircular DOS. scale=" << scale << '\n';
+    std::cout << "B=" << B << '\n';
+    if (shiftx != 0.0) std::cout << "shiftx=" << shiftx << '\n';
+    if (shifty != 0.0) std::cout << "shifty=" << shifty << '\n';
+    if (n != 0) std::cout << "n=" << n << '\n';
   }
 
   void about() {
-    std::cout << "# hilb -- Hilbert transformer for arbitrary density of states." << std::endl;
-    std::cout << "# Rok Zitko, rok.zitko@ijs.si, 2009-2020" << std::endl;
+    std::cout << "# hilb -- Hilbert transformer for arbitrary density of states.\n";
+    std::cout << "# Rok Zitko, rok.zitko@ijs.si, 2009-2026\n";
+  }
+
+  void version() {
+    std::cout << "hilb " << HILB_VERSION << '\n';
   }
 
   void usage() {
-    std::cout << "Usage (1): hilb [options] <x> <y>" << std::endl;
-    std::cout << "Usage (2): hilb [options] <inputfile>" << std::endl;
-    std::cout << "Usage (3): hilb [options] <resigma.dat> <imsigma.dat> <reaw.dat> <imaw.dat>" << std::endl;
-    std::cout << std::endl;
-    std::cout << "Options:" << std::endl;
-    std::cout << "-h        show help" << std::endl;
-    std::cout << "-d <dos>  Load the density of state data from file 'dos'" << std::endl;
-    std::cout << "          If this option is not used, the Bethe lattice DOS is assumed." << std::endl;
-    std::cout << "-v        Increase verbosity" << std::endl;
-    std::cout << "-s <s>    Rescale factor 'scale' for the DOS." << std::endl;
-    std::cout << "-B <B>    Half-bandwidth 'B' of the Bethe lattice DOS." << std::endl;
-    std::cout << "          Use either -s or -B. Default is scale=B=1." << std::endl;
-    std::cout << "-n <n>    Multiply the integrand by E^n; n must be a nonnegative integer." << std::endl;
-    std::cout << "          Default is n=0." << std::endl;
-    std::cout << "-G        Return both Re[H_n(z)] and Im[H_n(z)]." << std::endl;
-    std::cout << "-o <file> Write output to file in single-point and input-file modes." << std::endl;
-    std::cout << "-x <dx>   Shift real part of the argument" << std::endl;
-    std::cout << "-y <dy>   Shift imag part of the argument" << std::endl;
-    std::cout << "-c <c>    Minimum magnitude used to clip ImSigma in DMFT mode." << std::endl;
-    std::cout << "          Default is sqrt(numeric_limits<double>::min())." << std::endl;
-    std::cout << "-t <t>    Direct-integration threshold. Default is 1e-3." << std::endl;
-    std::cout << "-a <a>    Absolute integration tolerance. Default is 1e-14." << std::endl;
-    std::cout << "-r <r>    Relative integration tolerance. Default is 1e-10." << std::endl;
-    std::cout << "-f <f>    Frequency-label tolerance in DMFT mode. Default is 1e-6." << std::endl;
+    std::cout << "Usage (1): hilb [options] <x> <y>\n";
+    std::cout << "Usage (2): hilb [options] <inputfile>\n";
+    std::cout << "Usage (3): hilb [options] <resigma.dat> <imsigma.dat> <reaw.dat> <imaw.dat>\n\n";
+    std::cout << "Options:\n";
+    std::cout << "-h        show help\n";
+    std::cout << "-V        show version\n";
+    std::cout << "-d <dos>  Load the density of state data from file 'dos'\n";
+    std::cout << "          If this option is not used, the Bethe lattice DOS is assumed.\n";
+    std::cout << "-v        Increase verbosity\n";
+    std::cout << "-s <s>    Rescale factor 'scale' for the DOS.\n";
+    std::cout << "-B <B>    Half-bandwidth 'B' of the Bethe lattice DOS.\n";
+    std::cout << "          Use either -s or -B. Default is scale=B=1.\n";
+    std::cout << "-n <n>    Multiply the integrand by E^n; n must be a nonnegative integer.\n";
+    std::cout << "          Default is n=0.\n";
+    std::cout << "-G        Return both Re[H_n(z)] and Im[H_n(z)].\n";
+    std::cout << "-o <file> Write output to file in single-point and input-file modes.\n";
+    std::cout << "-x <dx>   Shift real part of the argument\n";
+    std::cout << "-y <dy>   Shift imag part of the argument\n";
+    std::cout << "-c <c>    Minimum magnitude used to clip ImSigma in DMFT mode.\n";
+    std::cout << "          Default is sqrt(numeric_limits<double>::min()).\n";
+    std::cout << "-t <t>    Direct-integration threshold. Default is 1e-3.\n";
+    std::cout << "-a <a>    Absolute integration tolerance. Default is 1e-14.\n";
+    std::cout << "-r <r>    Relative integration tolerance. Default is 1e-10.\n";
+    std::cout << "-f <f>    Frequency-label tolerance in DMFT mode. Default is 1e-6.\n";
   }
 
   void parse_param_run(int argc, char *argv[]) {
     std::optional<std::string> output_filename;
-    std::optional<std::ofstream> OUTFILE;
+    std::optional<std::string> dos_filename;
     int c;
     while ((c = getopt(argc, argv, "hGd:vVs:B:o:x:y:n:c:t:a:r:f:")) != -1) {
       switch (c) {
-        case 'h': usage(); exit(EXIT_SUCCESS);
+        case 'h': usage(); return;
+        case 'V': version(); return;
         case 'G': G = true; break;
-        case 'd': 
+        case 'd':
           tabulated = true;
-          load_dos(optarg);
+          dos_filename = optarg;
           break;
         case 'v': verbose = true; break;
         case 's':
-          scale = atof(optarg);
-          B     = 1 / scale;
-          Xmin  = -B;
-          Xmax  = +B;
-          if (verbose) { std::cout << "scale=" << scale << " B=" << B << std::endl; }
+          scale = parse_finite_double(optarg, "DOS scale");
+          if (scale <= 0.0) throw std::runtime_error("DOS scale must be positive.");
+          B = 1.0 / scale;
+          if (!std::isfinite(B)) throw std::runtime_error("DOS scale reciprocal must be finite.");
+          Xmin = -B;
+          Xmax = +B;
           break;
         case 'B':
-          B     = atof(optarg);
-          scale = 1 / B;
-          Xmin  = -B;
-          Xmax  = +B;
-          if (verbose) { std::cout << "scale=" << scale << " B=" << B << std::endl; }
+          B = parse_finite_double(optarg, "Half-bandwidth");
+          if (B <= 0.0) throw std::runtime_error("Half-bandwidth must be positive.");
+          scale = 1.0 / B;
+          if (!std::isfinite(scale)) throw std::runtime_error("Half-bandwidth reciprocal must be finite.");
+          Xmin = -B;
+          Xmax = +B;
           break;
         case 'o':
           output_filename = optarg;
           break;
         case 'x':
-          shiftx = atof(optarg);
+          shiftx = parse_finite_double(optarg, "Real shift");
           break;
         case 'y':
-          shifty = atof(optarg);
+          shifty = parse_finite_double(optarg, "Imaginary shift");
           break;
         case 'n':
           n = parse_energy_power(optarg);
@@ -594,48 +733,72 @@ class Hilb {
     } catch (const std::invalid_argument &error) {
       throw std::runtime_error(error.what());
     }
-    if (tabulated) report_dos();
     const auto remaining = argc - optind; // arguments left
     const std::vector<std::string> args(argv+optind, argv+argc); // NOLINT
-    if (output_filename && (remaining == 1 || remaining == 2)) {
-      OUTFILE = safe_open_wr(*output_filename);
-      if (verbose) std::cout << "Output file: " << *output_filename << std::endl;
+    if (remaining != 1 && remaining != 2 && remaining != 4)
+      throw std::runtime_error("Invalid number of positional arguments: got " + std::to_string(remaining) + "; expected 1, 2, or 4.");
+    if (remaining == 4 && output_filename) throw std::runtime_error("The -o option is not valid in DMFT mode.");
+    if (remaining == 1 && output_filename && *output_filename == args[0])
+      throw std::runtime_error("Input and output files must be different.");
+    if (remaining == 4
+        && (args[2] == args[3] || args[2] == args[0] || args[2] == args[1] || args[3] == args[0] || args[3] == args[1]))
+      throw std::runtime_error("DMFT output files must differ from each other and from both input files.");
+    if (tabulated && output_filename && *dos_filename == *output_filename)
+      throw std::runtime_error("Density-of-states input and output files must be different.");
+    if (tabulated && remaining == 4 && (*dos_filename == args[2] || *dos_filename == args[3]))
+      throw std::runtime_error("DMFT output files must differ from the density-of-states input file.");
+    if (tabulated) {
+      load_dos(*dos_filename);
+      report_dos();
     }
-    // Usage case 1: real (x,y) pairs from an input file.
+
     if (remaining == 1) {
       about();
       if (verbose) info();
       auto F = safe_open_rd(args[0]);
-      do_stream(F, OUTFILE ? OUTFILE.value() : std::cout);
+      numeric_row_reader<3> rows(F, args[0]);
+      std::optional<std::ofstream> output;
+      if (output_filename) {
+        output = safe_open_wr(*output_filename);
+        if (verbose) std::cout << "Output file: " << *output_filename << '\n';
+      }
+      do_stream(rows, output ? *output : std::cout);
       return;
     }
-    // Usage case 2: real a single (x,y) pair from the command line.
     if (remaining == 2) {
-      const auto x = atof(args[0]);
-      const auto y = atof(args[1]);
-      do_one(x, y, OUTFILE ? OUTFILE.value() : std::cout);
+      const auto x = parse_finite_double(args[0], "Real argument");
+      const auto y = parse_finite_double(args[1], "Imaginary argument");
+      std::optional<std::ofstream> output;
+      if (output_filename) {
+        output = safe_open_wr(*output_filename);
+        if (verbose) std::cout << "Output file: " << *output_filename << '\n';
+      }
+      do_one(x, y, output ? *output : std::cout);
       return;
     }
-    // Usage case 3: convert self-energy to a spectral function
-    if (remaining == 4) {
-      about();
-      if (verbose) info();
-      auto Frs = safe_open_rd(args[0]); // Re[Sigma] (input)
-      auto Fis = safe_open_rd(args[1]); // Im[Sigma] (input)
-      auto Fra = safe_open_wr(args[2]); // Re[G] or Re[Aw] = -1/pi Re[G] (output) (factor -1/pi controlled by the -G switch)
-      auto Fia = safe_open_wr(args[3]); // Im[G] or Im[Aw] = -1/pi Im[G] (output) (factor -1/pi controlled by the -G switch)
-      do_hilb(Frs, Fis, Fra, Fia);
-      return;
-    }
+
     about();
-    usage();
+    if (verbose) info();
+    auto Frs = safe_open_rd(args[0]);
+    auto Fis = safe_open_rd(args[1]);
+    numeric_row_reader<2> real_rows(Frs, args[0]);
+    numeric_row_reader<2> imag_rows(Fis, args[1]);
+    auto Fra = safe_open_wr(args[2]);
+    auto Fia = safe_open_wr(args[3]);
+    do_hilb(real_rows, imag_rows, Fra, Fia);
   }
 
   public:
   Hilb(int argc, char *argv[]) {
-    std::cout << std::setprecision(OUTPUT_PREC);
+    std::cout << std::setprecision(OUTPUT_PRECISION);
     gsl_set_error_handler_off();
-    parse_param_run(argc, argv);
+    try {
+      parse_param_run(argc, argv);
+    } catch (...) {
+      gsl_failures.report(std::cerr);
+      throw;
+    }
+    gsl_failures.report(std::cerr);
   }
 };
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 "$1/hilb" -v -c 1e-8 -d DOS.dat resigma.dat imsigma.dat reaw.dat imaw.dat 2>stderr.txt
 grep -q "hilb: clipped" stderr.txt
 "$2/test/compare.pl" "$3/ref"

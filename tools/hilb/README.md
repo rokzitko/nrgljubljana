@@ -17,6 +17,10 @@ The command-line tool uses a real density of states. The low-level C++
 functions in `hilb.hpp` can also transform a complex function
 $\rho(E)=\rho_r(E)+i\rho_i(E)$.
 
+All numeric output uses `std::numeric_limits<double>::max_digits10`
+significant digits so that finite `double` values can be read back without
+losing precision.
+
 ## Usage
 
 `hilb` has three positional-argument modes.
@@ -30,10 +34,10 @@ hilb [options] x y
 This evaluates the transform at
 
 $$
-z=(x+\mathtt{shiftx})+i(y+\mathtt{shifty}),
+z=(x+\Delta_x)+i(y+\Delta_y),
 $$
 
-where `shiftx` and `shifty` are set by `-x` and `-y`. Without `-G`, the
+where $\Delta_x$ and $\Delta_y$ are set by `-x` and `-y`. Without `-G`, the
 program prints one value, `Im H_n(z)`. With `-G`, it prints the complete
 complex result in C++ complex-number format:
 
@@ -66,6 +70,11 @@ Each input record consists of three whitespace-separated numbers:
 label x y
 ```
 
+Input is line-oriented: each nonblank physical line must contain exactly one
+three-field record. Blank lines are skipped. Partial records, extra fields,
+comments, nonnumeric fields, and nonfinite values are errors reported with the
+filename and line number.
+
 The label is copied to the output. Without `-G`, each output row is
 
 ```text
@@ -94,6 +103,12 @@ omega ReSigma
 omega ImSigma
 ```
 
+Each nonblank physical line must contain exactly one two-field record. Blank
+lines are skipped, while comments, partial records, extra fields, nonnumeric
+fields, and nonfinite values are errors. The two files must contain the same
+number of data records; otherwise `hilb` reports the first unpaired record and
+exits with failure.
+
 The frequency labels in corresponding rows must agree within the tolerance set
 by `-f`, whose default is $10^{-6}$. The imaginary self-energy is capped as
 
@@ -102,16 +117,24 @@ $$
 \min(\operatorname{Im}\Sigma,-c),
 $$
 
-where the positive clipping magnitude $c$ is set by `-c`. Its default is
+where the positive clipping magnitude $c$ is set by `-c`. Define the smallest
+positive normal `double` as
 
 $$
-c=\sqrt{\mathtt{std::numeric_limits<double>::min()}}
-  \simeq 1.4916681462400413\times10^{-154}.
+m_{\mathrm{normal}} = 2.2250738585072014\times10^{-308}.
 $$
 
-This is the smallest default whose square remains a normal nonzero `double`,
-which is required by the current small-imaginary-part formulas. Smaller `-c`
-values are rejected. The transform is evaluated at
+The default clipping magnitude is
+
+$$
+c_{\min}=\sqrt{m_{\mathrm{normal}}}
+\simeq 1.4916681462400413\times10^{-154}.
+$$
+
+Here $m_{\mathrm{normal}}$ is `std::numeric_limits<double>::min()`. This is the
+smallest default whose square remains a normal nonzero `double`, which is
+required by the current small-imaginary-part formulas. Values of `-c` below
+$c_{\min}$ are rejected. The transform is evaluated at
 
 $$
 z=\omega-\operatorname{Re}\Sigma(\omega)
@@ -128,7 +151,7 @@ Without `-G`, both real and imaginary results are divided by $-\pi$ before
 being written to `reaw.dat` and `imaw.dat`. With `-G`, the raw real and
 imaginary parts of $H_n$ are written. For `n=0` this is the usual local Green
 function transform. For `n>0` it is the corresponding energy-weighted
-transform. The `-o` option is not used in this mode; the two output paths are
+transform. The `-o` option is invalid in this mode; the two output paths are
 the final positional arguments.
 
 ## Options
@@ -136,16 +159,17 @@ the final positional arguments.
 | Option | Meaning |
 | --- | --- |
 | `-h` | Print command-line help. |
+| `-V` | Print `hilb 2026.09`. |
 | `-d FILE` | Read a tabulated density of states from `FILE`. Otherwise use the built-in semicircular density. |
 | `-n N` | Multiply the density by $E^N$. `N` must be a nonnegative integer. Default: `0`. |
 | `-G` | Print or write both parts of the raw complex transform instead of the mode-specific default. |
 | `-v` | Print additional information to standard output. |
-| `-s SCALE` | Set the scale of the built-in semicircular density, with $B=1/\mathtt{SCALE}$. |
-| `-B B` | Set the half-bandwidth of the built-in semicircular density, with $\mathtt{SCALE}=1/B$. |
+| `-s SCALE` | Set the positive scale $s$ of the built-in semicircular density, with $B=1/s$. |
+| `-B B` | Set the positive half-bandwidth $B$ of the built-in semicircular density, with $s=1/B$. |
 | `-o FILE` | Write results to `FILE` in the single-point and argument-file modes. |
 | `-x DX` | Add `DX` to the real part of every transform argument. |
 | `-y DY` | Add `DY` to the imaginary part of every transform argument. |
-| `-c C` | Set the positive clipping magnitude for $\operatorname{Im}\Sigma$ in DMFT mode. Default: $\sqrt{\mathtt{double\ min}}\simeq1.4917\times10^{-154}$. |
+| `-c C` | Set the positive clipping magnitude for $\operatorname{Im}\Sigma$ in DMFT mode. Default: $c_{\min}\simeq1.4917\times10^{-154}$. |
 | `-t T` | Set the direct/singularity-subtracted integration threshold. Default: $10^{-3}$. |
 | `-a A` | Set the absolute quadrature tolerance. Default: $10^{-14}$. |
 | `-r R` | Set the relative quadrature tolerance. Default: $10^{-10}$. |
@@ -156,6 +180,10 @@ configure only the built-in density and do not rescale data loaded with `-d`.
 The shifts affect $z$, not the integration energy $E$ or the factor $E^n$.
 Verbose diagnostics are written to standard output and can therefore be mixed
 with data unless `-o` is used.
+
+Malformed options, invalid numeric arguments, and positional argument counts
+other than 1, 2, or 4 produce a nonzero exit status. Help and version requests
+exit successfully without requiring positional arguments.
 
 ## Density Of States
 
@@ -171,9 +199,12 @@ $$
 \end{cases}
 $$
 
-The default half-bandwidth is $B=1$. Internally, `scale=1/B` and the same
-density is evaluated as
-$2\,\mathtt{scale}\sqrt{1-(E\,\mathtt{scale})^2}/\pi$.
+The default half-bandwidth is $B=1$. Internally, the scale is $s=1/B$ and the
+same density is evaluated as
+
+$$
+\rho_B(E)=\frac{2s}{\pi}\sqrt{1-(Es)^2}.
+$$
 
 ### Tabulated density
 
@@ -183,21 +214,26 @@ A file selected with `-d` contains two whitespace-separated numeric columns:
 E rho(E)
 ```
 
-Records are sorted by energy after loading. The implementation constructs a
-GSL natural cubic spline (`gsl_interp_cspline`) through the supplied density
-values and returns zero outside the tabulated interval
+Each nonblank physical line must contain exactly one two-field record. Blank
+lines are skipped. Headers, comments, partial records, extra fields,
+nonnumeric values, and nonfinite values are rejected with a filename and line
+number.
+
+Records are sorted by energy after loading. The implementation constructs one
+cached GSL natural cubic spline (`gsl_interp_cspline`) through the supplied
+density values and reuses it for normalization and every transform. It returns
+zero outside the tabulated interval
 `[Emin,Emax]`. Quadrature is performed over the symmetric enclosing interval
 
 $$
 [-B,B],\qquad B=\max(|E_{\min}|,|E_{\max}|).
 $$
 
-The data are not normalized automatically. In verbose mode, `hilb` reports
-the integral of the interpolated density and only checks that it is finite.
-At least three points with distinct energies are required by the cubic spline.
-Duplicate energies, headers, comments, and extra columns are not supported by
-the token-based reader. Cubic interpolation can overshoot between data points
-and does not preserve positivity.
+The data are not normalized automatically. In verbose mode, `hilb` reports the
+integral of the interpolated density and checks that it is finite. At least
+three points with finite, strictly increasing energies are required after
+sorting. Duplicate energies are rejected. Cubic interpolation can overshoot
+between data points and does not preserve positivity.
 
 For an energy-weighted transform, interpolation is performed first and the
 power is applied to each interpolated value during quadrature:
@@ -299,16 +335,22 @@ The executable uses these defaults:
 | Workspace subdivision limit | 1000 |
 | Absolute tolerance (`-a`) | $10^{-14}$ |
 | Relative tolerance (`-r`) | $10^{-10}$ |
-| Direct/subtracted threshold (`-t`) | $|\operatorname{Im}z|=10^{-3}$ |
+| Direct/subtracted threshold (`-t`) | $\lvert\operatorname{Im}z\rvert=10^{-3}$ |
 
 The three numerical values are configurable with the options shown in the
 table. Tolerances must be finite and nonnegative and must form a combination
 accepted by GSL. The C++ `hilbert_transform` interface exposes them as
-`lim_direct`, `epsabs`, and `epsrel`. The command-line tolerances also apply to
-the normalization integral reported for a tabulated DOS. The workspace limit
-and local rule remain fixed. The GSL global error handler is disabled. The
-default integration wrapper returns GSL's result without reporting its error
-estimate or a nonzero status code.
+`lim_direct`, `epsabs`, and `epsrel`. An overload accepting an `integrator&`
+lets library callers reuse a GSL workspace across transforms. The executable
+uses one workspace for DOS normalization and all requested transforms.
+
+The workspace limit and local rule remain fixed. The GSL global error handler
+is disabled. Every nonzero GSL status, and every nonfinite GSL result or error
+estimate, is collected. Before exit, `hilb` writes at most one GSL warning line
+to standard error with status counts and details of the first failure. GSL
+warnings alone do not change the exit status for now; GSL's best available
+result is retained. An independent fatal input or runtime error still produces
+a nonzero exit status after accumulated warnings have been reported.
 
 ## Identities And Limitations
 
@@ -328,9 +370,8 @@ This also shows why $H_n$ is not simply $z^nH_0$.
 
 Numerical limitations include:
 
-- Values with $|\operatorname{Im}z|<
-  \sqrt{\mathtt{std::numeric_limits<double>::min()}}$ are rejected. Squaring a
-  smaller value can underflow in the small-imaginary-part formulas, and the
+- Values with $|\operatorname{Im}z|<c_{\min}$ are rejected. Squaring a smaller
+  value can underflow in the small-imaginary-part formulas, and the
   implementation is not a direct principal-value integrator.
 - Large powers can overflow or underflow in $E^n$ and can amplify cancellation
   in the integral.
@@ -340,7 +381,4 @@ Numerical limitations include:
   is dimensionless.
 - Singularity subtraction assumes that $g(E)$ is sufficiently smooth near
   $E=x$. Discontinuous densities are difficult cases.
-- At exactly $x=\pm B$ in the small-imaginary-part branch, the current boundary
-  special case retains only the analytic constant contribution.
-- The argument and DOS readers stop when numeric extraction fails; they do not
-  support descriptive headers or comments.
+- Descriptive headers and comments are not part of the numeric input grammar.
