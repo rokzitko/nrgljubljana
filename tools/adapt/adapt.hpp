@@ -16,6 +16,10 @@
 #include <functional>
 #include <stdexcept>
 #include <optional>
+#include <memory>
+
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_integration.h>
 
 using namespace std;
 using namespace std::string_literals;
@@ -28,6 +32,28 @@ using namespace std::string_literals;
 #include "calc.hpp"
 
 namespace NRG::Adapt {
+
+enum class FMethod { ODE, INTEGRAL };
+
+struct GslWorkspaceDeleter {
+  void operator()(gsl_integration_cquad_workspace *workspace) const { gsl_integration_cquad_workspace_free(workspace); }
+};
+
+class GslErrorHandlerGuard {
+  gsl_error_handler_t *previous;
+
+ public:
+  GslErrorHandlerGuard() : previous(gsl_set_error_handler_off()) {}
+  GslErrorHandlerGuard(const GslErrorHandlerGuard &) = delete;
+  GslErrorHandlerGuard &operator=(const GslErrorHandlerGuard &) = delete;
+  ~GslErrorHandlerGuard() {
+    if (previous) {
+      gsl_set_error_handler(previous);
+    } else {
+      gsl_set_error_handler_off();
+    }
+  }
+};
 
 inline void add_zero_point(Vec &v, const double small = 1e-99)
 {
@@ -57,7 +83,8 @@ class Adapt {
    int max_iter           = 10;                       // Maximum number of iterations in the secant method
    double max_abs         = 100.0;                    // Maximum value of |f(x)|.
    double bandrescale     = 1.0;                      // Rescale the input data by this scale factor
-   std::optional<double> flat_gamma;                   // Constant hybridisation supplied on the command line.
+   std::optional<double> flat_gamma;                  // Constant hybridisation supplied on the command line.
+   FMethod f_method = FMethod::ODE;                   // Method for calculating representative energies.
    bool adapt; // If adapt=false --> g(x)=1.
    bool hardgap;
    double boundary;
@@ -240,6 +267,97 @@ class Adapt {
      assert(x_ >= 1 && f > 0);
      return f * Lambda.power(2.0-x_);
    }
+   double cumulative_offset{};
+   double cumulative_total{};
+   Vec cumulative_plateaus;
+   void init_cumulative() {
+     cumulative_offset = intrho1(0.0);
+     cumulative_total  = intrho1(1.0) - cumulative_offset;
+     if (!(std::isfinite(cumulative_total) && cumulative_total > 0.0)) {
+       throw std::runtime_error("Integral method requires positive spectral weight in [0,1].");
+     }
+     cumulative_plateaus.clear();
+     for (std::size_t i = 0; i + 1 < vecrho.size();) {
+       if (vecrho[i].second == 0.0 && vecrho[i + 1].second == 0.0) {
+         std::size_t last = i + 1;
+         while (last + 1 < vecrho.size() && vecrho[last + 1].second == 0.0) { last++; }
+         const double lower = std::max(0.0, vecrho[i].first);
+         double upper = std::min(1.0, vecrho[last].first);
+         if (last + 1 == vecrho.size() && upper < 1.0) upper = 1.0;
+         if (lower < upper) {
+           const double midpoint = lower + (upper - lower) / 2.0;
+           cumulative_plateaus.emplace_back(normalized_cumulative(midpoint), upper);
+         }
+         i = last;
+       } else {
+         i++;
+       }
+     }
+   }
+   double normalized_cumulative(const double omega) {
+     return (intrho1(omega) - cumulative_offset) / cumulative_total;
+   }
+   // Generalized inverse of W. For a zero-density plateau, return its upper edge.
+   auto inverse_normalized_cumulative(const double weight) {
+     for (const auto &[plateau_weight, upper_edge] : cumulative_plateaus) {
+       if (weight == plateau_weight) return upper_edge;
+     }
+     double lower = 0.0;
+     double upper = 1.0;
+     while (true) {
+       const double midpoint = lower + (upper - lower) / 2.0;
+       if (midpoint == lower || midpoint == upper) break;
+       if (normalized_cumulative(midpoint) <= weight) {
+         lower = midpoint;
+       } else {
+         upper = midpoint;
+       }
+     }
+     return lower + (upper - lower) / 2.0;
+   }
+   auto integrate_cumulative(const double lower,
+                             const double upper,
+                             gsl_integration_cquad_workspace *workspace) {
+     const GslErrorHandlerGuard error_handler;
+     gsl_function integrand;
+     integrand.function = [](const double value, void *context) {
+       auto *self = static_cast<Adapt *>(context);
+       return self->normalized_cumulative(self->eps(value));
+     };
+     integrand.params = this;
+
+     double result = 0.0;
+     double error  = 0.0;
+     std::size_t evaluations = 0;
+     const int status = gsl_integration_cquad(&integrand, lower, upper, 0.0, allowed_error, workspace,
+                                              &result, &error, &evaluations);
+     if (status != GSL_SUCCESS) {
+       throw std::runtime_error("Integral method failed at x=" + std::to_string(lower) + ": " + gsl_strerror(status));
+     }
+     max_error = std::max(max_error, error);
+     return result;
+   }
+   // Representative energy from Eq. (2.51) in Don Rolih's doctoral thesis.
+   auto Eps_integral(const double x_, gsl_integration_cquad_workspace *workspace) {
+     assert(x_ >= 1.0);
+     if (x_ == 1.0) return 1.0;
+
+     double weight;
+     if (x_ < 2.0) {
+       weight = 2.0 - x_;
+       weight += integrate_cumulative(2.0, x_ + 1.0, workspace);
+     } else {
+       weight = integrate_cumulative(x_, x_ + 1.0, workspace);
+     }
+
+     constexpr double tolerance = 100.0 * DBL_EPSILON;
+     if (weight < -tolerance || weight > 1.0 + tolerance) {
+       throw std::runtime_error("Integral method produced a cumulative weight outside [0,1] at x="
+                                + std::to_string(x_));
+     }
+     weight = std::clamp(weight, 0.0, 1.0);
+     return inverse_normalized_cumulative(weight);
+   }
    // Right-hand-side of the differential equation. y=f !
    auto rhs_F(const double x_, const double y_) {
      assert(std::isfinite(x_));
@@ -288,6 +406,7 @@ class Adapt {
      std::cout << " max_subdiv=" << max_subdiv;
      std::cout << " max_abs=" << max_abs;
      std::cout << std::endl;
+     if (f_method == FMethod::INTEGRAL) { std::cout << "# f_method=integral" << std::endl; }
    }
    void set_parameters(const int PREC = 16) {
      std::cout << std::setprecision(PREC);
@@ -316,8 +435,23 @@ class Adapt {
      factor0         = 1.0 + P.P("secant_factor", 1e-7);
      max_iter        = P.Pint("secant_max_iter", 10);
    }
-   Adapt(const Params &P_, const Sign &sign_, std::optional<double> flat_gamma_ = std::nullopt) : P(P_), sign(sign_), flat_gamma(flat_gamma_) {
+   Adapt(const Params &P_,
+         const Sign &sign_,
+         std::optional<double> flat_gamma_ = std::nullopt,
+         const bool force_integral = false) : P(P_), sign(sign_), flat_gamma(flat_gamma_) {
      set_parameters();
+     if (force_integral) {
+       f_method = FMethod::INTEGRAL;
+     } else {
+       const auto method = P.Pstr("f_method", "ode");
+       if (method == "ode") {
+         f_method = FMethod::ODE;
+       } else if (method == "integral") {
+         f_method = FMethod::INTEGRAL;
+       } else {
+         throw std::invalid_argument("f_method must be either 'ode' or 'integral'.");
+       }
+     }
      report_parameters();
    }
    auto g_fn(const Sign &sign_) { return "GSOL" + (sign_ == Sign::POS ? ""s : "NEG"s) + ".dat"; }
@@ -357,11 +491,50 @@ class Adapt {
        }
      } while (x < xmax && std::abs(y) <= max_abs);
    }
+   void calc_f_integral() {
+     const GslErrorHandlerGuard error_handler;
+     constexpr std::size_t limit = 1000;
+     std::unique_ptr<gsl_integration_cquad_workspace, GslWorkspaceDeleter> workspace(
+       gsl_integration_cquad_workspace_alloc(limit));
+     if (!workspace) throw std::runtime_error("Failed to allocate integration workspace.");
+     if (!(std::isfinite(allowed_error) && allowed_error > 0.0)) {
+       throw std::runtime_error("Integral method requires allowed_error to be positive and finite.");
+     }
+
+     init_cumulative();
+
+     std::ofstream OUTF;
+     safe_open(OUTF, f_fn(sign));
+     rho(1); // NECESSARY!
+     x         = 1.0;
+     y         = 1.0 / Lambda;
+     max_error = 0.0;
+     save(OUTF);
+     double x_st = x;
+     do {
+       x_st += output_step;
+       x = x_st;
+       const double energy = Eps_integral(x, workspace.get());
+       y = energy / Lambda.power(2.0 - x);
+       if (!(std::isfinite(y) && y > 0.0)) {
+         throw std::runtime_error("Integral method produced a non-positive or non-finite f(x) at x=" + std::to_string(x));
+       }
+       save(OUTF);
+       if (std::abs(y) > max_abs) {
+         std::cout<< "***** y=" << y << " |y|>max_abs=" << max_abs << std::endl;
+         std::cout<< "***** Terminating!" << std::endl;
+       }
+     } while (x < xmax && std::abs(y) <= max_abs);
+   }
    void run() {
      load_init_rho();
      init_A();
      if (adapt) { load_or_calc_g(); }
-     calc_f();
+     if (f_method == FMethod::ODE) {
+       calc_f();
+     } else {
+       calc_f_integral();
+     }
      report();
    }
 };

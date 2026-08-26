@@ -35,12 +35,13 @@ void help(int argc, char **argv, const std::string &help_message)
   }
 }
 
-const auto usage = "Usage: adapt [-h|--help] [--flat GG] [P|N] [param_filename]"s;
+const auto usage = "Usage: adapt [-h|--help] [--flat GG] [--integral] [P|N] [param_filename]"s;
 
 struct CommandLineOptions {
   Sign sign = Sign::POS;
   std::string param_fn = "param";
   std::optional<double> flat_gamma;
+  bool integral = false;
 };
 
 auto uppercase(std::string text) {
@@ -97,6 +98,11 @@ CommandLineOptions cmd_line(int argc, char *argv[]) {
       options.flat_gamma = parse_flat_gamma(arg.substr(7));
       continue;
     }
+    if (arg == "--integral") {
+      if (options.integral) { throw std::invalid_argument("--integral specified more than once.\n" + usage); }
+      options.integral = true;
+      continue;
+    }
     if (!arg.empty() && arg[0] == '-') { throw std::invalid_argument("Unknown option: " + arg + "\n" + usage); }
 
     Sign parsed_sign;
@@ -123,7 +129,7 @@ int main(int argc, char *argv[]) {
     help(argc, argv, usage);
     const auto options = cmd_line(argc, argv);
     Params P(options.param_fn);
-    Adapt calc(P, options.sign, options.flat_gamma);
+    Adapt calc(P, options.sign, options.flat_gamma, options.integral);
     calc.run();
     const clock_t end_clock = clock();
     std::cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << std::endl;

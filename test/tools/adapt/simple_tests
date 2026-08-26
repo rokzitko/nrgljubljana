@@ -4,6 +4,7 @@ adapt11_allowederror
 adapt12_bandrescale
 adapt13_invalid_data
 adapt14_flat
+adapt15_integral
 adapt2_xrange
 adapt3_mesh
 adapt4_adapt=false

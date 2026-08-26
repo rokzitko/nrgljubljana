@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+export PATH="$1:$PATH"
+
+rm -rf ode integral-param integral-cli
+mkdir ode integral-param integral-cli
+
+for directory in ode integral-param integral-cli; do
+  cp param "$directory/param"
+  cp "$3/../adapt1/Delta.dat" "$directory/Delta.dat"
+  cp "$3/../adapt1/ref/GSOL.dat" "$directory/GSOL.dat"
+  cp "$3/../adapt1/ref/GSOLNEG.dat" "$directory/GSOLNEG.dat"
+done
+
+printf '\nf_method=integral\n' >>integral-param/param
+
+(cd ode && adapt P && adapt N)
+(cd integral-param && adapt P && adapt N)
+(cd integral-cli && adapt --integral P && adapt --integral N)
+
+"$2/test/mycomp.pl" ode/FSOL.dat integral-param/FSOL.dat
+"$2/test/mycomp.pl" ode/FSOLNEG.dat integral-param/FSOLNEG.dat
+cmp integral-param/FSOL.dat integral-cli/FSOL.dat
+cmp integral-param/FSOLNEG.dat integral-cli/FSOLNEG.dat
