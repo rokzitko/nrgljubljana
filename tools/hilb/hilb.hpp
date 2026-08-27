@@ -139,11 +139,11 @@ class numeric_row_reader {
   const auto &source_name() const noexcept { return source; }
 };
 
-// Unwrap a lambda expression and evaluate it at x
-// https://martin-ueding.de/articles/cpp-lambda-into-gsl/index.html
-inline auto unwrap(const double x, void *p) {
-  auto fp = static_cast<std::function<double(double)> *>(p);
-  return (*fp)(x);
+// Unwrap a callable and evaluate it at x.
+template <typename F>
+inline double unwrap(const double x, void *p) {
+  auto *f = static_cast<F *>(p);
+  return (*f)(x);
 }
 
 struct gsl_failure {
@@ -255,9 +255,10 @@ class integrator {
      * @param epsabs numeric integration epsilon (absolute)
      * @param epsrel numeric integration epsilon (relative)
      */
-  auto operator()(std::function<double(double)> f, const double a, const double b, const double epsabs = 1e-14, const double epsrel = 1e-10) {
+  template <typename F>
+  auto operator()(F f, const double a, const double b, const double epsabs = 1e-14, const double epsrel = 1e-10) {
     if (!work) throw std::runtime_error("Cannot use a moved-from GSL integrator.");
-    gsl_function function{&unwrap, &f};
+    gsl_function function{&unwrap<F>, &f};
     double result = std::numeric_limits<double>::quiet_NaN();
     double error = std::numeric_limits<double>::quiet_NaN();
     const auto status = gsl_integration_qag(&function, a, b, epsabs, epsrel, limit, GSL_INTEG_GAUSS15, work.get(), &result, &error);
