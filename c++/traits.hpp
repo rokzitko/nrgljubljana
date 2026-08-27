@@ -1,11 +1,12 @@
 // traits.hpp - data types definitions
-// Copyright (C) 2009-2024 Rok Zitko
+// Copyright (C) 2009-2026 Rok Zitko
 
 #ifndef _traits_hpp_
 #define _traits_hpp_
 
 #include <concepts>
 #include <complex>
+#include <vector>
 #include <type_traits> // is_same_v, is_floating_point_v
 
 #include <Eigen/Dense>
