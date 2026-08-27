@@ -51,9 +51,8 @@ class Invar {
    // more fancy terms) the dimension of the Cartan subalgebra of the full symmetry algebra.
    inline static size_t invdim = 0; // 0 before initialization!
    Invar() : data(invdim) {}
-   explicit Invar(const InvType &d) {
-     my_assert(d.size() == data.size());
-     data = d;
+   explicit Invar(const InvType &d) : data(d) {
+     my_assert(data.size() == invdim);
    }
    explicit Invar(const int i0) : data{i0} {} // (int) constructor
    explicit Invar(const int i0, const int i1) : data{i0, i1} {} // (int,int) constructor

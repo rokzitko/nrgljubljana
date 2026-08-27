@@ -95,6 +95,19 @@ TEST(Invar, InvarQS) { // NOLINT
   }
 }
 
+TEST(Invar, InvertParity) { // NOLINT
+  initInvar({
+    {"Q", additive},
+    {"SS", additive},
+    {"P", multiplicative}
+  });
+  const Invar I(1,2,1);
+  const auto inverted = I.InvertParity();
+  EXPECT_EQ(inverted, Invar(1,2,-1));
+  EXPECT_EQ(I, Invar(1,2,1));
+  EXPECT_EQ(inverted.InvertParity(), I);
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS(); // NOLINT
