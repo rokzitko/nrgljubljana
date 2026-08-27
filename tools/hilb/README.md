@@ -113,8 +113,8 @@ The frequency labels in corresponding rows must agree within the tolerance set
 by `-f`, whose default is $10^{-6}$. The imaginary self-energy is capped as
 
 $$
-\operatorname{Im}\Sigma\leftarrow
-\min(\operatorname{Im}\Sigma,-c),
+\mathrm{Im}\,\Sigma\leftarrow
+\min(\mathrm{Im}\,\Sigma,-c),
 $$
 
 where the positive clipping magnitude $c$ is set by `-c`. Define the smallest
@@ -137,15 +137,15 @@ required by the current small-imaginary-part formulas. Values of `-c` below
 $c_{\min}$ are rejected. The transform is evaluated at
 
 $$
-z=\omega-\operatorname{Re}\Sigma(\omega)
-  +i[-\operatorname{Im}\Sigma(\omega)],
+z=\omega-\mathrm{Re}\,\Sigma(\omega)
+  +i[-\mathrm{Im}\,\Sigma(\omega)],
 $$
 
 followed by any shifts requested with `-x` and `-y`. If one or more input
 values are changed by the cap, `hilb` writes one summary to standard error with
 the number changed, the cap, and the first affected frequency and value. Since
 the shifts are applied after clipping, a shift that makes the final
-$|\operatorname{Im}z|$ smaller than the safe minimum is rejected.
+$|\mathrm{Im}\,z|$ smaller than the safe minimum is rejected.
 
 Without `-G`, both real and imaginary results are divided by $-\pi$ before
 being written to `reaw.dat` and `imaw.dat`. With `-G`, the raw real and
@@ -169,7 +169,7 @@ the final positional arguments.
 | `-o FILE` | Write results to `FILE` in the single-point and argument-file modes. |
 | `-x DX` | Add `DX` to the real part of every transform argument. |
 | `-y DY` | Add `DY` to the imaginary part of every transform argument. |
-| `-c C` | Set the positive clipping magnitude for $\operatorname{Im}\Sigma$ in DMFT mode. Default: $c_{\min}\simeq1.4917\times10^{-154}$. |
+| `-c C` | Set the positive clipping magnitude for $\mathrm{Im}\,\Sigma$ in DMFT mode. Default: $c_{\min}\simeq1.4917\times10^{-154}$. |
 | `-t T` | Set the direct/singularity-subtracted integration threshold. Default: $10^{-3}$. |
 | `-a A` | Set the absolute quadrature tolerance. Default: $10^{-14}$. |
 | `-r R` | Set the relative quadrature tolerance. Default: $10^{-10}$. |
@@ -255,7 +255,7 @@ $$
 
 The real and imaginary parts of the transform are integrated separately. The
 algorithm switches between direct adaptive quadrature and a
-singularity-subtracted form according to the magnitude of $y=\operatorname{Im}z$.
+singularity-subtracted form according to the magnitude of $y=\mathrm{Im}\,z$.
 
 ### Direct quadrature
 
@@ -263,12 +263,12 @@ When $|y|\ge T$, the defining integral is evaluated directly, where $T$ is set
 by `-t` and defaults to $10^{-3}$. With $z=x+iy$, the two real integrands are
 
 $$
-\operatorname{Re}\frac{g(E)}{z-E}
+\mathrm{Re}\,\frac{g(E)}{z-E}
 =\frac{g_r(E)(x-E)+g_i(E)y}{(x-E)^2+y^2},
 $$
 
 $$
-\operatorname{Im}\frac{g(E)}{z-E}
+\mathrm{Im}\,\frac{g(E)}{z-E}
 =\frac{-g_r(E)y+g_i(E)(x-E)}{(x-E)^2+y^2}.
 $$
 
@@ -303,9 +303,9 @@ $$
 For complex $g(x)=a+ib$, the analytic contribution is assembled as
 
 $$
-\operatorname{Re}[g(x)Q]=aQ_R-bQ_I,
+\mathrm{Re}[g(x)Q]=aQ_R-bQ_I,
 \qquad
-\operatorname{Im}[g(x)Q]=aQ_I+bQ_R.
+\mathrm{Im}[g(x)Q]=aQ_I+bQ_R.
 $$
 
 The remaining integral is rescaled with
@@ -335,7 +335,7 @@ The executable uses these defaults:
 | Workspace subdivision limit | 1000 |
 | Absolute tolerance (`-a`) | $10^{-14}$ |
 | Relative tolerance (`-r`) | $10^{-10}$ |
-| Direct/subtracted threshold (`-t`) | $\lvert\operatorname{Im}z\rvert=10^{-3}$ |
+| Direct/subtracted threshold (`-t`) | $\lvert\mathrm{Im}\,z\rvert=10^{-3}$ |
 
 The three numerical values are configurable with the options shown in the
 table. Tolerances must be finite and nonnegative and must form a combination
@@ -370,7 +370,7 @@ This also shows why $H_n$ is not simply $z^nH_0$.
 
 Numerical limitations include:
 
-- Values with $|\operatorname{Im}z|<c_{\min}$ are rejected. Squaring a smaller
+- Values with $|\mathrm{Im}\,z|<c_{\min}$ are rejected. Squaring a smaller
   value can underflow in the small-imaginary-part formulas, and the
   implementation is not a direct principal-value integrator.
 - Large powers can overflow or underflow in $E^n$ and can amplify cancellation
