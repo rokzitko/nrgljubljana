@@ -49,6 +49,7 @@ jobs:
       NRGLJUBLJANA_CONDA_GIT_REV: ${{ github.sha }}
       OMPI_MCA_memory: ^patcher
       OPENBLAS_NUM_THREADS: "1"
+      UCX_TLS: "tcp,sm,self"
 
     steps:
       - uses: actions/checkout@v7
