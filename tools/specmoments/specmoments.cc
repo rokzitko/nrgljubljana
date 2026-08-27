@@ -147,15 +147,33 @@ void load(int i) {
   const ios::pos_type begin_pos = f.tellg();
   f.seekg(0, ios::end);
   const ios::pos_type end_pos = f.tellg();
-  const long len              = end_pos - begin_pos;
-  assert(len % (rows * sizeof(double)) == 0);
-  const int nr = len / (rows * sizeof(double)); // number of lines
+  if (begin_pos == ios::pos_type(-1) || end_pos == ios::pos_type(-1) || end_pos < begin_pos) {
+    cerr << "Error determining size of file " << filename << endl;
+    exit(1);
+  }
+  const auto file_len = end_pos - begin_pos;
+  if (!std::in_range<size_t>(file_len) || !std::in_range<streamsize>(file_len)) {
+    cerr << "Input binary file " << filename << " is too large." << endl;
+    exit(1);
+  }
+  const auto len = static_cast<size_t>(file_len);
+  const auto row_count = static_cast<size_t>(rows);
+  if (len % sizeof(double) != 0 || (len / sizeof(double)) % row_count != 0) {
+    cerr << "Input binary file " << filename << " has incomplete row data." << endl;
+    exit(1);
+  }
+  const auto element_count = len / sizeof(double);
+  if (!std::in_range<int>(element_count) || element_count > vector<double>().max_size()) {
+    cerr << "Input binary file " << filename << " is too large." << endl;
+    exit(1);
+  }
+  const auto nr = static_cast<int>(element_count / row_count); // number of lines
   if (verbose) cout << "len=" << len << " nr=" << nr << " data points" << endl;
   // Allocate the read buffer. The data will be kept in memory for the
   // duration of the calculation!
-  auto buffer = std::vector<double>(rows * nr);
+  auto buffer = std::vector<double>(element_count);
   f.seekg(0, ios::beg); // Return to the beginning of the file.
-  f.read((char *)buffer.data(), len);
+  f.read(reinterpret_cast<char *>(buffer.data()), static_cast<streamsize>(file_len));
   if (f.fail()) {
     cerr << "Error reading " << filename << endl;
     exit(1);
