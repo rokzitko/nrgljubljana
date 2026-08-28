@@ -97,19 +97,95 @@ ctest --test-dir build --output-on-failure -R '^(adapt|nrgchain)'
 ctest --test-dir build --output-on-failure -R '^(test_dmnrg_only|test_fdm_only|test65_algorithms_mats)$'
 ```
 
-## Running The Code
+## First End-To-End Calculation
 
-The runtime executable is `nrg`. It expects `param` and `data` in the working directory.
+The following calculation is the same minimal single-impurity Anderson model
+used by the `nrginit0_minimal` regression fixture. It exercises both installed
+entry points and requires a working Mathematica or Wolfram Engine kernel.
 
-Typical workflow:
+Start in a new directory. `nrginit` and `nrg` both read and write the current
+directory, and optional files left by an older calculation are not cleaned up
+automatically.
 
-1. generate `data` with the Mathematica-side initialization path
-2. prepare `param`
-3. run `nrg`
-4. inspect the generated workdir outputs and tool postprocessing results
+```sh
+run_dir="$(mktemp -d "$HOME/nrg-minimal.XXXXXX")"
+cd "$run_dir"
+cat > param <<'EOF'
+[param]
+symtype=QS
+model=SIAM
 
-The executable also creates a temporary workdir for iteration artifacts and density-matrix files.
+U=1.0
+Gamma=0.1
+delta=0.1
+band=flat
+
+discretization=Z
+Lambda=2.0
+
+Nmax=4
+keep=100
+
+ops=n_d
+EOF
+```
+
+Generate the seed Hamiltonian, operators, and Wilson-chain coefficients:
+
+```sh
+nrginit && test -s data
+```
+
+The launcher uses the command `math` by default. If the kernel has another
+name or is not on `PATH`, pass it as the only positional argument:
+
+```sh
+nrginit /path/to/WolframKernel
+```
+
+A successful initializer exits with status zero, prints `Success!`, and leaves
+`data` and `mmalog` in the calculation directory. `data` is the generated input
+for `nrg`; `mmalog` is a diagnostic Mathematica transcript.
+
+Run the iterative solver only after `nrginit` succeeds:
+
+```sh
+nrg && test -f DONE
+```
+
+For this input, the main persistent results are:
+
+- `td`: one row of thermodynamic quantities for the seed problem and each NRG
+  shell
+- `custom`: expectation values for requested scalar operators, including
+  `n_d`
+- `DONE`: an empty completion marker created at the end of a successful fresh
+  run when `done=true`
+
+Inspect the headers and first data rows with:
+
+```sh
+sed -n '1,2p' td
+sed -n '1,3p' custom
+```
+
+The exact floating-point values can vary with the eigensolver and numerical
+libraries. Use the headers rather than fixed character offsets when parsing the
+tables. See [Output format reference](output-formats.md) for column meanings and
+file lifecycle details.
+
+The runtime also creates a uniquely named temporary workdir for eigenspectra
+and density matrices used between phases. `nrg -w DIR` or `NRG_WORKDIR=DIR`
+selects the parent of that temporary directory; neither setting relocates
+`td`, `custom`, spectra, or other persistent results.
+
+It is normal for `nrg` to report initializer-only keys such as `model`, `U`,
+`Gamma`, `band`, and `Nmax` under `Unused settings`. Review the list because a
+misspelled runtime key appears in the same place. The complete ownership and
+syntax rules are in the [parameter reference](parameter-reference.md).
 
 ## Legacy Documentation
 
-The older Sphinx documentation remains in `doc/` while this MkDocs tree is being expanded. Use this new tree for contributor-facing structure and code-orientation material.
+The older Sphinx documentation remains in `doc/` while this MkDocs tree is
+being expanded. Use this MkDocs site for the current build, workflow, parameter,
+and output references as well as contributor-facing code orientation.

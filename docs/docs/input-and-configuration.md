@@ -1,18 +1,46 @@
 # Input and Configuration
 
-This page describes the startup side of the codebase: how `param` and `data` are interpreted, how symmetry is selected, and how the initial runtime objects are constructed.
+This page describes the startup side of the codebase: how `param` and `data` are interpreted, how symmetry is selected, and how the initial runtime objects are constructed. For the complete user-facing key list, see the [parameter reference](parameter-reference.md).
 
 ## Runtime Inputs
 
 The native executable expects two files in the working directory:
 
-- `param`: user-facing runtime configuration
+- `param`: user-facing initialization and runtime configuration
 - `data`: generated seed data for the first NRG step
 
 The split is intentional:
 
-- `param` controls how the run should proceed
+- `param` controls both how `nrginit` generates the model and how `nrg` runs
 - `data` contains the precomputed initial Hamiltonian basis, operator blocks, and coefficient tables
+
+`data` is a generated same-release hand-off rather than a user-edited result
+format. Regenerate it after changing model, symmetry, discretization, operator,
+or Wilson-chain settings.
+
+## End-User Syntax And Ownership
+
+A portable file uses named blocks and one case-sensitive `key=value`
+assignment per line:
+
+```text
+[param]
+symtype=QS
+Lambda=2.0
+
+[extra]
+# Model-specific values
+```
+
+Both parsers ignore blank lines and whole-line `#` comments when indentation
+uses ordinary ASCII spaces. Do not use tabs because the `nrginit` parser does
+not strip them. Inline comments, quoted strings, and duplicate keys should not
+be used. Initializer-only keys such as `model`, `band`, and `Nmax` remain in the
+file when `nrg` starts and are therefore printed as unused by the C++ parser.
+This is expected, but the same report also exposes misspelled runtime keys.
+
+The [parameter reference](parameter-reference.md#portable-file-syntax) defines
+the common syntax, boolean values, stage ownership, defaults, and constraints.
 
 ## `param` Parsing
 
@@ -34,6 +62,9 @@ Startup flow in the constructor is roughly:
 5. validate the resulting configuration
 6. initialize resume-related bookkeeping
 
+The C++ parser rejects duplicate keys. Unrecognized keys are reported rather
+than rejected so that the shared file can contain initializer settings.
+
 ## `data` Parsing
 
 The `data` file is read by `InputData<S>` in `c++/read-input.hpp`.
@@ -47,6 +78,10 @@ The `InputData` constructor performs these steps:
 5. load the seed `f` operators into `Opch<S>`
 6. read the remaining operator blocks and coefficient tables
 7. finalize chain-length-related derived parameters in `Params`
+
+The marker in `data` versions the producer/consumer hand-off, but the layout is
+not a general interchange contract. Its current role is described in the
+[output format reference](output-formats.md#nrginit-hand-off-files).
 
 ## Symmetry Selection
 
@@ -101,5 +136,8 @@ If you change any of the following, this page's area of the code is where you sh
 - altering the `data` file format
 - selecting or configuring symmetry backends
 - modifying chain-length or coefficient initialization rules
+
+Any user-visible change in this area also requires an update to the [parameter
+reference](parameter-reference.md).
 
 For the next stage after startup, see [Iteration engine](iteration-engine.md).

@@ -61,7 +61,10 @@ Several types serialize themselves directly:
 - `DensMatElements<S>::save/load(...)` in `c++/operators.hpp`
 - HDF5 save helpers across `Values`, `DiagInfo`, `Operators`, `Stats`, and stores
 
-The code consistently uses temporary files followed by rename for important binary outputs, which helps protect against partial writes.
+Temporary workdir archives are written to temporary files and renamed after
+successful serialization. Persistent result files such as `td`, spectra, and
+HDF5 output are generally opened directly and can remain partial after an
+interrupted run.
 
 ## Output Front-End: `Output<S>`
 
@@ -78,6 +81,9 @@ It may open and manage:
 - `raw.h5` or `raw-dm.h5`
 
 This makes `Output<S>` the phase-local front-end for persistence, while `ThermoStore` and `BackiterStore` are the cross-phase in-memory archive.
+
+The current user-visible layouts and their compatibility limitations are
+documented in the [output format reference](output-formats.md).
 
 ## Density-Matrix Persistence
 

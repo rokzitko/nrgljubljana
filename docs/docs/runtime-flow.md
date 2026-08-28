@@ -67,12 +67,12 @@ At a high level, each iteration does the following:
 4. diagonalize each block through the selected `DiagEngine`
 5. establish energy references and truncation criteria
 6. split eigenvectors into ancestor blocks when needed
-7. update statistics and outputs
-8. recalculate operators in the new basis
-9. compute observables and spectral data for the current phase
-10. archive state into thermodynamic and backward-sweep stores
-11. truncate the eigenspectra
-12. recalculate irreducible operators for the next step
+7. update iteration metadata and basic diagnostics
+8. for `strategy=all`, recalculate operators and measure before truncation
+9. truncate the eigenspectra
+10. archive truncated state into thermodynamic and backward-sweep stores
+11. recalculate irreducible operators for the next step
+12. for `strategy=kept`, recalculate operators and measure after truncation
 
 The most important coordination logic lives in `c++/core.hpp`.
 
@@ -99,7 +99,11 @@ The runtime produces several forms of output:
 
 The workdir is represented by `Workdir` in `c++/workdir.hpp` and is used for transient iteration-state files such as unitary matrices and density matrices.
 
-See [State and persistence](state-and-persistence.md) for the storage model and serialization boundaries.
+Persistent result files are written in the calculation directory, not the
+temporary workdir. See the [output format reference](output-formats.md) for
+filenames, columns, units, and lifecycle behavior. See [State and
+persistence](state-and-persistence.md) for the in-memory storage model and
+temporary serialization boundaries.
 
 ## Mathematica Side
 

@@ -3,18 +3,22 @@ repo_url: https://github.com/rokzitko/nrgljubljana
 edit_uri: edit/master/docs/docs/
 nav:
   - Overview: index.md
-  - Getting Started: getting-started.md
-  - Parallelism: parallelism.md
+  - User Guide:
+    - Getting started: getting-started.md
+    - Input and configuration: input-and-configuration.md
+    - nrginit workflow: nrginit-workflow.md
+    - Parallelism: parallelism.md
+  - Reference:
+    - Parameters: parameter-reference.md
+    - Output formats: output-formats.md
+    - Tools: tools.md
   - Architecture:
     - Project structure: project-structure.md
-    - Input and configuration: input-and-configuration.md
     - Runtime flow: runtime-flow.md
     - Iteration engine: iteration-engine.md
     - Data structures: data-structures.md
     - State and persistence: state-and-persistence.md
     - Symmetry framework: symmetry-framework.md
-    - nrginit workflow: nrginit-workflow.md
-  - Tools: tools.md
   - Testing: testing.md
   - Developer Guide: developer-guide.md
   - About: about.md
