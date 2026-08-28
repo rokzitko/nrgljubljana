@@ -2,6 +2,7 @@
 #define _tools_common_tabulated_hpp_
 
 #include <algorithm>
+#include <cerrno>
 #include <cfloat>
 #include <cctype>
 #include <cstdlib>
@@ -37,6 +38,20 @@ inline auto split_fields(const std::string &s, const unsigned int atleast = 0) {
   return substrings;
 }
 
+inline auto parse_tabulated_double(const std::string &text) {
+  const auto *begin = text.c_str();
+  const auto *finish = begin + text.size();
+  char *end = nullptr;
+  errno = 0;
+  const auto value = std::strtod(begin, &end);
+  const bool no_conversion = end == begin;
+  const bool underflowed_to_zero = errno == ERANGE && value == 0.0;
+  while (end != finish && std::isspace(static_cast<unsigned char>(*end))) { ++end; }
+  if (no_conversion || end != finish || underflowed_to_zero || !std::isfinite(value))
+    throw std::runtime_error("Tabulated value must be a finite representable number: " + text);
+  return value;
+}
+
 template<typename Vec, typename Stream, typename NextLine>
 auto load_pairs(Stream &input, NextLine next_line) {
   Vec vec;
@@ -44,7 +59,9 @@ auto load_pairs(Stream &input, NextLine next_line) {
     const auto line = next_line(input);
     if (!input) break;
     const auto columns = split_fields(line, 2);
-    vec.emplace_back(std::make_pair(std::atof(columns[0].c_str()), std::atof(columns[1].c_str())));
+    const auto x = parse_tabulated_double(columns[0]);
+    const auto y = parse_tabulated_double(columns[1]);
+    vec.emplace_back(std::make_pair(x, y));
   }
   if (vec.empty())
     throw std::runtime_error("No data found.");
@@ -79,8 +96,8 @@ auto load_abs_pairs(Stream &input, const Sign sign, AcceptSign accept_sign, Next
     const auto line = next_line(input);
     if (!input) break;
     const auto columns = split_fields(line, 2);
-    const auto x = std::atof(columns[0].c_str());
-    const auto y = std::atof(columns[1].c_str());
+    const auto x = parse_tabulated_double(columns[0]);
+    const auto y = parse_tabulated_double(columns[1]);
     if (accept_sign(sign, x)) {
       if (y < 0.0)
         throw std::runtime_error("Negative y found.");
@@ -121,7 +138,7 @@ void load_values(Stream &input, std::vector<double> &values, NextLine next_line)
   while (input) {
     const auto line = next_line(input);
     if (!input) break;
-    values.push_back(std::atof(line.c_str()));
+    values.push_back(parse_tabulated_double(line));
   }
 }
 
