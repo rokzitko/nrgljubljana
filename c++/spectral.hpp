@@ -13,6 +13,7 @@
 
 #include <range/v3/all.hpp>
 
+#include "broadening.hpp"
 #include "traits.hpp"
 #include "io.hpp"
 
@@ -37,39 +38,27 @@ class Spikes : public std::vector<t_delta_peak<S>> {
      }
 };
 
-#ifndef M_SQRTPI
-#define M_SQRTPI 1.7724538509055160273
-#endif
-
-// cf. A. Weichselbaum and J. von Delft, cond-mat/0607497
-
-// Modified log-Gaussian broadening kernel. For gamma=alpha/4, the
-// kernel is symmetric in both arguments.
-inline double BR_L(double e, double ept, double alpha) {
-  if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
-  if (ept == 0.0) return 0.0;
-  const double gamma = alpha/4.0;
-  return std::exp(-std::pow(std::log(e / ept) / alpha - gamma, 2)) / (alpha * std::abs(e) * M_SQRTPI);
+// Legacy names retained for the spectral code. The main NRG path deliberately
+// keeps the output-frequency crossover that it has always used.
+inline double BR_L(const double e, const double ept, const double alpha) {
+  return Broadening::log_gaussian(e, ept, alpha);
 }
 
-// Normalized to 1, width omega0. The kernel is symmetric in both
-// arguments.
-inline double BR_G(double e, double ept, double omega0) { return std::exp(-std::pow((e - ept) / omega0, 2)) / (omega0 * M_SQRTPI); }
+inline double BR_G(const double e, const double ept, const double omega0) {
+  return Broadening::gaussian(e, ept, omega0);
+}
 
-// Note: 'ept' is the energy of the delta peak in the raw spectrum,
-// 'e' is the energy of the data point in the broadened spectrum.
-inline double BR_NEW(double e, double ept, double alpha, double omega0) {
-  double part_l = BR_L(e, ept, alpha);
-  // Most of the time we only need to compute part_l (loggaussian)
-  if (std::abs(e) > omega0) return part_l;
-  // Note: this is DIFFERENT from the broadening kernel proposed by
-  // by Weichselbaum et al. This BR_h is a function of 'e', not
-  // of 'ept'! This breaks the normalization at finite temperatures.
-  // On the other hand, it gives nicer spectra when used in conjunction
-  // with the self-energy trick.
-  double BR_h = std::exp(-std::pow(std::log(std::abs(e) / omega0) / alpha, 2));
-  my_assert(BR_h >= 0.0 && BR_h <= 1.0);
-  return part_l * BR_h + BR_G(e, ept, omega0) * (1.0 - BR_h);
+inline double BR_NEW(const double e, const double ept, const double alpha, const double omega0) {
+  const auto log_part = BR_L(e, ept, alpha);
+  // Preserve the main NRG path's long-standing fast path.
+  if (std::abs(e) > omega0) return log_part;
+
+  // Unlike the normalization-conserving kernel, the legacy main path uses the
+  // output frequency for the crossover. This is intentionally unchanged.
+  const auto h = Broadening::crossover(e, ept, alpha, omega0,
+                                       Broadening::CrossoverMode::output_frequency);
+  my_assert(h >= 0.0 && h <= 1.0);
+  return Broadening::blend(log_part, BR_G(e, ept, omega0), h);
 }
 
 // Calculate "moment"-th spectral moment.

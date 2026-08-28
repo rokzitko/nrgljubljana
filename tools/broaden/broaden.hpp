@@ -30,12 +30,12 @@
 
 #include <range/v3/all.hpp>
 
+#include "broadening.hpp"
 #include "misc.hpp"
 #include "basicio.hpp"
 
 namespace NRG::Broaden {
 
-constexpr double m_SQRTPI = 1.7724538509055160273;
 const double R_1_SQRT2PI = 1.0 / std::sqrt(2.0 * M_PI); // sqrt not constexpr on all platforms (yet)
 
 using std::abs; // important!!
@@ -46,8 +46,6 @@ inline std::string tostring(const int i) {
   S << i;
   return S.str();
 }
-
-template<typename T> auto sqr(const T x) { return x * x; }
 
 inline double gaussian_kernel(const double x, const double y, const double sigma) {
   const auto d = (x - y) / sigma;
@@ -433,72 +431,17 @@ class Broaden {
      std::cout << "Integral with bosonic kernel (omega -> -omega)=" << sumboseinv << std::endl;
    }
 
-   // Modified log-Gaussian broadening kernel. For gamma=alpha/4, the kernel is symmetric in both arguments. e is the
-   // energy of the spectral function point being computed. ept is the energy of point.
-   inline auto BR_L_orig(const double e, const double ept) {
-     if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
-     if (ept == 0.0) return 0.0;
-     const auto gamma = alpha / 4;
-     return std::exp(-sqr(std::log(e / ept) / alpha - gamma)) / (alpha * std::abs(e) * m_SQRTPI);
-   }
-
-   // As above, with support for a shifted accumulation point
-   inline auto BR_L_acc(const double e0, const double ept0) {
-     auto e   = e0;
-     auto ept = ept0;
-     if (e > accumulation && ept > accumulation) {
-       const auto shift = accumulation;
-       e                = e - shift;
-       ept              = ept - shift;
-     }
-     if (e < -accumulation && ept < -accumulation) {
-       const auto shift = -accumulation; // note the sign!
-       e                = e - shift;
-       ept              = ept - shift;
-     }
-     if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
-     if (ept == 0.0) return 0.0;
-     const auto gamma = alpha / 4;
-     return std::exp(-sqr(std::log(e / ept) / alpha - gamma)) / (alpha * std::abs(e) * m_SQRTPI);
-   }
-
-#define BR_L BR_L_acc
-
-   // Normalized to 1, width omega0. The kernel is symmetric in both arguments.
-   inline auto BR_G(const double e, const double ept) { 
-     return std::exp(-sqr((e - ept) / omega0)) / (omega0 * m_SQRTPI);
-   }
-
-   inline auto BR_G_alpha(const double e, const double ept) {
-     const auto width = alpha;
-     return std::exp(-sqr((e - ept) / width)) / (width * m_SQRTPI);
-   }
-
-   inline auto BR_h0(const double x) {
-     const auto absx = std::abs(x);
-     return absx > omega0 ? 1.0 : std::exp(-sqr(std::log(absx / omega0) / alpha));
-   }
-
-   // normalization = true: Cross-over funciton as proposed by A. Weichselbaum et al. 
-   // normalization = false: BR_h is a function of 'e', not of 'ept'! This breaks the normalization at finite
-   // temperatures. It gives nicer spectra, especially in combination with the self-energy trick.
-   inline auto BR_h(const double e, const double ept) {
-     return normalization ? BR_h0(ept) : BR_h0(e);
-   }
-
-   // e - output energy
-   // ept - energy of the delta peak (data point)
-   auto bfnc(const double e, const double ept) {
-     if (gaussian) {
-       return BR_G_alpha(e, ept);
-     } else {
-       const auto part_l = BR_L(e, ept);
-       const auto part_g = BR_G(e, ept);
-       const auto h      = BR_h(e, ept);
-       assert(h >= 0.0 && h <= 1.0);
-       return part_l * h + part_g * (1.0 - h);
-     }
-   }
+    // e - output energy
+    // ept - energy of the delta peak (data point)
+    auto bfnc(const double e, const double ept) {
+      if (gaussian) {
+        return NRG::Broadening::gaussian(e, ept, alpha);
+      } else {
+        const auto mode = normalization ? NRG::Broadening::CrossoverMode::peak_frequency
+                                        : NRG::Broadening::CrossoverMode::output_frequency;
+        return NRG::Broadening::hybrid_kernel(e, ept, alpha, omega0, mode, accumulation);
+      }
+    }
 
    vec broaden(const vec &mesh_) {
      if (verbose) { std::cout << "Broadening. Number of mesh points = " << mesh_.size() << std::endl; }

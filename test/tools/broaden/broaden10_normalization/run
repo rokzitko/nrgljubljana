@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+"$1/broaden" -n -L "$3/mesh.dat" -o "$3/../broaden1/spec.bin" 1 0.3 0.1 1
+"$2/test/compare.pl" "$3/ref"
