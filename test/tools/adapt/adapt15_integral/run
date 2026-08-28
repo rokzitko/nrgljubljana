@@ -2,10 +2,10 @@
 set -eu
 export PATH="$1:$PATH"
 
-rm -rf ode integral-param integral-cli
-mkdir ode integral-param integral-cli
+rm -rf ode ode-options integral-param integral-cli integral-options-space integral-options-equals
+mkdir ode ode-options integral-param integral-cli integral-options-space integral-options-equals
 
-for directory in ode integral-param integral-cli; do
+for directory in ode ode-options integral-param integral-cli integral-options-space integral-options-equals; do
   cp param "$directory/param"
   cp "$3/../adapt1/Delta.dat" "$directory/Delta.dat"
   cp "$3/../adapt1/ref/GSOL.dat" "$directory/GSOL.dat"
@@ -15,10 +15,34 @@ done
 printf '\nf_method=integral\n' >>integral-param/param
 
 (cd ode && adapt P && adapt N)
+(cd ode-options && adapt --epsabs 1e-12 --epsrel 1e-8 --workspace-limit 3 --gsl-error-policy ignore P)
 (cd integral-param && adapt P && adapt N)
 (cd integral-cli && adapt --integral P && adapt --integral N)
+(cd integral-options-space &&
+  adapt --integral --epsabs 1e-12 --epsrel 1e-8 --workspace-limit 256 --gsl-error-policy warn P)
+(cd integral-options-equals &&
+  adapt --integral --epsabs=1e-12 --epsrel=1e-8 --workspace-limit=256 --gsl-error-policy=warn P)
 
 "$2/test/mycomp.pl" ode/FSOL.dat integral-param/FSOL.dat
 "$2/test/mycomp.pl" ode/FSOLNEG.dat integral-param/FSOLNEG.dat
+cmp ode/FSOL.dat ode-options/FSOL.dat
 cmp integral-param/FSOL.dat integral-cli/FSOL.dat
 cmp integral-param/FSOLNEG.dat integral-cli/FSOLNEG.dat
+cmp integral-options-space/FSOL.dat integral-options-equals/FSOL.dat
+
+expect_failure() {
+  name=$1
+  message=$2
+  shift 2
+  if adapt "$@" >"$name.stdout" 2>"$name.stderr"; then
+    echo "adapt unexpectedly accepted invalid $name" >&2
+    exit 1
+  fi
+  grep -Fq "$message" "$name.stderr"
+}
+
+expect_failure epsabs "Absolute integration tolerance must be a finite representable number" --epsabs nan
+expect_failure epsrel "Relative integration tolerance must be finite and nonnegative" --epsrel=-1
+expect_failure workspace "Integration workspace limit must be a positive integer" --workspace-limit 0
+expect_failure workspace-small "CQUAD workspace limit must be at least 3" --workspace-limit 2
+expect_failure policy "GSL error policy must be one of" --gsl-error-policy=abort

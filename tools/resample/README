@@ -1,11 +1,38 @@
-Resample tabular representation of a function
-Rok Zitko, rok.zitko@ijs.si, May 2014
+# `resample`
 
-Usage: resample [-h] [-v] [-p precision] [-e [-a A] [-b B]] <input> <grid> <output>
+`resample` evaluates a tabulated function on the `x` values supplied by a new
+grid file.
 
-The input data are interpolated on the x values supplied by the grid file.
-Use -e to enable constant extrapolation for grid points outside the input
-domain. By default, y at the lowest input x is used for x < x_min and y at
-the highest input x is used for x > x_max. Option -a A overrides the value
-below the domain, while -b B overrides the value above it. Both overrides
-require -e.
+## Usage
+
+```text
+resample [options] input grid output
+```
+
+The input and grid files contain two numeric columns. The grid's second column
+is replaced by the interpolated value in the output.
+
+## Options
+
+| Option | Meaning |
+| --- | --- |
+| `-h`, `--help` | Print help. |
+| `-v` | Print verbose diagnostics. |
+| `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, or `akima`. Default: `akima`. |
+| `-p N` | Write `N` significant digits. Default: `16`. |
+| `-e` | Enable constant extrapolation outside the input domain. |
+| `-a A` | With `-e`, use `A` below the input domain. Default: the first input `y`. |
+| `-b B` | With `-e`, use `B` above the input domain. Default: the last input `y`. |
+
+Without `-e`, no extrapolation is performed and grid points should remain in
+the input domain. Both `-a` and `-b` require `-e`.
+
+`linear` is piecewise linear and requires at least two points. `cspline` is a
+natural cubic spline and requires at least three points. `akima` is a local
+piecewise-cubic interpolant and requires at least five points. Both cubic
+methods can overshoot between samples and do not preserve positivity. Use
+`linear` when preserving the range and positivity of nonnegative samples is
+more important than smooth derivatives.
+
+`resample` performs interpolation only. It has no quadrature tolerance,
+workspace, rule, or GSL integration error-policy options.

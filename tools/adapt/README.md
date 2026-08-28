@@ -66,7 +66,15 @@ $$
 
 This follows by writing $\rho(E)dE/dx=dW(E)/dx=-w(x)$ and integrating from $x$ to infinity. It avoids propagating the representative energy as an initial-value problem.
 
-The implementation normalizes $W$ by $W(1)$, evaluates the integral with GSL CQUAD, and obtains $W^{-1}$ by monotonic bisection. Normalization does not change the result. If $W$ has a plateau caused by an exactly zero-density interval, the upper edge of that plateau is used as the generalized inverse. `allowed_error` is the relative CQUAD tolerance in this mode, and the reported `max_error` is the largest estimated absolute quadrature error for the normalized integral.
+The implementation normalizes $W$ by $W(1)$, evaluates the integral with GSL
+CQUAD, and obtains $W^{-1}$ by monotonic bisection. Normalization does not
+change the result. If $W$ has a plateau caused by an exactly zero-density
+interval, the upper edge of that plateau is used as the generalized inverse.
+By default CQUAD uses `epsabs=0` and `epsrel=allowed_error`; the parameter
+default is `allowed_error=1e-10`. The reported `max_error` is the largest
+estimated absolute CQUAD error for the normalized integral. `allowed_error`
+must be positive and finite even when `--epsrel` overrides the CQUAD value,
+because it can still control the adaptive ODE stage used to construct the mesh.
 
 Select this method in the parameter file with
 
@@ -79,7 +87,9 @@ or override the parameter file on the command line with `--integral`.
 ## Usage
 
 ```text
-adapt [-h|--help] [--flat GG] [--integral] [P|N] [param_filename]
+adapt [-h|--help] [--flat GG] [--integral] [--epsabs VALUE]
+      [--epsrel VALUE] [--workspace-limit N]
+      [--gsl-error-policy ignore|warn|fail] [P|N] [param_filename]
 ```
 
 - `P`, `POS`, or `POSITIVE` selects positive frequencies. This is the default.
@@ -87,6 +97,10 @@ adapt [-h|--help] [--flat GG] [--integral] [P|N] [param_filename]
 - `param_filename` selects the parameter file. The default is `param`.
 - `--flat GG` uses a constant positive hybridization $\rho(\omega)=GG$ without reading `Delta.dat`.
 - `--integral` selects the integral representative-energy method, overriding `f_method=ode` if present.
+- `--epsabs VALUE` sets the absolute CQUAD tolerance. Default: `0`.
+- `--epsrel VALUE` overrides the relative CQUAD tolerance. Default: `allowed_error`.
+- `--workspace-limit N` sets the CQUAD workspace capacity; `N` must be at least `3`. Default: `1000`.
+- `--gsl-error-policy POLICY` selects `ignore`, `warn`, or `fail` for CQUAD failures. Default: `fail`.
 - `-h` or `--help` prints the command synopsis.
 
 Options and positional arguments may be given in either order. Examples:
@@ -99,6 +113,29 @@ adapt --flat 0.01 --integral N custom.param
 ```
 
 Input and output paths are relative to the working directory. Sample parameter files are under `test/tools/adapt`.
+
+## Integral numerical controls
+
+The four numerical command-line controls apply only to the integral method;
+they do not alter the ODE calculation. Values for `--epsabs` and `--epsrel`
+must be finite and nonnegative and must form a combination accepted by GSL.
+The workspace limit must be at least three and small enough for GSL's internal
+allocation sizes.
+
+`--epsrel` overrides CQUAD only. It does not change the parameter-file
+`allowed_error`: that value remains the ODE step-error threshold and, when
+`--epsrel` is omitted, the default CQUAD relative tolerance. Similarly,
+`--epsabs` defaults to zero independently of `allowed_error`.
+
+CQUAD chooses its quadrature rules internally and has no selectable QAG rule.
+Consequently, `adapt` does not accept `--quadrature-rule`.
+
+The error policy applies when CQUAD returns a nonzero status or a nonfinite
+result or error estimate. `ignore` uses the returned result without a
+diagnostic, `warn` reports the failure to standard error and continues, and
+`fail` aborts with a nonzero exit status. Input errors and later checks for
+invalid cumulative weights or representative energies remain fatal under
+every policy.
 
 ## Numerical comparison
 

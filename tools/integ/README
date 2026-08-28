@@ -1,3 +1,58 @@
-integrate - a tool for integrations with accurate interpolation (using GSL)
-Rok Zitko, rok.zitko@ijs.si, May 2014
+# `integ`
 
+`integ` integrates a two-column tabulation using a selected GSL interpolant and
+adaptive QAG quadrature.
+
+## Usage
+
+```text
+integ [options] input [-p|-n|-a|-f]
+```
+
+The default output is the integral over the full input interval. The program
+also computes the positive, negative, absolute-value, and Fermi-weighted
+integrals, then prints the selected value with 16 significant digits.
+
+## Options
+
+| Option | Meaning |
+| --- | --- |
+| `-h`, `--help` | Print help. |
+| `-v` | Print verbose diagnostics. |
+| `-V` | Print additional integration diagnostics. |
+| `-t T`, `-T T` | Set the Fermi-Dirac temperature. Default: `1e-99`. |
+| `-p` | Print the integral over positive `x`. |
+| `-n` | Print the integral over negative `x`. |
+| `-a` | Print the integral of the absolute value. |
+| `-f` | Print the Fermi-Dirac-weighted integral. |
+| `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, or `akima`. Default: `akima`. |
+| `--epsabs VALUE` | Set the absolute QAG tolerance. Default: `1e-12`. |
+| `--epsrel VALUE` | Set the relative QAG tolerance. Default: `1e-8`. |
+| `--workspace-limit N` | Set the positive QAG workspace subdivision limit. Default: `1000`. |
+| `--quadrature-rule RULE` | Select `15`, `21`, `31`, `41`, `51`, or `61`. Default: `15`. |
+| `--gsl-error-policy POLICY` | Select `ignore`, `warn`, or `fail`. Default: `warn`. |
+| `-w` | Legacy alias for `--gsl-error-policy ignore`. |
+
+`-a` selects an output quantity; unlike `hilb -a`, it is not an absolute
+tolerance option. Use `--epsabs` for the tolerance.
+
+`linear` is piecewise linear and requires at least two points. `cspline` is a
+natural cubic spline and requires at least three points. `akima` is a local
+piecewise-cubic interpolant and requires at least five points. Both cubic
+methods can overshoot between samples and do not preserve positivity; use
+`linear` when range or positivity preservation is required.
+
+The QAG rule number is the number of Gauss-Kronrod points used on each adaptive
+subinterval. Higher-order rules can help on smooth functions; lower-order rules
+can leave more work to adaptive subdivision near local difficulties. The
+workspace limit bounds the number of stored subintervals. Tolerances must be
+finite and nonnegative and must form a combination accepted by GSL.
+
+For a nonzero QAG status or a nonfinite result or error estimate, `ignore`
+silently uses GSL's returned result, `warn` reports the failure to standard
+error and continues, and `fail` exits unsuccessfully. Input and setup errors
+remain fatal.
+
+The verbose spline `Sum` is computed by `gsl_spline_eval_integ`, not QAG. The
+QAG tolerances, rule, workspace, and error policy control the five requested
+quadratures but do not control that spline integration operation.

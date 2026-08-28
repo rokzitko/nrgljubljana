@@ -21,8 +21,7 @@
 #include <optional>
 #include <memory>
 
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_integration.h>
+#include "../common/gsl_config.hpp"
 
 using namespace std;
 using namespace std::string_literals;
@@ -37,6 +36,13 @@ using namespace std::string_literals;
 namespace NRG::Adapt {
 
 enum class FMethod { ODE, INTEGRAL };
+
+struct CquadOptions {
+  std::optional<double> epsabs;
+  std::optional<double> epsrel;
+  std::optional<std::size_t> workspace_limit;
+  std::optional<NRG::Tools::GslErrorPolicy> gsl_error_policy;
+};
 
 struct GslWorkspaceDeleter {
   void operator()(gsl_integration_cquad_workspace *workspace) const { gsl_integration_cquad_workspace_free(workspace); }
@@ -88,6 +94,7 @@ class Adapt {
    double bandrescale     = 1.0;                      // Rescale the input data by this scale factor
    std::optional<double> flat_gamma;                  // Constant hybridisation supplied on the command line.
    FMethod f_method = FMethod::ODE;                   // Method for calculating representative energies.
+   CquadOptions cquad_options;                        // Optional controls for the integral method.
    bool adapt; // If adapt=false --> g(x)=1.
    bool hardgap;
    double boundary;
@@ -301,7 +308,7 @@ class Adapt {
      return (intrho1(omega) - cumulative_offset) / cumulative_total;
    }
    // Generalized inverse of W. For a zero-density plateau, return its upper edge.
-   auto inverse_normalized_cumulative(const double weight) {
+    auto inverse_normalized_cumulative(const double weight) {
      for (const auto &[plateau_weight, upper_edge] : cumulative_plateaus) {
        if (weight == plateau_weight) return upper_edge;
      }
@@ -316,9 +323,21 @@ class Adapt {
          upper = midpoint;
        }
      }
-     return lower + (upper - lower) / 2.0;
-   }
-   auto integrate_cumulative(const double lower,
+      return lower + (upper - lower) / 2.0;
+    }
+    void handle_cquad_result(const int status, const double result, const double error, const double lower) const {
+      if (!NRG::Tools::gsl_integration_failed(status, result, error)) return;
+      const auto message = status != GSL_SUCCESS
+                             ? "Integral method failed at x=" + std::to_string(lower) + ": " + gsl_strerror(status)
+                             : "Integral method produced a non-finite CQUAD result or error estimate at x="
+                                 + std::to_string(lower);
+      switch (cquad_options.gsl_error_policy.value_or(NRG::Tools::GslErrorPolicy::fail)) {
+        case NRG::Tools::GslErrorPolicy::ignore: break;
+        case NRG::Tools::GslErrorPolicy::warn: std::cerr << "adapt: warning: " << message << std::endl; break;
+        case NRG::Tools::GslErrorPolicy::fail: throw std::runtime_error(message);
+      }
+    }
+    auto integrate_cumulative(const double lower,
                              const double upper,
                              gsl_integration_cquad_workspace *workspace) {
      const GslErrorHandlerGuard error_handler;
@@ -332,11 +351,12 @@ class Adapt {
      double result = 0.0;
      double error  = 0.0;
      std::size_t evaluations = 0;
-     const int status = gsl_integration_cquad(&integrand, lower, upper, 0.0, allowed_error, workspace,
+     const double epsabs = cquad_options.epsabs.value_or(0.0);
+     const double epsrel = cquad_options.epsrel.value_or(allowed_error);
+     NRG::Tools::validate_cquad_tolerances(epsabs, epsrel);
+     const int status = gsl_integration_cquad(&integrand, lower, upper, epsabs, epsrel, workspace,
                                               &result, &error, &evaluations);
-     if (status != GSL_SUCCESS) {
-       throw std::runtime_error("Integral method failed at x=" + std::to_string(lower) + ": " + gsl_strerror(status));
-     }
+     handle_cquad_result(status, result, error, lower);
      max_error = std::max(max_error, error);
      return result;
    }
@@ -354,7 +374,7 @@ class Adapt {
      }
 
      constexpr double tolerance = 100.0 * DBL_EPSILON;
-     if (weight < -tolerance || weight > 1.0 + tolerance) {
+     if (!std::isfinite(weight) || weight < -tolerance || weight > 1.0 + tolerance) {
        throw std::runtime_error("Integral method produced a cumulative weight outside [0,1] at x="
                                 + std::to_string(x_));
      }
@@ -428,6 +448,8 @@ class Adapt {
      dx_fine       = P.P("dx_fine", 1e-5);        // Integration stepsize in [1..xfine]
      dx_fast       = P.P("dx_fast", 1e-4);        // Integration stepsize in [xfine..xmax]
      allowed_error = P.P("allowed_error", 1e-10); // error control for adaptable stepsize
+     if (!(std::isfinite(allowed_error) && allowed_error > 0.0))
+       throw std::invalid_argument("allowed_error must be positive and finite.");
      max_subdiv    = P.Pint("max_subdiv", 10);    // maximum nr of integ. step subdivisions
      if (!(dx_fine * pow(0.5, max_subdiv) > DBL_EPSILON)) {
         throw std::invalid_argument("dx_fine and max_subdiv imply a sub-step below machine precision.");
@@ -441,7 +463,9 @@ class Adapt {
    Adapt(const Params &P_,
          const Sign &sign_,
          std::optional<double> flat_gamma_ = std::nullopt,
-         const bool force_integral = false) : P(P_), sign(sign_), flat_gamma(flat_gamma_) {
+         const bool force_integral = false,
+         const CquadOptions &cquad_options_ = {})
+     : P(P_), sign(sign_), flat_gamma(flat_gamma_), cquad_options(cquad_options_) {
      set_parameters();
      if (force_integral) {
        f_method = FMethod::INTEGRAL;
@@ -496,13 +520,14 @@ class Adapt {
    }
    void calc_f_integral() {
      const GslErrorHandlerGuard error_handler;
-     constexpr std::size_t limit = 1000;
+     const double epsabs = cquad_options.epsabs.value_or(0.0);
+     const double epsrel = cquad_options.epsrel.value_or(allowed_error);
+     NRG::Tools::validate_cquad_tolerances(epsabs, epsrel);
+     const std::size_t limit = cquad_options.workspace_limit.value_or(1000);
+     NRG::Tools::validate_cquad_workspace_limit(limit);
      std::unique_ptr<gsl_integration_cquad_workspace, GslWorkspaceDeleter> workspace(
        gsl_integration_cquad_workspace_alloc(limit));
      if (!workspace) throw std::runtime_error("Failed to allocate integration workspace.");
-     if (!(std::isfinite(allowed_error) && allowed_error > 0.0)) {
-       throw std::runtime_error("Integral method requires allowed_error to be positive and finite.");
-     }
 
      init_cumulative();
 

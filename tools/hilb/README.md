@@ -158,9 +158,10 @@ the final positional arguments.
 
 | Option | Meaning |
 | --- | --- |
-| `-h` | Print command-line help. |
+| `-h`, `--help` | Print command-line help. |
 | `-V` | Print `hilb 2026.09`. |
 | `-d FILE` | Read a tabulated density of states from `FILE`. Otherwise use the built-in semicircular density. |
+| `-i METHOD`, `--interpolation METHOD` | Interpolate a tabulated density with `linear`, `cspline`, or `akima`. Default: `cspline`. |
 | `-n N` | Multiply the density by $E^N$. `N` must be a nonnegative integer. Default: `0`. |
 | `-G` | Print or write both parts of the raw complex transform instead of the mode-specific default. |
 | `-v` | Print additional information to standard output. |
@@ -171,8 +172,11 @@ the final positional arguments.
 | `-y DY` | Add `DY` to the imaginary part of every transform argument. |
 | `-c C` | Set the positive clipping magnitude for $\mathrm{Im}\,\Sigma$ in DMFT mode. Default: $c_{\min}\simeq1.4917\times10^{-154}$. |
 | `-t T` | Set the direct/singularity-subtracted integration threshold. Default: $10^{-3}$. |
-| `-a A` | Set the absolute quadrature tolerance. Default: $10^{-14}$. |
-| `-r R` | Set the relative quadrature tolerance. Default: $10^{-10}$. |
+| `-a A`, `--epsabs A` | Set the absolute QAG tolerance. Default: $10^{-14}$. |
+| `-r R`, `--epsrel R` | Set the relative QAG tolerance. Default: $10^{-10}$. |
+| `--workspace-limit N` | Set the positive QAG workspace subdivision limit. Default: `1000`. |
+| `--quadrature-rule RULE` | Select Gauss-Kronrod rule `15`, `21`, `31`, `41`, `51`, or `61`. Default: `15`. |
+| `--gsl-error-policy POLICY` | Handle QAG failures with `ignore`, `warn`, or `fail`. Default: `warn`. |
 | `-f F` | Set the absolute frequency-label tolerance in DMFT mode. Default: $10^{-6}$. |
 
 Use either `-s` or `-B`; if both are present, the last one takes effect. They
@@ -180,6 +184,9 @@ configure only the built-in density and do not rescale data loaded with `-d`.
 The shifts affect $z$, not the integration energy $E$ or the factor $E^n$.
 Verbose diagnostics are written to standard output and can therefore be mixed
 with data unless `-o` is used.
+
+The short options `-a` and `-r` are retained as legacy aliases for the uniform
+long options `--epsabs` and `--epsrel`.
 
 Malformed options, invalid numeric arguments, and positional argument counts
 other than 1, 2, or 4 produce a nonzero exit status. Help and version requests
@@ -220,9 +227,12 @@ nonnumeric values, and nonfinite values are rejected with a filename and line
 number.
 
 Records are sorted by energy after loading. The implementation constructs one
-cached GSL natural cubic spline (`gsl_interp_cspline`) through the supplied
-density values and reuses it for normalization and every transform. It returns
-zero outside the tabulated interval
+cached GSL interpolant through the supplied density values and reuses it for
+normalization and every transform. `linear` is piecewise linear and requires at
+least two points; `cspline` is a natural cubic spline and requires at least
+three points; `akima` is a local piecewise-cubic interpolant and requires at
+least five points. The default is `cspline`. The interpolant returns zero
+outside the tabulated interval
 `[Emin,Emax]`. Quadrature is performed over the symmetric enclosing interval
 
 $$
@@ -230,10 +240,11 @@ $$
 $$
 
 The data are not normalized automatically. In verbose mode, `hilb` reports the
-integral of the interpolated density and checks that it is finite. At least
-three points with finite, strictly increasing energies are required after
-sorting. Duplicate energies are rejected. Cubic interpolation can overshoot
-between data points and does not preserve positivity.
+integral of the interpolated density and checks that it is finite. Energies
+must be finite and strictly increasing after sorting; duplicate energies are
+rejected. Both cubic methods can overshoot between samples and do not preserve
+positivity. Use `linear` when range or positivity preservation for nonnegative
+samples is required.
 
 For an energy-weighted transform, interpolation is performed first and the
 power is applied to each interpolated value during quadrature:
@@ -273,7 +284,7 @@ $$
 $$
 
 Each is integrated over `[-B,B]` with GSL `gsl_integration_qag` using the
-15-point Gauss-Kronrod rule.
+selected Gauss-Kronrod rule. The default is the 15-point rule.
 
 ### Small imaginary part
 
@@ -331,26 +342,31 @@ The executable uses these defaults:
 | Setting | Value |
 | --- | ---: |
 | GSL routine | `gsl_integration_qag` |
-| Local rule | 15-point Gauss-Kronrod |
-| Workspace subdivision limit | 1000 |
-| Absolute tolerance (`-a`) | $10^{-14}$ |
-| Relative tolerance (`-r`) | $10^{-10}$ |
+| Local rule (`--quadrature-rule`) | `15` |
+| Workspace subdivision limit (`--workspace-limit`) | `1000` |
+| Absolute tolerance (`-a`, `--epsabs`) | $10^{-14}$ |
+| Relative tolerance (`-r`, `--epsrel`) | $10^{-10}$ |
+| GSL error policy (`--gsl-error-policy`) | `warn` |
 | Direct/subtracted threshold (`-t`) | $\lvert\mathrm{Im}\,z\rvert=10^{-3}$ |
 
-The three numerical values are configurable with the options shown in the
-table. Tolerances must be finite and nonnegative and must form a combination
-accepted by GSL. The C++ `hilbert_transform` interface exposes them as
-`lim_direct`, `epsabs`, and `epsrel`. An overload accepting an `integrator&`
-lets library callers reuse a GSL workspace across transforms. The executable
-uses one workspace for DOS normalization and all requested transforms.
+The rule can be `15`, `21`, `31`, `41`, `51`, or `61`; its number is the number
+of Kronrod points used on each adaptive subinterval. Higher-order rules can be
+more efficient for smooth integrands, while lower-order rules can better focus
+adaptive subdivision around local difficulties. The workspace limit bounds
+the number of stored subintervals. Tolerances must be finite and nonnegative
+and must form a combination accepted by GSL.
 
-The workspace limit and local rule remain fixed. The GSL global error handler
-is disabled. Every nonzero GSL status, and every nonfinite GSL result or error
-estimate, is collected. Before exit, `hilb` writes at most one GSL warning line
-to standard error with status counts and details of the first failure. GSL
-warnings alone do not change the exit status for now; GSL's best available
-result is retained. An independent fatal input or runtime error still produces
-a nonzero exit status after accumulated warnings have been reported.
+The C++ `hilbert_transform` interface exposes `lim_direct`, `epsabs`, and
+`epsrel`. An overload accepting an `integrator&` lets callers select the
+workspace, rule, and policy and reuse the workspace. The executable uses one
+workspace for DOS normalization and all requested transforms.
+
+The GSL global error handler is disabled. A nonzero QAG status or a nonfinite
+result or error estimate is handled by `--gsl-error-policy`: `ignore` silently
+retains GSL's returned result, `warn` retains it and writes at most one summary
+line to standard error with counts and the first failure, and `fail` aborts
+with a nonzero exit status. Input errors and unrelated runtime errors remain
+fatal under every policy.
 
 ## Identities And Limitations
 

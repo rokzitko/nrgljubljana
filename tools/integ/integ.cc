@@ -11,11 +11,13 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <exception>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <ios>
 #include <istream>
+#include <limits>
 #include <ostream>
 #include <vector>
 #include <utility>
@@ -32,7 +34,13 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include "../common/gsl_config.hpp"
+
 using namespace std;
+
+using NRG::Tools::GslErrorPolicy;
+using NRG::Tools::InterpolationMethod;
+using NRG::Tools::QagRule;
 
 typedef pair<double, double> XYPOINT;
 using XYFUNC = vector<XYPOINT>;
@@ -44,7 +52,6 @@ using DVEC = vector<double>;
 // Dump additional information to stdout?
 bool verbose      = false; // enable with -v
 bool veryverbose  = false; // enable with -V
-bool showwarnings = true;  // disable with -s
 
 double T = 1e-99; // Temperature. Default is (essentially) 0.
 string inputfn;   // Filename for input data
@@ -62,21 +69,52 @@ void about() {
 }
 
 void usage() {
-  cout << "\nUsage: integ [-h] [-v] [-V] [-w] [-T temp] <input> [-p|n|a|f]" << endl;
-  cout << "-h: show help" << endl;
+  cout << "\nUsage: integ [options] <input> [-p|n|a|f]" << endl;
+  cout << "-h, --help: show help" << endl;
   cout << "-v: toggle verbose messages (now=" << verbose << ")" << endl;
   cout << "-V: toggle very verbose messages (now=" << veryverbose << ")" << endl;
-  cout << "-w: toggle warnings (now=" << showwarnings << ")" << endl;
+  cout << "-w: ignore QAG errors (alias for --gsl-error-policy ignore)" << endl;
   cout << "-T: temperature T" << endl;
   cout << "-p: integral over positive X range" << endl;
   cout << "-n: integral over negative X range" << endl;
   cout << "-a: integral over |f|" << endl;
   cout << "-f: integral weighted with Fermi-Dirac function for temperature T" << endl;
+  cout << "-i, --interpolation linear|cspline|akima: interpolation method (default=akima)" << endl;
+  cout << "--epsabs value: absolute integration tolerance (default=1e-12)" << endl;
+  cout << "--epsrel value: relative integration tolerance (default=1e-8)" << endl;
+  cout << "--workspace-limit value: integration workspace size (default=1000)" << endl;
+  cout << "--quadrature-rule 15|21|31|41|51|61: Gauss-Kronrod rule (default=15)" << endl;
+  cout << "--gsl-error-policy ignore|warn|fail: QAG error policy (default=warn)" << endl;
 }
 
+InterpolationMethod interpolation_method = InterpolationMethod::akima;
+double epsabs                             = 1e-12;
+double epsrel                             = 1e-8;
+size_t limit                              = 1000;
+QagRule quadrature_rule                   = QagRule::gauss15;
+GslErrorPolicy gsl_error_policy           = GslErrorPolicy::warn;
+
 void cmd_line(int argc, char *argv[]) {
+  enum LongOption {
+    OPT_EPSABS = 256,
+    OPT_EPSREL,
+    OPT_WORKSPACE_LIMIT,
+    OPT_QUADRATURE_RULE,
+    OPT_GSL_ERROR_POLICY,
+  };
+  static const struct option long_options[] = {
+    {"help", no_argument, nullptr, 'h'},
+    {"interpolation", required_argument, nullptr, 'i'},
+    {"epsabs", required_argument, nullptr, OPT_EPSABS},
+    {"epsrel", required_argument, nullptr, OPT_EPSREL},
+    {"workspace-limit", required_argument, nullptr, OPT_WORKSPACE_LIMIT},
+    {"quadrature-rule", required_argument, nullptr, OPT_QUADRATURE_RULE},
+    {"gsl-error-policy", required_argument, nullptr, OPT_GSL_ERROR_POLICY},
+    {nullptr, 0, nullptr, 0},
+  };
+
   int c;
-  while ((c = getopt(argc, argv, "hvVwt:T:pnaf")) != -1) {
+  while ((c = getopt_long(argc, argv, "hi:vVwt:T:pnaf", long_options, nullptr)) != -1) {
     switch (c) {
       case 'h':
         usage();
@@ -86,7 +124,7 @@ void cmd_line(int argc, char *argv[]) {
 
       case 'V': veryverbose = true; break;
 
-      case 'w': showwarnings = false; break;
+      case 'w': gsl_error_policy = GslErrorPolicy::ignore; break;
 
       case 't': // case insensitive!
       case 'T':
@@ -102,9 +140,24 @@ void cmd_line(int argc, char *argv[]) {
 
       case 'f': out = "fermi"; break;
 
-      default: abort();
+      case 'i': interpolation_method = NRG::Tools::parse_interpolation_method(optarg); break;
+
+      case OPT_EPSABS: epsabs = NRG::Tools::parse_finite_double(optarg, "Absolute integration tolerance"); break;
+
+      case OPT_EPSREL: epsrel = NRG::Tools::parse_finite_double(optarg, "Relative integration tolerance"); break;
+
+      case OPT_WORKSPACE_LIMIT: limit = NRG::Tools::parse_positive_size(optarg, "Workspace limit"); break;
+
+      case OPT_QUADRATURE_RULE: quadrature_rule = NRG::Tools::parse_qag_rule(optarg); break;
+
+      case OPT_GSL_ERROR_POLICY: gsl_error_policy = NRG::Tools::parse_gsl_error_policy(optarg); break;
+
+      default: exit(EXIT_FAILURE);
     }
   }
+
+  NRG::Tools::validate_tolerances(epsabs, epsrel);
+  NRG::Tools::validate_qag_workspace_limit(limit);
 
   int remaining = argc - optind;
 
@@ -145,17 +198,21 @@ DVEC Xpts, Ypts;
 gsl_interp_accel *acc;
 gsl_spline *spline;
 
-const size_t limit = 1000;
 gsl_integration_workspace *w;
-
-const double EPSABS = 1e-12; // numeric integration epsilon (absolute)
-const double EPSREL = 1e-8;  // numeric integration epsilon (relative)
 
 void init(XYFUNC &im) {
   if (im.empty()) {
     cerr << "Error: no data points found." << endl;
     exit(1);
   }
+
+  const auto minimum_size = NRG::Tools::interpolation_minimum_size(interpolation_method);
+  if (im.size() < minimum_size) {
+    cerr << "Error: failed to initialize GSL spline: " << NRG::Tools::interpolation_method_name(interpolation_method)
+         << " interpolation requires at least " << minimum_size << " data points." << endl;
+    exit(1);
+  }
+
   sort(im.begin(), im.end());
 
   len = im.size();
@@ -180,9 +237,7 @@ void init(XYFUNC &im) {
     cerr << "Error: failed to allocate GSL interpolation accelerator." << endl;
     exit(1);
   }
-  //const gsl_interp_type * Interp_type = gsl_interp_linear;
-  //const gsl_interp_type * Interp_type = gsl_interp_cspline;
-  const gsl_interp_type *Interp_type = gsl_interp_akima;
+  const gsl_interp_type *Interp_type = NRG::Tools::gsl_interpolation_type(interpolation_method);
   spline                             = gsl_spline_alloc(Interp_type, len);
   if (!spline) {
     cerr << "Error: failed to allocate GSL spline." << endl;
@@ -222,8 +277,15 @@ inline double f_fermi(double X, [[maybe_unused]] void *params) {
   return gsl_spline_eval(spline, X, acc) * fd;
 }
 
-void handle_qag(int status) {
-  if (status && showwarnings) { cerr << "WARNING - qag error: " << status << " -- " << gsl_strerror(status) << endl; }
+void handle_qag(int status, double integral, double integration_error) {
+  if (!NRG::Tools::gsl_integration_failed(status, integral, integration_error) || gsl_error_policy == GslErrorPolicy::ignore) return;
+
+  const char *severity = gsl_error_policy == GslErrorPolicy::fail ? "ERROR" : "WARNING";
+  if (status != GSL_SUCCESS) cerr << severity << " - qag error: " << status << " -- " << gsl_strerror(status) << endl;
+  if (!std::isfinite(integral) || !std::isfinite(integration_error))
+    cerr << severity << " - qag returned a non-finite result or error estimate." << endl;
+
+  if (gsl_error_policy == GslErrorPolicy::fail) exit(EXIT_FAILURE);
 }
 
 // NOTE about Gauss-Kronrod: The higher-order rules give better accuracy
@@ -239,21 +301,21 @@ void handle_qag(int status) {
 double calc(double (*fnc)(double, void *)) {
   gsl_function F;
   F.function = fnc;
-  //   F.params = &Z;
+  F.params   = nullptr;
 
-  double integral;
-  double integration_error;
+  double integral          = std::numeric_limits<double>::quiet_NaN();
+  double integration_error = std::numeric_limits<double>::quiet_NaN();
   int status = gsl_integration_qag(&F,   // integrand function
                                    Xmin, // lower integration boundary
                                    Xmax, // upper integration boundary
-                                   EPSABS, EPSREL,
-                                   limit,               // size of workspace w
-                                   GSL_INTEG_GAUSS15,   // Gauss-Kronrod rule
+                                   epsabs, epsrel,
+                                   limit,                                      // size of workspace w
+                                   NRG::Tools::gsl_qag_rule(quadrature_rule),   // Gauss-Kronrod rule
                                    w,                   // integration workspace
                                    &integral,           // final approximation
                                    &integration_error); // estimate of absolute error
 
-  handle_qag(status);
+  handle_qag(status, integral, integration_error);
 
   if (veryverbose) {
     cout << scientific;
@@ -272,41 +334,46 @@ void done() {
 }
 
 int main(int argv, char *argc[]) {
-  cmd_line(argv, argc);
-  if (verbose) about();
+  try {
+    cmd_line(argv, argc);
+    if (verbose) about();
 
-  if (verbose) cout << "T=" << T << endl;
+    if (verbose) cout << "T=" << T << endl;
 
-  ifstream Fin;
+    ifstream Fin;
 
-  Fin.open(inputfn.c_str());
-  if (!Fin) {
-    cerr << "Can't open " << inputfn << " for reading." << endl;
-    exit(2);
+    Fin.open(inputfn.c_str());
+    if (!Fin) {
+      cerr << "Can't open " << inputfn << " for reading." << endl;
+      exit(2);
+    }
+
+    XYFUNC f;
+    readtable(Fin, f);
+    init(f);
+    total    = calc(f_total);
+    pos      = calc(f_pos);
+    neg      = calc(f_neg);
+    totalabs = calc(f_abs);
+    fermi    = calc(f_fermi);
+    done();
+
+    if (verbose) {
+      cout << "Total=" << total << endl;
+      cout << "Positive=" << pos << endl;
+      cout << "Negative=" << neg << endl;
+      cout << "Total|f|=" << totalabs << endl;
+      cout << "Fermi-Dirac weighted=" << fermi << endl;
+    }
+
+    cout << setprecision(OUTPUT_PRECISION);
+    if (out == "total") cout << total << endl;
+    if (out == "pos") cout << pos << endl;
+    if (out == "neg") cout << neg << endl;
+    if (out == "abs") cout << totalabs << endl;
+    if (out == "fermi") cout << fermi << endl;
+  } catch (const exception &error) {
+    cerr << "Error: " << error.what() << endl;
+    return EXIT_FAILURE;
   }
-
-  XYFUNC f;
-  readtable(Fin, f);
-  init(f);
-  total    = calc(f_total);
-  pos      = calc(f_pos);
-  neg      = calc(f_neg);
-  totalabs = calc(f_abs);
-  fermi    = calc(f_fermi);
-  done();
-
-  if (verbose) {
-    cout << "Total=" << total << endl;
-    cout << "Positive=" << pos << endl;
-    cout << "Negative=" << neg << endl;
-    cout << "Total|f|=" << totalabs << endl;
-    cout << "Fermi-Dirac weighted=" << fermi << endl;
-  }
-
-  cout << setprecision(OUTPUT_PRECISION);
-  if (out == "total") cout << total << endl;
-  if (out == "pos") cout << pos << endl;
-  if (out == "neg") cout << neg << endl;
-  if (out == "abs") cout << totalabs << endl;
-  if (out == "fermi") cout << fermi << endl;
 }

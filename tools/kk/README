@@ -1,3 +1,50 @@
-This is the current production Kramers-Kronig transformation tool.
+# `kk`
 
-Rok Zitko, rok.zitko@ijs.si, August 2009
+`kk` performs a Kramers-Kronig transform of a real tabulated function. It
+interpolates the samples, subtracts the singular value, and evaluates the
+remaining integral with GSL QAG.
+
+## Usage
+
+```text
+kk [options] input output
+kk [options] -
+```
+
+The second form reads two-column `x y` data from standard input and writes to
+standard output. Input is sorted by `x`; it must contain an even number of
+points on a grid symmetric around zero. The result is evaluated on that grid.
+
+## Options
+
+| Option | Meaning |
+| --- | --- |
+| `-h`, `--help` | Print help. |
+| `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, or `akima`. Default: `akima`. |
+| `--epsabs VALUE` | Set the absolute QAG tolerance. Default: `1e-12`. |
+| `--epsrel VALUE` | Set the relative QAG tolerance. Default: `1e-8`. |
+| `--workspace-limit N` | Set the positive QAG workspace subdivision limit. Default: `1000`. |
+| `--quadrature-rule RULE` | Select `15`, `21`, `31`, `41`, `51`, or `61`. Default: `15`. |
+| `--gsl-error-policy POLICY` | Select `ignore`, `warn`, or `fail`. Default: `ignore`. |
+
+`linear` is piecewise linear and requires at least two points. `cspline` is a
+natural cubic spline and requires at least three points. `akima` is a local
+piecewise-cubic interpolant and requires at least five points. Both cubic
+methods can overshoot between samples and do not preserve positivity; use
+`linear` when range or positivity preservation is required.
+
+The QAG rule number is the number of Gauss-Kronrod points used on each adaptive
+subinterval. Higher-order rules can help on smooth functions; lower-order rules
+can leave more work to adaptive subdivision near local difficulties. The
+workspace limit bounds the number of stored subintervals. Tolerances must be
+finite and nonnegative and must form a combination accepted by GSL.
+
+The error policy applies to a nonzero QAG status or a nonfinite result or error
+estimate. `ignore` silently uses GSL's returned result, preserving legacy
+behavior. `warn` writes a warning to standard error for each failed transform
+point and continues. `fail` aborts with a nonzero exit status. Other input and
+runtime errors are always fatal.
+
+The displayed spline `Sum` is computed separately by
+`gsl_spline_eval_integ`. QAG tolerances, rule, workspace, and error policy do
+not control that operation.

@@ -31,7 +31,9 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <tuple>
 
@@ -40,6 +42,9 @@
 #include <gsl/gsl_integration.h>
 
 #include <unistd.h>
+#include <getopt.h>
+
+#include "../common/gsl_config.hpp"
 
 namespace NRG::KK {
 
@@ -66,6 +71,15 @@ struct gsl_workspace_deleter {
 using XYPOINT = std::pair<double, double>;
 using XYFUNC = std::vector<XYPOINT>;
 using DVEC = std::vector<double>;
+
+struct NumericalOptions {
+  NRG::Tools::InterpolationMethod interpolation = NRG::Tools::InterpolationMethod::akima;
+  double epsabs = 1e-12;
+  double epsrel = 1e-8;
+  size_t workspace_limit = 1000;
+  NRG::Tools::QagRule quadrature_rule = NRG::Tools::QagRule::gauss15;
+  NRG::Tools::GslErrorPolicy gsl_error_policy = NRG::Tools::GslErrorPolicy::ignore;
+};
 
 // number of digits of precision in the generated output file
 constexpr auto OUTPUT_PRECISION = 16;
@@ -137,14 +151,35 @@ class KK {
    std::ifstream Fin;
    std::ofstream Fout;
 
-   inline static const size_t workspace_limit = 1000; // workspace size for integration routine
+   NRG::Tools::InterpolationMethod interpolation_method = NRG::Tools::InterpolationMethod::akima;
+   double epsabs = 1e-12;
+   double epsrel = 1e-8;
+   size_t workspace_limit = 1000; // workspace size for integration routine
+   NRG::Tools::QagRule quadrature_rule = NRG::Tools::QagRule::gauss15;
+   NRG::Tools::GslErrorPolicy gsl_error_policy = NRG::Tools::GslErrorPolicy::ignore;
+
+   void configure(const NumericalOptions &options) {
+     NRG::Tools::validate_tolerances(options.epsabs, options.epsrel);
+     NRG::Tools::validate_qag_workspace_limit(options.workspace_limit);
+     interpolation_method = options.interpolation;
+     epsabs = options.epsabs;
+     epsrel = options.epsrel;
+     workspace_limit = options.workspace_limit;
+     quadrature_rule = options.quadrature_rule;
+     gsl_error_policy = options.gsl_error_policy;
+   }
    
     // Initialize the KK transformer
     void init(XYFUNC im) {  // pass by value
       if (im.empty()) throw std::runtime_error("No input data points provided.");
+      NRG::Tools::validate_qag_workspace_limit(workspace_limit);
       std::sort(im.begin(), im.end());
       len = im.size();
       if (len % 2 != 0) throw std::runtime_error("Input grid must contain an even number of points.");
+      const auto minimum_size = NRG::Tools::interpolation_minimum_size(interpolation_method);
+      if (im.size() < minimum_size)
+        throw std::runtime_error("Interpolation method " + std::string(NRG::Tools::interpolation_method_name(interpolation_method))
+                                 + " requires at least " + std::to_string(minimum_size) + " input points.");
       std::tie (Xmin, Xmax) = x_range(im);
       if (mode == MODE::FILES) std::cout << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
       if (gsl_fcmp(-Xmin, Xmax, 1.e-8) != 0) throw std::runtime_error("Only symmetric intervals are supported!");
@@ -152,11 +187,9 @@ class KK {
       gsl_set_error_handler_off();
       acc.reset(gsl_interp_accel_alloc());
       if (!acc) throw std::runtime_error("Failed to allocate GSL interpolation accelerator.");
-      // NOTE: With akime splines the might be problems with the loss of the floating point precision in the numeric
+      // NOTE: With Akima splines there might be problems with the loss of floating point precision in the numeric
       // integration step. In cubic splines instead no such difficulties seem to appear.
-      // gsl_interp_linear;
-      // gsl_interp_cspline;
-      const auto Interp_type = gsl_interp_akima;
+      const auto Interp_type = NRG::Tools::gsl_interpolation_type(interpolation_method);
       spline.reset(gsl_spline_alloc(Interp_type, len));
       if (!spline) throw std::runtime_error("Failed to allocate GSL spline.");
       if (const auto status = gsl_spline_init(spline.get(), Xpts.data(), Ypts.data(), len); status != 0)
@@ -205,26 +238,67 @@ class KK {
    }
    
    void usage() {
-     std::cout << "\nUsage: kk [-h] <input> <output>\n";
-     std::cout << "\nAlternative usage: kk -\n";
-     std::cout << "\nIn this mode, kk reads from STDIN and outputs to STDOUT." << std::endl;
+     std::cout << "\nUsage: kk [options] <input> <output>\n";
+     std::cout << "\nAlternative usage: kk [options] -\n";
+     std::cout << "\nIn this mode, kk reads from STDIN and outputs to STDOUT.\n\n";
+     std::cout << "Options:\n"
+               << "  -h, --help                     show this help\n"
+               << "  -i, --interpolation METHOD     linear, cspline, or akima (default: akima)\n"
+               << "      --epsabs VALUE             absolute tolerance (default: 1e-12)\n"
+               << "      --epsrel VALUE             relative tolerance (default: 1e-8)\n"
+               << "      --workspace-limit N        integration workspace size (default: 1000)\n"
+               << "      --quadrature-rule RULE     15, 21, 31, 41, 51, or 61 (default: 15)\n"
+               << "      --gsl-error-policy POLICY  ignore, warn, or fail (default: ignore)" << std::endl;
    }
 
    void parse_cmd_line(int argc, char *argv[]) {
-     if (argc == 2 && std::strcmp(argv[1], "-h") == 0) {
-       usage();
-       std::exit(EXIT_SUCCESS);
+     enum {
+       OPT_EPSABS = 1000,
+       OPT_EPSREL,
+       OPT_WORKSPACE_LIMIT,
+       OPT_QUADRATURE_RULE,
+       OPT_GSL_ERROR_POLICY
+     };
+     const option long_options[] = {
+       {"help", no_argument, nullptr, 'h'},
+       {"interpolation", required_argument, nullptr, 'i'},
+       {"epsabs", required_argument, nullptr, OPT_EPSABS},
+       {"epsrel", required_argument, nullptr, OPT_EPSREL},
+       {"workspace-limit", required_argument, nullptr, OPT_WORKSPACE_LIMIT},
+       {"quadrature-rule", required_argument, nullptr, OPT_QUADRATURE_RULE},
+       {"gsl-error-policy", required_argument, nullptr, OPT_GSL_ERROR_POLICY},
+       {nullptr, 0, nullptr, 0}
+     };
+     int option;
+     while ((option = getopt_long(argc, argv, "hi:", long_options, nullptr)) != -1) {
+       switch (option) {
+         case 'h':
+           usage();
+           std::exit(EXIT_SUCCESS);
+         case 'i': interpolation_method = NRG::Tools::parse_interpolation_method(optarg); break;
+         case OPT_EPSABS: epsabs = NRG::Tools::parse_finite_double(optarg, "Absolute integration tolerance"); break;
+         case OPT_EPSREL: epsrel = NRG::Tools::parse_finite_double(optarg, "Relative integration tolerance"); break;
+         case OPT_WORKSPACE_LIMIT:
+           workspace_limit = NRG::Tools::parse_positive_size(optarg, "Integration workspace limit");
+           break;
+         case OPT_QUADRATURE_RULE: quadrature_rule = NRG::Tools::parse_qag_rule(optarg); break;
+         case OPT_GSL_ERROR_POLICY: gsl_error_policy = NRG::Tools::parse_gsl_error_policy(optarg); break;
+         default: throw std::invalid_argument("Unknown command-line option.");
+       }
      }
-     if (argc == 3) mode = MODE::FILES;
-     if (argc == 2 && std::strcmp(argv[1], "-") == 0) mode = MODE::STD;
+     NRG::Tools::validate_tolerances(epsabs, epsrel);
+     NRG::Tools::validate_qag_workspace_limit(workspace_limit);
+     const auto remaining = argc - optind;
+     if (remaining == 2) mode = MODE::FILES;
+     if (remaining == 1 && std::strcmp(argv[optind], "-") == 0) mode = MODE::STD;
      if (mode != MODE::STD) about();
      if (mode == MODE::LIBRARY) {
        usage();
        std::exit(1);
      }
      if (mode == MODE::FILES) {
-       const std::string inputfn  = argv[1];
-       const std::string outputfn = argv[2];
+       const std::string inputfn  = argv[optind];
+       const std::string outputfn = argv[optind + 1];
        std::cout << inputfn << " --> " << outputfn << std::endl;
        Fin.open(inputfn);
        if (!Fin) {
@@ -243,32 +317,47 @@ class KK {
    // Perform the calculation for one point. Note: this is the critical part of the code, both for computational
    // requirements as for the accuracy of the results. Optimise wisely!
    auto calc(const double Z, 
-             const double EPSABS = 1e-12, // numeric integration epsilon (absolute)
+             const double EPSABS,          // numeric integration epsilon (absolute)
              const double EPSREL = 1e-8)  // numeric integration epsilon (relative)
    {
+      NRG::Tools::validate_tolerances(EPSABS, EPSREL);
       auto F = Wrap([Z,this](double X) -> double { return f(X,Z); }); // wrap a C++ lambda for the C interface of GSL
-      double integral;
-      double integration_error;
-      [[maybe_unused]] const int status = gsl_integration_qag(F.get(),             // integrand
+      double integral = std::numeric_limits<double>::quiet_NaN();
+      double integration_error = std::numeric_limits<double>::quiet_NaN();
+      const int status = gsl_integration_qag(F.get(),             // integrand
                                         0,                   // lower integration boundary
                                         Xmax,                // upper integration boundary
                                         EPSABS, EPSREL,      // convergence criteria
                                         workspace_limit,     // size of workspace w
-                                        GSL_INTEG_GAUSS15,   // Gauss-Kronrod rule
+                                        NRG::Tools::gsl_qag_rule(quadrature_rule), // Gauss-Kronrod rule
                                         w.get(),             // integration workspace
                                         &integral,           // final approximation
                                         &integration_error); // estimate of absolute error
+      if (NRG::Tools::gsl_integration_failed(status, integral, integration_error)
+          && gsl_error_policy != NRG::Tools::GslErrorPolicy::ignore) {
+        std::ostringstream message;
+        message << std::setprecision(17) << "GSL QAG failed for z=" << Z << ": status=" << status << " ("
+                << gsl_strerror(status) << "), result=" << integral << ", estimated_error=" << integration_error
+                << ", epsabs=" << EPSABS << ", epsrel=" << EPSREL << ", workspace_limit=" << workspace_limit
+                << ", quadrature_rule=" << static_cast<int>(quadrature_rule);
+        if (gsl_error_policy == NRG::Tools::GslErrorPolicy::warn)
+          std::cerr << "kk: warning: " << message.str() << std::endl;
+        else
+          throw std::runtime_error(message.str());
+      }
       // Add an approximation of the (-inf,-Xmax] and [Xmax,+inf) intervals.
       const auto correction = std::abs(Z) != Xmax ? -gsl_spline_eval(spline.get(), Z, acc.get()) * 2. * gsl_atanh(Z / Xmax) : 0.0;
       const auto sum = integral + correction;
       return sum/M_PI;  // Divide by pi in the definition of the KK relation!
     }
+
+   auto calc(const double Z) { return calc(Z, epsabs, epsrel); }
    
    // Perform the calculations for all points on a grid
    auto calc(const DVEC &grid) {
      XYFUNC result;
      result.reserve(grid.size());
-     for (const auto x : grid) result.push_back({x, calc(x)});
+     for (const auto x : grid) result.push_back({x, calc(x, epsabs, epsrel)});
      return result;
    }
 
@@ -284,6 +373,11 @@ class KK {
    
    // Modern interface when kk is used as a library
     KK(XYFUNC im) {
+      init(im);
+    }
+
+    KK(XYFUNC im, const NumericalOptions &options) {
+      configure(options);
       init(im);
     }
 };

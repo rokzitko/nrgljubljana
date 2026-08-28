@@ -12,3 +12,4 @@ foreach(test ${simple_tests})
 endforeach()
 
 configure_file(kk1/imaw.dat kk1/imaw.dat COPYONLY)
+configure_file(kk3_controls/input.dat kk3_controls/input.dat COPYONLY)

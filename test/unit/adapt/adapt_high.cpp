@@ -6,6 +6,7 @@
 #include <fstream>
 #include <initializer_list>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -217,6 +218,41 @@ TEST(Adapt, rejects_unknown_f_method) { // NOLINT
   Params P(filename);
   EXPECT_THROW(Adapt(P, Sign::POS), std::invalid_argument);
 
+  std::remove(filename);
+}
+
+TEST(Adapt, cquad_error_policies_handle_failed_results) { // NOLINT
+  const auto filename = "adapt_cquad_policy.param";
+  write_file(filename, "[param]\nf_method=integral\n");
+  Params params(filename);
+
+  Adapt default_fail(params, Sign::POS);
+  EXPECT_THROW(default_fail.handle_cquad_result(GSL_EMAXITER, 1.0, 0.1, 2.0), std::runtime_error);
+
+  CquadOptions ignore_options;
+  ignore_options.gsl_error_policy = NRG::Tools::GslErrorPolicy::ignore;
+  Adapt ignored(params, Sign::POS, std::nullopt, false, ignore_options);
+  EXPECT_NO_THROW(ignored.handle_cquad_result(GSL_EMAXITER, 1.0, 0.1, 2.0));
+
+  CquadOptions warn_options;
+  warn_options.gsl_error_policy = NRG::Tools::GslErrorPolicy::warn;
+  Adapt warned(params, Sign::POS, std::nullopt, false, warn_options);
+  testing::internal::CaptureStderr();
+  EXPECT_NO_THROW(warned.handle_cquad_result(GSL_EMAXITER, 1.0, 0.1, 2.0));
+  const auto warning = testing::internal::GetCapturedStderr();
+  EXPECT_NE(warning.find("adapt: warning: Integral method failed at x=2.000000"), std::string::npos);
+
+  std::remove(filename);
+}
+
+TEST(Adapt, cquad_override_does_not_bypass_allowed_error_validation) { // NOLINT
+  const auto filename = "adapt_invalid_allowed_error.param";
+  write_file(filename, "[param]\nadapt=true\nf_method=integral\nallowed_error=-1\n");
+  Params params(filename);
+  CquadOptions options;
+  options.epsrel = 1e-8;
+
+  EXPECT_THROW(Adapt(params, Sign::POS, std::nullopt, false, options), std::invalid_argument);
   std::remove(filename);
 }
 

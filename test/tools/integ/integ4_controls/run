@@ -1,0 +1,85 @@
+#!/bin/sh
+set -eu
+
+integ="$1/integ"
+compare="$2/test/mycomp.pl"
+
+"$integ" -T 0.5 imaw.dat >default.dat
+"$integ" -T 0.5 --interpolation akima imaw.dat >akima.dat
+"$integ" -T 0.5 -i linear imaw.dat >linear.dat
+"$integ" -T 0.5 --interpolation=cspline imaw.dat >cspline.dat
+
+cmp default.dat akima.dat
+expect_different() {
+  if cmp "$1" "$2" >/dev/null 2>&1; then
+    echo "integ interpolation outputs unexpectedly match: $1 and $2" >&2
+    exit 1
+  fi
+}
+expect_different linear.dat cspline.dat
+expect_different linear.dat akima.dat
+expect_different cspline.dat akima.dat
+
+# The linear fixture has an exact piecewise-linear absolute integral of 4523/660.
+printf '%s\n' 6.853030303030303 >expected-absolute.dat
+"$integ" -T 0.5 -i linear -a imaw.dat >absolute.dat
+"$integ" -T 0.5 -i linear -a -w imaw.dat >absolute-short-policy.dat
+"$integ" -T 0.5 -i linear -a --gsl-error-policy ignore imaw.dat >absolute-long-policy.dat
+"$compare" expected-absolute.dat absolute.dat
+cmp absolute.dat absolute-short-policy.dat
+cmp absolute.dat absolute-long-policy.dat
+
+# Exercise both valid tolerance boundaries and a non-default workspace.
+"$integ" -T 0.5 --epsabs 0 --epsrel 1e-6 --workspace-limit 2048 imaw.dat >relative-tolerance.dat
+"$integ" -T 0.5 --epsabs=1e-8 --epsrel=0 --workspace-limit=2048 imaw.dat >absolute-tolerance.dat
+
+for rule in 15 21 31 41 51 61; do
+  "$integ" -T 0.5 --epsabs 0 --epsrel 1e-6 --workspace-limit 2048 \
+    --quadrature-rule "$rule" imaw.dat >"rule-$rule.dat"
+done
+
+for policy in ignore warn fail; do
+  "$integ" -T 0.5 --epsabs 0 --epsrel 1e-6 --workspace-limit 2048 \
+    --gsl-error-policy "$policy" imaw.dat >"policy-$policy.dat"
+done
+
+expect_failure() {
+  name=$1
+  message=$2
+  shift 2
+  if "$integ" "$@" imaw.dat >"$name.stdout" 2>"$name.stderr"; then
+    echo "integ unexpectedly accepted invalid $name" >&2
+    exit 1
+  fi
+  grep -Fq "$message" "$name.stderr"
+}
+
+expect_failure interpolation "Interpolation method must be one of" --interpolation=nearest
+expect_failure epsabs "Absolute integration tolerance must be a finite representable number" --epsabs=nan
+expect_failure epsrel "Relative integration tolerance must be finite and nonnegative" --epsrel=-1
+expect_failure tolerances "Relative integration tolerance is too small" --epsabs=0 --epsrel=0
+expect_failure workspace "Workspace limit must be a positive integer" --workspace-limit=0
+expect_failure rule "Quadrature rule must be one of" --quadrature-rule=17
+expect_failure policy "GSL error policy must be one of" --gsl-error-policy=abort
+
+difficult_options="--epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 61"
+# shellcheck disable=SC2086
+"$integ" $difficult_options --gsl-error-policy ignore imaw.dat >ignore-result.dat 2>ignore.stderr
+test ! -s ignore.stderr
+
+"$integ" --epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 15 \
+  --gsl-error-policy ignore imaw.dat >rule-15-result.dat 2>rule-15.stderr
+expect_different rule-15-result.dat ignore-result.dat
+
+# shellcheck disable=SC2086
+"$integ" $difficult_options --gsl-error-policy warn imaw.dat >warn-result.dat 2>warn.stderr
+grep -Fq "WARNING - qag error" warn.stderr
+
+# The legacy default warns and continues.
+# shellcheck disable=SC2086
+"$integ" $difficult_options imaw.dat >default-policy-result.dat 2>default-policy.stderr
+grep -Fq "WARNING - qag error" default-policy.stderr
+cmp warn-result.dat default-policy-result.dat
+
+# shellcheck disable=SC2086
+expect_failure convergence "ERROR - qag error" $difficult_options --gsl-error-policy fail

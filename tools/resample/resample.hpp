@@ -33,6 +33,7 @@ using namespace std::string_literals;
 
 #include "misc.hpp"
 #include "basicio.hpp"
+#include "../common/gsl_config.hpp"
 
 using namespace NRG;
 
@@ -61,6 +62,7 @@ class Resample
         std::optional<std::string> outputfn; // Filename for resampled data. May be the same as gridfn.
         bool verbose = false; // enable with -v
         int output_precision = 16; // number of digits of precision in the output
+        NRG::Tools::InterpolationMethod interpolation_method = NRG::Tools::InterpolationMethod::akima;
         bool extrapolate = false; // enable constant extrapolation with -e
         std::optional<T> extrapolation_below;
         std::optional<T> extrapolation_above;
@@ -74,7 +76,9 @@ class Resample
 
         void usage() 
         {
-            std::cout << "\nUsage: resample [-h] [-v] [-p precision] [-e [-a A] [-b B]] <input> <grid> <output>" << std::endl;
+            std::cout << "\nUsage: resample [-h] [-v] [-i method] [-p precision] [-e [-a A] [-b B]] <input> <grid> <output>" << std::endl;
+            std::cout << "-h, --help: show this help" << std::endl;
+            std::cout << "-i, --interpolation METHOD: linear, cspline, or akima (default: akima)" << std::endl;
             std::cout << "-v: toggle verbose messages (now=" << verbose << ")" << std::endl;
             std::cout << "-e: enable constant extrapolation outside the input x range" << std::endl;
             std::cout << "-a A: use A for x < x_min (requires -e; default: y at x_min)" << std::endl;
@@ -83,14 +87,20 @@ class Resample
 
         void parse_param(int argc, char *argv[]) 
         {
+            const option long_options[] = {
+                {"help", no_argument, nullptr, 'h'},
+                {"interpolation", required_argument, nullptr, 'i'},
+                {nullptr, 0, nullptr, 0}
+            };
             int c;
-            while ((c = getopt(argc, argv, "hvep:a:b:")) != -1)
+            while ((c = getopt_long(argc, argv, "hvei:p:a:b:", long_options, nullptr)) != -1)
             {
                 switch (c) 
                 {
                 case 'h':
                     usage();
                     std::exit(EXIT_SUCCESS);
+                case 'i': interpolation_method = NRG::Tools::parse_interpolation_method(optarg); break;
                 case 'v': verbose = true; break;
                 case 'e': extrapolate = true; break;
                 case 'p': output_precision = atoi(optarg); break;
@@ -131,16 +141,21 @@ class Resample
             init(f);
         }
 
-        Resample(std::string inputfn_, std::string gridfn_, std::optional<std::string> outputfn_ = std::nullopt, bool verbose_ = false, int output_precision_ = 16):
-        inputfn(inputfn_), gridfn(gridfn_), outputfn(outputfn_), verbose(verbose_), output_precision(output_precision_)
+        Resample(std::string inputfn_, std::string gridfn_, std::optional<std::string> outputfn_ = std::nullopt, bool verbose_ = false,
+                 int output_precision_ = 16,
+                 NRG::Tools::InterpolationMethod interpolation_method_ = NRG::Tools::InterpolationMethod::akima):
+        inputfn(inputfn_), gridfn(gridfn_), outputfn(outputfn_), verbose(verbose_), output_precision(output_precision_),
+        interpolation_method(interpolation_method_)
         {
             std::vector<std::pair<T, T>> f = readtable<T,T>(inputfn, verbose);
             grid = readtable<T,T>(gridfn, verbose);
             init(f);
         }
 
-        Resample(std::vector<std::pair<T, T>> f, std::vector<std::pair<T, T>> grid_, std::optional<std::string> outputfn_ = std::nullopt, bool verbose_ = false, int output_precision_ = 16):
-        outputfn(outputfn_), verbose(verbose_), output_precision(output_precision_), grid(grid_)
+        Resample(std::vector<std::pair<T, T>> f, std::vector<std::pair<T, T>> grid_,
+                 std::optional<std::string> outputfn_ = std::nullopt, bool verbose_ = false, int output_precision_ = 16,
+                 NRG::Tools::InterpolationMethod interpolation_method_ = NRG::Tools::InterpolationMethod::akima):
+        outputfn(outputfn_), verbose(verbose_), output_precision(output_precision_), interpolation_method(interpolation_method_), grid(grid_)
         {
             init(f);
         }
@@ -165,6 +180,10 @@ class Resample
 
             std::sort(im.begin(), im.end());
             len  = im.size();
+            const auto minimum_size = NRG::Tools::interpolation_minimum_size(interpolation_method);
+            if (im.size() < minimum_size)
+              throw std::runtime_error("Interpolation method " + std::string(NRG::Tools::interpolation_method_name(interpolation_method))
+                                       + " requires at least " + std::to_string(minimum_size) + " input points.");
             Xmin = im.front().first;
             Xmax = im.back().first;
             if (!extrapolation_below) extrapolation_below = im.front().second;
@@ -177,7 +196,7 @@ class Resample
             gsl_set_error_handler_off();
             acc.reset(gsl_interp_accel_alloc());
             if (!acc) throw std::runtime_error("Failed to allocate GSL interpolation accelerator.");
-            const gsl_interp_type *Interp_type = gsl_interp_akima;
+            const gsl_interp_type *Interp_type = NRG::Tools::gsl_interpolation_type(interpolation_method);
             spline.reset(gsl_spline_alloc(Interp_type, len));
             if (!spline) throw std::runtime_error("Failed to allocate GSL spline.");
             if (const auto status = gsl_spline_init(spline.get(), Xpts.data(), Ypts.data(), len); status != 0)

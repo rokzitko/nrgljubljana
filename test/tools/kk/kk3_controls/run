@@ -1,0 +1,62 @@
+#!/bin/sh
+set -eu
+
+kk="$1/kk"
+
+"$kk" input.dat default.dat >default.stdout
+"$kk" --interpolation akima input.dat akima.dat >akima.stdout
+cmp default.dat akima.dat
+
+"$kk" -i linear input.dat linear.dat >linear.stdout
+"$kk" --interpolation=cspline input.dat cspline.dat >cspline.stdout
+if cmp linear.dat cspline.dat >/dev/null 2>&1; then
+  echo "kk interpolation outputs unexpectedly match" >&2
+  exit 1
+fi
+
+"$kk" --interpolation cspline --epsabs 1e-9 --epsrel 1e-7 \
+  --workspace-limit 64 --quadrature-rule 61 --gsl-error-policy fail \
+  input.dat configured.dat >configured.stdout
+
+expect_failure() {
+  name=$1
+  message=$2
+  shift 2
+  if "$kk" "$@" input.dat "$name.dat" >"$name.stdout" 2>"$name.stderr"; then
+    echo "kk unexpectedly accepted invalid $name" >&2
+    exit 1
+  fi
+  grep -Fq "$message" "$name.stderr"
+}
+
+expect_failure interpolation "Interpolation method must be one of" --interpolation nearest
+expect_failure tolerances "Relative integration tolerance is too small" --epsabs 0 --epsrel 0
+expect_failure workspace "Integration workspace limit must be a positive integer" --workspace-limit 0
+expect_failure rule "Quadrature rule must be one of" --quadrature-rule 17
+expect_failure policy "GSL error policy must be one of" --gsl-error-policy abort
+
+difficult_options="--epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 61"
+# shellcheck disable=SC2086
+"$kk" $difficult_options --gsl-error-policy ignore input.dat ignore.dat >ignore.stdout 2>ignore.stderr
+test ! -s ignore.stderr
+
+# The legacy default is silent ignore.
+# shellcheck disable=SC2086
+"$kk" $difficult_options input.dat default-policy.dat >default-policy.stdout 2>default-policy.stderr
+test ! -s default-policy.stderr
+cmp ignore.dat default-policy.dat
+
+# A constrained workspace makes the local rule affect GSL's returned estimate.
+"$kk" --epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 15 \
+  --gsl-error-policy ignore input.dat rule-15.dat >rule-15.stdout 2>rule-15.stderr
+if cmp rule-15.dat ignore.dat >/dev/null 2>&1; then
+  echo "kk quadrature rules unexpectedly produced identical constrained estimates" >&2
+  exit 1
+fi
+
+# shellcheck disable=SC2086
+"$kk" $difficult_options --gsl-error-policy warn input.dat warn.dat >warn.stdout 2>warn.stderr
+grep -Fq "kk: warning: GSL QAG failed" warn.stderr
+
+# shellcheck disable=SC2086
+expect_failure convergence "GSL QAG failed" $difficult_options --gsl-error-policy fail

@@ -24,6 +24,12 @@
 namespace {
 
 constexpr double B = 1.0;
+int gsl_handler_calls = 0;
+
+void count_gsl_handler_calls([[maybe_unused]] const char *reason, [[maybe_unused]] const char *file,
+                             [[maybe_unused]] int line, [[maybe_unused]] int error) {
+  ++gsl_handler_calls;
+}
 
 auto flat_band_h0(const std::complex<double> z) { return (std::log(z + B) - std::log(z - B)) / (2.0 * B); }
 
@@ -38,6 +44,26 @@ void run_hilb(std::vector<std::string> arguments) {
   for (auto &argument : arguments) argv.push_back(argument.data());
   optind = 1;
   NRG::Hilb::Hilb(static_cast<int>(argv.size()), argv.data());
+}
+
+struct captured_output {
+  std::string out;
+  std::string err;
+};
+
+auto run_hilb_captured(std::vector<std::string> arguments) {
+  testing::internal::CaptureStdout();
+  testing::internal::CaptureStderr();
+  try {
+    run_hilb(std::move(arguments));
+  } catch (...) {
+    testing::internal::GetCapturedStderr();
+    testing::internal::GetCapturedStdout();
+    throw;
+  }
+  const auto err = testing::internal::GetCapturedStderr();
+  const auto out = testing::internal::GetCapturedStdout();
+  return captured_output{out, err};
 }
 
 void write_file(const std::string &filename, const std::string &contents) {
@@ -107,6 +133,46 @@ TEST(Hilb, interpolator_rejects_invalid_grids) { // NOLINT
   EXPECT_THROW(NRG::Hilb::interpolator(std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{1.0, 1.0}), std::invalid_argument);
 }
 
+TEST(Hilb, interpolator_supports_linear_cspline_and_akima) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+
+  NRG::Hilb::interpolator linear({0.0, 2.0}, {1.0, 5.0}, -7.0, InterpolationMethod::linear);
+  EXPECT_DOUBLE_EQ(linear(0.5), 2.0);
+  EXPECT_DOUBLE_EQ(linear(-0.1), -7.0);
+
+  const std::vector<double> cubic_x{0.0, 1.0, 2.0};
+  const std::vector<double> cubic_y{0.0, 1.0, 0.0};
+  NRG::Hilb::interpolator legacy_cubic(cubic_x, cubic_y, -7.0);
+  NRG::Hilb::interpolator explicit_cubic(cubic_x, cubic_y, -7.0, InterpolationMethod::cspline);
+  NRG::Hilb::interpolator piecewise_linear(cubic_x, cubic_y, 0.0, InterpolationMethod::linear);
+  EXPECT_DOUBLE_EQ(legacy_cubic(0.5), explicit_cubic(0.5));
+  EXPECT_NEAR(explicit_cubic(0.5), 0.6875, 1e-15);
+  EXPECT_DOUBLE_EQ(piecewise_linear(0.5), 0.5);
+  EXPECT_NE(explicit_cubic(0.5), piecewise_linear(0.5));
+  EXPECT_DOUBLE_EQ(legacy_cubic(2.1), -7.0);
+
+  NRG::Hilb::interpolator akima({0.0, 1.0, 2.0, 3.0, 4.0}, {0.0, 1.0, 0.0, 1.0, 0.0}, 0.0,
+                                 InterpolationMethod::akima);
+  EXPECT_NEAR(akima(1.25), 0.84375, 1e-14);
+
+  NRG::Hilb::interpolator legacy_brace_argument(cubic_x, cubic_y, {});
+  EXPECT_DOUBLE_EQ(legacy_brace_argument(0.5), legacy_cubic(0.5));
+}
+
+TEST(Hilb, interpolator_enforces_each_method_minimum_size) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+
+  EXPECT_THROW(NRG::Hilb::interpolator({0.0}, {1.0}, 0.0, InterpolationMethod::linear), std::invalid_argument);
+  EXPECT_THROW(NRG::Hilb::interpolator({0.0, 1.0}, {0.0, 1.0}, 0.0, InterpolationMethod::cspline), std::invalid_argument);
+  EXPECT_THROW(NRG::Hilb::interpolator({0.0, 1.0, 2.0, 3.0}, {0.0, 1.0, 0.0, 1.0}, 0.0, InterpolationMethod::akima),
+               std::invalid_argument);
+
+  EXPECT_NO_THROW(NRG::Hilb::interpolator({0.0, 1.0}, {0.0, 1.0}, 0.0, InterpolationMethod::linear));
+  EXPECT_NO_THROW(NRG::Hilb::interpolator({0.0, 1.0, 2.0}, {0.0, 1.0, 0.0}, 0.0, InterpolationMethod::cspline));
+  EXPECT_NO_THROW(NRG::Hilb::interpolator({0.0, 1.0, 2.0, 3.0, 4.0}, {0.0, 1.0, 0.0, 1.0, 0.0}, 0.0,
+                                           InterpolationMethod::akima));
+}
+
 TEST(Hilb, energy_power_direct_quadrature) { // NOLINT
   auto rho = [](const double) { return 0.5; };
   auto zero = [](const double) { return 0.0; };
@@ -168,6 +234,31 @@ TEST(Hilb, tabulated_density_is_weighted_after_interpolation) { // NOLINT
   const auto result = NRG::Hilb::hilbert_transform(energies, density, zero, z, 1e-3, 2);
 
   expect_complex_near(result, expected, 1e-10);
+}
+
+TEST(Hilb, tabulated_transform_accepts_explicit_interpolation_and_defaults_to_cubic) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+  const std::vector<double> energies{-1.0, -0.5, 0.0, 0.5, 1.0};
+  const std::vector<double> real_density{0.0, 0.2, 1.0, 0.1, 0.0};
+  const std::vector<double> imaginary_density{0.0, -0.1, 0.3, -0.2, 0.0};
+  const std::complex<double> z{0.2, 0.4};
+
+  std::array<std::complex<double>, 3> results;
+  const std::array methods{InterpolationMethod::linear, InterpolationMethod::cspline, InterpolationMethod::akima};
+  for (std::size_t index = 0; index < methods.size(); ++index) {
+    const auto method = methods[index];
+    NRG::Hilb::interpolator rhor(energies, real_density, 0.0, method);
+    NRG::Hilb::interpolator rhoi(energies, imaginary_density, 0.0, method);
+    NRG::Hilb::integrator integration;
+    const auto expected = NRG::Hilb::hilbert_transform(integration, rhor, rhoi, B, z);
+    results[index] = NRG::Hilb::hilbert_transform_with_interpolation(energies, real_density, imaginary_density, z, method);
+    expect_complex_near(results[index], expected, 1e-12);
+  }
+
+  const auto legacy = NRG::Hilb::hilbert_transform(energies, real_density, imaginary_density, z);
+  EXPECT_EQ(legacy, results[1]);
+  EXPECT_GT(std::abs(results[0] - results[1]), 1e-3);
+  EXPECT_GT(std::abs(results[2] - results[1]), 1e-3);
 }
 
 TEST(Hilb, zero_energy_power_preserves_transform) { // NOLINT
@@ -234,6 +325,67 @@ TEST(Hilb, integration_workspace_is_reusable_and_copyable) { // NOLINT
   NRG::Hilb::integrator assigned(10);
   assigned = integration;
   expect_complex_near(NRG::Hilb::hilbert_transform(assigned, rho, zero, B, second_z), flat_band_h0(second_z), 1e-10);
+}
+
+TEST(Hilb, integrator_accepts_configured_workspace_rule_and_policy) { // NOLINT
+  using NRG::Tools::GslErrorPolicy;
+  using NRG::Tools::QagRule;
+
+  EXPECT_THROW(NRG::Hilb::integrator(NRG::Hilb::integrator::configured, 0, QagRule::gauss61, GslErrorPolicy::fail),
+               std::invalid_argument);
+  EXPECT_THROW(NRG::Hilb::integrator(NRG::Hilb::integrator::configured,
+                                     NRG::Tools::qag_workspace_limit_maximum() + 1,
+                                     QagRule::gauss61, GslErrorPolicy::fail),
+               std::invalid_argument);
+
+  NRG::Hilb::integrator integration(NRG::Hilb::integrator::configured, 32, QagRule::gauss61, GslErrorPolicy::fail);
+  std::size_t gauss61_evaluations = 0;
+  const auto result = integration([&gauss61_evaluations](const double x) {
+    ++gauss61_evaluations;
+    return x * x * x * x;
+  }, -1.0, 1.0, 1e-12, 1e-12);
+  EXPECT_NEAR(result, 0.4, 1e-14);
+  EXPECT_EQ(gauss61_evaluations, 61);
+
+  NRG::Hilb::integrator gauss15(NRG::Hilb::integrator::configured, 32, QagRule::gauss15, GslErrorPolicy::fail);
+  std::size_t gauss15_evaluations = 0;
+  EXPECT_NEAR(gauss15([&gauss15_evaluations](const double x) {
+    ++gauss15_evaluations;
+    return x * x * x * x;
+  }, -1.0, 1.0, 1e-12, 1e-12), 0.4, 1e-14);
+  EXPECT_EQ(gauss15_evaluations, 15);
+
+  auto copied = integration;
+  EXPECT_NEAR(copied([](const double x) { return x * x; }, 0.0, 1.0, 1e-12, 1e-12), 1.0 / 3.0, 1e-14);
+}
+
+TEST(Hilb, configured_integrator_policies_classify_nonfinite_results) { // NOLINT
+  using NRG::Tools::GslErrorPolicy;
+  using NRG::Tools::QagRule;
+  gsl_set_error_handler_off();
+  const auto nonfinite = [](const double) { return std::numeric_limits<double>::quiet_NaN(); };
+
+  NRG::Hilb::gsl_failure_summary ignored_failures;
+  NRG::Hilb::integrator ignored(NRG::Hilb::integrator::configured, 32, QagRule::gauss21, GslErrorPolicy::ignore,
+                                &ignored_failures);
+  EXPECT_FALSE(std::isfinite(ignored(nonfinite, -1.0, 1.0)));
+  EXPECT_EQ(ignored_failures.count(), 0);
+
+  NRG::Hilb::gsl_failure_summary warned_failures;
+  NRG::Hilb::integrator warned(NRG::Hilb::integrator::configured, 32, QagRule::gauss31, GslErrorPolicy::warn,
+                               &warned_failures);
+  EXPECT_FALSE(std::isfinite(warned(nonfinite, -1.0, 1.0)));
+  EXPECT_EQ(warned_failures.count(), 1);
+
+  NRG::Hilb::integrator failing(NRG::Hilb::integrator::configured, 32, QagRule::gauss41, GslErrorPolicy::fail);
+  auto *previous_handler = gsl_set_error_handler(&count_gsl_handler_calls);
+  gsl_handler_calls = 0;
+  EXPECT_THROW(failing(nonfinite, -1.0, 1.0), std::runtime_error);
+  if (previous_handler)
+    gsl_set_error_handler(previous_handler);
+  else
+    gsl_set_error_handler_off();
+  EXPECT_EQ(gsl_handler_calls, 0);
 }
 
 TEST(Hilb, gsl_failures_are_aggregated_and_reported_once) { // NOLINT
@@ -394,6 +546,47 @@ TEST(Hilb, numerical_cli_options_are_accepted) { // NOLINT
   testing::internal::CaptureStdout();
   EXPECT_NO_THROW(run_hilb({"hilb", "-t", "0.2", "-a", "1e-12", "-r", "1e-8", "0.2", "0.1"}));
   testing::internal::GetCapturedStdout();
+}
+
+TEST(Hilb, shared_gsl_cli_options_are_accepted) { // NOLINT
+  const std::string dos = "hilb_gsl_options_dos.dat";
+  write_file(dos, "-1 0\n-0.5 0.5\n0 1\n0.5 0.5\n1 0\n");
+
+  const auto output = run_hilb_captured({"hilb", "--interpolation", "akima", "--workspace-limit", "64",
+                                         "--quadrature-rule", "61", "--gsl-error-policy", "fail", "--epsabs", "1e-10",
+                                         "--epsrel", "1e-8", "-d", dos, "0.2", "0.4"});
+  EXPECT_TRUE(output.err.empty());
+  EXPECT_TRUE(std::isfinite(std::stod(output.out)));
+
+  std::remove(dos.c_str());
+}
+
+TEST(Hilb, shared_gsl_cli_options_reject_invalid_values) { // NOLINT
+  const auto overflow = std::to_string(std::numeric_limits<std::size_t>::max()) + "0";
+  EXPECT_ANY_THROW(run_hilb({"hilb", "--interpolation", "cubic", "0", "0.1"}));
+  EXPECT_ANY_THROW(run_hilb({"hilb", "--workspace-limit", "0", "0", "0.1"}));
+  EXPECT_ANY_THROW(run_hilb({"hilb", "--workspace-limit", overflow, "0", "0.1"}));
+  EXPECT_ANY_THROW(run_hilb({"hilb", "--quadrature-rule", "17", "0", "0.1"}));
+  EXPECT_ANY_THROW(run_hilb({"hilb", "--gsl-error-policy", "error", "0", "0.1"}));
+  EXPECT_ANY_THROW(run_hilb({"hilb", "--epsabs", "-1", "0", "0.1"}));
+  EXPECT_ANY_THROW(run_hilb({"hilb", "--epsrel", "-1", "0", "0.1"}));
+}
+
+TEST(Hilb, cli_legacy_interpolation_default_is_cubic) { // NOLINT
+  const std::string dos = "hilb_default_interpolation_dos.dat";
+  write_file(dos, "-1 0\n-0.5 0.2\n0 1\n0.5 0.1\n1 0\n");
+
+  const auto legacy = run_hilb_captured({"hilb", "-d", dos, "0.2", "0.4"});
+  const auto cubic = run_hilb_captured({"hilb", "-i", "cspline", "-d", dos, "0.2", "0.4"});
+  const auto linear = run_hilb_captured({"hilb", "-i", "linear", "-d", dos, "0.2", "0.4"});
+
+  EXPECT_TRUE(legacy.err.empty());
+  EXPECT_TRUE(cubic.err.empty());
+  EXPECT_TRUE(linear.err.empty());
+  EXPECT_EQ(legacy.out, cubic.out);
+  EXPECT_GT(std::abs(std::stod(legacy.out) - std::stod(linear.out)), 1e-3);
+
+  std::remove(dos.c_str());
 }
 
 TEST(Hilb, version_and_invalid_arity_have_distinct_behavior) { // NOLINT
