@@ -41,6 +41,7 @@ int nrcol = 1; // Number of columns
 int col   = 1; // Which y column are we interested in?
 
 string name;      // filename of binary files containing the raw data
+string output = "spec.dat"; // output filename
 int Nz;           // Number of spectra (1..Nz)
 int nrmats;       // Number of Matsubara points
 vector<vector<double>> buffers; // binary data buffers
@@ -61,25 +62,29 @@ cvec mesh; // Frequency mesh
 cvec G;    // Green's function
 
 void usage(ostream &F = cout) {
-  F << "Usage: mats <name> <Nz> <T> <nrmats>" << endl;
+  F << "Usage: mats [options] <name> <Nz> <T> <nrmats>" << endl;
   F << endl;
   F << "Optional parameters:" << endl;
-  F << "- h -- show help" << endl;
+  F << " -h -- show help" << endl;
   F << " -v -- verbose" << endl;
-  F << " -o -- one .dat file" << endl;
+  F << " -o -- read <name> directly for Nz=1" << endl;
+  F << " -b -- use bosonic Matsubara frequencies (fermionic by default)" << endl;
+  F << " -O <file> -- output filename (spec.dat by default)" << endl;
   F << " -2 -- use the 2nd column for weight values (complex spectra)" << endl;
   F << " -3 -- use the 3rd column for weight values (complex spectra)" << endl;
 }
 
 void cmd_line(int argc, char *argv[]) {
   int c;
-  while ((c = getopt(argc, argv, "hvo23")) != -1) {
+  while ((c = getopt(argc, argv, "hvo23bO:")) != -1) {
     switch (c) {
       case 'h':
         usage();
         exit(EXIT_SUCCESS);
       case 'v': verbose = true; break;
       case 'o': one = true; break;
+      case 'b': particle_stat = 'b'; break;
+      case 'O': output = optarg; break;
       case '2':
         nrcol = 2;
         col   = 1;
@@ -259,7 +264,6 @@ int main(int argc, char *argv[]) {
     merge();
     make_mesh(mesh);
     compute(mesh, G);
-    string output = "spec.dat";
     save(output, mesh, G);
   } catch (const std::exception &e) {
     cerr << "mats: error: " << e.what() << endl;
