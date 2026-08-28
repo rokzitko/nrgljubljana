@@ -308,18 +308,31 @@ void combinations(const vec &mesh_, const vec &inta_, vec &intb_, vec &intc_) {
 
 // Create a mesh on which the output spectral function will be computed.
 void make_mesh(vec &mesh_) {
-  assert(broaden_min < broaden_max);
-  assert(broaden_ratio > 1.0);
+  if (!std::isfinite(broaden_ratio) || broaden_ratio <= 1.0)
+    throw std::invalid_argument("broaden_ratio must be finite and greater than 1.");
+  if (!std::isfinite(broaden_max) || broaden_max <= 0.0)
+    throw std::invalid_argument("broaden_max must be finite and greater than 0.");
+  if (!std::isfinite(broaden_min) || broaden_min <= 0.0)
+    throw std::invalid_argument("broaden_min must be finite and greater than 0.");
+  if (broaden_min >= broaden_max)
+    throw std::invalid_argument("broaden_min must be smaller than broaden_max.");
 
-  double z;
-  for (z = broaden_min; z < broaden_max; z *= broaden_ratio) {
+  const auto advance = [](const double current) {
+    const double next = current * broaden_ratio;
+    if (!std::isfinite(next) || !(next > current))
+      throw std::runtime_error("Frequency mesh generation failed to make progress.");
+    return next;
+  };
+
+  double z = broaden_min;
+  for (; z < broaden_max; z = advance(z)) {
     mesh_.push_back(z);
     mesh_.push_back(-z);
   }
 
   // One more point to ensure that the point 'broaden_max' is part of the
   // full frequency interval.
-  z *= broaden_ratio;
+  z = advance(z);
   mesh_.push_back(z);
   mesh_.push_back(-z);
 

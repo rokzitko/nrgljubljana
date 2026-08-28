@@ -106,6 +106,11 @@ class Adapt {
      return Lambda.logL() * (y_ - A / rho(y_ * powL));
    }
    void save(std::ostream &OUT) { OUT << x << " " << y << std::endl; }
+   void advance_output_target(double &target) const {
+     const double next = target + output_step;
+     if (!(next > target)) throw std::runtime_error("outputstep is too small to advance the output grid.");
+     target = next;
+   }
    template<typename FNC> auto rk_step(const double dx, FNC rhs)
    {
      const auto k1 = dx * rhs(x, y);
@@ -213,7 +218,7 @@ class Adapt {
      vecg.emplace_back(std::make_pair(x, y));
      double x_st = x; // Target x for next output line
      do {
-       x_st += output_step;
+       advance_output_target(x_st);
        int_with_to(dx, x_st, [this](const auto x_, const auto y_) { return rhs_G(x_, y_); }, false); // rhs_G !!
        save(OUTG);
        vecg.emplace_back(std::make_pair(x, y));
@@ -444,7 +449,8 @@ class Adapt {
      xfine = P.P("xfine", 5); // Fine stepsize integral [1..xfine]
      if (!(xfine > 1)) throw std::invalid_argument("xfine must be greater than 1.");
      output_step = P.P("outputstep", 1.0 / 64.0); // Stepsize for output file
-     if (!(output_step <= 1.0)) throw std::invalid_argument("outputstep must be less than or equal to 1.");
+     if (!std::isfinite(output_step) || output_step <= 0.0 || output_step > 1.0)
+       throw std::invalid_argument("outputstep must be finite and in the range (0, 1].");
      dx_fine       = P.P("dx_fine", 1e-5);        // Integration stepsize in [1..xfine]
      dx_fast       = P.P("dx_fast", 1e-4);        // Integration stepsize in [xfine..xmax]
      allowed_error = P.P("allowed_error", 1e-10); // error control for adaptable stepsize
@@ -508,7 +514,7 @@ class Adapt {
      save(OUTF); // save x=1 data point
      double x_st = x; // Target x for next output line
      do {
-       x_st += output_step;
+       advance_output_target(x_st);
        int_with_to(dx, x_st, [this](const auto x_, const auto y_){ return rhs_F(x_, y_); }, true); // rhs_F !!
        save(OUTF);
        if (x > xfine) { dx = dx_fast; }
@@ -540,7 +546,7 @@ class Adapt {
      save(OUTF);
      double x_st = x;
      do {
-       x_st += output_step;
+       advance_output_target(x_st);
        x = x_st;
        const double energy = Eps_integral(x, workspace.get());
        y = energy / Lambda.power(2.0 - x);

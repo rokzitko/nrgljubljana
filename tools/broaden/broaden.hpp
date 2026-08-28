@@ -117,14 +117,22 @@ template<typename T> T trapez(const std::vector<T> &x, const std::vector<T> &y) 
 // Create a mesh on which the output spectral function will be computed. a is the accumulation point of the mesh.
 auto make_mesh(const double min, const double max, const double ratio, 
                const double a, const bool add_positive = true, const bool add_negative = false) {
-  assert(min < max);
-  assert(ratio > 1.0);
+  if (!std::isfinite(ratio) || ratio <= 1.0)
+    throw std::invalid_argument("broaden_ratio must be finite and greater than 1.");
+  if (!std::isfinite(max) || max <= 0.0)
+    throw std::invalid_argument("broaden_max must be finite and greater than 0.");
+  if (!std::isfinite(min) || min <= 0.0)
+    throw std::invalid_argument("broaden_min must be finite and greater than 0.");
+  if (min >= max) throw std::invalid_argument("broaden_min must be smaller than broaden_max.");
   const auto rescale_factor = (max-a)/max;
   std::vector<double> mesh;
-  for (double z = max; z > min; z /= ratio) {
+  for (double z = max; z > min;) {
     const auto x = a + z * rescale_factor;
     if (add_positive) mesh.push_back(x);
     if (add_negative) mesh.push_back(-x);
+    const double next = z / ratio;
+    if (!(next < z)) throw std::runtime_error("Frequency mesh generation failed to make progress.");
+    z = next;
   }
   std::sort(mesh.begin(), mesh.end());
   return mesh;
