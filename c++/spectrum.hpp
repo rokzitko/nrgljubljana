@@ -230,8 +230,8 @@ void SpectrumRealFreq<S>::continuous() {
   const auto fn = filename + ".dat";
   std::cout << " " << fn;
   std::ofstream Fdensity = safe_open(fn);
-  densityneg.save(Fdensity, P.prec_xy, P.reim);
-  densitypos.save(Fdensity, P.prec_xy, P.reim);
+  densityneg.save(Fdensity, P.prec_xy, P.reim, P.clip_tol_imag);
+  densitypos.save(Fdensity, P.prec_xy, P.reim, P.clip_tol_imag);
 }
 
 template<scalar S>
@@ -248,7 +248,7 @@ class GFMatsubara {
    }
    void save() {
      color_print(P.pretty_out, fmt::emphasis::bold, "GF Matsubara: {} {} -> {}\n", name, algoname, filename);
-     results.save(safe_open(filename + ".dat"), P.prec_xy);
+     results.save(safe_open(filename + ".dat"), P.prec_xy, P.clip_tol_imag);
    }
 };
 
@@ -267,7 +267,7 @@ class TempDependence {
    void save() {
      color_print(P.pretty_out, fmt::emphasis::bold, "Temperature dependence: {} {} -> {}\n", name, algoname, filename);
      ranges::sort(results, sortfirst());
-     results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim);
+     results.save(safe_open(filename + ".dat"), P.prec_xy, P.reim, P.clip_tol_imag);
    }
 };
 

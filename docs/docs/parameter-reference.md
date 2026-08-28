@@ -263,6 +263,7 @@ An empty string default means that the feature or list is disabled.
 | `cfsgt` | boolean | `false` | Enable CFS greater correlators. |
 | `cfsls` | boolean | `false` | Enable CFS lesser correlators. |
 | `fdm` | boolean | `false` | Enable full-density-matrix NRG spectra and thermodynamics. |
+| `fdm_cutoff` | number | `1e-16` | Non-negative shell-weight cutoff for FDM energy moments; only shells with `w_n > fdm_cutoff` contribute. |
 | `fdmgt` | boolean | `false` | Enable FDM greater correlators. |
 | `fdmls` | boolean | `false` | Enable FDM lesser correlators. |
 | `fdmexpv` | boolean | `false` | Calculate FDM expectation values. |
@@ -294,6 +295,7 @@ operator must have been included in the generated `data` file.
 | `strategy` | string | `kept` | Recalculate `kept` states or `all` states; CFS/FDM can force `all`. |
 | `Ninit` | non-negative integer | `0` | Highest Wilson site included in the seed problem; must be below `Nmax` from `data`. |
 | `reim` | boolean | `false` | Include imaginary spectral weights in output files. |
+| `clip_tol_imag` | number | `1e-10` | Non-negative relative tolerance for clipping imaginary values in text output. |
 
 `substeps` requires the ordinary coefficient structure and is not compatible
 with every polarized, rung, or custom-chain configuration. Unsupported

@@ -73,7 +73,7 @@ TEST(Clean, H) { // NOLINT
   calc_densitymatrix(rho, store_all, Sym, mt, P);
 
   calc_ZnD(store, stats, Sym, P);
-  fdm_thermodynamics(store, stats, Sym, P.T);
+  fdm_thermodynamics(store, stats, Sym, P.T, P.fdm_cutoff);
   auto rhoFDM = init_rho_FDM(step.lastndx(), store, stats, Sym->multfnc(), P.T, P.checkrho);
   rhoFDM.save(step.lastndx(), P, fn_rhoFDM);
   calc_fulldensitymatrix(step, rhoFDM, store, store_all, stats, Sym, mt, P);

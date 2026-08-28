@@ -53,9 +53,9 @@ class Matsubara {
        v[n].second += m2.v[n].second;
      }
    }
-   template <typename T> void save(T && F, const int prec) const {
+   template <typename T> void save(T && F, const int prec, const double clip_tol_imag) const {
      F << std::setprecision(prec); // prec_xy
-     for (const auto &[e, w] : v) outputxy(F, e, w, true);
+     for (const auto &[e, w] : v) outputxy(F, e, w, true, clip_tol_imag);
    }
 };
 

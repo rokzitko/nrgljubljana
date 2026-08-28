@@ -60,7 +60,7 @@ inline std::string prec_output(const std::complex<double> z, const Params &P) { 
   return fmt::format("{x:>.{prec}}", "x"_a=z.real(), "prec"_a=int(P.prec_custom));
 }
 
-inline void outputxy(std::ostream &F, const double x, const std::complex<double> z, const bool imagpart, const double clip_tol_imag = 1e-10) {
+inline void outputxy(std::ostream &F, const double x, const std::complex<double> z, const bool imagpart, const double clip_tol_imag) {
   const auto [r, i] = reim(z);
   F << x << " " << r;
   if (imagpart) F << " " << (std::abs(i)>std::abs(r)*clip_tol_imag ? i : 0);

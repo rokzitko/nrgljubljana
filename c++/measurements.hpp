@@ -123,7 +123,8 @@ void report_ZnD(Stats<S> &stats, const Params &P) {
 // TO DO: use Boost.Multiprecision instead of low-level GMP calls
 // https://www.boost.org/doc/libs/1_72_0/libs/multiprecision/doc/html/index.html
 template<scalar S>
-void fdm_thermodynamics(const ThermoStore<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T)
+void fdm_thermodynamics(const ThermoStore<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T,
+                        const double fdm_cutoff)
 {
   stats.Z_fdm = stats.ZZG*std::exp(-stats.GS_energy/T); // this is the true partition function
   stats.F_fdm = -std::log(stats.ZZG)*T+stats.GS_energy; // F = -k_B*T*log(Z)
@@ -133,7 +134,7 @@ void fdm_thermodynamics(const ThermoStore<S> &store, Stats<S> &stats, const Symm
   mpf_set_d(E, 0.0);
   mpf_set_d(E2, 0.0);
   for (const auto N : store.Nall())
-    if (stats.wn[N] > 1e-16)
+    if (stats.wn[N] > fdm_cutoff)
       for (const auto &[I, ds] : store[N])
         for (const auto i : ds.all()) {
           my_mpf weight;

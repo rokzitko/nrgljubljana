@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <fstream>
 #include <list>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <stdexcept>
@@ -67,7 +68,9 @@ TEST(params, Defaults) {
   EXPECT_EQ(P.keepmin, 0ul);
   EXPECT_EQ(P.fixeps, 1e-15);
   EXPECT_EQ(P.dm, false);
+  EXPECT_EQ(P.fdm_cutoff, 1e-16);
   EXPECT_EQ(P.strategy, "kept");
+  EXPECT_EQ(P.clip_tol_imag, 1e-10);
   EXPECT_EQ(P.bins, 1000ul);
   EXPECT_EQ(P.discard_trim, 1e-16);
   EXPECT_EQ(P.discard_immediately, 1e-16);
@@ -265,6 +268,28 @@ TEST(params, validate_rejects_non_positive_temperature) {
   EXPECT_NO_THROW(P.validate());
 }
 
+TEST(params, validate_rejects_invalid_thresholds) {
+  Params P;
+
+  P.fdm_cutoff = -1.0;
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+
+  P.fdm_cutoff = 0.0;
+  P.clip_tol_imag = -1.0;
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+
+  P.clip_tol_imag = 0.0;
+  P.fdm_cutoff = std::numeric_limits<double>::infinity();
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+
+  P.fdm_cutoff = 0.0;
+  P.clip_tol_imag = std::numeric_limits<double>::infinity();
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+
+  P.clip_tol_imag = 0.0;
+  EXPECT_NO_THROW(P.validate());
+}
+
 TEST(params, h5save_stores_nlen) {
   Params P;
   P.Nmax = 7;
@@ -295,6 +320,22 @@ TEST(params, parser_accepts_extended_bool_values) {
   EXPECT_TRUE(P.calc0);
   EXPECT_TRUE(P.lastall);
   EXPECT_FALSE(P.fdm);
+
+  std::remove(filename);
+}
+
+TEST(params, parser_accepts_threshold_values) {
+  const auto filename = "params_thresholds.param";
+  {
+    std::ofstream file(filename);
+    file << "[param]\n"
+         << "fdm_cutoff = 1e-12\n"
+         << "clip_tol_imag = 1e-8\n";
+  }
+
+  Params P(filename, "param", std::make_unique<Workdir>(".", true), true, true);
+  EXPECT_EQ(P.fdm_cutoff, 1e-12);
+  EXPECT_EQ(P.clip_tol_imag, 1e-8);
 
   std::remove(filename);
 }

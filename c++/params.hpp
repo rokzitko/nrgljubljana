@@ -270,6 +270,7 @@ class Params {
 
   // Perform full-density-matrix NRG calculation. Weichselbaum, J. von Delft, PRL 99 076402 (2007).
   param<bool> fdm{"fdm", "Perform FDM (full-density-matrix) calculation", "false", all}; // S
+  param<double> fdm_cutoff{"fdm_cutoff", "FDM shell-weight cutoff for thermodynamics", "1e-16", all}; // N
 
   // Support for calculating greater and lesser correlation functions
   param<bool> fdmgt{"fdmgt", "FDM greater correlation function?", "false", all}; // N
@@ -343,6 +344,7 @@ class Params {
 
   // Output real and imaginary parts of calculated correlators (specs).
   param<bool> reim{"reim", "Output imaginary parts of correlators?", "false", all}; // N
+  param<double> clip_tol_imag{"clip_tol_imag", "Relative clipping tolerance for imaginary output", "1e-10", all}; // N
 
   // Number of eigenstates to save in "annotated.dat" per iteration.
   // Use dumpabs=true together with dumpscaled=false to trace total
@@ -631,6 +633,10 @@ class Params {
 
   void validate() {
     if (T <= 0.0) throw std::invalid_argument("T must be greater than 0.");
+    if (!std::isfinite(fdm_cutoff.value()) || fdm_cutoff < 0.0)
+      throw std::invalid_argument("fdm_cutoff must be finite and non-negative.");
+    if (!std::isfinite(clip_tol_imag.value()) || clip_tol_imag < 0.0)
+      throw std::invalid_argument("clip_tol_imag must be finite and non-negative.");
     my_assert(keep > 1);
     if (keepenergy > 0.0) my_assert(keepmin <= keep);
     if (dm_flags()) dm = true;

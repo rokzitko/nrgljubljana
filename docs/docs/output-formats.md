@@ -236,6 +236,12 @@ For the `chit` prefix, `value` is `k_B*T*chi(T)` (`chi/beta`), not `chi(T)`.
 Recovering `chi(T)` therefore requires division by `k_B*T` in the units used by
 the calculation.
 
+In every text format with an imaginary column, `clip_tol_imag` replaces the
+imaginary value with zero when `|imag| <= |real| * clip_tol_imag`. Consequently,
+a nonzero imaginary value is not clipped when the real part is zero. This is an
+output-only operation; it does not alter internal values or unbroadened binary
+weights.
+
 ### Unbroadened `.bin`
 
 With `savebins=true`, each record consists of native host `double` values:

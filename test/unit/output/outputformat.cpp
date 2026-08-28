@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <complex>
 #include <cstdio>
 #include <map>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -63,6 +65,18 @@ TEST(OutputFormat, StatsFdmAccumulatorsUseFdmPrecision) { // NOLINT
   ASSERT_FALSE(stats.ZnDN.empty());
   EXPECT_GE(mpf_get_prec(stats.ZnDG[0]), FDM_MPF_PRECISION);
   EXPECT_GE(mpf_get_prec(stats.ZnDN[0]), FDM_MPF_PRECISION);
+}
+
+TEST(OutputFormat, OutputxyUsesConfiguredImaginaryClipping) { // NOLINT
+  const std::complex<double> value{2.0, 1e-3};
+
+  std::ostringstream clipped;
+  outputxy(clipped, 1.0, value, true, 1e-2);
+  EXPECT_EQ(clipped.str(), "1 2 0\n"s);
+
+  std::ostringstream retained;
+  outputxy(retained, 1.0, value, true, 1e-4);
+  EXPECT_EQ(retained.str(), "1 2 0.001\n"s);
 }
 
 int main(int argc, char **argv) {

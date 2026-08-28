@@ -27,9 +27,9 @@ template<scalar S, typename t_weight = weight_traits<S>>
 class Spikes : public std::vector<t_delta_peak<S>> {
  public:
    template<typename T>
-     void save(T&& F, const int prec, const bool imagpart) {
+     void save(T&& F, const int prec, const bool imagpart, const double clip_tol_imag) {
        F << std::setprecision(prec);
-       for (const auto &[e, w] : *this) outputxy(F, e, w, imagpart);
+       for (const auto &[e, w] : *this) outputxy(F, e, w, imagpart, clip_tol_imag);
      }
    [[nodiscard]] auto sum_weights() const { return sum2(*this); }
    template<typename F>
