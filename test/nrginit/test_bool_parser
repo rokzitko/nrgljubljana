@@ -1,0 +1,28 @@
+#!/bin/sh
+set -eu
+
+source_dir=$1
+kernel=$2
+
+"$kernel" -batchinput -batchoutput <<EOF
+DEBUG = 0;
+ExitOnError = False;
+If[Get["$source_dir/nrginit/misc.m"] === \$Failed, Exit[1]];
+If[Get["$source_dir/nrginit/initialparse.m"] === \$Failed, Exit[1]];
+
+failures = 0;
+check[value_, expected_] := Module[{actual},
+  data["param"]["value"] = value;
+  actual = parambool["value"];
+  If[actual =!= expected,
+    Print["FAILED: value=", value, " actual=", actual, " expected=", expected];
+    failures++
+  ];
+];
+
+Scan[(check[#, True]) &, {"yes", "YES", "tRuE", "  YeS  ", "1"}];
+Scan[(check[#, False]) &, {"no", "NO", "fAlSe", "  nO  ", "0"}];
+Scan[(check[#, \$Failed]) &, {"", "maybe", "2"}];
+
+If[failures == 0, Exit[0], Exit[1]];
+EOF

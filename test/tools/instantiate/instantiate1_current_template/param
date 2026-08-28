@@ -3,6 +3,7 @@ symtype=U1
 Lambda=2
 band=flat
 adapt=false
+polarized=NO
 xmax=20
 mMAX=20
 Nmax=4

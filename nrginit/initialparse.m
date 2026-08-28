@@ -85,9 +85,19 @@ paramnum[key_, group_:"param"] := Module[{str},
   ]
 ];
 
-(* For logic quantities we allow several ways of specifying True. *)
-parambool[key_, group_:"param"] :=
-  MemberQ[{"Yes", "yes", "True", "true", "TRUE", "1"}, param[key, group] ];
+(* Boolean values use the same syntax as the C++ parameter parser. *)
+parambool[key_, group_:"param"] := Module[{raw, value},
+  raw = param[key, group];
+  value = ToLowerCase[stripws[raw]];
+  Which[
+    MemberQ[{"yes", "true", "1"}, value], True,
+    MemberQ[{"no", "false", "0"}, value], False,
+    True,
+      MyError["Invalid boolean value [", raw, "] for parameter ", key,
+        " in group ", group, "; expected yes/no, true/false, or 1/0."];
+      $Failed
+  ]
+];
 
 (* paramexists[key_, group_:"param"] := ValueQ[ data[group][key] ]; *)
 paramexists[key_, group_:"param"] := MemberQ[ listkeywords[group], key ];

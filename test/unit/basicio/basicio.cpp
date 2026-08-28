@@ -52,12 +52,15 @@ TEST(basicio, from_string) {
   EXPECT_EQ(res, 12.3);
   EXPECT_TRUE(from_string<bool>("true"));
   EXPECT_TRUE(from_string<bool>("TRUE"));
+  EXPECT_TRUE(from_string<bool>("tRuE"));
   EXPECT_TRUE(from_string<bool>(" YeS "));
   EXPECT_TRUE(from_string<bool>("1"));
   EXPECT_FALSE(from_string<bool>("false"));
   EXPECT_FALSE(from_string<bool>("False"));
+  EXPECT_FALSE(from_string<bool>("nO"));
   EXPECT_FALSE(from_string<bool>(" no\t"));
   EXPECT_FALSE(from_string<bool>("0"));
+  EXPECT_THROW(from_string<bool>(""), std::runtime_error);
   EXPECT_THROW(from_string<bool>("NOTTRUE"), std::runtime_error);
   EXPECT_THROW(from_string<bool>("2"), std::runtime_error);
 }

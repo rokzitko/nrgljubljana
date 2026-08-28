@@ -9,6 +9,8 @@
 #include <map>
 #include <string>
 
+#include <parse_bool.hpp>
+
 #include "../common/parser.hpp"
 
 std::map<std::string, std::string> params;
@@ -27,7 +29,7 @@ std::string Pstr(const std::string &keyword, std::string def) {
 }
 
 bool Pbool(const std::string &keyword, bool def) {
-  return NRG::Tools::get_or_default(params, keyword, def, [](const auto &value) { return value == "true"; });
+  return NRG::Tools::get_or_default(params, keyword, def, [](const auto &value) { return NRG::parse_bool(value); });
 }
 
 void parser(const std::string &filename) {

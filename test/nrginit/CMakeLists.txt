@@ -10,8 +10,10 @@ foreach(test ${simple_tests})
            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test})
 endforeach()
 
+add_test(NAME nrginit_bool_parser
+         COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_bool_parser ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
+
 configure_file(nrginit10_calcopq_d2/SIAM.m nrginit10_calcopq_d2/SIAM.m COPYONLY)
 configure_file(nrginit11_calcopq_d3/SIAM.m nrginit11_calcopq_d3/SIAM.m COPYONLY)
 configure_file(nrginit12_calcopq_d4/DQD.m nrginit12_calcopq_d4/DQD.m COPYONLY)
 configure_file(nrginit105_bcsgap12/kondo.m nrginit105_bcsgap12/kondo.m COPYONLY)
-

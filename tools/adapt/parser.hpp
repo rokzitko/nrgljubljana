@@ -10,6 +10,8 @@
 #include <fstream>
 #include <stdexcept>
 
+#include <parse_bool.hpp>
+
 #include "../common/parser.hpp"
 
 namespace NRG::Adapt {
@@ -33,7 +35,7 @@ class Params : public std::map<std::string, std::string> {
       return NRG::Tools::get_or_default(*this, keyword, def, [](const auto &value) { return value; });
     }
     auto Pbool(const std::string &keyword, const bool def) const {
-      return NRG::Tools::get_or_default(*this, keyword, def, [](const auto &value) { return value == "true"; });
+      return NRG::Tools::get_or_default(*this, keyword, def, [](const auto &value) { return NRG::parse_bool(value); });
     }
 };
 

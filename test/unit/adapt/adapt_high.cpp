@@ -33,6 +33,31 @@ TEST(Adapt, parser_skips_blank_lines) { // NOLINT
   std::remove(filename);
 }
 
+TEST(Adapt, parser_accepts_extended_bool_values_and_rejects_invalid_values) { // NOLINT
+  const auto filename = "adapt_bool.param";
+  write_file(filename,
+             "[param]\n"
+             "yes = YeS\n"
+             "true = tRuE\n"
+             "one = 1\n"
+             "no = nO\n"
+             "false = FaLsE\n"
+             "zero = 0\n"
+             "invalid = maybe\n");
+
+  Params P(filename);
+  EXPECT_TRUE(P.Pbool("yes", false));
+  EXPECT_TRUE(P.Pbool("true", false));
+  EXPECT_TRUE(P.Pbool("one", false));
+  EXPECT_FALSE(P.Pbool("no", true));
+  EXPECT_FALSE(P.Pbool("false", true));
+  EXPECT_FALSE(P.Pbool("zero", true));
+  EXPECT_TRUE(P.Pbool("missing", true));
+  EXPECT_THROW(P.Pbool("invalid", false), std::runtime_error);
+
+  std::remove(filename);
+}
+
 TEST(Adapt, linint_requires_two_points) { // NOLINT
   EXPECT_THROW(LinInt(Vec{}), std::runtime_error);
   EXPECT_THROW(LinInt(Vec{{1.0, 2.0}}), std::runtime_error);

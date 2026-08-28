@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <map>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 
 using namespace std;
@@ -42,6 +43,35 @@ TEST(NRGChainParser, trims_keys_and_values) { // NOLINT
   EXPECT_TRUE(Pbool("adapt", false));
   EXPECT_EQ(Pstr("band", ""), "custom.dat");
   EXPECT_EQ(Pint("Nmax", 0), 8);
+
+  std::remove(filename);
+}
+
+TEST(NRGChainParser, accepts_extended_bool_values_and_rejects_invalid_values) { // NOLINT
+  const auto filename = "nrgchain_bool.param";
+  {
+    ofstream file(filename);
+    file << "[param]\n"
+         << "yes = YeS\n"
+         << "true = tRuE\n"
+         << "one = 1\n"
+         << "no = nO\n"
+         << "false = FaLsE\n"
+         << "zero = 0\n"
+         << "invalid = maybe\n";
+  }
+
+  params.clear();
+  parser(filename);
+
+  EXPECT_TRUE(Pbool("yes", false));
+  EXPECT_TRUE(Pbool("true", false));
+  EXPECT_TRUE(Pbool("one", false));
+  EXPECT_FALSE(Pbool("no", true));
+  EXPECT_FALSE(Pbool("false", true));
+  EXPECT_FALSE(Pbool("zero", true));
+  EXPECT_TRUE(Pbool("missing", true));
+  EXPECT_THROW(Pbool("invalid", false), std::runtime_error);
 
   std::remove(filename);
 }

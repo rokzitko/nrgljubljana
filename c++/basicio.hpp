@@ -20,13 +20,12 @@
 #include <cctype>
 #include <utility>
 #include <vector>
-#include <strings.h> // strcasecmp
-
 #include <fmt/format.h>
 
 #include <boost/lexical_cast.hpp>
 
 #include "portabil.hpp"
+#include "parse_bool.hpp"
 #include "traits.hpp"
 
 #define HIGHPREC(val) std::setprecision(std::numeric_limits<double>::max_digits10) << (val)
@@ -63,12 +62,7 @@ inline T from_string(const std::string &str) {
 
 template <>
 inline bool from_string(const std::string &str) {
-  const auto trimmed = strip_whitespace(str);
-  if (trimmed == "1") return true;
-  if (trimmed == "0") return false;
-  if (strcasecmp(trimmed.c_str(), "true") == 0 || strcasecmp(trimmed.c_str(), "yes") == 0) return true;
-  if (strcasecmp(trimmed.c_str(), "false") == 0 || strcasecmp(trimmed.c_str(), "no") == 0) return false;
-  throw std::runtime_error(fmt::format("Lexical cast [{}] failed.", str));
+  return parse_bool(str);
 }
 
 // for T=int, std::to_string is used

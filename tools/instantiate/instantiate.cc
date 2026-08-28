@@ -435,17 +435,6 @@ std::string param_value(const ParamSections &sections, const std::string &sectio
   return value_it->second;
 }
 
-bool optional_bool_param(const ParamSections &sections, const std::string &section, const std::string &key, const bool fallback) {
-  const auto section_it = sections.values.find(section);
-  if (section_it == sections.values.end()) return fallback;
-  const auto value_it = section_it->second.find(key);
-  if (value_it == section_it->second.end()) return fallback;
-  const auto value = value_it->second;
-  if (value == "true") return true;
-  if (value == "false") return false;
-  throw std::runtime_error("Parameter " + key + " must be true or false.");
-}
-
 TemplateHeader read_template_header(DataTemplateReader &data_in) {
   const auto header_line = data_in.next_data_line();
   if (!header_line) throw std::runtime_error("Missing data.in header.");
@@ -776,7 +765,7 @@ void run_full_instantiation(const Options &options) {
   if (options.generate_temporaries) write_wilson_channel(wilson.channels.front(), 1, staging_dir);
 
   const auto nmax = parse_size_t_value(param_value(sections, "param", "Nmax"), "Nmax");
-  const auto polarized = optional_bool_param(sections, "param", "polarized", false);
+  const auto polarized = params->polarized.value();
   if (polarized) throw std::runtime_error("Spin-polarized coefficient tables are not supported in this instantiate slice.");
 
   auto evaluator = make_matrix_evaluator(sections, wilson);
