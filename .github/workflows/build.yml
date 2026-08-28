@@ -355,15 +355,19 @@ jobs:
         libhdf5-dev
         liblapack-dev
         libopenmpi-dev
+        mkdocs
         openmpi-bin
         openmpi-common
         openmpi-doc
         python3-sphinx
 
-    - name: Build documentation
+    - name: Build Sphinx documentation
       env:
         CC: gcc-12
         CXX: g++-12
       run: |
         cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/install -DBuild_Documentation=ON -DSphinx_Only=ON
         cmake --build build --target docs_sphinx --parallel 2
+
+    - name: Build MkDocs documentation
+      run: make -C docs
