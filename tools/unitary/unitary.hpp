@@ -11,6 +11,9 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <optional>
+#include <ostream>
+#include <stdexcept>
 using namespace std::string_literals;
 #include <map>
 
@@ -51,7 +54,7 @@ class Unitary {
        switch (c) {
        case 'h':
          usage();
-         exit(EXIT_SUCCESS);
+         std::exit(EXIT_SUCCESS);
        case 'b': input_ac_bin = false; break;
        case 'B': input_ac_bin = true; break;
        case 'q': quiet = true; break;

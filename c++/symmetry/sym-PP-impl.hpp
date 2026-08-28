@@ -1,3 +1,6 @@
+#include <string>
+#include <vector>
+
 namespace NRG {
 
 template<typename SC>

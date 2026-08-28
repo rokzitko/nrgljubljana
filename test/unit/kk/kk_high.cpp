@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <stdexcept>
+
 #include <kk/kk.hpp>
 
 TEST(KK, empty_input_throws) { // NOLINT

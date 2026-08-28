@@ -10,6 +10,10 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <cstdlib>
+#include <iterator>
+#include <ostream>
+#include <stdexcept>
 #include <vector>
 #include <utility>
 #include <cassert>
@@ -86,7 +90,7 @@ class Resample
                 {
                 case 'h':
                     usage();
-                    exit(EXIT_SUCCESS);
+                    std::exit(EXIT_SUCCESS);
                 case 'v': verbose = true; break;
                 case 'e': extrapolate = true; break;
                 case 'p': output_precision = atoi(optarg); break;
@@ -101,7 +105,7 @@ class Resample
             if (remaining != 3) {
                 about();
                 usage();
-                exit(1);
+                std::exit(1);
             }
             inputfn  = std::string(argv[optind++]);
             gridfn   = std::string(argv[optind++]);

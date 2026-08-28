@@ -4,7 +4,10 @@
 // Linear interpolation of rho(omega), integration using trapezoidal method. 4th-order Runge-Kutta ODE solver. Secant
 // method for refinement of parameter A.
 
+#include <cstddef>
+#include <exception>
 #include <iostream>
+#include <ostream>
 #include <fstream>
 #include <utility>
 #include <string>
@@ -31,7 +34,7 @@ void help(int argc, char **argv, const std::string &help_message)
   std::vector<std::string> args(argv+1, argv+argc); // NOLINT
   if (args.size() >= 1 && args[0] == "-h") {
     std::cout << help_message << std::endl;
-    exit(EXIT_SUCCESS);
+    std::exit(EXIT_SUCCESS);
   }
 }
 
@@ -85,7 +88,7 @@ CommandLineOptions cmd_line(int argc, char *argv[]) {
     const std::string arg = argv[i];
     if (arg == "-h" || arg == "--help") {
       std::cout << usage << std::endl;
-      exit(EXIT_SUCCESS);
+      std::exit(EXIT_SUCCESS);
     }
     if (arg == "--flat") {
       if (options.flat_gamma) { throw std::invalid_argument("--flat specified more than once.\n" + usage); }
@@ -124,14 +127,14 @@ CommandLineOptions cmd_line(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
   try {
-    const clock_t start_clock = clock();
+    const std::clock_t start_clock = std::clock();
     about();
     help(argc, argv, usage);
     const auto options = cmd_line(argc, argv);
     Params P(options.param_fn);
     Adapt calc(P, options.sign, options.flat_gamma, options.integral);
     calc.run();
-    const clock_t end_clock = clock();
+    const std::clock_t end_clock = std::clock();
     std::cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << std::endl;
   } catch (const std::exception &e) {
     std::cerr << "adapt: error: " << e.what() << std::endl;

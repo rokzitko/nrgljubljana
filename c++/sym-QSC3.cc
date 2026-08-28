@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "nrg-general.hpp"
 #include "sym-QSC3-impl.hpp"
 #include "sym-QSC3.hpp" // include for consistency

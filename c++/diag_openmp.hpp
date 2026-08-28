@@ -1,6 +1,10 @@
 #ifndef _diag_openmp_hpp_
 #define _diag_openmp_hpp_
 
+#include <cstddef>
+#include <utility>
+#include <vector>
+
 #include "traits.hpp"
 #include "step.hpp"
 #include "operators.hpp"

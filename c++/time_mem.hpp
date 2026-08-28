@@ -5,7 +5,10 @@
 #include <cstddef>
 #include <utility>
 #include <chrono>
+#include <iomanip>
+#include <iostream>
 #include <map>
+#include <ostream>
 #include <string>
 #include "io.hpp"
 #include "portabil.hpp"

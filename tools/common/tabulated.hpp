@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <ostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>

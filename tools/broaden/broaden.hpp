@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <cstddef>
 #include <cmath>
 #include <cstdlib>
 #include <cassert>
@@ -17,6 +18,10 @@
 #include <map>
 #include <string>
 #include <algorithm>
+#include <functional>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <stdexcept>
 #include <numeric>
 
@@ -31,9 +36,10 @@
 namespace NRG::Broaden {
 
 constexpr double m_SQRTPI = 1.7724538509055160273;
-const double R_1_SQRT2PI = 1.0 / sqrt(2.0 * M_PI); // sqrt not constexpr on all platforms (yet)
+const double R_1_SQRT2PI = 1.0 / std::sqrt(2.0 * M_PI); // sqrt not constexpr on all platforms (yet)
 
 using std::abs; // important!!
+using std::size_t;
 
 inline std::string tostring(const int i) {
   std::ostringstream S;
@@ -45,13 +51,13 @@ template<typename T> auto sqr(const T x) { return x * x; }
 
 inline double gaussian_kernel(const double x, const double y, const double sigma) {
   const auto d = (x - y) / sigma;
-  return R_1_SQRT2PI * exp(-d * d / 2.0) / sigma;
+  return R_1_SQRT2PI * std::exp(-d * d / 2.0) / sigma;
 }
 
 // Derivative of the Fermi-Dirac function: -d/dw f_FD(x-y) with effective temperature sigma.
 inline double derfd_kernel(const double x, const double y, const double sigma) {
   const auto d = (x - y) / sigma;
-  return 1.0 / ((1.0 + cosh(d)) * 2.0 * sigma);
+  return 1.0 / ((1.0 + std::cosh(d)) * 2.0 * sigma);
 }
 
 template<typename S, typename T, typename FNC>
@@ -243,7 +249,7 @@ class Broaden {
    void cmd_line(int argc, char *argv[]) {
      if (argc == 2 && std::string(argv[1]) == "-h") {
        usage();
-       exit(EXIT_SUCCESS);
+       std::exit(EXIT_SUCCESS);
      }
      int c_;
      while ((c_ = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNABL:")) != -1) {
@@ -303,13 +309,13 @@ class Broaden {
        case 'L':
          mesh_filename = std::string(optarg);
          break;
-       default: abort();
+       default: std::abort();
        }
      }
      auto remaining = argc - optind; // arguments left
      if (remaining != 5 && remaining != 4) {
        usage();
-       exit(1);
+       std::exit(1);
      }
      name = std::string(argv[optind]); // Name of spectral density files
      Nz = atoi(argv[optind + 1]); // Number of z-values
@@ -401,10 +407,10 @@ class Broaden {
        sum += w;
        if (omega > 0.0) { sumpos += w; }
        if (omega < 0.0) { sumneg += w; }
-       const auto f  = 1 / (1 + exp(-omega / T));
-       const auto b  = 1 / (1 - exp(-omega / T));
-       const auto fi = 1 / (1 + exp(+omega / T)); // fi=1-f
-       const auto bi = 1 / (1 - exp(+omega / T)); // bi=1-b
+       const auto f  = 1 / (1 + std::exp(-omega / T));
+       const auto b  = 1 / (1 - std::exp(-omega / T));
+       const auto fi = 1 / (1 + std::exp(+omega / T)); // fi=1-f
+       const auto bi = 1 / (1 - std::exp(+omega / T)); // bi=1-b
        if (std::isfinite(f))  { sumfermi    += f * w;  }
         if (std::isfinite(b))  { sumbose     += b * w;  }
        if (std::isfinite(fi)) { sumfermiinv += fi * w; }
@@ -425,7 +431,7 @@ class Broaden {
      if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
      if (ept == 0.0) return 0.0;
      const auto gamma = alpha / 4;
-     return exp(-sqr(log(e / ept) / alpha - gamma)) / (alpha * std::abs(e) * m_SQRTPI);
+     return std::exp(-sqr(std::log(e / ept) / alpha - gamma)) / (alpha * std::abs(e) * m_SQRTPI);
    }
 
    // As above, with support for a shifted accumulation point
@@ -445,24 +451,24 @@ class Broaden {
      if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
      if (ept == 0.0) return 0.0;
      const auto gamma = alpha / 4;
-     return exp(-sqr(log(e / ept) / alpha - gamma)) / (alpha * std::abs(e) * m_SQRTPI);
+     return std::exp(-sqr(std::log(e / ept) / alpha - gamma)) / (alpha * std::abs(e) * m_SQRTPI);
    }
 
 #define BR_L BR_L_acc
 
    // Normalized to 1, width omega0. The kernel is symmetric in both arguments.
    inline auto BR_G(const double e, const double ept) { 
-     return exp(-sqr((e - ept) / omega0)) / (omega0 * m_SQRTPI); 
+     return std::exp(-sqr((e - ept) / omega0)) / (omega0 * m_SQRTPI);
    }
 
    inline auto BR_G_alpha(const double e, const double ept) {
      const auto width = alpha;
-     return exp(-sqr((e - ept) / width)) / (width * m_SQRTPI);
+     return std::exp(-sqr((e - ept) / width)) / (width * m_SQRTPI);
    }
 
    inline auto BR_h0(const double x) {
      const auto absx = std::abs(x);
-     return absx > omega0 ? 1.0 : exp(-sqr(log(absx / omega0) / alpha));
+     return absx > omega0 ? 1.0 : std::exp(-sqr(std::log(absx / omega0) / alpha));
    }
 
    // normalization = true: Cross-over funciton as proposed by A. Weichselbaum et al. 

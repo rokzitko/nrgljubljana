@@ -4,7 +4,9 @@
 #ifndef _splitting_hpp_
 #define _splitting_hpp_
 
+#include <iterator>
 #include <unordered_map>
+#include <utility>
 #include "portabil.hpp"
 #include "traits.hpp"
 #include "eigen.hpp"

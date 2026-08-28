@@ -5,8 +5,10 @@
 
 #include <cassert>
 #include <complex>
+#include <cstddef>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
 
 #include <fmt/format.h>
 

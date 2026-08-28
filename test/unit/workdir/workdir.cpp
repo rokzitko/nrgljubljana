@@ -3,6 +3,8 @@ using namespace std::string_literals;
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
+#include <ostream>
+#include <stdexcept>
 #include <workdir.hpp>
 
 using namespace NRG;

@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "nrg-general.hpp"
 #include "sym-NONE-impl.hpp"
 #include "sym-NONE.hpp" // include for consistency

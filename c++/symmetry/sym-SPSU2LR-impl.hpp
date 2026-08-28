@@ -1,4 +1,11 @@
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <vector>
+
 namespace NRG {
+
+using std::sqrt;
 
 template<typename SC>
 class SymmetrySPSU2LR : public SymLR<SC> {

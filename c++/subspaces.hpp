@@ -1,7 +1,14 @@
 #ifndef _subspaces_hpp_
 #define _subspaces_hpp_
 
+#include <cstddef>
+#include <iostream>
+#include <iterator>
+#include <map>
 #include <memory>
+#include <ostream>
+#include <string>
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <functional>

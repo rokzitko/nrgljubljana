@@ -1,6 +1,9 @@
 #ifndef _diag_serial_hpp_
 #define _diag_serial_hpp_
 
+#include <utility>
+#include <vector>
+
 #include "traits.hpp"
 #include "step.hpp"
 #include "operators.hpp"

@@ -3,7 +3,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <ostream>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 #include "traits.hpp"
 #include "params.hpp"
 #include "bins.hpp"
@@ -99,7 +107,7 @@ inline double windowfunction(const double E, const double Emin, const double Ex,
   if (E <= Emin || E >= Emax) return 0.0;  // Optimization
   // Window functions: f(0)=0, f(1)=1.
   const auto fnc_linear = [](const auto x) { return x ; };
-  const auto fnc_tanh_0 = [](const double x, const double NNtanh) { return tanh(NNtanh * (x - 0.5)); };
+  const auto fnc_tanh_0 = [](const double x, const double NNtanh) { return std::tanh(NNtanh * (x - 0.5)); };
   const auto fnc_tanh = [fnc_tanh_0](const double x, const double NNtanh) {
     const auto f0 = fnc_tanh_0(0, NNtanh);
     const auto fx = fnc_tanh_0(x, NNtanh);

@@ -1,3 +1,6 @@
+#include <initializer_list>
+#include <string>
+
 namespace NRG {
 
 // *** WARNING!!! Modify nrg-recalc-DBLQSZ.cc.m4, not nrg-recalc-DBLQSZ.cc !!!

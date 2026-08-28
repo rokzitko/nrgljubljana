@@ -1,9 +1,13 @@
 #ifndef _oprecalc_hpp_
 #define _oprecalc_hpp_
 
+#include <cstddef>
+#include <iostream>
 #include <string>
 #include <set>
 #include <memory>
+#include <ostream>
+#include <utility>
 #include "time_mem.hpp"
 #include "operators.hpp"
 #include "symmetry.hpp"

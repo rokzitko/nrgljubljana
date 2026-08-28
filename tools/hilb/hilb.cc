@@ -1,3 +1,8 @@
+#include <cstdlib>
+#include <exception>
+#include <iostream>
+#include <ostream>
+
 #include "hilb.hpp"
 
 int main(int argc, char *argv[]) {

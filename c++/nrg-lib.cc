@@ -1,3 +1,10 @@
+#include <complex>
+#include <iostream>
+#include <memory>
+#include <ostream>
+#include <string>
+#include <utility>
+
 #include "nrg-general.hpp"
 
 namespace NRG {

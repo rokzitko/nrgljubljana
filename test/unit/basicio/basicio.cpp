@@ -1,7 +1,16 @@
 #include <gtest/gtest.h>
+#include <complex>
+#include <cstddef>
 #include <cstdio>
 #include <fstream>
+#include <ios>
+#include <ostream>
+#include <set>
 #include <sstream>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <traits.hpp>
 #include <basicio.hpp>
@@ -9,6 +18,7 @@
 #include "compare.hpp"
 
 using namespace NRG;
+using std::literals::string_literals::operator""s;
 
 TEST(basicio, to_string) {
   auto res1 = to_string(std::complex(1.0,2.0));

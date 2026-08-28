@@ -1,6 +1,7 @@
 // Calculation of NRG chain coefficients
 // Rok Zitko, rok.zitko@ijs.si, 2009-2020
 
+#include <exception>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -15,6 +16,8 @@
 #include <algorithm>
 #include <ctime>
 #include <limits>
+#include <iterator>
+#include <ostream>
 #include <stdexcept>
 
 #include <gmp.h>

@@ -2,7 +2,9 @@
 
 #include <cstdio>
 #include <map>
+#include <stdexcept>
 #include <string>
+#include <vector>
 
 #include <h5.hpp>
 #include <output.hpp>

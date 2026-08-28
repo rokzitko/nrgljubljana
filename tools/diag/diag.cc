@@ -2,9 +2,13 @@
 // Computes eigenvalues and eigenvectors of a matrix
 // Rok Zitko, rok.zitko@ijs.si, 2009-2024
 
+#include <cstddef>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <cmath>
 #include <cstdlib>
 #include <cassert>

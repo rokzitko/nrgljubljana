@@ -1,14 +1,22 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <complex>
+#include <cstddef>
 #include <cstdio>
 #include <fstream>
+#include <initializer_list>
+#include <ios>
+#include <istream>
 #include <limits>
+#include <ostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 #include <hilb/hilb.hpp>

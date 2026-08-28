@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <string>
+
 #define main tdavg_program_main
 #include <tdavg/tdavg.cc>
 #undef main

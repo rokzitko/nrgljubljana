@@ -1,8 +1,13 @@
 #pragma once
 
+#include <sstream>
+#include <string>
+
 // test0_clean
 
 auto setup_P_clean(Params &P) {
+  using std::literals::string_literals::operator""s;
+
   EXPECT_EQ(P.Lambda.value(), 2.0); // defaults
   EXPECT_EQ(P.discretization.value(), "Z"s);
   EXPECT_EQ(P.Ninit.value(), 0);

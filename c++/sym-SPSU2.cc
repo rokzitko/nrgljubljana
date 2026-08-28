@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "nrg-general.hpp"
 #include "sym-SPSU2-impl.hpp"
 #include "sym-SPSU2.hpp" // include for consistency

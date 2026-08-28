@@ -1,8 +1,14 @@
 #ifndef _algo_DMNRG_hpp_
 #define _algo_DMNRG_hpp_
 
+#include <cmath>
 #include <complex>
+#include <cstddef>
+#include <memory>
+#include <string>
 #include <tuple>
+#include <utility>
+
 #include "traits.hpp"
 #include "blas_gemm.hpp"
 #include "algo.hpp"

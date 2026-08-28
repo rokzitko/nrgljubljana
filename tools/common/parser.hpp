@@ -2,6 +2,8 @@
 #define _tools_common_parser_hpp_
 
 #include <fstream>
+#include <ios>
+#include <istream>
 #include <string>
 
 namespace NRG::Tools {

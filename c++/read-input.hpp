@@ -1,7 +1,13 @@
 #ifndef _read_input_hpp_
 #define _read_input_hpp_
 
+#include <cctype>
+#include <cstddef>
+#include <fstream>
+#include <ios>
+#include <istream>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <iostream>
 #include <stdexcept>

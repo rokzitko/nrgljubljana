@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include <splitting.hpp>
 
 using namespace NRG;

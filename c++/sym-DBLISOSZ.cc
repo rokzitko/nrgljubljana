@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "nrg-general.hpp"
 #include "sym-DBLISOSZ-impl.hpp"
 #include "sym-DBLISOSZ.hpp" // include for consistency

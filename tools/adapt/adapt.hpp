@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <cstddef>
 #include <cmath>
 #include <cstdlib>
 #include <cassert>
@@ -14,6 +15,8 @@
 #include <map>
 #include <algorithm>
 #include <functional>
+#include <iterator>
+#include <ostream>
 #include <stdexcept>
 #include <optional>
 #include <memory>

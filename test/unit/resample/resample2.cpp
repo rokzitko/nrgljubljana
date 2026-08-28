@@ -3,6 +3,10 @@
 
 #include <cstdio>
 #include <fstream>
+#include <ostream>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 template<typename T1, typename T2, typename S1, typename S2>
 void compare(const std::vector<std::pair<T1,T2>> &a, const std::vector<std::pair<S1,S2>> &b) {

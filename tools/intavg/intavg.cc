@@ -11,6 +11,9 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <cmath>
 #include <cstdlib>
 #include <cassert>

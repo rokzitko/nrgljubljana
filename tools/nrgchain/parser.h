@@ -5,29 +5,33 @@
 // Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Dec 2008
 // $Id: parser.h,v 1.1 2009/03/20 09:53:41 rok Exp $
 
+#include <fstream>
+#include <map>
+#include <string>
+
 #include "../common/parser.hpp"
 
-map<string, string> params;
+std::map<std::string, std::string> params;
 
 // Return a parameter of type double, use default value if not found.
-double P(const string &keyword, double def) {
+double P(const std::string &keyword, double def) {
   return NRG::Tools::get_or_default(params, keyword, def, [](const auto &value) { return atof(value); });
 }
 
-int Pint(const string &keyword, int def) {
+int Pint(const std::string &keyword, int def) {
   return NRG::Tools::get_or_default(params, keyword, def, [](const auto &value) { return atoi(value); });
 }
 
-string Pstr(const string &keyword, string def) {
+std::string Pstr(const std::string &keyword, std::string def) {
   return NRG::Tools::get_or_default(params, keyword, def, [](const auto &value) { return value; });
 }
 
-bool Pbool(const string &keyword, bool def) {
+bool Pbool(const std::string &keyword, bool def) {
   return NRG::Tools::get_or_default(params, keyword, def, [](const auto &value) { return value == "true"; });
 }
 
-void parser(const string &filename) {
-  ifstream F;
+void parser(const std::string &filename) {
+  std::ifstream F;
   safe_open(F, filename);
 
   if (NRG::Tools::find_block(F, "param")) { NRG::Tools::parse_key_value_block(F, params); }

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <portabil.hpp>
+#include <ostream>
 #include <sstream>
 
 using namespace NRG;

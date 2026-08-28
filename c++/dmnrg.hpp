@@ -4,6 +4,7 @@
 #ifndef _dmnrg_hpp_
 #define _dmnrg_hpp_
 
+#include <algorithm>
 #include <memory>
 #include <fstream>
 #include <iomanip>
@@ -11,7 +12,11 @@
 #include <string>
 #include <cmath>
 #include <chrono>
+#include <cstddef>
+#include <iostream>
 #include <limits>
+#include <numeric>
+#include <ostream>
 #include <utility>
 
 #include "operators.hpp"
@@ -29,6 +34,8 @@
 #include <fmt/format.h>
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 // Check if the trace of the density matrix equals 'ref_value'.
 template<scalar S, typename MF>
@@ -280,7 +287,7 @@ DensMatElements<S> init_rho_FDM(const size_t N, const ThermoStore<S> &store, con
     rhoFDM[I] = zero_matrix<S>(ds.max());
     if (stats.ZnDNd[N] != 0.0)
       for (const auto i: ds.all())
-        rhoFDM[I](i, i) = exp(-ds.eig.values.abs_zero(i) / T) * stats.wn[N] / stats.ZnDNd[N];
+        rhoFDM[I](i, i) = std::exp(-ds.eig.values.abs_zero(i) / T) * stats.wn[N] / stats.ZnDNd[N];
   }
   if (checkrho && stats.wn[N] != 0.0) { // note: wn \propto ZnDNd, so this is the same condition as above
     // Trace should be equal to the total weight of the shell-N contribution to the FDM.

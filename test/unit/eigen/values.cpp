@@ -1,5 +1,6 @@
 #include <string>
 #include <sstream>
+#include <vector>
 #include <gtest/gtest.h>
 
 #include "compare.hpp"

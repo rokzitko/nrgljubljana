@@ -4,6 +4,10 @@
 #ifndef _tridiag_hpp_
 #define _tridiag_hpp_
 
+#include <cstddef>
+#include <iostream>
+#include <ostream>
+
 #include "mp.hpp"
 #include "coef.hpp"
 #include "params.hpp"

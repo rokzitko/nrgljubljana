@@ -3,6 +3,9 @@
 using namespace std::string_literals;
 #include <fstream>
 #include <exception>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
 
 #include <fmt/format.h>
 

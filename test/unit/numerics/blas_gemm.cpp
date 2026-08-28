@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <complex>
+#include <cstddef>
+#include <type_traits>
+
 #define USE_EIGEN
 #include <blas_gemm.hpp>
 #include <numerics.hpp>

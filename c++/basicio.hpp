@@ -2,16 +2,24 @@
 #define _basicio_hpp_
 
 #include <algorithm> // copy
+#include <cmath>
+#include <cstddef>
 #include <string>
 #include <complex>
 #include <set>
 #include <fstream>
+#include <ios>
 #include <iostream>
+#include <istream>
 #include <sstream>
 #include <iomanip> // set_precision
 #include <iterator> // ostream_iterator
+#include <limits>
+#include <ostream>
 #include <stdexcept>
 #include <cctype>
+#include <utility>
+#include <vector>
 #include <strings.h> // strcasecmp
 
 #include <fmt/format.h>

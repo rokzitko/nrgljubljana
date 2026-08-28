@@ -5,6 +5,7 @@
 #define _debug_hpp_
 
 #include <iostream>
+#include <ostream>
 #include <cstdlib> // exit
 
 namespace NRG {

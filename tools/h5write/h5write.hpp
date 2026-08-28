@@ -1,7 +1,13 @@
 #ifndef _h5write_h5write_hpp_
 #define _h5write_h5write_hpp_
 
+#include <cstdlib>
 #include <iostream>
+#include <memory>
+#include <ostream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include <traits.hpp>
 #include <basicio.hpp>
@@ -35,7 +41,7 @@ class H5Write {
      int c;
      while ((c = getopt(argc, argv, "hst")) != -1) {
        switch (c) {
-       case 'h': usage(); exit(EXIT_SUCCESS);
+       case 'h': usage(); std::exit(EXIT_SUCCESS);
        case 's': scalar = true; break;
        case 't': truncate = true; break;
        default: 

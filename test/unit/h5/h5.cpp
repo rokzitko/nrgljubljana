@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <type_traits>
 #include <complex>
+#include <string>
+#include <vector>
 
 #include <h5.hpp>
 

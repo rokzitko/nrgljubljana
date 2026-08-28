@@ -11,6 +11,8 @@
 #include <vector>
 #include <iostream>
 #include <cstdlib>
+#include <ostream>
+#include <utility>
 #include <boost/mpi/collectives.hpp>
 #if defined(NRGLJUBLJANA_ENABLE_FP_TRAPS) && NRGLJUBLJANA_ENABLE_FP_TRAPS
 #include <cstdio>

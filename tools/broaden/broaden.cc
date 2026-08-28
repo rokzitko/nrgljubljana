@@ -1,4 +1,6 @@
+#include <exception>
 #include <iostream>
+#include <ostream>
 #include "broaden.hpp"
 
 int main(int argc, char *argv[]) {

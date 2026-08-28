@@ -1,3 +1,7 @@
+#include <exception>
+#include <iostream>
+#include <ostream>
+
 #include "kk.hpp"
 
 int main(int argc, char *argv[]) {

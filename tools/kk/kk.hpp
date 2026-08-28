@@ -18,6 +18,11 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <cstddef>
+#include <cstdlib>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <vector>
 #include <utility>
 #include <cassert>
@@ -28,6 +33,7 @@
 #include <functional>
 #include <memory>
 #include <stdexcept>
+#include <tuple>
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
@@ -36,6 +42,8 @@
 #include <unistd.h>
 
 namespace NRG::KK {
+
+using std::size_t;
 
 struct gsl_accel_deleter {
   void operator()(gsl_interp_accel *acc) const {
@@ -203,16 +211,16 @@ class KK {
    }
 
    void parse_cmd_line(int argc, char *argv[]) {
-     if (argc == 2 && strcmp(argv[1], "-h") == 0) {
+     if (argc == 2 && std::strcmp(argv[1], "-h") == 0) {
        usage();
-       exit(EXIT_SUCCESS);
+       std::exit(EXIT_SUCCESS);
      }
      if (argc == 3) mode = MODE::FILES;
-     if (argc == 2 && strcmp(argv[1], "-") == 0) mode = MODE::STD;
+     if (argc == 2 && std::strcmp(argv[1], "-") == 0) mode = MODE::STD;
      if (mode != MODE::STD) about();
      if (mode == MODE::LIBRARY) {
        usage();
-       exit(1);
+       std::exit(1);
      }
      if (mode == MODE::FILES) {
        const std::string inputfn  = argv[1];
@@ -221,12 +229,12 @@ class KK {
        Fin.open(inputfn);
        if (!Fin) {
          std::cerr << "Can't open " << inputfn << " for reading." << std::endl;
-         exit(2);
+         std::exit(2);
        }
        Fout.open(outputfn);
        if (!Fout) {
          std::cerr << "Can't open " << outputfn << " for writing." << std::endl;
-         exit(2);
+         std::exit(2);
        }
      }
    }

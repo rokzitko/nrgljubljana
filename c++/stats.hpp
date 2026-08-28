@@ -1,6 +1,8 @@
 #ifndef _stats_hpp_
 #define _stats_hpp_
 
+#include <iostream>
+#include <ostream>
 #include <string>
 #include <map>
 #include <vector>
@@ -11,6 +13,8 @@
 #include "step.hpp"
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 // Structure for storing various statistical quantities calculated during the iteration
 template<scalar S, typename t_eigen = eigen_traits<S>, typename t_expv  = expv_traits<S>>

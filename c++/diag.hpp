@@ -7,6 +7,8 @@
 #include <type_traits> // is_same_v
 #include <algorithm>
 #include <complex>
+#include <cstddef>
+#include <functional>
 #include <vector>
 #include <memory>
 #include <iostream>
@@ -17,6 +19,8 @@
 #include <cmath>
 #include <cstdint>
 #include <numeric>
+#include <ostream>
+#include <utility>
 
 #include "traits.hpp"
 #include "params.hpp"
@@ -40,6 +44,8 @@
 #endif
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 #if NRG_ENABLE_CUDA
 inline void cuda_check(const cudaError_t status, const char *what) {
@@ -328,7 +334,7 @@ auto diagonalise_dsyevr(RM &m, const double ratio = 1.0, const char jobz = 'V', 
   auto M = dim;
   char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
-    M     = ceil(ratio * M); // round up
+    M     = std::ceil(ratio * M); // round up
     M     = std::clamp<lapack_int>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
@@ -456,7 +462,7 @@ auto diagonalise_zheevr(CM &m, const double ratio = 1.0, const char jobz = 'V', 
   auto M = dim;
   char RANGE = 'A'; // 'A'=all, 'V'=interval, 'I'=part
   if (ratio != 1.0) {
-    M     = ceil(ratio * M); // round up
+    M     = std::ceil(ratio * M); // round up
     M     = std::clamp<lapack_int>(M, 1, dim);        // at least 1, at most dim
     RANGE = 'I';
   }
@@ -519,7 +525,7 @@ template<real_matrix RM>
 auto diagonalise_cuda_dsyevd(RM &m, const char jobz = 'V', const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = size1(m);
-  const auto dim64 = static_cast<int64_t>(dim);
+  const auto dim64 = static_cast<std::int64_t>(dim);
   const auto elements = static_cast<size_t>(dim) * static_cast<size_t>(dim);
   auto ham = data(m);
   std::vector<double> eigenvalues(dim);
@@ -557,7 +563,7 @@ template<complex_matrix CM>
 auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V', const bool log_workspace = false) {
   if (!is_row_ordered(m)) m = NRG::trans(m);
   const auto dim = size1(m);
-  const auto dim64 = static_cast<int64_t>(dim);
+  const auto dim64 = static_cast<std::int64_t>(dim);
   const auto elements = static_cast<size_t>(dim) * static_cast<size_t>(dim);
   auto ham = data(m);
   std::vector<double> eigenvalues(dim);

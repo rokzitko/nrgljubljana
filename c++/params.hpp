@@ -4,6 +4,16 @@
 #ifndef _param_hpp_
 #define _param_hpp_
 
+#include <cstddef>
+#include <fstream>
+#include <iomanip>
+#include <ios>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
+#include <optional>
+#include <ostream>
 #include <utility>
 #include <list>
 #include <string>
@@ -720,9 +730,9 @@ class Params {
       // Campo, Oliveira PRB 72 104432, Eq. (46) [+ Lanczos]
       scale = (1.0 - 1. / Lambda) / std::log(Lambda); // NOLINT
     if (!substeps)
-      scale *= pow(Lambda, -(N - 1) / 2. + 1 - z); // NOLINT
+      scale *= std::pow(Lambda, -(N - 1) / 2. + 1 - z); // NOLINT
     else
-      scale *= pow(Lambda, -N / (2. * double(channels)) + 3 / 2. - z); // NOLINT
+      scale *= std::pow(Lambda, -N / (2. * double(channels)) + 3 / 2. - z); // NOLINT
     scale = scale * bandrescale; // RESCALE   // XXX: is this the appropriate place for rescaling? compatible with P.absolute==true?
     return scale;
   }
@@ -731,7 +741,7 @@ class Params {
   double last_step_scale() const noexcept { return SCALE(Nmax); }
 
   double nrg_step_scale_factor() const noexcept { // rescale factor in the RG transformation (matrix construction)
-    return absolute ? 1 : (!substeps ? sqrt(Lambda) : pow(Lambda, 0.5/double(channels))); // NOLINT
+    return absolute ? 1 : (!substeps ? std::sqrt(Lambda) : std::pow(Lambda, 0.5/double(channels))); // NOLINT
   }
 
   // Here we set the lowest frequency at which we will evaluate the spectral density. If the value is not predefined
@@ -750,7 +760,7 @@ class Params {
   double getE0()   const noexcept { return goodE; }
   double getEmin() const noexcept { return getE0(); }
   double getEx()   const noexcept { return getE0() * getEfactor(); }   // The "peak" energy of the "window function" in the patching procedure.
-  double getEmax() const noexcept { return getE0() * pow(getEfactor(),2); }
+  double getEmax() const noexcept { return getE0() * std::pow(getEfactor(),2); }
 
   auto Nall() const noexcept { return boost::irange(size_t(Ninit), size_t(Nlen)); }
 };

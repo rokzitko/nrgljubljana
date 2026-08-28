@@ -6,6 +6,7 @@
 
 #include <concepts>
 #include <complex>
+#include <cstddef>
 #include <vector>
 #include <type_traits> // is_same_v, is_floating_point_v
 

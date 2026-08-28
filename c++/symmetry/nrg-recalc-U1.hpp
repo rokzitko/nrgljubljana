@@ -1,3 +1,8 @@
+#include <complex>
+#include <initializer_list>
+#include <string>
+#include <type_traits>
+
 namespace NRG {
 
 // *** WARNING!!! Modify nrg-recalc-U1.cc.m4, not nrg-recalc-U1.cc !!!

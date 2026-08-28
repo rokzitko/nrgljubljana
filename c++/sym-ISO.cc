@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "nrg-general.hpp"
 #include "sym-ISO-impl.hpp"
 #include "sym-ISO.hpp" // include for consistency

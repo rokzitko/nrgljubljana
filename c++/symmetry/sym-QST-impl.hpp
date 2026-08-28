@@ -1,4 +1,12 @@
+#include <cmath>
+#include <complex>
+#include <cstddef>
+#include <cstdlib>
+#include <vector>
+
 namespace NRG {
+
+using std::sqrt;
 
 template<typename SC>
 class SymmetryQST : public Symmetry<SC> {

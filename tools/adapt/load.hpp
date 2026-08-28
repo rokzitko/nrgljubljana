@@ -7,6 +7,8 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <fstream>
+#include <ios>
 #include <iterator>
 #include <sstream>
 #include <stdexcept>

@@ -1,6 +1,10 @@
 #ifndef _algo_CFS_hpp_
 #define _algo_CFS_hpp_
 
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "traits.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"

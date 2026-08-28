@@ -1,4 +1,12 @@
+#include <cmath>
+#include <complex>
+#include <initializer_list>
+#include <string>
+#include <type_traits>
+
 namespace NRG {
+
+using std::sqrt;
 
 // *** WARNING!!! Modify nrg-recalc-SU2.cc.m4, not nrg-recalc-SU2.cc !!!
 

@@ -1,6 +1,10 @@
 %{
-#include <iostream>
+#include <cstdio>
+#include <cstddef>
 #include <cstdlib>
+#include <iostream>
+#include <ostream>
+
 #include "parser.hh"
 #include "matrix.h"
 #include <cmath>

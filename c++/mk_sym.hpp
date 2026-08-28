@@ -1,9 +1,14 @@
 #ifndef _mk_sym_hpp_
 #define _mk_sym_hpp_
 
+#include <complex>
+#include <cstddef>
+#include <iostream>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <stdexcept>
+#include <type_traits>
 
 #include "params.hpp"
 #include "symmetry.hpp"

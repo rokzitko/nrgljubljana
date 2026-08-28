@@ -1,7 +1,15 @@
 #include <string>
 #include <sstream>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <cstdio>
 #include <fstream>
+#include <list>
+#include <memory>
+#include <ostream>
+#include <stdexcept>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -201,10 +209,10 @@ TEST(params, scale) {
   EXPECT_EQ(P.discretization, "Z"s);
   const double s1 = (1.0-1.0/2.0)/std::log(2.0);
   EXPECT_LT(std::abs(P.SCALE(1) - s1), 1e-10);
-  const double s2 = s1/sqrt(2.0);
+  const double s2 = s1/std::sqrt(2.0);
   EXPECT_LT(std::abs(P.SCALE(2) - s2), 1e-10);
 
-  EXPECT_LT(std::abs(P.nrg_step_scale_factor() - sqrt(2.0)), 1e-10);
+  EXPECT_LT(std::abs(P.nrg_step_scale_factor() - std::sqrt(2.0)), 1e-10);
 
   P.Nmax = 1;
   EXPECT_LT(std::abs(P.last_step_scale() - s1), 1e-10);
@@ -222,10 +230,10 @@ TEST(params, invalid_discretization) {
 TEST(params, E) {
   Params P;
   P.Nmax = 1;
-  EXPECT_EQ(P.getEfactor(), sqrt(2.0));
+  EXPECT_EQ(P.getEfactor(), std::sqrt(2.0));
   EXPECT_EQ(P.getE0(), 2.0);
   EXPECT_EQ(P.getEmin(), 2.0);
-  EXPECT_EQ(P.getEx(), 2.0*sqrt(2.0));
+  EXPECT_EQ(P.getEx(), 2.0*std::sqrt(2.0));
   EXPECT_LT(std::abs(P.getEmax()-4.0), 1e-10);
 }
 

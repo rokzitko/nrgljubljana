@@ -4,8 +4,14 @@
 #ifndef _bins_hpp_
 #define _bins_hpp_
 
+#include <cfloat>
 #include <cmath>
+#include <complex>
+#include <cstddef>
+#include <iostream>
+#include <ostream>
 #include <stdexcept>
+
 #include <range/v3/all.hpp>
 #include "portabil.hpp"
 #include "traits.hpp"
@@ -61,13 +67,13 @@ class Bins {
 template<scalar S>
 void Bins<S>::setlimits() {
   // NOTE: this will silently discard spectral peaks far outside the conduction band!!
-  emax = (P.emax > 0 ? P.emax : P.SCALE(0) * pow(base, max_bin_shift));
-  emin = (P.emin > 0 ? P.emin : P.last_step_scale() / pow(base, min_bin_shift));
+  emax = (P.emax > 0 ? P.emax : P.SCALE(0) * std::pow(base, max_bin_shift));
+  emin = (P.emin > 0 ? P.emin : P.last_step_scale() / std::pow(base, min_bin_shift));
   if (!std::isfinite(emin) || !std::isfinite(emax) || emin <= 0.0 || emax <= 0.0 || emin >= emax)
     throw std::invalid_argument("Invalid binning limits: require finite 0 < emin < emax.");
   // Trick: use ceil/floor to obtain uniform binning grids for different values of the twist parameter z!
-  log10emin = floor(log10(emin));
-  log10emax = ceil(log10(emax));
+  log10emin = std::floor(std::log10(emin));
+  log10emax = std::ceil(std::log10(emax));
 }
 
 template<scalar S>
@@ -85,7 +91,7 @@ void Bins<S>::loggrid_acc() {
   const double a = P.accumulation;
   my_assert(a > 0.0);
   bins.resize(0);
-  for (auto e = emin; e <= emax; e *= pow(base, 1.0 / P.bins))
+  for (auto e = emin; e <= emax; e *= std::pow(base, 1.0 / P.bins))
     bins.emplace_back((emax - a) / emax * e + a, 0);
   if (P.linstep > 0)
     for (auto e = a; e > 0.0; e -= P.linstep) bins.emplace_back(e, 0);
@@ -98,7 +104,7 @@ template<scalar S>
 void Bins<S>::loggrid_std() {
   const auto nrbins = (size_t)((log10emax - log10emin) * P.bins + 1.0);
   bins.resize(nrbins); // Note: Spikes is a vector type!
-  for (const auto i : range0(nrbins)) bins[i] = { pow(base, log10emin + (double)i / P.bins), 0 };
+  for (const auto i : range0(nrbins)) bins[i] = { std::pow(base, log10emin + (double)i / P.bins), 0 };
 }
 
 // Unbiased assignment of the spectral weight to bins.
@@ -119,9 +125,9 @@ inline void Bins<S>::add_std(const double energy, const t_weight weight) {
     bins[0].second += weight;
     return;
   }
-  const double log10e  = log10(energy);
+  const double log10e  = std::log10(energy);
   const double x = (log10e - log10emin) * P.bins;
-  const double int_part = floor(x);
+  const double int_part = std::floor(x);
   if (int_part < 0) {
     bins.front().second += weight;
   } else if (const auto index = size_t(int_part) ; index >= bins.size() - 1) {

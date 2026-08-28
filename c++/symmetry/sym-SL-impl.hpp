@@ -1,4 +1,9 @@
+#include <cmath>
+#include <vector>
+
 namespace NRG {
+
+using std::pow;
 
 template<typename SC>
 class SymmetrySL : public Symmetry<SC> {

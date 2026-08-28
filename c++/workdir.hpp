@@ -1,12 +1,15 @@
 #ifndef _workdir_hpp_
 #define _workdir_hpp_
 
+#include <cstddef>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <optional>
 #include <stdexcept>
 #include <filesystem>
 #include <iostream>
+#include <system_error>
 #include <cstring> // strncpy
 #include <cstdlib> // mkdtemp, getenv
 #include "portabil.hpp" // remove(std::string)

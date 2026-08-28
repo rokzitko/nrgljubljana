@@ -1,5 +1,11 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <cmath>
+#include <complex>
+#include <cstddef>
+#include <vector>
+
 #define USE_EIGEN
 #include <traits.hpp>
 #include <numerics.hpp>
@@ -69,7 +75,7 @@ TEST(numerics_Eigen, trace_exp_real) {
     m(i) = i + 1;
   T expected = 0;
   for(size_t i = 0; i < N; i++)
-    expected += exp(-2.5 * v[i]) * m(i, i);
+    expected += std::exp(-2.5 * v[i]) * m(i, i);
   compare(expected, trace_exp(v, m, 2.5));
 }
 
@@ -84,7 +90,7 @@ TEST(numerics_Eigen, trace_exp_complex) {
     m(j) = j + 3.0 + 2i * (double)j;
   T expected = 0;
   for(size_t i = 0; i < N; i++)
-    expected += exp(- 2.5 * v(i)) * m(i, i);
+    expected += std::exp(- 2.5 * v(i)) * m(i, i);
   compare(expected, trace_exp(v, m, 2.5));
 }
 

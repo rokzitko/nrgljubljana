@@ -4,12 +4,17 @@
 #ifndef _symmetry_hpp_
 #define _symmetry_hpp_
 
+#include <cmath>
+#include <complex>
+#include <cstddef>
 #include <string>
 #include <vector>
 #include <iostream>
 #include <iomanip>
 #include <limits>
 #include <optional>
+#include <ostream>
+#include <utility>
 
 #include "operators.hpp"
 #include "params.hpp"
@@ -23,6 +28,8 @@
 #include "coef.hpp"
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 using cmpl = std::complex<double>;
 
@@ -125,7 +132,7 @@ class Symmetry {
    [[nodiscard]] virtual size_t mult(const Invar &) const { return 1; };
    auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
    auto calculate_Z(const Invar &I, const Eigen<S> &eig, const double rescale_factor) const {
-     return mult(I) * ranges::accumulate(eig.value_corr_msr(), 0.0, {}, [rf=rescale_factor](const auto &x) { return exp(-rf*x); });
+     return mult(I) * ranges::accumulate(eig.value_corr_msr(), 0.0, {}, [rf=rescale_factor](const auto &x) { return std::exp(-rf*x); });
    }
    // Does the combination of subspaces I1 and I2 contribute to the spectral function corresponding to spin SPIN?
    [[nodiscard]] virtual bool check_SPIN([[maybe_unused]] const Invar &I1, [[maybe_unused]] const Invar &I2, [[maybe_unused]] const int &SPIN) const { return true; }

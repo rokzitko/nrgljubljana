@@ -4,6 +4,15 @@
 #include <cstddef>
 #include <set>
 #include <algorithm>
+#include <cmath>
+#include <complex>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <ostream>
+#include <string>
+#include <vector>
+
 #include <range/v3/all.hpp>
 
 #include "constants.hpp"
@@ -41,6 +50,8 @@
 #include <fmt/color.h>
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 // Determine the ranges of index r
 template<scalar S>

@@ -4,6 +4,10 @@
 #ifndef _misc_hpp_
 #define _misc_hpp_
 
+#include <cassert>
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 #include <iterator>
@@ -13,11 +17,16 @@
 #include <set>
 #include <map>
 #include <fstream>
+#include <iomanip>
+#include <ios>
 #include <iostream>
+#include <istream>
+#include <ostream>
 #include <sstream>
 #include <cstring> // stdcasecmp
 #include <exception>
 #include <cstdio> // stdout
+#include <utility>
 #include <unistd.h> // isatyy
 
 #include <boost/range/irange.hpp>
@@ -31,6 +40,8 @@
 #include <Eigen/Dense>
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 inline bool is_stdout_redirected() {
   return !isatty(fileno(stdout));

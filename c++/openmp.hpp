@@ -9,7 +9,9 @@
 #include <dlfcn.h>
 #include <fstream>
 #include <iomanip>
+#include <ios>
 #include <iostream>
+#include <ostream>
 #include <set>
 #include <string>
 #include <utility>

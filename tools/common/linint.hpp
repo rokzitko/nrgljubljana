@@ -1,6 +1,7 @@
 #ifndef _tools_common_linint_hpp_
 #define _tools_common_linint_hpp_
 
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <utility>

@@ -9,9 +9,14 @@
 // CHANGE LOG
 // 21.5.2014 - first version
 
+#include <cstddef>
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <vector>
 #include <utility>
 #include <cassert>

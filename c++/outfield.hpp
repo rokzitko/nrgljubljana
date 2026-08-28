@@ -4,10 +4,13 @@
 #ifndef _outfield_hpp_
 #define _outfield_hpp_
 
+#include <cstddef>
 #include <vector>
 #include <string>
 #include <fstream>
+#include <iomanip>
 #include <optional>
+#include <ostream>
 #include <stdexcept>
 
 #include <fmt/format.h>

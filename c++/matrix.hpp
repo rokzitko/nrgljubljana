@@ -4,6 +4,7 @@
 #ifndef _matrix_hpp_
 #define _matrix_hpp_
 
+#include <cstddef>
 #include <stdexcept>
 
 #include "invar.hpp"

@@ -7,13 +7,21 @@
 #ifndef _numerics_hpp_
 #define _numerics_hpp_
 
+#include <algorithm>
 #include <concepts>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <complex>
+#include <cstddef>
 #include <iomanip>
 #include <vector>
 #include <fstream>
+#include <iostream>
+#include <limits>
+#include <ostream>
+#include <string>
+#include <utility>
 #include <stdexcept>
 #include <range/v3/all.hpp>
 #include <boost/io/ios_state.hpp>
@@ -100,7 +108,7 @@ V sum2(const std::vector<std::pair<U,V>> &v) { // sum second elements of a vecto
     return ranges::accumulate(v, V{}, {}, [](const auto el) { return el.second; });
 }
  
-[[nodiscard]] constexpr std::complex<double> conj_me(const std::complex<double> &z) { return conj(z); } // conjugation
+[[nodiscard]] constexpr std::complex<double> conj_me(const std::complex<double> &z) { return std::conj(z); } // conjugation
 [[nodiscard]] constexpr double conj_me(const double x) { return x; }    // no op
 
 template<scalar S, typename Matrix = Matrix_traits<S>>
@@ -153,7 +161,7 @@ inline auto are_conjugate(const std::complex<double> &a, const std::complex<doub
 template<matrix M> auto frobenius_norm(const M &m) { // Frobenius norm (without taking the final square root!)
   double sum{};
   for (auto i = 0; i < size1(m); i++)
-    for (auto j = 0; j < size2(m); j++) sum += pow(std::abs(m(i, j)),2);
+    for (auto j = 0; j < size2(m); j++) sum += std::pow(std::abs(m(i, j)),2);
   return sum;
 }
 
@@ -225,6 +233,7 @@ auto finite_size(const R &m) { return size1(m) && size2(m); }
 template<typename R, matrix M>
 auto trace_exp(R && v, const M &m, const double factor) { // Tr[exp(-factor*v) m]
   assert(v.size() == size1(m) && v.size() == size2(m));
+  using std::exp;
   return ranges::accumulate(range0(v.size()), typename M::value_type{}, {}, [&v, &m, factor](const auto i){ return exp(-factor * v[i]) * m(i, i); });
 }
 
@@ -232,6 +241,7 @@ auto trace_exp(R && v, const M &m, const double factor) { // Tr[exp(-factor*v) m
 template<typename R>
 auto sum_of_exp(R && values, const double factor) // sum exp(-factor*x)
 {
+  using std::exp;
   return ranges::accumulate(values, 0.0, {}, [factor](const auto &x){ return exp(-factor*x); });
 }      
 
@@ -245,8 +255,12 @@ auto trace_contract(const M &A, const M &B, const size_t range) // Tr[AB]
   return sum;
 }
 
+} // namespace
+
 #include "numerics_Eigen.hpp"
 #include "numerics_CUDA.hpp"
+
+namespace NRG {
 
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void product(const std::string &mult, EM &M, const t_coef factor, const EM &A, const EM &B) {
@@ -353,11 +367,11 @@ inline auto chit_weight(const double En, const double Em, const double beta) {
   if (std::abs(x) > WEIGHT_TOL) {
     // If one of {betaEm,betaEn} is small, one of exp() will have a value around 1, the other around 0, thus the
     // overall result will be approximately +-1/x.
-    return (exp(-betaEm) - exp(-betaEn)) / x;
+    return (std::exp(-betaEm) - std::exp(-betaEn)) / x;
   } else {
     // Special case for Em~En. In this case, we are integrating a constant over tau\in{0,\beta}, and dividing this by
     // beta we get 1. What remains is the Boltzmann weight exp(-betaEm).
-    return exp(-betaEm);
+    return std::exp(-betaEm);
   }
 }
 

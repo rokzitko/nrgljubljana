@@ -7,7 +7,9 @@
 #include <utility>
 #include <vector>
 #include <cmath>
+#include <iomanip>
 #include <limits> // quiet_NaN
+#include <type_traits>
 
 #include <range/v3/all.hpp>
 
@@ -47,12 +49,12 @@ inline double BR_L(double e, double ept, double alpha) {
   if ((e < 0.0 && ept > 0.0) || (e > 0.0 && ept < 0.0)) return 0.0;
   if (ept == 0.0) return 0.0;
   const double gamma = alpha/4.0;
-  return exp(-pow(log(e / ept) / alpha - gamma, 2)) / (alpha * std::abs(e) * M_SQRTPI);
+  return std::exp(-std::pow(std::log(e / ept) / alpha - gamma, 2)) / (alpha * std::abs(e) * M_SQRTPI);
 }
 
 // Normalized to 1, width omega0. The kernel is symmetric in both
 // arguments.
-inline double BR_G(double e, double ept, double omega0) { return exp(-pow((e - ept) / omega0, 2)) / (omega0 * M_SQRTPI); }
+inline double BR_G(double e, double ept, double omega0) { return std::exp(-std::pow((e - ept) / omega0, 2)) / (omega0 * M_SQRTPI); }
 
 // Note: 'ept' is the energy of the delta peak in the raw spectrum,
 // 'e' is the energy of the data point in the broadened spectrum.
@@ -65,7 +67,7 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
   // of 'ept'! This breaks the normalization at finite temperatures.
   // On the other hand, it gives nicer spectra when used in conjunction
   // with the self-energy trick.
-  double BR_h = exp(-pow(log(std::abs(e) / omega0) / alpha, 2));
+  double BR_h = std::exp(-std::pow(std::log(std::abs(e) / omega0) / alpha, 2));
   my_assert(BR_h >= 0.0 && BR_h <= 1.0);
   return part_l * BR_h + BR_G(e, ept, omega0) * (1.0 - BR_h);
 }
@@ -73,14 +75,14 @@ inline double BR_NEW(double e, double ept, double alpha, double omega0) {
 // Calculate "moment"-th spectral moment.
 template<scalar S, typename t_weight = weight_traits<S>>
 auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int moment) {
-  auto sumA = ranges::accumulate(s_pos, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*pow(e,moment); });
-  auto sumB = ranges::accumulate(s_neg, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*pow(-e,moment); });
+  auto sumA = ranges::accumulate(s_pos, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*std::pow(e,moment); });
+  auto sumB = ranges::accumulate(s_neg, t_weight{}, {}, [moment](const auto &x){ const auto &[e,w] = x; return w*std::pow(-e,moment); });
   return sumA+sumB;
 }
 
 inline constexpr double unsafe_fermi_fnc(const double omega, const double T) {
   const auto x = omega/T;
-  return 1.0 / (1.0 + exp(-x));
+  return 1.0 / (1.0 + std::exp(-x));
 }
 
 template <class T> T sigmoid(T x) noexcept {
@@ -117,7 +119,7 @@ inline double fermi_fnc(const double omega, const double T) noexcept {
 
 inline constexpr double unsafe_bose_fnc(const double omega, const double T) {
   const auto x = omega/T;
-  const auto d = 1.0 - exp(-x);
+  const auto d = 1.0 - std::exp(-x);
   return d != 0.0 ? 1.0/d : std::numeric_limits<double>::quiet_NaN();
 }
 

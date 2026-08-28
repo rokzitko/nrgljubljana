@@ -1,13 +1,19 @@
 #ifndef _operators_hpp_
 #define _operators_hpp_
 
+#include <cstddef>
+#include <ios>
+#include <istream>
 #include <map>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
 #include <iomanip>
+#include <ostream>
 #include <string>
 #include <stdexcept>
+#include <system_error>
+#include <vector>
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>

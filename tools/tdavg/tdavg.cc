@@ -7,10 +7,14 @@
 #define USAGE "[-h] [input] [reference]"
 #define AUTHOR "Rok Zitko, rok.zitko@ijs.si, 2020"
 
+#include <cctype>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <cmath>
 #include <cstdlib>
 #include <cassert>

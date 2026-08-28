@@ -1,5 +1,6 @@
 #include <string>
 #include <sstream>
+#include <complex>
 #include <gtest/gtest.h>
 
 #include "test_common.hpp"

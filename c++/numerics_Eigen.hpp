@@ -3,12 +3,21 @@
 #ifndef _NUMERICS_EIGEN_HPP_
 #define _NUMERICS_EIGEN_HPP_
 
+#include <cassert>
+#include <cstddef>
+#include <ios>
+#include <istream>
+#include <stdexcept>
+#include <utility>
+
 #include <Eigen/Dense>
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
 #include "basicio.hpp"
+
+namespace NRG {
 
 template <scalar S>
 [[nodiscard]] EigenMatrix<S> generate_Eigen(const size_t size1, const size_t size2) {
@@ -172,5 +181,7 @@ EigenMatrix<T> matrix_adj_prod(const U &A, const V &B) {
   gemm_hn<T>(T(1), A, B, T(0), result);
   return result;
 }
+
+} // namespace
 
 #endif

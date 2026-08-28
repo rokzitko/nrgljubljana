@@ -1,5 +1,8 @@
 #include <string>
 #include <sstream>
+#include <iostream>
+#include <ostream>
+#include <utility>
 #include <gtest/gtest.h>
 
 #include "test_common.hpp"

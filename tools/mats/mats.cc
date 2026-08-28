@@ -6,10 +6,14 @@
 
 #define VERSION "0.0.1"
 
+#include <exception>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <cmath>
 #include <cstdlib>
 #include <cassert>

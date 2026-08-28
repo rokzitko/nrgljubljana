@@ -1,6 +1,12 @@
 #ifndef _measurements_hpp_
 #define _measurements_hpp_
 
+#include <cmath>
+#include <cstddef>
+#include <iostream>
+#include <ostream>
+#include <string>
+
 #include "step.hpp"
 #include "eigen.hpp"
 #include "operators.hpp"
@@ -13,7 +19,9 @@
 #include "mp.hpp"
 
 namespace NRG {
-   
+
+using std::string_literals::operator""s;
+
 // Measure thermodynamic expectation values of singlet operators
 template<scalar S, typename MF>
 void measure_singlet(const double factor, Stats<S> &stats, const Operators<S> &a, MF mult, const DiagInfo<S> &diag, const Params &P) {
@@ -67,8 +75,8 @@ void calc_ZnD(const ThermoStore<S> &store, Stats<S> &stats, const Symmetry<S> *S
     for (const auto &[I, ds] : store[N])
       for (const auto i : ds.all()) {
         my_mpf g, n;
-        mpf_set_d(g, Sym->mult(I) * exp(-ds.eig.values.abs_G(i)/T));     // abs_G >= 0.0
-        mpf_set_d(n, Sym->mult(I) * exp(-ds.eig.values.abs_zero(i)/T)); // abs_zero >= 0.0
+        mpf_set_d(g, Sym->mult(I) * std::exp(-ds.eig.values.abs_G(i)/T));     // abs_G >= 0.0
+        mpf_set_d(n, Sym->mult(I) * std::exp(-ds.eig.values.abs_zero(i)/T)); // abs_zero >= 0.0
         mpf_add(ZnDG, ZnDG, g);
         mpf_add(ZnDN, ZnDN, n);
       }
@@ -117,8 +125,8 @@ void report_ZnD(Stats<S> &stats, const Params &P) {
 template<scalar S>
 void fdm_thermodynamics(const ThermoStore<S> &store, Stats<S> &stats, const Symmetry<S> *Sym, const double T)
 {
-  stats.Z_fdm = stats.ZZG*exp(-stats.GS_energy/T); // this is the true partition function
-  stats.F_fdm = -log(stats.ZZG)*T+stats.GS_energy; // F = -k_B*T*log(Z)
+  stats.Z_fdm = stats.ZZG*std::exp(-stats.GS_energy/T); // this is the true partition function
+  stats.F_fdm = -std::log(stats.ZZG)*T+stats.GS_energy; // F = -k_B*T*log(Z)
   // We use multiple precision arithmetics to ensure sufficient accuracy in the calculation of
   // the variance of energy and thus the heat capacity.
   my_mpf E, E2;
@@ -129,7 +137,7 @@ void fdm_thermodynamics(const ThermoStore<S> &store, Stats<S> &stats, const Symm
       for (const auto &[I, ds] : store[N])
         for (const auto i : ds.all()) {
           my_mpf weight;
-          mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * exp(-ds.eig.values.abs_zero(i)/T));
+          mpf_set_d(weight, stats.wn[N] * Sym->mult(I) * std::exp(-ds.eig.values.abs_zero(i)/T));
           mpf_div(weight, weight, stats.ZnDN[N]);
           my_mpf e;
           mpf_set_d(e, ds.eig.values.abs_T(i));
@@ -145,7 +153,7 @@ void fdm_thermodynamics(const ThermoStore<S> &store, Stats<S> &stats, const Symm
   mpf_mul(sqrE, E, E);
   my_mpf varE;
   mpf_sub(varE, E2, sqrE);
-  stats.C_fdm = mpf_get_d(varE)/pow(T,2);
+  stats.C_fdm = mpf_get_d(varE)/std::pow(T,2);
   stats.S_fdm = (stats.E_fdm-stats.F_fdm)/T;
   std::cout << std::endl;
   std::cout << "Z_fdm=" << HIGHPREC(stats.Z_fdm) << std::endl;
@@ -173,15 +181,15 @@ void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats,
   const auto rescale_factor = step.TD_factor() * additional_factor;
   const auto Z  = diag.trace([]([[maybe_unused]] double x) { return 1; }, rescale_factor, Sym->multfnc()); // partition function
   const auto E  = diag.trace([](double x) { return x; },                  rescale_factor, Sym->multfnc()); // Tr[beta H]
-  const auto E2 = diag.trace([](double x) { return pow(x,2); },           rescale_factor, Sym->multfnc()); // Tr[(beta H)^2]
+  const auto E2 = diag.trace([](double x) { return std::pow(x,2); },      rescale_factor, Sym->multfnc()); // Tr[(beta H)^2]
   stats.Z = Z;
   nrglog('Z', "Z_td=" << stats.Z);
   stats.td.set("T",     step.Teff());
   stats.td.set("<E>",   E/Z);               // beta <H>
   stats.td.set("<E^2>", E2/Z);              // beta^2 <H^2>
-  stats.td.set("C",     E2/Z - pow(E/Z,2)); // C/k_B=beta^2(<H^2>-<H>^2)
-  stats.td.set("F",     -log(Z));           // F/(k_B T)=-ln(Z)
-  stats.td.set("S",     E/Z+log(Z));        // S/k_B=beta<H>+ln(Z)
+  stats.td.set("C",     E2/Z - std::pow(E/Z,2)); // C/k_B=beta^2(<H^2>-<H>^2)
+  stats.td.set("F",     -std::log(Z));           // F/(k_B T)=-ln(Z)
+  stats.td.set("S",     E/Z+std::log(Z));        // S/k_B=beta<H>+ln(Z)
   Sym->calculate_TD(step, diag, stats, rescale_factor);  // symmetry-specific calculation routine
   stats.td.save_values();
 }

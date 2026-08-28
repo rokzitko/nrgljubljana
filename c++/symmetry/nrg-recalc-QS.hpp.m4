@@ -1,4 +1,10 @@
+#include <cmath>
+#include <initializer_list>
+#include <string>
+
 namespace NRG {
+
+using std::sqrt;
 
 // *** WARNING!!! Modify nrg-recalc-QS.cc.m4, not nrg-recalc-QS.cc !!!
 

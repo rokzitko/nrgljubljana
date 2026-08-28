@@ -5,6 +5,9 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <cmath>
 #include <cstdlib>
 #include <cassert>
@@ -59,7 +62,7 @@ class BinAvg {
        switch (c) {
        case 'h':
          usage();
-         exit(EXIT_SUCCESS);
+         std::exit(EXIT_SUCCESS);
        case 'v': verbose = true; break;
        case 'o': one = true; break;
        case '2':
@@ -70,16 +73,16 @@ class BinAvg {
          nrcol = 2;
          col   = 2;
          break;
-       default: abort();
+       default: std::abort();
        }
      }
      int remaining = argc - optind; // arguments left
      if (remaining != 2) {
        usage();
-       exit(1);
+       std::exit(1);
      }
      name = std::string(argv[optind]); // Name of spectral density files
-     Nz = atoi(argv[optind + 1]); // Number of z-values
+     Nz = std::atoi(argv[optind + 1]); // Number of z-values
      if (!(Nz >= 1)) throw std::invalid_argument("Nz must be greater than or equal to 1.");
      std::cout << "Processing: " << name << std::endl;
      std::cout << "Nz=" << Nz << std::endl;
@@ -92,7 +95,7 @@ class BinAvg {
      std::ifstream f(filename.c_str(), std::ios::in | std::ios::binary);
      if (!f.good() || f.eof() || !f.is_open()) {
        std::cerr << "Error opening file " << filename << std::endl;
-       exit(1);
+       std::exit(1);
      }
      if (verbose) { std::cout << "Reading " << filename << std::endl; }
      const int rows = 1 + nrcol; // number of elements in a line
@@ -111,7 +114,7 @@ class BinAvg {
       f.read((char *)buffer.data(), len);
      if (f.fail()) {
        std::cerr << "Error reading " << filename << std::endl;
-       exit(1);
+       std::exit(1);
       }
       f.close();
       // Keep record of the the buffer and its size.
@@ -170,7 +173,7 @@ class BinAvg {
      std::ofstream F(filename.c_str(), std::ios::out | std::ios::binary);
      if (!F) {
        std::cerr << "Failed to open " << filename << " for writing." << std::endl;
-       exit(1);
+       std::exit(1);
      }
      F << std::setprecision(SAVE_PREC);
      assert(x.size() == y.size());

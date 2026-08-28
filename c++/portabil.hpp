@@ -7,7 +7,10 @@
 #include <stdexcept>
 #include <string>
 #include <fstream>
+#include <ios>
 #include <iostream>
+#include <istream>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <optional>

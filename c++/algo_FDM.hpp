@@ -1,8 +1,15 @@
 #ifndef _algo_FDM_hpp_
 #define _algo_FDM_hpp_
 
+#include <cmath>
 #include <complex>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
+
 #include "traits.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"
@@ -37,7 +44,7 @@ class Algo_FDMls : virtual public Algo<S> {
       const auto rho_op2 = prod_fit(rhoFDM.at(Ij), op2);
       const auto absGi   = diagIi.values.all_abs_G() | ranges::to_vector;
       const auto absGj   = diagIj.values.all_abs_G() | ranges::to_vector;
-      const auto boltzGj = absGj | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+      const auto boltzGj = absGj | ranges::views::transform([T](const auto E) { return std::exp(-E / T); }) | ranges::to_vector;
       const auto add_exp_weight = [this, &absGi, &absGj, &boltzGj, &op1, &op2, factor, weight_scale = (-sign) * wnf](const auto i, const auto j) {
         cb->add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * op2(j, i) * weight_scale * boltzGj[j]), factor);
       };
@@ -86,7 +93,7 @@ class Algo_FDMgt : virtual public Algo<S> {
       const auto op2_rho = prod_fit(op2, rhoFDM.at(Ii));
       const auto absGi   = diagIi.values.all_abs_G() | ranges::to_vector;
       const auto absGj   = diagIj.values.all_abs_G() | ranges::to_vector;
-      const auto boltzGi = absGi | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+      const auto boltzGi = absGi | ranges::views::transform([T](const auto E) { return std::exp(-E / T); }) | ranges::to_vector;
       const auto add_exp_weight = [this, &absGi, &absGj, &boltzGi, &op1, &op2, factor, wnf](const auto i, const auto j) {
         cb->add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * op2(j, i) * wnf * boltzGi[i]), factor);
       };
@@ -137,8 +144,8 @@ class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
       const auto op2_rho = prod_fit(op2, rho.at(Ip));
       const auto absGi   = diagIp.values.all_abs_G() | ranges::to_vector;
       const auto absGj   = diagI1.values.all_abs_G() | ranges::to_vector;
-      const auto boltzGi = absGi | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
-      const auto boltzGj = absGj | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+      const auto boltzGi = absGi | ranges::views::transform([T](const auto E) { return std::exp(-E / T); }) | ranges::to_vector;
+      const auto boltzGj = absGj | ranges::views::transform([T](const auto E) { return std::exp(-E / T); }) | ranges::to_vector;
 
       const auto add_exp_weight = [&gt_cb, &ls_cb, &absGi, &absGj, &boltzGi, &boltzGj, &op1, &op2, factor, wnf, sign_ = sign](const auto i, const auto j) {
         const auto energy = absGj[j] - absGi[i];
@@ -209,8 +216,8 @@ class Algo_FDMmats : public Algo<S> {
       const auto op2_rho  = prod_fit(op2, rhoFDM.at(Ii));
       const auto absGi    = diagIi.values.all_abs_G() | ranges::to_vector;
       const auto absGj    = diagIj.values.all_abs_G() | ranges::to_vector;
-      const auto boltzGi  = absGi | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
-      const auto boltzGj  = absGj | ranges::views::transform([T](const auto E) { return exp(-E / T); }) | ranges::to_vector;
+      const auto boltzGi  = absGi | ranges::views::transform([T](const auto E) { return std::exp(-E / T); }) | ranges::to_vector;
+      const auto boltzGj  = absGj | ranges::views::transform([T](const auto E) { return std::exp(-E / T); }) | ranges::to_vector;
       std::vector<t_weight> mats_freq(cutoff);
       for (size_t n = 0; n < cutoff; n++) mats_freq[n] = ww(n, gt, T) * 1i;
       const auto term1_factors = [&absGi, &absGj, &boltzGi, &boltzGj, &op1, &op2, wnf, this](const auto i, const auto j) {

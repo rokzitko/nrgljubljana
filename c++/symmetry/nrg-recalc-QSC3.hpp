@@ -1,3 +1,7 @@
+#include <complex>
+#include <initializer_list>
+#include <type_traits>
+
 namespace NRG {
 
 // *** WARNING!!! Modify nrg-recalc-QSC3.cc.m4, not nrg-recalc-QSC3.cc !!!

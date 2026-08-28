@@ -1,10 +1,13 @@
 #ifndef _matsubara_hpp_
 #define _matsubara_hpp_
 
+#include <cstddef>
 #include <vector>
 #include <utility>
 #include <cmath>
 #include <iomanip>
+#include <ostream>
+
 #include "traits.hpp"
 
 namespace NRG {

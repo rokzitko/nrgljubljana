@@ -5,19 +5,25 @@
 #include <algorithm>
 #include <cerrno>
 #include <cctype>
+#include <cstddef>
 #include <cmath>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <ios>
+#include <istream>
 #include <limits>
 #include <map>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <sstream>
 #include <system_error>
+#include <streambuf>
 #include <utility>
 #include <vector>
 
@@ -30,6 +36,8 @@
 #include "nrgchain.hpp"
 
 namespace {
+
+using std::size_t;
 
 struct Options {
   std::string param_filename = "param";

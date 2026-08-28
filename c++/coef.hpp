@@ -1,9 +1,13 @@
 #ifndef _coef_hpp_
 #define _coef_hpp_
 
+#include <cstddef>
+#include <ios>
 #include <vector>
 #include <fstream>
+#include <istream>
 #include <stdexcept>
+
 #include "traits.hpp"
 #include "params.hpp"
 #include "numerics.hpp" // read_vector

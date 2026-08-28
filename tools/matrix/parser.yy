@@ -5,15 +5,20 @@
 */
 
 %{
+#include <cstddef>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <cmath>
 #include <cassert>
 #include <unistd.h>
+#include <string>
 #include <vector>
 
 #include "matrix.h"

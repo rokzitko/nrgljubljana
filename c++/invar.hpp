@@ -4,6 +4,13 @@
 #ifndef _nrg_invar_hpp_
 #define _nrg_invar_hpp_
 
+#include <cstddef>
+#include <initializer_list>
+#include <ios>
+#include <istream>
+#include <iterator>
+#include <ostream>
+#include <sstream>
 #include <utility>
 #include <string>
 #include <vector>
@@ -17,6 +24,8 @@
 #include "portabil.hpp"
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 // Conversion functions: multiplicity (integer) -> quantum number (floating point)
 // WARNING: avoid using S as template variable in places where S() is used!!!

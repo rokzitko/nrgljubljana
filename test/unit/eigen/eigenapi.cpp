@@ -1,7 +1,15 @@
 #include <string>
 #include <sstream>
+#include <cmath>
+#include <cstddef>
+#include <exception>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <filesystem>
+#include <ios>
+#include <ostream>
+#include <utility>
+#include <vector>
 
 #include "compare.hpp"
 #include "test_common.hpp"
@@ -184,7 +192,7 @@ TEST(Diag, constructor) { // NOLINT
   EXPECT_EQ(diag.dims(Invar(0,1),Invar(1,2)), std::make_pair(2ul,3ul));
   EXPECT_EQ(diag.count_states(Sym->multfnc()), 2*1+3*2); // multiplicity!
   EXPECT_DOUBLE_EQ(diag.trace([](const auto x){ return 1; }, 1.0, Sym->multfnc()), 
-                       exp(-1.0)+exp(-2.0)+2*exp(-4.0)+2*exp(-5.0)+2*exp(-6.0));
+                       std::exp(-1.0)+std::exp(-2.0)+2*std::exp(-4.0)+2*std::exp(-5.0)+2*std::exp(-6.0));
 //  diag.save(3, P);
 }
 

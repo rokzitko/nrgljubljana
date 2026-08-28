@@ -2,6 +2,12 @@
 #define _truncation_hpp_
 
 #include <algorithm> // clamp
+#include <cstddef>
+#include <exception>
+#include <iostream>
+#include <ostream>
+#include <string>
+#include <vector>
 
 #include "step.hpp"
 #include "eigen.hpp"
@@ -12,6 +18,8 @@
 #include <fmt/format.h>
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 // Returns true if all states should be retained in the current step of the NRG iteration.
 inline auto keepall(const Step &step, const Params &P) {

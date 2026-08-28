@@ -1,4 +1,10 @@
+#include <cmath>
+#include <initializer_list>
+#include <string>
+
 namespace NRG {
+
+using std::sqrt;
 
 // *** WARNING!!! Modify nrg-recalc-SPU1LR.cc.m4, not nrg-recalc-SPU1LR.cc !!!
 

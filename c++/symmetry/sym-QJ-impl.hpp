@@ -1,6 +1,15 @@
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <vector>
+
 #include <boost/math/special_functions/factorials.hpp>
 
 namespace NRG {
+
+using std::abs;
+using std::round;
+using std::sqrt;
 
 template<typename SC>
 class SymmetryQJ : public Symmetry<SC> {

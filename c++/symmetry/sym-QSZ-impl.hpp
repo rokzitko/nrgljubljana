@@ -1,4 +1,11 @@
+#include <cmath>
+#include <iostream>
+#include <ostream>
+#include <vector>
+
 namespace NRG {
+
+using std::pow;
 
 template<typename SC>
 class SymmetryQSZ : public SymField<SC> {

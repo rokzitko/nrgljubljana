@@ -13,6 +13,10 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <cstddef>
+#include <ios>
+#include <istream>
+#include <ostream>
 #include <array>
 #include <complex>
 #include <utility>
@@ -34,6 +38,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <system_error>
 #include <unistd.h>
 
 #include <gsl/gsl_errno.h> // GNU scientific library
@@ -41,6 +46,8 @@
 #include <gsl/gsl_spline.h>
 
 namespace NRG::Hilb {
+
+using std::size_t;
 
 inline constexpr std::string_view HILB_VERSION = "2026.09";
 inline constexpr int OUTPUT_PRECISION = std::numeric_limits<double>::max_digits10;
@@ -324,10 +331,10 @@ class interpolator {
 inline auto sqr(const double x) { return x * x; }
 
 // Result of Integrate[(-y/(y^2 + (x - omega)^2)), {omega, -B, B}] (atg -> imQ).
-inline auto imQ(const double x, const double y, const double B) { return atan((-B + x) / y) - atan((B + x) / y); }
+inline auto imQ(const double x, const double y, const double B) { return std::atan((-B + x) / y) - std::atan((B + x) / y); }
 
 // Result of Integrate[((x - omega)/(y^2 + (x - omega)^2)), {omega, -B, B}] (logs -> reQ).
-inline auto reQ(const double x, const double y, const double B) { return (-log(sqr(B - x) + sqr(y)) + log(sqr(B + x) + sqr(y))) / 2.0; }
+inline auto reQ(const double x, const double y, const double B) { return (-std::log(sqr(B - x) + sqr(y)) + std::log(sqr(B + x) + sqr(y))) / 2.0; }
 
 // Calculate the (half)bandwidth, i.e., the size B of the enclosing interval [-B:B].
 inline auto bandwidth(const std::vector<double> &X) {
@@ -488,7 +495,7 @@ class Hilb {
   integrator integration{1000, false, &gsl_failures};
 
   auto hilbert(const double x, const double y) {
-    auto Bethe_fnc = [this](const auto w) { return std::abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * sqrt(1 - sqr(w * scale)) : 0.0; };
+    auto Bethe_fnc = [this](const auto w) { return std::abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * std::sqrt(1 - sqr(w * scale)) : 0.0; };
     auto zero_fnc = []([[maybe_unused]] const auto w) { return 0.0; };
     const auto z = std::complex(x + shiftx, y + shifty); // shift here!
     if (tabulated) {

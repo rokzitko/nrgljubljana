@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -11,13 +12,13 @@
 #include "../common/linint.hpp"
 
 // Structures for storing tabulated data, such as rho(omega).
-typedef pair<double, double> Pair;
-using Vec = vector<Pair>;
+typedef std::pair<double, double> Pair;
+using Vec = std::vector<Pair>;
 
 struct ExitError {
   [[noreturn]] void operator()(const std::string &message) const {
-    cerr << "ERROR: " << message << endl;
-    exit(1);
+    std::cerr << "ERROR: " << message << std::endl;
+    std::exit(1);
   }
 };
 

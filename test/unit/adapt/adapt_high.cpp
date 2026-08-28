@@ -1,8 +1,13 @@
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <cstdio>
 #include <cmath>
 #include <fstream>
+#include <initializer_list>
+#include <memory>
+#include <stdexcept>
+#include <string>
 
 #include <adapt/adapt.hpp>
 

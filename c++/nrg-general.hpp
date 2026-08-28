@@ -41,6 +41,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <ostream>
 #include <iomanip>
 #include <vector>
 #include <map>

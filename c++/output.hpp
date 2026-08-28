@@ -1,6 +1,11 @@
 #ifndef _output_hpp_
 #define _output_hpp_
 
+#include <algorithm>
+#include <cstddef>
+#include <fstream>
+#include <ios>
+#include <iterator>
 #include <memory>
 #include <ostream>
 #include <iomanip>
@@ -24,6 +29,8 @@
 #include "eigen.hpp"
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 // Formatted output of the computed expectation values
 template<scalar S, typename t_expv = expv_traits<S>>

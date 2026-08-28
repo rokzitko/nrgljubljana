@@ -1,4 +1,16 @@
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <iostream>
+#include <ostream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
 namespace NRG {
+
+using std::sqrt;
+using std::string_literals::operator""s;
 
 template<typename SC>
 class SymmetryQS : public Symmetry<SC> {

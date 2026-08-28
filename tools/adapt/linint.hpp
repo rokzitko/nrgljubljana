@@ -5,6 +5,7 @@
 #define _adapt_linint_hpp_
 
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 

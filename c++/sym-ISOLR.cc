@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "nrg-general.hpp"
 #include "sym-ISOLR-impl.hpp"
 #include "sym-ISOLR.hpp" // include for consistency

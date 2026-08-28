@@ -1,10 +1,13 @@
 #ifndef _diag_mpi_hpp_
 #define _diag_mpi_hpp_
 
+#include <cstddef>
 #include <iostream>
 #include <list>
 #include <deque>
 #include <algorithm>
+#include <numeric>
+#include <utility>
 #include <vector>
 
 #ifdef OMPI_SKIP_MPICXX // workaround to avoid warnings for for redefinition in mpi/environment.hpp

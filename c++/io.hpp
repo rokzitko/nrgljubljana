@@ -4,11 +4,22 @@
 #ifndef _io_hpp_
 #define _io_hpp_
 
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
 #include <string>
 #include <fstream>
+#include <iomanip>
+#include <ios>
 #include <iostream>
+#include <istream>
 #include <complex>
+#include <ostream>
 #include <sstream>
+#include <stdexcept>
+#include <utility>
+
 #include "params.hpp"
 #include "numerics.hpp"// reim
 
@@ -106,7 +117,7 @@ auto read_matrix_bin(GEN && generate_matrix, const std::string &filename, const 
     F.read(reinterpret_cast<char *>(&value), sizeof(value));
     if (!F) throw std::runtime_error(fmt::format("Can't read {} from {}", what, filename));
   };
-  uint32_t dim1{}, dim2{};
+  std::uint32_t dim1{}, dim2{};
   read_binary(dim1, "matrix row count");
   read_binary(dim2, "matrix column count");
   if (verbose) std::cout << filename << " [" << dim1 << " x " << dim2 << "]" << std::endl;

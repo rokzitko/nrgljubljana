@@ -171,7 +171,7 @@ extern FILE *yyin, *yyout;
 	do \
 		{ \
 		/* Undo effects of setting up yytext. */ \
-        yy_size_t yyless_macro_arg = (n); \
+        int yyless_macro_arg = (n); \
         YY_LESS_LINENO(yyless_macro_arg);\
 		*yy_cp = (yy_hold_char); \
 		YY_RESTORE_YY_MORE_OFFSET \
@@ -531,8 +531,12 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "matrix.ll"
 #line 2 "matrix.ll"
-#include <iostream>
+#include <cstdio>
+#include <cstddef>
 #include <cstdlib>
+#include <iostream>
+#include <ostream>
+
 #include "parser.hh"
 #include "matrix.h"
 #include <cmath>
@@ -554,7 +558,7 @@ int include_depth = 0;
 
 
 
-#line 554 "matrix.cc"
+#line 562 "matrix.cc"
 
 #define INITIAL 0
 #define incl 1
@@ -665,7 +669,7 @@ static int input (void );
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
-		int n; \
+		size_t n; \
 		for ( n = 0; n < max_size && \
 			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
@@ -678,7 +682,7 @@ static int input (void );
 	else \
 		{ \
 		errno=0; \
-		while ( (result = (int) fread(buf, 1, (yy_size_t) max_size, yyin)) == 0 && ferror(yyin)) \
+		while ( (result = (int) fread(buf, 1, max_size, yyin))==0 && ferror(yyin)) \
 			{ \
 			if( errno != EINTR) \
 				{ \
@@ -777,9 +781,9 @@ YY_DECL
 		}
 
 	{
-#line 27 "matrix.ll"
+#line 35 "matrix.ll"
 
-#line 779 "matrix.cc"
+#line 787 "matrix.cc"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -839,52 +843,52 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 28 "matrix.ll"
+#line 36 "matrix.ll"
 ; /* Ignore comment lines */
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 30 "matrix.ll"
+#line 38 "matrix.ll"
 { return GAMMAPOLCH; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 31 "matrix.ll"
+#line 39 "matrix.ll"
 { return COEFXI; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 32 "matrix.ll"
+#line 40 "matrix.ll"
 { return COEFZETA; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 33 "matrix.ll"
+#line 41 "matrix.ll"
 { return COEFDELTA; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 34 "matrix.ll"
+#line 42 "matrix.ll"
 { return COEFKAPPA; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 35 "matrix.ll"
+#line 43 "matrix.ll"
 { return COEFV; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 36 "matrix.ll"
+#line 44 "matrix.ll"
 { BEGIN(incl); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 38 "matrix.ll"
+#line 46 "matrix.ll"
 ;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 39 "matrix.ll"
+#line 47 "matrix.ll"
 {
 	 parse_file(yytext);
 	 BEGIN(INITIAL);
@@ -892,17 +896,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 44 "matrix.ll"
+#line 52 "matrix.ll"
 { BEGIN(sys); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 46 "matrix.ll"
+#line 54 "matrix.ll"
 ;
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 47 "matrix.ll"
+#line 55 "matrix.ll"
 {
          system(yytext);
          BEGIN(INITIAL);
@@ -910,7 +914,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 52 "matrix.ll"
+#line 60 "matrix.ll"
 { 
          yylval.ival = atoi(yytext);
 	 return INTEGER;
@@ -918,7 +922,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 57 "matrix.ll"
+#line 65 "matrix.ll"
 {
   yylval.dval = atof(yytext);
   return NUMBER;
@@ -926,7 +930,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 62 "matrix.ll"
+#line 70 "matrix.ll"
 {
 		yylval.dval = atof(yytext);
 		return NUMBER;
@@ -934,17 +938,17 @@ YY_RULE_SETUP
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 68 "matrix.ll"
+#line 76 "matrix.ll"
 ;		 /* ignore white space */
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 70 "matrix.ll"
+#line 78 "matrix.ll"
 ;          /* ignore sections (param) */
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 72 "matrix.ll"
+#line 80 "matrix.ll"
 { 
                      if (veryverbose) {
                        cerr << yytext << endl;
@@ -953,7 +957,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 78 "matrix.ll"
+#line 86 "matrix.ll"
 {	/* return symbol pointer */
 		struct symtab *sp = symlook(yytext);
 
@@ -964,7 +968,7 @@ YY_RULE_SETUP
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(incl):
 case YY_STATE_EOF(sys):
-#line 85 "matrix.ll"
+#line 93 "matrix.ll"
 {
            if (verbose) {
              cerr << "EOF" << endl;
@@ -987,19 +991,19 @@ case YY_STATE_EOF(sys):
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 97 "matrix.ll"
+#line 113 "matrix.ll"
 { return 0; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 99 "matrix.ll"
+#line 115 "matrix.ll"
 { count_braces++;
           return yytext[0];
 	}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 103 "matrix.ll"
+#line 119 "matrix.ll"
 { if (count_braces == 0) {
              cerr << "Brace mismatch." << endl;
 	     exit(1);
@@ -1011,7 +1015,7 @@ YY_RULE_SETUP
 case 24:
 /* rule 24 can match eol */
 YY_RULE_SETUP
-#line 111 "matrix.ll"
+#line 127 "matrix.ll"
 {
           if (count_braces > 0) {
 	    // ignore line breaks when lists span multiple lines
@@ -1022,15 +1026,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 118 "matrix.ll"
+#line 134 "matrix.ll"
 return yytext[0];
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 119 "matrix.ll"
+#line 135 "matrix.ll"
 ECHO;
 	YY_BREAK
-#line 1022 "matrix.cc"
+#line 1038 "matrix.cc"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1238,7 +1242,7 @@ static int yy_get_next_buffer (void)
 
 				b->yy_ch_buf = (char *)
 					/* Include room in for 2 EOB chars. */
-					yyrealloc((void *) b->yy_ch_buf,(yy_size_t) (b->yy_buf_size + 2)  );
+					yyrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2  );
 				}
 			else
 				/* Can't grow it, we don't own it. */
@@ -1287,7 +1291,7 @@ static int yy_get_next_buffer (void)
 	if ((int) ((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
 		/* Extend the array by 50%, plus the number we really need. */
 		int new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
-		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) yyrealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,(yy_size_t) new_size  );
+		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) yyrealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size  );
 		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
 			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
 	}
@@ -1551,12 +1555,12 @@ static void yy_load_buffer_state  (void)
 	if ( ! b )
 		YY_FATAL_ERROR( "out of dynamic memory in yy_create_buffer()" );
 
-	b->yy_buf_size = size;
+	b->yy_buf_size = (yy_size_t)size;
 
 	/* yy_ch_buf has to be 2 characters longer than the size given because
 	 * we need to put in 2 end-of-buffer characters.
 	 */
-	b->yy_ch_buf = (char *) yyalloc((yy_size_t) (b->yy_buf_size + 2)  );
+	b->yy_ch_buf = (char *) yyalloc(b->yy_buf_size + 2  );
 	if ( ! b->yy_ch_buf )
 		YY_FATAL_ERROR( "out of dynamic memory in yy_create_buffer()" );
 
@@ -1759,7 +1763,7 @@ YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size )
 	if ( ! b )
 		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_buffer()" );
 
-	b->yy_buf_size = (int) (size - 2);	/* "- 2" to take care of EOB's */
+	b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
 	b->yy_buf_pos = b->yy_ch_buf = base;
 	b->yy_is_our_buffer = 0;
 	b->yy_input_file = NULL;
@@ -1800,10 +1804,10 @@ YY_BUFFER_STATE yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len )
 	YY_BUFFER_STATE b;
 	char *buf;
 	yy_size_t n;
-	int i;
+	yy_size_t i;
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
-	n = (yy_size_t) (_yybytes_len + 2);
+	n = (yy_size_t) _yybytes_len + 2;
 	buf = (char *) yyalloc(n  );
 	if ( ! buf )
 		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_bytes()" );
@@ -1842,7 +1846,7 @@ static void yynoreturn yy_fatal_error (yyconst char* msg )
 	do \
 		{ \
 		/* Undo effects of setting up yytext. */ \
-        yy_size_t yyless_macro_arg = (n); \
+        int yyless_macro_arg = (n); \
         YY_LESS_LINENO(yyless_macro_arg);\
 		yytext[yyleng] = (yy_hold_char); \
 		(yy_c_buf_p) = yytext + yyless_macro_arg; \
@@ -2032,7 +2036,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 119 "matrix.ll"
+#line 135 "matrix.ll"
 
 
 
@@ -2054,3 +2058,4 @@ void parse_file(const char *filename)
    include_depth++;
    yypush_buffer_state(buffer);
 }
+

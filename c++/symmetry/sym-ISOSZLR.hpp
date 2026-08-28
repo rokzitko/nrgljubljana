@@ -1,3 +1,5 @@
+#include <memory>
+
 namespace NRG {
 
 template <typename S>

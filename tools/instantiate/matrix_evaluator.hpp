@@ -19,6 +19,8 @@
 
 namespace NRG::Spawn {
 
+using std::size_t;
+
 struct MatrixEvalContext {
   std::map<std::string, double> variables;
   NRG::Tools::NrgChain::WilsonData wilson;

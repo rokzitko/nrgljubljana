@@ -3,18 +3,29 @@
 #ifndef _NUMERICS_CUDA_HPP_
 #define _NUMERICS_CUDA_HPP_
 
+#include <stdexcept>
+#include <string>
+
 #ifndef NRG_ENABLE_CUDA
 #define NRG_ENABLE_CUDA 0
 #endif
 
 #if NRG_ENABLE_CUDA
+#include <cassert>
+#include <complex>
+#include <cstddef>
+#include <functional>
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <cuComplex.h>
 #include <memory>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 #endif
+
+namespace NRG {
 
 inline auto cuda_mult_requested(const std::string &mult) { return mult == "cuda"; }
 
@@ -488,5 +499,7 @@ void transform_CUDA_accumulate(CudaRecalcAccumulator<S, EM> &, const t_coef, con
 }
 
 #endif
+
+} // namespace
 
 #endif

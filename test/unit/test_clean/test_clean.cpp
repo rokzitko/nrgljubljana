@@ -1,5 +1,6 @@
 #include <string>
 #include <sstream>
+#include <utility>
 #include <gtest/gtest.h>
 
 // Reproduce test/c++/test0_clean calculation

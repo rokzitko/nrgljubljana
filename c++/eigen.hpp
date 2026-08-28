@@ -1,11 +1,26 @@
 #ifndef _eigen_hpp_
 #define _eigen_hpp_
 
+#include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <complex>
+#include <cstddef>
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <ios>
+#include <iostream>
+#include <istream>
 #include <limits> // quiet_NaN
+#include <map>
+#include <numeric>
+#include <ostream>
 #include <stdexcept>
+#include <system_error>
+#include <utility>
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/irange.hpp>
@@ -210,7 +225,7 @@ class Vectors {
        double sum = 0.0;
        for (size_t j = 0; j < dim(); j++) {
          F << m(i,j) << (j != dim()-1 ? ", " : "");
-          sum += pow(std::abs(m(i,j)),2);
+          sum += std::pow(std::abs(m(i,j)),2);
        }
        const double diff = sum-1.0;
        F << "] norm-1=" << diff << std::endl;
@@ -405,12 +420,12 @@ public:
     const auto dim = getnrstored();
     auto m = zero_matrix<S>(dim);
     for (const auto i: range0(dim))
-      m(i, i) = exp(-values.corr(i) * factor); // corrected eigenvalues!
+      m(i, i) = std::exp(-values.corr(i) * factor); // corrected eigenvalues!
     return m;
   }
   template<typename F>
   [[nodiscard]] auto trace(F fnc, const double factor) const noexcept { // Tr[fnc(factor*E) exp(-factor*E)]
-    return ranges::accumulate(values.all_rel_zero(), 0.0, {}, [fnc, factor](const auto x) { return fnc(factor*x) * exp(-factor*x); });
+    return ranges::accumulate(values.all_rel_zero(), 0.0, {}, [fnc, factor](const auto x) { return fnc(factor*x) * std::exp(-factor*x); });
   }
   void clear_eigenvectors() {
     vectors.shrink();

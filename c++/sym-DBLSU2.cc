@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "nrg-general.hpp"
 #include "sym-DBLSU2-impl.hpp"
 #include "sym-DBLSU2.hpp" // include for consistency

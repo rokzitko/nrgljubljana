@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <complex>
 #include <gtest/gtest.h>
 
 #include "test_common.hpp"
@@ -9,7 +10,7 @@
 
 using namespace NRG;
 
-const double sq2 = 1.0/sqrt(2.0);
+const double sq2 = 1.0/std::sqrt(2.0);
 
 TEST(Diag, dsyev) {
   {

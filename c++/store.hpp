@@ -1,9 +1,11 @@
 #ifndef _store_hpp_
 #define _store_hpp_
 
+#include <cstddef>
 #include <vector>
 #include <map>
 #include <iostream>
+#include <ostream>
 #include <fstream>
 #include <string>
 
@@ -16,6 +18,8 @@
 #include "h5.hpp"
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 template<scalar S>
 struct ThermoSub {

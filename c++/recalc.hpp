@@ -1,6 +1,14 @@
 #ifndef _recalc_hpp_
 #define _recalc_hpp_
 
+#include <cassert>
+#include <cstddef>
+#include <iostream>
+#include <optional>
+#include <ostream>
+#include <string>
+#include <utility>
+
 #include "debug.hpp"
 #include "traits.hpp"
 #include "invar.hpp"

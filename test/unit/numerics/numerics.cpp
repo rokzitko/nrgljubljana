@@ -1,5 +1,14 @@
 #include <gtest/gtest.h>
 
+#include <cmath>
+#include <complex>
+#include <cstddef>
+#include <fstream>
+#include <ios>
+#include <sstream>
+#include <utility>
+#include <vector>
+
 // Use the matrix backend settings from traits.hpp
 #include <traits.hpp>
 #include <numerics.hpp>
@@ -164,16 +173,16 @@ TEST(numerics, is_unitary_real) {
 
   auto m = generate_matrix<T>(2,2);
   m(0,0) = 1.0;
-  m(0,1) = 1.0/sqrt(2.0);
+  m(0,1) = 1.0/std::sqrt(2.0);
   m(1,0) = 0.0;
-  m(1,1) = 1.0/sqrt(2.0);
+  m(1,1) = 1.0/std::sqrt(2.0);
   EXPECT_FALSE(is_unitary<T>(m));
 
   auto t = generate_matrix<T>(2,2);
   t(0,0) = 1.0;
   t(0,1) = 0.0;
-  t(1,0) = 1.0/sqrt(2.0);
-  t(1,1) = 1.0/sqrt(2.0);
+  t(1,0) = 1.0/std::sqrt(2.0);
+  t(1,1) = 1.0/std::sqrt(2.0);
   EXPECT_FALSE(is_unitary<T>(t));
 }
 
@@ -281,14 +290,14 @@ TEST(numerics, trace_exp) {
   v[1] = 2.0;
   auto m = generate_matrix<double>(2,2);
   m(0,0) = m(1,1) = 2.0;
-  EXPECT_DOUBLE_EQ(trace_exp(v, m, 2.0), 2.0*(exp(-2.0)+exp(-4.0)));
+  EXPECT_DOUBLE_EQ(trace_exp(v, m, 2.0), 2.0*(std::exp(-2.0)+std::exp(-4.0)));
 }
 
 TEST(numerics, sum_of_exp) {
   std::vector<double> v(2);
   v[0] = 1.0;
   v[1] = 2.0;
-  EXPECT_DOUBLE_EQ(sum_of_exp(v, 2.0), exp(-2.0) + exp(-4.0));
+  EXPECT_DOUBLE_EQ(sum_of_exp(v, 2.0), std::exp(-2.0) + std::exp(-4.0));
 }
 
 TEST(numerics, trim_matrix) {
@@ -447,11 +456,11 @@ TEST(numerics, prod_adj_fit_left_cx) {
 }
 
 TEST(numerics, chit_weight) {
-  EXPECT_DOUBLE_EQ(chit_weight(2.0, 1.0, 1.0), exp(-1.0)-exp(-2.0));
-  EXPECT_DOUBLE_EQ(chit_weight(2.0, 1.0, 0.5), (exp(-0.5)-exp(-1.0))/0.5);
-  EXPECT_DOUBLE_EQ(chit_weight(1.0, 1.0, 1.0), exp(-1.0));
-  EXPECT_DOUBLE_EQ(chit_weight(3.0, 1.0, 1.0), (exp(-1.0)-exp(-3.0))/2.0);
-  EXPECT_DOUBLE_EQ(chit_weight(3.0, 3.0, 1.0), exp(-3.0));
+  EXPECT_DOUBLE_EQ(chit_weight(2.0, 1.0, 1.0), std::exp(-1.0)-std::exp(-2.0));
+  EXPECT_DOUBLE_EQ(chit_weight(2.0, 1.0, 0.5), (std::exp(-0.5)-std::exp(-1.0))/0.5);
+  EXPECT_DOUBLE_EQ(chit_weight(1.0, 1.0, 1.0), std::exp(-1.0));
+  EXPECT_DOUBLE_EQ(chit_weight(3.0, 1.0, 1.0), (std::exp(-1.0)-std::exp(-3.0))/2.0);
+  EXPECT_DOUBLE_EQ(chit_weight(3.0, 3.0, 1.0), std::exp(-3.0));
 }
 
 TEST(numerics, save_r) {

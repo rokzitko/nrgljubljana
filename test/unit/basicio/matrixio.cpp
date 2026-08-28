@@ -2,7 +2,10 @@
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
+#include <ios>
+#include <ostream>
 #include <sstream>
+#include <stdexcept>
 
 #include <traits.hpp>
 #include <io.hpp>
@@ -41,7 +44,7 @@ TEST(io, read_matrix_bin_throws_on_truncated_data) {
   const auto filename = "txt/matrix_truncated.bin";
   {
     std::ofstream file(filename, std::ios::binary | std::ios::out);
-    const uint32_t dim = 2;
+    const std::uint32_t dim = 2;
     const double element = 1.0;
     file.write(reinterpret_cast<const char *>(&dim), sizeof(dim));
     file.write(reinterpret_cast<const char *>(&dim), sizeof(dim));

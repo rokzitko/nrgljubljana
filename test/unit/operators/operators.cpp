@@ -1,7 +1,13 @@
 #include <string>
 #include <sstream>
+#include <exception>
 #include <filesystem>
+#include <fstream>
 #include <gtest/gtest.h>
+#include <ios>
+#include <iostream>
+#include <ostream>
+#include <stdexcept>
 
 #include "test_common.hpp"
 #include "test_clean.hpp"

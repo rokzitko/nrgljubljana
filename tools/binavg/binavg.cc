@@ -1,5 +1,7 @@
+#include <exception>
 #include <iostream>
 #include <iomanip>
+#include <ostream>
 #include <string_view>
 #include <cstdlib>
 #include "binavg.hpp"

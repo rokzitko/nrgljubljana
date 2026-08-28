@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <initializer_list>
+#include <sstream>
+#include <string>
+
 #include <invar.hpp>
 #include <mk_sym.hpp>
 #include "test_common.hpp"
@@ -19,21 +23,24 @@ TEST(Invar, initInvar) { // NOLINT
 
 TEST(Invar, initInvar_resets_global_metadata) { // NOLINT
   Params P1;
-  auto Sym1 = set_symmetry<double>(P1, "QS", 1);
+  auto Sym1 = set_symmetry<double>(P1, "QSZ", 1);
+  ASSERT_EQ(Invar::qntype.size(), 2U);
+  ASSERT_EQ(Invar::names.size(), 2U);
+  EXPECT_TRUE(Invar::names.count("Q"));
+  EXPECT_TRUE(Invar::names.count("SSZ"));
+
+  Params P2;
+  auto Sym2 = set_symmetry<double>(P2, "QS", 1);
   ASSERT_EQ(Invar::qntype.size(), 2U);
   ASSERT_EQ(Invar::names.size(), 2U);
   EXPECT_TRUE(Invar::names.count("Q"));
   EXPECT_TRUE(Invar::names.count("SS"));
-
-  Params P2;
-  auto Sym2 = set_symmetry<double>(P2, "U1", 1);
-  ASSERT_EQ(Invar::qntype.size(), 1U);
-  ASSERT_EQ(Invar::names.size(), 1U);
-  EXPECT_TRUE(Invar::names.count("Q"));
-  EXPECT_FALSE(Invar::names.count("SS"));
+  EXPECT_FALSE(Invar::names.count("SSZ"));
 }
 
 TEST(Invar, InvarQS) { // NOLINT
+  using std::literals::string_literals::operator""s;
+
   Params P;
   auto Sym = setup_Sym<double>(P);
   {

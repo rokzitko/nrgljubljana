@@ -1,6 +1,8 @@
 #ifndef _diagengine_hpp_
 #define _diagengine_hpp_
 
+#include <vector>
+
 #include "traits.hpp"
 #include "step.hpp"
 #include "operators.hpp"

@@ -1,7 +1,14 @@
 #ifndef _algo_FT_hpp_
 #define _algo_FT_hpp_
 
+#include <cmath>
 #include <complex>
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <tuple>
+#include <utility>
+
 #include "traits.hpp"
 #include "algo.hpp"
 #include "spectrum.hpp"
@@ -29,7 +36,7 @@ class Algo_FT : public Algo<S> {
              const t_coef factor, const Invar &, const Invar &, const DensMatElements<S> &, const Stats<S> &stats) override
    {
      const auto stat_factor = [beta = 1.0/P.T, Z = stats.Zft, this](const auto E1, const auto Ep) {
-       return ((-sign) * exp(-beta*E1) + exp(-beta*Ep))/Z;
+       return ((-sign) * std::exp(-beta*E1) + std::exp(-beta*Ep))/Z;
      };
      const auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp) {
        const auto E1 = diagI1.values.abs_zero(r1);
@@ -71,8 +78,8 @@ class Algo_FTmats : public Algo<S> {
         const auto E1 = diagI1.values.abs_zero(r1);
         const auto Ep = diagIp.values.abs_zero(rp);
         const auto matrix_element = conj_me(op1(r1, rp)) * op2(r1, rp);
-        const auto exp_beta_E1 = exp(-beta * E1);
-        const auto exp_beta_Ep = exp(-beta * Ep);
+        const auto exp_beta_E1 = std::exp(-beta * E1);
+        const auto exp_beta_Ep = std::exp(-beta * Ep);
         const auto energy = E1 - Ep;
         const auto weight = matrix_element * (((-sign) * exp_beta_E1 + exp_beta_Ep) / Z);
         const auto zero_freq_bosonic_weight = matrix_element * (-exp_beta_E1 / (Z * T));
@@ -128,7 +135,7 @@ class Algo_GT : public Algo<S> {
    {
      const double temperature = P.gtp * step.scale(); // in absolute units! stats.Zgt is evaluated for this temperature.
      const auto stat_factor = [beta = 1.0/temperature, Z = stats.Zgt](const auto E1, const auto Ep) {
-       return beta / (exp(+beta*E1) + exp(+beta*Ep)) * pow(E1 - Ep, n)/Z; // n is template parameter
+       return beta / (std::exp(+beta*E1) + std::exp(+beta*Ep)) * std::pow(E1 - Ep, n)/Z; // n is template parameter
      };
      const auto term = [&diagI1, &diagIp, &op1, &op2, &stat_factor](const auto r1, const auto rp) {
        const auto E1 = diagI1.values.abs_zero(r1);

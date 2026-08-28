@@ -1,9 +1,16 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <complex>
+#include <iterator>
 #include <list>
 #include <map>
+#include <optional>
+#include <ostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 using namespace std::string_literals;
 #include <fstream>
 #include <cstdio>

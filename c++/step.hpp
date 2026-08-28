@@ -2,6 +2,9 @@
 #define _step_hpp_
 
 #include <algorithm>
+#include <cstddef>
+#include <string>
+#include <utility>
 #include "params.hpp"
 #include "numerics.hpp"
 #include "io.hpp"
@@ -9,6 +12,8 @@
 #include <fmt/format.h>
 
 namespace NRG {
+
+using std::string_literals::operator""s;
 
 class Step {
  private:
