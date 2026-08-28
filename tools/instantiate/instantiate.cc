@@ -31,6 +31,7 @@
 #include <tridiag.hpp>
 #include <read-input.hpp>
 #include <traits.hpp>
+#include <workdir.hpp>
 
 #include "matrix_evaluator.hpp"
 #include "nrgchain.hpp"
@@ -117,6 +118,13 @@ struct ParamSections {
   std::map<std::string, std::map<std::string, std::string>> values;
 };
 
+using ArtifactManifest = std::map<std::filesystem::path, std::filesystem::path>;
+
+void close_output_checked(std::ofstream &out, const std::filesystem::path &filename) {
+  out.close();
+  if (!out) throw std::runtime_error("Error writing " + filename.string() + ".");
+}
+
 ParamSections parse_param_sections(const std::string &filename) {
   std::ifstream in(filename);
   if (!in) throw std::runtime_error("Can't open " + filename + " for reading.");
@@ -145,55 +153,61 @@ void write_param_section_files(const ParamSections &sections, const std::string 
     std::ofstream out(param_filename + "." + section);
     if (!out) throw std::runtime_error("Can't open " + param_filename + "." + section + " for writing.");
     for (const auto &line : lines) out << line << '\n';
+    close_output_checked(out, param_filename + "." + section);
   }
 }
 
-void remove_file_noexcept(const std::filesystem::path &filename) {
-  std::error_code ec;
-  std::filesystem::remove(filename, ec);
+void register_artifact(ArtifactManifest &artifacts, const std::filesystem::path &staged,
+                       const std::filesystem::path &destination) {
+  artifacts[std::filesystem::absolute(destination)] = staged;
 }
 
-void remove_prefixed_files_noexcept(const std::string &prefix) {
-  std::error_code ec;
-  for (std::filesystem::directory_iterator it(".", ec), end; !ec && it != end; it.increment(ec)) {
-    const auto filename = it->path().filename().string();
-    if (filename.rfind(prefix + ".", 0) != 0) continue;
-
-    std::error_code type_ec;
-    if (it->is_directory(type_ec)) continue;
-    remove_file_noexcept(it->path());
-  }
-}
-
-void cleanup_instantiation_temporaries(const std::string &param_filename, const ParamSections &sections) {
-  const std::vector<std::string> filenames = {"xi.dat",      "zeta.dat",     "theta.dat", "xi1.dat",     "zeta1.dat",
-                                             "theta1.dat",  "val",          "vec",       "mat",         "mat.res",
-                                             "ham",         "param.param",  "param.dmft", "param.extra", "solverlog",
-                                             "solverlogneg"};
-  for (const auto &filename : filenames) remove_file_noexcept(filename);
+void write_staged_param_section_files(const ParamSections &sections, const std::string &param_filename,
+                                      const std::filesystem::path &staging_dir, ArtifactManifest &artifacts) {
+  size_t index = 0;
   for (const auto &[section, lines] : sections.lines) {
-    (void)lines;
-    remove_file_noexcept(param_filename + "." + section);
+    const auto staged = staging_dir / ("param-section-" + std::to_string(index++));
+    std::ofstream out(staged);
+    if (!out) throw std::runtime_error("Can't open " + staged.string() + " for writing.");
+    for (const auto &line : lines) out << line << '\n';
+    close_output_checked(out, staged);
+    register_artifact(artifacts, staged, param_filename + "." + section);
   }
-  remove_prefixed_files_noexcept("vec");
-  remove_prefixed_files_noexcept("ham");
 }
 
-class TemporaryCleanupGuard {
- private:
-  bool enabled = false;
-  std::string param_filename;
-  ParamSections sections;
+void register_existing_artifact(ArtifactManifest &artifacts, const std::filesystem::path &staging_dir,
+                                const std::filesystem::path &filename) {
+  const auto staged = staging_dir / filename;
+  std::error_code ec;
+  const auto exists = std::filesystem::exists(staged, ec);
+  if (ec) throw std::runtime_error("Can't inspect " + staged.string() + ": " + ec.message());
+  if (exists) register_artifact(artifacts, staged, filename);
+}
 
- public:
-  TemporaryCleanupGuard(const bool enabled_, std::string param_filename_, ParamSections sections_)
-      : enabled(enabled_), param_filename(std::move(param_filename_)), sections(std::move(sections_)) {}
-  TemporaryCleanupGuard(const TemporaryCleanupGuard &) = delete;
-  TemporaryCleanupGuard &operator=(const TemporaryCleanupGuard &) = delete;
-  ~TemporaryCleanupGuard() {
-    if (enabled) cleanup_instantiation_temporaries(param_filename, sections);
-  }
-};
+void publish_file(const std::filesystem::path &staged, const std::filesystem::path &destination) {
+  std::error_code ec;
+  std::filesystem::rename(staged, destination, ec);
+  if (!ec) return;
+  if (ec != std::errc::cross_device_link)
+    throw std::runtime_error("Can't publish " + destination.string() + " from " + staged.string() + ": " + ec.message());
+
+  NRG::Workdir local_staging(destination.parent_path().string(), true);
+  const auto local_file = std::filesystem::path(local_staging.get()) / "artifact";
+  ec.clear();
+  std::filesystem::copy_file(staged, local_file, ec);
+  if (ec)
+    throw std::runtime_error("Can't stage " + destination.string() + " from " + staged.string() + ": " + ec.message());
+  std::filesystem::rename(local_file, destination, ec);
+  if (ec)
+    throw std::runtime_error("Can't publish " + destination.string() + " from " + local_file.string() + ": " + ec.message());
+}
+
+void write_text_file_checked(const std::filesystem::path &filename, const std::string &text) {
+  std::ofstream out(filename);
+  if (!out) throw std::runtime_error("Can't open " + filename.string() + " for writing.");
+  out << text;
+  close_output_checked(out, filename);
+}
 
 std::map<std::string, double> numeric_variables(const std::map<std::string, std::string> &values) {
   std::map<std::string, double> variables;
@@ -205,29 +219,32 @@ std::map<std::string, double> numeric_variables(const std::map<std::string, std:
   return variables;
 }
 
-void write_values(const std::string &filename, const std::vector<double> &values) {
+void write_values(const std::filesystem::path &filename, const std::vector<double> &values) {
   std::ofstream out(filename);
-  if (!out) throw std::runtime_error("Can't open " + filename + " for writing.");
+  if (!out) throw std::runtime_error("Can't open " + filename.string() + " for writing.");
   out << std::setprecision(16);
   for (const auto value : values) out << value << '\n';
+  close_output_checked(out, filename);
 }
 
-void write_scalar(const std::string &filename, const double value) {
+void write_scalar(const std::filesystem::path &filename, const double value) {
   std::ofstream out(filename);
-  if (!out) throw std::runtime_error("Can't open " + filename + " for writing.");
+  if (!out) throw std::runtime_error("Can't open " + filename.string() + " for writing.");
   out << std::setprecision(16) << value << '\n';
+  close_output_checked(out, filename);
 }
 
-void write_wilson_channel(const NRG::Tools::NrgChain::WilsonChannel &channel, const size_t index) {
+void write_wilson_channel(const NRG::Tools::NrgChain::WilsonChannel &channel, const size_t index,
+                          const std::filesystem::path &output_dir = ".") {
   const auto suffix = std::to_string(index) + ".dat";
-  write_values("xi" + suffix, channel.xi);
-  write_values("zeta" + suffix, channel.zeta);
-  write_scalar("theta" + suffix, channel.theta);
+  write_values(output_dir / ("xi" + suffix), channel.xi);
+  write_values(output_dir / ("zeta" + suffix), channel.zeta);
+  write_scalar(output_dir / ("theta" + suffix), channel.theta);
 }
 
-void save_text_matrix(const std::string &filename, const NRG::Matrix_traits<double> &matrix) {
+void save_text_matrix(const std::filesystem::path &filename, const NRG::Matrix_traits<double> &matrix) {
   std::ofstream out(filename);
-  if (!out) throw std::runtime_error("Can't open " + filename + " for writing.");
+  if (!out) throw std::runtime_error("Can't open " + filename.string() + " for writing.");
   out << std::setprecision(18);
   for (Eigen::Index row = 0; row < matrix.rows(); ++row) {
     for (Eigen::Index col = 0; col < matrix.cols(); ++col) {
@@ -236,14 +253,15 @@ void save_text_matrix(const std::string &filename, const NRG::Matrix_traits<doub
     }
     out << '\n';
   }
+  close_output_checked(out, filename);
 }
 
-void save_binary_matrix(const std::string &filename, const NRG::Matrix_traits<double> &matrix) {
+void save_binary_matrix(const std::filesystem::path &filename, const NRG::Matrix_traits<double> &matrix) {
   if (matrix.rows() > static_cast<Eigen::Index>(std::numeric_limits<unsigned int>::max()) ||
       matrix.cols() > static_cast<Eigen::Index>(std::numeric_limits<unsigned int>::max()))
     throw std::runtime_error("Matrix too large for legacy binary format.");
   std::ofstream out(filename, std::ios::binary);
-  if (!out) throw std::runtime_error("Can't open " + filename + " for writing.");
+  if (!out) throw std::runtime_error("Can't open " + filename.string() + " for writing.");
   const auto rows = static_cast<unsigned int>(matrix.rows());
   const auto cols = static_cast<unsigned int>(matrix.cols());
   out.write(reinterpret_cast<const char *>(&rows), sizeof(rows));
@@ -253,13 +271,15 @@ void save_binary_matrix(const std::string &filename, const NRG::Matrix_traits<do
       const auto value = matrix(row, col);
       out.write(reinterpret_cast<const char *>(&value), sizeof(value));
     }
+  close_output_checked(out, filename);
 }
 
-void save_values(const std::string &filename, const std::vector<double> &values) {
+void save_values(const std::filesystem::path &filename, const std::vector<double> &values) {
   std::ofstream out(filename);
-  if (!out) throw std::runtime_error("Can't open " + filename + " for writing.");
+  if (!out) throw std::runtime_error("Can't open " + filename.string() + " for writing.");
   out << std::setprecision(18);
   for (const auto value : values) out << value << '\n';
+  close_output_checked(out, filename);
 }
 
 std::vector<std::string> fields(const std::string &line) {
@@ -462,7 +482,8 @@ void write_matrix(std::ostream &out, const NRG::Matrix_traits<double> &matrix) {
 }
 
 SeedData read_seed_data(DataTemplateReader &data_in, const size_t subspaces, NRG::Spawn::MatrixEvaluator &evaluator,
-                        const std::filesystem::path &template_dir, const bool write_legacy_outputs) {
+                        const std::filesystem::path &template_dir, const bool write_legacy_outputs,
+                        const std::filesystem::path &output_dir = ".") {
   SeedData seed;
 
   for (size_t subspace = 0; subspace < subspaces; ++subspace) {
@@ -487,8 +508,8 @@ SeedData read_seed_data(DataTemplateReader &data_in, const size_t subspaces, NRG
       throw std::runtime_error("Matrix dimension mismatch for " + qn_name + ".");
 
     if (write_legacy_outputs) {
-      save_text_matrix("ham." + qn_name, matrix);
-      save_text_matrix("ham", matrix);
+      save_text_matrix(output_dir / ("ham." + qn_name), matrix);
+      save_text_matrix(output_dir / "ham", matrix);
     }
 
     auto raw = NRG::diagonalise_dsyev(matrix);
@@ -496,9 +517,9 @@ SeedData read_seed_data(DataTemplateReader &data_in, const size_t subspaces, NRG
     if (!raw.val.empty()) seed.smallest = std::min(seed.smallest, raw.val.front());
 
     if (write_legacy_outputs) {
-      save_values("val", raw.val);
-      save_binary_matrix("vec", raw.vec);
-      save_binary_matrix("vec." + qn_name, raw.vec);
+      save_values(output_dir / "val", raw.val);
+      save_binary_matrix(output_dir / "vec", raw.vec);
+      save_binary_matrix(output_dir / ("vec." + qn_name), raw.vec);
     }
 
     if (seed.dimensions.contains(qn)) throw std::runtime_error("Duplicate seed subspace " + qn_name + ".");
@@ -679,9 +700,11 @@ class ScopedCoutRedirect {
   ~ScopedCoutRedirect() { std::cout.rdbuf(old_buffer); }
 };
 
-std::unique_ptr<NRG::Params> make_instantiate_params(const std::string &param_filename) {
+std::unique_ptr<NRG::Params> make_instantiate_params(const std::string &param_filename,
+                                                     const std::filesystem::path &workdir_parent = ".") {
   ScopedCoutRedirect quiet;
-  auto params = std::make_unique<NRG::Params>(param_filename, "param", std::make_unique<NRG::Workdir>(), true, true);
+  auto workdir = std::make_unique<NRG::Workdir>(workdir_parent.string(), true);
+  auto params = std::make_unique<NRG::Params>(param_filename, "param", std::move(workdir), true, true);
   params->silent = true;
   return params;
 }
@@ -693,11 +716,26 @@ void initialize_template_symmetry(NRG::Params &params, const TemplateHeader &hea
   (void)symmetry;
 }
 
-void validate_generated_data(const std::string &param_filename, const std::string &data_text) {
+void validate_generated_data(const std::string &param_filename, const std::string &data_text,
+                             const std::filesystem::path &workdir_parent = ".") {
   std::istringstream data_in(data_text);
   ScopedCoutRedirect quiet;
-  auto params = make_instantiate_params(param_filename);
+  auto params = make_instantiate_params(param_filename, workdir_parent);
   const NRG::InputData<double> input(*params, data_in);
+}
+
+void register_full_legacy_artifacts(ArtifactManifest &artifacts, const std::filesystem::path &staging_dir,
+                                    const SeedData &seed) {
+  const std::vector<std::string> filenames = {
+      "xi.dat",     "zeta.dat",  "theta.dat", "de_pos.dat", "de_neg.dat", "du_pos.dat", "du_neg.dat",
+      "xi1.dat",    "zeta1.dat", "theta1.dat", "ham",        "val",        "vec",
+  };
+  for (const auto &filename : filenames) register_existing_artifact(artifacts, staging_dir, filename);
+  for (const auto &subspace : seed.subspaces) {
+    const auto qn_name = legacy_qn_name(subspace.qn);
+    register_existing_artifact(artifacts, staging_dir, "ham." + qn_name);
+    register_existing_artifact(artifacts, staging_dir, "vec." + qn_name);
+  }
 }
 
 void run_diag_seed_only(const Options &options) {
@@ -723,14 +761,19 @@ void run_diag_seed_only(const Options &options) {
 
 void run_full_instantiation(const Options &options) {
   auto sections = parse_param_sections(options.param_filename);
-  TemporaryCleanupGuard cleanup(!options.generate_temporaries, options.param_filename, sections);
-  if (options.generate_temporaries) write_param_section_files(sections, options.param_filename);
-  auto params = make_instantiate_params(options.param_filename);
+  const auto data_destination = std::filesystem::absolute("data");
+  NRG::Workdir staging_workdir(data_destination.parent_path().string(), true);
+  const auto staging_dir = std::filesystem::path(staging_workdir.get());
+  ArtifactManifest legacy_artifacts;
+  if (options.generate_temporaries)
+    write_staged_param_section_files(sections, options.param_filename, staging_dir, legacy_artifacts);
+  auto params = make_instantiate_params(options.param_filename, staging_dir);
 
-  const auto wilson = NRG::Tools::NrgChain::calculate_from_file(options.param_filename);
+  const auto wilson = NRG::Tools::NrgChain::calculate_from_file(
+      options.param_filename, NRG::Tools::NrgChain::TableMode::Calculate, staging_dir);
   if (wilson.channels.size() != 1)
     throw std::runtime_error("Only single-channel Wilson generation is supported in this instantiate slice.");
-  if (options.generate_temporaries) write_wilson_channel(wilson.channels.front(), 1);
+  if (options.generate_temporaries) write_wilson_channel(wilson.channels.front(), 1, staging_dir);
 
   const auto nmax = parse_size_t_value(param_value(sections, "param", "Nmax"), "Nmax");
   const auto polarized = optional_bool_param(sections, "param", "polarized", false);
@@ -747,18 +790,22 @@ void run_full_instantiation(const Options &options) {
   initialize_template_symmetry(*params, header);
   data_buffer << header.channels << ' ' << nmax << ' ' << header.subspaces << '\n';
 
-  const auto seed = read_seed_data(data_in, header.subspaces, evaluator, template_dir, options.generate_temporaries);
+  const auto seed = read_seed_data(data_in, header.subspaces, evaluator, template_dir, options.generate_temporaries, staging_dir);
   write_seed_energy_block(data_buffer, seed);
   const auto tail = process_template_tail(data_in, data_buffer, seed, evaluator, template_dir, params->channels * params->perchannel);
   if (tail.ground_energy != seed.ground_energy) throw std::runtime_error("Internal ground-energy mismatch while instantiating data.");
   write_z_coefficients(data_buffer, wilson, params->coefchannels, nmax);
 
   const auto data_text = data_buffer.str();
-  validate_generated_data(options.param_filename, data_text);
+  validate_generated_data(options.param_filename, data_text, staging_dir);
 
-  std::ofstream data_out("data");
-  if (!data_out) throw std::runtime_error("Can't open data for writing.");
-  data_out << data_text;
+  const auto staged_data = staging_dir / "data";
+  write_text_file_checked(staged_data, data_text);
+  if (options.generate_temporaries) {
+    register_full_legacy_artifacts(legacy_artifacts, staging_dir, seed);
+    for (const auto &[destination, staged] : legacy_artifacts) publish_file(staged, destination);
+  }
+  publish_file(staged_data, data_destination);
 
   std::cout << "E_gs=" << std::setprecision(18) << seed.ground_energy << '\n';
 }

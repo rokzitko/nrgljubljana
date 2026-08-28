@@ -1,7 +1,12 @@
 #!/bin/sh
-set -e
+set -eu
 
 export PATH="$1:$PATH"
+
+rm -rf external link
+rm -f data ham ham.0 val vec vec.0 xi.dat zeta.dat theta.dat xi1.dat zeta1.dat theta1.dat param.param
+printf 'caller-owned-ham\n' > ham.keep
+printf 'caller-owned-vec\n' > vec.keep
 
 instantiate --generate-temporaries > instantiate.out
 
@@ -18,6 +23,20 @@ test -s xi1.dat
 test -s zeta1.dat
 test -s theta1.dat
 test -s param.param
+grep -q '^caller-owned-ham$' ham.keep
+grep -q '^caller-owned-vec$' vec.keep
 
 count=$(grep -c '^f ' data)
 test "$count" = 2
+
+mkdir -p external/child
+cp param external/param
+ln -s external/child link
+printf 'caller-owned-param-section\n' > param.param
+instantiate --generate-temporaries --param link/../param > instantiate-custom-param.out
+grep -q '^caller-owned-param-section$' param.param
+grep -q '^\[param\]$' external/param.param
+
+for directory in ??????; do
+  test ! -d "$directory"
+done

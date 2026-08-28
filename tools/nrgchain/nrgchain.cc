@@ -69,6 +69,14 @@ bool nrgchain_tables_load; // If nrg_tables_load=true, coefficient tables are
                            // read from files.
 bool nrgchain_tridiag;     // If nrgchain_tridiag=true, tridiagonalisation is
                            // performed.
+filesystem::path nrgchain_output_dir = ".";
+
+string output_path(const string &filename) { return (nrgchain_output_dir / filename).string(); }
+
+void close_output_checked(ofstream &output, const string &filename) {
+  output.close();
+  if (!output) throw runtime_error("Error writing " + filename + ".");
+}
 
 // eps(x) = D g(x) Lambda^(2-x) for x>2.
 // This is only an auxiliary quantity which defines the discretization
@@ -266,9 +274,10 @@ void tables() {
   result_theta = theta;
   
   ofstream THETA;
-  safe_open(THETA, "theta.dat"); // theta (hybridisation fnc. weight)
+  const auto theta_filename = output_path("theta.dat");
+  safe_open(THETA, theta_filename); // theta (hybridisation fnc. weight)
   THETA << theta << endl;
-  THETA.close();
+  close_output_checked(THETA, theta_filename);
 
   Table df_pos(mMAX + 1), df_neg(mMAX + 1);
   Table du0_neg(mMAX + 1), du0_pos(mMAX + 1);
@@ -295,8 +304,7 @@ void tables() {
   // A large deviation probably indicates a serious problem!
   const double CHECKSUM_LIMIT = 1e-10;
   if (std::abs(1 - checksum) > CHECKSUM_LIMIT) {
-    cerr << "Checksum test failed." << endl;
-    exit(1);
+    throw runtime_error("Checksum test failed.");
   }
 
   du_pos.resize(mMAX + 1);
@@ -313,10 +321,10 @@ void tables() {
 }
 
 void save_tables() {
-  save("de_pos.dat", de_pos);
-  save("de_neg.dat", de_neg);
-  save("du_pos.dat", du_pos);
-  save("du_neg.dat", du_neg);
+  save(output_path("de_pos.dat"), de_pos);
+  save(output_path("de_neg.dat"), de_neg);
+  save(output_path("du_pos.dat"), du_pos);
+  save(output_path("du_neg.dat"), du_neg);
 }
 
 void load_tables() {
@@ -376,8 +384,10 @@ void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX_) {
 
 void tridiag() {
   ofstream XI, ZETA;
-  safe_open(XI, "xi.dat");     // hopping constants
-  safe_open(ZETA, "zeta.dat"); // on-site energies
+  const auto xi_filename = output_path("xi.dat");
+  const auto zeta_filename = output_path("zeta.dat");
+  safe_open(XI, xi_filename);     // hopping constants
+  safe_open(ZETA, zeta_filename); // on-site energies
   result_xi.clear();
   result_zeta.clear();
 
@@ -444,9 +454,8 @@ void tridiag() {
     mpf_mul(tempsq, mpzeta, mpzeta);
     mpf_sub(xi2, xi2, tempsq);
 
-    if (!mpf_cmp_d(xi2, 0.0)) {
-      cerr << "xi2 negative, aborting." << endl;
-      exit(1);
+    if (mpf_cmp_d(xi2, 0.0) <= 0) {
+      throw runtime_error("xi2 non-positive, aborting.");
     }
 
     mpf_sqrt(mpxi, xi2);
@@ -516,6 +525,8 @@ void tridiag() {
       mpf_set(up_prev[m], up[m]);
     }
   }
+  close_output_checked(XI, xi_filename);
+  close_output_checked(ZETA, zeta_filename);
 }
 
 void calc_tables() {
@@ -572,6 +583,7 @@ void reset_calculation_state() {
   result_xi.clear();
   result_zeta.clear();
   result_theta = 0.0;
+  nrgchain_output_dir = ".";
 }
 
 namespace NRG::Tools::NrgChain {
@@ -597,7 +609,8 @@ WilsonData make_result() {
   return data;
 }
 
-WilsonData run_calculation(const TableMode mode) {
+WilsonData run_calculation(const TableMode mode, const filesystem::path &output_dir) {
+  nrgchain_output_dir = output_dir;
   set_parameters();
   apply_mode(mode);
 
@@ -614,17 +627,19 @@ WilsonData run_calculation(const TableMode mode) {
 
 } // namespace
 
-WilsonData calculate_from_params(const std::map<std::string, std::string> &param_values, const TableMode mode) {
+WilsonData calculate_from_params(const std::map<std::string, std::string> &param_values, const TableMode mode,
+                                 const filesystem::path &output_dir) {
   reset_calculation_state();
   params = param_values;
-  return run_calculation(mode);
+  return run_calculation(mode, output_dir);
 }
 
-WilsonData calculate_from_file(const std::string &param_filename, const TableMode mode) {
+WilsonData calculate_from_file(const std::string &param_filename, const TableMode mode,
+                               const filesystem::path &output_dir) {
   reset_calculation_state();
   param_fn = param_filename;
   parser(param_fn);
-  return run_calculation(mode);
+  return run_calculation(mode, output_dir);
 }
 
 } // namespace NRG::Tools::NrgChain

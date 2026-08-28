@@ -2,9 +2,7 @@
 //
 // ** Interpolation code
 
-#include <cstdlib>
-#include <iostream>
-#include <ostream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -17,8 +15,7 @@ using Vec = std::vector<Pair>;
 
 struct ExitError {
   [[noreturn]] void operator()(const std::string &message) const {
-    std::cerr << "ERROR: " << message << std::endl;
-    std::exit(1);
+    throw std::runtime_error(message);
   }
 };
 

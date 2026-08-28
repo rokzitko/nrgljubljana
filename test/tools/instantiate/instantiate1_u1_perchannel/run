@@ -1,19 +1,41 @@
 #!/bin/sh
-set -e
+set -eu
 
 export PATH="$1:$PATH"
 
+sentinel_files="xi.dat zeta.dat theta.dat xi1.dat zeta1.dat theta1.dat val vec mat mat.res ham param.param param.dmft param.extra solverlogneg ham.keep vec.keep"
+rm -rf sentinels solverlog data data-target
+mkdir sentinels solverlog
+for file in $sentinel_files; do
+  printf 'caller-owned:%s\n' "$file" > "$file"
+  cp "$file" "sentinels/$file"
+done
+
+printf 'old-data\n' > data
+cp data sentinels/data
+if instantiate --template-dir missing > instantiate-failure.out 2> instantiate-failure.err; then
+  exit 1
+fi
+cmp data sentinels/data
+
+rm data
+printf 'symlink-target\n' > data-target
+cp data-target sentinels/data-target
+ln -s data-target data
 instantiate > instantiate.out
 
 test -s data
+test ! -L data
+cmp data-target sentinels/data-target
 
 count=$(grep -c '^f ' data)
 test "$count" = 2
 
-for file in xi.dat zeta.dat theta.dat xi1.dat zeta1.dat theta1.dat val vec mat mat.res ham param.param param.dmft param.extra solverlog solverlogneg; do
-  test ! -e "$file"
+for file in $sentinel_files; do
+  cmp "$file" "sentinels/$file"
 done
+test -d solverlog
 
-for file in vec.* ham.*; do
-  test ! -e "$file"
+for directory in ??????; do
+  test ! -d "$directory"
 done

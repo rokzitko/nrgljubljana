@@ -3,20 +3,16 @@
 // ** Loading (and parsing) of tabulated data
 
 #include <algorithm>
-#include <cstdlib>
 #include <exception>
 #include <fstream>
-#include <ios>
-#include <iostream>
-#include <ostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "../common/tabulated.hpp"
 
 [[noreturn]] inline void fail_with_error(const std::string &message) {
-  std::cerr << "ERROR: " << message << std::endl;
-  std::exit(1);
+  throw std::runtime_error(message);
 }
 
 template<typename F>
@@ -70,12 +66,16 @@ void save(const std::string &fn, const Vec &v) {
   std::ofstream F(fn.c_str());
   if (!F) fail_with_error("Failed to open " + fn + " for writing.");
   NRG::Tools::save_pairs(F, v);
+  F.close();
+  if (!F) fail_with_error("Failed writing " + fn + ".");
 }
 
 void save(const std::string &fn, const std::vector<double> &v) {
   std::ofstream F(fn.c_str());
   if (!F) fail_with_error("Failed to open " + fn + " for writing.");
   NRG::Tools::save_values(F, v);
+  F.close();
+  if (!F) fail_with_error("Failed writing " + fn + ".");
 }
 
 void load(const std::string &fn, std::vector<double> &v) {
