@@ -41,7 +41,7 @@ while (<F>) {
 	# x is brackted
 	my $slope = ($yprev-$y)/($xprev-$x);
 	print "$slope\n";
-	exit(1);
+	exit(0);
     }
     
     $xprev = $x;

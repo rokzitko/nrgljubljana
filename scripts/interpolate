@@ -47,7 +47,7 @@ while (<F>) {
 	my $dy = $slope * ($xtarget-$xprev);
 	my $solution = $yprev + $dy;
 	print "$solution\n";
-	exit(1);
+	exit(0);
     }
     
     $xprev = $x;
@@ -57,7 +57,7 @@ while (<F>) {
 # HACK
 if ($cnt == 1) {
     print "$yprev\n";
-    exit(1);
+    exit(0);
 }
 
 die "No solution.\n";
