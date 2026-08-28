@@ -601,11 +601,11 @@ Module[{t = {}},
 
     (* Symmetrized fluctuations of side dots, for QSLR code *)
     t = Join[t, mtSingletOp["n_ab^2",
-      1/2 (pow[number[b[]], 2] + pow[number[b[]], 2]) ] ];
+      1/2 (pow[number[a[]], 2] + pow[number[b[]], 2]) ] ];
 
     (* Symmetrized fluctuations of side dots, for ISOLR code *)
     t = Join[t, mtSingletOp["q_ab^2",
-      1/2 (pow[number[b[]]-1, 2] + pow[number[b[]]-1, 2]) ] ];
+      1/2 (pow[number[a[]]-1, 2] + pow[number[b[]]-1, 2]) ] ];
 
     t = Join[t, mtSingletOp["n_bn_d", nc[number[b[]], number[d[]]] ] ];
     t = Join[t, mtSingletOp["n_an_b", nc[number[a[]], number[b[]]] ] ];
