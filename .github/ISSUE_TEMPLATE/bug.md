@@ -8,7 +8,7 @@ labels: bug
 
 ### Prerequisites
 
-* Please check that a similar issue isn't already filed: https://github.com/issues?q=is%3Aissue+user%3Atriqs
+* Please check whether a similar report already exists in the [NRG Ljubljana issues](https://github.com/rokzitko/nrgljubljana/issues?q=is%3Aissue).
 
 ### Description
 
@@ -28,13 +28,19 @@ or paste a minimal code example to reproduce the issue.
 
 ### Versions
 
-Please provide the application version that you used.
+Please provide the NRG Ljubljana version or source revision, installation method, and OS version.
 
-You can get this information from copy and pasting the output of
+For a Conda installation, paste:
 ```bash
-python -c "from nrgljubljana.version import *; show_version(); show_git_hash();"
+conda list nrgljubljana
 ```
-from the command line. Also, please include the OS you are running and its version.
+
+For a source build, run this from the source checkout and paste:
+```bash
+git rev-parse HEAD
+```
+
+For source builds, also include relevant CMake options and the compiler version.
 
 ### Formatting
 
