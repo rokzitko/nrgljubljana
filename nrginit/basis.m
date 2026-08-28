@@ -590,7 +590,7 @@ If[GENERATEBASIS == True,
   (* Support for spinless fermions is implemented as a simple hack:
   we keep only spin-up fermions in the basis! *)
 
-  If[parambool["spinless"] || isSL[],
+  If[paramdefaultbool["spinless", False] || isSL[],
     MyPrint["spinless=true"];
     bz = spinlessbasis[bz];
     If[ SYMTYPE == "QS" || SYMTYPE == "QSZ",
