@@ -56,7 +56,7 @@ Useful focused runs from `CONTRIBUTING.md`:
 
 ```sh
 ctest --test-dir build --output-on-failure -R '^(store|test_clean|test0_clean)$'
-ctest --test-dir build --output-on-failure -R '^(adapt|nrgchain)$'
+ctest --test-dir build --output-on-failure -R '^(adapt|nrgchain)'
 ctest --test-dir build --output-on-failure -R '^(test_dmnrg_only|test_fdm_only|test65_algorithms_mats)$'
 ```
 

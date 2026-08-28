@@ -9,7 +9,14 @@ nrgchain determines the coefficients xi (hopping constants) and zeta
 as its input.
 
 
-Usage: nrgchain [parameter_file]
+Usage: nrgchain [-h|--help] [s|l] [parameter_file]
 
-Consult the sample parameter file for description of the parameters
-(in test/tools/adapt).
+The parameter file defaults to "param". Mode "s" calculates and saves the
+intermediate tables without tridiagonalising; mode "l" loads those tables and
+tridiagonalises them. A command-line mode overrides the corresponding settings
+from the parameter file.
+
+The parameter "nrgchain_tridiag" controls whether tridiagonalisation is
+performed when no command-line mode overrides it.
+
+Consult test/tools/nrgchain/nrgchain1/param for a sample parameter file.

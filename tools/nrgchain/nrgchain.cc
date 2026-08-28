@@ -32,7 +32,6 @@ using namespace std;
 #include "calc.h"
 #include "nrgchain.hpp"
 
-string param_fn = "param";  // file with input parameters
 LAMBDA Lambda;              // discretization parameter
 double z;                   // twist parameter
 double xmax;                // higher boundary of the x=j+z interval, where the ODE
@@ -128,33 +127,40 @@ void about(ostream &F = cout) {
   F << "# Rok Zitko, rok.zitko@ijs.si, 2009" << endl;
 }
 
-void usage(ostream &F = cout) {
-  F << "Usage: nrgchain [-h] [s|l]" << endl;
-}
+constexpr auto usage_text = "Usage: nrgchain [-h|--help] [s|l] [parameter_file]";
 
-// Called before the parser.
-void cmd_line(int argc, char *argv[]) {
-  if (argc >= 2 && string(argv[1]) == "-h") {
-    usage();
-    exit(EXIT_SUCCESS);
-  }
-}
+void usage(ostream &F = cout) { F << usage_text << endl; }
 
-// Called after the parser.
-void cmd_line_post(int argc, char *argv[]) {
-  // Argument 's': save tables, do not tridiagonalise
-  if (argc == 2 && string(argv[1]) == "s") {
-    nrgchain_tables_load = false;
-    nrgchain_tables_save = true;
-    nrgchain_tridiag     = false;
+struct CommandLineOptions {
+  string param_filename = "param";
+  NRG::Tools::NrgChain::TableMode mode = NRG::Tools::NrgChain::TableMode::Calculate;
+};
+
+CommandLineOptions cmd_line(int argc, char *argv[]) {
+  CommandLineOptions options;
+  bool mode_set  = false;
+  bool param_set = false;
+
+  for (int i = 1; i < argc; i++) {
+    const string arg = argv[i];
+    if (arg == "-h" || arg == "--help") {
+      usage();
+      exit(EXIT_SUCCESS);
+    }
+    if (arg == "s" || arg == "l") {
+      if (mode_set) throw invalid_argument("Mode specified more than once.\n" + string(usage_text));
+      options.mode = arg == "s" ? NRG::Tools::NrgChain::TableMode::SaveOnly
+                                : NRG::Tools::NrgChain::TableMode::LoadAndTridiagonalize;
+      mode_set = true;
+      continue;
+    }
+    if (!arg.empty() && arg[0] == '-') throw invalid_argument("Unknown option: " + arg + "\n" + usage_text);
+    if (param_set) throw invalid_argument("Unexpected argument: " + arg + "\n" + usage_text);
+    options.param_filename = arg;
+    param_set              = true;
   }
 
-  // Argument 'l': load tables, tridiagonalise
-  if (argc == 2 && string(argv[1]) == "l") {
-    nrgchain_tables_load = true;
-    nrgchain_tables_save = false;
-    nrgchain_tridiag     = true;
-  }
+  return options;
 }
 
 void set_parameters() {
@@ -187,7 +193,9 @@ void set_parameters() {
 
   nrgchain_tables_save = Pbool("nrgchain_tables_save", false);
   nrgchain_tables_load = Pbool("nrgchain_tables_load", false);
-  nrgchain_tridiag     = Pbool("nrgchains_tridiag", true);
+  // Keep the historical misspelling as a fallback for existing parameter files.
+  nrgchain_tridiag = params.contains("nrgchain_tridiag") ? Pbool("nrgchain_tridiag", true)
+                                                          : Pbool("nrgchains_tridiag", true);
 
   cout << "# Lambda=" << Lambda;
   cout << " bandrescale=" << bandrescale;
@@ -637,8 +645,7 @@ WilsonData calculate_from_params(const std::map<std::string, std::string> &param
 WilsonData calculate_from_file(const std::string &param_filename, const TableMode mode,
                                const filesystem::path &output_dir) {
   reset_calculation_state();
-  param_fn = param_filename;
-  parser(param_fn);
+  parser(param_filename);
   return run_calculation(mode, output_dir);
 }
 
@@ -650,18 +657,8 @@ int main(int argc, char *argv[]) {
     clock_t start_clock = clock();
 
     about();
-    cmd_line(argc, argv);
-    parser(param_fn);
-    set_parameters();
-    cmd_line_post(argc, argv);
-
-    if (nrgchain_tables_load) {
-      load_tables();
-    } else {
-      calc_tables();
-    }
-
-    if (nrgchain_tridiag) tridiag();
+    const auto options = cmd_line(argc, argv);
+    NRG::Tools::NrgChain::calculate_from_file(options.param_filename, options.mode);
 
     clock_t end_clock = clock();
     cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << endl;
