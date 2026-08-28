@@ -31,13 +31,56 @@ nonstandard numerical-library configurations are required.
 
 ## Source builds
 
-Build locally with CMake:
+### Requirements
+
+Source builds require CMake 3.25 or newer and C and C++ compilers with
+C++20 support. The following dependencies must be provided by the system in
+all dependency modes:
+
+- threaded BLAS and LAPACK, typically MKL or OpenBLAS
+- MPI with C++ support
+- Boost 1.53 or newer, including the MPI and serialization components
+- GSL
+- GMP, including the C++ library
+- HDF5 with the C and high-level components
+
+OpenMP is required only when application-level OpenMP regions are enabled or
+when the selected BLAS/LAPACK threading implementation requires it. Wolfram
+Mathematica is required for the `nrginit` workflow, which prepares the initial
+Hamiltonian, basis, and operator data used by the C++ executable. CUDA support
+is optional and requires a CUDA Toolkit that provides cuSOLVER, cuBLAS, and
+cuDART.
+
+By default, `NRGLJUBLJANA_USE_SYSTEM_DEPS` is `OFF`. Configuration downloads
+CPM.cmake and uses it to obtain GoogleTest 1.15.2 when tests are enabled,
+Eigen 3.4.0 when a compatible system Eigen package is unavailable, HighFive
+3.1.0, fmt 12.2.0, and range-v3 0.12.0. The first configure therefore requires
+Git and network access unless these sources are already present in the CPM
+source cache.
+
+For a network-free build, install CMake config packages for Eigen 3.4 or newer,
+HighFive, fmt 11 or newer, and range-v3, then configure with
+`-DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON`. GoogleTest must also be installed when the
+default test build is enabled. The test suite additionally uses Perl and the
+HDF5 command-line tools; use `-DBuild_Tests=OFF` when tests are not needed.
+
+### Build and test
+
+CMake requires an explicit absolute install prefix. Configure, build, install,
+and load the installed environment with:
 
 ```sh
 cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/
 cmake --build build --parallel
 cmake --install build
+source "$HOME/nrgljubljana/share/nrgljubljanavars.sh"
 ```
+
+Source `nrgljubljanavars.sh` in each new shell that will use the installation.
+For a nondefault `CMAKE_INSTALL_DATADIR`, the script is under that directory
+instead of `share`; CMake prints its exact path during configuration. The
+script configures the executable, library, include, and CMake package search
+paths.
 
 Run the default test suite with:
 
@@ -50,25 +93,15 @@ Increase `--timeout` for slow machines or debug builds.
 Useful developer options:
 
 - `-DCMAKE_BUILD_TYPE=Debug`
+- `-DBuild_Tests=ON|OFF` controls the test build (default: `ON` for a top-level build)
 - `-DTEST_LONG=ON`
 - `-DASAN=ON -DUBSAN=ON`
 - `-DANALYZE_SOURCES=ON`
 - `-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON|OFF` enables application-level OpenMP regions such as simultaneous diagonalisation scheduling (default: `OFF`)
+- `-DNRGLJUBLJANA_ENABLE_CUDA=ON|OFF` requests CUDA/cuSOLVER support (default: `OFF`)
 - `-DNRGLJUBLJANA_ENABLE_MATHEMATICA=ON|OFF` controls `FindMathematica` (default: `OFF` on `aarch64`, `ON` otherwise)
 - `-DNRGLJUBLJANA_INSTALL_NRGINIT=ON|OFF` controls installation of the `nrginit` scripts (default: `ON`)
 - `-DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON|OFF` uses preinstalled dependencies instead of CPM downloads (default: `OFF`)
-
-Core native dependencies:
-
-- threaded BLAS and LAPACK, typically MKL or OpenBLAS
-- MPI
-- OpenMP only when enabled for application-level regions, or when required by the selected BLAS/LAPACK implementation
-- Boost
-- GSL
-- GMP
-- HDF5
-
-Wolfram Mathematica is required for the `nrginit` side of the workflow, which prepares the initial Hamiltonian, basis, and operator data used by the C++ executable.
 
 ## Parallelism Model
 
