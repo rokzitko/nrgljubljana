@@ -3,6 +3,7 @@ repo_url: https://github.com/rokzitko/nrgljubljana
 edit_uri: edit/master/docs/docs/
 nav:
   - Overview: index.md
+  - Research using NRG Ljubljana: publications.md
   - User Guide:
     - Getting started: getting-started.md
     - Input and configuration: input-and-configuration.md

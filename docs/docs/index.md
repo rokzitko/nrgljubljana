@@ -18,6 +18,8 @@ The input side is centered around the `param` and `data` files. The runtime side
 
 ## Start Here
 
+- [Research using NRG Ljubljana](publications.md): published applications in
+  quantum impurity physics, DMFT, and correlated materials
 - [Getting started](getting-started.md): build, test, and run the code locally
 - [Parameter reference](parameter-reference.md): `param` syntax, ownership,
   defaults, constraints, and interactions

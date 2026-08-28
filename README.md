@@ -6,6 +6,14 @@
 NRG Ljubljana is a framework for numerical renormalization group (NRG) calculations for quantum impurity problems. It combines a Mathematica-based initialization layer 
 (using [sneg](https://github.com/rokzitko/sneg)) with a C++20 runtime for the iterative NRG calculation, density-matrix variants, and a collection of standalone analysis tools.
 
+NRG Ljubljana is used in published research on quantum dots, Kondo systems,
+superconducting impurities, molecular magnets, DMFT, and correlated materials.
+See [publications using NRG Ljubljana](docs/docs/publications.md).
+
+If you publish work using NRG Ljubljana, please add your paper via a
+[pull request](https://github.com/rokzitko/nrgljubljana/edit/master/docs/docs/publications.md)
+or [open an issue](https://github.com/rokzitko/nrgljubljana/issues).
+
 ## What It Covers
 
 - multiple symmetry backends, including QS, QSZ, ISO, ISOSZ, SPSU2, and extended symmetry sets
