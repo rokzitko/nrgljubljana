@@ -741,12 +741,14 @@ diagvc[inv_] := diagvc[inv] = Module[{hamil, dim, nr, val, vec, reslt},
 
 (* coupledQ? Are two subspaces coupled by creation operator? *)
 (* spincoupledQ? Are two subspaces coupled by spin (triplet) operator? *)
+(* Spin triplets are scalars under all non-spin symmetries. *)
 (* WARNING: <i| op |j>; q1,s1 correspond to j, q2,s2 correspond to i *)
 
 coupledQ["QS" | "QSLR", {{q1_, ss1_, i1___}, {q2_, ss2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ss1-ss2] == 1, True, False, MyError["oops"]];
 spincoupledQ["QS" | "QSLR", {{q1_, ss1_, i1___}, {q2_, ss2_, i2___}}] :=
-  If[q1 == q2 && (ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2), True, False,
+  If[q1 == q2 && (ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2) &&
+    SameQ[{i1}, {i2}], True, False,
     MyError["oops"]];
 
 (* f[p] of three types. Need finer grained checks. *)
@@ -792,15 +794,14 @@ spincoupledQ["SPSU2T", {{ss1_, t1_, i1___}, {ss2_, t2_, i2___}}] :=
 
 coupledQ["SPSU2" | "SPSU2LR" | "SPSU2C3", {{ss1_, i1___}, {ss2_, i2___}}] :=
   If[Abs[ss1-ss2] == 1, True, False, MyError["oops"]];
-(* TODO: parity should not change! *)
 spincoupledQ["SPSU2" | "SPSU2LR" | "SPSU2C3", {{ss1_, i1___}, {ss2_, i2___}}] :=
-  If[ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2, True, False,
+  If[(ss1 == ss2 || ss1 == ss2-2 || ss1 == ss2+2) && SameQ[{i1}, {i2}], True, False,
     MyError["oops"]];
 
 coupledQ["SPU1" | "SPU1LR", {{ssz1_, i1___}, {ssz2_, i2___}}] :=
   If[Abs[ssz1-ssz2] == 1, True, False, MyError["oops"]];
 spincoupledQ["SPU1" | "SPU1LR", {{ssz1_, i1___}, {ssz2_, i2___}}] :=
-  If[ssz1 == ssz2 || ssz1 == ssz2-2 || ssz1 == ssz2+2, True, False,
+  If[(ssz1 == ssz2 || ssz1 == ssz2-2 || ssz1 == ssz2+2) && SameQ[{i1}, {i2}], True, False,
      MyError["oops"]];
 
 coupledQ["ISO" | "ISOLR" | "ISO2" | "ISO2LR",
