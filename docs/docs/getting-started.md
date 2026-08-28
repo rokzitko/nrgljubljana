@@ -41,6 +41,43 @@ tests are enabled. The test suite additionally uses Perl and the HDF5
 command-line tools; configure with `-DBuild_Tests=OFF` when tests are not
 needed.
 
+### BLAS/LAPACK integer ABI
+
+The BLAS integer ABI is independent of the operating system's pointer size.
+The usual LP64 interface passes 32-bit integers to BLAS and LAPACK, while the
+ILP64 interface passes 64-bit integers. NRG Ljubljana defaults to LP64 through
+`NRGLJUBLJANA_BLAS_ILP64=OFF`; enabling the option selects ILP64. The option
+also fixes CMake's `BLA_SIZEOF_INTEGER` to `4` or `8`, and configuration rejects
+an explicitly contradictory value.
+
+The selected BLAS and LAPACK libraries, the project declarations, and any
+dispatcher interface must all use the same integer width and symbol naming
+convention. An ABI mismatch may still link successfully but passes arguments
+with the wrong layout and is unsafe. Typical explicit selections are:
+
+```sh
+# LP64 OpenBLAS
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/ \
+  -DNRGLJUBLJANA_BLAS_ILP64=OFF -DBLA_VENDOR=OpenBLAS
+
+# LP64 Intel MKL
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/ \
+  -DNRGLJUBLJANA_BLAS_ILP64=OFF -DBLA_VENDOR=Intel10_64lp
+
+# ILP64 Intel MKL
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/ \
+  -DNRGLJUBLJANA_BLAS_ILP64=ON -DBLA_VENDOR=Intel10_64ilp
+```
+
+For ILP64, prefer MKL's direct `Intel10_64ilp` interface. An `mkl_rt`
+dispatcher build is only compatible when its runtime interface layer is also
+set to ILP64; NRG Ljubljana does not select that layer. OpenBLAS is compatible
+with ILP64 only when the installed library was built for 64-bit integers and
+exports a symbol convention detected by this project. Apple Accelerate is an
+LP64 choice with the supported CMake versions. ILP64 declarations currently
+use a 64-bit C++ `long`, so the option is not supported on LLP64 platforms such
+as Windows. The ILP64 path is not covered by the current CI matrix.
+
 ## Build
 
 CMake requires an explicit absolute install prefix. Configure, build, install,
@@ -74,6 +111,7 @@ Useful configure options:
 - `-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON|OFF` enables application-level OpenMP regions (default: `OFF`)
 - `-DNRGLJUBLJANA_ENABLE_CUDA=ON|OFF` requests CUDA/cuSOLVER support (default: `OFF`)
 - `-DNRGLJUBLJANA_ENABLE_MATHEMATICA=ON|OFF` controls `FindMathematica` (default: `OFF` on `aarch64`, `ON` otherwise)
+- `-DNRGLJUBLJANA_BLAS_ILP64=ON|OFF` selects the 64-bit or 32-bit BLAS/LAPACK integer ABI (default: `OFF`)
 - `-DNRGLJUBLJANA_INSTALL_NRGINIT=ON|OFF` controls installation of the `nrginit` scripts (default: `ON`)
 - `-DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON|OFF` uses preinstalled dependencies instead of CPM downloads (default: `OFF`)
 

@@ -9,7 +9,9 @@ Compiling NRG Ljubljana from source
 Installation steps
 ------------------
 
-#. Download the source code of the latest stable version by cloning the ``rokzitko/NRGLjubljana`` repository from GitHub::
+#. Clone the ``rokzitko/NRGLjubljana`` repository from GitHub. This checks out
+   the current development branch; select a release tag as described below
+   when a released version is required::
 
      $ git clone https://github.com/rokzitko/NRGLjubljana nrgljubljana.src
 
@@ -30,38 +32,55 @@ Installation steps
 Versions
 --------
 
-To use a particular version, go into the directory with the sources, and look at all available versions::
+Release tags use dotted numeric names. Go into the source directory and list
+them in descending version order::
 
-     $ cd nrgljubljana.src && git tag
+     $ cd nrgljubljana.src
+     $ git tag --list '[0-9]*' --sort=-version:refname
 
-Checkout the version of the code that you want::
+Select one of the listed tags in detached mode. For example::
 
-     $ git checkout 2019/12
+     $ git switch --detach 2026.06.1
 
-and follow steps 2 to 4 above to compile the code.
+Then follow steps 2 to 4 above to compile the code. The current set of
+published versions is also available on the `GitHub releases page
+<https://github.com/rokzitko/nrgljubljana/releases>`_ and the `tags page
+<https://github.com/rokzitko/nrgljubljana/tags>`_.
 
 Custom CMake options
 --------------------
 
-The compilation of ``NRG Ljubljana`` can be configured using CMake-options::
+The compilation of ``NRG Ljubljana`` can be configured using CMake options::
 
     cmake ../nrgljubljana.src -DOPTION1=value1 -DOPTION2=value2 ...
 
-+-----------------------------------------------------------------+-----------------------------------------------+
-| Options                                                         | Syntax                                        |
-+=================================================================+===============================================+
-| Specify an installation path                                    | -DCMAKE_INSTALL_PREFIX=path                   |
-+-----------------------------------------------------------------+-----------------------------------------------+
-| Build in Debugging Mode                                         | -DCMAKE_BUILD_TYPE=Debug                      |
-+-----------------------------------------------------------------+-----------------------------------------------+
-| Disable testing (not recommended)                               | -DBuild_Tests=OFF                             |
-+-----------------------------------------------------------------+-----------------------------------------------+
-| Build the documentation                                         | -DBuild_Documentation=ON                      |
-+-----------------------------------------------------------------+-----------------------------------------------+
-| Enable application-level OpenMP regions                         | -DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON          |
-+-----------------------------------------------------------------+-----------------------------------------------+
-| Select MKL threading layer for ``mkl_rt`` builds                 | -DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU       |
-+-----------------------------------------------------------------+-----------------------------------------------+
+Common options include:
+
+* Installation path: ``-DCMAKE_INSTALL_PREFIX=path``
+* Debug build: ``-DCMAKE_BUILD_TYPE=Debug``
+* Disable testing: ``-DBuild_Tests=OFF``
+* Build the documentation: ``-DBuild_Documentation=ON``
+* Enable application-level OpenMP regions:
+  ``-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON``
+* Select the MKL threading layer for ``mkl_rt`` builds:
+  ``-DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU``
+
+BLAS/LAPACK integer ABI
+-----------------------
+
+The default ``NRGLJUBLJANA_BLAS_ILP64=OFF`` configuration uses the
+32-bit-integer LP64 interface. ``NRGLJUBLJANA_BLAS_ILP64=ON`` selects the
+64-bit-integer ILP64 interface. This setting is independent of pointer size.
+The selected BLAS and LAPACK libraries and NRG Ljubljana must use the same
+integer ABI and symbol convention; mixing LP64 and ILP64 may link but is
+unsafe.
+
+For MKL, use ``-DBLA_VENDOR=Intel10_64lp`` with LP64 or
+``-DBLA_VENDOR=Intel10_64ilp`` with ILP64. OpenBLAS is an ILP64 option only
+when the installed library was built for 64-bit integers and exports compatible
+symbols. Apple Accelerate and the standard Conda variants use LP64. Prefer the
+direct MKL ILP64 interface over ``mkl_rt``; a dispatcher build also requires a
+matching runtime interface layer, which NRG Ljubljana does not select.
 
 Parallelism
 -----------

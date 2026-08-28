@@ -3,15 +3,14 @@
 ## Top-Level Layout
 
 - `c++/`: core solver, runtime orchestration, diagonalization wrappers, operator recalculation, stores, output handling, and symmetry abstraction
-- `tools/`: standalone preprocessing and postprocessing executables such as `adapt`, `nrgchain`, `broaden`, `hilb`, `resample`, and `unitary`
+- `tools/`: standalone preprocessing and postprocessing executables such as `adapt`, `nrgchain`, `instantiate`, `broaden`, `hilb`, `resample`, and `unitary`
 - `nrginit/`: Mathematica-side initialization code used to generate the initial `data` file and related model artifacts
+- `nrgspawn/`: checked-in examples and reference outputs for the template-instantiation workflow implemented by `tools/instantiate/`
 - `test/`: unit tests, regression tests, tool tests, and Mathematica-driven integration suites
 - `share/`: installed package metadata and auxiliary CMake modules used by the build and downstream consumers
 - `scripts/`: helper scripts for inspecting or aggregating output files
 - `doc/`: legacy Sphinx documentation tree
 - `docs/`: new MkDocs documentation tree
-- `templates/`: model and workflow templates used by higher-level generation or tests
-- `floquet/`: repository-local example and experiment directories for Floquet-related workflows
 
 ## Core Native Code In `c++/`
 
@@ -52,6 +51,7 @@ See also:
 Each tool is built as its own executable and linked against the project's common utility code and core numerical dependencies. The tool set covers several categories:
 
 - discretization and chain generation: `adapt`, `nrgchain`
+- prepared-run instantiation: `instantiate`
 - matrix and numerical transforms: `diag`, `hilb`, `kk`, `unitary`
 - spectral postprocessing: `broaden`, `bw`, `resample`, `specmoments`
 - averages and integration helpers: `binavg`, `intavg`, `integ`, `tdavg`, `mats`
@@ -65,6 +65,7 @@ The test tree is organized by style rather than by component:
 - `test/c++/`: main regression runs for the C++ executable
 - `test/c++sym_basic/`, `test/c++sym_more/`, `test/c++sym_all/`: regression suites across increasing symmetry coverage
 - `test/tools/`: standalone tool tests
+- `test/nrgspawn/`: prepared template-instantiation workflow tests
 - `test/nrginit*`, `test/models*`, `test/templates/`: Mathematica-dependent end-to-end workflows
 - `test/complex/`, `test/test_long/`: specialized or long-running suites
 

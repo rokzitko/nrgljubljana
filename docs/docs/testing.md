@@ -38,6 +38,13 @@ Several suites depend on Mathematica being available during configuration:
 
 These cover the higher-level initialization and generated-input workflow.
 
+All four configuration conditions must be satisfied for these suites to be
+registered: `Build_Tests=ON`, `SYM_ALL=ON`,
+`NRGLJUBLJANA_ENABLE_MATHEMATICA=ON`, and successful Mathematica discovery.
+The Conda recipe additionally defaults its
+`nrgljubljana_enable_mathematica` and `nrgljubljana_build_tests` variants to
+`OFF`; CMake kernel hints do not override those recipe variants.
+
 ## Long Tests
 
 Long-running suites are gated behind `-DTEST_LONG=ON`.

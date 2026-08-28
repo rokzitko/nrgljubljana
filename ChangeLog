@@ -1,3 +1,7 @@
+NOTE: This is an archival changelog ending in 2019. Current release information
+is maintained at https://github.com/rokzitko/nrgljubljana/releases and
+https://github.com/rokzitko/nrgljubljana/tags.
+
 2.2.0 relative to 2.0.6
 =======================
 - Parallelization using MPI. The diagonalization can now be spread

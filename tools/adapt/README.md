@@ -173,7 +173,6 @@ At these points no difference between the integral and analytic values was detec
 
 - Rok Zitko, "Adaptive logarithmic discretization for numerical renormalization group methods", *Computer Physics Communications* **180**, 1271-1276 (2009).
 - Rok Zitko and Thomas Pruschke, "Energy resolution and discretization artefacts in the numerical renormalization group", *Physical Review B* **79**, 085106 (2009).
-- Don Rolih, *Hybrid Devices Composed of Superconductors and Strongly Correlated Materials*, doctoral thesis, Section 2.3.3 and Equation (2.51), manuscript `rolih_PhD_aug24.pdf`.
 
 ## Acknowledgements
 

@@ -23,26 +23,49 @@ conda build -c conda-forge recipe
 conda install -n base -c conda-forge conda-build
 ```
 
-2. Optional: a local Mathematica installation on the machine, needed to run `nrginit` and Mathematica-dependent tests.
+2. Optional: a local Mathematica installation on the machine, needed to run
+   `nrginit` and Mathematica-dependent tests.
 
-3. Optional: Mathematica kernel visible to CMake `FindMathematica` (any one of these is usually sufficient):
-   - `WolframKernel` in `PATH`
-   - `math` in `PATH`
-   - explicit CMake hint via `CMAKE_ARGS` (examples below)
+## Optional: enable Mathematica detection
 
-## Optional: help CMake find Mathematica
+The recipe always installs the `nrginit` scripts, but configure-time
+Mathematica detection defaults to `OFF` on every platform through the
+`nrgljubljana_enable_mathematica` variant. CMake root or kernel hints only
+control where `FindMathematica` searches; they do not enable detection. The
+recipe passes its explicit `NRGLJUBLJANA_ENABLE_MATHEMATICA` value after
+`CMAKE_ARGS`, so setting that option in `CMAKE_ARGS` is also insufficient.
 
-If automatic detection does not work, pass one of these hints when building:
-
-```bash
-export CMAKE_ARGS="${CMAKE_ARGS} -DMathematica_ROOT_DIR=/path/to/Wolfram"
-```
-
-or
+Enable detection with the recipe variant:
 
 ```bash
-export CMAKE_ARGS="${CMAKE_ARGS} -DMathematica_KERNEL_EXECUTABLE=/full/path/to/WolframKernel"
+conda build -c conda-forge \
+  --variants "{nrgljubljana_enable_mathematica: ['ON']}" \
+  recipe
 ```
+
+CTest is disabled in Conda builds by default. To detect Mathematica and run
+the Mathematica-dependent tests, enable both variants:
+
+```bash
+conda build -c conda-forge \
+  --variants "{nrgljubljana_enable_mathematica: ['ON'], nrgljubljana_build_tests: ['ON']}" \
+  recipe
+```
+
+The finder recognizes a standard installation through the `math` command. For
+a nonstandard native installation, pass the host root and kernel location in
+addition to enabling the variant:
+
+```bash
+export CMAKE_ARGS="${CMAKE_ARGS:-} \
+  -DMathematica_HOST_ROOT_DIR=/path/to/Wolfram \
+  -DMathematica_ROOT_DIR=/path/to/Wolfram \
+  -DMathematica_KERNEL_EXECUTABLE=/full/path/to/WolframKernel"
+```
+
+Build-time detection does not store the kernel path in the installed launcher.
+At runtime, `nrginit` invokes `math` by default; pass a different executable as
+its only argument, for example `nrginit /full/path/to/WolframKernel`.
 
 ## Build the package
 
@@ -139,11 +162,15 @@ test -x "${CONDA_PREFIX}/nrginit/nrginit"
 command -v nrginit
 ```
 
-If Mathematica was detected during the build, the logs contain a line similar to `Mathematica executable ...`. Mathematica-dependent tests only run when Mathematica is detected.
+If Mathematica detection was enabled and succeeded, the logs contain a line
+similar to `Mathematica executable ...`. Mathematica-dependent tests are only
+registered when tests and the full symmetry set are enabled and Mathematica is
+found.
 
 ## Notes
 
 - Current recipe skips Windows.
 - The conda recipe uses Intel MKL on `linux-64`, Accelerate on macOS, and OpenBLAS on generic Linux `aarch64`; NVPL is available as an explicit Linux `aarch64` variant.
+- The provided Conda variants use the LP64 BLAS/LAPACK integer ABI. `blas_impl` selects an implementation, not ILP64; the recipe does not currently define or test an ILP64 package variant.
 - Mathematica is not provided by conda dependencies; using `nrginit` relies on a local system installation.
-- In isolated CI environments without Mathematica, `nrginit` is still installed but Mathematica-dependent tests are skipped.
+- Mathematica detection is disabled by default; `nrginit` is still installed, but Mathematica-dependent tests are not registered.

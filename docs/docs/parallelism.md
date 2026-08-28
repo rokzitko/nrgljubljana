@@ -17,6 +17,15 @@ In this mode the code has serial application-level scheduling, while each LAPACK
 
 OpenMP-based MKL threading-layer choices link CMake's documented `OpenMP::OpenMP_CXX` target so MKL can resolve the corresponding runtime symbols even though NRG Ljubljana's own OpenMP regions remain disabled.
 
+## BLAS/LAPACK ABI
+
+Threading and integer width are separate choices. The default
+`NRGLJUBLJANA_BLAS_ILP64=OFF` build uses the 32-bit-integer LP64 interface;
+`ON` requires a matching 64-bit-integer ILP64 BLAS and LAPACK. Do not combine
+libraries from different integer interfaces. For supported vendor selections,
+dispatcher constraints, and examples, see
+[BLAS/LAPACK integer ABI](getting-started.md#blaslapack-integer-abi).
+
 ## Expert Application OpenMP
 
 `NRGLJUBLJANA_ENABLE_APP_OPENMP=ON` enables OpenMP regions in NRG Ljubljana itself. This affects simultaneous diagonalisation scheduling through `diag_mode=OpenMP` and `diagth`, plus a few non-BLAS loops.

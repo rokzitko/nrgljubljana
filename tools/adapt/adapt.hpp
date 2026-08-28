@@ -365,7 +365,7 @@ class Adapt {
      max_error = std::max(max_error, error);
      return result;
    }
-   // Representative energy from Eq. (2.51) in Don Rolih's doctoral thesis.
+   // Evaluate the representative energy from the integrated cumulative weight.
    auto Eps_integral(const double x_, gsl_integration_cquad_workspace *workspace) {
      assert(x_ >= 1.0);
      if (x_ == 1.0) return 1.0;
