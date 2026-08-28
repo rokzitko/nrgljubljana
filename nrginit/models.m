@@ -714,10 +714,10 @@ If[ MODEL == "ZERO",
 
 (**** [TWO-CHANNELS] Single-impurity problems ****)
 
-(* A test for LR symmetry. TO DO: When and where should this test be performed?? *)
+(* Called after inittheta0ch[] has initialized the channel couplings. *)
 checkgammasym[] := Module[{test},
   test = Abs[gammaPolCh[1] - gammaPolCh[2] /. params] < 10^-10;
-  If[!test,
+  If[test =!= True,
     MyError["Coupling to conduction channels is not symmetric."];
   ];
 ];

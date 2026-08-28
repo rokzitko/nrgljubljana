@@ -164,7 +164,7 @@ InitPolarized[] := Module[{},
     COEFCHANNELS = 4 CHANNELS; (* Quadruple the number of coefficient sets for channels. *)
     VDIM = 2 * CHANNELS; (* !! *)
   ];
-  If[POLARIZE && POL2x2,
+  If[POLARIZED && POL2x2,
     MyError["POLARIZED or POL2x2? Choose one!"];
   ];
 ];
@@ -290,7 +290,7 @@ lrextrarule = {};
 
 (* Some useful functions for Hamiltonian construction and error checking. *)
 checkQSZ[] := If[Nor[isQSZ[], isP[], isPP[], isNONE[], isDBLQSZ[], isDBLSU2[], isDBLISOSZ[], isSU2[], isU1[],
-                     isSPU1[], isSPU1LR, isISOSZ[]],
+                     isSPU1[], isSPU1LR[], isISOSZ[]],
  MyError["SYMTYPE==QSZ (and similar) only"]
 ];
 

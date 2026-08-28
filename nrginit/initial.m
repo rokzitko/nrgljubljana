@@ -1967,7 +1967,12 @@ maketable[]:=Module[{t},
 
   perturbhamiltonian[];
   inittheta0ch[];
-  If[!option["GENERATE_TEMPLATE"], checkdefinitions[]];
+  If[!option["GENERATE_TEMPLATE"],
+    checkdefinitions[];
+    If[isLR[] && CHANNELS == 2 && !FreeQ[H, gammaPolCh[_]],
+      checkgammasym[];
+    ];
+  ];
 
   (* Perform all diagonalisations *)
   calcgsenergy[];
