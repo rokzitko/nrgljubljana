@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Integrate column data by trapezoid rule, taking absolute values [negative frequencies only]
-# Rok Zitko, 2025
+# Rok Zitko, 2025-2026
 
 use warnings;
 use strict;
@@ -15,7 +15,7 @@ while (<>) {
   
   if ($. != 1) {
       if ($x < 0 && $xprev < 0.0) {
-        $sum += ($x-$xprev) * abs($y + $yprev)/2.0;
+        $sum += ($x-$xprev) * (abs($y) + abs($yprev))/2.0;
       }
   }
   

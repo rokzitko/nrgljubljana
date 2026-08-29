@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 # Integrate column data by trapezoid rule: int(ABS(y) dx)
-# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Feb, Oct 2008
-# $Id$
+# Rok Zitko, rok.zitko@ijs.si, 2008-2026
 
 use warnings;
 use strict;
@@ -15,7 +14,7 @@ while (<>) {
   my ($x,$y,$remainder) = split;
   
   if ($. != 1) {
-    $sum += ($x-$xprev) * abs($y + $yprev)/2.0;
+    $sum += ($x-$xprev) * (abs($y) + abs($yprev))/2.0;
   }
   
   $xprev = $x;
