@@ -3,15 +3,63 @@
 `integ` integrates a two-column tabulation using a selected GSL interpolant and
 adaptive QAG quadrature.
 
+## Definitions
+
+Let $s(x)$ be the selected interpolant through the input samples, with input
+domain
+
+$$
+D = [x_{\min}, x_{\max}].
+$$
+
+The default output is the total integral
+
+$$
+I = \int_D s(x)\,dx
+  = \int_{x_{\min}}^{x_{\max}} s(x)\,dx.
+$$
+
+For the positive- and negative-frequency modes, define
+
+$$
+D_+ = D \cap (0, \infty),
+\qquad
+D_- = D \cap (-\infty, 0).
+$$
+
+The corresponding integrals are
+
+$$
+I_+ = \int_{D_+} s(x)\,dx,
+\qquad
+I_- = \int_{D_-} s(x)\,dx.
+$$
+
+The absolute-value mode integrates the absolute value of the interpolant:
+
+$$
+I_{\mathrm{abs}} = \int_D \lvert s(x) \rvert\,dx.
+$$
+
+Thus, the absolute value is applied after interpolation, rather than to the
+input samples before constructing the interpolant. The Fermi-weighted mode is
+
+$$
+I_{\mathrm{F}}(T)
+= \int_D s(x) f_T(x)\,dx,
+\qquad
+f_T(x) = \frac{1}{1 + \exp(x/T)}.
+$$
+
 ## Usage
 
 ```text
 integ [options] input [-p|-n|-a|-f]
 ```
 
-The default output is the integral over the full input interval. The program
-also computes the positive, negative, absolute-value, and Fermi-weighted
-integrals, then prints the selected value with 16 significant digits.
+The program computes the total, positive-frequency, negative-frequency,
+absolute-value, and Fermi-weighted integrals, then prints the selected value
+with 16 significant digits.
 
 ## Options
 
