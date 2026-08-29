@@ -714,7 +714,7 @@ class Hilb {
     std::cout << "-d <dos>  Load the density of state data from file 'dos'\n";
     std::cout << "          If this option is not used, the Bethe lattice DOS is assumed.\n";
     std::cout << "-i <method>, --interpolation <method>\n";
-    std::cout << "          Interpolation method: linear, cspline, or akima. Default is cspline.\n";
+    std::cout << "          Interpolation method: linear, cspline, akima, or steffen. Default is cspline.\n";
     std::cout << "-v        Increase verbosity\n";
     std::cout << "-s <s>    Rescale factor 'scale' for the DOS.\n";
     std::cout << "-B <B>    Half-bandwidth 'B' of the Bethe lattice DOS.\n";

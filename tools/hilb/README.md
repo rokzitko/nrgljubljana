@@ -161,7 +161,7 @@ the final positional arguments.
 | `-h`, `--help` | Print command-line help. |
 | `-V` | Print `hilb 2026.09`. |
 | `-d FILE` | Read a tabulated density of states from `FILE`. Otherwise use the built-in semicircular density. |
-| `-i METHOD`, `--interpolation METHOD` | Interpolate a tabulated density with `linear`, `cspline`, or `akima`. Default: `cspline`. |
+| `-i METHOD`, `--interpolation METHOD` | Interpolate a tabulated density with `linear`, `cspline`, `akima`, or `steffen`. Default: `cspline`. |
 | `-n N` | Multiply the density by $E^N$. `N` must be a nonnegative integer. Default: `0`. |
 | `-G` | Print or write both parts of the raw complex transform instead of the mode-specific default. |
 | `-v` | Print additional information to standard output. |
@@ -231,8 +231,9 @@ cached GSL interpolant through the supplied density values and reuses it for
 normalization and every transform. `linear` is piecewise linear and requires at
 least two points; `cspline` is a natural cubic spline and requires at least
 three points; `akima` is a local piecewise-cubic interpolant and requires at
-least five points. The default is `cspline`. The interpolant returns zero
-outside the tabulated interval
+least five points; `steffen` is a monotonicity-preserving piecewise-cubic
+interpolant and requires at least three points. The default is `cspline`. The
+interpolant returns zero outside the tabulated interval
 `[Emin,Emax]`. Quadrature is performed over the symmetric enclosing interval
 
 $$
@@ -242,9 +243,11 @@ $$
 The data are not normalized automatically. In verbose mode, `hilb` reports the
 integral of the interpolated density and checks that it is finite. Energies
 must be finite and strictly increasing after sorting; duplicate energies are
-rejected. Both cubic methods can overshoot between samples and do not preserve
-positivity. Use `linear` when range or positivity preservation for nonnegative
-samples is required.
+rejected. `cspline` and `akima` can overshoot between samples and do not
+preserve positivity. `steffen` stays within each interval's endpoint range and
+therefore preserves positivity of nonnegative samples, at the cost of a
+possibly discontinuous second derivative and a more conservative shape near
+extrema.
 
 For an energy-weighted transform, interpolation is performed first and the
 power is applied to each interpolated value during quadrature:

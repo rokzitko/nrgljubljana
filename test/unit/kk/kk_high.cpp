@@ -35,6 +35,7 @@ TEST(KK, interpolation_method_minimum_sizes) { // NOLINT
   EXPECT_EQ(NRG::Tools::interpolation_minimum_size(InterpolationMethod::linear), 2);
   EXPECT_EQ(NRG::Tools::interpolation_minimum_size(InterpolationMethod::cspline), 3);
   EXPECT_EQ(NRG::Tools::interpolation_minimum_size(InterpolationMethod::akima), 5);
+  EXPECT_EQ(NRG::Tools::interpolation_minimum_size(InterpolationMethod::steffen), 3);
 
   NRG::KK::NumericalOptions options;
   options.interpolation = InterpolationMethod::linear;
@@ -47,6 +48,15 @@ TEST(KK, interpolation_method_minimum_sizes) { // NOLINT
     FAIL() << "cspline accepted fewer than three input points";
   } catch (const std::runtime_error &error) {
     EXPECT_NE(std::string(error.what()).find("cspline requires at least 3"), std::string::npos);
+  }
+
+  options.interpolation = InterpolationMethod::steffen;
+  EXPECT_NO_THROW(NRG::KK::KK(NRG::KK::XYFUNC{{-2.0, 0.0}, {-1.0, 1.0}, {1.0, 4.0}, {2.0, 2.0}}, options));
+  try {
+    NRG::KK::KK too_small(NRG::KK::XYFUNC{{-1.0, 0.0}, {1.0, 1.0}}, options);
+    FAIL() << "steffen accepted fewer than three input points";
+  } catch (const std::runtime_error &error) {
+    EXPECT_NE(std::string(error.what()).find("steffen requires at least 3"), std::string::npos);
   }
 
   options.interpolation = InterpolationMethod::akima;
@@ -63,7 +73,8 @@ TEST(KK, interpolation_method_minimum_sizes) { // NOLINT
 
 TEST(KK, all_interpolation_methods_handle_symmetric_nonlinear_input) { // NOLINT
   using NRG::Tools::InterpolationMethod;
-  constexpr std::array methods{InterpolationMethod::linear, InterpolationMethod::cspline, InterpolationMethod::akima};
+  constexpr std::array methods{InterpolationMethod::linear, InterpolationMethod::cspline, InterpolationMethod::akima,
+                               InterpolationMethod::steffen};
   const NRG::KK::DVEC grid{-2.2, 0.7, 2.4};
   std::array<double, methods.size()> probe_values{};
 
@@ -86,6 +97,7 @@ TEST(KK, all_interpolation_methods_handle_symmetric_nonlinear_input) { // NOLINT
   EXPECT_GT(std::abs(probe_values[0] - probe_values[1]), 1e-4);
   EXPECT_GT(std::abs(probe_values[0] - probe_values[2]), 1e-4);
   EXPECT_GT(std::abs(probe_values[1] - probe_values[2]), 1e-4);
+  EXPECT_GT(std::abs(probe_values[0] - probe_values[3]), 1e-4);
 }
 
 TEST(KK, numerical_options_defaults) { // NOLINT

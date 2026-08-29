@@ -41,7 +41,7 @@ requirements:
     - eigen
     - fmt
     - gmp
-    - gsl
+    - gsl >=2.0
     - gtest 1.15.2
     - hdf5
     - highfive
@@ -52,7 +52,7 @@ requirements:
     - range-v3
   run:
     - gmp
-    - gsl
+    - gsl >=2.0
     - hdf5
     - libboost-mpi
     - llvm-openmp

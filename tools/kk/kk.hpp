@@ -4,7 +4,7 @@
 
 // The input file must consist of a table of space-separated (energy, value) pairs. The energy grid must be symmetric
 // with respect to zero and the file must contain an even number of lines. Gauss-Kronrod quadrature rules are used.
-// At singularity points the derivative is computed using GSL interpolation routines (cubic splines).
+// At singularity points the derivative is computed using the selected GSL interpolation routine.
 
 // NOTE about Gauss-Kronrod: The higher-order rules give better accuracy for smooth functions, while lower-order
 // rules save time when the function contains local difficulties, such as discontinuities. [GSL manual] On each
@@ -188,7 +188,7 @@ class KK {
       acc.reset(gsl_interp_accel_alloc());
       if (!acc) throw std::runtime_error("Failed to allocate GSL interpolation accelerator.");
       // NOTE: With Akima splines there might be problems with the loss of floating point precision in the numeric
-      // integration step. In cubic splines instead no such difficulties seem to appear.
+      // integration step. With natural cubic splines no such difficulties seem to appear.
       const auto Interp_type = NRG::Tools::gsl_interpolation_type(interpolation_method);
       spline.reset(gsl_spline_alloc(Interp_type, len));
       if (!spline) throw std::runtime_error("Failed to allocate GSL spline.");
@@ -243,7 +243,7 @@ class KK {
      std::cout << "\nIn this mode, kk reads from STDIN and outputs to STDOUT.\n\n";
      std::cout << "Options:\n"
                << "  -h, --help                     show this help\n"
-               << "  -i, --interpolation METHOD     linear, cspline, or akima (default: akima)\n"
+               << "  -i, --interpolation METHOD     linear, cspline, akima, or steffen (default: akima)\n"
                << "      --epsabs VALUE             absolute tolerance (default: 1e-12)\n"
                << "      --epsrel VALUE             relative tolerance (default: 1e-8)\n"
                << "      --workspace-limit N        integration workspace size (default: 1000)\n"

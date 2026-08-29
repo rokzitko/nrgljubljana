@@ -18,7 +18,7 @@ is replaced by the interpolated value in the output.
 | --- | --- |
 | `-h`, `--help` | Print help. |
 | `-v` | Print verbose diagnostics. |
-| `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, or `akima`. Default: `akima`. |
+| `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, `akima`, or `steffen`. Default: `akima`. |
 | `-p N` | Write `N` significant digits. Default: `16`. |
 | `-e` | Enable constant extrapolation outside the input domain. |
 | `-a A` | With `-e`, use `A` below the input domain. Default: the first input `y`. |
@@ -29,10 +29,12 @@ the input domain. Both `-a` and `-b` require `-e`.
 
 `linear` is piecewise linear and requires at least two points. `cspline` is a
 natural cubic spline and requires at least three points. `akima` is a local
-piecewise-cubic interpolant and requires at least five points. Both cubic
-methods can overshoot between samples and do not preserve positivity. Use
-`linear` when preserving the range and positivity of nonnegative samples is
-more important than smooth derivatives.
+piecewise-cubic interpolant and requires at least five points. `steffen` is a
+monotonicity-preserving piecewise-cubic interpolant and requires at least three
+points. `cspline` and `akima` can overshoot between samples. `steffen` stays
+within each interval's endpoint range and therefore preserves positivity of
+nonnegative samples, but its second derivative can be discontinuous and its
+shape can be conservative near extrema.
 
 `resample` performs interpolation only. It has no quadrature tolerance,
 workspace, rule, or GSL integration error-policy options.

@@ -8,7 +8,7 @@ each tool directory.
 
 | Option | Tools | Meaning |
 | --- | --- | --- |
-| `-i METHOD`, `--interpolation METHOD` | `hilb`, `kk`, `integ`, `resample` | Select `linear`, `cspline`, or `akima` interpolation. |
+| `-i METHOD`, `--interpolation METHOD` | `hilb`, `kk`, `integ`, `resample` | Select `linear`, `cspline`, `akima`, or `steffen` interpolation. |
 | `--epsabs VALUE` | `hilb`, `kk`, `integ`, `adapt` integral | Set the absolute integration tolerance. |
 | `--epsrel VALUE` | `hilb`, `kk`, `integ`, `adapt` integral | Set the relative integration tolerance. |
 | `--workspace-limit N` | `hilb`, `kk`, `integ`, `adapt` integral | Set the GSL workspace capacity; QAG requires `N >= 1` and CQUAD requires `N >= 3`. |
@@ -37,11 +37,13 @@ specified. A dash means that the control is not available.
 `--interpolation` option.
 
 The interpolation methods are GSL `linear` (piecewise linear, at least two
-points), `cspline` (natural cubic spline, at least three points), and `akima`
-(local piecewise cubic, at least five points). Cubic interpolation is smooth
-but can overshoot between samples and does not preserve positivity. Use
-`linear` when preserving the range and positivity of nonnegative samples is
-more important than smooth derivatives.
+points), `cspline` (natural cubic spline, at least three points), `akima`
+(local piecewise cubic, at least five points), and `steffen`
+(monotonicity-preserving piecewise cubic, at least three points). `cspline` and
+`akima` can overshoot between samples and do not preserve positivity. `steffen`
+stays within each interval's endpoint range and therefore preserves positivity
+of nonnegative samples, but its second derivative can be discontinuous and its
+shape can be conservative near extrema.
 
 QAG applies the selected Gauss-Kronrod rule on each adaptive subinterval. The
 rule number is the number of Kronrod points. Higher-order rules can be more

@@ -79,7 +79,7 @@ void usage() {
   cout << "-n: integral over negative X range" << endl;
   cout << "-a: integral over |f|" << endl;
   cout << "-f: integral weighted with Fermi-Dirac function for temperature T" << endl;
-  cout << "-i, --interpolation linear|cspline|akima: interpolation method (default=akima)" << endl;
+  cout << "-i, --interpolation linear|cspline|akima|steffen: interpolation method (default=akima)" << endl;
   cout << "--epsabs value: absolute integration tolerance (default=1e-12)" << endl;
   cout << "--epsrel value: relative integration tolerance (default=1e-8)" << endl;
   cout << "--workspace-limit value: integration workspace size (default=1000)" << endl;

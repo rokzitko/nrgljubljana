@@ -37,6 +37,7 @@ This release summarizes development since `2024.12`, with major improvements in 
 - `report.nrg` can list low-lying states together with diagonal observables, aiding fixed-point and sub-gap-state identification.
 - `broaden` accepts arbitrary user-provided output-frequency meshes.
 - `adapt --flat Gamma` directly supports constant hybridization functions.
+- `hilb`, `kk`, `integ`, and `resample` can select GSL's monotonicity-preserving Steffen interpolation.
 - Thermal Fermi and Bose kernels are stable at extreme energies and near the Bose pole.
 - Large Matsubara meshes no longer suffer from a small-integer index limitation.
 - FDM partition-function accumulators consistently retain high numerical precision.

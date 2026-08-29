@@ -34,13 +34,14 @@ class GslErrorHandlerGuard {
   }
 };
 
-enum class InterpolationMethod { linear, cspline, akima };
+enum class InterpolationMethod { linear, cspline, akima, steffen };
 
 inline auto interpolation_method_name(const InterpolationMethod method) -> std::string_view {
   switch (method) {
     case InterpolationMethod::linear: return "linear";
     case InterpolationMethod::cspline: return "cspline";
     case InterpolationMethod::akima: return "akima";
+    case InterpolationMethod::steffen: return "steffen";
   }
   throw std::logic_error("Unknown interpolation method.");
 }
@@ -49,7 +50,8 @@ inline auto parse_interpolation_method(const std::string_view value) {
   if (value == "linear") return InterpolationMethod::linear;
   if (value == "cspline") return InterpolationMethod::cspline;
   if (value == "akima") return InterpolationMethod::akima;
-  throw std::invalid_argument("Interpolation method must be one of: linear, cspline, akima.");
+  if (value == "steffen") return InterpolationMethod::steffen;
+  throw std::invalid_argument("Interpolation method must be one of: linear, cspline, akima, steffen.");
 }
 
 inline auto gsl_interpolation_type(const InterpolationMethod method) -> const gsl_interp_type * {
@@ -57,6 +59,7 @@ inline auto gsl_interpolation_type(const InterpolationMethod method) -> const gs
     case InterpolationMethod::linear: return gsl_interp_linear;
     case InterpolationMethod::cspline: return gsl_interp_cspline;
     case InterpolationMethod::akima: return gsl_interp_akima;
+    case InterpolationMethod::steffen: return gsl_interp_steffen;
   }
   throw std::logic_error("Unknown interpolation method.");
 }

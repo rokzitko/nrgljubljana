@@ -9,8 +9,13 @@ cmp default.dat akima.dat
 
 "$kk" -i linear input.dat linear.dat >linear.stdout
 "$kk" --interpolation=cspline input.dat cspline.dat >cspline.stdout
+"$kk" --interpolation steffen input.dat steffen.dat >steffen.stdout
 if cmp linear.dat cspline.dat >/dev/null 2>&1; then
   echo "kk interpolation outputs unexpectedly match" >&2
+  exit 1
+fi
+if cmp linear.dat steffen.dat >/dev/null 2>&1; then
+  echo "kk linear and Steffen interpolation outputs unexpectedly match" >&2
   exit 1
 fi
 

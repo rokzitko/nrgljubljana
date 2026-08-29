@@ -248,7 +248,7 @@ find_package(Boost 1.53 REQUIRED COMPONENTS serialization mpi)
 # as components in find_package()
 
 # GSL
-find_package(GSL REQUIRED)
+find_package(GSL 2.0 REQUIRED)
 add_library(gsl INTERFACE)
 target_include_directories(gsl SYSTEM INTERFACE ${GSL_INCLUDE_DIRS})
 target_link_libraries(gsl INTERFACE ${GSL_LIBRARIES})

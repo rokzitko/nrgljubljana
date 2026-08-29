@@ -66,7 +66,8 @@ TEST(resample, interpolation_methods_produce_expected_sparse_nonlinear_values) {
     ExpectedInterpolation{InterpolationMethod::akima,
                           "akima",
                           {-0.44021739130434767, -1.0234553775743709, 4.7142223536369015, 4.241459920066359,
-                           0.40394295302013417}}
+                           0.40394295302013417}},
+    ExpectedInterpolation{InterpolationMethod::steffen, "steffen", {0.25, -1.125, 5.125, 3.5, 1.625}}
   };
 
   for (const auto &expectation : expectations) {
@@ -92,7 +93,8 @@ TEST(resample, interpolation_method_minimum_sizes) {
   const std::array cases{
     MethodMinimum{InterpolationMethod::linear, "linear", 2},
     MethodMinimum{InterpolationMethod::cspline, "cspline", 3},
-    MethodMinimum{InterpolationMethod::akima, "akima", 5}
+    MethodMinimum{InterpolationMethod::akima, "akima", 5},
+    MethodMinimum{InterpolationMethod::steffen, "steffen", 3}
   };
   const std::vector<std::pair<double, double>> grid = {{0.5, 0.0}};
 
@@ -201,6 +203,7 @@ TEST(resample, command_line_selects_valid_interpolation_methods) {
   const std::string grid_filename = "resample_cli_methods_grid.dat";
   const std::string linear_filename = "resample_cli_methods_linear.dat";
   const std::string cspline_filename = "resample_cli_methods_cspline.dat";
+  const std::string steffen_filename = "resample_cli_methods_steffen.dat";
   {
     std::ofstream input(input_filename);
     input << "-3 4\n-1 -2\n0.5 1\n2 8\n5 -1\n9 6\n";
@@ -222,15 +225,26 @@ TEST(resample, command_line_selects_valid_interpolation_methods) {
   NRG::Resample::Resample<double> cspline(static_cast<int>(cspline_argv.size()), cspline_argv.data());
   cspline.run();
 
+  std::vector<std::string> steffen_arguments{"resample", "-i", "steffen", input_filename, grid_filename, steffen_filename};
+  std::vector<char *> steffen_argv;
+  for (auto &argument : steffen_arguments) steffen_argv.push_back(argument.data());
+  optind = 1;
+  NRG::Resample::Resample<double> steffen(static_cast<int>(steffen_argv.size()), steffen_argv.data());
+  steffen.run();
+
   const auto linear_output = readtable<double, double>(linear_filename);
   const auto cspline_output = readtable<double, double>(cspline_filename);
+  const auto steffen_output = readtable<double, double>(steffen_filename);
   ASSERT_EQ(linear_output.size(), 1);
   ASSERT_EQ(cspline_output.size(), 1);
+  ASSERT_EQ(steffen_output.size(), 1);
   EXPECT_DOUBLE_EQ(linear_output[0].second, 1.0);
   EXPECT_NEAR(cspline_output[0].second, 0.11598527171152861, 1e-12);
+  EXPECT_NEAR(steffen_output[0].second, 0.25, 1e-12);
 
   std::remove(input_filename.c_str());
   std::remove(grid_filename.c_str());
   std::remove(linear_filename.c_str());
   std::remove(cspline_filename.c_str());
+  std::remove(steffen_filename.c_str());
 }

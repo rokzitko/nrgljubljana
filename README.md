@@ -48,7 +48,7 @@ all dependency modes:
 - threaded BLAS and LAPACK, typically MKL or OpenBLAS
 - MPI with C++ support
 - Boost 1.53 or newer, including the MPI and serialization components
-- GSL
+- GSL 2.0 or newer
 - GMP, including the C++ library
 - HDF5 with the C and high-level components
 

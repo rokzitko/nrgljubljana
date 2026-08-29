@@ -25,7 +25,7 @@ integrals, then prints the selected value with 16 significant digits.
 | `-n` | Print the integral over negative `x`. |
 | `-a` | Print the integral of the absolute value. |
 | `-f` | Print the Fermi-Dirac-weighted integral. |
-| `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, or `akima`. Default: `akima`. |
+| `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, `akima`, or `steffen`. Default: `akima`. |
 | `--epsabs VALUE` | Set the absolute QAG tolerance. Default: `1e-12`. |
 | `--epsrel VALUE` | Set the relative QAG tolerance. Default: `1e-8`. |
 | `--workspace-limit N` | Set the positive QAG workspace subdivision limit. Default: `1000`. |
@@ -38,9 +38,11 @@ tolerance option. Use `--epsabs` for the tolerance.
 
 `linear` is piecewise linear and requires at least two points. `cspline` is a
 natural cubic spline and requires at least three points. `akima` is a local
-piecewise-cubic interpolant and requires at least five points. Both cubic
-methods can overshoot between samples and do not preserve positivity; use
-`linear` when range or positivity preservation is required.
+piecewise-cubic interpolant and requires at least five points. `steffen` is a
+monotonicity-preserving piecewise-cubic interpolant and requires at least three
+points. `cspline` and `akima` can overshoot between samples. `steffen` stays
+within each interval's endpoint range, but its second derivative can be
+discontinuous and its shape can be conservative near extrema.
 
 The QAG rule number is the number of Gauss-Kronrod points used on each adaptive
 subinterval. Higher-order rules can help on smooth functions; lower-order rules

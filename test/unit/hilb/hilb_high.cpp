@@ -133,7 +133,7 @@ TEST(Hilb, interpolator_rejects_invalid_grids) { // NOLINT
   EXPECT_THROW(NRG::Hilb::interpolator(std::vector<double>{-1.0, 0.0, 1.0}, std::vector<double>{1.0, 1.0}), std::invalid_argument);
 }
 
-TEST(Hilb, interpolator_supports_linear_cspline_and_akima) { // NOLINT
+TEST(Hilb, interpolator_supports_all_interpolation_methods) { // NOLINT
   using NRG::Tools::InterpolationMethod;
 
   NRG::Hilb::interpolator linear({0.0, 2.0}, {1.0, 5.0}, -7.0, InterpolationMethod::linear);
@@ -145,9 +145,11 @@ TEST(Hilb, interpolator_supports_linear_cspline_and_akima) { // NOLINT
   NRG::Hilb::interpolator legacy_cubic(cubic_x, cubic_y, -7.0);
   NRG::Hilb::interpolator explicit_cubic(cubic_x, cubic_y, -7.0, InterpolationMethod::cspline);
   NRG::Hilb::interpolator piecewise_linear(cubic_x, cubic_y, 0.0, InterpolationMethod::linear);
+  NRG::Hilb::interpolator steffen(cubic_x, cubic_y, 0.0, InterpolationMethod::steffen);
   EXPECT_DOUBLE_EQ(legacy_cubic(0.5), explicit_cubic(0.5));
   EXPECT_NEAR(explicit_cubic(0.5), 0.6875, 1e-15);
   EXPECT_DOUBLE_EQ(piecewise_linear(0.5), 0.5);
+  EXPECT_NEAR(steffen(0.5), 0.625, 1e-15);
   EXPECT_NE(explicit_cubic(0.5), piecewise_linear(0.5));
   EXPECT_DOUBLE_EQ(legacy_cubic(2.1), -7.0);
 
@@ -166,11 +168,13 @@ TEST(Hilb, interpolator_enforces_each_method_minimum_size) { // NOLINT
   EXPECT_THROW(NRG::Hilb::interpolator({0.0, 1.0}, {0.0, 1.0}, 0.0, InterpolationMethod::cspline), std::invalid_argument);
   EXPECT_THROW(NRG::Hilb::interpolator({0.0, 1.0, 2.0, 3.0}, {0.0, 1.0, 0.0, 1.0}, 0.0, InterpolationMethod::akima),
                std::invalid_argument);
+  EXPECT_THROW(NRG::Hilb::interpolator({0.0, 1.0}, {0.0, 1.0}, 0.0, InterpolationMethod::steffen), std::invalid_argument);
 
   EXPECT_NO_THROW(NRG::Hilb::interpolator({0.0, 1.0}, {0.0, 1.0}, 0.0, InterpolationMethod::linear));
   EXPECT_NO_THROW(NRG::Hilb::interpolator({0.0, 1.0, 2.0}, {0.0, 1.0, 0.0}, 0.0, InterpolationMethod::cspline));
   EXPECT_NO_THROW(NRG::Hilb::interpolator({0.0, 1.0, 2.0, 3.0, 4.0}, {0.0, 1.0, 0.0, 1.0, 0.0}, 0.0,
                                            InterpolationMethod::akima));
+  EXPECT_NO_THROW(NRG::Hilb::interpolator({0.0, 1.0, 2.0}, {0.0, 1.0, 0.0}, 0.0, InterpolationMethod::steffen));
 }
 
 TEST(Hilb, energy_power_direct_quadrature) { // NOLINT
@@ -243,8 +247,9 @@ TEST(Hilb, tabulated_transform_accepts_explicit_interpolation_and_defaults_to_cu
   const std::vector<double> imaginary_density{0.0, -0.1, 0.3, -0.2, 0.0};
   const std::complex<double> z{0.2, 0.4};
 
-  std::array<std::complex<double>, 3> results;
-  const std::array methods{InterpolationMethod::linear, InterpolationMethod::cspline, InterpolationMethod::akima};
+  constexpr std::array methods{InterpolationMethod::linear, InterpolationMethod::cspline, InterpolationMethod::akima,
+                               InterpolationMethod::steffen};
+  std::array<std::complex<double>, methods.size()> results;
   for (std::size_t index = 0; index < methods.size(); ++index) {
     const auto method = methods[index];
     NRG::Hilb::interpolator rhor(energies, real_density, 0.0, method);
@@ -259,6 +264,7 @@ TEST(Hilb, tabulated_transform_accepts_explicit_interpolation_and_defaults_to_cu
   EXPECT_EQ(legacy, results[1]);
   EXPECT_GT(std::abs(results[0] - results[1]), 1e-3);
   EXPECT_GT(std::abs(results[2] - results[1]), 1e-3);
+  EXPECT_GT(std::abs(results[3] - results[1]), 1e-3);
 }
 
 TEST(Hilb, zero_energy_power_preserves_transform) { // NOLINT
@@ -552,7 +558,7 @@ TEST(Hilb, shared_gsl_cli_options_are_accepted) { // NOLINT
   const std::string dos = "hilb_gsl_options_dos.dat";
   write_file(dos, "-1 0\n-0.5 0.5\n0 1\n0.5 0.5\n1 0\n");
 
-  const auto output = run_hilb_captured({"hilb", "--interpolation", "akima", "--workspace-limit", "64",
+  const auto output = run_hilb_captured({"hilb", "--interpolation", "steffen", "--workspace-limit", "64",
                                          "--quadrature-rule", "61", "--gsl-error-policy", "fail", "--epsabs", "1e-10",
                                          "--epsrel", "1e-8", "-d", dos, "0.2", "0.4"});
   EXPECT_TRUE(output.err.empty());

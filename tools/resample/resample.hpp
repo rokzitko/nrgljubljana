@@ -78,7 +78,7 @@ class Resample
         {
             std::cout << "\nUsage: resample [-h] [-v] [-i method] [-p precision] [-e [-a A] [-b B]] <input> <grid> <output>" << std::endl;
             std::cout << "-h, --help: show this help" << std::endl;
-            std::cout << "-i, --interpolation METHOD: linear, cspline, or akima (default: akima)" << std::endl;
+            std::cout << "-i, --interpolation METHOD: linear, cspline, akima, or steffen (default: akima)" << std::endl;
             std::cout << "-v: toggle verbose messages (now=" << verbose << ")" << std::endl;
             std::cout << "-e: enable constant extrapolation outside the input x range" << std::endl;
             std::cout << "-a A: use A for x < x_min (requires -e; default: y at x_min)" << std::endl;

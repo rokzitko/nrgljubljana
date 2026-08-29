@@ -30,6 +30,7 @@ TEST(GslConfig, interpolation_methods_parse_map_and_report_minimum_sizes) { // N
     interpolation_case{"linear", InterpolationMethod::linear, gsl_interp_linear, 2},
     interpolation_case{"cspline", InterpolationMethod::cspline, gsl_interp_cspline, 3},
     interpolation_case{"akima", InterpolationMethod::akima, gsl_interp_akima, 5},
+    interpolation_case{"steffen", InterpolationMethod::steffen, gsl_interp_steffen, 3},
   };
 
   for (const auto &[name, method, gsl_type, minimum_size] : cases) {
