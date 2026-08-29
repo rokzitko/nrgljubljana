@@ -1,4 +1,6 @@
 #!/bin/sh
+set -eu
+
 "$1/hilb" -G points.dat >results.dat
 "$1/hilb" -G -n 0 points.dat >>results.dat
 "$1/hilb" -G -n 1 points.dat >>results.dat

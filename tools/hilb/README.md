@@ -131,10 +131,10 @@ c_{\min}=\sqrt{m_{\mathrm{normal}}}
 \simeq 1.4916681462400413\times10^{-154}.
 $$
 
-Here $m_{\mathrm{normal}}$ is `std::numeric_limits<double>::min()`. This is the
-smallest default whose square remains a normal nonzero `double`, which is
-required by the current small-imaginary-part formulas. Values of `-c` below
-$c_{\min}$ are rejected. The transform is evaluated at
+Here $m_{\mathrm{normal}}$ is `std::numeric_limits<double>::min()`. The API uses
+$c_{\min}$ as a conservative safety floor whose square remains a normal
+nonzero `double`. Values of `-c` below $c_{\min}$ are rejected. The transform
+is evaluated at
 
 $$
 z=\omega-\mathrm{Re}\,\Sigma(\omega)
@@ -153,6 +153,23 @@ imaginary parts of $H_n$ are written. For `n=0` this is the usual local Green
 function transform. For `n>0` it is the corresponding energy-weighted
 transform. The `-o` option is invalid in this mode; the two output paths are
 the final positional arguments.
+
+## Output Safety
+
+An output path must not refer to an input file or the tabulated density of
+states. In DMFT mode, the two outputs must also differ from each other. These
+checks recognize normalized paths, symbolic links, and hard links. For
+portable behavior across case-sensitive and case-insensitive filesystems,
+names that differ only in ASCII letter case within one directory are
+conservatively treated as the same location.
+
+`hilb` assembles complete output text in memory before opening a destination.
+An existing file therefore survives input parsing and transform-calculation
+failures. Output open, write, flush, and close failures are fatal, but writing
+is not an atomic replacement: a failure after opening can leave a destination
+truncated or incomplete. The two DMFT outputs are written sequentially, so the
+first can be updated if writing the second fails. On systems that provide it,
+`-o /dev/stdout` sends the staged data to standard output.
 
 ## Options
 
@@ -244,11 +261,11 @@ $$
 The data are not normalized automatically. In verbose mode, `hilb` reports the
 analytic integral of the interval polynomials and checks that it is finite.
 Energies must be finite and strictly increasing after sorting; duplicate
-energies are rejected. `cspline` and `akima` can overshoot between samples and
-do not preserve positivity. `steffen` stays within each interval's endpoint
-range and therefore preserves positivity of nonnegative samples, at the cost
-of a possibly discontinuous second derivative and a more conservative shape
-near extrema.
+energies are rejected, and the overall width $E_{\max}-E_{\min}$ must be
+finite. `cspline` and `akima` can overshoot between samples and do not preserve
+positivity. `steffen` stays within each interval's endpoint range and therefore
+preserves positivity of nonnegative samples, at the cost of a possibly
+discontinuous second derivative and a more conservative shape near extrema.
 
 For an energy-weighted transform, interpolation is performed first and each
 interval polynomial is multiplied by the power exactly:
@@ -276,7 +293,9 @@ interval. The transform of each weighted polynomial is evaluated analytically
 using polynomial division and complex logarithms. A global subtraction of the
 interpolant at $\mathrm{Re}\,z$ stabilizes arguments close to the real axis;
 compensated summation combines the intervals, and a moment expansion avoids
-loss of precision far from the tabulated support.
+loss of precision far from the tabulated support. Ambiguous cancellation in
+the moments is resolved with wider or exact arithmetic before the result is
+narrowed to the public numeric type.
 
 This path performs no adaptive quadrature. The `-t`, QAG tolerance, workspace,
 quadrature-rule, and GSL-error-policy options are validated for compatibility
@@ -293,8 +312,10 @@ singularity-subtracted form according to the magnitude of $y=\mathrm{Im}\,z$.
 
 #### Direct quadrature
 
-When $|y|\ge T$, the defining integral is evaluated directly, where $T$ is set
-by `-t` and defaults to $10^{-3}$. With $z=x+iy$, the two real integrands are
+Normally, when $|y|\ge T$, the defining integral is evaluated directly, where
+$T$ is set by `-t` and defaults to $10^{-3}$. The direct path is also used for
+extremely far arguments outside the band when ordered logarithmic transformed
+limits cannot be represented. With $z=x+iy$, the two real integrands are
 
 $$
 \mathrm{Re}\,\frac{g(E)}{z-E}
@@ -382,7 +403,9 @@ and must form a combination accepted by GSL.
 The callable C++ `hilbert_transform` interface exposes `lim_direct`, `epsabs`,
 and `epsrel`. An overload accepting an `integrator&` lets callers select the
 workspace, rule, and policy and reuse the workspace. The executable uses one
-workspace for all requested built-in-density transforms.
+workspace for all requested built-in-density transforms. The overload taking
+a `PiecewisePolynomial` and an explicit $B$ requires the polynomial support to
+lie within `[-B,B]`.
 
 The GSL global error handler is disabled. A nonzero QAG status or a nonfinite
 result or error estimate is handled by `--gsl-error-policy`: `ignore` silently
@@ -409,9 +432,8 @@ This also shows why $H_n$ is not simply $z^nH_0$.
 
 Numerical limitations include:
 
-- Values with $|\mathrm{Im}\,z|<c_{\min}$ are rejected. Squaring a smaller
-  value can underflow in the callable small-imaginary-part formulas. `hilb`
-  does not expose a real-axis principal-value mode.
+- Values with $|\mathrm{Im}\,z|<c_{\min}$ are conservatively rejected by the
+  public API. `hilb` does not expose a real-axis principal-value mode.
 - Large powers can overflow or underflow in $E^n$ and can amplify cancellation
   in the integral.
 - The clipping magnitude and callable direct/subtracted threshold are absolute

@@ -2,9 +2,10 @@
 // Part of "NRG Ljubljana"
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
-// The input file must consist of a table of space-separated (energy, value) pairs. The energy grid must be symmetric
-// with respect to zero and the file must contain an even number of lines. The selected GSL interpolant is materialized
-// as intervalwise polynomials whose principal-value Cauchy transform is integrated analytically.
+// The input file must consist of one space-separated (energy, value) pair per data line. Blank lines and full-line
+// comments beginning with '#' are ignored. The energy grid must be symmetric with respect to zero and contain an even
+// number of points. The selected GSL interpolant is materialized as intervalwise polynomials whose principal-value
+// Cauchy transform is integrated analytically.
 
 #ifndef _kk_kk_hpp_
 #define _kk_kk_hpp_
@@ -12,14 +13,16 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <cerrno>
 #include <cstddef>
 #include <cstdlib>
+#include <filesystem>
 #include <ios>
 #include <istream>
 #include <ostream>
+#include <sstream>
 #include <vector>
 #include <utility>
-#include <cassert>
 #include <string>
 #include <cstring>
 #include <algorithm>
@@ -35,6 +38,7 @@
 #include <getopt.h>
 
 #include "../common/gsl_piecewise_polynomial.hpp"
+#include "../common/output_file.hpp"
 
 namespace NRG::KK {
 
@@ -51,27 +55,63 @@ struct NumericalOptions {
 // number of digits of precision in the generated output file
 constexpr auto OUTPUT_PRECISION = 16;
 
-// Read data from stream F.
-inline auto read(std::istream &F) {
+inline auto parse_finite_field(const std::string &text, const std::string &context) {
+  char *end = nullptr;
+  errno = 0;
+  const auto value = std::strtod(text.c_str(), &end);
+  const auto underflowed_to_zero = errno == ERANGE && value == 0.0;
+  if (underflowed_to_zero || end == text.c_str() || end != text.c_str() + text.size() || !std::isfinite(value))
+    throw std::runtime_error(context + ": expected a finite representable number; got '" + text + "'.");
+  return value;
+}
+
+// Read one physical record per line from stream F.
+inline auto read(std::istream &F, const std::string &source = "<input>") {
   XYFUNC v;
-  while (F) {
-    if (F.peek() == '#') { // skip comment lines
-      std::string line;
-      std::getline(F, line);
+  size_t line_number = 0;
+  auto process_line = [&](const std::string &line) {
+    ++line_number;
+    const auto first = line.find_first_not_of(" \t\r\f\v");
+    if (first == std::string::npos || line[first] == '#') return;
+
+    std::istringstream fields(line);
+    std::vector<std::string> tokens;
+    std::string token;
+    while (fields >> token) tokens.push_back(token);
+    if (tokens.size() != 2)
+      throw std::runtime_error(source + ":" + std::to_string(line_number)
+                               + ": expected exactly 2 numeric fields; found " + std::to_string(tokens.size()) + ".");
+
+    const auto context = source + ":" + std::to_string(line_number) + ": field ";
+    v.push_back({parse_finite_field(tokens[0], context + "1"), parse_finite_field(tokens[1], context + "2")});
+  };
+  std::string line;
+  try {
+    while (std::getline(F, line)) {
+      process_line(line);
+    }
+  } catch (const std::ios_base::failure &error) {
+    if (F.eof() && !F.bad()) {
+      if (!line.empty()) process_line(line);
     } else {
-      double x, y;
-      F >> x >> y;
-      if (F.fail()) break;
-      assert(std::isfinite(x) && std::isfinite(y));
-      v.push_back({x, y});
+      throw std::runtime_error(source + ": I/O error after line " + std::to_string(line_number) + ": " + error.what());
     }
   }
+  if (F.bad() || (F.fail() && !F.eof()))
+    throw std::runtime_error(source + ": I/O error after line " + std::to_string(line_number) + ".");
   return v;
 }
 
-inline void write(const XYFUNC &re, std::ostream &F, const int prec = OUTPUT_PRECISION) {
-  F << std::setprecision(prec);
-  for (const auto & [x,y] : re) F << x << " " << y << std::endl;
+inline void write(const XYFUNC &re, std::ostream &F, const int prec = OUTPUT_PRECISION,
+                  const std::string &source = "<output>") {
+  try {
+    F << std::setprecision(prec);
+    for (const auto & [x,y] : re) F << x << " " << y << '\n';
+    F.flush();
+  } catch (const std::ios_base::failure &error) {
+    throw std::runtime_error(source + ": output write or flush failed: " + error.what());
+  }
+  if (!F) throw std::runtime_error(source + ": output write or flush failed.");
 }
 
 inline auto x_range(const XYFUNC &l) 
@@ -108,7 +148,8 @@ class KK {
    std::optional<NRG::Tools::PiecewisePolynomial<double>> polynomial;
 
    std::ifstream Fin;
-   std::ofstream Fout;
+   std::string input_source = "<stdin>";
+   std::string output_source = "<stdout>";
 
    NRG::Tools::InterpolationMethod interpolation_method = NRG::Tools::InterpolationMethod::akima;
 
@@ -178,21 +219,31 @@ class KK {
        usage();
        std::exit(1);
      }
-     if (mode == MODE::FILES) {
-       const std::string inputfn  = argv[optind];
-       const std::string outputfn = argv[optind + 1];
-       std::cout << inputfn << " --> " << outputfn << std::endl;
-       Fin.open(inputfn);
-       if (!Fin) {
-         std::cerr << "Can't open " << inputfn << " for reading." << std::endl;
-         std::exit(2);
-       }
-       Fout.open(outputfn);
-       if (!Fout) {
-         std::cerr << "Can't open " << outputfn << " for writing." << std::endl;
-         std::exit(2);
-       }
-     }
+      if (mode == MODE::FILES) {
+        const std::string inputfn  = argv[optind];
+        const std::string outputfn = argv[optind + 1];
+        input_source = inputfn;
+        output_source = outputfn;
+        std::cout << inputfn << " --> " << outputfn << std::endl;
+        Fin.open(inputfn);
+        if (!Fin) {
+          std::cerr << "Can't open " << inputfn << " for reading." << std::endl;
+          std::exit(2);
+        }
+        std::error_code status_error;
+        const auto output_status = std::filesystem::status(outputfn, status_error);
+        if (status_error && status_error != std::errc::no_such_file_or_directory)
+          throw std::runtime_error("Can't inspect " + outputfn + " before writing: " + status_error.message());
+        if (!status_error && std::filesystem::exists(output_status)) {
+          std::error_code equivalent_error;
+          const auto equivalent = std::filesystem::equivalent(inputfn, outputfn, equivalent_error);
+          if (equivalent_error)
+            throw std::runtime_error("Can't compare input and output files: " + equivalent_error.message());
+          if (equivalent)
+            throw std::runtime_error("Input and output files must be different; '" + inputfn + "' and '" + outputfn
+                                     + "' refer to the same filesystem object.");
+        }
+      }
    }
 
   public:
@@ -213,15 +264,22 @@ class KK {
      return result;
    }
 
-   // Legacy interface when kk is used as a command-line tool
-   KK(int argv, char *argc[]) {
-     parse_cmd_line(argv, argc);
-     const auto im = read(mode == MODE::FILES ? Fin : std::cin);
-     init(im);
-     const auto re = calc(Xpts);
-     write(re, mode == MODE::FILES ? Fout : std::cout);
-     std::cout << "KK done!" << std::endl;
-   }
+    // Legacy interface when kk is used as a command-line tool
+    KK(int argv, char *argc[]) {
+      parse_cmd_line(argv, argc);
+      const auto im = read(mode == MODE::FILES ? Fin : std::cin, input_source);
+      init(im);
+      const auto re = calc(Xpts);
+      if (mode == MODE::FILES) {
+        std::ostringstream output;
+        write(re, output, OUTPUT_PRECISION, output_source);
+        NRG::Tools::write_output_file(output_source, output.str());
+        std::cout << "KK done!" << std::endl;
+        if (!std::cout) throw std::runtime_error("<stdout>: output write or flush failed.");
+      } else {
+        write(re, std::cout, OUTPUT_PRECISION, output_source);
+      }
+    }
    
    // Modern interface when kk is used as a library
     KK(XYFUNC im) {

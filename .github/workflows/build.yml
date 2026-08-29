@@ -24,6 +24,20 @@ env:
   NRGLJUBLJANA_CTEST_TIMEOUT_SECONDS: "3600"
 
 jobs:
+  reference-data:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v6
+      with:
+        python-version: "3.12"
+        cache: pip
+        cache-dependency-path: test/reference/requirements.txt
+    - name: Verify generated numerical references
+      run: |
+        python -m pip install -r test/reference/requirements.txt
+        python test/reference/generate.py --check
+
   build:
 
     strategy:

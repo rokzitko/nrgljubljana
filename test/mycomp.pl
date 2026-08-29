@@ -44,7 +44,9 @@ if ($verbose >= 2) {
 # Trim leading and trailing whitespace + REMOVE parameter= STRINGS
 sub trim($) {
     my $string = shift;
-    $string =~ s/\b[^=\s]+=//g;   # remove parameter=
+    # Match labels only at field boundaries so report fields such as
+    # <n_d>=0.5 become numeric fields rather than the nonnumeric token <0.5.
+    $string =~ s/(?<!\S)[^=\s]+=//g;
     $string =~ s/^\s+//;
     $string =~ s/\s+$//;
     return $string;
@@ -68,12 +70,22 @@ sub getline($) {
 }
 
 # Is argument numeric? (C float)
+my $FLOAT = qr/[+-]?(?=\d|\.\d)\d*(?:\.\d*)?(?:[Ee][+-]?\d+)?/;
+
 sub isnumeric($) {
     my $string = shift;
-    if ($string =~ /^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/) {
+    if ($string =~ /^$FLOAT$/) {
         return 1;
     }
     return 0;
+}
+
+# Expand the C++ stream representation of complex numbers into two numeric
+# fields so that (real,imaginary) output is compared numerically.
+sub numeric_fields($) {
+    my $string = shift;
+    $string =~ s/(?<!\S)\(($FLOAT),($FLOAT)\)(?!\S)/__complex__ $1 $2/g;
+    return split(/\s+/, $string);
 }
 
 my $error = 0;
@@ -103,8 +115,8 @@ while (1) {
         $cntmatch += 1; 
     } else {
         # If lines don't match, try comparing number by number
-        my @numbers1 = split(/\s+/,$line1);
-        my @numbers2 = split(/\s+/,$line2);
+        my @numbers1 = numeric_fields($line1);
+        my @numbers2 = numeric_fields($line2);
         my $len1 = @numbers1;
         my $len2 = @numbers2;
         if ($verbose >= 3) {
@@ -121,7 +133,9 @@ while (1) {
             for ($i = 0; $i < $len1; $i++) {
                 my $n1 = pop(@numbers1);
                 my $n2 = pop(@numbers2);
-                if (isnumeric($n1) && isnumeric($n2)) {
+                my $numeric1 = isnumeric($n1);
+                my $numeric2 = isnumeric($n2);
+                if ($numeric1 && $numeric2) {
                     my $diff = $n1-$n2;
                     if (abs($diff) > $ABSACCURACY) {
                         if ($verbose >= 2) {
@@ -133,10 +147,7 @@ while (1) {
                     if ($verbose >= 2) {
                         print "Not numeric: $n1 vs. $n2\n";
                     }
-                    if (!isnumeric($n1) && isnumeric($n2)) {
-                        # If the second (reference) is numeric, but the
-                        # first one isn't, than it's probably really
-                        # an error.
+                    if ($numeric1 != $numeric2 || $n1 ne $n2) {
                         $error++;
                     }
                 }
@@ -167,4 +178,4 @@ if ($verbose == 1) {
     }
 }
 
-exit($error);
+exit($error ? 1 : 0);

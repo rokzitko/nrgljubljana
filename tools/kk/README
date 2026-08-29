@@ -15,9 +15,26 @@ kk [options] input output
 kk [options] -
 ```
 
-The second form reads two-column `x y` data from standard input and writes to
-standard output. Input is sorted by `x`; it must contain an even number of
+The second form reads two-column `x y` data from standard input and writes only
+numeric result rows to standard output. Diagnostics and errors are written to
+standard error.
+
+Input is line-oriented. Blank lines and full-line comments whose first
+non-whitespace character is `#` are skipped. Every other physical line must
+contain exactly two finite representable numbers. Inline comments, partial or
+extra records, malformed fields, and values that overflow or underflow to zero
+are errors reported with the source and line number.
+
+Input is sorted by `x`. The coordinates must then be strictly increasing and
+their total span must be finite. The input must contain an even number of
 points on a grid symmetric around zero. The result is evaluated on that grid.
+
+In file mode, input and output must not be the same filesystem object,
+including through a symbolic or hard link. Parsing and transformation finish
+before the output is opened, so an existing output survives those failures.
+Output open, write, flush, and close failures are fatal. Writing is not an
+atomic replacement: a failure after the destination is opened can leave it
+truncated or incomplete.
 
 ## Options
 
@@ -42,6 +59,8 @@ integrates each polynomial divided by $E-z$ analytically using polynomial
 division and logarithms, then combines the interval contributions with
 compensated summation. It does not use adaptive quadrature and has no
 integration-tolerance, workspace, quadrature-rule, or GSL-error-policy options.
+Intermediate moment calculations use wider or exact arithmetic when native
+precision cannot reliably distinguish cancellation from a true zero.
 
 At $z=a$ or $z=b$, the ordinary one-sided transform generally has a logarithmic
 divergence. For compatibility, `kk` reports the finite endpoint-subtracted

@@ -243,7 +243,7 @@ install(TARGETS cuda_solver EXPORT nrgljubljana-targets)
 set(Boost_NO_WARN_NEW_VERSIONS 1)
 set(Boost_NO_BOOST_CMAKE ON)
 set(Boost_USE_STATIC_LIBS OFF)
-find_package(Boost 1.53 REQUIRED COMPONENTS serialization mpi)
+find_package(Boost 1.68 REQUIRED COMPONENTS serialization mpi)
 # note: header-only libraries such as multiprecision do not need to be listed
 # as components in find_package()
 

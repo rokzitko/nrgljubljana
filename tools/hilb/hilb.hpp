@@ -30,6 +30,7 @@
 #include <ctime>
 #include <cmath>
 #include <cstdlib>
+#include <filesystem>
 #include <cassert>
 #include <charconv>
 #include <cerrno>
@@ -39,6 +40,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <system_error>
+#include <type_traits>
 #include <getopt.h>
 #include <unistd.h>
 
@@ -47,6 +49,7 @@
 
 #include "../common/gsl_config.hpp"
 #include "../common/gsl_piecewise_polynomial.hpp"
+#include "../common/output_file.hpp"
 
 namespace NRG::Hilb {
 
@@ -60,6 +63,9 @@ inline auto format_double(const double value) {
   output << std::setprecision(OUTPUT_PRECISION) << value;
   return output.str();
 }
+
+using NRG::Tools::files_refer_to_same_location;
+using NRG::Tools::finish_output;
 
 inline auto parse_finite_double(const std::string_view value, const std::string_view name) {
   const std::string text(value);
@@ -318,11 +324,148 @@ class interpolator {
 // Square of x
 inline auto sqr(const double x) { return x * x; }
 
+struct scaled_value {
+  double fraction = 0.0;
+  int exponent = 0;
+};
+
+struct scaled_complex_value {
+  scaled_value real;
+  scaled_value imaginary;
+};
+
+inline auto make_scaled_product_ratio(const double value, const double numerator, const double denominator) {
+  if (value == 0.0 || numerator == 0.0) return scaled_value{std::copysign(0.0, value * numerator), 0};
+  int value_exponent = 0;
+  int numerator_exponent = 0;
+  int denominator_exponent = 0;
+  const auto value_fraction = std::frexp(value, &value_exponent);
+  const auto numerator_fraction = std::frexp(numerator, &numerator_exponent);
+  const auto denominator_fraction = std::frexp(denominator, &denominator_exponent);
+  int normalization_exponent = 0;
+  const auto fraction = std::frexp(value_fraction * numerator_fraction / denominator_fraction,
+                                   &normalization_exponent);
+  return scaled_value{fraction, value_exponent + numerator_exponent - denominator_exponent + normalization_exponent};
+}
+
+inline auto add_scaled_values(const scaled_value first, const scaled_value second) {
+  if (first.fraction == 0.0) return second;
+  if (second.fraction == 0.0) return first;
+  const auto exponent = std::max(first.exponent, second.exponent);
+  const auto sum = std::scalbn(first.fraction, first.exponent - exponent)
+                   + std::scalbn(second.fraction, second.exponent - exponent);
+  if (sum == 0.0) return scaled_value{std::copysign(0.0, sum), 0};
+  int normalization_exponent = 0;
+  const auto fraction = std::frexp(sum, &normalization_exponent);
+  return scaled_value{static_cast<double>(fraction), exponent + normalization_exponent};
+}
+
+inline auto scale_value(const scaled_value value, const double numerator, const double denominator = 1.0) {
+  const auto scaled = make_scaled_product_ratio(value.fraction, numerator, denominator);
+  return scaled_value{scaled.fraction, scaled.exponent + value.exponent};
+}
+
+inline auto multiply_scaled_values(const scaled_value first, const scaled_value second) {
+  if (first.fraction == 0.0 || second.fraction == 0.0) return scaled_value{};
+  int normalization_exponent = 0;
+  const auto fraction = std::frexp(first.fraction * second.fraction, &normalization_exponent);
+  return scaled_value{fraction, first.exponent + second.exponent + normalization_exponent};
+}
+
+inline auto scaled_exponential(const double logarithm) {
+  constexpr auto logarithm_of_two = 0.693147180559945309417232121458176568L;
+  const auto exponent = static_cast<int>(std::floor(static_cast<long double>(logarithm) / logarithm_of_two));
+  int normalization_exponent = 0;
+  const auto fraction = std::frexp(std::exp(static_cast<long double>(logarithm)
+                                            - static_cast<long double>(exponent) * logarithm_of_two),
+                                   &normalization_exponent);
+  return scaled_value{static_cast<double>(fraction), exponent + normalization_exponent};
+}
+
+inline auto scaled_to_double(const scaled_value value) { return std::scalbn(value.fraction, value.exponent); }
+
+inline auto robust_complex_divide_scaled(const std::complex<double> numerator, const double denominator_real,
+                                         const double denominator_imaginary) {
+  const auto numerator_scale = std::max(std::abs(numerator.real()), std::abs(numerator.imag()));
+  if (numerator_scale == 0.0) return scaled_complex_value{};
+  const auto denominator_scale = std::max(std::abs(denominator_real), std::abs(denominator_imaginary));
+  const auto denominator_real_scaled = denominator_real / denominator_scale;
+  const auto denominator_imaginary_scaled = denominator_imaginary / denominator_scale;
+  const auto norm = sqr(denominator_real_scaled) + sqr(denominator_imaginary_scaled);
+  const auto real_first = make_scaled_product_ratio(numerator.real(), denominator_real_scaled / norm,
+                                                     denominator_scale);
+  const auto real_second = make_scaled_product_ratio(numerator.imag(), denominator_imaginary_scaled / norm,
+                                                      denominator_scale);
+  const auto imaginary_first = make_scaled_product_ratio(numerator.imag(), denominator_real_scaled / norm,
+                                                          denominator_scale);
+  const auto imaginary_second = make_scaled_product_ratio(numerator.real(), -denominator_imaginary_scaled / norm,
+                                                           denominator_scale);
+  const auto real = add_scaled_values(real_first, real_second);
+  const auto imaginary = add_scaled_values(imaginary_first, imaginary_second);
+  return scaled_complex_value{real, imaginary};
+}
+
+inline auto robust_complex_divide(const std::complex<double> numerator, const double denominator_real,
+                                  const double denominator_imaginary) {
+  const auto result = robust_complex_divide_scaled(numerator, denominator_real, denominator_imaginary);
+  return std::complex<double>{scaled_to_double(result.real), scaled_to_double(result.imaginary)};
+}
+
+inline auto exact_scaled_complex_divide(const std::complex<double> numerator, const double argument_real,
+                                        const double energy, const double argument_imaginary,
+                                        const double multiplier = 1.0) {
+  const auto real = NRG::Tools::detail::exact_rational(argument_real)
+                    - NRG::Tools::detail::exact_rational(energy);
+  const auto imaginary = NRG::Tools::detail::exact_rational(argument_imaginary);
+  const auto norm = real * real + imaginary * imaginary;
+  const auto exact_multiplier = NRG::Tools::detail::exact_rational(multiplier);
+  const NRG::Tools::detail::ExactRational numerator_real =
+    NRG::Tools::detail::exact_rational(numerator.real()) * exact_multiplier;
+  const NRG::Tools::detail::ExactRational numerator_imaginary =
+    NRG::Tools::detail::exact_rational(numerator.imag()) * exact_multiplier;
+  const NRG::Tools::detail::ExactRational result_real =
+    (numerator_real * real + numerator_imaginary * imaginary) / norm;
+  const NRG::Tools::detail::ExactRational result_imaginary =
+    (numerator_imaginary * real - numerator_real * imaginary) / norm;
+  return NRG::Tools::detail::ExactComplex{result_real, result_imaginary};
+}
+
+inline auto logarithm_of_absolute_sum(const double first, const double second) {
+  if (first == 0.0) return std::log(std::abs(second));
+  if (second == 0.0) return std::log(std::abs(first));
+  if (std::signbit(first) != std::signbit(second)) return std::log(std::abs(first + second));
+  const auto scale = std::max(std::abs(first), std::abs(second));
+  return std::log(scale) + std::log(std::abs(first / scale + second / scale));
+}
+
 // Result of Integrate[(-y/(y^2 + (x - omega)^2)), {omega, -B, B}] (atg -> imQ).
 inline auto imQ(const double x, const double y, const double B) { return std::atan((-B + x) / y) - std::atan((B + x) / y); }
 
 // Result of Integrate[((x - omega)/(y^2 + (x - omega)^2)), {omega, -B, B}] (logs -> reQ).
-inline auto reQ(const double x, const double y, const double B) { return (-std::log(sqr(B - x) + sqr(y)) + std::log(sqr(B + x) + sqr(y))) / 2.0; }
+inline auto reQ(const double x, const double y, const double B) {
+  const long double scale = std::max({std::abs(static_cast<long double>(B)), std::abs(static_cast<long double>(x)),
+                                      std::abs(static_cast<long double>(y))});
+  const auto bandwidth = static_cast<long double>(B) / scale;
+  const auto real = static_cast<long double>(x) / scale;
+  const auto negative = bandwidth - real;
+  const auto imaginary = static_cast<long double>(y) / scale;
+  const auto denominator = negative * negative + imaginary * imaginary;
+  const auto difference = 4.0L * bandwidth * real;
+  const auto ratio = difference / denominator;
+  if (std::isfinite(ratio) && ratio > -1.0L) return static_cast<double>(0.5L * std::log1p(ratio));
+
+  auto logarithmic_hypot = [y](const double first, const double second) {
+    const auto real_logarithm = logarithm_of_absolute_sum(first, second);
+    const auto imaginary_logarithm = std::log(std::abs(y));
+    return 0.5L * NRG::Tools::detail::log_add_positive(2.0L * real_logarithm,
+                                                       2.0L * imaginary_logarithm);
+  };
+  return static_cast<double>(logarithmic_hypot(B, x) - logarithmic_hypot(B, -x));
+}
+
+struct zero_density {
+  auto operator()([[maybe_unused]] const double energy) const { return 0.0; }
+};
 
 // Calculate the (half)bandwidth, i.e., the size B of the enclosing interval [-B:B].
 inline auto bandwidth(const std::vector<double> &X) {
@@ -344,9 +487,11 @@ inline void validate_hilbert_transform_inputs(const double B, const std::complex
 
 template <typename Scalar>
 auto hilbert_transform(const NRG::Tools::PiecewisePolynomial<Scalar> &density, const double B, const std::complex<double> z,
-                       const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14,
-                       const double epsrel = 1e-10) {
+                        const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14,
+                        const double epsrel = 1e-10) {
   validate_hilbert_transform_inputs(B, z, lim_direct, n, epsabs, epsrel);
+  if (density.lower_bound() < -B || density.upper_bound() > B)
+    throw std::invalid_argument("Piecewise-polynomial support must lie within [-B, B].");
   return NRG::Tools::cauchy_transform(density.multiply_by_monomial(static_cast<size_t>(n)), z);
 }
 
@@ -380,67 +525,135 @@ auto hilbert_transform(integrator &integration, FNCR &rhor, FNCI &rhoi, const do
     return n == 0 ? rhoi(omega) : std::pow(omega, n) * rhoi(omega);
   };
 
-  if (std::abs(y) >= lim_direct) {
-    auto ref0 = [x, y, &g_r, &g_i](double omega) -> double {
-      return (g_r(omega) * (x - omega) + g_i(omega) * y) / (sqr(y) + sqr(x - omega));
+  const bool inside = -B <= x && x <= B;
+  const auto logarithmic_y = std::log(std::abs(y));
+  const bool unusable_exterior_limits = !inside && [&]() {
+    if (!std::isfinite(x + B) || !std::isfinite(x - B)) return true;
+    const auto near = x > B ? logarithm_of_absolute_sum(x, -B) : logarithm_of_absolute_sum(x, B);
+    const auto far = x > B ? logarithm_of_absolute_sum(x, B) : logarithm_of_absolute_sum(x, -B);
+    return !(near < far);
+  }();
+  if (std::abs(y) >= lim_direct || unusable_exterior_limits) {
+    auto direct_value = [x, y](const std::complex<double> numerator, const double omega) {
+      if (x == 0.0 || omega == 0.0 || std::signbit(x) == std::signbit(omega))
+        return robust_complex_divide_scaled(numerator, x - omega, y);
+
+      // Opposite signs can make x-omega overflow, so form a scaled denominator first.
+      const auto scale = std::max({std::abs(x), std::abs(omega), std::abs(y)});
+      const auto quotient = robust_complex_divide_scaled(numerator, x / scale - omega / scale, y / scale);
+      return scaled_complex_value{scale_value(quotient.real, 1.0, scale),
+                                  scale_value(quotient.imaginary, 1.0, scale)};
     };
-    auto imf0 = [x, y, &g_r, &g_i](double omega) -> double {
-      return (g_r(omega) * (-y) + g_i(omega) * (x - omega)) / (sqr(y) + sqr(x - omega));
+    auto integrate_density = [&integration, B, epsabs, epsrel, &direct_value](auto &density,
+                                                                              const bool imaginary) {
+        auto integrate_component = [&](const bool output_imaginary) {
+          auto integrand = [B, imaginary, output_imaginary, &density, &direct_value](const double unit) {
+            const auto energy = B * unit;
+            const auto density_value = density(energy);
+            const auto numerator = imaginary ? std::complex<double>{0.0, density_value}
+                                             : std::complex<double>{density_value, 0.0};
+            const auto value = direct_value(numerator, energy);
+            return scaled_to_double(scale_value(output_imaginary ? value.imaginary : value.real, B));
+          };
+          return integration(integrand, -1.0, 1.0, epsabs, epsrel);
+        };
+        return std::complex<double>{integrate_component(false), integrate_component(true)};
     };
-    const auto real_result = integration(ref0, -B, B, epsabs, epsrel);
-    const auto imag_result = integration(imf0, -B, B, epsabs, epsrel);
-    return std::complex(real_result, imag_result);
+    const auto real_density_result = integrate_density(g_r, false);
+    if constexpr (std::is_same_v<std::remove_cvref_t<FNCI>, zero_density>) return real_density_result;
+    const auto imaginary_density_result = integrate_density(g_i, true);
+    NRG::Tools::CompensatedComplexSum result;
+    result.add(real_density_result);
+    result.add(imaginary_density_result);
+    auto combined = result.value();
+    auto cancelled = [](const double first, const double second, const double value) {
+        return first != 0.0 && second != 0.0 && std::signbit(first) != std::signbit(second)
+               && std::abs(value) <= std::sqrt(std::numeric_limits<double>::epsilon())
+                                        * (std::abs(first) + std::abs(second));
+    };
+    const auto recompute_real = cancelled(real_density_result.real(), imaginary_density_result.real(), combined.real());
+    const auto recompute_imaginary = cancelled(real_density_result.imag(), imaginary_density_result.imag(),
+                                                combined.imag());
+    auto integrate_exact_component = [&](const bool imaginary) {
+        auto integrand = [x, y, B, imaginary, &g_r, &g_i](const double unit) {
+          const auto positive_energy = B * unit;
+          const auto negative_energy = -positive_energy;
+          const auto positive = exact_scaled_complex_divide(
+            {g_r(positive_energy), g_i(positive_energy)}, x, positive_energy, y, B);
+          const auto negative = exact_scaled_complex_divide(
+            {g_r(negative_energy), g_i(negative_energy)}, x, negative_energy, y, B);
+          const NRG::Tools::detail::ExactRational value = imaginary
+                                                            ? positive.imaginary + negative.imaginary
+                                                            : positive.real + negative.real;
+          return value.convert_to<double>();
+        };
+        return integration(integrand, 0.0, 1.0, epsabs, epsrel);
+    };
+    if (recompute_real) combined.real(integrate_exact_component(false));
+    if (recompute_imaginary) combined.imag(integrate_exact_component(true));
+    return combined;
   }
 
-  const bool inside = -B <= x && x <= B;
   const double g_r_x = inside ? g_r(x) : 0.0;
   const double g_i_x = inside ? g_i(x) : 0.0;
 
+  const auto logarithmic_right_distance = logarithm_of_absolute_sum(B, -x) - logarithmic_y;
+  const auto logarithmic_left_distance = logarithm_of_absolute_sum(B, x) - logarithmic_y;
+
   // Integrate the singularity-subtracted remainder after the logarithmic change of variables.
-  auto calc_subtracted = [&integration, x, y, B, inside, epsabs, epsrel](auto f3p, auto f3m, auto analytic) -> double {
-    const double W1 = (x - B) / std::abs(y); // Rescaled integration limits. Only the absolute value of y matters here.
-    const double W2 = (B + x) / std::abs(y);
-    assert(W2 >= W1);
+  auto calc_subtracted = [&integration, x, B, inside, logarithmic_right_distance, logarithmic_left_distance,
+                          logarithmic_y, epsabs, epsrel](auto positive, auto negative, auto analytic) -> double {
     double lim1down = 1.0, lim1up = -1.0, lim2down = 1.0, lim2up = -1.0;
     if (inside) {
       constexpr double log_zero_cutoff = -36.8; // approximately log(10^-16)
-      if (W1 < 0.0) {
+      if (x < B) {
         lim1down = log_zero_cutoff;
-        lim1up = std::log(-W1);
+        lim1up = logarithmic_right_distance;
       }
-      if (W2 > 0.0) {
+      if (x > -B) {
         lim2down = log_zero_cutoff;
-        lim2up = std::log(W2);
+        lim2up = logarithmic_left_distance;
       }
-    } else if (W1 > 0 && W2 > 0) { // x above the band
-      lim2down = std::log(W1);
-      lim2up = std::log(W2);
-    } else if (W1 < 0 && W2 < 0) { // x below the band
-      lim1down = std::log(-W2);
-      lim1up = std::log(-W1);
+    } else if (x > B) {
+      lim2down = logarithm_of_absolute_sum(x, -B) - logarithmic_y;
+      lim2up = logarithm_of_absolute_sum(x, B) - logarithmic_y;
+    } else {
+      lim1down = logarithm_of_absolute_sum(x, B) - logarithmic_y;
+      lim1up = logarithm_of_absolute_sum(x, -B) - logarithmic_y;
     }
-    const auto result1 = lim1down < lim1up ? integration(f3p, lim1down, lim1up, epsabs, epsrel) : 0.0;
-    const auto result2 = lim2down < lim2up ? integration(f3m, lim2down, lim2up, epsabs, epsrel) : 0.0;
+    const auto result1 = lim1down < lim1up ? integration(positive, lim1down, lim1up, epsabs, epsrel) : 0.0;
+    const auto result2 = lim2down < lim2up ? integration(negative, lim2down, lim2up, epsabs, epsrel) : 0.0;
     const auto result3 = inside ? analytic : 0.0;
     return result1 + result2 + result3;
   };
 
-  // Re part of g(omega)/(z-omega) with the singularity subtracted out.
-  auto ref1 = [x, y, g_r_x, g_i_x, &g_r, &g_i](double omega) -> double {
-    return ((g_r(omega) - g_r_x) * (x - omega) + (g_i(omega) - g_i_x) * y) / (sqr(y) + sqr(x - omega));
+  auto subtracted_value = [x, y, g_r_x, g_i_x, &g_r, &g_i](const double omega) {
+    return robust_complex_divide_scaled({g_r(omega) - g_r_x, g_i(omega) - g_i_x}, x - omega, y);
   };
-  auto ref2  = [x, y, ref1](double W) -> double { return std::abs(y) * ref1(std::abs(y) * W + x); };
-  auto ref3p = [ref2](double r) -> double { return ref2(std::exp(r)) * std::exp(r); };
-  auto ref3m = [ref2](double r) -> double { return ref2(-std::exp(r)) * std::exp(r); };
+  auto transformed_value = [x, B, logarithmic_y, &subtracted_value](const double logarithmic_displacement,
+                                                                    const bool positive,
+                                                                    const bool imaginary) {
+    const auto displacement = scaled_exponential(logarithmic_y + logarithmic_displacement);
+    const auto narrow_displacement = scaled_to_double(displacement);
+    double omega = 0.0;
+    if (std::isfinite(narrow_displacement)) {
+      omega = positive ? std::min(B, x + narrow_displacement) : std::max(-B, x - narrow_displacement);
+    } else {
+      const auto wide_displacement = boost::multiprecision::ldexp(NRG::Tools::detail::FarReal{displacement.fraction},
+                                                                  displacement.exponent);
+      const auto wide_omega = NRG::Tools::detail::FarReal{x}
+                              + (positive ? wide_displacement : -wide_displacement);
+      omega = std::clamp(wide_omega.convert_to<double>(), -B, B);
+    }
+    const auto value = subtracted_value(omega);
+    return scaled_to_double(multiply_scaled_values(imaginary ? value.imaginary : value.real, displacement));
+  };
+  auto ref3p = [&transformed_value](const double r) { return transformed_value(r, true, false); };
+  auto ref3m = [&transformed_value](const double r) { return transformed_value(r, false, false); };
   const auto red = g_r_x * reQ(x, y, B) - g_i_x * imQ(x, y, B);
 
-  // Im part of g(omega)/(z-omega) with the singularity subtracted out.
-  auto imf1 = [x, y, g_r_x, g_i_x, &g_r, &g_i](double omega) -> double {
-    return ((g_r(omega) - g_r_x) * (-y) + (g_i(omega) - g_i_x) * (x - omega)) / (sqr(y) + sqr(x - omega));
-  };
-  auto imf2  = [x, y, imf1](double W) -> double { return std::abs(y) * imf1(std::abs(y) * W + x); };
-  auto imf3p = [imf2](double r) -> double { return imf2(std::exp(r)) * std::exp(r); };
-  auto imf3m = [imf2](double r) -> double { return imf2(-std::exp(r)) * std::exp(r); };
+  auto imf3p = [&transformed_value](const double r) { return transformed_value(r, true, true); };
+  auto imf3m = [&transformed_value](const double r) { return transformed_value(r, false, true); };
   const auto imd = g_r_x * imQ(x, y, B) + g_i_x * reQ(x, y, B);
 
   const auto real_result = calc_subtracted(ref3p, ref3m, red);
@@ -544,7 +757,7 @@ class Hilb {
 
   auto hilbert(const double x, const double y) {
     auto Bethe_fnc = [this](const auto w) { return std::abs(w*scale) < 1.0 ? 2.0 / M_PI * scale * std::sqrt(1 - sqr(w * scale)) : 0.0; };
-    auto zero_fnc = []([[maybe_unused]] const auto w) { return 0.0; };
+    zero_density zero_fnc;
     const auto z = std::complex(x + shiftx, y + shifty); // shift here!
     if (tabulated) {
       if (!weighted_tabulated_rho) throw std::logic_error("Tabulated DOS polynomial is not initialized.");
@@ -636,13 +849,6 @@ class Hilb {
   auto safe_open_rd(const std::string &filename) {
     std::ifstream F(filename);
     if (!F) throw std::runtime_error("Error opening file " + filename + " for reading.");
-    return F;
-  }
-
-  auto safe_open_wr(const std::string &filename) {
-    std::ofstream F(filename);
-    if (!F) throw std::runtime_error("Error opening file " + filename + " for writing.");
-    F << std::setprecision(OUTPUT_PRECISION);
     return F;
   }
 
@@ -827,14 +1033,17 @@ class Hilb {
     if (remaining != 1 && remaining != 2 && remaining != 4)
       throw std::runtime_error("Invalid number of positional arguments: got " + std::to_string(remaining) + "; expected 1, 2, or 4.");
     if (remaining == 4 && output_filename) throw std::runtime_error("The -o option is not valid in DMFT mode.");
-    if (remaining == 1 && output_filename && *output_filename == args[0])
+    if (remaining == 1 && output_filename && files_refer_to_same_location(*output_filename, args[0]))
       throw std::runtime_error("Input and output files must be different.");
     if (remaining == 4
-        && (args[2] == args[3] || args[2] == args[0] || args[2] == args[1] || args[3] == args[0] || args[3] == args[1]))
+        && (files_refer_to_same_location(args[2], args[3]) || files_refer_to_same_location(args[2], args[0])
+            || files_refer_to_same_location(args[2], args[1]) || files_refer_to_same_location(args[3], args[0])
+            || files_refer_to_same_location(args[3], args[1])))
       throw std::runtime_error("DMFT output files must differ from each other and from both input files.");
-    if (tabulated && output_filename && *dos_filename == *output_filename)
+    if (tabulated && output_filename && files_refer_to_same_location(*dos_filename, *output_filename))
       throw std::runtime_error("Density-of-states input and output files must be different.");
-    if (tabulated && remaining == 4 && (*dos_filename == args[2] || *dos_filename == args[3]))
+    if (tabulated && remaining == 4
+        && (files_refer_to_same_location(*dos_filename, args[2]) || files_refer_to_same_location(*dos_filename, args[3])))
       throw std::runtime_error("DMFT output files must differ from the density-of-states input file.");
     if (tabulated) {
       load_dos(*dos_filename);
@@ -847,23 +1056,31 @@ class Hilb {
       if (verbose) info();
       auto F = safe_open_rd(args[0]);
       numeric_row_reader<3> rows(F, args[0]);
-      std::optional<std::ofstream> output;
       if (output_filename) {
-        output = safe_open_wr(*output_filename);
         if (verbose) std::cout << "Output file: " << *output_filename << '\n';
+        std::ostringstream output;
+        output << std::setprecision(OUTPUT_PRECISION);
+        do_stream(rows, output);
+        NRG::Tools::write_output_file(*output_filename, output.str());
+      } else {
+        do_stream(rows, std::cout);
+        finish_output(std::cout, "<stdout>");
       }
-      do_stream(rows, output ? *output : std::cout);
       return;
     }
     if (remaining == 2) {
       const auto x = parse_finite_double(args[0], "Real argument");
       const auto y = parse_finite_double(args[1], "Imaginary argument");
-      std::optional<std::ofstream> output;
       if (output_filename) {
-        output = safe_open_wr(*output_filename);
         if (verbose) std::cout << "Output file: " << *output_filename << '\n';
+        std::ostringstream output;
+        output << std::setprecision(OUTPUT_PRECISION);
+        do_one(x, y, output);
+        NRG::Tools::write_output_file(*output_filename, output.str());
+      } else {
+        do_one(x, y, std::cout);
+        finish_output(std::cout, "<stdout>");
       }
-      do_one(x, y, output ? *output : std::cout);
       return;
     }
 
@@ -873,9 +1090,13 @@ class Hilb {
     auto Fis = safe_open_rd(args[1]);
     numeric_row_reader<2> real_rows(Frs, args[0]);
     numeric_row_reader<2> imag_rows(Fis, args[1]);
-    auto Fra = safe_open_wr(args[2]);
-    auto Fia = safe_open_wr(args[3]);
-    do_hilb(real_rows, imag_rows, Fra, Fia);
+    std::ostringstream real_output;
+    std::ostringstream imaginary_output;
+    real_output << std::setprecision(OUTPUT_PRECISION);
+    imaginary_output << std::setprecision(OUTPUT_PRECISION);
+    do_hilb(real_rows, imag_rows, real_output, imaginary_output);
+    NRG::Tools::write_output_file(args[2], real_output.str());
+    NRG::Tools::write_output_file(args[3], imaginary_output.str());
   }
 
   public:
@@ -884,6 +1105,7 @@ class Hilb {
     gsl_set_error_handler_off();
     try {
       parse_param_run(argc, argv);
+      finish_output(std::cout, "<stdout>");
     } catch (...) {
       gsl_failures.report(std::cerr);
       throw;

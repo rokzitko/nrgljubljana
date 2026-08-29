@@ -1,0 +1,150 @@
+#!/bin/sh
+set -eu
+
+hilb="$1/hilb"
+generated="$2/test/reference/generated"
+mycomp="$2/test/mycomp.pl"
+
+rm -f ./*.out ./*.err mapped.stdout mapped.stderr raw.stdout raw.stderr comparator.*
+
+run_complex_case() {
+  name=$1
+  power=$2
+  real=$3
+  imaginary=$4
+  "$hilb" -d "$generated/cubic_cspline_dos.dat" -i cspline -G -n "$power" -- "$real" "$imaginary" \
+    >"$name.out" 2>"$name.err"
+  test ! -s "$name.err"
+}
+
+run_complex_case cubic_upper_knot 0 -0.25 0.09375
+run_complex_case cubic_lower_knot 0 -0.25 -0.09375
+run_complex_case cubic_power1 1 0.75 0.25
+run_complex_case cubic_power2_lower 2 -1.5 -0.1875
+
+"$hilb" -d "$generated/cubic_cspline_dos.dat" \
+  "$generated/dmft_resigma.dat" "$generated/dmft_imsigma.dat" mapped_re.out mapped_im.out \
+  >mapped.stdout 2>mapped.stderr
+test ! -s mapped.stderr
+
+"$hilb" -G -d "$generated/cubic_cspline_dos.dat" \
+  "$generated/dmft_resigma.dat" "$generated/dmft_imsigma.dat" raw_re.out raw_im.out \
+  >raw.stdout 2>raw.stderr
+test ! -s raw.stderr
+
+perl - "$generated" <<'PERL'
+use strict;
+use warnings;
+
+my $generated = shift @ARGV;
+my $number = qr/[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?/;
+
+sub close_enough {
+  my ($actual, $expected, $description) = @_;
+  my $scale = abs($expected) > 1 ? abs($expected) : 1;
+  die "$description: $actual != $expected\n" if abs($actual - $expected) > 3e-13 * $scale;
+}
+
+my %transform;
+open(my $transforms, '<', "$generated/cauchy_transforms.tsv") or die $!;
+while (<$transforms>) {
+  next if /^#/;
+  chomp;
+  my @field = split /\t/;
+  $transform{$field[0]} = [$field[6], $field[7]];
+}
+close($transforms);
+
+for my $name (qw(cubic_upper_knot cubic_lower_knot cubic_power1 cubic_power2_lower)) {
+  open(my $result, '<', "$name.out") or die $!;
+  my @lines = <$result>;
+  close($result);
+  @lines == 1 or die "$name: expected one output line\n";
+  chomp($lines[0]);
+  $lines[0] =~ /^\(($number),($number)\)$/ or die "$name: malformed complex output: $lines[0]\n";
+  close_enough(0 + $1, $transform{$name}[0], "$name real");
+  close_enough(0 + $2, $transform{$name}[1], "$name imaginary");
+}
+
+sub read_pair {
+  my ($filename) = @_;
+  open(my $input, '<', $filename) or die $!;
+  my @lines = <$input>;
+  close($input);
+  @lines == 1 or die "$filename: expected one row\n";
+  $lines[0] =~ /^\s*($number)\s+($number)\s*$/ or die "$filename: malformed numeric row\n";
+  return (0 + $1, 0 + $2);
+}
+
+for my $part (qw(re im)) {
+  my ($actual_label, $actual) = read_pair("mapped_${part}.out");
+  my ($expected_label, $expected) = read_pair("$generated/dmft_${part}aw.ref");
+  close_enough($actual_label, $expected_label, "mapped DMFT $part label");
+  close_enough($actual, $expected, "mapped DMFT $part");
+}
+
+open(my $mapping, '<', "$generated/dmft_mapping.tsv") or die $!;
+my @mapping_rows;
+while (<$mapping>) {
+  next if /^#/;
+  chomp;
+  push @mapping_rows, [split /\t/];
+}
+close($mapping);
+@mapping_rows == 1 or die "expected exactly one DMFT mapping reference\n";
+my @mapping = @{$mapping_rows[0]};
+@mapping == 11 or die "malformed DMFT mapping reference\n";
+my ($raw_real_label, $raw_real) = read_pair('raw_re.out');
+my ($raw_imaginary_label, $raw_imaginary) = read_pair('raw_im.out');
+close_enough($raw_real_label, $mapping[2], 'raw DMFT real label');
+close_enough($raw_imaginary_label, $mapping[2], 'raw DMFT imaginary label');
+close_enough($raw_real, $mapping[7], 'raw DMFT real');
+close_enough($raw_imaginary, $mapping[8], 'raw DMFT imaginary');
+PERL
+
+printf '%s\n' '(1,2)' >comparator.reference
+printf '%s\n' '(1.000000000000001,1.999999999999999)' >comparator.close
+perl "$mycomp" comparator.reference comparator.close
+printf '%s\n' 'I=0 n=1 E=0 <n_d>=0.5 <n_d^2>=1' >comparator.reference
+printf '%s\n' 'I=0 n=1 E=0.000001 <n_d>=0.500001 <n_d^2>=1.000001' >comparator.close
+perl "$mycomp" comparator.reference comparator.close
+printf '%s\n' 'I=0 n=1 E=0 <n_d>=0.6 <n_d^2>=1' >comparator.bad
+if perl "$mycomp" comparator.reference comparator.bad; then
+  echo "mycomp accepted an out-of-tolerance labeled value" >&2
+  exit 1
+fi
+printf '%s\n' '(1,2)' >comparator.reference
+printf '%s\n' '(1,2)junk' >comparator.bad
+if perl "$mycomp" comparator.reference comparator.bad; then
+  echo "mycomp accepted trailing junk in a complex field" >&2
+  exit 1
+fi
+printf '%s\n' 'garbage' >comparator.bad
+if perl "$mycomp" comparator.reference comparator.bad; then
+  echo "mycomp accepted a nonnumeric replacement" >&2
+  exit 1
+fi
+printf '%s\n' 'foo' >comparator.reference
+printf '%s\n' 'bar' >comparator.bad
+if perl "$mycomp" comparator.reference comparator.bad; then
+  echo "mycomp accepted unequal nonnumeric fields" >&2
+  exit 1
+fi
+printf '%s\n' '(1,2)' >comparator.reference
+printf '%s\n' '(1,2.1)' >comparator.bad
+if perl "$mycomp" comparator.reference comparator.bad; then
+  echo "mycomp accepted an out-of-tolerance complex value" >&2
+  exit 1
+fi
+: >comparator.reference
+: >comparator.bad
+index=0
+while test "$index" -lt 256; do
+  printf '%s\n' 'foo' >>comparator.reference
+  printf '%s\n' 'bar' >>comparator.bad
+  index=$((index + 1))
+done
+if perl "$mycomp" comparator.reference comparator.bad >/dev/null; then
+  echo "mycomp returned success for 256 differences" >&2
+  exit 1
+fi

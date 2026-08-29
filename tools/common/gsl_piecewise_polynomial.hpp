@@ -36,6 +36,8 @@ inline auto make_gsl_piecewise_polynomial(const std::vector<double> &knots, cons
     if (index != 0 && !(knots[index - 1] < knots[index]))
       throw std::invalid_argument("Interpolation energies must be strictly increasing.");
   }
+  if (!std::isfinite(knots.back() - knots.front()))
+    throw std::invalid_argument("Interpolation domain width must be finite.");
 
   const GslErrorHandlerGuard error_handler;
   std::unique_ptr<gsl_spline, GslSplineDeleter> spline{gsl_spline_alloc(gsl_interpolation_type(method), knots.size())};
@@ -60,7 +62,7 @@ inline auto make_gsl_piecewise_polynomial(const std::vector<double> &knots, cons
       throw std::runtime_error("Failed to evaluate GSL interpolation second derivative: " + std::string(gsl_strerror(status)));
     const auto width = knots[interval + 1] - knots[interval];
     const auto linear = width * first_derivative;
-    const auto quadratic = 0.5 * width * width * second_derivative;
+    const auto quadratic = 0.5 * width * (width * second_derivative);
     coefficients.push_back({values[interval], linear, quadratic, delta - linear - quadratic});
   }
   return PiecewisePolynomial<double>{knots, std::move(coefficients)};

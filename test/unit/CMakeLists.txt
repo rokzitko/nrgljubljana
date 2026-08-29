@@ -1,5 +1,11 @@
 file(GLOB_RECURSE all_tests RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp)
 
+set(TEST_REFERENCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/reference)
+file(MAKE_DIRECTORY ${TEST_REFERENCE_DIR})
+foreach(reference_file polynomials.tsv moments.tsv cauchy_transforms.tsv kk_nonlinear.tsv)
+  configure_file(${PROJECT_SOURCE_DIR}/test/reference/generated/${reference_file}
+                 ${TEST_REFERENCE_DIR}/${reference_file} COPYONLY)
+endforeach()
 configure_file(include/cmake_configure.hpp.in include/cmake_configure.hpp)
 
 option(GCOV "gcov" OFF)

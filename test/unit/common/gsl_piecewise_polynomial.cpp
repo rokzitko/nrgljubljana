@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -70,12 +71,30 @@ TEST(GslPiecewisePolynomial, preserves_nonrounded_akima_corner_intervals) { // N
     EXPECT_NEAR(polynomial.evaluate(x), gsl_spline_eval(spline.get(), x, acceleration.get()), 2e-14);
 }
 
+TEST(GslPiecewisePolynomial, constant_cubic_on_wide_intervals_avoids_infinity_times_zero) { // NOLINT
+  const std::vector<double> knots{0.0, 1e200, 2e200};
+  const std::vector<double> values{1.0, 1.0, 1.0};
+  const auto polynomial = NRG::Tools::make_gsl_piecewise_polynomial(knots, values, NRG::Tools::InterpolationMethod::cspline);
+
+  for (const auto &coefficients : polynomial.coefficients()) {
+    ASSERT_EQ(coefficients.size(), 4);
+    EXPECT_DOUBLE_EQ(coefficients[0], 1.0);
+    EXPECT_DOUBLE_EQ(coefficients[1], 0.0);
+    EXPECT_DOUBLE_EQ(coefficients[2], 0.0);
+    EXPECT_DOUBLE_EQ(coefficients[3], 0.0);
+  }
+}
+
 TEST(GslPiecewisePolynomial, validates_grid_and_method_minimum) { // NOLINT
   EXPECT_THROW(NRG::Tools::make_gsl_piecewise_polynomial({0.0, 1.0}, {0.0}, NRG::Tools::InterpolationMethod::linear),
                std::invalid_argument);
   EXPECT_THROW(NRG::Tools::make_gsl_piecewise_polynomial({0.0, 1.0}, {0.0, 1.0}, NRG::Tools::InterpolationMethod::steffen),
                std::invalid_argument);
   EXPECT_THROW(NRG::Tools::make_gsl_piecewise_polynomial({0.0, 1.0, 1.0}, {0.0, 1.0, 2.0}, NRG::Tools::InterpolationMethod::cspline),
+               std::invalid_argument);
+  const auto maximum = std::numeric_limits<double>::max();
+  EXPECT_THROW(NRG::Tools::make_gsl_piecewise_polynomial({-maximum, 0.0, maximum}, {0.0, 1.0, 0.0},
+                                                          NRG::Tools::InterpolationMethod::cspline),
                std::invalid_argument);
 }
 

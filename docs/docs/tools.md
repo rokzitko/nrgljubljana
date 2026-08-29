@@ -122,6 +122,9 @@ These tools operate on tabulated spectral or response data after the main `nrg` 
 - strong reliance on `tools/common/tabulated.hpp`
 - a lot of command-line option parsing and validation
 - frequent interaction with GSL-based interpolation or integration routines
+- `hilb -d` and `kk` materialize GSL interpolants as interval polynomials and
+  evaluate their transforms analytically; built-in and callable `hilb`
+  densities continue to use adaptive GSL QAG integration
 
 ### Notable Distinctions
 

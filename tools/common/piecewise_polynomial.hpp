@@ -5,13 +5,32 @@
 #include <cmath>
 #include <complex>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <memory>
+#include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+#include <boost/multiprecision/cpp_bin_float.hpp>
+#include <boost/multiprecision/cpp_complex.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
 namespace NRG::Tools {
+
+using PiecewiseWideFloat = boost::multiprecision::cpp_bin_float_50;
+using PiecewiseWideComplex = boost::multiprecision::cpp_complex_50;
+using PiecewiseExactRational = boost::multiprecision::cpp_rational;
 
 template <typename Scalar>
 inline auto polynomial_scalar_is_finite(const Scalar value) {
@@ -29,12 +48,63 @@ inline auto polynomial_scalar_as_complex(const Scalar value) {
     return std::complex<double>{value};
 }
 
+template <typename Scalar>
+inline auto polynomial_scalar_as_long_complex(const Scalar value) {
+  if constexpr (std::is_same_v<Scalar, double>)
+    return std::complex<long double>{static_cast<long double>(value), 0.0L};
+  else
+    return std::complex<long double>{static_cast<long double>(value.real()), static_cast<long double>(value.imag())};
+}
+
+namespace detail {
+
+using ExactRational = PiecewiseExactRational;
+inline constexpr bool native_extended_precision = std::numeric_limits<long double>::digits
+                                                  > std::numeric_limits<double>::digits;
+inline constexpr std::size_t double_exponent_span = std::numeric_limits<double>::max_exponent
+                                                    - std::numeric_limits<double>::min_exponent
+                                                    + std::numeric_limits<double>::digits + 8;
+
+inline auto exact_binary_scale(unsigned exponent) {
+  boost::multiprecision::cpp_int result{1};
+  result <<= exponent;
+  return result;
+}
+
+inline auto exact_rational(const double value) {
+  if (value == 0.0) return ExactRational{};
+  int exponent = 0;
+  const auto fraction = std::frexp(value, &exponent);
+  constexpr auto digits = std::numeric_limits<double>::digits;
+  const auto mantissa = static_cast<std::int64_t>(std::ldexp(fraction, digits));
+  ExactRational result{mantissa};
+  if (exponent >= digits)
+    result *= exact_binary_scale(static_cast<unsigned>(exponent - digits));
+  else
+    result /= exact_binary_scale(static_cast<unsigned>(digits - exponent));
+  return result;
+}
+
+inline auto exact_power(ExactRational base, std::size_t exponent) {
+  ExactRational result{1};
+  while (exponent != 0) {
+    if (exponent % 2 != 0) result *= base;
+    exponent /= 2;
+    if (exponent != 0) base *= base;
+  }
+  return result;
+}
+
+} // namespace detail
+
 template <typename Real>
 class CompensatedComplexSumType {
   Real real_sum = 0.0;
   Real real_correction = 0.0;
   Real imaginary_sum = 0.0;
   Real imaginary_correction = 0.0;
+  Real real_absolute_sum = 0.0;
+  Real imaginary_absolute_sum = 0.0;
 
   static void add_component(const Real value, Real &sum, Real &correction) {
     const auto updated = sum + value;
@@ -49,13 +119,33 @@ class CompensatedComplexSumType {
   void add(const std::complex<Real> value) {
     add_component(value.real(), real_sum, real_correction);
     add_component(value.imag(), imaginary_sum, imaginary_correction);
+    real_absolute_sum += std::abs(value.real());
+    imaginary_absolute_sum += std::abs(value.imag());
   }
 
   auto value() const { return std::complex<Real>{real_sum + real_correction, imaginary_sum + imaginary_correction}; }
+  auto real_absolute_bound() const { return real_absolute_sum; }
+  auto imaginary_absolute_bound() const { return imaginary_absolute_sum; }
 };
 
 using CompensatedComplexSum = CompensatedComplexSumType<double>;
 using CompensatedLongComplexSum = CompensatedComplexSumType<long double>;
+
+struct PiecewiseNativeMoment {
+  std::complex<long double> value;
+  long double real_absolute_bound = 0.0L;
+  long double imaginary_absolute_bound = 0.0L;
+};
+
+struct PiecewiseFarMomentCache {
+  std::mutex mutex;
+  std::vector<PiecewiseNativeMoment> native_moments;
+  std::vector<std::vector<long double>> native_powers;
+  std::vector<std::pair<PiecewiseWideFloat, PiecewiseWideFloat>> moments;
+  std::vector<std::vector<PiecewiseWideFloat>> powers;
+  std::vector<std::pair<PiecewiseExactRational, PiecewiseExactRational>> exact_moments;
+  std::vector<std::vector<PiecewiseExactRational>> exact_powers;
+};
 
 template <typename Scalar>
 class PiecewisePolynomial {
@@ -63,6 +153,7 @@ class PiecewisePolynomial {
 
   std::vector<double> knots_;
   std::vector<std::vector<Scalar>> coefficients_;
+  mutable std::shared_ptr<PiecewiseFarMomentCache> far_moment_cache_ = std::make_shared<PiecewiseFarMomentCache>();
 
   auto interval_index(const double x) const {
     if (!std::isfinite(x) || x < knots_.front() || x > knots_.back())
@@ -85,6 +176,8 @@ class PiecewisePolynomial {
       if (index != 0 && !(knots_[index - 1] < knots_[index]))
         throw std::invalid_argument("Piecewise-polynomial knots must be strictly increasing.");
     }
+    if (!std::isfinite(knots_.back() - knots_.front()))
+      throw std::invalid_argument("Piecewise-polynomial domain width must be finite.");
     for (const auto &interval : coefficients_) {
       if (interval.empty()) throw std::invalid_argument("Each polynomial interval requires at least one coefficient.");
       for (const auto coefficient : interval)
@@ -97,6 +190,8 @@ class PiecewisePolynomial {
   auto interval_count() const noexcept { return coefficients_.size(); }
   auto lower_bound() const noexcept { return knots_.front(); }
   auto upper_bound() const noexcept { return knots_.back(); }
+
+  auto far_moment_cache() const { return far_moment_cache_; }
 
   auto evaluate(const double x) const {
     const auto index = interval_index(x);
@@ -125,33 +220,150 @@ class PiecewisePolynomial {
 
   auto multiply_by_monomial(const std::size_t exponent) const {
     if (exponent == 0) return *this;
+    if (exponent == std::numeric_limits<std::size_t>::max())
+      throw std::length_error("Energy-weighted polynomial degree is too large.");
     std::vector<std::vector<Scalar>> weighted;
     weighted.reserve(coefficients_.size());
     for (std::size_t interval = 0; interval < coefficients_.size(); ++interval) {
-      const auto left = knots_[interval];
-      const auto width = knots_[interval + 1] - left;
-      std::vector<double> monomial(exponent + 1, 0.0);
-      if (left == 0.0) {
-        monomial[exponent] = std::pow(width, static_cast<double>(exponent));
-      } else if (std::abs(left) >= width) {
-        monomial[0] = std::pow(left, static_cast<double>(exponent));
-        for (std::size_t power = 0; power < exponent; ++power)
-          monomial[power + 1] = monomial[power] * static_cast<double>(exponent - power)
-                                / static_cast<double>(power + 1) * width / left;
-      } else {
-        monomial[exponent] = std::pow(width, static_cast<double>(exponent));
-        for (std::size_t power = exponent; power > 0; --power)
-          monomial[power - 1] = monomial[power] * static_cast<double>(power)
-                                / static_cast<double>(exponent - power + 1) * left / width;
+      if (coefficients_[interval].size() > std::numeric_limits<std::size_t>::max() - exponent)
+        throw std::length_error("Energy-weighted polynomial degree is too large.");
+      if (std::all_of(coefficients_[interval].begin(), coefficients_[interval].end(),
+                      [](const auto coefficient) { return coefficient == Scalar{}; })) {
+        weighted.push_back({Scalar{}});
+        continue;
       }
 
-      std::vector<Scalar> product(coefficients_[interval].size() + exponent, Scalar{});
-      for (std::size_t first = 0; first < coefficients_[interval].size(); ++first)
-        for (std::size_t second = 0; second < monomial.size(); ++second)
-          product[first + second] += coefficients_[interval][first] * monomial[second];
-      for (const auto coefficient : product)
-        if (!polynomial_scalar_is_finite(coefficient))
-          throw std::overflow_error("Energy weighting produced a nonfinite polynomial coefficient.");
+      const auto left = knots_[interval];
+      const auto width = knots_[interval + 1] - left;
+      const auto extended_left = static_cast<long double>(left);
+      const auto extended_width = static_cast<long double>(width);
+      std::vector<long double> monomial(exponent + 1, 0.0L);
+      if (left == 0.0) {
+        monomial[exponent] = std::pow(extended_width, static_cast<long double>(exponent));
+      } else if (std::abs(left) >= width) {
+        monomial[0] = std::pow(extended_left, static_cast<long double>(exponent));
+        for (std::size_t power = 0; power < exponent; ++power)
+          monomial[power + 1] = monomial[power] * static_cast<long double>(exponent - power)
+                                / static_cast<long double>(power + 1) * extended_width / extended_left;
+      } else {
+        monomial[exponent] = std::pow(extended_width, static_cast<long double>(exponent));
+        for (std::size_t power = exponent; power > 0; --power)
+          monomial[power - 1] = monomial[power] * static_cast<long double>(power)
+                                / static_cast<long double>(exponent - power + 1) * extended_left / extended_width;
+      }
+
+      auto requires_exact_arithmetic = false;
+      for (std::size_t power = 0; power < monomial.size(); ++power) {
+        const auto expected_nonzero = left != 0.0 || power == exponent;
+        if (!std::isfinite(monomial[power]) || (expected_nonzero && monomial[power] == 0.0L)) {
+          requires_exact_arithmetic = true;
+          break;
+        }
+      }
+      std::vector<std::complex<long double>> extended_product(coefficients_[interval].size() + exponent);
+      if (!requires_exact_arithmetic) {
+        std::vector<CompensatedLongComplexSum> product_sums(extended_product.size());
+        std::vector<long double> real_logarithmic_bounds(extended_product.size(),
+                                                         -std::numeric_limits<long double>::infinity());
+        std::vector<long double> imaginary_logarithmic_bounds(extended_product.size(),
+                                                              -std::numeric_limits<long double>::infinity());
+        auto add_logarithm = [](long double &sum, const long double value) {
+          if (value == 0.0L) return;
+          const auto logarithm = std::log(std::abs(value));
+          if (sum == -std::numeric_limits<long double>::infinity()) {
+            sum = logarithm;
+            return;
+          }
+          const auto larger = std::max(sum, logarithm);
+          sum = larger + std::log1p(std::exp(std::min(sum, logarithm) - larger));
+        };
+        for (std::size_t first = 0; first < coefficients_[interval].size(); ++first) {
+          const auto coefficient = polynomial_scalar_as_long_complex(coefficients_[interval][first]);
+          for (std::size_t second = 0; second < monomial.size(); ++second) {
+            const auto contribution = coefficient * monomial[second];
+            if (monomial[second] != 0.0L
+                && ((coefficient.real() != 0.0L && contribution.real() == 0.0L)
+                    || (coefficient.imag() != 0.0L && contribution.imag() == 0.0L)))
+              requires_exact_arithmetic = true;
+            product_sums[first + second].add(contribution);
+            add_logarithm(real_logarithmic_bounds[first + second], contribution.real());
+            add_logarithm(imaginary_logarithmic_bounds[first + second], contribution.imag());
+          }
+        }
+        const auto logarithmic_roundoff = std::log(8.0L * std::numeric_limits<long double>::epsilon()
+                                                    / std::numeric_limits<double>::epsilon());
+        for (std::size_t power = 0; power < extended_product.size(); ++power) {
+          extended_product[power] = product_sums[power].value();
+          const auto uncertain = [logarithmic_roundoff](const long double value, const long double bound) {
+            if (!std::isfinite(value)) return true;
+            if (bound == -std::numeric_limits<long double>::infinity()) return false;
+            return value == 0.0L || std::log(std::abs(value)) <= logarithmic_roundoff + bound;
+          };
+          if (uncertain(extended_product[power].real(), real_logarithmic_bounds[power])
+              || uncertain(extended_product[power].imag(), imaginary_logarithmic_bounds[power])) {
+            requires_exact_arithmetic = true;
+            break;
+          }
+        }
+      }
+
+      std::vector<Scalar> product;
+      product.reserve(extended_product.size());
+      if (!requires_exact_arithmetic) {
+        for (const auto coefficient : extended_product) {
+          const auto real_part = static_cast<double>(coefficient.real());
+          const auto imaginary_part = static_cast<double>(coefficient.imag());
+          if (!std::isfinite(real_part) || !std::isfinite(imaginary_part)) {
+            requires_exact_arithmetic = true;
+            break;
+          }
+          if constexpr (std::is_same_v<Scalar, double>)
+            product.push_back(real_part);
+          else
+            product.emplace_back(real_part, imaginary_part);
+        }
+      }
+
+      if (requires_exact_arithmetic) {
+        std::vector<detail::ExactRational> exact_monomial(exponent + 1);
+        const auto exact_left = detail::exact_rational(left);
+        const auto exact_width = detail::exact_rational(width);
+        if (left == 0.0) {
+          exact_monomial[exponent] = detail::exact_power(exact_width, exponent);
+        } else if (std::abs(left) >= width) {
+          exact_monomial[0] = detail::exact_power(exact_left, exponent);
+          for (std::size_t power = 0; power < exponent; ++power)
+            exact_monomial[power + 1] = exact_monomial[power] * (exponent - power) / (power + 1)
+                                          * exact_width / exact_left;
+        } else {
+          exact_monomial[exponent] = detail::exact_power(exact_width, exponent);
+          for (std::size_t power = exponent; power > 0; --power)
+            exact_monomial[power - 1] = exact_monomial[power] * power / (exponent - power + 1)
+                                        * exact_left / exact_width;
+        }
+
+        std::vector<detail::ExactRational> exact_real(extended_product.size());
+        std::vector<detail::ExactRational> exact_imaginary(extended_product.size());
+        for (std::size_t first = 0; first < coefficients_[interval].size(); ++first) {
+          const auto coefficient = polynomial_scalar_as_complex(coefficients_[interval][first]);
+          for (std::size_t second = 0; second < exact_monomial.size(); ++second) {
+            exact_real[first + second] += detail::exact_rational(coefficient.real()) * exact_monomial[second];
+            exact_imaginary[first + second] += detail::exact_rational(coefficient.imag()) * exact_monomial[second];
+          }
+        }
+
+        product.clear();
+        for (std::size_t power = 0; power < exact_real.size(); ++power) {
+          const auto real_part = exact_real[power].convert_to<double>();
+          const auto imaginary_part = exact_imaginary[power].convert_to<double>();
+          if (!std::isfinite(real_part) || !std::isfinite(imaginary_part))
+            throw std::overflow_error("Energy weighting produced a nonfinite polynomial coefficient.");
+          if constexpr (std::is_same_v<Scalar, double>)
+            product.push_back(real_part);
+          else
+            product.emplace_back(real_part, imaginary_part);
+        }
+      }
       weighted.push_back(std::move(product));
     }
     return PiecewisePolynomial<Scalar>{knots_, std::move(weighted)};
@@ -183,162 +395,941 @@ enum class CauchyEndpointPolicy { reject, subtracted };
 
 namespace detail {
 
+using FarReal = PiecewiseWideFloat;
+
+struct FarComplex {
+  FarReal real;
+  FarReal imaginary;
+};
+
+struct ExactComplex {
+  ExactRational real;
+  ExactRational imaginary;
+};
+
+struct ResolvedMoment {
+  long double real = 0.0L;
+  long double imaginary = 0.0L;
+  bool wide_real = false;
+  bool wide_imaginary = false;
+  FarReal real_wide;
+  FarReal imaginary_wide;
+};
+
+inline void add(FarComplex &sum, const FarComplex &value) {
+  sum.real += value.real;
+  sum.imaginary += value.imaginary;
+}
+
+inline auto multiply(const FarComplex &first, const FarComplex &second) {
+  return FarComplex{first.real * second.real - first.imaginary * second.imaginary,
+                    first.real * second.imaginary + first.imaginary * second.real};
+}
+
+inline auto multiply(const FarComplex &value, const FarReal &scale) {
+  return FarComplex{value.real * scale, value.imaginary * scale};
+}
+
+inline auto far_inverse_root_from_argument(const double right, const double left, const double argument_real,
+                                           const double argument_imaginary) {
+  const FarReal real = FarReal{argument_real} - FarReal{left};
+  const FarReal imaginary{argument_imaginary};
+  if (real == 0 && imaginary == 0) return FarComplex{};
+  const auto norm = real * real + imaginary * imaginary;
+  const auto numerator = FarReal{right} - FarReal{left};
+  return FarComplex{numerator * real / norm, -numerator * imaginary / norm};
+}
+
+inline auto exact_inverse_root_from_argument(const double right, const double left, const double argument_real,
+                                             const double argument_imaginary) {
+  const auto real = exact_rational(argument_real) - exact_rational(left);
+  const auto imaginary = exact_rational(argument_imaginary);
+  const auto norm = real * real + imaginary * imaginary;
+  const auto numerator = exact_rational(right) - exact_rational(left);
+  return ExactComplex{numerator * real / norm, -numerator * imaginary / norm};
+}
+
+inline auto multiply(const ExactComplex &first, const ExactComplex &second) {
+  return ExactComplex{first.real * second.real - first.imaginary * second.imaginary,
+                      first.real * second.imaginary + first.imaginary * second.real};
+}
+
+inline auto far_power(FarComplex base, std::size_t exponent) {
+  FarComplex result{FarReal{1}, FarReal{0}};
+  while (exponent != 0) {
+    if (exponent % 2 != 0) result = multiply(result, base);
+    exponent /= 2;
+    if (exponent != 0) base = multiply(base, base);
+  }
+  return result;
+}
+
+inline auto log_add_positive(const long double first, const long double second) {
+  if (first == -std::numeric_limits<long double>::infinity()) return second;
+  if (second == -std::numeric_limits<long double>::infinity()) return first;
+  const auto larger = std::max(first, second);
+  return larger + std::log1p(std::exp(std::min(first, second) - larger));
+}
+
+inline auto logarithmic_absolute(const FarReal &value) {
+  if (value == 0) return -std::numeric_limits<long double>::infinity();
+  int exponent = 0;
+  const auto fraction = boost::multiprecision::frexp(boost::multiprecision::abs(value), &exponent);
+  return static_cast<long double>(exponent) * std::log(2.0L)
+         + std::log(fraction.convert_to<long double>());
+}
+
+inline auto logarithmic_magnitude(const FarComplex &value) {
+  const auto real_logarithm = logarithmic_absolute(value.real);
+  const auto imaginary_logarithm = logarithmic_absolute(value.imaginary);
+  return 0.5L * log_add_positive(2.0L * real_logarithm, 2.0L * imaginary_logarithm);
+}
+
+inline auto logarithmic_magnitude(const std::complex<long double> value) {
+  const auto scale = std::max(std::abs(value.real()), std::abs(value.imag()));
+  if (scale == 0.0L) return -std::numeric_limits<long double>::infinity();
+  const auto real = value.real() / scale;
+  const auto imaginary = value.imag() / scale;
+  return std::log(scale) + 0.5L * std::log(real * real + imaginary * imaginary);
+}
+
+inline auto log_absolute(const long double value) {
+  return value == 0.0L ? -std::numeric_limits<long double>::infinity() : std::log(std::abs(value));
+}
+
+inline auto log_absolute_difference(const double first, const double second) {
+  if (first == second) return -std::numeric_limits<long double>::infinity();
+  if (std::signbit(first) == std::signbit(second))
+    return log_absolute(static_cast<long double>(first) - static_cast<long double>(second));
+  return log_add_positive(log_absolute(static_cast<long double>(first)), log_absolute(static_cast<long double>(second)));
+}
+
+inline auto moment_component_is_uncertain(const long double value, const long double logarithmic_term_bound,
+                                          const bool require_double_accuracy) {
+  if (!std::isfinite(value)) return true;
+  if (logarithmic_term_bound == -std::numeric_limits<long double>::infinity()) return false;
+  if (value == 0.0L) return true;
+  const auto target = require_double_accuracy ? std::numeric_limits<double>::epsilon() : 1.0L;
+  return std::log(std::abs(value))
+         <= std::log(8.0L * std::numeric_limits<long double>::epsilon() / target) + logarithmic_term_bound;
+}
+
+inline auto moment_component_is_uncertain(const FarReal &value, const long double logarithmic_term_bound) {
+  if (logarithmic_term_bound == -std::numeric_limits<long double>::infinity()) return false;
+  if (value == 0) return true;
+  constexpr auto precision = std::numeric_limits<FarReal>::digits;
+  const auto logarithmic_roundoff = std::log(8.0L / std::numeric_limits<double>::epsilon())
+                                     + static_cast<long double>(1 - precision) * std::log(2.0L);
+  return logarithmic_absolute(value) <= logarithmic_roundoff + logarithmic_term_bound;
+}
+
+template <typename HighPrecisionMoment, typename ExactMoment>
+inline auto resolve_uncertain_moment(const std::complex<long double> value, const long double real_logarithmic_bound,
+                                     const long double imaginary_logarithmic_bound, const bool require_double_accuracy,
+                                     HighPrecisionMoment high_precision_moment, ExactMoment exact_moment) {
+  const auto uncertain_real = moment_component_is_uncertain(value.real(), real_logarithmic_bound,
+                                                             require_double_accuracy);
+  const auto uncertain_imaginary = moment_component_is_uncertain(value.imag(), imaginary_logarithmic_bound,
+                                                                  require_double_accuracy);
+  ResolvedMoment result;
+  result.real = value.real();
+  result.imaginary = value.imag();
+  if (!uncertain_real && !uncertain_imaginary) return result;
+  const auto high_precision = high_precision_moment();
+  auto selected_real = uncertain_real ? high_precision.first : FarReal{value.real()};
+  auto selected_imaginary = uncertain_imaginary ? high_precision.second : FarReal{value.imag()};
+  const auto exact_real = uncertain_real && moment_component_is_uncertain(selected_real, real_logarithmic_bound);
+  const auto exact_imaginary = uncertain_imaginary
+                                && moment_component_is_uncertain(selected_imaginary, imaginary_logarithmic_bound);
+  if (exact_real || exact_imaginary) {
+    const auto exact = exact_moment();
+    if (exact_real) selected_real = exact.first.template convert_to<FarReal>();
+    if (exact_imaginary) selected_imaginary = exact.second.template convert_to<FarReal>();
+  }
+  auto resolve_component = [](const FarReal &high_precision_value, long double &narrow, bool &wide,
+                              FarReal &wide_value) {
+    const auto converted = high_precision_value.convert_to<long double>();
+    if (std::isfinite(converted) && !(converted == 0.0L && high_precision_value != 0)) {
+      narrow = converted;
+      return;
+    }
+    wide = true;
+    wide_value = high_precision_value;
+  };
+  if (uncertain_real) resolve_component(selected_real, result.real, result.wide_real, result.real_wide);
+  if (uncertain_imaginary)
+    resolve_component(selected_imaginary, result.imaginary, result.wide_imaginary, result.imaginary_wide);
+  return result;
+}
+
+template <typename HighPrecisionMoment, typename ExactMoment>
+inline auto resolve_high_precision_moment(const long double real_logarithmic_bound,
+                                          const long double imaginary_logarithmic_bound,
+                                          HighPrecisionMoment high_precision_moment, ExactMoment exact_moment) {
+  auto selected = high_precision_moment();
+  const auto exact_real = moment_component_is_uncertain(selected.first, real_logarithmic_bound);
+  const auto exact_imaginary = moment_component_is_uncertain(selected.second, imaginary_logarithmic_bound);
+  if (exact_real || exact_imaginary) {
+    const auto exact = exact_moment();
+    if (exact_real) selected.first = exact.first.template convert_to<FarReal>();
+    if (exact_imaginary) selected.second = exact.second.template convert_to<FarReal>();
+  }
+  ResolvedMoment result;
+  result.wide_real = true;
+  result.wide_imaginary = true;
+  result.real_wide = std::move(selected.first);
+  result.imaginary_wide = std::move(selected.second);
+  return result;
+}
+
+template <typename Sum>
+inline auto far_series_converged(const long double logarithmic_bound, const std::size_t expansion,
+                                 const long double inverse_logarithm, const long double inverse_magnitude,
+                                 const Sum &sum) {
+  if (logarithmic_bound == -std::numeric_limits<long double>::infinity()) return true;
+  const auto sum_logarithm = logarithmic_magnitude(sum);
+  if (sum_logarithm == -std::numeric_limits<long double>::infinity()) return false;
+  const auto logarithmic_remaining_bound = logarithmic_bound
+                                           + static_cast<long double>(expansion + 2) * inverse_logarithm
+                                           - std::log1p(-inverse_magnitude);
+  return logarithmic_remaining_bound
+         <= std::log(static_cast<long double>(std::numeric_limits<double>::epsilon())) + sum_logarithm;
+}
+
+class FarSeriesAccumulator {
+  CompensatedLongComplexSum real_narrow;
+  CompensatedLongComplexSum imaginary_narrow;
+  FarComplex real_wide;
+  FarComplex imaginary_wide;
+  FarComplex inverse_root_wide;
+  FarComplex inverse_power_wide;
+  FarReal wide_output_real_absolute_bound;
+  FarReal wide_output_imaginary_absolute_bound;
+  bool wide = false;
+
+  void activate_wide(const FarComplex &inverse_root, const std::size_t expansion) {
+    wide = true;
+    const auto real_value = real_narrow.value();
+    const auto imaginary_value = imaginary_narrow.value();
+    real_wide = {FarReal{real_value.real()}, FarReal{real_value.imag()}};
+    imaginary_wide = {FarReal{imaginary_value.real()}, FarReal{imaginary_value.imag()}};
+    wide_output_real_absolute_bound = FarReal{real_narrow.real_absolute_bound()}
+                                      + FarReal{imaginary_narrow.imaginary_absolute_bound()};
+    wide_output_imaginary_absolute_bound = FarReal{real_narrow.imaginary_absolute_bound()}
+                                           + FarReal{imaginary_narrow.real_absolute_bound()};
+    inverse_root_wide = inverse_root;
+    inverse_power_wide = far_power(inverse_root_wide, expansion + 1);
+  }
+
+  public:
+  void force_wide(const FarComplex &inverse_root) {
+    wide = true;
+    inverse_root_wide = inverse_root;
+    inverse_power_wide = inverse_root;
+  }
+
+  void add_moment(const ResolvedMoment &moment, const std::complex<long double> inverse_root,
+                  const std::optional<FarComplex> &inverse_root_extended,
+                  const std::complex<long double> inverse_power,
+                  const std::size_t expansion) {
+    if (!wide && !moment.wide_real && !moment.wide_imaginary) {
+      const auto real_term = inverse_power * moment.real;
+      const auto imaginary_term = inverse_power * moment.imaginary;
+      if (std::isfinite(real_term.real()) && std::isfinite(real_term.imag())
+          && std::isfinite(imaginary_term.real()) && std::isfinite(imaginary_term.imag())) {
+        real_narrow.add(real_term);
+        imaginary_narrow.add(imaginary_term);
+        return;
+      }
+    }
+    if (!wide) {
+      const auto root = inverse_root_extended
+                          ? *inverse_root_extended
+                          : FarComplex{FarReal{inverse_root.real()}, FarReal{inverse_root.imag()}};
+      activate_wide(root, expansion);
+    }
+    const auto real_term = multiply(inverse_power_wide, moment.wide_real ? moment.real_wide : FarReal{moment.real});
+    const auto imaginary_term = multiply(inverse_power_wide,
+                                         moment.wide_imaginary ? moment.imaginary_wide : FarReal{moment.imaginary});
+    add(real_wide, real_term);
+    add(imaginary_wide, imaginary_term);
+    wide_output_real_absolute_bound += boost::multiprecision::abs(real_term.real)
+                                       + boost::multiprecision::abs(imaginary_term.imaginary);
+    wide_output_imaginary_absolute_bound += boost::multiprecision::abs(real_term.imaginary)
+                                            + boost::multiprecision::abs(imaginary_term.real);
+  }
+
+  void advance() {
+    if (wide) inverse_power_wide = multiply(inverse_power_wide, inverse_root_wide);
+  }
+
+  void advance_or_promote(const std::complex<long double> inverse_root,
+                          const std::complex<long double> next_inverse_power,
+                          const std::size_t next_expansion) {
+    if (wide) {
+      advance();
+      return;
+    }
+    if (next_inverse_power == std::complex<long double>{} && inverse_root != std::complex<long double>{}) {
+      const FarComplex root{FarReal{inverse_root.real()}, FarReal{inverse_root.imag()}};
+      activate_wide(root, next_expansion);
+    }
+  }
+
+  auto output_is_ill_conditioned() const {
+    if (wide) {
+      const auto real = real_wide.real - imaginary_wide.imaginary;
+      const auto imaginary = real_wide.imaginary + imaginary_wide.real;
+      const auto threshold = FarReal{8.0 / std::numeric_limits<double>::epsilon()}
+                             * std::numeric_limits<FarReal>::epsilon();
+      return (wide_output_real_absolute_bound != 0
+              && boost::multiprecision::abs(real) <= threshold * wide_output_real_absolute_bound)
+             || (wide_output_imaginary_absolute_bound != 0
+                 && boost::multiprecision::abs(imaginary)
+                      <= threshold * wide_output_imaginary_absolute_bound);
+    }
+    const auto real_value = real_narrow.value();
+    const auto imaginary_value = imaginary_narrow.value();
+    constexpr auto threshold = 8.0L * std::numeric_limits<long double>::epsilon()
+                               / std::numeric_limits<double>::epsilon();
+    auto component_is_ill_conditioned = [](const long double value, const long double absolute_bound) {
+      return absolute_bound > 0.0L && std::abs(value) <= threshold * absolute_bound;
+    };
+    return component_is_ill_conditioned(
+             real_value.real() - imaginary_value.imag(),
+             real_narrow.real_absolute_bound() + imaginary_narrow.imaginary_absolute_bound())
+           || component_is_ill_conditioned(
+             real_value.imag() + imaginary_value.real(),
+             real_narrow.imaginary_absolute_bound() + imaginary_narrow.real_absolute_bound());
+  }
+
+  auto converged(const long double real_logarithmic_bound, const long double imaginary_logarithmic_bound,
+                 const long double output_real_logarithmic_bound,
+                 const long double output_imaginary_logarithmic_bound,
+                 const std::size_t expansion, const long double inverse_logarithm,
+                 const long double inverse_magnitude) const {
+    const auto independent = wide
+                               ? far_series_converged(real_logarithmic_bound, expansion, inverse_logarithm,
+                                                      inverse_magnitude, real_wide)
+                                   && far_series_converged(imaginary_logarithmic_bound, expansion, inverse_logarithm,
+                                                           inverse_magnitude, imaginary_wide)
+                               : far_series_converged(real_logarithmic_bound, expansion, inverse_logarithm,
+                                                      inverse_magnitude, real_narrow.value())
+                                   && far_series_converged(imaginary_logarithmic_bound, expansion, inverse_logarithm,
+                                                           inverse_magnitude, imaginary_narrow.value());
+    if (!independent) return false;
+
+    long double real_logarithm = 0.0L;
+    long double imaginary_logarithm = 0.0L;
+    if (wide) {
+      real_logarithm = logarithmic_absolute(real_wide.real - imaginary_wide.imaginary);
+      imaginary_logarithm = logarithmic_absolute(real_wide.imaginary + imaginary_wide.real);
+    } else {
+      const auto real_value = real_narrow.value();
+      const auto imaginary_value = imaginary_narrow.value();
+      real_logarithm = log_absolute(real_value.real() - imaginary_value.imag());
+      imaginary_logarithm = log_absolute(real_value.imag() + imaginary_value.real());
+    }
+    auto component_converged = [expansion, inverse_logarithm, inverse_magnitude](
+                                 const long double value_logarithm, const long double logarithmic_bound) {
+      if (logarithmic_bound == -std::numeric_limits<long double>::infinity()) return true;
+      const auto logarithmic_remaining_bound = logarithmic_bound
+                                               + static_cast<long double>(expansion + 2) * inverse_logarithm
+                                               - std::log1p(-inverse_magnitude);
+      if (value_logarithm == -std::numeric_limits<long double>::infinity())
+        return logarithmic_remaining_bound
+               <= std::log(static_cast<long double>(std::numeric_limits<double>::denorm_min())) - std::log(2.0L);
+      return logarithmic_remaining_bound
+             <= std::log(static_cast<long double>(std::numeric_limits<double>::epsilon())) + value_logarithm;
+    };
+    return component_converged(real_logarithm, output_real_logarithmic_bound)
+           && component_converged(imaginary_logarithm, output_imaginary_logarithmic_bound);
+  }
+
+  auto value() const {
+    if (wide) {
+      const FarReal real = real_wide.real - imaginary_wide.imaginary;
+      const FarReal imaginary = real_wide.imaginary + imaginary_wide.real;
+      return std::complex<double>{real.convert_to<double>(), imaginary.convert_to<double>()};
+    }
+    const auto real_value = real_narrow.value();
+    const auto imaginary_value = imaginary_narrow.value();
+    return std::complex<double>{static_cast<double>(real_value.real() - imaginary_value.imag()),
+                                static_cast<double>(real_value.imag() + imaginary_value.real())};
+  }
+};
+
+template <typename Scalar>
+inline auto high_precision_local_moment(const std::vector<Scalar> &coefficients,
+                                        const std::complex<double> subtraction, const std::size_t expansion) {
+  FarReal real;
+  FarReal imaginary;
+  for (std::size_t power = 0; power < coefficients.size(); ++power) {
+    const auto coefficient = polynomial_scalar_as_complex(coefficients[power]);
+    const FarReal denominator{power + expansion + 1};
+    real += (FarReal{coefficient.real()} - (power == 0 ? FarReal{subtraction.real()} : FarReal{})) / denominator;
+    imaginary += (FarReal{coefficient.imag()} - (power == 0 ? FarReal{subtraction.imag()} : FarReal{})) / denominator;
+  }
+  return std::pair<FarReal, FarReal>{std::move(real), std::move(imaginary)};
+}
+
+template <typename Scalar>
+inline auto exact_local_moment(const std::vector<Scalar> &coefficients, const std::complex<double> subtraction,
+                               const std::size_t expansion) {
+  ExactRational real;
+  ExactRational imaginary;
+  for (std::size_t power = 0; power < coefficients.size(); ++power) {
+    const auto coefficient = polynomial_scalar_as_complex(coefficients[power]);
+    const auto denominator = power + expansion + 1;
+    real += (exact_rational(coefficient.real())
+             - (power == 0 ? exact_rational(subtraction.real()) : ExactRational{})) / denominator;
+    imaginary += (exact_rational(coefficient.imag())
+                  - (power == 0 ? exact_rational(subtraction.imag()) : ExactRational{})) / denominator;
+  }
+  return std::pair<ExactRational, ExactRational>{std::move(real), std::move(imaginary)};
+}
+
+template <typename Scalar>
+inline auto native_global_moment(const PiecewisePolynomial<Scalar> &polynomial, const std::size_t expansion) {
+  const auto cache = polynomial.far_moment_cache();
+  const std::lock_guard lock(cache->mutex);
+  if (cache->native_powers.empty())
+    cache->native_powers.assign(polynomial.interval_count(), std::vector<long double>{1.0L});
+  const auto global_left = static_cast<long double>(polynomial.lower_bound());
+  const auto global_width = static_cast<long double>(polynomial.upper_bound()) - global_left;
+  while (cache->native_moments.size() <= expansion) {
+    CompensatedLongComplexSum sum;
+    auto real_absolute_bound = 0.0L;
+    auto imaginary_absolute_bound = 0.0L;
+    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+      const auto width_fraction = (static_cast<long double>(polynomial.knots()[interval + 1])
+                                   - static_cast<long double>(polynomial.knots()[interval]))
+                                  / global_width;
+      const auto &power_coefficients = cache->native_powers[interval];
+      for (std::size_t global_power = 0; global_power < power_coefficients.size(); ++global_power) {
+        for (std::size_t local_power = 0; local_power < polynomial.coefficients()[interval].size(); ++local_power) {
+          const auto coefficient = polynomial_scalar_as_long_complex(polynomial.coefficients()[interval][local_power]);
+          const auto factor = width_fraction * power_coefficients[global_power]
+                              / static_cast<long double>(local_power + global_power + 1);
+          const auto contribution = coefficient * factor;
+          sum.add(contribution);
+          real_absolute_bound += std::abs(contribution.real());
+          imaginary_absolute_bound += std::abs(contribution.imag());
+        }
+      }
+    }
+    cache->native_moments.push_back({sum.value(), real_absolute_bound, imaginary_absolute_bound});
+
+    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+      const auto left_fraction = (static_cast<long double>(polynomial.knots()[interval]) - global_left) / global_width;
+      const auto width_fraction = (static_cast<long double>(polynomial.knots()[interval + 1])
+                                   - static_cast<long double>(polynomial.knots()[interval]))
+                                  / global_width;
+      const auto &power_coefficients = cache->native_powers[interval];
+      std::vector<long double> next_power(power_coefficients.size() + 1);
+      for (std::size_t coefficient = 0; coefficient < power_coefficients.size(); ++coefficient) {
+        next_power[coefficient] += left_fraction * power_coefficients[coefficient];
+        next_power[coefficient + 1] += width_fraction * power_coefficients[coefficient];
+      }
+      cache->native_powers[interval] = std::move(next_power);
+    }
+  }
+  return cache->native_moments[expansion];
+}
+
+template <typename Scalar>
+inline auto high_precision_global_moment(const PiecewisePolynomial<Scalar> &polynomial, const std::size_t expansion) {
+  const auto cache = polynomial.far_moment_cache();
+  const std::lock_guard lock(cache->mutex);
+  if (cache->powers.empty())
+    cache->powers.assign(polynomial.interval_count(), std::vector<FarReal>{FarReal{1}});
+  const auto global_left = polynomial.lower_bound();
+  const auto global_width = FarReal{polynomial.upper_bound()} - FarReal{global_left};
+  while (cache->moments.size() <= expansion) {
+    FarReal real;
+    FarReal imaginary;
+    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+      const auto width_fraction = (FarReal{polynomial.knots()[interval + 1]} - FarReal{polynomial.knots()[interval]})
+                                  / global_width;
+      const auto &power_coefficients = cache->powers[interval];
+      for (std::size_t global_power = 0; global_power < power_coefficients.size(); ++global_power) {
+        for (std::size_t local_power = 0; local_power < polynomial.coefficients()[interval].size(); ++local_power) {
+          const auto coefficient = polynomial_scalar_as_complex(polynomial.coefficients()[interval][local_power]);
+          const auto factor = width_fraction * power_coefficients[global_power]
+                              / FarReal{local_power + global_power + 1};
+          real += FarReal{coefficient.real()} * factor;
+          imaginary += FarReal{coefficient.imag()} * factor;
+        }
+      }
+    }
+    cache->moments.emplace_back(std::move(real), std::move(imaginary));
+
+    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+      const auto left_fraction = (FarReal{polynomial.knots()[interval]} - FarReal{global_left}) / global_width;
+      const auto width_fraction = (FarReal{polynomial.knots()[interval + 1]} - FarReal{polynomial.knots()[interval]})
+                                  / global_width;
+      const auto &power_coefficients = cache->powers[interval];
+      std::vector<FarReal> next_power(power_coefficients.size() + 1);
+      for (std::size_t coefficient = 0; coefficient < power_coefficients.size(); ++coefficient) {
+        next_power[coefficient] += left_fraction * power_coefficients[coefficient];
+        next_power[coefficient + 1] += width_fraction * power_coefficients[coefficient];
+      }
+      cache->powers[interval] = std::move(next_power);
+    }
+  }
+  return cache->moments[expansion];
+}
+
+template <typename Scalar>
+inline auto exact_global_moment(const PiecewisePolynomial<Scalar> &polynomial, const std::size_t expansion) {
+  const auto cache = polynomial.far_moment_cache();
+  const std::lock_guard lock(cache->mutex);
+  if (cache->exact_powers.empty())
+    cache->exact_powers.assign(polynomial.interval_count(), std::vector<ExactRational>{ExactRational{1}});
+  const auto global_left = polynomial.lower_bound();
+  const auto global_width = exact_rational(polynomial.upper_bound()) - exact_rational(global_left);
+  while (cache->exact_moments.size() <= expansion) {
+    ExactRational real;
+    ExactRational imaginary;
+    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+      const auto width_fraction = (exact_rational(polynomial.knots()[interval + 1])
+                                   - exact_rational(polynomial.knots()[interval]))
+                                  / global_width;
+      const auto &power_coefficients = cache->exact_powers[interval];
+      for (std::size_t global_power = 0; global_power < power_coefficients.size(); ++global_power) {
+        for (std::size_t local_power = 0; local_power < polynomial.coefficients()[interval].size(); ++local_power) {
+          const auto coefficient = polynomial_scalar_as_complex(polynomial.coefficients()[interval][local_power]);
+          const auto factor = width_fraction * power_coefficients[global_power]
+                              / (local_power + global_power + 1);
+          real += exact_rational(coefficient.real()) * factor;
+          imaginary += exact_rational(coefficient.imag()) * factor;
+        }
+      }
+    }
+    cache->exact_moments.emplace_back(std::move(real), std::move(imaginary));
+
+    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+      const auto left_fraction = (exact_rational(polynomial.knots()[interval]) - exact_rational(global_left))
+                                 / global_width;
+      const auto width_fraction = (exact_rational(polynomial.knots()[interval + 1])
+                                   - exact_rational(polynomial.knots()[interval]))
+                                  / global_width;
+      const auto &power_coefficients = cache->exact_powers[interval];
+      std::vector<ExactRational> next_power(power_coefficients.size() + 1);
+      for (std::size_t coefficient = 0; coefficient < power_coefficients.size(); ++coefficient) {
+        next_power[coefficient] += left_fraction * power_coefficients[coefficient];
+        next_power[coefficient + 1] += width_fraction * power_coefficients[coefficient];
+      }
+      cache->exact_powers[interval] = std::move(next_power);
+    }
+  }
+  return cache->exact_moments[expansion];
+}
+
+template <typename ExactMoment>
+inline auto exact_far_series(const ExactComplex inverse_root, const long double inverse_logarithm,
+                             const long double inverse_magnitude, const long double output_real_logarithmic_bound,
+                             const long double output_imaginary_logarithmic_bound,
+                             const std::size_t maximum_expansions, ExactMoment exact_moment) {
+  ExactComplex sum;
+  auto inverse_power = inverse_root;
+  auto component_converged = [inverse_logarithm, inverse_magnitude](const ExactRational &value,
+                                                                    const long double logarithmic_bound,
+                                                                    const std::size_t expansion) {
+    if (logarithmic_bound == -std::numeric_limits<long double>::infinity()) return std::pair{true, true};
+    const auto logarithmic_remaining_bound = logarithmic_bound
+                                             + static_cast<long double>(expansion + 2) * inverse_logarithm
+                                             - std::log1p(-inverse_magnitude);
+    const auto logarithmic_half_denormal =
+      std::log(static_cast<long double>(std::numeric_limits<double>::denorm_min())) - std::log(2.0L);
+    const auto value_logarithm = value == 0
+                                  ? -std::numeric_limits<long double>::infinity()
+                                  : logarithmic_absolute(
+                                      boost::multiprecision::abs(value).template convert_to<FarReal>());
+    const auto rounds_to_zero = log_add_positive(value_logarithm, logarithmic_remaining_bound)
+                                <= logarithmic_half_denormal;
+    const auto relatively_converged = value != 0
+                                      && logarithmic_remaining_bound
+                                           <= std::log(static_cast<long double>(std::numeric_limits<double>::epsilon()))
+                                                + value_logarithm;
+    return std::pair{rounds_to_zero || relatively_converged, rounds_to_zero};
+  };
+
+  for (std::size_t expansion = 0; expansion < maximum_expansions; ++expansion) {
+    const auto moment = exact_moment(expansion);
+    const auto term = multiply(ExactComplex{moment.first, moment.second}, inverse_power);
+    sum.real += term.real;
+    sum.imaginary += term.imaginary;
+    const auto real_status = component_converged(sum.real, output_real_logarithmic_bound, expansion);
+    const auto imaginary_status = component_converged(sum.imaginary, output_imaginary_logarithmic_bound, expansion);
+    if (real_status.first && imaginary_status.first)
+      return std::complex<double>{real_status.second ? 0.0 : sum.real.convert_to<double>(),
+                                  imaginary_status.second ? 0.0 : sum.imaginary.convert_to<double>()};
+    inverse_power = multiply(inverse_power, inverse_root);
+  }
+  throw std::overflow_error("Exact far-field Cauchy-transform series did not converge.");
+}
+
 template <typename Argument>
 inline auto normalized_root(const Argument argument, const double left, const double right) {
-  const auto width = right - left;
-  if (std::abs(argument - left) <= std::abs(argument - right)) return (argument - left) / width;
-  return Argument{1.0} + (argument - right) / width;
+  using Real = decltype(std::abs(argument));
+  const auto extended_left = static_cast<Real>(left);
+  const auto extended_right = static_cast<Real>(right);
+  const auto width = extended_right - extended_left;
+  if (std::abs(argument - extended_left) <= std::abs(argument - extended_right))
+    return (argument - extended_left) / width;
+  return Argument{1.0} + (argument - extended_right) / width;
 }
 
 template <typename Scalar, typename Argument>
 inline auto evaluate_polynomial(const std::vector<Scalar> &coefficients, const Argument argument) {
-  using Result = decltype(polynomial_scalar_as_complex(Scalar{}) * Argument{});
+  using Real = decltype(std::abs(argument));
+  using Result = std::complex<Real>;
   Result result{};
-  for (auto coefficient = coefficients.rbegin(); coefficient != coefficients.rend(); ++coefficient)
-    result = result * argument + polynomial_scalar_as_complex(*coefficient);
+  for (auto coefficient = coefficients.rbegin(); coefficient != coefficients.rend(); ++coefficient) {
+    const auto value = polynomial_scalar_as_complex(*coefficient);
+    result = result * argument + Result{static_cast<Real>(value.real()), static_cast<Real>(value.imag())};
+  }
   return result;
 }
 
 template <typename Scalar, typename Argument>
 inline auto quotient_integral(const std::vector<Scalar> &coefficients, const Argument root) {
-  if (coefficients.size() == 1) return std::complex<double>{};
-  auto quotient = polynomial_scalar_as_complex(coefficients.back());
-  auto result = quotient / static_cast<double>(coefficients.size() - 1);
+  using Real = decltype(std::abs(root));
+  using Result = std::complex<Real>;
+  if (coefficients.size() == 1) return Result{};
+  const auto last = polynomial_scalar_as_complex(coefficients.back());
+  auto quotient = Result{static_cast<Real>(last.real()), static_cast<Real>(last.imag())};
+  auto result = quotient / static_cast<Real>(coefficients.size() - 1);
   for (std::size_t power = coefficients.size() - 1; power > 1; --power) {
-    quotient = polynomial_scalar_as_complex(coefficients[power - 1]) + root * quotient;
-    result += quotient / static_cast<double>(power - 1);
+    const auto coefficient = polynomial_scalar_as_complex(coefficients[power - 1]);
+    quotient = Result{static_cast<Real>(coefficient.real()), static_cast<Real>(coefficient.imag())} + root * quotient;
+    result += quotient / static_cast<Real>(power - 1);
   }
   return result;
 }
 
 template <typename Scalar>
-inline auto far_interval_transform(const std::vector<Scalar> &coefficients, const std::complex<double> subtraction,
-                                   const std::complex<long double> inverse_root) {
+inline auto wide_coefficient(const Scalar coefficient) {
+  const auto value = polynomial_scalar_as_complex(coefficient);
+  return PiecewiseWideComplex{value.real(), value.imag()};
+}
+
+template <typename Scalar, typename Root>
+inline auto wide_polynomial_value(const std::vector<Scalar> &coefficients, const Root &root) {
+  PiecewiseWideComplex result;
+  for (auto coefficient = coefficients.rbegin(); coefficient != coefficients.rend(); ++coefficient)
+    result = result * root + wide_coefficient(*coefficient);
+  return result;
+}
+
+template <typename Scalar, typename Root>
+inline auto wide_quotient_integral(const std::vector<Scalar> &coefficients, const Root &root) {
+  if (coefficients.size() == 1) return PiecewiseWideComplex{};
+  auto quotient = wide_coefficient(coefficients.back());
+  auto result = quotient / PiecewiseWideFloat{coefficients.size() - 1};
+  for (std::size_t power = coefficients.size() - 1; power > 1; --power) {
+    quotient = wide_coefficient(coefficients[power - 1]) + root * quotient;
+    result += quotient / PiecewiseWideFloat{power - 1};
+  }
+  return result;
+}
+
+template <typename Scalar>
+inline auto wide_complex_interval_transform(const std::vector<Scalar> &coefficients,
+                                            const std::complex<double> subtraction, const double left,
+                                            const double right, const std::complex<double> argument) {
+  const PiecewiseWideComplex wide_argument{argument.real(), argument.imag()};
+  const PiecewiseWideComplex left_delta = wide_argument - PiecewiseWideFloat{left};
+  const PiecewiseWideComplex right_delta = wide_argument - PiecewiseWideFloat{right};
+  const auto width = PiecewiseWideFloat{right} - PiecewiseWideFloat{left};
+  const auto root = boost::multiprecision::abs(left_delta) <= boost::multiprecision::abs(right_delta)
+                      ? left_delta / width
+                      : PiecewiseWideComplex{1} + right_delta / width;
+  const auto logarithm = boost::multiprecision::log(left_delta) - boost::multiprecision::log(right_delta);
+  const PiecewiseWideComplex wide_subtraction{subtraction.real(), subtraction.imag()};
+  const PiecewiseWideComplex result = (wide_polynomial_value(coefficients, root) - wide_subtraction) * logarithm
+                                      - wide_quotient_integral(coefficients, root);
+  const PiecewiseWideFloat result_real = result.real();
+  const PiecewiseWideFloat result_imaginary = result.imag();
+  return std::complex<double>{result_real.convert_to<double>(), result_imaginary.convert_to<double>()};
+}
+
+template <typename Scalar>
+inline auto wide_real_interval_transform(const std::vector<Scalar> &coefficients,
+                                         const std::complex<double> subtraction, const double left,
+                                         const double right, const double argument) {
+  const auto wide_argument = PiecewiseWideFloat{argument};
+  const auto left_delta = wide_argument - PiecewiseWideFloat{left};
+  const auto right_delta = wide_argument - PiecewiseWideFloat{right};
+  const auto width = PiecewiseWideFloat{right} - PiecewiseWideFloat{left};
+  const auto root = boost::multiprecision::abs(left_delta) <= boost::multiprecision::abs(right_delta)
+                      ? left_delta / width
+                      : PiecewiseWideFloat{1} + right_delta / width;
+  const auto logarithm = boost::multiprecision::log(boost::multiprecision::abs(left_delta))
+                         - boost::multiprecision::log(boost::multiprecision::abs(right_delta));
+  const PiecewiseWideComplex wide_subtraction{subtraction.real(), subtraction.imag()};
+  const PiecewiseWideComplex result = (wide_polynomial_value(coefficients, root) - wide_subtraction) * logarithm
+                                      - wide_quotient_integral(coefficients, root);
+  const PiecewiseWideFloat result_real = result.real();
+  const PiecewiseWideFloat result_imaginary = result.imag();
+  return std::complex<double>{result_real.convert_to<double>(), result_imaginary.convert_to<double>()};
+}
+
+template <typename Moment, typename ExactMoment, typename ExactRoot>
+inline auto evaluate_far_series(const std::complex<long double> inverse_root,
+                                const std::optional<FarComplex> &inverse_root_extended,
+                                const long double real_logarithmic_bound,
+                                const long double imaginary_logarithmic_bound,
+                                const std::size_t maximum_expansions, Moment moment, ExactMoment exact_moment,
+                                ExactRoot exact_root, const char *failure_message) {
+  FarSeriesAccumulator sum;
+  const auto use_extended_root = inverse_root_extended
+                                 && (inverse_root == std::complex<long double>{} || !native_extended_precision);
+  if (use_extended_root) sum.force_wide(*inverse_root_extended);
+
+  auto inverse_power = inverse_root;
+  const auto inverse_logarithm = use_extended_root ? logarithmic_magnitude(*inverse_root_extended)
+                                                    : std::log(std::abs(inverse_root));
+  const auto inverse_magnitude = std::exp(inverse_logarithm);
+  const auto inverse_is_real = use_extended_root ? inverse_root_extended->imaginary == 0
+                                                  : inverse_root.imag() == 0.0L;
+  const auto combined_bound = log_add_positive(real_logarithmic_bound, imaginary_logarithmic_bound);
+  const auto output_real_bound = inverse_is_real ? real_logarithmic_bound : combined_bound;
+  const auto output_imaginary_bound = inverse_is_real ? imaginary_logarithmic_bound : combined_bound;
+
+  for (std::size_t expansion = 0; expansion < maximum_expansions; ++expansion) {
+    sum.add_moment(moment(expansion), inverse_root, inverse_root_extended, inverse_power, expansion);
+    if (sum.output_is_ill_conditioned())
+      return exact_far_series(exact_root(), inverse_logarithm, inverse_magnitude, output_real_bound,
+                              output_imaginary_bound, maximum_expansions, exact_moment);
+    if (sum.converged(real_logarithmic_bound, imaginary_logarithmic_bound, output_real_bound,
+                      output_imaginary_bound, expansion, inverse_logarithm, inverse_magnitude))
+      return sum.value();
+    const auto next_inverse_power = inverse_power * inverse_root;
+    sum.advance_or_promote(inverse_root, next_inverse_power, expansion + 1);
+    inverse_power = next_inverse_power;
+  }
+  throw std::overflow_error(failure_message);
+}
+
+template <typename Scalar>
+inline std::complex<double> far_interval_transform(const std::vector<Scalar> &coefficients,
+                                                   const std::complex<double> subtraction,
+                                                   const std::complex<long double> inverse_root,
+                                                   const std::optional<FarComplex> &inverse_root_extended,
+                                                   const double left, const double right,
+                                                   const std::complex<double> argument) {
+  auto effective_inverse_root_extended = inverse_root_extended;
+  if constexpr (!native_extended_precision) {
+    if (!effective_inverse_root_extended)
+      effective_inverse_root_extended.emplace(
+        far_inverse_root_from_argument(right, left, argument.real(), argument.imag()));
+  }
   const std::complex<long double> extended_subtraction{subtraction.real(), subtraction.imag()};
-  long double absolute_moment_bound = 0.0L;
+  auto real_logarithmic_bound = -std::numeric_limits<long double>::infinity();
+  auto imaginary_logarithmic_bound = -std::numeric_limits<long double>::infinity();
+  auto real_absolute_bound = 0.0L;
+  auto imaginary_absolute_bound = 0.0L;
+  auto bounds_are_finite = true;
   for (std::size_t power = 0; power < coefficients.size(); ++power) {
     const auto coefficient = polynomial_scalar_as_complex(coefficients[power]);
     const std::complex<long double> extended_coefficient{coefficient.real(), coefficient.imag()};
     const auto adjusted = extended_coefficient - (power == 0 ? extended_subtraction : std::complex<long double>{});
-    absolute_moment_bound += std::abs(adjusted) / static_cast<long double>(power + 1);
+    real_absolute_bound += std::abs(adjusted.real()) / static_cast<long double>(power + 1);
+    imaginary_absolute_bound += std::abs(adjusted.imag()) / static_cast<long double>(power + 1);
+    bounds_are_finite = bounds_are_finite && std::isfinite(real_absolute_bound) && std::isfinite(imaginary_absolute_bound);
   }
-  if (absolute_moment_bound == 0.0L) return std::complex<double>{};
+  if (bounds_are_finite) {
+    real_logarithmic_bound = log_absolute(real_absolute_bound);
+    imaginary_logarithmic_bound = log_absolute(imaginary_absolute_bound);
+  } else {
+    for (std::size_t power = 0; power < coefficients.size(); ++power) {
+      const auto coefficient = polynomial_scalar_as_complex(coefficients[power]);
+      const auto denominator_logarithm = std::log(static_cast<long double>(power + 1));
+      const auto real_logarithm = power == 0 ? log_absolute_difference(coefficient.real(), subtraction.real())
+                                             : log_absolute(static_cast<long double>(coefficient.real()));
+      const auto imaginary_logarithm = power == 0 ? log_absolute_difference(coefficient.imag(), subtraction.imag())
+                                                  : log_absolute(static_cast<long double>(coefficient.imag()));
+      real_logarithmic_bound = log_add_positive(real_logarithmic_bound, real_logarithm - denominator_logarithm);
+      imaginary_logarithmic_bound = log_add_positive(imaginary_logarithmic_bound,
+                                                      imaginary_logarithm - denominator_logarithm);
+    }
+  }
+  if (real_logarithmic_bound == -std::numeric_limits<long double>::infinity()
+      && imaginary_logarithmic_bound == -std::numeric_limits<long double>::infinity())
+    return std::complex<double>{};
 
-  CompensatedLongComplexSum sum;
-  auto inverse_power = inverse_root;
-  auto inverse_magnitude_power = std::abs(inverse_root);
-  const auto inverse_magnitude = inverse_magnitude_power;
-  const auto maximum_expansions = coefficients.size() + static_cast<std::size_t>(std::numeric_limits<long double>::max_exponent);
-  for (std::size_t expansion = 0; expansion < maximum_expansions; ++expansion) {
-    std::complex<long double> moment{};
+  if (coefficients.size() > std::numeric_limits<std::size_t>::max() - double_exponent_span)
+    throw std::length_error("Piecewise-polynomial coefficient count is too large.");
+  const auto maximum_expansions = coefficients.size() + double_exponent_span;
+  auto moment = [&](const std::size_t expansion) {
+    CompensatedLongComplexSum moment_sum;
+    auto real_moment_absolute_bound = 0.0L;
+    auto imaginary_moment_absolute_bound = 0.0L;
     for (std::size_t power = 0; power < coefficients.size(); ++power) {
       const auto coefficient = polynomial_scalar_as_complex(coefficients[power]);
       const std::complex<long double> extended_coefficient{coefficient.real(), coefficient.imag()};
-      moment += (extended_coefficient - (power == 0 ? extended_subtraction : std::complex<long double>{}))
-                / static_cast<long double>(power + expansion + 1);
+      const auto contribution = (extended_coefficient - (power == 0 ? extended_subtraction : std::complex<long double>{}))
+                                / static_cast<long double>(power + expansion + 1);
+      moment_sum.add(contribution);
+      real_moment_absolute_bound += std::abs(contribution.real());
+      imaginary_moment_absolute_bound += std::abs(contribution.imag());
     }
-    const auto term = moment * inverse_power;
-    sum.add(term);
-    const auto next_inverse_magnitude_power = inverse_magnitude_power * inverse_magnitude;
-    const auto remaining_bound = absolute_moment_bound * next_inverse_magnitude_power / (1.0L - inverse_magnitude);
-    if (std::abs(sum.value()) != 0.0
-        && remaining_bound <= static_cast<long double>(std::numeric_limits<double>::epsilon())
-                              * std::abs(sum.value()))
-      return std::complex<double>{static_cast<double>(sum.value().real()), static_cast<double>(sum.value().imag())};
-    inverse_power *= inverse_root;
-    inverse_magnitude_power = next_inverse_magnitude_power;
+    const auto moment_value = moment_sum.value();
+    if constexpr (native_extended_precision) {
+      return resolve_uncertain_moment(
+        moment_value, log_absolute(real_moment_absolute_bound), log_absolute(imaginary_moment_absolute_bound),
+        true,
+        [&] { return high_precision_local_moment(coefficients, subtraction, expansion); },
+        [&] { return exact_local_moment(coefficients, subtraction, expansion); });
+    } else {
+      return resolve_high_precision_moment(
+        log_absolute(real_moment_absolute_bound), log_absolute(imaginary_moment_absolute_bound),
+        [&] { return high_precision_local_moment(coefficients, subtraction, expansion); },
+        [&] { return exact_local_moment(coefficients, subtraction, expansion); });
+    }
+  };
+  auto exact_moment = [&](const std::size_t expansion) {
+    return exact_local_moment(coefficients, subtraction, expansion);
+  };
+  auto exact_root = [&] {
+    return exact_inverse_root_from_argument(right, left, argument.real(), argument.imag());
+  };
+  return evaluate_far_series(inverse_root, effective_inverse_root_extended, real_logarithmic_bound,
+                             imaginary_logarithmic_bound, maximum_expansions, moment, exact_moment, exact_root,
+                             "Far-interval Cauchy-transform series did not converge.");
+}
+
+template <typename Scalar>
+inline std::complex<double> complex_interval_transform(
+  const std::vector<Scalar> &coefficients, const std::complex<double> subtraction,
+  const std::complex<long double> root, const std::complex<long double> inverse_root,
+  const std::optional<FarComplex> &inverse_root_extended, const std::complex<long double> left_delta,
+  const std::complex<long double> right_delta, const double left, const double right,
+  const std::complex<double> argument) {
+  if constexpr (!native_extended_precision) {
+    const auto wide_inverse_root = far_inverse_root_from_argument(right, left, argument.real(), argument.imag());
+    if (logarithmic_magnitude(wide_inverse_root) < -std::log(2.0L))
+      return far_interval_transform(coefficients, subtraction, inverse_root,
+                                    std::optional<FarComplex>{wide_inverse_root}, left, right, argument);
+    return wide_complex_interval_transform(coefficients, subtraction, left, right, argument);
   }
-  throw std::overflow_error("Far-interval Cauchy-transform series did not converge.");
-}
-
-template <typename Scalar>
-inline auto complex_interval_transform(const std::vector<Scalar> &coefficients, const std::complex<double> subtraction,
-                                       const std::complex<double> root, const std::complex<long double> inverse_root,
-                                       const std::complex<double> left_delta, const std::complex<double> right_delta) {
-  if (std::abs(inverse_root) < 0.5) return far_interval_transform(coefficients, subtraction, inverse_root);
-  const auto logarithm = std::log(left_delta) - std::log(right_delta);
-  const auto value_at_root = evaluate_polynomial(coefficients, root) - subtraction;
-  return value_at_root * logarithm - quotient_integral(coefficients, root);
-}
-
-template <typename Scalar>
-inline auto real_interval_transform(const std::vector<Scalar> &coefficients, const std::complex<double> subtraction,
-                                    const double root, const long double inverse_root, const double left_delta,
-                                    const double right_delta, const bool singular) {
-  if (singular) return -quotient_integral(coefficients, root);
   if (std::abs(inverse_root) < 0.5)
-    return far_interval_transform(coefficients, subtraction, std::complex<long double>{inverse_root, 0.0L});
-  const auto logarithm = std::log(std::abs(left_delta)) - std::log(std::abs(right_delta));
-  const auto value_at_root = evaluate_polynomial(coefficients, root) - subtraction;
-  return value_at_root * logarithm - quotient_integral(coefficients, root);
+    return far_interval_transform(coefficients, subtraction, inverse_root, inverse_root_extended, left, right, argument);
+  const auto logarithm = std::log(left_delta) - std::log(right_delta);
+  const auto extended_subtraction = std::complex<long double>{subtraction.real(), subtraction.imag()};
+  const auto value_at_root = evaluate_polynomial(coefficients, root) - extended_subtraction;
+  const auto result = value_at_root * logarithm - quotient_integral(coefficients, root);
+  return {static_cast<double>(result.real()), static_cast<double>(result.imag())};
 }
 
 template <typename Scalar>
-inline auto global_far_transform(const PiecewisePolynomial<Scalar> &polynomial,
-                                 const std::complex<long double> inverse_root) {
-  const auto global_left = polynomial.lower_bound();
-  const auto global_width = polynomial.upper_bound() - global_left;
-  const auto extended_global_width = static_cast<long double>(polynomial.upper_bound()) - static_cast<long double>(global_left);
-  std::vector<std::vector<double>> global_powers(polynomial.interval_count(), std::vector<double>{1.0});
-  long double absolute_moment_bound = 0.0L;
-  for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
-    const auto width_fraction = (static_cast<long double>(polynomial.knots()[interval + 1])
-                                 - static_cast<long double>(polynomial.knots()[interval])) / extended_global_width;
-    for (std::size_t power = 0; power < polynomial.coefficients()[interval].size(); ++power)
-      absolute_moment_bound += width_fraction
-                               * static_cast<long double>(std::abs(polynomial_scalar_as_complex(polynomial.coefficients()[interval][power])))
-                               / static_cast<long double>(power + 1);
-  }
-  if (absolute_moment_bound == 0.0L) return std::complex<double>{};
-
-  CompensatedLongComplexSum sum;
-  auto inverse_power = inverse_root;
-  auto inverse_magnitude_power = static_cast<long double>(std::abs(inverse_root));
-  const auto inverse_magnitude = inverse_magnitude_power;
-  for (std::size_t expansion = 0; expansion < 128; ++expansion) {
-    CompensatedComplexSum moment;
-    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
-      const auto left_fraction = (polynomial.knots()[interval] - global_left) / global_width;
-      const auto width_fraction = (polynomial.knots()[interval + 1] - polynomial.knots()[interval]) / global_width;
-      const auto extended_width_fraction = (static_cast<long double>(polynomial.knots()[interval + 1])
-                                            - static_cast<long double>(polynomial.knots()[interval])) / extended_global_width;
-      const auto &power_coefficients = global_powers[interval];
-      for (std::size_t local_power = 0; local_power < polynomial.coefficients()[interval].size(); ++local_power) {
-        const auto coefficient = polynomial_scalar_as_complex(polynomial.coefficients()[interval][local_power]);
-        for (std::size_t global_power = 0; global_power < power_coefficients.size(); ++global_power) {
-          if (width_fraction != 0.0) {
-            moment.add(width_fraction * coefficient * power_coefficients[global_power]
-                       / static_cast<double>(local_power + global_power + 1));
-          } else {
-            const std::complex<long double> extended_coefficient{coefficient.real(), coefficient.imag()};
-            const auto contribution = extended_width_fraction * extended_coefficient
-                                      * static_cast<long double>(power_coefficients[global_power])
-                                      / static_cast<long double>(local_power + global_power + 1);
-            moment.add({static_cast<double>(contribution.real()), static_cast<double>(contribution.imag())});
-          }
-        }
-      }
-
-      std::vector<double> next_power(power_coefficients.size() + 1, 0.0);
-      for (std::size_t power = 0; power < power_coefficients.size(); ++power) {
-        next_power[power] += left_fraction * power_coefficients[power];
-        next_power[power + 1] += width_fraction * power_coefficients[power];
-      }
-      global_powers[interval] = std::move(next_power);
+inline std::complex<double> real_interval_transform(
+  const std::vector<Scalar> &coefficients, const std::complex<double> subtraction, const long double root,
+  const long double inverse_root, const std::optional<FarComplex> &inverse_root_extended,
+  const long double left_delta, const long double right_delta, const bool singular, const double left,
+  const double right, const double argument) {
+  if constexpr (!native_extended_precision) {
+    if (singular) {
+      const auto root_numerator = PiecewiseWideFloat{argument} - PiecewiseWideFloat{left};
+      const auto width = PiecewiseWideFloat{right} - PiecewiseWideFloat{left};
+      const PiecewiseWideComplex result = -wide_quotient_integral(coefficients, root_numerator / width);
+      const PiecewiseWideFloat result_real = result.real();
+      const PiecewiseWideFloat result_imaginary = result.imag();
+      return {result_real.convert_to<double>(), result_imaginary.convert_to<double>()};
     }
-
-    const auto moment_value = moment.value();
-    sum.add(std::complex<long double>{moment_value.real(), moment_value.imag()} * inverse_power);
-    const auto next_inverse_magnitude_power = inverse_magnitude_power * inverse_magnitude;
-    const auto remaining_bound = absolute_moment_bound * next_inverse_magnitude_power / (1.0L - inverse_magnitude);
-    if (std::abs(sum.value()) != 0.0
-        && remaining_bound <= static_cast<long double>(std::numeric_limits<double>::epsilon())
-                              * std::abs(sum.value()))
-      return std::complex<double>{static_cast<double>(sum.value().real()), static_cast<double>(sum.value().imag())};
-    inverse_power *= inverse_root;
-    inverse_magnitude_power = next_inverse_magnitude_power;
+    const auto wide_inverse_root = far_inverse_root_from_argument(right, left, argument, 0.0);
+    if (logarithmic_magnitude(wide_inverse_root) < -std::log(2.0L))
+      return far_interval_transform(coefficients, subtraction, std::complex<long double>{inverse_root, 0.0L},
+                                    std::optional<FarComplex>{wide_inverse_root}, left, right, {argument, 0.0});
+    return wide_real_interval_transform(coefficients, subtraction, left, right, argument);
+  } else if (singular) {
+    const auto result = -quotient_integral(coefficients, root);
+    return {static_cast<double>(result.real()), static_cast<double>(result.imag())};
   }
-  throw std::overflow_error("Global far-field Cauchy-transform series did not converge.");
+  if (std::abs(inverse_root) < 0.5)
+    return far_interval_transform(coefficients, subtraction, std::complex<long double>{inverse_root, 0.0L},
+                                  inverse_root_extended, left, right, {argument, 0.0});
+  const auto logarithm = std::log(std::abs(left_delta)) - std::log(std::abs(right_delta));
+  const auto extended_subtraction = std::complex<long double>{subtraction.real(), subtraction.imag()};
+  const auto value_at_root = evaluate_polynomial(coefficients, root) - extended_subtraction;
+  const auto result = value_at_root * logarithm - quotient_integral(coefficients, root);
+  return {static_cast<double>(result.real()), static_cast<double>(result.imag())};
+}
+
+template <typename Scalar>
+inline std::complex<double> global_far_transform(const PiecewisePolynomial<Scalar> &polynomial,
+                                                 const std::complex<long double> inverse_root,
+                                                 const std::optional<FarComplex> &inverse_root_extended,
+                                                 const std::complex<double> argument) {
+  const auto global_left = polynomial.lower_bound();
+  const auto extended_global_width = static_cast<long double>(polynomial.upper_bound())
+                                     - static_cast<long double>(global_left);
+  const auto global_width_logarithm = native_extended_precision
+                                        ? std::log(extended_global_width)
+                                        : logarithmic_absolute(FarReal{polynomial.upper_bound()} - FarReal{global_left});
+  auto effective_inverse_root_extended = inverse_root_extended;
+  if constexpr (!native_extended_precision) {
+    if (!effective_inverse_root_extended)
+      effective_inverse_root_extended.emplace(far_inverse_root_from_argument(
+        polynomial.upper_bound(), polynomial.lower_bound(), argument.real(), argument.imag()));
+  }
+  auto real_logarithmic_bound = -std::numeric_limits<long double>::infinity();
+  auto imaginary_logarithmic_bound = -std::numeric_limits<long double>::infinity();
+  for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+    const auto interval_width_logarithm = native_extended_precision
+                                            ? std::log(static_cast<long double>(polynomial.knots()[interval + 1])
+                                                       - static_cast<long double>(polynomial.knots()[interval]))
+                                            : logarithmic_absolute(FarReal{polynomial.knots()[interval + 1]}
+                                                                   - FarReal{polynomial.knots()[interval]});
+    const auto width_fraction_logarithm = interval_width_logarithm - global_width_logarithm;
+    for (std::size_t power = 0; power < polynomial.coefficients()[interval].size(); ++power) {
+      const auto coefficient = polynomial_scalar_as_complex(polynomial.coefficients()[interval][power]);
+      const auto factor_logarithm = width_fraction_logarithm - std::log(static_cast<long double>(power + 1));
+      real_logarithmic_bound = log_add_positive(real_logarithmic_bound,
+                                                log_absolute(static_cast<long double>(coefficient.real())) + factor_logarithm);
+      imaginary_logarithmic_bound = log_add_positive(imaginary_logarithmic_bound,
+                                                     log_absolute(static_cast<long double>(coefficient.imag())) + factor_logarithm);
+    }
+  }
+  if (real_logarithmic_bound == -std::numeric_limits<long double>::infinity()
+      && imaginary_logarithmic_bound == -std::numeric_limits<long double>::infinity())
+    return std::complex<double>{};
+
+  std::size_t coefficient_count = 0;
+  for (const auto &coefficients : polynomial.coefficients()) {
+    if (coefficient_count > std::numeric_limits<std::size_t>::max() - coefficients.size())
+      throw std::length_error("Piecewise-polynomial coefficient count is too large.");
+    coefficient_count += coefficients.size();
+  }
+  if (coefficient_count == std::numeric_limits<std::size_t>::max())
+    throw std::length_error("Piecewise-polynomial coefficient count is too large.");
+  const auto maximum_expansions = std::max<std::size_t>(double_exponent_span, coefficient_count + 1);
+  auto moment = [&](const std::size_t expansion) {
+    if constexpr (native_extended_precision) {
+      const auto native_moment = native_global_moment(polynomial, expansion);
+      return resolve_uncertain_moment(
+        native_moment.value, log_absolute(native_moment.real_absolute_bound),
+        log_absolute(native_moment.imaginary_absolute_bound),
+        true,
+        [&] { return high_precision_global_moment(polynomial, expansion); },
+        [&] { return exact_global_moment(polynomial, expansion); });
+    } else {
+      return resolve_high_precision_moment(
+        real_logarithmic_bound, imaginary_logarithmic_bound,
+        [&] { return high_precision_global_moment(polynomial, expansion); },
+        [&] { return exact_global_moment(polynomial, expansion); });
+    }
+  };
+  auto exact_moment = [&](const std::size_t expansion) { return exact_global_moment(polynomial, expansion); };
+  auto exact_root = [&] {
+    return exact_inverse_root_from_argument(polynomial.upper_bound(), polynomial.lower_bound(), argument.real(),
+                                            argument.imag());
+  };
+  return evaluate_far_series(inverse_root, effective_inverse_root_extended, real_logarithmic_bound,
+                             imaginary_logarithmic_bound, maximum_expansions, moment, exact_moment, exact_root,
+                             "Global far-field Cauchy-transform series did not converge.");
 }
 
 inline void require_finite_transform(const std::complex<double> value) {
@@ -356,12 +1347,19 @@ auto cauchy_transform(const PiecewisePolynomial<Scalar> &polynomial, const std::
     throw std::invalid_argument("Use the principal-value transform for a real Cauchy-transform argument.");
 
   const auto global_left = polynomial.lower_bound();
-  const auto global_width = polynomial.upper_bound() - global_left;
+  const auto global_width = static_cast<long double>(polynomial.upper_bound()) - static_cast<long double>(global_left);
   const std::complex<long double> extended_argument{argument.real(), argument.imag()};
-  const auto global_inverse_root = static_cast<long double>(global_width)
-                                   / (extended_argument - static_cast<long double>(global_left));
-  if (std::abs(global_inverse_root) < 0.5) {
-    const auto result = detail::global_far_transform(polynomial, global_inverse_root);
+  const auto global_inverse_root = global_width / (extended_argument - static_cast<long double>(global_left));
+  std::optional<detail::FarComplex> global_inverse_root_extended;
+  if (global_inverse_root == std::complex<long double>{} || !detail::native_extended_precision)
+    global_inverse_root_extended.emplace(detail::far_inverse_root_from_argument(
+      polynomial.upper_bound(), global_left, argument.real(), argument.imag()));
+  const auto global_far = detail::native_extended_precision
+                            ? std::abs(global_inverse_root) < 0.5
+                            : detail::logarithmic_magnitude(*global_inverse_root_extended) < -std::log(2.0L);
+  if (global_far) {
+    const auto result = detail::global_far_transform(polynomial, global_inverse_root, global_inverse_root_extended,
+                                                     argument);
     detail::require_finite_transform(result);
     return result;
   }
@@ -374,23 +1372,35 @@ auto cauchy_transform(const PiecewisePolynomial<Scalar> &polynomial, const std::
   for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
     const auto left = polynomial.knots()[interval];
     const auto right = polynomial.knots()[interval + 1];
-    const auto delta = argument - left;
-    const auto root = detail::normalized_root(argument, left, right);
-    const auto inverse_root = (static_cast<long double>(right) - static_cast<long double>(left))
-                              / (extended_argument - static_cast<long double>(left));
+    const auto delta = extended_argument - static_cast<long double>(left);
+    const auto root = detail::normalized_root(extended_argument, left, right);
+    const auto interval_width = static_cast<long double>(right) - static_cast<long double>(left);
+    const auto inverse_root = interval_width / (extended_argument - static_cast<long double>(left));
+    std::optional<detail::FarComplex> inverse_root_extended;
+    if (inverse_root == std::complex<long double>{})
+      inverse_root_extended.emplace(detail::far_inverse_root_from_argument(right, left, argument.real(),
+                                                                            argument.imag()));
     sum.add(detail::complex_interval_transform(polynomial.coefficients()[interval], subtraction, root, inverse_root,
-                                               delta, argument - right));
+                                               inverse_root_extended, delta,
+                                               extended_argument - static_cast<long double>(right), left, right,
+                                               argument));
   }
 
   if (subtraction != std::complex<double>{}) {
     const auto left = polynomial.lower_bound();
     const auto right = polynomial.upper_bound();
-    const auto delta = argument - left;
-    const auto root = detail::normalized_root(argument, left, right);
-    const auto inverse_root = (static_cast<long double>(right) - static_cast<long double>(left))
-                              / (extended_argument - static_cast<long double>(left));
+    const auto delta = extended_argument - static_cast<long double>(left);
+    const auto root = detail::normalized_root(extended_argument, left, right);
+    const auto interval_width = static_cast<long double>(right) - static_cast<long double>(left);
+    const auto inverse_root = interval_width / (extended_argument - static_cast<long double>(left));
+    std::optional<detail::FarComplex> inverse_root_extended;
+    if (inverse_root == std::complex<long double>{})
+      inverse_root_extended.emplace(detail::far_inverse_root_from_argument(right, left, argument.real(),
+                                                                            argument.imag()));
     const std::vector<double> constant{1.0};
-    sum.add(subtraction * detail::complex_interval_transform(constant, {}, root, inverse_root, delta, argument - right));
+    sum.add(subtraction * detail::complex_interval_transform(constant, {}, root, inverse_root, inverse_root_extended,
+                                                              delta, extended_argument - static_cast<long double>(right),
+                                                              left, right, argument));
   }
   const auto result = sum.value();
   detail::require_finite_transform(result);
@@ -410,8 +1420,17 @@ auto cauchy_principal_value(const PiecewisePolynomial<Scalar> &polynomial, const
                               - static_cast<long double>(polynomial.lower_bound());
     const auto global_inverse_root = global_width
                                      / (static_cast<long double>(argument) - static_cast<long double>(polynomial.lower_bound()));
-    if (std::abs(global_inverse_root) < 0.5) {
-      const auto result = detail::global_far_transform(polynomial, std::complex<long double>{global_inverse_root, 0.0L});
+    std::optional<detail::FarComplex> inverse_root_extended;
+    if (global_inverse_root == 0.0L || !detail::native_extended_precision)
+      inverse_root_extended.emplace(detail::far_inverse_root_from_argument(
+        polynomial.upper_bound(), polynomial.lower_bound(), argument, 0.0));
+    const auto global_far = detail::native_extended_precision
+                              ? std::abs(global_inverse_root) < 0.5
+                              : detail::logarithmic_magnitude(*inverse_root_extended) < -std::log(2.0L);
+    if (global_far) {
+      const auto result = detail::global_far_transform(polynomial,
+                                                       std::complex<long double>{global_inverse_root, 0.0L},
+                                                       inverse_root_extended, {argument, 0.0});
       detail::require_finite_transform(result);
       return result;
     }
@@ -433,13 +1452,19 @@ auto cauchy_principal_value(const PiecewisePolynomial<Scalar> &polynomial, const
   for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
     const auto left = polynomial.knots()[interval];
     const auto right = polynomial.knots()[interval + 1];
-    const auto delta = argument - left;
-    const auto root = detail::normalized_root(argument, left, right);
-    const auto inverse_root = (static_cast<long double>(right) - static_cast<long double>(left))
-                              / (static_cast<long double>(argument) - static_cast<long double>(left));
+    const auto extended_argument = static_cast<long double>(argument);
+    const auto delta = extended_argument - static_cast<long double>(left);
+    const auto root = detail::normalized_root(extended_argument, left, right);
+    const auto interval_width = static_cast<long double>(right) - static_cast<long double>(left);
+    const auto inverse_root = interval_width / (static_cast<long double>(argument) - static_cast<long double>(left));
+    std::optional<detail::FarComplex> inverse_root_extended;
+    if (inverse_root == 0.0L)
+      inverse_root_extended.emplace(detail::far_inverse_root_from_argument(right, left, argument, 0.0));
     const auto singular = inside && left <= argument && argument <= right;
     sum.add(detail::real_interval_transform(polynomial.coefficients()[interval], subtraction, root, inverse_root,
-                                            delta, argument - right, singular));
+                                             inverse_root_extended, delta,
+                                             extended_argument - static_cast<long double>(right), singular, left, right,
+                                             argument));
   }
 
   if (inside && !at_endpoint && subtraction != std::complex<double>{}) {

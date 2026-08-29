@@ -1,0 +1,99 @@
+#!/bin/sh
+set -eu
+
+kk="$1/kk"
+
+rm -f valid.dat preserved.dat malformed.dat malformed.expected malformed.out overflow.dat overflow.expected overflow.out alias-symlink.dat alias-hardlink.dat ./*.stdout ./*.stderr
+cat >valid.dat <<'EOF'
+# full-line comments and blank lines are valid
+
+-2 -2
+  # indented full-line comment
+-1 -1
+1 1
+2 2
+EOF
+
+"$kk" -i linear - <valid.dat >stream.stdout 2>stream.stderr
+perl -e '
+  use strict;
+  use warnings;
+  my $number = qr/[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?/;
+  my @expected_x = (-2, -1, 1, 2);
+  my $pi = atan2(0, -1);
+  my @expected_y = (4 / $pi, (4 - log(3)) / $pi, (4 - log(3)) / $pi, 4 / $pi);
+  my $row = 0;
+  while (<>) {
+    /^\s*($number)\s+($number)\s*$/ or die "non-numeric stdout row: $_";
+    $row < @expected_x or die "too many stdout rows\n";
+    abs($1 - $expected_x[$row]) < 1e-14 or die "wrong x value on row " . ($row + 1) . "\n";
+    abs($2 - $expected_y[$row]) < 3e-14 or die "wrong analytic transform on row " . ($row + 1) . "\n";
+    ++$row;
+  }
+  $row == @expected_x or die "wrong number of stdout rows\n";
+' stream.stdout
+test ! -s stream.stderr
+
+cat >malformed.dat <<'EOF'
+# heading
+
+-2 -2
+-1 -1junk
+1 1
+2 2
+EOF
+printf '%s\n' 'preserve existing output' >malformed.out
+cp malformed.out malformed.expected
+if "$kk" -i linear malformed.dat malformed.out >malformed.stdout 2>malformed.stderr; then
+  echo "kk unexpectedly accepted a malformed numeric suffix" >&2
+  exit 1
+fi
+grep -Fq "malformed.dat:4: field 2" malformed.stderr
+cmp malformed.expected malformed.out
+
+cat >overflow.dat <<'EOF'
+-2 8e307
+-1 -8e307
+1 8e307
+2 -8e307
+EOF
+printf '%s\n' 'preserve existing output' >overflow.out
+cp overflow.out overflow.expected
+if "$kk" -i linear overflow.dat overflow.out >overflow.stdout 2>overflow.stderr; then
+  echo "kk unexpectedly accepted a nonfinite transform" >&2
+  exit 1
+fi
+grep -Fq "Cauchy transform is not finite" overflow.stderr
+cmp overflow.expected overflow.out
+
+cp valid.dat preserved.dat
+if "$kk" -i linear valid.dat valid.dat >same.stdout 2>same.stderr; then
+  echo "kk unexpectedly accepted identical input and output paths" >&2
+  exit 1
+fi
+grep -Fq "refer to the same filesystem object" same.stderr
+cmp valid.dat preserved.dat
+
+ln -s valid.dat alias-symlink.dat
+if "$kk" -i linear valid.dat alias-symlink.dat >symlink.stdout 2>symlink.stderr; then
+  echo "kk unexpectedly accepted a symlink-aliased output" >&2
+  exit 1
+fi
+grep -Fq "refer to the same filesystem object" symlink.stderr
+cmp valid.dat preserved.dat
+
+ln valid.dat alias-hardlink.dat
+if "$kk" -i linear valid.dat alias-hardlink.dat >hardlink.stdout 2>hardlink.stderr; then
+  echo "kk unexpectedly accepted a hardlink-aliased output" >&2
+  exit 1
+fi
+grep -Fq "refer to the same filesystem object" hardlink.stderr
+cmp valid.dat preserved.dat
+
+if test -e /dev/full; then
+  if "$kk" -i linear valid.dat /dev/full >full.stdout 2>full.stderr; then
+    echo "kk unexpectedly ignored an output write failure" >&2
+    exit 1
+  fi
+  grep -Fq "/dev/full: output write or flush failed" full.stderr
+fi

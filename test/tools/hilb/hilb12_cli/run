@@ -1,5 +1,8 @@
 #!/bin/sh
-set -e
+set -eu
+
+rm -f result.txt
+number='[-+]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][-+]?[0-9]+)?'
 
 version=$("$1/hilb" -V 2>stderr.txt)
 test "$version" = "hilb 2026.09"
@@ -15,3 +18,31 @@ if "$1/hilb" junk 0.1 >stdout.txt 2>stderr.txt; then
   exit 1
 fi
 grep -q "Real argument must be a finite representable number" stderr.txt
+
+"$1/hilb" -G --workspace-limit 64 --quadrature-rule 61 --gsl-error-policy fail \
+  --epsabs 1e-10 --epsrel 1e-8 0.2 0.4 >stdout.txt 2>stderr.txt
+grep -Eq "^\\(${number},${number}\\)$" stdout.txt
+test ! -s stderr.txt
+
+"$1/hilb" -G -o result.txt 0.2 0.4 >stdout.txt 2>stderr.txt
+test ! -s stdout.txt
+test ! -s stderr.txt
+grep -Eq "^\\(${number},${number}\\)$" result.txt
+
+if test -e /dev/stdout; then
+  "$1/hilb" -G -o /dev/stdout 0.2 0.4 >stdout.txt 2>stderr.txt
+  grep -Eq "^\\(${number},${number}\\)$" stdout.txt
+  test ! -s stderr.txt
+fi
+
+if "$1/hilb" --workspace-limit 1 --quadrature-rule 15 --gsl-error-policy fail \
+  --epsabs 0 --epsrel 2e-14 0.2 0.4 >stdout.txt 2>stderr.txt; then
+  exit 1
+fi
+grep -q "qag error: 11 -- exceeded max number of iterations" stderr.txt
+test ! -s stdout.txt
+
+"$1/hilb" --workspace-limit 1 --quadrature-rule 15 --gsl-error-policy warn \
+  --epsabs 0 --epsrel 2e-14 0.2 0.4 >stdout.txt 2>stderr.txt
+test -s stdout.txt
+grep -q "hilb: warning: 2 GSL integration call(s) reported failure" stderr.txt
