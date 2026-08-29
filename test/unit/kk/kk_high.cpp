@@ -103,11 +103,6 @@ TEST(KK, all_interpolation_methods_handle_symmetric_nonlinear_input) { // NOLINT
 TEST(KK, numerical_options_defaults) { // NOLINT
   const NRG::KK::NumericalOptions options;
   EXPECT_EQ(options.interpolation, NRG::Tools::InterpolationMethod::akima);
-  EXPECT_DOUBLE_EQ(options.epsabs, 1e-12);
-  EXPECT_DOUBLE_EQ(options.epsrel, 1e-8);
-  EXPECT_EQ(options.workspace_limit, 1000);
-  EXPECT_EQ(options.quadrature_rule, NRG::Tools::QagRule::gauss15);
-  EXPECT_EQ(options.gsl_error_policy, NRG::Tools::GslErrorPolicy::ignore);
 }
 
 TEST(KK, old_constructor_matches_explicit_defaults) { // NOLINT
@@ -125,90 +120,41 @@ TEST(KK, old_constructor_matches_explicit_defaults) { // NOLINT
   }
 }
 
-TEST(KK, numerical_options_validate_tolerances_and_workspace) { // NOLINT
-  const auto input = nonlinear_symmetric_input();
+TEST(KK, exact_transform_matches_constant_and_linear_principal_values) { // NOLINT
   NRG::KK::NumericalOptions options;
+  options.interpolation = NRG::Tools::InterpolationMethod::linear;
+  const double boundary = 2.0;
+  const NRG::KK::XYFUNC constant{{-boundary, 1.0}, {-1.0, 1.0}, {1.0, 1.0}, {boundary, 1.0}};
+  const NRG::KK::XYFUNC linear{{-boundary, -boundary}, {-1.0, -1.0}, {1.0, 1.0}, {boundary, boundary}};
+  const NRG::KK::KK constant_transformer(constant, options);
+  const NRG::KK::KK linear_transformer(linear, options);
 
-  options.workspace_limit = 0;
-  EXPECT_THROW(NRG::KK::KK(input, options), std::invalid_argument);
-
-  options.workspace_limit = NRG::Tools::qag_workspace_limit_maximum() + 1;
-  EXPECT_THROW(NRG::KK::KK(input, options), std::invalid_argument);
-
-  options = {};
-  options.epsabs = -1.0;
-  EXPECT_THROW(NRG::KK::KK(input, options), std::invalid_argument);
-
-  options = {};
-  options.epsrel = -1.0;
-  EXPECT_THROW(NRG::KK::KK(input, options), std::invalid_argument);
-
-  options = {};
-  options.epsabs = 0.0;
-  options.epsrel = 0.0;
-  EXPECT_THROW(NRG::KK::KK(input, options), std::invalid_argument);
-}
-
-TEST(KK, configured_rule_workspace_and_tolerances_are_used) { // NOLINT
-  NRG::KK::NumericalOptions options;
-  options.interpolation = NRG::Tools::InterpolationMethod::cspline;
-  options.epsabs = 2e-9;
-  options.epsrel = 3e-7;
-  options.workspace_limit = 64;
-  options.quadrature_rule = NRG::Tools::QagRule::gauss61;
-  options.gsl_error_policy = NRG::Tools::GslErrorPolicy::fail;
-  NRG::KK::KK transformer(nonlinear_symmetric_input(), options);
-
-  const NRG::KK::DVEC grid{-1.7, 0.35, 2.1};
-  const auto result = transformer.calc(grid);
-  ASSERT_EQ(result.size(), grid.size());
-  for (std::size_t index = 0; index < result.size(); ++index) {
-    EXPECT_DOUBLE_EQ(result[index].first, grid[index]);
-    EXPECT_TRUE(std::isfinite(result[index].second));
+  for (const double z : {-1.5, -0.4, 0.0, 0.7, 1.5}) {
+    const auto logarithm = std::log(std::abs((boundary - z) / (boundary + z)));
+    EXPECT_NEAR(constant_transformer.calc(z), logarithm / M_PI, 2e-14);
+    EXPECT_NEAR(linear_transformer.calc(z), (2.0 * boundary + z * logarithm) / M_PI, 3e-14);
   }
-  EXPECT_DOUBLE_EQ(transformer.calc(grid[1]), result[1].second);
 }
 
-TEST(KK, fail_policy_reports_deterministic_qag_failure) { // NOLINT
+TEST(KK, endpoint_values_preserve_the_legacy_subtracted_convention) { // NOLINT
   NRG::KK::NumericalOptions options;
-  options.epsabs = 1e-300;
-  options.epsrel = 0.0;
-  options.workspace_limit = 1;
-  options.quadrature_rule = NRG::Tools::QagRule::gauss61;
-  options.gsl_error_policy = NRG::Tools::GslErrorPolicy::fail;
-  NRG::KK::KK transformer(nonlinear_symmetric_input(), options);
+  options.interpolation = NRG::Tools::InterpolationMethod::linear;
+  const NRG::KK::KK constant({{-2.0, 1.0}, {-1.0, 1.0}, {1.0, 1.0}, {2.0, 1.0}}, options);
+  const NRG::KK::KK linear({{-2.0, -2.0}, {-1.0, -1.0}, {1.0, 1.0}, {2.0, 2.0}}, options);
 
-  std::string message;
-  try {
-    (void)transformer.calc(0.73);
-  } catch (const std::runtime_error &error) {
-    message = error.what();
-  }
-
-  ASSERT_FALSE(message.empty()) << "the constrained QAG calculation unexpectedly converged";
-  EXPECT_NE(message.find("GSL QAG failed for z="), std::string::npos);
-  EXPECT_NE(message.find("epsabs=1e-300"), std::string::npos);
-  EXPECT_NE(message.find("epsrel=0"), std::string::npos);
-  EXPECT_NE(message.find("workspace_limit=1"), std::string::npos);
-  EXPECT_NE(message.find("quadrature_rule=61"), std::string::npos);
+  EXPECT_DOUBLE_EQ(constant.calc(-2.0), 0.0);
+  EXPECT_DOUBLE_EQ(constant.calc(2.0), 0.0);
+  EXPECT_NEAR(linear.calc(-2.0), 4.0 / M_PI, 2e-15);
+  EXPECT_NEAR(linear.calc(2.0), 4.0 / M_PI, 2e-15);
+  EXPECT_THROW(linear.calc(std::numeric_limits<double>::quiet_NaN()), std::invalid_argument);
 }
 
-TEST(KK, configured_qag_rule_changes_the_constrained_estimate) { // NOLINT
+TEST(KK, principal_value_is_stable_at_knots_on_highly_uneven_grids) { // NOLINT
   NRG::KK::NumericalOptions options;
-  options.epsabs = 1e-300;
-  options.epsrel = 0.0;
-  options.workspace_limit = 1;
-  options.gsl_error_policy = NRG::Tools::GslErrorPolicy::ignore;
+  options.interpolation = NRG::Tools::InterpolationMethod::linear;
+  const NRG::KK::KK constant({{-1e16, 1.0}, {-1.0, 1.0}, {1.0, 1.0}, {1e16, 1.0}}, options);
 
-  options.quadrature_rule = NRG::Tools::QagRule::gauss15;
-  NRG::KK::KK gauss15(nonlinear_symmetric_input(), options);
-  const auto result15 = gauss15.calc(0.73);
-
-  options.quadrature_rule = NRG::Tools::QagRule::gauss61;
-  NRG::KK::KK gauss61(nonlinear_symmetric_input(), options);
-  const auto result61 = gauss61.calc(0.73);
-
-  EXPECT_GT(std::abs(result15 - result61), 1e-8);
+  EXPECT_NEAR(constant.calc(0.0), 0.0, 1e-15);
 }
 
 int main(int argc, char **argv) {

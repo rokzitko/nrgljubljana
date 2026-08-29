@@ -44,9 +44,9 @@
 
 #include <gsl/gsl_errno.h> // GNU scientific library
 #include <gsl/gsl_integration.h>
-#include <gsl/gsl_spline.h>
 
 #include "../common/gsl_config.hpp"
+#include "../common/gsl_piecewise_polynomial.hpp"
 
 namespace NRG::Hilb {
 
@@ -60,18 +60,6 @@ inline auto format_double(const double value) {
   output << std::setprecision(OUTPUT_PRECISION) << value;
   return output.str();
 }
-
-struct gsl_accel_deleter {
-  void operator()(gsl_interp_accel *acc) const {
-    if (acc) gsl_interp_accel_free(acc);
-  }
-};
-
-struct gsl_spline_deleter {
-  void operator()(gsl_spline *spline) const {
-    if (spline) gsl_spline_free(spline);
-  }
-};
 
 inline auto parse_finite_double(const std::string_view value, const std::string_view name) {
   const std::string text(value);
@@ -311,68 +299,20 @@ class integrator {
 // Wrap around GSL interpolation routines
 class interpolator {
   private:
-  size_t len = 0;                  // number of data points
-  std::vector<double> X, Y;        // X and Y tables
-  double Xmin = 0.0, Xmax = 0.0;   // boundary points
-  NRG::Tools::InterpolationMethod method;
-  double oob_value;                // out-of-boundary value
-  std::unique_ptr<gsl_interp_accel, gsl_accel_deleter> acc; // workspace
-  std::unique_ptr<gsl_spline, gsl_spline_deleter> spline;   // spline data
-
-  void initialize() {
-    if (X.size() != Y.size()) throw std::invalid_argument("Interpolation grids must have equal sizes.");
-    const auto minimum_size = NRG::Tools::interpolation_minimum_size(method);
-    if (X.size() < minimum_size) {
-      if (method == NRG::Tools::InterpolationMethod::cspline)
-        throw std::invalid_argument("Cubic interpolation requires at least " + std::to_string(minimum_size) + " points.");
-      throw std::invalid_argument(std::string(NRG::Tools::interpolation_method_name(method)) + " interpolation requires at least "
-                                  + std::to_string(minimum_size) + " points.");
-    }
-    for (size_t i = 0; i < X.size(); ++i) {
-      if (!std::isfinite(X[i]) || !std::isfinite(Y[i])) throw std::invalid_argument("Interpolation data must be finite.");
-      if (i != 0 && !(X[i - 1] < X[i])) throw std::invalid_argument("Interpolation energies must be strictly increasing.");
-    }
-
-    acc.reset(gsl_interp_accel_alloc());
-    if (!acc) throw std::runtime_error("Failed to allocate GSL interpolation accelerator.");
-    len = X.size();
-    spline.reset(gsl_spline_alloc(NRG::Tools::gsl_interpolation_type(method), len));
-    if (!spline) {
-      if (method == NRG::Tools::InterpolationMethod::cspline) throw std::runtime_error("Failed to allocate GSL cubic spline.");
-      throw std::runtime_error("Failed to allocate GSL interpolation spline.");
-    }
-    const auto status = gsl_spline_init(spline.get(), X.data(), Y.data(), len);
-    if (status != GSL_SUCCESS) {
-      if (method == NRG::Tools::InterpolationMethod::cspline)
-        throw std::runtime_error("Failed to initialize GSL cubic spline: " + std::string(gsl_strerror(status)));
-      throw std::runtime_error("Failed to initialize GSL interpolation spline: " + std::string(gsl_strerror(status)));
-    }
-    Xmin = X.front();
-    Xmax = X.back();
-  }
+  NRG::Tools::PiecewisePolynomial<double> polynomial;
+  double oob_value;
 
   public:
   interpolator(const std::vector<double> &_X, const std::vector<double> &_Y, const double _oob_value = 0.0)
-      : X{_X}, Y{_Y}, method{NRG::Tools::InterpolationMethod::cspline}, oob_value{_oob_value} {
-    initialize();
-  }
+      : polynomial{NRG::Tools::make_gsl_piecewise_polynomial(_X, _Y, NRG::Tools::InterpolationMethod::cspline)}, oob_value{_oob_value} {}
   interpolator(const std::vector<double> &_X, const std::vector<double> &_Y, const double _oob_value,
-               const NRG::Tools::InterpolationMethod method_)
-      : X{_X}, Y{_Y}, method{method_}, oob_value{_oob_value} {
-    initialize();
+                const NRG::Tools::InterpolationMethod method_)
+      : polynomial{NRG::Tools::make_gsl_piecewise_polynomial(_X, _Y, method_)}, oob_value{_oob_value} {}
+  auto operator()(const double x) const {
+    return polynomial.lower_bound() <= x && x <= polynomial.upper_bound() ? polynomial.evaluate(x) : oob_value;
   }
-  interpolator(const interpolator &I) : X{I.X}, Y{I.Y}, method{I.method}, oob_value{I.oob_value} {
-    initialize();
-  }
-  interpolator(interpolator &&I) = default;
-  interpolator &operator=(const interpolator &I) {
-    if (this == &I) return *this;
-    interpolator copy(I);
-    *this = std::move(copy);
-    return *this;
-  }
-  interpolator &operator=(interpolator &&I) = default;
-  auto operator()(const double x) { return (Xmin <= x && x <= Xmax ? gsl_spline_eval(spline.get(), x, acc.get()) : oob_value); }
+  const auto &piecewise_polynomial() const noexcept { return polynomial; }
+  auto out_of_bounds_value() const noexcept { return oob_value; }
 };
 
 // Square of x
@@ -390,6 +330,24 @@ inline auto bandwidth(const std::vector<double> &X) {
   const auto Xmin = X.front();
   const auto Xmax = X.back();
   return std::max(std::abs(Xmin), std::abs(Xmax));
+}
+
+inline void validate_hilbert_transform_inputs(const double B, const std::complex<double> z, const double lim_direct,
+                                              const int n, const double epsabs, const double epsrel) {
+  if (n < 0) throw std::invalid_argument("Energy power must be nonnegative.");
+  validate_integration_settings(lim_direct, epsabs, epsrel);
+  if (!std::isfinite(B) || B <= 0.0) throw std::invalid_argument("Half-bandwidth must be finite and positive.");
+  if (!std::isfinite(z.real()) || !std::isfinite(z.imag())) throw std::invalid_argument("Hilbert-transform argument must be finite.");
+  if (std::abs(z.imag()) < minimum_safe_imaginary_part())
+    throw std::invalid_argument("Absolute imaginary part is below the minimum safe value sqrt(numeric_limits<double>::min()).");
+}
+
+template <typename Scalar>
+auto hilbert_transform(const NRG::Tools::PiecewisePolynomial<Scalar> &density, const double B, const std::complex<double> z,
+                       const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14,
+                       const double epsrel = 1e-10) {
+  validate_hilbert_transform_inputs(B, z, lim_direct, n, epsabs, epsrel);
+  return NRG::Tools::cauchy_transform(density.multiply_by_monomial(static_cast<size_t>(n)), z);
 }
 
 /**
@@ -410,16 +368,11 @@ inline auto bandwidth(const std::vector<double> &X) {
  */
 template <typename FNCR, typename FNCI>
 auto hilbert_transform(integrator &integration, FNCR &rhor, FNCI &rhoi, const double B, const std::complex<double> z,
-                        const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
+                         const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
   gsl_set_error_handler_off();
-  if (n < 0) throw std::invalid_argument("Energy power must be nonnegative.");
-  validate_integration_settings(lim_direct, epsabs, epsrel);
-  if (!std::isfinite(B) || B <= 0.0) throw std::invalid_argument("Half-bandwidth must be finite and positive.");
+  validate_hilbert_transform_inputs(B, z, lim_direct, n, epsabs, epsrel);
   const auto x = real(z);
   const auto y = imag(z);
-  if (!std::isfinite(x) || !std::isfinite(y)) throw std::invalid_argument("Hilbert-transform argument must be finite.");
-  if (std::abs(y) < minimum_safe_imaginary_part())
-    throw std::invalid_argument("Absolute imaginary part is below the minimum safe value sqrt(numeric_limits<double>::min()).");
   auto g_r = [&rhor, n](const double omega) -> double {
     return n == 0 ? rhor(omega) : std::pow(omega, n) * rhor(omega);
   };
@@ -495,6 +448,41 @@ auto hilbert_transform(integrator &integration, FNCR &rhor, FNCI &rhoi, const do
   return std::complex(real_result, imag_result);
 }
 
+inline auto hilbert_transform(integrator &integration, const interpolator &rhor, const interpolator &rhoi, const double B,
+                              const std::complex<double> z, const double lim_direct = 1e-3, const int n = 0,
+                              const double epsabs = 1e-14, const double epsrel = 1e-10) {
+  const auto &real_polynomial = rhor.piecewise_polynomial();
+  const auto &imaginary_polynomial = rhoi.piecewise_polynomial();
+  const auto exact_domain = rhor.out_of_bounds_value() == 0.0 && rhoi.out_of_bounds_value() == 0.0
+                            && real_polynomial.knots() == imaginary_polynomial.knots()
+                            && -B <= real_polynomial.lower_bound() && real_polynomial.upper_bound() <= B;
+  if (exact_domain)
+    return hilbert_transform(NRG::Tools::combine_piecewise_polynomials(real_polynomial, imaginary_polynomial), B, z,
+                             lim_direct, n, epsabs, epsrel);
+  auto real_callable = [&rhor](const double energy) { return rhor(energy); };
+  auto imaginary_callable = [&rhoi](const double energy) { return rhoi(energy); };
+  return hilbert_transform(integration, real_callable, imaginary_callable, B, z, lim_direct, n, epsabs, epsrel);
+}
+
+inline auto hilbert_transform(integrator &integration, interpolator &rhor, interpolator &rhoi, const double B,
+                              const std::complex<double> z, const double lim_direct = 1e-3, const int n = 0,
+                              const double epsabs = 1e-14, const double epsrel = 1e-10) {
+  return hilbert_transform(integration, static_cast<const interpolator &>(rhor), static_cast<const interpolator &>(rhoi),
+                           B, z, lim_direct, n, epsabs, epsrel);
+}
+
+inline auto hilbert_transform(integrator &integration, interpolator &rhor, const interpolator &rhoi, const double B,
+                              const std::complex<double> z, const double lim_direct = 1e-3, const int n = 0,
+                              const double epsabs = 1e-14, const double epsrel = 1e-10) {
+  return hilbert_transform(integration, static_cast<const interpolator &>(rhor), rhoi, B, z, lim_direct, n, epsabs, epsrel);
+}
+
+inline auto hilbert_transform(integrator &integration, const interpolator &rhor, interpolator &rhoi, const double B,
+                              const std::complex<double> z, const double lim_direct = 1e-3, const int n = 0,
+                              const double epsabs = 1e-14, const double epsrel = 1e-10) {
+  return hilbert_transform(integration, rhor, static_cast<const interpolator &>(rhoi), B, z, lim_direct, n, epsabs, epsrel);
+}
+
 template <typename FNCR, typename FNCI>
 auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<double> z, const double lim_direct = 1e-3,
                         const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
@@ -513,12 +501,10 @@ auto hilbert_transform_with_interpolation(const T &Xpts, const T &Rpts, const T 
                                           const NRG::Tools::InterpolationMethod interpolation_method,
                                           const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14,
                                           const double epsrel = 1e-10) {
-  gsl_set_error_handler_off();
-  interpolator rhor(Xpts, Rpts, 0.0, interpolation_method);
-  interpolator rhoi(Xpts, Ipts, 0.0, interpolation_method);
+  const auto rhor = NRG::Tools::make_gsl_piecewise_polynomial(Xpts, Rpts, interpolation_method);
+  const auto rhoi = NRG::Tools::make_gsl_piecewise_polynomial(Xpts, Ipts, interpolation_method);
   const double B = bandwidth(Xpts);
-  integrator integration;
-  return hilbert_transform(integration, rhor, rhoi, B, z, lim_direct, n, epsabs, epsrel);
+  return hilbert_transform(NRG::Tools::combine_piecewise_polynomials(rhor, rhoi), B, z, lim_direct, n, epsabs, epsrel);
 }
 
 template <typename T>
@@ -539,6 +525,7 @@ class Hilb {
   bool G           = false; // G(z). Reports real and imaginary part.
   std::vector<double> Xpts, Ypts;
   std::optional<interpolator> tabulated_rho;
+  std::optional<NRG::Tools::PiecewisePolynomial<double>> weighted_tabulated_rho;
   bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
   double shiftx = 0.0;
   double shifty = 0.0;
@@ -560,9 +547,11 @@ class Hilb {
     auto zero_fnc = []([[maybe_unused]] const auto w) { return 0.0; };
     const auto z = std::complex(x + shiftx, y + shifty); // shift here!
     if (tabulated) {
-      if (!tabulated_rho) throw std::logic_error("Tabulated DOS spline is not initialized.");
-      return hilbert_transform(*integration, *tabulated_rho, zero_fnc, B, z, lim_direct, n, epsabs, epsrel);
+      if (!weighted_tabulated_rho) throw std::logic_error("Tabulated DOS polynomial is not initialized.");
+      validate_hilbert_transform_inputs(B, z, lim_direct, n, epsabs, epsrel);
+      return NRG::Tools::cauchy_transform(*weighted_tabulated_rho, z);
     }
+    if (!integration) throw std::logic_error("GSL integration workspace is not initialized.");
     return hilbert_transform(*integration, Bethe_fnc, zero_fnc, B, z, lim_direct, n, epsabs, epsrel);
   }
 
@@ -679,7 +668,8 @@ class Hilb {
     B = std::max(std::abs(Xmin), std::abs(Xmax));
     if (!std::isfinite(B) || B <= 0.0) throw std::runtime_error("DOS half-bandwidth must be finite and positive.");
     tabulated_rho.emplace(Xpts, Ypts, 0.0, interpolation_method);
-    const auto sum = (*integration)(std::ref(*tabulated_rho), -B, B, epsabs, epsrel);
+    weighted_tabulated_rho.emplace(tabulated_rho->piecewise_polynomial().multiply_by_monomial(static_cast<size_t>(n)));
+    const auto sum = tabulated_rho->piecewise_polynomial().integral();
     if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
     if (verbose) std::cout << "Sum=" << sum << '\n';
   }
@@ -727,17 +717,17 @@ class Hilb {
     std::cout << "-y <dy>   Shift imag part of the argument\n";
     std::cout << "-c <c>    Minimum magnitude used to clip ImSigma in DMFT mode.\n";
     std::cout << "          Default is sqrt(numeric_limits<double>::min()).\n";
-    std::cout << "-t <t>    Direct-integration threshold. Default is 1e-3.\n";
+    std::cout << "-t <t>    Built-in-DOS direct-integration threshold. Default is 1e-3.\n";
     std::cout << "-a <a>, --epsabs <a>\n";
-    std::cout << "          Absolute integration tolerance. Default is 1e-14.\n";
+    std::cout << "          Built-in-DOS absolute integration tolerance. Default is 1e-14.\n";
     std::cout << "-r <r>, --epsrel <r>\n";
-    std::cout << "          Relative integration tolerance. Default is 1e-10.\n";
+    std::cout << "          Built-in-DOS relative integration tolerance. Default is 1e-10.\n";
     std::cout << "--workspace-limit <n>\n";
-    std::cout << "          GSL integration workspace size. Default is 1000.\n";
+    std::cout << "          Built-in-DOS GSL integration workspace size. Default is 1000.\n";
     std::cout << "--quadrature-rule <rule>\n";
-    std::cout << "          Gauss-Kronrod rule: 15, 21, 31, 41, 51, or 61. Default is 15.\n";
+    std::cout << "          Built-in-DOS Gauss-Kronrod rule: 15, 21, 31, 41, 51, or 61. Default is 15.\n";
     std::cout << "--gsl-error-policy <policy>\n";
-    std::cout << "          GSL error policy: ignore, warn, or fail. Default is warn.\n";
+    std::cout << "          Built-in-DOS GSL error policy: ignore, warn, or fail. Default is warn.\n";
     std::cout << "-f <f>    Frequency-label tolerance in DMFT mode. Default is 1e-6.\n";
   }
 
@@ -828,6 +818,7 @@ class Hilb {
     }
     try {
       validate_integration_settings(lim_direct, epsabs, epsrel);
+      NRG::Tools::validate_qag_workspace_limit(workspace_limit);
     } catch (const std::invalid_argument &error) {
       throw std::runtime_error(error.what());
     }
@@ -845,11 +836,11 @@ class Hilb {
       throw std::runtime_error("Density-of-states input and output files must be different.");
     if (tabulated && remaining == 4 && (*dos_filename == args[2] || *dos_filename == args[3]))
       throw std::runtime_error("DMFT output files must differ from the density-of-states input file.");
-    integration.emplace(integrator::configured, workspace_limit, quadrature_rule, gsl_error_policy, &gsl_failures);
     if (tabulated) {
       load_dos(*dos_filename);
       report_dos();
-    }
+    } else
+      integration.emplace(integrator::configured, workspace_limit, quadrature_rule, gsl_error_policy, &gsl_failures);
 
     if (remaining == 1) {
       about();

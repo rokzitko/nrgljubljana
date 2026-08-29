@@ -171,12 +171,12 @@ the final positional arguments.
 | `-x DX` | Add `DX` to the real part of every transform argument. |
 | `-y DY` | Add `DY` to the imaginary part of every transform argument. |
 | `-c C` | Set the positive clipping magnitude for $\mathrm{Im}\,\Sigma$ in DMFT mode. Default: $c_{\min}\simeq1.4917\times10^{-154}$. |
-| `-t T` | Set the direct/singularity-subtracted integration threshold. Default: $10^{-3}$. |
-| `-a A`, `--epsabs A` | Set the absolute QAG tolerance. Default: $10^{-14}$. |
-| `-r R`, `--epsrel R` | Set the relative QAG tolerance. Default: $10^{-10}$. |
-| `--workspace-limit N` | Set the positive QAG workspace subdivision limit. Default: `1000`. |
-| `--quadrature-rule RULE` | Select Gauss-Kronrod rule `15`, `21`, `31`, `41`, `51`, or `61`. Default: `15`. |
-| `--gsl-error-policy POLICY` | Handle QAG failures with `ignore`, `warn`, or `fail`. Default: `warn`. |
+| `-t T` | Set the direct/singularity-subtracted threshold for the built-in density. Default: $10^{-3}$. |
+| `-a A`, `--epsabs A` | Set the absolute QAG tolerance for the built-in density. Default: $10^{-14}$. |
+| `-r R`, `--epsrel R` | Set the relative QAG tolerance for the built-in density. Default: $10^{-10}$. |
+| `--workspace-limit N` | Set the positive QAG workspace subdivision limit for the built-in density. Default: `1000`. |
+| `--quadrature-rule RULE` | Select built-in-density Gauss-Kronrod rule `15`, `21`, `31`, `41`, `51`, or `61`. Default: `15`. |
+| `--gsl-error-policy POLICY` | Handle built-in-density QAG failures with `ignore`, `warn`, or `fail`. Default: `warn`. |
 | `-f F` | Set the absolute frequency-label tolerance in DMFT mode. Default: $10^{-6}$. |
 
 Use either `-s` or `-B`; if both are present, the last one takes effect. They
@@ -227,30 +227,31 @@ nonnumeric values, and nonfinite values are rejected with a filename and line
 number.
 
 Records are sorted by energy after loading. The implementation constructs one
-cached GSL interpolant through the supplied density values and reuses it for
-normalization and every transform. `linear` is piecewise linear and requires at
-least two points; `cspline` is a natural cubic spline and requires at least
-three points; `akima` is a local piecewise-cubic interpolant and requires at
-least five points; `steffen` is a monotonicity-preserving piecewise-cubic
-interpolant and requires at least three points. The default is `cspline`. The
-interpolant returns zero outside the tabulated interval
-`[Emin,Emax]`. Quadrature is performed over the symmetric enclosing interval
+GSL interpolant through the supplied density values, materializes its
+intervalwise polynomial coefficients, and reuses them for normalization and
+every transform. `linear` is piecewise linear and requires at least two points;
+`cspline` is a natural cubic spline and requires at least three points; `akima`
+is a local piecewise-cubic interpolant and requires at least five points;
+`steffen` is a monotonicity-preserving piecewise-cubic interpolant and requires
+at least three points. The default is `cspline`. The interpolant is zero outside
+the tabulated interval `[Emin,Emax]`, which lies within the symmetric enclosing
+interval
 
 $$
 [-B,B],\qquad B=\max(|E_{\min}|,|E_{\max}|).
 $$
 
 The data are not normalized automatically. In verbose mode, `hilb` reports the
-integral of the interpolated density and checks that it is finite. Energies
-must be finite and strictly increasing after sorting; duplicate energies are
-rejected. `cspline` and `akima` can overshoot between samples and do not
-preserve positivity. `steffen` stays within each interval's endpoint range and
-therefore preserves positivity of nonnegative samples, at the cost of a
-possibly discontinuous second derivative and a more conservative shape near
-extrema.
+analytic integral of the interval polynomials and checks that it is finite.
+Energies must be finite and strictly increasing after sorting; duplicate
+energies are rejected. `cspline` and `akima` can overshoot between samples and
+do not preserve positivity. `steffen` stays within each interval's endpoint
+range and therefore preserves positivity of nonnegative samples, at the cost
+of a possibly discontinuous second derivative and a more conservative shape
+near extrema.
 
-For an energy-weighted transform, interpolation is performed first and the
-power is applied to each interpolated value during quadrature:
+For an energy-weighted transform, interpolation is performed first and each
+interval polynomial is multiplied by the power exactly:
 
 $$
 g(E)=E^n S_\rho(E).
@@ -267,11 +268,30 @@ $$
 g(E)=E^n\rho(E)=g_r(E)+ig_i(E).
 $$
 
-The real and imaginary parts of the transform are integrated separately. The
+### Tabulated densities
+
+For a density selected with `-d`, and for the tabulated C++ interfaces, the
+selected GSL interpolant is represented as a polynomial on every input
+interval. The transform of each weighted polynomial is evaluated analytically
+using polynomial division and complex logarithms. A global subtraction of the
+interpolant at $\mathrm{Re}\,z$ stabilizes arguments close to the real axis;
+compensated summation combines the intervals, and a moment expansion avoids
+loss of precision far from the tabulated support.
+
+This path performs no adaptive quadrature. The `-t`, QAG tolerance, workspace,
+quadrature-rule, and GSL-error-policy options are validated for compatibility
+but have no numerical effect with `-d`. No GSL integration workspace is
+allocated. The transform still requires a nonzero imaginary part as described
+under [Identities And Limitations](#identities-and-limitations).
+
+### Built-in and callable densities
+
+For the built-in semicircular density and arbitrary callable C++ interfaces,
+the real and imaginary parts of the transform are integrated separately. The
 algorithm switches between direct adaptive quadrature and a
 singularity-subtracted form according to the magnitude of $y=\mathrm{Im}\,z$.
 
-### Direct quadrature
+#### Direct quadrature
 
 When $|y|\ge T$, the defining integral is evaluated directly, where $T$ is set
 by `-t` and defaults to $10^{-3}$. With $z=x+iy$, the two real integrands are
@@ -289,7 +309,7 @@ $$
 Each is integrated over `[-B,B]` with GSL `gsl_integration_qag` using the
 selected Gauss-Kronrod rule. The default is the 15-point rule.
 
-### Small imaginary part
+#### Small imaginary part
 
 When $|y|<T$, direct quadrature would need to resolve a narrow structure near
 $E=x$. The implementation instead subtracts the complete weighted numerator
@@ -338,7 +358,7 @@ This logarithmic coordinate supplies more integration points near the narrow
 feature. When $x$ is inside the band, the lower limit $r=-\infty$ is truncated
 to `-36.8`, for which $e^r$ is approximately $10^{-16}$.
 
-### Quadrature settings
+### QAG settings
 
 The executable uses these defaults:
 
@@ -359,10 +379,10 @@ adaptive subdivision around local difficulties. The workspace limit bounds
 the number of stored subintervals. Tolerances must be finite and nonnegative
 and must form a combination accepted by GSL.
 
-The C++ `hilbert_transform` interface exposes `lim_direct`, `epsabs`, and
-`epsrel`. An overload accepting an `integrator&` lets callers select the
+The callable C++ `hilbert_transform` interface exposes `lim_direct`, `epsabs`,
+and `epsrel`. An overload accepting an `integrator&` lets callers select the
 workspace, rule, and policy and reuse the workspace. The executable uses one
-workspace for DOS normalization and all requested transforms.
+workspace for all requested built-in-density transforms.
 
 The GSL global error handler is disabled. A nonzero QAG status or a nonfinite
 result or error estimate is handled by `--gsl-error-policy`: `ignore` silently
@@ -390,14 +410,14 @@ This also shows why $H_n$ is not simply $z^nH_0$.
 Numerical limitations include:
 
 - Values with $|\mathrm{Im}\,z|<c_{\min}$ are rejected. Squaring a smaller
-  value can underflow in the small-imaginary-part formulas, and the
-  implementation is not a direct principal-value integrator.
+  value can underflow in the callable small-imaginary-part formulas. `hilb`
+  does not expose a real-axis principal-value mode.
 - Large powers can overflow or underflow in $E^n$ and can amplify cancellation
   in the integral.
-- The clipping magnitude and direct/subtracted threshold are absolute energy
-  scales and are not scaled with the bandwidth. The absolute quadrature
+- The clipping magnitude and callable direct/subtracted threshold are absolute
+  energy scales and are not scaled with the bandwidth. The absolute QAG
   tolerance has the units of the transformed integral; the relative tolerance
   is dimensionless.
-- Singularity subtraction assumes that $g(E)$ is sufficiently smooth near
-  $E=x$. Discontinuous densities are difficult cases.
+- Callable-path singularity subtraction assumes that $g(E)$ is sufficiently
+  smooth near $E=x$. Discontinuous callable densities are difficult cases.
 - Descriptive headers and comments are not part of the numeric input grammar.

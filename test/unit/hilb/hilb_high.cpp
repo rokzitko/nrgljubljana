@@ -255,9 +255,15 @@ TEST(Hilb, tabulated_transform_accepts_explicit_interpolation_and_defaults_to_cu
     NRG::Hilb::interpolator rhor(energies, real_density, 0.0, method);
     NRG::Hilb::interpolator rhoi(energies, imaginary_density, 0.0, method);
     NRG::Hilb::integrator integration;
-    const auto expected = NRG::Hilb::hilbert_transform(integration, rhor, rhoi, B, z);
     results[index] = NRG::Hilb::hilbert_transform_with_interpolation(energies, real_density, imaginary_density, z, method);
-    expect_complex_near(results[index], expected, 1e-12);
+    EXPECT_EQ(results[index], NRG::Hilb::hilbert_transform(integration, rhor, rhoi, B, z));
+    EXPECT_EQ(results[index], NRG::Hilb::hilbert_transform(integration,
+                                                           static_cast<const NRG::Hilb::interpolator &>(rhor),
+                                                           static_cast<const NRG::Hilb::interpolator &>(rhoi), B, z));
+    EXPECT_EQ(results[index], NRG::Hilb::hilbert_transform(integration, rhor,
+                                                           static_cast<const NRG::Hilb::interpolator &>(rhoi), B, z));
+    EXPECT_EQ(results[index], NRG::Hilb::hilbert_transform(integration,
+                                                           static_cast<const NRG::Hilb::interpolator &>(rhor), rhoi, B, z));
   }
 
   const auto legacy = NRG::Hilb::hilbert_transform(energies, real_density, imaginary_density, z);
@@ -563,6 +569,10 @@ TEST(Hilb, shared_gsl_cli_options_are_accepted) { // NOLINT
                                          "--epsrel", "1e-8", "-d", dos, "0.2", "0.4"});
   EXPECT_TRUE(output.err.empty());
   EXPECT_TRUE(std::isfinite(std::stod(output.out)));
+
+  const auto oversized_workspace = std::to_string(NRG::Tools::qag_workspace_limit_maximum() + 1);
+  EXPECT_THROW(run_hilb({"hilb", "-d", dos, "--workspace-limit", oversized_workspace, "0.2", "0.4"}),
+               std::runtime_error);
 
   std::remove(dos.c_str());
 }

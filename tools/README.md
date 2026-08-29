@@ -9,11 +9,11 @@ each tool directory.
 | Option | Tools | Meaning |
 | --- | --- | --- |
 | `-i METHOD`, `--interpolation METHOD` | `hilb`, `kk`, `integ`, `resample` | Select `linear`, `cspline`, `akima`, or `steffen` interpolation. |
-| `--epsabs VALUE` | `hilb`, `kk`, `integ`, `adapt` integral | Set the absolute integration tolerance. |
-| `--epsrel VALUE` | `hilb`, `kk`, `integ`, `adapt` integral | Set the relative integration tolerance. |
-| `--workspace-limit N` | `hilb`, `kk`, `integ`, `adapt` integral | Set the GSL workspace capacity; QAG requires `N >= 1` and CQUAD requires `N >= 3`. |
-| `--quadrature-rule RULE` | `hilb`, `kk`, `integ` | Select QAG rule `15`, `21`, `31`, `41`, `51`, or `61`. |
-| `--gsl-error-policy POLICY` | `hilb`, `kk`, `integ`, `adapt` integral | Select `ignore`, `warn`, or `fail`. |
+| `--epsabs VALUE` | `hilb`, `integ`, `adapt` integral | Set the absolute integration tolerance. |
+| `--epsrel VALUE` | `hilb`, `integ`, `adapt` integral | Set the relative integration tolerance. |
+| `--workspace-limit N` | `hilb`, `integ`, `adapt` integral | Set the GSL workspace capacity; QAG requires `N >= 1` and CQUAD requires `N >= 3`. |
+| `--quadrature-rule RULE` | `hilb`, `integ` | Select QAG rule `15`, `21`, `31`, `41`, `51`, or `61`. |
+| `--gsl-error-policy POLICY` | `hilb`, `integ`, `adapt` integral | Select `ignore`, `warn`, or `fail`. |
 
 `hilb` retains `-a` and `-r` as aliases for `--epsabs` and `--epsrel`.
 `integ` retains `-w` as an alias for `--gsl-error-policy ignore`; its `-a`
@@ -27,8 +27,9 @@ specified. A dash means that the control is not available.
 
 | Tool or mode | Interpolation | `epsabs` | `epsrel` | Workspace | QAG rule | Error policy |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| `hilb` | `cspline` | `1e-14` | `1e-10` | `1000` | `15` | `warn` |
-| `kk` | `akima` | `1e-12` | `1e-8` | `1000` | `15` | `ignore` |
+| `hilb`, built-in DOS | - | `1e-14` | `1e-10` | `1000` | `15` | `warn` |
+| `hilb`, tabulated DOS | `cspline` | - | - | - | - | - |
+| `kk` | `akima` | - | - | - | - | - |
 | `integ` | `akima` | `1e-12` | `1e-8` | `1000` | `15` | `warn` |
 | `resample` | `akima` | - | - | - | - | - |
 | `adapt` integral | `linear` (fixed) | `0` | `allowed_error` (`1e-10`) | `1000` | - | `fail` |
@@ -45,14 +46,21 @@ stays within each interval's endpoint range and therefore preserves positivity
 of nonnegative samples, but its second derivative can be discontinuous and its
 shape can be conservative near extrema.
 
-QAG applies the selected Gauss-Kronrod rule on each adaptive subinterval. The
-rule number is the number of Kronrod points. Higher-order rules can be more
-efficient for smooth integrands; lower-order rules can leave more work to
-adaptive subdivision near local difficulties. The workspace limit bounds the
-number of stored subintervals. Tolerances must be finite and nonnegative, the
-workspace limit must meet the algorithm-specific minimum, and the tolerance
-pair must be accepted by GSL. Limits that could overflow GSL's internal
-allocations are rejected.
+`hilb -d` and `kk` materialize the selected GSL interpolant as a polynomial on
+each input interval. Ordinary integrals and Cauchy transforms of those
+polynomials are then evaluated analytically, without adaptive quadrature. The
+QAG controls accepted by `hilb` affect only its built-in density; they are
+validated but have no numerical effect with `-d`. `kk` has no QAG controls.
+
+For the built-in `hilb` density and for `integ`, QAG applies the selected
+Gauss-Kronrod rule on each adaptive subinterval. The rule number is the number
+of Kronrod points. Higher-order rules can be more efficient for smooth
+integrands; lower-order rules can leave more work to adaptive subdivision near
+local difficulties. The workspace limit bounds the number of stored
+subintervals. Tolerances must be finite and nonnegative, the workspace limit
+must meet the algorithm-specific minimum, and the tolerance pair must be
+accepted by GSL. Limits that could overflow GSL's internal allocations are
+rejected.
 
 The error policies apply when GSL returns a nonzero status or a nonfinite
 result or error estimate:
@@ -69,6 +77,7 @@ Its `--epsrel` overrides CQUAD only: it does not change the parameter-file
 `allowed_error`, which remains the ODE error control and the default CQUAD
 relative tolerance.
 
-In `kk` and `integ`, the spline `Sum` check uses
-`gsl_spline_eval_integ`. That operation is separate from QAG and is not
+The `Sum` reported by `hilb -d` and `kk` is the analytic integral of the
+interval polynomials. In `integ`, the spline `Sum` check uses
+`gsl_spline_eval_integ`; that operation is separate from QAG and is not
 controlled by the QAG tolerances, rule, workspace, or error policy.
