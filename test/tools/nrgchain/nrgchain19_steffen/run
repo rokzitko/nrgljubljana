@@ -1,0 +1,75 @@
+#!/bin/sh
+set -eu
+
+export PATH="$1:$PATH"
+
+adapt -v P >adapt-positive.out 2>adapt-positive.err
+adapt -v N >adapt-negative.out 2>adapt-negative.err
+grep -q "density_interpolation=steffen" adapt-positive.err
+grep -q "density_interpolation=steffen" adapt-negative.err
+cp FSOL.dat FSOL.ode.dat
+cp FSOLNEG.dat FSOLNEG.ode.dat
+
+adapt --integral P >adapt-positive-integral.out 2>adapt-positive-integral.err
+adapt --integral N >adapt-negative-integral.out 2>adapt-negative-integral.err
+# The historical ODE loop emits one terminal point beyond xmax when repeated
+# floating-point additions undershoot the exact boundary.
+sed '$d' FSOL.ode.dat >FSOL.ode.common.dat
+sed '$d' FSOLNEG.ode.dat >FSOLNEG.ode.common.dat
+"$2/test/mycomp.pl" FSOL.ode.common.dat FSOL.dat
+"$2/test/mycomp.pl" FSOLNEG.ode.common.dat FSOLNEG.dat
+
+nrgchain -v >nrgchain.out 2>nrgchain.err
+grep -q "density_interpolation=steffen" nrgchain.err
+cp theta.dat theta.steffen.dat
+cp xi.dat xi.steffen.dat
+cp zeta.dat zeta.steffen.dat
+
+instantiate --wilson-only -v >instantiate.out 2>instantiate.err
+grep -q "nrgchain.density_interpolation=steffen" instantiate.err
+"$2/test/mycomp.pl" theta.steffen.dat theta1.dat
+"$2/test/mycomp.pl" xi.steffen.dat xi1.dat
+"$2/test/mycomp.pl" zeta.steffen.dat zeta1.dat
+
+nrgchain s >nrgchain-save.out 2>nrgchain-save.err
+nrgchain l >nrgchain-load.out 2>nrgchain-load.err
+"$2/test/mycomp.pl" xi.steffen.dat xi.dat
+"$2/test/mycomp.pl" zeta.steffen.dat zeta.dat
+
+instantiate --wilson-only --param "$3/load.param" -v >instantiate-load.out 2>instantiate-load.err
+grep -q "nrgchain.density_interpolation=auto -> inactive" instantiate-load.err
+"$2/test/mycomp.pl" theta.dat theta1.dat
+
+cp du_pos.dat du_pos.complete.dat
+sed '$d' du_pos.complete.dat >du_pos.dat
+if nrgchain l >nrgchain-truncated.out 2>nrgchain-truncated.err; then
+  echo "nrgchain unexpectedly accepted a truncated coefficient table" >&2
+  exit 1
+fi
+grep -q "Loaded Wilson tables must each contain mMAX+1 values" nrgchain-truncated.err
+mv du_pos.complete.dat du_pos.dat
+
+if nrgchain "$3/conflict.param" >nrgchain-conflict.out 2>nrgchain-conflict.err; then
+  echo "nrgchain unexpectedly accepted conflicting table modes" >&2
+  exit 1
+fi
+grep -q "nrgchain_tables_load and nrgchain_tables_save cannot both be true" nrgchain-conflict.err
+
+if instantiate --wilson-only --param "$3/no-tridiag.param" >instantiate-no-tridiag.out 2>instantiate-no-tridiag.err; then
+  echo "instantiate unexpectedly accepted nrgchain_tridiag=false" >&2
+  exit 1
+fi
+grep -q "instantiate requires nrgchain_tridiag=true" instantiate-no-tridiag.err
+
+adapt P "$3/linear.param" >adapt-linear-positive.out
+adapt N "$3/linear.param" >adapt-linear-negative.out
+nrgchain "$3/linear.param" >nrgchain-linear.out
+perl -e 'open my $left, "<", $ARGV[0] or die $!; open my $right, "<", $ARGV[1] or die $!; my $a = <$left>; my $b = <$right>; die "Steffen and linear theta unexpectedly agree\n" unless abs($a - $b) > 1e-5' theta.steffen.dat theta.dat
+
+test -s FSOL.dat
+test -s FSOLNEG.dat
+for file in theta.dat xi.dat zeta.dat theta1.dat xi1.dat zeta1.dat; do
+  test -s "$file"
+  perl -MScalar::Util=looks_like_number -ne 'chomp; die "non-finite output in $ARGV\n" unless looks_like_number($_) && $_ == $_ && abs($_) < 1e300' "$file"
+done
+perl -e 'open my $file, "<", $ARGV[0] or die $!; my $theta = <$file>; die "theta is not positive\n" unless $theta > 0' theta.dat

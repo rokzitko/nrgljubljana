@@ -4,15 +4,10 @@
 //
 // Rok Zitko, zitko@theorie.physik.uni-goettingen.de
 
-#include <cstdlib>
 #include <fstream>
 #include <string>
 
 #include "../common/io.hpp"
-
-inline double atof(const std::string &s) { return std::atof(s.c_str()); }
-
-inline int atoi(const std::string &s) { return std::atoi(s.c_str()); }
 
 void safe_open(std::ifstream &F, const std::string &filename) {
   NRG::Tools::open_input(F, filename);

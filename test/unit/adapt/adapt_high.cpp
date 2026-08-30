@@ -59,6 +59,22 @@ TEST(Adapt, parser_accepts_extended_bool_values_and_rejects_invalid_values) { //
   std::remove(filename);
 }
 
+TEST(Adapt, parser_rejects_partial_and_nonfinite_numbers) { // NOLINT
+  const auto filename = "adapt_invalid_numbers.param";
+  write_file(filename,
+             "[param]\n"
+             "partial=2junk\n"
+             "infinite=inf\n"
+             "integer=12junk\n");
+
+  Params params(filename);
+  EXPECT_THROW(params.P("partial", 0.0), std::invalid_argument);
+  EXPECT_THROW(params.P("infinite", 0.0), std::invalid_argument);
+  EXPECT_THROW(params.Pint("integer", 0), std::invalid_argument);
+
+  std::remove(filename);
+}
+
 TEST(Adapt, linint_requires_two_points) { // NOLINT
   EXPECT_THROW(LinInt(Vec{}), std::runtime_error);
   EXPECT_THROW(LinInt(Vec{{1.0, 2.0}}), std::runtime_error);
@@ -70,6 +86,8 @@ TEST(Adapt, int_with_to_throws_when_step_limit_is_exceeded) { // NOLINT
 
   Params P(filename);
   Adapt calc(P, Sign::POS);
+  calc.rho = NRG::Tools::TabulatedDensity({{0.0, 1.0}, {1.0, 1.0}},
+                                          NRG::Tools::InterpolationMethod::linear);
   calc.x = 0.0;
   calc.y = 0.0;
 
@@ -187,11 +205,7 @@ TEST(Adapt, integral_method_matches_linear_density_oracle) { // NOLINT
   Params P(filename);
   Adapt calc(P, Sign::POS);
   calc.vecrho = {{0.0, 0.0}, {1.0, 2.0}};
-  calc.rho = LinInt(calc.vecrho);
-  auto integrated_rho = calc.vecrho;
-  integrate(integrated_rho);
-  calc.intrho1 = IntLinInt(calc.vecrho, integrated_rho);
-  calc.intrho2 = calc.intrho1;
+  calc.rho = NRG::Tools::TabulatedDensity(calc.vecrho, NRG::Tools::InterpolationMethod::linear);
   calc.init_cumulative();
   calc.max_error = 0.0;
 
@@ -218,6 +232,41 @@ TEST(Adapt, rejects_unknown_f_method) { // NOLINT
   Params P(filename);
   EXPECT_THROW(Adapt(P, Sign::POS), std::invalid_argument);
 
+  std::remove(filename);
+}
+
+TEST(Adapt, selects_only_supported_density_interpolation) { // NOLINT
+  const auto steffen_filename = "adapt_steffen.param";
+  write_file(steffen_filename, "[param]\ndensity_interpolation=steffen\n");
+  Params steffen_params(steffen_filename);
+  Adapt steffen(steffen_params, Sign::POS);
+  EXPECT_EQ(steffen.density_interpolation, NRG::Tools::InterpolationMethod::steffen);
+
+  const auto invalid_filename = "adapt_invalid_density_interpolation.param";
+  write_file(invalid_filename, "[param]\ndensity_interpolation=cspline\n");
+  Params invalid_params(invalid_filename);
+  EXPECT_THROW(Adapt(invalid_params, Sign::POS), std::invalid_argument);
+
+  std::remove(invalid_filename);
+  std::remove(steffen_filename);
+}
+
+TEST(Adapt, validates_bandrescale_and_uses_exact_density_weight) { // NOLINT
+  const auto invalid_filename = "adapt_invalid_bandrescale.param";
+  write_file(invalid_filename, "[param]\nbandrescale=0\n");
+  Params invalid_params(invalid_filename);
+  EXPECT_THROW(Adapt(invalid_params, Sign::POS), std::invalid_argument);
+  std::remove(invalid_filename);
+
+  const auto filename = "adapt_exact_density_weight.param";
+  write_file(filename, "[param]\n");
+  Params params(filename);
+  Adapt calc(params, Sign::POS);
+  calc.vecrho = {{0.25, 2.0}, {0.5, 2.0}};
+  calc.rho = NRG::Tools::TabulatedDensity(calc.vecrho, NRG::Tools::InterpolationMethod::linear);
+  calc.init_A();
+  EXPECT_DOUBLE_EQ(calc.intA, 2.0);
+  EXPECT_DOUBLE_EQ(calc.A, 2.0);
   std::remove(filename);
 }
 

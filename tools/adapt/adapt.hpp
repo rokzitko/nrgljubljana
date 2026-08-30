@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "../common/gsl_config.hpp"
+#include "../common/tabulated_density.hpp"
 
 using namespace std;
 using namespace std::string_literals;
@@ -31,7 +32,6 @@ using namespace std::string_literals;
 #include "io.hpp"
 #include "parser.hpp"
 #include "load.hpp"
-#include "calc.hpp"
 
 namespace NRG::Adapt {
 
@@ -78,8 +78,7 @@ class Adapt {
    Sign sign;     // positive or negative frequencies
    LAMBDA Lambda; // discretization parameter
    Vec vecrho;    // Density of states (rho) in tabulated form
-   LinInt rho;    // Linear interpolation object
-   IntLinInt intrho1, intrho2; // Integrated interpolation function objects
+   NRG::Tools::TabulatedDensity rho;
    LinInt g;
    double x;                                          // running x
    double y;                                          // running y(x)
@@ -93,12 +92,13 @@ class Adapt {
    double max_abs         = 100.0;                    // Maximum value of |f(x)|.
    double bandrescale     = 1.0;                      // Rescale the input data by this scale factor
    std::optional<double> flat_gamma;                  // Constant hybridisation supplied on the command line.
+   NRG::Tools::InterpolationMethod density_interpolation = NRG::Tools::InterpolationMethod::linear;
    FMethod f_method = FMethod::ODE;                   // Method for calculating representative energies.
    CquadOptions cquad_options;                        // Optional controls for the integral method.
    bool adapt; // If adapt=false --> g(x)=1.
    bool hardgap;
    double boundary;
-   double intA; // intA=int_0^1 rho(w) dw (trapezoidal method).
+    double intA; // intA=int_0^1 rho(w) dw.
    double A;    // parameter in the shooting method. Initially A=intA. Equal to intA if adapt=false.
    // Right-hand-side of the differential equation. y=g !
    auto rhs_G(const double x_, const double y_) {
@@ -230,10 +230,12 @@ class Adapt {
      std::cout << "#  eps_last=" << y * Lambda.power(2 - x) << " max_error=" << max_error << std::endl;
      return std::make_pair(ratio, vecg);
    }
-   void init_A() {
-     intA = integrate_ab(vecrho, 0.0, 1.0);
-     std::cout << "# intA=" << intA << std::endl;
-     A = intA;
+    void init_A() {
+      intA = rho.integral(0.0, 1.0);
+      if (!(std::isfinite(intA) && intA > 0.0))
+        throw std::runtime_error("Density must have positive finite spectral weight in [0,1].");
+      std::cout << "# intA=" << intA << std::endl;
+      A = intA;
    }
    Vec calc_g() {
      const auto [ratio1, vecg1] = shoot_g();
@@ -282,12 +284,10 @@ class Adapt {
      assert(x_ >= 1 && f > 0);
      return f * Lambda.power(2.0-x_);
    }
-   double cumulative_offset{};
-   double cumulative_total{};
-   Vec cumulative_plateaus;
-   void init_cumulative() {
-     cumulative_offset = intrho1(0.0);
-     cumulative_total  = intrho1(1.0) - cumulative_offset;
+    double cumulative_total{};
+    Vec cumulative_plateaus;
+    void init_cumulative() {
+      cumulative_total  = rho.integral(0.0, 1.0);
      if (!(std::isfinite(cumulative_total) && cumulative_total > 0.0)) {
        throw std::runtime_error("Integral method requires positive spectral weight in [0,1].");
      }
@@ -308,9 +308,9 @@ class Adapt {
          i++;
        }
      }
-   }
-   double normalized_cumulative(const double omega) {
-     return (intrho1(omega) - cumulative_offset) / cumulative_total;
+    }
+    double normalized_cumulative(const double omega) {
+      return rho.integral(0.0, omega) / cumulative_total;
    }
    // Generalized inverse of W. For a zero-density plateau, return its upper edge.
     auto inverse_normalized_cumulative(const double weight) {
@@ -388,10 +388,10 @@ class Adapt {
    }
    // Right-hand-side of the differential equation. y=f !
    auto rhs_F(const double x_, const double y_) {
-     assert(std::isfinite(x_));
-     assert(std::isfinite(y_));
-     const double term1 = Lambda.logL() * y_;
-     const double integral = intrho2(eps(x_)) - intrho1(eps(x_ + 1));
+      assert(std::isfinite(x_));
+      assert(std::isfinite(y_));
+      const double term1 = Lambda.logL() * y_;
+      const double integral = rho.integral(eps(x_ + 1), eps(x_));
      const double powL     = Lambda.power(2.0 - x_);
      const double denom    = powL * rho(y_ * powL);
      double term2 = integral / denom;
@@ -410,17 +410,12 @@ class Adapt {
        std::string rhofn = P.Pstr("dos", "Delta.dat");
        vecrho = load_rho(rhofn, sign);
      }
-     add_zero_point(vecrho);
-     rescalevecxy(vecrho, 1.0/bandrescale, bandrescale);
-     minmaxvec(vecrho, "rho");
-     rho = LinInt(vecrho);
-     std::cout << "# rho(0)=" << rho(0) << " rho(1)=" << rho(1) << std::endl;
-     Vec vecintrho(vecrho);
-     integrate(vecintrho);
-     intrho1 = IntLinInt(vecrho, vecintrho);
-     intrho2 = intrho1; // trick: two objects, one at upper, another at lower boundary. significant performance improvement!
-
-   }
+      rescalevecxy(vecrho, 1.0/bandrescale, bandrescale);
+      add_zero_point(vecrho);
+      minmaxvec(vecrho, "rho");
+      rho = NRG::Tools::TabulatedDensity(vecrho, density_interpolation);
+      std::cout << "# rho(0)=" << rho(0) << " rho(1)=" << rho(1) << std::endl;
+    }
    void report_parameters() {
      std::cout << "# ++ " << (adapt ? "ADAPTIVE" : "FIXED-GRID") << std::endl;
      std::cout << "# Lambda=" << Lambda;
@@ -440,10 +435,16 @@ class Adapt {
      std::cout << std::setprecision(PREC);
      Lambda = LAMBDA(P.P("Lambda", 2.0));
      if (!(Lambda > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
-     adapt = P.Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
-     hardgap  = P.Pbool("hardgap", false); // Exclude an interval around omega=0 ?
-     boundary = P.P("boundary", 0.0);      // The boundary of the exclusion interval.
-     bandrescale = P.P("bandrescale", 1.0); // band rescaling parameter
+      adapt = P.Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
+      hardgap  = P.Pbool("hardgap", false); // Exclude an interval around omega=0 ?
+      boundary = P.P("boundary", 0.0);      // The boundary of the exclusion interval.
+      if (hardgap && !(boundary >= 0.0 && boundary < 1.0))
+        throw std::invalid_argument("boundary must be in [0,1) when hardgap=true.");
+      bandrescale = P.P("bandrescale", 1.0); // band rescaling parameter
+      if (!(std::isfinite(bandrescale) && bandrescale > 0.0))
+        throw std::invalid_argument("bandrescale must be positive and finite.");
+      density_interpolation = NRG::Tools::parse_density_interpolation_method(
+        P.Pstr("density_interpolation", "linear"));
      xmax = P.P("xmax", 30); // Integrate over [1..xmax]
      if (!(xmax > 1)) throw std::invalid_argument("xmax must be greater than 1.");
      xfine = P.P("xfine", 5); // Fine stepsize integral [1..xfine]
@@ -451,20 +452,27 @@ class Adapt {
      output_step = P.P("outputstep", 1.0 / 64.0); // Stepsize for output file
      if (!std::isfinite(output_step) || output_step <= 0.0 || output_step > 1.0)
        throw std::invalid_argument("outputstep must be finite and in the range (0, 1].");
-     dx_fine       = P.P("dx_fine", 1e-5);        // Integration stepsize in [1..xfine]
-     dx_fast       = P.P("dx_fast", 1e-4);        // Integration stepsize in [xfine..xmax]
-     allowed_error = P.P("allowed_error", 1e-10); // error control for adaptable stepsize
+      dx_fine       = P.P("dx_fine", 1e-5);        // Integration stepsize in [1..xfine]
+      dx_fast       = P.P("dx_fast", 1e-4);        // Integration stepsize in [xfine..xmax]
+      if (!(dx_fine > 0.0 && dx_fast > 0.0))
+        throw std::invalid_argument("dx_fine and dx_fast must be positive and finite.");
+      allowed_error = P.P("allowed_error", 1e-10); // error control for adaptable stepsize
      if (!(std::isfinite(allowed_error) && allowed_error > 0.0))
        throw std::invalid_argument("allowed_error must be positive and finite.");
-     max_subdiv    = P.Pint("max_subdiv", 10);    // maximum nr of integ. step subdivisions
-     if (!(dx_fine * pow(0.5, max_subdiv) > DBL_EPSILON)) {
+      max_subdiv    = P.Pint("max_subdiv", 10);    // maximum nr of integ. step subdivisions
+      if (max_subdiv < 0) throw std::invalid_argument("max_subdiv must be nonnegative.");
+      if (!(dx_fine * pow(0.5, max_subdiv) > DBL_EPSILON)) {
         throw std::invalid_argument("dx_fine and max_subdiv imply a sub-step below machine precision.");
       }
-     max_abs = P.P("max_abs", 100.0); // Maximal |f(x)|
-     if (!(max_abs > 0.0)) throw std::invalid_argument("max_abs must be greater than 0.");
-     convergence_eps = P.P("secant_eps", 1e-4);
-     factor0         = 1.0 + P.P("secant_factor", 1e-7);
-     max_iter        = P.Pint("secant_max_iter", 10);
+      max_abs = P.P("max_abs", 100.0); // Maximal |f(x)|
+      if (!(max_abs > 0.0)) throw std::invalid_argument("max_abs must be greater than 0.");
+      convergence_eps = P.P("secant_eps", 1e-4);
+      if (!(convergence_eps > 0.0)) throw std::invalid_argument("secant_eps must be positive and finite.");
+      const auto secant_factor = P.P("secant_factor", 1e-7);
+      if (!(secant_factor > 0.0)) throw std::invalid_argument("secant_factor must be positive and finite.");
+      factor0         = 1.0 + secant_factor;
+      max_iter        = P.Pint("secant_max_iter", 10);
+      if (max_iter <= 0) throw std::invalid_argument("secant_max_iter must be positive.");
    }
    Adapt(const Params &P_,
          const Sign &sign_,

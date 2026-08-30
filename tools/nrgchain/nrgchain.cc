@@ -22,6 +22,8 @@
 
 #include <gmp.h>
 
+#include "../common/tabulated_density.hpp"
+
 #ifndef NRGCHAIN_NO_MAIN
 #include <common/version.hpp>
 
@@ -35,7 +37,6 @@ using namespace std;
 #include "io.h"
 #include "parser.h"
 #include "load.h"
-#include "calc.h"
 #include "nrgchain.hpp"
 
 LAMBDA Lambda;              // discretization parameter
@@ -50,8 +51,7 @@ bool rescalexi     = false; // rescale coefficients xi
 unsigned int preccpp; // precision for GMP
 
 Vec vecrho_pos, vecrho_neg; // rho, for positive and negative energies
-LinInt rho_pos, rho_neg;
-IntLinInt intrho_pos, intrho_neg; // integrated rho
+NRG::Tools::TabulatedDensity rho_pos, rho_neg;
 LinInt g_pos, g_neg;              // g(x)
 LinInt f_pos, f_neg;
 
@@ -64,6 +64,7 @@ double result_theta = 0.0;
 Table de_pos, de_neg, du_pos, du_neg;
 
 bool adapt; // If adapt=false --> g(x)=1.
+NRG::Tools::InterpolationMethod density_interpolation = NRG::Tools::InterpolationMethod::linear;
 
 string band; // If band="flat", we use an analytical expression for f,
              // otherwise we load "FSOL.dat" and "FSOLNEG.dat"
@@ -198,19 +199,29 @@ void set_parameters() {
   adapt = Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
 
   bandrescale = P("bandrescale", 1.0);
+  if (!(std::isfinite(bandrescale) && bandrescale > 0.0))
+    throw std::invalid_argument("bandrescale must be positive and finite.");
+  density_interpolation = NRG::Tools::parse_density_interpolation_method(
+    Pstr("density_interpolation", "linear"));
   rescalexi   = Pbool("rescalexi", false);
 
   xmax = P("xmax", 30); // Interval [1..xmax]
-  if (!(xmax >= 1.0)) throw std::invalid_argument("xmax must be greater than or equal to 1.");
+  if (!(std::isfinite(xmax) && xmax >= 1.0))
+    throw std::invalid_argument("xmax must be finite and greater than or equal to 1.");
 
-  Nmax = Pint("Nmax", 0); // Maximal site index in the Wilson chain
+  const auto nmax_value = Pint("Nmax", 0); // Maximal site index in the Wilson chain
+  if (nmax_value < 0) throw std::invalid_argument("Nmax must be nonnegative.");
+  Nmax = static_cast<unsigned int>(nmax_value);
 
-  mMAX = Pint("mMAX", 2 * Nmax); // Maximal index of coefficients (e,f)
+  if (Nmax > static_cast<unsigned int>(std::numeric_limits<int>::max() / 2))
+    throw std::invalid_argument("Nmax is too large to derive mMAX.");
+  const auto mmax_value = Pint("mMAX", static_cast<int>(2 * Nmax)); // Maximal index of coefficients (e,f)
+  if (mmax_value <= 0) throw std::invalid_argument("mMAX must be greater than 0.");
+  mMAX = static_cast<unsigned int>(mmax_value);
 
-  if (!(mMAX > 0)) throw std::invalid_argument("mMAX must be greater than 0.");
-
-  preccpp = Pint("preccpp", 2000); // Precision for GMP
-  if (!(preccpp > 10)) throw std::invalid_argument("preccpp must be greater than 10.");
+  const auto precision_value = Pint("preccpp", 2000); // Precision for GMP
+  if (precision_value <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
+  preccpp = static_cast<unsigned int>(precision_value);
 
   band = Pstr("band", "adapt"); // Default: load FSOL*.dat
 
@@ -252,16 +263,8 @@ void load_rho() {
 }
 
 void init_rho() {
-  rho_pos = LinInt(vecrho_pos);
-  rho_neg = LinInt(vecrho_neg);
-
-  Vec vecintrho_pos(vecrho_pos);
-  integrate(vecintrho_pos);
-  intrho_pos = IntLinInt(vecrho_pos, vecintrho_pos);
-
-  Vec vecintrho_neg(vecrho_neg);
-  integrate(vecintrho_neg);
-  intrho_neg = IntLinInt(vecrho_neg, vecintrho_neg);
+  rho_pos = NRG::Tools::TabulatedDensity(vecrho_pos, density_interpolation);
+  rho_neg = NRG::Tools::TabulatedDensity(vecrho_neg, density_interpolation);
 }
 
 void load_g() {
@@ -291,23 +294,25 @@ double SCALE(int N) { return (1.0 - 1. / Lambda) / log(Lambda) * pow(Lambda, -(N
 inline double sqr(double x) { return x * x; }
 
 void tables() {
-  const double int_pos1 = integrate_ab(vecrho_pos, 0.0, 1.0);
-  const double int_neg1 = integrate_ab(vecrho_neg, 0.0, 1.0);
+  const double int_pos1 = rho_pos.integral(0.0, 1.0);
+  const double int_neg1 = rho_neg.integral(0.0, 1.0);
   const double theta1   = int_pos1 + int_neg1;
   cout << "# int_pos1=" << int_pos1 << " int_neg1=" << int_neg1 << " theta1=" << theta1 << endl;
-  const double int_pos2 = intrho_pos(eps_pos(z+1)) - intrho_pos(eps_pos(z + mMAX + 2));
-  const double int_neg2 = intrho_neg(eps_neg(z+1)) - intrho_neg(eps_neg(z + mMAX + 2));
+  const double int_pos2 = rho_pos.integral(eps_pos(z + mMAX + 2), eps_pos(z + 1));
+  const double int_neg2 = rho_neg.integral(eps_neg(z + mMAX + 2), eps_neg(z + 1));
   const double theta2 = int_pos2 + int_neg2;
   cout << "# int_pos2=" << int_pos2 << " int_neg2=" << int_neg2 << " theta2=" << theta2 << endl;
 
   // For consistency with df_pos & df_neg, we use set 2
   const double theta = theta2;
+  if (!(std::isfinite(theta) && theta > 0.0))
+    throw runtime_error("Hybridisation weight theta must be positive and finite.");
   result_theta = theta;
   
   ofstream THETA;
   const auto theta_filename = output_path("theta.dat");
   safe_open(THETA, theta_filename); // theta (hybridisation fnc. weight)
-  THETA << theta << endl;
+  THETA << setprecision(18) << theta << endl;
   close_output_checked(THETA, theta_filename);
 
   Table df_pos(mMAX + 1), df_neg(mMAX + 1);
@@ -317,18 +322,22 @@ void tables() {
   de_neg.resize(mMAX + 1);
 
   for (unsigned int m = 0; m <= mMAX; m++) {
-    df_pos[m] = intrho_pos(eps_pos(z + m + 1)) - intrho_pos(eps_pos(z + m + 2));
-    df_neg[m] = intrho_neg(eps_neg(z + m + 1)) - intrho_neg(eps_neg(z + m + 2));
+    df_pos[m] = rho_pos.integral(eps_pos(z + m + 2), eps_pos(z + m + 1));
+    df_neg[m] = rho_neg.integral(eps_neg(z + m + 2), eps_neg(z + m + 1));
 
     du0_pos[m] = sqrt(df_pos[m]) / sqrt(theta);
     du0_neg[m] = sqrt(df_neg[m]) / sqrt(theta);
 
     de_pos[m] = Eps_pos(z + m + 1);
     de_neg[m] = Eps_neg(z + m + 1);
+    if (!(std::isfinite(de_pos[m]) && de_pos[m] > 0.0 && std::isfinite(de_neg[m]) && de_neg[m] > 0.0))
+      throw runtime_error("Representative energies must be positive and finite.");
   }
 
   double checksum = 0.0;
   for (unsigned int m = 0; m <= mMAX; m++) checksum += sqr(du0_pos[m]) + sqr(du0_neg[m]);
+  if (!(std::isfinite(checksum) && checksum > 0.0))
+    throw runtime_error("Wilson-state normalization is not positive and finite.");
 
   cout << "# 1-checksum=" << 1 - checksum << endl;
 
@@ -363,6 +372,31 @@ void load_tables() {
   load("de_neg.dat", de_neg);
   load("du_pos.dat", du_pos);
   load("du_neg.dat", du_neg);
+
+  Table theta_values;
+  load("theta.dat", theta_values);
+  if (theta_values.size() != 1 || !(std::isfinite(theta_values.front()) && theta_values.front() > 0.0))
+    throw runtime_error("theta.dat must contain one positive finite value.");
+  result_theta = theta_values.front();
+
+  const auto expected_size = static_cast<std::size_t>(mMAX) + 1;
+  if (de_pos.size() != expected_size || de_neg.size() != expected_size || du_pos.size() != expected_size
+      || du_neg.size() != expected_size)
+    throw runtime_error("Loaded Wilson tables must each contain mMAX+1 values.");
+
+  double checksum = 0.0;
+  for (std::size_t index = 0; index < expected_size; ++index) {
+    if (!(std::isfinite(de_pos[index]) && de_pos[index] > 0.0 && std::isfinite(de_neg[index])
+          && de_neg[index] > 0.0))
+      throw runtime_error("Loaded representative energies must be positive and finite.");
+    if (!(std::isfinite(du_pos[index]) && du_pos[index] >= 0.0 && std::isfinite(du_neg[index])
+          && du_neg[index] >= 0.0))
+      throw runtime_error("Loaded Wilson amplitudes must be nonnegative and finite.");
+    checksum += sqr(du_pos[index]) + sqr(du_neg[index]);
+  }
+  constexpr double checksum_limit = 1e-10;
+  if (!std::isfinite(checksum) || std::abs(1.0 - checksum) > checksum_limit)
+    throw runtime_error("Loaded Wilson-table normalization failed.");
 }
 
 class my_mpf {
@@ -570,6 +604,8 @@ void calc_tables() {
     const double mindbl = numeric_limits<double>::min();
     Vec v;
     v.push_back(make_pair(mindbl, 0.5));
+    if (density_interpolation == NRG::Tools::InterpolationMethod::steffen)
+      v.push_back(make_pair(0.5, 0.5));
     v.push_back(make_pair(1.0, 0.5));
     vecrho_pos = v;
     vecrho_neg = v;
@@ -594,10 +630,8 @@ void reset_calculation_state() {
   preccpp = 0;
   vecrho_pos.clear();
   vecrho_neg.clear();
-  rho_pos = LinInt();
-  rho_neg = LinInt();
-  intrho_pos = IntLinInt();
-  intrho_neg = IntLinInt();
+  rho_pos = NRG::Tools::TabulatedDensity();
+  rho_neg = NRG::Tools::TabulatedDensity();
   g_pos = LinInt();
   g_neg = LinInt();
   f_pos = LinInt();
@@ -607,6 +641,7 @@ void reset_calculation_state() {
   du_pos.clear();
   du_neg.clear();
   adapt = false;
+  density_interpolation = NRG::Tools::InterpolationMethod::linear;
   band.clear();
   nrgchain_tables_save = false;
   nrgchain_tables_load = false;
@@ -665,8 +700,11 @@ void report_configuration(const TableMode mode) {
   report.value("rescalexi", rescalexi);
   report.value("gmp_precision", preccpp);
   report.value("output_precision", PREC);
+  const auto density_method = NRG::Tools::interpolation_method_name(density_interpolation);
   if (nrgchain_tables_load) {
     report.resolved("density_source", "inactive", "tables_load=true");
+    report.resolved("density_interpolation", "inactive", "tables_load=true");
+    report.resolved("density_integration", "inactive", "tables_load=true");
     report.resolved("dos", "inactive", "tables_load=true");
     report.resolved("g_positive", "inactive", "tables_load=true");
     report.resolved("g_negative", "inactive", "tables_load=true");
@@ -674,6 +712,8 @@ void report_configuration(const TableMode mode) {
     report.resolved("f_negative", "inactive", "tables_load=true");
   } else if (band == "flat") {
     report.value("density_source", "flat");
+    report.resolved("density_interpolation", density_method, "flat density is interpolation-independent");
+    report.value("density_integration", "exact interpolant primitive");
     report.resolved("dos", "inactive", "flat band");
     report.resolved("g_positive", "inactive", "flat band");
     report.resolved("g_negative", "inactive", "flat band");
@@ -681,6 +721,11 @@ void report_configuration(const TableMode mode) {
     report.resolved("f_negative", "inactive", "flat band");
   } else {
     report.value("density_source", "file");
+    if (params.contains("density_interpolation"))
+      report.value("density_interpolation", density_method);
+    else
+      report.resolved("density_interpolation", density_method, "parameter default");
+    report.value("density_integration", "exact interpolant primitive");
     report.value("dos", Pstr("dos", "Delta.dat"));
     if (adapt) {
       report.value("g_positive", "GSOL.dat");
@@ -703,7 +748,7 @@ void report_configuration(const TableMode mode) {
   }
 
   if (nrgchain_tables_load)
-    report.resolved("theta_output", "inactive", "coefficient tables are loaded");
+    report.value("theta_input", "theta.dat");
   else
     report.value("theta_output", output_path("theta.dat"));
 
@@ -741,6 +786,8 @@ WilsonData run_calculation(const TableMode mode, const filesystem::path &output_
   nrgchain_output_dir = output_dir;
   set_parameters();
   apply_mode(mode);
+  if (nrgchain_tables_load && nrgchain_tables_save)
+    throw invalid_argument("nrgchain_tables_load and nrgchain_tables_save cannot both be true.");
 #ifndef NRGCHAIN_NO_MAIN
   report_configuration(mode);
 #endif

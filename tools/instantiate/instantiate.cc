@@ -39,6 +39,7 @@
 
 #include "../common/diagnostics.hpp"
 #include "../common/parser.hpp"
+#include "../common/tabulated_density.hpp"
 #include "matrix_evaluator.hpp"
 #include "nrgchain.hpp"
 
@@ -481,6 +482,7 @@ struct ResolvedNrgChainConfiguration {
   bool rescalexi;
   std::string band;
   std::string dos;
+  NRG::Tools::InterpolationMethod density_interpolation;
   bool requested_tables_save;
   bool requested_tables_load;
   bool requested_tridiagonalize;
@@ -510,11 +512,14 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
   };
   auto number = [&text](const std::string_view key, const double default_value) {
     const auto *value = text(key);
-    return value ? std::atof(value->c_str()) : default_value;
+    return value ? NRG::Tools::parse_parameter_double(*value, key) : default_value;
   };
   auto integer = [&text](const std::string_view key, const unsigned int default_value) {
     const auto *value = text(key);
-    return value ? static_cast<unsigned int>(std::atoi(value->c_str())) : default_value;
+    if (!value) return default_value;
+    const auto parsed = NRG::Tools::parse_parameter_int(*value, key);
+    if (parsed < 0) throw std::invalid_argument(std::string(key) + " must be nonnegative.");
+    return static_cast<unsigned int>(parsed);
   };
   auto boolean = [&text](const std::string_view key, const bool default_value) {
     const auto *value = text(key);
@@ -538,6 +543,8 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
     .rescalexi = boolean("rescalexi", false),
     .band = string("band", "adapt"),
     .dos = string("dos", "Delta.dat"),
+    .density_interpolation = NRG::Tools::parse_density_interpolation_method(
+      string("density_interpolation", "linear")),
     .requested_tables_save = boolean("nrgchain_tables_save", false),
     .requested_tables_load = boolean("nrgchain_tables_load", false),
     .requested_tridiagonalize = parameters.contains("nrgchain_tridiag")
@@ -547,7 +554,15 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
     .tables_load = false,
     .tridiagonalize = false,
   };
+  if (!(config.Lambda > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
+  if (!(config.z > 0.0 && config.z <= 1.0)) throw std::invalid_argument("z must satisfy 0 < z <= 1.");
+  if (!(config.bandrescale > 0.0)) throw std::invalid_argument("bandrescale must be positive.");
+  if (!(config.xmax >= 1.0)) throw std::invalid_argument("xmax must be greater than or equal to 1.");
+  if (config.Nmax > static_cast<unsigned int>(std::numeric_limits<int>::max() / 2))
+    throw std::invalid_argument("Nmax is too large to derive mMAX.");
   config.mMAX = integer("mMAX", 2U * config.Nmax);
+  if (config.mMAX == 0) throw std::invalid_argument("mMAX must be greater than 0.");
+  if (config.preccpp <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
   config.tables_save = config.requested_tables_save;
   config.tables_load = config.requested_tables_load;
   config.tridiagonalize = config.requested_tridiagonalize;
@@ -560,6 +575,8 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
     config.tables_save = false;
     config.tridiagonalize = true;
   }
+  if (config.tables_load && config.tables_save)
+    throw std::invalid_argument("nrgchain_tables_load and nrgchain_tables_save cannot both be true.");
   return config;
 }
 
@@ -567,6 +584,8 @@ NrgChainInvocation make_nrgchain_invocation(const std::string &filename, const N
   // Keep reporting and core execution on the same parser output and mode.
   auto parameters = read_nrgchain_parameters(filename);
   auto configuration = resolve_nrgchain_configuration(parameters, mode);
+  if (!configuration.tridiagonalize)
+    throw std::invalid_argument("instantiate requires nrgchain_tridiag=true.");
   return {std::move(parameters), std::move(configuration)};
 }
 
@@ -646,6 +665,17 @@ void report_configuration(const Options &options, const NrgChainInvocation &invo
   parameter("nrgchain.rescalexi", "rescalexi", config.rescalexi);
   parameter("nrgchain.band", "band", config.band);
   parameter("nrgchain.dos", "dos", config.dos);
+  const auto density_method = NRG::Tools::interpolation_method_name(config.density_interpolation);
+  if (config.tables_load) {
+    report.resolved("nrgchain.density_interpolation", "inactive", "coefficient tables are loaded");
+    report.resolved("nrgchain.density_integration", "inactive", "coefficient tables are loaded");
+  } else if (config.band == "flat") {
+    report.resolved("nrgchain.density_interpolation", density_method, "flat density is interpolation-independent");
+    report.value("nrgchain.density_integration", "exact interpolant primitive");
+  } else {
+    parameter("nrgchain.density_interpolation", "density_interpolation", density_method);
+    report.value("nrgchain.density_integration", "exact interpolant primitive");
+  }
 
   if (config.mode == NrgChainTableMode::Calculate) {
     parameter("nrgchain.tables_save", "nrgchain_tables_save", config.tables_save);
@@ -665,6 +695,7 @@ void report_configuration(const Options &options, const NrgChainInvocation &invo
   if (config.tables_load) {
     report.resolved("nrgchain.density_source", "coefficient-tables", "tables_load=true");
     report.resolved("nrgchain.dos.active", false, "coefficient tables are loaded");
+    report.value("nrgchain.theta_input", "theta.dat");
   } else if (config.band == "flat") {
     report.value("nrgchain.density_source", "flat");
     report.resolved("nrgchain.dos.active", false, "flat band");

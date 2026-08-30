@@ -43,10 +43,14 @@ that the control is not available.
 | `kk` | `akima` | - | - | - | - | - |
 | `integ` | `akima` | `1e-12` | `1e-8` | `1000` | `15` | `warn` |
 | `resample` | `akima` | - | - | - | - | - |
-| `adapt` integral | `linear` (fixed) | `0` | `allowed_error` (`1e-10`) | `1000` | - | `fail` |
+| `adapt`, `nrgchain` density | `linear` | - | - | - | - | - |
+| `adapt` integral | `linear` | `0` | `allowed_error` (`1e-10`) | `1000` | - | `fail` |
 
-`adapt` uses its existing internal linear interpolation and has no
-`--interpolation` option.
+`adapt` and `nrgchain` accept `density_interpolation=linear|steffen` in the
+shared parameter file and have no interpolation command-line override. Both
+tools must use the same setting because `adapt` constructs representative
+energies while `nrgchain` independently constructs shell weights. The legacy
+Mathematica discretization remains linear.
 
 The interpolation methods are GSL `linear` (piecewise linear, at least two
 points), `cspline` (natural cubic spline, at least three points), `akima`

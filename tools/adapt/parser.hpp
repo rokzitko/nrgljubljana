@@ -26,10 +26,14 @@ class Params : public std::map<std::string, std::string> {
     }
     // Return a parameter of type double, use default value if not found.
     auto P(const std::string &keyword, const double def) const {
-      return NRG::Tools::get_or_default(*this, keyword, def, [](const auto &value) { return atof(value); });
+      return NRG::Tools::get_or_default(*this, keyword, def, [&keyword](const auto &value) {
+        return NRG::Tools::parse_parameter_double(value, keyword);
+      });
     }
     auto Pint(const std::string &keyword, const int def) const {
-      return NRG::Tools::get_or_default(*this, keyword, def, [](const auto &value) { return atoi(value); });
+      return NRG::Tools::get_or_default(*this, keyword, def, [&keyword](const auto &value) {
+        return NRG::Tools::parse_parameter_int(value, keyword);
+      });
     }
     auto Pstr(const std::string &keyword, const std::string &def) const {
       return NRG::Tools::get_or_default(*this, keyword, def, [](const auto &value) { return value; });

@@ -76,6 +76,25 @@ TEST(NRGChainParser, accepts_extended_bool_values_and_rejects_invalid_values) { 
   std::remove(filename);
 }
 
+TEST(NRGChainParser, rejects_partial_nonfinite_and_out_of_range_numbers) { // NOLINT
+  const auto filename = "nrgchain_invalid_numbers.param";
+  {
+    ofstream file(filename);
+    file << "[param]\n"
+         << "partial = 2junk\n"
+         << "infinite = inf\n"
+         << "integer = 999999999999999999999\n";
+  }
+
+  params.clear();
+  parser(filename);
+  EXPECT_THROW(P("partial", 0.0), std::invalid_argument);
+  EXPECT_THROW(P("infinite", 0.0), std::invalid_argument);
+  EXPECT_THROW(Pint("integer", 0), std::invalid_argument);
+
+  std::remove(filename);
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS(); // NOLINT

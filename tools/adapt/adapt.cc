@@ -1,8 +1,8 @@
 // Discretization ODE solver for NRG
 // Adaptable discretization mesh code
 //
-// Linear interpolation of rho(omega), integration using trapezoidal method. 4th-order Runge-Kutta ODE solver. Secant
-// method for refinement of parameter A.
+// Selectable shape-preserving interpolation of rho(omega) with an exact interval primitive. 4th-order Runge-Kutta
+// ODE solver. Secant method for refinement of parameter A.
 
 #include <cstddef>
 #include <exception>
@@ -212,8 +212,12 @@ void report_configuration(const CommandLineOptions &options, const Adapt &calc) 
       report.resolved("density_file", density_file, "parameter default");
     }
   }
-  report.value("density_interpolation", "linear");
-  report.value("density_integration", "trapezoidal");
+  const auto density_method = NRG::Tools::interpolation_method_name(calc.density_interpolation);
+  if (calc.P.contains("density_interpolation"))
+    report.value("density_interpolation", density_method);
+  else
+    report.resolved("density_interpolation", density_method, "parameter default");
+  report.value("density_integration", "exact interpolant primitive");
   report.value("frequency_min", 0.0);
   report.value("frequency_max", 1.0);
   report.value("Lambda", static_cast<double>(calc.Lambda));

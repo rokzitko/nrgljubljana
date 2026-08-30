@@ -1,0 +1,6 @@
+[param]
+Lambda=2
+mMAX=24
+Nmax=12
+nrgchain_tables_load=true
+nrgchain_tables_save=true

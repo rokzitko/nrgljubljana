@@ -1,0 +1,16 @@
+[param]
+dos=Delta.dat
+density_interpolation=linear
+Lambda=2
+adapt=false
+xmax=12
+outputstep=0.125
+xfine=5
+dx_fine=1e-4
+dx_fast=1e-3
+allowed_error=1e-8
+max_subdiv=20
+mMAX=24
+Nmax=12
+z=0.5
+preccpp=256

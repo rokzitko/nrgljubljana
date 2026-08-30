@@ -16,11 +16,15 @@ std::map<std::string, std::string> params;
 
 // Return a parameter of type double, use default value if not found.
 double P(const std::string &keyword, double def) {
-  return NRG::Tools::get_or_default(params, keyword, def, [](const auto &value) { return atof(value); });
+  return NRG::Tools::get_or_default(params, keyword, def, [&keyword](const auto &value) {
+    return NRG::Tools::parse_parameter_double(value, keyword);
+  });
 }
 
 int Pint(const std::string &keyword, int def) {
-  return NRG::Tools::get_or_default(params, keyword, def, [](const auto &value) { return atoi(value); });
+  return NRG::Tools::get_or_default(params, keyword, def, [&keyword](const auto &value) {
+    return NRG::Tools::parse_parameter_int(value, keyword);
+  });
 }
 
 std::string Pstr(const std::string &keyword, std::string def) {

@@ -4,8 +4,6 @@
 #ifndef _adapt_io_hpp_
 #define _adapt_io_hpp_
 
-#include <string>
-#include <cstdlib>
 #include <fstream>
 #include <string>
 #include <stdexcept>
@@ -13,9 +11,6 @@
 #include "../common/io.hpp"
 
 namespace NRG::Adapt {
-
-inline double atof(const std::string &s) { return std::atof(s.c_str()); }
-inline int atoi(const std::string &s) { return std::atoi(s.c_str()); }
 
 inline void safe_open(std::ifstream &F, const std::string &filename) {
   NRG::Tools::open_input(F, filename);

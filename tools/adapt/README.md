@@ -2,6 +2,30 @@
 
 `adapt` calculates the logarithmic discretization functions used by the numerical renormalization group (NRG). It supports fixed and adaptive meshes and treats the positive and negative frequency branches separately.
 
+## Density interpolation
+
+The tabulated hybridization density is selected with
+
+```ini
+density_interpolation=linear
+```
+
+Supported values are `linear`, the compatibility default, and `steffen`, a
+shape-preserving piecewise-cubic method. Both preserve nonnegativity between
+nonnegative samples. Cubic-spline and Akima interpolation are not accepted for
+densities because they can overshoot below zero.
+
+Point values and cumulative weights are evaluated from the same interpolant;
+the cumulative is its analytic interval primitive. Constant endpoint extension
+is retained outside the tabulated range. Steffen interpolation requires at
+least three strictly ordered points on each selected frequency branch after
+preprocessing.
+
+Use the same `density_interpolation` value for `adapt P`, `adapt N`, and
+`nrgchain`. Regenerate `GSOL*` and `FSOL*` after changing it because those files
+do not record the method used to create them. This setting applies to the C++
+tool pipeline; the legacy Mathematica implementation remains linear.
+
 ## Discretization functions
 
 In units of the half-bandwidth, the mesh points and representative energies are
@@ -52,7 +76,7 @@ Select this method by omitting `f_method` or by setting
 f_method=ode
 ```
 
-The default path invokes the original ODE calculation and output-grid loop without changing their floating-point operations. Existing parameter files therefore retain their previous output.
+The default path retains linear density interpolation and the historical ODE calculation and output-grid loop. Existing full-band tables therefore retain the linear compatibility behavior. Interval weights now consistently include the documented constant endpoint extension; legacy tables that stop inside `[0,1]` can consequently differ from the former bounded-trapezoid calculation.
 
 ### Integral method
 

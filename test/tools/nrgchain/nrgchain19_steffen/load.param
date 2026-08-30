@@ -1,0 +1,9 @@
+[param]
+density_interpolation=steffen
+Lambda=2
+adapt=false
+mMAX=24
+Nmax=12
+z=0.5
+preccpp=256
+nrgchain_tables_load=true
