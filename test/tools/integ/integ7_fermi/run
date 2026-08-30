@@ -1,0 +1,44 @@
+#!/bin/sh
+set -eu
+
+integ="$1/integ"
+checker="$2/test/tools/integ/check_scalar.pl"
+perl="$4"
+
+expect_exact() {
+  name=$1
+  expected=$2
+  shift 2
+  printf '%s\n' "$expected" >"$name.expected"
+  "$integ" -i linear "$@" >"$name.actual" 2>"$name.stderr"
+  cmp "$name.expected" "$name.actual"
+  test ! -s "$name.stderr"
+}
+
+expect_close() {
+  name=$1
+  expected=$2
+  abs_tolerance=$3
+  rel_tolerance=$4
+  shift 4
+  printf '%s\n' "$expected" >"$name.expected"
+  "$integ" -i linear "$@" >"$name.actual" 2>"$name.stderr"
+  "$perl" "$checker" "$name.expected" "$name.actual" "$abs_tolerance" "$rel_tolerance"
+  test ! -s "$name.stderr"
+}
+
+# f(-x)=f(x) and w_T(-x)+w_T(x)=1, so Fermi integration is half the total.
+expect_exact constant-total 2 constant-symmetric.dat
+expect_close constant-symmetric 1 2e-16 2e-16 -f -T 0.37 constant-symmetric.dat
+expect_close constant-symmetric-hot 1 2e-16 2e-16 -f -T 1e300 constant-symmetric.dat
+expect_close constant-symmetric-cold 1 2e-16 2e-16 -f -T 1e-300 constant-symmetric.dat
+expect_exact even-total 2 symmetric-even.dat
+expect_close even-symmetric 1 2e-16 2e-16 -f -T 0.37 symmetric-even.dat
+
+# On [0,1], integral w_1(x) dx = log(2/(1+exp(-1))).
+expect_close constant-positive 0.37988549304172248 2e-15 2e-15 \
+  -f -T 1 constant-positive.dat
+
+# The dimensionless Fermi path resolves an O(T) endpoint layer without an input knot.
+expect_close low-temperature 6.9314718055994531e-13 5e-26 5e-14 \
+  -f -T 1e-12 --epsabs 1e-25 --epsrel 1e-12 --gsl-error-policy fail constant-positive.dat

@@ -1,55 +1,12 @@
-#!/usr/bin/env perl
-# Integrate column data on the interval [a:b] by the trapezoid rule.
-# Linear interpolation is used when needed.
-# Rok Zitko, rok.zitko@ijs.si, 2009-2026
+#!/bin/sh
 
-use strict;
-use warnings;
+integ=integ
+case $0 in
+  */*) candidate=${0%/*}/integ; test ! -x "$candidate" || integ=$candidate ;;
+esac
 
-my $verbose = 0;
-
-my $xprev = 0.0;
-my $yprev = 0.0;
-my $sum = 0.0;
-my ($slope, $xprevIN, $xIN, $ym1, $y1);
-
-@ARGV == 1 || @ARGV == 3 or die "Syntax: integrateab filename [a b]";
-my $hasab = (@ARGV == 3);
-
-my $fn = shift;
-my $a = $hasab ? shift : -1.0;
-my $b = $hasab ? shift : 1.0;
-
-if ($verbose) {
-    print "integrateab: fn=$fn a=$a b=$b\n";
-}
-
-open (F, "<$fn") or die "Can't open $fn for reading: $?";
-
-while (<F>) {
-    chomp;
-    my ($x,$y,$remainder) = split;
-    if ($. != 1) {
-        $slope = ($y-$yprev)/($x-$xprev);
-        $xprevIN = ($a <= $xprev && $xprev <=$b);
-        $xIN = ($a <= $x && $x <= $b);
-        if ($xprevIN && $xIN) {
-            # Both points within [-1:1]
-            $sum += ($x-$xprev) * ($y + $yprev)/2.0;
-        } elsif ($xprev < $a && $xIN) {
-            # $x within [a:n], $xprev < a
-            # Interpolate the value at x=a
-            $ym1 = $slope * ($a - $xprev) + $yprev;
-            $sum += ($x-$a) * ($y + $ym1)/2.0;
-        } elsif ($xprevIN && $x > $b) {
-            # $xprev within [a:b], $x > b
-            # Interpolate the value at x=b
-            $y1 = $slope * ($b - $xprev) + $yprev;
-            $sum += ($b-$xprev) * ($yprev + $y1)/2.0;
-        }
-    }
-    $xprev = $x;
-    $yprev = $y;
-}
-
-print "$sum\n";
+case $# in
+  1) exec "$integ" --interpolation linear --lower-bound=-1 --upper-bound=1 -- "$1" ;;
+  3) exec "$integ" --interpolation linear --lower-bound="$2" --upper-bound="$3" -- "$1" ;;
+  *) printf '%s\n' 'Syntax: integrateab filename [a b]' >&2; exit 1 ;;
+esac

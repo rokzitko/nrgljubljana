@@ -34,10 +34,14 @@ TEST(KK, input_reader_accepts_blank_lines_and_full_line_comments) { // NOLINT
   ASSERT_EQ(rows.size(), 2);
   EXPECT_EQ(rows[0], (NRG::KK::XYPOINT{-2.0, -3.0}));
   EXPECT_EQ(rows[1], (NRG::KK::XYPOINT{1.5, 4.25}));
+
+  std::istringstream comments_only("\n # comment\n\t");
+  EXPECT_TRUE(NRG::KK::read(comments_only, "empty.dat").empty());
 }
 
 TEST(KK, input_reader_rejects_non_records_and_nonfinite_fields) { // NOLINT
-  for (const std::string text : {"1\n", "1 2 3\n", "1 2junk\n", "1 nan\n", "1 1e9999\n", "1 2 # inline\n"}) {
+  for (const std::string text : {"1\n", "1 2 3\n", "1 2junk\n", "1 nan\n", "1 1e9999\n", "1 1e-9999\n",
+                                 "1 2 # inline\n"}) {
     SCOPED_TRACE(text);
     std::istringstream input(text);
     EXPECT_THROW((void)NRG::KK::read(input, "points.dat"), std::runtime_error);

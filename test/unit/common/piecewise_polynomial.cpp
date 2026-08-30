@@ -3,6 +3,7 @@
 #include <cmath>
 #include <complex>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <stdexcept>
@@ -74,8 +75,110 @@ TEST(PiecewisePolynomial, evaluates_and_integrates_normalized_local_coefficients
   EXPECT_DOUBLE_EQ(polynomial.evaluate(-0.5), 2.5);
   EXPECT_DOUBLE_EQ(polynomial.evaluate(1.0), 4.0);
   EXPECT_DOUBLE_EQ(polynomial.evaluate(3.0), 3.0);
-  EXPECT_NEAR(polynomial.integral(), 3.0 * 2.5 + 2.0 * (4.0 - 1.0 + 1.0 / 3.0), 1e-15);
+  EXPECT_DOUBLE_EQ(polynomial.integral(), 85.0 / 6.0);
+  EXPECT_NEAR(polynomial.integral(-0.5, 2.0), 203.0 / 24.0, 2e-15);
+  EXPECT_DOUBLE_EQ(polynomial.integral(-2.0, 3.0), polynomial.integral());
   EXPECT_THROW(polynomial.evaluate(-2.1), std::domain_error);
+}
+
+TEST(PiecewisePolynomial, bounded_integral_supports_complex_coefficients_and_stable_primitive_differences) { // NOLINT
+  using Complex = std::complex<double>;
+  const PiecewisePolynomial<Complex> complex_polynomial{{10.0, 14.0},
+                                                         {{{1.0, 2.0}, {3.0, -4.0}, {-2.0, 1.0}}}};
+  expect_complex_near(complex_polynomial.integral(11.0, 13.0), {47.0 / 12.0, 13.0 / 24.0}, 2e-15);
+
+  const PiecewisePolynomial<double> cubic_monomial{{0.0, 1.0}, {{0.0, 0.0, 0.0, 1.0}}};
+  const auto lower = std::nextafter(1.0, 0.0);
+  const auto extended_lower = static_cast<long double>(lower);
+  const auto expected = static_cast<double>((1.0L - std::pow(extended_lower, 4)) / 4.0L);
+  EXPECT_NEAR(cubic_monomial.integral(lower, 1.0), expected,
+              2.0 * std::numeric_limits<double>::epsilon() * expected);
+
+  const auto maximum = std::numeric_limits<double>::max();
+  constexpr auto narrow_width = 1e-308;
+  const PiecewisePolynomial<double> narrow{{0.0, narrow_width}, {{maximum, maximum}}};
+  const auto narrow_expected = maximum * narrow_width + maximum * (narrow_width / 2.0);
+  EXPECT_NEAR(narrow.integral(), narrow_expected, 2.0 * std::numeric_limits<double>::epsilon() * narrow_expected);
+  EXPECT_NEAR(NRG::Tools::absolute_integral(narrow), narrow_expected,
+              2.0 * std::numeric_limits<double>::epsilon() * narrow_expected);
+
+  const auto minimum = std::numeric_limits<double>::denorm_min();
+  const PiecewisePolynomial<double> wide{{0.0, 1e308}, {{maximum}}};
+  EXPECT_DOUBLE_EQ(wide.integral(minimum, 2.0 * minimum), maximum * minimum);
+  EXPECT_DOUBLE_EQ(NRG::Tools::absolute_integral(wide, minimum, 2.0 * minimum), maximum * minimum);
+
+  const PiecewisePolynomial<double> scaled_linear{{0.0, 1.0}, {{0.0, 1e308}}};
+  EXPECT_NEAR(scaled_linear.integral(0.0, 2e-308), 2e-308, 2.0 * minimum);
+
+  const PiecewisePolynomial<double> huge_interval_identity{{0.0, 1e308}, {{0.0, 1e308}}};
+  EXPECT_NEAR(huge_interval_identity.integral(0.0, 1e-16), 5e-33, 2e-48);
+
+  const PiecewisePolynomial<double> cancelling{{0.0, 2.0}, {{1e308, -1.7e308}}};
+  const auto cancelling_expected = static_cast<double>(
+    2.0L * (static_cast<long double>(1e308) + static_cast<long double>(-1.7e308) / 2.0L));
+  EXPECT_DOUBLE_EQ(cancelling.integral(), cancelling_expected);
+
+  const PiecewisePolynomial<double> finite_triangle{{0.0, 2.0}, {{maximum, -maximum}}};
+  EXPECT_DOUBLE_EQ(NRG::Tools::absolute_integral(finite_triangle), maximum);
+}
+
+TEST(PiecewisePolynomial, bounded_integral_validates_bounds) { // NOLINT
+  const PiecewisePolynomial<double> polynomial{{0.0, 2.0}, {{1.0, -1.0}}};
+  const auto infinity = std::numeric_limits<double>::infinity();
+  const auto nan = std::numeric_limits<double>::quiet_NaN();
+
+  EXPECT_DOUBLE_EQ(polynomial.integral(0.5, 0.5), 0.0);
+  EXPECT_THROW(polynomial.integral(1.5, 0.5), std::invalid_argument);
+  EXPECT_THROW(polynomial.integral(-0.1, 1.0), std::domain_error);
+  EXPECT_THROW(polynomial.integral(1.0, 2.1), std::domain_error);
+  EXPECT_THROW(polynomial.integral(nan, 1.0), std::invalid_argument);
+  EXPECT_THROW(polynomial.integral(0.0, infinity), std::invalid_argument);
+}
+
+TEST(PiecewisePolynomial, absolute_integral_handles_linear_crossings_and_subranges) { // NOLINT
+  const PiecewisePolynomial<double> polynomial{{2.0, 6.0}, {{-0.25, 1.0}}};
+
+  EXPECT_NEAR(NRG::Tools::absolute_integral(polynomial), 5.0 / 4.0, 2e-15);
+  EXPECT_NEAR(NRG::Tools::absolute_integral(polynomial, 2.5, 4.0), 5.0 / 32.0, 2e-15);
+  EXPECT_DOUBLE_EQ(NRG::Tools::absolute_integral(polynomial, 3.0, 3.0), 0.0);
+}
+
+TEST(PiecewisePolynomial, absolute_integral_handles_degenerate_quadratic_tangent) { // NOLINT
+  const PiecewisePolynomial<double> polynomial{{-1.0, 2.0}, {{0.25, -1.0, 1.0, 0.0}}};
+
+  EXPECT_NEAR(NRG::Tools::absolute_integral(polynomial), 0.25, 2e-15);
+}
+
+TEST(PiecewisePolynomial, absolute_integral_partitions_cubic_with_three_roots) { // NOLINT
+  const PiecewisePolynomial<double> polynomial{{0.0, 1.0}, {{-3.0 / 32.0, 11.0 / 16.0, -1.5, 1.0}}};
+
+  EXPECT_NEAR(NRG::Tools::absolute_integral(polynomial), 5.0 / 256.0, 2e-15);
+}
+
+TEST(PiecewisePolynomial, absolute_integral_handles_endpoint_and_shared_knot_roots) { // NOLINT
+  const PiecewisePolynomial<double> polynomial{{0.0, 2.0, 5.0}, {{0.0, 1.0, -1.0}, {0.0, 1.0, -1.0}}};
+
+  EXPECT_NEAR(NRG::Tools::absolute_integral(polynomial), 5.0 / 6.0, 2e-15);
+  EXPECT_NEAR(NRG::Tools::absolute_integral(polynomial, 2.0, 5.0), 0.5, 2e-15);
+}
+
+TEST(PiecewisePolynomial, absolute_integral_handles_zero_and_constant_intervals) { // NOLINT
+  const PiecewisePolynomial<double> polynomial{{0.0, 1.0, 3.0}, {{0.0, 0.0, 0.0, 0.0}, {-2.0}}};
+
+  EXPECT_DOUBLE_EQ(NRG::Tools::absolute_integral(polynomial, 0.0, 1.0), 0.0);
+  EXPECT_DOUBLE_EQ(NRG::Tools::absolute_integral(polynomial), 4.0);
+}
+
+TEST(PiecewisePolynomial, absolute_integral_validates_bounds_and_degree) { // NOLINT
+  const PiecewisePolynomial<double> linear{{0.0, 1.0}, {{1.0, -2.0}}};
+  const PiecewisePolynomial<double> quartic{{0.0, 1.0}, {{0.0, 0.0, 0.0, 1.0, 1.0}}};
+  const auto infinity = std::numeric_limits<double>::infinity();
+
+  EXPECT_THROW(NRG::Tools::absolute_integral(linear, 0.8, 0.2), std::invalid_argument);
+  EXPECT_THROW(NRG::Tools::absolute_integral(linear, -0.1, 0.8), std::domain_error);
+  EXPECT_THROW(NRG::Tools::absolute_integral(linear, 0.2, infinity), std::invalid_argument);
+  EXPECT_THROW(NRG::Tools::absolute_integral(quartic), std::invalid_argument);
+  EXPECT_THROW(NRG::Tools::absolute_integral(quartic, 0.2, 0.8), std::invalid_argument);
 }
 
 TEST(PiecewisePolynomial, exact_cauchy_transform_matches_polynomial_identities) { // NOLINT

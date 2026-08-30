@@ -13,7 +13,6 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <cerrno>
 #include <cstddef>
 #include <cstdlib>
 #include <filesystem>
@@ -40,6 +39,7 @@
 #include "../common/diagnostics.hpp"
 #include "../common/gsl_piecewise_polynomial.hpp"
 #include "../common/output_file.hpp"
+#include "../common/tabulated.hpp"
 
 namespace NRG::KK {
 
@@ -56,51 +56,9 @@ struct NumericalOptions {
 // number of digits of precision in the generated output file
 constexpr auto OUTPUT_PRECISION = 16;
 
-inline auto parse_finite_field(const std::string &text, const std::string &context) {
-  char *end = nullptr;
-  errno = 0;
-  const auto value = std::strtod(text.c_str(), &end);
-  const auto underflowed_to_zero = errno == ERANGE && value == 0.0;
-  if (underflowed_to_zero || end == text.c_str() || end != text.c_str() + text.size() || !std::isfinite(value))
-    throw std::runtime_error(context + ": expected a finite representable number; got '" + text + "'.");
-  return value;
-}
-
 // Read one physical record per line from stream F.
 inline auto read(std::istream &F, const std::string &source = "<input>") {
-  XYFUNC v;
-  size_t line_number = 0;
-  auto process_line = [&](const std::string &line) {
-    ++line_number;
-    const auto first = line.find_first_not_of(" \t\r\f\v");
-    if (first == std::string::npos || line[first] == '#') return;
-
-    std::istringstream fields(line);
-    std::vector<std::string> tokens;
-    std::string token;
-    while (fields >> token) tokens.push_back(token);
-    if (tokens.size() != 2)
-      throw std::runtime_error(source + ":" + std::to_string(line_number)
-                               + ": expected exactly 2 numeric fields; found " + std::to_string(tokens.size()) + ".");
-
-    const auto context = source + ":" + std::to_string(line_number) + ": field ";
-    v.push_back({parse_finite_field(tokens[0], context + "1"), parse_finite_field(tokens[1], context + "2")});
-  };
-  std::string line;
-  try {
-    while (std::getline(F, line)) {
-      process_line(line);
-    }
-  } catch (const std::ios_base::failure &error) {
-    if (F.eof() && !F.bad()) {
-      if (!line.empty()) process_line(line);
-    } else {
-      throw std::runtime_error(source + ": I/O error after line " + std::to_string(line_number) + ": " + error.what());
-    }
-  }
-  if (F.bad() || (F.fail() && !F.eof()))
-    throw std::runtime_error(source + ": I/O error after line " + std::to_string(line_number) + ".");
-  return v;
+  return NRG::Tools::read_strict_pairs(F, source);
 }
 
 inline void write(const XYFUNC &re, std::ostream &F, const int prec = OUTPUT_PRECISION,

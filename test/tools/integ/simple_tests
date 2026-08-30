@@ -2,3 +2,6 @@ integ1
 integ2_empty
 integ3_invalid_akima
 integ4_controls
+integ5_linear
+integ6_io
+integ7_fermi

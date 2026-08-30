@@ -5,10 +5,14 @@
 #include <cerrno>
 #include <cfloat>
 #include <cctype>
+#include <cstddef>
 #include <cstdlib>
 #include <cmath>
+#include <exception>
 #include <iomanip>
 #include <iostream>
+#include <ios>
+#include <istream>
 #include <iterator>
 #include <ostream>
 #include <sstream>
@@ -50,6 +54,66 @@ inline auto parse_tabulated_double(const std::string &text) {
   if (no_conversion || end != finish || underflowed_to_zero || !std::isfinite(value))
     throw std::runtime_error("Tabulated value must be a finite representable number: " + text);
   return value;
+}
+
+// Read exactly two finite numeric fields from each non-comment physical line. Empty input is valid.
+inline auto read_strict_pairs(std::istream &input, const std::string &source = "<input>") {
+  std::vector<std::pair<double, double>> pairs;
+  std::size_t line_number = 0;
+  const auto io_context = [&] {
+    return source + ": I/O error after line " + std::to_string(line_number);
+  };
+  const auto process_line = [&](const std::string &line) {
+    std::istringstream fields(line);
+    std::vector<std::string> tokens;
+    std::string token;
+    while (fields >> token) tokens.push_back(token);
+    if (tokens.empty() || tokens.front().front() == '#') return;
+    if (tokens.size() != 2)
+      throw std::runtime_error(source + ":" + std::to_string(line_number)
+                               + ": expected exactly 2 numeric fields; found " + std::to_string(tokens.size()) + ".");
+
+    const auto parse_field = [&](const std::size_t index) {
+      try {
+        return parse_tabulated_double(tokens[index]);
+      } catch (const std::runtime_error &) {
+        throw std::runtime_error(source + ":" + std::to_string(line_number) + ": field " + std::to_string(index + 1)
+                                 + ": expected a finite representable number; got '" + tokens[index] + "'.");
+      }
+    };
+    const auto x = parse_field(0);
+    const auto y = parse_field(1);
+    pairs.emplace_back(x, y);
+  };
+
+  while (true) {
+    std::string line;
+    bool line_read = false;
+    try {
+      line_read = static_cast<bool>(std::getline(input, line));
+    } catch (const std::ios_base::failure &error) {
+      if (input.bad() || !input.eof())
+        throw std::runtime_error(io_context() + ": " + error.what());
+      // An eofbit exception can be raised after extracting a final unterminated line.
+      if (!line.empty()) {
+        ++line_number;
+        process_line(line);
+      }
+      break;
+    } catch (const std::exception &error) {
+      throw std::runtime_error(io_context() + ": " + error.what());
+    } catch (...) {
+      throw std::runtime_error(io_context() + ".");
+    }
+
+    if (!line_read) {
+      if (input.bad() || (input.fail() && !input.eof())) throw std::runtime_error(io_context() + ".");
+      break;
+    }
+    ++line_number;
+    process_line(line);
+  }
+  return pairs;
 }
 
 template<typename Vec, typename Stream, typename NextLine>

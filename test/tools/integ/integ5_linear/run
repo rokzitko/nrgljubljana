@@ -1,0 +1,89 @@
+#!/bin/sh
+set -eu
+
+tools=$1
+integ="$tools/integ"
+
+expect_exact() {
+  name=$1
+  expected=$2
+  shift 2
+  printf '%s\n' "$expected" >"$name.expected"
+  "$integ" -i linear "$@" linear.dat >"$name.actual"
+  cmp "$name.expected" "$name.actual"
+}
+
+expect_failure() {
+  name=$1
+  message=$2
+  shift 2
+  if "$integ" -i linear "$@" linear.dat >"$name.stdout" 2>"$name.stderr"; then
+    echo "integ unexpectedly accepted $name" >&2
+    exit 1
+  fi
+  test ! -s "$name.stdout"
+  grep -q '^integ: error:' "$name.stderr"
+  grep -Fq "$message" "$name.stderr"
+}
+
+expect_frontend() {
+  name=$1
+  expected=$2
+  frontend=$3
+  shift 3
+  printf '%s\n' "$expected" >"$name.expected"
+  "$tools/$frontend" "$@" >"$name.actual"
+  cmp "$name.expected" "$name.actual"
+}
+
+expect_frontend_stdin() {
+  name=$1
+  expected=$2
+  frontend=$3
+  printf '%s\n' "$expected" >"$name.expected"
+  "$tools/$frontend" <linear.dat >"$name.actual"
+  cmp "$name.expected" "$name.actual"
+}
+
+# s(x)=x on [-1,1]. These analytic linear results have stable exact strings.
+expect_exact default 0
+expect_exact total 0 --total
+expect_exact temperature-does-not-select-fermi 0 -T 0.5
+expect_exact positive 0.5 -p
+expect_exact negative -0.5 -n
+expect_exact absolute 1 -a
+expect_exact negative-absolute 0.5 --negative-absolute
+expect_exact moment-short 0.66666666666666663 -e
+expect_exact moment-long 0.66666666666666663 --energy-moment
+expect_exact bounded -0.09375 --lower-bound=-0.5 --upper-bound=0.25
+expect_exact clipped-left -0.46875 --lower-bound=-2 --upper-bound=0.25
+expect_exact clipped-right 0.375 --lower-bound=-0.5 --upper-bound=2
+expect_exact disjoint-left 0 --lower-bound=-3 --upper-bound=-2
+expect_exact disjoint-right 0 --lower-bound=2 --upper-bound=3
+expect_exact fermi-zero -0.5 -f -T 0
+
+expect_failure conflicting-selectors "Exactly one integration quantity may be requested" -p -n
+expect_failure bounds-with-selector "Bounds cannot be combined with another integration quantity" -a \
+  --lower-bound=-0.5 --upper-bound=0.25
+expect_failure missing-bound "Bounded integration requires both --lower-bound and --upper-bound" --lower-bound=-0.5
+expect_failure reversed-bounds "The lower integration bound must not exceed the upper bound" \
+  --lower-bound=0.5 --upper-bound=-0.5
+
+# Every build-tree compatibility frontend delegates to linear integ.
+expect_frontend frontend-integrate 0 integrate linear.dat
+expect_frontend frontend-integratepos 0.5 integratepos linear.dat
+expect_frontend frontend-integrateneg -0.5 integrateneg linear.dat
+expect_frontend frontend-integrateabs 1 integrateabs linear.dat
+expect_frontend frontend-integratenegabs 0.5 integratenegabs linear.dat
+expect_frontend frontend-integrateeps 0.66666666666666663 integrateeps linear.dat
+expect_frontend frontend-integrateab-default 0 integrateab linear.dat
+expect_frontend frontend-integrateab-bounds -0.09375 integrateab linear.dat -0.5 0.25
+expect_frontend frontend-integrateab-stdin 0 integrateab - <linear.dat
+
+# Frontends without positional arguments inherit integ's no-argument stdin mode.
+expect_frontend_stdin stdin-integrate 0 integrate
+expect_frontend_stdin stdin-integratepos 0.5 integratepos
+expect_frontend_stdin stdin-integrateneg -0.5 integrateneg
+expect_frontend_stdin stdin-integrateabs 1 integrateabs
+expect_frontend_stdin stdin-integratenegabs 0.5 integratenegabs
+expect_frontend_stdin stdin-integrateeps 0.66666666666666663 integrateeps

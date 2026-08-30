@@ -51,6 +51,16 @@ foreach(exec ${all_executables})
   add_tool(${exec})
 endforeach()
 
+set(integration_frontends integrate integrateab integrateabs integrateeps integratepos integrateneg integratenegabs)
+foreach(frontend ${integration_frontends})
+  configure_file(${PROJECT_SOURCE_DIR}/scripts/${frontend} ${CMAKE_CURRENT_BINARY_DIR}/${frontend} COPYONLY)
+  add_custom_command(TARGET integ POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${PROJECT_SOURCE_DIR}/scripts/${frontend} $<TARGET_FILE_DIR:integ>/${frontend}
+    VERBATIM)
+  install(PROGRAMS ${PROJECT_SOURCE_DIR}/scripts/${frontend} DESTINATION ${CMAKE_INSTALL_BINDIR})
+endforeach()
+
 target_sources(instantiate PRIVATE $<TARGET_OBJECTS:nrgchain_core>)
 target_include_directories(instantiate PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nrgchain>)
 target_link_libraries(instantiate PRIVATE nrgljubljana_c)

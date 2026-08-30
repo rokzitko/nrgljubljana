@@ -1,15 +1,31 @@
 #!/bin/sh
 set -eu
-"$1/integ" -w -T 0.501 imaw.dat >result.dat
-"$1/integ" -vv -w -T 0.501 imaw.dat >result-v.dat 2>verbose.txt
+integ="$1/integ"
+checker="$2/test/tools/integ/check_scalar.pl"
+perl="$4"
+
+"$integ" -w -T 0.501 imaw.dat >result.dat
+"$integ" -vv -w -T 0.501 imaw.dat >result-v.dat 2>verbose.txt
 cmp result.dat result-v.dat
 grep -q '^integ: configuration$' verbose.txt
 grep -q '^  verbosity=2$' verbose.txt
 grep -q '^  input.lower_bound=auto ->' verbose.txt
+grep -q '^  output.quantity=total$' verbose.txt
+grep -q '^  algorithm=analytic-piecewise-polynomial$' verbose.txt
 grep -q '^  integration.gsl_error_policy=ignore$' verbose.txt
-grep -q '^  output.precision=16$' verbose.txt
-"$1/integ" -w -f -T 0.501 imaw.dat >result-f.dat
-"$1/integ" -w -p -T 0.501 imaw.dat >result-p.dat
-"$1/integ" -w -n -T 0.501 imaw.dat >result-n.dat
-"$1/integ" -w -a -T 0.501 imaw.dat >result-a.dat
-"$2/test/compare.pl" "$3/ref"
+grep -q '^  output.precision=17$' verbose.txt
+
+"$integ" -w -f -T 0.501 imaw.dat >result-f.dat
+"$integ" -vv -w -f -T 0.501 imaw.dat >result-f-v.dat 2>fermi-verbose.txt
+cmp result-f.dat result-f-v.dat
+grep -q '^  output.quantity=fermi$' fermi-verbose.txt
+grep -q '^  algorithm=adaptive-qag-per-polynomial-interval$' fermi-verbose.txt
+grep -q '^integ: qag interval=' fermi-verbose.txt
+
+"$integ" -w -p -T 0.501 imaw.dat >result-p.dat
+"$integ" -w -n -T 0.501 imaw.dat >result-n.dat
+"$integ" -w -a -T 0.501 imaw.dat >result-a.dat
+
+for result in result.dat result-f.dat result-p.dat result-n.dat result-a.dat; do
+  "$perl" "$checker" "$3/ref/$result" "$result" 1e-13 1e-13
+done

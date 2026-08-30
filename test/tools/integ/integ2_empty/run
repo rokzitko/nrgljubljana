@@ -4,4 +4,6 @@ if "$1/integ" imaw.dat >stdout.txt 2>stderr.txt; then
   echo "integ unexpectedly accepted empty input" >&2
   exit 1
 fi
-grep -q "Error: no data points found." stderr.txt
+test ! -s stdout.txt
+printf '%s\n' 'integ: error: No input data points provided.' >expected-stderr.txt
+cmp expected-stderr.txt stderr.txt

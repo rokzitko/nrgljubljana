@@ -1,0 +1,9 @@
+# leading comment
+
+   # indented comment
+
+-1 -1
+
+0 0
+  # another indented comment
+1 1

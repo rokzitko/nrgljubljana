@@ -1,24 +1,8 @@
-#!/usr/bin/env perl
-# Integrate column data by trapezoid rule: int(ABS(y) dx)
-# Rok Zitko, rok.zitko@ijs.si, 2008-2026
+#!/bin/sh
 
-use warnings;
-use strict;
+integ=integ
+case $0 in
+  */*) candidate=${0%/*}/integ; test ! -x "$candidate" || integ=$candidate ;;
+esac
 
-my $xprev = 0;
-my $yprev = 0;
-my $sum = 0;
-
-while (<>) {
-  chomp;
-  my ($x,$y,$remainder) = split;
-  
-  if ($. != 1) {
-    $sum += ($x-$xprev) * (abs($y) + abs($yprev))/2.0;
-  }
-  
-  $xprev = $x;
-  $yprev = $y;
-}
-
-print "$sum\n";
+exec "$integ" --interpolation linear --absolute -- "$@"

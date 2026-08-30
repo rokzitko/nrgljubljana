@@ -2,13 +2,12 @@
 set -eu
 
 integ="$1/integ"
-compare="$2/test/mycomp.pl"
 
-"$integ" -T 0.5 imaw.dat >default.dat
-"$integ" -T 0.5 --interpolation akima imaw.dat >akima.dat
-"$integ" -T 0.5 -i linear imaw.dat >linear.dat
-"$integ" -T 0.5 --interpolation=cspline imaw.dat >cspline.dat
-"$integ" -T 0.5 --interpolation steffen imaw.dat >steffen.dat
+"$integ" imaw.dat >default.dat
+"$integ" --interpolation akima imaw.dat >akima.dat
+"$integ" -i linear imaw.dat >linear.dat
+"$integ" --interpolation=cspline imaw.dat >cspline.dat
+"$integ" --interpolation steffen imaw.dat >steffen.dat
 
 cmp default.dat akima.dat
 expect_different() {
@@ -24,25 +23,34 @@ expect_different linear.dat steffen.dat
 expect_different cspline.dat steffen.dat
 
 # The linear fixture has an exact piecewise-linear absolute integral of 4523/660.
-printf '%s\n' 6.853030303030303 >expected-absolute.dat
-"$integ" -T 0.5 -i linear -a imaw.dat >absolute.dat
-"$integ" -T 0.5 -i linear -a -w imaw.dat >absolute-short-policy.dat
-"$integ" -T 0.5 -i linear -a --gsl-error-policy ignore imaw.dat >absolute-long-policy.dat
-"$compare" expected-absolute.dat absolute.dat
+printf '%s\n' 6.8530303030303035 >expected-absolute.dat
+"$integ" -i linear -a imaw.dat >absolute.dat
+"$integ" -i linear -a -w imaw.dat >absolute-short-policy.dat
+"$integ" -i linear -a --gsl-error-policy ignore imaw.dat >absolute-long-policy.dat
+cmp expected-absolute.dat absolute.dat
 cmp absolute.dat absolute-short-policy.dat
 cmp absolute.dat absolute-long-policy.dat
 
-# Exercise both valid tolerance boundaries and a non-default workspace.
-"$integ" -T 0.5 --epsabs 0 --epsrel 1e-6 --workspace-limit 2048 imaw.dat >relative-tolerance.dat
-"$integ" -T 0.5 --epsabs=1e-8 --epsrel=0 --workspace-limit=2048 imaw.dat >absolute-tolerance.dat
+# QAG controls are accepted but do not change an analytic quantity.
+analytic_options="--epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 61"
+for policy in ignore warn fail; do
+  # shellcheck disable=SC2086
+  "$integ" $analytic_options --gsl-error-policy "$policy" imaw.dat >"analytic-$policy.dat" 2>"analytic-$policy.stderr"
+  cmp default.dat "analytic-$policy.dat"
+  test ! -s "analytic-$policy.stderr"
+done
+
+# Exercise valid QAG controls only in positive-temperature Fermi mode.
+"$integ" -f -T 0.5 --epsabs 0 --epsrel 1e-6 --workspace-limit 2048 imaw.dat >relative-tolerance.dat
+"$integ" -f -T 0.5 --epsabs=1e-8 --epsrel=0 --workspace-limit=2048 imaw.dat >absolute-tolerance.dat
 
 for rule in 15 21 31 41 51 61; do
-  "$integ" -T 0.5 --epsabs 0 --epsrel 1e-6 --workspace-limit 2048 \
+  "$integ" -f -T 0.5 --epsabs 0 --epsrel 1e-6 --workspace-limit 2048 \
     --quadrature-rule "$rule" imaw.dat >"rule-$rule.dat"
 done
 
 for policy in ignore warn fail; do
-  "$integ" -T 0.5 --epsabs 0 --epsrel 1e-6 --workspace-limit 2048 \
+  "$integ" -f -T 0.5 --epsabs 0 --epsrel 1e-6 --workspace-limit 2048 \
     --gsl-error-policy "$policy" imaw.dat >"policy-$policy.dat"
 done
 
@@ -54,6 +62,8 @@ expect_failure() {
     echo "integ unexpectedly accepted invalid $name" >&2
     exit 1
   fi
+  test ! -s "$name.stdout"
+  grep -q '^integ: error:' "$name.stderr"
   grep -Fq "$message" "$name.stderr"
 }
 
@@ -70,26 +80,29 @@ if "$integ" -i steffen steffen-too-small.dat >steffen-too-small.stdout 2>steffen
   echo "integ unexpectedly accepted too few points for Steffen interpolation" >&2
   exit 1
 fi
-grep -Fq "steffen interpolation requires at least 3 data points" steffen-too-small.stderr
+test ! -s steffen-too-small.stdout
+grep -q '^integ: error:' steffen-too-small.stderr
+grep -Fq "steffen interpolation requires at least 3 points." steffen-too-small.stderr
 
 difficult_options="--epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 61"
 # shellcheck disable=SC2086
-"$integ" $difficult_options --gsl-error-policy ignore imaw.dat >ignore-result.dat 2>ignore.stderr
+"$integ" -f -T 0.5 $difficult_options --gsl-error-policy ignore imaw.dat >ignore-result.dat 2>ignore.stderr
 test ! -s ignore.stderr
 
-"$integ" --epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 15 \
+"$integ" -f -T 0.5 --epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 15 \
   --gsl-error-policy ignore imaw.dat >rule-15-result.dat 2>rule-15.stderr
+test ! -s rule-15.stderr
 expect_different rule-15-result.dat ignore-result.dat
 
 # shellcheck disable=SC2086
-"$integ" $difficult_options --gsl-error-policy warn imaw.dat >warn-result.dat 2>warn.stderr
-grep -Fq "WARNING - qag error" warn.stderr
+"$integ" -f -T 0.5 $difficult_options --gsl-error-policy warn imaw.dat >warn-result.dat 2>warn.stderr
+grep -q '^integ: warning: qag error' warn.stderr
 
-# The legacy default warns and continues.
+# The default policy warns and continues.
 # shellcheck disable=SC2086
-"$integ" $difficult_options imaw.dat >default-policy-result.dat 2>default-policy.stderr
-grep -Fq "WARNING - qag error" default-policy.stderr
+"$integ" -f -T 0.5 $difficult_options imaw.dat >default-policy-result.dat 2>default-policy.stderr
+grep -q '^integ: warning: qag error' default-policy.stderr
 cmp warn-result.dat default-policy-result.dat
 
 # shellcheck disable=SC2086
-expect_failure convergence "ERROR - qag error" $difficult_options --gsl-error-policy fail
+expect_failure convergence "qag error" -f -T 0.5 $difficult_options --gsl-error-policy fail

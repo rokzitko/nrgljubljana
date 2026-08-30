@@ -183,6 +183,26 @@ These tools work on already-produced numerical data and compute derived tables o
 - Matsubara-oriented summaries
 - temperature-dependent averaging helpers
 
+### `integ`
+
+`integ` accepts strict two-column data from standard input, one file, or
+multiple files that are merged and sorted as one logical table. It constructs
+one selected GSL interpolant and computes only the requested total, bounded,
+sign-restricted, absolute, negative-absolute, first-moment, or Fermi-weighted
+quantity.
+
+The interpolant is represented as a polynomial of degree at most three on each
+input interval. All modes except positive-temperature Fermi integration use
+analytic polynomial antiderivatives; absolute modes first locate interval
+roots. Positive-temperature Fermi integration alone uses stable, interval-wise
+adaptive QAG with temperature-scaled breakpoints around zero, while `T=0` is
+exactly the negative-domain integral.
+
+The installed `integrate`, `integrateab`, `integratepos`, `integrateneg`,
+`integrateabs`, `integratenegabs`, and `integrateeps` commands are
+linear-interpolation front ends to `integ`. `integrateab` defaults to
+`[-1,1]`.
+
 ### Common Characteristics
 
 - line-oriented parsing of simple text or binary data

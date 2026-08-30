@@ -38,6 +38,8 @@ This release summarizes development since `2024.12`, with major improvements in 
 - `broaden` accepts arbitrary user-provided output-frequency meshes.
 - `adapt --flat Gamma` directly supports constant hybridization functions.
 - `hilb`, `kk`, `integ`, and `resample` can select GSL's monotonicity-preserving Steffen interpolation.
+- `integ` is now a unified one-result integrator for strict two-column data from standard input, one file, or multiple files. It adds explicit total and paired bounded selectors, negative-absolute integration, and the exact first moment $\int x s(x)\,dx$ alongside the existing positive, negative, absolute, and Fermi modes.
+- Total, bounded, sign-restricted, absolute, negative-absolute, and moment modes use analytic interval-polynomial integration; absolute modes split at polynomial roots. Positive-temperature Fermi integration alone uses a stable factor and interval-wise adaptive QAG, while `T=0` is exactly the negative-domain integral.
 - Thermal Fermi and Bose kernels are stable at extreme energies and near the Bose pole.
 - Large Matsubara meshes no longer suffer from a small-integer index limitation.
 - FDM partition-function accumulators consistently retain high numerical precision.
@@ -47,6 +49,7 @@ This release summarizes development since `2024.12`, with major improvements in 
 ## Workflows And Reliability
 
 - Parameter files, spectral meshes, and truncated inputs now receive substantially stricter validation.
+- The installed `integrate`, `integrateab`, `integratepos`, `integrateneg`, `integrateabs`, `integratenegabs`, and `integrateeps` commands are corrected linear-interpolation front ends to `integ`. They now apply absolute value after interpolation, clip crossing segments to bounded or sign-restricted domains, evaluate the first moment exactly, reject malformed or extra input fields, sort the logical input table, and print at `max_digits10` precision. `integrateab` continues to default to `[-1,1]`.
 - The new `instantiate`/`nrgspawn` workflow can run prepared model templates without invoking Mathematica for every parameter point.
 - Basis, Hamiltonian, and operator blocks can be saved and reused in parameter sweeps.
 - Checkpoints and density matrices are written atomically and loaded transactionally.

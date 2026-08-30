@@ -1,0 +1,68 @@
+#!/bin/sh
+set -eu
+
+integ="$1/integ"
+
+expect_failure() {
+  name=$1
+  input=$2
+  message=$3
+  if "$integ" -i linear "$input" >"$name.stdout" 2>"$name.stderr"; then
+    echo "integ unexpectedly accepted $name" >&2
+    exit 1
+  fi
+  test ! -s "$name.stdout"
+  grep -q '^integ: error:' "$name.stderr"
+  grep -Fq "$message" "$name.stderr"
+}
+
+printf '%s\n' 0 >expected-zero.dat
+"$integ" -i linear linear.dat >file.dat
+"$integ" -i linear <linear.dat >stdin-no-arg.dat
+"$integ" -i linear - <linear.dat >stdin-dash.dat
+"$integ" -i linear comments.dat >comments-result.dat
+cmp expected-zero.dat file.dat
+cmp file.dat stdin-no-arg.dat
+cmp file.dat stdin-dash.dat
+cmp file.dat comments-result.dat
+
+"$integ" -i linear multiple-positive.dat multiple-negative.dat >multiple-files.dat
+cmp expected-zero.dat multiple-files.dat
+
+"$integ" -h --epsrel=-1 >help.stdout 2>help.stderr
+test ! -s help.stderr
+grep -Fq 'Usage: integ' help.stdout
+
+expect_failure malformed-suffix malformed_suffix.dat \
+  "malformed_suffix.dat:3: field 2: expected a finite representable number; got '2junk'."
+expect_failure one-field one_field.dat "one_field.dat:2: expected exactly 2 numeric fields; found 1."
+expect_failure three-fields three_fields.dat "three_fields.dat:2: expected exactly 2 numeric fields; found 3."
+expect_failure inline-comment inline_comment.dat \
+  "inline_comment.dat:2: expected exactly 2 numeric fields; found 3."
+expect_failure nan nan.dat "nan.dat:2: field 2: expected a finite representable number; got 'nan'."
+expect_failure inf inf.dat "inf.dat:2: field 2: expected a finite representable number; got 'inf'."
+expect_failure overflow overflow.dat "overflow.dat:2: field 2: expected a finite representable number; got '1e309'."
+expect_failure underflow underflow.dat \
+  "underflow.dat:2: field 2: expected a finite representable number; got '1e-9999'."
+expect_failure duplicate duplicate.dat "Interpolation energies must be strictly increasing."
+
+if "$integ" -i linear - - <linear.dat >duplicate-stdin.stdout 2>duplicate-stdin.stderr; then
+  echo "integ unexpectedly accepted standard input twice" >&2
+  exit 1
+fi
+test ! -s duplicate-stdin.stdout
+grep -q '^integ: error:' duplicate-stdin.stderr
+grep -Fq 'Standard input may be specified only once.' duplicate-stdin.stderr
+
+# 16 significant digits would print 0.1; max_digits10 preserves this round trip.
+printf '%s\n' 0.10000000000000001 >precision-expected.dat
+"$integ" -i linear precision.dat >precision-actual.dat
+cmp precision-expected.dat precision-actual.dat
+
+if test -e /dev/full && test -w /dev/full; then
+  if "$integ" -i linear linear.dat >/dev/full 2>dev-full.stderr; then
+    echo "integ unexpectedly succeeded while writing to /dev/full" >&2
+    exit 1
+  fi
+  grep -q '^integ: error: <stdout>: output write or flush failed\.$' dev-full.stderr
+fi

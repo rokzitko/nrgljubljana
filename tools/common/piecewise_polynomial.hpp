@@ -60,7 +60,11 @@ namespace detail {
 
 using ExactRational = PiecewiseExactRational;
 inline constexpr bool native_extended_precision = std::numeric_limits<long double>::digits
-                                                  > std::numeric_limits<double>::digits;
+                                                     > std::numeric_limits<double>::digits
+                                                   && std::numeric_limits<long double>::max_exponent
+                                                        >= 3 * std::numeric_limits<double>::max_exponent
+                                                   && std::numeric_limits<long double>::min_exponent
+                                                        <= 3 * std::numeric_limits<double>::min_exponent;
 inline constexpr std::size_t double_exponent_span = std::numeric_limits<double>::max_exponent
                                                     - std::numeric_limits<double>::min_exponent
                                                     + std::numeric_limits<double>::digits + 8;
@@ -130,6 +134,80 @@ class CompensatedComplexSumType {
 
 using CompensatedComplexSum = CompensatedComplexSumType<double>;
 using CompensatedLongComplexSum = CompensatedComplexSumType<long double>;
+
+namespace detail {
+
+inline auto normalized_interval_coordinate(const double value, const double left, const double right) {
+  if (value == left) return 0.0L;
+  if (value == right) return 1.0L;
+  const auto extended_value = static_cast<long double>(value);
+  const auto extended_left = static_cast<long double>(left);
+  const auto extended_right = static_cast<long double>(right);
+  const auto width = extended_right - extended_left;
+  if (extended_value - extended_left <= extended_right - extended_value)
+    return (extended_value - extended_left) / width;
+  return 1.0L + (extended_value - extended_right) / width;
+}
+
+inline auto wide_normalized_interval_coordinate(const double value, const double left, const double right) {
+  if (value == left) return PiecewiseWideFloat{0};
+  if (value == right) return PiecewiseWideFloat{1};
+  const PiecewiseWideFloat wide_value{value};
+  const PiecewiseWideFloat wide_left{left};
+  const PiecewiseWideFloat wide_right{right};
+  const auto width = wide_right - wide_left;
+  if (wide_value - wide_left <= wide_right - wide_value) return (wide_value - wide_left) / width;
+  return PiecewiseWideFloat{1} + (wide_value - wide_right) / width;
+}
+
+inline auto normalized_primitive_average(const std::size_t power, const long double lower, const long double upper) {
+  const auto exponent = power + 1;
+  auto lower_power = 1.0L;
+  auto divided_difference = 1.0L;
+  for (std::size_t term = 1; term < exponent; ++term) {
+    lower_power *= lower;
+    divided_difference = upper * divided_difference + lower_power;
+  }
+  return divided_difference / static_cast<double>(exponent);
+}
+
+template <typename Scalar>
+inline auto normalized_polynomial_integral(const std::vector<Scalar> &coefficients, const long double lower,
+                                            const long double upper, const long double physical_span) {
+  CompensatedLongComplexSum sum;
+  for (std::size_t power = 0; power < coefficients.size(); ++power)
+    sum.add(polynomial_scalar_as_long_complex(coefficients[power])
+            * (physical_span * normalized_primitive_average(power, lower, upper)));
+  return sum.value();
+}
+
+inline auto wide_normalized_primitive_average(const std::size_t power, const PiecewiseWideFloat &lower,
+                                               const PiecewiseWideFloat &upper) {
+  const auto exponent = power + 1;
+  PiecewiseWideFloat lower_power{1};
+  PiecewiseWideFloat divided_difference{1};
+  for (std::size_t term = 1; term < exponent; ++term) {
+    lower_power *= lower;
+    divided_difference = upper * divided_difference + lower_power;
+  }
+  return divided_difference / PiecewiseWideFloat{exponent};
+}
+
+template <typename Scalar>
+inline auto wide_normalized_polynomial_integral(const std::vector<Scalar> &coefficients,
+                                                 const PiecewiseWideFloat &lower,
+                                                 const PiecewiseWideFloat &upper,
+                                                 const PiecewiseWideFloat &physical_span) {
+  PiecewiseWideComplex sum;
+  for (std::size_t power = 0; power < coefficients.size(); ++power) {
+    const auto coefficient = polynomial_scalar_as_complex(coefficients[power]);
+    sum += PiecewiseWideComplex{coefficient.real(), coefficient.imag()}
+           * (physical_span * wide_normalized_primitive_average(power, lower, upper));
+  }
+  return sum;
+}
+
+} // namespace detail
 
 struct PiecewiseNativeMoment {
   std::complex<long double> value;
@@ -203,20 +281,54 @@ class PiecewisePolynomial {
     return result;
   }
 
-  auto integral() const {
-    CompensatedComplexSum sum;
-    for (std::size_t interval = 0; interval < coefficients_.size(); ++interval) {
-      const auto width = knots_[interval + 1] - knots_[interval];
-      std::complex<double> value{};
-      for (std::size_t power = 0; power < coefficients_[interval].size(); ++power)
-        value += polynomial_scalar_as_complex(coefficients_[interval][power]) / static_cast<double>(power + 1);
-      sum.add(width * value);
+  auto integral(const double lower, const double upper) const {
+    if (!std::isfinite(lower) || !std::isfinite(upper))
+      throw std::invalid_argument("Polynomial integration bounds must be finite.");
+    if (lower > upper) throw std::invalid_argument("Polynomial integration bounds must be ordered.");
+    if (lower < knots_.front() || upper > knots_.back())
+      throw std::domain_error("Polynomial integration bounds are outside the interpolation domain.");
+    if (lower == upper) return Scalar{};
+
+    if constexpr (detail::native_extended_precision) {
+      CompensatedLongComplexSum sum;
+      for (std::size_t interval = 0; interval < coefficients_.size(); ++interval) {
+        const auto left = std::max(lower, knots_[interval]);
+        const auto right = std::min(upper, knots_[interval + 1]);
+        if (!(left < right)) continue;
+        const auto interval_left = knots_[interval];
+        const auto interval_right = knots_[interval + 1];
+        const auto normalized_left = detail::normalized_interval_coordinate(left, interval_left, interval_right);
+        const auto normalized_right = detail::normalized_interval_coordinate(right, interval_left, interval_right);
+        const auto physical_span = static_cast<long double>(right) - static_cast<long double>(left);
+        sum.add(detail::normalized_polynomial_integral(coefficients_[interval], normalized_left, normalized_right,
+                                                       physical_span));
+      }
+      if constexpr (std::is_same_v<Scalar, double>)
+        return static_cast<double>(sum.value().real());
+      else
+        return std::complex<double>{static_cast<double>(sum.value().real()), static_cast<double>(sum.value().imag())};
+    } else {
+      PiecewiseWideComplex sum;
+      for (std::size_t interval = 0; interval < coefficients_.size(); ++interval) {
+        const auto left = std::max(lower, knots_[interval]);
+        const auto right = std::min(upper, knots_[interval + 1]);
+        if (!(left < right)) continue;
+        const auto interval_left = knots_[interval];
+        const auto interval_right = knots_[interval + 1];
+        const auto normalized_left = detail::wide_normalized_interval_coordinate(left, interval_left, interval_right);
+        const auto normalized_right = detail::wide_normalized_interval_coordinate(right, interval_left, interval_right);
+        const auto physical_span = PiecewiseWideFloat{right} - PiecewiseWideFloat{left};
+        sum += detail::wide_normalized_polynomial_integral(coefficients_[interval], normalized_left, normalized_right,
+                                                           physical_span);
+      }
+      if constexpr (std::is_same_v<Scalar, double>)
+        return static_cast<double>(sum.real());
+      else
+        return std::complex<double>{static_cast<double>(sum.real()), static_cast<double>(sum.imag())};
     }
-    if constexpr (std::is_same_v<Scalar, double>)
-      return sum.value().real();
-    else
-      return sum.value();
   }
+
+  auto integral() const { return integral(lower_bound(), upper_bound()); }
 
   auto multiply_by_monomial(const std::size_t exponent) const {
     if (exponent == 0) return *this;
@@ -369,6 +481,249 @@ class PiecewisePolynomial {
     return PiecewisePolynomial<Scalar>{knots_, std::move(weighted)};
   }
 };
+
+namespace detail {
+
+inline auto evaluate_real_polynomial(const std::vector<long double> &coefficients, const long double argument) {
+  auto result = 0.0L;
+  for (auto coefficient = coefficients.rbegin(); coefficient != coefficients.rend(); ++coefficient)
+    result = std::fma(result, argument, *coefficient);
+  return result;
+}
+
+inline auto isolate_real_polynomial_roots(std::vector<long double> coefficients, const long double lower,
+                                          const long double upper) {
+  while (!coefficients.empty() && coefficients.back() == 0.0L) coefficients.pop_back();
+  std::vector<long double> roots;
+  if (coefficients.size() <= 1 || lower > upper) return roots;
+
+  std::vector<long double> derivative(coefficients.size() - 1);
+  for (std::size_t power = 1; power < coefficients.size(); ++power)
+    derivative[power - 1] = static_cast<long double>(power) * coefficients[power];
+  auto critical_points = isolate_real_polynomial_roots(std::move(derivative), lower, upper);
+  std::sort(critical_points.begin(), critical_points.end());
+  critical_points.erase(std::unique(critical_points.begin(), critical_points.end()), critical_points.end());
+
+  std::vector<long double> partition{lower};
+  for (const auto point : critical_points)
+    if (lower < point && point < upper) partition.push_back(point);
+  if (lower < upper) partition.push_back(upper);
+
+  std::vector<long double> values;
+  values.reserve(partition.size());
+  for (const auto point : partition) values.push_back(evaluate_real_polynomial(coefficients, point));
+  for (std::size_t point = 0; point < partition.size(); ++point) {
+    if (values[point] == 0.0L) roots.push_back(partition[point]);
+    if (point + 1 == partition.size() || values[point] == 0.0L || values[point + 1] == 0.0L
+        || std::signbit(values[point]) == std::signbit(values[point + 1]))
+      continue;
+
+    auto left = partition[point];
+    auto right = partition[point + 1];
+    auto left_value = values[point];
+    auto right_value = values[point + 1];
+    for (int iteration = 0; iteration < std::numeric_limits<long double>::digits + 4; ++iteration) {
+      const auto midpoint = left + (right - left) / 2.0L;
+      if (midpoint == left || midpoint == right) break;
+      const auto midpoint_value = evaluate_real_polynomial(coefficients, midpoint);
+      if (midpoint_value == 0.0L) {
+        left = midpoint;
+        right = midpoint;
+        left_value = 0.0L;
+        right_value = 0.0L;
+        break;
+      }
+      if (std::signbit(left_value) == std::signbit(midpoint_value)) {
+        left = midpoint;
+        left_value = midpoint_value;
+      } else {
+        right = midpoint;
+        right_value = midpoint_value;
+      }
+    }
+    roots.push_back(std::abs(left_value) <= std::abs(right_value) ? left : right);
+  }
+  std::sort(roots.begin(), roots.end());
+  roots.erase(std::unique(roots.begin(), roots.end()), roots.end());
+  return roots;
+}
+
+inline auto real_polynomial_roots(const std::vector<double> &coefficients, const long double lower,
+                                  const long double upper) {
+  auto scale = 0.0L;
+  for (const auto coefficient : coefficients)
+    scale = std::max(scale, std::abs(static_cast<long double>(coefficient)));
+  if (scale == 0.0L) return std::vector<long double>{};
+
+  std::vector<long double> scaled_coefficients;
+  scaled_coefficients.reserve(coefficients.size());
+  for (const auto coefficient : coefficients)
+    scaled_coefficients.push_back(static_cast<long double>(coefficient) / scale);
+  const auto extended_roots = isolate_real_polynomial_roots(std::move(scaled_coefficients), lower, upper);
+  std::vector<long double> roots;
+  roots.reserve(extended_roots.size());
+  for (const auto root : extended_roots) roots.push_back(std::clamp(root, lower, upper));
+  std::sort(roots.begin(), roots.end());
+  roots.erase(std::unique(roots.begin(), roots.end()), roots.end());
+  return roots;
+}
+
+inline auto evaluate_wide_real_polynomial(const std::vector<PiecewiseWideFloat> &coefficients,
+                                           const PiecewiseWideFloat &argument) {
+  PiecewiseWideFloat result{};
+  for (auto coefficient = coefficients.rbegin(); coefficient != coefficients.rend(); ++coefficient)
+    result = result * argument + *coefficient;
+  return result;
+}
+
+inline auto isolate_wide_real_polynomial_roots(std::vector<PiecewiseWideFloat> coefficients,
+                                                const PiecewiseWideFloat &lower,
+                                                const PiecewiseWideFloat &upper) {
+  while (!coefficients.empty() && coefficients.back() == 0) coefficients.pop_back();
+  std::vector<PiecewiseWideFloat> roots;
+  if (coefficients.size() <= 1 || lower > upper) return roots;
+
+  std::vector<PiecewiseWideFloat> derivative(coefficients.size() - 1);
+  for (std::size_t power = 1; power < coefficients.size(); ++power)
+    derivative[power - 1] = PiecewiseWideFloat{power} * coefficients[power];
+  auto critical_points = isolate_wide_real_polynomial_roots(std::move(derivative), lower, upper);
+  std::sort(critical_points.begin(), critical_points.end());
+  critical_points.erase(std::unique(critical_points.begin(), critical_points.end()), critical_points.end());
+
+  std::vector<PiecewiseWideFloat> partition{lower};
+  for (const auto &point : critical_points)
+    if (lower < point && point < upper) partition.push_back(point);
+  if (lower < upper) partition.push_back(upper);
+
+  std::vector<PiecewiseWideFloat> values;
+  values.reserve(partition.size());
+  for (const auto &point : partition) values.push_back(evaluate_wide_real_polynomial(coefficients, point));
+  for (std::size_t point = 0; point < partition.size(); ++point) {
+    if (values[point] == 0) roots.push_back(partition[point]);
+    if (point + 1 == partition.size() || values[point] == 0 || values[point + 1] == 0
+        || (values[point] < 0) == (values[point + 1] < 0))
+      continue;
+
+    auto left = partition[point];
+    auto right = partition[point + 1];
+    auto left_value = values[point];
+    auto right_value = values[point + 1];
+    for (int iteration = 0; iteration < std::numeric_limits<PiecewiseWideFloat>::digits + 4; ++iteration) {
+      const auto midpoint = left + (right - left) / 2;
+      if (midpoint == left || midpoint == right) break;
+      const auto midpoint_value = evaluate_wide_real_polynomial(coefficients, midpoint);
+      if (midpoint_value == 0) {
+        left = midpoint;
+        right = midpoint;
+        left_value = 0;
+        right_value = 0;
+        break;
+      }
+      if ((left_value < 0) == (midpoint_value < 0)) {
+        left = midpoint;
+        left_value = midpoint_value;
+      } else {
+        right = midpoint;
+        right_value = midpoint_value;
+      }
+    }
+    roots.push_back(boost::multiprecision::abs(left_value) <= boost::multiprecision::abs(right_value) ? left : right);
+  }
+  std::sort(roots.begin(), roots.end());
+  roots.erase(std::unique(roots.begin(), roots.end()), roots.end());
+  return roots;
+}
+
+inline auto wide_real_polynomial_roots(const std::vector<double> &coefficients, const PiecewiseWideFloat &lower,
+                                       const PiecewiseWideFloat &upper) {
+  PiecewiseWideFloat scale{};
+  for (const auto coefficient : coefficients)
+    scale = std::max(scale, boost::multiprecision::abs(PiecewiseWideFloat{coefficient}));
+  if (scale == 0) return std::vector<PiecewiseWideFloat>{};
+
+  std::vector<PiecewiseWideFloat> scaled_coefficients;
+  scaled_coefficients.reserve(coefficients.size());
+  for (const auto coefficient : coefficients) scaled_coefficients.push_back(PiecewiseWideFloat{coefficient} / scale);
+  return isolate_wide_real_polynomial_roots(std::move(scaled_coefficients), lower, upper);
+}
+
+} // namespace detail
+
+inline auto absolute_integral(const PiecewisePolynomial<double> &polynomial, const double lower, const double upper) {
+  if (!std::isfinite(lower) || !std::isfinite(upper))
+    throw std::invalid_argument("Absolute-integration bounds must be finite.");
+  if (lower > upper) throw std::invalid_argument("Absolute-integration bounds must be ordered.");
+  if (lower < polynomial.lower_bound() || upper > polynomial.upper_bound())
+    throw std::domain_error("Absolute-integration bounds are outside the interpolation domain.");
+  for (const auto &coefficients : polynomial.coefficients())
+    if (coefficients.size() > 4)
+      throw std::invalid_argument("Absolute integration supports polynomial intervals of degree at most three.");
+  if (lower == upper) return 0.0;
+
+  if constexpr (detail::native_extended_precision) {
+    CompensatedLongComplexSum sum;
+    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+      const auto left = std::max(lower, polynomial.knots()[interval]);
+      const auto right = std::min(upper, polynomial.knots()[interval + 1]);
+      if (!(left < right)) continue;
+      const auto interval_left = polynomial.knots()[interval];
+      const auto interval_right = polynomial.knots()[interval + 1];
+      const auto width = static_cast<long double>(interval_right) - static_cast<long double>(interval_left);
+      const auto normalized_left = detail::normalized_interval_coordinate(left, interval_left, interval_right);
+      const auto normalized_right = detail::normalized_interval_coordinate(right, interval_left, interval_right);
+      const auto roots = detail::real_polynomial_roots(polynomial.coefficients()[interval], normalized_left,
+                                                       normalized_right);
+      auto segment_left = normalized_left;
+      for (const auto root : roots) {
+        if (!(segment_left < root && root < normalized_right)) continue;
+        const auto value = detail::normalized_polynomial_integral(polynomial.coefficients()[interval], segment_left,
+                                                                  root, width * (root - segment_left)).real();
+        sum.add({std::abs(value), 0.0L});
+        segment_left = root;
+      }
+      const auto physical_span = segment_left == normalized_left
+                                   ? static_cast<long double>(right) - static_cast<long double>(left)
+                                   : width * (normalized_right - segment_left);
+      const auto value = detail::normalized_polynomial_integral(polynomial.coefficients()[interval], segment_left,
+                                                                normalized_right, physical_span).real();
+      sum.add({std::abs(value), 0.0L});
+    }
+    return static_cast<double>(sum.value().real());
+  } else {
+    PiecewiseWideFloat sum{};
+    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+      const auto left = std::max(lower, polynomial.knots()[interval]);
+      const auto right = std::min(upper, polynomial.knots()[interval + 1]);
+      if (!(left < right)) continue;
+      const auto interval_left = polynomial.knots()[interval];
+      const auto interval_right = polynomial.knots()[interval + 1];
+      const auto width = PiecewiseWideFloat{interval_right} - PiecewiseWideFloat{interval_left};
+      const auto normalized_left = detail::wide_normalized_interval_coordinate(left, interval_left, interval_right);
+      const auto normalized_right = detail::wide_normalized_interval_coordinate(right, interval_left, interval_right);
+      const auto roots = detail::wide_real_polynomial_roots(polynomial.coefficients()[interval], normalized_left,
+                                                            normalized_right);
+      auto segment_left = normalized_left;
+      for (const auto &root : roots) {
+        if (!(segment_left < root && root < normalized_right)) continue;
+        const auto value = detail::wide_normalized_polynomial_integral(
+          polynomial.coefficients()[interval], segment_left, root, width * (root - segment_left)).real();
+        sum += boost::multiprecision::abs(value);
+        segment_left = root;
+      }
+      const auto physical_span = segment_left == normalized_left
+                                   ? PiecewiseWideFloat{right} - PiecewiseWideFloat{left}
+                                   : width * (normalized_right - segment_left);
+      const auto value = detail::wide_normalized_polynomial_integral(
+        polynomial.coefficients()[interval], segment_left, normalized_right, physical_span).real();
+      sum += boost::multiprecision::abs(value);
+    }
+    return static_cast<double>(sum);
+  }
+}
+
+inline auto absolute_integral(const PiecewisePolynomial<double> &polynomial) {
+  return absolute_integral(polynomial, polynomial.lower_bound(), polynomial.upper_bound());
+}
 
 inline auto combine_piecewise_polynomials(const PiecewisePolynomial<double> &real_part,
                                           const PiecewisePolynomial<double> &imaginary_part) {
