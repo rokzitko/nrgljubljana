@@ -243,6 +243,16 @@ TEST(Hilb, singularity_subtraction_integrates_both_band_edges) { // NOLINT
   }
 }
 
+TEST(Hilb, real_analytic_term_is_stable_at_both_band_edges) { // NOLINT
+  constexpr double imaginary = 1e-6;
+  const auto expected = 0.5 * std::log1p(4.0 / (imaginary * imaginary));
+
+  for (const double y : {-imaginary, imaginary}) {
+    EXPECT_NEAR(NRG::Hilb::reQ(B, y, B), expected, 1e-12);
+    EXPECT_NEAR(NRG::Hilb::reQ(-B, y, B), -expected, 1e-12);
+  }
+}
+
 TEST(Hilb, subtraction_does_not_evaluate_density_outside_support) { // NOLINT
   auto rho = [](const double energy) {
     if (std::abs(energy) > B) throw std::runtime_error("outside support");
@@ -925,6 +935,22 @@ TEST(Hilb, existing_outputs_survive_parse_and_calculation_failures) { // NOLINT
   std::remove(input.c_str());
   std::remove(stream_output.c_str());
   std::remove(single_output.c_str());
+}
+
+TEST(Hilb, future_output_paths_are_compared_lexically) { // NOLINT
+  const std::string existing = "hilb_path_comparison_input.dat";
+  const std::string first = "hilb_future_output_a.dat";
+  const std::string second = "hilb_future_output_b.dat";
+  for (const auto &file : {existing, first, second}) std::remove(file.c_str());
+  write_file(existing, "input\n");
+
+  EXPECT_FALSE(NRG::Tools::files_refer_to_same_location(first, second));
+  EXPECT_FALSE(NRG::Tools::files_refer_to_same_location(existing, first));
+  EXPECT_FALSE(NRG::Tools::files_refer_to_same_location(first, existing));
+  EXPECT_TRUE(NRG::Tools::files_refer_to_same_location(first, "./" + first));
+  EXPECT_TRUE(NRG::Tools::files_refer_to_same_location(first, "HILB_FUTURE_OUTPUT_A.DAT"));
+
+  std::remove(existing.c_str());
 }
 
 TEST(Hilb, output_file_must_not_alias_stream_input) { // NOLINT

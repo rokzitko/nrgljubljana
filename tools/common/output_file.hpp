@@ -30,10 +30,11 @@ inline auto ascii_lowercase(std::string value) {
 }
 
 inline auto files_refer_to_same_location(const std::filesystem::path &first, const std::filesystem::path &second) {
-  std::error_code error;
-  if (std::filesystem::equivalent(first, second, error)) return true;
-  if (error && error != std::errc::no_such_file_or_directory)
-    throw std::filesystem::filesystem_error("Unable to compare file paths", first, second, error);
+  if (std::filesystem::exists(first) && std::filesystem::exists(second)) {
+    std::error_code error;
+    if (std::filesystem::equivalent(first, second, error)) return true;
+    if (error) throw std::filesystem::filesystem_error("Unable to compare file paths", first, second, error);
+  }
 
   const auto normalized_first = normalized_file_path(first);
   const auto normalized_second = normalized_file_path(second);

@@ -130,6 +130,17 @@ if perl "$mycomp" comparator.reference comparator.bad; then
   echo "mycomp accepted unequal nonnumeric fields" >&2
   exit 1
 fi
+printf '%s\n' 'nan +nan -NAN' >comparator.reference
+printf '%s\n' '-nan NAN +NaN' >comparator.close
+perl "$mycomp" comparator.reference comparator.close
+printf '%s\n' 'nan' >comparator.reference
+for replacement in 0 inf 'nan(payload)' garbage; do
+  printf '%s\n' "$replacement" >comparator.bad
+  if perl "$mycomp" comparator.reference comparator.bad; then
+    echo "mycomp accepted nan as equivalent to $replacement" >&2
+    exit 1
+  fi
+done
 printf '%s\n' '(1,2)' >comparator.reference
 printf '%s\n' '(1,2.1)' >comparator.bad
 if perl "$mycomp" comparator.reference comparator.bad; then

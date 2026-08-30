@@ -80,6 +80,12 @@ sub isnumeric($) {
     return 0;
 }
 
+sub canonical_nonnumeric($) {
+    my $string = shift;
+    return "nan" if $string =~ /^[+-]?nan$/i;
+    return $string;
+}
+
 # Expand the C++ stream representation of complex numbers into two numeric
 # fields so that (real,imaginary) output is compared numerically.
 sub numeric_fields($) {
@@ -147,7 +153,7 @@ while (1) {
                     if ($verbose >= 2) {
                         print "Not numeric: $n1 vs. $n2\n";
                     }
-                    if ($numeric1 != $numeric2 || $n1 ne $n2) {
+                    if ($numeric1 != $numeric2 || canonical_nonnumeric($n1) ne canonical_nonnumeric($n2)) {
                         $error++;
                     }
                 }

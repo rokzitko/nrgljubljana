@@ -451,7 +451,8 @@ inline auto reQ(const double x, const double y, const double B) {
   const auto denominator = negative * negative + imaginary * imaginary;
   const auto difference = 4.0L * bandwidth * real;
   const auto ratio = difference / denominator;
-  if (std::isfinite(ratio) && ratio > -1.0L) return static_cast<double>(0.5L * std::log1p(ratio));
+  // Rounding in a ratio near -1 is strongly amplified by log1p; use the log-space form below instead.
+  if (std::isfinite(ratio) && ratio >= -0.5L) return static_cast<double>(0.5L * std::log1p(ratio));
 
   auto logarithmic_hypot = [y](const double first, const double second) {
     const auto real_logarithm = logarithm_of_absolute_sum(first, second);
