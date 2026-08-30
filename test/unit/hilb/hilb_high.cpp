@@ -302,7 +302,7 @@ TEST(Hilb, direct_callable_transform_avoids_finite_complex_division_overflow) { 
   EXPECT_NEAR(mixed.real() / (1e-200 * factor), 1.0, 3e-14);
   EXPECT_NEAR(mixed.imag() / (-1e200 * factor), 1.0, 3e-14);
 
-  constexpr auto coupled_bandwidth = std::ldexp(1.0, -346);
+  constexpr double coupled_bandwidth = 0x1p-346;
   auto coupled_real = [](const double) { return std::ldexp(1.0, 991); };
   auto coupled_imaginary = [](const double) { return std::ldexp(1.0, 660); };
   NRG::Hilb::integrator coupled_integration(NRG::Hilb::integrator::configured, 64,
