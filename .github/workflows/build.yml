@@ -44,8 +44,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: ""}
-          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: ""}
+          # Ubuntu 22.04's OpenBLAS 0.3.20 can return incorrect DGEMM results with CooperLake dispatch.
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: HASWELL}
+          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: HASWELL}
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl, cmake_flags: "-DBLA_VENDOR=Intel10_64_dyn -DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU", openblas_threads: "1", mkl_threads: "2", mkl_threading_layer: GNU, omp_threads: "2"}
           - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: ARMV8}
           - {os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "2", mkl_threads: "1", omp_threads: ""}
