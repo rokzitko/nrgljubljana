@@ -17,7 +17,8 @@ add_subdirectory(specmoments)
 add_subdirectory(tdavg)
 add_subdirectory(unitary)
 
-foreach(tool IN LISTS NRG_TOOL_EXECUTABLES)
+set(NRG_VERSIONED_EXECUTABLES ${NRG_TOOL_EXECUTABLES} nrg)
+foreach(tool IN LISTS NRG_VERSIONED_EXECUTABLES)
   add_test(
     NAME tool_version_${tool}
     COMMAND ${CMAKE_COMMAND}

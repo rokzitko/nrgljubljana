@@ -24,6 +24,7 @@
 #include "nrg.hpp"         // specific to executable
 #include "openmp.hpp"      // report_openMP() called from main()
 #include "workdir.hpp"
+#include <common/version.hpp>
 
 #ifndef NRG_BUILD_CXX_COMPILER_ID
  #define NRG_BUILD_CXX_COMPILER_ID ""
@@ -220,6 +221,7 @@ auto set_workdir(int argc, char **argv) { // not inline!
 }
 
 int main(int argc, char **argv) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "nrg")) return EXIT_SUCCESS;
   configure_asan_mpi_environment();
   boost::mpi::environment mpienv(argc, argv);
   boost::mpi::communicator mpiw;
@@ -230,7 +232,7 @@ int main(int argc, char **argv) {
   constexpr int startup_continue = -1;
   int startup_status = startup_continue;
   if (mpiw.rank() == 0) {
-    if (help(argc, argv, "Usage: nrg [-h] [-w workdir]")) {
+    if (help(argc, argv, "Usage: nrg [-h] [-V|--version] [-w workdir]")) {
       startup_status = EXIT_SUCCESS;
     } else if (!file_exists("data")) {
       std::cout << "Input file 'data' does not exist. Terminating." << std::endl;

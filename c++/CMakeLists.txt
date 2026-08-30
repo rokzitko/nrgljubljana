@@ -71,6 +71,7 @@ target_link_options(nrgljubljana_c PRIVATE $<$<BOOL:${GPROF}>:-pg>)
 # Compile nrg executable
 add_executable(nrg nrg.cc)
 target_link_libraries(nrg PRIVATE nrgljubljana_c)
+target_include_directories(nrg PRIVATE $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/tools/generated>)
 target_link_options(nrg PRIVATE $<$<BOOL:${GPROF}>:-pg>)
 target_compile_options(nrg PRIVATE ${NRG_CXX_OPT} $<$<BOOL:${GPROF}>:-pg>)
 nrgljubljana_apply_strict_floating_point(nrg)
