@@ -20,6 +20,8 @@
 #include <stdexcept>
 #include <unistd.h> // getopt
 
+#include "../common/diagnostics.hpp"
+
 namespace NRG::BinAvg {
 
 inline std::string tostring(const int i) {
@@ -30,7 +32,8 @@ inline std::string tostring(const int i) {
 
 class BinAvg {
  private:   
-   bool verbose = false; // output verbosity level
+    bool verbose = false; // output verbosity level
+    bool veryverbose = false;
    bool one     = false; // For Nz=1, no subdir.
     int nrcol = 1; // Number of columns
     int col   = 1; // Which y column are we interested in?
@@ -49,8 +52,10 @@ class BinAvg {
      F << "Usage: binavg <name> <Nz>" << std::endl;
      F << std::endl;
      F << "Optional parameters:" << std::endl;
-     F << " -h -- show help" << std::endl;
-     F << " -v -- verbose" << std::endl;
+      F << " -h -- show help" << std::endl;
+      F << " -v -- print resolved configuration and enable verbose diagnostics" << std::endl;
+      F << " -vv -- enable very verbose diagnostics" << std::endl;
+      F << " -V, --version -- show version and exit" << std::endl;
      F << " -o -- one .dat file" << std::endl;
      F << " -2 -- use the 2nd column for weight values (complex spectra)" << std::endl;
      F << " -3 -- use the 3rd column for weight values (complex spectra)" << std::endl;
@@ -63,7 +68,10 @@ class BinAvg {
        case 'h':
          usage();
          std::exit(EXIT_SUCCESS);
-       case 'v': verbose = true; break;
+       case 'v':
+         if (verbose) veryverbose = true;
+         verbose = true;
+         break;
        case 'o': one = true; break;
        case '2':
          nrcol = 2;
@@ -85,8 +93,23 @@ class BinAvg {
      Nz = std::atoi(argv[optind + 1]); // Number of z-values
      if (!(Nz >= 1)) throw std::invalid_argument("Nz must be greater than or equal to 1.");
      std::cout << "Processing: " << name << std::endl;
-     std::cout << "Nz=" << Nz << std::endl;
-   }
+      std::cout << "Nz=" << Nz << std::endl;
+    }
+
+    void report_configuration() const {
+      NRG::Tools::ConfigurationReport report("binavg");
+      report.value("verbosity", veryverbose ? 2 : 1);
+      report.value("input_name", name);
+      report.value("Nz", Nz);
+      report.value("one_file_mode", one);
+      report.value("input_layout", one && Nz == 1 ? "direct" : "numbered_subdirectories");
+      report.value("input_columns", 1 + nrcol);
+      report.value("weight_column", col + 1);
+      report.value("averaging_mode", "equal_weight_1_over_Nz");
+      report.value("output_file", one ? "spec.bin" : name);
+      report.value("output_mode", "native_binary_pairs");
+      report.write(std::cerr);
+    }
    
    // Load a file containing binary representation of raw spectral density. The grid is not assumed to be uniform.
    void load(const int i) {
@@ -97,7 +120,7 @@ class BinAvg {
        std::cerr << "Error opening file " << filename << std::endl;
        std::exit(1);
      }
-     if (verbose) { std::cout << "Reading " << filename << std::endl; }
+      if (verbose) { std::cerr << "Reading " << filename << std::endl; }
      const int rows = 1 + nrcol; // number of elements in a line
      // Determine the number of records
      f.seekg(0, std::ios::beg);
@@ -107,7 +130,7 @@ class BinAvg {
      const long len       = end_pos - begin_pos;
      if (len % (rows * sizeof(double)) != 0) throw std::runtime_error("Input binary file has incomplete row data.");
      const int nr = len / (rows * sizeof(double)); // number of lines
-     if (verbose) { std::cout << "len=" << len << " nr=" << nr << " data points" << std::endl; }
+      if (verbose) { std::cerr << "len=" << len << " nr=" << nr << " data points" << std::endl; }
      // Allocate the read buffer. The data will be kept in memory for the duration of the calculation!
       auto buffer = std::vector<double>(rows * nr);
       f.seekg(0, std::ios::beg); // Return to the beginning of the file.
@@ -124,7 +147,7 @@ class BinAvg {
         // Check normalization.
         double sum = 0.0;
         for (int j = 0; j < nr; j++) sum += buffers[i][rows * j + col];
-        std::cout << "Weight=" << sum << std::endl;
+         std::cerr << "Weight=" << sum << std::endl;
       }
     }
 
@@ -152,7 +175,7 @@ class BinAvg {
        }
      }
      nr_spec = spec.size();
-     if (verbose) { std::cout << nr_spec << " unique frequencies." << std::endl; }
+      if (verbose) { std::cerr << nr_spec << " unique frequencies." << std::endl; }
      // Normalize weight by 1/Nz, determine total weight, and store the (frequency,weight) data in the form of linear
      // vectors for faster access in the ensuing calculations.
      double sum = 0.0;
@@ -163,13 +186,13 @@ class BinAvg {
        vspec.push_back(weight);
        sum += weight;
      }
-     if (verbose) { std::cout << "Total weight=" << sum << std::endl; }
+      if (verbose) { std::cerr << "Total weight=" << sum << std::endl; }
      assert(vfreq.size() == nr_spec && vspec.size() == nr_spec);
    }
 
    // Save a map of (double,double) pairs to a BINARY file.
    void save_binary(const std::string filename, const vec &x, const vec &y, const int SAVE_PREC = 18) {
-     if (verbose) { std::cout << "Saving " << filename << std::endl; }
+      if (verbose) { std::cerr << "Saving " << filename << std::endl; }
      std::ofstream F(filename.c_str(), std::ios::out | std::ios::binary);
      if (!F) {
        std::cerr << "Failed to open " << filename << " for writing." << std::endl;
@@ -187,9 +210,10 @@ class BinAvg {
    }
    
  public:
-   BinAvg(int argc, char *argv[]) {
-     cmd_line(argc, argv);
-   }
+    BinAvg(int argc, char *argv[]) {
+      cmd_line(argc, argv);
+      if (verbose) report_configuration();
+    }
    void calc() {
      read_files();
      merge();

@@ -1,3 +1,9 @@
 #!/bin/sh
-"$1/intavg" GT.dat 2
+set -eu
+"$1/intavg" -vv GT.dat 2 2>verbose.txt
+grep -q '^intavg: configuration$' verbose.txt
+grep -q '^  verbosity=2$' verbose.txt
+grep -q '^  interpolation=linear$' verbose.txt
+grep -q '^  mesh.points=auto ->' verbose.txt
+grep -q '^  output.precision=16$' verbose.txt
 "$2/test/compare.pl" "$3/ref"

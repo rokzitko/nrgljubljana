@@ -1,3 +1,10 @@
 #!/bin/sh
-"$1/tdavg" -c
+set -eu
+"$1/tdavg" -vv -c 2>verbose.txt
+grep -q '^tdavg: configuration$' verbose.txt
+grep -q '^  verbosity=2$' verbose.txt
+grep -q '^  input=auto -> td.dat ' verbose.txt
+grep -q '^  reference=auto -> td-ref.dat ' verbose.txt
+grep -q '^  output=auto -> td-avg.dat ' verbose.txt
+grep -q '^  input_blocks=auto ->' verbose.txt
 "$2/test/compare.pl" "$3/ref"

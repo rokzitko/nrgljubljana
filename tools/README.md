@@ -8,12 +8,19 @@ each tool directory.
 
 | Option | Tools | Meaning |
 | --- | --- | --- |
+| `-v` | all tools | Report the resolved configuration and verbose diagnostics on standard error. |
+| `-vv` | all tools | Also enable detailed diagnostics where available. |
+| `-V`, `--version` | all tools | Print the NRG Ljubljana project version and exit immediately. |
 | `-i METHOD`, `--interpolation METHOD` | `hilb`, `kk`, `integ`, `resample` | Select `linear`, `cspline`, `akima`, or `steffen` interpolation. |
 | `--epsabs VALUE` | `hilb`, `integ`, `adapt` integral | Set the absolute integration tolerance. |
 | `--epsrel VALUE` | `hilb`, `integ`, `adapt` integral | Set the relative integration tolerance. |
 | `--workspace-limit N` | `hilb`, `integ`, `adapt` integral | Set the GSL workspace capacity; QAG requires `N >= 1` and CQUAD requires `N >= 3`. |
 | `--quadrature-rule RULE` | `hilb`, `integ` | Select QAG rule `15`, `21`, `31`, `41`, `51`, or `61`. |
 | `--gsl-error-policy POLICY` | `hilb`, `integ`, `adapt` integral | Select `ignore`, `warn`, or `fail`. |
+
+Configuration reports use `auto -> VALUE` when a value is derived from input
+data, another setting, or an environment-dependent default. Verbosity does not
+change machine-readable standard output or numerical output files.
 
 `hilb` retains `-a` and `-r` as aliases for `--epsabs` and `--epsrel`.
 `integ` retains `-w` as an alias for `--gsl-error-policy ignore`; its `-a`

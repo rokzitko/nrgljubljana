@@ -1,5 +1,10 @@
 #!/bin/sh
-"$1/resample" -e input.dat grid.dat default.dat
+set -eu
+"$1/resample" -v -e input.dat grid.dat default.dat 2>verbose.txt
+grep -q '^resample: configuration$' verbose.txt
+grep -q '^  x_min=auto ->' verbose.txt
+grep -q '^  extrapolation_below=auto ->' verbose.txt
+grep -q '^  extrapolation_above=auto ->' verbose.txt
 "$1/resample" -e -a -1.25 -b 9.5 input.dat grid.dat custom.dat
 
 if "$1/resample" -a 0 input.dat grid.dat invalid.dat >/dev/null 2>&1; then

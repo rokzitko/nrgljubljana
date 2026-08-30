@@ -1,0 +1,25 @@
+#ifndef NRG_TOOLS_COMMON_VERSION_HPP
+#define NRG_TOOLS_COMMON_VERSION_HPP
+
+#include <iostream>
+#include <string_view>
+
+namespace NRG::Tools {
+
+inline constexpr std::string_view project_version = "@PROJECT_VERSION@";
+
+inline bool report_version_if_requested(const int argc, char *const argv[], const std::string_view program) {
+  for (int index = 1; index < argc; ++index) {
+    const std::string_view option{argv[index]};
+    if (option == "--") break;
+    if (option == "-V" || option == "--version") {
+      std::cout << program << ' ' << project_version << '\n';
+      return true;
+    }
+  }
+  return false;
+}
+
+} // namespace NRG::Tools
+
+#endif

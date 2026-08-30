@@ -1779,6 +1779,10 @@ yyreturn:
 }
 #line 180 "parser.yy" /* yacc.c:1906  */
 
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
+
 /* look up a symbol table entry, add if not present */
 struct symtab * symlook(char *s)
 {
@@ -1808,7 +1812,14 @@ void addfunc(const char *name, double (*func)(double))
 
 void usage()
 {
-  std::cout << "Usage: matrix [-h] [-vV] [-c channels] [-p | -P] <file1> <file2> ..." << std::endl;
+  std::cout << "Usage: matrix [options] <file1> <file2> ...\n"
+            << "  -h             show this help\n"
+            << "  -v             show resolved configuration and verbose diagnostics on standard error\n"
+            << "  -vv            also show detailed parser diagnostics\n"
+            << "  -V, --version  show project version\n"
+            << "  -c channels    use numbered coefficient files for this many channels\n"
+            << "  -s             use superconducting/Nambu coefficient files\n"
+            << "  -p | -P        omit or add '= ' to output lines" << std::endl;
 }
 
 void parse_param(int argc, char *argv[])
@@ -1821,6 +1832,7 @@ void parse_param(int argc, char *argv[])
       exit(EXIT_SUCCESS);
   
     case 'v':
+       if (verbose) veryverbose = true;
        verbose = true;
        break;
   
@@ -1833,10 +1845,6 @@ void parse_param(int argc, char *argv[])
       sc = true;
       break;
   
-      case 'V':
-        veryverbose = true;
-	break;
-      
       case 'p':
         prefix = "";
 	break;
@@ -1975,11 +1983,60 @@ int yywrap(void)
 }
 }
 
+void report_configuration()
+{
+  if (!verbose) return;
+  NRG::Tools::ConfigurationReport report("matrix");
+  report.value("verbosity", veryverbose ? 2 : 1);
+  report.value("mode", sc ? "superconducting" : "normal");
+  report.value("channels", nrchannels);
+  report.value("numbered_coefficient_files", numberedch);
+  report.value("output.prefix", prefix.empty() ? "none" : "equals");
+  report.value("output.precision", 18);
+  report.resolved("input.mode", remaining == 0 ? "stdin" : "files", "positional arguments");
+  report.value("input.count", remaining);
+  if (remaining == 0) {
+    report.resolved("input.0", "<stdin>", "no input files");
+  } else {
+    for (int i = 0; i < remaining; ++i) report.value("input." + to_string(i + 1), filelist[i]);
+  }
+
+  for (int ch = 1; ch <= nrchannels; ++ch) {
+    const auto base = "channel." + to_string(ch) + ".";
+    const auto suffix = (numberedch ? to_string(ch) : "") + ".dat";
+    report.value(base + "xi.file", "xi" + suffix);
+    report.value(base + "xi.count", xi[ch - 1].size());
+    if (!xi[ch - 1].empty()) report.resolved(base + "xi.max_index", xi[ch - 1].size() - 1, "loaded coefficient file");
+    report.value(base + "zeta.file", "zeta" + suffix);
+    report.value(base + "zeta.count", zeta[ch - 1].size());
+    if (!zeta[ch - 1].empty()) report.resolved(base + "zeta.max_index", zeta[ch - 1].size() - 1, "loaded coefficient file");
+    if (!sc) {
+      report.value(base + "theta.file", "theta" + suffix);
+      report.value(base + "theta", theta[ch - 1]);
+    } else {
+      report.value(base + "delta.file", "scdelta" + suffix);
+      report.value(base + "delta.count", delta[ch - 1].size());
+      report.value(base + "kappa.file", "sckappa" + suffix);
+      report.value(base + "kappa.count", kappa[ch - 1].size());
+      for (int i = 1; i <= 2; ++i)
+        for (int j = 1; j <= 2; ++j) {
+          const auto name = base + "V" + to_string(i) + to_string(j);
+          report.value(name + ".file", "V" + to_string(i) + to_string(j) + suffix);
+          report.value(name, V[ch - 1][i - 1][j - 1]);
+        }
+    }
+  }
+  report.write(cerr);
+}
+
 int main(int argc, char *argv[])
 {
+ if (NRG::Tools::report_version_if_requested(argc, argv, "matrix")) return EXIT_SUCCESS;
  cout << setprecision(18);
 
  parse_param(argc, argv);
+ remaining = argc-optind; // arguments left = filenames!
+ filelist = argv+optind; // copy the pointer
  
  theta.resize(nrchannels);
  zeta.resize(nrchannels);
@@ -1994,14 +2051,13 @@ int main(int argc, char *argv[])
    load_discretization_sc();
  }
 
+ report_configuration();
+
  addfunc((const char *)"Sqrt", sqrt);
  addfunc((const char *)"sqrt", sqrt);
  addfunc((const char *)"exp", exp);
  addfunc((const char *)"log", log);
 
- remaining = argc-optind; // arguments left = filenames!
- filelist = argv+optind; // copy the pointer
- 
  if (remaining != 0) {
    // Read from files!
    yywrap();

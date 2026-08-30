@@ -1,10 +1,17 @@
 #!/bin/sh
-set -e
+set -eu
 
 export PATH="$1:$PATH"
 
 test ! -d template
-instantiate > instantiate.out
+instantiate -v >instantiate.out 2>verbose.txt
+
+grep -q '^instantiate: configuration$' verbose.txt
+grep -q '^  mode=auto -> full ' verbose.txt
+grep -q '^  template.data=auto ->' verbose.txt
+grep -q '^  template.scale_factor=auto ->' verbose.txt
+grep -q '^  nrgchain.mMAX=' verbose.txt
+grep -q '^  nrgchain.tridiagonalize=' verbose.txt
 
 test -s data
 

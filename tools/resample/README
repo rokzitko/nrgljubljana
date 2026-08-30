@@ -17,7 +17,9 @@ is replaced by the interpolated value in the output.
 | Option | Meaning |
 | --- | --- |
 | `-h`, `--help` | Print help. |
-| `-v` | Print verbose diagnostics. |
+| `-v` | Print the resolved configuration and verbose diagnostics to standard error. |
+| `-vv` | Increase verbosity further. |
+| `-V`, `--version` | Print the project version and exit immediately. |
 | `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, `akima`, or `steffen`. Default: `akima`. |
 | `-p N` | Write `N` significant digits. Default: `16`. |
 | `-e` | Enable constant extrapolation outside the input domain. |

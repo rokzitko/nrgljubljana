@@ -1,10 +1,8 @@
 // specmoments - Compute spectral moments from raw spectal data
-// Ljubljana code, Rok Zitko, rok.zitko@ijs.si, Aug 2015
+// Ljubljana code, Rok Zitko, rok.zitko@ijs.si
 
 // CHANGE LOG
 // 25.8.2015 - first version
-
-#define VERSION "1.0"
 
 #include <cstddef>
 #include <iostream>
@@ -27,9 +25,13 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
+
 using namespace std;
 
-bool verbose      = false;   // output verbosity
+int verbosity     = 0;
 bool one          = false;   // For Nz=1, no subdirs.
 double filterlow  = 0.0;     // filter all input data points with |omega|<filterlow
 double filterhigh = DBL_MAX; // filter all input data points with |omega|>filterhigh
@@ -47,16 +49,17 @@ int Nz;
 const int COUT_PREC = 16;
 
 void about(ostream &F = cout) {
-  F << "specmoments - Spectral moment calculation tool - " << VERSION << endl;
-  F << "Rok Zitko, rok.zitko@ijs.si, 2015" << endl;
+  F << "specmoments - spectral moment calculation tool" << endl;
 }
 
 void usage(ostream &F = cout) {
   F << "Usage: specmoments <name> <Nz>\n";
   F << endl;
   F << "Optional parameters:" << endl;
-  F << " -h -- show help (when used as sole cmd line switch)" << endl;
-  F << " -v -- verbose" << endl;
+  F << " -h, --help -- show help (when used as sole cmd line switch)" << endl;
+  F << " -v -- show resolved configuration and verbose diagnostics on stderr" << endl;
+  F << " -vv -- increase verbosity further" << endl;
+  F << " -V, --version -- show project version and exit" << endl;
   F << " -o -- one .dat file" << endl;
   F << " -l -- filter out low-frequency raw data" << endl;
   F << " -h -- filter out high-frequency raw data" << endl;
@@ -68,7 +71,7 @@ void usage(ostream &F = cout) {
 }
 
 void cmd_line(int argc, char *argv[]) {
-  if (argc == 2 && string(argv[1]) == "-h") {
+  if (argc == 2 && (string(argv[1]) == "-h" || string(argv[1]) == "--help")) {
     usage();
     exit(EXIT_SUCCESS);
   }
@@ -76,25 +79,20 @@ void cmd_line(int argc, char *argv[]) {
   while ((c = getopt(argc, argv, "vol:h:pnc")) != -1) {
     switch (c) {
       case 'v':
-        verbose = true;
-        about(); // only if verbose is on
+        ++verbosity;
         break;
       case 'o': one = true; break;
       case 'l':
         filterlow = atof(optarg);
-        if (verbose) { cout << "filterlow=" << filterlow << endl; }
         break;
       case 'h':
         filterhigh = atof(optarg);
-        if (verbose) { cout << "filterhigh=" << filterhigh << endl; }
         break;
       case 'p':
         posonly = true;
-        if (verbose) { cout << "positive part" << endl; }
         break;
       case 'n':
         negonly = true;
-        if (verbose) { cout << "negative part" << endl; }
         break;
       case 'c': central = true; break;
       default: abort();
@@ -102,14 +100,35 @@ void cmd_line(int argc, char *argv[]) {
   }
   int remaining = argc - optind;
   if (remaining != 2) {
-    if (!verbose) about();
+    about(verbosity > 0 ? cerr : cout);
     usage();
     exit(1);
   }
   name = string(argv[optind]);
   Nz   = atoi(argv[optind + 1]);
   assert(Nz >= 1);
-  if (verbose) cout << "Processing: " << name << " Nz=" << Nz << endl;
+  if (verbosity > 0) {
+    about(cerr);
+    NRG::Tools::ConfigurationReport report("specmoments");
+    report.value("verbosity", verbosity);
+    report.value("input", name);
+    report.value("input_layout", one && Nz == 1 ? "single-file" : "numbered-directories");
+    report.value("input_format", "native-binary");
+    report.value("Nz", Nz);
+    report.value("input_columns", 1 + nrcol);
+    report.value("weight_column", col + 1);
+    report.value("filter_low", filterlow);
+    report.value("filter_high", filterhigh);
+    report.value("positive_only", posonly);
+    report.value("negative_only", negonly);
+    report.value("moment_mode", central ? "central" : "raw");
+    report.value("averaging", "equal-weight-1/Nz");
+    report.value("output", "stdout");
+    report.value("output_values", 5);
+    report.value("output_precision", COUT_PREC);
+    report.write(cerr);
+    cerr << "Processing: " << name << " Nz=" << Nz << endl;
+  }
 }
 
 vector<vector<double>> buffers; // binary data buffers
@@ -144,7 +163,7 @@ void load(int i) {
     cerr << "Error opening file " << filename << endl;
     exit(1);
   }
-  if (verbose) cout << "Reading " << filename << endl;
+  if (verbosity > 0) cerr << "Reading " << filename << endl;
   const int rows = 1 + nrcol; // number of elements in a line
   // Determine the number of records
   f.seekg(0, ios::beg);
@@ -172,7 +191,7 @@ void load(int i) {
     exit(1);
   }
   const auto nr = static_cast<int>(element_count / row_count); // number of lines
-  if (verbose) cout << "len=" << len << " nr=" << nr << " data points" << endl;
+  if (verbosity > 0) cerr << "len=" << len << " nr=" << nr << " data points" << endl;
   // Allocate the read buffer. The data will be kept in memory for the
   // duration of the calculation!
   auto buffer = std::vector<double>(element_count);
@@ -186,11 +205,11 @@ void load(int i) {
   // Keep record of the the buffer and its size.
   buffers[i] = std::move(buffer);
   sizes[i]   = nr;
-  if (verbose) {
+  if (verbosity > 0) {
     // Check normalization.
     double sum = 0.0;
     for (int j = 0; j < nr; j++) sum += buffers[i][rows * j + col];
-    cout << "Weight=" << sum << endl;
+    cerr << "Weight=" << sum << endl;
   }
 }
 
@@ -219,7 +238,7 @@ void merge() {
     }
   }
   nr_spec = spec.size();
-  if (verbose) { cout << nr_spec << " unique frequencies." << endl; }
+  if (verbosity > 0) { cerr << nr_spec << " unique frequencies." << endl; }
   // Normalize weight by 1/Nz, determine total weight, and store the
   // (frequency,weight) data in the form of linear vectors for faster
   // access in the ensuing calculations.
@@ -231,7 +250,7 @@ void merge() {
     vspec.push_back(weight);
     sum += weight;
   }
-  if (verbose) { cout << "Total weight=" << sum << endl; }
+  if (verbosity > 0) { cerr << "Total weight=" << sum << endl; }
   assert(vfreq.size() == nr_spec && vspec.size() == nr_spec);
 }
 
@@ -255,17 +274,16 @@ void moments() {
     mom4 += vspec[j] * pow(vfreq[j], 4);
   }
   // Important: no normalization!
-  if (verbose) {
-    cout << endl;
-    cout << "0. raw moment = " << mom0 << endl;
-    cout << "1. raw moment = " << mom1 << endl;
-    cout << "2. raw moment = " << mom2 << endl;
-    cout << "3. raw moment = " << mom3 << endl;
-    cout << "4. raw moment = " << mom4 << endl;
-  } else {
-    cout << mom0 << " " << mom1 << " " << mom2 << " " << mom3 << " " << mom4;
-    cout << endl;
+  if (verbosity > 0) {
+    cerr << endl;
+    cerr << "0. raw moment = " << mom0 << endl;
+    cerr << "1. raw moment = " << mom1 << endl;
+    cerr << "2. raw moment = " << mom2 << endl;
+    cerr << "3. raw moment = " << mom3 << endl;
+    cerr << "4. raw moment = " << mom4 << endl;
   }
+  cout << mom0 << " " << mom1 << " " << mom2 << " " << mom3 << " " << mom4;
+  cout << endl;
 }
 
 // Moments about the mean
@@ -278,13 +296,13 @@ void central_moments() {
     mom3 += vspec[j] * pow(vfreq[j], 3);
     mom4 += vspec[j] * pow(vfreq[j], 4);
   }
-  if (verbose) {
-    cout << endl;
-    cout << "0. raw moment = " << mom0 << endl;
-    cout << "1. raw moment = " << mom1 << endl;
-    cout << "2. raw moment = " << mom2 << endl;
-    cout << "3. raw moment = " << mom3 << endl;
-    cout << "4. raw moment = " << mom4 << endl;
+  if (verbosity > 0) {
+    cerr << endl;
+    cerr << "0. raw moment = " << mom0 << endl;
+    cerr << "1. raw moment = " << mom1 << endl;
+    cerr << "2. raw moment = " << mom2 << endl;
+    cerr << "3. raw moment = " << mom3 << endl;
+    cerr << "4. raw moment = " << mom4 << endl;
   }
   const double weight = mom0;
   if (weight == 0.0) {
@@ -305,28 +323,29 @@ void central_moments() {
   const double sigma    = sqrt(cmom2); // std. deviation
   const double skewness = sigma == 0.0 ? 0.0 : cmom3 / pow(sigma, 3);
   const double kurtosis = sigma == 0.0 ? 0.0 : cmom4 / pow(sigma, 4) - 3.0;
-  if (verbose) {
-    cout << endl;
-    cout << "0. moment (weight) = " << mom0 << endl;
-    cout << "1. moment          = " << mom1 << endl;
-    cout << endl;
-    cout << "2. central moment  = " << cmom2 << endl;
-    cout << "3. central moment  = " << cmom3 << endl;
-    cout << "4. central moment  = " << cmom4 << endl;
-    cout << endl;
-    cout << "mean               = " << mean << endl;
-    cout << "sigma (std dev)    = " << sigma << endl;
-    cout << "skewness           = " << skewness << endl;
-    cout << "kurtosis           = " << kurtosis << endl;
-  } else {
-    cout << mom0 << " " << mom1 << " " << cmom2 << " " << cmom3 << " " << cmom4;
-    cout << endl;
+  if (verbosity > 0) {
+    cerr << endl;
+    cerr << "0. moment (weight) = " << mom0 << endl;
+    cerr << "1. moment          = " << mom1 << endl;
+    cerr << endl;
+    cerr << "2. central moment  = " << cmom2 << endl;
+    cerr << "3. central moment  = " << cmom3 << endl;
+    cerr << "4. central moment  = " << cmom4 << endl;
+    cerr << endl;
+    cerr << "mean               = " << mean << endl;
+    cerr << "sigma (std dev)    = " << sigma << endl;
+    cerr << "skewness           = " << skewness << endl;
+    cerr << "kurtosis           = " << kurtosis << endl;
   }
+  cout << mom0 << " " << mom1 << " " << cmom2 << " " << cmom3 << " " << cmom4;
+  cout << endl;
 }
 
 int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "specmoments")) return EXIT_SUCCESS;
   cmd_line(argc, argv);
   cout << setprecision(COUT_PREC);
+  cerr << setprecision(COUT_PREC);
   read_files();
   merge();
   filter();

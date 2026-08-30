@@ -16,3 +16,14 @@ add_subdirectory(resample)
 add_subdirectory(specmoments)
 add_subdirectory(tdavg)
 add_subdirectory(unitary)
+
+foreach(tool IN LISTS NRG_TOOL_EXECUTABLES)
+  add_test(
+    NAME tool_version_${tool}
+    COMMAND ${CMAKE_COMMAND}
+      -DTOOL=$<TARGET_FILE:${tool}>
+      -DTOOL_NAME=${tool}
+      -DEXPECTED_VERSION=${PROJECT_VERSION}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/check-version.cmake
+  )
+endforeach()

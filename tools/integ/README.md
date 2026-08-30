@@ -66,8 +66,9 @@ with 16 significant digits.
 | Option | Meaning |
 | --- | --- |
 | `-h`, `--help` | Print help. |
-| `-v` | Print verbose diagnostics. |
-| `-V` | Print additional integration diagnostics. |
+| `-v` | Print resolved configuration and verbose diagnostics to standard error. |
+| `-vv` | Also print detailed integration diagnostics to standard error. |
+| `-V`, `--version` | Print the project version. |
 | `-t T`, `-T T` | Set the Fermi-Dirac temperature. Default: `1e-99`. |
 | `-p` | Print the integral over positive `x`. |
 | `-n` | Print the integral over negative `x`. |

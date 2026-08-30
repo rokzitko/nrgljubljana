@@ -2,8 +2,7 @@
 //
 // ** Parsing of the parameter file
 //
-// Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Dec 2008
-// $Id: parser.h,v 1.1 2009/03/20 09:53:41 rok Exp $
+// Rok Zitko, zitko@theorie.physik.uni-goettingen.de
 
 #include <fstream>
 #include <map>

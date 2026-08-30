@@ -1,7 +1,7 @@
 // Numerical integration tool: compute accurate spectral weights and moments
 // of tabulated functions using smooth interpolation functions (GSL).
 // Part of "NRG Ljubljana"
-// Rok Zitko, rok.zitko@ijs.si, May 2014
+// Rok Zitko, rok.zitko@ijs.si
 
 // The input file must consist of a table of space-separated (energy,
 // value) pairs. Gauss-Kronrod quadrature rules are used.
@@ -34,6 +34,9 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
 #include "../common/gsl_config.hpp"
 
 using namespace std;
@@ -49,9 +52,7 @@ using DVEC = vector<double>;
 // number of digits of precision in the output
 #define OUTPUT_PRECISION 16
 
-// Dump additional information to stdout?
-bool verbose      = false; // enable with -v
-bool veryverbose  = false; // enable with -V
+int verbosity = 0;
 
 double T = 1e-99; // Temperature. Default is (essentially) 0.
 string inputfn;   // Filename for input data
@@ -60,19 +61,16 @@ double sum;                              // integral over input function on [Xmi
 double total, totalabs, pos, neg, fermi; // Results
 string out = "total";                    // What to output to STDOUT
 
-void about() {
-  cout << "Integration tool - GSL" << endl;
-#ifdef __TIMESTAMP__
-  cout << "Timestamp: " << __TIMESTAMP__ << endl;
-#endif
-  cout << "Compiled on " << __DATE__ << " at " << __TIME__ << endl;
+void about(ostream &output = cout) {
+  output << "Integration tool - GSL" << endl;
 }
 
 void usage() {
   cout << "\nUsage: integ [options] <input> [-p|n|a|f]" << endl;
   cout << "-h, --help: show help" << endl;
-  cout << "-v: toggle verbose messages (now=" << verbose << ")" << endl;
-  cout << "-V: toggle very verbose messages (now=" << veryverbose << ")" << endl;
+  cout << "-v: show resolved configuration and verbose diagnostics on standard error" << endl;
+  cout << "-vv: also show detailed integration diagnostics" << endl;
+  cout << "-V, --version: show project version" << endl;
   cout << "-w: ignore QAG errors (alias for --gsl-error-policy ignore)" << endl;
   cout << "-T: temperature T" << endl;
   cout << "-p: integral over positive X range" << endl;
@@ -114,22 +112,20 @@ void cmd_line(int argc, char *argv[]) {
   };
 
   int c;
-  while ((c = getopt_long(argc, argv, "hi:vVwt:T:pnaf", long_options, nullptr)) != -1) {
+  while ((c = getopt_long(argc, argv, "hi:vwt:T:pnaf", long_options, nullptr)) != -1) {
     switch (c) {
       case 'h':
         usage();
         exit(EXIT_SUCCESS);
       
-      case 'v': verbose = true; break;
-
-      case 'V': veryverbose = true; break;
+      case 'v': ++verbosity; break;
 
       case 'w': gsl_error_policy = GslErrorPolicy::ignore; break;
 
       case 't': // case insensitive!
       case 'T':
         T = atof(optarg);
-        if (verbose) { cout << "T=" << T << endl; }
+        if (verbosity >= 1) { cerr << "T=" << T << endl; }
         break;
 
       case 'p': out = "pos"; break;
@@ -187,7 +183,7 @@ void readtable(istream &F, XYFUNC &v) {
     }
   }
 
-  if (verbose) cout << v.size() << " lines read." << endl;
+  if (verbosity >= 1) cerr << v.size() << " lines read." << endl;
 }
 
 int len;           // number of data points
@@ -199,6 +195,26 @@ gsl_interp_accel *acc;
 gsl_spline *spline;
 
 gsl_integration_workspace *w;
+
+void report_configuration() {
+  if (verbosity == 0) return;
+  NRG::Tools::ConfigurationReport report("integ");
+  report.value("verbosity", verbosity);
+  report.value("input.file", inputfn);
+  report.value("input.points", len);
+  report.resolved("input.lower_bound", Xmin, "sorted input data");
+  report.resolved("input.upper_bound", Xmax, "sorted input data");
+  report.value("output.mode", out);
+  report.value("output.precision", OUTPUT_PRECISION);
+  report.value("temperature", T);
+  report.value("interpolation", NRG::Tools::interpolation_method_name(interpolation_method));
+  report.value("integration.epsabs", epsabs);
+  report.value("integration.epsrel", epsrel);
+  report.value("integration.workspace_limit", limit);
+  report.value("integration.quadrature_rule", static_cast<int>(quadrature_rule));
+  report.value("integration.gsl_error_policy", NRG::Tools::gsl_error_policy_name(gsl_error_policy));
+  report.write(cerr);
+}
 
 void init(XYFUNC &im) {
   if (im.empty()) {
@@ -220,7 +236,7 @@ void init(XYFUNC &im) {
   Xmin = im[0].first;
   Xmax = im[len - 1].first;
 
-  if (verbose) cout << "Range: [" << Xmin << " ; " << Xmax << "]" << endl;
+  if (verbosity >= 1) cerr << "Range: [" << Xmin << " ; " << Xmax << "]" << endl;
 
   // Xpts are increasing
   Xpts = DVEC(len);
@@ -230,6 +246,8 @@ void init(XYFUNC &im) {
     Xpts[i] = im[i].first;
     Ypts[i] = im[i].second;
   }
+
+  report_configuration();
 
   gsl_set_error_handler_off();
   acc = gsl_interp_accel_alloc();
@@ -255,7 +273,7 @@ void init(XYFUNC &im) {
     exit(1);
   }
 
-  if (verbose) cout << "Sum=" << sum << endl;
+  if (verbosity >= 1) cerr << "Sum=" << sum << endl;
 
   w = gsl_integration_workspace_alloc(limit);
   if (!w) {
@@ -317,11 +335,11 @@ double calc(double (*fnc)(double, void *)) {
 
   handle_qag(status, integral, integration_error);
 
-  if (veryverbose) {
-    cout << scientific;
-    cout << "Result=" << integral << endl;
-    cout << "Int. error=" << integration_error << endl;
-    cout.unsetf(ios_base::scientific);
+  if (verbosity >= 2) {
+    cerr << scientific;
+    cerr << "Result=" << integral << endl;
+    cerr << "Int. error=" << integration_error << endl;
+    cerr.unsetf(ios_base::scientific);
   }
 
   return integral;
@@ -333,12 +351,13 @@ void done() {
   gsl_integration_workspace_free(w);
 }
 
-int main(int argv, char *argc[]) {
+int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "integ")) return EXIT_SUCCESS;
   try {
-    cmd_line(argv, argc);
-    if (verbose) about();
+    cmd_line(argc, argv);
+    if (verbosity >= 1) about(cerr);
 
-    if (verbose) cout << "T=" << T << endl;
+    if (verbosity >= 1) cerr << "T=" << T << endl;
 
     ifstream Fin;
 
@@ -358,12 +377,12 @@ int main(int argv, char *argc[]) {
     fermi    = calc(f_fermi);
     done();
 
-    if (verbose) {
-      cout << "Total=" << total << endl;
-      cout << "Positive=" << pos << endl;
-      cout << "Negative=" << neg << endl;
-      cout << "Total|f|=" << totalabs << endl;
-      cout << "Fermi-Dirac weighted=" << fermi << endl;
+    if (verbosity >= 1) {
+      cerr << "Total=" << total << endl;
+      cerr << "Positive=" << pos << endl;
+      cerr << "Negative=" << neg << endl;
+      cerr << "Total|f|=" << totalabs << endl;
+      cerr << "Fermi-Dirac weighted=" << fermi << endl;
     }
 
     cout << setprecision(OUTPUT_PRECISION);
@@ -372,6 +391,7 @@ int main(int argv, char *argc[]) {
     if (out == "neg") cout << neg << endl;
     if (out == "abs") cout << totalabs << endl;
     if (out == "fermi") cout << fermi << endl;
+    return EXIT_SUCCESS;
   } catch (const exception &error) {
     cerr << "Error: " << error.what() << endl;
     return EXIT_FAILURE;

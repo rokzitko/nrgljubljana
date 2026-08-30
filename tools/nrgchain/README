@@ -1,15 +1,16 @@
 nrgchain - tridiagonalisation code for determining the tight-bidning
 coefficients of the Wilson chain for NRG calculations
 
-Copyright (C) 2008, 2009 Rok Zitko
-
-
 nrgchain determines the coefficients xi (hopping constants) and zeta
 (on-site energies) for a Wilson chain. It takes the output from adapt
 as its input.
 
 
-Usage: nrgchain [-h|--help] [s|l] [parameter_file]
+Usage: nrgchain [options] [s|l] [parameter_file]
+
+Option "-v" writes the resolved configuration and verbose diagnostics to
+standard error; "-vv" increases verbosity further. "-V" and "--version" print
+the project version and exit immediately. "-h" and "--help" print help.
 
 The parameter file defaults to "param". Mode "s" calculates and saves the
 intermediate tables without tridiagonalising; mode "l" loads those tables and

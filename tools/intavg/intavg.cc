@@ -1,11 +1,9 @@
 // intavg - Averaging with interpolation
-// Part of "NRG Ljubljana", Rok Zitko, rok.zitko@ijs.si, Aug 2009
+// Part of "NRG Ljubljana", Rok Zitko, rok.zitko@ijs.si
 
 // CHANGE LOG
 // 25.8.2009 - first version
 // 12.1.2010 - missing header added
-
-#define VERSION "0.1"
 
 #include <iostream>
 #include <fstream>
@@ -27,10 +25,13 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
+
 using namespace std;
 
-bool verbose     = false; // output verbosity level
-bool veryverbose = false; // horribly detailed output
+int verbosity = 0;
 string name;              // filename of binary files containing the raw data
 int Nz;                   // Number of spectra (1..Nz)
 
@@ -41,19 +42,27 @@ using dvec = vector<double>;
 vector<Vec> input; // input data
 dvec mesh;         // output mesh
 
-void usage(ostream &F = cout) { F << "Usage: intavg [-h] [-vV] <name> <Nz>\n"; }
+void usage(ostream &F = cout) {
+  F << "Usage: intavg [options] <name> <Nz>\n"
+    << "  -h, --help     show this help\n"
+    << "  -v             show resolved configuration on standard error\n"
+    << "  -vv            increase verbosity further\n"
+    << "  -V, --version  show project version\n";
+}
 
 void cmd_line(int argc, char *argv[]) {
+  static const option long_options[] = {
+    {"help", no_argument, nullptr, 'h'},
+    {nullptr, 0, nullptr, 0},
+  };
   int c;
-  while ((c = getopt(argc, argv, "hvV")) != -1) {
+  while ((c = getopt_long(argc, argv, "hv", long_options, nullptr)) != -1) {
     switch (c) {
       case 'h':
         usage();
         exit(EXIT_SUCCESS);
 
-      case 'v': verbose = true; break;
-
-      case 'V': veryverbose = true; break;
+      case 'v': ++verbosity; break;
 
       default: abort();
     }
@@ -86,7 +95,7 @@ Vec load(int i) {
     cerr << "Error opening file " << filename << endl;
     exit(1);
   }
-  if (verbose) { cout << "Reading " << filename << endl; }
+  if (verbosity >= 1) { cerr << "Reading " << filename << endl; }
 
   Vec data;
 
@@ -230,6 +239,25 @@ dvec merge_meshes() {
 
 vector<LinInt> f; // interpolation objects
 
+void report_configuration() {
+  if (verbosity == 0) return;
+  NRG::Tools::ConfigurationReport report("intavg");
+  report.value("verbosity", verbosity);
+  report.value("mode", "interpolated-average");
+  report.value("input.name", name);
+  report.value("input.spectra", Nz);
+  report.resolved("input.pattern", "1.." + tostring(Nz) + "/" + name, "spectrum count and name");
+  report.value("interpolation", "linear");
+  report.value("extrapolation", "constant-endpoint");
+  report.value("mesh.relative_merge_tolerance", EPS);
+  report.value("output.precision", 16);
+  report.resolved("mesh.points", mesh.size(), "merged input meshes");
+  report.resolved("mesh.lower_bound", mesh.front(), "merged input meshes");
+  report.resolved("mesh.upper_bound", mesh.back(), "merged input meshes");
+  report.value("output.file", name);
+  report.write(cerr);
+}
+
 void interpolate() {
   for (int i = 0; i < Nz; i++) { f.emplace_back(input[i]); }
 }
@@ -262,14 +290,16 @@ void save(const Vec &result, string filename) {
 }
 
 int main(int argc, char *argv[]) {
-  cout << "intavg - Averaging tool - " << VERSION << endl;
-  cout << "Rok Zitko, rok.zitko@ijs.si, 2009" << endl;
+  if (NRG::Tools::report_version_if_requested(argc, argv, "intavg")) return EXIT_SUCCESS;
+  cout << "intavg - Averaging tool" << endl;
   cout << setprecision(16);
 
   cmd_line(argc, argv);
   read_files();
   mesh = merge_meshes();
+  report_configuration();
   interpolate();
   Vec result = avg();
   save(result, name);
+  return EXIT_SUCCESS;
 }

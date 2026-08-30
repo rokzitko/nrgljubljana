@@ -1,5 +1,4 @@
 // broaden - Finite-temperature raw spectral data broadening tool
-// Ljubljana code Rok Zitko, rok.zitko@ijs.si, 2012-2025
 
 #ifndef _broaden_broaden_hpp_
 #define _broaden_broaden_hpp_
@@ -33,6 +32,8 @@
 #include "broadening.hpp"
 #include "misc.hpp"
 #include "basicio.hpp"
+
+#include "../common/diagnostics.hpp"
 
 namespace NRG::Broaden {
 
@@ -91,7 +92,7 @@ void convolve(const std::vector<S> &mesh, std::vector<T> &a, const double sigma,
 template<typename S, typename T>
 void save(const std::string &filename, const std::vector<S> &x, const std::vector<T> &y, 
           bool verbose, const int SAVE_PREC = 18) {
-  if (verbose) { std::cout << "Saving " << filename << std::endl; }
+  if (verbose) { std::cerr << "Saving " << filename << std::endl; }
   std::ofstream F(filename.c_str());
   if (!F) throw std::runtime_error("Failed to open " + filename + " for writing.");
   F << std::setprecision(SAVE_PREC);
@@ -137,10 +138,11 @@ auto make_mesh(const double min, const double max, const double ratio,
 }
 
 auto load_mesh(const std::string &filename, bool verbose = false) {
-  auto l = readtable<double,double>(filename, verbose);
+  auto l = readtable<double,double>(filename, false);
   std::vector<double> mesh;
   for (const auto &first : l | ranges::views::transform([](const auto& pair) { return pair.first; }))
     mesh.push_back(first);
+  if (verbose) std::cerr << "Reading " << filename << "; " << mesh.size() << " lines read." << std::endl;
   return mesh;
 }
 
@@ -169,11 +171,11 @@ auto load(const std::string &filename, const int nrcol, const bool verbose) {
   std::ifstream f(filename.c_str(), std::ios::in | std::ios::binary);
   if (!f.good() || f.eof() || !f.is_open()) 
     throw std::runtime_error("Error opening file " + filename + " for reading.");
-  if (verbose) { std::cout << "Reading " << filename << std::endl; }
+  if (verbose) { std::cerr << "Reading " << filename << std::endl; }
   const auto len = file_size(f); // in bytes
   const auto cols = 1 + nrcol;
   const auto rows = nr_rows(f, cols);
-  if (verbose) { std::cout << "len=" << len << ", " << rows << " data points" << std::endl; }
+  if (verbose) { std::cerr << "len=" << len << ", " << rows << " data points" << std::endl; }
   auto buffer = std::vector<double>(cols*rows);
   f.seekg(0, std::ios::beg); // Return to the beginning of the file.
   f.read((char *)buffer.data(), len);
@@ -184,17 +186,19 @@ auto load(const std::string &filename, const int nrcol, const bool verbose) {
 
 class Broaden {
  private:
-   bool verbose         = false; // output verbosity level
+    bool verbose         = false; // output verbosity level
+    bool veryverbose     = false;
    bool sumrules        = false; // compute the integrals for testing the T!=0 sum rules
    bool cumulative      = false; // output of integrated spectral function
    double broaden_min   = 1e-7;  // parameters defining the frequency mesh
    double broaden_max   = 2.0;
    double broaden_ratio = 1.01;
    double alpha;          // broadening parameter alpha
-   double ggamma, dgamma; // broadening parameter gamma (final Gaussian, derFD)
+    double ggamma = 0.0, dgamma = 0.0; // broadening parameter gamma (final Gaussian, derFD)
    double T;              // temperature parameter
-   double omega0_ratio;   // omega0=omega0_ratio*T
-   double omega0;
+    double omega0_ratio;   // omega0=omega0_ratio*T
+    double omega0;
+    bool omega0_ratio_defaulted = false;
    double accumulation = 0.0;     // accumpulation point for the mesh
    bool one            = false;   // For Nz=1, no subdir.
    bool normalization  = false;   // What cross-over function to use?
@@ -229,7 +233,9 @@ class Broaden {
      F << std::endl;
      F << "Optional parameters:" << std::endl;
      F << " -h -- show help (when used as sole cmd line switch)" << std::endl;
-     F << " -v -- verbose" << std::endl;
+      F << " -v -- print resolved configuration and enable verbose diagnostics" << std::endl;
+      F << " -vv -- enable very verbose diagnostics" << std::endl;
+      F << " -V, --version -- show version and exit" << std::endl;
      F << " -m <min> -- minimal mesh frequency" << std::endl;
      F << " -M <max> -- maximal mesh frequency" << std::endl;
      F << " -r <ratio> -- ratio between two consecutive frequency points" << std::endl;
@@ -262,19 +268,19 @@ class Broaden {
        switch (c_) {
        case 'c': cumulative = true; break;
        case 's': sumrules = true; break;
-       case 'v': verbose = true; break;
-       case 'm':
-         broaden_min = atof(optarg);
-         if (verbose) { std::cout << "broaden_min=" << broaden_min << std::endl; }
+       case 'v':
+         if (verbose) veryverbose = true;
+         verbose = true;
          break;
-       case 'M':
-         broaden_max = atof(optarg);
-         if (verbose) { std::cout << "broaden_max=" << broaden_max << std::endl; }
-         break;
-       case 'r':
-         broaden_ratio = atof(optarg);
-         if (verbose) { std::cout << "broaden_ratio=" << broaden_ratio << std::endl; }
-         break;
+        case 'm':
+          broaden_min = atof(optarg);
+          break;
+        case 'M':
+          broaden_max = atof(optarg);
+          break;
+        case 'r':
+          broaden_ratio = atof(optarg);
+          break;
        case 'o': one = true; break;
        case '2':
          nrcol = 2;
@@ -286,28 +292,23 @@ class Broaden {
          break;
        case 'n': normalization = true; break;
        case 'g': gaussian = true; break;
-       case 'f':
-         finalgaussian = true;
-         ggamma        = atof(optarg);
-         if (verbose) { std::cout << "final Gaussian with gamma=" << ggamma << std::endl; }
-         break;
-       case 'x':
-         finalderfd = true;
-         dgamma     = atof(optarg);
-         if (verbose) { std::cout << "final derFD with gamma=" << dgamma << std::endl; }
-         break;
-       case 'a':
-         accumulation = atof(optarg);
-         if (verbose) { std::cout << "accumulation=" << accumulation << std::endl; }
-         break;
-       case 'l':
-         filterlow = atof(optarg);
-         if (verbose) { std::cout << "filterlow=" << filterlow << std::endl; }
-         break;
-       case 'h':
-         filterhigh = atof(optarg);
-         if (verbose) { std::cout << "filterhigh=" << filterhigh << std::endl; }
-         break;
+        case 'f':
+          finalgaussian = true;
+          ggamma        = atof(optarg);
+          break;
+        case 'x':
+          finalderfd = true;
+          dgamma     = atof(optarg);
+          break;
+        case 'a':
+          accumulation = atof(optarg);
+          break;
+        case 'l':
+          filterlow = atof(optarg);
+          break;
+        case 'h':
+          filterhigh = atof(optarg);
+          break;
        case 'P': keepnegative = false; break;
        case 'N': keeppositive = false; break;
        case 'A': meshnegative = false; break;
@@ -335,22 +336,89 @@ class Broaden {
        if (!(omega0_ratio > 0.0)) throw std::invalid_argument("omega0_ratio must be greater than 0.");
        omega0 = omega0_ratio * T;
      }
-     if (remaining == 4) {
-       omega0_ratio = 1e-9; // Effectively zero
-       omega0       = omega0_ratio * T;
+      if (remaining == 4) {
+        omega0_ratio = 1e-9; // Effectively zero
+        omega0       = omega0_ratio * T;
+        omega0_ratio_defaulted = true;
      }
      if (finalgaussian && ggamma <= 0.0) throw std::invalid_argument("Final Gaussian width must be greater than 0.");
-     if (finalderfd && dgamma <= 0.0) throw std::invalid_argument("Final derFD width must be greater than 0.");
-     if (!meshpositive && !meshnegative) throw std::invalid_argument("Output mesh cannot be empty.");
-     std::cout << "Processing: " << name << std::endl;
-     if (verbose) { std::cout << "Nz=" << Nz << " alpha=" << alpha << " T=" << T << " omega0_ratio=" << omega0_ratio << std::endl; }
+      if (finalderfd && dgamma <= 0.0) throw std::invalid_argument("Final derFD width must be greater than 0.");
+      if (!meshpositive && !meshnegative) throw std::invalid_argument("Output mesh cannot be empty.");
+      std::cout << "Processing: " << name << std::endl;
+     }
+
+    void resolve_mesh() {
+      if (mesh_filename != "") {
+        mesh = load_mesh(mesh_filename, verbose);
+      } else {
+        mesh = make_mesh(broaden_min, broaden_max, broaden_ratio, accumulation, meshpositive, meshnegative);
+      }
+      if (mesh.empty()) throw std::runtime_error("Output mesh is empty.");
     }
-   void check_buffer_normalisation(const std::vector<double> &buffer, const int col_) {
+
+    void report_configuration() const {
+      NRG::Tools::ConfigurationReport report("broaden");
+      report.value("verbosity", veryverbose ? 2 : 1);
+      report.value("input_name", name);
+      report.value("Nz", Nz);
+      report.value("one_file_mode", one);
+      report.value("input_layout", one && Nz == 1 ? "direct" : "numbered_subdirectories");
+      report.value("input_columns", 1 + nrcol);
+      report.value("weight_column", col + 1);
+      report.value("alpha", alpha);
+      report.value("temperature", T);
+      if (omega0_ratio_defaulted) {
+        report.resolved("omega0_ratio", omega0_ratio, "omitted positional argument");
+      } else {
+        report.value("omega0_ratio", omega0_ratio);
+      }
+      report.resolved("omega0", omega0, "omega0_ratio*temperature");
+      report.value("kernel_mode", gaussian ? "gaussian" : normalization ? "hybrid_peak_frequency" : "hybrid_output_frequency");
+      report.value("normalization_mode", normalization);
+      report.value("sum_rules", sumrules);
+      report.value("cumulative", cumulative);
+      report.value("filter_low", filterlow);
+      report.value("filter_high", filterhigh);
+      report.value("keep_positive_input", keeppositive);
+      report.value("keep_negative_input", keepnegative);
+      report.value("accumulation", accumulation);
+      report.value("final_gaussian", finalgaussian);
+      if (finalgaussian) {
+        report.value("final_gaussian_gamma", ggamma);
+        report.resolved("final_gaussian_sigma", ggamma * T, "gamma*temperature");
+      }
+      report.value("final_derfd", finalderfd);
+      if (finalderfd) {
+        report.value("final_derfd_gamma", dgamma);
+        report.resolved("final_derfd_sigma", dgamma * T, "gamma*temperature");
+      }
+      report.value("mesh_source", mesh_filename.empty() ? "generated" : "loaded");
+      if (mesh_filename.empty()) {
+        report.value("broaden_min", broaden_min);
+        report.value("broaden_max", broaden_max);
+        report.value("broaden_ratio", broaden_ratio);
+        report.value("mesh_positive", meshpositive);
+        report.value("mesh_negative", meshnegative);
+      } else {
+        report.value("mesh_file", mesh_filename);
+      }
+      const auto [mesh_min, mesh_max] = std::minmax_element(mesh.begin(), mesh.end());
+      report.value("mesh_points", mesh.size());
+      report.value("mesh_min", *mesh_min);
+      report.value("mesh_max", *mesh_max);
+      report.value("mesh_sorted", std::is_sorted(mesh.begin(), mesh.end()));
+      report.value("output_file", output_filename);
+      report.value("output_precision", 18);
+      report.value("cumulative_file", cumulative ? cumulative_filename : "disabled");
+      report.write(std::cerr);
+    }
+
+    void check_buffer_normalisation(const std::vector<double> &buffer, const int col_) {
      const auto cols = 1 + nrcol;
      const auto rows = buffer.size()/cols;
      auto sum = 0.0;
      for (auto j = 0; j < rows; j++) sum += buffer[cols * j + col_];
-     std::cout << "Weight=" << sum << std::endl;
+      std::cerr << "Weight=" << sum << std::endl;
    }
    // Load all the input data.
    void read_files() {
@@ -372,7 +440,7 @@ class Broaden {
        }
      }
      nr_spec = spec.size();
-     if (verbose) { std::cout << nr_spec << " unique frequencies." << std::endl; }
+      if (verbose) { std::cerr << nr_spec << " unique frequencies." << std::endl; }
      // Normalize weight by 1/Nz, determine total weight, and store the (frequency,weight) data in the form of linear
      // vectors for faster access in the ensuing calculations.
      auto sum = 0.0;
@@ -383,7 +451,7 @@ class Broaden {
        vspec.push_back(weight);
        sum += weight;
      }
-     if (verbose) { std::cout << "Total weight=" << sum << std::endl; }
+      if (verbose) { std::cerr << "Total weight=" << sum << std::endl; }
      assert(vfreq.size() == nr_spec && vspec.size() == nr_spec);
    }
 
@@ -444,7 +512,7 @@ class Broaden {
     }
 
    vec broaden(const vec &mesh_) {
-     if (verbose) { std::cout << "Broadening. Number of mesh points = " << mesh_.size() << std::endl; }
+      if (verbose) { std::cerr << "Broadening. Number of mesh points = " << mesh_.size() << std::endl; }
      vec result(mesh_.size());
      std::transform(mesh_.begin(), mesh_.end(), result.begin(), [this](const auto m) {
        return std::transform_reduce(vspec.begin(), vspec.end(), vfreq.begin(), 0.0, std::plus<>(), 
@@ -456,7 +524,7 @@ class Broaden {
    // Cumulative spectrum
     void calc_cumulative(const vec &mesh_, vec &c_) {
       const auto nr_mesh = mesh_.size();
-      if (verbose) std::cout << "Calculating cumulative spectrum." << std::endl;
+       if (verbose) std::cerr << "Calculating cumulative spectrum." << std::endl;
       c_.resize(nr_mesh);
       auto sum = 0.0;
       size_t j = 0;
@@ -477,23 +545,20 @@ class Broaden {
      for (auto z = 1e-10; z < 1.0; z *= 10) {
        const auto nr = x.size();
        for (auto i = 0; i < nr; i++) { y[i] = bfnc(x[i], z); }
-       std::cout << "z=" << z << " weight=" << trapez(x, y) << std::endl;
+        std::cerr << "z=" << z << " weight=" << trapez(x, y) << std::endl;
      }
    }
  public:
-   Broaden(int argc, char *argv[]) {
-     cmd_line(argc, argv);
-   }
-   void calc() {
-     read_files();
-     merge();
-     filter();
-     if (sumrules) integrals_for_sumrules();
-      if (mesh_filename != "")
-        mesh = load_mesh(mesh_filename, verbose);
-      else
-        mesh = make_mesh(broaden_min, broaden_max, broaden_ratio, accumulation, meshpositive, meshnegative);
-      if (mesh.empty()) throw std::runtime_error("Output mesh is empty.");
+    Broaden(int argc, char *argv[]) {
+      cmd_line(argc, argv);
+    }
+    void calc() {
+      read_files();
+      merge();
+      filter();
+      if (sumrules) integrals_for_sumrules();
+      resolve_mesh();
+      if (verbose) report_configuration();
       if (verbose) check_normalizations(mesh);
       a = broaden(mesh);
      if (finalgaussian) convolve(mesh, a, ggamma * T, gaussian_kernel);

@@ -1,5 +1,5 @@
 // Calculation of NRG chain coefficients
-// Rok Zitko, rok.zitko@ijs.si, 2009-2020
+// Rok Zitko, rok.zitko@ijs.si
 
 #include <exception>
 #include <iostream>
@@ -21,6 +21,12 @@
 #include <stdexcept>
 
 #include <gmp.h>
+
+#ifndef NRGCHAIN_NO_MAIN
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
+#endif
 
 using namespace std;
 
@@ -124,17 +130,30 @@ inline double Eps_neg(double x) {
 
 void about(ostream &F = cout) {
   F << "# Calculation of NRG coefficients" << endl;
-  F << "# Rok Zitko, rok.zitko@ijs.si, 2009" << endl;
 }
 
-constexpr auto usage_text = "Usage: nrgchain [-h|--help] [s|l] [parameter_file]";
+constexpr auto usage_text = "Usage: nrgchain [options] [s|l] [parameter_file]";
 
-void usage(ostream &F = cout) { F << usage_text << endl; }
+void usage(ostream &F = cout) {
+  F << usage_text << endl;
+  F << " -h, --help -- show help" << endl;
+  F << " -v -- show resolved configuration and verbose diagnostics on stderr" << endl;
+  F << " -vv -- increase verbosity further" << endl;
+  F << " -V, --version -- show project version and exit" << endl;
+  F << " s -- calculate and save tables without tridiagonalising" << endl;
+  F << " l -- load tables and tridiagonalise" << endl;
+}
 
 struct CommandLineOptions {
   string param_filename = "param";
   NRG::Tools::NrgChain::TableMode mode = NRG::Tools::NrgChain::TableMode::Calculate;
+  int verbosity = 0;
 };
+
+#ifndef NRGCHAIN_NO_MAIN
+int command_line_verbosity = 0;
+string command_line_param_filename = "param";
+#endif
 
 CommandLineOptions cmd_line(int argc, char *argv[]) {
   CommandLineOptions options;
@@ -146,6 +165,10 @@ CommandLineOptions cmd_line(int argc, char *argv[]) {
     if (arg == "-h" || arg == "--help") {
       usage();
       exit(EXIT_SUCCESS);
+    }
+    if (arg.size() >= 2 && arg[0] == '-' && all_of(arg.begin() + 1, arg.end(), [](const char ch) { return ch == 'v'; })) {
+      options.verbosity += static_cast<int>(arg.size() - 1);
+      continue;
     }
     if (arg == "s" || arg == "l") {
       if (mode_set) throw invalid_argument("Mode specified more than once.\n" + string(usage_text));
@@ -611,6 +634,103 @@ void apply_mode(const TableMode mode) {
   }
 }
 
+#ifndef NRGCHAIN_NO_MAIN
+const char *mode_name(const TableMode mode) {
+  switch (mode) {
+    case TableMode::Calculate: return "parameter-file";
+    case TableMode::SaveOnly: return "save-only";
+    case TableMode::LoadAndTridiagonalize: return "load-and-tridiagonalize";
+  }
+  return "unknown";
+}
+
+void report_configuration(const TableMode mode) {
+  if (command_line_verbosity == 0) return;
+  NRG::Tools::ConfigurationReport report("nrgchain");
+  report.value("verbosity", command_line_verbosity);
+  report.value("parameter_file", command_line_param_filename);
+  report.value("output_directory", nrgchain_output_dir);
+  report.value("mode", mode_name(mode));
+  report.value("Lambda", Lambda);
+  report.value("z", z);
+  report.value("xmax", xmax);
+  report.value("Nmax", Nmax);
+  if (params.contains("mMAX"))
+    report.value("mMAX", mMAX);
+  else
+    report.resolved("mMAX", mMAX, "2*Nmax");
+  report.value("band", band);
+  report.value("bandrescale", bandrescale);
+  report.value("adapt", adapt);
+  report.value("rescalexi", rescalexi);
+  report.value("gmp_precision", preccpp);
+  report.value("output_precision", PREC);
+  if (nrgchain_tables_load) {
+    report.resolved("density_source", "inactive", "tables_load=true");
+    report.resolved("dos", "inactive", "tables_load=true");
+    report.resolved("g_positive", "inactive", "tables_load=true");
+    report.resolved("g_negative", "inactive", "tables_load=true");
+    report.resolved("f_positive", "inactive", "tables_load=true");
+    report.resolved("f_negative", "inactive", "tables_load=true");
+  } else if (band == "flat") {
+    report.value("density_source", "flat");
+    report.resolved("dos", "inactive", "flat band");
+    report.resolved("g_positive", "inactive", "flat band");
+    report.resolved("g_negative", "inactive", "flat band");
+    report.resolved("f_positive", "inactive", "flat band");
+    report.resolved("f_negative", "inactive", "flat band");
+  } else {
+    report.value("density_source", "file");
+    report.value("dos", Pstr("dos", "Delta.dat"));
+    if (adapt) {
+      report.value("g_positive", "GSOL.dat");
+      report.value("g_negative", "GSOLNEG.dat");
+    } else {
+      report.resolved("g_positive", "inactive", "adapt=false");
+      report.resolved("g_negative", "inactive", "adapt=false");
+    }
+    report.value("f_positive", "FSOL.dat");
+    report.value("f_negative", "FSOLNEG.dat");
+  }
+  if (mode == TableMode::Calculate) {
+    report.value("tables_save", nrgchain_tables_save);
+    report.value("tables_load", nrgchain_tables_load);
+    report.value("tridiagonalize", nrgchain_tridiag);
+  } else {
+    report.resolved("tables_save", nrgchain_tables_save, "command mode override");
+    report.resolved("tables_load", nrgchain_tables_load, "command mode override");
+    report.resolved("tridiagonalize", nrgchain_tridiag, "command mode override");
+  }
+
+  if (nrgchain_tables_load)
+    report.resolved("theta_output", "inactive", "coefficient tables are loaded");
+  else
+    report.value("theta_output", output_path("theta.dat"));
+
+  if (nrgchain_tridiag) {
+    report.value("xi_output", output_path("xi.dat"));
+    report.value("zeta_output", output_path("zeta.dat"));
+  } else {
+    report.resolved("xi_output", "inactive", "tridiagonalize=false");
+    report.resolved("zeta_output", "inactive", "tridiagonalize=false");
+  }
+
+  const auto report_table = [&report](const string &key, const string &filename) {
+    if (nrgchain_tables_load)
+      report.value(key + "_input", filename);
+    else if (nrgchain_tables_save)
+      report.value(key + "_output", output_path(filename));
+    else
+      report.resolved(key, "not persisted", "tables_save=false");
+  };
+  report_table("de_positive_table", "de_pos.dat");
+  report_table("de_negative_table", "de_neg.dat");
+  report_table("du_positive_table", "du_pos.dat");
+  report_table("du_negative_table", "du_neg.dat");
+  report.write(cerr);
+}
+#endif
+
 WilsonData make_result() {
   WilsonData data;
   data.channels.push_back(WilsonChannel{result_theta, result_xi, result_zeta});
@@ -621,6 +741,9 @@ WilsonData run_calculation(const TableMode mode, const filesystem::path &output_
   nrgchain_output_dir = output_dir;
   set_parameters();
   apply_mode(mode);
+#ifndef NRGCHAIN_NO_MAIN
+  report_configuration(mode);
+#endif
 
   if (nrgchain_tables_load) {
     load_tables();
@@ -653,11 +776,14 @@ WilsonData calculate_from_file(const std::string &param_filename, const TableMod
 
 #ifndef NRGCHAIN_NO_MAIN
 int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "nrgchain")) return EXIT_SUCCESS;
   try {
     clock_t start_clock = clock();
 
     about();
     const auto options = cmd_line(argc, argv);
+    command_line_verbosity = options.verbosity;
+    command_line_param_filename = options.param_filename;
     NRG::Tools::NrgChain::calculate_from_file(options.param_filename, options.mode);
 
     clock_t end_clock = clock();

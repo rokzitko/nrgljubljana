@@ -1,5 +1,5 @@
 // Resample a tabulated function on a new X grid using smooth interpolation functions (GSL).
-// Rok Zitko, rok.zitko@ijs.si, May 2014
+// Rok Zitko, rok.zitko@ijs.si
 
 // The input file must consist of a table of space-separated (energy,
 // value) pairs. Gauss-Kronrod quadrature rules are used.
@@ -33,6 +33,7 @@ using namespace std::string_literals;
 
 #include "misc.hpp"
 #include "basicio.hpp"
+#include "../common/diagnostics.hpp"
 #include "../common/gsl_config.hpp"
 
 using namespace NRG;
@@ -56,16 +57,17 @@ class Resample
 {
     private:
 
-        // Dump additional information to stdout?
         std::string inputfn;  // Filename for input data
         std::string gridfn;   // Filename for a new X grid
         std::optional<std::string> outputfn; // Filename for resampled data. May be the same as gridfn.
-        bool verbose = false; // enable with -v
+        int verbosity = 0;
         int output_precision = 16; // number of digits of precision in the output
         NRG::Tools::InterpolationMethod interpolation_method = NRG::Tools::InterpolationMethod::akima;
         bool extrapolate = false; // enable constant extrapolation with -e
         std::optional<T> extrapolation_below;
         std::optional<T> extrapolation_above;
+        bool extrapolation_below_explicit = false;
+        bool extrapolation_above_explicit = false;
         T Xmin{};
         T Xmax{};
 
@@ -76,10 +78,13 @@ class Resample
 
         void usage() 
         {
-            std::cout << "\nUsage: resample [-h] [-v] [-i method] [-p precision] [-e [-a A] [-b B]] <input> <grid> <output>" << std::endl;
+            std::cout << "\nUsage: resample [-h] [-v|-vv] [-i method] [-p precision] [-e [-a A] [-b B]] <input> <grid> <output>" << std::endl;
             std::cout << "-h, --help: show this help" << std::endl;
             std::cout << "-i, --interpolation METHOD: linear, cspline, akima, or steffen (default: akima)" << std::endl;
-            std::cout << "-v: toggle verbose messages (now=" << verbose << ")" << std::endl;
+            std::cout << "-v: show resolved configuration and verbose diagnostics on stderr" << std::endl;
+            std::cout << "-vv: increase verbosity further" << std::endl;
+            std::cout << "-V, --version: show project version and exit" << std::endl;
+            std::cout << "-p N: output precision (default: 16)" << std::endl;
             std::cout << "-e: enable constant extrapolation outside the input x range" << std::endl;
             std::cout << "-a A: use A for x < x_min (requires -e; default: y at x_min)" << std::endl;
             std::cout << "-b B: use B for x > x_max (requires -e; default: y at x_max)" << std::endl;
@@ -101,11 +106,17 @@ class Resample
                     usage();
                     std::exit(EXIT_SUCCESS);
                 case 'i': interpolation_method = NRG::Tools::parse_interpolation_method(optarg); break;
-                case 'v': verbose = true; break;
+                case 'v': ++verbosity; break;
                 case 'e': extrapolate = true; break;
                 case 'p': output_precision = atoi(optarg); break;
-                case 'a': extrapolation_below = static_cast<T>(std::stod(optarg)); break;
-                case 'b': extrapolation_above = static_cast<T>(std::stod(optarg)); break;
+                case 'a':
+                    extrapolation_below = static_cast<T>(std::stod(optarg));
+                    extrapolation_below_explicit = true;
+                    break;
+                case 'b':
+                    extrapolation_above = static_cast<T>(std::stod(optarg));
+                    extrapolation_above_explicit = true;
+                    break;
                 default: throw std::runtime_error("Unknown argument "s + std::string(1, static_cast<char>(c)));
                 }
             }
@@ -113,7 +124,7 @@ class Resample
               throw std::invalid_argument("Options -a and -b require -e.");
             int remaining = argc - optind;
             if (remaining != 3) {
-                about();
+                about(std::cout);
                 usage();
                 std::exit(1);
             }
@@ -122,40 +133,70 @@ class Resample
             outputfn = std::string(argv[optind++]);
         }
 
-        void about() 
+        void about(std::ostream &output)
         {
-            std::cout << "Resampling tool" << std::endl;
-            #ifdef __TIMESTAMP__
-            std::cout << "Timestamp: " << __TIMESTAMP__ << std::endl;
-            #endif
-            std::cout << "Compiled on " << __DATE__ << " at " << __TIME__ << std::endl;
+            output << "Resampling tool" << std::endl;
+        }
+
+        void report_configuration(const std::size_t input_points)
+        {
+            if (verbosity == 0) return;
+            NRG::Tools::ConfigurationReport report("resample");
+            report.value("verbosity", verbosity);
+            report.value("input", inputfn);
+            report.value("input_format", "two-column-text");
+            report.value("grid", gridfn);
+            report.value("grid_format", "two-column-text");
+            report.value("output", outputfn.value_or("memory"));
+            report.value("output_format", "two-column-text");
+            report.value("interpolation", NRG::Tools::interpolation_method_name(interpolation_method));
+            report.value("output_precision", output_precision);
+            report.value("extrapolate", extrapolate);
+            report.resolved("input_points", input_points, "input data");
+            report.resolved("grid_points", grid.size(), "grid data");
+            report.resolved("x_min", Xmin, "input lower bound");
+            report.resolved("x_max", Xmax, "input upper bound");
+            if (extrapolation_below_explicit)
+                report.value("extrapolation_below", *extrapolation_below);
+            else
+                report.resolved("extrapolation_below", *extrapolation_below, "input lower endpoint");
+            if (extrapolation_above_explicit)
+                report.value("extrapolation_above", *extrapolation_above);
+            else
+                report.resolved("extrapolation_above", *extrapolation_above, "input upper endpoint");
+            report.write(std::cerr);
         }
 
     public:
         Resample(int argv, char *argc[])
         {
             parse_param(argv, argc);
-            if (verbose) about();
-            std::vector<std::pair<T, T>> f = readtable<T,T>(inputfn, verbose);
-            grid = readtable<T,T>(gridfn, verbose);
+            if (verbosity > 0) about(std::cerr);
+            std::vector<std::pair<T, T>> f = readtable<T,T>(inputfn);
+            if (verbosity > 0) std::cerr << "Reading " << inputfn << "; " << f.size() << " lines read." << std::endl;
+            grid = readtable<T,T>(gridfn);
+            if (verbosity > 0) std::cerr << "Reading " << gridfn << "; " << grid.size() << " lines read." << std::endl;
             init(f);
+            report_configuration(f.size());
         }
 
         Resample(std::string inputfn_, std::string gridfn_, std::optional<std::string> outputfn_ = std::nullopt, bool verbose_ = false,
                  int output_precision_ = 16,
                  NRG::Tools::InterpolationMethod interpolation_method_ = NRG::Tools::InterpolationMethod::akima):
-        inputfn(inputfn_), gridfn(gridfn_), outputfn(outputfn_), verbose(verbose_), output_precision(output_precision_),
+        inputfn(inputfn_), gridfn(gridfn_), outputfn(outputfn_), verbosity(verbose_ ? 1 : 0), output_precision(output_precision_),
         interpolation_method(interpolation_method_)
         {
-            std::vector<std::pair<T, T>> f = readtable<T,T>(inputfn, verbose);
-            grid = readtable<T,T>(gridfn, verbose);
+            std::vector<std::pair<T, T>> f = readtable<T,T>(inputfn);
+            if (verbosity > 0) std::cerr << "Reading " << inputfn << "; " << f.size() << " lines read." << std::endl;
+            grid = readtable<T,T>(gridfn);
+            if (verbosity > 0) std::cerr << "Reading " << gridfn << "; " << grid.size() << " lines read." << std::endl;
             init(f);
         }
 
         Resample(std::vector<std::pair<T, T>> f, std::vector<std::pair<T, T>> grid_,
-                 std::optional<std::string> outputfn_ = std::nullopt, bool verbose_ = false, int output_precision_ = 16,
-                 NRG::Tools::InterpolationMethod interpolation_method_ = NRG::Tools::InterpolationMethod::akima):
-        outputfn(outputfn_), verbose(verbose_), output_precision(output_precision_), interpolation_method(interpolation_method_), grid(grid_)
+                  std::optional<std::string> outputfn_ = std::nullopt, bool verbose_ = false, int output_precision_ = 16,
+                  NRG::Tools::InterpolationMethod interpolation_method_ = NRG::Tools::InterpolationMethod::akima):
+        outputfn(outputfn_), verbosity(verbose_ ? 1 : 0), output_precision(output_precision_), interpolation_method(interpolation_method_), grid(grid_)
         {
             init(f);
         }
@@ -188,7 +229,7 @@ class Resample
             Xmax = im.back().first;
             if (!extrapolation_below) extrapolation_below = im.front().second;
             if (!extrapolation_above) extrapolation_above = im.back().second;
-            if (verbose) std::cout << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
+            if (verbosity > 0) std::cerr << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
 
             std::transform(im.begin(), im.end(), std::back_inserter(Xpts), [] (const auto& pair){return pair.first;});
             std::transform(im.begin(), im.end(), std::back_inserter(Ypts), [] (const auto& pair){return pair.second;});

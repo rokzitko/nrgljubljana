@@ -2,18 +2,20 @@
 #include <iostream>
 #include <iomanip>
 #include <ostream>
-#include <string_view>
 #include <cstdlib>
+
+#include <common/version.hpp>
+
 #include "binavg.hpp"
 
-constexpr std::string_view VERSION = "0.0.2";
 const int cout_PREC = 18; // Precision for verbose reporting on console
 
 int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "binavg")) return EXIT_SUCCESS;
   try {
-    std::cout << "binvag - binned binary data averaging tool - " << VERSION << std::endl;
-    std::cout << "Rok Zitko, rok.zitko@ijs.si, 2013" << std::endl;
+    std::cout << "binavg - binned binary data averaging tool" << std::endl;
     std::cout << std::setprecision(cout_PREC);
+    std::cerr << std::setprecision(cout_PREC);
     NRG::BinAvg::BinAvg binavg(argc, argv);
     binavg.calc();
   } catch (const std::exception &e) {

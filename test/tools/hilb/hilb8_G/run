@@ -2,4 +2,9 @@
 set -eu
 "$1/hilb" -v -c 1e-8 -d DOS.dat resigma.dat imsigma.dat reaw.dat imaw.dat 2>stderr.txt
 grep -q "hilb: clipped" stderr.txt
+grep -q '^hilb: configuration$' stderr.txt
+grep -q '^  dos.interpolation=cspline$' stderr.txt
+grep -q '^  dos.half_bandwidth=auto ->' stderr.txt
+grep -q '^  integration.qag.active=auto -> false ' stderr.txt
+grep -q '^  output.precision=17$' stderr.txt
 "$2/test/compare.pl" "$3/ref"

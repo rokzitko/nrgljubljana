@@ -33,7 +33,18 @@ std::string exec(const char* cmd) {
 
 TEST(unitary, unitary_help){
     auto out = exec(PROJECT_BINARY_DIR "/tools/unitary -h");
-    std::string  expected = "Usage: unitary [-h] [-b | -B] [-qvV] [-tl] [-s scale] [-o output_fn] [-c chop_tol] <A> <B> <C>\n";
+    std::string expected =
+        "Usage: unitary [-h] [-b | -B] [-q] [-v|-vv] [-tl] [-s scale] [-o output_fn] [-c chop_tol] <A> <B> <C>\n"
+        " -h, --help -- show help\n"
+        " -v -- show resolved configuration and verbose diagnostics on stderr\n"
+        " -vv -- include matrix dumps\n"
+        " -V, --version -- show project version and exit\n"
+        " -b, -B -- read A and C as text or binary matrices\n"
+        " -q -- suppress the banner\n"
+        " -t, -l -- transpose A or C\n"
+        " -s scale -- scale the result\n"
+        " -o output_fn -- write the result matrix\n"
+        " -c chop_tol -- zero output values below this magnitude\n";
     EXPECT_EQ(out, expected);
 }
 

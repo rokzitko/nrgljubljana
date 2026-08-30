@@ -5,7 +5,7 @@
 // Mode 2: read x and y from a file.
 // Mode 3: convert imsigma/resigma.dat to imaw/reaw.dat files in the DMFT loop.
 //
-// Rok Zitko, rok.zitko@ijs.si, 2009-2026
+// Rok Zitko, rok.zitko@ijs.si
 
 #ifndef _hilb_hilb_hpp_
 #define _hilb_hilb_hpp_
@@ -27,7 +27,6 @@
 #include <map>
 #include <optional>
 #include <memory>
-#include <ctime>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -48,6 +47,7 @@
 #include <gsl/gsl_integration.h>
 
 #include "../common/gsl_config.hpp"
+#include "../common/diagnostics.hpp"
 #include "../common/gsl_piecewise_polynomial.hpp"
 #include "../common/output_file.hpp"
 
@@ -55,7 +55,6 @@ namespace NRG::Hilb {
 
 using std::size_t;
 
-inline constexpr std::string_view HILB_VERSION = "2026.09";
 inline constexpr int OUTPUT_PRECISION = std::numeric_limits<double>::max_digits10;
 
 inline auto format_double(const double value) {
@@ -730,15 +729,19 @@ auto hilbert_transform(const T &Xpts, const T &Rpts, const T &Ipts, const std::c
 
 class Hilb {
   private:
+  enum class BandwidthSource { defaults, scale, half_bandwidth };
+
   double scale = 1.0;         // scale factor
   double B     = 1.0 / scale; // half-bandwidth
   double Xmin = -B;
   double Xmax = +B;
-  bool verbose     = false;
+  int verbosity    = 0;
+  BandwidthSource bandwidth_source = BandwidthSource::defaults;
   bool G           = false; // G(z). Reports real and imaginary part.
   std::vector<double> Xpts, Ypts;
   std::optional<interpolator> tabulated_rho;
   std::optional<NRG::Tools::PiecewisePolynomial<double>> weighted_tabulated_rho;
+  std::optional<double> dos_integral;
   bool tabulated = false; // Use tabulated DOS. If false, use rho_Bethe().
   double shiftx = 0.0;
   double shifty = 0.0;
@@ -853,7 +856,7 @@ class Hilb {
   }
 
   void load_dos(const std::string &filename) {
-    if (verbose) std::cout << "Density of states filename: " << filename << '\n';
+    if (verbosity >= 2) std::cerr << "Density of states filename: " << filename << '\n';
     auto F = safe_open_rd(filename);
     numeric_row_reader<2> rows(F, filename);
     std::vector<std::pair<double, double>> pts;
@@ -875,29 +878,89 @@ class Hilb {
     if (!std::isfinite(B) || B <= 0.0) throw std::runtime_error("DOS half-bandwidth must be finite and positive.");
     tabulated_rho.emplace(Xpts, Ypts, 0.0, interpolation_method);
     weighted_tabulated_rho.emplace(tabulated_rho->piecewise_polynomial().multiply_by_monomial(static_cast<size_t>(n)));
-    const auto sum = tabulated_rho->piecewise_polynomial().integral();
-    if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
-    if (verbose) std::cout << "Sum=" << sum << '\n';
+    dos_integral = tabulated_rho->piecewise_polynomial().integral();
+    if (!std::isfinite(*dos_integral)) throw std::runtime_error("Error: Integral is not a finite number.");
+    if (verbosity >= 2) std::cerr << "Sum=" << *dos_integral << '\n';
   }
 
-  void info() {
-    if (tabulated)
-      std::cout << "Xmin=" << Xmin << " Xmax=" << Xmax << '\n';
-    else
-      std::cout << "Semicircular DOS. scale=" << scale << '\n';
-    std::cout << "B=" << B << '\n';
-    if (shiftx != 0.0) std::cout << "shiftx=" << shiftx << '\n';
-    if (shifty != 0.0) std::cout << "shifty=" << shifty << '\n';
-    if (n != 0) std::cout << "n=" << n << '\n';
+  void report_configuration(const int remaining, const std::vector<std::string> &args,
+                            const std::optional<std::string> &output_filename,
+                            const std::optional<std::string> &dos_filename,
+                            const std::optional<std::pair<double, double>> &point) const {
+    if (verbosity == 0) return;
+
+    NRG::Tools::ConfigurationReport report("hilb");
+    report.value("verbosity", verbosity);
+    report.resolved("mode", remaining == 1 ? "argument-file" : remaining == 2 ? "single-point" : "dmft",
+                    "positional argument count");
+    report.value("output.mode", G ? "raw-complex" : remaining == 4 ? "minus-one-over-pi-scaled-components" : "imaginary");
+    report.value("output.precision", OUTPUT_PRECISION);
+    report.value("energy_power", n);
+    report.value("argument.real_shift", shiftx);
+    report.value("argument.imaginary_shift", shifty);
+
+    if (tabulated) {
+      report.value("dos.mode", "tabulated");
+      report.value("dos.file", *dos_filename);
+      report.value("dos.interpolation", NRG::Tools::interpolation_method_name(interpolation_method));
+      report.value("dos.points", Xpts.size());
+      report.resolved("dos.lower_bound", Xmin, "tabulated DOS");
+      report.resolved("dos.upper_bound", Xmax, "tabulated DOS");
+      report.resolved("dos.half_bandwidth", B, "tabulated DOS bounds");
+      report.value("dos.integral", *dos_integral);
+      report.value("algorithm", "analytic-piecewise-polynomial");
+      report.resolved("integration.qag.active", false, "tabulated analytic mode");
+    } else {
+      report.value("dos.mode", "semicircular");
+      if (bandwidth_source == BandwidthSource::scale) {
+        report.value("dos.scale", scale);
+        report.resolved("dos.half_bandwidth", B, "reciprocal DOS scale");
+      } else if (bandwidth_source == BandwidthSource::half_bandwidth) {
+        report.value("dos.half_bandwidth", B);
+        report.resolved("dos.scale", scale, "reciprocal half-bandwidth");
+      } else {
+        report.value("dos.scale", scale);
+        report.value("dos.half_bandwidth", B);
+      }
+      report.resolved("dos.lower_bound", Xmin, "symmetric half-bandwidth");
+      report.resolved("dos.upper_bound", Xmax, "symmetric half-bandwidth");
+      report.value("algorithm", "adaptive-qag");
+      report.value("integration.qag.active", true);
+    }
+
+    report.value("integration.direct_threshold", lim_direct);
+    report.value("integration.epsabs", epsabs);
+    report.value("integration.epsrel", epsrel);
+    report.value("integration.workspace_limit", workspace_limit);
+    report.value("integration.quadrature_rule", static_cast<int>(quadrature_rule));
+    report.value("integration.gsl_error_policy", NRG::Tools::gsl_error_policy_name(gsl_error_policy));
+
+    if (remaining == 1) {
+      report.value("input.file", args[0]);
+      if (output_filename)
+        report.value("output.file", *output_filename);
+      else
+        report.resolved("output.file", "<stdout>", "-o not specified");
+    } else if (remaining == 2) {
+      report.value("argument.real", point->first);
+      report.value("argument.imaginary", point->second);
+      if (output_filename)
+        report.value("output.file", *output_filename);
+      else
+        report.resolved("output.file", "<stdout>", "-o not specified");
+    } else {
+      report.value("input.real_self_energy", args[0]);
+      report.value("input.imaginary_self_energy", args[1]);
+      report.value("output.real", args[2]);
+      report.value("output.imaginary", args[3]);
+      report.value("dmft.clipping", clipping);
+      report.value("dmft.frequency_tolerance", frequency_tolerance);
+    }
+    report.write(std::cerr);
   }
 
   void about() {
     std::cout << "# hilb -- Hilbert transformer for arbitrary density of states.\n";
-    std::cout << "# Rok Zitko, rok.zitko@ijs.si, 2009-2026\n";
-  }
-
-  void version() {
-    std::cout << "hilb " << HILB_VERSION << '\n';
   }
 
   void usage() {
@@ -906,12 +969,14 @@ class Hilb {
     std::cout << "Usage (3): hilb [options] <resigma.dat> <imsigma.dat> <reaw.dat> <imaw.dat>\n\n";
     std::cout << "Options:\n";
     std::cout << "-h, --help  show help\n";
-    std::cout << "-V        show version\n";
+    std::cout << "-v        Show resolved configuration on standard error\n";
+    std::cout << "-vv       Also show detailed setup diagnostics\n";
+    std::cout << "-V, --version\n";
+    std::cout << "          Show project version\n";
     std::cout << "-d <dos>  Load the density of state data from file 'dos'\n";
     std::cout << "          If this option is not used, the Bethe lattice DOS is assumed.\n";
     std::cout << "-i <method>, --interpolation <method>\n";
     std::cout << "          Interpolation method: linear, cspline, akima, or steffen. Default is cspline.\n";
-    std::cout << "-v        Increase verbosity\n";
     std::cout << "-s <s>    Rescale factor 'scale' for the DOS.\n";
     std::cout << "-B <B>    Half-bandwidth 'B' of the Bethe lattice DOS.\n";
     std::cout << "          Use either -s or -B. Default is scale=B=1.\n";
@@ -956,17 +1021,16 @@ class Hilb {
     std::optional<std::string> output_filename;
     std::optional<std::string> dos_filename;
     int c;
-    while ((c = getopt_long(argc, argv, "hGd:i:vVs:B:o:x:y:n:c:t:a:r:f:", long_options, nullptr)) != -1) {
+    while ((c = getopt_long(argc, argv, "hGd:i:vs:B:o:x:y:n:c:t:a:r:f:", long_options, nullptr)) != -1) {
       switch (c) {
         case 'h': usage(); return;
-        case 'V': version(); return;
         case 'G': G = true; break;
         case 'd':
           tabulated = true;
           dos_filename = optarg;
           break;
         case 'i': interpolation_method = NRG::Tools::parse_interpolation_method(optarg); break;
-        case 'v': verbose = true; break;
+        case 'v': ++verbosity; break;
         case 's':
           scale = parse_finite_double(optarg, "DOS scale");
           if (scale <= 0.0) throw std::runtime_error("DOS scale must be positive.");
@@ -974,6 +1038,7 @@ class Hilb {
           if (!std::isfinite(B)) throw std::runtime_error("DOS scale reciprocal must be finite.");
           Xmin = -B;
           Xmax = +B;
+          bandwidth_source = BandwidthSource::scale;
           break;
         case 'B':
           B = parse_finite_double(optarg, "Half-bandwidth");
@@ -982,6 +1047,7 @@ class Hilb {
           if (!std::isfinite(scale)) throw std::runtime_error("Half-bandwidth reciprocal must be finite.");
           Xmin = -B;
           Xmax = +B;
+          bandwidth_source = BandwidthSource::half_bandwidth;
           break;
         case 'o':
           output_filename = optarg;
@@ -1045,19 +1111,26 @@ class Hilb {
     if (tabulated && remaining == 4
         && (files_refer_to_same_location(*dos_filename, args[2]) || files_refer_to_same_location(*dos_filename, args[3])))
       throw std::runtime_error("DMFT output files must differ from the density-of-states input file.");
+    std::optional<std::pair<double, double>> point;
+    if (remaining == 2) {
+      const auto x = parse_finite_double(args[0], "Real argument");
+      const auto y = parse_finite_double(args[1], "Imaginary argument");
+      point.emplace(x, y);
+    }
     if (tabulated) {
       load_dos(*dos_filename);
       report_dos();
     } else
       integration.emplace(integrator::configured, workspace_limit, quadrature_rule, gsl_error_policy, &gsl_failures);
 
+    report_configuration(remaining, args, output_filename, dos_filename, point);
+
     if (remaining == 1) {
       about();
-      if (verbose) info();
       auto F = safe_open_rd(args[0]);
       numeric_row_reader<3> rows(F, args[0]);
       if (output_filename) {
-        if (verbose) std::cout << "Output file: " << *output_filename << '\n';
+        if (verbosity >= 2) std::cerr << "Output file: " << *output_filename << '\n';
         std::ostringstream output;
         output << std::setprecision(OUTPUT_PRECISION);
         do_stream(rows, output);
@@ -1069,23 +1142,20 @@ class Hilb {
       return;
     }
     if (remaining == 2) {
-      const auto x = parse_finite_double(args[0], "Real argument");
-      const auto y = parse_finite_double(args[1], "Imaginary argument");
       if (output_filename) {
-        if (verbose) std::cout << "Output file: " << *output_filename << '\n';
+        if (verbosity >= 2) std::cerr << "Output file: " << *output_filename << '\n';
         std::ostringstream output;
         output << std::setprecision(OUTPUT_PRECISION);
-        do_one(x, y, output);
+        do_one(point->first, point->second, output);
         NRG::Tools::write_output_file(*output_filename, output.str());
       } else {
-        do_one(x, y, std::cout);
+        do_one(point->first, point->second, std::cout);
         finish_output(std::cout, "<stdout>");
       }
       return;
     }
 
     about();
-    if (verbose) info();
     auto Frs = safe_open_rd(args[0]);
     auto Fis = safe_open_rd(args[1]);
     numeric_row_reader<2> real_rows(Frs, args[0]);

@@ -1,7 +1,10 @@
 #include "resample.hpp"
 
-int main(int argv, char *argc[]) {
+#include <common/version.hpp>
 
-  NRG::Resample::Resample<double> resample(argv, argc);
+int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "resample")) return EXIT_SUCCESS;
+
+  NRG::Resample::Resample<double> resample(argc, argv);
   resample.run();
 }

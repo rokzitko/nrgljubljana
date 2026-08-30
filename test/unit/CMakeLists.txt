@@ -44,7 +44,10 @@ foreach(test ${all_tests})
   set_property(TARGET ${test_name} PROPERTY BUILD_RPATH "${PROJECT_BINARY_DIR}/c++")
   target_link_libraries(${test_name} nrgljubljana_c gtest_main project_warnings gsl)
   target_link_options(${test_name} PRIVATE  $<$<BOOL:${GCOV}>:--coverage>)
-  target_include_directories(${test_name} PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_include_directories(${test_name} PUBLIC
+    ${CMAKE_CURRENT_BINARY_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${PROJECT_BINARY_DIR}/tools/generated)
   add_test(NAME ${gtest_test_name}${test_name} COMMAND ${test_name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
   set_tests_properties(${gtest_test_name}${test_name} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}" RESOURCE_LOCK "${test_resource_lock}")
 

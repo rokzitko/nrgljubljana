@@ -42,6 +42,9 @@ truncated or incomplete.
 | --- | --- |
 | `-h`, `--help` | Print help. |
 | `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, `akima`, or `steffen`. Default: `akima`. |
+| `-v` | Print the resolved configuration to standard error. |
+| `-vv` | Increase verbosity further. |
+| `-V`, `--version` | Print the project version. |
 
 `linear` is piecewise linear and requires at least two points. `cspline` is a
 natural cubic spline and requires at least three points. `akima` is a local

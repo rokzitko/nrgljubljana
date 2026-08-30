@@ -1,4 +1,10 @@
 #!/bin/sh
+set -eu
 export PATH="$1:$PATH"
-matrix param matrix >result
+matrix -vv param matrix >result 2>verbose.txt
+grep -q '^matrix: configuration$' verbose.txt
+grep -q '^  verbosity=2$' verbose.txt
+grep -q '^  channels=1$' verbose.txt
+grep -q '^  channel.1.xi.count=' verbose.txt
+grep -q '^  output.precision=18$' verbose.txt
 "$2/test/compare.pl" "$3/ref"

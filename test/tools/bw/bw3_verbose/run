@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+perl -e 'print pack("d*", -1.0, 0.5, 1.0, 0.5)' >spec.bin
+"$1/bw" -vv -o -n 1 -m 0.001 -M 2 -r 1.2 spec.bin 0.3 1 >stdout.txt 2>verbose.txt
+
+test -s a1.dat
+grep -q '^bw: configuration$' verbose.txt
+grep -q '^  verbosity=2$' verbose.txt
+grep -q 'bmin=auto -> .*broaden_ratio-1' verbose.txt
+grep -q 'trim=auto -> 0.01' verbose.txt
+grep -q 'dynamic_mesh_threshold=auto -> disabled' verbose.txt
+grep -q '^  mesh_points=auto ->' verbose.txt

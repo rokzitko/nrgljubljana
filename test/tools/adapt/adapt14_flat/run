@@ -15,7 +15,12 @@ EOF
 cp param from_flat/param
 
 (cd from_file && adapt P && adapt N)
-(cd from_flat && adapt --flat 0.01 P && adapt --flat 0.01 N)
+(cd from_flat &&
+  adapt -v --flat 0.01 P 2>verbose.txt &&
+  grep -q '^adapt: configuration$' verbose.txt &&
+  grep -q 'flat_gamma=0.01' verbose.txt &&
+  grep -q 'f_method=auto -> ode' verbose.txt &&
+  adapt --flat 0.01 N)
 
 test ! -e from_flat/Delta.dat
 "$2/test/mycomp.pl" from_file/FSOL.dat from_flat/FSOL.dat

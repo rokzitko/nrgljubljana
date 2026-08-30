@@ -1,5 +1,8 @@
 #!/bin/sh
 set -eu
-"$1/h5write" -t -s out.h5 /scalar 3.25
+"$1/h5write" -v -t -s out.h5 /scalar 3.25 2>verbose.txt
+grep -q '^h5write: configuration$' verbose.txt
+grep -q '^  dataset_mode=scalar$' verbose.txt
+grep -q '^  scalar_value=3.25$' verbose.txt
 h5dump -d /scalar out.h5 > dump.txt
 grep -q "3.25" dump.txt

@@ -1,3 +1,8 @@
 #!/bin/sh
-"$1/diag" -vV -o val.dat -O vec.dat mat.dat
+set -eu
+"$1/diag" -vv -o val.dat -O vec.dat mat.dat 2>verbose.txt
+grep -q '^diag: configuration$' verbose.txt
+grep -q '^  dimension=auto -> 2 ' verbose.txt
+grep -q '^  LWORK=auto ->' verbose.txt
+grep -q '^  output_precision=18$' verbose.txt
 "$2/test/compare.pl" "$3/ref"

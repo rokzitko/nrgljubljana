@@ -1,6 +1,5 @@
 // Diagonalisation tool
 // Computes eigenvalues and eigenvectors of a matrix
-// Rok Zitko, rok.zitko@ijs.si, 2009-2024
 
 #include <cstddef>
 #include <iostream>
@@ -22,6 +21,10 @@
 #include <limits>
 #include <unistd.h>
 
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
+
 using namespace std;
 
 using DVEC = std::vector<double>;
@@ -35,19 +38,44 @@ const int OUTPUT_PREC = 18;
 
 const char *fn_val = nullptr;
 const char *fn_vec = nullptr;
+const char *fn_input = nullptr;
 
 double scale_factor = 1.0;
 
 void about(ostream &OUT = cout) {
   if (!quiet) {
     OUT << "# diag -- command line eigensolver tool" << endl;
-    OUT << "# Rok Zitko, rok.zitko@ijs.si, May 2009" << endl;
   }
 }
 
 #include "linalg.hpp"
 
 #define IJ(i, j) (dim * (i) + (j))
+
+void report_configuration(const unsigned int dim,
+                          const std::size_t input_elements,
+                          const lapack_int lwork,
+                          const bool lwork_raised) {
+  NRG::Tools::ConfigurationReport report("diag");
+  report.value("verbosity", veryverbose ? 2 : 1);
+  report.value("quiet", quiet);
+  report.value("input_file", fn_input);
+  report.value("input_mode", "text_matrix");
+  report.value("input_elements", input_elements);
+  report.resolved("dimension", dim, "square root of input element count");
+  report.value("eigensolver", "LAPACK_dsyev");
+  report.value("eigenvectors", true);
+  report.value("stored_triangle", "lower");
+  report.value("scale_factor", scale_factor);
+  report.resolved("LWORK", lwork,
+                  lwork_raised ? "LAPACK workspace query raised to documented minimum" : "LAPACK workspace query");
+  report.value("eigenvalue_file", fn_val != nullptr ? fn_val : "disabled");
+  report.value("eigenvector_file", fn_vec != nullptr ? fn_vec : "disabled");
+  report.value("eigenvector_text", output_text);
+  report.value("eigenvector_binary", output_bin);
+  report.value("output_precision", OUTPUT_PREC);
+  report.write(cerr);
+}
 
 void diagonalize(unsigned int dim, DVEC &d) {
   if (dim > static_cast<unsigned int>(std::numeric_limits<lapack_int>::max())) {
@@ -73,14 +101,17 @@ void diagonalize(unsigned int dim, DVEC &d) {
   assert(INFO == 0);
 
   lapack_int LWORK = lapack_int(WORK0[0]);
-  if (verbose) { cout << "LWORK=" << LWORK << endl; }
   assert(LWORK > 0);
 
   const lapack_int minLWORK = std::max(lapack_int(1), 3 * NN - 1); // cf. LAPACK 3.1 dsyev.f
+  bool lwork_raised = false;
   if (LWORK < minLWORK) {
     cerr << "Buggy dsyev. Fixing LWORK." << endl;
     LWORK = minLWORK;
+    lwork_raised = true;
   }
+  if (verbose) { cerr << "LWORK=" << LWORK << endl; }
+  if (verbose) report_configuration(dim, d.size(), LWORK, lwork_raised);
 
   std::vector<double> WORK(static_cast<std::size_t>(LWORK));
 
@@ -96,23 +127,23 @@ void diagonalize(unsigned int dim, DVEC &d) {
   for (unsigned int r = 0; r < dim; r++) { eigenvalues[r] *= scale_factor; }
 
   if (verbose) {
-    cout << "Eigenvalues: " << endl;
-    for (unsigned int r = 0; r < dim; r++) { cout << r + 1 << "  " << eigenvalues[r] << endl; }
-    cout << endl;
+    cerr << "Eigenvalues: " << endl;
+    for (unsigned int r = 0; r < dim; r++) { cerr << r + 1 << "  " << eigenvalues[r] << endl; }
+    cerr << endl;
   }
 
   if (veryverbose) {
-    cout << "Eigenvectors: " << endl;
+    cerr << "Eigenvectors: " << endl;
     for (unsigned int r = 0; r < dim; r++) {
-      cout << r + 1 << "  ";
-      for (unsigned int j = 0; j < dim; j++) { cout << ham[IJ(r, j)] << (j != dim - 1 ? " " : ""); }
-      cout << endl;
+      cerr << r + 1 << "  ";
+      for (unsigned int j = 0; j < dim; j++) { cerr << ham[IJ(r, j)] << (j != dim - 1 ? " " : ""); }
+      cerr << endl;
     }
-    cout << endl;
+    cerr << endl;
   }
 
   if (fn_val != nullptr) {
-    if (verbose) { cout << "Saving eigenvalues to " << fn_val << " [text]" << endl; }
+    if (verbose) { cerr << "Saving eigenvalues to " << fn_val << " [text]" << endl; }
 
     ofstream F(fn_val);
     if (!F) {
@@ -125,7 +156,7 @@ void diagonalize(unsigned int dim, DVEC &d) {
   }
 
   if (fn_vec != nullptr && output_text) {
-    if (verbose) { cout << "Saving eigenvectors to " << fn_vec << " [text]" << endl; }
+    if (verbose) { cerr << "Saving eigenvectors to " << fn_vec << " [text]" << endl; }
 
     ofstream F(fn_vec);
     if (!F) {
@@ -141,7 +172,7 @@ void diagonalize(unsigned int dim, DVEC &d) {
   }
 
   if (fn_vec != nullptr && output_bin) {
-    if (verbose) { cout << "Saving eigenvectors to " << fn_vec << " [bin]" << endl; }
+    if (verbose) { cerr << "Saving eigenvectors to " << fn_vec << " [bin]" << endl; }
 
     ofstream F(fn_vec, ios_base::binary);
     if (!F) {
@@ -179,7 +210,7 @@ void diag_stream(istream &F) {
     exit(1);
   }
   const auto N = static_cast<int>(sqrt(size));
-  if (verbose) { cout << "size=" << size << " N=" << N << endl; }
+  if (verbose) { cerr << "size=" << size << " N=" << N << endl; }
 
   if (N == 0 || size != static_cast<size_t>(N) * static_cast<size_t>(N)) {
     cerr << "ERROR: matrix must be square!" << endl;
@@ -190,12 +221,15 @@ void diag_stream(istream &F) {
 }
 
 void usage(ostream &OUT = cout) { 
-  OUT << "Usage: diag [-h] [-t | -T] [-b | -B] [-vVq] [-o fn_val] [-O fn_vec] [-s scale] <input file>" << endl; 
+  OUT << "Usage: diag [-h] [-t | -T] [-b | -B] [-v|-vv] [-q] [-o fn_val] [-O fn_vec] [-s scale] <input file>" << endl;
+  OUT << "  -v              print resolved configuration and enable verbose diagnostics" << endl;
+  OUT << "  -vv             enable very verbose diagnostics" << endl;
+  OUT << "  -V, --version   print version and exit" << endl;
 }
 
 void parse_param(int argc, char *argv[]) {
   int c;
-  while ((c = getopt(argc, argv, "htTbBvVqo:O:s:")) != -1) {
+  while ((c = getopt(argc, argv, "htTbBvqo:O:s:")) != -1) {
     switch (c) {
       case 'h':
         usage();
@@ -209,9 +243,10 @@ void parse_param(int argc, char *argv[]) {
 
       case 'B': output_bin = true; break;
 
-      case 'v': verbose = true; break;
-
-      case 'V': veryverbose = true; break;
+      case 'v':
+        if (verbose) veryverbose = true;
+        verbose = true;
+        break;
 
       case 'q': quiet = true; break;
 
@@ -231,6 +266,7 @@ void run(int argc, char *argv[]) {
 
   if (remaining == 1) {
     char *filename = argv[optind];
+    fn_input = filename;
 
     ifstream F(filename);
     if (!F) {
@@ -246,8 +282,10 @@ void run(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "diag")) return EXIT_SUCCESS;
   clock_t start_clock = clock();
   cout << setprecision(OUTPUT_PREC);
+  cerr << setprecision(OUTPUT_PREC);
   parse_param(argc, argv);
   about();
   run(argc, argv);

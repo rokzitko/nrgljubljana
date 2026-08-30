@@ -1,3 +1,6 @@
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/common)
+configure_file(common/version.hpp.in generated/common/version.hpp @ONLY)
+
 macro(add_tool exec_name)
   add_executable(${exec_name} ${exec_name}/${exec_name}.cc)
 
@@ -11,6 +14,7 @@ macro(add_tool exec_name)
   target_compile_options(${exec_name} PRIVATE ${NRG_CXX_OPT})
   nrgljubljana_apply_strict_floating_point(${exec_name})
   target_include_directories(${exec_name} PRIVATE 
+                     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
                      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${exec_name}>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
@@ -35,12 +39,14 @@ target_compile_options(nrgchain_core PRIVATE ${NRG_CXX_OPT})
 nrgljubljana_apply_strict_floating_point(nrgchain_core)
 target_compile_definitions(nrgchain_core PRIVATE NRGCHAIN_NO_MAIN)
 target_include_directories(nrgchain_core PRIVATE
+                     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
                      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nrgchain>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include/range-v3>)
 
 set(all_executables adapt binavg broaden bw diag h5write hilb instantiate intavg integ kk matrix mats nrgchain resample specmoments tdavg unitary)
+set(NRG_TOOL_EXECUTABLES ${all_executables} PARENT_SCOPE)
 foreach(exec ${all_executables})
   add_tool(${exec})
 endforeach()

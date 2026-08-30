@@ -1,10 +1,8 @@
 // mats - evaluation of Green's functions at Matsubara frequencies
-// Ljubljana code Rok Zitko, rok.zitko@ijs.si, Nov 2012
+// Ljubljana code Rok Zitko, rok.zitko@ijs.si
 
 // CHANGE LOG
 // 16.11.2012 - first version based on the 'broaden' tool
-
-#define VERSION "0.0.1"
 
 #include <exception>
 #include <iostream>
@@ -29,9 +27,13 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
+
 using namespace std;
 
-bool verbose      = false; // output verbosity level
+int verbosity     = 0;
 double T;                 // temperature parameter
 bool one          = false; // For Nz=1, no subdir.
 char particle_stat = 'f';  // f)ermionic, b)osonic
@@ -46,6 +48,10 @@ int Nz;           // Number of spectra (1..Nz)
 int nrmats;       // Number of Matsubara points
 vector<vector<double>> buffers; // binary data buffers
 vector<int> sizes;              // sizes of buffers
+
+// Use high precision.
+const int SAVE_PREC = 18;
+const int COUT_PREC = 18;
 
 using cmpl = complex<double>;
 typedef map<double, cmpl> mapdc;
@@ -65,8 +71,10 @@ void usage(ostream &F = cout) {
   F << "Usage: mats [options] <name> <Nz> <T> <nrmats>" << endl;
   F << endl;
   F << "Optional parameters:" << endl;
-  F << " -h -- show help" << endl;
-  F << " -v -- verbose" << endl;
+  F << " -h, --help -- show help" << endl;
+  F << " -v -- show resolved configuration and verbose diagnostics on stderr" << endl;
+  F << " -vv -- increase verbosity further" << endl;
+  F << " -V, --version -- show project version and exit" << endl;
   F << " -o -- read <name> directly for Nz=1" << endl;
   F << " -b -- use bosonic Matsubara frequencies (fermionic by default)" << endl;
   F << " -O <file> -- output filename (spec.dat by default)" << endl;
@@ -75,13 +83,17 @@ void usage(ostream &F = cout) {
 }
 
 void cmd_line(int argc, char *argv[]) {
+  const option long_options[] = {
+    {"help", no_argument, nullptr, 'h'},
+    {nullptr, 0, nullptr, 0},
+  };
   int c;
-  while ((c = getopt(argc, argv, "hvo23bO:")) != -1) {
+  while ((c = getopt_long(argc, argv, "hvo23bO:", long_options, nullptr)) != -1) {
     switch (c) {
       case 'h':
         usage();
         exit(EXIT_SUCCESS);
-      case 'v': verbose = true; break;
+      case 'v': ++verbosity; break;
       case 'o': one = true; break;
       case 'b': particle_stat = 'b'; break;
       case 'O': output = optarg; break;
@@ -108,6 +120,30 @@ void cmd_line(int argc, char *argv[]) {
   if (!(T > 0.0)) throw std::invalid_argument("T must be greater than 0.");
   nrmats = atoi(argv[optind + 3]); // Number of Matsubara points
   if (!(nrmats >= 1)) throw std::invalid_argument("nrmats must be greater than or equal to 1.");
+  if (verbosity > 0) {
+    NRG::Tools::ConfigurationReport report("mats");
+    report.value("verbosity", verbosity);
+    report.value("input", name);
+    report.value("input_layout", one && Nz == 1 ? "single-file" : "numbered-directories");
+    report.value("input_format", "native-binary");
+    report.value("output", output);
+    report.value("Nz", Nz);
+    report.value("temperature", T);
+    report.value("matsubara_points", nrmats);
+    report.value("statistics", particle_stat == 'f' ? "fermionic" : "bosonic");
+    const auto first_frequency = particle_stat == 'f' ? M_PI * T : 0.0;
+    const auto last_index = static_cast<double>(nrmats - 1);
+    const auto last_frequency = particle_stat == 'f' ? (2.0 * last_index + 1.0) * M_PI * T
+                                                     : 2.0 * last_index * M_PI * T;
+    report.resolved("matsubara_first_frequency", first_frequency, "statistics, temperature, and first index");
+    report.resolved("matsubara_last_frequency", last_frequency, "statistics, temperature, and point count");
+    report.value("input_columns", 1 + nrcol);
+    report.value("weight_column", col + 1);
+    report.value("averaging", "equal-weight-1/Nz");
+    report.value("output_format", "text-frequency-real-imaginary");
+    report.value("output_precision", SAVE_PREC);
+    report.write(cerr);
+  }
   cout << "Processing: " << name << endl;
   cout << "Nz=" << Nz << " T=" << T << " nrmats=" << nrmats << endl;
 }
@@ -133,7 +169,7 @@ void load(int i) {
     cerr << "Error opening file " << filename << endl;
     exit(1);
   }
-  if (verbose) cout << "Reading " << filename << endl;
+  if (verbosity > 0) cerr << "Reading " << filename << endl;
   const int rows = 1 + nrcol; // number of elements in a line
   // Determine the number of records
   f.seekg(0, ios::beg);
@@ -143,7 +179,7 @@ void load(int i) {
   const long len              = end_pos - begin_pos;
   if (len % (rows * sizeof(double)) != 0) throw std::runtime_error("Input binary file has incomplete row data.");
   const int nr = len / (rows * sizeof(double)); // number of lines
-  if (verbose) cout << "len=" << len << " nr=" << nr << " data points" << endl;
+  if (verbosity > 0) cerr << "len=" << len << " nr=" << nr << " data points" << endl;
   // Allocate the read buffer. The data will be kept in memory for the
   // duration of the calculation!
   auto buffer = vector<double>(rows * nr);
@@ -157,11 +193,11 @@ void load(int i) {
   // Keep record of the the buffer and its size.
   buffers[i] = std::move(buffer);
   sizes[i]   = nr;
-  if (verbose) {
+  if (verbosity > 0) {
     // Check normalization.
     double sum = 0.0;
     for (int j = 0; j < nr; j++) sum += buffers[i][rows * j + col];
-    cout << "Weight=" << sum << endl;
+    cerr << "Weight=" << sum << endl;
   }
 }
 
@@ -189,7 +225,7 @@ void merge() {
     }
   }
   nr_spec = spec.size();
-  if (verbose) cout << nr_spec << " unique frequencies." << endl;
+  if (verbosity > 0) cerr << nr_spec << " unique frequencies." << endl;
   // Normalize weight by 1/Nz, determine total weight, and store the
   // (frequency,weight) data in the form of linear vectors for faster
   // access in the ensuing calculations.
@@ -201,7 +237,7 @@ void merge() {
     vspec.push_back(weight);
     sum += weight;
   }
-  if (verbose) cout << "Total weight=" << sum << endl;
+  if (verbosity > 0) cerr << "Total weight=" << sum << endl;
   assert(vfreq.size() == nr_spec && vspec.size() == nr_spec);
 }
 
@@ -224,7 +260,7 @@ void make_mesh(cvec &mesh_) {
 
 void compute(const cvec &mesh_, cvec &G_) {
   const int nr_mesh = mesh_.size();
-  if (verbose) cout << "Computing. nr_mesh=" << nr_mesh << endl;
+  if (verbosity > 0) cerr << "Computing. nr_mesh=" << nr_mesh << endl;
   G_.resize(nr_mesh);
   for (int i = 0; i < nr_mesh; i++) {
     const cmpl &z = mesh_[i];
@@ -233,13 +269,9 @@ void compute(const cvec &mesh_, cvec &G_) {
   }
 }
 
-// Use high precision!
-const int SAVE_PREC = 18; // Precision for output to the file
-const int COUT_PREC = 18; // Precision for verbose reporting on console
-
 // Save a map of (double,double) pairs to a file.
 void save(const string filename, const cvec &x, const cvec &y) {
-  if (verbose) cout << "Saving " << filename << endl;
+  if (verbosity > 0) cerr << "Saving " << filename << endl;
   ofstream F(filename.c_str());
   if (!F) {
     cerr << "Failed to open " << filename << " for writing." << endl;
@@ -255,10 +287,11 @@ void save(const string filename, const cvec &x, const cvec &y) {
 }
 
 int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "mats")) return EXIT_SUCCESS;
   try {
-    cout << "mats - thermal Green's function evaluation tool - " << VERSION << endl;
-    cout << "Rok Zitko, rok.zitko@ijs.si, Nov 2012" << endl;
+    cout << "mats - thermal Green's function evaluation tool" << endl;
     cout << setprecision(COUT_PREC);
+    cerr << setprecision(COUT_PREC);
     cmd_line(argc, argv);
     read_files();
     merge();

@@ -1,6 +1,6 @@
 // Kramers-Kronig transformation tool
 // Part of "NRG Ljubljana"
-// Rok Zitko, rok.zitko@ijs.si, 2007-2020
+// Rok Zitko, rok.zitko@ijs.si
 
 // The input file must consist of one space-separated (energy, value) pair per data line. Blank lines and full-line
 // comments beginning with '#' are ignored. The energy grid must be symmetric with respect to zero and contain an even
@@ -37,6 +37,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include "../common/diagnostics.hpp"
 #include "../common/gsl_piecewise_polynomial.hpp"
 #include "../common/output_file.hpp"
 
@@ -152,10 +153,27 @@ class KK {
    std::string output_source = "<stdout>";
 
    NRG::Tools::InterpolationMethod interpolation_method = NRG::Tools::InterpolationMethod::akima;
+   int verbosity = 0;
 
    void configure(const NumericalOptions &options) {
      interpolation_method = options.interpolation;
-   }
+    }
+
+    void report_configuration() const {
+      if (verbosity == 0) return;
+      NRG::Tools::ConfigurationReport report("kk");
+      report.value("verbosity", verbosity);
+      report.resolved("mode", mode == MODE::FILES ? "files" : "stdio", "positional arguments");
+      report.value("input", input_source);
+      report.value("output", output_source);
+      report.value("interpolation", NRG::Tools::interpolation_method_name(interpolation_method));
+      report.value("input.points", len);
+      report.resolved("input.lower_bound", Xmin, "sorted input grid");
+      report.resolved("input.upper_bound", Xmax, "sorted input grid");
+      report.value("output.precision", OUTPUT_PRECISION);
+      report.value("endpoint_policy", "subtracted");
+      report.write(std::cerr);
+    }
    
      // Initialize the KK transformer
      void init(XYFUNC im) {  // pass by value
@@ -171,28 +189,32 @@ class KK {
        if (mode == MODE::FILES) std::cout << "Range: [" << Xmin << " ; " << Xmax << "]" << std::endl;
        if (gsl_fcmp(-Xmin, Xmax, 1.e-8) != 0) throw std::runtime_error("Only symmetric intervals are supported!");
        tie(Xpts, Ypts) = split_vector_of_pairs(im);
-       polynomial.emplace(NRG::Tools::make_gsl_piecewise_polynomial(Xpts, Ypts, interpolation_method));
-       const auto sum = polynomial->integral();
-       if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
-       if (mode == MODE::FILES) std::cout << "Sum=" << sum << std::endl;
-       const auto nr = Xpts.size()/2;
-      for (auto i = nr; i < len; i++)
-        if (gsl_fcmp(Xpts[len - i - 1], -Xpts[i], 1e-8) != 0) {
-           throw std::runtime_error("Input grid is not symmetric around zero.");
-         }
-     }
+        const auto nr = Xpts.size()/2;
+       for (auto i = nr; i < len; i++)
+         if (gsl_fcmp(Xpts[len - i - 1], -Xpts[i], 1e-8) != 0) {
+            throw std::runtime_error("Input grid is not symmetric around zero.");
+          }
+        report_configuration();
+        polynomial.emplace(NRG::Tools::make_gsl_piecewise_polynomial(Xpts, Ypts, interpolation_method));
+        const auto sum = polynomial->integral();
+        if (!std::isfinite(sum)) throw std::runtime_error("Error: Integral is not a finite number.");
+        if (mode == MODE::FILES) std::cout << "Sum=" << sum << std::endl;
+      }
    
     void about() {
-     std::cout << "Kramers-Kronig transformation tool, RZ 2007-2020" << std::endl;
+     std::cout << "Kramers-Kronig transformation tool" << std::endl;
    }
    
    void usage() {
      std::cout << "\nUsage: kk [options] <input> <output>\n";
      std::cout << "\nAlternative usage: kk [options] -\n";
      std::cout << "\nIn this mode, kk reads from STDIN and outputs to STDOUT.\n\n";
-      std::cout << "Options:\n"
-                << "  -h, --help                     show this help\n"
-                << "  -i, --interpolation METHOD     linear, cspline, akima, or steffen (default: akima)" << std::endl;
+       std::cout << "Options:\n"
+                 << "  -h, --help                     show this help\n"
+                 << "  -i, --interpolation METHOD     linear, cspline, akima, or steffen (default: akima)\n"
+                 << "  -v                             show resolved configuration on standard error\n"
+                 << "  -vv                            increase verbosity further\n"
+                 << "  -V, --version                  show project version" << std::endl;
     }
 
     void parse_cmd_line(int argc, char *argv[]) {
@@ -202,12 +224,13 @@ class KK {
         {nullptr, 0, nullptr, 0}
      };
      int option;
-     while ((option = getopt_long(argc, argv, "hi:", long_options, nullptr)) != -1) {
+     while ((option = getopt_long(argc, argv, "hi:v", long_options, nullptr)) != -1) {
        switch (option) {
          case 'h':
             usage();
-            std::exit(EXIT_SUCCESS);
+           std::exit(EXIT_SUCCESS);
           case 'i': interpolation_method = NRG::Tools::parse_interpolation_method(optarg); break;
+          case 'v': ++verbosity; break;
           default: throw std::invalid_argument("Unknown command-line option.");
         }
       }

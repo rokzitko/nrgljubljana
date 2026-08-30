@@ -1,5 +1,4 @@
 // bw - Adaptive broadening of spectral functions obtained using NRG.
-// Ljubljana code Rok Zitko, rok.zitko@ijs.si, Mar, Aug 2009, Jun 2010
 
 // Approach from A. Freyn, S. Florens, PRB 79, 121102(R) (2009).
 
@@ -10,8 +9,6 @@
 // 12.1.2010 - missing header added
 // 14.6.2010 - rescale 'avg' by q in calc_b()
 // 22.10.2010 - removed some overzealous assertion checks
-
-#define VERSION "0.2.5"
 
 #include <exception>
 #include <iostream>
@@ -35,6 +32,10 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
+
 using namespace std;
 
 bool verbose            = false; // output verbosity level
@@ -52,6 +53,8 @@ bool savemore   = false;         // save intermediate results for A(w) and b(w)
 bool saveall    = false;         // save all quantities (integrated DOS, etc.)
 double dyn_mesh = -999;          // if > 0, the mesh is dynamically refined
 bool one        = false;         // For Nz=1, no subdir.
+bool bmin_was_sentinel = false;
+bool trim_was_sentinel = false;
 
 string name;      // filename of binary files containing the raw data
 int Nz;           // Number of spectra (1..Nz)
@@ -74,54 +77,51 @@ vec a;                // Spectral function [current approximation]
 vec inta, intb, intc; // Integrated spectral functions
 
 void usage(ostream &F = cout) { 
-  F << "Usage: bw [-h] [-vVpsSo] [-m min] [-M max] [-r ratio] [-n nr_iter] [-t trim] [-q q] <name> <b0> <Nz>\n"; 
+  F << "Usage: bw [-h] [-v|-vv] [-psSo] [-m min] [-M max] [-r ratio] [-n nr_iter] [-t trim] [-q q] <name> <b0> <Nz>\n";
+  F << "  -v              print resolved configuration and enable verbose diagnostics\n";
+  F << "  -vv             enable very verbose diagnostics\n";
+  F << "  -V, --version   print version and exit\n";
 }
 
 void cmd_line(int argc, char *argv[]) {
   int c;
-  while ((c = getopt(argc, argv, "hvVm:M:r:n:t:pq:sSx:d:o")) != -1) {
+  while ((c = getopt(argc, argv, "hvm:M:r:n:t:pq:sSx:d:o")) != -1) {
     switch (c) {
       case 'h':
         usage();
         exit(EXIT_SUCCESS);
 
-      case 'v': verbose = true; break;
-
-      case 'V': veryverbose = true; break;
+      case 'v':
+        if (verbose) veryverbose = true;
+        verbose = true;
+        break;
 
       case 'm':
         broaden_min = atof(optarg);
-        if (verbose) { cout << "broaden_min=" << broaden_min << endl; }
         break;
 
       case 'M':
         broaden_max = atof(optarg);
-        if (verbose) { cout << "broaden_max=" << broaden_max << endl; }
         break;
 
       case 'r':
         broaden_ratio = atof(optarg);
-        if (verbose) { cout << "broaden_ratio=" << broaden_ratio << endl; }
         break;
 
       case 'n':
         nr_iter = atoi(optarg);
-        if (verbose) { cout << "nr_iter=" << nr_iter << endl; }
         break;
 
       case 't':
         trim = atof(optarg);
-        if (verbose) { cout << "trim=" << trim << " trim/broaden_min=" << trim / broaden_min << endl; }
         break;
 
       case 'p':
         enforce_positivity = true;
-        if (verbose) { cout << "positivity of the spectral function will be enforced" << endl; }
         break;
 
       case 'q':
         q = atof(optarg);
-        if (verbose) { cout << "regularization q=" << q << endl; }
         break;
 
       case 's': savemore = true; break;
@@ -130,12 +130,10 @@ void cmd_line(int argc, char *argv[]) {
 
       case 'x':
         bmin = atof(optarg);
-        if (verbose) { cout << "minimal b(w)=" << bmin << endl; }
         break;
 
       case 'd':
         dyn_mesh = atof(optarg);
-        if (verbose) { cout << "dyn_mesh=" << dyn_mesh << endl; }
         break;
 
       case 'o': one = true; break;
@@ -182,7 +180,7 @@ void load(int i) {
     cerr << "Error opening file " << filename << endl;
     exit(1);
   }
-  if (verbose) { cout << "Reading " << filename << endl; }
+  if (verbose) { cerr << "Reading " << filename << endl; }
 
   // Determine the number of records
   f.seekg(0, ios::beg);
@@ -192,7 +190,7 @@ void load(int i) {
   const long len              = end_pos - begin_pos;
   if (len % (2 * sizeof(double)) != 0) throw std::runtime_error("Input binary file has incomplete data pairs.");
   const int nr = len / (2 * sizeof(double)); // number of pairs of double
-  if (verbose) { cout << "len=" << len << " nr=" << nr << " data points" << endl; }
+  if (verbose) { cerr << "len=" << len << " nr=" << nr << " data points" << endl; }
 
   // Allocate the read buffer. The data will be kept in memory for the
   // duration of the calculation!
@@ -213,7 +211,7 @@ void load(int i) {
     // Check normalization to 1.
     double sum = 0.0;
     for (int j = 0; j < nr; j++) sum += buffers[i][2 * j + 1];
-    cout << "Weight=" << sum << endl;
+    cerr << "Weight=" << sum << endl;
   }
 }
 
@@ -243,7 +241,7 @@ void merge() {
   }
 
   nr_spec = spec.size();
-  if (verbose) { cout << nr_spec << " unique frequencies." << endl; }
+  if (verbose) { cerr << nr_spec << " unique frequencies." << endl; }
 
   // Normalize weight by 1/Nz, determine total weight, and store the
   // (frequency,weight) data in the form of linear vectors for faster
@@ -256,7 +254,7 @@ void merge() {
     vspec.push_back(weight);
     sum += weight;
   }
-  if (verbose) { cout << "Total weight=" << sum << endl; }
+  if (verbose) { cerr << "Total weight=" << sum << endl; }
   assert(vfreq.size() == nr_spec && vspec.size() == nr_spec);
 }
 
@@ -277,7 +275,7 @@ void integrate_a(const vec &a_, const vec &mesh_, vec &inta_) {
     inta_[i] = sum;                                            // Integrated spectrum up to current freq
   }
 
-  if (verbose) { cout << "Total weight=" << sum << endl; }
+  if (verbose) { cerr << "Total weight=" << sum << endl; }
 }
 
 // inta = \int [-infty, omega]
@@ -336,7 +334,7 @@ void make_mesh(vec &mesh_) {
   mesh_.push_back(z);
   mesh_.push_back(-z);
 
-  if (verbose) { cout << "Maximal frequency=" << z << endl; }
+  if (verbose) { cerr << "Maximal frequency=" << z << endl; }
 
   sort(mesh_.begin(), mesh_.end());
 }
@@ -424,7 +422,7 @@ void refine_mesh(vec &mesh_, const vec &a_) {
 void broaden(const vec &mesh_, vec &a_, const vec &b_) {
   const int nr_mesh = mesh_.size();
 
-  if (verbose) { cout << "Broadening. nr_mesh=" << nr_mesh << endl; }
+  if (verbose) { cerr << "Broadening. nr_mesh=" << nr_mesh << endl; }
 
   a_.resize(nr_mesh);
 
@@ -439,7 +437,7 @@ void broaden(const vec &mesh_, vec &a_, const vec &b_) {
 
     // Enforce positivity
     if (a_[i] < 0.0 && enforce_positivity) {
-      if (veryverbose) { cout << "Warning: a(" << outputfreq << ")=" << a_[i] << endl; }
+      if (veryverbose) { cerr << "Warning: a(" << outputfreq << ")=" << a_[i] << endl; }
       a_[i] = 1e-16;
     }
   }
@@ -449,7 +447,7 @@ void broaden(const vec &mesh_, vec &a_, const vec &b_) {
 void save(const string filename0, const mapdd &m, int iter = 0, double trim_ = 0.0) {
   const string filename = filename0 + (iter > 0 ? tostring(iter) : "") + ".dat";
 
-  if (verbose) { cout << "Saving " << filename << endl; }
+  if (verbose) { cerr << "Saving " << filename << endl; }
 
   ofstream F(filename.c_str());
   if (!F) {
@@ -466,7 +464,7 @@ void save(const string filename0, const mapdd &m, int iter = 0, double trim_ = 0
 // Save pairs taken respectively from (mesh) and (data).
 void save(const string filename0, const vec &mesh_, const vec &data, int iter = 0, double trim_ = 0.0) {
   const string filename = filename0 + (iter > 0 ? tostring(iter) : "") + ".dat";
-  if (verbose) { cout << "Saving " << filename << endl; }
+  if (verbose) { cerr << "Saving " << filename << endl; }
 
   ofstream F(filename.c_str());
   if (!F) {
@@ -483,7 +481,7 @@ void save(const string filename0, const vec &mesh_, const vec &data, int iter = 
     if (std::isfinite(data[i])) {
       F << x << " " << y << endl;
     } else {
-      if (veryverbose) { cout << "Warning: " << i << " not finite." << endl; }
+      if (veryverbose) { cerr << "Warning: " << i << " not finite." << endl; }
     }
   }
 }
@@ -506,7 +504,7 @@ void calc_b(const vec &logd1, const vec &logd2, vec &bb) {
 // = (log f_1-log f_0)/(log omega_1-log omega_0)
 // = log(f_1/f_0) / log(omega_1/omega_0).
 void calc_deriv(const vec &inta_, vec &deriv) {
-  if (verbose) { cout << "Calculating a logarithmic derivative." << endl; }
+  if (verbose) { cerr << "Calculating a logarithmic derivative." << endl; }
 
   int nr = inta_.size();
   deriv.resize(nr);
@@ -520,7 +518,7 @@ void calc_deriv(const vec &inta_, vec &deriv) {
     assert(w1 > w0);
     const double log1 = log(f1 / f0);
     if (!std::isfinite(log1)) {
-      if (veryverbose) { cout << "Warning: log1 not finite at w0=" << w0 << endl; }
+      if (veryverbose) { cerr << "Warning: log1 not finite at w0=" << w0 << endl; }
     }
 
     const double log2 = log(std::abs(w1 / w0));
@@ -629,7 +627,7 @@ double LinInt::operator()(double x) {
 }
 
 void recalc_b(const vec &mesh_, const vec &bpos, const vec &bneg, vec &b_) {
-  if (verbose) { cout << "Recalculating b(omega)" << endl; }
+  if (verbose) { cerr << "Recalculating b(omega)" << endl; }
 
   const unsigned int sizepos = bpos.size();
   Vec Vecbpos(sizepos);
@@ -657,6 +655,8 @@ void recalc_b(const vec &mesh_, const vec &bpos, const vec &bneg, vec &b_) {
 // Set default values which depend on the chosen values of other
 // parameters.
 void defaults() {
+  bmin_was_sentinel = bmin < 0.0;
+  trim_was_sentinel = trim < 0.0;
   if (dyn_mesh > 0.0) {
     // Dynamic mesh
     if (bmin < 0.0) { bmin = 0.0; }
@@ -669,11 +669,59 @@ void defaults() {
   if (trim < 0.0) { trim = broaden_min * 10; }
 }
 
+void report_configuration() {
+  NRG::Tools::ConfigurationReport report("bw");
+  report.value("verbosity", veryverbose ? 2 : 1);
+  report.value("input_name", name);
+  report.value("Nz", Nz);
+  report.value("one_file_mode", one);
+  report.value("input_layout", one && Nz == 1 ? "direct" : "numbered_subdirectories");
+  report.value("input_mode", "native_binary_pairs");
+  report.value("kernel", "modified_log_gaussian");
+  report.value("b0", b0);
+  if (bmin_was_sentinel) {
+    report.resolved("bmin", bmin, dyn_mesh > 0.0 ? "dynamic-mesh default" : "broaden_ratio-1");
+  } else {
+    report.value("bmin", bmin);
+  }
+  report.value("regularization_q", q);
+  report.value("iterations", nr_iter);
+  report.value("broaden_min", broaden_min);
+  report.value("broaden_max", broaden_max);
+  report.value("broaden_ratio", broaden_ratio);
+  report.value("mesh_mode", dyn_mesh > 0.0 ? "dynamic" : "fixed");
+  if (dyn_mesh <= 0.0) {
+    report.resolved("dynamic_mesh_threshold", "disabled",
+                    dyn_mesh < 0.0 ? "negative sentinel" : "non-positive setting");
+  } else {
+    report.value("dynamic_mesh_threshold", dyn_mesh);
+  }
+  const auto [mesh_min, mesh_max] = minmax_element(mesh.begin(), mesh.end());
+  report.resolved("mesh_points", mesh.size(), "generated frequency mesh");
+  report.resolved("mesh_min", *mesh_min, "generated frequency mesh");
+  report.resolved("mesh_max", *mesh_max, "generated frequency mesh");
+  if (trim_was_sentinel) {
+    report.resolved("trim", trim, "10*broaden_min");
+  } else {
+    report.value("trim", trim);
+  }
+  report.value("enforce_positivity", enforce_positivity);
+  report.value("save_intermediate", savemore);
+  report.value("save_all", saveall);
+  report.value("integration", "trapezoidal");
+  report.value("derivative", "logarithmic_finite_difference");
+  report.value("b_interpolation", "linear");
+  report.value("spectrum_output_pattern", "a<iteration>.dat");
+  report.value("b_output_pattern", savemore ? "b<iteration>.dat" : "disabled");
+  report.write(cerr);
+}
+
 int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "bw")) return EXIT_SUCCESS;
   try {
-    cout << "bw - Adaptive broadening tool - " << VERSION << endl;
-    cout << "Rok Zitko, rok.zitko@ijs.si, 2009-2010" << endl;
+    cout << "bw - Adaptive broadening tool" << endl;
     cout << setprecision(16);
+    cerr << setprecision(16);
 
     cmd_line(argc, argv);
     defaults();
@@ -681,6 +729,7 @@ int main(int argc, char *argv[]) {
     merge();
 
     make_mesh(mesh);
+    if (verbose) report_configuration();
     initial_b(b);
 
     if (savemore) { save("b", vfreq, b, 0, trim); }

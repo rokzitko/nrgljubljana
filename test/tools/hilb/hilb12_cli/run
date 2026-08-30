@@ -4,10 +4,6 @@ set -eu
 rm -f result.txt
 number='[-+]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][-+]?[0-9]+)?'
 
-version=$("$1/hilb" -V 2>stderr.txt)
-test "$version" = "hilb 2026.09"
-test ! -s stderr.txt
-
 if "$1/hilb" >stdout.txt 2>stderr.txt; then
   exit 1
 fi

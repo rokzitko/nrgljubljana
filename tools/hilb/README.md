@@ -88,7 +88,7 @@ label Re(H_n) Im(H_n)
 ```
 
 The `-o FILE` option writes these data to a file instead of standard output.
-The program's two `# hilb ...` identification lines remain on standard output.
+The program's `# hilb ...` identification line remains on standard output.
 
 ### DMFT self-energy conversion
 
@@ -176,12 +176,13 @@ first can be updated if writing the second fails. On systems that provide it,
 | Option | Meaning |
 | --- | --- |
 | `-h`, `--help` | Print command-line help. |
-| `-V` | Print `hilb 2026.09`. |
+| `-v` | Print the resolved configuration to standard error. |
+| `-vv` | Also print detailed setup diagnostics to standard error. |
+| `-V`, `--version` | Print the project version. |
 | `-d FILE` | Read a tabulated density of states from `FILE`. Otherwise use the built-in semicircular density. |
 | `-i METHOD`, `--interpolation METHOD` | Interpolate a tabulated density with `linear`, `cspline`, `akima`, or `steffen`. Default: `cspline`. |
 | `-n N` | Multiply the density by $E^N$. `N` must be a nonnegative integer. Default: `0`. |
 | `-G` | Print or write both parts of the raw complex transform instead of the mode-specific default. |
-| `-v` | Print additional information to standard output. |
 | `-s SCALE` | Set the positive scale $s$ of the built-in semicircular density, with $B=1/s$. |
 | `-B B` | Set the positive half-bandwidth $B$ of the built-in semicircular density, with $s=1/B$. |
 | `-o FILE` | Write results to `FILE` in the single-point and argument-file modes. |
@@ -199,8 +200,8 @@ first can be updated if writing the second fails. On systems that provide it,
 Use either `-s` or `-B`; if both are present, the last one takes effect. They
 configure only the built-in density and do not rescale data loaded with `-d`.
 The shifts affect $z$, not the integration energy $E$ or the factor $E^n$.
-Verbose diagnostics are written to standard output and can therefore be mixed
-with data unless `-o` is used.
+Verbose diagnostics are written to standard error and never mix with numeric
+standard output.
 
 The short options `-a` and `-r` are retained as legacy aliases for the uniform
 long options `--epsabs` and `--epsrel`.

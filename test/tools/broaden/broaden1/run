@@ -1,3 +1,8 @@
 #!/bin/sh
-"$1/broaden" -r 1.1 -o spec.bin 1 0.3 1e-4
+set -eu
+"$1/broaden" -v -r 1.1 -o spec.bin 1 0.3 1e-4 2>verbose.txt
+grep -q '^broaden: configuration$' verbose.txt
+grep -q 'omega0_ratio=auto ->' verbose.txt
+grep -q '^  mesh_points=' verbose.txt
+grep -q '^  output_precision=18$' verbose.txt
 "$2/test/compare.pl" "$3/ref"

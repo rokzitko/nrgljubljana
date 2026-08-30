@@ -851,10 +851,7 @@ TEST(Hilb, dmft_shifts_and_clipping_match_equivalent_arguments) { // NOLINT
   for (const auto &file : files) std::remove(file.c_str());
 }
 
-TEST(Hilb, version_and_invalid_arity_have_distinct_behavior) { // NOLINT
-  testing::internal::CaptureStdout();
-  EXPECT_NO_THROW(run_hilb({"hilb", "-V"}));
-  EXPECT_EQ(testing::internal::GetCapturedStdout(), "hilb 2026.09\n");
+TEST(Hilb, invalid_arity_is_rejected) { // NOLINT
   EXPECT_THROW(run_hilb({"hilb"}), std::runtime_error);
   EXPECT_THROW(run_hilb({"hilb", "1", "2", "3"}), std::runtime_error);
 }

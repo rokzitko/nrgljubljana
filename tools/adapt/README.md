@@ -2,8 +2,6 @@
 
 `adapt` calculates the logarithmic discretization functions used by the numerical renormalization group (NRG). It supports fixed and adaptive meshes and treats the positive and negative frequency branches separately.
 
-Copyright (C) 2008-2026 Rok Zitko
-
 ## Discretization functions
 
 In units of the half-bandwidth, the mesh points and representative energies are
@@ -87,7 +85,7 @@ or override the parameter file on the command line with `--integral`.
 ## Usage
 
 ```text
-adapt [-h|--help] [--flat GG] [--integral] [--epsabs VALUE]
+adapt [-h|--help] [-v|-vv] [--flat GG] [--integral] [--epsabs VALUE]
       [--epsrel VALUE] [--workspace-limit N]
       [--gsl-error-policy ignore|warn|fail] [P|N] [param_filename]
 ```
@@ -101,6 +99,9 @@ adapt [-h|--help] [--flat GG] [--integral] [--epsabs VALUE]
 - `--epsrel VALUE` overrides the relative CQUAD tolerance. Default: `allowed_error`.
 - `--workspace-limit N` sets the CQUAD workspace capacity; `N` must be at least `3`. Default: `1000`.
 - `--gsl-error-policy POLICY` selects `ignore`, `warn`, or `fail` for CQUAD failures. Default: `fail`.
+- `-v` writes the resolved configuration to standard error.
+- `-vv` additionally enables very verbose diagnostics.
+- `-V` or `--version` prints the project version and exits immediately.
 - `-h` or `--help` prints the command synopsis.
 
 Options and positional arguments may be given in either order. Examples:

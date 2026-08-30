@@ -5,8 +5,6 @@ into a continuous spectrum. It can average several $z$-shifted spectra, apply
 one of several primary broadening kernels, and optionally perform a final
 Gaussian or Fermi-derivative convolution.
 
-Copyright (C) 2012-2026 Rok Zitko
-
 The finite-temperature hybrid kernels used here are implemented in
 `c++/broadening.hpp` and shared with the main NRG executable. The two programs
 select the same legacy kernel by default. The standalone tool additionally
@@ -305,7 +303,9 @@ normalization guarantee in that case.
 | Option | Meaning |
 | --- | --- |
 | `-h` as the only argument | Print command-line help and exit. |
-| `-v` | Print input, mesh, total-weight, and kernel-area diagnostics. |
+| `-v` | Print the resolved configuration and input, mesh, total-weight, and kernel-area diagnostics to standard error. |
+| `-vv` | Enable very verbose diagnostics. |
+| `-V` or `--version` | Print the project version and exit immediately. |
 | `-m min` | Set the smallest geometric mesh scale. Default: `1e-7`. |
 | `-M max` | Set the largest mesh frequency. Default: `2.0`. |
 | `-r ratio` | Set the ratio between geometric mesh scales. Must exceed one. Default: `1.01`. |

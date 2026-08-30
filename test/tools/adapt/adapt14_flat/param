@@ -2,6 +2,7 @@
 dos=Delta.dat
 Lambda=2
 adapt=false
+loadg=not-a-boolean
 xmax=2.5
 outputstep=0.25
 xfine=1.5

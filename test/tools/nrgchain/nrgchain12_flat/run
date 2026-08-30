@@ -1,4 +1,11 @@
 #!/bin/sh
+set -eu
 export PATH="$1:$PATH"
-nrgchain
+grep -v '^mMAX=' param >param-auto
+nrgchain -v param-auto 2>verbose.txt
+grep -q '^nrgchain: configuration$' verbose.txt
+grep -q '^  mMAX=auto -> 60 ' verbose.txt
+grep -q '^  density_source=flat$' verbose.txt
+grep -q '^  g_positive=auto -> inactive ' verbose.txt
+grep -q '^  output_precision=16$' verbose.txt
 "$2/test/compare.pl" "$3/ref"

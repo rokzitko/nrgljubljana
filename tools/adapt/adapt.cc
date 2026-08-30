@@ -19,14 +19,16 @@
 #include <optional>
 #include <stdexcept>
 
+#include <common/version.hpp>
+
 using namespace std::string_literals;
 
 #include "adapt.hpp"
+#include "../common/diagnostics.hpp"
 using namespace NRG::Adapt;
 
 void about(std::ostream &F = std::cout) {
   F << "# Discretization ODE solver" << std::endl;
-  F << "# Rok Zitko, rok.zitko@ijs.si, 2008-2020" << std::endl;
 }
 
 void help(int argc, char **argv, const std::string &help_message)
@@ -38,14 +40,19 @@ void help(int argc, char **argv, const std::string &help_message)
   }
 }
 
-const auto usage = "Usage: adapt [-h|--help] [--flat GG] [--integral] [--epsabs VALUE] [--epsrel VALUE] "
-                   "[--workspace-limit N] [--gsl-error-policy ignore|warn|fail] [P|N] [param_filename]"s;
+const auto usage = "Usage: adapt [-h|--help] [-v|-vv] [--flat GG] [--integral] [--epsabs VALUE] [--epsrel VALUE] "
+                   "[--workspace-limit N] [--gsl-error-policy ignore|warn|fail] [P|N] [param_filename]\n"
+                   "  -v              print resolved configuration to stderr\n"
+                   "  -vv             enable very verbose diagnostics\n"
+                   "  -V, --version   print version and exit"s;
 
 struct CommandLineOptions {
   Sign sign = Sign::POS;
   std::string param_fn = "param";
   std::optional<double> flat_gamma;
   bool integral = false;
+  bool verbose = false;
+  bool veryverbose = false;
   CquadOptions cquad;
 };
 
@@ -107,6 +114,16 @@ CommandLineOptions cmd_line(int argc, char *argv[]) {
     if (arg == "-h" || arg == "--help") {
       std::cout << usage << std::endl;
       std::exit(EXIT_SUCCESS);
+    }
+    if (arg == "-v") {
+      if (options.verbose) options.veryverbose = true;
+      options.verbose = true;
+      continue;
+    }
+    if (arg == "-vv") {
+      options.verbose     = true;
+      options.veryverbose = true;
+      continue;
     }
     if (arg == "--flat") {
       if (options.flat_gamma) { throw std::invalid_argument("--flat specified more than once.\n" + usage); }
@@ -178,7 +195,94 @@ CommandLineOptions cmd_line(int argc, char *argv[]) {
   return options;
 }
 
+void report_configuration(const CommandLineOptions &options, const Adapt &calc) {
+  NRG::Tools::ConfigurationReport report("adapt");
+  report.value("verbosity", options.veryverbose ? 2 : 1);
+  report.value("frequency_branch", calc.sign == Sign::POS ? "positive" : "negative");
+  report.value("parameter_file", options.param_fn);
+  if (calc.flat_gamma) {
+    report.value("density_mode", "flat");
+    report.value("flat_gamma", *calc.flat_gamma);
+  } else {
+    report.value("density_mode", "file");
+    const auto density_file = calc.P.Pstr("dos", "Delta.dat");
+    if (calc.P.contains("dos")) {
+      report.value("density_file", density_file);
+    } else {
+      report.resolved("density_file", density_file, "parameter default");
+    }
+  }
+  report.value("density_interpolation", "linear");
+  report.value("density_integration", "trapezoidal");
+  report.value("frequency_min", 0.0);
+  report.value("frequency_max", 1.0);
+  report.value("Lambda", static_cast<double>(calc.Lambda));
+  report.value("adaptive_mesh", calc.adapt);
+  report.value("hardgap", calc.hardgap);
+  report.value("boundary", calc.boundary);
+  report.value("bandrescale", calc.bandrescale);
+  report.value("x_min", 1.0);
+  report.value("xmax", calc.xmax);
+  report.value("xfine", calc.xfine);
+  report.value("output_step", calc.output_step);
+  report.value("dx_fine", calc.dx_fine);
+  report.value("dx_fast", calc.dx_fast);
+  report.value("allowed_error", calc.allowed_error);
+  report.value("max_subdiv", calc.max_subdiv);
+  report.value("max_abs", calc.max_abs);
+  report.value("secant_eps", calc.convergence_eps);
+  report.value("secant_factor", calc.P.P("secant_factor", 1e-7));
+  report.value("secant_max_iter", calc.max_iter);
+  if (!calc.adapt) {
+    report.resolved("load_g", "inactive", "adaptive_mesh=false");
+    report.resolved("g_file", "inactive", "adaptive_mesh=false");
+  } else {
+    const auto load_g = calc.P.Pbool("loadg", false);
+    if (calc.P.contains("loadg")) {
+      report.value("load_g", load_g);
+    } else {
+      report.resolved("load_g", load_g, "parameter default");
+    }
+    report.value("g_file", calc.sign == Sign::POS ? "GSOL.dat" : "GSOLNEG.dat");
+  }
+  report.value("f_file", calc.sign == Sign::POS ? "FSOL.dat" : "FSOLNEG.dat");
+
+  const auto method = calc.f_method == FMethod::ODE ? "ode" : "integral";
+  if (options.integral) {
+    report.value("f_method", method);
+    report.value("f_method_source", "--integral override");
+  } else if (calc.P.contains("f_method")) {
+    report.value("f_method", method);
+  } else {
+    report.resolved("f_method", method, "parameter default");
+  }
+  report.value("cquad_active", calc.f_method == FMethod::INTEGRAL);
+  if (options.cquad.epsabs) {
+    report.value("cquad_epsabs", *options.cquad.epsabs);
+  } else {
+    report.resolved("cquad_epsabs", 0.0, "CQUAD default");
+  }
+  if (options.cquad.epsrel) {
+    report.value("cquad_epsrel", *options.cquad.epsrel);
+  } else {
+    report.resolved("cquad_epsrel", calc.allowed_error, "allowed_error");
+  }
+  if (options.cquad.workspace_limit) {
+    report.value("cquad_workspace_limit", *options.cquad.workspace_limit);
+  } else {
+    report.resolved("cquad_workspace_limit", std::size_t{1000}, "CQUAD default");
+  }
+  const auto error_policy = options.cquad.gsl_error_policy.value_or(NRG::Tools::GslErrorPolicy::fail);
+  if (options.cquad.gsl_error_policy) {
+    report.value("cquad_error_policy", NRG::Tools::gsl_error_policy_name(error_policy));
+  } else {
+    report.resolved("cquad_error_policy", NRG::Tools::gsl_error_policy_name(error_policy), "default policy");
+  }
+  report.write(std::cerr);
+}
+
 int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "adapt")) return EXIT_SUCCESS;
   try {
     const std::clock_t start_clock = std::clock();
     about();
@@ -186,6 +290,7 @@ int main(int argc, char *argv[]) {
     const auto options = cmd_line(argc, argv);
     Params P(options.param_fn);
     Adapt calc(P, options.sign, options.flat_gamma, options.integral, options.cquad);
+    if (options.verbose) report_configuration(options, calc);
     calc.run();
     const std::clock_t end_clock = std::clock();
     std::cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << std::endl;

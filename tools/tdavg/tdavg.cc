@@ -1,11 +1,9 @@
 // tdavg - Averaging with interpolation for thermodynamics
-// Part of "NRG Ljubljana", Rok Zitko, rok.zitko@ijs.si, Aug 2009
+// Part of "NRG Ljubljana", Rok Zitko, rok.zitko@ijs.si
 
 #define PROGRAM "tdavg"
 #define DESCRIPTION "thermodynamics averaging tool"
-#define VERSION "0.2.1"
-#define USAGE "[-h] [input] [reference]"
-#define AUTHOR "Rok Zitko, rok.zitko@ijs.si, 2020"
+#define USAGE "[options] [input] [reference]"
 
 #include <cctype>
 #include <iostream>
@@ -30,13 +28,19 @@
 #include <unistd.h>
 #include <getopt.h>
 
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
+
 using namespace std;
 
-bool verbose     = false; // output verbosity level
-bool veryverbose = false; // horribly detailed output
+int verbosity = 0;
 
 string name;     // input file
 string ref_name; // reference file (to be subtracted element by element)
+bool input_defaulted = false;
+bool reference_explicit = false;
+bool reference_default_found = false;
 
 bool copycomments      = false;
 string lastcommentline = "";
@@ -59,7 +63,14 @@ unsigned int columns = 0; // number of columns (excluding the first column!)
 
 const int OUTPUT_PRECISION = 16;
 
-void usage(ostream &F = cout) { F << "Usage: " << PROGRAM << " " << USAGE << endl; }
+void usage(ostream &F = cout) {
+  F << "Usage: " << PROGRAM << " " << USAGE << endl;
+  F << " -h, --help -- show help" << endl;
+  F << " -v -- show resolved configuration and verbose diagnostics on stderr" << endl;
+  F << " -vv -- include detailed input diagnostics" << endl;
+  F << " -V, --version -- show project version and exit" << endl;
+  F << " -c -- copy the last input comment to the output" << endl;
+}
 
 // Check for the existance of a regular file.
 bool file_exists(string filename) {
@@ -70,14 +81,17 @@ bool file_exists(string filename) {
 }
 
 void cmd_line(int argc, char *argv[]) {
+  const option long_options[] = {
+    {"help", no_argument, nullptr, 'h'},
+    {nullptr, 0, nullptr, 0},
+  };
   int c;
-  while ((c = getopt(argc, argv, "hvVc")) != -1) {
+  while ((c = getopt_long(argc, argv, "hvc", long_options, nullptr)) != -1) {
     switch (c) {
       case 'h':
         usage();
         exit(EXIT_SUCCESS);
-      case 'v': verbose = true; break;
-      case 'V': veryverbose = true; break;
+      case 'v': ++verbosity; break;
       case 'c': copycomments = true; break;
       default: abort();
     }
@@ -91,13 +105,16 @@ void cmd_line(int argc, char *argv[]) {
     name = string(argv[optind]); // Input filename
   } else {
     name = string("td.dat");
+    input_defaulted = true;
   }
   if (remaining >= 2) {
     ref_name = string(argv[optind+1]); // Reference filename
+    reference_explicit = true;
   } else {
     const string ref_name_default = "td-ref.dat";
     if (file_exists("td-ref.dat")) {
       ref_name = ref_name_default;
+      reference_default_found = true;
     } else {
       ref_name = string("");
     }
@@ -146,7 +163,7 @@ DataType load(const string &filename) {
   while (f.good() && f.peek() == '#') {
     string line;
     getline(f, line);
-    if (veryverbose) cout << "##" << line << endl;
+    if (verbosity >= 2) cerr << "##" << line << endl;
     if (copycomments) lastcommentline = line;
   }
   do {
@@ -154,7 +171,7 @@ DataType load(const string &filename) {
     while (f.good() && f.peek() != '#') {
       string line;
       getline(f, line);
-      if (veryverbose) cout << line << endl;
+      if (verbosity >= 2) cerr << line << endl;
       if (f.fail()) break;
       dvec elements = split(line);
       if (elements.size() == 0) {
@@ -171,18 +188,18 @@ DataType load(const string &filename) {
       }
       double T    = elements[0]; // temperature
       dvec values = dvec(elements.begin() + 1, elements.end());
-      if (veryverbose) cout << T << " " << values << endl;
+      if (verbosity >= 2) cerr << T << " " << values << endl;
       data.push_back(make_pair(T, values));
     }
     if (data.size() != 0) {
-      if (verbose) cout << "Block length " << data.size() << endl;
+      if (verbosity >= 1) cerr << "Block length " << data.size() << endl;
       result.push_back(data); // accumulate results for all blocks
     }
     // skip comments to next block
     while (f.good() && f.peek() == '#') {
       string line;
       getline(f, line);
-      if (veryverbose) { cout << "#" << line << endl; }
+      if (verbosity >= 2) { cerr << "#" << line << endl; }
     }
   } while (f.good() && !f.eof());
   return result;
@@ -204,7 +221,7 @@ void read_files() {
       exit(1);
     }
   }
-  if (verbose) cout << "Nz=" << Nz << " columns=" << columns << endl;
+  if (verbosity >= 1) cerr << "Nz=" << Nz << " columns=" << columns << endl;
 }
 
 // Linear interpolation class
@@ -355,14 +372,44 @@ void save(const multiVec &result, ostream &f_) {
   }
 }
 
+void report_configuration(const string &output_name) {
+  if (verbosity == 0) return;
+  NRG::Tools::ConfigurationReport report("tdavg");
+  report.value("verbosity", verbosity);
+  if (input_defaulted)
+    report.resolved("input", name, "default filename");
+  else
+    report.value("input", name);
+  if (reference_explicit)
+    report.value("reference", ref_name);
+  else
+    report.resolved("reference", ref_name.empty() ? string("none") : ref_name,
+                    reference_default_found ? "default file exists" : "default file not found");
+  report.resolved("output", output_name, "input filename");
+  report.value("reference_mode", ref_name.empty() ? "none" : "subtract");
+  report.value("copy_comments", copycomments);
+  report.value("interpolation", "linear");
+  report.value("extrapolation", "constant-endpoint");
+  report.value("mesh_relative_merge_tolerance", EPS);
+  report.value("output_precision", OUTPUT_PRECISION);
+  report.resolved("input_blocks", Nz, "input data");
+  if (!ref_name.empty()) report.resolved("reference_blocks", reference.size(), "reference data");
+  report.resolved("value_columns", columns, "input data");
+  report.resolved("output_rows", mesh.size(), "merged temperature mesh");
+  report.resolved("mesh_lower_bound", mesh.front(), "merged temperature mesh");
+  report.resolved("mesh_upper_bound", mesh.back(), "merged temperature mesh");
+  report.write(cerr);
+}
+
 void hello() {
-  cout << PROGRAM << " - " << DESCRIPTION << " - " << VERSION << endl;
-  cout << AUTHOR << endl;
+  cout << PROGRAM << " - " << DESCRIPTION << endl;
 }
 
 int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, PROGRAM)) return EXIT_SUCCESS;
   hello();
   cout << setprecision(OUTPUT_PRECISION);
+  cerr << setprecision(OUTPUT_PRECISION);
   cmd_line(argc, argv);
   const string output_name = (name == "td.dat" ? "td-avg.dat" : name + ".avg.dat");
   ofstream OF(output_name.c_str());
@@ -373,6 +420,7 @@ int main(int argc, char *argv[]) {
   OF << setprecision(OUTPUT_PRECISION);
   read_files();
   mesh = merge_meshes();
+  report_configuration(output_name);
   f    = interpolate(input);
   if (ref_name != "") reff = interpolate(reference);
   multiVec result = avg();

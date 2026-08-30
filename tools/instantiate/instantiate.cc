@@ -21,6 +21,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <system_error>
 #include <streambuf>
@@ -32,7 +33,12 @@
 #include <read-input.hpp>
 #include <traits.hpp>
 #include <workdir.hpp>
+#include <parse_bool.hpp>
 
+#include <common/version.hpp>
+
+#include "../common/diagnostics.hpp"
+#include "../common/parser.hpp"
 #include "matrix_evaluator.hpp"
 #include "nrgchain.hpp"
 
@@ -46,10 +52,20 @@ struct Options {
   bool wilson_only = false;
   bool diag_seed_only = false;
   bool generate_temporaries = false;
+  int verbosity = 0;
 };
 
 void usage(std::ostream &out = std::cout) {
-  out << "Usage: instantiate [--wilson-only | --diag-seed-only] [--generate-temporaries] [--param FILE] [--template-dir DIR]\n";
+  out << "Usage: instantiate [options]\n"
+      << "  --wilson-only          generate Wilson-chain files only\n"
+      << "  --diag-seed-only       generate and diagonalize the seed only\n"
+      << "  --generate-temporaries publish legacy temporary files\n"
+      << "  --param FILE           read parameters from FILE (default: param)\n"
+      << "  --template-dir DIR     find template inputs under DIR (default: template)\n"
+      << "  -v                     show resolved configuration on standard error\n"
+      << "  -vv                    increase verbosity further\n"
+      << "  -V, --version          show project version\n"
+      << "  -h, --help             show this help\n";
 }
 
 Options parse_options(const int argc, char *argv[]) {
@@ -59,6 +75,11 @@ Options parse_options(const int argc, char *argv[]) {
     if (arg == "-h" || arg == "--help") {
       usage();
       std::exit(EXIT_SUCCESS);
+    }
+    if (arg.size() >= 2 && arg.front() == '-' &&
+        std::all_of(arg.begin() + 1, arg.end(), [](const char ch) { return ch == 'v'; })) {
+      options.verbosity += static_cast<int>(arg.size() - 1);
+      continue;
     }
     if (arg == "--wilson-only") {
       options.wilson_only = true;
@@ -445,6 +466,256 @@ TemplateHeader read_template_header(DataTemplateReader &data_in) {
   return header;
 }
 
+using NrgChainTableMode = NRG::Tools::NrgChain::TableMode;
+
+struct ResolvedNrgChainConfiguration {
+  NrgChainTableMode mode;
+  double Lambda;
+  double z;
+  double bandrescale;
+  double xmax;
+  unsigned int Nmax;
+  unsigned int mMAX;
+  unsigned int preccpp;
+  bool adapt;
+  bool rescalexi;
+  std::string band;
+  std::string dos;
+  bool requested_tables_save;
+  bool requested_tables_load;
+  bool requested_tridiagonalize;
+  bool tables_save;
+  bool tables_load;
+  bool tridiagonalize;
+};
+
+struct NrgChainInvocation {
+  std::map<std::string, std::string> parameters;
+  ResolvedNrgChainConfiguration configuration;
+};
+
+std::map<std::string, std::string> read_nrgchain_parameters(const std::string &filename) {
+  std::ifstream input(filename);
+  if (!input) throw std::runtime_error("Can't open " + filename + " for reading.");
+  std::map<std::string, std::string> parameters;
+  if (NRG::Tools::find_block(input, "param")) NRG::Tools::parse_key_value_block(input, parameters);
+  return parameters;
+}
+
+ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
+  const std::map<std::string, std::string> &parameters, const NrgChainTableMode mode) {
+  auto text = [&parameters](const std::string_view key) -> const std::string * {
+    const auto it = parameters.find(std::string(key));
+    return it == parameters.end() ? nullptr : &it->second;
+  };
+  auto number = [&text](const std::string_view key, const double default_value) {
+    const auto *value = text(key);
+    return value ? std::atof(value->c_str()) : default_value;
+  };
+  auto integer = [&text](const std::string_view key, const unsigned int default_value) {
+    const auto *value = text(key);
+    return value ? static_cast<unsigned int>(std::atoi(value->c_str())) : default_value;
+  };
+  auto boolean = [&text](const std::string_view key, const bool default_value) {
+    const auto *value = text(key);
+    return value ? NRG::parse_bool(*value) : default_value;
+  };
+  auto string = [&text](const std::string_view key, std::string default_value) {
+    const auto *value = text(key);
+    return value ? *value : std::move(default_value);
+  };
+
+  ResolvedNrgChainConfiguration config{
+    .mode = mode,
+    .Lambda = number("Lambda", 2.0),
+    .z = number("z", 1.0),
+    .bandrescale = number("bandrescale", 1.0),
+    .xmax = number("xmax", 30.0),
+    .Nmax = integer("Nmax", 0),
+    .mMAX = 0,
+    .preccpp = integer("preccpp", 2000),
+    .adapt = boolean("adapt", false),
+    .rescalexi = boolean("rescalexi", false),
+    .band = string("band", "adapt"),
+    .dos = string("dos", "Delta.dat"),
+    .requested_tables_save = boolean("nrgchain_tables_save", false),
+    .requested_tables_load = boolean("nrgchain_tables_load", false),
+    .requested_tridiagonalize = parameters.contains("nrgchain_tridiag")
+                                      ? boolean("nrgchain_tridiag", true)
+                                      : boolean("nrgchains_tridiag", true),
+    .tables_save = false,
+    .tables_load = false,
+    .tridiagonalize = false,
+  };
+  config.mMAX = integer("mMAX", 2U * config.Nmax);
+  config.tables_save = config.requested_tables_save;
+  config.tables_load = config.requested_tables_load;
+  config.tridiagonalize = config.requested_tridiagonalize;
+  if (mode == NrgChainTableMode::SaveOnly) {
+    config.tables_load = false;
+    config.tables_save = true;
+    config.tridiagonalize = false;
+  } else if (mode == NrgChainTableMode::LoadAndTridiagonalize) {
+    config.tables_load = true;
+    config.tables_save = false;
+    config.tridiagonalize = true;
+  }
+  return config;
+}
+
+NrgChainInvocation make_nrgchain_invocation(const std::string &filename, const NrgChainTableMode mode) {
+  // Keep reporting and core execution on the same parser output and mode.
+  auto parameters = read_nrgchain_parameters(filename);
+  auto configuration = resolve_nrgchain_configuration(parameters, mode);
+  return {std::move(parameters), std::move(configuration)};
+}
+
+std::string_view nrgchain_mode_name(const NrgChainTableMode mode) {
+  switch (mode) {
+    case NrgChainTableMode::Calculate: return "parameter-file";
+    case NrgChainTableMode::SaveOnly: return "save-only";
+    case NrgChainTableMode::LoadAndTridiagonalize: return "load-and-tridiagonalize";
+  }
+  throw std::logic_error("Unknown nrgchain table mode.");
+}
+
+void report_configuration(const Options &options, const NrgChainInvocation &invocation) {
+  if (options.verbosity == 0) return;
+
+  const auto &values = invocation.parameters;
+  const auto &config = invocation.configuration;
+  NRG::Tools::ConfigurationReport report("instantiate");
+  report.value("verbosity", options.verbosity);
+  if (options.wilson_only)
+    report.value("mode", "wilson-only");
+  else if (options.diag_seed_only)
+    report.value("mode", "diag-seed-only");
+  else
+    report.resolved("mode", "full", "no restricted-mode option");
+  report.value("generate_temporaries", options.generate_temporaries);
+  report.value("param.file", options.param_filename);
+  report.value("nrgchain.mode", nrgchain_mode_name(config.mode));
+
+  if (!options.wilson_only) {
+    report.value("template.directory", options.template_dir);
+    const auto data_filename = resolve_template_file(options.template_dir, "data.in");
+    report.resolved("template.data", data_filename.string(), "template search");
+    DataTemplateReader data_in(data_filename);
+    const auto header = read_template_header(data_in);
+    report.value("template.channels", header.channels);
+    report.value("template.chain_sites", header.chain_sites);
+    report.value("template.subspaces", header.subspaces);
+    for (int seed_header_line = 0; seed_header_line < 3; ++seed_header_line)
+      if (!data_in.next_data_line()) throw std::runtime_error("Template contains incomplete seed data after its header.");
+    report.resolved("template.scale_factor", data_in.factor(), "template # SCALE value");
+    report.value("matrix.output_precision", 18);
+    report.value("matrix.chop_tolerance", 1e-14);
+  }
+
+  auto parameter = [&values, &report](const std::string_view name, const std::string_view key, const auto &value,
+                                     const std::string_view reason = "nrgchain default") {
+    if (values.contains(std::string(key)))
+      report.value(name, value);
+    else
+      report.resolved(name, value, reason);
+  };
+  auto requested_tridiagonalization = [&](const std::string_view name) {
+    if (values.contains("nrgchain_tridiag")) {
+      report.value(name, config.requested_tridiagonalize);
+      report.value("nrgchain.tridiagonalize.parameter", "nrgchain_tridiag");
+      if (values.contains("nrgchains_tridiag"))
+        report.value("nrgchain.nrgchains_tridiag.ignored", values.at("nrgchains_tridiag"));
+    } else if (values.contains("nrgchains_tridiag")) {
+      report.resolved(name, config.requested_tridiagonalize, "legacy nrgchains_tridiag parameter");
+      report.value("nrgchain.tridiagonalize.parameter", "nrgchains_tridiag (legacy)");
+    } else {
+      report.resolved(name, config.requested_tridiagonalize, "nrgchain default");
+      report.resolved("nrgchain.tridiagonalize.parameter", "<default>", "no tridiagonalization parameter");
+    }
+  };
+
+  parameter("nrgchain.Lambda", "Lambda", config.Lambda);
+  parameter("nrgchain.z", "z", config.z);
+  parameter("nrgchain.bandrescale", "bandrescale", config.bandrescale);
+  parameter("nrgchain.xmax", "xmax", config.xmax);
+  parameter("nrgchain.Nmax", "Nmax", config.Nmax);
+  parameter("nrgchain.mMAX", "mMAX", config.mMAX, "2 * Nmax");
+  parameter("nrgchain.preccpp", "preccpp", config.preccpp);
+  report.value("nrgchain.output_precision", 16);
+  parameter("nrgchain.adapt", "adapt", config.adapt);
+  parameter("nrgchain.rescalexi", "rescalexi", config.rescalexi);
+  parameter("nrgchain.band", "band", config.band);
+  parameter("nrgchain.dos", "dos", config.dos);
+
+  if (config.mode == NrgChainTableMode::Calculate) {
+    parameter("nrgchain.tables_save", "nrgchain_tables_save", config.tables_save);
+    parameter("nrgchain.tables_load", "nrgchain_tables_load", config.tables_load);
+    requested_tridiagonalization("nrgchain.tridiagonalize");
+  } else {
+    parameter("nrgchain.tables_save.requested", "nrgchain_tables_save", config.requested_tables_save);
+    parameter("nrgchain.tables_load.requested", "nrgchain_tables_load", config.requested_tables_load);
+    requested_tridiagonalization("nrgchain.tridiagonalize.requested");
+    const auto reason = config.mode == NrgChainTableMode::SaveOnly ? "save-only mode override"
+                                                                   : "load-and-tridiagonalize mode override";
+    report.resolved("nrgchain.tables_save", config.tables_save, reason);
+    report.resolved("nrgchain.tables_load", config.tables_load, reason);
+    report.resolved("nrgchain.tridiagonalize", config.tridiagonalize, reason);
+  }
+
+  if (config.tables_load) {
+    report.resolved("nrgchain.density_source", "coefficient-tables", "tables_load=true");
+    report.resolved("nrgchain.dos.active", false, "coefficient tables are loaded");
+  } else if (config.band == "flat") {
+    report.value("nrgchain.density_source", "flat");
+    report.resolved("nrgchain.dos.active", false, "flat band");
+  } else {
+    report.value("nrgchain.density_source", "dos-file");
+    report.value("nrgchain.dos.active", true);
+    report.value("nrgchain.f_positive", "FSOL.dat");
+    report.value("nrgchain.f_negative", "FSOLNEG.dat");
+    if (config.adapt) {
+      report.value("nrgchain.g_positive", "GSOL.dat");
+      report.value("nrgchain.g_negative", "GSOLNEG.dat");
+    }
+  }
+
+  if (!options.wilson_only) {
+    report.value("output.stdout", "E_gs");
+  } else {
+    report.resolved("output.stdout", "none", "wilson-only mode");
+  }
+  if (!options.wilson_only && !options.diag_seed_only) {
+    report.value("output.data", "data");
+  } else {
+    report.resolved("output.data", "inactive", "restricted mode");
+  }
+  if (options.wilson_only || options.diag_seed_only || options.generate_temporaries) {
+    report.value("output.wilson_theta", "theta1.dat");
+    report.value("output.wilson_xi", "xi1.dat");
+    report.value("output.wilson_zeta", "zeta1.dat");
+  } else {
+    report.resolved("output.wilson_files", "temporary", "full mode without --generate-temporaries");
+  }
+  if (options.diag_seed_only || options.generate_temporaries) {
+    const auto sections = parse_param_sections(options.param_filename);
+    std::string section_outputs;
+    for (const auto &[section, lines] : sections.lines) {
+      (void)lines;
+      if (!section_outputs.empty()) section_outputs += ',';
+      section_outputs += options.param_filename + "." + section;
+    }
+    report.value("output.parameter_sections", section_outputs.empty() ? "none" : section_outputs);
+  }
+  if (options.diag_seed_only) {
+    report.value("output.seed_artifacts", "ham*,val,vec*");
+  } else if (options.generate_temporaries) {
+    report.value("output.legacy_artifacts", "parameter sections, Wilson tables, ham*, val, vec*");
+  } else {
+    report.resolved("output.legacy_artifacts", "inactive", "--generate-temporaries not selected");
+  }
+  report.write(std::cerr);
+}
+
 NRG::Matrix_traits<double> parse_inline_matrix(const std::vector<std::string> &rows, const size_t expected_cols,
                                                const std::string &context) {
   NRG::Matrix_traits<double> matrix(static_cast<Eigen::Index>(rows.size()), static_cast<Eigen::Index>(expected_cols));
@@ -729,10 +1000,12 @@ void register_full_legacy_artifacts(ArtifactManifest &artifacts, const std::file
 
 void run_diag_seed_only(const Options &options) {
   auto sections = parse_param_sections(options.param_filename);
+  const auto nrgchain = make_nrgchain_invocation(options.param_filename, NrgChainTableMode::Calculate);
+  report_configuration(options, nrgchain);
   write_param_section_files(sections, options.param_filename);
   auto params = make_instantiate_params(options.param_filename);
 
-  const auto wilson = NRG::Tools::NrgChain::calculate_from_file(options.param_filename);
+  const auto wilson = NRG::Tools::NrgChain::calculate_from_params(nrgchain.parameters, nrgchain.configuration.mode);
   if (wilson.channels.size() != 1)
     throw std::runtime_error("Only single-channel Wilson generation is supported in this instantiate slice.");
   write_wilson_channel(wilson.channels.front(), 1);
@@ -750,6 +1023,8 @@ void run_diag_seed_only(const Options &options) {
 
 void run_full_instantiation(const Options &options) {
   auto sections = parse_param_sections(options.param_filename);
+  const auto nrgchain = make_nrgchain_invocation(options.param_filename, NrgChainTableMode::Calculate);
+  report_configuration(options, nrgchain);
   const auto data_destination = std::filesystem::absolute("data");
   NRG::Workdir staging_workdir(data_destination.parent_path().string(), true);
   const auto staging_dir = std::filesystem::path(staging_workdir.get());
@@ -758,8 +1033,8 @@ void run_full_instantiation(const Options &options) {
     write_staged_param_section_files(sections, options.param_filename, staging_dir, legacy_artifacts);
   auto params = make_instantiate_params(options.param_filename, staging_dir);
 
-  const auto wilson = NRG::Tools::NrgChain::calculate_from_file(
-      options.param_filename, NRG::Tools::NrgChain::TableMode::Calculate, staging_dir);
+  const auto wilson = NRG::Tools::NrgChain::calculate_from_params(
+      nrgchain.parameters, nrgchain.configuration.mode, staging_dir);
   if (wilson.channels.size() != 1)
     throw std::runtime_error("Only single-channel Wilson generation is supported in this instantiate slice.");
   if (options.generate_temporaries) write_wilson_channel(wilson.channels.front(), 1, staging_dir);
@@ -800,7 +1075,9 @@ void run_full_instantiation(const Options &options) {
 }
 
 void run_wilson_only(const Options &options) {
-  const auto wilson = NRG::Tools::NrgChain::calculate_from_file(options.param_filename);
+  const auto nrgchain = make_nrgchain_invocation(options.param_filename, NrgChainTableMode::Calculate);
+  report_configuration(options, nrgchain);
+  const auto wilson = NRG::Tools::NrgChain::calculate_from_params(nrgchain.parameters, nrgchain.configuration.mode);
   if (wilson.channels.size() != 1)
     throw std::runtime_error("Only single-channel Wilson generation is supported in this instantiate slice.");
   write_wilson_channel(wilson.channels.front(), 1);
@@ -809,6 +1086,7 @@ void run_wilson_only(const Options &options) {
 } // namespace
 
 int main(int argc, char *argv[]) {
+  if (NRG::Tools::report_version_if_requested(argc, argv, "instantiate")) return EXIT_SUCCESS;
   try {
     const auto options = parse_options(argc, argv);
     if (options.wilson_only && options.diag_seed_only)

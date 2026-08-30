@@ -51,7 +51,9 @@ Arguments:
 Options:
 
 - `-h` prints command-line help.
-- `-v` prints detailed processing information.
+- `-v` prints the resolved configuration and detailed processing information to standard error.
+- `-vv` increases verbosity further.
+- `-V` or `--version` prints the project version and exits immediately.
 - `-o` reads `<name>` directly when `<Nz>` is 1, instead of reading `1/<name>`.
 - `-b` uses bosonic frequencies. The default is fermionic frequencies.
 - `-O <file>` writes the result to `<file>`. The default is `spec.dat`.
@@ -129,5 +131,3 @@ From the repository root:
 cmake --build build --target mats
 ctest --test-dir build --output-on-failure -R '^mats[12]$'
 ```
-
-`mats` was written by Rok Zitko, rok.zitko@ijs.si, in November 2012.

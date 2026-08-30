@@ -1,5 +1,13 @@
 #!/bin/sh
+set -eu
 "$1/integ" -w -T 0.501 imaw.dat >result.dat
+"$1/integ" -vv -w -T 0.501 imaw.dat >result-v.dat 2>verbose.txt
+cmp result.dat result-v.dat
+grep -q '^integ: configuration$' verbose.txt
+grep -q '^  verbosity=2$' verbose.txt
+grep -q '^  input.lower_bound=auto ->' verbose.txt
+grep -q '^  integration.gsl_error_policy=ignore$' verbose.txt
+grep -q '^  output.precision=16$' verbose.txt
 "$1/integ" -w -f -T 0.501 imaw.dat >result-f.dat
 "$1/integ" -w -p -T 0.501 imaw.dat >result-p.dat
 "$1/integ" -w -n -T 0.501 imaw.dat >result-n.dat
