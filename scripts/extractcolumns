@@ -5,60 +5,61 @@
 
 use warnings;
 use strict;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(read_records);
 
 if (@ARGV < 1) {
-  die "Synthax: extractcolumn <filename> [keyword1] [keyword2] ...\n";
+  die "Synthax: extractcolumns <filename> [keyword1] [keyword2] ...\n";
 }
 
 my $filename = shift;
-open(F, "<$filename") or die "Can't open $filename: $!";
+my $records = read_records(
+    $filename, fixed_columns => 1, numeric_columns => 0);
 
-my @cols; # column numbers
-
-my $nrkeywords = @ARGV;
-
-my $headerline;
-
-while (<F>) {
-  if (/^#/) {
-     $headerline = $_;
-  } else {
-     # First non-comment line detected
-     $headerline =~ s/^#\s*(.*)/$1/;
-     my @tags = split(' ', $headerline);
-     for (my $cnt = 0; $cnt < $nrkeywords; $cnt++) {
-       my $keyword = $ARGV[$cnt];	 
-       for (my $i = 0; $i < @tags; $i++) {
-         if ($tags[$i] eq $keyword) {
-	   push(@cols, $i);
-	 }
-       }
-     }
-     process_line($_);
-     last;
-  }
-}
-
-while (<F>) {
-    process_line($_);
-}
-    
-close F;
-
-sub process_line
-{
-  my $line = $_;
-  chomp($line);
-  my @vals = split(' ', $line);
-
-  for(my $i = 0; $i < @cols; $i++) {
-    my $x = @vals[$cols[$i]];
-    print "$x";
-    if ($i != @cols-1) { 
-	print " "; 
-    } else {
-	print "\n";
+my ($header, $seen_data) = (undef, 0);
+my @rows;
+for my $record (@$records) {
+    if ($record->{type} eq 'data') {
+        $seen_data = 1;
+        push @rows, $record;
+    } elsif (!$seen_data && $record->{type} eq 'comment') {
+        $header = $record->{raw};
     }
-  }
 }
 
+defined($header) or die "$filename: missing leading header comment\n";
+$header =~ s/\A\s*#\s*//;
+my @labels = split ' ', $header;
+@labels or die "$filename: header is empty\n";
+
+my %column_for;
+for my $column (0 .. $#labels) {
+    exists($column_for{$labels[$column]})
+        and die "$filename: duplicate header label '$labels[$column]'\n";
+    $column_for{$labels[$column]} = $column;
+}
+
+my @columns;
+for my $name (@ARGV) {
+    exists($column_for{$name})
+        or die "$filename: header has no column named '$name'\n";
+    push @columns, $column_for{$name};
+}
+
+my $width = scalar @labels;
+for my $row (@rows) {
+    my $found = scalar @{$row->{tokens}};
+    $found == $width
+        or die "$row->{path}:$row->{line}: expected $width columns from header, "
+            . "found $found\n";
+}
+
+my $output = '';
+if (@columns) {
+    for my $row (@rows) {
+        $output .= join(' ', map { $row->{tokens}[$_] } @columns) . "\n";
+    }
+}
+print STDOUT $output or die "Can't write extractcolumns output: $!\n";
+close(STDOUT) or die "Can't finish extractcolumns output: $!\n";

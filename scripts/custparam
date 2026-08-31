@@ -4,29 +4,56 @@
 # Rok Zitko, rok.zitko@ijs.si, April 2008
 # $id$
 
-if (@ARGV != 1) {
-    die "Usage: custparam <param>\n";
+use strict;
+use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(read_records);
+
+@ARGV == 1 or die "Usage: custparam <param>\n";
+my ($param) = @ARGV;
+$param !~ /[\r\n]/ or die "custparam: parameter contains CR or LF\n";
+
+my $records = read_records('custom.dat', numeric_columns => 0);
+my ($last_data, $last_comment);
+for my $record (@$records) {
+    $last_data = $record if $record->{type} eq 'data';
+    $last_comment = $record if $record->{type} eq 'comment';
 }
+defined($last_data) or die "custom.dat: no data rows\n";
 
-my $param = shift;
-
-my $fn = "custom.dat";
-open (F, "<$fn") or die "Can't open $fn for reading: $!\n";
-
-my $lastcommentline = "";
-my $lastline = "";
-
-while (<F>) {
-  if (/^#/) {
-    $lastcommentline = $_;
-  } else {
-    $lastline = $_;
-  }
+open(my $getparam, '-|', $^X, "$Bin/getparam", $param, 'param.loop')
+    or die "Can't run $Bin/getparam: $!\n";
+my @value_lines;
+my $read_error;
+while (1) {
+    $! = 0;
+    my $line = <$getparam>;
+    if (!defined($line)) {
+        $read_error = "$!" if $!;
+        last;
+    }
+    push @value_lines, $line;
 }
+my $getparam_ok = close($getparam);
+defined($read_error) and die "Can't read $Bin/getparam output: $read_error\n";
+$getparam_ok or die "$Bin/getparam failed\n";
+@value_lines == 1 or die "custparam: getparam must return exactly one line\n";
 
-my $param = `getparam $param param.loop`;
+my $value = $value_lines[0];
+$value =~ s/\r?\n\z//;
+$value !~ /[\r\n]/
+    or die "custparam: getparam returned an embedded CR or LF\n";
 
-chomp($lastline);
+my $data = $last_data->{raw};
+$data =~ s/[\r\n]+\z//;
+my $output = '';
+if (defined($last_comment)) {
+    my $comment = $last_comment->{raw};
+    $comment =~ s/[\r\n]+\z//;
+    $output .= "$comment\n";
+}
+$output .= "$data   $value\n";
 
-print ("$lastcommentline");
-print ("$lastline   $param");
+print STDOUT $output or die "Can't write custparam output: $!\n";
+close(STDOUT) or die "Can't finish custparam output: $!\n";

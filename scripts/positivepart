@@ -4,9 +4,25 @@
 
 use warnings;
 use strict;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(join_outputs read_records);
 
-while (<>) {
-  my ($x,$remainder) = split;
-  
-  print if $x > 0;
+my @paths = @ARGV ? @ARGV : ('-');
+my $stdin_count = grep { $_ eq '-' } @paths;
+$stdin_count <= 1 or die "positivepart: standard input may be specified at most once\n";
+my @sources = map {
+    read_records($_, minimum_columns => 1, fixed_columns => 1, numeric_columns => 1)
+} @paths;
+
+my @parts;
+for my $records (@sources) {
+    my $part = '';
+    for my $record (@$records) {
+        $part .= $record->{raw}
+            if $record->{type} ne 'data' || $record->{values}[0] > 0;
+    }
+    push @parts, $part;
 }
+print STDOUT join_outputs(@parts) or die "Can't write positivepart output: $!\n";
+close(STDOUT) or die "Can't finish positivepart output: $!\n";

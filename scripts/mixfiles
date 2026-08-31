@@ -6,48 +6,53 @@
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(data_rows parse_number read_records scaled_weighted_sum);
 
-my $Nz = @ARGV/2; # number of files
-    
-# Algorithm: just sum both columns and divide the sums by Nz at the
-# end. No attempt is made to check for the sanity of input files.
-my @sumx; 
-my @sumy;
-    
-for (my $i = 0; $i < $Nz; $i++) {
-    my $weight = shift;
-    my $filename = shift;
-    open(F, "<$filename") or die "Can't open $filename: $!\n";
-	
-    my $cnt = 0; # line counter
-    while (<F>) {
-	chomp;
-	if (/^#/) { # skip comment lines
-	    next;
-	}
-	
-	my $line = $_;
-	$line =~ s/^\s+(.*)/$1/; # strip leading white space
-	my @vals = split(/\s+/, $line); # split on whitespace
-	my $x = $vals[0];
-	my $y = $vals[1];
-	
-	if ($i == 0) { 
-	    push(@sumx, $x); # push back in the first iteration
-	    push(@sumy, $y * $weight);
-	} else {
-	    $sumx[$cnt] += $x; # add in later iterations
-	    $sumy[$cnt] += $y * $weight;
-	}
-	$cnt++;
+@ARGV >= 2 && @ARGV % 2 == 0
+    or die "Syntax: mixfiles <weight1> <filename1> [<weight2> <filename2> ...]\n";
+
+my (@weights, @paths);
+while (@ARGV) {
+    my $number = @weights + 1;
+    push @weights, parse_number(shift @ARGV, "mixfiles: weight $number");
+    push @paths, shift @ARGV;
+}
+my $stdin_count = grep { $_ eq '-' } @paths;
+$stdin_count <= 1 or die "mixfiles: standard input may be specified at most once\n";
+
+my @records = map { read_records($_, columns => 2) } @paths;
+my @tables = map { data_rows($_) } @records;
+for my $file (0 .. $#tables) {
+    @{$tables[$file]} or die "$paths[$file]: expected at least one data row\n";
+}
+
+my $row_count = @{$tables[0]};
+for my $file (1 .. $#tables) {
+    my $found = @{$tables[$file]};
+    $found == $row_count
+        or die "$paths[$file]: expected $row_count data rows to match $paths[0], found $found\n";
+    for my $row (0 .. $row_count - 1) {
+        my ($reference, $current) = ($tables[0]->[$row], $tables[$file]->[$row]);
+        my ($x, $other_x) = ($reference->{values}[0], $current->{values}[0]);
+        $x == $other_x or die "$current->{path}:$current->{line}: column 1 ($other_x) "
+            . "does not match $reference->{path}:$reference->{line} ($x)\n";
     }
-    close(F);
 }
 
-my $len = @sumx;
-
-for (my $l = 0; $l < $len; $l++) {
-    $sumx[$l] /= $Nz;
-##    $sumy[$l] /= $Nz; # no division here. We assume sum_i(weight_i)=1
-    print "$sumx[$l] $sumy[$l]\n";
+my @sums;
+for my $row (0 .. $row_count - 1) {
+    push @sums, scaled_weighted_sum(
+        [map { $tables[$_]->[$row]{values}[1] } 0 .. $#tables],
+        \@weights, "mixfiles: row " . ($row + 1));
 }
+
+my ($output, $row) = ('', 0);
+for my $record (@{$records[0]}) {
+    $output .= $record->{type} eq 'data'
+        ? $record->{tokens}[0] . " $sums[$row++]\n"
+        : $record->{raw};
+}
+print STDOUT $output or die "Can't write mixfiles output: $!\n";
+close(STDOUT) or die "Can't finish mixfiles output: $!\n";

@@ -5,26 +5,11 @@
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
 
 if (@ARGV != 2) {
   die "Synthax: column <filename> <column>\n";
 }
 
-my $filename = $ARGV[0];
-my $column = $ARGV[1]-1; # offset 1!
-
-if ($column < 0) {
-    die "Column number is negative.\n";
-}
-
-open(F, "<$filename") or die "Can't open $filename: $!";
-
-while (<F>) {
-    next if (/^#/);
-    chomp;
-    my @vals = split;
-    my $x = $vals[$column];
-    print "$x\n";
-}
-
-close(F);
+exec {$^X} $^X, "$Bin/columns", @ARGV;
+die "Can't execute $Bin/columns: $!\n";

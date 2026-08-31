@@ -2,21 +2,27 @@
 # Kondo temperature calculator.
 # Rok Zitko, zitko@theorie.physik.uni-goettingen.de, July 2008
 
+use strict;
+use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(finite_result nv_string parse_number);
+
 @ARGV == 2 or die "Usage: tk <U> <Gamma>\n";
+my $u = parse_number($ARGV[0], 'tk: U');
+my $gamma = parse_number($ARGV[1], 'tk: Gamma');
+$u > 0 or die "tk: U must be positive\n";
+$gamma > 0 or die "tk: Gamma must be positive\n";
 
-my $u = eval(shift);
-my $gamma = eval(shift);
+require Math::BigFloat;
+my $wide_rhoJ = Math::BigFloat->new(nv_string($gamma));
+$wide_rhoJ->bmul(8)->bdiv('3.14159')->bdiv(nv_string($u));
+my $rhoJ = finite_result($wide_rhoJ->numify(), 'tk: rho_0 J');
+$rhoJ > 0 or die "tk: rho_0 J underflowed to zero\n";
+my $Deff = finite_result(0.182 * $u, 'tk: Deff');
+my $log_tk = log(0.182) + log($u) + 0.5 * log($rhoJ) - 1 / $rhoJ;
+my $tk = finite_result(exp($log_tk), 'tk: T_K');
 
-print "u=$u\ngamma=$gamma\n";
-
-my $rhoJ=8*$gamma/(3.14159*$u);
-
-print "rho_0 J=$rhoJ\n";
-
-my $Deff = 0.182 * $u;
-
-print "Deff=$Deff\n";
-
-my $tk = $Deff * sqrt($rhoJ) * exp(-1/$rhoJ);
-
-print "T_K=$tk\n";
+print STDOUT "u=$u\ngamma=$gamma\nrho_0 J=$rhoJ\nDeff=$Deff\nT_K=$tk\n"
+    or die "Can't write tk output: $!\n";
+close(STDOUT) or die "Can't finish tk output: $!\n";

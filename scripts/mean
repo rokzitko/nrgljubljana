@@ -4,15 +4,16 @@
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(data_rows read_records scaled_mean);
 
-my $sum = 0.0;
-my $cnt = 0;
-
-while (<>) {
-  $sum += $_;
-  $cnt++;
-}
-
-my $mean = $sum/$cnt;
-
-print "$mean\n";
+my @paths = @ARGV ? @ARGV : ('-');
+my $stdin_count = grep { $_ eq '-' } @paths;
+$stdin_count <= 1 or die "mean: standard input may be specified at most once\n";
+my @sources = map { read_records($_, columns => 1) } @paths;
+my @values = map { map { $_->{values}[0] } @{data_rows($_)} } @sources;
+@values or die "mean: expected at least one data row\n";
+my $mean = scaled_mean(\@values, 'mean');
+print STDOUT "$mean\n" or die "Can't write mean output: $!\n";
+close(STDOUT) or die "Can't finish mean output: $!\n";

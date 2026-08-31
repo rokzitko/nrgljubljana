@@ -1,4 +1,27 @@
-#!/bin/sh
+#!/usr/bin/perl
 # Extract the first column from a table.
 # Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
-perl -ane 'chomp($F[0]); print $F[0], "\n";' $@
+
+use strict;
+use warnings;
+use FindBin qw($RealBin);
+use lib $RealBin;
+use TableIO qw(join_outputs);
+
+my @paths = @ARGV ? @ARGV : ('-');
+my $stdin_count = grep { $_ eq '-' } @paths;
+$stdin_count <= 1 or die "column1: standard input may only be read once\n";
+
+my @parts;
+for my $path (@paths) {
+    open(my $pipe, '-|', $^X, "$RealBin/columns", $path, '1')
+        or die "Can't execute $RealBin/columns: $!\n";
+    $! = 0;
+    my $part = do { local $/; <$pipe> } // '';
+    my $read_error = $!;
+    close($pipe) or die "$RealBin/columns failed for '$path'\n";
+    $read_error and die "Can't read $RealBin/columns output: $read_error\n";
+    push @parts, $part;
+}
+print STDOUT join_outputs(@parts) or die "Can't write column1 output: $!\n";
+close(STDOUT) or die "Can't finish column1 output: $!\n";

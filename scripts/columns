@@ -4,30 +4,38 @@
 
 use warnings;
 use strict;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(data_rows read_records);
 
 if (@ARGV < 2) {
   die "Synthax: columns <filename> <column1> <column2>...\n";
 }
 
 my $filename = shift;
-my @columns = @ARGV; 
-
-open(F, "<$filename") or die "Can't open $filename: $!";
-
-$,=" ";
-
-while (<F>) {
-    next if (/^#/);
-    chomp;
-    my @vals = split;
-    my @output;
-    for (my $i = 0; $i < @columns; $i++) {
-	my $col = $columns[$i]-1; # offset 1!
-	my $val = $vals[$col];
-	push(@output, $val);
-    }
-    print @output;
-    print "\n";
+my @columns = @ARGV;
+for my $column (@columns) {
+    $column =~ /\A[0-9]+\z/ && $column =~ /[1-9]/
+        or die "Invalid column index '$column': expected a positive integer\n";
+    $column =~ s/\A0+//;
 }
 
-close(F);
+my $rows = data_rows(read_records(
+    $filename, fixed_columns => 1, numeric_columns => 0));
+
+for my $row (@$rows) {
+    my $width = scalar @{$row->{tokens}};
+    for my $column (@columns) {
+        (length($column) < length($width)
+            || (length($column) == length($width) && $column le "$width"))
+            or die "$row->{path}:$row->{line}: column $column is out of range "
+                . "for $width columns\n";
+    }
+}
+
+my $output = '';
+for my $row (@$rows) {
+    $output .= join(' ', map { $row->{tokens}[$_ - 1] } @columns) . "\n";
+}
+print STDOUT $output or die "Can't write columns output: $!\n";
+close(STDOUT) or die "Can't finish columns output: $!\n";

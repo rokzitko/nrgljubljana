@@ -4,15 +4,33 @@
 
 use warnings;
 use strict;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(finite_result join_outputs read_records);
 
-while (<>) {
-  if (!/^#/) {
-    chomp;
-    my @d = split;
-    $d[1] /= $d[0];
-      
-    print "@d\n";
-  } else {
-    print;
-  }
+my @paths = @ARGV ? @ARGV : ('-');
+my $stdin_count = grep { $_ eq '-' } @paths;
+$stdin_count <= 1 or die "divybyx: standard input may be specified at most once\n";
+my @sources = map {
+    read_records($_, minimum_columns => 2, fixed_columns => 1, numeric_columns => 2)
+} @paths;
+
+my @parts;
+for my $records (@sources) {
+    my $part = '';
+    for my $record (@$records) {
+        if ($record->{type} eq 'data') {
+            my $where = "$record->{path}:$record->{line}";
+            $record->{values}[0] != 0 or die "$where: column 1 must be nonzero\n";
+            my @tokens = @{$record->{tokens}};
+            $tokens[1] = finite_result($record->{values}[1] / $record->{values}[0],
+                                       "$where: column 2");
+            $part .= join(' ', @tokens) . "\n";
+        } else {
+            $part .= $record->{raw};
+        }
+    }
+    push @parts, $part;
 }
+print STDOUT join_outputs(@parts) or die "Can't write divybyx output: $!\n";
+close(STDOUT) or die "Can't finish divybyx output: $!\n";

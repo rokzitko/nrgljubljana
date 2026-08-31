@@ -5,23 +5,31 @@
 
 use warnings;
 use strict;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(join_outputs parse_number read_records);
 
-if (@ARGV < 1) {
-    die "Usage: cutouthigh <cutoff> [filename]\n";
-}     
+@ARGV >= 1 or die "Usage: cutouthigh <cutoff> [filename ...]\n";
+my $cutoff = parse_number(shift @ARGV, 'cutouthigh: cutoff');
+$cutoff >= 0 or die "cutouthigh: cutoff must be nonnegative\n";
+my @paths = @ARGV ? @ARGV : ('-');
+my $stdin_count = grep { $_ eq '-' } @paths;
+$stdin_count <= 1 or die "cutouthigh: standard input may be specified at most once\n";
 
-my $cutoff = eval(shift);
-
-while (<>) {
-  if (!/^#/) {
-    chomp;
-    my @d = split;
-    my $x = $d[0];
-    
-    if (abs($x) <= $cutoff) {
-	print "@d\n";
+my @sources = map {
+    read_records($_, minimum_columns => 1, fixed_columns => 1, numeric_columns => 1)
+} @paths;
+my @parts;
+for my $records (@sources) {
+    my $part = '';
+    for my $record (@$records) {
+        if ($record->{type} ne 'data') {
+            $part .= $record->{raw};
+        } elsif (abs($record->{values}[0]) <= $cutoff) {
+            $part .= join(' ', @{$record->{tokens}}) . "\n";
+        }
     }
-  } else {
-    print;
-  }
+    push @parts, $part;
 }
+print STDOUT join_outputs(@parts) or die "Can't write cutouthigh output: $!\n";
+close(STDOUT) or die "Can't finish cutouthigh output: $!\n";

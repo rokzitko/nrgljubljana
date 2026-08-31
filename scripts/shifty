@@ -2,25 +2,35 @@
 # Shift the second column in tabulated data by a value given on command line
 # Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Feb 2008, Aug 2009
 
+use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(finite_result join_outputs parse_number read_records);
 
-if (@ARGV == 0) {
-    print "Shift the second column of a file by some value.\n";
-    print "Rok Zitko, rok.zitko\@ijs.si, May 2008\n";
-    print "Usage: shifty <shift> [filename]\n";
-    exit(1);
-}     
+@ARGV >= 1 or die "Usage: shifty <shift> [filename ...]\n";
+my $shift = parse_number(shift @ARGV, 'shifty: shift');
+my @paths = @ARGV ? @ARGV : ('-');
+my $stdin_count = grep { $_ eq '-' } @paths;
+$stdin_count <= 1 or die "shifty: standard input may be specified at most once\n";
 
-my $shift = eval(shift);
-
-while (<>) {
-  if (!/^#/) {
-    chomp;
-    my @d = split;
-    $d[1] = $d[1] + $shift;
-    
-    print "@d\n";
-  } else {
-    print;
-  }
+my @sources = map {
+    read_records($_, minimum_columns => 2, fixed_columns => 1, numeric_columns => 2)
+} @paths;
+my @parts;
+for my $records (@sources) {
+    my $part = '';
+    for my $record (@$records) {
+        if ($record->{type} eq 'data') {
+            my @tokens = @{$record->{tokens}};
+            $tokens[1] = finite_result($record->{values}[1] + $shift,
+                                       "$record->{path}:$record->{line}: column 2");
+            $part .= join(' ', @tokens) . "\n";
+        } else {
+            $part .= $record->{raw};
+        }
+    }
+    push @parts, $part;
 }
+print STDOUT join_outputs(@parts) or die "Can't write shifty output: $!\n";
+close(STDOUT) or die "Can't finish shifty output: $!\n";

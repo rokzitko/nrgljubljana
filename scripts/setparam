@@ -5,45 +5,63 @@
 use strict;
 use warnings;
 
-my $verbose = 1;
+use Fcntl qw(LOCK_EX O_CREAT O_RDWR);
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO ();
 
-my $argv = scalar(@ARGV);
-if ($argv != 2 && $argv != 3) {
-    die "Usage: setparam <keyword> <value> [param filename]\n";
+@ARGV == 2 || @ARGV == 3
+    or die "Usage: setparam <keyword> <value> [param filename]\n";
+my ($keyword, $value, $file) = @ARGV;
+$file //= 'param';
+
+length($keyword) or die "setparam: keyword is empty\n";
+$keyword !~ /[\r\n]/ or die "setparam: keyword contains CR or LF\n";
+$value !~ /[\r\n]/ or die "setparam: value contains CR or LF\n";
+$file !~ /[\r\n]/ or die "setparam: filename contains CR or LF\n";
+
+my $lock_file = "$file.lock";
+-l $lock_file and die "setparam: refusing lock symlink $lock_file\n";
+sysopen(my $lock, $lock_file, O_RDWR | O_CREAT, 0666)
+    or die "Can't open $lock_file: $!\n";
+flock($lock, LOCK_EX) or die "Can't lock $lock_file: $!\n";
+
+-l $file and die "setparam: refusing target symlink $file\n";
+-e $file && !-f $file and die "setparam: refusing nonregular target $file\n";
+open(my $input, '<', $file) or die "Can't open $file for reading: $!\n";
+my @lines;
+while (1) {
+    $! = 0;
+    my $line = <$input>;
+    if (!defined($line)) {
+        $! and die "Can't read $file: $!\n";
+        last;
+    }
+    push @lines, $line;
 }
+close($input) or die "Can't finish reading $file: $!\n";
 
-my $keyword = shift;
-my $value = shift;
-my $fn= $argv == 3 ? shift : "param";
-
-if ($verbose) {
-    print "setparam: keyword=$keyword value=$value fn=$fn\n";
-}
-
-open (I, "<$fn") or die "Can't open $fn for reading: $!\n";
-open (O, ">$fn.tmp") or die "Can't open $fn.tmp for writing: $!\n";
-
-my $nrsubst = 0; # number of substitutions performed
-while (<I>) {
-    if (/^\s*$keyword\s*=\s*(.*)/) {
-        print O "$keyword=$value\n"; # substitute
+my ($content, $nrsubst) = ('', 0);
+for my $line (@lines) {
+    if ($line =~ /^\s*\Q$keyword\E\s*=/) {
+        $content .= "$keyword=$value\n";
         $nrsubst++;
     } else {
-        print O;
+        $content .= $line;
     }
 }
+$nrsubst <= 1
+    or die "setparam: Keyword $keyword is ambiguous in $file\n";
 
 if ($nrsubst == 0) {
-    print O "$keyword=$value\n"; # append
+    $content .= "\n" if length($content) && $content !~ /\n\z/;
+    $content .= "$keyword=$value\n";
 }
 
-close(O);
-close(I);
+TableIO::atomic_write($file, $content, $file);
+close($lock) or die "Can't release $lock_file: $!\n";
 
-# Perform file replacement; we do this at the end. If the program fails before,
-# the original file is kept as it was.
-system("mv $fn.tmp $fn") == 0 or die;
-
-if ($verbose) {
-  print "setparam done. nrsubst=$nrsubst\n";
-}
+print STDOUT "setparam: keyword=$keyword value=$value fn=$file\n",
+             "setparam done. nrsubst=$nrsubst\n"
+    or die "Can't write setparam diagnostics: $!\n";
+close(STDOUT) or die "Can't finish setparam diagnostics: $!\n";

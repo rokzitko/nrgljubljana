@@ -3,15 +3,23 @@ package TableIO;
 use strict;
 use warnings;
 
+use Config qw(%Config);
 use Exporter qw(import);
 use File::Basename qw(dirname);
 use File::Temp qw(tempfile);
 use POSIX qw(isfinite);
 
-our @EXPORT_OK = qw(atomic_write atomic_write_many data_rows finite_result parse_number
-                    read_records scaled_mean scaled_mean_sem);
+our @EXPORT_OK = qw(atomic_write atomic_write_many data_rows finite_result join_outputs
+                    nv_string parse_number read_records scaled_mean scaled_mean_sem
+                    scaled_weighted_sum);
 
 my $number = qr/[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/;
+my $nv_bits = ($Config{nvmantbits} || 52) + 1;
+my $nv_digits = 2 + int($nv_bits * log(2) / log(10));
+
+sub nv_string {
+    return sprintf('%.*g', $nv_digits, shift);
+}
 
 sub parse_number {
     my ($text, $where) = @_;
@@ -34,20 +42,14 @@ sub finite_result {
 sub scaled_mean {
     my ($values, $where) = @_;
     @$values or die "$where: can't average an empty sample\n";
-    my $scale = 0;
-    for my $value (@$values) {
-        $scale = abs($value) if abs($value) > $scale;
-    }
-    return 0 if $scale == 0;
 
-    my ($sum, $correction) = (0, 0);
+    require Math::BigFloat;
+    my $sum = Math::BigFloat->new(0);
     for my $value (@$values) {
-        my $adjusted = $value / $scale - $correction;
-        my $next = $sum + $adjusted;
-        $correction = ($next - $sum) - $adjusted;
-        $sum = $next;
+        $sum->badd(nv_string($value));
     }
-    return finite_result($scale * ($sum / @$values), $where);
+    $sum->bdiv(scalar(@$values));
+    return finite_result($sum->numify(), $where);
 }
 
 sub scaled_mean_sem {
@@ -72,6 +74,31 @@ sub scaled_mean_sem {
     return ($result, $error);
 }
 
+sub scaled_weighted_sum {
+    my ($values, $weights, $where) = @_;
+    @$values && @$values == @$weights
+        or die "$where: values and weights must be nonempty and equally sized\n";
+
+    require Math::BigFloat;
+    my $sum = Math::BigFloat->new(0);
+    for my $index (0 .. $#$values) {
+        my $term = Math::BigFloat->new(nv_string($values->[$index]));
+        $term->bmul(nv_string($weights->[$index]));
+        $sum->badd($term);
+    }
+    return finite_result($sum->numify(), $where);
+}
+
+sub join_outputs {
+    my @parts = @_;
+    my $output = '';
+    for my $part (@parts) {
+        $output .= "\n" if length($output) && $output !~ /\n\z/ && length($part);
+        $output .= $part;
+    }
+    return $output;
+}
+
 sub read_records {
     my ($path, %options) = @_;
     my $fh;
@@ -84,7 +111,13 @@ sub read_records {
     my @records;
     my $line_number = 0;
     my $record_width;
-    while (my $raw = <$fh>) {
+    while (1) {
+        $! = 0;
+        my $raw = <$fh>;
+        if (!defined($raw)) {
+            $! and die "Can't read $path: $!\n";
+            last;
+        }
         $line_number++;
         if ($raw =~ /^\s*$/) {
             push @records, { type => 'blank', raw => $raw };
@@ -137,18 +170,18 @@ sub _stage {
     my $open = 1;
     eval {
         my @source_stat = stat(defined($mode_source) ? $mode_source : $path);
+        my $mode;
         if (@source_stat) {
-            chmod($source_stat[2] & 07777, $temporary)
-                or die "Can't set permissions on $temporary: $!\n";
+            $mode = $source_stat[2] & 07777;
         } else {
             my $mask = umask;
             umask($mask);
-            chmod(0666 & ~$mask, $temporary)
-                or die "Can't set permissions on $temporary: $!\n";
+            $mode = 0666 & ~$mask;
         }
         print {$fh} $content or die "Can't write $temporary: $!\n";
         close($fh) or die "Can't finish writing $temporary: $!\n";
         $open = 0;
+        chmod($mode, $temporary) or die "Can't set permissions on $temporary: $!\n";
         1;
     } or do {
         my $error = $@ || "Can't stage $path\n";

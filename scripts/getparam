@@ -12,7 +12,13 @@ $file //= 'param';
 
 open(my $fh, '<', $file) or die "Can't open $file for reading: $!\n";
 my @values;
-while (my $line = <$fh>) {
+while (1) {
+    $! = 0;
+    my $line = <$fh>;
+    if (!defined($line)) {
+        $! and die "Can't read $file: $!\n";
+        last;
+    }
     push @values, $1 if $line =~ /^\s*\Q$keyword\E\s*=\s*(.*)/;
 }
 close($fh) or die "Can't finish reading $file: $!\n";
@@ -21,3 +27,4 @@ close($fh) or die "Can't finish reading $file: $!\n";
     or die @values ? "getparam: Keyword $keyword is ambiguous in $file\n"
                    : "getparam: Keyword $keyword not found in $file\n";
 print STDOUT "$values[0]\n" or die "Can't write parameter: $!\n";
+close(STDOUT) or die "Can't finish writing parameter: $!\n";
